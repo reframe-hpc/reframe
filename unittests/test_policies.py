@@ -95,6 +95,7 @@ def assert_all_dead(runner):
         try:
             if t.check.job and t.check.job.scheduler:
                 t.check.job.scheduler.poll_jobs([t.check.job])
+
             finished = t.check.poll()
         except JobNotStartedError:
             finished = True

@@ -53,7 +53,9 @@ class TorqueJobScheduler(PbsJobScheduler):
 
         # Depending on the configuration, completed jobs will remain on the job
         # list for a limited time, or be removed upon completion.
-        # If qstat cannot find the jobid, it returns code 153.
+        # If qstat cannot find any of the jobids, it returns code 153.
+        # Otherwise, it will return with return code 0 and print information
+        # only for the ones it could find.
         if completed.returncode == 153:
             getlogger().debug(
                 'return code = 153: jobids not known by scheduler, '
@@ -64,23 +66,19 @@ class TorqueJobScheduler(PbsJobScheduler):
             return
 
         if completed.returncode != 0:
-            for job in jobs:
-                job.exception = JobError(f'qstat failed: {completed.stderr}',
-                                         jobid=job.jobid)
+            raise JobError(f'qstat failed: {completed.stderr}')
 
-            return
-
-        jobs_stdout = {}
-        for jobout in completed.stdout.split('\n\n'):
+        jobs_info = {}
+        for job_raw_info in completed.stdout.split('\n\n'):
             jobid_match = re.search(
-                r'^Job Id:\s*(?P<jobid>\S+)', jobout, re.MULTILINE
+                r'^Job Id:\s*(?P<jobid>\S+)', job_raw_info, re.MULTILINE
             )
             if jobid_match:
                 jobid = int(jobid_match.group('jobid'))
-                jobs_stdout[jobid] = jobout
+                jobs_info[jobid] = job_raw_info
 
         for job in jobs:
-            if job.jobid not in jobs_stdout:
+            if job.jobid not in jobs_info:
                 getlogger().debug(
                     f'jobid {job.jobid} not known by scheduler, '
                     'assuming job completed'
@@ -88,7 +86,7 @@ class TorqueJobScheduler(PbsJobScheduler):
                 job.state = 'COMPLETED'
                 continue
 
-            stdout = jobs_stdout[job.jobid]
+            stdout = jobs_info[job.jobid]
             nodelist_match = re.search(
                 r'^\s*exec_host = (?P<nodespec>\S+)', stdout, re.MULTILINE
             )
@@ -108,15 +106,15 @@ class TorqueJobScheduler(PbsJobScheduler):
             state = state_match.group('state')
             job.state = JOB_STATES[state]
             if job.state == 'COMPLETED':
-                code_match = re.search(
+                exitcode_match = re.search(
                     r'^\s*exit_status = (?P<code>\d+)',
                     stdout,
                     re.MULTILINE,
                 )
-                if not code_match:
+                if not exitcode_match:
                     continue
 
-                job.exitcode = int(code_match.group('code'))
+                job.exitcode = int(exitcode_match.group('code'))
 
     def finished(self, job):
         if job.exception:

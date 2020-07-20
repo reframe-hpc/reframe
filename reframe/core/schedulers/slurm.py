@@ -377,11 +377,11 @@ class SlurmJobScheduler(sched.JobScheduler):
         '''Update the status of the jobs.'''
 
         jobids = [job.jobid for job in jobs]
-        start_time = min([job._submit_time for job in jobs])
+        start_time = min(job._submit_time for job in jobs)
 
         completed = _run_strict(
             'sacct -S %s -P -j %s -o jobid,state,exitcode,nodelist' %
-            (start_time.strftime('%F'), ','.join([str(j) for j in jobids]))
+            (start_time.strftime('%F'), ','.join(str(j) for j in jobids))
         )
         for job in jobs:
             self._update_state_count[job.jobid] += 1
@@ -395,29 +395,30 @@ class SlurmJobScheduler(sched.JobScheduler):
                               completed.stdout)
             return
 
-        jobs_captured = {}
+        jobs_info = {}
         for s in state_match:
-            jobid = s.group('jobid').split('_')[0]
-            jobs_captured.setdefault(jobid, []).append(s)
+            jobid = int(s.group('jobid').split('_')[0])
+            jobs_info.setdefault(jobid, []).append(s)
 
         for job in jobs:
             try:
-                job_match = jobs_captured[str(job.jobid)]
+                jobarr_info = jobs_info[job.jobid]
             except KeyError:
                 continue
+
             # Join the states with ',' in case of job arrays
-            job.state = ','.join(s.group('state') for s in job_match)
+            job.state = ','.join(m.group('state') for m in jobarr_info)
             update_count = self._update_state_count[job.jobid]
             if not update_count % self.SACCT_SQUEUE_RATIO:
                 self._cancel_if_blocked(job)
 
             if slurm_state_completed(job.state):
                 # Since Slurm exitcodes are positive take the maximum one
-                job.exitcode = max(int(s.group('exitcode')) for s in job_match)
+                job.exitcode = max(int(m.group('exitcode')) for m in jobarr_info)
 
             # Use ',' to join nodes to be consistent with Slurm syntax
             self._set_nodelist(
-                job, ','.join(s.group('nodespec') for s in job_match)
+                job, ','.join(m.group('nodespec') for m in jobarr_info)
             )
 
     def _cancel_if_blocked(self, job):
@@ -559,7 +560,7 @@ class SqueueJobScheduler(SlurmJobScheduler):
         if not jobs:
             return
 
-        m = max([job._submit_time for job in jobs])
+        m = max(job._submit_time for job in jobs)
         time_from_last_submit = datetime.now() - m
         rem_wait = self._squeue_delay - time_from_last_submit.total_seconds()
         if rem_wait > 0:
@@ -592,14 +593,14 @@ class SqueueJobScheduler(SlurmJobScheduler):
 
             return
 
-        jobs_captured = {}
+        jobs_info = {}
         for s in state_match:
             jobid = s.group('jobid').split('_')[0]
-            jobs_captured.setdefault(jobid, []).append(s)
+            jobs_info.setdefault(jobid, []).append(s)
 
         for job in jobs:
             try:
-                job_match = jobs_captured[str(job.jobid)]
+                job_match = jobs_info[str(job.jobid)]
             except KeyError:
                 job.state = (
                     'CANCELLED' if job.jobid in self._cancelled

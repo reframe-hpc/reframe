@@ -50,17 +50,17 @@ class LocalJobScheduler(sched.JobScheduler):
         # The new process starts also a new session (session leader), so that
         # we can later kill any other processes that this might spawn by just
         # killing this one.
-        new_proc = os_ext.run_command_async(
+        proc = os_ext.run_command_async(
             os.path.abspath(job.script_filename),
             stdout=_f_stdout,
             stderr=_f_stderr,
             start_new_session=True)
-        self._procs[new_proc.pid] = new_proc
-        self._f_stdout[new_proc.pid] = _f_stdout
-        self._f_stderr[new_proc.pid] = _f_stderr
+        self._procs[proc.pid] = proc
+        self._f_stdout[proc.pid] = _f_stdout
+        self._f_stderr[proc.pid] = _f_stderr
 
         # Update job info
-        job.jobid = new_proc.pid
+        job.jobid = proc.pid
         job.nodelist = [socket.gethostname()]
 
     def emit_preamble(self, job):
@@ -174,10 +174,7 @@ class LocalJobScheduler(sched.JobScheduler):
         the process has finished, you *must* call wait() to properly cleanup
         after it.
         '''
-        if self._procs[job.jobid].returncode is None:
-            return False
-
-        return True
+        return self._procs[job.jobid].returncode is not None
 
     def poll_jobs(self, jobs):
         for job in jobs:

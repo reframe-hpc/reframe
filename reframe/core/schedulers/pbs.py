@@ -163,7 +163,6 @@ class PbsJobScheduler(sched.JobScheduler):
                             os.path.exists(job.stderr))
 
         done = job.jobid in self._cancelled or output_ready
-
         if done:
             t_now = datetime.now()
             if job.jobid in self._time_finished:

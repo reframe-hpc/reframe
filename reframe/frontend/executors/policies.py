@@ -58,10 +58,10 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 raise TaskDependencyError('dependencies failed')
 
             partname = task.testcase.partition.fullname
-            sched = self._schedulers.get(partname, None)
+            sched = self._schedulers.get(partname)
             task.setup(task.testcase.partition,
                        task.testcase.environ,
-                       _rfm_sched_type=sched,
+                       scheduler=sched,
                        sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
                        sched_account=self.sched_account,
                        sched_partition=self.sched_partition,
@@ -70,9 +70,8 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
                        sched_exclude_nodelist=self.sched_exclude_nodelist,
                        sched_options=self.sched_options)
 
-            if partname not in self._schedulers:
-                self._schedulers[partname] = task.check.job.scheduler
-                sched = task.check.job.scheduler
+            self._schedulers.setdefault(partname, task.check.job.scheduler)
+            sched = task.check.job.scheduler
 
             task.compile()
             task.compile_wait()
@@ -207,7 +206,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         # Index tasks by test cases
         self._task_index = {}
 
-        # All currently running tasks
+        # All currently running tasks per partition
         self._running_tasks = {}
 
         # All schedulers per partition
@@ -253,8 +252,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def on_task_setup(self, task):
         partname = task.check.current_partition.fullname
         self._ready_tasks[partname].append(task)
-        if partname not in self._schedulers:
-            self._schedulers[partname] = task.check.job.scheduler
+        self._schedulers.setdefault(partname, task.check.job.scheduler)
 
     def on_task_run(self, task):
         partname = task.check.current_partition.fullname
@@ -292,7 +290,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                                              None)
                 task.setup(task.testcase.partition,
                            task.testcase.environ,
-                           _rfm_sched_type=sched,
+                           scheduler=sched,
                            sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
                            sched_account=self.sched_account,
                            sched_partition=self.sched_partition,
@@ -376,8 +374,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         for partname, sched in self._schedulers.items():
             getlogger().debug(f'polling {len(self._running_tasks[partname])} '
                               f'task(s) in {partname}')
-            jobs = [task.check.job for task in self._running_tasks[partname]]
-            sched.poll_jobs(jobs)
+            sched.poll_jobs(
+                task.check.job for task in self._running_tasks[partname]
+            )
 
         for t in all_running:
             t.poll()
@@ -419,8 +418,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                     self._running_tasks[partname].pop().abort(cause)
             except IndexError:
                 pass
-        self._running_tasks = {}
 
+        self._running_tasks = {}
         for ready_list in self._ready_tasks.values():
             getlogger().debug('ready list size: %s' % len(ready_list))
             for task in ready_list:
