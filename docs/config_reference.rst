@@ -298,7 +298,7 @@ System Partition Configuration
 .. js:attribute:: .systems[].partitions[].max_jobs
 
    :required: No
-   :default: ``1``
+   :default: ``8``
 
    The maximum number of concurrent regression tests that may be active (i.e., not completed) on this partition.
    This option is relevant only when ReFrame executes with the `asynchronous execution policy <pipeline.html#execution-policies>`__.
