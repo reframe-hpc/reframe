@@ -16,18 +16,17 @@ import types
 from collections import UserDict
 
 
-def get_next_runreport_index():
-    runreports = os.listdir('.')
+def get_next_runreport_index(runreport_dir):
+    runreports = os.listdir(runreport_dir)
     pattern = r'runreport-\d+.json'
     filenames = filter(re.compile(pattern).match, runreports)
-    filenames = sorted(filenames)
 
     if not filenames:
         return 1
 
-    for i, f in enumerate(filenames, 1):
-        idx = f.split('.')[0].split('-')[1]
-        idx = int(idx)
+    idx_list = sorted([int(f.split('.')[0].split('-')[1])
+                       for f in filenames])
+    for i, idx in enumerate(idx_list):
         if idx != i:
             return i
 

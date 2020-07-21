@@ -3,10 +3,13 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import datetime
 import json
 import jsonschema
 import os
 import pytest
+import socket
+import sys
 
 import reframe
 import reframe.core.runtime as rt
@@ -116,10 +119,25 @@ def validate_report(runreport):
 
 
 def test_runall(make_runner, make_cases, common_exec_ctx):
+    reframe_info = {
+        'version': os_ext.reframe_version(),
+        'command': repr(' '.join(sys.argv)),
+        'user': f"{os_ext.osuser() or '<unknown>'}",
+        'host': socket.gethostname(),
+        'working_directory': repr(os.getcwd()),
+        'check_search_path': 'unittests/resources/checks',
+        'recursive_search_path': True,
+        'settings_file': fixtures.TEST_CONFIG_FILE,
+        'stage_prefix': repr(rt.runtime().stage_prefix),
+        'output_prefix': repr(rt.runtime().output_prefix),
+    }
     runner = make_runner()
+    reframe_info['start_time'] = datetime.datetime.today().strftime('%c %Z')
     runner.runall(make_cases())
+    reframe_info['end_time'] = datetime.datetime.today().strftime('%c %Z')
     stats = runner.stats
-    validate_report(runner.stats.json())
+    runreport = runner.stats.json(reframe_info, force=True)
+    validate_report(runreport)
     assert 8 == stats.num_cases()
     assert_runall(runner)
     assert 5 == len(stats.failures())

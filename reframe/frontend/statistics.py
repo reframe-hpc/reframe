@@ -71,13 +71,14 @@ class TestStats:
 
         return '\n'.join(report)
 
-    def json(self, force=False):
+    def json(self, reframe_info=None, force=False):
         if not force and self._records:
             return self._records
 
-        self._records = []
+        self._records = {'run_info': []}
         current_run = rt.runtime().current_run
         for run_no, run in enumerate(self._alltasks):
+            tests = []
             for t in run:
                 check = t.check
                 partition = check.current_partition
@@ -138,9 +139,12 @@ class TestStats:
                     entry['result'] = 'success'
                     entry['outputdir'] = check.outputdir
 
-                entry['runid'] = run_no
+                tests.append(entry)
 
-                self._records.append(entry)
+            self._records['run_info'].append({'runid': run_no, 'tests': tests})
+
+        if reframe_info:
+            self._records['reframe_info'] = reframe_info
 
         return self._records
 
@@ -149,8 +153,8 @@ class TestStats:
         report = [line_width * '=']
         report.append('SUMMARY OF FAILURES')
         last_run = rt.runtime().current_run
-        for r in self.json():
-            if r['result'] == 'success' or r['runid'] != last_run:
+        for r in self.json()['run_info'][last_run]['tests']:
+            if r['result'] == 'success':
                 continue
 
             retry_info = (f'(for the last of {last_run} retries)'

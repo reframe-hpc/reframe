@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import datetime
 import inspect
 import json
 import os
@@ -10,6 +11,7 @@ import re
 import socket
 import sys
 import traceback
+from pathlib import Path
 
 import reframe
 import reframe.core.config as config
@@ -138,7 +140,7 @@ def main():
         envvar='RFM_SAVE_LOG_FILES', configvar='general/save_log_files'
     )
     output_options.add_argument(
-        '--keep-runreport', action='store_true', default=False,
+        '--runreport-name', action='store', metavar='NAME',
         help="Do not overwrite runreport.json",
     )
 
@@ -502,19 +504,32 @@ def main():
         param = param + ':'
         printer.info(f"  {param.ljust(18)} {value}")
 
+    reframe_info = {
+        'version': os_ext.reframe_version(),
+        'command': repr(' '.join(sys.argv)),
+        'user': f"{os_ext.osuser() or '<unknown>'}",
+        'host': socket.gethostname(),
+        'working_directory': repr(os.getcwd()),
+        'check_search_path': f"{':'.join(loader.load_path)!r}",
+        'recursive_search_path': loader.recurse,
+        'settings_file': site_config.filename,
+        'stage_prefix': repr(rt.stage_prefix),
+        'output_prefix': repr(rt.output_prefix),
+    }
+
     # Print command line
     printer.info(f"[ReFrame Setup]")
-    print_infoline('version', os_ext.reframe_version())
-    print_infoline('command', repr(' '.join(sys.argv)))
+    print_infoline('version', reframe_info['version'])
+    print_infoline('command', reframe_info['command'])
     print_infoline('launched by',
-                   f"{os_ext.osuser() or '<unknown>'}@{socket.gethostname()}")
-    print_infoline('working directory', repr(os.getcwd()))
-    print_infoline('settings file', f'{site_config.filename!r}')
+                   f"{reframe_info['user']}@{reframe_info['host']}")
+    print_infoline('working directory', reframe_info['working_directory'])
+    print_infoline('settings file', f"{reframe_info['settings_file']!r}")
     print_infoline('check search path',
-                   f"{'(R) ' if loader.recurse else ''}"
-                   f"{':'.join(loader.load_path)!r}")
-    print_infoline('stage directory', repr(rt.stage_prefix))
-    print_infoline('output directory', repr(rt.output_prefix))
+                   f"{'(R) ' if reframe_info['recursive_search_path'] else ''}"
+                   f"{reframe_info['check_search_path']!r}")
+    print_infoline('stage directory', reframe_info['stage_prefix'])
+    print_infoline('output directory', reframe_info['output_prefix'])
     printer.info('')
     try:
         # Locate and load checks
@@ -689,9 +704,13 @@ def main():
                                   max_retries) from None
             runner = Runner(exec_policy, printer, max_retries)
             try:
+                reframe_info['start_time'] = (
+                    datetime.datetime.today().strftime('%c %Z'))
                 runner.runall(testcases)
             finally:
                 # Print a retry report if we did any retries
+                reframe_info['end_time'] = (
+                    datetime.datetime.today().strftime('%c %Z'))
                 if runner.stats.failures(run=0):
                     printer.info(runner.stats.retry_report())
 
@@ -705,14 +724,23 @@ def main():
                 if options.performance_report:
                     printer.info(runner.stats.performance_report())
 
-                if options.keep_runreport:
-                    runreport_id = get_next_runreport_index()
-                    runreport_name = f'runreport-{runreport_id}.json'
+                if options.runreport_name:
+                    runreport_file = options.runreport_name
                 else:
-                    runreport_name = 'runreport.json'
+                    runreport_dir = os.path.join(Path.home(), '.local/reframe')
+                    runreport_id = get_next_runreport_index(runreport_dir)
+                    runreport_name = f'runreport-{runreport_id}.json'
+                    Path(runreport_dir).mkdir(parents=True, exist_ok=True)
+                    runreport_file = os.path.join(runreport_dir,
+                                                  runreport_name)
 
-                with open(runreport_name, 'w') as fp:
-                    json.dump(runner.stats.json(), fp, indent=4)
+                try:
+                    with open(runreport_file, 'w') as fp:
+                        json.dump(runner.stats.json(reframe_info, force=True),
+                                  fp, indent=4)
+                except OSError:
+                    printer.error(f'invalid path: {runreport_file}')
+                    sys.exit(1)
 
         else:
             printer.error("No action specified. Please specify `-l'/`-L' for "
