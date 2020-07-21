@@ -3,210 +3,163 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import abc
 import pytest
 
 import reframe.core.containers as containers
+import unittests.fixtures as fixtures
 from reframe.core.exceptions import ContainerError
 
 
-@pytest.fixture(params=['docker', 'shifter', 'shifter_localimage',
-                        'shifter_mpi', 'sarus', 'sarus_localimage',
-                        'sarus_mpi', 'singularity',
-                        'singularity_cuda'])
-def container_platform(request):
-    platform = request.param.split('_')[0]
-    if platform == 'docker':
-        return containers.Docker(), request.param
-    elif platform == 'shifter':
-        ret = containers.Shifter()
-        if 'mpi' in request.param:
-            ret.with_mpi = True
+@pytest.fixture(params=[
+    'Docker',
+    'Sarus', 'Sarus+mpi', 'Sarus+localimage',
+    'Shifter', 'Shifter+mpi', 'Shifter+localimage',
+    'Singularity', 'Singularity+cuda'
+])
+def container_variant(request):
+    return request.param
 
-        return ret, request.param
-    elif platform == 'sarus':
-        ret = containers.Sarus()
-        if 'mpi' in request.param:
-            ret.with_mpi = True
 
-        return ret, request.param
+@pytest.fixture
+def container_platform(container_variant):
+    name = container_variant.split('+')[0]
+    ret = containers.__dict__[name]()
+    if '+mpi' in container_variant:
+        ret.with_mpi = True
+
+    if '+cuda' in container_variant:
+        ret.with_cuda = True
+
+    if '+localimage' in container_variant:
+        ret.image = 'load/library/image:tag'
     else:
-        ret = containers.Singularity()
-        if 'cuda' in request.param:
-            ret.with_cuda = True
+        ret.image = 'image:tag'
 
-        return ret, request.param
-
-
-def _expected_docker_cmd_prepare():
-    return []
-
-
-def _expected_shifter_cmd_prepare():
-    return ['shifter pull image:tag']
-
-
-def _expected_sarus_cmd_prepare():
-    return ['sarus pull image:tag']
-
-
-_expected_shifter_localimage_cmd_prepare = _expected_docker_cmd_prepare
-_expected_shifter_mpi_cmd_prepare = _expected_shifter_cmd_prepare
-_expected_sarus_localimage_cmd_prepare = _expected_docker_cmd_prepare
-_expected_sarus_mpi_cmd_prepare = _expected_sarus_cmd_prepare
-_expected_singularity_cmd_prepare = _expected_docker_cmd_prepare
-_expected_singularity_cuda_cmd_prepare = _expected_singularity_cmd_prepare
+    return ret
 
 
 @pytest.fixture
-def expected_cmd_prepare(container_platform):
-    return globals()[f'_expected_{container_platform[1]}_cmd_prepare']()
-
-
-def _expected_docker_cmd_mount_points():
-    return ('docker run --rm -v "/path/one":"/one" -v "/path/two":"/two" '
-            "image:tag bash -c 'cd /stagedir; cmd1; cmd2'")
-
-
-def _expected_shifter_cmd_mount_points():
-    return ('shifter run '
-            '--mount=type=bind,source="/path/one",destination="/one" '
-            '--mount=type=bind,source="/path/two",destination="/two" '
-            "image:tag bash -c 'cd /stagedir; cmd1; cmd2'")
-
-
-def _expected_shifter_mpi_cmd_mount_points():
-    return ('shifter run '
-            '--mount=type=bind,source="/path/one",destination="/one" '
-            '--mount=type=bind,source="/path/two",destination="/two" '
-            "--mpi image:tag bash -c 'cd /stagedir; cmd1; cmd2'")
-
-
-def _expected_sarus_cmd_mount_points():
-    return ('sarus run '
-            '--mount=type=bind,source="/path/one",destination="/one" '
-            '--mount=type=bind,source="/path/two",destination="/two" '
-            "image:tag bash -c 'cd /stagedir; cmd1; cmd2'")
-
-
-def _expected_sarus_mpi_cmd_mount_points():
-    return ('sarus run '
-            '--mount=type=bind,source="/path/one",destination="/one" '
-            '--mount=type=bind,source="/path/two",destination="/two" '
-            "--mpi image:tag bash -c 'cd /stagedir; cmd1; cmd2'")
-
-
-def _expected_singularity_cmd_mount_points():
-    return ('singularity exec -B"/path/one:/one" -B"/path/two:/two" '
-            "image:tag bash -c 'cd /stagedir; cmd1; cmd2'")
-
-
-def _expected_singularity_cuda_cmd_mount_points():
-    return ('singularity exec -B"/path/one:/one" -B"/path/two:/two" '
-            "--nv image:tag bash -c 'cd /stagedir; cmd1; cmd2'")
-
-
-_expected_shifter_localimage_cmd_mount_points = (
-    _expected_shifter_cmd_mount_points
-)
-_expected_sarus_localimage_cmd_mount_points = _expected_sarus_cmd_mount_points
+def expected_cmd_mount_points(container_variant):
+    if container_variant == 'Docker':
+        return ('docker run --rm -v "/path/one":"/one" -v "/path/two":"/two" '
+                "image:tag bash -c 'cd /stagedir; cmd1; cmd2'")
+    elif container_variant == 'Sarus':
+        return ('sarus run '
+                '--mount=type=bind,source="/path/one",destination="/one" '
+                '--mount=type=bind,source="/path/two",destination="/two" '
+                "image:tag bash -c 'cd /stagedir; cmd1; cmd2'")
+    elif container_variant == 'Sarus+mpi':
+        return ('sarus run '
+                '--mount=type=bind,source="/path/one",destination="/one" '
+                '--mount=type=bind,source="/path/two",destination="/two" '
+                "--mpi image:tag bash -c 'cd /stagedir; cmd1; cmd2'")
+    elif container_variant == 'Sarus+localimage':
+        return ('sarus run '
+                '--mount=type=bind,source="/path/one",destination="/one" '
+                '--mount=type=bind,source="/path/two",destination="/two" '
+                "load/library/image:tag bash -c 'cd /stagedir; cmd1; cmd2'")
+    elif container_variant == 'Singularity':
+        return ('singularity exec -B"/path/one:/one" -B"/path/two:/two" '
+                "image:tag bash -c 'cd /stagedir; cmd1; cmd2'")
+    elif container_variant == 'Singularity+cuda':
+        return ('singularity exec -B"/path/one:/one" -B"/path/two:/two" '
+                "--nv image:tag bash -c 'cd /stagedir; cmd1; cmd2'")
+    elif container_variant == 'Shifter':
+        return ('shifter run '
+                '--mount=type=bind,source="/path/one",destination="/one" '
+                '--mount=type=bind,source="/path/two",destination="/two" '
+                "image:tag bash -c 'cd /stagedir; cmd1; cmd2'")
+    elif container_variant == 'Shifter+localimage':
+        return ('shifter run '
+                '--mount=type=bind,source="/path/one",destination="/one" '
+                '--mount=type=bind,source="/path/two",destination="/two" '
+                "load/library/image:tag bash -c 'cd /stagedir; cmd1; cmd2'")
+    elif container_variant == 'Shifter+mpi':
+        return ('shifter run '
+                '--mount=type=bind,source="/path/one",destination="/one" '
+                '--mount=type=bind,source="/path/two",destination="/two" '
+                "--mpi image:tag bash -c 'cd /stagedir; cmd1; cmd2'")
 
 
 @pytest.fixture
-def expected_cmd_mount_points(container_platform):
-    return globals()[f'_expected_{container_platform[1]}_cmd_mount_points']()
-
-
-def _expected_docker_cmd_with_run_opts():
-    return ('docker run --rm -v "/path/one":"/one" --foo --bar '
-            "image:tag bash -c 'cd /stagedir; cmd'")
-
-
-def _expected_shifter_cmd_with_run_opts():
-    return ('shifter run '
-            '--mount=type=bind,source="/path/one",destination="/one" '
-            "--foo --bar image:tag bash -c 'cd /stagedir; cmd'")
-
-
-def _expected_shifter_mpi_cmd_with_run_opts():
-    return ('shifter run '
-            '--mount=type=bind,source="/path/one",destination="/one" '
-            "--mpi --foo --bar image:tag bash -c 'cd /stagedir; cmd'")
-
-
-def _expected_sarus_cmd_with_run_opts():
-    return ('sarus run '
-            '--mount=type=bind,source="/path/one",destination="/one" '
-            "--foo --bar image:tag bash -c 'cd /stagedir; cmd'")
-
-
-def _expected_sarus_mpi_cmd_with_run_opts():
-    return ('sarus run '
-            '--mount=type=bind,source="/path/one",destination="/one" '
-            "--mpi --foo --bar image:tag bash -c 'cd /stagedir; cmd'")
-
-
-def _expected_singularity_cmd_with_run_opts():
-    return ('singularity exec -B"/path/one:/one" '
-            "--foo --bar image:tag bash -c 'cd /stagedir; cmd'")
-
-
-def _expected_singularity_cuda_cmd_with_run_opts():
-    return ('singularity exec -B"/path/one:/one" '
-            "--nv --foo --bar image:tag bash -c 'cd /stagedir; cmd'")
-
-
-_expected_shifter_localimage_cmd_with_run_opts = (
-    _expected_shifter_cmd_with_run_opts
-)
-_expected_sarus_localimage_cmd_with_run_opts = (
-    _expected_sarus_cmd_with_run_opts
-)
+def expected_cmd_prepare(container_variant):
+    if container_variant in ('Shifter', 'Shifter+mpi'):
+        return ['shifter pull image:tag']
+    elif container_variant in ('Sarus', 'Sarus+mpi'):
+        return ['sarus pull image:tag']
+    else:
+        return []
 
 
 @pytest.fixture
-def expected_cmd_with_run_opts(container_platform):
-    return globals()[f'_expected_{container_platform[1]}_cmd_with_run_opts']()
+def expected_cmd_run_opts(container_variant):
+    if container_variant == 'Docker':
+        return ('docker run --rm -v "/path/one":"/one" --foo --bar '
+                "image:tag bash -c 'cd /stagedir; cmd'")
+    elif container_variant == 'Shifter':
+        return ('shifter run '
+                '--mount=type=bind,source="/path/one",destination="/one" '
+                "--foo --bar image:tag bash -c 'cd /stagedir; cmd'")
+    elif container_variant == 'Shifter+mpi':
+        return ('shifter run '
+                '--mount=type=bind,source="/path/one",destination="/one" '
+                "--mpi --foo --bar image:tag bash -c 'cd /stagedir; cmd'")
+    elif container_variant == 'Shifter+localimage':
+        return (
+            'shifter run '
+            '--mount=type=bind,source="/path/one",destination="/one" '
+            "--foo --bar load/library/image:tag bash -c 'cd /stagedir; cmd'"
+        )
+    elif container_variant == 'Sarus':
+        return ('sarus run '
+                '--mount=type=bind,source="/path/one",destination="/one" '
+                "--foo --bar image:tag bash -c 'cd /stagedir; cmd'")
+    elif container_variant == 'Sarus+mpi':
+        return ('sarus run '
+                '--mount=type=bind,source="/path/one",destination="/one" '
+                "--mpi --foo --bar image:tag bash -c 'cd /stagedir; cmd'")
+    elif container_variant == 'Sarus+localimage':
+        return (
+            'sarus run '
+            '--mount=type=bind,source="/path/one",destination="/one" '
+            "--foo --bar load/library/image:tag bash -c 'cd /stagedir; cmd'"
+        )
+    elif container_variant == 'Singularity':
+        return ('singularity exec -B"/path/one:/one" '
+                "--foo --bar image:tag bash -c 'cd /stagedir; cmd'")
+    elif container_variant == 'Singularity+cuda':
+        return ('singularity exec -B"/path/one:/one" '
+                "--nv --foo --bar image:tag bash -c 'cd /stagedir; cmd'")
 
 
 def test_mount_points(container_platform, expected_cmd_mount_points):
-    platform = container_platform[0]
-    platform.image = 'image:tag'
-    platform.mount_points = [('/path/one', '/one'), ('/path/two', '/two')]
-    platform.commands = ['cmd1', 'cmd2']
-    platform.workdir = '/stagedir'
-    assert expected_cmd_mount_points == platform.launch_command()
+    container_platform.mount_points = [('/path/one', '/one'),
+                                       ('/path/two', '/two')]
+    container_platform.commands = ['cmd1', 'cmd2']
+    container_platform.workdir = '/stagedir'
+    assert container_platform.launch_command() == expected_cmd_mount_points
 
 
 def test_missing_image(container_platform):
-    platform = container_platform[0]
-    platform.commands = ['cmd']
+    container_platform.image = None
+    container_platform.commands = ['cmd']
     with pytest.raises(ContainerError):
-        platform.validate()
+        container_platform.validate()
 
 
 def test_missing_commands(container_platform):
-    platform = container_platform[0]
-    platform.image = 'image:tag'
+    container_platform.image = 'image:tag'
     with pytest.raises(ContainerError):
-        platform.validate()
+        container_platform.validate()
 
 
 def test_prepare_command(container_platform, expected_cmd_prepare):
-    platform = container_platform[0]
-    if container_platform[1] in {'shifter_localimage', 'sarus_localimage'}:
-        platform.image = 'load/library/image:tag'
-    else:
-        platform.image = 'image:tag'
-
-    assert expected_cmd_prepare == platform.emit_prepare_commands()
+    assert container_platform.emit_prepare_commands() == expected_cmd_prepare
 
 
-def test_run_opts(container_platform, expected_cmd_with_run_opts):
-    platform = container_platform[0]
-    platform.image = 'image:tag'
-    platform.commands = ['cmd']
-    platform.mount_points = [('/path/one', '/one')]
-    platform.workdir = '/stagedir'
-    platform.options = ['--foo', '--bar']
-    assert expected_cmd_with_run_opts == platform.launch_command()
+def test_run_opts(container_platform, expected_cmd_run_opts):
+    container_platform.commands = ['cmd']
+    container_platform.mount_points = [('/path/one', '/one')]
+    container_platform.workdir = '/stagedir'
+    container_platform.options = ['--foo', '--bar']
+    assert container_platform.launch_command() == expected_cmd_run_opts

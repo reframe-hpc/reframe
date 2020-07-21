@@ -131,7 +131,12 @@ def dispatch(argname):
     The target function has the same name as the decorated one, but without
     the ``test_`` prefix and a suffix ``_{type(kwargs[argname])}`` will be
     appended. If the target function does not exist, the original function
-    will be called.'''
+    will be called.
+
+    :arg argname: The name of the decorated function's keyword argument, based
+      on whose type we will dispatch the call.
+
+    '''
 
     def _dispatch_deco(fn):
         fnmodule = sys.modules[fn.__module__]
