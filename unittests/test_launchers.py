@@ -194,6 +194,7 @@ def _expected_launcherwrapperalps_minimal_command():
 def _expected_local_command():
         return ''
 
+
 _expected_local_minimal_command = _expected_local_command
 
 

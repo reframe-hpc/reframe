@@ -257,6 +257,7 @@ def test_assert_true():
     with pytest.raises(SanityError, match='not true'):
         sn.evaluate(sn.assert_true(0, msg='not true'))
 
+
 def test_assert_true_with_deferrables():
     assert sn.assert_true(sn.defer(True))
     assert sn.assert_true(sn.defer(1))
@@ -269,6 +270,7 @@ def test_assert_true_with_deferrables():
 
     with pytest.raises(SanityError, match=r'\[\] is not True'):
         sn.evaluate(sn.assert_true(sn.defer([])))
+
 
 def test_assert_false():
     assert sn.assert_false(False)
@@ -505,13 +507,13 @@ def test_assert_reference():
 
 @pytest.fixture
 def tempfile(tmp_path):
-     tmp_file = tmp_path / 'tempfile'
-     with open(tmp_file, 'w') as fp:
-         fp.write('Step: 1\n')
-         fp.write('Step: 2\n')
-         fp.write('Step: 3\n')
+    tmp_file = tmp_path / 'tempfile'
+    with open(tmp_file, 'w') as fp:
+        fp.write('Step: 1\n')
+        fp.write('Step: 2\n')
+        fp.write('Step: 3\n')
 
-     return str(tmp_file)
+    return str(tmp_file)
 
 
 def test_assert_found(tempfile):
@@ -626,9 +628,6 @@ def test_chain():
     chain1 = sn.evaluate(sn.chain(sn.defer(list1), list2))
     chain2 = itertools.chain(list1, list2)
     assert all((a == b for a, b in zip(chain1, chain2)))
-
-
-
 
 
 def test_findall(tempfile):

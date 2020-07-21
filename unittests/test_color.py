@@ -22,6 +22,7 @@ def test_color_rgb():
     with pytest.raises(ValueError):
         color.ColorRGB(0, 28, -1)
 
+
 def test_colorize():
     s = color.colorize('hello', color.RED, palette='ANSI')
     assert '\033' in s

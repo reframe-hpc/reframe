@@ -93,7 +93,7 @@ def test_make_emit_from_buildsystem(environ, make_build_system,
 
 def test_make_emit_no_env_defaults(environ, make_build_system):
     make_build_system.flags_from_environ = False
-    assert ['make -j 1'] ==  make_build_system.emit_build_commands(environ)
+    assert ['make -j 1'] == make_build_system.emit_build_commands(environ)
 
 
 def test_cmake_emit_from_env(environ, cmake_build_system):
@@ -184,6 +184,7 @@ def test_autotools_emit_from_buildsystem(environ, autotools_build_system,
     ]
     assert expected == autotools_build_system.emit_build_commands(environ)
 
+
 def test_autotools_emit_no_env_defaults(environ, autotools_build_system):
     autotools_build_system.flags_from_environ = False
     assert (['./configure', 'make -j 1'] ==
@@ -257,7 +258,7 @@ def test_emit_no_env(environ, setup_build_system, single_source_build_system,
         'Fortran': '-Wall -O3',
     }
     single_source_build_system.include_path = ['foodir/include',
-                                              'bardir/include']
+                                               'bardir/include']
     single_source_build_system.executable = 'foo.e'
     for lang, comp in compilers.items():
         single_source_build_system.srcfile = files[lang]

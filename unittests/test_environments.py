@@ -13,8 +13,6 @@ import unittests.fixtures as fixtures
 from reframe.core.exceptions import EnvironError
 
 
-
-
 @pytest.fixture
 def environ_save(monkeypatch):
     monkeypatch.setenv('_var0', 'val0')
@@ -231,6 +229,7 @@ def test_immutability(environ):
 
     with pytest.raises(AttributeError):
         prgenv.ldflags = ['-lm']
+
 
 @fixtures.switch_to_user_runtime
 def test_emit_load_commands(environ, setup_modules_system):

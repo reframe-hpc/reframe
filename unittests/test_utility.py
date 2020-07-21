@@ -32,8 +32,8 @@ def test_command_error():
 def test_command_timeout():
     with pytest.raises(
         SpawnedProcessTimeout,
-        match=r"command 'sleep 3' timed out after 2s" ) as exc_info:
-        os_ext.run_command('sleep 3', timeout=2)
+        match=r"command 'sleep 3' timed out after 2s") as exc_info:
+    os_ext.run_command('sleep 3', timeout=2)
 
     assert exc_info.value.timeout == 2
 

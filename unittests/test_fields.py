@@ -53,6 +53,7 @@ def test_constant_field():
     with pytest.raises(ValueError):
         tester.ro = 'bar'
 
+
 def test_typed_field():
     class ClassA:
         def __init__(self, val):

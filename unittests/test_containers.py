@@ -163,6 +163,7 @@ _expected_sarus_localimage_cmd_with_run_opts = (
     _expected_sarus_cmd_with_run_opts
 )
 
+
 @pytest.fixture
 def expected_cmd_with_run_opts(container_platform):
     return globals()[f'_expected_{container_platform[1]}_cmd_with_run_opts']()

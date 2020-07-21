@@ -19,17 +19,14 @@ def _expected_tmod_load_instr(module):
 
 
 _expected_tmod4_load_instr = _expected_tmod_load_instr
-
-
 _expected_lmod_load_instr = _expected_tmod_load_instr
 
 
 def _expected_tmod_unload_instr(module):
     return f'module unload {module}'
 
+
 _expected_tmod4_unload_instr = _expected_tmod_unload_instr
-
-
 _expected_lmod_unload_instr = _expected_tmod_unload_instr
 
 
@@ -49,9 +46,9 @@ def modules_system(request):
         except ConfigError:
             pytest.skip('nomod not supported')
     else:
-       try:
+        try:
             m = modules.ModulesSystem.create(request.param)
-       except ConfigError:
+        except ConfigError:
             pytest.skip('{requst.param} not supported')
 
     return m
