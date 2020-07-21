@@ -7,6 +7,8 @@
 # unittests/fixtures.py -- Fixtures used in multiple unit tests
 #
 import os
+import functools
+import sys
 import tempfile
 
 import reframe
@@ -120,3 +122,39 @@ def safe_rmtree(path, **kwargs):
     assert common_path != path
     assert path != os.environ['HOME']
     os_ext.rmtree(path, **kwargs)
+
+
+def dispatch(argname):
+    '''Dispatch call to the decorated function to another one based on the type of
+    the keyword argument ``argname``.
+
+    The target function has the same name as the decorated one, but without
+    the ``test_`` prefix and a suffix ``_{type(kwargs[argname])}`` will be
+    appended. If the target function does not exist, the original function
+    will be called.'''
+
+    def _dispatch_deco(fn):
+        fnmodule = sys.modules[fn.__module__]
+
+        @functools.wraps(fn)
+        def _wrapped(*args, **kwargs):
+            target_fn_name = fn.__name__
+            if target_fn_name.startswith('test'):
+                target_fn_name = target_fn_name[4:]
+
+            if argname not in kwargs:
+                raise ValueError(
+                    f'cannot dispatch call: no {argname!r} keyword argument '
+                    f'was passed to {fn.__name__}()'
+                )
+
+            target_fn_name += f'_{type(kwargs[argname]).__name__}'
+            try:
+                fnmodule.__dict__[target_fn_name](*args, **kwargs)
+            except KeyError:
+                # no target function found; use the original one
+                fn(*args, **kwargs)
+
+        return _wrapped
+
+    return _dispatch_deco
