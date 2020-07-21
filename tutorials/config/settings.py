@@ -19,7 +19,6 @@ site_configuration = {
                     'scheduler': 'local',
                     'launcher': 'local',
                     'environs': ['gnu', 'clang'],
-                    'max_jobs': 10
                 }
             ]
         },
@@ -35,7 +34,6 @@ site_configuration = {
                     'scheduler': 'local',
                     'launcher': 'local',
                     'environs': ['gnu', 'intel', 'pgi', 'cray'],
-                    'max_jobs': 10
                 },
                 {
                     'name': 'gpu',
