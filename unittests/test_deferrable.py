@@ -41,17 +41,17 @@ def test_iter():
 
 
 @sn.sanity_function
-def add(a, b):
+def _add(a, b):
     return a + b
 
 
 def test_kwargs_passing():
-    expr = add(a=4, b=2) / 3
+    expr = _add(a=4, b=2) / 3
     assert 2 == expr
 
 
 @pytest.fixture
-def value():
+def value_wrapper():
     class _Value:
         def __init__(self):
             self._value = 0
@@ -64,65 +64,65 @@ def value():
     return _Value()
 
 
-def test_eq(value):
-    expr = value.value == 2
-    value._value = 2
+def test_eq(value_wrapper):
+    expr = value_wrapper.value == 2
+    value_wrapper._value = 2
     assert expr
 
 
-def test_ne(value):
-    expr = value.value != 0
-    value._value = 2
+def test_ne(value_wrapper):
+    expr = value_wrapper.value != 0
+    value_wrapper._value = 2
     assert expr
 
 
-def test_lt(value):
-    expr = value.value < 0
-    value._value = -1
+def test_lt(value_wrapper):
+    expr = value_wrapper.value < 0
+    value_wrapper._value = -1
     assert expr
 
 
-def test_le(value):
-    expr = value.value <= 0
+def test_le(value_wrapper):
+    expr = value_wrapper.value <= 0
     assert expr
 
-    value._value = -1
-    assert expr
-
-
-def test_gt(value):
-    expr = value.value > 1
-    value._value = 2
+    value_wrapper._value = -1
     assert expr
 
 
-def test_ge(value):
-    expr = value.value >= 1
-    value._value = 1
-    assert expr
-
-    value._value = 2
+def test_gt(value_wrapper):
+    expr = value_wrapper.value > 1
+    value_wrapper._value = 2
     assert expr
 
 
-def test_list_getitem():
+def test_ge(value_wrapper):
+    expr = value_wrapper.value >= 1
+    value_wrapper._value = 1
+    assert expr
+
+    value_wrapper._value = 2
+    assert expr
+
+
+def test_getitem_list():
     l = [1, 2]
     expr = sn.defer(l)[1] == 3
     l[1] = 3
     assert expr
 
 
-def test_list_contains():
+def test_contains_list():
     l = [1, 2]
     assert 2 in sn.defer(l)
 
 
-def test_set_contains():
+def test_contains_set():
     s = {1, 2}
     assert 2 in sn.defer(s)
 
 
-def test_dict_contains():
+def test_contains_dict():
         d = {1: 'a', 2: 'b'}
         assert 2 in sn.defer(d)
 

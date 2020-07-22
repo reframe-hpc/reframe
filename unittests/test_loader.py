@@ -23,7 +23,8 @@ def loader():
 def loader_with_path():
     return RegressionCheckLoader(
         ['unittests/resources/checks', 'unittests/foobar'],
-        ignore_conflicts=True)
+        ignore_conflicts=True
+    )
 
 
 def test_load_file_relative(loader):
@@ -34,7 +35,8 @@ def test_load_file_relative(loader):
 
 def test_load_file_absolute(loader):
     checks = loader.load_from_file(
-        os.path.abspath('unittests/resources/checks/emptycheck.py'))
+        os.path.abspath('unittests/resources/checks/emptycheck.py')
+    )
     assert 1 == len(checks)
     assert checks[0].name == 'EmptyTest'
 
@@ -51,7 +53,8 @@ def test_load_all(loader_with_path):
 
 def test_load_new_syntax(loader):
     checks = loader.load_from_file(
-        'unittests/resources/checks_unlisted/good.py')
+        'unittests/resources/checks_unlisted/good.py'
+    )
     assert 13 == len(checks)
 
 
@@ -74,7 +77,8 @@ def test_load_bad_required_version(loader):
 
 def test_load_bad_init(loader):
     tests = loader.load_from_file(
-        'unittests/resources/checks_unlisted/bad_init_check.py')
+        'unittests/resources/checks_unlisted/bad_init_check.py'
+    )
     assert 0 == len(tests)
 
 

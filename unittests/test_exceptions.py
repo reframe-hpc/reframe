@@ -8,26 +8,14 @@ import pytest
 import reframe.core.exceptions as exc
 
 
-@pytest.fixture
-def raise_exc():
-    def _raise_exc(exc):
-        raise exc
-
-    return _raise_exc
+def assert_args(exc_type, *args):
+    e = exc_type(*args)
+    assert args == e.args
 
 
-@pytest.fixture
-def assert_args():
-    def _assert_args(exc_type, *args):
-        e = exc_type(*args)
-        assert args == e.args
-
-    return _assert_args
-
-
-def test_soft_error(raise_exc, assert_args):
+def test_soft_error():
     with pytest.raises(exc.ReframeError, match=r'random error'):
-        raise_exc(exc.ReframeError('random error'))
+        raise exc.ReframeError('random error')
 
     assert_args(exc.ReframeError, 'error msg')
     assert_args(exc.ReframeError, 'error msg', 'another arg')
@@ -64,7 +52,7 @@ def test_reraise_fatal_error():
         assert 'fatal error: random value error' == str(e)
 
 
-def test_spawned_process_error(raise_exc):
+def test_spawned_process_error():
     exc_args = ('foo bar', 'partial output', 'error message', 1)
     e = exc.SpawnedProcessError(*exc_args)
     with pytest.raises(
@@ -75,12 +63,12 @@ def test_spawned_process_error(raise_exc):
                    r"=== STDERR ===\n"
                    r"error message")
     ):
-        raise_exc(e)
+        raise e
 
     assert exc_args == e.args
 
 
-def test_spawned_process_error_list_args(raise_exc):
+def test_spawned_process_error_list_args():
     exc_args = (['foo', 'bar'], 'partial output', 'error message', 1)
     e = exc.SpawnedProcessError(*exc_args)
     with pytest.raises(
@@ -91,12 +79,12 @@ def test_spawned_process_error_list_args(raise_exc):
                    r"=== STDERR ===\n"
                    r"error message")
     ):
-        raise_exc(e)
+        raise e
 
     assert exc_args == e.args
 
 
-def test_spawned_process_error_nostdout(raise_exc):
+def test_spawned_process_error_nostdout():
     exc_args = ('foo bar', '', 'error message', 1)
     e = exc.SpawnedProcessError(*exc_args)
     with pytest.raises(
@@ -106,10 +94,10 @@ def test_spawned_process_error_nostdout(raise_exc):
                    r"=== STDERR ===\n"
                    r"error message")
     ):
-        raise_exc(e)
+        raise e
 
 
-def test_spawned_process_error_nostderr(raise_exc):
+def test_spawned_process_error_nostderr():
     exc_args = ('foo bar', 'partial output', '', 1)
     e = exc.SpawnedProcessError(*exc_args)
     with pytest.raises(
@@ -119,10 +107,10 @@ def test_spawned_process_error_nostderr(raise_exc):
                    r'partial output\n'
                    r"=== STDERR ===")
     ):
-        raise_exc(e)
+        raise e
 
 
-def test_spawned_process_timeout(raise_exc):
+def test_spawned_process_timeout():
     exc_args = ('foo bar', 'partial output', 'partial error', 10)
     e = exc.SpawnedProcessTimeout(*exc_args)
     with pytest.raises(exc.ReframeError,
@@ -131,12 +119,10 @@ def test_spawned_process_timeout(raise_exc):
                               r'partial output\n'
                               r"=== STDERR ===\n"
                               r"partial error")):
-        raise_exc(e)
-
-    assert exc_args == e.args
+        raise e
 
 
-def test_spawned_process_timeout_nostdout(raise_exc):
+def test_spawned_process_timeout_nostdout():
     exc_args = ('foo bar', '', 'partial error', 10)
     e = exc.SpawnedProcessTimeout(*exc_args)
     with pytest.raises(exc.ReframeError,
@@ -144,10 +130,10 @@ def test_spawned_process_timeout_nostdout(raise_exc):
                               r"=== STDOUT ===\n"
                               r"=== STDERR ===\n"
                               r"partial error")):
-        raise_exc(e)
+        raise e
 
 
-def test_spawned_process_timeout_nostderr(raise_exc):
+def test_spawned_process_timeout_nostderr():
     exc_args = ('foo bar', 'partial output', '', 10)
     e = exc.SpawnedProcessTimeout(*exc_args)
     with pytest.raises(exc.ReframeError,
@@ -155,15 +141,15 @@ def test_spawned_process_timeout_nostderr(raise_exc):
                               r"=== STDOUT ===\n"
                               r'partial output\n'
                               r"=== STDERR ===")):
-        raise_exc(e)
+        raise e
 
 
-def test_job_error(raise_exc):
+def test_job_error():
     exc_args = ('some error',)
     e = exc.JobError(*exc_args, jobid=1234)
     assert 1234 == e.jobid
     with pytest.raises(exc.JobError, match=r'\[jobid=1234\] some error'):
-        raise_exc(e)
+        raise e
 
     assert exc_args == e.args
 

@@ -17,16 +17,11 @@ from unittests.fixtures import TEST_RESOURCES_CHECKS
 
 
 @pytest.fixture
-def fixt():
-    class _Fixture:
+def user_obj():
+    class _C:
         def __init__(self):
             self._a = 0
             self._b = 1
-
-        # Property retrieval must also be deferred, if we want lazy evaluation
-        # of their values. The following demonstrates two different ways to
-        # achieve this. Notice that the `getattr` is actually a call to
-        # `reframe.utility.sanity.getattr`, since we have imported everything.
 
         @property
         @sn.sanity_function
@@ -37,7 +32,7 @@ def fixt():
         def b(self):
             return sn.getattr(self, '_b')
 
-    return _Fixture()
+    return _C()
 
 
 def test_abs():
@@ -47,19 +42,19 @@ def test_abs():
     assert 2.0 == sn.abs(sn.defer(-2.0))
 
 
-def test_and(fixt):
-    expr = sn.and_(fixt.a, fixt.b)
-    fixt._a = 1
-    fixt._b = 1
+def test_and(user_obj):
+    expr = sn.and_(user_obj.a, user_obj.b)
+    user_obj._a = 1
+    user_obj._b = 1
 
     assert expr
     assert not sn.not_(expr)
 
 
-def test_or(fixt):
-    expr = sn.or_(fixt.a, fixt.b)
-    fixt._a = 0
-    fixt._b = 0
+def test_or(user_obj):
+    expr = sn.or_(user_obj.a, user_obj.b)
+    user_obj._a = 0
+    user_obj._b = 0
     assert not expr
     assert sn.not_(expr)
 
@@ -105,11 +100,11 @@ def test_filter():
     assert [1, 3, 5] == list(sn.evaluate(df))
 
 
-def test_hasattr(fixt):
-    e = sn.hasattr(fixt, '_c')
+def test_hasattr(user_obj):
+    e = sn.hasattr(user_obj, '_c')
     assert not e
 
-    fixt._c = 1
+    user_obj._c = 1
     assert e
 
 
@@ -200,11 +195,11 @@ def test_round():
     assert 1.0 == sn.round(sn.defer(1.4))
 
 
-def test_setattr(fixt):
-    dset = sn.setattr(fixt, '_a', 5)
-    assert 0 == fixt._a
+def test_setattr(user_obj):
+    dset = sn.setattr(user_obj, '_a', 5)
+    assert 0 == user_obj._a
     sn.evaluate(dset)
-    assert 5 == fixt._a
+    assert 5 == user_obj._a
 
 
 def test_sorted():

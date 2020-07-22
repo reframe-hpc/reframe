@@ -8,20 +8,16 @@ import pytest
 import reframe.utility.typecheck as types
 
 
-@pytest.fixture
-def test_type_hierarchy():
-    def _test_type_hierarchy(builtin_type, ctype):
-        assert issubclass(builtin_type, ctype)
-        assert issubclass(ctype[int], ctype)
-        assert issubclass(ctype[ctype[int]], ctype)
-        assert not issubclass(ctype[int], ctype[float])
-        assert not issubclass(ctype[ctype[int]], ctype[int])
-        assert not issubclass(ctype[int], ctype[ctype[int]])
-
-    return _test_type_hierarchy
+def assert_type_hierarchy(builtin_type, ctype):
+    assert issubclass(builtin_type, ctype)
+    assert issubclass(ctype[int], ctype)
+    assert issubclass(ctype[ctype[int]], ctype)
+    assert not issubclass(ctype[int], ctype[float])
+    assert not issubclass(ctype[ctype[int]], ctype[int])
+    assert not issubclass(ctype[int], ctype[ctype[int]])
 
 
-def test_list_type(test_type_hierarchy):
+def test_list_type():
     l = [1, 2]
     ll = [[1, 2], [3, 4]]
     assert isinstance(l, types.List)
@@ -30,7 +26,7 @@ def test_list_type(test_type_hierarchy):
 
     assert isinstance(ll, types.List)
     assert isinstance(ll, types.List[types.List[int]])
-    test_type_hierarchy(list, types.List)
+    assert_type_hierarchy(list, types.List)
 
     # Test invalid arguments
     with pytest.raises(TypeError):
@@ -40,7 +36,7 @@ def test_list_type(test_type_hierarchy):
         types.List[int, float]
 
 
-def test_set_type(test_type_hierarchy):
+def test_set_type():
     s = {1, 2}
     ls = [{1, 2}, {3, 4}]
     assert isinstance(s, types.Set)
@@ -49,7 +45,7 @@ def test_set_type(test_type_hierarchy):
 
     assert isinstance(ls, types.List)
     assert isinstance(ls, types.List[types.Set[int]])
-    test_type_hierarchy(set, types.Set)
+    assert_type_hierarchy(set, types.Set)
 
     # Test invalid arguments
     with pytest.raises(TypeError):
@@ -59,7 +55,7 @@ def test_set_type(test_type_hierarchy):
         types.Set[int, float]
 
 
-def test_uniform_tuple_type(test_type_hierarchy):
+def test_uniform_tuple_type():
     t = (1, 2)
     tl = ([1, 2], [3, 4])
     lt = [(1, 2), (3, 4)]
@@ -72,7 +68,7 @@ def test_uniform_tuple_type(test_type_hierarchy):
 
     assert isinstance(lt, types.List)
     assert isinstance(lt, types.List[types.Tuple[int]])
-    test_type_hierarchy(tuple, types.Tuple)
+    assert_type_hierarchy(tuple, types.Tuple)
 
     # Test invalid arguments
     with pytest.raises(TypeError):
