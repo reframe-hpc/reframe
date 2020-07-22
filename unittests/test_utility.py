@@ -12,7 +12,6 @@ import tempfile
 import unittest
 
 import reframe
-import reframe.core.debug as debug
 import reframe.core.fields as fields
 import reframe.utility as util
 import reframe.utility.os_ext as os_ext
@@ -420,40 +419,6 @@ class TestImportFromFile(unittest.TestCase):
         assert 'unittests.resources' in sys.modules
 
 
-class TestDebugRepr(unittest.TestCase):
-    def test_builtin_types(self):
-        # builtin types must use the default repr()
-        assert repr(1) == debug.repr(1)
-        assert repr(1.2) == debug.repr(1.2)
-        assert repr([1, 2, 3]) == debug.repr([1, 2, 3])
-        assert repr({1, 2, 3}) == debug.repr({1, 2, 3})
-        assert repr({1, 2, 3}) == debug.repr({1, 2, 3})
-        assert repr({'a': 1, 'b': {2, 3}}) == debug.repr({'a': 1, 'b': {2, 3}})
-
-    def test_obj_repr(self):
-        class C:
-            def __repr__(self):
-                return debug.repr(self)
-
-        class D:
-            def __repr__(self):
-                return debug.repr(self)
-
-        c = C()
-        c._a = -1
-        c.a = 1
-        c.b = {1, 2, 3}
-        c.d = D()
-        c.d.a = 2
-        c.d.b = 3
-
-        rep = repr(c)
-        assert 'unittests.test_utility' in rep
-        assert '_a=%r' % c._a in rep
-        assert 'b=%r' % c.b in rep
-        assert 'D(...)' in rep
-
-
 class TestPpretty:
     def test_simple_types(self):
         assert util.ppretty(1) == repr(1)
@@ -540,6 +505,40 @@ class TestPpretty:
                                                   "    <class C>,\n"
                                                   "    <class D>\n"
                                                   "]")
+
+
+class _X:
+    def __init__(self):
+        self._a = False
+
+
+class _Y:
+    def __init__(self, x, a=None):
+        self.x = x
+        self.y = 'foo'
+        self.z = self
+        self.a = a
+
+
+def test_repr_default():
+    c0, c1 = _Y(1), _Y(2, _X())
+    s = util.repr([c0, c1])
+    assert s == f'''[
+    _Y({{
+        'x': 1,
+        'y': 'foo',
+        'z': _Y(...)@{hex(id(c0))},
+        'a': None
+    }})@{hex(id(c0))},
+    _Y({{
+        'x': 2,
+        'y': 'foo',
+        'z': _Y(...)@{hex(id(c1))},
+        'a': _X({{
+            '_a': False
+        }})@{hex(id(c1.a))}
+    }})@{hex(id(c1))}
+]'''
 
 
 class TestChangeDirCtxManager(unittest.TestCase):
@@ -1137,3 +1136,77 @@ class TestOrderedSet(unittest.TestCase):
 
         with pytest.raises(TypeError):
             os_ext.unique_abs_paths(None)
+
+
+def test_cray_cdt_version(tmp_path, monkeypatch):
+    # Mock up a CDT file
+    rcfile = tmp_path / 'rcfile'
+    with open(rcfile, 'w') as fp:
+        fp.write('#%Module CDT 20.06\nblah blah\n')
+
+    monkeypatch.setenv('MODULERCFILE', str(rcfile))
+    assert os_ext.cray_cdt_version() == '20.06'
+
+
+def test_cray_cdt_version_unknown_fmt(tmp_path, monkeypatch):
+    # Mock up a CDT file
+    rcfile = tmp_path / 'rcfile'
+    with open(rcfile, 'w') as fp:
+        fp.write('random stuff')
+
+    monkeypatch.setenv('MODULERCFILE', str(rcfile))
+    assert os_ext.cray_cdt_version() is None
+
+
+def test_cray_cdt_version_empty_file(tmp_path, monkeypatch):
+    # Mock up a CDT file
+    rcfile = tmp_path / 'rcfile'
+    rcfile.touch()
+    monkeypatch.setenv('MODULERCFILE', str(rcfile))
+    assert os_ext.cray_cdt_version() is None
+
+
+def test_cray_cdt_version_no_such_file(tmp_path, monkeypatch):
+    # Mock up a CDT file
+    rcfile = tmp_path / 'rcfile'
+    monkeypatch.setenv('MODULERCFILE', str(rcfile))
+    assert os_ext.cray_cdt_version() is None
+
+
+def test_cray_cle_info(tmp_path):
+    # Mock up a CLE release
+    cle_info_file = tmp_path / 'cle-release'
+    with open(cle_info_file, 'w') as fp:
+        fp.write('RELEASE=7.0.UP01\n'
+                 'BUILD=7.0.1227\n'
+                 'DATE=20200326\n'
+                 'ARCH=noarch\n'
+                 'NETWORK=ari\n'
+                 'PATCHSET=09-202003261814\n')
+
+    cle_info = os_ext.cray_cle_info(cle_info_file)
+    assert cle_info.release == '7.0.UP01'
+    assert cle_info.build == '7.0.1227'
+    assert cle_info.date == '20200326'
+    assert cle_info.network == 'ari'
+    assert cle_info.patchset == '09'
+
+
+def test_cray_cle_info_no_such_file(tmp_path):
+    cle_info_file = tmp_path / 'cle-release'
+    assert os_ext.cray_cle_info(cle_info_file) is None
+
+
+def test_cray_cle_info_missing_parts(tmp_path):
+    # Mock up a CLE release
+    cle_info_file = tmp_path / 'cle-release'
+    with open(cle_info_file, 'w') as fp:
+        fp.write('RELEASE=7.0.UP01\n'
+                 'PATCHSET=09-202003261814\n')
+
+    cle_info = os_ext.cray_cle_info(cle_info_file)
+    assert cle_info.release == '7.0.UP01'
+    assert cle_info.build is None
+    assert cle_info.date is None
+    assert cle_info.network is None
+    assert cle_info.patchset == '09'

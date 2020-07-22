@@ -7,6 +7,9 @@
 # CSCS CI settings
 #
 
+import reframe.utility.os_ext as os_ext
+
+
 site_configuration = {
     'systems': [
         {
@@ -27,7 +30,7 @@ site_configuration = {
                     'access': [
                         '--constraint=gpu',
                         '--partition=cscsci',
-                        '--account=jenscscs'
+                        f'--account={os_ext.osgroup()}'
                     ],
                     'environs': [
                         'builtin'
@@ -63,7 +66,7 @@ site_configuration = {
                     ],
                     'access': [
                         '--constraint=gpu',
-                        '--account=jenscscs'
+                        f'--account={os_ext.osgroup()}'
                     ],
                     'environs': [
                         'builtin'
@@ -88,7 +91,7 @@ site_configuration = {
                     ],
                     'access': [
                         'proc=gpu',
-                        '-A jenscscs'
+                        f'-A {os_ext.osgroup()}'
                     ],
                     'environs': [
                         'builtin'
@@ -105,7 +108,7 @@ site_configuration = {
                     ],
                     'access': [
                         '-l proc=gpu',
-                        '-A jenscscs'
+                        f'-A {os_ext.osgroup()}'
                     ],
                     'environs': [
                         'builtin'

@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import builtins
 import collections
 import functools
 import importlib
@@ -143,7 +144,8 @@ def toalphanum(s):
     return re.sub(r'\W', '_', s)
 
 
-def ppretty(value, htchar=' ', lfchar='\n', indent=4, basic_offset=0):
+def ppretty(value, htchar=' ', lfchar='\n', indent=4, basic_offset=0,
+            repr=builtins.repr):
     '''Format string of dictionaries, lists and tuples
 
     :arg value: The value to be formatted.
@@ -152,18 +154,22 @@ def ppretty(value, htchar=' ', lfchar='\n', indent=4, basic_offset=0):
     :arg indent: Number of htchar characters for every indentation level.
     :arg basic_offset: Basic offset for the representation, any additional
         indentation space is added to the ``basic_offset``.
+    :arg repr: The :func:`repr` to use for printing values. This function may
+        accept also all the arguments of :func:`ppretty` except the ``repr``.
+
     :returns: a formatted string of the ``value``.
     '''
 
+    ppretty2 = functools.partial(
+        ppretty, htchar=htchar, lfchar=lfchar, indent=indent,
+        basic_offset=basic_offset+1, repr=repr
+    )
     nlch = lfchar + htchar * indent * (basic_offset + 1)
     if isinstance(value, tuple):
         if value == ():
             return '()'
 
-        items = [
-            nlch + ppretty(item, htchar, lfchar, indent, basic_offset + 1)
-            for item in value
-        ]
+        items = [nlch + ppretty2(item) for item in value]
         return '(%s)' % (','.join(items) + lfchar +
                          htchar * indent * basic_offset)
     elif isinstance(value, list):
@@ -171,7 +177,7 @@ def ppretty(value, htchar=' ', lfchar='\n', indent=4, basic_offset=0):
             return '[]'
 
         items = [
-            nlch + ppretty(item, htchar, lfchar, indent, basic_offset + 1)
+            nlch + ppretty2(item)
             for item in value
         ]
         return '[%s]' % (','.join(items) + lfchar +
@@ -181,9 +187,7 @@ def ppretty(value, htchar=' ', lfchar='\n', indent=4, basic_offset=0):
             return '{}'
 
         items = [
-            nlch + repr(key) + ': ' +
-            ppretty(value[key], htchar, lfchar, indent, basic_offset + 1)
-            for key in value
+            nlch + repr(key) + ': ' + ppretty2(value[key]) for key in value
         ]
         return '{%s}' % (','.join(items) + lfchar +
                          htchar * indent * basic_offset)
@@ -191,14 +195,47 @@ def ppretty(value, htchar=' ', lfchar='\n', indent=4, basic_offset=0):
         if value == set():
             return 'set()'
 
-        items = [
-            nlch + ppretty(item, htchar, lfchar, indent, basic_offset + 1)
-            for item in value
-        ]
+        items = [nlch + ppretty2(item) for item in value]
         return '{%s}' % (','.join(items) + lfchar +
                          htchar * indent * basic_offset)
     else:
-        return repr(value)
+        try:
+            return repr(value, htchar, lfchar, indent, basic_offset)
+        except TypeError:
+            # Not our custom repr()
+            return repr(value)
+
+
+def _tracked_repr(func):
+    objects = set()
+
+    @functools.wraps(func)
+    def _repr(obj, *args, **kwargs):
+        addr = id(obj)
+        if addr in objects:
+            return f'{type(obj).__name__}(...)@{hex(addr)}'
+
+        # Do not track builtin objects
+        if hasattr(obj, '__dict__'):
+            objects.add(addr)
+
+        return func(obj, *args, **kwargs)
+
+    return _repr
+
+
+@_tracked_repr
+def repr(obj, htchar=' ', lfchar='\n', indent=4, basic_offset=0):
+    '''A debug repr() function printing all object attributes recursively'''
+    if (isinstance(obj, list) or isinstance(obj, tuple) or
+        isinstance(obj, set) or isinstance(obj, dict)):
+        return ppretty(obj, basic_offset=basic_offset, repr=repr)
+
+    if not hasattr(obj, '__dict__'):
+        return builtins.repr(obj)
+
+    r = ppretty(obj.__dict__, htchar, lfchar, indent, basic_offset, repr)
+    return f'{type(obj).__name__}({r})@{hex(id(obj))}'
 
 
 class ScopedDict(UserDict):

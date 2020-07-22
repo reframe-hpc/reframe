@@ -161,17 +161,17 @@ Let's run now the test:
 .. code-block:: none
 
    [ReFrame Setup]
-     version:           3.1-dev0 (rev: 986c3505)
+     version:           3.1-dev2 (rev: 50d8f227)
      command:           './bin/reframe -c tutorials/basics/hello/hello2.py -r'
      launched by:       user@tresa.local
-     working directory: '/Users/user/reframe'
+     working directory: '/Users/user/Repositories/reframe'
      settings file:     '<builtin>'
-     check search path: '/Users/user/reframe/tutorials/basics/hello/hello2.py'
-     stage directory:   '/Users/user/reframe/stage'
-     output directory:  '/Users/user/reframe/output'
+     check search path: '/Users/user/Repositories/reframe/tutorials/basics/hello/hello2.py'
+     stage directory:   '/Users/user/Repositories/reframe/stage'
+     output directory:  '/Users/user/Repositories/reframe/output'
 
    [==========] Running 2 check(s)
-   [==========] Started on Sat Jun 20 23:28:32 2020
+   [==========] Started on Mon Jul 20 21:03:21 2020
 
    [----------] started processing HelloMultiLangTest_c (HelloMultiLangTest_c)
    [ RUN      ] HelloMultiLangTest_c on generic:default using builtin
@@ -179,16 +179,15 @@ Let's run now the test:
 
    [----------] started processing HelloMultiLangTest_cpp (HelloMultiLangTest_cpp)
    [ RUN      ] HelloMultiLangTest_cpp on generic:default using builtin
-   [     HOLD ] HelloMultiLangTest_cpp on generic:default using builtin
+   [     FAIL ] (1/2) HelloMultiLangTest_cpp on generic:default using builtin [compile: 0.003s run: n/a total: 0.015s]
    [----------] finished processing HelloMultiLangTest_cpp (HelloMultiLangTest_cpp)
 
    [----------] waiting for spawned checks to finish
-   [       OK ] (1/2) HelloMultiLangTest_c on generic:default using builtin [compile: 1.068s run: 0.330s total: 1.431s]
-   [     FAIL ] (2/2) HelloMultiLangTest_cpp on generic:default using builtin [compile: 0.002s run: n/a total: 0.340s]
+   [       OK ] (2/2) HelloMultiLangTest_c on generic:default using builtin [compile: 1.257s run: 0.349s total: 1.642s]
    [----------] all spawned checks have finished
 
    [  FAILED  ] Ran 2 test case(s) from 2 check(s) (1 failure(s))
-   [==========] Finished on Sat Jun 20 23:28:33 2020
+   [==========] Finished on Mon Jul 20 21:03:23 2020
 
    ==============================================================================
    SUMMARY OF FAILURES
@@ -197,7 +196,7 @@ Let's run now the test:
      * Test Description: HelloMultiLangTest_cpp
      * System partition: generic:default
      * Environment: builtin
-     * Stage directory: /Users/user/reframe/stage/generic/default/builtin/HelloMultiLangTest_cpp
+     * Stage directory: /Users/user/Repositories/reframe/stage/generic/default/builtin/HelloMultiLangTest_cpp
      * Node list: <None>
      * Job type: local (id=None)
      * Maintainers: []
@@ -238,8 +237,8 @@ Note that you should *not* edit this configuration file in place.
 Here is how the new configuration file looks like with the needed additions highlighted:
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 10-25,66-86,119-
-   :emphasize-lines: 3-16,32-43
+   :lines: 10-24,64-85,118-
+   :emphasize-lines: 3-15,31-42
 
 Here we define a system named ``catalina`` that has one partition named ``default``.
 This partition makes no use of any workload manager, but instead launches any jobs locally as OS processes.
@@ -676,7 +675,7 @@ Let's extend our configuration file for Piz Daint.
 
 .. literalinclude:: ../tutorials/config/settings.py
    :lines: 10-46,53-
-   :emphasize-lines: 17-50,72-103
+   :emphasize-lines: 16-48,70-101
 
 
 First of all, we need to define a new system and set the list of hostnames that will help ReFrame identify it.
@@ -707,7 +706,7 @@ Notice that we do not include Clang in the list, since there is no such compiler
 Before looking into the definition of the new environments for the four compilers, it is worth mentioning the :js:attr:`max_jobs` parameter.
 This parameter specifies the maximum number of ReFrame test jobs that can be simultaneously in flight.
 ReFrame will try to keep concurrency close to this limit (but not exceeding it).
-By default, this is set to one, so you are advised to set it to a higher number if you want to increase the throughput of completed tests.
+By default, this is set to ``8``, so you are advised to set it to a higher number if you want to increase the throughput of completed tests.
 
 The new environments are defined similarly to the ones we had for our local system, except that now we set two more parameters: the :js:attr:`modules` and the :js:attr:`target_systems`.
 The :js:attr:`modules` parameter is a list of environment modules that needs to be loaded, in order to make available this compiler.

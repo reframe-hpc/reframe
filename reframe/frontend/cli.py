@@ -354,9 +354,15 @@ def main():
     # Options not associated with command-line arguments
     argparser.add_argument(
         dest='graylog_server',
-        envvar='RFM_GRAYLOG_SERVER',
+        envvar='RFM_GRAYLOG_ADDRESS',
         configvar='logging/handlers_perflog/graylog_address',
         help='Graylog server address'
+    )
+    argparser.add_argument(
+        dest='syslog_address',
+        envvar='RFM_SYSLOG_ADDRESS',
+        configvar='logging/handlers_perflog/syslog_address',
+        help='Syslog server address'
     )
     argparser.add_argument(
         dest='ignore_reqnodenotavail',
@@ -393,6 +399,12 @@ def main():
     printer = PrettyPrinter()
     printer.colorize = site_config.get('general/0/colorize')
     printer.inc_verbosity(site_config.get('general/0/verbose'))
+    if os.getenv('RFM_GRAYLOG_SERVER'):
+        printer.warning(
+            'RFM_GRAYLOG_SERVER environment variable is deprecated; '
+            'please use RFM_GRAYLOG_ADDRESS instead'
+        )
+        os.environ['RFM_GRAYLOG_ADDRESS'] = os.getenv('RFM_GRAYLOG_SERVER')
 
     if options.upgrade_config_file is not None:
         old_config, *new_config = options.upgrade_config_file.split(

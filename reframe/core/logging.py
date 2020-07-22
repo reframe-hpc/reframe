@@ -18,7 +18,6 @@ import time
 
 import reframe
 import reframe.utility.color as color
-import reframe.core.debug as debug
 import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import ConfigError, LoggingError
 
@@ -223,7 +222,12 @@ def _create_syslog_handler(site_config, config_prefix):
     except ValueError:
         pass
     else:
-        address = (host, port)
+        try:
+            address = (host, int(port))
+        except ValueError:
+            raise ConfigError(
+                f'syslog address port not an integer: {port!r}'
+            ) from None
 
     facility = site_config.get(f'{config_prefix}/facility')
     try:
@@ -333,9 +337,6 @@ class Logger(logging.Logger):
         super().__init__(name, logging.NOTSET)
         self.level = _check_level(level)
 
-    def __repr__(self):
-        return debug.repr(self)
-
     def setLevel(self, level):
         self.level = _check_level(level)
 
@@ -404,9 +405,6 @@ class LoggerAdapter(logging.LoggerAdapter):
         )
         self.check = check
         self.colorize = False
-
-    def __repr__(self):
-        return debug.repr(self)
 
     def setLevel(self, level):
         if self.logger:
