@@ -13,7 +13,9 @@ class TestStats:
     def __init__(self):
         # Tasks per run stored as follows: [[run0_tasks], [run1_tasks], ...]
         self._alltasks = [[]]
-        self._records = []
+
+        # Data collected for all the runs of this session in JSON format
+        self._run_data = []
 
     def add_task(self, task):
         current_run = rt.runtime().current_run
@@ -44,7 +46,6 @@ class TestStats:
         report.append('SUMMARY OF RETRIES')
         report.append(line_width * '-')
         messages = {}
-
         for run in range(1, len(self._alltasks)):
             for t in self.tasks(run):
                 partition_name = ''
@@ -67,42 +68,41 @@ class TestStats:
 
         return '\n'.join(report)
 
-    def json(self, reframe_info=None, force=False):
-        if not force and self._records:
-            return self._records
+    def json(self, force=False):
+        if not force and self._run_data:
+            return self._run_data
 
-        self._records = {'run_info': []}
-        current_run = rt.runtime().current_run
-        for run_no, run in enumerate(self._alltasks):
-            tests = []
+        for runid, run in enumerate(self._alltasks):
+            testcases = []
+            num_failures = 0
             for t in run:
                 check = t.check
                 partition = check.current_partition
                 entry = {
-                    'testname': check.name,
-                    'description': check.descr,
-                    'system': check.current_system.name,
-                    'environment': None,
-                    'tags': list(check.tags),
-                    'maintainers': check.maintainers,
-                    'scheduler': None,
-                    'jobid': None,
-                    'nodelist': [],
-                    'job_stdout': None,
-                    'job_stderr': None,
-                    'build_stdout': None,
                     'build_stderr': None,
-                    'failing_reason': None,
-                    'failing_phase': None,
-                    'outputdir': None,
-                    'stagedir': None,
-                    'job_stdout': None,
+                    'build_stdout': None,
+                    'description': check.descr,
+                    'environment': None,
+                    'fail_reason': None,
+                    'fail_phase': None,
+                    'jobid': None,
                     'job_stderr': None,
-                    'time_setup': t.duration('setup'),
-                    'time_compile': t.duration('complete_complete'),
+                    'job_stdout': None,
+                    'name': check.name,
+                    'maintainers': check.maintainers,
+                    'nodelist': [],
+                    'outputdir': None,
+                    'perfvars': None,
+                    'result': None,
+                    'stagedir': None,
+                    'scheduler': None,
+                    'system': check.current_system.name,
+                    'tags': list(check.tags),
+                    'time_compile': t.duration('compile_complete'),
+                    'time_performance': t.duration('performance'),
                     'time_run': t.duration('run_complete'),
                     'time_sanity': t.duration('sanity'),
-                    'time_performance': t.duration('performance'),
+                    'time_setup': t.duration('setup'),
                     'time_total': t.duration('total')
                 }
                 partition = check.current_partition
@@ -116,47 +116,66 @@ class TestStats:
 
                 if check.job:
                     entry['jobid'] = check.job.jobid
-                    entry['nodelist'] = check.job.nodelist or []
-                    entry['job_stdout'] = check.stdout.evaluate()
                     entry['job_stderr'] = check.stderr.evaluate()
+                    entry['job_stdout'] = check.stdout.evaluate()
+                    entry['nodelist'] = check.job.nodelist or []
 
-                if check._build_job:
-                    entry['build_stdout'] = check.build_stdout.evaluate()
+                if check.build_job:
                     entry['build_stderr'] = check.build_stderr.evaluate()
+                    entry['build_stdout'] = check.build_stdout.evaluate()
 
                 if t.failed:
-                    entry['result'] = 'fail'
+                    num_failures += 1
+                    entry['result'] = 'failure'
+                    entry['stagedir'] = check.stagedir
+                    entry['fail_phase'] = t.failed_stage
                     if t.exc_info is not None:
-                        entry['failing_reason'] = format_exception(
-                            *t.exc_info)
-                        entry['failing_phase'] = t.failed_stage
-                        entry['stagedir'] = check.stagedir
+                        entry['fail_reason'] = format_exception(*t.exc_info)
                 else:
                     entry['result'] = 'success'
                     entry['outputdir'] = check.outputdir
 
-                tests.append(entry)
+                if check.perf_patterns:
+                    # Record performance variables
+                    entry['perfvars'] = []
+                    for key, ref in check.perfvalues.items():
+                        var = key.split(':')[-1]
+                        val, ref, lower, upper, unit = ref
+                        entry['perfvars'].append({
+                            'name': var,
+                            'reference': ref,
+                            'thres_lower': lower,
+                            'thres_upper': upper,
+                            'unit': unit,
+                            'value': val
+                        })
 
-            self._records['run_info'].append({'runid': run_no, 'tests': tests})
+                testcases.append(entry)
 
-        if reframe_info:
-            self._records['reframe_info'] = reframe_info
+            self._run_data.append({
+                'num_cases': len(run),
+                'num_failures': num_failures,
+                'runid': runid,
+                'testcases': testcases
+            })
 
-        return self._records
+        return self._run_data
 
     def failure_report(self):
         line_width = 78
         report = [line_width * '=']
         report.append('SUMMARY OF FAILURES')
-        last_run = rt.runtime().current_run
-        for r in self.json()['run_info'][last_run]['tests']:
+        run_report = self.json()[-1]
+        last_run = run_report['runid']
+        for r in run_report['testcases']:
             if r['result'] == 'success':
                 continue
 
-            retry_info = (f'(for the last of {last_run} retries)'
-                          if last_run > 0 else '')
+            retry_info = (
+                f'(for the last of {last_run} retries)' if last_run > 0 else ''
+            )
             report.append(line_width * '-')
-            report.append(f"FAILURE INFO for {r['testname']} {retry_info}")
+            report.append(f"FAILURE INFO for {r['name']} {retry_info}")
             report.append(f"  * Test Description: {r['description']}")
             report.append(f"  * System partition: {r['system']}")
             report.append(f"  * Environment: {r['environment']}")
@@ -167,13 +186,13 @@ class TestStats:
             jobid = r['jobid']
             report.append(f"  * Job type: {job_type} (id={r['jobid']})")
             report.append(f"  * Maintainers: {r['maintainers']}")
-            report.append(f"  * Failing phase: {r['failing_phase']}")
-            report.append(f"  * Rerun with '-n {r['testname']}"
+            report.append(f"  * Failing phase: {r['fail_phase']}")
+            report.append(f"  * Rerun with '-n {r['name']}"
                           f" -p {r['environment']} --system {r['system']}'")
-            report.append(f"  * Reason: {r['failing_reason']}")
-            if r['failing_phase'] == 'sanity':
+            report.append(f"  * Reason: {r['fail_reason']}")
+            if r['fail_phase'] == 'sanity':
                 report.append('Sanity check failure')
-            elif r['failing_phase'] == 'performance':
+            elif r['fail_phase'] == 'performance':
                 report.append('Performance check failure')
             else:
                 # This shouldn't happen...
@@ -227,6 +246,8 @@ class TestStats:
         return ''
 
     def performance_report(self):
+        # FIXME: Adapt this function to use the JSON report
+
         line_width = 78
         report_start = line_width * '='
         report_title = 'PERFORMANCE REPORT'

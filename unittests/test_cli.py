@@ -108,6 +108,9 @@ def run_reframe(tmp_path, logfile, perflogdir):
         if more_options:
             argv += more_options
 
+        # Always pass the --report-file option, because we don't want to
+        # pollute the user's home directory
+        argv += [f'--report-file={tmp_path / "report.json"}']
         return run_command_inline(argv, cli.main)
 
     return _run_reframe

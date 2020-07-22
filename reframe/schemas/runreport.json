@@ -4,93 +4,112 @@
     "title": "Validation schema for ReFrame's run report",
     "type": "object",
     "properties": {
-        "reframe_info": {
+        "session_info": {
             "type": "object",
             "properties": {
-                "version": {"type": "string"},
-                "command": {"type": "string"},
+                "cmdline": {"type": "string"},
+                "config_file": {"type": ["string", "null"]},
+                "data_version": {"type": "string"},
+                "hostname": {"type": "string"},
+                "num_cases": {"type": "number"},
+                "num_failures": {"type": "number"},
+                "prefix_output": {"type": "string"},
+                "prefix_stage": {"type": "string"},
+                "time_elapsed": {"type": "number"},
+                "time_end": {"type": "string"},
+                "time_start": {"type": "string"},
                 "user": {"type": "string"},
-                "host": {"type": "string"},
-                "check_search_path": {"type": "string"},
-                "working_directory": {"type": "string"},
-                "recursive_search_path": {"type": "boolean"},
-                "settings_file": {"type": "string"},
-                "stage_prefix": {"type": "string"},
-                "output_prefix": {"type": "string"},
-                "start_time": {"type": "string"},
-                "end_time": {"type": "string"}
+                "version": {"type": "string"},
+                "workdir": {"type": "string"}
             },
-            "additionalProperties": false,
-            "required": ["check_search_path", "command", "end_time", "host",
-                         "output_prefix", "recursive_search_path",
-                         "stage_prefix", "start_time", "user", "version",
-                         "working_directory"]
+            "required": ["data_version"]
         },
-        "run_info": {
+        "runs": {
             "type": "array",
             "items": {
                 "type": "object",
                 "properties": {
+                    "num_cases": {"type": "number"},
+                    "num_failures": {"type": "number"},
                     "runid": {"type": "number"},
-                    "tests": {
+                    "testcases": {
                         "type": "array",
                         "items": {
                             "type": "object",
                             "properties": {
-                                "testname": {"type": "string"},
+                                "build_stderr": {"type": ["string", "null"]},
+                                "build_stdout": {"type": ["string", "null"]},
                                 "description": {"type": "string"},
-                                "system": {"type": "string"},
                                 "environment": {"type": ["string", "null"]},
-                                "stagedir": {"type": ["string", "null"]},
-                                "outputdir": {"type": ["string", "null"]},
+                                "fail_phase": {"type": ["string", "null"]},
+                                "fail_reason": {"type": ["string", "null"]},
+                                "jobid": {"type": ["number", "null"]},
+                                "job_stderr": {"type": ["string", "null"]},
+                                "job_stdout": {"type": ["string", "null"]},
+                                "name": {"type": "string"},
+                                "maintainers": {
+                                    "type": "array",
+                                    "items": {"type": "string"}
+                                },
                                 "nodelist": {
                                     "type": "array",
                                     "items": {"type": "string"}
                                 },
-                                "scheduler": {"type": ["string", "null"]},
-                                "jobid": {"type": ["number", "null"]},
+                                "outputdir": {"type": ["string", "null"]},
+                                "perfvars": {
+                                    "type": ["array", "null"],
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "name": {"type": "string"},
+                                            "reference": {
+                                                "type": ["number", "null"]
+                                            },
+                                            "thres_lower": {
+                                                "type": ["number", "null"]
+                                            },
+                                            "thres_upper": {
+                                                "type": ["number", "null"]
+                                            },
+                                            "unit": {"type": ["string", "null"]},
+                                            "value": {"type": "number"}
+                                        },
+                                        "required": [
+                                            "name", "reference",
+                                            "thres_lower", "thres_upper",
+                                            "unit", "value"
+                                        ]
+                                    }
+                                },
                                 "result": {
                                     "type": "string",
-                                    "enum": ["success", "fail"]
+                                    "enum": ["success", "failure"]
                                 },
-                                "failing_phase": {"type": ["string", "null"]},
-                                "failing_reason": {"type": ["string", "null"]},
-                                "build_stdout": {"type": ["string", "null"]},
-                                "build_stderr": {"type": ["string", "null"]},
-                                "job_stdout": {"type": ["string", "null"]},
-                                "job_stderr": {"type": ["string", "null"]},
-                                "maintainers": {
-                                    "type": "array",
-                                    "items": {"type": ["string"]}
-                                },
+                                "scheduler": {"type": ["string", "null"]},
+                                "stagedir": {"type": ["string", "null"]},
+                                "system": {"type": "string"},
                                 "tags": {
                                     "type": "array",
                                     "items": {"type": "string"}
                                 },
-                                "runid": {"type": "number"},
-                                "time_setup": {"type": ["number", "null"]},
                                 "time_compile": {"type": ["number", "null"]},
+                                "time_performance": {"type": ["number", "null"]},
                                 "time_run": {"type": ["number", "null"]},
                                 "time_sanity": {"type": ["number", "null"]},
-                                "time_performance": {"type": ["number", "null"]},
+                                "time_setup": {"type": ["number", "null"]},
                                 "time_total": {"type": ["number", "null"]}
                             },
-                            "additionalProperties": false,
-                            "required": ["build_stderr", "build_stdout", "description",
-                                         "environment", "failing_phase", "failing_reason",
-                                         "job_stderr", "job_stdout", "jobid", "maintainers",
-                                         "nodelist", "outputdir", "result", "scheduler",
-                                         "stagedir", "system", "tags", "testname",
-                                         "time_compile", "time_performance", "time_run",
-                                         "time_sanity", "time_setup", "time_total"]
+                            "required": [
+                                "environment", "name", "result", "system"
+                            ]
                         },
-                        "additionalProperties": false,
-                        "required": ["runid", "tests"]
+                        "required": [
+                            "num_cases", "num_failures", "runid", "testcases"
+                        ]
                     }
                 }
             }
         }
     },
-    "additionalProperties": false,
-    "required": ["reframe_info", "run_info"]
+    "required": ["runs"]
 }

@@ -3,13 +3,13 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import datetime
 import json
 import jsonschema
 import os
 import pytest
 import socket
 import sys
+import time
 
 import reframe
 import reframe.core.runtime as rt
@@ -111,41 +111,47 @@ def num_failures_stage(runner, stage):
     return len([t for t in stats.failures() if t.failed_stage == stage])
 
 
-def validate_report(runreport):
-    schema_filename = os.path.join('reframe/schemas/runreport.json')
+def _validate_runreport(report):
+    schema_filename = 'reframe/schemas/runreport.json'
     with open(schema_filename) as fp:
         schema = json.loads(fp.read())
 
-    jsonschema.validate(runreport, schema)
+    jsonschema.validate(report, schema)
 
 
 def test_runall(make_runner, make_cases, common_exec_ctx):
-    reframe_info = {
-        'version': os_ext.reframe_version(),
-        'command': repr(' '.join(sys.argv)),
-        'user': f"{os_ext.osuser() or '<unknown>'}",
-        'host': socket.gethostname(),
-        'working_directory': repr(os.getcwd()),
-        'check_search_path': 'unittests/resources/checks',
-        'recursive_search_path': True,
-        'settings_file': fixtures.TEST_CONFIG_FILE,
-        'stage_prefix': repr(rt.runtime().stage_prefix),
-        'output_prefix': repr(rt.runtime().output_prefix),
-    }
     runner = make_runner()
-    reframe_info['start_time'] = datetime.datetime.today().strftime('%c %Z')
+    time_start = time.time()
     runner.runall(make_cases())
-    reframe_info['end_time'] = datetime.datetime.today().strftime('%c %Z')
-    stats = runner.stats
-    runreport = runner.stats.json(reframe_info, force=True)
-    validate_report(runreport)
-    assert 8 == stats.num_cases()
+    time_end = time.time()
+    assert 8 == runner.stats.num_cases()
     assert_runall(runner)
-    assert 5 == len(stats.failures())
+    assert 5 == len(runner.stats.failures())
     assert 2 == num_failures_stage(runner, 'setup')
     assert 1 == num_failures_stage(runner, 'sanity')
     assert 1 == num_failures_stage(runner, 'performance')
     assert 1 == num_failures_stage(runner, 'cleanup')
+
+    # Create a run report and validate it
+    run_stats = runner.stats.json()
+    report = {
+        'session_info': {
+            'cmdline': ' '.join(sys.argv),
+            'config_file': rt.runtime().site_config.filename,
+            'data_version': '1.0',
+            'hostname': socket.gethostname(),
+            'prefix_output': rt.runtime().output_prefix,
+            'prefix_stage': rt.runtime().stage_prefix,
+            'user': os_ext.osuser(),
+            'version': os_ext.reframe_version(),
+            'workdir': os.getcwd(),
+            'num_cases': run_stats[0]['num_cases'],
+            'num_failures': run_stats[-1]['num_failures']
+
+        },
+        'runs': run_stats
+    }
+    _validate_runreport(report)
 
 
 def test_runall_skip_system_check(make_runner, make_cases, common_exec_ctx):
