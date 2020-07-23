@@ -765,7 +765,7 @@ def main():
                 )
                 os.makedirs(os.path.dirname(report_file), exist_ok=True)
 
-                # Build final report JSON
+                # Build final JSON report
                 run_stats = runner.stats.json()
                 session_info.update({
                     'num_cases': run_stats[0]['num_cases'],

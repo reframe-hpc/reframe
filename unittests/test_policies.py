@@ -140,14 +140,20 @@ def test_runall(make_runner, make_cases, common_exec_ctx):
             'config_file': rt.runtime().site_config.filename,
             'data_version': '1.0',
             'hostname': socket.gethostname(),
+            'num_cases': run_stats[0]['num_cases'],
+            'num_failures': run_stats[-1]['num_failures'],
             'prefix_output': rt.runtime().output_prefix,
             'prefix_stage': rt.runtime().stage_prefix,
+            'time_elapsed': time_end - time_start,
+            'time_end': time.strftime(
+                '%FT%T%z', time.localtime(time_end),
+            ),
+            'time_start': time.strftime(
+                '%FT%T%z', time.localtime(time_start),
+            ),
             'user': os_ext.osuser(),
             'version': os_ext.reframe_version(),
-            'workdir': os.getcwd(),
-            'num_cases': run_stats[0]['num_cases'],
-            'num_failures': run_stats[-1]['num_failures']
-
+            'workdir': os.getcwd()
         },
         'runs': run_stats
     }
