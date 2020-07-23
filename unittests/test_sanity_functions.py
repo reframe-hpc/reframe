@@ -659,7 +659,7 @@ class TestPatternMatchingFunctions(unittest.TestCase):
             r'Number: (\d+) (\d+)', self.tempfile, (1, 2)))
         for expected, v in enumerate(res, start=1):
             assert str(expected) == v[0]
-            assert str(2 * expected) == v[1]
+            assert str(2*expected) == v[1]
 
         # Check multiple named groups
         res = sn.evaluate(sn.extractall(
@@ -667,7 +667,7 @@ class TestPatternMatchingFunctions(unittest.TestCase):
             ('no1', 'no2')))
         for expected, v in enumerate(res, start=1):
             assert str(expected) == v[0]
-            assert str(2 * expected) == v[1]
+            assert str(2*expected) == v[1]
 
         # Check single convert function
         res = sn.evaluate(sn.extractall(r'Number: (?P<no1>\d+) (?P<no2>\d+)',
@@ -684,6 +684,20 @@ class TestPatternMatchingFunctions(unittest.TestCase):
             assert expected == v[0]
             assert 2 * expected == v[1]
             assert isinstance(v[1], float)
+
+        # Check more convert functions than tags
+        res = sn.evaluate(sn.extractall(r'Number: (?P<no1>\d+) (?P<no2>\d+)',
+                                        self.tempfile, ('no1', 'no2'),
+                                        [int, float, float, float]))
+        for expected, v in enumerate(res, start=1):
+            assert expected == v[0]
+            assert 2 * expected == v[1]
+
+        # Check multiple convert functions and single tag
+        res = sn.evaluate(sn.extractall(
+            r'Number: (?P<no>\d+) \d+', self.tempfile, 'no', [int, float]))
+        for expected, v in enumerate(res, start=1):
+            assert expected == v
 
         # Check fewer convert functions than tags
         res = sn.evaluate(sn.extractall(r'Number: (?P<no1>\d+) (?P<no2>\d+)',
