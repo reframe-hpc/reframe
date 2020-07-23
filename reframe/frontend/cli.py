@@ -71,7 +71,7 @@ def list_checks(checks, printer, detailed=False):
 
 
 def generate_report_filename(filepatt):
-    if not '{sessionid}' in filepatt:
+    if '{sessionid}' not in filepatt:
         return filepatt
 
     search_patt = os.path.basename(filepatt).replace('{sessionid}', r'(\d+)')
