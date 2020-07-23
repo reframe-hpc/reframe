@@ -417,7 +417,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         num_polls = 0
         t_start = datetime.now()
         while (self._running_tasks or self._waiting_tasks or
-               self._completed_tasks or sum(self._ready_tasks.values(), []):
+               self._completed_tasks or sum(self._ready_tasks.values(), [])):
             getlogger().debug('running tasks: %s' % len(self._running_tasks))
             num_polls += len(self._running_tasks)
             try:
