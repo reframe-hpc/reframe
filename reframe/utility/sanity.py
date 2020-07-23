@@ -1,9 +1,10 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyrigh 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
 import builtins
+import collections
 import glob as pyglob
 import itertools
 import re
@@ -530,28 +531,65 @@ def extractiter(patt, filename, tag=0, conv=None, encoding='utf-8'):
     the extracted values.
     '''
     for m in finditer(patt, filename, encoding):
-        try:
-            val = m.group(tag)
-        except (IndexError, KeyError):
-            raise SanityError(
-                "no such group in pattern `%s': %s" % (patt, tag))
-
-        try:
-            yield conv(val) if callable(conv) else val
-        except ValueError:
-            fn_name = '<unknown>'
-            try:
-                # Assume conv is standard function
-                fn_name = conv.__name__
-            except AttributeError:
+        if isinstance(tag, collections.Iterable) and not isinstance(tag, str):
+            val = []
+            for t in tag:
                 try:
-                    # Assume conv is callable object
-                    fn_name = conv.__class__.__name__
-                except AttributeError:
-                    pass
+                    val.append(m.group(t))
+                except (IndexError, KeyError):
+                    raise SanityError(
+                        "no such group in pattern `%s': %s" % (patt, t))
+        else:
+            try:
+                val = m.group(tag)
+            except (IndexError, KeyError):
+                raise SanityError(
+                    "no such group in pattern `%s': %s" % (patt, tag))
 
-            raise SanityError("could not convert value `%s' using `%s()'" %
-                              (val, fn_name))
+        if isinstance(val, list):
+            converted_vals = []
+            if not isinstance(conv, collections.Iterable):
+                conv = [conv] * len(val)
+
+            # Here we use the last conversion function for the remaining
+            # tags which don't have a corresponding one
+            for v, c in itertools.zip_longest(val, conv, fillvalue=conv[-1]):
+                try:
+                    converted_vals.append(c(v) if callable(c) else v)
+                except ValueError:
+                    fn_name = '<unknown>'
+                    try:
+                        # Assume conv is standard function
+                        fn_name = c.__name__
+                    except AttributeError:
+                        try:
+                            # Assume conv is callable object
+                            fn_name = c.__class__.__name__
+                        except AttributeError:
+                            pass
+
+                    raise SanityError(
+                        "could not convert value `%s' using `%s()'" %
+                        (v, fn_name))
+
+            yield(tuple(converted_vals))
+        else:
+            try:
+                yield conv(val) if callable(conv) else val
+            except ValueError:
+                fn_name = '<unknown>'
+                try:
+                    # Assume conv is standard function
+                    fn_name = conv.__name__
+                except AttributeError:
+                    try:
+                        # Assume conv is callable object
+                        fn_name = conv.__class__.__name__
+                    except AttributeError:
+                        pass
+
+                raise SanityError("could not convert value `%s' using `%s()'" %
+                                  (val, fn_name))
 
 
 @deferrable
