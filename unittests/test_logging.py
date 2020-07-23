@@ -39,7 +39,7 @@ def fake_check():
 
 
 @pytest.fixture
-def formatter():
+def rfc3339formatter():
     return rlog.RFC3339Formatter(
         fmt='[%(asctime)s] %(levelname)s: %(check_name)s: %(message)s',
         datefmt='%FT%T')
@@ -47,13 +47,13 @@ def formatter():
 
 @pytest.fixture
 def logfile(tmp_path):
-    return tmp_path / 'logfile'
+    return tmp_path / 'test.log'
 
 
 @pytest.fixture
-def handler(logfile, formatter):
+def handler(logfile, rfc3339formatter):
     handler = logging.handlers.RotatingFileHandler(str(logfile))
-    handler.setFormatter(formatter)
+    handler.setFormatter(rfc3339formatter)
     return handler
 
 
@@ -76,16 +76,12 @@ def logger_with_check(logger, fake_check):
     return rlog.LoggerAdapter(logger, fake_check)
 
 
-@pytest.fixture
-def found_in_logfile(logfile):
-    def _found_in_logfile(pattern):
-        found = False
-        with open(logfile, 'rt') as fp:
-            found = re.search(pattern, fp.read()) is not None
+def _pattern_in_logfile(pattern, logfile):
+    found = False
+    with open(logfile, 'rt') as fp:
+        found = re.search(pattern, fp.read()) is not None
 
-        return found
-
-    return _found_in_logfile
+    return found
 
 
 def test_invalid_loglevel(logger):
@@ -96,24 +92,24 @@ def test_invalid_loglevel(logger):
         rlog.Logger('logger', 'level')
 
 
-def test_custom_loglevels(logfile, logger_without_check, found_in_logfile):
+def test_custom_loglevels(logfile, logger_without_check):
     logger_without_check.info('foo')
     logger_without_check.verbose('bar')
 
     assert os.path.exists(logfile)
-    assert found_in_logfile('info')
-    assert found_in_logfile('verbose')
-    assert found_in_logfile('reframe')
+    assert _pattern_in_logfile('info', logfile)
+    assert _pattern_in_logfile('verbose', logfile)
+    assert _pattern_in_logfile('reframe', logfile)
 
 
-def test_check_logger(logfile, logger_with_check, found_in_logfile):
+def test_check_logger(logfile, logger_with_check):
     logger_with_check.info('foo')
     logger_with_check.verbose('bar')
 
     assert os.path.exists(logfile)
-    assert found_in_logfile('info')
-    assert found_in_logfile('verbose')
-    assert found_in_logfile('_FakeCheck')
+    assert _pattern_in_logfile('info', logfile)
+    assert _pattern_in_logfile('verbose', logfile)
+    assert _pattern_in_logfile('_FakeCheck', logfile)
 
 
 def test_handler_types():
@@ -127,51 +123,50 @@ def test_handler_types():
         rlog.Handler()
 
 
-def test_custom_handler_levels(handler, logger_with_check, found_in_logfile):
+def test_custom_handler_levels(logfile, logger_with_check):
+    handler = logger_with_check.logger.handlers[0]
     handler.setLevel('verbose')
     handler.setLevel(rlog.VERBOSE)
 
     logger_with_check.debug('foo')
     logger_with_check.verbose('bar')
 
-    assert not found_in_logfile('foo')
-    assert found_in_logfile('bar')
+    assert not _pattern_in_logfile('foo', logfile)
+    assert _pattern_in_logfile('bar', logfile)
 
 
-def test_logger_levels(logger_with_check, found_in_logfile):
+def test_logger_levels(logfile, logger_with_check):
     logger_with_check.setLevel('verbose')
     logger_with_check.setLevel(rlog.VERBOSE)
 
     logger_with_check.debug('bar')
     logger_with_check.verbose('foo')
 
-    assert not found_in_logfile('bar')
-    assert found_in_logfile('foo')
+    assert not _pattern_in_logfile('bar', logfile)
+    assert _pattern_in_logfile('foo', logfile)
 
 
-def test_rfc3339_timezone_extension(handler, logger_with_check,
-                                    logger_without_check, found_in_logfile):
+def test_rfc3339_timezone_extension(logfile, logger_with_check,
+                                    logger_without_check):
     formatter = rlog.RFC3339Formatter(
         fmt=('[%(asctime)s] %(levelname)s: %(check_name)s: '
              'ct:%(check_job_completion_time)s: %(message)s'),
         datefmt='%FT%T%:z')
-    handler.setFormatter(formatter)
+    logger_with_check.logger.handlers[0].setFormatter(formatter)
     logger_with_check.info('foo')
     logger_without_check.info('foo')
-    assert not found_in_logfile(r'%%:z')
-    assert found_in_logfile(r'\[.+(\+|-)\d\d:\d\d\]')
-    assert found_in_logfile(r'ct:.+(\+|-)\d\d:\d\d')
+    assert not _pattern_in_logfile(r'%%:z', logfile)
+    assert _pattern_in_logfile(r'\[.+(\+|-)\d\d:\d\d\]', logfile)
+    assert _pattern_in_logfile(r'ct:.+(\+|-)\d\d:\d\d', logfile)
 
 
-def test_rfc3339_timezone_wrong_directive(handler, logger_with_check,
-                                          logger_without_check,
-                                          found_in_logfile):
+def test_rfc3339_timezone_wrong_directive(logfile, logger_without_check):
     formatter = rlog.RFC3339Formatter(
         fmt='[%(asctime)s] %(levelname)s: %(check_name)s: %(message)s',
         datefmt='%FT%T:z')
-    handler.setFormatter(formatter)
+    logger_without_check.logger.handlers[0].setFormatter(formatter)
     logger_without_check.info('foo')
-    assert found_in_logfile(':z')
+    assert _pattern_in_logfile(':z', logfile)
 
 
 @pytest.fixture
@@ -187,30 +182,6 @@ def temp_runtime(tmp_path):
             yield rt.runtime()
 
     return _temp_runtime
-
-
-@pytest.fixture
-def logfile(tmp_path):
-    return str(tmp_path / 'test.log')
-
-
-@pytest.fixture
-def basic_config(temp_runtime, logfile):
-    yield from temp_runtime({
-        'level': 'info',
-        'handlers': [
-            {
-                'type': 'file',
-                'name': logfile,
-                'level': 'warning',
-                'format': '[%(asctime)s] %(levelname)s: '
-                '%(check_name)s: %(message)s',
-                'datefmt': '%F',
-                'append': True,
-            },
-        ],
-        'handlers_perflog': []
-    })
 
 
 def _flush_handlers():
@@ -231,6 +202,25 @@ def _found_in_logfile(string, filename):
         found = string in fp.read()
 
     return found
+
+
+@pytest.fixture
+def basic_config(temp_runtime, logfile):
+    yield from temp_runtime({
+        'level': 'info',
+        'handlers': [
+            {
+                'type': 'file',
+                'name': str(logfile),
+                'level': 'warning',
+                'format': '[%(asctime)s] %(levelname)s: '
+                '%(check_name)s: %(message)s',
+                'datefmt': '%F',
+                'append': True,
+            },
+        ],
+        'handlers_perflog': []
+    })
 
 
 def test_valid_level(basic_config):
@@ -266,7 +256,7 @@ def test_handler_noappend(temp_runtime, logfile):
             'handlers': [
                 {
                     'type': 'file',
-                    'name': logfile,
+                    'name': str(logfile),
                     'level': 'warning',
                     'format': '[%(asctime)s] %(levelname)s: %(message)s',
                     'datefmt': '%F',
@@ -324,7 +314,7 @@ def test_multiple_handlers(temp_runtime, logfile):
         'level': 'info',
         'handlers': [
             {'type': 'stream', 'name': 'stderr'},
-            {'type': 'file', 'name': logfile},
+            {'type': 'file', 'name': str(logfile)},
             {'type': 'syslog', 'address': '/dev/log'}
         ],
         'handlers_perflog': []
@@ -340,7 +330,7 @@ def test_file_handler_timestamp(temp_runtime, logfile):
         'handlers': [
             {
                 'type': 'file',
-                'name': logfile,
+                'name': str(logfile),
                 'level': 'warning',
                 'format': '[%(asctime)s] %(levelname)s: '
                 '%(check_name)s: %(message)s',
