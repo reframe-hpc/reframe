@@ -285,7 +285,7 @@ site_configuration = {
             'hostnames': [
                 'dom'
             ],
-            'modules_system': 'tmod',
+            'modules_system': 'tmod4',
             'resourcesdir': '/apps/common/UES/reframe/resources',
             'partitions': [
                 {
@@ -317,7 +317,7 @@ site_configuration = {
                         {
                             'type': 'Singularity',
                             'modules': [
-                                'singularity'
+                                'singularity/3.5.3'
                             ]
                         }
                     ],
@@ -358,7 +358,7 @@ site_configuration = {
                         {
                             'type': 'Singularity',
                             'modules': [
-                                'singularity'
+                                'singularity/3.5.3'
                             ]
                         }
                     ],
