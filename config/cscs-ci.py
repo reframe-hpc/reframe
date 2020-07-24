@@ -55,7 +55,7 @@ site_configuration = {
             'hostnames': [
                 'dom'
             ],
-            'modules_system': 'tmod4',
+            'modules_system': 'tmod',
             'resourcesdir': '/apps/common/UES/reframe/resources',
             'partitions': [
                 {
