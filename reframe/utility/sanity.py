@@ -538,9 +538,8 @@ def _callable_name(fn):
 
 def _extractiter_singletag(patt, filename, tag, conv, encoding):
     if isinstance(conv, collections.Iterable):
-        raise SanityError(
-            f'multiple conversion functions given for single group: {tag}'
-        )
+        raise SanityError('multiple conversion functions given for the single '
+                          f'capturing group: {tag!r}')
 
     for m in finditer(patt, filename, encoding):
         try:
@@ -621,7 +620,7 @@ def extractall(patt, filename, tag=0, conv=None, encoding='utf-8'):
         returns the whole line that was matched.
     :arg conv: A callable or iterable of callables taking a single argument
         and returning a new value.
-        If not an iterable it will be used to convert the extracted values for
+        If not an iterable, it will be used to convert the extracted values for
         all the capturing groups specified in ``tag``.
         Otherwise, each conversion function will be used to convert the value
         extracted from the corresponding capturing group in ``tag``.
