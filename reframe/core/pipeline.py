@@ -926,6 +926,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
         return self._job.stderr
 
     @property
+    def build_job(self):
+        return self._build_job
+
+    @property
     @sn.sanity_function
     def build_stdout(self):
         return self._build_job.stdout

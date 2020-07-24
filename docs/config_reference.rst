@@ -1111,6 +1111,16 @@ General Configuration
    Purge any loaded environment modules before running any tests.
 
 
+.. js:attribute:: .general[].report_file
+
+   :required: No
+   :default: ``"${HOME}/.reframe/reports/run-report-{sessionid}.json"``
+
+   The file where ReFrame will store its report.
+
+   .. versionadded:: 3.1
+
+
 .. js:attribute:: .general[].save_log_files
 
    :required: No
