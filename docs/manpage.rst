@@ -225,6 +225,8 @@ Options controlling ReFrame output
    Normally, if the stage directory of a test exists, ReFrame will remove it and recreate it.
    This option disables this behavior.
 
+   This option can also be set using the :envvar:`RFM_CLEAN_STAGEDIR` environment variable or the :js:attr:`clean_stagedir` general configuration parameter.
+
    .. versionadded:: 3.1
 
 .. option:: --save-log-files
@@ -234,6 +236,16 @@ Options controlling ReFrame output
 
 
    This option can also be set using the :envvar:`RFM_SAVE_LOG_FILES` environment variable or the :js:attr:`save_log_files` general configuration parameter.
+
+
+.. option:: --report-file=FILE
+
+   The file where ReFrame will store its report.
+   The ``FILE`` argument may contain the special placeholder ``{sessionid}``, in which case ReFrame will generate a new report each time it is run by appending a counter to the report file.
+
+   This option can also be set using the :envvar:`RFM_REPORT_FILE` environment variable or the :js:attr:`report_file` general configuration parameter.
+
+   .. versionadded:: 3.1
 
 
 -------------------------------------
@@ -787,6 +799,21 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
       Associated command line option     :option:`--purge-env`
       Associated configuration parameter :js:attr:`purge_environment` general configuration parameter
+      ================================== ==================
+
+
+.. envvar:: RFM_REPORT_FILE
+
+   The file where ReFrame will store its report.
+
+   .. versionadded:: 3.1
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     :option:`--report-file`
+      Associated configuration parameter :js:attr:`report_file` general configuration parameter
       ================================== ==================
 
 

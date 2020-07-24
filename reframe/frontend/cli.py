@@ -76,7 +76,8 @@ def generate_report_filename(filepatt):
 
     search_patt = os.path.basename(filepatt).replace('{sessionid}', r'(\d+)')
     new_id = -1
-    for filename in os.listdir(os.path.dirname(filepatt)):
+    basedir = os.path.dirname(filepatt) or '.'
+    for filename in os.listdir(basedir):
         match = re.match(search_patt, filename)
         if match:
             found_id = int(match.group(1))
@@ -547,7 +548,7 @@ def main():
     # Print command line
     printer.info(f"[ReFrame Setup]")
     print_infoline('version', session_info['version'])
-    print_infoline('command', session_info['cmdline'])
+    print_infoline('command', repr(session_info['cmdline']))
     print_infoline(
         f"launched by",
         f"{session_info['user'] or '<unknown>'}@{session_info['hostname']}"
@@ -763,7 +764,9 @@ def main():
                 report_file = os.path.normpath(
                     os_ext.expandvars(rt.get_option('general/0/report_file'))
                 )
-                os.makedirs(os.path.dirname(report_file), exist_ok=True)
+                basedir = os.path.dirname(report_file)
+                if basedir:
+                    os.makedirs(basedir, exist_ok=True)
 
                 # Build final JSON report
                 run_stats = runner.stats.json()
