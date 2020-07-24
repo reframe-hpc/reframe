@@ -9,6 +9,7 @@ import os
 import re
 import socket
 import sys
+import time
 import traceback
 
 import reframe
@@ -67,6 +68,23 @@ def list_checks(checks, printer, detailed=False):
         printer.info(format_check(c, detailed))
 
     printer.info('\nFound %d check(s).' % len(checks))
+
+
+def generate_report_filename(filepatt):
+    if '{sessionid}' not in filepatt:
+        return filepatt
+
+    search_patt = os.path.basename(filepatt).replace('{sessionid}', r'(\d+)')
+    new_id = -1
+    basedir = os.path.dirname(filepatt) or '.'
+    for filename in os.listdir(basedir):
+        match = re.match(search_patt, filename)
+        if match:
+            found_id = int(match.group(1))
+            new_id = max(found_id, new_id)
+
+    new_id += 1
+    return filepatt.format(sessionid=new_id)
 
 
 def main():
@@ -135,6 +153,12 @@ def main():
         '--save-log-files', action='store_true', default=False,
         help='Save ReFrame log files to the output directory',
         envvar='RFM_SAVE_LOG_FILES', configvar='general/save_log_files'
+    )
+    output_options.add_argument(
+        '--report-file', action='store', metavar='FILE',
+        help="Store JSON run report in FILE",
+        envvar='RFM_REPORT_FILE',
+        configvar='general/report_file'
     )
 
     # Check discovery options
@@ -509,19 +533,33 @@ def main():
         param = param + ':'
         printer.info(f"  {param.ljust(18)} {value}")
 
+    session_info = {
+        'cmdline': ' '.join(sys.argv),
+        'config_file': rt.site_config.filename,
+        'data_version': '1.0',
+        'hostname': socket.gethostname(),
+        'prefix_output': rt.output_prefix,
+        'prefix_stage': rt.stage_prefix,
+        'user': os_ext.osuser(),
+        'version': os_ext.reframe_version(),
+        'workdir': os.getcwd(),
+    }
+
     # Print command line
     printer.info(f"[ReFrame Setup]")
-    print_infoline('version', os_ext.reframe_version())
-    print_infoline('command', repr(' '.join(sys.argv)))
-    print_infoline('launched by',
-                   f"{os_ext.osuser() or '<unknown>'}@{socket.gethostname()}")
-    print_infoline('working directory', repr(os.getcwd()))
-    print_infoline('settings file', f'{site_config.filename!r}')
+    print_infoline('version', session_info['version'])
+    print_infoline('command', repr(session_info['cmdline']))
+    print_infoline(
+        f"launched by",
+        f"{session_info['user'] or '<unknown>'}@{session_info['hostname']}"
+    )
+    print_infoline('working directory', repr(session_info['workdir']))
+    print_infoline('settings file', f"{session_info['config_file']!r}")
     print_infoline('check search path',
                    f"{'(R) ' if loader.recurse else ''}"
                    f"{':'.join(loader.load_path)!r}")
-    print_infoline('stage directory', repr(rt.stage_prefix))
-    print_infoline('output directory', repr(rt.output_prefix))
+    print_infoline('stage directory', repr(session_info['prefix_stage']))
+    print_infoline('output directory', repr(session_info['prefix_output']))
     printer.info('')
     try:
         # Locate and load checks
@@ -696,8 +734,18 @@ def main():
                                   max_retries) from None
             runner = Runner(exec_policy, printer, max_retries)
             try:
+                time_start = time.time()
+                session_info['time_start'] = time.strftime(
+                    '%FT%T%z', time.localtime(time_start),
+                )
                 runner.runall(testcases)
             finally:
+                time_end = time.time()
+                session_info['time_end'] = time.strftime(
+                    '%FT%T%z', time.localtime(time_end)
+                )
+                session_info['time_elapsed'] = time_end - time_start
+
                 # Print a retry report if we did any retries
                 if runner.stats.failures(run=0):
                     printer.info(runner.stats.retry_report())
@@ -711,6 +759,33 @@ def main():
 
                 if options.performance_report:
                     printer.info(runner.stats.performance_report())
+
+                # Generate the report for this session
+                report_file = os.path.normpath(
+                    os_ext.expandvars(rt.get_option('general/0/report_file'))
+                )
+                basedir = os.path.dirname(report_file)
+                if basedir:
+                    os.makedirs(basedir, exist_ok=True)
+
+                # Build final JSON report
+                run_stats = runner.stats.json()
+                session_info.update({
+                    'num_cases': run_stats[0]['num_cases'],
+                    'num_failures': run_stats[-1]['num_failures']
+                })
+                json_report = {
+                    'session_info': session_info,
+                    'runs': run_stats
+                }
+                report_file = generate_report_filename(report_file)
+                try:
+                    with open(report_file, 'w') as fp:
+                        json.dump(json_report, fp, indent=2)
+                except OSError as e:
+                    printer.warning(
+                        f'failed to generate report in {report_file!r}: {e}'
+                    )
 
         else:
             printer.error("No action specified. Please specify `-l'/`-L' for "
