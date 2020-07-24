@@ -539,7 +539,7 @@ def _callable_name(fn):
 def _extractiter_singletag(patt, filename, tag, conv, encoding):
     if isinstance(conv, collections.Iterable):
         raise SanityError('multiple conversion functions given for the single '
-                          f'capturing group: {tag!r}')
+                          f'capturing group {tag!r}')
 
     for m in finditer(patt, filename, encoding):
         try:
