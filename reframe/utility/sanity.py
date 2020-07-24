@@ -536,9 +536,11 @@ def _callable_name(fn):
     return fn_name
 
 
-def _extractiter_tag(patt, filename, tag, conv, encoding):
+def _extractiter_singletag(patt, filename, tag, conv, encoding):
     if isinstance(conv, collections.Iterable):
-        conv = conv[0]
+        raise SanityError(
+            f'multiple conversion functions given for single group: {tag}'
+        )
 
     for m in finditer(patt, filename, encoding):
         try:
@@ -551,7 +553,8 @@ def _extractiter_tag(patt, filename, tag, conv, encoding):
         except ValueError:
             fn_name = _callable_name(conv)
             raise SanityError(
-                f'could not convert value {val!r} using {fn_name}()')
+                f'could not convert value {val!r} using {fn_name}()'
+            )
 
 
 def _extractiter_multitag(patt, filename, tags, conv, encoding):
@@ -569,16 +572,16 @@ def _extractiter_multitag(patt, filename, tags, conv, encoding):
         elif builtins.len(conv) > builtins.len(val):
             conv = conv[:builtins.len(val)]
 
-        # Here we use the last conversion function for the remaining
-        # tags which don't have a corresponding one, if length of the
-        # conversion function iterable is less that the one of tags
+        # Use the last function in case we have less conversion functions than
+        # tags
         for v, c in itertools.zip_longest(val, conv, fillvalue=conv[-1]):
             try:
                 converted_vals.append(c(v) if callable(c) else v)
             except ValueError:
                 fn_name = _callable_name(conv)
                 raise SanityError(
-                    f'could not convert value {v!r} using {fn_name}()')
+                    f'could not convert value {v!r} using {fn_name}()'
+                )
 
         yield tuple(converted_vals)
 
@@ -595,7 +598,7 @@ def extractiter(patt, filename, tag=0, conv=None, encoding='utf-8'):
     if isinstance(tag, collections.Iterable) and not isinstance(tag, str):
         yield from _extractiter_multitag(patt, filename, tag, conv, encoding)
     else:
-        yield from _extractiter_tag(patt, filename, tag, conv, encoding)
+        yield from _extractiter_singletag(patt, filename, tag, conv, encoding)
 
 
 @deferrable
@@ -618,24 +621,22 @@ def extractall(patt, filename, tag=0, conv=None, encoding='utf-8'):
         returns the whole line that was matched.
     :arg conv: A callable or iterable of callables taking a single argument
         and returning a new value.
-        If provided, and is not an iterable it will be used to convert
-        the extracted values for all the capturing groups of ``tag``
-        returning the converted values.
-        If an iterable of callables is provided, each one will be used to
-        convert the corresponding extracted capturing group of `tag`.
-        If more callables functions than the corresponding capturing groups of
-        ``tag`` are provided, the last conversion function is used for the
-        remaining capturing groups.
-    :returns: A list of the extracted values from the matched regex if ``tag``
-        converted using the ``conv`` callable if ``tag`` is a single value.
-        In case of multiple capturing groups, a list of tuples where each one
-        contains the extracted capturing converted using the corresponding
-        callable of ``conv``.
+        If not an iterable it will be used to convert the extracted values for
+        all the capturing groups specified in ``tag``.
+        Otherwise, each conversion function will be used to convert the value
+        extracted from the corresponding capturing group in ``tag``.
+        If more conversion functions are supplied than the corresponding
+        capturing groups in ``tag``, the last conversion function will be used
+        for the additional capturing groups.
+    :returns: A list of tuples of converted values extracted from the
+         capturing groups specified in ``tag``, if ``tag`` is an iterable.
+         Otherwise, a list of the converted values extracted from the single
+         capturing group specified in ``tag``.
     :raises reframe.core.exceptions.SanityError: In case of errors.
 
     .. versionchanged:: 3.1
         Multiple regex capturing groups are now supporetd via ``tag`` and
-        multiple callables can be used in ``conv``.
+        multiple conversion functions can be used in ``conv``.
     '''
     return list(evaluate(x)
                 for x in extractiter(patt, filename, tag, conv, encoding))

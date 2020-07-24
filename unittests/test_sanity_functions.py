@@ -685,19 +685,13 @@ class TestPatternMatchingFunctions(unittest.TestCase):
             assert 2 * expected == v[1]
             assert isinstance(v[1], float)
 
-        # Check more convert functions than tags
+        # Check more conversion functions than tags
         res = sn.evaluate(sn.extractall(r'Number: (?P<no1>\d+) (?P<no2>\d+)',
                                         self.tempfile, ('no1', 'no2'),
                                         [int, float, float, float]))
         for expected, v in enumerate(res, start=1):
             assert expected == v[0]
             assert 2 * expected == v[1]
-
-        # Check multiple convert functions and single tag
-        res = sn.evaluate(sn.extractall(
-            r'Number: (?P<no>\d+) \d+', self.tempfile, 'no', [int, float]))
-        for expected, v in enumerate(res, start=1):
-            assert expected == v
 
         # Check fewer convert functions than tags
         res = sn.evaluate(sn.extractall(r'Number: (?P<no1>\d+) (?P<no2>\d+)',
@@ -706,6 +700,12 @@ class TestPatternMatchingFunctions(unittest.TestCase):
         for expected, v in enumerate(res, start=1):
             assert expected == v[0]
             assert 2 * expected == v[1]
+
+        # Check multiple conversion functions and a single tag
+        with pytest.raises(SanityError):
+            res = sn.evaluate(sn.extractall(
+                r'Number: (?P<no>\d+) \d+', self.tempfile, 'no', [int, float])
+            )
 
     def test_extractall_encoding(self):
         res = sn.evaluate(
