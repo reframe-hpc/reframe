@@ -75,7 +75,10 @@ def run_reframe(tmp_path, logfile, perflogdir):
                      perflogdir=str(perflogdir)):
         import reframe.frontend.cli as cli
 
-        argv = ['./bin/reframe', '--prefix', str(tmp_path), '--nocolor']
+        # We always pass the --report-file option, because we don't want to
+        # pollute the user's home directory
+        argv = ['./bin/reframe', '--prefix', str(tmp_path), '--nocolor',
+                f'--report-file={tmp_path / "report.json"}']
         if mode:
             argv += ['--mode', mode]
 
@@ -108,9 +111,6 @@ def run_reframe(tmp_path, logfile, perflogdir):
         if more_options:
             argv += more_options
 
-        # Always pass the --report-file option, because we don't want to
-        # pollute the user's home directory
-        argv += [f'--report-file={tmp_path / "report.json"}']
         return run_command_inline(argv, cli.main)
 
     return _run_reframe
@@ -148,7 +148,19 @@ def test_check_success(run_reframe, tmp_path, logfile):
     assert 'PASSED' in stdout
     assert 'FAILED' not in stdout
     assert returncode == 0
-    os.path.exists(tmp_path / 'output' / logfile)
+    assert os.path.exists(tmp_path / 'output' / logfile)
+    assert os.path.exists(tmp_path / 'report.json')
+
+
+def test_report_file_with_sessionid(run_reframe, tmp_path):
+    returncode, stdout, _ = run_reframe(
+        more_options=[
+            f'--save-log-files',
+            f'--report-file={tmp_path / "rfm-report-{sessionid}.json"}'
+        ]
+    )
+    assert returncode == 0
+    assert os.path.exists(tmp_path / 'rfm-report-0.json')
 
 
 def test_check_submit_success(run_reframe, remote_exec_ctx):
