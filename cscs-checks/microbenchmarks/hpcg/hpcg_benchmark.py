@@ -99,8 +99,7 @@ class HPCGCheckMKL(rfm.RegressionTest):
         self.modules = ['craype-hugepages8M']
         self.build_system = 'Make'
         self.prebuild_cmds = ['cp -r ${MKLROOT}/benchmarks/hpcg/* .',
-                              'mv Make.CrayXC setup',
-                              './configure CrayXC']
+                              'mv Make.CrayXC setup', './configure CrayXC']
 
         self.num_tasks = 0
         self.num_tasks_per_core = 2
@@ -116,9 +115,9 @@ class HPCGCheckMKL(rfm.RegressionTest):
         }
 
         self.executable = 'bin/xhpcg_avx2'
-        self.executable_opts = ['--nx=%d' % self.problem_size,
-                                '--ny=%d' % self.problem_size,
-                                '--nz=%d' % self.problem_size, '-t2']
+        self.executable_opts = [f'--nx={self.problem_size}',
+                                f'--ny={self.problem_size}',
+                                f'--nz={self.problem_size}', '-t2']
 
         self.reference = {
             'dom:mc': {
@@ -146,9 +145,8 @@ class HPCGCheckMKL(rfm.RegressionTest):
     @property
     @sn.sanity_function
     def outfile_lazy(self):
-        pattern = 'n%d-%dp-%dt-*.yaml' % (self.problem_size,
-                                          self.job.num_tasks,
-                                          self.num_cpus_per_task)
+        pattern = (f'n{self.problem_size}-{self.job.num_tasks}p-'
+                   f'{self.num_cpus_per_task}t*.txt')
         return sn.getitem(sn.glob(pattern), 0)
 
     @rfm.run_before('compile')
@@ -168,7 +166,7 @@ class HPCGCheckMKL(rfm.RegressionTest):
         num_nodes = self.num_tasks_assigned / self.num_tasks_per_node
         self.perf_patterns = {
             'gflops': sn.extractsingle(
-                r'HPCG result is VALID with a GFLOP\/s rating of:\s*'
+                r'HPCG result is VALID with a GFLOP\/s rating of='
                 r'(?P<perf>\S+)',
                 self.outfile_lazy, 'perf',  float) / num_nodes
         }
