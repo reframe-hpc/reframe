@@ -146,7 +146,7 @@ class HPCGCheckMKL(rfm.RegressionTest):
     @sn.sanity_function
     def outfile_lazy(self):
         pattern = (f'n{self.problem_size}-{self.job.num_tasks}p-'
-                   f'{self.num_cpus_per_task}t*.txt')
+                   f'{self.num_cpus_per_task}t*.*')
         return sn.getitem(sn.glob(pattern), 0)
 
     @rfm.run_before('compile')
@@ -166,7 +166,7 @@ class HPCGCheckMKL(rfm.RegressionTest):
         num_nodes = self.num_tasks_assigned / self.num_tasks_per_node
         self.perf_patterns = {
             'gflops': sn.extractsingle(
-                r'HPCG result is VALID with a GFLOP\/s rating of='
+                r'HPCG result is VALID with a GFLOP\/s rating of(=|:)\s*'
                 r'(?P<perf>\S+)',
                 self.outfile_lazy, 'perf',  float) / num_nodes
         }
