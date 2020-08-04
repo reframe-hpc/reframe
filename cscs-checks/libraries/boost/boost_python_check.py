@@ -14,21 +14,20 @@ class BoostCrayGnuPythonTest(rfm.RegressionTest):
         self.descr = (f'Test for Boost-{boost_version} for '
                       f'CrayGnu-{cray_gnu_version} with python '
                       f'{python_version} support')
+        python_major, python_minor = python_version.split('.')
 
         if cray_gnu_version == '20.06':
             self.valid_systems = ['dom:mc', 'dom:gpu']
             python_include_suffix = ''
         else:
             self.valid_systems = ['daint:mc', 'daint:gpu']
-            python_include_suffix = '' if python_major == '3' else ''
+            python_include_suffix = 'm' if python_major == '3' else ''
 
         self.valid_prog_environs = ['builtin']
-        python_major, python_minor = python_version.split('.')
         self.modules = [f'Boost/{boost_version}-CrayGNU-{cray_gnu_version}-'
                         f'python{python_major}']
         self.executable = f'python{python_major} hello.py'
         self.sanity_patterns = sn.assert_found('hello, world', self.stdout)
-        python_include_suffix = '' if python_major == '3' else ''
         self.variables = {
             'PYTHON_INCLUDE':
                 f'include/python{python_version}{python_include_suffix}',
