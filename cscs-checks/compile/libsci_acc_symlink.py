@@ -9,8 +9,10 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.parameterized_test(['libsci_acc_gnu_71_nv35'],
-                        ['libsci_acc_gnu_71_nv60'],
+@rfm.parameterized_test(['libsci_acc_gnu_81_nv35'],
+                        ['libsci_acc_gnu_81_nv60'],
+                        ['libsci_acc_cray_nv35'],
+                        ['libsci_acc_cray_nv60'],
                         ['libsci_acc_cray_nv35_openacc'],
                         ['libsci_acc_cray_nv60_openacc'])
 class LibSciAccSymLinkTest(rfm.RunOnlyRegressionTest):
