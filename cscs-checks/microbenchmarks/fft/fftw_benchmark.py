@@ -24,9 +24,13 @@ class FFTWTest(rfm.RegressionTest):
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
             self.build_system.cflags += ['-I$FFTW_INC', '-L$FFTW_DIR',
                                          '-lfftw3']
-        elif self.current_system.name in {'daint', 'dom', 'tiger'}:
+        elif self.current_system.name in {'daint', 'tiger'}:
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi',
                                         'PrgEnv-gnu']
+        elif self.current_system.name == 'dom':
+            # Cray FFTW library is not officially supported for the PGI
+            # compiler (Cray case #266199)
+            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
 
         self.perf_patterns = {
             'fftw_exec_time': sn.extractsingle(
@@ -39,7 +43,7 @@ class FFTWTest(rfm.RegressionTest):
             self.executable_opts = ['72 12 1000 0']
             self.reference = {
                 'dom:gpu': {
-                    'fftw_exec_time': (0.55, None, 0.05, 's'),
+                    'fftw_exec_time': (0.59, None, 0.05, 's'),
                 },
                 'daint:gpu': {
                     'fftw_exec_time': (0.55, None, 0.05, 's'),
