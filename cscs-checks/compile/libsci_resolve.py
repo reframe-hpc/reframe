@@ -33,7 +33,7 @@ class NvidiaResolveTest(LibSciResolveBaseTest):
             'craype-accel-nvidia60': 'nv60'
         }
         self.compiler_version = {
-            'dom':   '71',
+            'dom':   '81',
             'daint': '71',
         }
         self.compiler_version_default = '71'
