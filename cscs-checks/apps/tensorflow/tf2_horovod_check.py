@@ -18,7 +18,6 @@ class TensorFlow2HorovodTest(rfm.RunOnlyRegressionTest):
             self.modules = ['Horovod/0.19.1-CrayGNU-20.06-tf-2.2.0']
         else:
             self.modules = ['Horovod/0.19.1-CrayGNU-19.10-tf-2.2.0']
-        print(self.current_system.name, self.modules)
         self.sourcesdir = None
         self.num_tasks_per_node = 1
         self.num_cpus_per_task = 12
