@@ -51,7 +51,7 @@ class TensorFlow2HorovodTest(rfm.RunOnlyRegressionTest):
                 r'Img/sec per GPU: (?P<throughput_per_gpu>\S+) \S+',
                 self.stdout, 'throughput_per_gpu', float)
         }
-        model = 'ResNet101'
+        model = 'ResNet50'
         batch_size = 64
         self.sanity_patterns = sn.all([
             sn.assert_found(r'Model: %s' % model, self.stdout),
@@ -66,11 +66,15 @@ class TensorFlow2HorovodTest(rfm.RunOnlyRegressionTest):
         self.prerun_cmds = ['wget https://raw.githubusercontent.com/horovod/'
                             'horovod/842d1075e8440f15e84364f494645c28bf20c3ae/'
                             'examples/tensorflow2_synthetic_benchmark.py']
+
         self.executable = 'python'
         self.executable_opts = [
             'tensorflow2_synthetic_benchmark.py',
             '--model %s' % model,
             '--batch-size %s' % batch_size,
+            '--num-iters 3',
+            '--num-batches-per-iter 3',
+            '--num-warmup-batches 3',
         ]
         self.tags = {'production'}
         self.maintainers = ['RS', 'TR']
