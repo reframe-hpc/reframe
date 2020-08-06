@@ -14,7 +14,11 @@ class TensorFlow2HorovodTest(rfm.RunOnlyRegressionTest):
         self.descr = 'Distributed training with TensorFlow2 and Horovod'
         self.valid_systems = ['daint:gpu']
         self.valid_prog_environs = ['builtin']
-        self.modules = ['Horovod/0.18.1-CrayGNU-19.10-tf-2.0.0']
+        if 'dom' in self.current_system.name:
+            self.modules = ['Horovod/0.19.1-CrayGNU-20.06-tf-2.2.0']
+        else:
+            self.modules = ['Horovod/0.19.1-CrayGNU-19.10-tf-2.2.0']
+        print(self.current_system.name, self.modules)
         self.sourcesdir = None
         self.num_tasks_per_node = 1
         self.num_cpus_per_task = 12
@@ -48,7 +52,7 @@ class TensorFlow2HorovodTest(rfm.RunOnlyRegressionTest):
                 r'Img/sec per GPU: (?P<throughput_per_gpu>\S+) \S+',
                 self.stdout, 'throughput_per_gpu', float)
         }
-        model = 'InceptionV3'
+        model = 'ResNet101'
         batch_size = 64
         self.sanity_patterns = sn.all([
             sn.assert_found(r'Model: %s' % model, self.stdout),
@@ -61,7 +65,7 @@ class TensorFlow2HorovodTest(rfm.RunOnlyRegressionTest):
             'OMP_NUM_THREADS': '$SLURM_CPUS_PER_TASK',
         }
         self.prerun_cmds = ['wget https://raw.githubusercontent.com/horovod/'
-                            'horovod/26b55a7890f6923ca58cdb68a765ed0ec436ab0f/'
+                            'horovod/842d1075e8440f15e84364f494645c28bf20c3ae/'
                             'examples/tensorflow2_synthetic_benchmark.py']
         self.executable = 'python'
         self.executable_opts = [
