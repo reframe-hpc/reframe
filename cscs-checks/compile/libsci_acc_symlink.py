@@ -10,6 +10,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
+#FIXME: Remove the 71 entries after daint upgrade
 @rfm.parameterized_test(['libsci_acc_gnu_71_nv35'],
                         ['libsci_acc_gnu_71_nv60'],
                         ['libsci_acc_gnu_81_nv35'],
@@ -27,6 +28,7 @@ class LibSciAccSymLinkTest(rfm.RunOnlyRegressionTest):
                  r'?(?P<version>\S+)')
         prgenv = re.match(regex, lib_name).group('prgenv')
 
+        #FIXME: Remove this logic after daint upgrade
         if prgenv == 'gnu':
             cver = re.match(regex, lib_name).group('cver')
             if cver == '71':
