@@ -1,23 +1,30 @@
-from paraview.simple import *
 import os
+
+from paraview.simple import *
+
+
 basename = os.getenv('SCRATCH')
 if basename is None:
     basename = "/tmp"
 
 Version = str(GetParaViewVersion())
 if(servermanager.vtkSMProxyManager.GetVersionMajor() == 5):
-  if(servermanager.vtkSMProxyManager.GetVersionMinor() == 7):
-    from paraview.modules.vtkPVClientServerCoreCorePython import (
-        vtkProcessModule)
-    info = GetOpenGLInformation(location=servermanager.vtkSMSession.RENDER_SERVER)
-  elif(servermanager.vtkSMProxyManager.GetVersionMinor() == 8):
-      from paraview.modules.vtkRemotingCore import vtkProcessModule
-      info = GetOpenGLInformation(location=servermanager.vtkSMSession.RENDER_SERVER)
-  else:
-    from paraview.servermanager import vtkProcessModule
-    from vtk.vtkPVClientServerCoreRendering import vtkPVOpenGLInformation
-    info = vtkPVOpenGLInformation()
-    info.CopyFromObject(None)
+    if(servermanager.vtkSMProxyManager.GetVersionMinor() == 7):
+        from paraview.modules.vtkPVClientServerCoreCorePython import (
+            vtkProcessModule)
+        info = GetOpenGLInformation(
+            location=servermanager.vtkSMSession.RENDER_SERVER
+        )
+    elif(servermanager.vtkSMProxyManager.GetVersionMinor() == 8):
+        from paraview.modules.vtkRemotingCore import vtkProcessModule
+        info = GetOpenGLInformation(
+            location=servermanager.vtkSMSession.RENDER_SERVER
+        )
+    else:
+        from paraview.servermanager import vtkProcessModule
+        from vtk.vtkPVClientServerCoreRendering import vtkPVOpenGLInformation
+        info = vtkPVOpenGLInformation()
+        info.CopyFromObject(None)
 
 rank = vtkProcessModule.GetProcessModule().GetPartitionId()
 nbprocs = servermanager.ActiveConnection.GetNumberOfDataPartitions()
@@ -78,6 +85,7 @@ IndexedColors = [
 a = []
 for i in range(nbprocs):
     a.extend((str(i), str(i)))
+
 processIdLUT.Annotations = a
 processIdLUT.IndexedColors = IndexedColors
 
