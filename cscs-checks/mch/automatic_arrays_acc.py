@@ -79,18 +79,10 @@ class AutomaticArraysCheck(rfm.RegressionTest):
         self.reference = self.arrays_reference[envname]
 
     @rfm.run_before('compile')
-    def cray_linker_workaround(self):
-        # NOTE: Workaround for using CCE < 9.1 in CLE7.UP01.PS03 and above
-        # See Patch Set README.txt for more details.
-        if (self.current_system.name == 'dom' and
-            self.current_environ.name == 'PrgEnv-cray'):
-            self.variables['LINKER_X86_64'] = '/usr/bin/ld'
-
-    @rfm.run_before('compile')
     def cdt2006_pgi_workaround(self):
         cdt = os_ext.cray_cdt_version()
         if not cdt:
             return
 
-        if (self.current_environ.name == 'PrgEnv-pgi' and cdt == '20.06'):
+        if (self.current_environ.name == 'PrgEnv-pgi' and cdt == '20.08'):
             self.variables.update({'CUDA_HOME': '$CUDATOOLKIT_HOME'})

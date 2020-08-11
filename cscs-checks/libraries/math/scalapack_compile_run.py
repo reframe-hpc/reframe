@@ -33,14 +33,6 @@ class ScaLAPACKTest(rfm.RegressionTest):
         self.maintainers = ['CB', 'LM']
         self.tags = {'production', 'external-resources'}
 
-    @rfm.run_before('compile')
-    def cray_linker_workaround(self):
-        # NOTE: Workaround for using CCE < 9.1 in CLE7.UP01.PS03 and above
-        # See Patch Set README.txt for more details.
-        if (self.current_system.name == 'dom' and
-            self.current_environ.name == 'PrgEnv-cray'):
-            self.variables['LINKER_X86_64'] = '/usr/bin/ld'
-
 
 @rfm.required_version('>=2.14')
 @rfm.parameterized_test(['static'], ['dynamic'])
