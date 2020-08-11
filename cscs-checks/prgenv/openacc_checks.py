@@ -69,7 +69,7 @@ class OpenACCFortranCheck(rfm.RegressionTest):
                 self.build_system.fflags = ['-acc', '-ta=tesla:cc70']
 
     @rfm.run_before('compile')
-    def cdt2006_pgi_workaround(self):
+    def cdt2008_pgi_workaround(self):
         cdt = os_ext.cray_cdt_version()
         if not cdt:
             return
