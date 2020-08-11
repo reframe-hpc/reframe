@@ -24,7 +24,7 @@ class LibSciResolveBaseTest(rfm.CompileOnlyRegressionTest):
 class NvidiaResolveTest(LibSciResolveBaseTest):
     def __init__(self, module_name):
         super().__init__()
-        self.descr = 'Module %s resolves libsci_acc' % module_name
+        self.descr = f'Module {module_name} resolves libsci_acc'
         self.build_system = 'SingleSource'
 
         self.module_name = module_name
@@ -49,7 +49,7 @@ class NvidiaResolveTest(LibSciResolveBaseTest):
         # produce any output when xalt/2.7.10 is loaded, thus we use readelf
         # to find the dynamic libraries of the executable
         # self.build_system.fflags = ['-Wl,-ydgemm_']
-        self.postbuild_cmds = ['readelf -d %s' % self.executable]
+        self.postbuild_cmds = [f'readelf -d {self.executable}']
 
     @rfm.run_before('sanity')
     def set_sanity(self):
@@ -76,14 +76,6 @@ class NvidiaResolveTest(LibSciResolveBaseTest):
                 sn.extractsingle(regex, self.stdout, 'version'), mod_name)
         ])
 
-    @rfm.run_before('compile')
-    def cray_linker_workaround(self):
-        # NOTE: Workaround for using CCE < 9.1 in CLE7.UP01.PS03 and above
-        # See Patch Set README.txt for more details.
-        if (self.current_environ.name.startswith('PrgEnv-cray') and
-            self.current_system.name == 'dom'):
-            self.variables['LINKER_X86_64'] = '/usr/bin/ld'
-
 
 @rfm.required_version('>=2.14')
 @rfm.simple_test
@@ -99,7 +91,7 @@ class MKLResolveTest(LibSciResolveBaseTest):
         # to find the dynamic libraries of the executable
         # self.build_system.fflags = ['-Wl,-ydgemm_', '-mkl']
         self.build_system.fflags = ['-mkl']
-        self.postbuild_cmds = ['readelf -d %s' % self.executable]
+        self.postbuild_cmds = [f'readelf -d {self.executable}']
         regex = (r'.*\(NEEDED\).*libmkl_(?P<prgenv>[A-Za-z]+)_(?P<version>\S+)'
                  r'\.so')
         self.sanity_patterns = sn.all([
