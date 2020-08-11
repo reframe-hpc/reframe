@@ -18,7 +18,7 @@ class HDF5Test(rfm.RegressionTest):
         }
         self.linkage = linkage
         self.descr = lang_names[lang] + ' HDF5 ' + linkage.capitalize()
-        self.sourcepath = 'h5ex_d_chunk.' + lang
+        self.sourcepath = f'h5ex_d_chunk.{lang}'
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                               'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
@@ -75,7 +75,7 @@ class HDF5Test(rfm.RegressionTest):
         self.num_tasks = 1
         self.num_tasks_per_node = 1
         self.build_system = 'SingleSource'
-        self.build_system.ldflags = ['-%s' % linkage]
+        self.build_system.ldflags = [f'-{linkage}']
         self.postrun_cmds = ['h5dump h5ex_d_chunk.h5 > h5dump_out.txt']
 
         self.maintainers = ['SO', 'RS']

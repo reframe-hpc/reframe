@@ -79,7 +79,7 @@ class AutomaticArraysCheck(rfm.RegressionTest):
         self.reference = self.arrays_reference[envname]
 
     @rfm.run_before('compile')
-    def cdt2006_pgi_workaround(self):
+    def cdt2008_pgi_workaround(self):
         cdt = os_ext.cray_cdt_version()
         if not cdt:
             return

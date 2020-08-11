@@ -14,8 +14,8 @@ from reframe.core.fields import ScopedDict
 class JacobiNoToolHybrid(rfm.RegressionTest):
     def __init__(self, lang):
         super().__init__()
-        self.descr = 'Jacobi (without tool) %s check' % lang
-        self.name = '%s_%s' % (type(self).__name__, lang.replace('+', 'p'))
+        self.descr = f'Jacobi (without tool) {lang} check'
+        self.name = f'{type(self).__name__}_{lang.replace("+", "p")}'
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-cray_classic',
                                     'PrgEnv-gnu', 'PrgEnv-intel', 'PrgEnv-pgi']
@@ -62,9 +62,9 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         self.maintainers = ['JG', 'MKr']
         self.tags = {'production'}
         url = 'http://github.com/eth-cscs/hpctools'
-        readme_str = (r'More debug and performance tools ReFrame checks are'
-                      r' available at %s' % url)
-        self.postrun_cmds = ['echo "%s"' % readme_str]
+        readme_str = (rf'More debug and performance tools ReFrame checks are'
+                      rf' available at {url}')
+        self.postrun_cmds = [f'echo "{readme_str}"']
         if self.current_system.name in {'dom', 'daint'}:
             # get general info about the environment:
             self.postrun_cmds += ['module list -t']
@@ -97,7 +97,7 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         found_version = sn.extractsingle(r'OpenMP-\s*(\d+)', self.stdout, 1,
                                          int)
         envname = self.current_environ.name
-        ompversion_key = '%s:%s:version' % (envname, self.lang)
+        ompversion_key = f'{envname}:{self.lang}:version'
         self.sanity_patterns = sn.all([
             sn.assert_eq(found_version, self.openmp_versions[ompversion_key]),
             sn.assert_found('SUCCESS', self.stdout),

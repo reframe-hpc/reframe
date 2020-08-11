@@ -20,7 +20,7 @@ class HelloWorldBaseTest(rfm.RegressionTest):
             'cpp': 'C++',
             'f90': 'Fortran 90'
         }
-        self.descr = self.lang_names[lang] + ' Hello World'
+        self.descr = f'{self.lang_names[lang]} Hello World'
         self.sourcepath = 'hello_world'
         self.build_system = 'SingleSource'
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',

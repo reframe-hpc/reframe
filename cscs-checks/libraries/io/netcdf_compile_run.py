@@ -22,7 +22,7 @@ class NetCDFTest(rfm.RegressionTest):
         }
         self.lang = lang
         self.linkage = linkage
-        self.descr = lang_names[lang] + ' NetCDF ' + linkage.capitalize()
+        self.descr = f'{lang_names[lang]} NetCDF {linkage.capitalize()}'
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc', 'kesch:cn', 'tiger:gpu',
                               'arolla:cn', 'tsa:cn']
@@ -108,9 +108,4 @@ class NetCDFTest(rfm.RegressionTest):
                 '-lnetcdf', '-lnetcdf_c++4', '-lnetcdff'
             ]
         else:
-            self.build_system.ldflags = ['-%s' % self.linkage]
-
-    @rfm.run_before('run')
-    def cdt2006_cpp_workaround(self):
-        if (os_ext.cray_cdt_version() == '20.06' and self.lang == 'cpp'):
-            self.modules += ['cray-hdf5/1.10.6.1']
+            self.build_system.ldflags = [f'-{self.linkage}']
