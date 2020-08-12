@@ -22,7 +22,7 @@ class NetCDFTest(rfm.RegressionTest):
         }
         self.lang = lang
         self.linkage = linkage
-        self.descr = lang_names[lang] + ' NetCDF ' + linkage.capitalize()
+        self.descr = f'{lang_names[lang]} NetCDF {linkage.capitalize()}'
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc', 'kesch:cn', 'tiger:gpu',
                               'arolla:cn', 'tsa:cn']
@@ -108,20 +108,4 @@ class NetCDFTest(rfm.RegressionTest):
                 '-lnetcdf', '-lnetcdf_c++4', '-lnetcdff'
             ]
         else:
-            self.build_system.ldflags = ['-%s' % self.linkage]
-
-    @rfm.run_before('compile')
-    def cray_linker_workaround(self):
-        # NOTE: Workaround for using CCE < 9.1 in CLE7.UP01.PS03 and above
-        # See Patch Set README.txt for more details.
-        cle = os_ext.cray_cle_info()
-        if not cle:
-            return
-
-        if (cle.release == '7.0.UP01' and cle.patchset >= '03'):
-            self.variables['LINKER_X86_64'] = '/usr/bin/ld'
-
-    @rfm.run_before('run')
-    def cdt2006_cpp_workaround(self):
-        if (os_ext.cray_cdt_version() == '20.06' and self.lang == 'cpp'):
-            self.modules += ['cray-hdf5/1.10.6.1']
+            self.build_system.ldflags = [f'-{self.linkage}']
