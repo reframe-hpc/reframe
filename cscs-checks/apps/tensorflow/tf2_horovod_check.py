@@ -27,20 +27,20 @@ class TensorFlow2HorovodTest(rfm.RunOnlyRegressionTest):
             self.num_tasks = 8
             self.reference = {
                 'dom:gpu': {
-                    'throughput': (2031.6, -0.05, None, 'images/s'),
-                    'throughput_per_gpu': (253.9, -0.05, None, 'images/s'),
+                    'throughput': (1712, 0, None, 'images/s'),
+                    'throughput_per_gpu': (214, 0, None, 'images/s'),
                 },
                 'daint:gpu': {
-                    'throughput': (2031.6, -0.05, None, 'images/s'),
-                    'throughput_per_gpu': (253.9, -0.05, None, 'images/s')
+                    'throughput': (1712, 0, None, 'images/s'),
+                    'throughput_per_gpu': (214, 0, None, 'images/s')
                 },
             }
         else:
             self.num_tasks = 32
             self.reference = {
                 'daint:gpu': {
-                    'throughput': (7976.6, -0.05, None, 'images/s'),
-                    'throughput_per_gpu': (253.9, -0.05, None, 'images/s')
+                    'throughput': (6848, 0, None, 'images/s'),
+                    'throughput_per_gpu': (214, 0, None, 'images/s')
                 },
             }
         self.perf_patterns = {
@@ -72,9 +72,9 @@ class TensorFlow2HorovodTest(rfm.RunOnlyRegressionTest):
             'tensorflow2_synthetic_benchmark.py',
             f'--model {model}',
             f'--batch-size {batch_size}',
-            '--num-iters 3',
-            '--num-batches-per-iter 3',
-            '--num-warmup-batches 3',
+            '--num-iters 5',
+            '--num-batches-per-iter 5',
+            '--num-warmup-batches 5',
         ]
         self.tags = {'production'}
         self.maintainers = ['RS', 'TR']
