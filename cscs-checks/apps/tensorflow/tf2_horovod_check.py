@@ -27,20 +27,20 @@ class TensorFlow2HorovodTest(rfm.RunOnlyRegressionTest):
             self.num_tasks = 8
             self.reference = {
                 'dom:gpu': {
-                    'throughput': (1712, 0, None, 'images/s'),
-                    'throughput_per_gpu': (214, 0, None, 'images/s'),
+                    'throughput': (1712, -0.05, None, 'images/s'),
+                    'throughput_per_gpu': (214, -0.05, None, 'images/s'),
                 },
                 'daint:gpu': {
-                    'throughput': (1712, 0, None, 'images/s'),
-                    'throughput_per_gpu': (214, 0, None, 'images/s')
+                    'throughput': (1712, -0.05, None, 'images/s'),
+                    'throughput_per_gpu': (214, -0.05, None, 'images/s')
                 },
             }
         else:
             self.num_tasks = 32
             self.reference = {
                 'daint:gpu': {
-                    'throughput': (6848, 0, None, 'images/s'),
-                    'throughput_per_gpu': (214, 0, None, 'images/s')
+                    'throughput': (6848, -0.05, None, 'images/s'),
+                    'throughput_per_gpu': (214, -0.05, None, 'images/s')
                 },
             }
         self.perf_patterns = {
