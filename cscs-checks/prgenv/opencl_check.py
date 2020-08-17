@@ -36,5 +36,5 @@ class OpenCLCheck(rfm.RegressionTest):
         if not cdt:
             return
 
-        if (self.current_environ.name == 'PrgEnv-pgi' and cdt == '20.06'):
+        if (self.current_environ.name == 'PrgEnv-pgi' and cdt == '20.08'):
             self.variables.update({'CUDA_HOME': '$CUDATOOLKIT_HOME'})
