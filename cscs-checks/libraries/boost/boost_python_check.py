@@ -8,7 +8,7 @@ import reframe.utility.sanity as sn
 
 
 @rfm.parameterized_test(['1.70.0', '19.10', '2.7'], ['1.70.0', '19.10', '3.6'],
-                        ['1.70.0', '20.06', '3.8'])
+                        ['1.70.0', '20.08', '3.8'])
 class BoostCrayGnuPythonTest(rfm.RegressionTest):
     def __init__(self, boost_version, cray_gnu_version, python_version):
         self.descr = (f'Test for Boost-{boost_version} for '
@@ -16,7 +16,7 @@ class BoostCrayGnuPythonTest(rfm.RegressionTest):
                       f'{python_version} support')
         python_major, python_minor = python_version.split('.')
 
-        if cray_gnu_version == '20.06':
+        if cray_gnu_version == '20.08':
             self.valid_systems = ['dom:mc', 'dom:gpu']
             python_include_suffix = ''
         else:
