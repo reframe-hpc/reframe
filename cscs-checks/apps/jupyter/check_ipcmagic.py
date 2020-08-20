@@ -5,6 +5,7 @@
 
 import reframe as rfm
 import reframe.utility.sanity as sn
+import reframe.utility.os_ext as os_ext
 from reframe.core.backends import getlauncher
 
 
@@ -14,13 +15,10 @@ class IPCMagicCheck(rfm.RunOnlyRegressionTest):
         self.descr = 'Distributed training with TensorFlow using ipyparallel'
         self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
-        self.modules = ['ipcmagic']
-        # FIXME: Workaround until Dom and Daint are aligned
-        if self.current_system.name == 'daint':
-            self.modules.append('Horovod/0.19.1-CrayGNU-19.10-tf-2.2.0')
-        else:
-            self.modules.append('Horovod/0.19.1-CrayGNU-20.08-tf-2.2.0')
-
+        # FIXME: The following will not be needed after the Daint upgrade
+        cray_cdt_version = os_ext.cray_cdt_version() or '19.10'
+        self.modules = ['ipcmagic',
+                        f'Horovod/0.19.1-CrayGNU-{cray_cdt_version}-tf-2.2.0']
         self.num_tasks = 2
         self.num_tasks_per_node = 1
         self.executable = 'ipython'
