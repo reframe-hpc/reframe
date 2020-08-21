@@ -61,8 +61,9 @@ class TorqueJobScheduler(PbsJobScheduler):
             raise JobError('qstat failed: %s' % completed.stderr, job.jobid)
 
         nodelist_match = re.search(
-             re.compile(r'exec_host = (?P<nodespec>[\S\t\n]+)', re.MULTILINE),
-             completed.stdout
+            r'exec_host = (?P<nodespec>[\S\t\n]+)',
+            completed.stdout,
+            re.MULTILINE
         )
         if nodelist_match:
             nodespec = nodelist_match.group('nodespec')
