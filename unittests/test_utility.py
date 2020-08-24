@@ -111,13 +111,7 @@ def test_inpath():
 
 
 @pytest.fixture
-def prefix(tmp_path):
-    prefix = tmp_path / 'prefix'
-    return prefix
-
-
-@pytest.fixture
-def testdirs(prefix):
+def tempdirs(tmp_path):
     # Create a temporary directory structure
     # foo/
     #   bar/
@@ -125,14 +119,16 @@ def testdirs(prefix):
     #   goo/
     # loo/
     #   bar/
+    prefix = tmp_path / 'prefix'
     (prefix / 'foo' / 'bar' / 'boo').mkdir(parents=True)
     (prefix / 'foo' / 'goo').mkdir()
     (prefix / 'loo' / 'bar').mkdir(parents=True)
+    return prefix
 
 
-def test_subdirs(prefix, testdirs):
+def test_subdirs(tempdirs):
     # Try to fool the algorithm by adding normal files
-    prefix_name = str(prefix)
+    prefix_name = str(tempdirs)
     open(os.path.join(prefix_name, 'foo', 'bar', 'file.txt'), 'w').close()
     open(os.path.join(prefix_name, 'loo', 'file.txt'), 'w').close()
 
@@ -151,8 +147,8 @@ def test_subdirs(prefix, testdirs):
     assert expected_subdirs == set(returned_subdirs)
 
 
-def test_samefile(prefix, testdirs):
-    prefix_name = str(prefix)
+def test_samefile(tempdirs):
+    prefix_name = str(tempdirs)
 
     # Try to fool the algorithm by adding symlinks
     os.symlink(os.path.join(prefix_name, 'foo'),
@@ -270,21 +266,7 @@ def test_expandvars_nocmd(monkeypatch):
 
 
 @pytest.fixture
-def prefix_abs(tmp_path):
-    prefix = tmp_path / 'prefix'
-    prefix.mkdir()
-    return prefix.resolve()
-
-
-@pytest.fixture
-def target_abs(tmp_path):
-    target = tmp_path / 'target'
-    target.mkdir()
-    return target.resolve()
-
-
-@pytest.fixture
-def testfiles(prefix_abs, target_abs):
+def direntries(tmp_path):
     # Create a test directory structure
     #
     # prefix/
@@ -297,101 +279,90 @@ def testfiles(prefix_abs, target_abs):
     #   bar.txt
     #   foo.txt
     #
-    (prefix_abs / 'bar').mkdir(parents=True)
-    (prefix_abs / 'foo').mkdir(parents=True)
-    (prefix_abs / 'bar' / 'bar.txt').touch()
-    (prefix_abs / 'bar' / 'foo.txt').touch()
-    (prefix_abs / 'bar' / 'foobar.txt').touch()
-    (prefix_abs / 'foo' / 'bar.txt').touch()
-    (prefix_abs / 'bar.txt').touch()
-    (prefix_abs / 'foo.txt').touch()
+    prefix = tmp_path / 'prefix'
+    target = tmp_path / 'target'
+    prefix.mkdir()
+    target.mkdir()
+
+    (prefix / 'bar').mkdir(parents=True)
+    (prefix / 'foo').mkdir(parents=True)
+    (prefix / 'bar' / 'bar.txt').touch()
+    (prefix / 'bar' / 'foo.txt').touch()
+    (prefix / 'bar' / 'foobar.txt').touch()
+    (prefix / 'foo' / 'bar.txt').touch()
+    (prefix / 'bar.txt').touch()
+    (prefix / 'foo.txt').touch()
 
     # Create also a subdirectory in target, so as to check the recursion
-    (target_abs / 'foo').mkdir(parents=True)
+    (target / 'foo').mkdir(parents=True)
+    return prefix.resolve(), target.resolve()
 
 
-@pytest.fixture()
-def verify_target_directory(prefix_abs, target_abs, testfiles):
-    target_name = str(target_abs)
+def assert_target_directory(src_prefix, dst_prefix, file_links=[]):
+    '''Verify the directory structure'''
+    assert os.path.exists(dst_prefix / 'bar' / 'bar.txt')
+    assert os.path.exists(dst_prefix / 'bar' / 'foo.txt')
+    assert os.path.exists(dst_prefix / 'bar' / 'foobar.txt')
+    assert os.path.exists(dst_prefix / 'foo' / 'bar.txt')
+    assert os.path.exists(dst_prefix / 'bar.txt')
+    assert os.path.exists(dst_prefix / 'foo.txt')
 
-    def _verify_target_directory(file_links=[]):
-        '''Verify the directory structure'''
-        assert os.path.exists(os.path.join(target_name, 'bar', 'bar.txt'))
-        assert os.path.exists(os.path.join(target_name, 'bar', 'foo.txt'))
-        assert os.path.exists(os.path.join(target_name, 'bar', 'foobar.txt'))
-        assert os.path.exists(os.path.join(target_name, 'foo', 'bar.txt'))
-        assert os.path.exists(os.path.join(target_name, 'bar.txt'))
-        assert os.path.exists(os.path.join(target_name, 'foo.txt'))
-
-        # Verify the symlinks
-        for lf in file_links:
-            target_link_name = os.path.abspath(
-                os.path.join(str(prefix_abs), lf))
-            link_name = os.path.abspath(os.path.join(str(target_abs), lf))
-            assert os.path.islink(link_name)
-            assert target_link_name == os.readlink(link_name)
-
-    return _verify_target_directory
+    # Verify the symlinks
+    for lf in file_links:
+        target_link_name = os.path.abspath(src_prefix / lf)
+        link_name = os.path.abspath(dst_prefix / lf)
+        assert os.path.islink(link_name)
+        assert target_link_name == os.readlink(link_name)
 
 
-def test_virtual_copy_nolinks(prefix_abs, target_abs, verify_target_directory):
-    os_ext.copytree_virtual(str(prefix_abs), str(target_abs),
-                            dirs_exist_ok=True)
-    verify_target_directory()
+def test_virtual_copy_nolinks(direntries):
+    os_ext.copytree_virtual(*direntries, dirs_exist_ok=True)
+    assert_target_directory(*direntries)
 
 
-def test_virtual_copy_nolinks_dirs_exist(prefix_abs, target_abs):
+def test_virtual_copy_nolinks_dirs_exist(direntries):
     with pytest.raises(FileExistsError):
-        os_ext.copytree_virtual(str(prefix_abs), str(target_abs))
+        os_ext.copytree_virtual(*direntries)
 
 
-def test_virtual_copy_valid_links(prefix_abs, target_abs,
-                                  verify_target_directory):
+def test_virtual_copy_valid_links(direntries):
     file_links = ['bar/', 'foo/bar.txt', 'foo.txt']
-    os_ext.copytree_virtual(str(prefix_abs), str(target_abs),
-                            file_links, dirs_exist_ok=True)
-    verify_target_directory(file_links)
+    os_ext.copytree_virtual(*direntries, file_links, dirs_exist_ok=True)
+    assert_target_directory(*direntries, file_links)
 
 
-def test_virtual_copy_inexistent_links(prefix_abs, target_abs):
+def test_virtual_copy_inexistent_links(direntries):
     file_links = ['foobar/', 'foo/bar.txt', 'foo.txt']
     with pytest.raises(ValueError):
-        os_ext.copytree_virtual(str(prefix_abs), str(target_abs),
-                                file_links, dirs_exist_ok=True)
+        os_ext.copytree_virtual(*direntries, file_links, dirs_exist_ok=True)
 
 
-def test_virtual_copy_absolute_paths(prefix_abs, target_abs):
-    file_links = [os.path.join(str(prefix_abs), 'bar'),
-                  'foo/bar.txt', 'foo.txt']
+def test_virtual_copy_absolute_paths(direntries):
+    file_links = [direntries[0] / 'bar', 'foo/bar.txt', 'foo.txt']
     with pytest.raises(ValueError):
-        os_ext.copytree_virtual(str(prefix_abs), str(target_abs),
-                                file_links, dirs_exist_ok=True)
+        os_ext.copytree_virtual(*direntries, file_links, dirs_exist_ok=True)
 
 
-def test_virtual_copy_irrelevenant_paths(prefix_abs, target_abs):
+def test_virtual_copy_irrelevant_paths(direntries):
     file_links = ['/bin', 'foo/bar.txt', 'foo.txt']
     with pytest.raises(ValueError):
-        os_ext.copytree_virtual(str(prefix_abs), str(target_abs),
-                                file_links, dirs_exist_ok=True)
+        os_ext.copytree_virtual(*direntries, file_links, dirs_exist_ok=True)
 
-    file_links = [os.path.dirname(str(prefix_abs)), 'foo/bar.txt', 'foo.txt']
+    file_links = [os.path.dirname(direntries[0]), 'foo/bar.txt', 'foo.txt']
     with pytest.raises(ValueError):
-        os_ext.copytree_virtual(str(prefix_abs), str(target_abs),
-                                file_links, dirs_exist_ok=True)
+        os_ext.copytree_virtual(*direntries, file_links, dirs_exist_ok=True)
 
 
-def test_virtual_copy_linkself(prefix_abs, target_abs):
+def test_virtual_copy_linkself(direntries):
     file_links = ['.']
     with pytest.raises(ValueError):
-        os_ext.copytree_virtual(str(prefix_abs), str(target_abs),
-                                file_links, dirs_exist_ok=True)
+        os_ext.copytree_virtual(*direntries, file_links, dirs_exist_ok=True)
 
 
-def test_virtual_copy_linkparent(prefix_abs, target_abs):
+def test_virtual_copy_linkparent(direntries):
     file_links = ['..']
     with pytest.raises(ValueError):
-        os_ext.copytree_virtual(str(prefix_abs), str(target_abs),
-                                file_links, dirs_exist_ok=True)
+        os_ext.copytree_virtual(*direntries, file_links, dirs_exist_ok=True)
 
 
 def test_import_from_file_load_relpath():
