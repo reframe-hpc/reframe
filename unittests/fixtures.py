@@ -7,6 +7,7 @@
 # unittests/fixtures.py -- Fixtures used in multiple unit tests
 #
 import os
+import inspect
 import functools
 import sys
 import tempfile
@@ -124,7 +125,7 @@ def safe_rmtree(path, **kwargs):
     os_ext.rmtree(path, **kwargs)
 
 
-def dispatch(argname):
+def dispatch(argname, suffix=None, before=False, after=False):
     '''Dispatch call to the decorated function to another one based on the type of
     the keyword argument ``argname``.
 
@@ -133,8 +134,18 @@ def dispatch(argname):
     appended. If the target function does not exist, the original function
     will be called.
 
+    If the decorated function is a generator, it will be called twice: before
+    and after the target function. This allows you to perform actions before
+    and after the function call is dispatched.
+
     :arg argname: The name of the decorated function's keyword argument, based
       on whose type we will dispatch the call.
+
+    :arg suffix: A callable taking a single argument that will produce the
+      unique suffix of function where this call will be dispatched. This
+      callable will be called with the value of ``argname`` to the decorated
+      function. If :class:`None` the default suffix mentioned above will be
+      used.
 
     '''
 
@@ -144,6 +155,11 @@ def dispatch(argname):
         @functools.wraps(fn)
         def _wrapped(*args, **kwargs):
             target_fn_name = fn.__name__
+            if not suffix:
+                fn_suffix = f'_{type(kwargs[argname]).__name__}'
+            else:
+                fn_suffix = suffix(kwargs[argname])
+
             if target_fn_name.startswith('test'):
                 target_fn_name = target_fn_name[4:]
 
@@ -153,9 +169,19 @@ def dispatch(argname):
                     f'was passed to {fn.__name__}()'
                 )
 
-            target_fn_name += f'_{type(kwargs[argname]).__name__}'
+            target_fn_name += fn_suffix
             try:
+                if inspect.isgeneratorfunction(fn):
+                    gen = fn(*args, **kwargs)
+                    next(gen)
+
                 fnmodule.__dict__[target_fn_name](*args, **kwargs)
+                if inspect.isgeneratorfunction(fn):
+                    try:
+                        next(gen)
+                    except StopIteration:
+                        pass
+
             except KeyError:
                 # no target function found; use the original one
                 fn(*args, **kwargs)
