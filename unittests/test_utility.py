@@ -1173,3 +1173,77 @@ def test_unique_abs_paths():
 
     with pytest.raises(TypeError):
         os_ext.unique_abs_paths(None)
+
+
+def test_cray_cdt_version(tmp_path, monkeypatch):
+    # Mock up a CDT file
+    rcfile = tmp_path / 'rcfile'
+    with open(rcfile, 'w') as fp:
+        fp.write('#%Module CDT 20.06\nblah blah\n')
+
+    monkeypatch.setenv('MODULERCFILE', str(rcfile))
+    assert os_ext.cray_cdt_version() == '20.06'
+
+
+def test_cray_cdt_version_unknown_fmt(tmp_path, monkeypatch):
+    # Mock up a CDT file
+    rcfile = tmp_path / 'rcfile'
+    with open(rcfile, 'w') as fp:
+        fp.write('random stuff')
+
+    monkeypatch.setenv('MODULERCFILE', str(rcfile))
+    assert os_ext.cray_cdt_version() is None
+
+
+def test_cray_cdt_version_empty_file(tmp_path, monkeypatch):
+    # Mock up a CDT file
+    rcfile = tmp_path / 'rcfile'
+    rcfile.touch()
+    monkeypatch.setenv('MODULERCFILE', str(rcfile))
+    assert os_ext.cray_cdt_version() is None
+
+
+def test_cray_cdt_version_no_such_file(tmp_path, monkeypatch):
+    # Mock up a CDT file
+    rcfile = tmp_path / 'rcfile'
+    monkeypatch.setenv('MODULERCFILE', str(rcfile))
+    assert os_ext.cray_cdt_version() is None
+
+
+def test_cray_cle_info(tmp_path):
+    # Mock up a CLE release
+    cle_info_file = tmp_path / 'cle-release'
+    with open(cle_info_file, 'w') as fp:
+        fp.write('RELEASE=7.0.UP01\n'
+                 'BUILD=7.0.1227\n'
+                 'DATE=20200326\n'
+                 'ARCH=noarch\n'
+                 'NETWORK=ari\n'
+                 'PATCHSET=09-202003261814\n')
+
+    cle_info = os_ext.cray_cle_info(cle_info_file)
+    assert cle_info.release == '7.0.UP01'
+    assert cle_info.build == '7.0.1227'
+    assert cle_info.date == '20200326'
+    assert cle_info.network == 'ari'
+    assert cle_info.patchset == '09'
+
+
+def test_cray_cle_info_no_such_file(tmp_path):
+    cle_info_file = tmp_path / 'cle-release'
+    assert os_ext.cray_cle_info(cle_info_file) is None
+
+
+def test_cray_cle_info_missing_parts(tmp_path):
+    # Mock up a CLE release
+    cle_info_file = tmp_path / 'cle-release'
+    with open(cle_info_file, 'w') as fp:
+        fp.write('RELEASE=7.0.UP01\n'
+                 'PATCHSET=09-202003261814\n')
+
+    cle_info = os_ext.cray_cle_info(cle_info_file)
+    assert cle_info.release == '7.0.UP01'
+    assert cle_info.build is None
+    assert cle_info.date is None
+    assert cle_info.network is None
+    assert cle_info.patchset == '09'
