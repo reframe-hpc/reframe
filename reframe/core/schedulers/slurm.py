@@ -214,7 +214,7 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         if constraints:
             preamble.append(
-                self._format_option(','.join(constraints), '--constraint={0}')
+                self._format_option('&'.join(constraints), '--constraint={0}')
             )
 
         preamble.append(self._format_option(hint, '--hint={0}'))
@@ -326,7 +326,7 @@ class SlurmJobScheduler(sched.JobScheduler):
             'available nodes now: %s' % (partitions, len(nodes)))
 
         if constraints:
-            constraints = set(constraints.strip().split(','))
+            constraints = set(constraints.strip().split('&'))
             nodes = {n for n in nodes if n.active_features >= constraints}
             getlogger().debug(
                 'flex_alloc_nodes: filtering nodes by constraint(s) %s: '

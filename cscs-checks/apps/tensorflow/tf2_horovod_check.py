@@ -5,6 +5,7 @@
 
 import reframe as rfm
 import reframe.utility.sanity as sn
+import reframe.utility.os_ext as os_ext
 
 
 @rfm.required_version('>=2.16')
@@ -14,7 +15,10 @@ class TensorFlow2HorovodTest(rfm.RunOnlyRegressionTest):
         self.descr = 'Distributed training with TensorFlow2 and Horovod'
         self.valid_systems = ['daint:gpu']
         self.valid_prog_environs = ['builtin']
-        self.modules = ['Horovod/0.18.1-CrayGNU-19.10-tf-2.0.0']
+
+        # FIXME: The following will not be needed after the Daint upgrade
+        cray_cdt_version = os_ext.cray_cdt_version() or '19.10'
+        self.modules = [f'Horovod/0.19.1-CrayGNU-{cray_cdt_version}-tf-2.2.0']
         self.sourcesdir = None
         self.num_tasks_per_node = 1
         self.num_cpus_per_task = 12
@@ -23,26 +27,26 @@ class TensorFlow2HorovodTest(rfm.RunOnlyRegressionTest):
             self.num_tasks = 8
             self.reference = {
                 'dom:gpu': {
-                    'throughput': (2031.6, -0.05, None, 'images/s'),
-                    'throughput_per_gpu': (253.9, -0.05, None, 'images/s'),
+                    'throughput': (1712, -0.05, None, 'images/s'),
+                    'throughput_per_gpu': (214, -0.05, None, 'images/s'),
                 },
                 'daint:gpu': {
-                    'throughput': (2031.6, -0.05, None, 'images/s'),
-                    'throughput_per_gpu': (253.9, -0.05, None, 'images/s')
+                    'throughput': (1712, -0.05, None, 'images/s'),
+                    'throughput_per_gpu': (214, -0.05, None, 'images/s')
                 },
             }
         else:
             self.num_tasks = 32
             self.reference = {
                 'daint:gpu': {
-                    'throughput': (7976.6, -0.05, None, 'images/s'),
-                    'throughput_per_gpu': (253.9, -0.05, None, 'images/s')
+                    'throughput': (6848, -0.05, None, 'images/s'),
+                    'throughput_per_gpu': (214, -0.05, None, 'images/s')
                 },
             }
         self.perf_patterns = {
             'throughput': sn.extractsingle(
-                r'Total img/sec on %s GPU\(s\): '
-                r'(?P<throughput>\S+) \S+' % self.num_tasks,
+                rf'Total img/sec on {self.num_tasks} GPU\(s\): '
+                rf'(?P<throughput>\S+) \S+',
                 self.stdout, 'throughput', float),
             'throughput_per_gpu': sn.extractsingle(
                 r'Img/sec per GPU: (?P<throughput_per_gpu>\S+) \S+',
@@ -51,8 +55,8 @@ class TensorFlow2HorovodTest(rfm.RunOnlyRegressionTest):
         model = 'InceptionV3'
         batch_size = 64
         self.sanity_patterns = sn.all([
-            sn.assert_found(r'Model: %s' % model, self.stdout),
-            sn.assert_found(r'Batch size: %s' % batch_size, self.stdout)
+            sn.assert_found(rf'Model: {model}', self.stdout),
+            sn.assert_found(rf'Batch size: {batch_size}', self.stdout)
         ])
         self.variables = {
             'NCCL_DEBUG': 'INFO',
@@ -61,13 +65,16 @@ class TensorFlow2HorovodTest(rfm.RunOnlyRegressionTest):
             'OMP_NUM_THREADS': '$SLURM_CPUS_PER_TASK',
         }
         self.prerun_cmds = ['wget https://raw.githubusercontent.com/horovod/'
-                            'horovod/26b55a7890f6923ca58cdb68a765ed0ec436ab0f/'
+                            'horovod/842d1075e8440f15e84364f494645c28bf20c3ae/'
                             'examples/tensorflow2_synthetic_benchmark.py']
         self.executable = 'python'
         self.executable_opts = [
             'tensorflow2_synthetic_benchmark.py',
-            '--model %s' % model,
-            '--batch-size %s' % batch_size,
+            f'--model {model}',
+            f'--batch-size {batch_size}',
+            '--num-iters 5',
+            '--num-batches-per-iter 5',
+            '--num-warmup-batches 5',
         ]
         self.tags = {'production'}
         self.maintainers = ['RS', 'TR']

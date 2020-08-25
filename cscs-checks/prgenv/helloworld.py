@@ -20,7 +20,7 @@ class HelloWorldBaseTest(rfm.RegressionTest):
             'cpp': 'C++',
             'f90': 'Fortran 90'
         }
-        self.descr = self.lang_names[lang] + ' Hello World'
+        self.descr = f'{self.lang_names[lang]} Hello World'
         self.sourcepath = 'hello_world'
         self.build_system = 'SingleSource'
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
@@ -106,14 +106,6 @@ class HelloWorldBaseTest(rfm.RegressionTest):
     def compile_timer_end(self):
         elapsed = datetime.now() - self.compilation_time_seconds
         self.compilation_time_seconds = elapsed.total_seconds()
-
-    @rfm.run_before('compile')
-    def cray_linker_workaround(self):
-        # NOTE: Workaround for using CCE < 9.1 in CLE7.UP01.PS03 and above
-        # See Patch Set README.txt for more details.
-        if (self.current_system.name == 'dom' and
-            self.current_environ.name.startswith('PrgEnv-cray')):
-            self.variables['LINKER_X86_64'] = '/usr/bin/ld'
 
 
 @rfm.required_version('>=2.14')

@@ -1,20 +1,30 @@
-from paraview.simple import *
 import os
+
+from paraview.simple import *
+
+
 basename = os.getenv('SCRATCH')
 if basename is None:
     basename = "/tmp"
 
 Version = str(GetParaViewVersion())
-if(GetParaViewVersion() > 5.6):
-    from paraview.modules.vtkPVClientServerCoreCorePython import (
-        vtkProcessModule)
-    info = GetOpenGLInformation(
-        location=servermanager.vtkSMSession.RENDER_SERVER)
-else:
-    from paraview.servermanager import vtkProcessModule
-    from vtk.vtkPVClientServerCoreRendering import vtkPVOpenGLInformation
-    info = vtkPVOpenGLInformation()
-    info.CopyFromObject(None)
+if(servermanager.vtkSMProxyManager.GetVersionMajor() == 5):
+    if(servermanager.vtkSMProxyManager.GetVersionMinor() == 7):
+        from paraview.modules.vtkPVClientServerCoreCorePython import (
+            vtkProcessModule)
+        info = GetOpenGLInformation(
+            location=servermanager.vtkSMSession.RENDER_SERVER
+        )
+    elif(servermanager.vtkSMProxyManager.GetVersionMinor() == 8):
+        from paraview.modules.vtkRemotingCore import vtkProcessModule
+        info = GetOpenGLInformation(
+            location=servermanager.vtkSMSession.RENDER_SERVER
+        )
+    else:
+        from paraview.servermanager import vtkProcessModule
+        from vtk.vtkPVClientServerCoreRendering import vtkPVOpenGLInformation
+        info = vtkPVOpenGLInformation()
+        info.CopyFromObject(None)
 
 rank = vtkProcessModule.GetProcessModule().GetPartitionId()
 nbprocs = servermanager.ActiveConnection.GetNumberOfDataPartitions()
@@ -75,6 +85,7 @@ IndexedColors = [
 a = []
 for i in range(nbprocs):
     a.extend((str(i), str(i)))
+
 processIdLUT.Annotations = a
 processIdLUT.IndexedColors = IndexedColors
 
@@ -89,10 +100,8 @@ processIdLUTColorBar.Visibility = 1
 rep.SetScalarBarVisibility(view, True)
 
 view.Background = [.7, .7, .7]
-
-Render()
-
 view.ViewSize = [1024, 1024]
+
 # change the pathname to a place where you have write access
 filename = basename + "/coloredSphere_v" + Version + "." + Vendor + ".png"
 SaveScreenshot(filename=filename, view=view)

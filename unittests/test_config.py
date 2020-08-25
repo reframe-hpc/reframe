@@ -229,7 +229,7 @@ def test_select_subconfig():
     assert site_config.get('systems/0/partitions/0/container_platforms') == []
     assert site_config.get('systems/0/partitions/0/modules') == []
     assert site_config.get('systems/0/partitions/0/variables') == []
-    assert site_config.get('systems/0/partitions/0/max_jobs') == 1
+    assert site_config.get('systems/0/partitions/0/max_jobs') == 8
     assert len(site_config['environments']) == 6
     assert site_config.get('environments/@PrgEnv-gnu/cc') == 'gcc'
     assert site_config.get('environments/0/cxx') == 'g++'
