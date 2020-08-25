@@ -8,7 +8,6 @@ import pytest
 import stat
 import tempfile
 import time
-import unittest
 
 import reframe.core.shell as shell
 import reframe.utility.os_ext as os_ext

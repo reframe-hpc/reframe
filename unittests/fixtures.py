@@ -6,9 +6,9 @@
 #
 # unittests/fixtures.py -- Fixtures used in multiple unit tests
 #
-import os
-import inspect
 import functools
+import inspect
+import os
 import sys
 import tempfile
 
@@ -42,18 +42,6 @@ def init_runtime():
     site_config = config.load_config('unittests/resources/settings.py')
     site_config.select_subconfig('generic')
     rt.init_runtime(site_config)
-
-
-def switch_to_user_runtime(fn):
-    '''Decorator to switch to the user supplied configuration.
-
-    If no such configuration exists, this decorator returns the target function
-    untouched.
-    '''
-    if USER_CONFIG_FILE is None:
-        return fn
-
-    return rt.switch_runtime(USER_CONFIG_FILE, USER_SYSTEM)(fn)
 
 
 def partition_by_scheduler(name=None):
@@ -107,22 +95,6 @@ def custom_prefix(prefix):
         return cls
 
     return _set_prefix
-
-
-def safe_rmtree(path, **kwargs):
-    '''Do some safety checks before removing path to protect against silly, but
-    catastrophic bugs, during development.
-
-    Do not allow removing any subdirectory of reframe or any directory
-    containing reframe. Also do not allow removing the user's $HOME directory.
-    '''
-
-    path = os.path.abspath(path)
-    common_path = os.path.commonpath([reframe.INSTALL_PREFIX, path])
-    assert common_path != reframe.INSTALL_PREFIX
-    assert common_path != path
-    assert path != os.environ['HOME']
-    os_ext.rmtree(path, **kwargs)
 
 
 def dispatch(argname, suffix=None):

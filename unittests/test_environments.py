@@ -157,7 +157,6 @@ def test_env_not_equal(base_environ):
     assert env1 != env2
 
 
-@fixtures.switch_to_user_runtime
 def test_env_conflict(base_environ, user_runtime, modules_system):
     env0 = env.Environment('env0', ['testmod_foo', 'testmod_boo'])
     env1 = env.Environment('env1', ['testmod_bar'])

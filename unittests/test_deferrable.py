@@ -37,7 +37,7 @@ def test_iter():
     dl = sn.defer(l)
     l.append(4)
     for i, e in enumerate(dl, start=1):
-            assert i == e
+        assert i == e
 
 
 @sn.sanity_function
@@ -123,8 +123,8 @@ def test_contains_set():
 
 
 def test_contains_dict():
-        d = {1: 'a', 2: 'b'}
-        assert 2 in sn.defer(d)
+    d = {1: 'a', 2: 'b'}
+    assert 2 in sn.defer(d)
 
 
 class V:
