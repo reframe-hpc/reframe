@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import builtins
-import collections
+import collections.abc
 import glob as pyglob
 import itertools
 import re
@@ -537,7 +537,7 @@ def _callable_name(fn):
 
 
 def _extractiter_singletag(patt, filename, tag, conv, encoding):
-    if isinstance(conv, collections.Iterable):
+    if isinstance(conv, collections.abc.Iterable):
         raise SanityError(f'multiple conversion functions given for the '
                           f'single capturing group {tag!r}')
 
@@ -566,7 +566,7 @@ def _extractiter_multitag(patt, filename, tags, conv, encoding):
                 raise SanityError(f'no such group in pattern {patt!r}: {t}')
 
         converted_vals = []
-        if not isinstance(conv, collections.Iterable):
+        if not isinstance(conv, collections.abc.Iterable):
             conv = [conv] * builtins.len(val)
         elif builtins.len(conv) > builtins.len(val):
             conv = conv[:builtins.len(val)]
@@ -594,7 +594,7 @@ def extractiter(patt, filename, tag=0, conv=None, encoding='utf-8'):
     a generator object, instead of a list, which you can use to iterate over
     the extracted values.
     '''
-    if isinstance(tag, collections.Iterable) and not isinstance(tag, str):
+    if isinstance(tag, collections.abc.Iterable) and not isinstance(tag, str):
         yield from _extractiter_multitag(patt, filename, tag, conv, encoding)
     else:
         yield from _extractiter_singletag(patt, filename, tag, conv, encoding)

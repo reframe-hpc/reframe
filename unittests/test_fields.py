@@ -6,251 +6,257 @@
 import datetime
 import os
 import pytest
-import unittest
 
 import reframe.core.fields as fields
 from reframe.core.exceptions import ReframeDeprecationWarning
 from reframe.utility import ScopedDict
 
 
-class TestFields(unittest.TestCase):
-    def test_not_set_attribute(self):
-        class FieldTester:
-            var = fields.Field('var')
+def test_not_set_attribute():
+    class FieldTester:
+        var = fields.Field('var')
 
-        c = FieldTester()
-        with pytest.raises(AttributeError):
-            a = c.var
+    c = FieldTester()
+    with pytest.raises(AttributeError):
+        a = c.var
 
-        with pytest.raises(AttributeError):
-            getattr(c, 'var')
+    with pytest.raises(AttributeError):
+        getattr(c, 'var')
 
-    def test_copy_on_write_field(self):
-        class FieldTester:
-            cow = fields.CopyOnWriteField('cow')
 
-        tester = FieldTester()
-        var = [1, [2, 4], 3]
+def test_copy_on_write_field():
+    class FieldTester:
+        cow = fields.CopyOnWriteField('cow')
 
-        # Set copy-on-write field
-        tester.cow = var
+    tester = FieldTester()
+    var = [1, [2, 4], 3]
 
-        # Verify that the lists are different
-        assert var is not tester.cow
+    # Set copy-on-write field
+    tester.cow = var
 
-        # Make sure we have a deep copy
-        var[1].append(5)
-        assert tester.cow == [1, [2, 4], 3]
-        assert isinstance(FieldTester.cow, fields.CopyOnWriteField)
+    # Verify that the lists are different
+    assert var is not tester.cow
 
-    def test_constant_field(self):
-        class FieldTester:
-            ro = fields.ConstantField('foo')
+    # Make sure we have a deep copy
+    var[1].append(5)
+    assert tester.cow == [1, [2, 4], 3]
+    assert isinstance(FieldTester.cow, fields.CopyOnWriteField)
 
-        tester = FieldTester()
-        assert FieldTester.ro == 'foo'
-        assert tester.ro == 'foo'
-        with pytest.raises(ValueError):
-            tester.ro = 'bar'
 
-    def test_typed_field(self):
-        class ClassA:
-            def __init__(self, val):
-                self.value = val
+def test_constant_field():
+    class FieldTester:
+        ro = fields.ConstantField('foo')
 
-        class ClassB(ClassA):
-            def __init__(self):
-                super().__init__(10)
+    tester = FieldTester()
+    assert FieldTester.ro == 'foo'
+    assert tester.ro == 'foo'
+    with pytest.raises(ValueError):
+        tester.ro = 'bar'
 
-        class FieldTester:
-            field = fields.TypedField('field', ClassA)
-            field_any = fields.TypedField('field_any', ClassA, str, type(None))
 
-            def __init__(self, value):
-                self.field = value
+def test_typed_field():
+    class ClassA:
+        def __init__(self, val):
+            self.value = val
 
-        tester = FieldTester(ClassA(3))
-        assert isinstance(FieldTester.field, fields.TypedField)
-        assert 3 == tester.field.value
-        with pytest.raises(TypeError):
-            FieldTester(3)
+    class ClassB(ClassA):
+        def __init__(self):
+            super().__init__(10)
 
-        tester.field = ClassB()
-        assert 10 == tester.field.value
-        with pytest.raises(TypeError):
-            tester.field = None
+    class FieldTester:
+        field = fields.TypedField('field', ClassA)
+        field_any = fields.TypedField('field_any', ClassA, str, type(None))
 
-        tester.field_any = None
-        tester.field_any = 'foo'
-        tester.field_any = ClassA(5)
-        with pytest.raises(TypeError):
-            tester.field_any = 3
+        def __init__(self, value):
+            self.field = value
 
-    def test_timer_field(self):
-        class FieldTester:
-            field = fields.TimerField('field')
-            field_maybe_none = fields.TimerField(
-                'field_maybe_none', type(None))
+    tester = FieldTester(ClassA(3))
+    assert isinstance(FieldTester.field, fields.TypedField)
+    assert 3 == tester.field.value
+    with pytest.raises(TypeError):
+        FieldTester(3)
 
-        tester = FieldTester()
-        tester.field = '1d65h22m87s'
-        tester.field_maybe_none = None
-        assert isinstance(FieldTester.field, fields.TimerField)
-        assert (datetime.timedelta(days=1, hours=65,
-                                   minutes=22, seconds=87) == tester.field)
-        tester.field = datetime.timedelta(days=1, hours=65,
-                                          minutes=22, seconds=87)
-        assert (datetime.timedelta(days=1, hours=65,
-                                   minutes=22, seconds=87) == tester.field)
-        tester.field = ''
-        assert (datetime.timedelta(days=0, hours=0,
-                                   minutes=0, seconds=0) == tester.field)
-        with pytest.warns(ReframeDeprecationWarning):
-            tester.field = (65, 22, 87)
+    tester.field = ClassB()
+    assert 10 == tester.field.value
+    with pytest.raises(TypeError):
+        tester.field = None
 
-        with pytest.raises(ValueError):
-            tester.field = '1e'
+    tester.field_any = None
+    tester.field_any = 'foo'
+    tester.field_any = ClassA(5)
+    with pytest.raises(TypeError):
+        tester.field_any = 3
 
-        with pytest.raises(ValueError):
-            tester.field = '-10m5s'
 
-        with pytest.raises(ValueError):
-            tester.field = '10m-5s'
+def test_timer_field():
+    class FieldTester:
+        field = fields.TimerField('field')
+        field_maybe_none = fields.TimerField(
+            'field_maybe_none', type(None))
 
-        with pytest.raises(ValueError):
-            tester.field = 'm10s'
+    tester = FieldTester()
+    tester.field = '1d65h22m87s'
+    tester.field_maybe_none = None
+    assert isinstance(FieldTester.field, fields.TimerField)
+    assert (datetime.timedelta(days=1, hours=65,
+                               minutes=22, seconds=87) == tester.field)
+    tester.field = datetime.timedelta(days=1, hours=65,
+                                      minutes=22, seconds=87)
+    assert (datetime.timedelta(days=1, hours=65,
+                               minutes=22, seconds=87) == tester.field)
+    tester.field = ''
+    assert (datetime.timedelta(days=0, hours=0,
+                               minutes=0, seconds=0) == tester.field)
+    with pytest.warns(ReframeDeprecationWarning):
+        tester.field = (65, 22, 87)
 
-        with pytest.raises(ValueError):
-            tester.field = '10m10'
+    with pytest.raises(ValueError):
+        tester.field = '1e'
 
-        with pytest.raises(ValueError):
-            tester.field = '10m10m1s'
+    with pytest.raises(ValueError):
+        tester.field = '-10m5s'
 
-        with pytest.raises(ValueError):
-            tester.field = '10m5s3m'
+    with pytest.raises(ValueError):
+        tester.field = '10m-5s'
 
-        with pytest.raises(ValueError):
-            tester.field = '10ms'
+    with pytest.raises(ValueError):
+        tester.field = 'm10s'
 
-        with pytest.raises(ValueError):
-            tester.field = '10'
+    with pytest.raises(ValueError):
+        tester.field = '10m10'
 
-    def test_proxy_field(self):
-        class Target:
-            def __init__(self):
-                self.a = 1
-                self.b = 2
+    with pytest.raises(ValueError):
+        tester.field = '10m10m1s'
 
-        t = Target()
+    with pytest.raises(ValueError):
+        tester.field = '10m5s3m'
 
-        class Proxy:
-            a = fields.ForwardField(t, 'a')
-            b = fields.ForwardField(t, 'b')
+    with pytest.raises(ValueError):
+        tester.field = '10ms'
 
-        proxy = Proxy()
-        assert isinstance(Proxy.a, fields.ForwardField)
-        assert 1 == proxy.a
-        assert 2 == proxy.b
+    with pytest.raises(ValueError):
+        tester.field = '10'
 
-        proxy.a = 3
-        proxy.b = 4
-        assert 3 == t.a
-        assert 4 == t.b
 
-    def test_deprecated_field(self):
-        class FieldTester:
-            value = fields.DeprecatedField(fields.TypedField('value', int),
-                                           'value field is deprecated')
-            _value = fields.TypedField('value', int)
-            ro = fields.DeprecatedField(fields.TypedField('ro', int),
-                                        'value field is deprecated',
-                                        fields.DeprecatedField.OP_SET)
-            _ro = fields.TypedField('ro', int)
-            wo = fields.DeprecatedField(fields.TypedField('wo', int),
-                                        'value field is deprecated',
-                                        fields.DeprecatedField.OP_GET)
+def test_proxy_field():
+    class Target:
+        def __init__(self):
+            self.a = 1
+            self.b = 2
 
-            def __init__(self):
-                self._value = 1
-                self._ro = 2
-                self.wo = 3
+    t = Target()
 
-        tester = FieldTester()
+    class Proxy:
+        a = fields.ForwardField(t, 'a')
+        b = fields.ForwardField(t, 'b')
 
-        # Test set operation
-        with pytest.warns(ReframeDeprecationWarning):
-            tester.value = 2
+    proxy = Proxy()
+    assert isinstance(Proxy.a, fields.ForwardField)
+    assert 1 == proxy.a
+    assert 2 == proxy.b
 
-        with pytest.warns(ReframeDeprecationWarning):
-            tester.ro = 1
+    proxy.a = 3
+    proxy.b = 4
+    assert 3 == t.a
+    assert 4 == t.b
 
-        try:
-            tester.wo = 20
-        except ReframeDeprecationWarning:
-            pytest.fail('deprecation warning not expected here')
 
-        # Test get operation
-        try:
-            a = tester.ro
-        except ReframeDeprecationWarning:
-            pytest.fail('deprecation warning not expected here')
+def test_deprecated_field():
+    class FieldTester:
+        value = fields.DeprecatedField(fields.TypedField('value', int),
+                                       'value field is deprecated')
+        _value = fields.TypedField('value', int)
+        ro = fields.DeprecatedField(fields.TypedField('ro', int),
+                                    'value field is deprecated',
+                                    fields.DeprecatedField.OP_SET)
+        _ro = fields.TypedField('ro', int)
+        wo = fields.DeprecatedField(fields.TypedField('wo', int),
+                                    'value field is deprecated',
+                                    fields.DeprecatedField.OP_GET)
 
-        with pytest.warns(ReframeDeprecationWarning):
-            a = tester.value
+        def __init__(self):
+            self._value = 1
+            self._ro = 2
+            self.wo = 3
 
-        with pytest.warns(ReframeDeprecationWarning):
-            a = tester.wo
+    tester = FieldTester()
 
-    def test_absolute_path_field(self):
-        class FieldTester:
-            value = fields.AbsolutePathField('value', type(None))
+    # Test set operation
+    with pytest.warns(ReframeDeprecationWarning):
+        tester.value = 2
 
-            def __init__(self, value):
-                self.value = value
+    with pytest.warns(ReframeDeprecationWarning):
+        tester.ro = 1
 
-        tester = FieldTester('foo')
-        assert os.path.abspath('foo') == tester.value
+    try:
+        tester.wo = 20
+    except ReframeDeprecationWarning:
+        pytest.fail('deprecation warning not expected here')
 
-        # Test set with an absolute path already
-        tester.value = os.path.abspath('foo')
-        assert os.path.abspath('foo') == tester.value
+    # Test get operation
+    try:
+        a = tester.ro
+    except ReframeDeprecationWarning:
+        pytest.fail('deprecation warning not expected here')
 
-        # This should not raise
-        tester.value = None
-        with pytest.raises(TypeError):
-            tester.value = 1
+    with pytest.warns(ReframeDeprecationWarning):
+        a = tester.value
 
-    def test_scoped_dict_field(self):
-        class FieldTester:
-            field = fields.ScopedDictField('field', int)
-            field_maybe_none = fields.ScopedDictField(
-                'field_maybe_none', int, type(None))
+    with pytest.warns(ReframeDeprecationWarning):
+        a = tester.wo
 
-        tester = FieldTester()
 
-        # Test valid assignments
-        tester.field = {
-            'a': {'k1': 1, 'k2': 2},
-            'a:b': {'k1': 3, 'k3': 4},
-            'a:b:c': {'k2': 5, 'k3': 6},
-            '*': {'k1': 7, 'k3': 9, 'k4': 10}
-        }
-        tester.field_maybe_none = None
+def test_absolute_path_field():
+    class FieldTester:
+        value = fields.AbsolutePathField('value', type(None))
 
-        # Check that we have indeed a ScopedDict here
-        assert isinstance(FieldTester.field, fields.ScopedDictField)
-        assert isinstance(tester.field, ScopedDict)
-        assert 10 == tester.field['a:k4']
+        def __init__(self, value):
+            self.value = value
 
-        # Test invalid assignments
-        with pytest.raises(TypeError):
-            tester.field = {1: "a", 2: "b"}
+    tester = FieldTester('foo')
+    assert os.path.abspath('foo') == tester.value
 
-        with pytest.raises(TypeError):
-            tester.field = [('a', 1), ('b', 2)]
+    # Test set with an absolute path already
+    tester.value = os.path.abspath('foo')
+    assert os.path.abspath('foo') == tester.value
 
-        with pytest.raises(TypeError):
-            tester.field = {'a': {1: 'k1'}, 'b': {2: 'k2'}}
+    # This should not raise
+    tester.value = None
+    with pytest.raises(TypeError):
+        tester.value = 1
 
-        # Test assigning a ScopedDict already
-        tester.field = ScopedDict({})
+
+def test_scoped_dict_field():
+    class FieldTester:
+        field = fields.ScopedDictField('field', int)
+        field_maybe_none = fields.ScopedDictField(
+            'field_maybe_none', int, type(None))
+
+    tester = FieldTester()
+
+    # Test valid assignments
+    tester.field = {
+        'a': {'k1': 1, 'k2': 2},
+        'a:b': {'k1': 3, 'k3': 4},
+        'a:b:c': {'k2': 5, 'k3': 6},
+        '*': {'k1': 7, 'k3': 9, 'k4': 10}
+    }
+    tester.field_maybe_none = None
+
+    # Check that we have indeed a ScopedDict here
+    assert isinstance(FieldTester.field, fields.ScopedDictField)
+    assert isinstance(tester.field, ScopedDict)
+    assert 10 == tester.field['a:k4']
+
+    # Test invalid assignments
+    with pytest.raises(TypeError):
+        tester.field = {1: "a", 2: "b"}
+
+    with pytest.raises(TypeError):
+        tester.field = [('a', 1), ('b', 2)]
+
+    with pytest.raises(TypeError):
+        tester.field = {'a': {1: 'k1'}, 'b': {2: 'k2'}}
+
+    # Test assigning a ScopedDict already
+    tester.field = ScopedDict({})
