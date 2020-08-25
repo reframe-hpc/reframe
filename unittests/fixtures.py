@@ -126,8 +126,8 @@ def safe_rmtree(path, **kwargs):
 
 
 def dispatch(argname, suffix=None):
-    '''Dispatch call to the decorated function to another one based on the type of
-    the keyword argument ``argname``.
+    '''Dispatch call to the decorated function to another one based on the type
+    of the keyword argument ``argname``.
 
     The target function has the same name as the decorated one, but without
     the ``test_`` prefix and a suffix ``_{type(kwargs[argname])}`` will be

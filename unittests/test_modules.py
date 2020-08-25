@@ -215,7 +215,8 @@ def modules_system_emu():
         def __init__(self):
             self._loaded_modules = set()
 
-            # The following two variables record the sequence of loads and unloads
+            # The following two variables record the sequence of loads and
+            # unloads
             self.load_seq = []
             self.unload_seq = []
 
