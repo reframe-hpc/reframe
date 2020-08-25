@@ -507,6 +507,9 @@ def tempfile(tmp_path):
         fp.write('Step: 1\n')
         fp.write('Step: 2\n')
         fp.write('Step: 3\n')
+        fp.write('Number: 1 2\n')
+        fp.write('Number: 2 4\n')
+        fp.write('Number: 3 6\n')
 
     return str(tmp_file)
 
@@ -728,6 +731,61 @@ def test_extractsingle_encoding(utf16_file):
         sn.extractsingle(r'Odyssey', utf16_file, encoding='utf-16')
     )
     assert -1 != res.find('Odyssey')
+
+
+def test_extractall_multiple_tags(tempfile):
+    # Check multiple numeric groups
+    res = sn.evaluate(sn.extractall(
+        r'Number: (\d+) (\d+)', tempfile, (1, 2)))
+    for expected, v in enumerate(res, start=1):
+        assert str(expected) == v[0]
+        assert str(2*expected) == v[1]
+
+    # Check multiple named groups
+    res = sn.evaluate(sn.extractall(
+        r'Number: (?P<no1>\d+) (?P<no2>\d+)', tempfile,
+        ('no1', 'no2')))
+    for expected, v in enumerate(res, start=1):
+        assert str(expected) == v[0]
+        assert str(2*expected) == v[1]
+
+    # Check single convert function
+    res = sn.evaluate(sn.extractall(r'Number: (?P<no1>\d+) (?P<no2>\d+)',
+                                    tempfile, ('no1', 'no2'), int))
+    for expected, v in enumerate(res, start=1):
+        assert expected == v[0]
+        assert 2 * expected == v[1]
+
+    # Check multiple convert functions
+    res = sn.evaluate(sn.extractall(r'Number: (?P<no1>\d+) (?P<no2>\d+)',
+                                    tempfile, ('no1', 'no2'),
+                                    (int, float)))
+    for expected, v in enumerate(res, start=1):
+        assert expected == v[0]
+        assert 2 * expected == v[1]
+        assert isinstance(v[1], float)
+
+    # Check more conversion functions than tags
+    res = sn.evaluate(sn.extractall(r'Number: (?P<no1>\d+) (?P<no2>\d+)',
+                                    tempfile, ('no1', 'no2'),
+                                    [int, float, float, float]))
+    for expected, v in enumerate(res, start=1):
+        assert expected == v[0]
+        assert 2 * expected == v[1]
+
+    # Check fewer convert functions than tags
+    res = sn.evaluate(sn.extractall(r'Number: (?P<no1>\d+) (?P<no2>\d+)',
+                                    tempfile, ('no1', 'no2'),
+                                    [int]))
+    for expected, v in enumerate(res, start=1):
+        assert expected == v[0]
+        assert 2 * expected == v[1]
+
+    # Check multiple conversion functions and a single tag
+    with pytest.raises(SanityError):
+        res = sn.evaluate(sn.extractall(
+            r'Number: (?P<no>\d+) \d+', tempfile, 'no', [int, float])
+        )
 
 
 def test_safe_format():
