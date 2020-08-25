@@ -125,7 +125,7 @@ def safe_rmtree(path, **kwargs):
     os_ext.rmtree(path, **kwargs)
 
 
-def dispatch(argname, suffix=None, before=False, after=False):
+def dispatch(argname, suffix=None):
     '''Dispatch call to the decorated function to another one based on the type of
     the keyword argument ``argname``.
 
@@ -142,10 +142,10 @@ def dispatch(argname, suffix=None, before=False, after=False):
       on whose type we will dispatch the call.
 
     :arg suffix: A callable taking a single argument that will produce the
-      unique suffix of function where this call will be dispatched. This
-      callable will be called with the value of ``argname`` to the decorated
-      function. If :class:`None` the default suffix mentioned above will be
-      used.
+      unique suffix of the function where this call will be dispatched. This
+      callable will be passed the value of the ``argname`` argument that was
+      passed to the decorated function. If :class:`None` the default suffix
+      mentioned above will be used.
 
     '''
 

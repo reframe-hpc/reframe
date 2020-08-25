@@ -11,33 +11,6 @@ from reframe.core.backends import getlauncher
 from reframe.core.schedulers import Job, JobScheduler
 
 
-class _FakeJobScheduler(JobScheduler):
-    @property
-    def completion_time(self, job):
-        pass
-
-    def emit_preamble(self, job):
-        pass
-
-    def submit(self, job):
-        pass
-
-    def wait(self, job):
-        pass
-
-    def cancel(self, job):
-        pass
-
-    def finished(self, job):
-        pass
-
-    def allnodes(self):
-        pass
-
-    def filternodes(self, job, nodes):
-        pass
-
-
 @pytest.fixture(params=[
     'alps', 'launcherwrapper', 'local', 'mpiexec',
     'mpirun', 'srun', 'srunalloc', 'ssh', 'upcrun', 'upcxx-run'
@@ -57,8 +30,34 @@ def launcher(request):
 
 @pytest.fixture
 def make_job():
+    class FakeJobScheduler(JobScheduler):
+        @property
+        def completion_time(self, job):
+            pass
+
+        def emit_preamble(self, job):
+            pass
+
+        def submit(self, job):
+            pass
+
+        def wait(self, job):
+            pass
+
+        def cancel(self, job):
+            pass
+
+        def finished(self, job):
+            pass
+
+        def allnodes(self):
+            pass
+
+        def filternodes(self, job, nodes):
+            pass
+
     def _make_job(launcher, *args, **kwargs):
-        return Job.create(_FakeJobScheduler(), launcher,
+        return Job.create(FakeJobScheduler(), launcher,
                           'fake_job', *args, **kwargs)
 
     return _make_job
