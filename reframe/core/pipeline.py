@@ -1436,10 +1436,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
                 for var in variables:
                     name, unit = var
-                    ref_tuple = (
-                        0, None, None,
-                        unit or '(no unit specified)'
-                    )
+                    ref_tuple = (0, None, None, unit or '(no unit specified)')
                     self.reference.update({'*': {name: ref_tuple}})
 
             # We first evaluate and log all performance values and then we
