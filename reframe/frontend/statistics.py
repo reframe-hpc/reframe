@@ -273,7 +273,11 @@ class TestStats:
             for key, ref in t.check.perfvalues.items():
                 var = key.split(':')[-1]
                 val = ref[0]
-                unit = ref[4]
+                try:
+                    unit = ref[4]
+                except IndexError:
+                    unit = '(no unit specified)'
+
                 report_body.append('      * %s: %s %s' % (var, val, unit))
 
         if report_body:
