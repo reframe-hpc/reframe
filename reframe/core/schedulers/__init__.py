@@ -91,7 +91,7 @@ class JobScheduler(abc.ABC):
         '''
 
     @abc.abstractmethod
-    def poll_jobs(self, jobs):
+    def poll_jobs(self, *jobs):
         '''Poll all the requested jobs.
 
         :arg jobs: A list of job descriptors.
@@ -402,6 +402,15 @@ class Job:
             self._completion_time = self._completion_time or time.time()
 
         return done
+
+    def __eq__(self, other):
+        return (
+            self.__class__ == other.__class__ and
+            self.jobid == other.jobid
+        )
+
+    def __hash__(self):
+        return hash(self.jobid)
 
 
 class Node(abc.ABC):

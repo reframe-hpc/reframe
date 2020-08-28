@@ -437,7 +437,7 @@ def test_submit_max_pending_time(make_job, exec_ctx, scheduler):
         pytest.skip(f"max_pending_time not supported by the "
                     f"'{scheduler.registered_name}' scheduler")
 
-    def poll_jobs(jobs):
+    def poll_jobs(*jobs):
         for job in jobs:
             if scheduler.registered_name in ('slurm', 'squeue'):
                 job.state = 'PENDING'

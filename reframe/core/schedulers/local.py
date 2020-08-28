@@ -55,13 +55,13 @@ class LocalJobScheduler(sched.JobScheduler):
             stdout=_f_stdout,
             stderr=_f_stderr,
             start_new_session=True)
-        self._procs[proc.pid] = proc
-        self._f_stdout[proc.pid] = _f_stdout
-        self._f_stderr[proc.pid] = _f_stderr
 
         # Update job info
         job.jobid = proc.pid
         job.nodelist = [socket.gethostname()]
+        self._procs[job] = proc
+        self._f_stdout[job] = _f_stdout
+        self._f_stderr[job] = _f_stderr
 
     def emit_preamble(self, job):
         return []
@@ -95,7 +95,7 @@ class LocalJobScheduler(sched.JobScheduler):
                    number, too). If `None` or `0`, no timeout will be set.
         '''
         t_wait = datetime.now()
-        self._procs[job.jobid].wait(timeout=timeout or None)
+        self._procs[job].wait(timeout=timeout or None)
         t_wait = datetime.now() - t_wait
         try:
             # Wait for all processes in the process group to finish
@@ -152,7 +152,7 @@ class LocalJobScheduler(sched.JobScheduler):
 
         try:
             self._wait_all(job, timeout)
-            job.exitcode = self._procs[job.jobid].returncode
+            job.exitcode = self._procs[job].returncode
             if job.exitcode != 0:
                 job.state = 'FAILURE'
             else:
@@ -164,8 +164,8 @@ class LocalJobScheduler(sched.JobScheduler):
             # Cleanup all the processes of this job
             self._kill_all(job)
             self._wait_all(job)
-            self._f_stdout[job.jobid].close()
-            self._f_stderr[job.jobid].close()
+            self._f_stdout[job].close()
+            self._f_stderr[job].close()
 
     def finished(self, job):
         '''Check if the spawned process has finished.
@@ -174,12 +174,12 @@ class LocalJobScheduler(sched.JobScheduler):
         the process has finished, you *must* call wait() to properly cleanup
         after it.
         '''
-        return self._procs[job.jobid].returncode is not None
+        return self._procs[job].returncode is not None
 
-    def poll_jobs(self, jobs):
+    def poll_jobs(self, *jobs):
         for job in jobs:
-            if job and job.jobid and self._procs[job.jobid]:
-                self._procs[job.jobid].poll()
+            if job.jobid and self._procs[job]:
+                self._procs[job].poll()
 
 
 class _LocalNode(sched.Node):

@@ -132,23 +132,23 @@ class PbsJobScheduler(sched.JobScheduler):
         jobid, *info = jobid_match.group('jobid').split('.', maxsplit=1)
         job.jobid = int(jobid)
         if info:
-            self._pbs_server[job.jobid] = info[0]
+            self._pbs_server[job] = info[0]
 
         job._submit_time = datetime.now()
 
     def wait(self, job):
         intervals = itertools.cycle([1, 2, 3])
         while not self.finished(job):
-            self.poll_jobs([job])
+            self.poll_jobs(job)
             time.sleep(next(intervals))
 
     def cancel(self, job):
-        self._cancelled.add(job.jobid)
+        self._cancelled.add(job)
 
         # Recreate the full job id
         jobid = str(job.jobid)
-        if job.jobid in self._pbs_server:
-            jobid += '.' + self._pbs_server[job.jobid]
+        if job in self._pbs_server:
+            jobid += '.' + self._pbs_server[job]
 
         time_from_submit = (datetime.now() - job._submit_time).total_seconds()
         if time_from_submit < PBS_CANCEL_DELAY:
@@ -162,18 +162,18 @@ class PbsJobScheduler(sched.JobScheduler):
             output_ready = (os.path.exists(job.stdout) and
                             os.path.exists(job.stderr))
 
-        done = job.jobid in self._cancelled or output_ready
+        done = job in self._cancelled or output_ready
         if done:
             t_now = datetime.now()
-            if job.jobid in self._time_finished:
-                job_time_finished = self._time_finished[job.jobid]
+            if job in self._time_finished:
+                job_time_finished = self._time_finished[job]
             else:
-                self._time_finished[job.jobid] = t_now
+                self._time_finished[job] = t_now
                 job_time_finished = t_now
 
             time_from_finish = (t_now - job_time_finished).total_seconds()
 
         return done and time_from_finish > PBS_OUTPUT_WRITEBACK_WAIT
 
-    def poll_jobs(self, jobs):
+    def poll_jobs(self, *jobs):
         pass

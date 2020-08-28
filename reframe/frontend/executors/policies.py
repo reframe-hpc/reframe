@@ -81,7 +81,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
             t_start = datetime.now()
             while True:
                 num_polls += 1
-                sched.poll_jobs([task.check.job])
+                sched.poll_jobs(task.check.job)
                 if task.poll():
                     break
 
@@ -375,7 +375,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             getlogger().debug(f'polling {len(self._running_tasks[partname])} '
                               f'task(s) in {partname}')
             sched.poll_jobs(
-                task.check.job for task in self._running_tasks[partname]
+                *[task.check.job for task in self._running_tasks[partname]]
             )
 
         for t in all_running:

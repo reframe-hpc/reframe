@@ -37,7 +37,7 @@ class FakeJobScheduler(JobScheduler):
     def filternodes(self, job, nodes):
         pass
 
-    def poll_jobs(self, jobs):
+    def poll_jobs(self, *jobs):
         pass
 
 

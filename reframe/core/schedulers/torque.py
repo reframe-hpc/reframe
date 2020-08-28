@@ -42,20 +42,19 @@ class TorqueJobScheduler(PbsJobScheduler):
         job.nodelist = [x.split('/')[0] for x in nodespec.split('+')]
         job.nodelist.sort()
 
-    def poll_jobs(self, jobs):
+    def poll_jobs(self, *jobs):
         '''Update the status of the jobs.'''
-
-        if not jobs:
+        jobids = [str(job.jobid) for job in jobs]
+        if not jobids:
             return
 
-        jobids = [str(job.jobid) for job in jobs]
         completed = os_ext.run_command(f"qstat -f {' '.join(jobids)}")
 
         # Depending on the configuration, completed jobs will remain on the job
         # list for a limited time, or be removed upon completion.
-        # If qstat cannot find any of the jobids, it returns code 153.
+        # If qstat cannot find any of the job IDs, it will return 153.
         # Otherwise, it will return with return code 0 and print information
-        # only for the ones it could find.
+        # only for the jobs it could find.
         if completed.returncode == 153:
             getlogger().debug(
                 'return code = 153: jobids not known by scheduler, '
