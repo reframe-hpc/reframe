@@ -33,9 +33,11 @@ class RegressionTestMeta(type):
             except AttributeError:
                 pass
 
-        hooks['post_setup'] = fn_with_deps + hooks.get('post_setup', [])
-        cls._rfm_pipeline_hooks = hooks
+        if fn_with_deps:
+            hooks['post_setup'] = fn_with_deps + hooks.get('post_setup', [])
 
+        cls._rfm_pipeline_hooks = hooks
+        cls._rfm_disabled_hooks = set()
         cls._final_methods = {v.__name__ for v in namespace.values()
                               if hasattr(v, '_rfm_final')}
 

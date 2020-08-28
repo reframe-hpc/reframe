@@ -1,5 +1,6 @@
 jsonschema
 pytest>=5.0.0
+pyyaml
 coverage
 setuptools
 wcwidth
