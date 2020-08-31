@@ -316,6 +316,10 @@ def main():
         dest='flex_alloc_nodes', metavar='{all|STATE|NUM}', default=None,
         help='Set strategy for the flexible node allocation (default: "idle").'
     )
+    run_options.add_argument(
+        '--disable-hook', action='append', metavar='NAME', dest='hooks',
+        default=[], help='Disable a pipeline hook for this run'
+    )
     env_options.add_argument(
         '-M', '--map-module', action='append', metavar='MAPPING',
         dest='module_mappings', default=[],
@@ -382,10 +386,6 @@ def main():
     misc_options.add_argument(
         '--upgrade-config-file', action='store', metavar='OLD[:NEW]',
         help='Upgrade ReFrame 2.x configuration file to ReFrame 3.x syntax'
-    )
-    misc_options.add_argument(
-        '--disable-hook', action='append', metavar='NAME', dest='hooks',
-        default=[], help='Disable a pipeline hook for this run'
     )
     misc_options.add_argument(
         '-V', '--version', action='version', version=os_ext.reframe_version()
