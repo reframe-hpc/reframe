@@ -22,12 +22,6 @@ class IorCheck(rfm.RegressionTest):
         self.prerun_cmds = ['mkdir -p ' + self.test_dir]
         self.test_file = os.path.join(self.test_dir, 'ior')
         self.fs = {
-            '/scratch/snx1600tds': {
-                'valid_systems': ['dom:gpu', 'dom:mc'],
-                'dom': {
-                    'num_tasks': 2,
-                }
-            },
             '/scratch/snx3000tds': {
                 'valid_systems': ['dom:gpu', 'dom:mc'],
                 'dom': {
@@ -120,8 +114,7 @@ class IorCheck(rfm.RegressionTest):
         self.executable_opts += ['-o', self.test_file]
 
 
-@rfm.parameterized_test(['/scratch/snx1600tds'],
-                        ['/scratch/snx3000tds'],
+@rfm.parameterized_test(['/scratch/snx3000tds'],
                         ['/scratch/snx3000'],
                         ['/users'],
                         ['/scratch/shared/fulen'])
@@ -138,8 +131,7 @@ class IorWriteCheck(IorCheck):
         self.tags |= {'write'}
 
 
-@rfm.parameterized_test(['/scratch/snx1600tds'],
-                        ['/scratch/snx3000tds'],
+@rfm.parameterized_test(['/scratch/snx3000tds'],
                         ['/scratch/snx3000'],
                         ['/users'],
                         ['/scratch/shared/fulen'])
