@@ -453,9 +453,7 @@ def unique_abs_paths(paths, prune_children=True):
 
                 p_parent = os.path.dirname(p_parent)
 
-    # FIXME: This should be performed using the minus operator of
-    # `OrderedSet` once #1165 is fixed.
-    return [p for p in unique_paths if p not in children]
+    return list(unique_paths - children)
 
 
 def cray_cdt_version():

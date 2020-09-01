@@ -1013,6 +1013,38 @@ def random_seed():
     random.seed(1)
 
 
+def test_shortest_sequence():
+    s0 = 'abcde'
+    s1 = [1, 2, 3]
+    assert util.shortest(s0, s1) == s1
+    assert id(util.shortest(s0, s1)) == id(s1)
+    assert util.shortest(s0, s0) == s0
+    with pytest.raises(TypeError):
+        util.shortest(12)
+
+    with pytest.raises(TypeError):
+        util.shortest(x for x in range(10))
+
+    with pytest.raises(TypeError):
+        util.shortest([1], 2)
+
+
+def test_longest_sequence():
+    s0 = 'abcde'
+    s1 = [1, 2, 3]
+    assert util.longest(s0, s1) == s0
+    assert id(util.longest(s0, s1)) == id(s0)
+    assert util.longest(s0, s0) == s0
+    with pytest.raises(TypeError):
+        util.longest(12)
+
+    with pytest.raises(TypeError):
+        util.longest(x for x in range(10))
+
+    with pytest.raises(TypeError):
+        util.longest([1], 2)
+
+
 def test_ordered_set_construction(random_seed):
     l = list(range(10))
     random.shuffle(l)
@@ -1050,15 +1082,23 @@ def test_ordered_set_construction_error():
         s = util.OrderedSet(1, 2, 3)
 
 
-def test_ordered_set_operators():
-    s0 = util.OrderedSet(range(10))
-    s1 = util.OrderedSet(range(20))
-    s2 = util.OrderedSet(range(10, 20))
+def test_ordered_set_repr():
+    assert repr(util.OrderedSet('abc')) == "{'a', 'b', 'c'}"
+    assert str(util.OrderedSet('abc'))  == "{'a', 'b', 'c'}"
 
-    assert s0 == set(range(10))
-    assert set(range(10)) == s0
+
+def test_ordered_set_operators():
+    s0 = util.OrderedSet('abc')
+    s1 = util.OrderedSet('abced')
+    s2 = util.OrderedSet('ed')
+
+    assert s0 == set('abc')
+    assert s0 == util.OrderedSet('abc')
+    assert set('abc') == s0
+    assert util.OrderedSet('abc') == s0
     assert s0 != s1
     assert s1 != s0
+    assert s0 != util.OrderedSet('cab')
 
     assert s0 < s1
     assert s0 <= s1
@@ -1095,7 +1135,6 @@ def test_ordered_set_union(random_seed):
     s0 = util.OrderedSet(l0)
     s1 = util.OrderedSet(l1)
     s2 = util.OrderedSet(l2)
-
     assert list(s0.union(s1, s2)) == l0 + l1 + l2
 
 
@@ -1111,7 +1150,9 @@ def test_ordered_set_intersection(random_seed):
     s1 = util.OrderedSet(l1)
     s2 = util.OrderedSet(l2)
 
-    assert s0.intersection(s1, s2) == s2
+    # OrderedSet must keep the order of elements in s0
+    assert list(s0.intersection(s1, s2)) == [x for x in l0
+                                             if x >= 20 and x < 30]
 
 
 def test_ordered_set_difference():
@@ -1126,7 +1167,8 @@ def test_ordered_set_difference():
     s1 = util.OrderedSet(l1)
     s2 = util.OrderedSet(l2)
 
-    assert s0.difference(s1, s2) == set(range(10, 20))
+    # OrderedSet must keep the order of elements in s0
+    assert list(s0.difference(s1, s2)) == [x for x in l0 if x >= 10 and x < 20]
 
 
 def test_ordered_set_reversed():
