@@ -372,8 +372,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def _poll_tasks(self):
         '''Update the counts of running checks per partition.'''
         getlogger().debug('updating counts for running test cases')
-        all_running = sum(self._running_tasks.values(), [])
-        getlogger().debug('polling %s task(s)' % len(all_running))
         for partname, sched in self._schedulers.items():
             getlogger().debug(f'polling {len(self._running_tasks[partname])} '
                               f'task(s) in {partname}')
@@ -381,8 +379,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 *[task.check.job for task in self._running_tasks[partname]]
             )
 
-        for t in all_running:
-            t.poll()
+            for t in self._running_tasks[partname]:
+                t.poll()
 
     def _setup_all(self):
         still_waiting = []
