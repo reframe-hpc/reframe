@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import contextlib
+import functools
 import itertools
 import math
 import sys
@@ -26,6 +27,8 @@ def _cleanup_all(tasks, *args, **kwargs):
     # Remove cleaned up tests
     tasks[:] = [t for t in tasks if t.ref_count]
 
+def num_values(d):
+    return functools.reduce(lambda l, r: l + len(r), d.values(), 0)
 
 class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def __init__(self):
@@ -81,7 +84,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
             t_start = datetime.now()
             while True:
                 num_polls += 1
-                sched.poll_jobs(task.check.job)
+                sched.poll(task.check.job)
                 if task.poll():
                     break
 
@@ -374,7 +377,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         for partname, sched in self._schedulers.items():
             getlogger().debug(f'polling {len(self._running_tasks[partname])} '
                               f'task(s) in {partname}')
-            sched.poll_jobs(
+            sched.poll(
                 *[task.check.job for task in self._running_tasks[partname]]
             )
 
@@ -463,10 +466,10 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         pollrate = PollRateFunction(0.2, 60)
         num_polls = 0
         t_start = datetime.now()
-        while (sum(self._running_tasks.values(), []) or self._waiting_tasks):
+        while (num_values(self._running_tasks) or self._waiting_tasks):
             getlogger().debug(f'running tasks: '
-                              f'{len(sum(self._running_tasks.values(), []))}')
-            num_polls += len(sum(self._running_tasks.values(), []))
+                              f'{num_values(self._running_tasks)}')
+            num_polls += num_values(self._running_tasks)
             try:
                 self._poll_tasks()
                 self._finalize_all()
@@ -478,12 +481,12 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 getlogger().debug(
                     'polling rate (real): %.3f polls/sec' % real_rate)
 
-                count_running = len(sum(self._running_tasks.values(), []))
-                if count_running:
+                num_running = num_values(self._running_tasks)
+                if num_running:
                     desired_rate = pollrate(t_elapsed, real_rate)
                     getlogger().debug(
                         'polling rate (desired): %.3f' % desired_rate)
-                    t = count_running / desired_rate
+                    t = num_running / desired_rate
                     getlogger().debug('sleeping: %.3fs' % t)
                     time.sleep(t)
 

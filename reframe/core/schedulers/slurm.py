@@ -107,6 +107,7 @@ class SlurmJobScheduler(sched.JobScheduler):
         self._is_cancelling = set()
         self._is_job_array = {}
         self._update_state_count = {}
+        self._job_submit_time = {}
         self._job_submit_timeout = rt.runtime().get_option(
             f'schedulers/@{self.registered_name}/job_submit_timeout'
         )
@@ -122,7 +123,7 @@ class SlurmJobScheduler(sched.JobScheduler):
         with rt.temp_environment(variables={'SLURM_TIME_FORMAT': '%s'}):
             completed = os_ext.run_command(
                 'sacct -S %s -P -j %s -o jobid,end' %
-                (job._submit_time.strftime('%F'), job.jobid),
+                (self._job_submit_time[job].strftime('%F'), job.jobid),
                 log=False
             )
 
@@ -241,7 +242,7 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         job.jobid = int(jobid_match.group('jobid'))
         self._update_state_count[job] = 0
-        job._submit_time = datetime.now()
+        self._job_submit_time[job] = datetime.now()
 
     def allnodes(self):
         try:
@@ -373,14 +374,14 @@ class SlurmJobScheduler(sched.JobScheduler):
         if nodespec and nodespec != 'None assigned':
             job.nodelist = [n.name for n in self._get_nodes_by_name(nodespec)]
 
-    def poll_jobs(self, *jobs):
+    def poll(self, *jobs):
         '''Update the status of the jobs.'''
 
         jobids = [job.jobid for job in jobs]
         if not jobids:
             return
 
-        start_time = min(job._submit_time for job in jobs)
+        start_time = min(self._job_submit_time[job] for job in jobs)
         completed = _run_strict(
             'sacct -S %s -P -j %s -o jobid,state,exitcode,nodelist' %
             (start_time.strftime('%F'), ','.join(str(j) for j in jobids))
@@ -487,17 +488,18 @@ class SlurmJobScheduler(sched.JobScheduler):
             return
 
         intervals = itertools.cycle([1, 2, 3])
-        self.poll_jobs(job)
+        self.poll(job)
 
         while not slurm_state_completed(job.state):
             if job.max_pending_time and slurm_state_pending(job.state):
-                if datetime.now() - job._submit_time >= job.max_pending_time:
+                if (datetime.now() - self._job_submit_time[job] >=
+                    job.max_pending_time):
                     self.cancel(job)
                     raise JobError('maximum pending time exceeded',
                                    jobid=job.jobid)
 
             time.sleep(next(intervals))
-            self.poll_jobs(job)
+            self.poll(job)
 
         if self.is_array(job):
             self._merge_files(job)
@@ -524,7 +526,7 @@ class SlurmJobScheduler(sched.JobScheduler):
                 job.exception = None
 
         if job.max_pending_time and slurm_state_pending(job.state):
-            if datetime.now() - job._submit_time >= job.max_pending_time:
+            if datetime.now() - self._job_submit_time[job] >= job.max_pending_time:
                 self.cancel(job)
                 raise JobError('maximum pending time exceeded',
                                jobid=job.jobid)
@@ -558,13 +560,13 @@ class SqueueJobScheduler(SlurmJobScheduler):
     def completion_time(self, job):
         return None
 
-    def poll_jobs(self, *jobs):
+    def poll(self, *jobs):
         '''Update the status of the jobs.'''
 
         if not jobs:
             return
 
-        m = max(job._submit_time for job in jobs)
+        m = max(self._job_submit_time[job] for job in jobs)
         time_from_last_submit = datetime.now() - m
         rem_wait = self._squeue_delay - time_from_last_submit.total_seconds()
         if rem_wait > 0:

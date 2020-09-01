@@ -91,7 +91,7 @@ class JobScheduler(abc.ABC):
         '''
 
     @abc.abstractmethod
-    def poll_jobs(self, *jobs):
+    def poll(self, *jobs):
         '''Poll all the requested jobs.
 
         :arg jobs: A list of job descriptors.
@@ -251,7 +251,6 @@ class Job:
         self._sched_reservation = sched_reservation
         self._sched_account = sched_account
         self._sched_exclusive_access = sched_exclusive_access
-
         self.exception = None
 
 

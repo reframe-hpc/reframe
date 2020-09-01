@@ -437,7 +437,7 @@ def test_submit_max_pending_time(make_job, exec_ctx, scheduler):
         pytest.skip(f"max_pending_time not supported by the "
                     f"'{scheduler.registered_name}' scheduler")
 
-    def poll_jobs(*jobs):
+    def poll(*jobs):
         for job in jobs:
             if scheduler.registered_name in ('slurm', 'squeue'):
                 job.state = 'PENDING'
@@ -453,7 +453,7 @@ def test_submit_max_pending_time(make_job, exec_ctx, scheduler):
     # Monkey patch `self._update_state` to simulate that the job is
     # pending on the queue for enough time so it can be canceled due
     # to exceeding the maximum pending time
-    minimal_job.scheduler.poll_jobs = poll_jobs
+    minimal_job.scheduler.poll = poll
     minimal_job._max_pending_time = timedelta(milliseconds=50)
     minimal_job.submit()
     with pytest.raises(JobError,

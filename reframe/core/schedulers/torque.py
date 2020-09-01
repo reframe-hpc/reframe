@@ -42,7 +42,7 @@ class TorqueJobScheduler(PbsJobScheduler):
         job.nodelist = [x.split('/')[0] for x in nodespec.split('+')]
         job.nodelist.sort()
 
-    def poll_jobs(self, *jobs):
+    def poll(self, *jobs):
         '''Update the status of the jobs.'''
         jobids = [str(job.jobid) for job in jobs]
         if not jobids:
@@ -115,6 +115,14 @@ class TorqueJobScheduler(PbsJobScheduler):
 
                 job.exitcode = int(exitcode_match.group('code'))
 
+        for job in jobs:
+            stdout = os.path.join(job.workdir, job.stdout)
+            stderr = os.path.join(job.workdir, job.stderr)
+            output_ready = os.path.exists(stdout) and os.path.exists(stderr)
+            done = job.jobid in self._cancelled or output_ready
+            if job.state == 'COMPLETED' and done:
+                self._finished_jobs.add(job)
+
     def finished(self, job):
         if job.exception:
             try:
@@ -130,14 +138,10 @@ class TorqueJobScheduler(PbsJobScheduler):
         if job.max_pending_time and job.state in ['QUEUED',
                                                   'HELD',
                                                   'WAITING']:
-            if datetime.now() - job._submit_time >= job.max_pending_time:
+            if datetime.now() - self._job_submit_time[job] >= job.max_pending_time:
                 self.cancel(job)
                 raise JobError('maximum pending time exceeded',
                                jobid=job.jobid)
 
-        stdout = os.path.join(job.workdir, job.stdout)
-        stderr = os.path.join(job.workdir, job.stderr)
-        output_ready = os.path.exists(stdout) and os.path.exists(stderr)
-        done = job.jobid in self._cancelled or output_ready
-        getlogger().debug(f"finishedd: {job.state == 'COMPLETED' and done}")
-        return job.state == 'COMPLETED' and done
+        getlogger().debug(f"finished: {job in self._finished_jobs}")
+        return job in self._finished_jobs

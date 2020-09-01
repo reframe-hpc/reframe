@@ -176,7 +176,7 @@ class LocalJobScheduler(sched.JobScheduler):
         '''
         return self._procs[job].returncode is not None
 
-    def poll_jobs(self, *jobs):
+    def poll(self, *jobs):
         for job in jobs:
             if job.jobid and self._procs[job]:
                 self._procs[job].poll()
