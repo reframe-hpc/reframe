@@ -221,9 +221,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         # Retired tasks that need to be cleaned up
         self._retired_tasks = []
 
-        # Counts of running tasks per partition
-        self._running_tasks_counts = {}
-
         # Ready tasks to be executed per partition
         self._ready_tasks = {}
 
