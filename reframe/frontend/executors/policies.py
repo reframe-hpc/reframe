@@ -18,6 +18,10 @@ from reframe.frontend.executors import (ExecutionPolicy, RegressionTask,
                                         TaskEventListener, ABORT_REASONS)
 
 
+def dictlist_len(d):
+    return functools.reduce(lambda l, r: l + len(r), d.values(), 0)
+
+
 def _cleanup_all(tasks, *args, **kwargs):
     for task in tasks:
         if task.ref_count == 0:
@@ -26,9 +30,6 @@ def _cleanup_all(tasks, *args, **kwargs):
 
     # Remove cleaned up tests
     tasks[:] = [t for t in tasks if t.ref_count]
-
-def num_values(d):
-    return functools.reduce(lambda l, r: l + len(r), d.values(), 0)
 
 class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def __init__(self):
@@ -461,10 +462,12 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         pollrate = PollRateFunction(0.2, 60)
         num_polls = 0
         t_start = datetime.now()
-        while (num_values(self._running_tasks) or self._waiting_tasks):
+
+        while (dictlist_len(self._running_tasks) or self._waiting_tasks or
+               self._completed_tasks or dictlist_len(self._ready_tasks)):
             getlogger().debug(f'running tasks: '
-                              f'{num_values(self._running_tasks)}')
-            num_polls += num_values(self._running_tasks)
+                              f'{dictlist_len(self._running_tasks)}')
+            num_polls += dictlist_len(self._running_tasks)
             try:
                 self._poll_tasks()
                 self._finalize_all()
@@ -476,7 +479,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 getlogger().debug(
                     'polling rate (real): %.3f polls/sec' % real_rate)
 
-                num_running = num_values(self._running_tasks)
+                num_running = dictlist_len(self._running_tasks)
                 if num_running:
                     desired_rate = pollrate(t_elapsed, real_rate)
                     getlogger().debug(

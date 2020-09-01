@@ -926,6 +926,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
         return self._job.stderr
 
     @property
+    def build_job(self):
+        return self._build_job
+
+    @property
     @sn.sanity_function
     def build_stdout(self):
         return self._build_job.stdout
@@ -1433,10 +1437,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
                 for var in variables:
                     name, unit = var
-                    ref_tuple = (0, None, None)
-                    if unit:
-                        ref_tuple += (unit,)
-
+                    ref_tuple = (0, None, None, unit)
                     self.reference.update({'*': {name: ref_tuple}})
 
             # We first evaluate and log all performance values and then we

@@ -1,6 +1,6 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "$id": "https://raw.githubusercontent.com/eth-cscs/reframe/master/schemas/config.json",
+    "$id": "https://raw.githubusercontent.com/eth-cscs/reframe/master/reframe/schemas/config.json",
     "title": "Validation schema for ReFrame's configuration file",
     "defs": {
         "alphanum_string": {
@@ -163,7 +163,10 @@
                                 "descr": {"type": "string"},
                                 "scheduler": {
                                     "type": "string",
-                                    "enum": ["local", "pbs", "slurm", "squeue", "torque"]
+                                    "enum": [
+                                        "local", "pbs", "slurm",
+                                        "squeue", "torque"
+                                    ]
                                 },
                                 "launcher": {
                                     "type": "string",
@@ -361,6 +364,7 @@
                     },
                     "non_default_craype": {"type": "boolean"},
                     "purge_environment": {"type": "boolean"},
+                    "report_file": {"type": "string"},
                     "save_log_files": {"type": "boolean"},
                     "target_systems": {"$ref": "#/defs/system_ref"},
                     "timestamp_dirs": {"type": "string"},
@@ -403,6 +407,7 @@
         "general/module_mappings": [],
         "general/non_default_craype": false,
         "general/purge_environment": false,
+        "general/report_file": "${HOME}/.reframe/reports/run-report-{sessionid}.json",
         "general/save_log_files": false,
         "general/target_systems": ["*"],
         "general/timestamp_dirs": "",
@@ -448,6 +453,6 @@
         "systems/partitions/modules": [],
         "systems/partitions/variables": [],
         "systems/partitions/environs": [],
-        "systems/partitions/max_jobs": 1
+        "systems/partitions/max_jobs": 8
     }
 }

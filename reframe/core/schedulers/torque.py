@@ -87,10 +87,13 @@ class TorqueJobScheduler(PbsJobScheduler):
 
             stdout = jobs_info[job.jobid]
             nodelist_match = re.search(
-                r'^\s*exec_host = (?P<nodespec>\S+)', stdout, re.MULTILINE
+                r'exec_host = (?P<nodespec>[\S\t\n]+)',
+                completed.stdout,
+                re.MULTILINE
             )
             if nodelist_match:
                 nodespec = nodelist_match.group('nodespec')
+                nodespec = re.sub(r'[\n\t]*', '', nodespec)
                 self._set_nodelist(job, nodespec)
 
             state_match = re.search(

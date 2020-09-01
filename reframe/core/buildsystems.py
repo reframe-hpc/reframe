@@ -368,7 +368,7 @@ class SingleSource(BuildSystem):
         self.lang = None
 
     def _auto_exec_name(self):
-        return '%s.exe' % os.path.splitext(self.srcfile)[0]
+        return '%s.x' % os.path.splitext(self.srcfile)[0]
 
     def emit_build_commands(self, environ):
         if not self.srcfile:

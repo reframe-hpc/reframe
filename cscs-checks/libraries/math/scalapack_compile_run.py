@@ -33,14 +33,6 @@ class ScaLAPACKTest(rfm.RegressionTest):
         self.maintainers = ['CB', 'LM']
         self.tags = {'production', 'external-resources'}
 
-    @rfm.run_before('compile')
-    def cray_linker_workaround(self):
-        # NOTE: Workaround for using CCE < 9.1 in CLE7.UP01.PS03 and above
-        # See Patch Set README.txt for more details.
-        if (self.current_system.name == 'dom' and
-            self.current_environ.name == 'PrgEnv-cray'):
-            self.variables['LINKER_X86_64'] = '/usr/bin/ld'
-
 
 @rfm.required_version('>=2.14')
 @rfm.parameterized_test(['static'], ['dynamic'])
@@ -53,9 +45,9 @@ class ScaLAPACKSanity(ScaLAPACKTest):
             return float(value.replace('D', 'E'))
 
         def scalapack_sanity(number1, number2, expected_value):
-            symbol = 'z{0}{1}'.format(number1, number2)
-            pattern = r'Z\(     {0},     {1}\)=\s+(?P<{2}>\S+)'.format(
-                number2, number1, symbol)
+            symbol = f'z{number1}{number2}'
+            pattern = (rf'Z\(     {number2},     {number1}\)='
+                       rf'\s+(?P<{symbol}>\S+)')
             found_value = sn.extractsingle(pattern, self.stdout, symbol,
                                            fortran_float)
             return sn.assert_lt(sn.abs(expected_value - found_value), 1.0e-15)

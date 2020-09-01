@@ -3,9 +3,15 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import json
+import jsonschema
 import os
 import pytest
+import socket
+import sys
+import time
 
+import reframe
 import reframe.core.runtime as rt
 import reframe.frontend.dependency as dependency
 import reframe.frontend.executors as executors
@@ -108,17 +114,53 @@ def num_failures_stage(runner, stage):
     return len([t for t in stats.failures() if t.failed_stage == stage])
 
 
+def _validate_runreport(report):
+    schema_filename = 'reframe/schemas/runreport.json'
+    with open(schema_filename) as fp:
+        schema = json.loads(fp.read())
+
+    jsonschema.validate(report, schema)
+
+
 def test_runall(make_runner, make_cases, common_exec_ctx):
     runner = make_runner()
+    time_start = time.time()
     runner.runall(make_cases())
-    stats = runner.stats
-    assert 8 == stats.num_cases()
+    time_end = time.time()
+    assert 8 == runner.stats.num_cases()
     assert_runall(runner)
-    assert 5 == len(stats.failures())
+    assert 5 == len(runner.stats.failures())
     assert 2 == num_failures_stage(runner, 'setup')
     assert 1 == num_failures_stage(runner, 'sanity')
     assert 1 == num_failures_stage(runner, 'performance')
     assert 1 == num_failures_stage(runner, 'cleanup')
+
+    # Create a run report and validate it
+    run_stats = runner.stats.json()
+    report = {
+        'session_info': {
+            'cmdline': ' '.join(sys.argv),
+            'config_file': rt.runtime().site_config.filename,
+            'data_version': '1.0',
+            'hostname': socket.gethostname(),
+            'num_cases': run_stats[0]['num_cases'],
+            'num_failures': run_stats[-1]['num_failures'],
+            'prefix_output': rt.runtime().output_prefix,
+            'prefix_stage': rt.runtime().stage_prefix,
+            'time_elapsed': time_end - time_start,
+            'time_end': time.strftime(
+                '%FT%T%z', time.localtime(time_end),
+            ),
+            'time_start': time.strftime(
+                '%FT%T%z', time.localtime(time_start),
+            ),
+            'user': os_ext.osuser(),
+            'version': os_ext.reframe_version(),
+            'workdir': os.getcwd()
+        },
+        'runs': run_stats
+    }
+    _validate_runreport(report)
 
 
 def test_runall_skip_system_check(make_runner, make_cases, common_exec_ctx):
