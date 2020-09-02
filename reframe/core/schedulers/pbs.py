@@ -152,7 +152,8 @@ class PbsJobScheduler(sched.JobScheduler):
         if job in self._pbs_server:
             jobid += '.' + self._pbs_server[job]
 
-        time_from_submit = (datetime.now() - self._job_submit_time[job]).total_seconds()
+        time_from_submit = (
+            datetime.now() - self._job_submit_time[job]).total_seconds()
         if time_from_submit < PBS_CANCEL_DELAY:
             time.sleep(PBS_CANCEL_DELAY - time_from_submit)
 
