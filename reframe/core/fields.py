@@ -110,8 +110,7 @@ class TimerField(TypedField):
     '''Stores a timer in the form of a :class:`datetime.timedelta` object'''
 
     def __init__(self, fieldname, *other_types):
-        super().__init__(fieldname, datetime.timedelta, str,
-                         types.Tuple[int, int, int], *other_types)
+        super().__init__(fieldname, datetime.timedelta, str, *other_types)
 
     def __set__(self, obj, value):
         self._check_type(value)

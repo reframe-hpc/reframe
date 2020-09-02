@@ -107,9 +107,6 @@ def test_timer_field():
     tester.field = ''
     assert (datetime.timedelta(days=0, hours=0,
                                minutes=0, seconds=0) == tester.field)
-    with pytest.warns(ReframeDeprecationWarning):
-        tester.field = (65, 22, 87)
-
     with pytest.raises(ValueError):
         tester.field = '1e'
 
