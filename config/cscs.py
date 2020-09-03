@@ -1009,8 +1009,9 @@ site_configuration = {
                 '--output=$APPS/UES/$USER/regression/maintenance',
                 '--perflogdir=$APPS/UES/$USER/regression/maintenance/logs',
                 '--stage=$SCRATCH/regression/maintenance/stage',
+                '--report-file=$APPS/UES/$USER/regression/maintenance/reports/maint_report_{sessionid}.json',
                 '--reservation=maintenance',
-                '--save-log-files',
+                '--save-log-files', ``
                 '--tag=maintenance',
                 '--timestamp=%F_%H-%M-%S'
             ]
@@ -1024,6 +1025,7 @@ site_configuration = {
                 '--output=$APPS/UES/$USER/regression/production',
                 '--perflogdir=$APPS/UES/$USER/regression/production/logs',
                 '--stage=$SCRATCH/regression/production/stage',
+                '--report-file=$APPS/UES/$USER/regression/production/reports/prod_report_{sessionid}.json',
                 '--save-log-files',
                 '--tag=production',
                 '--timestamp=%F_%H-%M-%S'
