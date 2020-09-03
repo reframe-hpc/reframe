@@ -114,13 +114,6 @@ class TimerField(TypedField):
 
     def __set__(self, obj, value):
         self._check_type(value)
-        if isinstance(value, tuple):
-            user_deprecation_warning(
-                "setting a timer field from a tuple is deprecated: "
-                "please use a string '<days>d<hours>h<minutes>m<seconds>s'")
-            h, m, s = value
-            value = datetime.timedelta(hours=h, minutes=m, seconds=s)
-
         if isinstance(value, str):
             time_match = re.match(r'^((?P<days>\d+)d)?'
                                   r'((?P<hours>\d+)h)?'
