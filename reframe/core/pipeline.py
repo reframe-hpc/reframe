@@ -629,6 +629,9 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: .. warning::
     #:    .. versionchanged:: 3.0
     #:       The old syntax using a ``(h, m, s)`` tuple is deprecated.
+    #:
+    #:    .. versionchanged:: 3.2
+    #:       The old syntax using a ``(h, m, s)`` tuple is dropped.
     time_limit = fields.TimerField('time_limit', type(None))
 
     #: .. versionadded:: 2.8
