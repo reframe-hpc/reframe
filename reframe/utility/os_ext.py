@@ -357,7 +357,7 @@ def git_repo_hash(branch='HEAD', short=True, wd=None):
             completed = run_command('git rev-parse %s' % branch,
                                     check=True, log=False)
 
-    except SpawnedProcessError:
+    except (SpawnedProcessError, FileNotFoundError):
         return None
 
     hash = completed.stdout.strip()
