@@ -630,6 +630,36 @@ def test_overriden_hooks(local_exec_ctx):
     assert test.foo == 10
 
 
+def test_disabled_hooks(local_exec_ctx):
+    @fixtures.custom_prefix('unittests/resources/checks')
+    class BaseTest(HelloTest):
+        def __init__(self):
+            super().__init__()
+            self.name = type(self).__name__
+            self.executable = os.path.join('.', self.name)
+            self.var = 0
+            self.foo = 0
+
+        @rfm.run_after('setup')
+        def x(self):
+            self.var += 1
+
+        @rfm.run_before('setup')
+        def y(self):
+            self.foo += 1
+
+    class MyTest(BaseTest):
+        @rfm.run_after('setup')
+        def x(self):
+            self.var += 5
+
+    test = MyTest()
+    MyTest.disable_hook('y')
+    _run(test, *local_exec_ctx)
+    assert test.var == 5
+    assert test.foo == 0
+
+
 def test_require_deps(local_exec_ctx):
     import reframe.frontend.dependency as dependency
     import reframe.frontend.executors as executors

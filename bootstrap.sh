@@ -53,10 +53,10 @@ CMD $python -m ensurepip --root external/ --default-pip
 export PATH=$(pwd)/external/usr/bin:$PATH
 export PYTHONPATH=$(pwd)/external:$(pwd)/external/usr/lib/python$pyver/site-packages:$PYTHONPATH
 
-CMD $python -m pip install -q --upgrade pip --target=external/
-CMD $python -m pip install -q -r requirements.txt --target=external/ --upgrade
+CMD $python -m pip install --no-cache-dir -q --upgrade pip --target=external/
+CMD $python -m pip install --use-feature=2020-resolver --no-cache-dir -q -r requirements.txt --target=external/ --upgrade
 
 if [ x"$1" == x"+docs" ]; then
-    CMD $python -m pip install -q -r docs/requirements.txt --target=external/ --upgrade
+    CMD $python -m pip install --use-feature=2020-resolver --no-cache-dir -q -r docs/requirements.txt --target=external/ --upgrade
     make -C docs
 fi
