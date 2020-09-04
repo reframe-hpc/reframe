@@ -188,13 +188,13 @@ def test_is_url():
 
 
 def test_git_repo_hash(monkeypatch):
-    # a git branch hash consists of 8(short) or 40 characters.
+    # A git branch hash consists of 8(short) or 40 characters.
     assert len(os_ext.git_repo_hash()) == 8
     assert len(os_ext.git_repo_hash(short=False)) == 40
     assert os_ext.git_repo_hash(branch='invalid') is None
     assert os_ext.git_repo_hash(branch='') is None
 
-    # imitate a system with no git installed by emptying the PATH
+    # Imitate a system with no git installed by emptying the PATH
     monkeypatch.setenv('PATH', '')
     assert os_ext.git_repo_hash() is None
 
