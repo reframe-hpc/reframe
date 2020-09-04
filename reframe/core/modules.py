@@ -152,12 +152,12 @@ class ModulesSystem:
     def backend(self):
         return(self._backend)
 
-    def available_modules(self):
+    def available_modules(self, module):
         '''Return a list of available modules.
 
         :rtype: List[str]
         '''
-        return [str(m) for m in self._backend.available_modules()]
+        return [str(m) for m in self._backend.available_modules(modu, modulele)]
 
     def loaded_modules(self):
         '''Return a list of loaded modules.
@@ -333,7 +333,7 @@ class ModulesSystemImpl(abc.ABC):
     '''Abstract base class for module systems.'''
 
     @abc.abstractmethod
-    def available_modules(self):
+    def available_modules(self, module):
         '''Return a list of available modules.
 
         This method returns a list of Module instances.
@@ -484,13 +484,13 @@ class TModImpl(ModulesSystemImpl):
         completed = self._run_module_command(*args, msg=msg)
         exec(completed.stdout)
 
-    def available_modules(self):
+    def available_modules(self, module, module):
         avail = []
         completed = self._run_module_command(
-            'avail', '-t', msg="could not run 'module avail'")
+            'avail', '-t', module, msg="could not run 'module avail'")
 
         for line in re.finditer(r'\S+[^:]$', completed.stderr, re.MULTILINE):
-            module = re.sub(r'\(default\)', '', line)
+            module = re.sub(r'\(default\)', '', line.group(0))
             avail.append(Module(module))
 
         return avail
@@ -706,10 +706,10 @@ class LModImpl(TModImpl):
     def _module_command_failed(self, completed):
         return completed.stdout.strip() == 'false'
 
-    def available_modules(self):
+    def available_modules(self, module):
         avail = []
         completed = self._run_module_command(
-            '-t', 'available', msg="could not run module available")
+            '-t', 'available', module, msg="could not run module available")
 
         for line in re.finditer(r'\S+[^:/]$', completed.stderr, re.MULTILINE):
             module = re.sub(r"\(\S+\)", "", line.group(0))
