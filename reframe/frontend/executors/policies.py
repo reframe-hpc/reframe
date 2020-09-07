@@ -80,7 +80,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
             task.compile()
             task.compile_wait()
             task.run()
-            pollrate = PollRateFunction(0.2, 60)
+            sleeptime = itertools.cycle(range(1, 11))
             num_polls = 0
             t_start = datetime.now()
             while True:
@@ -89,15 +89,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 if task.poll():
                     break
 
-                t_elapsed = (datetime.now() - t_start).total_seconds()
-                real_rate = num_polls / t_elapsed
-                getlogger().debug(
-                    'polling rate (real): %.3f polls/sec' % real_rate)
-
-                desired_rate = pollrate(t_elapsed, real_rate)
-                getlogger().debug(
-                    'polling rate (desired): %.3f' % desired_rate)
-                t = 1 / desired_rate
+                t = next(sleeptime)
                 getlogger().debug('sleeping: %.3fs' % t)
                 time.sleep(t)
 
@@ -168,38 +160,6 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def exit(self):
         # Clean up all remaining tasks
         _cleanup_all(self._retired_tasks, not self.keep_stage_files)
-
-
-class PollRateFunction:
-    def __init__(self, min_rate, decay_time):
-        self._min_rate = min_rate
-        self._decay = decay_time
-        self._thres = 0.05
-
-        # decay function parameters
-        self._a = None
-        self._b = None
-        self._c = None
-
-    def _init_poll_fn(self, init_rate):
-        self._init_rate = init_rate
-        self._b = self._min_rate
-        log_arg = (init_rate - self._b) / (self._thres*self._b)
-        if log_arg < sys.float_info.min:
-            self._a = 0.0
-            self._c = 0.0
-        else:
-            self._a = init_rate - self._b
-            self._c = math.log(self._a / (self._thres*self._b)) / self._decay
-
-        getlogger().debug('rate equation: %.3f*exp(-%.3f*x)+%.3f' %
-                          (self._a, self._c, self._b))
-
-    def __call__(self, x, init_rate):
-        if self._a is None:
-            self._init_poll_fn(init_rate)
-
-        return self._a*math.exp(-self._c*x) + self._b
 
 
 class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
@@ -374,7 +334,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             getlogger().debug(f'polling {len(self._running_tasks[partname])} '
                               f'task(s) in {partname}')
             sched.poll(
-                *[task.check.job for task in self._running_tasks[partname]]
+                *(task.check.job for task in self._running_tasks[partname])
             )
 
             for t in self._running_tasks[partname]:
@@ -411,12 +371,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def _failall(self, cause):
         '''Mark all tests as failures'''
-        for partname in self._running_tasks.keys():
-            try:
-                while True:
-                    self._running_tasks[partname].pop().abort(cause)
-            except IndexError:
-                pass
+        for task in sum(self._running_tasks.values(), []):
+            task.abort(cause)
 
         self._running_tasks = {}
         for ready_list in self._ready_tasks.values():
@@ -459,7 +415,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def exit(self):
         self.printer.separator('short single line',
                                'waiting for spawned checks to finish')
-        pollrate = PollRateFunction(0.2, 60)
+        sleeptime = itertools.cycle(range(1, 11))
         num_polls = 0
         t_start = datetime.now()
 
@@ -481,10 +437,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
                 num_running = dictlist_len(self._running_tasks)
                 if num_running:
-                    desired_rate = pollrate(t_elapsed, real_rate)
-                    getlogger().debug(
-                        'polling rate (desired): %.3f' % desired_rate)
-                    t = num_running / desired_rate
+                    t = next(sleeptime)
                     getlogger().debug('sleeping: %.3fs' % t)
                     time.sleep(t)
 

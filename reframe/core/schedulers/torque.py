@@ -124,7 +124,7 @@ class TorqueJobScheduler(PbsJobScheduler):
             output_ready = os.path.exists(stdout) and os.path.exists(stderr)
             done = job.jobid in self._cancelled or output_ready
             if job.state == 'COMPLETED' and done:
-                self._finished_jobs.add(job)
+                self._finished.add(job)
 
     def finished(self, job):
         if job.exception:
@@ -141,11 +141,11 @@ class TorqueJobScheduler(PbsJobScheduler):
         if job.max_pending_time and job.state in ['QUEUED',
                                                   'HELD',
                                                   'WAITING']:
-            if (datetime.now() - self._job_submit_time[job] >=
+            if (datetime.now() - self._submit_time[job] >=
                 job.max_pending_time):
                 self.cancel(job)
                 raise JobError('maximum pending time exceeded',
                                jobid=job.jobid)
 
-        getlogger().debug(f"finished: {job in self._finished_jobs}")
-        return job in self._finished_jobs
+        getlogger().debug(f"finished: {job in self._finished}")
+        return job in self._finished

@@ -47,9 +47,9 @@ class PbsJobScheduler(sched.JobScheduler):
 
     def __init__(self):
         self._prefix = '#PBS'
-        self._job_submit_time = {}
+        self._submit_time = {}
         self._time_finished = {}
-        self._job_submit_timeout = rt.runtime().get_option(
+        self._submit_timeout = rt.runtime().get_option(
             f'schedulers/@{self.registered_name}/job_submit_timeout'
         )
         self._cancelled = set()
@@ -57,7 +57,7 @@ class PbsJobScheduler(sched.JobScheduler):
         # Optional part of the job id refering to the PBS server
         # Indexed by the jobid
         self._pbs_server = {}
-        self._finished_jobs = set()
+        self._finished = set()
 
     def completion_time(self, job):
         return None
@@ -125,7 +125,7 @@ class PbsJobScheduler(sched.JobScheduler):
         # Slurm wrappers.
         cmd = 'qsub -o %s -e %s %s' % (job.stdout, job.stderr,
                                        job.script_filename)
-        completed = _run_strict(cmd, timeout=self._job_submit_timeout)
+        completed = _run_strict(cmd, timeout=self._submit_timeout)
         jobid_match = re.search(r'^(?P<jobid>\S+)', completed.stdout)
         if not jobid_match:
             raise JobError('could not retrieve the job id '
@@ -136,7 +136,7 @@ class PbsJobScheduler(sched.JobScheduler):
         if info:
             self._pbs_server[job] = info[0]
 
-        self._job_submit_time[job] = datetime.now()
+        self._submit_time[job] = datetime.now()
 
     def wait(self, job):
         intervals = itertools.cycle([1, 2, 3])
@@ -153,21 +153,20 @@ class PbsJobScheduler(sched.JobScheduler):
             jobid += '.' + self._pbs_server[job]
 
         time_from_submit = (
-            datetime.now() - self._job_submit_time[job]).total_seconds()
+            datetime.now() - self._submit_time[job]).total_seconds()
         if time_from_submit < PBS_CANCEL_DELAY:
             time.sleep(PBS_CANCEL_DELAY - time_from_submit)
 
         getlogger().debug('cancelling job (id=%s)' % jobid)
-        _run_strict('qdel %s' % jobid, timeout=self._job_submit_timeout)
+        _run_strict('qdel %s' % jobid, timeout=self._submit_timeout)
 
     def finished(self, job):
-        return job in self._finished_jobs
+        return job in self._finished
 
-    def poll(self, *jobs):
-        for job in jobs:
-            with os_ext.change_dir(job.workdir):
-                output_ready = (os.path.exists(job.stdout) and
-                                os.path.exists(job.stderr))
+    def _poll_job(self, job):
+        with os_ext.change_dir(job.workdir):
+            output_ready = (os.path.exists(job.stdout) and
+                            os.path.exists(job.stderr))
 
             done = job in self._cancelled or output_ready
             if done:
@@ -181,4 +180,8 @@ class PbsJobScheduler(sched.JobScheduler):
                 time_from_finish = (t_now - job_time_finished).total_seconds()
 
                 if time_from_finish > PBS_OUTPUT_WRITEBACK_WAIT:
-                    self._finished_jobs.add(job)
+                    self._finished.add(job)
+
+    def poll(self, *jobs):
+        for job in jobs:
+            self._poll_job(job)

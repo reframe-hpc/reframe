@@ -94,7 +94,7 @@ class JobScheduler(abc.ABC):
     def poll(self, *jobs):
         '''Poll all the requested jobs.
 
-        :arg jobs: A list of job descriptors.
+        :arg jobs: The job descriptors to poll.
 
         :meta private:
         '''
@@ -403,10 +403,7 @@ class Job:
         return done
 
     def __eq__(self, other):
-        return (
-            self.__class__ == other.__class__ and
-            self.jobid == other.jobid
-        )
+        return type(self) == type(other) and self.jobid == other.jobid
 
     def __hash__(self):
         return hash(self.jobid)
