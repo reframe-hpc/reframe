@@ -16,7 +16,10 @@ from reframe.core.runtime import runtime
 
 @pytest.fixture(params=['tmod', 'tmod4', 'lmod', 'nomod'])
 def modules_system(request, monkeypatch):
+    # Always pretend to be on a clean modules environment
     monkeypatch.setenv('MODULEPATH', '')
+    monkeypatch.setenv('LOADEDMODULES', '')
+    monkeypatch.setenv('_LMFILES_', '')
     args = [request.param] if request.param != 'nomod' else []
     try:
         m = modules.ModulesSystem.create(*args)
