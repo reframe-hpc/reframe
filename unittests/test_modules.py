@@ -258,6 +258,9 @@ def modules_system_emu():
         def is_module_loaded(self, module):
             return module.name in self._loaded_modules
 
+        def available_modules(self, substr):
+            return []
+
         def name(self):
             return 'nomod_debug'
 
