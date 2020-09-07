@@ -127,8 +127,7 @@ class SlurmJobScheduler(sched.JobScheduler):
                 log=False
             )
 
-        # Use `list(re.finditer())`` instead of `re.findall()` in order
-        # to use the named groups. `re.findall` returns a list of tuples.
+        # We need the match objects, so we have to use finditer()
         state_match = list(re.finditer(
             r'^(?P<jobid>%s)\|(?P<end>\S+)' % self._state_patt,
             completed.stdout, re.MULTILINE))
@@ -391,8 +390,7 @@ class SlurmJobScheduler(sched.JobScheduler):
         for job in jobs:
             self._update_state_count[job] += 1
 
-        # Use `list(re.finditer())`` instead of `re.findall()` in order
-        # to use the named groups. `re.findall` returns a list of tuples.
+        # We need the match objects, so we have to use finditer()
         state_match = list(re.finditer(
             r'^(?P<jobid>%s)\|(?P<state>\S+)([^\|]*)\|(?P<exitcode>\d+)\:'
             r'(?P<signal>\d+)\|(?P<nodespec>.*)' % self._state_patt,
@@ -584,6 +582,7 @@ class SqueueJobScheduler(SlurmJobScheduler):
         completed = os_ext.run_command('squeue -h -j %s '
                                        '-o "%%i|%%T|%%N|%%r"' %
                                        ','.join([str(j) for j in jobids]))
+        # We need the match objects, so we have to use finditer()
         state_match = list(re.finditer(r'^(?P<jobid>%s)\|(?P<state>\S+)\|'
                                        r'(?P<nodespec>\S*)\|'
                                        r'(?P<reason>.+)' % self._state_patt,
