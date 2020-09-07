@@ -152,12 +152,13 @@ class ModulesSystem:
     def backend(self):
         return(self._backend)
 
-    def available_modules(self, module):
-        '''Return a list of available modules.
+    def available_modules(self, substr=None):
+        '''Return a list of available modules that contain ``substr`` in their
+        name.
 
         :rtype: List[str]
         '''
-        return [str(m) for m in self._backend.available_modules(modu, modulele)]
+        return [str(m) for m in self._backend.available_modules(substr or '')]
 
     def loaded_modules(self):
         '''Return a list of loaded modules.
@@ -333,8 +334,8 @@ class ModulesSystemImpl(abc.ABC):
     '''Abstract base class for module systems.'''
 
     @abc.abstractmethod
-    def available_modules(self, module):
-        '''Return a list of available modules.
+    def available_modules(self, substr):
+        '''Return a list of available modules, whose name contains ``substr``.
 
         This method returns a list of Module instances.
         '''
@@ -484,16 +485,16 @@ class TModImpl(ModulesSystemImpl):
         completed = self._run_module_command(*args, msg=msg)
         exec(completed.stdout)
 
-    def available_modules(self, module, module):
-        avail = []
+    def available_modules(self, substr):
         completed = self._run_module_command(
-            'avail', '-t', module, msg="could not run 'module avail'")
-
+            'avail', '-t', substr, msg='could not retrieve available modules'
+        )
+        ret = []
         for line in re.finditer(r'\S+[^:]$', completed.stderr, re.MULTILINE):
             module = re.sub(r'\(default\)', '', line.group(0))
-            avail.append(Module(module))
+            ret.append(Module(module))
 
-        return avail
+        return ret
 
     def loaded_modules(self):
         try:
@@ -706,16 +707,16 @@ class LModImpl(TModImpl):
     def _module_command_failed(self, completed):
         return completed.stdout.strip() == 'false'
 
-    def available_modules(self, module):
-        avail = []
+    def available_modules(self, substr):
         completed = self._run_module_command(
-            '-t', 'available', module, msg="could not run module available")
-
+            '-t', 'avail', substr, msg='could not retrieve available modules'
+        )
+        ret = []
         for line in re.finditer(r'\S+[^:/]$', completed.stderr, re.MULTILINE):
             module = re.sub(r"\(\S+\)", "", line.group(0))
-            avail += [Module(module)]
+            ret.append(Module(module))
 
-        return avail
+        return ret
 
     def conflicted_modules(self, module):
         completed = self._run_module_command(
@@ -746,7 +747,7 @@ class LModImpl(TModImpl):
 class NoModImpl(ModulesSystemImpl):
     '''A convenience class that implements a no-op a modules system.'''
 
-    def available_modules(self):
+    def available_modules(self, substr):
         return []
 
     def loaded_modules(self):
