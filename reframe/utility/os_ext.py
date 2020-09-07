@@ -357,7 +357,7 @@ def git_repo_hash(branch='HEAD', short=True, wd=None):
             completed = run_command('git rev-parse %s' % branch,
                                     check=True, log=False)
 
-    except SpawnedProcessError:
+    except (SpawnedProcessError, FileNotFoundError):
         return None
 
     hash = completed.stdout.strip()
@@ -453,6 +453,60 @@ def unique_abs_paths(paths, prune_children=True):
 
                 p_parent = os.path.dirname(p_parent)
 
-    # FIXME: This should be performed using the minus operator of
-    # `OrderedSet` once #1165 is fixed.
-    return [p for p in unique_paths if p not in children]
+    return list(unique_paths - children)
+
+
+def cray_cdt_version():
+    '''Return the Cray CDT version or :class:`None` for non-Cray systems'''
+    rcfile = os.getenv('MODULERCFILE', '/opt/cray/pe/cdt/default/modulerc')
+    try:
+        with open(rcfile) as fp:
+            header = fp.readline()
+            if not header:
+                return None
+
+        match = re.search(r'^#%Module CDT (\S+)', header)
+        if not match:
+            return None
+
+        return match.group(1)
+    except OSError:
+        return None
+
+
+def cray_cle_info(filename='/etc/opt/cray/release/cle-release'):
+    '''Return cray CLE release information.
+
+    :arg filename: The file that contains the CLE release information
+
+    :returns: A named tuple with the following attributes that correspond to
+        the release information: :attr:`release`, :attr:`build`, :attr:`date`,
+        :attr:`arch`, :attr:`network`, :attr:`patchset`.
+    '''
+
+    cle_info = collections.namedtuple(
+        'cle_info',
+        ['release', 'build', 'date', 'arch', 'network', 'patchset']
+    )
+    try:
+        info = {}
+        with open(filename) as fp:
+            for line in fp:
+                key, value = line.split('=', maxsplit=1)
+                if key == 'PATCHSET':
+                    # Strip the date from the patchset
+                    value = value.split('-')[0]
+
+                info[key] = value.strip()
+
+    except OSError:
+        return None
+
+    return cle_info(
+        info.get('RELEASE'),
+        info.get('BUILD'),
+        info.get('DATE'),
+        info.get('ARCH'),
+        info.get('NETWORK'),
+        info.get('PATCHSET'),
+    )

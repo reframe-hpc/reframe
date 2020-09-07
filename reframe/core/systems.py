@@ -189,12 +189,12 @@ class SystemPartition:
             'container_platforms': [
                 {
                     'type': ctype,
-                    'modules': [m.name for m in cpenv.modules],
+                    'modules': [m for m in cpenv.modules],
                     'variables': [[n, v] for n, v in cpenv.variables.items()]
                 }
                 for ctype, cpenv in self._container_environs.items()
             ],
-            'modules': [m.name for m in self._local_env.modules],
+            'modules': [m for m in self._local_env.modules],
             'variables': [[n, v]
                           for n, v in self._local_env.variables.items()],
             'environs': [e.name for e in self._environs],

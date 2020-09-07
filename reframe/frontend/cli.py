@@ -9,6 +9,7 @@ import os
 import re
 import socket
 import sys
+import time
 import traceback
 
 import reframe
@@ -32,23 +33,49 @@ from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.printer import PrettyPrinter
 
 
-def format_check(check, detailed):
-    lines = ['  - %s (found in %s)' % (check.name,
-                                       inspect.getfile(type(check)))]
-    flex = 'flexible' if check.num_tasks <= 0 else 'standard'
+def format_check(check, detailed=False):
+    def fmt_list(x):
+        if not x:
+            return '<none>'
 
-    if detailed:
-        lines += [
-            f"      description: {check.descr}",
-            f"      systems: {', '.join(check.valid_systems)}",
-            f"      environments: {', '.join(check.valid_prog_environs)}",
-            f"      modules: {', '.join(check.modules)}",
-            f"      task allocation: {flex}",
-            f"      dependencies: "
-            f"{', '.join([d[0] for d in check.user_deps()])}",
-            f"      tags: {', '.join(check.tags)}",
-            f"      maintainers: {', '.join(check.maintainers)}"
-        ]
+        return ', '.join(x)
+
+    location = inspect.getfile(type(check))
+    if not detailed:
+        return f'- {check.name} (found in {location!r})\n'
+
+    if check.num_tasks > 0:
+        node_alloc_scheme = f'standard ({check.num_tasks} task(s))'
+    elif check.num_tasks == 0:
+        node_alloc_scheme = 'flexible'
+    else:
+        node_alloc_scheme = f'flexible (minimum {-check.num_tasks} task(s))'
+
+    check_info = {
+        'Dependencies': fmt_list([d[0] for d in check.user_deps()]),
+        'Description': check.descr,
+        'Environment modules': fmt_list(check.modules),
+        'Location': location,
+        'Maintainers': fmt_list(check.maintainers),
+        'Node allocation': node_alloc_scheme,
+        'Pipeline hooks': {
+            k: fmt_list(fn.__name__ for fn in v)
+            for k, v in type(check)._rfm_pipeline_hooks.items()
+        },
+        'Tags': fmt_list(check.tags),
+        'Valid environments': fmt_list(check.valid_prog_environs),
+        'Valid systems': fmt_list(check.valid_systems)
+    }
+    lines = [f'- {check.name}:']
+    for prop, val in check_info.items():
+        lines.append(f'    {prop}:')
+        if isinstance(val, dict):
+            for k, v in val.items():
+                lines.append(f'      {k}: {v}')
+        else:
+            lines.append(f'      {val}')
+
+        lines.append('')
 
     return '\n'.join(lines)
 
@@ -63,10 +90,25 @@ def format_env(envvars):
 
 def list_checks(checks, printer, detailed=False):
     printer.info('[List of matched checks]')
-    for c in checks:
-        printer.info(format_check(c, detailed))
+    printer.info('\n'.join(format_check(c, detailed) for c in checks))
+    printer.info(f'Found {len(checks)} check(s)')
 
-    printer.info('\nFound %d check(s).' % len(checks))
+
+def generate_report_filename(filepatt):
+    if '{sessionid}' not in filepatt:
+        return filepatt
+
+    search_patt = os.path.basename(filepatt).replace('{sessionid}', r'(\d+)')
+    new_id = -1
+    basedir = os.path.dirname(filepatt) or '.'
+    for filename in os.listdir(basedir):
+        match = re.match(search_patt, filename)
+        if match:
+            found_id = int(match.group(1))
+            new_id = max(found_id, new_id)
+
+    new_id += 1
+    return filepatt.format(sessionid=new_id)
 
 
 def main():
@@ -135,6 +177,12 @@ def main():
         '--save-log-files', action='store_true', default=False,
         help='Save ReFrame log files to the output directory',
         envvar='RFM_SAVE_LOG_FILES', configvar='general/save_log_files'
+    )
+    output_options.add_argument(
+        '--report-file', action='store', metavar='FILE',
+        help="Store JSON run report in FILE",
+        envvar='RFM_REPORT_FILE',
+        configvar='general/report_file'
     )
 
     # Check discovery options
@@ -268,6 +316,10 @@ def main():
         dest='flex_alloc_nodes', metavar='{all|STATE|NUM}', default=None,
         help='Set strategy for the flexible node allocation (default: "idle").'
     )
+    run_options.add_argument(
+        '--disable-hook', action='append', metavar='NAME', dest='hooks',
+        default=[], help='Disable a pipeline hook for this run'
+    )
     env_options.add_argument(
         '-M', '--map-module', action='append', metavar='MAPPING',
         dest='module_mappings', default=[],
@@ -333,7 +385,7 @@ def main():
     )
     misc_options.add_argument(
         '--upgrade-config-file', action='store', metavar='OLD[:NEW]',
-        help='Upgrade old configuration file to new syntax'
+        help='Upgrade ReFrame 2.x configuration file to ReFrame 3.x syntax'
     )
     misc_options.add_argument(
         '-V', '--version', action='version', version=os_ext.reframe_version()
@@ -347,9 +399,15 @@ def main():
     # Options not associated with command-line arguments
     argparser.add_argument(
         dest='graylog_server',
-        envvar='RFM_GRAYLOG_SERVER',
+        envvar='RFM_GRAYLOG_ADDRESS',
         configvar='logging/handlers_perflog/graylog_address',
         help='Graylog server address'
+    )
+    argparser.add_argument(
+        dest='syslog_address',
+        envvar='RFM_SYSLOG_ADDRESS',
+        configvar='logging/handlers_perflog/syslog_address',
+        help='Syslog server address'
     )
     argparser.add_argument(
         dest='ignore_reqnodenotavail',
@@ -386,6 +444,12 @@ def main():
     printer = PrettyPrinter()
     printer.colorize = site_config.get('general/0/colorize')
     printer.inc_verbosity(site_config.get('general/0/verbose'))
+    if os.getenv('RFM_GRAYLOG_SERVER'):
+        printer.warning(
+            'RFM_GRAYLOG_SERVER environment variable is deprecated; '
+            'please use RFM_GRAYLOG_ADDRESS instead'
+        )
+        os.environ['RFM_GRAYLOG_ADDRESS'] = os.getenv('RFM_GRAYLOG_SERVER')
 
     if options.upgrade_config_file is not None:
         old_config, *new_config = options.upgrade_config_file.split(
@@ -497,19 +561,33 @@ def main():
         param = param + ':'
         printer.info(f"  {param.ljust(18)} {value}")
 
+    session_info = {
+        'cmdline': ' '.join(sys.argv),
+        'config_file': rt.site_config.filename,
+        'data_version': '1.0',
+        'hostname': socket.gethostname(),
+        'prefix_output': rt.output_prefix,
+        'prefix_stage': rt.stage_prefix,
+        'user': os_ext.osuser(),
+        'version': os_ext.reframe_version(),
+        'workdir': os.getcwd(),
+    }
+
     # Print command line
     printer.info(f"[ReFrame Setup]")
-    print_infoline('version', os_ext.reframe_version())
-    print_infoline('command', repr(' '.join(sys.argv)))
-    print_infoline('launched by',
-                   f"{os_ext.osuser() or '<unknown>'}@{socket.gethostname()}")
-    print_infoline('working directory', repr(os.getcwd()))
-    print_infoline('settings file', f'{site_config.filename!r}')
+    print_infoline('version', session_info['version'])
+    print_infoline('command', repr(session_info['cmdline']))
+    print_infoline(
+        f"launched by",
+        f"{session_info['user'] or '<unknown>'}@{session_info['hostname']}"
+    )
+    print_infoline('working directory', repr(session_info['workdir']))
+    print_infoline('settings file', f"{session_info['config_file']!r}")
     print_infoline('check search path',
                    f"{'(R) ' if loader.recurse else ''}"
                    f"{':'.join(loader.load_path)!r}")
-    print_infoline('stage directory', repr(rt.stage_prefix))
-    print_infoline('output directory', repr(rt.output_prefix))
+    print_infoline('stage directory', repr(session_info['prefix_stage']))
+    print_infoline('output directory', repr(session_info['prefix_output']))
     printer.info('')
     try:
         # Locate and load checks
@@ -563,6 +641,12 @@ def main():
 
         # Generate the test cases, validate dependencies and sort them
         checks_matched = list(checks_matched)
+
+        # Disable hooks
+        for c in checks_matched:
+            for h in options.hooks:
+                type(c).disable_hook(h)
+
         testcases = generate_testcases(checks_matched,
                                        options.skip_system_check,
                                        options.skip_prgenv_check,
@@ -625,13 +709,8 @@ def main():
 
         # Act on checks
         success = True
-        if options.list:
-            # List matched checks
-            list_checks(list(checks_matched), printer)
-        elif options.list_detailed:
-            # List matched checks with details
-            list_checks(list(checks_matched), printer, detailed=True)
-
+        if options.list or options.list_detailed:
+            list_checks(list(checks_matched), printer, options.list_detailed)
         elif options.run:
             # Setup the execution policy
             if options.exec_policy == 'serial':
@@ -684,8 +763,18 @@ def main():
                                   max_retries) from None
             runner = Runner(exec_policy, printer, max_retries)
             try:
+                time_start = time.time()
+                session_info['time_start'] = time.strftime(
+                    '%FT%T%z', time.localtime(time_start),
+                )
                 runner.runall(testcases)
             finally:
+                time_end = time.time()
+                session_info['time_end'] = time.strftime(
+                    '%FT%T%z', time.localtime(time_end)
+                )
+                session_info['time_elapsed'] = time_end - time_start
+
                 # Print a retry report if we did any retries
                 if runner.stats.failures(run=0):
                     printer.info(runner.stats.retry_report())
@@ -699,6 +788,33 @@ def main():
 
                 if options.performance_report:
                     printer.info(runner.stats.performance_report())
+
+                # Generate the report for this session
+                report_file = os.path.normpath(
+                    os_ext.expandvars(rt.get_option('general/0/report_file'))
+                )
+                basedir = os.path.dirname(report_file)
+                if basedir:
+                    os.makedirs(basedir, exist_ok=True)
+
+                # Build final JSON report
+                run_stats = runner.stats.json()
+                session_info.update({
+                    'num_cases': run_stats[0]['num_cases'],
+                    'num_failures': run_stats[-1]['num_failures']
+                })
+                json_report = {
+                    'session_info': session_info,
+                    'runs': run_stats
+                }
+                report_file = generate_report_filename(report_file)
+                try:
+                    with open(report_file, 'w') as fp:
+                        json.dump(json_report, fp, indent=2)
+                except OSError as e:
+                    printer.warning(
+                        f'failed to generate report in {report_file!r}: {e}'
+                    )
 
         else:
             printer.error("No action specified. Please specify `-l'/`-L' for "

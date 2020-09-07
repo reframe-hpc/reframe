@@ -6,6 +6,9 @@
 # ReFrame CSCS settings
 #
 
+import reframe.utility.os_ext as os_ext
+
+
 site_configuration = {
     'systems': [
         {
@@ -171,7 +174,8 @@ site_configuration = {
                         'daint-gpu'
                     ],
                     'access': [
-                        '--constraint=gpu'
+                        f'--constraint=gpu',
+                        f'--account={os_ext.osgroup()}'
                     ],
                     'environs': [
                         'builtin',
@@ -218,7 +222,8 @@ site_configuration = {
                         'daint-mc'
                     ],
                     'access': [
-                        '--constraint=mc'
+                        f'--constraint=mc',
+                        f'--account={os_ext.osgroup()}'
                     ],
                     'environs': [
                         'builtin',
@@ -312,7 +317,7 @@ site_configuration = {
                         {
                             'type': 'Singularity',
                             'modules': [
-                                'singularity'
+                                'singularity/3.5.3'
                             ]
                         }
                     ],
@@ -320,7 +325,8 @@ site_configuration = {
                         'daint-gpu'
                     ],
                     'access': [
-                        '--constraint=gpu'
+                        f'--constraint=gpu',
+                        f'--account={os_ext.osgroup()}'
                     ],
                     'environs': [
                         'builtin',
@@ -352,7 +358,7 @@ site_configuration = {
                         {
                             'type': 'Singularity',
                             'modules': [
-                                'singularity'
+                                'singularity/3.5.3'
                             ]
                         }
                     ],
@@ -360,7 +366,8 @@ site_configuration = {
                         'daint-mc'
                     ],
                     'access': [
-                        '--constraint=mc'
+                        f'--constraint=mc',
+                        f'--account={os_ext.osgroup()}'
                     ],
                     'environs': [
                         'builtin',
@@ -1002,6 +1009,7 @@ site_configuration = {
                 '--output=$APPS/UES/$USER/regression/maintenance',
                 '--perflogdir=$APPS/UES/$USER/regression/maintenance/logs',
                 '--stage=$SCRATCH/regression/maintenance/stage',
+                '--report-file=$APPS/UES/$USER/regression/maintenance/reports/maint_report_{sessionid}.json',
                 '--reservation=maintenance',
                 '--save-log-files',
                 '--tag=maintenance',
@@ -1017,6 +1025,7 @@ site_configuration = {
                 '--output=$APPS/UES/$USER/regression/production',
                 '--perflogdir=$APPS/UES/$USER/regression/production/logs',
                 '--stage=$SCRATCH/regression/production/stage',
+                '--report-file=$APPS/UES/$USER/regression/production/reports/prod_report_{sessionid}.json',
                 '--save-log-files',
                 '--tag=production',
                 '--timestamp=%F_%H-%M-%S'
