@@ -258,6 +258,30 @@ def longest(*iterables):
     return ret
 
 
+def find_modules(module, toolchain_mapping=None):
+    def _is_valid_for_env(m, e):
+        if toolchain_mapping is None:
+            return True
+
+        for patt, toolchains in toolchain_mapping.items():
+            if re.match(patt, m) and e in toolchains:
+                return True
+
+        return False
+
+    ms = rt.runtime().modules_system
+    current_system = rt.runtime().system
+    snap0 = rt.snapshot()
+    for p in current_system.partitions:
+        for e in p.environs:
+            rt.loadenv(p.local_env, e)
+            modules = ms.available_modules(module)
+            snap0.restore()
+            for m in modules:
+                if _is_valid_for_env(m, e.name):
+                    yield (p.fullname, e.name, m)
+
+
 class ScopedDict(UserDict):
     '''This is a special dict that imposes scopes on its keys.
 
