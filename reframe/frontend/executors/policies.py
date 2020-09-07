@@ -18,7 +18,7 @@ from reframe.frontend.executors import (ExecutionPolicy, RegressionTask,
                                         TaskEventListener, ABORT_REASONS)
 
 
-def dictlist_len(d):
+def countall(d):
     return functools.reduce(lambda l, r: l + len(r), d.values(), 0)
 
 
@@ -419,11 +419,11 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         num_polls = 0
         t_start = datetime.now()
 
-        while (dictlist_len(self._running_tasks) or self._waiting_tasks or
-               self._completed_tasks or dictlist_len(self._ready_tasks)):
+        while (countall(self._running_tasks) or self._waiting_tasks or
+               self._completed_tasks or countall(self._ready_tasks)):
             getlogger().debug(f'running tasks: '
-                              f'{dictlist_len(self._running_tasks)}')
-            num_polls += dictlist_len(self._running_tasks)
+                              f'{countall(self._running_tasks)}')
+            num_polls += countall(self._running_tasks)
             try:
                 self._poll_tasks()
                 self._finalize_all()
@@ -435,7 +435,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 getlogger().debug(
                     'polling rate (real): %.3f polls/sec' % real_rate)
 
-                num_running = dictlist_len(self._running_tasks)
+                num_running = countall(self._running_tasks)
                 if num_running:
                     t = next(sleeptime)
                     getlogger().debug('sleeping: %.3fs' % t)
