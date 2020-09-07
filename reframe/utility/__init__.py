@@ -259,6 +259,8 @@ def longest(*iterables):
 
 
 def find_modules(module, toolchain_mapping=None):
+    import reframe.core.runtime as rt
+
     def _is_valid_for_env(m, e):
         if toolchain_mapping is None:
             return True
