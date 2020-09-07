@@ -33,23 +33,49 @@ from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.printer import PrettyPrinter
 
 
-def format_check(check, detailed):
-    lines = ['  - %s (found in %s)' % (check.name,
-                                       inspect.getfile(type(check)))]
-    flex = 'flexible' if check.num_tasks <= 0 else 'standard'
+def format_check(check, detailed=False):
+    def fmt_list(x):
+        if not x:
+            return '<none>'
 
-    if detailed:
-        lines += [
-            f"      description: {check.descr}",
-            f"      systems: {', '.join(check.valid_systems)}",
-            f"      environments: {', '.join(check.valid_prog_environs)}",
-            f"      modules: {', '.join(check.modules)}",
-            f"      task allocation: {flex}",
-            f"      dependencies: "
-            f"{', '.join([d[0] for d in check.user_deps()])}",
-            f"      tags: {', '.join(check.tags)}",
-            f"      maintainers: {', '.join(check.maintainers)}"
-        ]
+        return ', '.join(x)
+
+    location = inspect.getfile(type(check))
+    if not detailed:
+        return f'- {check.name} (found in {location!r})\n'
+
+    if check.num_tasks > 0:
+        node_alloc_scheme = f'standard ({check.num_tasks} task(s))'
+    elif check.num_tasks == 0:
+        node_alloc_scheme = 'flexible'
+    else:
+        node_alloc_scheme = f'flexible (minimum {-check.num_tasks} task(s))'
+
+    check_info = {
+        'Dependencies': fmt_list([d[0] for d in check.user_deps()]),
+        'Description': check.descr,
+        'Environment modules': fmt_list(check.modules),
+        'Location': location,
+        'Maintainers': fmt_list(check.maintainers),
+        'Node allocation': node_alloc_scheme,
+        'Pipeline hooks': {
+            k: fmt_list(fn.__name__ for fn in v)
+            for k, v in type(check)._rfm_pipeline_hooks.items()
+        },
+        'Tags': fmt_list(check.tags),
+        'Valid environments': fmt_list(check.valid_prog_environs),
+        'Valid systems': fmt_list(check.valid_systems)
+    }
+    lines = [f'- {check.name}:']
+    for prop, val in check_info.items():
+        lines.append(f'    {prop}:')
+        if isinstance(val, dict):
+            for k, v in val.items():
+                lines.append(f'      {k}: {v}')
+        else:
+            lines.append(f'      {val}')
+
+        lines.append('')
 
     return '\n'.join(lines)
 
@@ -64,10 +90,8 @@ def format_env(envvars):
 
 def list_checks(checks, printer, detailed=False):
     printer.info('[List of matched checks]')
-    for c in checks:
-        printer.info(format_check(c, detailed))
-
-    printer.info('\nFound %d check(s).' % len(checks))
+    printer.info('\n'.join(format_check(c, detailed) for c in checks))
+    printer.info(f'Found {len(checks)} check(s)')
 
 
 def generate_report_filename(filepatt):
@@ -292,6 +316,10 @@ def main():
         dest='flex_alloc_nodes', metavar='{all|STATE|NUM}', default=None,
         help='Set strategy for the flexible node allocation (default: "idle").'
     )
+    run_options.add_argument(
+        '--disable-hook', action='append', metavar='NAME', dest='hooks',
+        default=[], help='Disable a pipeline hook for this run'
+    )
     env_options.add_argument(
         '-M', '--map-module', action='append', metavar='MAPPING',
         dest='module_mappings', default=[],
@@ -357,7 +385,7 @@ def main():
     )
     misc_options.add_argument(
         '--upgrade-config-file', action='store', metavar='OLD[:NEW]',
-        help='Upgrade old configuration file to new syntax'
+        help='Upgrade ReFrame 2.x configuration file to ReFrame 3.x syntax'
     )
     misc_options.add_argument(
         '-V', '--version', action='version', version=os_ext.reframe_version()
@@ -613,6 +641,12 @@ def main():
 
         # Generate the test cases, validate dependencies and sort them
         checks_matched = list(checks_matched)
+
+        # Disable hooks
+        for c in checks_matched:
+            for h in options.hooks:
+                type(c).disable_hook(h)
+
         testcases = generate_testcases(checks_matched,
                                        options.skip_system_check,
                                        options.skip_prgenv_check,
@@ -675,13 +709,8 @@ def main():
 
         # Act on checks
         success = True
-        if options.list:
-            # List matched checks
-            list_checks(list(checks_matched), printer)
-        elif options.list_detailed:
-            # List matched checks with details
-            list_checks(list(checks_matched), printer, detailed=True)
-
+        if options.list or options.list_detailed:
+            list_checks(list(checks_matched), printer, options.list_detailed)
         elif options.run:
             # Setup the execution policy
             if options.exec_policy == 'serial':

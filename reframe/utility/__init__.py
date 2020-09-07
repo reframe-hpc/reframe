@@ -5,6 +5,7 @@
 
 import builtins
 import collections
+import collections.abc
 import functools
 import importlib
 import importlib.util
@@ -221,6 +222,42 @@ def repr(obj, htchar=' ', lfchar='\n', indent=4, basic_offset=0):
     return f'{type(obj).__name__}({r})@{hex(id(obj))}'
 
 
+def shortest(*iterables):
+    '''Return the shortest sequence.'''
+
+    ret = None
+    for seq in iterables:
+        if not isinstance(seq, collections.abc.Sized):
+            raise TypeError(f'expected a sized iterable: {seq}')
+
+        if ret is None:
+            ret = seq
+            continue
+
+        if len(seq) < len(ret):
+            ret = seq
+
+    return ret
+
+
+def longest(*iterables):
+    '''Return the longest sequence.'''
+
+    ret = None
+    for seq in iterables:
+        if not isinstance(seq, collections.abc.Sized):
+            raise TypeError(f'expected a sized iterable: {seq}')
+
+        if ret is None:
+            ret = seq
+            continue
+
+        if len(seq) > len(ret):
+            ret = seq
+
+    return ret
+
+
 class ScopedDict(UserDict):
     '''This is a special dict that imposes scopes on its keys.
 
@@ -381,7 +418,7 @@ class OrderedSet(collections.abc.MutableSet):
         if not vals:
             return type(self).__name__ + '()'
         else:
-            return '{' + ', '.join(str(v) for v in vals) + '}'
+            return '{' + ', '.join(repr(v) for v in vals) + '}'
 
     # Container i/face
     def __contains__(self, item):
@@ -406,10 +443,19 @@ class OrderedSet(collections.abc.MutableSet):
     # factor.
     #
     def __eq__(self, other):
-        if not isinstance(other, collections.abc.Set):
-            return NotImplemented
+        if isinstance(other, OrderedSet):
+            if len(self) != len(other):
+                return False
 
-        return set(self.__data.keys()) == other
+            for x, y in zip(self, other):
+                if x != y:
+                    return False
+
+            return True
+        elif isinstance(other, collections.abc.Set):
+            return set(self.__data.keys()) == other
+        else:
+            return NotImplemented
 
     def __gt__(self, other):
         if not isinstance(other, collections.abc.Set):
@@ -421,25 +467,46 @@ class OrderedSet(collections.abc.MutableSet):
         if not isinstance(other, collections.abc.Set):
             return NotImplemented
 
-        return set(self.__data.keys()) & other
+        ret = type(self)()
+        for x in shortest(self, other):
+            if x in self and x in other:
+                ret.add(x)
+
+        return ret
 
     def __or__(self, other):
         if not isinstance(other, collections.abc.Set):
             return NotImplemented
 
-        return set(self.__data.keys()) | other
+        ret = type(self)()
+        for x in itertools.chain(self, other):
+            ret.add(x)
+
+        return ret
 
     def __sub__(self, other):
         if not isinstance(other, collections.abc.Set):
             return NotImplemented
 
-        return set(self.__data.keys()) - other
+        ret = type(self)(self.__data.keys())
+        for x in other:
+            if x in ret:
+                ret.remove(x)
+
+        return ret
 
     def __xor__(self, other):
         if not isinstance(other, collections.abc.Set):
             return NotImplemented
 
-        return set(self.__data.keys()) ^ other
+        ret = type(self)()
+        for x in itertools.chain(self, other):
+            if x in self and x in other:
+                continue
+
+            ret.add(x)
+
+        return ret
 
     def isdisjoint(self, other):
         if not isinstance(other, collections.abc.Set):

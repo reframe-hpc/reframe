@@ -303,6 +303,15 @@ Options controlling ReFrame execution
    The test stage and output directories will receive a ``_retry<N>`` suffix every time the test is retried.
 
 
+.. option:: --disable-hook=HOOK
+
+   Disable the pipeline hook named ``HOOK`` from all the tests that will run.
+   This feature is useful when you have implemented test workarounds as pipeline hooks, in which case you can quickly disable them from the command line.
+   This option may be specified multiple times in order to disable multiple hooks at the same time.
+
+   .. versionadded:: 3.2
+
+
 ----------------------------------
 Options controlling job submission
 ----------------------------------
