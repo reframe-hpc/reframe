@@ -393,11 +393,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         task.run()
 
     def _reschedule_all(self):
-        partitions = self._running_tasks.keys()
-        for partname in partitions:
-            num_jobs = len(self._running_tasks[partname])
-            assert(num_jobs >= 0)
-            num_empty_slots = self._max_jobs[partname] - num_jobs
+        for partname, tasks in self._running_tasks.items():
+            num_tasks = len(tasks)
+            num_empty_slots = self._max_jobs[partname] - num_tasks
             num_rescheduled = 0
             for _ in range(num_empty_slots):
                 try:
