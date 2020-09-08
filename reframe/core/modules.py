@@ -490,8 +490,12 @@ class TModImpl(ModulesSystemImpl):
             'avail', '-t', substr, msg='could not retrieve available modules'
         )
         ret = []
-        for line in re.finditer(r'\S+[^:]$', completed.stderr, re.MULTILINE):
-            module = re.sub(r'\(default\)', '', line.group(0))
+        for line in completed.stderr.split('\n'):
+            if not line or line[-1] == ':':
+                # Ignore empty lines and path entries
+                continue
+
+            module = re.sub(r'\(default\)', '', line)
             ret.append(Module(module))
 
         return ret
@@ -712,8 +716,12 @@ class LModImpl(TModImpl):
             '-t', 'avail', substr, msg='could not retrieve available modules'
         )
         ret = []
-        for line in re.finditer(r'\S+[^:/]$', completed.stderr, re.MULTILINE):
-            module = re.sub(r"\(\S+\)", "", line.group(0))
+        for line in completed.stderr.split('\n'):
+            if not line or line[-1] == ':':
+                # Ignore empty lines and path entries
+                continue
+
+            module = re.sub(r'\(\S+\)', '', line)
             ret.append(Module(module))
 
         return ret
