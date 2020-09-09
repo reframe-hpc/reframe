@@ -283,6 +283,10 @@ def main():
         help='Skip sanity checking'
     )
     run_options.add_argument(
+        '--skip-report-file', action='store_true',
+        help='Skip json report file'
+    )
+    run_options.add_argument(
         '--skip-performance-check', action='store_true',
         help='Skip performance checking'
     )
@@ -798,23 +802,25 @@ def main():
                     os.makedirs(basedir, exist_ok=True)
 
                 # Build final JSON report
-                run_stats = runner.stats.json()
-                session_info.update({
-                    'num_cases': run_stats[0]['num_cases'],
-                    'num_failures': run_stats[-1]['num_failures']
-                })
-                json_report = {
-                    'session_info': session_info,
-                    'runs': run_stats
-                }
-                report_file = generate_report_filename(report_file)
-                try:
-                    with open(report_file, 'w') as fp:
-                        json.dump(json_report, fp, indent=2)
-                except OSError as e:
-                    printer.warning(
-                        f'failed to generate report in {report_file!r}: {e}'
-                    )
+                if options.skip_report_file is not True:
+                    run_stats = runner.stats.json()
+                    session_info.update({
+                        'num_cases': run_stats[0]['num_cases'],
+                        'num_failures': run_stats[-1]['num_failures']
+                    })
+                    json_report = {
+                        'session_info': session_info,
+                        'runs': run_stats
+                    }
+                    report_file = generate_report_filename(report_file)
+                    try:
+                        with open(report_file, 'w') as fp:
+                            json.dump(json_report, fp, indent=2)
+                    except OSError as e:
+                        printer.warning(
+                            f'failed to generate report in {report_file!r}: '
+                            f'{e}'
+                        )
 
         else:
             printer.error("No action specified. Please specify `-l'/`-L' for "
