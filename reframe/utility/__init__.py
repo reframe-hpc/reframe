@@ -281,6 +281,7 @@ def find_modules(module, toolchain_mapping=None):
             snap0.restore()
             for m in modules:
                 if _is_valid_for_env(m, e.name):
+                    print(p.fullname, e.name, m)
                     yield (p.fullname, e.name, m)
 
 

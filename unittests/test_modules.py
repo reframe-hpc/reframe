@@ -9,6 +9,7 @@ import pytest
 
 import reframe.core.environments as env
 import reframe.core.modules as modules
+import reframe.utility as util
 import unittests.fixtures as fixtures
 from reframe.core.exceptions import ConfigError, EnvironError
 from reframe.core.runtime import runtime

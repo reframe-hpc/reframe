@@ -11,9 +11,13 @@ import sys
 
 import reframe
 import reframe.core.fields as fields
+import reframe.core.runtime as rt
 import reframe.utility as util
 import reframe.utility.os_ext as os_ext
-from reframe.core.exceptions import (SpawnedProcessError,
+import unittests.fixtures as fixtures
+
+from reframe.core.exceptions import (ConfigError,
+                                     SpawnedProcessError,
                                      SpawnedProcessTimeout)
 
 
@@ -1293,3 +1297,69 @@ def test_cray_cle_info_missing_parts(tmp_path):
     assert cle_info.date is None
     assert cle_info.network is None
     assert cle_info.patchset == '09'
+
+
+@pytest.fixture
+def temp_runtime(tmp_path):
+    def _temp_runtime(site_config, system=None, options={}):
+        options.update({'systems/prefix': tmp_path})
+        with rt.temp_runtime(site_config, system, options):
+            yield rt.runtime
+
+    yield _temp_runtime
+
+
+@pytest.fixture(params=['tmod', 'tmod4', 'lmod', 'nomod'])
+def runtime_with_modules(request, temp_runtime):
+    if fixtures.USER_CONFIG_FILE:
+        config_file, system = fixtures.USER_CONFIG_FILE, fixtures.USER_SYSTEM
+    else:
+        config_file, system = fixtures.BUILTIN_CONFIG_FILE, 'generic'
+
+    try:
+        yield from temp_runtime(config_file, system,
+                                {'systems/modules_system': request.param})
+    except ConfigError as e:
+        pytest.skip(str(e))
+
+
+def test_find_modules(monkeypatch, runtime_with_modules):
+    # Pretend to be on a clean modules environment
+    monkeypatch.setenv('MODULEPATH', '')
+    monkeypatch.setenv('LOADEDMODULES', '')
+    monkeypatch.setenv('_LMFILES_', '')
+
+    ms = rt.runtime().system.modules_system
+    ms.searchpath_add(fixtures.TEST_MODULES)
+    found_modules = list(util.find_modules('testmod'))
+    if ms.name == 'nomod':
+        assert found_modules == []
+    else:
+        assert found_modules == [
+            ('generic:default', 'builtin', 'testmod_bar'),
+            ('generic:default', 'builtin', 'testmod_base'),
+            ('generic:default', 'builtin', 'testmod_boo'),
+            ('generic:default', 'builtin', 'testmod_foo')
+        ]
+
+
+def test_find_modules_toolchains(monkeypatch, runtime_with_modules):
+    # Pretend to be on a clean modules environment
+    monkeypatch.setenv('MODULEPATH', '')
+    monkeypatch.setenv('LOADEDMODULES', '')
+    monkeypatch.setenv('_LMFILES_', '')
+
+    ms = rt.runtime().system.modules_system
+    ms.searchpath_add(fixtures.TEST_MODULES)
+    found_modules = list(
+        util.find_modules('testmod',
+                          toolchain_mapping={r'.*_ba.*': 'builtin',
+                                             r'testmod_foo': 'foo'})
+    )
+    if ms.name == 'nomod':
+        assert found_modules == []
+    else:
+        assert found_modules == [
+            ('generic:default', 'builtin', 'testmod_bar'),
+            ('generic:default', 'builtin', 'testmod_base')
+        ]
