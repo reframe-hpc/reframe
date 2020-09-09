@@ -261,6 +261,13 @@ def longest(*iterables):
 def find_modules(module, toolchain_mapping=None):
     import reframe.core.runtime as rt
 
+    if not isinstance(module, str):
+        raise TypeError("'module' argument must be a string")
+
+    if (toolchain_mapping is not None and
+        not isinstance(toolchain_mapping, collections.abc.Mapping)):
+        raise TypeError("'toolchain_mapping' argument must be a mapping type")
+
     def _is_valid_for_env(m, e):
         if toolchain_mapping is None:
             return True
@@ -281,7 +288,6 @@ def find_modules(module, toolchain_mapping=None):
             snap0.restore()
             for m in modules:
                 if _is_valid_for_env(m, e.name):
-                    print(p.fullname, e.name, m)
                     yield (p.fullname, e.name, m)
 
 
