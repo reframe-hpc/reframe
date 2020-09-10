@@ -93,13 +93,7 @@ class QuantumESPRESSOGpuCheck(QuantumESPRESSOCheck):
         super().__init__()
         self.descr = f'QuantumESPRESSO GPU check (version: {scale}, {variant})'
         self.valid_systems = ['daint:gpu']
-
-        # FIXME: Unify modules after daint upgrade
-        if self.current_system.name == 'daint':
-            self.modules = ['QuantumESPRESSO/6.5a1-CrayPGI-19.10-cuda-10.1']
-        else:
-            self.modules = ['QuantumESPRESSO']
-
+        self.modules = ['QuantumESPRESSO']
         self.num_gpus_per_node = 1
         if scale == 'small':
             self.valid_systems += ['dom:gpu']
