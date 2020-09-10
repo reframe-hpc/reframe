@@ -24,6 +24,19 @@ def build_deps(cases, default_cases=None):
     '''
 
     # Index cases for quick access
+    def build_name_index(cases):
+        if cases is None:
+            return {}
+
+        ret = {}
+        for c in cases:
+            cname = c.check.name
+            ret.setdefault(cname, [])
+            ret[cname].append(c)
+
+        return ret
+
+    # Index cases for quick access
     def build_partition_index(cases):
         if cases is None:
             return {}
@@ -51,12 +64,16 @@ def build_deps(cases, default_cases=None):
 
     def resolve_dep(target, from_map, fallback_map, *args):
         errmsg = 'could not resolve dependency: %s -> %s' % (target, args)
+        if len(args) == 1:
+            key = args[0]
+        else:
+            key = args
         try:
-            ret = from_map[args]
+            ret = from_map[key]
         except KeyError:
             # try to resolve the dependency in the fallback map
             try:
-                ret = fallback_map[args]
+                ret = fallback_map[key]
             except KeyError:
                 raise DependencyError(errmsg) from None
 
@@ -65,8 +82,10 @@ def build_deps(cases, default_cases=None):
 
         return ret
 
+    all_cases = build_name_index(cases)
     cases_by_part = build_partition_index(cases)
     cases_revmap  = build_cases_index(cases)
+    default_all_cases = build_name_index(default_cases)
     default_cases_by_part = build_partition_index(default_cases)
     default_cases_revmap  = build_cases_index(default_cases)
 
@@ -86,7 +105,7 @@ def build_deps(cases, default_cases=None):
         ename = c.environ.name
         for dep in c.check.user_deps():
             tname, how, subdeps = dep
-            if how == rfm.DEPEND_FULLY:
+            if how == rfm.DEPEND_BY_PARTITION:
                 c.deps.extend(resolve_dep(c, cases_by_part,
                                           default_cases_by_part, tname, pname))
             elif how == rfm.DEPEND_BY_ENV:
@@ -104,6 +123,8 @@ def build_deps(cases, default_cases=None):
                             resolve_dep(c, cases_revmap, default_cases_revmap,
                                         tname, pname, te)
                         )
+            elif how == rfm.DEPEND_FULLY:
+                c.deps.extend(resolve_dep(c, all_cases, default_all_cases, tname))
 
         graph[c] = util.OrderedSet(c.deps)
 

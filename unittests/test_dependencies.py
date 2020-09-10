@@ -126,7 +126,7 @@ def test_build_deps(loader, exec_ctx):
     dependency.validate_deps(deps)
 
     # Check DEPEND_FULLY dependencies
-    assert num_deps(deps, 'Test1_fully') == 8
+    assert num_deps(deps, 'Test1_fully') == 16
     for p in ['sys0:p0', 'sys0:p1']:
         for e0 in ['e0', 'e1']:
             for e1 in ['e0', 'e1']:
@@ -165,15 +165,15 @@ def test_build_deps(loader, exec_ctx):
     # 1 from Test1_by_env,
     # 1 from Test1_exact,
     # 1 from Test1_default
-    assert in_degree(deps, Node('Test0', 'sys0:p0', 'e0')) == 5
-    assert in_degree(deps, Node('Test0', 'sys0:p1', 'e0')) == 5
+    assert in_degree(deps, Node('Test0', 'sys0:p0', 'e0')) == 7
+    assert in_degree(deps, Node('Test0', 'sys0:p1', 'e0')) == 7
 
     # 2 from Test1_fully,
     # 1 from Test1_by_env,
     # 2 from Test1_exact,
     # 1 from Test1_default
-    assert in_degree(deps, Node('Test0', 'sys0:p0', 'e1')) == 6
-    assert in_degree(deps, Node('Test0', 'sys0:p1', 'e1')) == 6
+    assert in_degree(deps, Node('Test0', 'sys0:p0', 'e1')) == 8
+    assert in_degree(deps, Node('Test0', 'sys0:p1', 'e1')) == 8
 
     # Pick a check to test getdep()
     check_e0 = find_case('Test1_exact', 'e0', cases).check

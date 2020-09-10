@@ -9,7 +9,8 @@
 
 __all__ = [
     'CompileOnlyRegressionTest', 'RegressionTest', 'RunOnlyRegressionTest',
-    'DEPEND_BY_ENV', 'DEPEND_EXACT', 'DEPEND_FULLY', 'final'
+    'DEPEND_BY_ENV', 'DEPEND_EXACT', 'DEPEND_FULLY', 'DEPEND_BY_PARTITION',
+    'final'
 ]
 
 
@@ -57,11 +58,19 @@ DEPEND_EXACT  = 1
 DEPEND_BY_ENV = 2
 
 #: Constant to be passed as the ``how`` argument of the
+#: :func:`RegressionTest.depends_on` method. It denotes that the test cases of
+#: the current test will depend only on the corresponding test cases of the
+#: target test that use the same partition.
+#:
+#:  This constant is directly available under the :mod:`reframe` module.
+DEPEND_BY_PARTITION = 3
+
+#: Constant to be passed as the ``how`` argument of the
 #: :func:`RegressionTest.depends_on` method. It denotes that each test case of
 #: this test depends on all the test cases of the target test.
 #:
 #:  This constant is directly available under the :mod:`reframe` module.
-DEPEND_FULLY  = 3
+DEPEND_FULLY  = 4
 
 
 def _run_hooks(name=None):
