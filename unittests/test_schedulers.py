@@ -732,7 +732,7 @@ def test_flex_alloc_sched_access_constraint_partition(make_flexible_job):
 
 
 def test_flex_alloc_sched_access_partition(make_flexible_job):
-    job = make_flexible_job('all')  #, sched_access=['--partition=p1'])
+    job = make_flexible_job('all')
     prepare_job(job)
     assert job.num_tasks == 16
 
@@ -751,8 +751,8 @@ def test_flex_alloc_constraint_idle(make_flexible_job):
 
 
 def test_flex_alloc_partition_idle(make_flexible_job):
-    job = make_flexible_job('idle')  #, sched_partition='p2')
-    job.options = ['--partition=p2'] 
+    job = make_flexible_job('idle')
+    job.options = ['--partition=p2']
     with pytest.raises(JobError):
         prepare_job(job)
 
