@@ -144,7 +144,6 @@ site_configuration = {
                     'environs': [
                         'builtin',
                         'PrgEnv-cray',
-                        'PrgEnv-cray_classic',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
                         'PrgEnv-pgi'
@@ -180,7 +179,6 @@ site_configuration = {
                     'environs': [
                         'builtin',
                         'PrgEnv-cray',
-                        'PrgEnv-cray_classic',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
                         'PrgEnv-pgi'
@@ -228,7 +226,6 @@ site_configuration = {
                     'environs': [
                         'builtin',
                         'PrgEnv-cray',
-                        'PrgEnv-cray_classic',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
                         'PrgEnv-pgi'
@@ -912,13 +909,6 @@ site_configuration = {
             'name': 'PrgEnv-cray',
             'modules': [
                 'PrgEnv-cray'
-            ]
-        },
-        {
-            'name': 'PrgEnv-cray_classic',
-            'modules': [
-                'PrgEnv-cray',
-                'cce/9.0.2-classic'
             ]
         },
         {
