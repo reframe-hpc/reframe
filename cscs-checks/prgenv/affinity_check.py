@@ -119,7 +119,7 @@ class AffinityOpenMPTest(AffinityTestBase):
                 self.cases[self.variant]['ntasks_per_core'])
 
         self.num_tasks = 1
-        self.variables  = {
+        self.variables = {
             'OMP_NUM_THREADS': str(self.num_cpus_per_task),
             'OMP_PLACES': self.cases[self.variant]['OMP_PLACES']
             # OMP_PROC_BIND is set to TRUE if OMP_PLACES is defined.
