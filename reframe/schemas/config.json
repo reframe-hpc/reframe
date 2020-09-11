@@ -410,7 +410,7 @@
         "general/purge_environment": false,
         "general/report_file": "${HOME}/.reframe/reports/run-report-{sessionid}.json",
         "general/save_log_files": false,
-        "general/save_report_file": true,
+        "general/enable_json_report": false,
         "general/target_systems": ["*"],
         "general/timestamp_dirs": "",
         "general/unload_modules": [],

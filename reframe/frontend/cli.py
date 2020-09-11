@@ -424,10 +424,9 @@ def main():
         help='Use a login shell for job scripts'
     )
     argparser.add_argument(
-        dest='save_report_file', default=True,
-        envvar='RFM_SAVE_REPORT_FILE',
-        configvar='general/save_report_file',
-        action='store_true',
+        dest='enable_json_report', default=False,
+        envvar='RFM_enable_json_report',
+        configvar='general/enable_json_report',
         help='Option to output JSON report file'
     )
 
@@ -797,7 +796,7 @@ def main():
                     printer.info(runner.stats.performance_report())
 
                 # Generate the report for this session
-                if site_config.get('general/0/save_report_file'):
+                if site_config.get('general/0/enable_json_report'):
                     report_file = os.path.normpath(os_ext.expandvars(
                         rt.get_option('general/0/report_file'))
                     )
