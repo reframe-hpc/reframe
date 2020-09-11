@@ -117,7 +117,7 @@ class HelloWorldTestSerial(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
         super().__init__('serial', lang, linkage)
         self.valid_systems += ['kesch:pn', 'arolla:pn', 'tsa:pn']
-        self.sourcesdir += os.path.join('serial', lang)
+        self.sourcesdir += os.path.join('serial')
         self.valid_prog_environs += ['PrgEnv-gnu-nompi', 'PrgEnv-pgi-nompi',
                                      'PrgEnv-gnu-nompi-nocuda',
                                      'PrgEnf-pgi-nompi-nocuda']
@@ -153,7 +153,7 @@ class HelloWorldTestOpenMP(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
         super().__init__('openmp', lang, linkage)
         self.valid_systems += ['kesch:pn', 'arolla:pn', 'tsa:pn']
-        self.sourcesdir += os.path.join('/openmp', lang)
+        self.sourcesdir += os.path.join('openmp')
         self.sourcepath += '_openmp.' + lang
         self.descr += ' OpenMP ' + str.capitalize(linkage)
         self.prgenv_flags = {
@@ -194,7 +194,7 @@ class HelloWorldTestOpenMP(HelloWorldBaseTest):
 class HelloWorldTestMPI(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
         super().__init__('mpi', lang, linkage)
-        self.sourcesdir += os.path.join('/mpi', lang)
+        self.sourcesdir += os.path.join('mpi')
         self.sourcepath += '_mpi.' + lang
         self.descr += ' MPI ' + linkage.capitalize()
         self.prgenv_flags = {
@@ -220,7 +220,7 @@ class HelloWorldTestMPI(HelloWorldBaseTest):
 class HelloWorldTestMPIOpenMP(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
         super().__init__('mpi_openmp', lang, linkage)
-        self.sourcesdir += os.path.join('/mpi_openmp', lang)
+        self.sourcesdir += os.path.join('mpi_openmp')
         self.sourcepath += '_mpi_openmp.' + lang
         self.descr += ' MPI + OpenMP ' + linkage.capitalize()
         self.prgenv_flags = {

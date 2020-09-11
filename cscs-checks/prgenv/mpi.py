@@ -40,7 +40,7 @@ class MpiInitTest(rfm.RegressionTest):
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi']
         self.build_system = 'SingleSource'
-        self.sourcesdir += os.path.join('/mpi_thread', 'cpp')
+        self.sourcesdir += os.path.join('mpi_thread')
         self.sourcepath = 'mpi_init_thread.cpp'
         self.cppflags = {
             'single':     ['-D_MPI_THREAD_SINGLE'],
@@ -86,7 +86,7 @@ class MpiHelloTest(rfm.RegressionTest):
             self.valid_prog_environs = ['PrgEnv-gnu']
 
         self.descr = 'MPI Hello World'
-        self.sourcesdir += os.path.join('/mpi', 'c')
+        self.sourcesdir += os.path.join('mpi')
         self.sourcepath = 'mpi_helloworld.c'
         self.maintainers = ['RS', 'AJ']
         self.num_tasks_per_node = 1

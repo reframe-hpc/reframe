@@ -21,7 +21,7 @@ class OpenACCFortranCheck(rfm.RegressionTest):
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
                               'arolla:cn', 'tsa:cn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
-        self.sourcesdir += os.path.join('/openacc', 'f90')
+        self.sourcesdir += os.path.join('openacc')
         if self.num_tasks == 1:
             self.sourcepath = 'vecAdd_openacc_nompi.f90'
             if self.current_system.name == 'kesch':
