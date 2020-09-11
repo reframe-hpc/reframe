@@ -19,7 +19,8 @@ class CudaStressTest(rfm.RegressionTest):
             self.modules = ['cudatoolkit/8.0.61']
         elif self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
-            self.valid_prog_environs = ['PrgEnv-gnu-nompi']
+            self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-gnu-nompi',
+                                        'PrgEnv-pgi', 'PrgEnv-pgi-nompi']
             self.modules = ['cuda/10.1.243']
         else:
             self.valid_prog_environs = ['PrgEnv-gnu']

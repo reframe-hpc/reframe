@@ -6,6 +6,7 @@
 import os
 
 import reframe as rfm
+import reframe.utility.os_ext as os_ext
 import reframe.utility.sanity as sn
 
 
@@ -29,3 +30,12 @@ class OpenCLCheck(rfm.RegressionTest):
     def setflags(self):
         if self.current_environ.name == 'PrgEnv-pgi':
             self.build_system.cflags = ['-mmmx']
+
+    @rfm.run_before('compile')
+    def cdt2006_pgi_workaround(self):
+        cdt = os_ext.cray_cdt_version()
+        if not cdt:
+            return
+
+        if (self.current_environ.name == 'PrgEnv-pgi' and cdt == '20.08'):
+            self.variables.update({'CUDA_HOME': '$CUDATOOLKIT_HOME'})

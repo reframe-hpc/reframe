@@ -76,8 +76,12 @@ def _run_hooks(name=None):
                 hook_name = 'xxx'
 
             func_names = set()
-            ret = []
+            disabled_hooks = set()
+            func_list = []
             for cls in type(obj).mro():
+                if hasattr(cls, '_rfm_disabled_hooks'):
+                    disabled_hooks |= cls._rfm_disabled_hooks
+
                 try:
                     funcs = cls._rfm_pipeline_hooks.get(hook_name, [])
                     if any(fn.__name__ in func_names for fn in funcs):
@@ -85,11 +89,13 @@ def _run_hooks(name=None):
                         continue
 
                     func_names |= {fn.__name__ for fn in funcs}
-                    ret += funcs
+                    func_list += funcs
                 except AttributeError:
                     pass
 
-            return ret
+            # Remove the disabled hooks before returning
+            return [fn for fn in func_list
+                    if fn.__name__ not in disabled_hooks]
 
         '''Run the hooks before and after func.'''
         @functools.wraps(func)
@@ -128,6 +134,16 @@ class RegressionTest(metaclass=RegressionTestMeta):
            Base constructor takes no arguments.
 
     '''
+
+    @classmethod
+    def disable_hook(cls, hook_name):
+        '''Disable pipeline hook by name.
+
+        :arg hook_name: The function name of the hook to be disabled.
+
+        :meta private:
+        '''
+        cls._rfm_disabled_hooks.add(hook_name)
 
     #: The name of the test.
     #:
@@ -436,6 +452,9 @@ class RegressionTest(metaclass=RegressionTestMeta):
                                            int, type(None))
 
     #: Number of GPUs per node required by this test.
+    #: This attribute is translated internally to the ``_rfm_gpu`` resource.
+    #: For more information on test resources, have a look at the
+    #: :attr:`extra_resources` attribute.
     #:
     #: :type: integral
     #: :default: ``0``
@@ -610,6 +629,9 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: .. warning::
     #:    .. versionchanged:: 3.0
     #:       The old syntax using a ``(h, m, s)`` tuple is deprecated.
+    #:
+    #:    .. versionchanged:: 3.2
+    #:       The old syntax using a ``(h, m, s)`` tuple is dropped.
     time_limit = fields.TimerField('time_limit', type(None))
 
     #: .. versionadded:: 2.8
@@ -923,6 +945,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
         return self._job.stderr
 
     @property
+    def build_job(self):
+        return self._build_job
+
+    @property
     @sn.sanity_function
     def build_stdout(self):
         return self._build_job.stdout
@@ -1069,9 +1095,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
                           (path, self._stagedir))
         self.logger.debug('symlinking files: %s' % self.readonly_files)
         try:
-            os_ext.copytree_virtual(path, self._stagedir, self.readonly_files)
+            os_ext.copytree_virtual(
+                path, self._stagedir, self.readonly_files, dirs_exist_ok=True
+            )
         except (OSError, ValueError, TypeError) as e:
-            raise PipelineError('virtual copying of files failed') from e
+            raise PipelineError('copying of files failed') from e
 
     def _clone_to_stagedir(self, url):
         self.logger.debug('cloning URL %s to stage directory (%s)' %
@@ -1427,10 +1455,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
                 for var in variables:
                     name, unit = var
-                    ref_tuple = (0, None, None)
-                    if unit:
-                        ref_tuple += (unit,)
-
+                    ref_tuple = (0, None, None, unit)
                     self.reference.update({'*': {name: ref_tuple}})
 
             # We first evaluate and log all performance values and then we

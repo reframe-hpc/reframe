@@ -6,6 +6,9 @@
 # ReFrame CSCS settings
 #
 
+import reframe.utility.os_ext as os_ext
+
+
 site_configuration = {
     'systems': [
         {
@@ -170,7 +173,8 @@ site_configuration = {
                         'daint-gpu'
                     ],
                     'access': [
-                        '--constraint=gpu'
+                        f'--constraint=gpu',
+                        f'--account={os_ext.osgroup()}'
                     ],
                     'environs': [
                         'builtin',
@@ -216,7 +220,8 @@ site_configuration = {
                         'daint-mc'
                     ],
                     'access': [
-                        '--constraint=mc'
+                        f'--constraint=mc',
+                        f'--account={os_ext.osgroup()}'
                     ],
                     'environs': [
                         'builtin',
@@ -288,7 +293,6 @@ site_configuration = {
                     'environs': [
                         'builtin',
                         'PrgEnv-cray',
-                        'PrgEnv-cray_classic',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
                         'PrgEnv-pgi'
@@ -310,7 +314,7 @@ site_configuration = {
                         {
                             'type': 'Singularity',
                             'modules': [
-                                'singularity'
+                                'singularity/3.5.3'
                             ]
                         }
                     ],
@@ -318,12 +322,12 @@ site_configuration = {
                         'daint-gpu'
                     ],
                     'access': [
-                        '--constraint=gpu'
+                        f'--constraint=gpu',
+                        f'--account={os_ext.osgroup()}'
                     ],
                     'environs': [
                         'builtin',
                         'PrgEnv-cray',
-                        'PrgEnv-cray_classic',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
                         'PrgEnv-pgi'
@@ -351,7 +355,7 @@ site_configuration = {
                         {
                             'type': 'Singularity',
                             'modules': [
-                                'singularity'
+                                'singularity/3.5.3'
                             ]
                         }
                     ],
@@ -359,12 +363,12 @@ site_configuration = {
                         'daint-mc'
                     ],
                     'access': [
-                        '--constraint=mc'
+                        f'--constraint=mc',
+                        f'--account={os_ext.osgroup()}'
                     ],
                     'environs': [
                         'builtin',
                         'PrgEnv-cray',
-                        'PrgEnv-cray_classic',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
                         'PrgEnv-pgi'
@@ -545,10 +549,13 @@ site_configuration = {
                     'environs': [
                         'PrgEnv-pgi',
                         'PrgEnv-pgi-nompi',
+                        'PrgEnv-pgi-nompi-nocuda',
                         'PrgEnv-gnu',
-                        'PrgEnv-gnu-nompi'
+                        'PrgEnv-gnu-nompi',
+                        'PrgEnv-gnu-nompi-nocuda'
                     ],
                     'descr': 'Arolla login nodes',
+                    'max_jobs': 4,
                     'launcher': 'local'
                 },
                 {
@@ -560,10 +567,13 @@ site_configuration = {
                     'environs': [
                         'PrgEnv-pgi',
                         'PrgEnv-pgi-nompi',
+                        'PrgEnv-pgi-nompi-nocuda',
                         'PrgEnv-gnu',
-                        'PrgEnv-gnu-nompi'
+                        'PrgEnv-gnu-nompi',
+                        'PrgEnv-gnu-nompi-nocuda'
                     ],
                     'descr': 'Arolla post-processing nodes',
+                    'max_jobs': 50,
                     'launcher': 'srun'
                 },
                 {
@@ -575,8 +585,10 @@ site_configuration = {
                     'environs': [
                         'PrgEnv-gnu',
                         'PrgEnv-gnu-nompi',
+                        'PrgEnv-gnu-nompi-nocuda',
                         'PrgEnv-pgi',
-                        'PrgEnv-pgi-nompi'
+                        'PrgEnv-pgi-nompi',
+                        'PrgEnv-pgi-nompi-nocuda'
                     ],
                     'descr': 'Arolla compute nodes',
                     'resources': [
@@ -587,6 +599,7 @@ site_configuration = {
                             ]
                         }
                     ],
+                    'max_jobs': 50,
                     'launcher': 'srun'
                 }
             ]
@@ -606,10 +619,15 @@ site_configuration = {
                     'environs': [
                         'PrgEnv-pgi',
                         'PrgEnv-pgi-nompi',
+                        'PrgEnv-pgi-nocuda',
+                        'PrgEnv-pgi-nompi-nocuda',
                         'PrgEnv-gnu',
-                        'PrgEnv-gnu-nompi'
+                        'PrgEnv-gnu-nompi',
+                        'PrgEnv-gnu-nocuda',
+                        'PrgEnv-gnu-nompi-nocuda'
                     ],
                     'descr': 'Tsa login nodes',
+                    'max_jobs': 4,
                     'launcher': 'local'
                 },
                 {
@@ -621,10 +639,15 @@ site_configuration = {
                     'environs': [
                         'PrgEnv-pgi',
                         'PrgEnv-pgi-nompi',
+                        'PrgEnv-pgi-nocuda',
+                        'PrgEnv-pgi-nompi-nocuda',
                         'PrgEnv-gnu',
-                        'PrgEnv-gnu-nompi'
+                        'PrgEnv-gnu-nompi',
+                        'PrgEnv-gnu-nocuda',
+                        'PrgEnv-gnu-nompi-nocuda'
                     ],
                     'descr': 'Tsa post-processing nodes',
+                    'max_jobs': 20,
                     'launcher': 'srun'
                 },
                 {
@@ -636,10 +659,15 @@ site_configuration = {
                     'environs': [
                         'PrgEnv-gnu',
                         'PrgEnv-gnu-nompi',
+                        'PrgEnv-gnu-nocuda',
+                        'PrgEnv-gnu-nompi-nocuda',
                         'PrgEnv-pgi',
-                        'PrgEnv-pgi-nompi'
+                        'PrgEnv-pgi-nompi',
+                        'PrgEnv-pgi-nocuda',
+                        'PrgEnv-pgi-nompi-nocuda'
                     ],
                     'descr': 'Tsa compute nodes',
+                    'max_jobs': 20,
                     'resources': [
                         {
                             'name': '_rfm_gpu',
@@ -782,9 +810,21 @@ site_configuration = {
             'ftn': 'gfortran'
         },
         {
+            'name': 'PrgEnv-pgi-nompi-nocuda',
+            'target_systems': [
+                'arolla', 'tsa'
+            ],
+            'modules': [
+                'PrgEnv-pgi/19.9-nocuda'
+            ],
+            'cc': 'pgcc',
+            'cxx': 'pgc++',
+            'ftn': 'pgf90'
+        },
+        {
             'name': 'PrgEnv-pgi-nompi',
             'target_systems': [
-                'arolla'
+                'arolla', 'tsa'
             ],
             'modules': [
                 'PrgEnv-pgi/19.9'
@@ -796,7 +836,7 @@ site_configuration = {
         {
             'name': 'PrgEnv-pgi',
             'target_systems': [
-                'arolla'
+                'arolla', 'tsa'
             ],
             'modules': [
                 'PrgEnv-pgi/19.9'
@@ -806,9 +846,21 @@ site_configuration = {
             'ftn': 'mpifort'
         },
         {
+            'name': 'PrgEnv-pgi-nocuda',
+            'target_systems': [
+                'arolla', 'tsa'
+            ],
+            'modules': [
+                'PrgEnv-pgi/19.9-nocuda'
+            ],
+            'cc': 'mpicc',
+            'cxx': 'mpicxx',
+            'ftn': 'mpifort'
+        },
+        {
             'name': 'PrgEnv-gnu',
             'target_systems': [
-                'arolla'
+                'arolla', 'tsa'
             ],
             'modules': [
                 'PrgEnv-gnu/19.2'
@@ -818,9 +870,21 @@ site_configuration = {
             'ftn': 'mpifort'
         },
         {
+            'name': 'PrgEnv-gnu-nocuda',
+            'target_systems': [
+                'arolla', 'tsa'
+            ],
+            'modules': [
+                'PrgEnv-gnu/19.2-nocuda'
+            ],
+            'cc': 'mpicc',
+            'cxx': 'mpicxx',
+            'ftn': 'mpifort'
+        },
+        {
             'name': 'PrgEnv-gnu-nompi',
             'target_systems': [
-                'arolla'
+                'arolla', 'tsa'
             ],
             'modules': [
                 'PrgEnv-gnu/19.2'
@@ -830,48 +894,12 @@ site_configuration = {
             'ftn': 'gfortran'
         },
         {
-            'name': 'PrgEnv-pgi-nompi',
+            'name': 'PrgEnv-gnu-nompi-nocuda',
             'target_systems': [
-                'tsa'
+                'arolla', 'tsa'
             ],
             'modules': [
-                'PrgEnv-pgi/19.9'
-            ],
-            'cc': 'pgcc',
-            'cxx': 'pgc++',
-            'ftn': 'pgf90'
-        },
-        {
-            'name': 'PrgEnv-pgi',
-            'target_systems': [
-                'tsa'
-            ],
-            'modules': [
-                'PrgEnv-pgi/19.9'
-            ],
-            'cc': 'mpicc',
-            'cxx': 'mpicxx',
-            'ftn': 'mpifort'
-        },
-        {
-            'name': 'PrgEnv-gnu',
-            'target_systems': [
-                'tsa'
-            ],
-            'modules': [
-                'PrgEnv-gnu/19.2'
-            ],
-            'cc': 'mpicc',
-            'cxx': 'mpicxx',
-            'ftn': 'mpifort'
-        },
-        {
-            'name': 'PrgEnv-gnu-nompi',
-            'target_systems': [
-                'tsa'
-            ],
-            'modules': [
-                'PrgEnv-gnu/19.2'
+                'PrgEnv-gnu/19.2-nocuda'
             ],
             'cc': 'gcc',
             'cxx': 'g++',
@@ -881,13 +909,6 @@ site_configuration = {
             'name': 'PrgEnv-cray',
             'modules': [
                 'PrgEnv-cray'
-            ]
-        },
-        {
-            'name': 'PrgEnv-cray_classic',
-            'modules': [
-                'PrgEnv-cray',
-                'cce/9.0.2-classic'
             ]
         },
         {
@@ -978,6 +999,7 @@ site_configuration = {
                 '--output=$APPS/UES/$USER/regression/maintenance',
                 '--perflogdir=$APPS/UES/$USER/regression/maintenance/logs',
                 '--stage=$SCRATCH/regression/maintenance/stage',
+                '--report-file=$APPS/UES/$USER/regression/maintenance/reports/maint_report_{sessionid}.json',
                 '--reservation=maintenance',
                 '--save-log-files',
                 '--tag=maintenance',
@@ -993,6 +1015,7 @@ site_configuration = {
                 '--output=$APPS/UES/$USER/regression/production',
                 '--perflogdir=$APPS/UES/$USER/regression/production/logs',
                 '--stage=$SCRATCH/regression/production/stage',
+                '--report-file=$APPS/UES/$USER/regression/production/reports/prod_report_{sessionid}.json',
                 '--save-log-files',
                 '--tag=production',
                 '--timestamp=%F_%H-%M-%S'

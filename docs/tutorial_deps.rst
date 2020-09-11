@@ -1,5 +1,5 @@
 ===============================================
-Tutorial 3: Using Dependencies in ReFrame Tests
+Tutorial 2: Using Dependencies in ReFrame Tests
 ===============================================
 
 .. versionadded:: 2.21
@@ -12,7 +12,7 @@ You could have a build test, which all runtime tests would depend on.
 This is the approach we take with the following example, that fetches, builds and runs several `OSU benchmarks <http://mvapich.cse.ohio-state.edu/benchmarks/>`__.
 We first create a basic compile-only test, that fetches the benchmarks and builds them for the different programming environments:
 
-.. literalinclude:: ../tutorial/advanced/osu/osu_benchmarks.py
+.. literalinclude:: ../tutorials/deps/osu_benchmarks.py
    :lines: 92-106
 
 There is nothing particular to that test, except perhaps that you can set :attr:`sourcesdir <reframe.core.pipeline.RegressionTest.sourcesdir>` to ``None`` even for a test that needs to compile something.
@@ -21,7 +21,7 @@ In such a case, you should at least provide the commands that fetch the code ins
 For the next test we need to use the OSU benchmark binaries that we just built, so as to run the MPI ping-pong benchmark.
 Here is the relevant part:
 
-.. literalinclude:: ../tutorial/advanced/osu/osu_benchmarks.py
+.. literalinclude:: ../tutorials/deps/osu_benchmarks.py
    :lines: 12-44
 
 First, since we will have multiple similar benchmarks, we move all the common functionality to the :class:`OSUBenchmarkTestBase` base class.
@@ -29,7 +29,7 @@ Again nothing new here; we are going to use two nodes for the benchmark and we s
 The new part comes in with the :class:`OSULatencyTest` test in the following line:
 
 
-.. literalinclude:: ../tutorial/advanced/osu/osu_benchmarks.py
+.. literalinclude:: ../tutorials/deps/osu_benchmarks.py
    :lines: 32
 
 Here we tell ReFrame that this test depends on a test named ``OSUBuildTest``.
@@ -45,7 +45,7 @@ If any of its dependencies fails, the current test will be marked as failure as 
 The next step for the :class:`OSULatencyTest` is to set its executable to point to the binary produced by the :class:`OSUBuildTest`.
 This is achieved with the following specially decorated function:
 
-.. literalinclude:: ../tutorial/advanced/osu/osu_benchmarks.py
+.. literalinclude:: ../tutorials/deps/osu_benchmarks.py
    :lines: 37-43
 
 The :func:`@require_deps <reframe.core.decorators.require_deps>` decorator will bind the arguments passed to the decorated function to the result of the dependency that each argument names.
@@ -61,12 +61,12 @@ This concludes the presentation of the :class:`OSULatencyTest` test. The :class:
 The :class:`OSUAllreduceTest` shown below is similar to the other two, except that it is parameterized.
 It is essentially a scalability test that is running the ``osu_allreduce`` executable created by the :class:`OSUBuildTest` for 2, 4, 8 and 16 nodes.
 
-.. literalinclude:: ../tutorial/advanced/osu/osu_benchmarks.py
+.. literalinclude:: ../tutorials/deps/osu_benchmarks.py
    :lines: 69-89
 
 The full set of OSU example tests is shown below:
 
-.. literalinclude:: ../tutorial/advanced/osu/osu_benchmarks.py
+.. literalinclude:: ../tutorials/deps/osu_benchmarks.py
 
 Notice that the order in which dependencies are defined in a test file is irrelevant.
 In this case, we define :class:`OSUBuildTest` at the end.

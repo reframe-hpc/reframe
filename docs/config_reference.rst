@@ -298,7 +298,7 @@ System Partition Configuration
 .. js:attribute:: .systems[].partitions[].max_jobs
 
    :required: No
-   :default: ``1``
+   :default: ``8``
 
    The maximum number of concurrent regression tests that may be active (i.e., not completed) on this partition.
    This option is relevant only when ReFrame executes with the `asynchronous execution policy <pipeline.html#execution-policies>`__.
@@ -311,6 +311,9 @@ System Partition Configuration
 
    A list of job scheduler `resource specification <config_reference.html#custom-job-scheduler-resources>`__ objects.
 
+
+
+.. _container-platform-configuration:
 
 
 Container Platform Configuration
@@ -1037,6 +1040,16 @@ General Configuration
 
 
 
+.. js:attribute:: .general[].clean_stagedir
+
+   :required: No
+   :default: ``true``
+
+   Clean stage directory of tests before populating it.
+
+   .. versionadded:: 3.1
+
+
 .. js:attribute:: .general[].colorize
 
    :required: No
@@ -1096,6 +1109,16 @@ General Configuration
    :default: ``false``
 
    Purge any loaded environment modules before running any tests.
+
+
+.. js:attribute:: .general[].report_file
+
+   :required: No
+   :default: ``"${HOME}/.reframe/reports/run-report-{sessionid}.json"``
+
+   The file where ReFrame will store its report.
+
+   .. versionadded:: 3.1
 
 
 .. js:attribute:: .general[].save_log_files

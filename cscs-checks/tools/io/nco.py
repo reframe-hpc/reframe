@@ -30,7 +30,8 @@ class NCOBaseTest(rfm.RunOnlyRegressionTest):
                               'kesch:pn', 'arolla:pn', 'tsa:pn']
         if self.current_system.name in ['arolla', 'kesch', 'tsa']:
             self.exclusive_access = True
-            self.valid_prog_environs = ['PrgEnv-gnu-nompi']
+            self.valid_prog_environs = ['PrgEnv-gnu-nompi',
+                                        'PrgEnv-gnu-nompi-nocuda']
             self.modules = ['nco']
         else:
             self.modules = ['NCO']

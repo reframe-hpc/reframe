@@ -219,6 +219,16 @@ Options controlling ReFrame output
 
    This option can also be set using the :envvar:`RFM_KEEP_STAGE_FILES` environment variable or the :js:attr:`keep_stage_files` general configuration parameter.
 
+.. option:: --dont-restage
+
+   Do not restage a test if its stage directory exists.
+   Normally, if the stage directory of a test exists, ReFrame will remove it and recreate it.
+   This option disables this behavior.
+
+   This option can also be set using the :envvar:`RFM_CLEAN_STAGEDIR` environment variable or the :js:attr:`clean_stagedir` general configuration parameter.
+
+   .. versionadded:: 3.1
+
 .. option:: --save-log-files
 
    Save ReFrame log files in the output directory before exiting.
@@ -226,6 +236,16 @@ Options controlling ReFrame output
 
 
    This option can also be set using the :envvar:`RFM_SAVE_LOG_FILES` environment variable or the :js:attr:`save_log_files` general configuration parameter.
+
+
+.. option:: --report-file=FILE
+
+   The file where ReFrame will store its report.
+   The ``FILE`` argument may contain the special placeholder ``{sessionid}``, in which case ReFrame will generate a new report each time it is run by appending a counter to the report file.
+
+   This option can also be set using the :envvar:`RFM_REPORT_FILE` environment variable or the :js:attr:`report_file` general configuration parameter.
+
+   .. versionadded:: 3.1
 
 
 -------------------------------------
@@ -281,6 +301,15 @@ Options controlling ReFrame execution
 
    The maximum number of times a failing test can be retried.
    The test stage and output directories will receive a ``_retry<N>`` suffix every time the test is retried.
+
+
+.. option:: --disable-hook=HOOK
+
+   Disable the pipeline hook named ``HOOK`` from all the tests that will run.
+   This feature is useful when you have implemented test workarounds as pipeline hooks, in which case you can quickly disable them from the command line.
+   This option may be specified multiple times in order to disable multiple hooks at the same time.
+
+   .. versionadded:: 3.2
 
 
 ----------------------------------
@@ -344,12 +373,15 @@ Options controlling job submission
    Any job options specified with this command-line option will be emitted after any job options specified in the :js:attr:`access` system partition configuration parameter.
 
    Especially for the Slurm backends, constraint options, such as ``-J constraint=value``, ``-J C=value``, ``-J --constraint=value`` or ``-J -C=value``, are going to be combined with any constraint options specified in the :js:attr:`access` system partition configuration parameter.
-   For example, if ``-C x`` is specified in the :js:attr:`access` and ``-J C=y`` is passed to the command-line, ReFrame will pass ``-C x,y`` as a constraint to the scheduler.
+   For example, if ``-C x`` is specified in the :js:attr:`access` and ``-J C=y`` is passed to the command-line, ReFrame will pass ``-C x&y`` as a constraint to the scheduler.
    Notice, however, that if constraint options are specified through multiple :option:`-J` options, only the last one will be considered.
    If you wish to completely overwrite any constraint options passed in :js:attr:`access`, you should consider passing explicitly the Slurm directive with ``-J '#SBATCH --constraint=new'``.
 
    .. versionchanged:: 3.0
       This option has become more flexible.
+
+   .. versionchanged:: 3.1
+      Use ``&`` to combine constraints.
 
 ------------------------
 Flexible node allocation
@@ -585,6 +617,21 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
 
 
+.. envvar:: RFM_CLEAN_STAGEDIR
+
+   Clean stage directory of tests before populating it.
+
+   .. versionadded:: 3.1
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     :option:`--dont-restage`
+      Associated configuration parameter :js:attr:`clean_stagedir` general configuration parameter
+      ================================== ==================
+
+
 .. envvar:: RFM_COLORIZE
 
    Enable output coloring.
@@ -611,7 +658,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
 
 
-.. envvar:: RFM_GRAYLOG_SERVER
+.. envvar:: RFM_GRAYLOG_ADDRESS
 
    The address of the Graylog server to send performance logs.
    The address is specified in ``host:port`` format.
@@ -623,6 +670,15 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       Associated command line option     N/A
       Associated configuration parameter :js:attr:`address` graylog log handler configuration parameter
       ================================== ==================
+
+
+.. versionadded:: 3.1
+
+
+.. envvar:: RFM_GRAYLOG_SERVER
+
+   .. deprecated:: 3.1
+      Please :envvar:`RFM_GRAYLOG_ADDRESS` instead.
 
 
 .. envvar:: RFM_IGNORE_CHECK_CONFLICTS
@@ -755,6 +811,21 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
 
 
+.. envvar:: RFM_REPORT_FILE
+
+   The file where ReFrame will store its report.
+
+   .. versionadded:: 3.1
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     :option:`--report-file`
+      Associated configuration parameter :js:attr:`report_file` general configuration parameter
+      ================================== ==================
+
+
 .. envvar:: RFM_SAVE_LOG_FILES
 
    Save ReFrame log files in the output directory before exiting.
@@ -780,6 +851,23 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       Associated configuration parameter :js:attr:`stagedir` system configuration parameter
       ================================== ==================
 
+
+.. envvar:: RFM_SYSLOG_ADDRESS
+
+   The address of the Syslog server to send performance logs.
+   The address is specified in ``host:port`` format.
+   If no port is specified, the address refers to a UNIX socket.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :js:attr:`address` syslog log handler configuration parameter
+      ================================== ==================
+
+
+.. versionadded:: 3.1
 
 .. envvar:: RFM_SYSTEM
 

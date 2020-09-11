@@ -33,7 +33,7 @@ class GpuDirectCudaCheck(rfm.RegressionTest):
             self.build_system.cxxflags = ['-ccbin', 'mpicxx', '-arch=sm_37']
         elif self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
-            self.valid_prog_environs = ['PrgEnv-gnu']
+            self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-pgi']
             self.variables = {
                 'G2G': '1',
             }

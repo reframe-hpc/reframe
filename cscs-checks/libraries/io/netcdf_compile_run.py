@@ -6,6 +6,7 @@
 import os
 
 import reframe as rfm
+import reframe.utility.os_ext as os_ext
 import reframe.utility.sanity as sn
 
 
@@ -21,7 +22,7 @@ class NetCDFTest(rfm.RegressionTest):
         }
         self.lang = lang
         self.linkage = linkage
-        self.descr = lang_names[lang] + ' NetCDF ' + linkage.capitalize()
+        self.descr = f'{lang_names[lang]} NetCDF {linkage.capitalize()}'
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc', 'kesch:cn', 'tiger:gpu',
                               'arolla:cn', 'tsa:cn']
@@ -107,12 +108,4 @@ class NetCDFTest(rfm.RegressionTest):
                 '-lnetcdf', '-lnetcdf_c++4', '-lnetcdff'
             ]
         else:
-            self.build_system.ldflags = ['-%s' % self.linkage]
-
-    @rfm.run_before('compile')
-    def cray_linker_workaround(self):
-        # NOTE: Workaround for using CCE < 9.1 in CLE7.UP01.PS03 and above
-        # See Patch Set README.txt for more details.
-        if (self.current_system.name == 'dom' and
-            self.current_environ.name == 'PrgEnv-cray'):
-            self.variables['LINKER_X86_64'] = '/usr/bin/ld'
+            self.build_system.ldflags = [f'-{self.linkage}']

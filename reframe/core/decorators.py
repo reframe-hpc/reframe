@@ -227,9 +227,13 @@ def require_deps(func):
     The converted arguments are essentially functions accepting a single
     argument, which is the target test's programming environment.
 
+    Additionally, this decorator will attach the function to run *after* the
+    test's setup phase, but *before* any other "post_setup" pipeline hook.
+
     This decorator is also directly available under the :mod:`reframe` module.
 
     .. versionadded:: 2.21
+
     '''
     tests = inspect.getfullargspec(func).args[1:]
     func._rfm_resolve_deps = True

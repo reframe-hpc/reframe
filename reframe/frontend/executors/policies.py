@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import contextlib
+import functools
 import itertools
 import math
 import sys
@@ -15,6 +16,10 @@ from reframe.core.exceptions import (TaskDependencyError, TaskExit)
 from reframe.core.logging import getlogger
 from reframe.frontend.executors import (ExecutionPolicy, RegressionTask,
                                         TaskEventListener, ABORT_REASONS)
+
+
+def dictlist_len(d):
+    return functools.reduce(lambda l, r: l + len(r), d.values(), 0)
 
 
 def _cleanup_all(tasks, *args, **kwargs):
@@ -416,7 +421,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         pollrate = PollRateFunction(0.2, 60)
         num_polls = 0
         t_start = datetime.now()
-        while (self._running_tasks or self._waiting_tasks):
+        while (self._running_tasks or self._waiting_tasks or
+               self._completed_tasks or dictlist_len(self._ready_tasks)):
             getlogger().debug('running tasks: %s' % len(self._running_tasks))
             num_polls += len(self._running_tasks)
             try:
