@@ -13,7 +13,7 @@ import reframe.utility.sanity as sn
 class AccountingCommandCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
         self.valid_systems = ['daint:login', 'dom:login']
-        self.descr = 'Slurm CSCS usertools sbucheck'
+        self.descr = 'Slurm CSCS usertools accounting'
         self.executable = 'accounting'
         self.valid_prog_environs = ['builtin']
         self.num_tasks = 1
