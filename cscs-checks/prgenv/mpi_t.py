@@ -16,7 +16,7 @@ class MpiTCheck(rfm.RegressionTest):
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu', 'PrgEnv-pgi',
                                     'PrgEnv-intel', 'PrgEnv-cray_classic']
         self.build_system = 'SingleSource'
-        self.sourcesdir += os.path.join('mpi_t')
+        self.sourcesdir = 'src/mpi_t'
         self.sourcepath = 'mpit_vars.c'
         src_ref_files = ['mpit_categories.ref', 'mpit_perf_vars.ref',
                          'mpit_control_vars.ref', self.sourcepath]
