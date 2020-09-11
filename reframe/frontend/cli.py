@@ -424,8 +424,8 @@ def main():
         help='Use a login shell for job scripts'
     )
     argparser.add_argument(
-        dest='enable_json_report', default=False,
-        envvar='RFM_enable_json_report',
+        dest='enable_json_report',
+        envvar='RFM_ENABLE_JSON_REPORT',
         configvar='general/enable_json_report',
         help='Option to output JSON report file'
     )

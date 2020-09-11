@@ -658,6 +658,22 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
 
 
+.. envvar:: RFM_ENABLE_JSON_REPORT
+
+   Enable json reporting.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :js:attr:`enable_json_report` general configuration parameter
+      ================================== ==================
+
+
+.. versionadded:: 3.2
+
+
 .. envvar:: RFM_GRAYLOG_ADDRESS
 
    The address of the Graylog server to send performance logs.
