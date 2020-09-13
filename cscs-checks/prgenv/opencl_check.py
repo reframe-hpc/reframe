@@ -22,7 +22,7 @@ class OpenCLCheck(rfm.RegressionTest):
         self.build_system = 'Make'
         self.sourcesdir = 'src/opencl'
         self.num_gpus_per_node = 1
-        self.executable = 'vecAdd_opencl'
+        self.executable = 'vecAdd'
 
         self.sanity_patterns = sn.assert_found('SUCCESS', self.stdout)
 
