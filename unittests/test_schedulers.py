@@ -276,6 +276,7 @@ def test_submit(make_job, exec_ctx):
     prepare_job(minimal_job)
     assert minimal_job.nodelist is None
     minimal_job.submit()
+    assert minimal_job.kind == type(minimal_job.scheduler).registered_name
     assert minimal_job.jobid is not None
     minimal_job.wait()
 

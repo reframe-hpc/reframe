@@ -47,7 +47,6 @@ class PbsJobScheduler(sched.JobScheduler):
 
     def __init__(self):
         self._prefix = '#PBS'
-        self._submit_time = {}
         self._time_finished = {}
         self._submit_timeout = rt.runtime().get_option(
             f'schedulers/@{self.registered_name}/job_submit_timeout'
@@ -132,11 +131,12 @@ class PbsJobScheduler(sched.JobScheduler):
                            'of the submitted job')
 
         jobid, *info = jobid_match.group('jobid').split('.', maxsplit=1)
+        job.kind = 'pbs'
         job.jobid = int(jobid)
         if info:
             self._pbs_server[job] = info[0]
 
-        self._submit_time[job] = datetime.now()
+        job.submit_time = datetime.now()
 
     def wait(self, job):
         intervals = itertools.cycle([1, 2, 3])
@@ -152,8 +152,7 @@ class PbsJobScheduler(sched.JobScheduler):
         if job in self._pbs_server:
             jobid += '.' + self._pbs_server[job]
 
-        time_from_submit = (
-            datetime.now() - self._submit_time[job]).total_seconds()
+        time_from_submit = (datetime.now() - job.submit_time).total_seconds()
         if time_from_submit < PBS_CANCEL_DELAY:
             time.sleep(PBS_CANCEL_DELAY - time_from_submit)
 

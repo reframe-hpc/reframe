@@ -233,6 +233,7 @@ class Job:
         self.exitcode = None
         self.state = None
         self.nodelist = None
+        self.submit_time = None
 
         self._name = name
         self._workdir = workdir
@@ -253,7 +254,6 @@ class Job:
         self._sched_exclusive_access = sched_exclusive_access
         self.exception = None
 
-
     @classmethod
     def create(cls, scheduler, launcher, *args, **kwargs):
         ret = Job(*args, **kwargs)
@@ -263,6 +263,10 @@ class Job:
     @property
     def name(self):
         return self._name
+
+    @property
+    def kind(self):
+        return type(self.scheduler).registered_name
 
     @property
     def workdir(self):

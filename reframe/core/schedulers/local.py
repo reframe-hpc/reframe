@@ -24,16 +24,8 @@ class _TimeoutExpired(ReframeError):
 
 @register_scheduler('local', local=True)
 class LocalJobScheduler(sched.JobScheduler):
-    def __init__(self):
-        self._cancel_grace_period = 2
-        self._wait_poll_secs = 0.1
-
-        # Underlying processes (indexed by the pid)
-        self._procs = {}
-
-        # Underlying process' stdout/stderr (indexed by the pid)
-        self._f_stdout = {}
-        self._f_stderr = {}
+    CANCEL_GRACE_PERIOD = 2
+    WAIT_POLL_SECS = 0.1
 
     def completion_time(self, job):
         return None
@@ -44,24 +36,25 @@ class LocalJobScheduler(sched.JobScheduler):
                  os.stat(job.script_filename).st_mode | stat.S_IEXEC)
 
         # Run from the absolute path
-        _f_stdout = open(job.stdout, 'w+')
-        _f_stderr = open(job.stderr, 'w+')
+        f_stdout = open(job.stdout, 'w+')
+        f_stderr = open(job.stderr, 'w+')
 
         # The new process starts also a new session (session leader), so that
         # we can later kill any other processes that this might spawn by just
         # killing this one.
         proc = os_ext.run_command_async(
             os.path.abspath(job.script_filename),
-            stdout=_f_stdout,
-            stderr=_f_stderr,
-            start_new_session=True)
+            stdout=f_stdout,
+            stderr=f_stderr,
+            start_new_session=True
+        )
 
         # Update job info
         job.jobid = proc.pid
         job.nodelist = [socket.gethostname()]
-        self._procs[job] = proc
-        self._f_stdout[job] = _f_stdout
-        self._f_stderr[job] = _f_stderr
+        job.proc = proc
+        job.f_stdout = f_stdout
+        job.f_stderr = f_stderr
 
     def emit_preamble(self, job):
         return []
@@ -95,14 +88,14 @@ class LocalJobScheduler(sched.JobScheduler):
                    number, too). If `None` or `0`, no timeout will be set.
         '''
         t_wait = datetime.now()
-        self._procs[job].wait(timeout=timeout or None)
+        job.proc.wait(timeout=timeout or None)
         t_wait = datetime.now() - t_wait
         try:
             # Wait for all processes in the process group to finish
             while not timeout or t_wait.total_seconds() < timeout:
                 t_poll = datetime.now()
                 os.killpg(job.jobid, 0)
-                time.sleep(self._wait_poll_secs)
+                time.sleep(self.WAIT_POLL_SECS)
                 t_poll = datetime.now() - t_poll
                 t_wait += t_poll
 
@@ -128,7 +121,7 @@ class LocalJobScheduler(sched.JobScheduler):
 
         # Set the time limit to the grace period and let wait() do the final
         # killing
-        job.time_limit = timedelta(seconds=self._cancel_grace_period)
+        job.time_limit = timedelta(seconds=self.CANCEL_GRACE_PERIOD)
         self.wait(job)
 
     def wait(self, job):
@@ -152,7 +145,7 @@ class LocalJobScheduler(sched.JobScheduler):
 
         try:
             self._wait_all(job, timeout)
-            job.exitcode = self._procs[job].returncode
+            job.exitcode = job.proc.returncode
             if job.exitcode != 0:
                 job.state = 'FAILURE'
             else:
@@ -164,8 +157,8 @@ class LocalJobScheduler(sched.JobScheduler):
             # Cleanup all the processes of this job
             self._kill_all(job)
             self._wait_all(job)
-            self._f_stdout[job].close()
-            self._f_stderr[job].close()
+            job.f_stdout.close()
+            job.f_stderr.close()
 
     def finished(self, job):
         '''Check if the spawned process has finished.
@@ -174,12 +167,12 @@ class LocalJobScheduler(sched.JobScheduler):
         the process has finished, you *must* call wait() to properly cleanup
         after it.
         '''
-        return self._procs[job].returncode is not None
+        return job.proc.returncode is not None
 
     def poll(self, *jobs):
         for job in jobs:
-            if job.jobid and self._procs[job]:
-                self._procs[job].poll()
+            if job.jobid and job.proc:
+                job.proc.poll()
 
 
 class _LocalNode(sched.Node):
