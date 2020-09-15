@@ -423,12 +423,6 @@ def main():
         action='store_true',
         help='Use a login shell for job scripts'
     )
-    argparser.add_argument(
-        dest='enable_json_report',
-        envvar='RFM_ENABLE_JSON_REPORT',
-        configvar='general/enable_json_report',
-        help='Option to output JSON report file'
-    )
 
     if len(sys.argv) == 1:
         argparser.print_help()
@@ -796,33 +790,32 @@ def main():
                     printer.info(runner.stats.performance_report())
 
                 # Generate the report for this session
-                if site_config.get('general/0/enable_json_report'):
-                    report_file = os.path.normpath(os_ext.expandvars(
-                        rt.get_option('general/0/report_file'))
-                    )
-                    basedir = os.path.dirname(report_file)
-                    if basedir:
-                        os.makedirs(basedir, exist_ok=True)
+                report_file = os.path.normpath(os_ext.expandvars(
+                    rt.get_option('general/0/report_file'))
+                )
+                basedir = os.path.dirname(report_file)
+                if basedir:
+                    os.makedirs(basedir, exist_ok=True)
 
-                    # Build final JSON report
-                    run_stats = runner.stats.json()
-                    session_info.update({
-                        'num_cases': run_stats[0]['num_cases'],
-                        'num_failures': run_stats[-1]['num_failures']
-                    })
-                    json_report = {
-                        'session_info': session_info,
-                        'runs': run_stats
-                    }
-                    report_file = generate_report_filename(report_file)
-                    try:
-                        with open(report_file, 'w') as fp:
-                            json.dump(json_report, fp, indent=2)
-                    except OSError as e:
-                        printer.warning(
-                            f'failed to generate report in {report_file!r}: '
-                            f'{e}'
-                        )
+                # Build final JSON report
+                run_stats = runner.stats.json()
+                session_info.update({
+                    'num_cases': run_stats[0]['num_cases'],
+                    'num_failures': run_stats[-1]['num_failures']
+                })
+                json_report = {
+                    'session_info': session_info,
+                    'runs': run_stats
+                }
+                report_file = generate_report_filename(report_file)
+                try:
+                    with open(report_file, 'w') as fp:
+                        json.dump(json_report, fp, indent=2)
+                except OSError as e:
+                    printer.warning(
+                        f'failed to generate report in {report_file!r}: '
+                        f'{e}'
+                    )
 
         else:
             printer.error("No action specified. Please specify `-l'/`-L' for "

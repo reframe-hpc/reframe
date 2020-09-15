@@ -366,7 +366,6 @@
                     "purge_environment": {"type": "boolean"},
                     "report_file": {"type": "string"},
                     "save_log_files": {"type": "boolean"},
-                    "enable_json_report": {"type": "boolean"},
                     "target_systems": {"$ref": "#/defs/system_ref"},
                     "timestamp_dirs": {"type": "string"},
                     "unload_modules": {
@@ -408,9 +407,8 @@
         "general/module_mappings": [],
         "general/non_default_craype": false,
         "general/purge_environment": false,
-        "general/report_file": "${HOME}/.reframe/reports/run-report-{sessionid}.json",
+        "general/report_file": "${HOME}/.reframe/reports/run-report.json",
         "general/save_log_files": false,
-        "general/enable_json_report": false,
         "general/target_systems": ["*"],
         "general/timestamp_dirs": "",
         "general/unload_modules": [],

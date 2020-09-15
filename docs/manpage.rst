@@ -241,7 +241,7 @@ Options controlling ReFrame output
 .. option:: --report-file=FILE
 
    The file where ReFrame will store its report.
-   The ``FILE`` argument may contain the special placeholder ``{sessionid}``, in which case ReFrame will generate a new report each time it is run by appending a counter to the report file.
+   The ``FILE`` argument may contain the special placeholder ``{sessionid}``, in which case ReFrame will generate a new report each time it is run by appending a counter to the report file. By default, ReFrame will write to $HOME/.reframe/reports/run-report.json.
 
    This option can also be set using the :envvar:`RFM_REPORT_FILE` environment variable or the :js:attr:`report_file` general configuration parameter.
 
@@ -656,22 +656,6 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       Associated command line option     :option:`-C`
       Associated configuration parameter N/A
       ================================== ==================
-
-
-.. envvar:: RFM_ENABLE_JSON_REPORT
-
-   Enable json reporting.
-
-   .. table::
-      :align: left
-
-      ================================== ==================
-      Associated command line option     N/A
-      Associated configuration parameter :js:attr:`enable_json_report` general configuration parameter
-      ================================== ==================
-
-
-.. versionadded:: 3.2
 
 
 .. envvar:: RFM_GRAYLOG_ADDRESS

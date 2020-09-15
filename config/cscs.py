@@ -1028,7 +1028,6 @@ site_configuration = {
                 'checks/'
             ],
             'check_search_recursive': True,
-            'enable_json_report': True
         }
     ]
 }
