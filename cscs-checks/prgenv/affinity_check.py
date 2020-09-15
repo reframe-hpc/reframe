@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import os
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -17,6 +18,7 @@ class AffinityTestBase(rfm.RegressionTest):
         # The github URL can not be specifid as `self.sourcedir` as that
         # would prevent the src folder from being copied to stage which is
         # necessary since these tests need files from it.
+        self.sourcesdir = os.path.join('src/affinity_ref')
         self.prebuild_cmds = ['git clone https://github.com/vkarak/affinity']
         self.executable = './affinity/affinity'
         self.variant = variant
@@ -67,7 +69,7 @@ class AffinityTestBase(rfm.RegressionTest):
 class AffinityOpenMPTest(AffinityTestBase):
     def __init__(self, variant):
         super().__init__(variant)
-        self.descr = 'Checking the cpu affinity for OMP threads.'
+        self.descr = 'Checking the cpu affinity for OMP threads'
         self.cases = {
             'omp_bind_threads': {
                 'ref_daint:gpu': 'gpu_omp_bind_threads.txt',
@@ -117,7 +119,7 @@ class AffinityOpenMPTest(AffinityTestBase):
                 self.cases[self.variant]['ntasks_per_core'])
 
         self.num_tasks = 1
-        self.variables  = {
+        self.variables = {
             'OMP_NUM_THREADS': str(self.num_cpus_per_task),
             'OMP_PLACES': self.cases[self.variant]['OMP_PLACES']
             # OMP_PROC_BIND is set to TRUE if OMP_PLACES is defined.
