@@ -366,7 +366,7 @@
                     "purge_environment": {"type": "boolean"},
                     "report_file": {"type": "string"},
                     "save_log_files": {"type": "boolean"},
-                    "save_report_file": {"type": "boolean"},
+                    "enable_json_report": {"type": "boolean"},
                     "target_systems": {"$ref": "#/defs/system_ref"},
                     "timestamp_dirs": {"type": "string"},
                     "unload_modules": {

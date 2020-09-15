@@ -1028,7 +1028,7 @@ site_configuration = {
                 'checks/'
             ],
             'check_search_recursive': True,
-            'save_report_file': True
+            'enable_json_report': True
         }
     ]
 }
