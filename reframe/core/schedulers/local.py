@@ -22,13 +22,33 @@ class _TimeoutExpired(ReframeError):
     pass
 
 
+class _LocalJob(sched.Job):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._proc = None
+        self._f_stdout = None
+        self._f_stderr = None
+
+    @property
+    def proc(self):
+        return self._proc
+
+    @property
+    def f_stdout(self):
+        return self._f_stdout
+
+    @property
+    def f_stderr(self):
+        return self._f_stderr
+
+
 @register_scheduler('local', local=True)
 class LocalJobScheduler(sched.JobScheduler):
     CANCEL_GRACE_PERIOD = 2
     WAIT_POLL_SECS = 0.1
 
-    def completion_time(self, job):
-        return None
+    def make_job(self, *args, **kwargs):
+        return _LocalJob(*args, **kwargs)
 
     def submit(self, job):
         # `chmod +x' first, because we will execute the script locally
@@ -50,11 +70,11 @@ class LocalJobScheduler(sched.JobScheduler):
         )
 
         # Update job info
-        job.jobid = proc.pid
-        job.nodelist = [socket.gethostname()]
-        job.proc = proc
-        job.f_stdout = f_stdout
-        job.f_stderr = f_stderr
+        job._jobid = proc.pid
+        job._nodelist = [socket.gethostname()]
+        job._proc = proc
+        job._f_stdout = f_stdout
+        job._f_stderr = f_stderr
 
     def emit_preamble(self, job):
         return []
@@ -72,8 +92,9 @@ class LocalJobScheduler(sched.JobScheduler):
         except (ProcessLookupError, PermissionError):
             # The process group may already be dead or assigned to a different
             # group, so ignore this error
-            getlogger().debug('pid %s already dead or assigned elsewhere' %
-                              job.jobid)
+            getlogger().debug(
+                f'pid {job.jobid} already dead or assigned elsewhere'
+            )
 
     def _term_all(self, job):
         '''Send SIGTERM to all the processes of the spawned job.'''
@@ -145,14 +166,14 @@ class LocalJobScheduler(sched.JobScheduler):
 
         try:
             self._wait_all(job, timeout)
-            job.exitcode = job.proc.returncode
+            job._exitcode = job.proc.returncode
             if job.exitcode != 0:
-                job.state = 'FAILURE'
+                job._state = 'FAILURE'
             else:
-                job.state = 'SUCCESS'
+                job._state = 'SUCCESS'
         except (_TimeoutExpired, subprocess.TimeoutExpired):
             getlogger().debug('job timed out')
-            job.state = 'TIMEOUT'
+            job._state = 'TIMEOUT'
         finally:
             # Cleanup all the processes of this job
             self._kill_all(job)

@@ -35,12 +35,12 @@ JOB_STATES = {
 class TorqueJobScheduler(PbsJobScheduler):
     TASKS_OPT = '-l nodes={num_nodes}:ppn={num_cpus_per_node}'
 
-    def _set_nodelist(self, job, nodespec):
+    def _update_nodelist(self, job, nodespec):
         if job.nodelist is not None:
             return
 
-        job.nodelist = [x.split('/')[0] for x in nodespec.split('+')]
-        job.nodelist.sort()
+        job._nodelist = [x.split('/')[0] for x in nodespec.split('+')]
+        job._nodelist.sort()
 
     def poll(self, *jobs):
         '''Update the status of the jobs.'''
@@ -61,11 +61,12 @@ class TorqueJobScheduler(PbsJobScheduler):
                 'assuming all jobs completed'
             )
             for job in jobs:
-                job.state = 'COMPLETED'
+                job._state = 'COMPLETED'
+
             return
 
         if completed.returncode != 0:
-            raise JobError(f'qstat failed: {completed.stderr}')
+            raise JobError(f'qstat failed:\n{completed.stderr}')
 
         jobs_info = {}
         for job_raw_info in completed.stdout.split('\n\n'):
@@ -73,7 +74,7 @@ class TorqueJobScheduler(PbsJobScheduler):
                 r'^Job Id:\s*(?P<jobid>\S+)', job_raw_info, re.MULTILINE
             )
             if jobid_match:
-                jobid = int(jobid_match.group('jobid'))
+                jobid = jobid_match.group('jobid')
                 jobs_info[jobid] = job_raw_info
 
         for job in jobs:
@@ -94,7 +95,7 @@ class TorqueJobScheduler(PbsJobScheduler):
             if nodelist_match:
                 nodespec = nodelist_match.group('nodespec')
                 nodespec = re.sub(r'[\n\t]*', '', nodespec)
-                self._set_nodelist(job, nodespec)
+                self._update_nodelist(job, nodespec)
 
             state_match = re.search(
                 r'^\s*job_state = (?P<state>[A-Z])', stdout, re.MULTILINE
@@ -106,7 +107,7 @@ class TorqueJobScheduler(PbsJobScheduler):
                 continue
 
             state = state_match.group('state')
-            job.state = JOB_STATES[state]
+            job._state = JOB_STATES[state]
             if job.state == 'COMPLETED':
                 exitcode_match = re.search(
                     r'^\s*exit_status = (?P<code>\d+)',
@@ -116,15 +117,15 @@ class TorqueJobScheduler(PbsJobScheduler):
                 if not exitcode_match:
                     continue
 
-                job.exitcode = int(exitcode_match.group('code'))
+                job._exitcode = int(exitcode_match.group('code'))
 
         for job in jobs:
             stdout = os.path.join(job.workdir, job.stdout)
             stderr = os.path.join(job.workdir, job.stderr)
             output_ready = os.path.exists(stdout) and os.path.exists(stderr)
-            done = job.jobid in self._cancelled or output_ready
+            done = job.cancelled or output_ready
             if job.state == 'COMPLETED' and done:
-                self._finished.add(job)
+                job._finished = True
 
     def finished(self, job):
         if job.exception:
@@ -146,5 +147,5 @@ class TorqueJobScheduler(PbsJobScheduler):
                 raise JobError('maximum pending time exceeded',
                                jobid=job.jobid)
 
-        getlogger().debug(f"finished: {job in self._finished}")
-        return job in self._finished
+        getlogger().debug(f'job {"" if job.finished else "not"} finished')
+        return job.finished

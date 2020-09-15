@@ -67,6 +67,21 @@ def slurm_state_pending(state):
 _run_strict = functools.partial(os_ext.run_command, check=True)
 
 
+class _SlurmJob(sched.Job):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._is_array = False
+        self._is_cancelling = False
+
+    @property
+    def is_array(self):
+        return self._is_array
+
+    @property
+    def is_cancelling(self):
+        return self._is_cancelling
+
+
 @register_scheduler('slurm')
 class SlurmJobScheduler(sched.JobScheduler):
     # In some systems, scheduler performance is sensitive to the squeue poll
@@ -112,34 +127,8 @@ class SlurmJobScheduler(sched.JobScheduler):
             f'schedulers/@{self.registered_name}/use_nodes_option'
         )
 
-    def completion_time(self, job):
-        if (job._completion_time or
-            not slurm_state_completed(job.state)):
-            return job._completion_time
-
-        with rt.temp_environment(variables={'SLURM_TIME_FORMAT': '%s'}):
-            completed = os_ext.run_command(
-                f'sacct -S {job.submit_time.strftime("%F")} '
-                f'-P -j {job.jobid} -o jobid,end',
-                log=False
-            )
-
-        # We need the match objects, so we have to use finditer()
-        state_match = list(re.finditer(
-            r'^(?P<jobid>%s)\|(?P<end>\S+)' % self._state_patt,
-            completed.stdout, re.MULTILINE))
-        if not state_match:
-            return None
-
-        completion_times = []
-        for s in state_match:
-            with suppress(ValueError):
-                completion_times.append(float(s.group('end')))
-
-        if completion_times:
-            job._completion_time = max(completion_times)
-
-        return job._completion_time
+    def make_job(self, *args, **kwargs):
+        return _SlurmJob(*args, **kwargs)
 
     def _format_option(self, var, option):
         if var is not None:
@@ -170,8 +159,8 @@ class SlurmJobScheduler(sched.JobScheduler):
         jobarr_parser = ArgumentParser()
         jobarr_parser.add_argument('-a', '--array')
         parsed_args, _ = jobarr_parser.parse_known_args(job.options)
-        job.is_array = True if parsed_args.array else False
-        if job.is_array:
+        if parsed_args.array:
+            job._is_array = True
             getlogger().debug('Slurm job is a job array')
 
         # Slurm replaces '%a' by the corresponding SLURM_ARRAY_TASK_ID
@@ -247,8 +236,8 @@ class SlurmJobScheduler(sched.JobScheduler):
             raise JobError(
                 'could not retrieve the job id of the submitted job')
 
-        job.jobid = int(jobid_match.group('jobid'))
-        job.submit_time = datetime.now()
+        job._jobid = jobid_match.group('jobid')
+        job._submit_time = datetime.now()
 
     def allnodes(self):
         try:
@@ -373,12 +362,25 @@ class SlurmJobScheduler(sched.JobScheduler):
         node_descriptions = completed.stdout.splitlines()
         return _create_nodes(node_descriptions)
 
-    def _set_nodelist(self, job, nodespec):
+    def _update_nodelist(self, job, nodespec):
         if job.nodelist is not None:
             return
 
         if nodespec and nodespec != 'None assigned':
-            job.nodelist = [n.name for n in self._get_nodes_by_name(nodespec)]
+            job._nodelist = [n.name for n in self._get_nodes_by_name(nodespec)]
+
+    def _update_completion_time(self, job, timestamps):
+        if job._completion_time is not None:
+            return
+
+        # Convert timestamps to floats
+        ct = []
+        for ts in timestamps:
+            with suppress(ValueError):
+                ct.append(float(ts))
+
+        if ct:
+            job._completion_time = max(ct)
 
     def poll(self, *jobs):
         '''Update the status of the jobs.'''
@@ -388,17 +390,21 @@ class SlurmJobScheduler(sched.JobScheduler):
             return
 
         start_time = min(job.submit_time for job in jobs)
-        completed = _run_strict(
-            'sacct -S %s -P -j %s -o jobid,state,exitcode,nodelist' %
-            (start_time.strftime('%F'), ','.join(str(j) for j in jobids))
-        )
+        with rt.temp_environment(variables={'SLURM_TIME_FORMAT': '%s'}):
+            completed = _run_strict(
+                f'sacct -S {start_time.strftime("%F")} -P '
+                f'-j {",".join(str(j) for j in jobids)} '
+                f'-o jobid,state,exitcode,end,nodelist'
+            )
+
         self._update_state_count += 1
 
         # We need the match objects, so we have to use finditer()
         state_match = list(re.finditer(
-            r'^(?P<jobid>%s)\|(?P<state>\S+)([^\|]*)\|(?P<exitcode>\d+)\:'
-            r'(?P<signal>\d+)\|(?P<nodespec>.*)' % self._state_patt,
-            completed.stdout, re.MULTILINE))
+            fr'^(?P<jobid>{self._state_patt})\|(?P<state>\S+)([^\|]*)\|'
+            fr'(?P<exitcode>\d+)\:(?P<signal>\d+)\|(?P<end>\S+)\|'
+            fr'(?P<nodespec>.*)', completed.stdout, re.MULTILINE)
+        )
         if not state_match:
             getlogger().debug('job state not matched (stdout follows)\n%s' %
                               completed.stdout)
@@ -411,24 +417,27 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         for job in jobs:
             try:
-                jobarr_info = jobs_info[job.jobid]
+                jobarr_info = jobs_info[job]
             except KeyError:
                 continue
 
             # Join the states with ',' in case of job arrays
-            job.state = ','.join(m.group('state') for m in jobarr_info)
+            job._state = ','.join(m.group('state') for m in jobarr_info)
             if not self._update_state_count % self.SACCT_SQUEUE_RATIO:
                 self._cancel_if_blocked(job)
 
             if slurm_state_completed(job.state):
                 # Since Slurm exitcodes are positive take the maximum one
-                job.exitcode = max(
+                job._exitcode = max(
                     int(m.group('exitcode')) for m in jobarr_info
                 )
 
             # Use ',' to join nodes to be consistent with Slurm syntax
-            self._set_nodelist(
+            self._update_nodelist(
                 job, ','.join(m.group('nodespec') for m in jobarr_info)
+            )
+            self._update_completion_time(
+                job, (m.group('end') for m in jobarr_info)
             )
 
     def _cancel_if_blocked(self, job):
@@ -510,7 +519,7 @@ class SlurmJobScheduler(sched.JobScheduler):
     def cancel(self, job):
         getlogger().debug('cancelling job (id=%s)' % job.jobid)
         _run_strict('scancel %s' % job.jobid, timeout=self._submit_timeout)
-        job.is_cancelling = True
+        job._is_cancelling = True
 
     def finished(self, job):
         if job.exception:
@@ -542,13 +551,6 @@ class SqueueJobScheduler(SlurmJobScheduler):
     '''A Slurm job that uses squeue to query its state.'''
 
     SQUEUE_DELAY = 2
-
-    def completion_time(self, job):
-        return None
-
-    def submit(self, job):
-        super().submit(job)
-        job.cancelled = False
 
     def poll(self, *jobs):
         '''Update the status of the jobs.'''
@@ -583,9 +585,9 @@ class SqueueJobScheduler(SlurmJobScheduler):
 
         for job in jobs:
             try:
-                job_match = jobs_info[job.jobid]
+                job_match = jobs_info[job]
             except KeyError:
-                job.state = 'CANCELLED' if job.cancelled else 'COMPLETED'
+                job.state = 'CANCELLED' if job.is_cancelling else 'COMPLETED'
                 if job.exitcode is None:
                     job.exitcode = 0
 
@@ -597,13 +599,6 @@ class SqueueJobScheduler(SlurmJobScheduler):
             if (not job.is_cancelling and not slurm_state_pending(job.state)):
                 for s in job_match:
                     self._check_and_cancel(job, s.group('reason'))
-
-    def cancel(self, job):
-        # There is no reliable way to get the state of the job after it has
-        # finished, so we explicitly mark it as cancelled here. The
-        # _update_state() will make sure to return the approriate state.
-        super().cancel(job)
-        job.cancelled = True
 
 
 def _create_nodes(descriptions):

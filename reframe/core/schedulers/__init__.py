@@ -20,11 +20,14 @@ from reframe.core.logging import getlogger
 
 
 class JobScheduler(abc.ABC):
-    '''Abstract base class for job scheduler backends.'''
+    '''Abstract base class for job scheduler backends.
+
+    :meta private:
+    '''
 
     @abc.abstractmethod
-    def completion_time(self, job):
-        '''The completion time of this job expressed in seconds from the Epoch.
+    def make_job(self, *args, **kwargs):
+        '''Create a new job to be managed by this scheduler.
 
         :meta private:
         '''
@@ -151,53 +154,6 @@ class Job:
     #:
     #: :type: :class:`reframe.core.launchers.JobLauncher`
     launcher = fields.TypedField('launcher', JobLauncher)
-    scheduler = fields.TypedField('scheduler', JobScheduler)
-
-    #: .. versionadded:: 2.21
-    #:
-    #: The ID of the current job.
-    #:
-    #: :type: :class:`int` or :class:`None`.
-    jobid = fields.TypedField('jobid', int, type(None))
-
-    #: .. versionadded:: 2.21
-    #:
-    #: The exit code of the job.
-    #:
-    #: This may or may not be set depending on the scheduler backend.
-    #:
-    #: :type: :class:`int` or :class:`None`.
-    exitcode = fields.TypedField('exitcode', int, type(None))
-
-    #: .. versionadded:: 2.21
-    #:
-    #: The state of the job.
-    #:
-    #: The value of this field is scheduler-specific.
-    #:
-    #: :type: :class:`str` or :class:`None`.
-    state = fields.TypedField('state', str, type(None))
-
-    #: .. versionadded:: 2.17
-    #:
-    #: The list of node names assigned to this job.
-    #:
-    #: This attribute is :class:`None` if no nodes are assigned to the job
-    #: yet.
-    #: This attribute is set reliably only for the ``slurm`` backend, i.e.,
-    #: Slurm *with* accounting enabled.
-    #: The ``squeue`` scheduler backend, i.e., Slurm *without* accounting,
-    #: might not set this attribute for jobs that finish very quickly.
-    #: For the ``local`` scheduler backend, this returns an one-element list
-    #: containing the hostname of the current host.
-    #:
-    #: This attribute might be useful in a flexible regression test for
-    #: determining the actual nodes that were assigned to the test.
-    #: For more information on flexible node allocation, see the
-    #: |--flex-alloc-nodes|_ command-line option
-    #:
-    #: This attribute is *not* supported by the ``pbs`` scheduler backend.
-    nodelist = fields.TypedField('nodelist', typ.List[str], type(None))
 
     # The sched_* arguments are exposed also to the frontend
     def __init__(self,
@@ -227,21 +183,12 @@ class Job:
         self.time_limit = None
         self.options = list(sched_options) if sched_options else []
 
-        # Live job information; to be filled during job's lifetime by the
-        # scheduler
-        self.jobid = None
-        self.exitcode = None
-        self.state = None
-        self.nodelist = None
-        self.submit_time = None
-
         self._name = name
         self._workdir = workdir
         self._script_filename = script_filename or '%s.sh' % name
         self._stdout = stdout or '%s.out' % name
         self._stderr = stderr or '%s.err' % name
         self._max_pending_time = max_pending_time
-        self._completion_time = None
 
         # Backend scheduler related information
         self._sched_flex_alloc_nodes = sched_flex_alloc_nodes
@@ -254,19 +201,25 @@ class Job:
         self._sched_exclusive_access = sched_exclusive_access
         self.exception = None
 
+        # Live job information; to be filled during job's lifetime by the
+        # scheduler
+        self._jobid = None
+        self._exitcode = None
+        self._state = None
+        self._nodelist = None
+        self._submit_time = None
+        self._completion_time = None
+
     @classmethod
     def create(cls, scheduler, launcher, *args, **kwargs):
-        ret = Job(*args, **kwargs)
-        ret.scheduler, ret.launcher = scheduler, launcher
+        ret = scheduler.make_job(*args, **kwargs)
+        ret._scheduler = scheduler
+        ret.launcher = launcher
         return ret
 
     @property
     def name(self):
         return self._name
-
-    @property
-    def kind(self):
-        return type(self.scheduler).registered_name
 
     @property
     def workdir(self):
@@ -322,7 +275,74 @@ class Job:
 
     @property
     def completion_time(self):
-        return self.scheduler.completion_time(self) or self._completion_time
+        return self._completion_time
+
+    @property
+    def scheduler(self):
+        return self._scheduler
+
+    @property
+    def jobid(self):
+        '''The ID of this job.
+
+        .. versionadded:: 2.21
+
+        .. versionchanged:: 3.2
+           Job ID type is now a string.
+
+        :type: :class:`str` or :class:`None`
+        '''
+        return self._jobid
+
+    @property
+    def exitcode(self):
+        '''The exit code of this job.
+
+        This may or may not be set depending on the scheduler backend.
+
+        .. versionadded:: 2.21
+
+        :type: :class:`int` or :class:`None`
+        '''
+        return self._exitcode
+
+    @property
+    def state(self):
+        '''The state of this job.
+
+        The value of this field is scheduler-specific.
+
+        .. versionadded:: 2.21
+
+        :type: :class`str` or :class:`None`
+        '''
+        return self._state
+
+    @property
+    def nodelist(self):
+        '''The list of node names assigned to this job.
+
+        This attribute is :class:`None` if no nodes are assigned to the job
+        yet.
+        This attribute is set reliably only for the ``slurm`` backend, i.e.,
+        Slurm *with* accounting enabled.
+        The ``squeue`` scheduler backend, i.e., Slurm *without* accounting,
+        might not set this attribute for jobs that finish very quickly.
+        For the ``local`` scheduler backend, this returns an one-element list
+        containing the hostname of the current host.
+
+        This attribute might be useful in a flexible regression test for
+        determining the actual nodes that were assigned to the test.
+        For more information on flexible node allocation, see the
+        |--flex-alloc-nodes|_ command-line option
+
+        This attribute is *not* supported by the ``pbs`` scheduler backend.
+
+        .. versionadded:: 2.17
+
+        :type:`List[str]` or :type:`None`
+        '''
+        return self._nodelist
 
     def prepare(self, commands, environs=None, **gen_opts):
         environs = environs or []
