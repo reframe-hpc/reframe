@@ -82,6 +82,7 @@ class TestStats:
                     'build_stderr': None,
                     'build_stdout': None,
                     'description': check.descr,
+                    'prefix': check.prefix,
                     'environment': None,
                     'fail_reason': None,
                     'fail_phase': None,

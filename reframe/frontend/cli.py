@@ -5,6 +5,7 @@
 
 import inspect
 import json
+import jsonschema
 import os
 import re
 import socket
@@ -312,6 +313,10 @@ def main():
              'may be retried (default: 0)'
     )
     run_options.add_argument(
+        '--retry-failed', metavar='NUM', action='store', default=None,
+        help='Retry failed tests in a given runreport'
+    )
+    run_options.add_argument(
         '--flex-alloc-nodes', action='store',
         dest='flex_alloc_nodes', metavar='{all|STATE|NUM}', default=None,
         help='Set strategy for the flexible node allocation (default: "idle").'
@@ -551,11 +556,53 @@ def main():
     printer.debug(format_env(options.env_vars))
 
     # Setup the check loader
-    loader = RegressionCheckLoader(
-        load_path=site_config.get('general/0/check_search_path'),
-        recurse=site_config.get('general/0/check_search_recursive'),
-        ignore_conflicts=site_config.get('general/0/ignore_check_conflicts')
-    )
+    if options.retry_failed:
+        with open(options.retry_failed) as f:
+            try:
+                restart_report = json.load(f)
+            except json.JSONDecodeError as e:
+                raise ReframeFatalError(
+                    f"invalid runreport: '{restart_report}'"
+                ) from e
+
+        schema_filename = os.path.join(reframe.INSTALL_PREFIX, 'reframe',
+                                       'schemas', 'runreport.json')
+        with open(schema_filename) as f:
+            try:
+                schema = json.load(f)
+            except json.JSONDecodeError as e:
+                raise ReframeFatalError(
+                    f"invalid schema: '{schema_filename}'"
+                ) from e
+
+        try:
+            jsonschema.validate(restart_report, schema)
+        except jsonschema.ValidationError as e:
+            raise ValueError(f"could not validate restart runreport: "
+                             f"'{restart_report}'") from e
+
+        failed_checks = set()
+        failed_checks_prefixes = set()
+        for run in restart_report['runs']:
+            for testcase in run['testcases']:
+                if testcase['result'] == 'failure':
+                    failed_checks.add(hash(testcase['name']) ^
+                                      hash(testcase['system']) ^
+                                      hash(testcase['environment']))
+                    failed_checks_prefixes.add(testcase['prefix'])
+
+        loader = RegressionCheckLoader(
+            load_path=failed_checks_prefixes,
+            ignore_conflicts=site_config.get(
+                'general/0/ignore_check_conflicts')
+        )
+    else:
+        loader = RegressionCheckLoader(
+            load_path=site_config.get('general/0/check_search_path'),
+            recurse=site_config.get('general/0/check_search_recursive'),
+            ignore_conflicts=site_config.get(
+                'general/0/ignore_check_conflicts')
+        )
 
     def print_infoline(param, value):
         param = param + ':'
@@ -651,6 +698,10 @@ def main():
                                        options.skip_system_check,
                                        options.skip_prgenv_check,
                                        allowed_environs)
+        if options.retry_failed:
+            testcases = [tc for tc in testcases
+                         if tc.__hash__() in failed_checks]
+
         testgraph = dependency.build_deps(testcases)
         dependency.validate_deps(testgraph)
         testcases = dependency.toposort(testgraph)

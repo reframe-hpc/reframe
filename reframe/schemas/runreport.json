@@ -40,6 +40,7 @@
                                 "build_stderr": {"type": ["string", "null"]},
                                 "build_stdout": {"type": ["string", "null"]},
                                 "description": {"type": "string"},
+                                "prefix": {"type": "string"},
                                 "environment": {"type": ["string", "null"]},
                                 "fail_phase": {"type": ["string", "null"]},
                                 "fail_reason": {"type": ["string", "null"]},
