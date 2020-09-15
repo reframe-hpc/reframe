@@ -31,9 +31,8 @@ def launcher(request):
 @pytest.fixture
 def make_job():
     class FakeJobScheduler(JobScheduler):
-        @property
-        def completion_time(self, job):
-            pass
+        def make_job(self, *args, **kwargs):
+            return Job(*args, **kwargs)
 
         def emit_preamble(self, job):
             pass

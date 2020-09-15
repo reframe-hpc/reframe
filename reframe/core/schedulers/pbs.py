@@ -107,7 +107,7 @@ class PbsJobScheduler(sched.JobScheduler):
         ]
 
         if job.time_limit is not None:
-            h, m, s = seconds_to_hms(job.time_limit.total_seconds())
+            h, m, s = seconds_to_hms(job.time_limit)
             preamble.append(
                 self._format_option('-l walltime=%d:%d:%d' % (h, m, s)))
 
@@ -139,20 +139,20 @@ class PbsJobScheduler(sched.JobScheduler):
                            'of the submitted job')
 
         job._jobid = jobid_match.group('jobid')
-        job._submit_time = datetime.now()
+        job._submit_time = time.time()
 
     def wait(self, job):
         intervals = itertools.cycle([1, 2, 3])
-        while not job.completed:
+        while not self.finished(job):
             self.poll(job)
             time.sleep(next(intervals))
 
     def cancel(self, job):
-        time_from_submit = (datetime.now() - job.submit_time).total_seconds()
+        time_from_submit = time.time() - job.submit_time
         if time_from_submit < PBS_CANCEL_DELAY:
             time.sleep(PBS_CANCEL_DELAY - time_from_submit)
 
-        getlogger().debug('cancelling job (id=%s)' % jobid)
+        getlogger().debug(f'cancelling job (id={job.jobid})')
         _run_strict(f'qdel {job.jobid}', timeout=self._submit_timeout)
         job._cancelled = True
 

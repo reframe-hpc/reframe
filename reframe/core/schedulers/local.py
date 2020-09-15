@@ -9,7 +9,6 @@ import socket
 import stat
 import subprocess
 import time
-from datetime import datetime, timedelta
 
 import reframe.core.schedulers as sched
 import reframe.utility.os_ext as os_ext
@@ -108,16 +107,16 @@ class LocalJobScheduler(sched.JobScheduler):
         timeout -- Timeout period for this wait call in seconds (may be a real
                    number, too). If `None` or `0`, no timeout will be set.
         '''
-        t_wait = datetime.now()
+        t_wait = time.time()
         job.proc.wait(timeout=timeout or None)
-        t_wait = datetime.now() - t_wait
+        t_wait = time.time() - t_wait
         try:
             # Wait for all processes in the process group to finish
-            while not timeout or t_wait.total_seconds() < timeout:
-                t_poll = datetime.now()
+            while not timeout or t_wait < timeout:
+                t_poll = time.time()
                 os.killpg(job.jobid, 0)
                 time.sleep(self.WAIT_POLL_SECS)
-                t_poll = datetime.now() - t_poll
+                t_poll = time.time() - t_poll
                 t_wait += t_poll
 
             # Final check
@@ -142,7 +141,7 @@ class LocalJobScheduler(sched.JobScheduler):
 
         # Set the time limit to the grace period and let wait() do the final
         # killing
-        job.time_limit = timedelta(seconds=self.CANCEL_GRACE_PERIOD)
+        job.time_limit = self.CANCEL_GRACE_PERIOD
         self.wait(job)
 
     def wait(self, job):
@@ -160,7 +159,7 @@ class LocalJobScheduler(sched.JobScheduler):
 
         # Convert job's time_limit to seconds
         if job.time_limit is not None:
-            timeout = job.time_limit.total_seconds()
+            timeout = job.time_limit
         else:
             timeout = 0
 

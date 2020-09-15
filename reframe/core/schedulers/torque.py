@@ -10,7 +10,7 @@
 
 import re
 import os
-from datetime import datetime
+import time
 
 import reframe.utility.os_ext as os_ext
 from reframe.core.backends import register_scheduler
@@ -43,12 +43,12 @@ class TorqueJobScheduler(PbsJobScheduler):
         job._nodelist.sort()
 
     def poll(self, *jobs):
-        '''Update the status of the jobs.'''
-        jobids = [str(job.jobid) for job in jobs]
-        if not jobids:
+        if not jobs:
             return
 
-        completed = os_ext.run_command(f"qstat -f {' '.join(jobids)}")
+        completed = os_ext.run_command(
+            f'qstat -f {" ".join(job.jobid for job in jobs)}'
+        )
 
         # Depending on the configuration, completed jobs will remain on the job
         # list for a limited time, or be removed upon completion.
@@ -66,86 +66,71 @@ class TorqueJobScheduler(PbsJobScheduler):
             return
 
         if completed.returncode != 0:
-            raise JobError(f'qstat failed:\n{completed.stderr}')
+            raise JobError(
+                f'qstat failed with exit code {completed.returncode} '
+                f'(standard error follows):\n{completed.stderr}'
+            )
 
-        jobs_info = {}
+        # Store information for each job separately
+        jobinfo = {}
         for job_raw_info in completed.stdout.split('\n\n'):
             jobid_match = re.search(
                 r'^Job Id:\s*(?P<jobid>\S+)', job_raw_info, re.MULTILINE
             )
             if jobid_match:
                 jobid = jobid_match.group('jobid')
-                jobs_info[jobid] = job_raw_info
+                jobinfo[jobid] = job_raw_info
 
         for job in jobs:
-            if job.jobid not in jobs_info:
+            if job.jobid not in jobinfo:
                 getlogger().debug(
-                    f'jobid {job.jobid} not known by scheduler, '
-                    'assuming job completed'
+                    f'jobid {job.jobid} not known to scheduler, '
+                    f'assuming job completed'
                 )
-                job.state = 'COMPLETED'
+                job._state = 'COMPLETED'
+                job._completed = True
                 continue
 
-            stdout = jobs_info[job.jobid]
+            info = jobinfo[job.jobid]
+            state_match = re.search(
+                r'^\s*job_state = (?P<state>[A-Z])', info, re.MULTILINE
+            )
+            if not state_match:
+                getlogger().debug(
+                    f'job state not found (job info follows):\n{info}'
+                )
+                continue
+
+            state = state_match.group('state')
+            job._state = JOB_STATES[state]
             nodelist_match = re.search(
                 r'exec_host = (?P<nodespec>[\S\t\n]+)',
-                completed.stdout,
-                re.MULTILINE
+                info, re.MULTILINE
             )
             if nodelist_match:
                 nodespec = nodelist_match.group('nodespec')
                 nodespec = re.sub(r'[\n\t]*', '', nodespec)
                 self._update_nodelist(job, nodespec)
 
-            state_match = re.search(
-                r'^\s*job_state = (?P<state>[A-Z])', stdout, re.MULTILINE
-            )
-            if not state_match:
-                getlogger().debug(
-                    'job state not found (stdout follows)\n%s' % stdout
-                )
-                continue
-
-            state = state_match.group('state')
-            job._state = JOB_STATES[state]
             if job.state == 'COMPLETED':
                 exitcode_match = re.search(
                     r'^\s*exit_status = (?P<code>\d+)',
-                    stdout,
-                    re.MULTILINE,
+                    info, re.MULTILINE,
                 )
-                if not exitcode_match:
-                    continue
+                if exitcode_match:
+                    job._exitcode = int(exitcode_match.group('code'))
 
-                job._exitcode = int(exitcode_match.group('code'))
-
-        for job in jobs:
-            stdout = os.path.join(job.workdir, job.stdout)
-            stderr = os.path.join(job.workdir, job.stderr)
-            output_ready = os.path.exists(stdout) and os.path.exists(stderr)
-            done = job.cancelled or output_ready
-            if job.state == 'COMPLETED' and done:
-                job._finished = True
-
-    def finished(self, job):
-        if job.exception:
-            try:
-                raise job.exception
-            except JobError as e:
-                # We ignore these exceptions at this point and we simply mark
-                # the job as unfinished.
-                getlogger().debug('ignoring error during polling: %s' % e)
-                return False
-            finally:
-                job.exception = None
-
-        if job.max_pending_time and job.state in ['QUEUED',
-                                                  'HELD',
-                                                  'WAITING']:
-            if (datetime.now() - job.submit_time >= job.max_pending_time):
-                self.cancel(job)
-                raise JobError('maximum pending time exceeded',
-                               jobid=job.jobid)
-
-        getlogger().debug(f'job {"" if job.finished else "not"} finished')
-        return job.finished
+                # We report a job as finished only when its stdout/stderr are
+                # written back to the working directory
+                stdout = os.path.join(job.workdir, job.stdout)
+                stderr = os.path.join(job.workdir, job.stderr)
+                out_ready = os.path.exists(stdout) and os.path.exists(stderr)
+                done = job.cancelled or out_ready
+                if done:
+                    job._completed = True
+            elif (job.state in ['QUEUED', 'HELD', 'WAITING'] and
+                  job.max_pending_time):
+                if (time.time() - job.submit_time >= job.max_pending_time):
+                    self.cancel(job)
+                    raise JobError('maximum pending time exceeded',
+                                   jobid=job.jobid)

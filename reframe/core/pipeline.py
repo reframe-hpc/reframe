@@ -611,15 +611,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: Time limit for this test.
     #:
     #: Time limit is specified as a string in the form
-    #: ``<days>d<hours>h<minutes>m<seconds>s``.
+    #: ``<days>d<hours>h<minutes>m<seconds>s`` or as number of seconds.
     #: If set to :class:`None`, no time limit will be set.
     #: The default time limit of the system partition's scheduler will be used.
     #:
-    #: The value is internaly kept as a :class:`datetime.timedelta` object.
-    #: For example '2h30m' is represented as
-    #: ``datetime.timedelta(hours=2, minutes=30)``
-    #:
-    #: :type: :class:`str` or :class:`datetime.timedelta`
+    #: :type: :class:`str` or :class:`float` or :class:`int`
     #: :default: ``'10m'``
     #:
     #: .. note::
@@ -631,7 +627,9 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:       The old syntax using a ``(h, m, s)`` tuple is deprecated.
     #:
     #:    .. versionchanged:: 3.2
-    #:       The old syntax using a ``(h, m, s)`` tuple is dropped.
+    #:       - The old syntax using a ``(h, m, s)`` tuple is dropped.
+    #:       - Support of `timedelta` objects is dropped.
+    #:       - Number values are now accepted.
     time_limit = fields.TimerField('time_limit', type(None))
 
     #: .. versionadded:: 2.8

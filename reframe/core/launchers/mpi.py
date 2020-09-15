@@ -86,7 +86,7 @@ class SrunAllocationLauncher(JobLauncher):
             ret += ['--job-name=%s' % job.name]
 
         if job.time_limit:
-            h, m, s = seconds_to_hms(job.time_limit.total_seconds())
+            h, m, s = seconds_to_hms(job.time_limit)
             ret += ['--time=%d:%d:%d' % (h, m, s)]
 
         if job.stdout:

@@ -10,7 +10,6 @@ import re
 import time
 from argparse import ArgumentParser
 from contextlib import suppress
-from datetime import datetime
 
 import reframe.core.environments as env
 import reframe.core.runtime as rt
@@ -170,7 +169,7 @@ class SlurmJobScheduler(sched.JobScheduler):
                      self._format_option(job.stderr, errfile_fmt)]
 
         if job.time_limit is not None:
-            h, m, s = seconds_to_hms(job.time_limit.total_seconds())
+            h, m, s = seconds_to_hms(job.time_limit)
             preamble.append(
                 self._format_option('%d:%d:%d' % (h, m, s), '--time={0}')
             )
@@ -228,16 +227,17 @@ class SlurmJobScheduler(sched.JobScheduler):
         return list(filter(None, preamble))
 
     def submit(self, job):
-        cmd = 'sbatch %s' % job.script_filename
+        cmd = f'sbatch {job.script_filename}'
         completed = _run_strict(cmd, timeout=self._submit_timeout)
         jobid_match = re.search(r'Submitted batch job (?P<jobid>\d+)',
                                 completed.stdout)
         if not jobid_match:
             raise JobError(
-                'could not retrieve the job id of the submitted job')
+                'could not retrieve the job id of the submitted job'
+            )
 
         job._jobid = jobid_match.group('jobid')
-        job._submit_time = datetime.now()
+        job._submit_time = time.time()
 
     def allnodes(self):
         try:
@@ -385,15 +385,16 @@ class SlurmJobScheduler(sched.JobScheduler):
     def poll(self, *jobs):
         '''Update the status of the jobs.'''
 
-        jobids = [job.jobid for job in jobs]
-        if not jobids:
+        if not jobs:
             return
 
-        start_time = min(job.submit_time for job in jobs)
         with rt.temp_environment(variables={'SLURM_TIME_FORMAT': '%s'}):
+            t_start = time.strftime(
+                '%F', time.localtime(min(job.submit_time for job in jobs))
+            )
             completed = _run_strict(
-                f'sacct -S {start_time.strftime("%F")} -P '
-                f'-j {",".join(str(j) for j in jobids)} '
+                f'sacct -S {t_start} -P '
+                f'-j {",".join(job.jobid for job in jobs)} '
                 f'-o jobid,state,exitcode,end,nodelist'
             )
 
@@ -410,22 +411,24 @@ class SlurmJobScheduler(sched.JobScheduler):
                               completed.stdout)
             return
 
-        jobs_info = {}
+        job_info = {}
         for s in state_match:
-            jobid = int(s.group('jobid').split('_')[0])
-            jobs_info.setdefault(jobid, []).append(s)
+            jobid = s.group('jobid').split('_')[0]
+            job_info.setdefault(jobid, []).append(s)
 
         for job in jobs:
             try:
-                jobarr_info = jobs_info[job]
+                jobarr_info = job_info[job.jobid]
             except KeyError:
                 continue
 
             # Join the states with ',' in case of job arrays
             job._state = ','.join(m.group('state') for m in jobarr_info)
+
             if not self._update_state_count % self.SACCT_SQUEUE_RATIO:
                 self._cancel_if_blocked(job)
 
+            self._cancel_if_pending_too_long(job)
             if slurm_state_completed(job.state):
                 # Since Slurm exitcodes are positive take the maximum one
                 job._exitcode = max(
@@ -440,21 +443,32 @@ class SlurmJobScheduler(sched.JobScheduler):
                 job, (m.group('end') for m in jobarr_info)
             )
 
-    def _cancel_if_blocked(self, job):
+    def _cancel_if_pending_too_long(self, job):
+        if not job.max_pending_time or not slurm_state_pending(job.state):
+            return
+
+        t_pending = time.time() - job.submit_time
+        if t_pending >= job.max_pending_time:
+            self.cancel(job)
+            raise JobError('maximum pending time exceeded', job.jobid)
+
+    def _cancel_if_blocked(self, job, reasons=None):
         if (job.is_cancelling or not slurm_state_pending(job.state)):
             return
 
-        completed = _run_strict('squeue -h -j %s -o %%r' % job.jobid)
-        if not completed.stdout:
-            # Can't retrieve job's state. Perhaps it has finished already and
-            # does not show up in the output of squeue
-            return
+        if not reasons:
+            completed = _run_strict('squeue -h -j %s -o %%r' % job.jobid)
+            reasons = completed.stdout.splitlines()
+            if not reasons:
+                # Can't retrieve job's state. Perhaps it has finished already
+                # and does not show up in the output of squeue
+                return
 
         # For slurm job arrays the squeue output consists of multiple lines
-        for reason_descr in completed.stdout.splitlines():
-            self._check_and_cancel(job, reason_descr)
+        for r in reasons:
+            self._do_cancel_if_blocked(job, r)
 
-    def _check_and_cancel(self, job, reason_descr):
+    def _do_cancel_if_blocked(self, job, reason_descr):
         '''Check if blocking reason ``reason_descr`` is unrecoverable and
         cancel the job in this case.'''
 
@@ -470,7 +484,8 @@ class SlurmJobScheduler(sched.JobScheduler):
             if reason == 'ReqNodeNotAvail' and reason_details:
                 node_match = re.match(
                     r'UnavailableNodes:(?P<node_names>\S+)?',
-                    reason_details.strip())
+                    reason_details.strip()
+                )
                 if node_match:
                     node_names = node_match['node_names']
                     if node_names:
@@ -501,48 +516,19 @@ class SlurmJobScheduler(sched.JobScheduler):
             return
 
         intervals = itertools.cycle([1, 2, 3])
-        self.poll(job)
-
         while not slurm_state_completed(job.state):
-            if job.max_pending_time and slurm_state_pending(job.state):
-                if (datetime.now() - job.submit_time >= job.max_pending_time):
-                    self.cancel(job)
-                    raise JobError('maximum pending time exceeded',
-                                   jobid=job.jobid)
-
-            time.sleep(next(intervals))
             self.poll(job)
+            time.sleep(next(intervals))
 
         if job.is_array:
             self._merge_files(job)
 
     def cancel(self, job):
-        getlogger().debug('cancelling job (id=%s)' % job.jobid)
-        _run_strict('scancel %s' % job.jobid, timeout=self._submit_timeout)
+        getlogger().debug(f'cancelling job (id={job.jobid})')
+        _run_strict(f'scancel {job.jobid}', timeout=self._submit_timeout)
         job._is_cancelling = True
 
     def finished(self, job):
-        if job.exception:
-            try:
-                raise job.exception
-            except JobBlockedError:
-                # Job blocked forever;
-                # reraise the exception to notify our caller
-                raise
-            except JobError as e:
-                # We ignore these exceptions at this point and we
-                # simply mark the job as unfinished.
-                getlogger().debug('ignoring error during polling: %s' % e)
-                return False
-            finally:
-                job.exception = None
-
-        if job.max_pending_time and slurm_state_pending(job.state):
-            if (datetime.now() - job.submit_time >= job.max_pending_time):
-                self.cancel(job)
-                raise JobError('maximum pending time exceeded',
-                               jobid=job.jobid)
-
         return slurm_state_completed(job.state)
 
 
@@ -553,52 +539,50 @@ class SqueueJobScheduler(SlurmJobScheduler):
     SQUEUE_DELAY = 2
 
     def poll(self, *jobs):
-        '''Update the status of the jobs.'''
-
         if not jobs:
             return
 
         m = max(job.submit_time for job in jobs)
-        time_from_last_submit = datetime.now() - m
-        rem_wait = self.SQUEUE_DELAY - time_from_last_submit.total_seconds()
+        time_from_last_submit = time.time() - m
+        rem_wait = self.SQUEUE_DELAY - time_from_last_submit
         if rem_wait > 0:
             time.sleep(rem_wait)
 
-        jobids = [job.jobid for job in jobs]
         # We don't run the command with check=True, because if the job has
         # finished already, squeue might return an error about an invalid
         # job id.
-        completed = os_ext.run_command('squeue -h -j %s '
-                                       '-o "%%i|%%T|%%N|%%r"' %
-                                       ','.join([str(j) for j in jobids]))
-        # We need the match objects, so we have to use finditer()
-        state_match = list(re.finditer(r'^(?P<jobid>%s)\|(?P<state>\S+)\|'
-                                       r'(?P<nodespec>\S*)\|'
-                                       r'(?P<reason>.+)' % self._state_patt,
-                                       completed.stdout,
-                                       re.MULTILINE))
+        completed = os_ext.run_command(
+            f'squeue -h -j {",".join(job.jobid for job in jobs)} '
+            f'-o "%%i|%%T|%%N|%%r"'
+        )
 
-        jobs_info = {}
+        # We need the match objects, so we have to use finditer()
+        state_match = list(re.finditer(
+            fr'^(?P<jobid>{self._state_patt})\|(?P<state>\S+)\|'
+            fr'(?P<nodespec>\S*)\|(?P<reason>.+)',
+            completed.stdout, re.MULTILINE)
+        )
+        jobinfo = {}
         for s in state_match:
-            jobid = int(s.group('jobid').split('_')[0])
-            jobs_info.setdefault(jobid, []).append(s)
+            jobid = s.group('jobid').split('_')[0]
+            jobinfo.setdefault(jobid, []).append(s)
 
         for job in jobs:
             try:
-                job_match = jobs_info[job]
+                job_match = jobinfo[job.jobid]
             except KeyError:
-                job.state = 'CANCELLED' if job.is_cancelling else 'COMPLETED'
+                job._state = 'CANCELLED' if job.is_cancelling else 'COMPLETED'
                 if job.exitcode is None:
-                    job.exitcode = 0
+                    job._exitcode = 0
 
                 continue
 
             # Join the states with ',' in case of job arrays
-            job.state = ','.join(s.group('state') for s in job_match)
-
-            if (not job.is_cancelling and not slurm_state_pending(job.state)):
-                for s in job_match:
-                    self._check_and_cancel(job, s.group('reason'))
+            job._state = ','.join(s.group('state') for s in job_match)
+            self._cancel_if_blocked(
+                job, [s.group('reason') for s in state_match]
+            )
+            self._cancel_if_pending_too_long(job)
 
 
 def _create_nodes(descriptions):

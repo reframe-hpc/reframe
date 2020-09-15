@@ -435,24 +435,22 @@ def test_submit_max_pending_time(make_job, exec_ctx, scheduler):
         pytest.skip(f"max_pending_time not supported by the "
                     f"'{scheduler.registered_name}' scheduler")
 
-    def poll(*jobs):
-        for job in jobs:
-            if scheduler.registered_name in ('slurm', 'squeue'):
-                job.state = 'PENDING'
-            elif scheduler.registered_name == 'torque':
-                job.state = 'QUEUED'
-            else:
-                # This should not happen
-                assert 0
+    minimal_job = make_job(sched_access=exec_ctx.access,
+                           max_pending_time=0.05)
 
-    minimal_job = make_job(sched_access=exec_ctx.access)
+    # Monkey-patch the Job's state property to pretend that the job is always
+    # pending
+    def state(self):
+        if scheduler.registered_name in ('slurm', 'squeue'):
+            return 'PENDING'
+        elif scheduler.registered_name == 'torque':
+            return 'QUEUED'
+        else:
+            # This should not happen
+            assert 0
+
+    type(minimal_job).state = property(state)
     prepare_job(minimal_job, 'sleep 30')
-
-    # Monkey patch `self._update_state` to simulate that the job is
-    # pending on the queue for enough time so it can be canceled due
-    # to exceeding the maximum pending time
-    minimal_job.scheduler.poll = poll
-    minimal_job._max_pending_time = timedelta(milliseconds=50)
     minimal_job.submit()
     with pytest.raises(JobError,
                        match='maximum pending time exceeded'):

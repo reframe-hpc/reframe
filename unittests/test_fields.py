@@ -98,15 +98,13 @@ def test_timer_field():
     tester.field = '1d65h22m87s'
     tester.field_maybe_none = None
     assert isinstance(FieldTester.field, fields.TimerField)
-    assert (datetime.timedelta(days=1, hours=65,
-                               minutes=22, seconds=87) == tester.field)
-    tester.field = datetime.timedelta(days=1, hours=65,
-                                      minutes=22, seconds=87)
-    assert (datetime.timedelta(days=1, hours=65,
-                               minutes=22, seconds=87) == tester.field)
+    secs = datetime.timedelta(days=1, hours=65,
+                              minutes=22, seconds=87).total_seconds()
+    assert tester.field == secs
+    tester.field = secs
+    assert tester.field == secs
     tester.field = ''
-    assert (datetime.timedelta(days=0, hours=0,
-                               minutes=0, seconds=0) == tester.field)
+    assert tester.field == 0
     with pytest.raises(ValueError):
         tester.field = '1e'
 
@@ -133,6 +131,9 @@ def test_timer_field():
 
     with pytest.raises(ValueError):
         tester.field = '10'
+
+    with pytest.raises(ValueError):
+        tester.field = -10
 
 
 def test_proxy_field():

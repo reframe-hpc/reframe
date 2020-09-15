@@ -199,7 +199,6 @@ class Job:
         self._sched_reservation = sched_reservation
         self._sched_account = sched_account
         self._sched_exclusive_access = sched_exclusive_access
-        self.exception = None
 
         # Live job information; to be filled during job's lifetime by the
         # scheduler
@@ -343,6 +342,10 @@ class Job:
         :type:`List[str]` or :type:`None`
         '''
         return self._nodelist
+
+    @property
+    def submit_time(self):
+        return self._submit_time
 
     def prepare(self, commands, environs=None, **gen_opts):
         environs = environs or []
