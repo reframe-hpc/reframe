@@ -31,6 +31,7 @@ def _cleanup_all(tasks, *args, **kwargs):
     # Remove cleaned up tests
     tasks[:] = [t for t in tasks if t.ref_count]
 
+
 class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def __init__(self):
         super().__init__()
@@ -371,7 +372,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def _failall(self, cause):
         '''Mark all tests as failures'''
-        for task in sum(self._running_tasks.values(), []):
+        for task in list(itertools.chain(*self._running_tasks.values())):
             task.abort(cause)
 
         self._running_tasks = {}
@@ -413,10 +414,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def exit(self):
         self.printer.separator('short single line',
                                'waiting for spawned checks to finish')
-        sleeptime = itertools.cycle(range(1, 11))
+        sleeptime = itertools.cycle(range(1, 10))
         num_polls = 0
         t_start = datetime.now()
-
         while (countall(self._running_tasks) or self._waiting_tasks or
                self._completed_tasks or countall(self._ready_tasks)):
             getlogger().debug(f'running tasks: '
