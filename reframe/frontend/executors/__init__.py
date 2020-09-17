@@ -211,6 +211,10 @@ class RegressionTask:
     def succeeded(self):
         return self._current_stage in {'finalize', 'cleanup'}
 
+    @property
+    def completed(self):
+        return self.failed or self.succeeded
+
     def _notify_listeners(self, callback_name):
         for l in self._listeners:
             callback = getattr(l, callback_name)

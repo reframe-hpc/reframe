@@ -32,6 +32,27 @@ def _cleanup_all(tasks, *args, **kwargs):
     tasks[:] = [t for t in tasks if t.ref_count]
 
 
+def init_sleep_control(num_tasks):
+    num_prev_tasks = num_tasks
+    sleep_min = 0.5
+    sleep_max = 10
+    sleep_inc = 0.5
+    sleep_next = sleep_min
+
+    def _sleep_duration(num_tasks):
+        nonlocal sleep_next, num_prev_tasks
+
+        if num_tasks != num_prev_tasks or sleep_next >= sleep_max:
+            sleep_next = sleep_min
+            num_prev_tasks = num_tasks
+        else:
+            sleep_next += sleep_inc
+
+        return sleep_next
+
+    return _sleep_duration
+
+
 class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def __init__(self):
         super().__init__()
@@ -81,17 +102,14 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
             task.compile()
             task.compile_wait()
             task.run()
-            sleeptime = itertools.cycle(range(1, 11))
-            num_polls = 0
-            t_start = datetime.now()
+            nap_duration = init_sleep_control(1)
             while True:
-                num_polls += 1
                 sched.poll(task.check.job)
                 if task.poll():
                     break
 
-                t = next(sleeptime)
-                getlogger().debug('sleeping: %.3fs' % t)
+                t = nap_duration(int(not task.completed))
+                getlogger().debug(f'sleeping for {t}s')
                 time.sleep(t)
 
             task.wait()
@@ -414,30 +432,27 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def exit(self):
         self.printer.separator('short single line',
                                'waiting for spawned checks to finish')
-        sleeptime = itertools.cycle(range(1, 10))
-        num_polls = 0
-        t_start = datetime.now()
+        nap_duration = init_sleep_control(countall(self._running_tasks))
         while (countall(self._running_tasks) or self._waiting_tasks or
                self._completed_tasks or countall(self._ready_tasks)):
             getlogger().debug(f'running tasks: '
                               f'{countall(self._running_tasks)}')
-            num_polls += countall(self._running_tasks)
             try:
                 self._poll_tasks()
+
+                # We count running tasks just after polling in order to check
+                # more reliably that the state has changed, so that we
+                # decrease the sleep time. Otherwise if the number of tasks
+                # rescheduled was the as the number of tasks retired, the
+                # sleep time would be increased.
+                num_running = countall(self._running_tasks)
                 self._finalize_all()
                 self._setup_all()
                 self._reschedule_all()
                 _cleanup_all(self._retired_tasks, not self.keep_stage_files)
-                t_elapsed = (datetime.now() - t_start).total_seconds()
-                real_rate = num_polls / t_elapsed
-                getlogger().debug(
-                    'polling rate (real): %.3f polls/sec' % real_rate)
-
-                num_running = countall(self._running_tasks)
-                if num_running:
-                    t = next(sleeptime)
-                    getlogger().debug('sleeping: %.3fs' % t)
-                    time.sleep(t)
+                t = nap_duration(num_running)
+                getlogger().debug(f'sleeping for {t}s')
+                time.sleep(t)
 
             except TaskExit:
                 with contextlib.suppress(TaskExit):
