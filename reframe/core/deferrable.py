@@ -5,6 +5,7 @@
 
 import builtins
 import functools
+import json
 
 from reframe.core.exceptions import user_deprecation_warning
 
@@ -76,6 +77,9 @@ class _DeferredExpression:
     def __iter__(self):
         '''Evaluate the deferred expression and iterate over the result.'''
         return iter(self.evaluate())
+
+    def __rfm_json_encode__(self):
+        return self.evaluate()
 
     # Overload Python operators to be able to defer any expression
     #
@@ -338,3 +342,11 @@ class _DeferredExpression:
     @deferrable
     def __invert__(a):
         return ~a
+
+
+class DeferredExpressionJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, _DeferredExpression):
+            return obj.evaluate()
+
+        return json.JSONEncoder.default(self, obj)
