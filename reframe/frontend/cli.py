@@ -3,8 +3,8 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import json
 import inspect
+import json
 import os
 import re
 import socket

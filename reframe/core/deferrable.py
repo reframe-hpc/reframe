@@ -342,11 +342,3 @@ class _DeferredExpression:
     @deferrable
     def __invert__(a):
         return ~a
-
-
-class DeferredExpressionJSONEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, _DeferredExpression):
-            return obj.evaluate()
-
-        return json.JSONEncoder.default(self, obj)
