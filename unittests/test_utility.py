@@ -1303,74 +1303,59 @@ def test_cray_cle_info_missing_parts(tmp_path):
 def temp_runtime(tmp_path):
     def _temp_runtime(site_config, system=None, options={}):
         options.update({'systems/prefix': tmp_path})
-        with rt.temp_runtime(site_config, system, options):
-            yield rt.runtime
+        with rt.temp_runtime(site_config, system, options) as ctx:
+            yield ctx
 
     yield _temp_runtime
 
 
 @pytest.fixture(params=['tmod', 'tmod4', 'lmod', 'nomod'])
-def modules_system(request, temp_runtime, monkeypatch):
-    # Pretend to be on a clean modules environment
-    monkeypatch.setenv('MODULEPATH', '')
-    monkeypatch.setenv('LOADEDMODULES', '')
-    monkeypatch.setenv('_LMFILES_', '')
-
+def user_exec_ctx(request, temp_runtime):
     if fixtures.USER_CONFIG_FILE:
         config_file, system = fixtures.USER_CONFIG_FILE, fixtures.USER_SYSTEM
     else:
         config_file, system = fixtures.BUILTIN_CONFIG_FILE, 'generic'
 
     try:
-        next(temp_runtime(config_file, system,
-                          {'systems/modules_system': request.param}))
+        yield from temp_runtime(config_file, system,
+                                {'systems/modules_system': request.param})
     except ConfigError as e:
         pytest.skip(str(e))
-    else:
-        ms = rt.runtime().system.modules_system
-        ms.searchpath_add(fixtures.TEST_MODULES)
-        return ms
+
+
+@pytest.fixture
+def modules_system(user_exec_ctx, monkeypatch):
+    # Pretend to be on a clean modules environment
+    #    monkeypatch.setenv('MODULEPATH', '')
+    monkeypatch.setenv('LOADEDMODULES', '')
+    monkeypatch.setenv('_LMFILES_', '')
+
+    ms = rt.runtime().system.modules_system
+    ms.searchpath_add(fixtures.TEST_MODULES)
+    return ms
 
 
 def test_find_modules(modules_system):
-    found_modules = list(util.find_modules('testmod'))
+    found_modules = [m[2] for m in util.find_modules('testmod')]
     if modules_system.name == 'nomod':
         assert found_modules == []
     else:
-        assert found_modules == [
-            ('generic:default', 'builtin', 'testmod_bar'),
-            ('generic:default', 'builtin', 'testmod_base'),
-            ('generic:default', 'builtin', 'testmod_boo'),
-            ('generic:default', 'builtin', 'testmod_foo')
-        ]
+        assert found_modules == ['testmod_bar', 'testmod_base',
+                                 'testmod_boo', 'testmod_foo']
 
 
 def test_find_modules_toolchains(modules_system):
-    found_modules = list(
-        util.find_modules('testmod',
-                          toolchain_mapping={r'.*_ba.*': 'builtin',
-                                             r'testmod_foo': 'foo'})
-    )
+    found_modules = [
+        m[2] for m in util.find_modules('testmod',
+                                        toolchain_mapping={
+                                            r'.*_ba.*': 'builtin',
+                                            r'testmod_foo': 'foo'
+                                        })
+    ]
     if modules_system.name == 'nomod':
         assert found_modules == []
     else:
-        assert found_modules == [
-            ('generic:default', 'builtin', 'testmod_bar'),
-            ('generic:default', 'builtin', 'testmod_base')
-        ]
-
-
-def test_find_modules_all(modules_system):
-    found_modules = list(util.find_modules(''))
-    if modules_system.name == 'nomod':
-        assert found_modules == []
-    else:
-        assert found_modules == [
-            ('generic:default', 'builtin', 'testmod_bar'),
-            ('generic:default', 'builtin', 'testmod_base'),
-            ('generic:default', 'builtin', 'testmod_boo'),
-            ('generic:default', 'builtin', 'testmod_foo')
-        ]
+        assert found_modules == ['testmod_bar', 'testmod_base']
 
 
 def test_find_modules_errors():
