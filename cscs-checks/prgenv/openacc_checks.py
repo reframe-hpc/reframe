@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import os
 import reframe as rfm
 import reframe.utility.os_ext as os_ext
 import reframe.utility.sanity as sn
@@ -20,8 +21,9 @@ class OpenACCFortranCheck(rfm.RegressionTest):
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
                               'arolla:cn', 'tsa:cn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
+        self.sourcesdir = 'src/openacc'
         if self.num_tasks == 1:
-            self.sourcepath = 'vecAdd_openacc.f90'
+            self.sourcepath = 'vecAdd_openacc_nompi.f90'
             if self.current_system.name == 'kesch':
                 self.valid_prog_environs = ['PrgEnv-cray-nompi',
                                             'PrgEnv-pgi-nompi']
