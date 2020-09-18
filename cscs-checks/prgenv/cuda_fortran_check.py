@@ -57,7 +57,8 @@ class CUDAFortranCheck(rfm.RegressionTest):
         if self.current_environ.name.startswith('PrgEnv-pgi'):
             if self.current_system.name in ['daint', 'dom', 'tiger']:
                 # FIXME CUDA_HOME should not be set this way
-                self.build_system.fflags = ['CUDA_HOME=$CUDATOOLKIT_HOME',
+                self.build_system.fflags = [
+                    'CUDA_HOME=$CUDATOOLKIT_HOME',
                     '-ta=tesla:cc60', '-Mcuda=cuda10.2'
                 ]
             elif self.current_system.name == 'kesch':
