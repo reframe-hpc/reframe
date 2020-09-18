@@ -1067,6 +1067,14 @@ General Configuration
    Ignore test name conflicts when loading tests.
 
 
+.. js:attribute:: .general[].ignore_exit_code
+
+   :required: No
+   :default: ``true``
+
+   Ignore job exit code
+
+
 .. js:attribute:: .general[].keep_stage_files
 
    :required: No

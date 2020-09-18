@@ -356,6 +356,7 @@
                     "clean_stagedir": {"type": "boolean"},
                     "colorize": {"type": "boolean"},
                     "ignore_check_conflicts": {"type": "boolean"},
+                    "ignore_exit_code": {"type": "boolean"},
                     "keep_stage_files": {"type": "boolean"},
                     "module_map_file": {"type": "string"},
                     "module_mappings": {
@@ -402,6 +403,7 @@
         "general/clean_stagedir": true,
         "general/colorize": true,
         "general/ignore_check_conflicts": false,
+        "general/ignore_exit_code": true,
         "general/keep_stage_files": false,
         "general/module_map_file": "",
         "general/module_mappings": [],
