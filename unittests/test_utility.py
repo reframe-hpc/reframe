@@ -1326,7 +1326,6 @@ def user_exec_ctx(request, temp_runtime):
 @pytest.fixture
 def modules_system(user_exec_ctx, monkeypatch):
     # Pretend to be on a clean modules environment
-    #    monkeypatch.setenv('MODULEPATH', '')
     monkeypatch.setenv('LOADEDMODULES', '')
     monkeypatch.setenv('_LMFILES_', '')
 
