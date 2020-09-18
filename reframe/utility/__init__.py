@@ -16,6 +16,7 @@ import sys
 import types
 
 from collections import UserDict
+from . import typecheck as typ
 
 
 def seconds_to_hms(seconds):
@@ -258,22 +259,82 @@ def longest(*iterables):
     return ret
 
 
-def find_modules(module, toolchain_mapping=None):
+def find_modules(substr, environ_mapping=None):
+    '''Return all modules in the current system that contain ``substr`` in
+    their name.
+
+    This function is a generator and will yield tuples of partition,
+    environment and module combinations for each partition of the current
+    system and for each environment of a partition.
+
+    The ``environ_mapping`` argument allows you to map module name patterns to
+    ReFrame environments. This is useful for flat module name schemes, in
+    order to avoid incompatible combinations of modules and environments.
+
+    You can use this function to parametrize regression tests over the
+    available environment modules. The following example will generate tests
+    for all the available ``netcdf`` packages in the system:
+
+    .. code:: python
+
+       @rfm.parameterized_test(*find_modules('netcdf'))
+       class MyTest(rfm.RegressionTest):
+           def __init__(self, s, e, m):
+               self.descr = f'{s}, {e}, {m}'
+               self.valid_systems = [s]
+               self.valid_prog_environs = [e]
+               self.modules = [m]
+               ...
+
+    The following example shows the use of ``environ_mapping`` with flat
+    module name schemes. In this example, the toolchain for which the package
+    was built is encoded in the module's name. Using the ``environ_mapping``
+    argument we can map module name patterns to ReFrame environments, so that
+    invalid combinations are pruned:
+
+    .. code:: python
+
+       my_find_modules = functools.partial(find_modules, environ_mapping={
+           r'.*CrayGNU.*': {'PrgEnv-gnu'},
+           r'.*CrayIntel.*': {'PrgEnv-intel'},
+           r'.*CrayCCE.*': {'PrgEnv-cray'}
+       })
+
+       @rfm.parameterized_test(*my_find_modules('GROMACS'))
+       class MyTest(rfm.RegressionTest):
+           def __init__(self, s, e, m):
+               self.descr = f'{s}, {e}, {m}'
+               self.valid_systems = [s]
+               self.valid_prog_environs = [e]
+               self.modules = [m]
+               ...
+
+    :arg substr: A substring that the returned module names must contain.
+    :arg environ_mapping: A dictionary mapping regular expressions to
+        environment names.
+
+    :returns: An iterator that iterates over tuples of the module, partition
+    and environment name combinations that were found.
+
+    '''
+
     import reframe.core.runtime as rt
 
-    if not isinstance(module, str):
-        raise TypeError("'module' argument must be a string")
+    if not isinstance(substr, str):
+        raise TypeError("'substr' argument must be a string")
 
-    if (toolchain_mapping is not None and
-        not isinstance(toolchain_mapping, collections.abc.Mapping)):
-        raise TypeError("'toolchain_mapping' argument must be a mapping type")
+    if (environ_mapping is not None and
+        not isinstance(environ_mapping, typ.Dict[str, str])):
+        raise TypeError(
+            "'environ_mapping' argument must be of type Dict[str,str]"
+        )
 
     def _is_valid_for_env(m, e):
-        if toolchain_mapping is None:
+        if environ_mapping is None:
             return True
 
-        for patt, toolchains in toolchain_mapping.items():
-            if re.match(patt, m) and e in toolchains:
+        for patt, environs in environ_mapping.items():
+            if re.match(patt, m) and e in environs:
                 return True
 
         return False
@@ -284,7 +345,7 @@ def find_modules(module, toolchain_mapping=None):
     for p in current_system.partitions:
         for e in p.environs:
             rt.loadenv(p.local_env, e)
-            modules = ms.available_modules(module)
+            modules = ms.available_modules(substr)
             snap0.restore()
             for m in modules:
                 if _is_valid_for_env(m, e.name):

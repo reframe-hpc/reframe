@@ -1344,10 +1344,10 @@ def test_find_modules(modules_system):
                                  'testmod_boo', 'testmod_foo']
 
 
-def test_find_modules_toolchains(modules_system):
+def test_find_modules_env_mapping(modules_system):
     found_modules = [
         m[2] for m in util.find_modules('testmod',
-                                        toolchain_mapping={
+                                        environ_mapping={
                                             r'.*_ba.*': 'builtin',
                                             r'testmod_foo': 'foo'
                                         })
