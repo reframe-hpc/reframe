@@ -72,6 +72,13 @@ def import_module_from_file(filename):
         # module to import is outside the top-level package
         return _do_import_module_from_file(filename, module_name)
 
+    # Extract module name if `filename` is under `site-packages/` or the
+    # Debian specific `dist-packages/`
+    site_packages = re.compile(r'.*(site|dist)-packages/(?P<rel_filename>.+)')
+    match = site_packages.search(filename)
+    if match:
+        module_name = _get_module_name(match['rel_filename'])
+
     return importlib.import_module(module_name)
 
 
