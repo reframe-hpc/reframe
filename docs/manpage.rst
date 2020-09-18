@@ -241,7 +241,7 @@ Options controlling ReFrame output
 .. option:: --report-file=FILE
 
    The file where ReFrame will store its report.
-   The ``FILE`` argument may contain the special placeholder ``{sessionid}``, in which case ReFrame will generate a new report each time it is run by appending a counter to the report file.
+   The ``FILE`` argument may contain the special placeholder ``{sessionid}``, in which case ReFrame will generate a new report each time it is run by appending a counter to the report file. By default, ReFrame will write to $HOME/.reframe/reports/run-report.json.
 
    This option can also be set using the :envvar:`RFM_REPORT_FILE` environment variable or the :js:attr:`report_file` general configuration parameter.
 
