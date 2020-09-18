@@ -790,8 +790,8 @@ def main():
                     printer.info(runner.stats.performance_report())
 
                 # Generate the report for this session
-                report_file = os.path.normpath(os_ext.expandvars(
-                    rt.get_option('general/0/report_file'))
+                report_file = os.path.normpath(
+                    os_ext.expandvars(rt.get_option('general/0/report_file'))
                 )
                 basedir = os.path.dirname(report_file)
                 if basedir:
@@ -813,8 +813,7 @@ def main():
                         json.dump(json_report, fp, indent=2)
                 except OSError as e:
                     printer.warning(
-                        f'failed to generate report in {report_file!r}: '
-                        f'{e}'
+                        f'failed to generate report in {report_file!r}: {e}'
                     )
 
         else:
