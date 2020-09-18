@@ -4,35 +4,26 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import reframe as rfm
+import reframe.utility.os_ext as os_ext
 import reframe.utility.sanity as sn
 
 
-@rfm.parameterized_test(['1.70.0', '19.10', '2.7'], ['1.70.0', '19.10', '3.6'],
-                        ['1.70.0', '20.08', '3.8'])
-class BoostCrayGnuPythonTest(rfm.RegressionTest):
-    def __init__(self, boost_version, cray_gnu_version, python_version):
-        self.descr = (f'Test for Boost-{boost_version} for '
-                      f'CrayGnu-{cray_gnu_version} with python '
-                      f'{python_version} support')
-        python_major, python_minor = python_version.split('.')
-
-        if cray_gnu_version == '20.08':
-            self.valid_systems = ['dom:mc', 'dom:gpu']
-            python_include_suffix = ''
-        else:
-            self.valid_systems = ['daint:mc', 'daint:gpu']
-            python_include_suffix = 'm' if python_major == '3' else ''
-
+@rfm.parameterized_test(['1.70.0'])
+class BoostPythonBindingsTest(rfm.RegressionTest):
+    def __init__(self, boostver):
+        self.descr = f'Test for Boost {boostver} with Python bindings'
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['builtin']
-        self.modules = [f'Boost/{boost_version}-CrayGNU-{cray_gnu_version}-'
-                        f'python{python_major}']
-        self.executable = f'python{python_major} hello.py'
+        cdt_version = os_ext.cray_cdt_version()
+        self.modules = [f'Boost/{boostver}-CrayGNU-{cdt_version}-python3']
+        self.executable = f'python3 hello.py'
         self.sanity_patterns = sn.assert_found('hello, world', self.stdout)
+        version_cmd = ('python3 -c \'import sys; '
+                       'ver=sys.version_info; '
+                       'print(f"{ver.major}{ver.minor}")\'')
         self.variables = {
-            'PYTHON_INCLUDE':
-                f'include/python{python_version}{python_include_suffix}',
-            'PYTHON_BOOST_LIB':
-                f'boost_python{python_major}{python_minor}'
+            'PYTHON_INCLUDE': '$(python3-config --includes)',
+            'PYTHON_BOOST_LIB': f'boost_python$({version_cmd})'
         }
         self.maintainers = ['JB', 'AJ']
         self.tags = {'scs', 'production'}
