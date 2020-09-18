@@ -1119,6 +1119,8 @@ General Configuration
    The file where ReFrame will store its report.
 
    .. versionadded:: 3.1
+   .. versionchanged:: 3.2
+      Default value has changed to avoid generating a report file per session.
 
 
 .. js:attribute:: .general[].save_log_files
