@@ -102,9 +102,8 @@ def minimal_job(make_job):
 
 @pytest.fixture
 def fake_job(make_job):
-    ret = make_job(
-        sched_exclusive_access=True
-    )
+    ret = make_job(sched_exclusive_access=True,
+                   sched_options=['--account=spam'])
     ret.time_limit = '5m'
     ret.num_tasks = 16
     ret.num_tasks_per_node = 2
@@ -112,9 +111,9 @@ def fake_job(make_job):
     ret.num_tasks_per_socket = 1
     ret.num_cpus_per_task = 18
     ret.use_smt = True
-    ret.options = ['--gres=gpu:4',
-                   '#DW jobdw capacity=100GB',
-                   '#DW stage_in source=/foo']
+    ret.options += ['--gres=gpu:4',
+                    '#DW jobdw capacity=100GB',
+                    '#DW stage_in source=/foo']
     return ret
 
 
@@ -154,6 +153,8 @@ def _expected_slurm_directives(job):
         '#SBATCH --cpus-per-task=%s' % job.num_cpus_per_task,
         '#SBATCH --hint=multithread',
         '#SBATCH --exclusive',
+        # Custom options and directives
+        '#SBATCH --account=spam',
         '#SBATCH --gres=gpu:4',
         '#DW jobdw capacity=100GB',
         '#DW stage_in source=/foo'
@@ -175,6 +176,7 @@ def _expected_pbs_directives(job):
         ':mem=100GB:cpu_type=haswell' % (num_nodes,
                                          job.num_tasks_per_node,
                                          num_cpus_per_node),
+        '#PBS --account=spam',
         '#PBS --gres=gpu:4',
         '#DW jobdw capacity=100GB',
         '#DW stage_in source=/foo'
@@ -191,6 +193,7 @@ def _expected_torque_directives(job):
         '#PBS -e %s' % job.stderr,
         '#PBS -l nodes=%s:ppn=%s:haswell' % (num_nodes, num_cpus_per_node),
         '#PBS -l mem=100GB',
+        '#PBS --account=spam',
         '#PBS --gres=gpu:4',
         '#DW jobdw capacity=100GB',
         '#DW stage_in source=/foo'
@@ -718,7 +721,8 @@ def test_flex_alloc_sched_access_idle_sequence_view(make_flexible_job):
     from reframe.utility import SequenceView
 
     job = make_flexible_job('idle',
-                            sched_access=SequenceView(['--constraint=f3']))
+                            sched_access=SequenceView(['--constraint=f3']),
+                            sched_options=['--partition=p3'])
     prepare_job(job)
     assert job.num_tasks == 4
 
@@ -732,7 +736,7 @@ def test_flex_alloc_sched_access_constraint_partition(make_flexible_job):
 
 
 def test_flex_alloc_sched_access_partition(make_flexible_job):
-    job = make_flexible_job('all')
+    job = make_flexible_job('all', sched_access=['--partition=p1'])
     prepare_job(job)
     assert job.num_tasks == 16
 
@@ -751,8 +755,7 @@ def test_flex_alloc_constraint_idle(make_flexible_job):
 
 
 def test_flex_alloc_partition_idle(make_flexible_job):
-    job = make_flexible_job('idle')
-    job.options = ['--partition=p2']
+    job = make_flexible_job('idle', sched_options=['--partition=p2'])
     with pytest.raises(JobError):
         prepare_job(job)
 
@@ -769,6 +772,12 @@ def test_flex_alloc_valid_multiple_constraints(make_flexible_job):
     job.options = ['-C f1&f3']
     prepare_job(job)
     assert job.num_tasks == 4
+
+
+def test_flex_alloc_valid_partition_cmd(make_flexible_job):
+    job = make_flexible_job('all', sched_options=['--partition=p2'])
+    prepare_job(job)
+    assert job.num_tasks == 8
 
 
 def test_flex_alloc_valid_partition_opt(make_flexible_job):
@@ -792,6 +801,12 @@ def test_flex_alloc_valid_constraint_partition(make_flexible_job):
     assert job.num_tasks == 4
 
 
+def test_flex_alloc_invalid_partition_cmd(make_flexible_job):
+    job = make_flexible_job('all', sched_options=['--partition=invalid'])
+    with pytest.raises(JobError):
+        prepare_job(job)
+
+
 def test_flex_alloc_invalid_partition_opt(make_flexible_job):
     job = make_flexible_job('all')
     job.options = ['--partition=invalid']
@@ -806,11 +821,28 @@ def test_flex_alloc_invalid_constraint(make_flexible_job):
         prepare_job(job)
 
 
+def test_flex_alloc_valid_reservation_cmd(make_flexible_job):
+    job = make_flexible_job('all',
+                            sched_access=['--constraint=f2'],
+                            sched_options=['--reservation=dummy'])
+
+    prepare_job(job)
+    assert job.num_tasks == 4
+
+
 def test_flex_alloc_valid_reservation_option(make_flexible_job):
     job = make_flexible_job('all', sched_access=['--constraint=f2'])
     job.options = ['--reservation=dummy']
     prepare_job(job)
     assert job.num_tasks == 4
+
+
+def test_flex_alloc_exclude_nodes_cmd(make_flexible_job):
+    job = make_flexible_job('all',
+                            sched_access=['--constraint=f1'],
+                            sched_options=['--exclude=nid00001'])
+    prepare_job(job)
+    assert job.num_tasks == 8
 
 
 def test_flex_alloc_exclude_nodes_opt(make_flexible_job):
