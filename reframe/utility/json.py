@@ -15,12 +15,10 @@ class _ReframeJsonEncoder(json.JSONEncoder):
 
 
 def dump(obj, fp, **kwargs):
-    fn_kwargs = kwargs
     kwargs['cls'] = _ReframeJsonEncoder
     return json.dump(obj, fp, **kwargs)
 
 
 def dumps(obj, **kwargs):
-    fn_kwargs = kwargs
     kwargs['cls'] = _ReframeJsonEncoder
     return json.dumps(obj, **kwargs)

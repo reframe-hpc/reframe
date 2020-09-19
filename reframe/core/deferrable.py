@@ -5,7 +5,6 @@
 
 import builtins
 import functools
-import json
 
 from reframe.core.exceptions import user_deprecation_warning
 

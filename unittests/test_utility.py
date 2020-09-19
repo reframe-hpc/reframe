@@ -1299,22 +1299,21 @@ def test_cray_cle_info_missing_parts(tmp_path):
 
 def test_jsonext_dump(tmp_path):
     json_dump = tmp_path / 'test.json'
-    json_dump_indent = tmp_path / 'test_indent.json'
-    with open(json_dump, 'w') as f:
-        jsonext.dump({'foo': sn.defer(['bar'])}, f)
+    with open(json_dump, 'w') as fp:
+        jsonext.dump({'foo': sn.defer(['bar'])}, fp)
 
-    with open(json_dump, 'r') as f:
-        assert '{"foo": ["bar"]}' == f.read()
+    with open(json_dump, 'r') as fp:
+        assert '{"foo": ["bar"]}' == fp.read()
 
-    with open(json_dump_indent, 'w') as f:
-        jsonext.dump({'foo': sn.defer(['bar'])}, f, indent=2)
+    with open(json_dump, 'w') as fp:
+        jsonext.dump({'foo': sn.defer(['bar'])}, fp, separators=(',', ':'))
 
-    with open(json_dump_indent, 'r') as f:
-        assert '{\n  "foo": [\n    "bar"\n  ]\n}' == f.read()
+    with open(json_dump, 'r') as fp:
+        assert '{"foo":["bar"]}' == fp.read()
 
 
 def test_jsonext_dumps():
     assert '"foo"' == jsonext.dumps('foo')
     assert '{"foo": ["bar"]}' == jsonext.dumps({'foo': sn.defer(['bar'])})
-    assert ('{\n  "foo": [\n    "bar"\n  ]\n}' ==
-            jsonext.dumps({'foo': sn.defer(['bar'])}, indent=2))
+    assert '{"foo":["bar"]}' == jsonext.dumps({'foo': sn.defer(['bar'])},
+                                              separators=(',', ':'))
