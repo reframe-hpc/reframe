@@ -149,32 +149,4 @@ class CudaAwareMPITwoNodesCheck(rfm.RunOnlyRegressionTest):
             'posts','cuda-aware-mpi-example',
             'bin', 'jacobi_cuda_aware_mpi'
         )
- 
-##@rfm.required_version('>=2.14')
-##@rfm.simple_test
-##class CudaSimpleMPICheck(CudaParForallCheck):
-##    def __init__(self):
-##        super().__init__()
-##        self.descr = 'Simple example demonstrating how to use MPI with CUDA'
-##        self.sourcesdir = os.path.join(self.current_system.resourcesdir,
-##                                       'CUDA', 'simplempi')
-##        self.executable = './simplempi'
-##        self.num_tasks = 2
-##        self.num_tasks_per_node = 2
-##        self.sanity_patterns = sn.assert_found(r'Result = PASS', self.stdout)
-##        if self.current_system.name == 'kesch':
-##            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
-##            self.variables = {'G2G': '0'}
-##            self.num_gpus_per_node = 2
-##        elif self.current_system.name in ['arolla', 'tsa','ault']:
-##            self.valid_prog_environs = ['PrgEnv-gnu']
-##            self.num_gpus_per_node = 2
-##        else:
-##            self.variables = {'CRAY_CUDA_MPS': '1'}
-##
-##        self.build_system = 'Make'
-##        self.build_system.cxxflags = ['-I.', '-ccbin g++', '-m64',
-##                                      '-arch=sm_%s' % self.nvidia_sm]
-##        self.build_system.ldflags = ['-lcublas']
-##
 
