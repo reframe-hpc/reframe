@@ -21,6 +21,7 @@ import reframe.frontend.argparse as argparse
 import reframe.frontend.check_filters as filters
 import reframe.frontend.dependency as dependency
 import reframe.utility.os_ext as os_ext
+import reframe.utility.json as jsonext
 from reframe.core.exceptions import (
     EnvironError, ConfigError, ReframeError,
     ReframeDeprecationWarning, ReframeFatalError,
@@ -42,7 +43,7 @@ def format_check(check, detailed=False):
 
     location = inspect.getfile(type(check))
     if not detailed:
-        return f'- {check.name} (found in {location!r})\n'
+        return f'- {check.name} (found in {location!r})'
 
     if check.num_tasks > 0:
         node_alloc_scheme = f'standard ({check.num_tasks} task(s))'
@@ -810,7 +811,7 @@ def main():
                 report_file = generate_report_filename(report_file)
                 try:
                     with open(report_file, 'w') as fp:
-                        json.dump(json_report, fp, indent=2)
+                        jsonext.dump(json_report, fp, indent=2)
                 except OSError as e:
                     printer.warning(
                         f'failed to generate report in {report_file!r}: {e}'
