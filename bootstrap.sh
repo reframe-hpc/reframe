@@ -24,20 +24,26 @@ usage()
     echo "Usage: $0 [-h] [+docs]"
     echo "Bootstrap ReFrame by pulling all its dependencies"
     echo "  -P EXEC  Use EXEC as Python interpreter"
+    echo "  -p PATH  Use PATH as Python lib. Default /usr/lib"
     echo "  -h       Print this help message and exit"
     echo "  +docs    Build also the documentation"
 }
 
 
-while getopts "hP:" opt; do
+while getopts "hP:p:" opt; do
     case $opt in
         "P") python=$OPTARG ;;
+        "p") libpath=$OPTARG ;;
         "h") usage && exit 0 ;;
         "?") usage && exit 0 ;;
     esac
 done
 
 shift $((OPTIND - 1))
+if [ -z $libpath ]; then
+    libpath=/usr/lib
+fi
+
 if [ -z $python ]; then
     python=python3
 fi
@@ -57,7 +63,8 @@ fi
 # everything under `external/`. That's why include both in the PYTHONPATH
 
 export PATH=$(pwd)/external/usr/bin:$PATH
-export PYTHONPATH=$(pwd)/external:$(pwd)/external/usr/lib/python$pyver/site-packages:$PYTHONPATH
+export PYTHONPATH=$(pwd)/external:$(pwd)/external/${libpath}/python$pyver/site-packages:$PYTHONPATH
+echo "Setting PYTHONPATH to ${PYTHONPATH}"
 
 CMD $python -m pip install --no-cache-dir -q --upgrade pip --target=external/
 CMD $python -m pip install --use-feature=2020-resolver --no-cache-dir -q -r requirements.txt --target=external/ --upgrade
