@@ -12,7 +12,9 @@ import sys
 import reframe
 import reframe.core.fields as fields
 import reframe.utility as util
+import reframe.utility.json as jsonext
 import reframe.utility.os_ext as os_ext
+import reframe.utility.sanity as sn
 from reframe.core.exceptions import (SpawnedProcessError,
                                      SpawnedProcessTimeout)
 
@@ -1293,3 +1295,25 @@ def test_cray_cle_info_missing_parts(tmp_path):
     assert cle_info.date is None
     assert cle_info.network is None
     assert cle_info.patchset == '09'
+
+
+def test_jsonext_dump(tmp_path):
+    json_dump = tmp_path / 'test.json'
+    with open(json_dump, 'w') as fp:
+        jsonext.dump({'foo': sn.defer(['bar'])}, fp)
+
+    with open(json_dump, 'r') as fp:
+        assert '{"foo": ["bar"]}' == fp.read()
+
+    with open(json_dump, 'w') as fp:
+        jsonext.dump({'foo': sn.defer(['bar'])}, fp, separators=(',', ':'))
+
+    with open(json_dump, 'r') as fp:
+        assert '{"foo":["bar"]}' == fp.read()
+
+
+def test_jsonext_dumps():
+    assert '"foo"' == jsonext.dumps('foo')
+    assert '{"foo": ["bar"]}' == jsonext.dumps({'foo': sn.defer(['bar'])})
+    assert '{"foo":["bar"]}' == jsonext.dumps({'foo': sn.defer(['bar'])},
+                                              separators=(',', ':'))

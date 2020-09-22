@@ -44,8 +44,14 @@ fi
 
 pyver=$($python -V | sed -n 's/Python \([0-9]\+\)\.\([0-9]\+\)\..*/\1.\2/p')
 
+
+# Check if ensurepip is installed
+$python -m ensurepip --version &> /dev/null
+
 # Install pip for Python 3
-CMD $python -m ensurepip --root external/ --default-pip
+if [ $? -eq 0 ]; then
+    CMD $python -m ensurepip --root external/ --default-pip
+fi
 
 # ensurepip installs pip in `external/usr/` whereas the --target option installs
 # everything under `external/`. That's why include both in the PYTHONPATH
