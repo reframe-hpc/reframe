@@ -55,6 +55,9 @@ class CudaAwareMPICheck(rfm.CompileOnlyRegressionTest):
     
     @rfm.run_before('compile')
     def set_compilers(self):
+        if self.current_environ.name == 'PrgEnv-pgi':
+           self.build_system.cflags = ['-std=c99',' -O3']
+
         self.build_system.options += ['MPICC="%s"' % self.build_system._cc(self.current_environ),
                                       'MPILD="%s"' % self.build_system._cxx(self.current_environ)]
 
