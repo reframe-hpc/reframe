@@ -152,6 +152,14 @@ class ModulesSystem:
     def backend(self):
         return(self._backend)
 
+    def available_modules(self, substr=None):
+        '''Return a list of available modules that contain ``substr`` in their
+        name.
+
+        :rtype: List[str]
+        '''
+        return [str(m) for m in self._backend.available_modules(substr or '')]
+
     def loaded_modules(self):
         '''Return a list of loaded modules.
 
@@ -326,6 +334,13 @@ class ModulesSystemImpl(abc.ABC):
     '''Abstract base class for module systems.'''
 
     @abc.abstractmethod
+    def available_modules(self, substr):
+        '''Return a list of available modules, whose name contains ``substr``.
+
+        This method returns a list of Module instances.
+        '''
+
+    @abc.abstractmethod
     def loaded_modules(self):
         '''Return a list of loaded modules.
 
@@ -469,6 +484,21 @@ class TModImpl(ModulesSystemImpl):
     def _exec_module_command(self, *args, msg=None):
         completed = self._run_module_command(*args, msg=msg)
         exec(completed.stdout)
+
+    def available_modules(self, substr):
+        completed = self._run_module_command(
+            'avail', '-t', substr, msg='could not retrieve available modules'
+        )
+        ret = []
+        for line in completed.stderr.split('\n'):
+            if not line or line[-1] == ':':
+                # Ignore empty lines and path entries
+                continue
+
+            module = re.sub(r'\(default\)', '', line)
+            ret.append(Module(module))
+
+        return ret
 
     def loaded_modules(self):
         try:
@@ -681,6 +711,21 @@ class LModImpl(TModImpl):
     def _module_command_failed(self, completed):
         return completed.stdout.strip() == 'false'
 
+    def available_modules(self, substr):
+        completed = self._run_module_command(
+            '-t', 'avail', substr, msg='could not retrieve available modules'
+        )
+        ret = []
+        for line in completed.stderr.split('\n'):
+            if not line or line[-1] == ':':
+                # Ignore empty lines and path entries
+                continue
+
+            module = re.sub(r'\(\S+\)', '', line)
+            ret.append(Module(module))
+
+        return ret
+
     def conflicted_modules(self, module):
         completed = self._run_module_command(
             'show', str(module), msg="could not show module '%s'" % module)
@@ -709,6 +754,9 @@ class LModImpl(TModImpl):
 
 class NoModImpl(ModulesSystemImpl):
     '''A convenience class that implements a no-op a modules system.'''
+
+    def available_modules(self, substr):
+        return []
 
     def loaded_modules(self):
         return []
