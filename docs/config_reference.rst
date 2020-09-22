@@ -1122,11 +1122,13 @@ General Configuration
 .. js:attribute:: .general[].report_file
 
    :required: No
-   :default: ``"${HOME}/.reframe/reports/run-report-{sessionid}.json"``
+   :default: ``"${HOME}/.reframe/reports/run-report.json"``
 
    The file where ReFrame will store its report.
 
    .. versionadded:: 3.1
+   .. versionchanged:: 3.2
+      Default value has changed to avoid generating a report file per session.
 
 
 .. js:attribute:: .general[].save_log_files

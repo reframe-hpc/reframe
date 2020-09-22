@@ -190,13 +190,6 @@ class TestStats:
             report.append(f"  * Rerun with '-n {r['name']}"
                           f" -p {r['environment']} --system {r['system']}'")
             report.append(f"  * Reason: {r['fail_reason']}")
-            if r['fail_phase'] == 'sanity':
-                report.append('Sanity check failure')
-            elif r['fail_phase'] == 'performance':
-                report.append('Performance check failure')
-            else:
-                # This shouldn't happen...
-                report.append('Unknown error.')
 
         report.append(line_width * '-')
         return '\n'.join(report)
