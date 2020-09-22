@@ -34,9 +34,9 @@ def _cleanup_all(tasks, *args, **kwargs):
 
 def init_sleep_control(num_tasks):
     num_prev_tasks = num_tasks
-    sleep_min = 0.5
-    sleep_max = 10
-    sleep_inc = 0.5
+    sleep_min = 0.005
+    sleep_max = 5
+    sleep_inc_rate = 1.1
     sleep_next = sleep_min
 
     def _sleep_duration(num_tasks):
@@ -46,7 +46,7 @@ def init_sleep_control(num_tasks):
             sleep_next = sleep_min
             num_prev_tasks = num_tasks
         else:
-            sleep_next += sleep_inc
+            sleep_next *= sleep_inc_rate
 
         return sleep_next
 
