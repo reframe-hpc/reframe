@@ -450,11 +450,6 @@ class ExecutionPolicy(abc.ABC):
 
         # Scheduler options
         self.sched_flex_alloc_nodes = None
-        self.sched_account = None
-        self.sched_partition = None
-        self.sched_reservation = None
-        self.sched_nodelist = None
-        self.sched_exclude_nodelist = None
         self.sched_options = []
 
         # Task event listeners

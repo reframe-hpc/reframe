@@ -77,6 +77,9 @@ class _DeferredExpression:
         '''Evaluate the deferred expression and iterate over the result.'''
         return iter(self.evaluate())
 
+    def __rfm_json_encode__(self):
+        return self.evaluate()
+
     # Overload Python operators to be able to defer any expression
     #
     # NOTE: In the following we are not using `self` for denoting the first
