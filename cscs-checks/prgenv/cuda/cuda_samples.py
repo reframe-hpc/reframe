@@ -7,124 +7,75 @@ import os
 import reframe as rfm
 import reframe.utility.sanity as sn
 
-
-@rfm.simple_test
-class CudaSamplesBuildCheck(rfm.CompileOnlyRegressionTest):
+class CudaSamples(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
-        self.descr = 'Downloads and compiles the entire CUDA Samples repo from NVIDIA.'
-        self.sourcesdir = 'https://github.com/NVIDIA/cuda-samples.git'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
                               'arolla:cn', 'tsa:cn', 'ault:amdv100', 'ault:intelv100']
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
         if self.current_system.name == 'kesch':
             self.valid_prog_environs += ['PrgEnv-cray-nompi',
                                          'PrgEnv-gnu-nompi']
-        elif self.current_system.name in ['arolla', 'tsa']:
-            self.valid_prog_environs += ['PrgEnv-pgi',
-                                         'PrgEnv-gnu-nompi',
-                                         'PrgEnv-pgi-nompi']
-        elif self.current_system.name in ['ault']:
-            self.valid_prog_environs = ['PrgEnv-gnu']
-
-        # Remove the tensorcore cases, which don't even compile
-        self.prebuild_cmds = ['rm Samples/*TensorCoreGemm/Makefile']
-        self.sanity_patterns = sn.assert_found(r'Finished building CUDA samples', self.stdout)
-        if self.current_system.name == 'kesch':
-            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
-        elif self.current_system.name in ['arolla', 'tsa','ault']:
-            self.valid_prog_environs = ['PrgEnv-gnu']
-
-        self.nvidia_sm = '60'
-        self.num_tasks = 8
-        if self.current_system.name == 'kesch':
-            self.exclusive_access = True
-            self.nvidia_sm = '37'
-        elif self.current_system.name in ['arolla', 'tsa', 'ault']:
-            self.exclusive_access = True
-            self.nvidia_sm = '70'
-
-        self.build_system = 'Make'
-        self.build_system.options = ['SMS="%s"' % self.nvidia_sm]
-
-
-class CudaCheck(rfm.RunOnlyRegressionTest):
-    def __init__(self):
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
-                              'arolla:cn', 'tsa:cn', 'ault:amdv100', 'ault:intelv100']
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
-        if self.current_system.name == 'kesch':
-            self.valid_prog_environs += ['PrgEnv-cray-nompi',
-                                         'PrgEnv-gnu-nompi']
-        elif self.current_system.name in ['arolla', 'tsa']:
-            self.valid_prog_environs += ['PrgEnv-pgi',
-                                         'PrgEnv-gnu-nompi',
-                                         'PrgEnv-pgi-nompi']
-        elif self.current_system.name in ['ault']:
-            self.valid_prog_environs = ['PrgEnv-gnu']
-
-        self.sourcesdir = None
-        self.depends_on('CudaSamplesBuildCheck')
-        if self.current_system.name == 'kesch':
             self.modules = ['cudatoolkit/8.0.61']
         elif self.current_system.name in ['arolla', 'tsa']:
+            self.valid_prog_environs += ['PrgEnv-pgi',
+                                         'PrgEnv-gnu-nompi',
+                                         'PrgEnv-pgi-nompi']
             self.modules = ['cuda/10.1.243']
         elif self.current_system.name in ['ault']:
+            self.valid_prog_environs = ['PrgEnv-gnu']
             self.modules = ['cuda/11.0']
         else:
+            self.valid_prog_environs = ['PrgEnv-cray', 
+                                        'PrgEnv-gnu', 
+                                        'PrgEnv-pgi']
             self.modules = ['craype-accel-nvidia60']
 
-        self.num_tasks = 1
-        self.num_gpus_per_node = 1
-        self.nvidia_sm = '60'
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
             self.nvidia_sm = '37'
         elif self.current_system.name in ['arolla', 'tsa', 'ault']:
             self.exclusive_access = True
             self.nvidia_sm = '70'
+        else:
+            self.nvidia_sm = '60'
+            self.modules = ['cudatoolkit']
 
-        self.maintainers = ['AJ', 'SK']
-        self.tags = {'production', 'craype', 'external-resources'}
+        self.sourcesdir = None
+        self.build_system = 'Make'
+        if self.current_system.name in ['daint']:
+            self.prebuild_cmds = ['export CUDA_HOME=$CUDATOOLKIT_HOME']
+        else:
+            self.prebuild_cmds = []
 
-
-@rfm.required_version('>=2.14')
-@rfm.simple_test
-class CudaMatrixMultCublasCheck(CudaCheck):
-    def __init__(self):
-        super().__init__()
-        self.descr = 'CUDA simpleCUBLAS test'
-        self.sanity_patterns = sn.assert_found(
-            r'test passed',
-            self.stdout)
-
-    @rfm.require_deps
-    def set_executable(self, CudaSamplesBuildCheck):
-        self.executable = os.path.join(
-            CudaSamplesBuildCheck().stagedir, 
-            'Samples', 'simpleCUBLAS', 'simpleCUBLAS') 
-
+        self.build_system.options = ['SMS="%s"' % self.nvidia_sm, 'CUDA_PATH=$CUDA_HOME']
+ 
 
 @rfm.required_version('>=2.14')
 @rfm.simple_test
-class CudaDeviceQueryCheck(CudaCheck):
+class CudaDeviceQueryCheck(CudaSamples):
     def __init__(self):
         super().__init__()
         self.descr = 'CUDA deviceQuery test.'
+        self.sourcesdir = 'https://github.com/NVIDIA/cuda-samples.git'
+        self.num_tasks = 1
+        self.prebuild_cmds += ['git checkout v11.0',
+                               'cd Samples/deviceQuery'
+                              ]
+        self.executable = 'Samples/deviceQuery/deviceQuery'
         self.sanity_patterns = sn.assert_found(
             r'Result = PASS',
             self.stdout)
 
-    @rfm.require_deps
-    def set_executable(self, CudaSamplesBuildCheck):
-        self.executable = os.path.join(
-            CudaSamplesBuildCheck().stagedir, 
-            'Samples', 'deviceQuery', 'deviceQuery') 
+
+class DependentCudaSamples(CudaSamples):
+    def __init__(self):
+        super().__init__()
+        self.depends_on('CudaDeviceQueryCheck')
 
 
 @rfm.required_version('>=2.14')
 @rfm.simple_test
-class CudaConcurrentKernelsCheck(CudaCheck):
+class CudaConcurrentKernelsCheck(DependentCudaSamples):
     def __init__(self):
         super().__init__()
         self.descr = 'CUDA concurrentKernels test'
@@ -133,10 +84,37 @@ class CudaConcurrentKernelsCheck(CudaCheck):
             self.stdout)
 
     @rfm.require_deps
-    def set_executable(self, CudaSamplesBuildCheck):
+    def set_prebuild_cmds(self, CudaDeviceQueryCheck):
+        self.prebuild_cmds += ['cd %s' % os.path.join(
+            CudaDeviceQueryCheck().stagedir,
+            'Samples', 'concurrentKernels')] 
+
+    @rfm.require_deps
+    def set_executable(self,CudaDeviceQueryCheck):
         self.executable = os.path.join(
-            CudaSamplesBuildCheck().stagedir, 
+            CudaDeviceQueryCheck().stagedir, 
             'Samples', 'concurrentKernels', 'concurrentKernels') 
 
 
+@rfm.required_version('>=2.14')
+@rfm.simple_test
+class CudaMatrixMultCublasCheck(DependentCudaSamples):
+    def __init__(self):
+        super().__init__()
+        self.descr = 'CUDA simpleCUBLAS test'
+        self.sanity_patterns = sn.assert_found(
+            r'test passed',
+            self.stdout)
+
+    @rfm.require_deps
+    def set_prebuild_cmds(self, CudaDeviceQueryCheck):
+        self.prebuild_cmds += ['cd %s' % os.path.join(
+            CudaDeviceQueryCheck().stagedir, 
+            'Samples', 'simpleCUBLAS')] 
+
+    @rfm.require_deps
+    def set_executable(self, CudaDeviceQueryCheck):
+        self.executable = os.path.join(
+            CudaDeviceQueryCheck().stagedir, 
+            'Samples', 'simpleCUBLAS', 'simpleCUBLAS') 
 
