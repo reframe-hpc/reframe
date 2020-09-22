@@ -35,19 +35,30 @@ def _cleanup_all(tasks, *args, **kwargs):
 def init_sleep_control(num_tasks):
     num_prev_tasks = num_tasks
     sleep_min = 0.005
-    sleep_max = 5
-    sleep_inc_rate = 1.1
+    sleep_max = 10
+    sleep_inc_rate = 1.15
     sleep_next = sleep_min
+
+    t_init = time.time()
+    num_polls = 0
 
     def _sleep_duration(num_tasks):
         nonlocal sleep_next, num_prev_tasks
+        nonlocal num_polls
 
         if num_tasks != num_prev_tasks or sleep_next >= sleep_max:
-            sleep_next = sleep_min
+            sleep_next = sleep_max
             num_prev_tasks = num_tasks
         else:
             sleep_next *= sleep_inc_rate
 
+        num_polls += 1
+        t_elapsed = time.time() - t_init
+
+        from reframe.core.logging import getlogger
+
+        getlogger().debug(f'sleep time: {sleep_next}')
+        getlogger().debug(f'poll rate: {num_polls/t_elapsed} polls/s')
         return sleep_next
 
     return _sleep_duration
