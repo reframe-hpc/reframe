@@ -48,7 +48,9 @@ class CudaSamples(rfm.RegressionTest):
             self.prebuild_cmds = []
 
         self.build_system.options = ['SMS="%s"' % self.nvidia_sm, 'CUDA_PATH=$CUDA_HOME']
- 
+        self.maintainers = ['JO']
+        self.tags = {'production', 'external_resosurces'} 
+
 
 @rfm.required_version('>=2.14')
 @rfm.simple_test

@@ -52,6 +52,8 @@ class CudaAwareMPICheck(rfm.CompileOnlyRegressionTest):
                                      'GENCODE_FLAGS="-gencode arch=compute_%s,code=sm_%s"'  % (self.nvidia_sm, self.nvidia_sm)]
         self.postbuild_cmds = ['ls ../bin']
         self.sanity_patterns = sn.assert_found(r'jacobi_cuda_aware_mpi', self.stdout)
+        self.maintainers = ['JO']
+        self.tags = {'production', 'external_resources'}
     
     @rfm.run_before('compile')
     def set_compilers(self):
