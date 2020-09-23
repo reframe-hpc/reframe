@@ -118,3 +118,49 @@ class CudaMatrixMultCublasCheck(DependentCudaSamples):
             CudaDeviceQueryCheck().stagedir, 
             'Samples', 'simpleCUBLAS', 'simpleCUBLAS') 
 
+
+@rfm.required_version('>=2.14')
+@rfm.simple_test
+class CudaBandwidthCheck(DependentCudaSamples):
+    def __init__(self):
+        super().__init__()
+        self.descr = 'CUDA simpleCUBLAS test'
+        self.sanity_patterns = sn.assert_found(
+            r'Result = PASS',
+            self.stdout)
+
+    @rfm.require_deps
+    def set_prebuild_cmds(self, CudaDeviceQueryCheck):
+        self.prebuild_cmds += ['cd %s' % os.path.join(
+            CudaDeviceQueryCheck().stagedir, 
+            'Samples', 'bandwidthTest')] 
+
+    @rfm.require_deps
+    def set_executable(self, CudaDeviceQueryCheck):
+        self.executable = os.path.join(
+            CudaDeviceQueryCheck().stagedir, 
+            'Samples', 'bandwidthTest', 'bandwidthTest') 
+
+
+@rfm.required_version('>=2.14')
+@rfm.simple_test
+class CudaGraphsCGCheck(DependentCudaSamples):
+    def __init__(self):
+        super().__init__()
+        self.descr = 'CUDA simpleCUBLAS test'
+        self.sanity_patterns = sn.assert_found(
+            r'Test Summary:  Error amount = 0.00000',
+            self.stdout)
+
+    @rfm.require_deps
+    def set_prebuild_cmds(self, CudaDeviceQueryCheck):
+        self.prebuild_cmds += ['cd %s' % os.path.join(
+            CudaDeviceQueryCheck().stagedir, 
+            'Samples', 'conjugateGradientCudaGraphs')] 
+
+    @rfm.require_deps
+    def set_executable(self, CudaDeviceQueryCheck):
+        self.executable = os.path.join(
+            CudaDeviceQueryCheck().stagedir, 
+            'Samples', 'conjugateGradientCudaGraphs', 'conjugateGradientCudaGraphs') 
+
