@@ -694,7 +694,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
 
 
-.. envvar:: RFM_IGNORE_EXIT_CODE
+.. envvar:: RFM_TRAP_JOB_ERRORS
 
    Ignore job exit code
 
@@ -702,7 +702,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       :align: left
 
       ================================== ==================
-      Associated configuration parameter :js:attr:`ignore_exit_code` general configuration parameter
+      Associated configuration parameter :js:attr:`trap_job_errors` general configuration parameter
       ================================== ==================
 
 

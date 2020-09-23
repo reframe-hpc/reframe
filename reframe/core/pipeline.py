@@ -1407,7 +1407,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         if self.sanity_patterns is None:
             raise SanityError('sanity_patterns not set')
 
-        if not rt.runtime().get_option('general/0/ignore_exit_code'):
+        if rt.runtime().get_option('general/0/trap_job_errors'):
             self.sanity_patterns = sn.all([
                 sn.assert_eq(self.job.exitcode, 0,
                              msg='job exited with exit code {0}'),
