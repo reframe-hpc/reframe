@@ -36,23 +36,21 @@ def init_sleep_control():
     num_prev_tasks = 0
     sleep_min = 0.01
     sleep_max = 5
-    sleep_inc_rate = 1.1
+    sleep_inc_rate = 1.15
     sleep_next = sleep_min
-
-    t_init = time.time()
     num_polls = 0
+    t_init = 0
 
     def _sleep_duration(num_tasks):
-        nonlocal sleep_next, num_prev_tasks
-        nonlocal num_polls
+        nonlocal sleep_next, num_prev_tasks, num_polls, t_init
+        if num_polls == 0:
+            t_init = time.time()
 
         if num_tasks != num_prev_tasks:
             sleep_next = sleep_min
             num_prev_tasks = num_tasks
-        elif sleep_next >= sleep_max:
-            sleep_next = sleep_max
         else:
-            sleep_next *= sleep_inc_rate
+            sleep_next = min(sleep_next*sleep_inc_rate, sleep_max)
 
         num_polls += 1
         t_elapsed = time.time() - t_init
