@@ -30,7 +30,7 @@ site_configuration = {
                     'access': [
                         '--constraint=gpu',
                         '--partition=cscsci',
-                        f'--account={os_ext.osgroup()}'
+                        f'-J account={os_ext.osgroup()}'
                     ],
                     'environs': [
                         'builtin'
@@ -66,7 +66,7 @@ site_configuration = {
                     ],
                     'access': [
                         '--constraint=gpu',
-                        f'--account={os_ext.osgroup()}'
+                        f'-J account={os_ext.osgroup()}'
                     ],
                     'environs': [
                         'builtin'

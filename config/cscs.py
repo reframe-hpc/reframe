@@ -174,7 +174,7 @@ site_configuration = {
                     ],
                     'access': [
                         f'--constraint=gpu',
-                        f'--account={os_ext.osgroup()}'
+                        f'-J account={os_ext.osgroup()}'
                     ],
                     'environs': [
                         'builtin',
@@ -221,7 +221,7 @@ site_configuration = {
                     ],
                     'access': [
                         f'--constraint=mc',
-                        f'--account={os_ext.osgroup()}'
+                        f'-J account={os_ext.osgroup()}'
                     ],
                     'environs': [
                         'builtin',
@@ -323,7 +323,7 @@ site_configuration = {
                     ],
                     'access': [
                         f'--constraint=gpu',
-                        f'--account={os_ext.osgroup()}'
+                        f'-J account={os_ext.osgroup()}'
                     ],
                     'environs': [
                         'builtin',
@@ -364,7 +364,7 @@ site_configuration = {
                     ],
                     'access': [
                         f'--constraint=mc',
-                        f'--account={os_ext.osgroup()}'
+                        f'-J account={os_ext.osgroup()}'
                     ],
                     'environs': [
                         'builtin',
