@@ -11,11 +11,15 @@ import sys
 
 import reframe
 import reframe.core.fields as fields
+import reframe.core.runtime as rt
 import reframe.utility as util
 import reframe.utility.json as jsonext
 import reframe.utility.os_ext as os_ext
 import reframe.utility.sanity as sn
-from reframe.core.exceptions import (SpawnedProcessError,
+import unittests.fixtures as fixtures
+
+from reframe.core.exceptions import (ConfigError,
+                                     SpawnedProcessError,
                                      SpawnedProcessTimeout)
 
 
@@ -1295,6 +1299,75 @@ def test_cray_cle_info_missing_parts(tmp_path):
     assert cle_info.date is None
     assert cle_info.network is None
     assert cle_info.patchset == '09'
+
+
+@pytest.fixture
+def temp_runtime(tmp_path):
+    def _temp_runtime(site_config, system=None, options={}):
+        options.update({'systems/prefix': tmp_path})
+        with rt.temp_runtime(site_config, system, options) as ctx:
+            yield ctx
+
+    yield _temp_runtime
+
+
+@pytest.fixture(params=['tmod', 'tmod4', 'lmod', 'nomod'])
+def user_exec_ctx(request, temp_runtime):
+    if fixtures.USER_CONFIG_FILE:
+        config_file, system = fixtures.USER_CONFIG_FILE, fixtures.USER_SYSTEM
+    else:
+        config_file, system = fixtures.BUILTIN_CONFIG_FILE, 'generic'
+
+    try:
+        yield from temp_runtime(config_file, system,
+                                {'systems/modules_system': request.param})
+    except ConfigError as e:
+        pytest.skip(str(e))
+
+
+@pytest.fixture
+def modules_system(user_exec_ctx, monkeypatch):
+    # Pretend to be on a clean modules environment
+    monkeypatch.setenv('LOADEDMODULES', '')
+    monkeypatch.setenv('_LMFILES_', '')
+
+    ms = rt.runtime().system.modules_system
+    ms.searchpath_add(fixtures.TEST_MODULES)
+    return ms
+
+
+def test_find_modules(modules_system):
+    found_modules = [m[2] for m in util.find_modules('testmod')]
+    if modules_system.name == 'nomod':
+        assert found_modules == []
+    else:
+        assert found_modules == ['testmod_bar', 'testmod_base',
+                                 'testmod_boo', 'testmod_foo']
+
+
+def test_find_modules_env_mapping(modules_system):
+    found_modules = [
+        m[2] for m in util.find_modules('testmod',
+                                        environ_mapping={
+                                            r'.*_ba.*': 'builtin',
+                                            r'testmod_foo': 'foo'
+                                        })
+    ]
+    if modules_system.name == 'nomod':
+        assert found_modules == []
+    else:
+        assert found_modules == ['testmod_bar', 'testmod_base']
+
+
+def test_find_modules_errors():
+    with pytest.raises(TypeError):
+        list(util.find_modules(1))
+
+    with pytest.raises(TypeError):
+        list(util.find_modules(None))
+
+    with pytest.raises(TypeError):
+        list(util.find_modules('foo', 1))
 
 
 def test_jsonext_dump(tmp_path):

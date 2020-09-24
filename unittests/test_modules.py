@@ -9,13 +9,18 @@ import pytest
 
 import reframe.core.environments as env
 import reframe.core.modules as modules
+import reframe.utility as util
 import unittests.fixtures as fixtures
 from reframe.core.exceptions import ConfigError, EnvironError
 from reframe.core.runtime import runtime
 
 
 @pytest.fixture(params=['tmod', 'tmod4', 'lmod', 'nomod'])
-def modules_system(request):
+def modules_system(request, monkeypatch):
+    # Always pretend to be on a clean modules environment
+    monkeypatch.setenv('MODULEPATH', '')
+    monkeypatch.setenv('LOADEDMODULES', '')
+    monkeypatch.setenv('_LMFILES_', '')
     args = [request.param] if request.param != 'nomod' else []
     try:
         m = modules.ModulesSystem.create(*args)
@@ -103,6 +108,23 @@ def test_module_conflict_list(modules_system):
         conflict_list = modules_system.conflicted_modules('testmod_bar')
         assert 'testmod_foo' in conflict_list
         assert 'testmod_boo' in conflict_list
+
+
+def test_module_available_all(modules_system):
+    modules = sorted(modules_system.available_modules())
+    if modules_system.name == 'nomod':
+        assert modules == []
+    else:
+        assert (modules == ['testmod_bar', 'testmod_base',
+                            'testmod_boo', 'testmod_foo'])
+
+
+def test_module_available_substr(modules_system):
+    modules = sorted(modules_system.available_modules('testmod_b'))
+    if modules_system.name == 'nomod':
+        assert modules == []
+    else:
+        assert (modules == ['testmod_bar', 'testmod_base', 'testmod_boo'])
 
 
 @fixtures.dispatch('modules_system', suffix=lambda ms: ms.name)
@@ -239,6 +261,9 @@ def modules_system_emu():
 
         def is_module_loaded(self, module):
             return module.name in self._loaded_modules
+
+        def available_modules(self, substr):
+            return []
 
         def name(self):
             return 'nomod_debug'

@@ -75,11 +75,6 @@ def job(make_job, launcher):
                    stdout='fake_stdout',
                    stderr='fake_stderr',
                    sched_access=access,
-                   sched_account='fake_account',
-                   sched_partition='fake_partition',
-                   sched_reservation='fake_reservation',
-                   sched_nodelist="mynode",
-                   sched_exclude_nodelist='fake_exclude_nodelist',
                    sched_exclusive_access='fake_exclude_access',
                    sched_options=['--fake'])
     job.num_tasks = 4
@@ -132,13 +127,8 @@ def test_run_command(job):
                            '--ntasks-per-core=1 '
                            '--ntasks-per-socket=1 '
                            '--cpus-per-task=2 '
-                           '--partition=fake_partition '
                            '--exclusive '
                            '--hint=multithread '
-                           '--partition=fake_partition '
-                           '--account=fake_account '
-                           '--nodelist=mynode '
-                           '--exclude=fake_exclude_nodelist '
                            '--fake '
                            '--gres=gpu:4 '
                            '--foo')
