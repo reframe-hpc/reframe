@@ -1317,9 +1317,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
                 self._job.prepare(
                     commands, environs,
                     login=rt.runtime().get_option('general/0/use_login_shell'),
+                    trap_errors=True
                 )
             except OSError as e:
-                raise PipelineError('failed to prepare job') from e
+                raise PipelineError('failed to prepare run job') from e
 
             self._job.submit()
 
