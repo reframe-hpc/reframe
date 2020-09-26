@@ -46,7 +46,7 @@ from reframe.core.schedulers import Job
 #: dependencies will be explicitly specified by the user.
 #:
 #:  This constant is directly available under the :mod:`reframe` module.
-DEPEND_EXACT  = 1
+DEPEND_EXACT = 1
 
 #: Constant to be passed as the ``how`` argument of the
 #: :func:`RegressionTest.depends_on` method. It denotes that the test cases of
@@ -61,7 +61,7 @@ DEPEND_BY_ENV = 2
 #: this test depends on all the test cases of the target test.
 #:
 #:  This constant is directly available under the :mod:`reframe` module.
-DEPEND_FULLY  = 3
+DEPEND_FULLY = 3
 
 
 def _run_hooks(name=None):
@@ -1147,7 +1147,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         # Verify the sourcepath and determine the sourcepath in the stagedir
         if (os.path.isabs(self.sourcepath) or
-            os.path.normpath(self.sourcepath).startswith('..')):
+                os.path.normpath(self.sourcepath).startswith('..')):
             raise PipelineError(
                 'self.sourcepath is an absolute path or does not point to a '
                 'subfolder or a file contained in self.sourcesdir: ' +
@@ -1317,7 +1317,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
                 self._job.prepare(
                     commands, environs,
                     login=rt.runtime().get_option('general/0/use_login_shell'),
-                    trap_errors=True
+                    trap_errors=rt.runtime().get_option(
+                        'general/0/trap_job_errors')
                 )
             except OSError as e:
                 raise PipelineError('failed to prepare run job') from e
@@ -1601,7 +1602,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
             raise TypeError("how argument must be of type: `int'")
 
         if (subdeps is not None and
-            not isinstance(subdeps, typ.Dict[str, typ.List[str]])):
+                not isinstance(subdeps, typ.Dict[str, typ.List[str]])):
             raise TypeError("subdeps argument must be of type "
                             "`Dict[str, List[str]]' or `None'")
 
