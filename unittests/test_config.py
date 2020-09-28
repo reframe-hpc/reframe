@@ -29,6 +29,17 @@ def test_load_config_python_old_syntax():
             'unittests/resources/settings_old_syntax.py'
         )
 
+def test_load_config_nouser(monkeypatch):
+    import pwd
+
+    # Monkeypatch to simulate a system with no username
+    monkeypatch.setattr(pwd, 'getpwuid', lambda uid: None)
+    monkeypatch.delenv('LOGNAME', raising=False)
+    monkeypatch.delenv('USER', raising=False)
+    monkeypatch.delenv('LNAME', raising=False)
+    monkeypatch.delenv('USERNAME', raising=False)
+    config.load_config()
+
 
 def test_convert_old_config():
     converted = config.convert_old_config(
