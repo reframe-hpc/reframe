@@ -34,15 +34,16 @@ def _cleanup_all(tasks, *args, **kwargs):
 
 def init_sleep_control():
     num_prev_tasks = 0
-    sleep_min = 0.01
-    sleep_max = 5
-    sleep_inc_rate = 1.15
+    sleep_min = 0.1
+    sleep_max = 10
+    sleep_inc_rate = 1.1
     sleep_next = sleep_min
     num_polls = 0
     t_init = 0
 
     def _sleep_duration(num_tasks):
         nonlocal sleep_next, num_prev_tasks, num_polls, t_init
+
         if num_polls == 0:
             t_init = time.time()
 
