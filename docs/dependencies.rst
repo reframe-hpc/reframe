@@ -26,10 +26,9 @@ Conceptually, this dependency can be viewed at the test level as follows:
 
 For most of the cases, this is sufficient to reason about test dependencies.
 In reality, as mentioned above, dependencies are handled at the level of test cases.
-Test cases on different partitions are always independent.
-If not specified differently, test cases using programming environments are also independent.
+If not specified differently, test cases on different partitions or programming environments are independent.
 This is the default behavior of the :func:`depends_on` function.
-The following image shows the actual test case dependencies assuming that both tests support the ``E0`` and ``E1`` programming environments (for simplicity, we have omitted the partitions, since tests are always independent in that dimension):
+The following image shows the actual test case dependencies assuming that both tests support the ``E0`` and ``E1`` programming environments (for simplicity, we have omitted the partitions):
 
 .. figure:: _static/img/test-deps-by-env.svg
   :align: center
@@ -69,7 +68,7 @@ These dependencies can be achieved as follows:
        def __init__(self):
            ...
            self.depends_on('T0', how=rfm.DEPEND_EXACT,
-                           subdeps={'E0': ['E0', 'E1'], 'E1': ['E1']})
+                           subdeps={('P0', 'E0'): [('P0', 'E0'), ('P0', 'E1')], '('P0', 'E1')': [('P0', 'E1')]})
 
 The ``subdeps`` argument defines the sub-dependencies between the test cases of :class:`T1` and :class:`T0` using an adjacency list representation.
 
