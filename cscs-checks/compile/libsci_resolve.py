@@ -32,23 +32,13 @@ class NvidiaResolveTest(LibSciResolveBaseTest):
             'craype-accel-nvidia35': 'nv35',
             'craype-accel-nvidia60': 'nv60'
         }
-        self.compiler_version = {
-            'dom':   '81',
-            'daint': '71',
-        }
-        self.compiler_version_default = '71'
+        self.compiler_version = '81'
         self.modules = ['craype-haswell', module_name]
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
-
         self.prgenv_names = {
             'PrgEnv-cray': 'cray',
             'PrgEnv-gnu':  'gnu'
         }
-
-        # FIXME Flags '-Wl,-ydgemm_' which are passed to the linker do not
-        # produce any output when xalt/2.7.10 is loaded, thus we use readelf
-        # to find the dynamic libraries of the executable
-        # self.build_system.fflags = ['-Wl,-ydgemm_']
         self.postbuild_cmds = [f'readelf -d {self.executable}']
 
     @rfm.run_before('sanity')
@@ -58,8 +48,7 @@ class NvidiaResolveTest(LibSciResolveBaseTest):
         regex = (r'.*\(NEEDED\).*libsci_acc_(?P<prgenv>[A-Za-z]+)_'
                  r'((?P<cver>[A-Za-z0-9]+)_)?(?P<version>\S+)\.so')
         prgenv = self.prgenv_names[self.current_environ.name]
-        cver = self.compiler_version.get(self.current_system.name,
-                                         self.compiler_version_default)
+        cver = self.compiler_version
         mod_name = self.module_version[self.module_name]
 
         if self.current_environ.name == 'PrgEnv-cray':
@@ -86,10 +75,6 @@ class MKLResolveTest(LibSciResolveBaseTest):
         self.valid_prog_environs = ['PrgEnv-intel']
         self.build_system = 'SingleSource'
 
-        # FIXME Flags '-Wl,-ydgemm_' which are passed to the linker do not
-        # produce any output when xalt/2.7.10 is loaded, thus we use readelf
-        # to find the dynamic libraries of the executable
-        # self.build_system.fflags = ['-Wl,-ydgemm_', '-mkl']
         self.build_system.fflags = ['-mkl']
         self.postbuild_cmds = [f'readelf -d {self.executable}']
         regex = (r'.*\(NEEDED\).*libmkl_(?P<prgenv>[A-Za-z]+)_(?P<version>\S+)'

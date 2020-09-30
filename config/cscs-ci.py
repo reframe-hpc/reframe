@@ -189,8 +189,6 @@ site_configuration = {
                 {
                     'name': 'default',
                     'scheduler': 'local',
-                    'modules': [],
-                    'access': [],
                     'environs': [
                         'builtin'
                     ],

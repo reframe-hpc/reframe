@@ -15,6 +15,7 @@ class UlimitCheck(rfm.RegressionTest):
                               'dom:gpu',   'dom:mc', 'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-cray',  'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi']
+        self.sourcesdir += '/ulimit'
         self.sourcepath = 'ulimit.c'
         self.sanity_patterns = sn.all([
             sn.assert_found(r'The soft limit is unlimited', self.stdout),

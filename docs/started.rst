@@ -74,7 +74,8 @@ If you want the latest development version or any pre-release, you can clone ReF
 
 
 Pre-release versions are denoted with the ``devX`` suffix and are `tagged <https://github.com/eth-cscs/reframe/releases>`__ in the repository.
-Preparing and running ReFrame from source is pretty straightforward:
+Preparing and running ReFrame from source is pretty straightforward.
+All you need is a Python 3.6+ installation with ``pip``:
 
 .. code:: bash
 

@@ -220,8 +220,12 @@ def loadenv(*environs):
 
 
 def emit_loadenv_commands(*environs):
-    env_snapshot, commands = loadenv(*environs)
-    env_snapshot.restore()
+    env_snapshot = snapshot()
+    try:
+        _, commands = loadenv(*environs)
+    finally:
+        env_snapshot.restore()
+
     return commands
 
 
