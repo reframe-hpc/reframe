@@ -126,7 +126,9 @@ def build_deps(cases, default_cases=None):
                                         tname, tp, te)
                         )
             elif how == rfm.DEPEND_FULLY:
-                c.deps.extend(resolve_dep(c, all_cases, default_all_cases, tname))
+                c.deps.extend(
+                    resolve_dep(c, all_cases, default_all_cases, tname)
+                )
 
         graph[c] = util.OrderedSet(c.deps)
 
