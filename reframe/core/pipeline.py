@@ -1587,7 +1587,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
             .. code-block:: python
 
                self.depends_on('T0', how=rfm.DEPEND_EXACT,
-                               subdeps={'E0': ['E0', 'E1'], 'E1': ['E1']})
+                               subdeps={('P0', 'E0'): [('P0', 'E0'), ('P0', 'E1')],
+                                        ('P0', 'E1'): [('P0', 'E1')]})
 
         For more details on how test dependencies work in ReFrame, please
         refer to `How Test Dependencies Work In ReFrame <dependencies.html>`__.
@@ -1602,9 +1603,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
             raise TypeError("how argument must be of type: `int'")
 
         if (subdeps is not None and
-            not isinstance(subdeps, typ.Dict[str, typ.List[str]])):
+            not isinstance(subdeps, typ.Dict[typ.Tuple[str, str],
+                           typ.List[typ.Tuple[str, str]]])):
             raise TypeError("subdeps argument must be of type "
-                            "`Dict[str, List[str]]' or `None'")
+                            "`Dict[Tuple[str, str], List[Tuple[str, str]]]' "
+                            "or `None'")
 
         self._userdeps.append((target, how, subdeps))
 

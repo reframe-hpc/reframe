@@ -9,6 +9,7 @@
 
 import collections
 import itertools
+import re
 
 import reframe as rfm
 import reframe.utility as util
@@ -115,13 +116,14 @@ def build_deps(cases, default_cases=None):
                 )
             elif how == rfm.DEPEND_EXACT:
                 for env, tenvs in subdeps.items():
-                    if env != ename:
+                    if env != (pname.split(':')[1], ename):
                         continue
 
-                    for te in tenvs:
+                    for tp, te in tenvs:
+                        tp = re.sub(r':\S+', f':{tp}', pname)
                         c.deps.append(
                             resolve_dep(c, cases_revmap, default_cases_revmap,
-                                        tname, pname, te)
+                                        tname, tp, te)
                         )
             elif how == rfm.DEPEND_FULLY:
                 c.deps.extend(resolve_dep(c, all_cases, default_all_cases, tname))
