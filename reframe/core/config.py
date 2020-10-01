@@ -550,11 +550,9 @@ def convert_old_config(filename, newfilename=None):
 
 def _find_config_file():
     # The order of elements is important, since it defines the priority
-    prefixes = [
-        os.path.join(os.getlogin(), '.reframe'),
-        reframe.INSTALL_PREFIX,
-        '/etc/reframe.d'
-    ]
+    username = os_ext.osuser()
+    prefixes = [os.path.join(username, '.reframe')] if username else []
+    prefixes += [reframe.INSTALL_PREFIX, '/etc/reframe.d']
     valid_exts = ['py', 'json']
     for d in prefixes:
         for ext in valid_exts:
