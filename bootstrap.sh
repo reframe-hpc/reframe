@@ -24,7 +24,7 @@ usage()
     echo "Usage: $0 [-h] [+docs]"
     echo "Bootstrap ReFrame by pulling all its dependencies"
     echo "  -P EXEC  Use EXEC as Python interpreter"
-    echo "  -p PATH  Use PATH as Python lib. Default /usr/lib"
+    echo "  -L PATH  Prefix of Python libraries (default: '/usr/lib')"
     echo "  -h       Print this help message and exit"
     echo "  +docs    Build also the documentation"
 }
@@ -63,8 +63,7 @@ fi
 # everything under `external/`. That's why include both in the PYTHONPATH
 
 export PATH=$(pwd)/external/usr/bin:$PATH
-export PYTHONPATH=$(pwd)/external:$(pwd)/external/${libpath}/python$pyver/site-packages:$PYTHONPATH
-echo "Setting PYTHONPATH to ${PYTHONPATH}"
+export PYTHONPATH=$(pwd)/external:$(pwd)/external${libpath}/python$pyver/site-packages:$PYTHONPATH
 
 CMD $python -m pip install --no-cache-dir -q --upgrade pip --target=external/
 CMD $python -m pip install --use-feature=2020-resolver --no-cache-dir -q -r requirements.txt --target=external/ --upgrade
