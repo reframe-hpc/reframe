@@ -30,10 +30,10 @@ usage()
 }
 
 
-while getopts "hP:p:" opt; do
+while getopts "hP:L:" opt; do
     case $opt in
         "P") python=$OPTARG ;;
-        "p") libpath=$OPTARG ;;
+        "L") libpath=$OPTARG ;;
         "h") usage && exit 0 ;;
         "?") usage && exit 0 ;;
     esac
@@ -42,6 +42,9 @@ done
 shift $((OPTIND - 1))
 if [ -z $libpath ]; then
     libpath=/usr/lib
+elif [ "${libpath}" == "${libpath#/}" ]; then
+    # if relative path prepend the current one
+    libpath=$(pwd)/$libpath
 fi
 
 if [ -z $python ]; then
