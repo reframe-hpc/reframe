@@ -24,16 +24,16 @@ usage()
     echo "Usage: $0 [-h] [+docs]"
     echo "Bootstrap ReFrame by pulling all its dependencies"
     echo "  -P EXEC  Use EXEC as Python interpreter"
-    echo "  -L PATH  Prefix of pip (default: '/usr')"
+    echo "  -p PATH  Prefix of pip (default: '/usr')"
     echo "  -h       Print this help message and exit"
     echo "  +docs    Build also the documentation"
 }
 
 
-while getopts "hP:L:B:" opt; do
+while getopts "hP:p:" opt; do
     case $opt in
         "P") python=$OPTARG ;;
-        "L") pippath=$OPTARG ;;
+        "p") pippath=$OPTARG ;;
         "h") usage && exit 0 ;;
         "?") usage && exit 0 ;;
     esac
@@ -64,8 +64,6 @@ fi
 
 # ensurepip installs pip in `external/usr/` whereas the --target option installs
 # everything under `external/`. That's why include both in the PYTHONPATH
-
-#export PATH=$(pwd)/external/usr/bin:$PATH
 export PATH=$(pwd)/external${pippath}/bin:$PATH
 export PYTHONPATH=$(pwd)/external:$(pwd)/external${pippath}/lib/python$pyver/site-packages:$PYTHONPATH
 
