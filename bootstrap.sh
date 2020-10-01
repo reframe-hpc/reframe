@@ -24,27 +24,27 @@ usage()
     echo "Usage: $0 [-h] [+docs]"
     echo "Bootstrap ReFrame by pulling all its dependencies"
     echo "  -P EXEC  Use EXEC as Python interpreter"
-    echo "  -L PATH  Prefix of Python libraries (default: '/usr/lib')"
+    echo "  -L PATH  Prefix of pip (default: '/usr')"
     echo "  -h       Print this help message and exit"
     echo "  +docs    Build also the documentation"
 }
 
 
-while getopts "hP:L:" opt; do
+while getopts "hP:L:B:" opt; do
     case $opt in
         "P") python=$OPTARG ;;
-        "L") libpath=$OPTARG ;;
+        "L") pippath=$OPTARG ;;
         "h") usage && exit 0 ;;
         "?") usage && exit 0 ;;
     esac
 done
 
 shift $((OPTIND - 1))
-if [ -z $libpath ]; then
-    libpath=/usr/lib
-elif [ "${libpath}" == "${libpath#/}" ]; then
+if [ -z $pippath ]; then
+    pippath=/usr
+elif [ "${pippath}" == "${pippath#/}" ]; then
     # if relative path prepend the current one
-    libpath=$(pwd)/$libpath
+    pippath=$(pwd)/$pippath
 fi
 
 if [ -z $python ]; then
@@ -65,8 +65,10 @@ fi
 # ensurepip installs pip in `external/usr/` whereas the --target option installs
 # everything under `external/`. That's why include both in the PYTHONPATH
 
-export PATH=$(pwd)/external/usr/bin:$PATH
-export PYTHONPATH=$(pwd)/external:$(pwd)/external${libpath}/python$pyver/site-packages:$PYTHONPATH
+#export PATH=$(pwd)/external/usr/bin:$PATH
+export PATH=$(pwd)/external${pippath}/bin:$PATH
+export PYTHONPATH=$(pwd)/external:$(pwd)/external${pippath}/lib/python$pyver/site-packages:$PYTHONPATH
+
 
 CMD $python -m pip install --no-cache-dir -q --upgrade pip --target=external/
 CMD $python -m pip install --use-feature=2020-resolver --no-cache-dir -q -r requirements.txt --target=external/ --upgrade
