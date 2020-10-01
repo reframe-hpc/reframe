@@ -44,7 +44,7 @@ class _LocalJob(sched.Job):
 @register_scheduler('local', local=True)
 class LocalJobScheduler(sched.JobScheduler):
     CANCEL_GRACE_PERIOD = 2
-    WAIT_POLL_SECS = 0.1
+    WAIT_POLL_SECS = 0.001
 
     def make_job(self, *args, **kwargs):
         return _LocalJob(*args, **kwargs)

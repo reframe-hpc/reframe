@@ -67,7 +67,10 @@ def common_exec_ctx(temp_runtime):
                         policies.AsynchronousExecutionPolicy])
 def make_runner(request):
     def _make_runner(*args, **kwargs):
-        return executors.Runner(request.param(), *args, **kwargs)
+        # Use a much higher poll rate for the unit tests
+        policy = request.param()
+        policy._pollctl.SLEEP_MIN = 0.001
+        return executors.Runner(policy, *args, **kwargs)
 
     return _make_runner
 

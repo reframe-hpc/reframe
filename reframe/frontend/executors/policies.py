@@ -32,45 +32,51 @@ def _cleanup_all(tasks, *args, **kwargs):
     tasks[:] = [t for t in tasks if t.ref_count]
 
 
-def init_sleep_control():
-    num_prev_tasks = 0
-    sleep_min = 0.1
-    sleep_max = 10
-    sleep_inc_rate = 1.1
-    sleep_next = sleep_min
-    num_polls = 0
-    t_init = 0
+class _PollController:
+    SLEEP_MIN = 0.1
+    SLEEP_MAX = 10
+    SLEEP_INC_RATE = 1.1
 
-    def _sleep_duration(num_tasks):
-        nonlocal sleep_next, num_prev_tasks, num_polls, t_init
+    def __init__(self):
+        self._num_polls = 0
+        self._num_tasks = 0
+        self._sleep_duration = None
+        self._t_init = None
 
-        if num_polls == 0:
-            t_init = time.time()
+    def running_tasks(self, num_tasks):
+        if self._sleep_duration is None:
+            self._sleep_duration = self.SLEEP_MIN
 
-        if num_tasks != num_prev_tasks:
-            sleep_next = sleep_min
-            num_prev_tasks = num_tasks
+        if self._num_polls == 0:
+            self._t_init = time.time()
         else:
-            sleep_next = min(sleep_next*sleep_inc_rate, sleep_max)
+            if self._num_tasks != num_tasks:
+                self._sleep_duration = self.SLEEP_MIN
+            else:
+                self._sleep_duration = min(
+                    self._sleep_duration*self.SLEEP_INC_RATE, self.SLEEP_MAX
+                )
 
-        num_polls += 1
-        t_elapsed = time.time() - t_init
+        self._num_tasks = num_tasks
+        return self
 
+    def snooze(self):
         from reframe.core.logging import getlogger
 
-        getlogger().debug(f'sleep time: {sleep_next}')
-        getlogger().debug(f'poll rate: {num_polls/t_elapsed} polls/s')
-        return sleep_next
-
-    return _sleep_duration
-
-
-nap_duration = init_sleep_control()
+        t_elapsed = time.time() - self._t_init
+        self._num_polls += 1
+        getlogger().debug(
+            f'poll rate control: sleeping for {self._sleep_duration}s '
+            f'(current poll rate: {self._num_polls/t_elapsed} polls/s)'
+        )
+        time.sleep(self._sleep_duration)
 
 
 class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def __init__(self):
         super().__init__()
+
+        self._pollctl = _PollController()
 
         # Index tasks by test cases
         self._task_index = {}
@@ -113,7 +119,6 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
             self._schedulers.setdefault(partname, task.check.job.scheduler)
             sched = task.check.job.scheduler
-
             task.compile()
             task.compile_wait()
             task.run()
@@ -122,9 +127,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 if task.poll():
                     break
 
-                t = nap_duration(int(not task.completed))
-                getlogger().debug(f'sleeping for {t}s')
-                time.sleep(t)
+                self._pollctl.running_tasks(1).snooze()
 
             task.wait()
             if not self.skip_sanity_check:
@@ -199,6 +202,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def __init__(self):
 
         super().__init__()
+
+        self._pollctl = _PollController()
 
         # Index tasks by test cases
         self._task_index = {}
@@ -463,9 +468,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 self._setup_all()
                 self._reschedule_all()
                 _cleanup_all(self._retired_tasks, not self.keep_stage_files)
-                t = nap_duration(num_running)
-                getlogger().debug(f'sleeping for {t}s')
-                time.sleep(t)
+                if num_running:
+                    self._pollctl.running_tasks(num_running).snooze()
 
             except TaskExit:
                 with contextlib.suppress(TaskExit):
