@@ -491,9 +491,9 @@ def test_cancel_with_grace(minimal_job, scheduler, local_only):
 
     t_grace = datetime.now()
     minimal_job.cancel()
+    minimal_job.wait()
     t_grace = datetime.now() - t_grace
 
-    minimal_job.wait()
     # Read pid of spawned sleep
     with open(minimal_job.stdout) as fp:
         sleep_pid = int(fp.read())
@@ -519,7 +519,6 @@ def test_cancel_term_ignore(minimal_job, scheduler, local_only):
     #  implementation grants the sleep process a grace period and then
     #  kills it.
     minimal_job.time_limit = '1m'
-    minimal_job.scheduler._cancel_grace_period = 2
     prepare_job(minimal_job,
                 command=os.path.join(fixtures.TEST_RESOURCES_CHECKS,
                                      'src', 'sleep_deeply.sh'),
@@ -533,8 +532,8 @@ def test_cancel_term_ignore(minimal_job, scheduler, local_only):
 
     t_grace = datetime.now()
     minimal_job.cancel()
-    t_grace = datetime.now() - t_grace
     minimal_job.wait()
+    t_grace = datetime.now() - t_grace
 
     # Read pid of spawned sleep
     with open(minimal_job.stdout) as fp:
