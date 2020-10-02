@@ -13,7 +13,8 @@ class CudaAwareMPICheck(rfm.CompileOnlyRegressionTest):
     def __init__(self):
         super().__init__()
         self.descr = 'Cuda-aware MPI test from the NVIDIA repo.'
-        self.sourcesdir = 'https://github.com/NVIDIA-developer-blog/code-samples.git'
+        self.sourcesdir = ('https://github.com/NVIDIA-developer-blog/'
+                           'code-samples.git')
         self.valid_systems = ['daint:gpu', 'dom:gpu',
                               'kesch:cn', 'tiger:gpu',
                               'arolla:cn', 'tsa:cn',
@@ -37,12 +38,12 @@ class CudaAwareMPICheck(rfm.CompileOnlyRegressionTest):
         self.num_tasks = 2
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
-            self.nvidia_sm = '37'
+            nvidia_sm = '37'
         elif self.current_system.name in ['arolla', 'tsa', 'ault']:
             self.exclusive_access = True
-            self.nvidia_sm = '70'
+            nvidia_sm = '70'
         else:
-            self.nvidia_sm = '60'
+            nvidia_sm = '60'
 
         if self.current_system.name in ['daint']:
             self.prebuild_cmds = ['export CUDA_HOME=$CUDATOOLKIT_HOME']
@@ -50,25 +51,22 @@ class CudaAwareMPICheck(rfm.CompileOnlyRegressionTest):
             self.prebuild_cmds = []
 
         self.prebuild_cmds += ['cd posts/cuda-aware-mpi-example/src']
-        gencode_flags = 'GENCODE_FLAGS="-gencode arch=compute_%s,code=sm_%s"' %
-                        (self.nvidia_sm, self.nvidia_sm)]
-        self.build_system= 'Make'
-        self.build_system.options= [
-            'CUDA_INSTALL_PATH=$CUDA_HOME',
-            'MPI_HOME=$CRAY_MPICH_PREFIX',
-            gencode_flags
-        ]
+        gcd_flgs = '-gencode arch=compute_{0},code=sm_{0}'.format(nvidia_sm)
+        self.build_system = 'Make'
+        self.build_system.options = ['CUDA_INSTALL_PATH=$CUDA_HOME',
+                                     'MPI_HOME=$CRAY_MPICH_PREFIX',
+                                     'GENCODE_FLAGS="%s"' % (gcd_flgs)]
 
-        self.postbuild_cmds = ['ls ../bin']
-        self.sanity_patterns = sn.assert_found(r'jacobi_cuda_aware_mpi',
+        self.postbuild_cmds= ['ls ../bin']
+        self.sanity_patterns= sn.assert_found(r'jacobi_cuda_aware_mpi',
                                                self.stdout)
-        self.maintainers = ['JO']
-        self.tags = {'production', 'external_resources'}
- 
-    @rfm.run_before('compile')
+        self.maintainers=['JO']
+        self.tags={'production', 'external_resources'}
+
+    @ rfm.run_before('compile')
     def set_compilers(self):
         if self.current_environ.name == 'PrgEnv-pgi':
-           self.build_system.cflags = ['-std=c99',' -O3']
+           self.build_system.cflags=['-std=c99', ' -O3']
 
         self.build_system.options += [
             'MPICC="%s"' % self.build_system._cc(self.current_environ),
