@@ -6,13 +6,19 @@
 #include<cuda_runtime.h>
 
 #include "types.hpp"
+#include "cuda/types.hpp"
 
-template<class dataFrom, class dataTo, cudaMemcpyKind cpyDir>
+template<class dataFrom, class dataTo, typename memcpy>
 float copyBandwidth(size_t size, int device, int repeat)
 {
   /*
-   Returns the average time per memory copy from the structure data_in to data_out.
-   These structures can be either host or device arrays (see types.hpp).
+   Returns the average time taken for a copy from data_in to data_out done
+   several times. These types can represent either host data or device data.
+   dataFrom and dataTo are RAII classes to handle both host and device data 
+   in a much easier way (see types.hpp).
+   The template parameter memcpy is a stora class, where memcpy::value has the
+   right arguments for the copy, depending on whether dataFrom and dataTo are 
+   host or device targeted classes.
   */
 
   // Declare and allocate the buffers.
@@ -31,7 +37,7 @@ float copyBandwidth(size_t size, int device, int repeat)
   cudaEventRecord(start, stream);
   for ( int i = 0; i < repeat; i++ )
   {
-    cudaMemcpyAsync(data_out.data, data_in.data, size, cpyDir, stream);
+    cudaMemcpyAsync(data_out.data, data_in.data, size, memcpy::value, stream);
   }
 
   // Do the timing
@@ -44,6 +50,6 @@ float copyBandwidth(size_t size, int device, int repeat)
   cudaStreamDestroy(stream);
 
   // Return the average time per copy.
-  return size/(execution_time/(float)repeat)/1e3;
+  return (execution_time/(float)repeat);
 }
 #endif

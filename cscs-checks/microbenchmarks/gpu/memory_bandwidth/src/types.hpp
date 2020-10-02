@@ -1,10 +1,21 @@
 #ifndef __INCLUDED_TYPES__
 #define __INCLUDED_TYPES__
 
-#include<cuda.h>
+#if defined TARGET_CUDA
+#  include "cuda/utils.hpp"
+#elif defined TARGET_AMD
+#  include "rocm/utils.hpp"
+#endif
+
+class RAIIData
+{
+public:
+  RAIIData() {};
+  virtual ~RAIIData() {};
+};
 
 // Class managing host data.
-class HostData
+class HostData : public RAIIData
 {
 private:
   size_t size;
@@ -14,16 +25,16 @@ public:
   HostData() = delete;
   HostData(size_t s) : size(s)
   {
-    cudaMallocHost(&data, size);
+    XMallocHost(&data, size);
   }
   ~HostData()
   {
-    cudaFreeHost(data);
+    XFreeHost(data);
   }
 };
 
 // Class managing device data
-class DeviceData
+class DeviceData : public RAIIData
 {
 private:
   size_t size;
@@ -33,11 +44,11 @@ public:
   DeviceData() = delete;
   DeviceData(size_t s) : size(s)
   {
-    cudaMalloc(&data, size);
+    XMalloc(&data, size);
   }
   ~DeviceData()
   {
-    cudaFree(data);
+    XFree(data);
   }
 };
 #endif

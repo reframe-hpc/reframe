@@ -1,7 +1,16 @@
 #include <iostream>
 #include <unistd.h>
-#include <cuda_runtime.h>
-#include <cuda.h>
+
+// Set default platform
+#if (!defined TARGET_CUDA || !defined TARGET_AMD)
+#  define TARGET_CUDA
+#endif
+
+#ifdef TARGET_CUDA
+# include "cuda/include.hpp"
+#else
+# error "TARGET NOT IMPLEMENTED"
+#endif
 
 #include "bandwidth.hpp"
 
@@ -19,16 +28,9 @@ int main()
   gethostname(nid_name,80);
 
   int number_of_devices;
-  cudaError_t cudaError = cudaGetDeviceCount(&number_of_devices);
+  XGetDeviceCount(number_of_devices);
 
-  // Do some error checking
-  if (cudaError != cudaSuccess)
-  {
-    std::cout << "On host " << nid_name << ", cudaGetDeviceCount returned an error with ID " << (int)cudaError << " (" <<
-                 cudaGetErrorString(cudaError) << ").\n";
-    return 1; 
-  }
-
+  // Make sure we've got devices aboard.g
   if (number_of_devices == 0) 
   {
     std::cout << "No devices found on host " << nid_name << std::endl;
@@ -44,14 +46,16 @@ int main()
   */
   size_t copy_size = COPY_SIZE;
   int copy_repeats = NUMBER_OF_COPIES;
+  float fact = (float)copy_size/(float)1e3;
+
   /*
    Test the Host to Device bandwidth.
   */
   for (int d = 0; d < number_of_devices; d++)
   {
-    cudaSetDevice(d);
-    float bw = copyBandwidth<HostData, DeviceData, cudaMemcpyHostToDevice>(copy_size, d, copy_repeats);
-    printf("[%s] Host to device bandwidth on device %d is %f Mb/s.\n", nid_name, d, bw);
+    XSetDevice(d);
+    float bw = fact / copyBandwidth<HostData, DeviceData, XMemcpyHostToDevice>(copy_size, d, copy_repeats);
+    printf("[%s] Host to device bandwidth on device %d is %.2f Mb/s.\n", nid_name, d, bw);
   }
 
   /*
@@ -59,9 +63,9 @@ int main()
   */
   for (int d = 0; d < number_of_devices; d++)
   {
-    cudaSetDevice(d);
-    float bw = copyBandwidth<DeviceData, HostData, cudaMemcpyDeviceToHost>(copy_size, d, copy_repeats);
-    printf("[%s] Device to host bandwidth on device %d is %f Mb/s.\n", nid_name, d, bw);
+    XSetDevice(d);
+    float bw = fact / copyBandwidth<DeviceData, HostData, XMemcpyDeviceToHost>(copy_size, d, copy_repeats);
+    printf("[%s] Device to host bandwidth on device %d is %.2f Mb/s.\n", nid_name, d, bw);
   }
 
   /*
@@ -69,14 +73,13 @@ int main()
   */
   for (int d = 0; d < number_of_devices; d++)
   {
-    cudaSetDevice(d);
-    float bw = copyBandwidth<DeviceData, DeviceData, cudaMemcpyDeviceToDevice>(copy_size, d, copy_repeats) * 2.0;
-
-    printf("[%s] Device to device bandwidth on device %d is %f Mb/s.\n", nid_name, d, bw);
+    XSetDevice(d);
+    float bw = (float)2 * fact / copyBandwidth<DeviceData, DeviceData, XMemcpyDeviceToDevice>(copy_size, d, copy_repeats);
+    printf("[%s] Device to device bandwidth on device %d is %.2f Mb/s.\n", nid_name, d, bw);
   }
 
   // Do some basic error checking
-  if (cudaGetLastError() == cudaSuccess)
+  if (!XGetLastError())
   {
     printf("[%s] Test Result = PASS", nid_name);
   } 
@@ -84,5 +87,6 @@ int main()
   {
     printf("[%s] Test Result = FAIL", nid_name);
   }
+
   return 0;
 }
