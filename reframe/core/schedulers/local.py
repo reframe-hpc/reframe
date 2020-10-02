@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import errno
 import os
 import signal
 import socket
@@ -27,6 +28,8 @@ class _LocalJob(sched.Job):
         self._proc = None
         self._f_stdout = None
         self._f_stderr = None
+        self._signal = None
+        self._cancel_time = None
 
     @property
     def proc(self):
@@ -39,6 +42,14 @@ class _LocalJob(sched.Job):
     @property
     def f_stderr(self):
         return self._f_stderr
+
+    @property
+    def signal(self):
+        return self._signal
+
+    @property
+    def cancel_time(self):
+        return self._cancel_time
 
 
 @register_scheduler('local', local=True)
@@ -90,16 +101,23 @@ class LocalJobScheduler(sched.JobScheduler):
         '''Send SIGKILL to all the processes of the spawned job.'''
         try:
             os.killpg(job.jobid, signal.SIGKILL)
+            job._signal = signal.SIGKILL
         except (ProcessLookupError, PermissionError):
             # The process group may already be dead or assigned to a different
             # group, so ignore this error
             getlogger().debug(
                 f'pid {job.jobid} already dead or assigned elsewhere'
             )
+        finally:
+            # Close file handles
+            job.f_stdout.close()
+            job.f_stderr.close()
+            job._state = 'FAILURE'
 
     def _term_all(self, job):
         '''Send SIGTERM to all the processes of the spawned job.'''
         os.killpg(job.jobid, signal.SIGTERM)
+        job._signal = signal.SIGTERM
 
     def cancel(self, job):
         '''Cancel job.
@@ -110,10 +128,7 @@ class LocalJobScheduler(sched.JobScheduler):
         This function waits for the spawned process tree to finish.
         '''
         self._term_all(job)
-
-        # Set the time limit to the grace period and let wait() do the final
-        # killing
-        job.time_limit = time.time() - job.submit_time + self.CANCEL_GRACE_PERIOD
+        job._cancel_time = time.time()
 
     def wait(self, job):
         '''Wait for the spawned job to finish.
@@ -128,9 +143,6 @@ class LocalJobScheduler(sched.JobScheduler):
         while not self.finished(job):
             self.poll(job)
             time.sleep(self.WAIT_POLL_SECS)
-
-        job.f_stdout.close()
-        job.f_stderr.close()
 
     def finished(self, job):
         '''Check if the spawned process has finished.
@@ -150,25 +162,42 @@ class LocalJobScheduler(sched.JobScheduler):
             return
 
         try:
-            os.killpg(job.jobid, 0)
-        except (ProcessLookupError, PermissionError):
-            # Spawned session has finished; call wait on the
-            # subprocess object to get the exit code, etc.
-            job.proc.wait()
-            job._exitcode = job.proc.returncode
-            job._state = 'FAILURE' if job.exitcode != 0 else 'SUCCESS'
-            job.f_stdout.close()
-            job.f_stderr.close()
-        else:
-            # Job is still alive; check if it should time out
+            pid, status = os.waitpid(job.jobid, os.WNOHANG)
+        except OSError as e:
+            if e.errno == errno.ECHILD:
+                # No unwaited children
+                return
+            else:
+                raise e
+
+        if job.cancel_time:
+            # Job has been cancelled; give it a grace period and kill it
+            t_rem = self.CANCEL_GRACE_PERIOD - (time.time() - job.cancel_time)
+            if t_rem > 0:
+                time.sleep(t_rem)
+
+            self._kill_all(job)
+            return
+
+        if not pid:
+            # Job has not finished; check if we have reached a timeout
             t_elapsed = time.time() - job.submit_time
             if job.time_limit and t_elapsed > job.time_limit:
                 self._kill_all(job)
-                job.proc.wait()
-                job._exitcode = job.proc.returncode
                 job._state = 'TIMEOUT'
-                job.f_stdout.close()
-                job.f_stderr.close()
+
+            return
+
+        # Job has finished; kill the whole session
+        self._kill_all(job)
+
+        # Retrieve the status of the job and return
+        if os.WIFEXITED(status):
+            job._exitcode = os.WEXITSTATUS(status)
+            job._state = 'FAILURE' if job.exitcode != 0 else 'SUCCESS'
+        elif os.WIFSIGNALED(status):
+            job._state = 'FAILURE'
+            job._signal = os.WTERMSIG(status)
 
 
 class _LocalNode(sched.Node):

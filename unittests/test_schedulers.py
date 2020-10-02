@@ -8,6 +8,7 @@ import functools
 import os
 import pytest
 import re
+import signal
 import socket
 import time
 from datetime import datetime, timedelta
@@ -283,7 +284,8 @@ def test_submit(make_job, exec_ctx):
     sched_name = minimal_job.scheduler.registered_name
     if sched_name == 'local':
         assert [socket.gethostname()] == minimal_job.nodelist
-        assert 0 == minimal_job.exitcode
+        assert minimal_job.exitcode == 0
+        assert minimal_job.state == 'SUCCESS'
     elif sched_name == ('slurm', 'squeue', 'pbs', 'torque'):
         num_tasks_per_node = minimal_job.num_tasks_per_node or 1
         num_nodes = minimal_job.num_tasks // num_tasks_per_node
@@ -306,6 +308,12 @@ def test_submit_timelimit(minimal_job, local_only):
 
     assert minimal_job.state == 'TIMEOUT'
 
+    # Additional scheduler-specific checks
+    sched_name = minimal_job.scheduler.registered_name
+    if sched_name == 'local':
+        assert minimal_job.signal == signal.SIGKILL
+        assert minimal_job.state == 'TIMEOUT'
+
 
 def test_submit_job_array(make_job, slurm_only, exec_ctx):
     job = make_job(sched_access=exec_ctx.access)
@@ -326,6 +334,14 @@ def test_cancel(make_job, exec_ctx):
     t_job = datetime.now()
     minimal_job.submit()
     minimal_job.cancel()
+
+    # We give some time to the local scheduler for the TERM signal to be
+    # delivered; if we poll immediately, the process may have not been killed
+    # yet, and the scheduler will assume that it's ignoring its signal, then
+    # wait for a grace period and send a KILL signal, which is not what we
+    # want to test here.
+    time.sleep(0.1)
+
     minimal_job.wait()
     t_job = datetime.now() - t_job
     assert minimal_job.finished()
@@ -335,6 +351,9 @@ def test_cancel(make_job, exec_ctx):
     sched_name = minimal_job.scheduler.registered_name
     if sched_name in ('slurm', 'squeue'):
         assert minimal_job.state == 'CANCELLED'
+    elif sched_name == 'local':
+        assert minimal_job.state == 'FAILURE'
+        assert minimal_job.signal == signal.SIGTERM
 
 
 def test_cancel_before_submit(minimal_job):
@@ -469,7 +488,7 @@ def test_cancel_with_grace(minimal_job, scheduler, local_only):
     # This test emulates a spawned process that ignores the SIGTERM signal
     # and also spawns another process:
     #
-    #   reframe --- local job script --- sleep 10
+    #   reframe --- local job script --- sleep 5
     #                  (TERM IGN)
     #
     # We expect the job not to be cancelled immediately, since it ignores
@@ -478,7 +497,7 @@ def test_cancel_with_grace(minimal_job, scheduler, local_only):
     #
     # We also check that the additional spawned process is also killed.
     minimal_job.time_limit = '1m'
-    minimal_job.scheduler._cancel_grace_period = 2
+    minimal_job.scheduler.CANCEL_GRACE_PERIOD = 2
     prepare_job(minimal_job,
                 command='sleep 5 &',
                 pre_run=['trap -- "" TERM'],
@@ -491,6 +510,7 @@ def test_cancel_with_grace(minimal_job, scheduler, local_only):
 
     t_grace = datetime.now()
     minimal_job.cancel()
+    time.sleep(0.1)
     minimal_job.wait()
     t_grace = datetime.now() - t_grace
 
@@ -500,7 +520,8 @@ def test_cancel_with_grace(minimal_job, scheduler, local_only):
 
     assert t_grace.total_seconds() >= 2
     assert t_grace.total_seconds() < 5
-    assert minimal_job.state == 'TIMEOUT'
+    assert minimal_job.state == 'FAILURE'
+    assert minimal_job.signal == signal.SIGKILL
 
     # Verify that the spawned sleep is killed, too
     assert_process_died(sleep_pid)
@@ -532,6 +553,7 @@ def test_cancel_term_ignore(minimal_job, scheduler, local_only):
 
     t_grace = datetime.now()
     minimal_job.cancel()
+    time.sleep(0.1)
     minimal_job.wait()
     t_grace = datetime.now() - t_grace
 
@@ -540,7 +562,8 @@ def test_cancel_term_ignore(minimal_job, scheduler, local_only):
         sleep_pid = int(fp.read())
 
     assert t_grace.total_seconds() >= 2
-    assert minimal_job.state == 'TIMEOUT'
+    assert minimal_job.state == 'FAILURE'
+    assert minimal_job.signal == signal.SIGKILL
 
     # Verify that the spawned sleep is killed, too
     assert_process_died(sleep_pid)
