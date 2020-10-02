@@ -12,10 +12,12 @@ import reframe.utility.sanity as sn
 class CudaAwareMPICheck(rfm.CompileOnlyRegressionTest):
     def __init__(self):
         super().__init__()
-        self.descr = 'Cuda-aware MPI test from the Parallel Forall repo by NVIDIA.'
+        self.descr = 'Cuda-aware MPI test from the NVIDIA repo.'
         self.sourcesdir = 'https://github.com/NVIDIA-developer-blog/code-samples.git'
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
-                              'arolla:cn', 'tsa:cn', 'ault:amdv100', 'ault:intelv100']
+        self.valid_systems = ['daint:gpu', 'dom:gpu',
+                              'kesch:cn', 'tiger:gpu',
+                              'arolla:cn', 'tsa:cn',
+                              'ault:amdv100', 'ault:intelv100']
         if self.current_system.name == 'kesch':
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
             self.modules = ['cudatoolkit/8.0.61']
@@ -26,10 +28,12 @@ class CudaAwareMPICheck(rfm.CompileOnlyRegressionTest):
             self.valid_prog_environs = ['PrgEnv-gnu']
             self.modules = ['cuda/11.0']
         else:
-            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu', 'PrgEnv-pgi']
+            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
+                                        'PrgEnv-pgi']
             self.modules = ['craype-accel-nvidia60']
 
-        self.sanity_patterns = sn.assert_found(r'Finished building CUDA samples', self.stdout)
+        self.sanity_patterns = sn.assert_found(r'Finished building'
+                                               r' CUDA samples', self.stdout)
         self.num_tasks = 2
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
@@ -46,29 +50,38 @@ class CudaAwareMPICheck(rfm.CompileOnlyRegressionTest):
             self.prebuild_cmds = []
 
         self.prebuild_cmds += ['cd posts/cuda-aware-mpi-example/src']
-        self.build_system = 'Make'
-        self.build_system.options = ['CUDA_INSTALL_PATH=$CUDA_HOME',
-                                     'MPI_HOME=$CRAY_MPICH_PREFIX',
-                                     'GENCODE_FLAGS="-gencode arch=compute_%s,code=sm_%s"'  % (self.nvidia_sm, self.nvidia_sm)]
+        gencode_flags = 'GENCODE_FLAGS="-gencode arch=compute_%s,code=sm_%s"' %
+                        (self.nvidia_sm, self.nvidia_sm)]
+        self.build_system= 'Make'
+        self.build_system.options= [
+            'CUDA_INSTALL_PATH=$CUDA_HOME',
+            'MPI_HOME=$CRAY_MPICH_PREFIX',
+            gencode_flags
+        ]
+
         self.postbuild_cmds = ['ls ../bin']
-        self.sanity_patterns = sn.assert_found(r'jacobi_cuda_aware_mpi', self.stdout)
+        self.sanity_patterns = sn.assert_found(r'jacobi_cuda_aware_mpi',
+                                               self.stdout)
         self.maintainers = ['JO']
         self.tags = {'production', 'external_resources'}
-    
+ 
     @rfm.run_before('compile')
     def set_compilers(self):
         if self.current_environ.name == 'PrgEnv-pgi':
            self.build_system.cflags = ['-std=c99',' -O3']
 
-        self.build_system.options += ['MPICC="%s"' % self.build_system._cc(self.current_environ),
-                                      'MPILD="%s"' % self.build_system._cxx(self.current_environ)]
+        self.build_system.options += [
+            'MPICC="%s"' % self.build_system._cc(self.current_environ),
+            'MPILD="%s"' % self.build_system._cxx(self.current_environ)
+        ]
 
 
 class CudaAwareMPIRuns(rfm.RunOnlyRegressionTest):
     def __init__(self):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
-                              'arolla:cn', 'tsa:cn', 'ault:amdv100', 'ault:intelv100']
+                              'arolla:cn', 'tsa:cn',
+                              'ault:amdv100', 'ault:intelv100']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
         if self.current_system.name in ['arolla', 'tsa', 'daint']:
             self.valid_prog_environs += ['PrgEnv-pgi']
@@ -85,7 +98,9 @@ class CudaAwareMPIRuns(rfm.RunOnlyRegressionTest):
         self.executable = '../bin/jacobi_cuda_aware_mpi'
         self.prerun_cmds = ['export MPICH_RDMA_ENABLED_CUDA=1']
         self.depends_on('CudaAwareMPICheck')
-        self.sanity_patterns = sn.assert_found(r'Stopped after 1000 iterations with residue 0.00024', self.stdout)
+        self.sanity_patterns = sn.assert_found(r'Stopped after 1000 iterations'
+                                               r' with residue 0.00024', 
+                                               self.stdout)
 
  
 @rfm.simple_test
@@ -93,8 +108,8 @@ class CudaAwareMPIOneNodeCheck(CudaAwareMPIRuns):
     def __init__(self):
         super().__init__() 
         self.partition_num_gpus_per_node = {
-            'daint:gpu':      1, 
-            'dom:gpu':        1, 
+            'daint:gpu':      1,
+            'dom:gpu':        1,
             'kesh:cn':        2, 
             'tiger:gpu':      2,
             'arolla:cn':      2,
@@ -107,8 +122,9 @@ class CudaAwareMPIOneNodeCheck(CudaAwareMPIRuns):
 
     @rfm.run_before('run')
     def set_num_gpus_per_node(self):
-        if self.current_partition.fullname in self.partition_num_gpus_per_node:
-            self.num_gpus_per_node = self.partition_num_gpus_per_node.get(self.current_partition.fullname)
+        cp = self.current_partition.fullname
+        if cp in self.partition_num_gpus_per_node:
+            self.num_gpus_per_node = self.partition_num_gpus_per_node.get(cp)
         else:
             self.num_gpus_per_node = 1
 
