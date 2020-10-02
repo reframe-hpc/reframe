@@ -1318,7 +1318,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
                     commands, environs,
                     login=rt.runtime().get_option('general/0/use_login_shell'),
                     trap_errors=rt.runtime().get_option(
-                        'general/0/trap_job_errors')
+                        'general/0/trap_job_errors'
+                    )
                 )
             except OSError as e:
                 raise PipelineError('failed to prepare run job') from e
@@ -1406,15 +1407,17 @@ class RegressionTest(metaclass=RegressionTestMeta):
               more details.
 
         '''
-        if self.sanity_patterns is None:
-            raise SanityError('sanity_patterns not set')
-
         if rt.runtime().get_option('general/0/trap_job_errors'):
-            self.sanity_patterns = sn.all([
+            sanity_patterns = [
                 sn.assert_eq(self.job.exitcode, 0,
-                             msg='job exited with exit code {0}'),
-                self.sanity_patterns
-            ])
+                             msg='job exited with exit code {0}')
+            ]
+            if self.sanity_patterns is not None:
+                sanity_patterns.append(self.sanity_patterns)
+
+            self.sanity_patterns = sn.all(sanity_patterns)
+        elif self.sanity_patterns is None:
+            raise SanityError('sanity_patterns not set')
 
         with os_ext.change_dir(self._stagedir):
             success = sn.evaluate(self.sanity_patterns)

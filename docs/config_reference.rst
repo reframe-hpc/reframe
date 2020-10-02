@@ -1072,7 +1072,7 @@ General Configuration
    :required: No
    :default: ``false``
 
-   Trap command errors and exit in the generated job scripts.
+   Trap command errors in the generated job scripts and let them exit immediately.
 
 
 .. js:attribute:: .general[].keep_stage_files
