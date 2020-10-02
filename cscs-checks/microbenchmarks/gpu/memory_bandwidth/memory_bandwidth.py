@@ -21,10 +21,9 @@ class GpuBandwidthCheck(rfm.RegressionTest):
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
             self.exclusive_access = True
 
-        self.sourcesdir = os.path.join(
-            self.current_system.resourcesdir, 'CUDA', 'essentials'
-        )
         self.build_system = 'SingleSource'
+        self.sourcepath = 'memory_bandwidth.cu'
+        self.executable = 'memory_bandwidth.x'
 
         # Set nvcc flags
         nvidia_sm = '60'
@@ -33,17 +32,10 @@ class GpuBandwidthCheck(rfm.RegressionTest):
         elif self.current_system.name in ['arolla', 'tsa']:
             nvidia_sm = '70'
 
-        self.build_system.cxxflags = ['-I.', '-m64', '-arch=sm_%s' % nvidia_sm]
-        self.sourcepath = 'bandwidthtestflex.cu'
-        self.executable = 'gpu_bandwidth_check.x'
-
         # Perform a single bandwidth test with a buffer size of 1024MB
-        self.min_buffer_size = 1073741824
-        self.max_buffer_size = 1073741824
-        self.executable_opts = ['device', 'all', '--mode=range',
-                                '--start=%d' % self.min_buffer_size,
-                                '--increment=%d' % self.min_buffer_size,
-                                '--end=%d' % self.max_buffer_size, '--csv']
+        self.copy_size = 1073741824
+ 
+        self.build_system.cxxflags = ['-I.', '-m64', '-arch=sm_%s' % nvidia_sm, '-std=c++11', '-DCOPY=%d' % self.copy_size]
         self.num_tasks = 0
         self.num_tasks_per_node = 1
         if self.current_system.name in ['daint', 'dom', 'tiger']:
@@ -78,46 +70,43 @@ class GpuBandwidthCheck(rfm.RegressionTest):
     def _xfer_pattern(self, xfer_kind, devno, nodename):
         '''generates search pattern for performance analysis'''
         if xfer_kind == 'h2d':
-            first_part = 'bandwidthTest-H2D-Pinned'
+            direction = 'Host to device'
         elif xfer_kind == 'd2h':
-            first_part = 'bandwidthTest-D2H-Pinned'
+            direction = 'Device to host'
         else:
-            first_part = 'bandwidthTest-D2D'
+            direction = 'Device to device'
 
-        # Extract the bandwidth corresponding to the maximum buffer size
-        return (r'^%s[^,]*,\s*%s[^,]*,\s*Bandwidth\s*=\s*(\S+)\s*MB/s([^,]*,)'
-                r'{2}\s*Size\s*=\s*%d\s*bytes[^,]*,\s*DeviceNo\s*=\s*-1'
-                r':%s' % (nodename, first_part, self.max_buffer_size, devno))
+        # Extract the bandwidth corresponding to the right node, transfer and device.
+        return (r'^[^,]*\[[^,]*\]\s*%s\s*bandwidth on device %d is \s*(\S+)\s*Mb/s.' % 
+                (direction,devno))
 
     @sn.sanity_function
     def do_sanity_check(self):
-        failures = []
-        devices_found = set(sn.extractall(
-            r'^\s*([^,]*),\s*Detected devices: %s' % self.num_gpus_per_node,
+        node_names = set(sn.extractall(
+            r'^\s*\[([^,]*)\]\s*Found %s device\(s\).' % self.num_gpus_per_node,
             self.stdout, 1
         ))
 
         sn.evaluate(sn.assert_eq(
-            self.job.num_tasks, len(devices_found),
+            self.job.num_tasks, len(node_names),
             msg='requested {0} node(s), got {1} (nodelist: %s)' %
-            ','.join(sorted(devices_found))))
+            ','.join(sorted(node_names))))
 
         good_nodes = set(sn.extractall(
-            r'^\s*([^,]*),\s*NID\s*=\s*\S+\s+Result = PASS',
+            r'^[^,]*\[([^,]*)\]\s*Test Result\s*=\s*PASS',
             self.stdout, 1
         ))
 
         sn.evaluate(sn.assert_eq(
-            devices_found, good_nodes,
+            node_names, good_nodes,
             msg='check failed on the following node(s): %s' %
-            ','.join(sorted(devices_found - good_nodes)))
+            ','.join(sorted(node_names - good_nodes)))
         )
 
         # Sanity is fine, fill in the perf. patterns based on the exact node id
-        for nodename in devices_found:
+        for nodename in node_names:
             for xfer_kind in ('h2d', 'd2h', 'd2d'):
                 for devno in range(self.num_gpus_per_node):
-                    perfvar = '%s_gpu_%s_%s_bw' % (nodename, devno, xfer_kind)
                     perfvar = 'bw_%s_%s_gpu_%s' % (xfer_kind, nodename, devno)
                     self.perf_patterns[perfvar] = sn.extractsingle(
                         self._xfer_pattern(xfer_kind, devno, nodename),
