@@ -124,12 +124,12 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
             task.run()
             while True:
                 sched.poll(task.check.job)
-                if task.poll():
+                if task.run_complete():
                     break
 
                 self._pollctl.running_tasks(1).snooze()
 
-            task.wait()
+            task.run_wait()
             if not self.skip_sanity_check:
                 task.sanity()
 
@@ -278,7 +278,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._retired_tasks.append(task)
 
     def on_task_exit(self, task):
-        task.wait()
+        task.run_wait()
         self._remove_from_running(task)
         self._completed_tasks.append(task)
 
@@ -375,8 +375,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 *(task.check.job for task in self._running_tasks[partname])
             )
 
+            # Trigger notifications for finished jobs
             for t in self._running_tasks[partname]:
-                t.poll()
+                t.run_complete()
 
     def _setup_all(self):
         still_waiting = []

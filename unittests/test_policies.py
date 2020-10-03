@@ -101,15 +101,9 @@ def assert_runall(runner):
 def assert_all_dead(runner):
     stats = runner.stats
     for t in runner.stats.tasks():
-        try:
-            if t.check.job and t.check.job.scheduler:
-                t.check.job.scheduler.poll(t.check.job)
-
-            finished = t.check.poll()
-        except JobNotStartedError:
-            finished = True
-
-        assert finished
+        job = t.check.job
+        if job:
+            assert job.finished
 
 
 def num_failures_stage(runner, stage):

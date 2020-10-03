@@ -34,7 +34,7 @@ from reframe.core.containers import ContainerPlatform, ContainerPlatformField
 from reframe.core.deferrable import _DeferredExpression
 from reframe.core.exceptions import (BuildError, DependencyError,
                                      PipelineError, SanityError,
-                                     PerformanceError)
+                                     PerformanceError, user_deprecation_warning)
 from reframe.core.meta import RegressionTestMeta
 from reframe.core.schedulers import Job
 
@@ -1331,8 +1331,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
             self.num_tasks = self.job.num_tasks
 
     @final
-    def poll(self):
-        '''Poll the test's state.
+    def run_complete(self):
+        '''Check if the run phase has completed.
 
         :returns: :class:`True` if the associated job has finished,
             :class:`False` otherwise.
@@ -1342,12 +1342,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
         :raises reframe.core.exceptions.ReframeError: In case of errors.
 
         .. warning::
-
-           .. versionchanged:: 3.0
-              You may not override this method directly unless you are in
-              special test. See `here
-              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
-              more details.
+           You may not override this method directly unless you are in
+           special test. See `here
+           <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+           more details.
 
         '''
         if not self._job:
@@ -1355,24 +1353,43 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         return self._job.finished()
 
+    @final
+    def poll(self):
+        '''See :func:`run_complete`.
+
+        .. deprecated:: 3.2
+
+        '''
+        user_deprecation_warning('calling poll() is deprecated; '
+                                 'please use run_complete() instead')
+        return self.run_complete()
+
     @_run_hooks('post_run')
     @final
-    def wait(self):
-        '''Wait for this test to finish.
+    def run_wait(self):
+        '''Wait for the run phase of this test to finish.
 
         :raises reframe.core.exceptions.ReframeError: In case of errors.
 
         .. warning::
-
-           .. versionchanged:: 3.0
-              You may not override this method directly unless you are in
-              special test. See `here
-              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
-              more details.
+           You may not override this method directly unless you are in
+           special test. See `here
+           <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+           more details.
 
         '''
         self._job.wait()
         self.logger.debug('spawned job finished')
+
+    @final
+    def wait(self):
+        '''See :func:`run_wait`.
+
+        .. deprecated:: 3.2
+        '''
+        user_deprecation_warning('calling wait() is deprecated; '
+                                 'please use run_wait() instead')
+        self.run_wait()
 
     @_run_hooks()
     @final

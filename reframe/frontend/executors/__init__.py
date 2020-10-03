@@ -267,17 +267,17 @@ class RegressionTask:
         self._safe_call(self.check.run)
         self._notify_listeners('on_task_run')
 
-    def wait(self):
-        self._safe_call(self.check.wait)
-        self.zombie = False
-
-    def poll(self):
-        finished = self._safe_call(self.check.poll)
-        if finished:
+    def run_complete(self):
+        done = self._safe_call(self.check.run_complete)
+        if done:
             self.zombie = True
             self._notify_listeners('on_task_exit')
 
-        return finished
+        return done
+
+    def run_wait(self):
+        self._safe_call(self.check.run_wait)
+        self.zombie = False
 
     def sanity(self):
         self._safe_call(self.check.sanity)
