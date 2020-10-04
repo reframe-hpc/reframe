@@ -370,7 +370,7 @@ def test_wait_before_submit(minimal_job):
         minimal_job.wait()
 
 
-def test_poll(make_job, exec_ctx):
+def test_finished(make_job, exec_ctx):
     minimal_job = make_job(sched_access=exec_ctx.access)
     prepare_job(minimal_job, 'sleep 2')
     minimal_job.submit()
@@ -378,9 +378,22 @@ def test_poll(make_job, exec_ctx):
     minimal_job.wait()
 
 
-def test_poll_before_submit(minimal_job):
+def test_finished_before_submit(minimal_job):
     prepare_job(minimal_job, 'sleep 3')
     with pytest.raises(JobNotStartedError):
+        minimal_job.finished()
+
+
+def test_finished_raises_error(make_job, exec_ctx):
+    minimal_job = make_job(sched_access=exec_ctx.access)
+    prepare_job(minimal_job, 'echo hello')
+    minimal_job.submit()
+    minimal_job.wait()
+
+    # Emulate an error during polling and verify that it is raised correctly
+    # when finished() is called
+    minimal_job._exception = JobError('fake error')
+    with pytest.raises(JobError, match='fake error'):
         minimal_job.finished()
 
 

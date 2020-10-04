@@ -151,6 +151,9 @@ class LocalJobScheduler(sched.JobScheduler):
         the process has finished, you *must* call wait() to properly cleanup
         after it.
         '''
+        if job.exception:
+            raise job.exception
+
         return job.state in ['SUCCESS', 'FAILURE', 'TIMEOUT']
 
     def poll(self, *jobs):

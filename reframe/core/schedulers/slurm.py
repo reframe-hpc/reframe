@@ -512,14 +512,14 @@ class SlurmJobScheduler(sched.JobScheduler):
 
     def wait(self, job):
         # Quickly return in case we have finished already
-        if slurm_state_completed(job.state):
+        if self.finished(job):
             if job.is_array:
                 self._merge_files(job)
 
             return
 
         intervals = itertools.cycle([1, 2, 3])
-        while not slurm_state_completed(job.state):
+        while not self.finished(job):
             self.poll(job)
             time.sleep(next(intervals))
 

@@ -81,9 +81,6 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         # Index tasks by test cases
         self._task_index = {}
 
-        # All schedulers per partition
-        self._schedulers = {}
-
         # Tasks that have finished, but have not performed their cleanup phase
         self._retired_tasks = []
         self.task_listeners.append(self)
@@ -105,7 +102,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 raise TaskDependencyError('dependencies failed')
 
             partname = task.testcase.partition.fullname
-            sched = self._schedulers.get(partname)
+            sched = self.schedulers.get(partname)
             task.setup(task.testcase.partition,
                        task.testcase.environ,
                        scheduler=sched,
@@ -117,7 +114,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
                        sched_exclude_nodelist=self.sched_exclude_nodelist,
                        sched_options=self.sched_options)
 
-            self._schedulers.setdefault(partname, task.check.job.scheduler)
+            self.schedulers.setdefault(partname, task.check.job.scheduler)
             sched = task.check.job.scheduler
             task.compile()
             task.compile_wait()
@@ -211,9 +208,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         # All currently running tasks per partition
         self._running_tasks = {}
 
-        # All schedulers per partition
-        self._schedulers = {}
-
         # Tasks that need to be finalized
         self._completed_tasks = []
 
@@ -251,7 +245,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def on_task_setup(self, task):
         partname = task.check.current_partition.fullname
         self._ready_tasks[partname].append(task)
-        self._schedulers.setdefault(partname, task.check.job.scheduler)
+        self.schedulers.setdefault(partname, task.check.job.scheduler)
 
     def on_task_run(self, task):
         partname = task.check.current_partition.fullname
@@ -271,6 +265,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         msg = f'{task.check.info()} [{task.pipeline_timings_basic()}]'
         self.printer.status('OK', msg, just='right')
         getlogger().verbose(f"==> {task.pipeline_timings_all()}")
+
         # update reference count of dependencies
         for c in task.testcase.deps:
             self._task_index[c].ref_count -= 1
@@ -285,8 +280,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def _setup_task(self, task):
         if self.deps_succeeded(task):
             try:
-                sched = self._schedulers.get(task.testcase.partition.fullname,
-                                             None)
+                sched = self.schedulers.get(task.testcase.partition.fullname,
+                                            None)
                 task.setup(task.testcase.partition,
                            task.testcase.environ,
                            scheduler=sched,
@@ -368,7 +363,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def _poll_tasks(self):
         '''Update the counts of running checks per partition.'''
         getlogger().debug('updating counts for running test cases')
-        for partname, sched in self._schedulers.items():
+        for partname, sched in self.schedulers.items():
             getlogger().debug(f'polling {len(self._running_tasks[partname])} '
                               f'task(s) in {partname}')
             sched.poll(
