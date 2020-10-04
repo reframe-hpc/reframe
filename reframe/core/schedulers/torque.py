@@ -14,7 +14,7 @@ import time
 
 import reframe.utility.os_ext as os_ext
 from reframe.core.backends import register_scheduler
-from reframe.core.exceptions import JobError
+from reframe.core.exceptions import JobError, JobSchedulerError
 from reframe.core.logging import getlogger
 from reframe.core.schedulers.pbs import PbsJobScheduler, _run_strict
 
@@ -66,7 +66,7 @@ class TorqueJobScheduler(PbsJobScheduler):
             return
 
         if completed.returncode != 0:
-            raise JobError(
+            raise JobSchedulerError(
                 f'qstat failed with exit code {completed.returncode} '
                 f'(standard error follows):\n{completed.stderr}'
             )
@@ -132,5 +132,4 @@ class TorqueJobScheduler(PbsJobScheduler):
                   job.max_pending_time):
                 if (time.time() - job.submit_time >= job.max_pending_time):
                     self.cancel(job)
-                    raise JobError('maximum pending time exceeded',
-                                   jobid=job.jobid)
+                    job._exception = JobError('maximum pending time exceeded')

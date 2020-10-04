@@ -17,7 +17,9 @@ import reframe.core.schedulers as sched
 import reframe.utility.os_ext as os_ext
 from reframe.core.backends import register_scheduler
 from reframe.core.exceptions import (SpawnedProcessError,
-                                     JobBlockedError, JobError)
+                                     JobBlockedError,
+                                     JobError,
+                                     JobSchedulerError)
 from reframe.core.logging import getlogger
 from reframe.utility import seconds_to_hms
 
@@ -232,7 +234,7 @@ class SlurmJobScheduler(sched.JobScheduler):
         jobid_match = re.search(r'Submitted batch job (?P<jobid>\d+)',
                                 completed.stdout)
         if not jobid_match:
-            raise JobError(
+            raise JobSchedulerError(
                 'could not retrieve the job id of the submitted job'
             )
 
@@ -243,7 +245,8 @@ class SlurmJobScheduler(sched.JobScheduler):
         try:
             completed = _run_strict('scontrol -a show -o nodes')
         except SpawnedProcessError as e:
-            raise JobError('could not retrieve node information') from e
+            raise JobSchedulerError(
+                'could not retrieve node information') from e
 
         node_descriptions = completed.stdout.splitlines()
         return _create_nodes(node_descriptions)
@@ -349,8 +352,8 @@ class SlurmJobScheduler(sched.JobScheduler):
         if node_match:
             reservation_nodes = node_match[1]
         else:
-            raise JobError("could not extract the node names for "
-                           "reservation '%s'" % reservation)
+            raise JobSchedulerError("could not extract the node names for "
+                                    "reservation '%s'" % reservation)
 
         completed = _run_strict('scontrol -a show -o %s' % reservation_nodes)
         node_descriptions = completed.stdout.splitlines()
@@ -450,7 +453,7 @@ class SlurmJobScheduler(sched.JobScheduler):
         t_pending = time.time() - job.submit_time
         if t_pending >= job.max_pending_time:
             self.cancel(job)
-            raise JobError('maximum pending time exceeded', job.jobid)
+            job._exception = JobError('maximum pending time exceeded')
 
     def _cancel_if_blocked(self, job, reasons=None):
         if (job.is_cancelling or not slurm_state_pending(job.state)):
@@ -505,7 +508,7 @@ class SlurmJobScheduler(sched.JobScheduler):
             if reason_details is not None:
                 reason_msg += ', ' + reason_details
 
-            raise JobBlockedError(reason_msg, jobid=job.jobid)
+            job._exception = JobBlockedError(reason_msg)
 
     def wait(self, job):
         # Quickly return in case we have finished already
@@ -529,6 +532,9 @@ class SlurmJobScheduler(sched.JobScheduler):
         job._is_cancelling = True
 
     def finished(self, job):
+        if job.exception:
+            raise job.exception
+
         return slurm_state_completed(job.state)
 
 
@@ -588,7 +594,7 @@ class SqueueJobScheduler(SlurmJobScheduler):
 def _create_nodes(descriptions):
     nodes = set()
     for descr in descriptions:
-        with suppress(JobError):
+        with suppress(JobSchedulerError):
             nodes.add(_SlurmNode(descr))
 
     return nodes
@@ -600,7 +606,9 @@ class _SlurmNode(sched.Node):
     def __init__(self, node_descr):
         self._name = self._extract_attribute('NodeName', node_descr)
         if not self._name:
-            raise JobError('could not extract NodeName from node description')
+            raise JobSchedulerError(
+                'could not extract NodeName from node description'
+            )
 
         self._partitions = self._extract_attribute(
             'Partitions', node_descr, sep=',') or set()

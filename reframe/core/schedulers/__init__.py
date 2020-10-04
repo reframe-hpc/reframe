@@ -209,6 +209,10 @@ class Job:
         self._submit_time = None
         self._completion_time = None
 
+        # Job errors discovered while polling; if not None this will be raised
+        # in finished()
+        self._exception = None
+
     @classmethod
     def create(cls, scheduler, launcher, *args, **kwargs):
         ret = scheduler.make_job(*args, **kwargs)
@@ -279,6 +283,10 @@ class Job:
     @property
     def scheduler(self):
         return self._scheduler
+
+    @property
+    def exception(self):
+        return self._exception
 
     @property
     def jobid(self):

@@ -211,6 +211,10 @@ class SpawnedProcessTimeout(SpawnedProcessError):
         return self._timeout
 
 
+class JobSchedulerError(ReframeError):
+    pass
+
+
 class JobError(ReframeError):
     '''Job related errors.'''
 

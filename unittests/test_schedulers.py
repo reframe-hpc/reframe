@@ -18,7 +18,9 @@ import reframe.utility.os_ext as os_ext
 import unittests.fixtures as fixtures
 from reframe.core.backends import (getlauncher, getscheduler)
 from reframe.core.environments import Environment
-from reframe.core.exceptions import JobError, JobNotStartedError
+from reframe.core.exceptions import (
+    JobError, JobNotStartedError, JobSchedulerError
+)
 from reframe.core.launchers.local import LocalLauncher
 from reframe.core.schedulers import Job
 from reframe.core.schedulers.slurm import _SlurmNode, _create_nodes
@@ -1036,7 +1038,7 @@ def slurm_node_maintenance():
 
 
 def test_slurm_node_noname():
-    with pytest.raises(JobError):
+    with pytest.raises(JobSchedulerError):
         _SlurmNode(
             'Arch=x86_64 CoresPerSocket=12 '
             'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '

@@ -20,7 +20,7 @@ import reframe.core.schedulers as sched
 import reframe.utility.os_ext as os_ext
 from reframe.core.backends import register_scheduler
 from reframe.core.config import settings
-from reframe.core.exceptions import SpawnedProcessError, JobError
+from reframe.core.exceptions import JobSchedulerError
 from reframe.core.logging import getlogger
 from reframe.utility import seconds_to_hms
 
@@ -135,8 +135,8 @@ class PbsJobScheduler(sched.JobScheduler):
         completed = _run_strict(cmd, timeout=self._submit_timeout)
         jobid_match = re.search(r'^(?P<jobid>\S+)', completed.stdout)
         if not jobid_match:
-            raise JobError('could not retrieve the job id '
-                           'of the submitted job')
+            raise JobSchedulerError('could not retrieve the job id '
+                                    'of the submitted job')
 
         job._jobid = jobid_match.group('jobid')
         job._submit_time = time.time()
@@ -157,6 +157,9 @@ class PbsJobScheduler(sched.JobScheduler):
         job._cancelled = True
 
     def finished(self, job):
+        if job.exception:
+            raise job.exception
+
         return job.completed
 
     def _poll_job(self, job):
