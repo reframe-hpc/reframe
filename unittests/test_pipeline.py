@@ -108,21 +108,6 @@ def remote_exec_ctx(user_system):
 
 
 @pytest.fixture
-def remote_exec_ctx(user_system):
-    partition = fixtures.partition_by_scheduler()
-    if partition is None:
-        pytest.skip('job submission not supported')
-
-    try:
-        environ = partition.environs[0]
-    except IndexError:
-        pytest.skip('no environments configured for partition: %s' %
-                    partition.fullname)
-
-    yield partition, environ
-
-
-@pytest.fixture
 def container_remote_exec_ctx(remote_exec_ctx):
     def _container_exec_ctx(platform):
         partition = remote_exec_ctx[0]
@@ -787,6 +772,36 @@ def test_registration_of_tests():
             mod.AnotherBaseTest(2, 0),
             mod.AnotherBaseTest(2, 1),
             mod.MyBaseTest(10, 20)] == checks
+
+
+def test_trap_job_errors_without_sanity_patterns(local_exec_ctx):
+    rt.runtime().site_config.add_sticky_option('general/trap_job_errors', True)
+
+    @fixtures.custom_prefix('unittests/resources/checks')
+    class MyTest(rfm.RunOnlyRegressionTest):
+        def __init__(self):
+            self.valid_prog_environs = ['*']
+            self.valid_systems = ['*']
+            self.executable = 'exit 10'
+
+    with pytest.raises(SanityError, match='job exited with exit code 10'):
+        _run(MyTest(), *local_exec_ctx)
+
+
+def test_trap_job_errors_with_sanity_patterns(local_exec_ctx):
+    rt.runtime().site_config.add_sticky_option('general/trap_job_errors', True)
+
+    @fixtures.custom_prefix('unittests/resources/checks')
+    class MyTest(rfm.RunOnlyRegressionTest):
+        def __init__(self):
+            self.valid_prog_environs = ['*']
+            self.valid_systems = ['*']
+            self.prerun_cmds = ['echo hello']
+            self.executable = 'true'
+            self.sanity_patterns = sn.assert_not_found(r'hello', self.stdout)
+
+    with pytest.raises(SanityError):
+        _run(MyTest(), *local_exec_ctx)
 
 
 def _run_sanity(test, *exec_ctx, skip_perf=False):

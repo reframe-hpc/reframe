@@ -107,11 +107,6 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
                        task.testcase.environ,
                        scheduler=sched,
                        sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
-                       sched_account=self.sched_account,
-                       sched_partition=self.sched_partition,
-                       sched_reservation=self.sched_reservation,
-                       sched_nodelist=self.sched_nodelist,
-                       sched_exclude_nodelist=self.sched_exclude_nodelist,
                        sched_options=self.sched_options)
 
             self.schedulers.setdefault(partname, task.check.job.scheduler)
@@ -286,11 +281,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                            task.testcase.environ,
                            scheduler=sched,
                            sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
-                           sched_account=self.sched_account,
-                           sched_partition=self.sched_partition,
-                           sched_reservation=self.sched_reservation,
-                           sched_nodelist=self.sched_nodelist,
-                           sched_exclude_nodelist=self.sched_exclude_nodelist,
                            sched_options=self.sched_options)
             except TaskExit:
                 return False
