@@ -401,7 +401,7 @@ def test_execution_modes(run_reframe):
     assert 'Traceback' not in stderr
     assert 'FAILED' not in stdout
     assert 'PASSED' in stdout
-    assert 'Ran 1 test case' in stdout
+    assert 'Ran 2 test case' in stdout
 
 
 def test_no_ignore_check_conflicts(run_reframe):
@@ -521,6 +521,7 @@ def test_verbosity_with_check(run_reframe):
     returncode, stdout, stderr = run_reframe(
         more_options=['-vvvvv'],
         system='testsys',
+        action='list',
         checkpath=['unittests/resources/checks/hellocheck.py']
     )
     assert '' != stdout

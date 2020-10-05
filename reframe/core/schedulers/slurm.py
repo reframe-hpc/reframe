@@ -371,6 +371,9 @@ class SlurmJobScheduler(sched.JobScheduler):
         if not jobs:
             return
 
+        # Filter out non-jobs
+        jobs = [job for job in jobs if job is not None]
+
         with rt.temp_environment(variables={'SLURM_TIME_FORMAT': '%s'}):
             t_start = time.strftime(
                 '%F', time.localtime(min(job.submit_time for job in jobs))
@@ -554,6 +557,9 @@ class SqueueJobScheduler(SlurmJobScheduler):
             jobinfo.setdefault(jobid, []).append(s)
 
         for job in jobs:
+            if job is None:
+                continue
+
             try:
                 job_match = jobinfo[job.jobid]
             except KeyError:

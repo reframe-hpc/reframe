@@ -46,6 +46,9 @@ class TorqueJobScheduler(PbsJobScheduler):
         if not jobs:
             return
 
+        # Filter out non-jobs
+        jobs = [job for job in jobs if job is not None]
+
         completed = os_ext.run_command(
             f'qstat -f {" ".join(job.jobid for job in jobs)}'
         )

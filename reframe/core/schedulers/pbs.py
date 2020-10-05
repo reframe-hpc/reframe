@@ -159,6 +159,9 @@ class PbsJobScheduler(sched.JobScheduler):
         return job.completed
 
     def _poll_job(self, job):
+        if job is None:
+            return
+
         with os_ext.change_dir(job.workdir):
             output_ready = (os.path.exists(job.stdout) and
                             os.path.exists(job.stderr))

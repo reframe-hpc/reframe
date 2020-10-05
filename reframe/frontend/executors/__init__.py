@@ -456,9 +456,6 @@ class ExecutionPolicy(abc.ABC):
         self.sched_flex_alloc_nodes = None
         self.sched_options = []
 
-        # Job schedulers per partition
-        self.schedulers = {}
-
         # Task event listeners
         self.task_listeners = []
         self.stats = None

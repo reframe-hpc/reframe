@@ -161,7 +161,7 @@ class LocalJobScheduler(sched.JobScheduler):
             self._poll_job(job)
 
     def _poll_job(self, job):
-        if job.jobid is None:
+        if job is None or job.jobid is None:
             return
 
         try:

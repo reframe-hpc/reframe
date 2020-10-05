@@ -102,20 +102,16 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 raise TaskDependencyError('dependencies failed')
 
             partname = task.testcase.partition.fullname
-            sched = self.schedulers.get(partname)
             task.setup(task.testcase.partition,
                        task.testcase.environ,
-                       scheduler=sched,
                        sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
                        sched_options=self.sched_options)
 
-            self.schedulers.setdefault(partname, task.check.job.scheduler)
-            sched = task.check.job.scheduler
             task.compile()
             task.compile_wait()
             task.run()
             while True:
-                sched.poll(task.check.job)
+                partition.scheduler.poll(task.check.job)
                 if task.run_complete():
                     break
 
@@ -218,6 +214,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         # Job limit per partition
         self._max_jobs = {}
 
+        # Keep a reference to all the partitions
+        self._partitions = set()
+
         self.task_listeners.append(self)
 
     def _remove_from_running(self, task):
@@ -240,7 +239,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def on_task_setup(self, task):
         partname = task.check.current_partition.fullname
         self._ready_tasks[partname].append(task)
-        self.schedulers.setdefault(partname, task.check.job.scheduler)
 
     def on_task_run(self, task):
         partname = task.check.current_partition.fullname
@@ -275,11 +273,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def _setup_task(self, task):
         if self.deps_succeeded(task):
             try:
-                sched = self.schedulers.get(task.testcase.partition.fullname,
-                                            None)
                 task.setup(task.testcase.partition,
                            task.testcase.environ,
-                           scheduler=sched,
                            sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
                            sched_options=self.sched_options)
             except TaskExit:
@@ -297,6 +292,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def runcase(self, case):
         super().runcase(case)
         check, partition, environ = case
+        self._partitions.add(partition)
 
         # Set partition-based counters, if not set already
         self._running_tasks.setdefault(partition.fullname, [])
@@ -352,11 +348,14 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def _poll_tasks(self):
         '''Update the counts of running checks per partition.'''
+
         getlogger().debug('updating counts for running test cases')
-        for partname, sched in self.schedulers.items():
-            getlogger().debug(f'polling {len(self._running_tasks[partname])} '
-                              f'task(s) in {partname}')
-            sched.poll(
+        for part in self._partitions:
+            print(part.scheduler.registered_name)
+            partname = part.fullname
+            num_tasks = len(self._running_tasks[partname])
+            getlogger().debug(f'polling {num_tasks} task(s) in {partname!r}')
+            part.scheduler.poll(
                 *(task.check.job for task in self._running_tasks[partname])
             )
 

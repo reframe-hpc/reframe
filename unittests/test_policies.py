@@ -125,7 +125,7 @@ def test_runall(make_runner, make_cases, common_exec_ctx):
     time_start = time.time()
     runner.runall(make_cases())
     time_end = time.time()
-    assert 8 == runner.stats.num_cases()
+    assert 9 == runner.stats.num_cases()
     assert_runall(runner)
     assert 5 == len(runner.stats.failures())
     assert 2 == num_failures_stage(runner, 'setup')
@@ -165,7 +165,7 @@ def test_runall_skip_system_check(make_runner, make_cases, common_exec_ctx):
     runner = make_runner()
     runner.runall(make_cases(skip_system_check=True))
     stats = runner.stats
-    assert 9 == stats.num_cases()
+    assert 10 == stats.num_cases()
     assert_runall(runner)
     assert 5 == len(stats.failures())
     assert 2 == num_failures_stage(runner, 'setup')
@@ -178,7 +178,7 @@ def test_runall_skip_prgenv_check(make_runner, make_cases, common_exec_ctx):
     runner = make_runner()
     runner.runall(make_cases(skip_environ_check=True))
     stats = runner.stats
-    assert 9 == stats.num_cases()
+    assert 10 == stats.num_cases()
     assert_runall(runner)
     assert 5 == len(stats.failures())
     assert 2 == num_failures_stage(runner, 'setup')
@@ -192,7 +192,7 @@ def test_runall_skip_sanity_check(make_runner, make_cases, common_exec_ctx):
     runner.policy.skip_sanity_check = True
     runner.runall(make_cases())
     stats = runner.stats
-    assert 8 == stats.num_cases()
+    assert 9 == stats.num_cases()
     assert_runall(runner)
     assert 4 == len(stats.failures())
     assert 2 == num_failures_stage(runner, 'setup')
@@ -207,7 +207,7 @@ def test_runall_skip_performance_check(make_runner, make_cases,
     runner.policy.skip_performance_check = True
     runner.runall(make_cases())
     stats = runner.stats
-    assert 8 == stats.num_cases()
+    assert 9 == stats.num_cases()
     assert_runall(runner)
     assert 4 == len(stats.failures())
     assert 2 == num_failures_stage(runner, 'setup')
@@ -221,7 +221,7 @@ def test_strict_performance_check(make_runner, make_cases, common_exec_ctx):
     runner.policy.strict_check = True
     runner.runall(make_cases())
     stats = runner.stats
-    assert 8 == stats.num_cases()
+    assert 9 == stats.num_cases()
     assert_runall(runner)
     assert 6 == len(stats.failures())
     assert 2 == num_failures_stage(runner, 'setup')

@@ -19,13 +19,14 @@ class SystemPartition:
        Users may not create :class:`SystemPartition` objects directly.
     '''
 
-    def __init__(self, parent, name, scheduler, launcher,
+    def __init__(self, parent, name, sched_type, launcher_type,
                  descr, access, container_environs, resources,
                  local_env, environs, max_jobs):
         self._parent_system = parent
         self._name = name
-        self._scheduler = scheduler
-        self._launcher = launcher
+        self._sched_type = sched_type
+        self._scheduler = None
+        self._launcher_type = launcher_type
         self._descr = descr
         self._access = access
         self._container_environs = container_environs
@@ -119,27 +120,46 @@ class SystemPartition:
 
     @property
     def scheduler(self):
-        '''The type of the backend scheduler of this partition.
+        '''The backend scheduler of this partition.
 
-        :returns: a subclass of :class:`reframe.core.schedulers.JobScheduler`.
+        :type: :class:`reframe.core.schedulers.JobScheduler`.
 
         .. note::
            .. versionchanged:: 2.8
               Prior versions returned a string representing the scheduler and
               job launcher combination.
+           .. versionchanged:: 3.2
+              The property now stores a :class:`JobScheduler` instance.
 
         '''
+        if self._scheduler is None:
+            self._scheduler = self._sched_type()
+
         return self._scheduler
 
     @property
-    def launcher(self):
+    def launcher_type(self):
         '''The type of the backend launcher of this partition.
 
-        .. versionadded:: 2.8
+        .. versionadded:: 3.2
 
-        :returns: a subclass of :class:`reframe.core.launchers.JobLauncher`.
+        :type: a subclass of :class:`reframe.core.launchers.JobLauncher`.
         '''
-        return self._launcher
+        return self._launcher_type
+
+    @property
+    def launcher(self):
+        '''See :attr:`launcher_type`.
+
+        .. deprecated:: 3.2
+           Please use :attr:`launcher_type` instead.
+        '''
+
+        from reframe.core.exceptions import user_deprecation_warning
+
+        user_deprecation_warning("the 'launcher' attribute is deprecated; "
+                                 "please use 'launcher_type' instead")
+        return self.launcher_type
 
     def get_resource(self, name, **values):
         '''Instantiate managed resource ``name`` with ``value``.
@@ -169,13 +189,16 @@ class SystemPartition:
         if not isinstance(other, type(self)):
             return NotImplemented
 
-        return (self._name      == other.name and
-                self._scheduler == other._scheduler and
-                self._launcher  == other._launcher and
-                self._access    == other._access and
+        return (self._name == other.name and
+                self._sched_type == other._sched_type and
+                self._launcher_type == other._launcher_type and
+                self._access == other._access and
                 self._environs  == other._environs and
                 self._resources == other._resources and
                 self._local_env == other._local_env)
+
+    def __hash__(self):
+        return hash(self.fullname)
 
     def json(self):
         '''Return a JSON object representing this system partition.'''
@@ -183,8 +206,8 @@ class SystemPartition:
         return {
             'name': self._name,
             'descr': self._descr,
-            'scheduler': self._scheduler.registered_name,
-            'launcher': self._launcher.registered_name,
+            'scheduler': self._sched_type.registered_name,
+            'launcher': self._launcher_type.registered_name,
             'access': self._access,
             'container_platforms': [
                 {
@@ -279,8 +302,8 @@ class System:
                 SystemPartition(
                     parent=site_config.get('systems/0/name'),
                     name=part_name,
-                    scheduler=part_sched,
-                    launcher=part_launcher,
+                    sched_type=part_sched,
+                    launcher_type=part_launcher,
                     descr=site_config.get(f'{partid}/descr'),
                     access=site_config.get(f'{partid}/access'),
                     resources=site_config.get(f'{partid}/resources'),

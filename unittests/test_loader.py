@@ -43,12 +43,12 @@ def test_load_file_absolute(loader):
 
 def test_load_recursive(loader):
     checks = loader.load_from_dir('unittests/resources/checks', recurse=True)
-    assert 12 == len(checks)
+    assert 13 == len(checks)
 
 
 def test_load_all(loader_with_path):
     checks = loader_with_path.load_all()
-    assert 11 == len(checks)
+    assert 12 == len(checks)
 
 
 def test_load_new_syntax(loader):
