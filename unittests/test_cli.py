@@ -179,7 +179,7 @@ def test_check_submit_success(run_reframe, remote_exec_ctx):
     assert 'PASSED' in stdout
 
     # Assert that we have run only one test case
-    assert 'Ran 1 test case(s)' in stdout
+    assert 'Ran 2 test case(s)' in stdout
     assert 0 == returncode
 
 

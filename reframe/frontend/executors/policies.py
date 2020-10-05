@@ -351,7 +351,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
         getlogger().debug('updating counts for running test cases')
         for part in self._partitions:
-            print(part.scheduler.registered_name)
             partname = part.fullname
             num_tasks = len(self._running_tasks[partname])
             getlogger().debug(f'polling {num_tasks} task(s) in {partname!r}')
