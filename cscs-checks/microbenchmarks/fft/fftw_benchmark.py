@@ -46,7 +46,7 @@ class FFTWTest(rfm.RegressionTest):
                     'fftw_exec_time': (0.59, None, 0.05, 's'),
                 },
                 'daint:gpu': {
-                    'fftw_exec_time': (0.55, None, 0.05, 's'),
+                    'fftw_exec_time': (0.59, None, 0.05, 's'),
                 },
                 'kesch:cn': {
                     'fftw_exec_time': (0.61, None, 0.05, 's'),
