@@ -105,15 +105,10 @@ class TestStats:
                     'time_setup': t.duration('setup'),
                     'time_total': t.duration('total')
                 }
-                partition = check.current_partition
-                environ = check.current_environ
-                if partition:
-                    entry['system'] = partition.fullname
-                    entry['scheduler'] = partition.scheduler.registered_name
-
-                if environ:
-                    entry['environment'] = environ.name
-
+                partition = t.testcase.partition
+                entry['system'] = partition.fullname
+                entry['scheduler'] = partition.scheduler.registered_name
+                entry['environment'] = t.testcase.environ.name
                 if check.job:
                     entry['jobid'] = check.job.jobid
                     entry['job_stderr'] = check.stderr.evaluate()
