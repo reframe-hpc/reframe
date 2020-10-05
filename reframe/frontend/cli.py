@@ -21,6 +21,7 @@ import reframe.frontend.argparse as argparse
 import reframe.frontend.check_filters as filters
 import reframe.frontend.dependency as dependency
 import reframe.utility.os_ext as os_ext
+import reframe.utility.json as jsonext
 from reframe.core.exceptions import (
     EnvironError, ConfigError, ReframeError,
     ReframeDeprecationWarning, ReframeFatalError,
@@ -248,27 +249,6 @@ def main():
     )
 
     # Run options
-    run_options.add_argument(
-        '-A', '--account', action='store',
-        help="Use ACCOUNT for submitting jobs (Slurm) "
-             "*deprecated*, please use '-J account=ACCOUNT'")
-    run_options.add_argument(
-        '-P', '--partition', action='store', metavar='PART',
-        help="Use PART for submitting jobs (Slurm/PBS/Torque) "
-             "*deprecated*, please use '-J partition=PART' "
-             "or '-J q=PART'")
-    run_options.add_argument(
-        '--reservation', action='store', metavar='RES',
-        help="Use RES for submitting jobs (Slurm) "
-             "*deprecated*, please use '-J reservation=RES'")
-    run_options.add_argument(
-        '--nodelist', action='store',
-        help="Run checks on the selected list of nodes (Slurm) "
-             "*deprecated*, please use '-J nodelist=NODELIST'")
-    run_options.add_argument(
-        '--exclude-nodes', action='store', metavar='NODELIST',
-        help="Exclude the list of nodes from running checks (Slurm) "
-             "*deprecated*, please use '-J exclude=NODELIST'")
     run_options.add_argument(
         '-J', '--job-option', action='append', metavar='OPT',
         dest='job_options', default=[],
@@ -680,32 +660,6 @@ def main():
                 printer.debug(str(e))
 
         options.flex_alloc_nodes = options.flex_alloc_nodes or 'idle'
-        if options.account:
-            printer.warning(f"`--account' is deprecated and "
-                            f"will be removed in the future; you should "
-                            f"use `-J account={options.account}'")
-
-        if options.partition:
-            printer.warning(f"`--partition' is deprecated and "
-                            f"will be removed in the future; you should "
-                            f"use `-J partition={options.partition}' "
-                            f"or `-J q={options.partition}' depending on your "
-                            f"scheduler")
-
-        if options.reservation:
-            printer.warning(f"`--reservation' is deprecated and "
-                            f"will be removed in the future; you should "
-                            f"use `-J reservation={options.reservation}'")
-
-        if options.nodelist:
-            printer.warning(f"`--nodelist' is deprecated and "
-                            f"will be removed in the future; you should "
-                            f"use `-J nodelist={options.nodelist}'")
-
-        if options.exclude_nodes:
-            printer.warning(f"`--exclude-nodes' is deprecated and "
-                            f"will be removed in the future; you should "
-                            f"use `-J exclude={options.exclude_nodes}'")
 
         # Act on checks
         success = True
@@ -740,12 +694,6 @@ def main():
                 sched_flex_alloc_nodes = options.flex_alloc_nodes
 
             exec_policy.sched_flex_alloc_nodes = sched_flex_alloc_nodes
-            exec_policy.flex_alloc_nodes = options.flex_alloc_nodes
-            exec_policy.sched_account = options.account
-            exec_policy.sched_partition = options.partition
-            exec_policy.sched_reservation = options.reservation
-            exec_policy.sched_nodelist = options.nodelist
-            exec_policy.sched_exclude_nodelist = options.exclude_nodes
             parsed_job_options = []
             for opt in options.job_options:
                 if opt.startswith('-') or opt.startswith('#'):
@@ -810,7 +758,7 @@ def main():
                 report_file = generate_report_filename(report_file)
                 try:
                     with open(report_file, 'w') as fp:
-                        json.dump(json_report, fp, indent=2)
+                        jsonext.dump(json_report, fp, indent=2)
                 except OSError as e:
                     printer.warning(
                         f'failed to generate report in {report_file!r}: {e}'
