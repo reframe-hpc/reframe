@@ -2,11 +2,9 @@
 #define __INCLUDED_BANDWIDTH__
 
 #include<iostream>
-#include<cuda.h>
-#include<cuda_runtime.h>
 
 #include "types.hpp"
-#include "cuda/types.hpp"
+#include "cuda/include.hpp"
 
 template<class dataFrom, class dataTo, typename memcpy>
 float copyBandwidth(size_t size, int device, int repeat)
@@ -16,7 +14,7 @@ float copyBandwidth(size_t size, int device, int repeat)
    several times. These types can represent either host data or device data.
    dataFrom and dataTo are RAII classes to handle both host and device data 
    in a much easier way (see types.hpp).
-   The template parameter memcpy is a stora class, where memcpy::value has the
+   The template parameter memcpy is a storage class, where memcpy::value has the
    right arguments for the copy, depending on whether dataFrom and dataTo are 
    host or device targeted classes.
   */
@@ -26,28 +24,24 @@ float copyBandwidth(size_t size, int device, int repeat)
   dataTo data_out(size);
 
   // Create a cuda stream.
-  cudaStream_t stream;
-  cudaStreamCreate(&stream);
+  XStream_t stream;
+  XStreamCreate(&stream);
 
-  // Declare and create the cuda Events to do the timing,
-  cudaEvent_t start, stop;
-  cudaEventCreate(&start);
-  cudaEventCreate(&stop);
+  // Instantiate the timer.
+  XTimer t(stream);
 
-  cudaEventRecord(start, stream);
+  // Start the timer and run the copy
+  t.start();
   for ( int i = 0; i < repeat; i++ )
   {
-    cudaMemcpyAsync(data_out.data, data_in.data, size, memcpy::value, stream);
+    XMemcpyAsync(data_out.data, data_in.data, size, memcpy::value, stream);
   }
 
   // Do the timing
-  cudaEventRecord(stop, stream);
-  cudaEventSynchronize(stop);
-  float execution_time = 0;
-  cudaEventElapsedTime(&execution_time, start, stop);
-  
+  float execution_time = t.stop(); 
+
   // Destroy the cuda stream
-  cudaStreamDestroy(stream);
+  XStreamDestroy(stream);
 
   // Return the average time per copy.
   return (execution_time/(float)repeat);

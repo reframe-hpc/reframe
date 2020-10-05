@@ -3,6 +3,8 @@
 
 #include<cuda.h>
 
+using XStream_t = cudaStream_t;
+
 struct XMemcpyBase {};
 
 struct XMemcpyDefault : XMemcpyBase

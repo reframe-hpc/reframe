@@ -39,6 +39,11 @@ void XMalloc(void ** data, size_t size)
   gpuErrorCheck( cudaMalloc(data, size) );
 }
 
+void XMemcpyAsync(void * in, void * out, size_t size, cudaMemcpyKind dir, cudaStream_t stream)
+{
+  gpuErrorCheck ( cudaMemcpyAsync(out, in, size, dir, stream) );
+}
+
 void XFree(void * data)
 {
   gpuErrorCheck( cudaFree(data) );
@@ -54,6 +59,16 @@ void XSetDevice(int device)
   gpuErrorCheck( cudaSetDevice(device) );
 }
 
+void XStreamCreate(cudaStream_t * stream)
+{
+  gpuErrorCheck( cudaStreamCreate(stream) );
+}
+
+void XStreamDestroy(cudaStream_t stream)
+{ 
+  cudaStreamDestroy(stream);
+}
+
 int XGetLastError()
 { 
   cudaError_t err = cudaGetLastError();
@@ -65,5 +80,33 @@ int XGetLastError()
   return 0;
 }
 
+class XTimer
+{
+private:
+  cudaStream_t stream;
+  cudaEvent_t startEvent, stopEvent;
+
+public:
+  XTimer(cudaStream_t st = 0) : stream(st) 
+  {
+    cudaEventCreate(&startEvent);
+    cudaEventCreate(&stopEvent);
+  }
+
+  void start()
+  {
+    cudaEventRecord(startEvent, stream);   
+  }
+
+  float stop()
+  {
+    cudaEventRecord(stopEvent, stream);
+    cudaEventSynchronize(stopEvent);
+    float execTime = 0;
+    cudaEventElapsedTime(&execTime, startEvent, stopEvent);
+    return execTime; 
+  }
+
+};
 
 #endif

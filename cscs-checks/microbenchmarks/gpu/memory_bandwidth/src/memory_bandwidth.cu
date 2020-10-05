@@ -81,11 +81,11 @@ int main()
   // Do some basic error checking
   if (!XGetLastError())
   {
-    printf("[%s] Test Result = PASS", nid_name);
+    printf("[%s] Test Result = PASS\n", nid_name);
   } 
   else
   {
-    printf("[%s] Test Result = FAIL", nid_name);
+    printf("[%s] Test Result = FAIL\n", nid_name);
   }
 
   return 0;
