@@ -118,7 +118,7 @@ class KeyboardInterruptCheck(BaseFrontendCheck, special=True):
         if self.phase == 'setup':
             raise KeyboardInterrupt
 
-    def wait(self):
+    def run_wait(self):
         # We do our nasty stuff in wait() to make things more complicated
         if self.phase == 'wait':
             raise KeyboardInterrupt
@@ -134,7 +134,7 @@ class SystemExitCheck(BaseFrontendCheck, special=True):
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
 
-    def wait(self):
+    def run_wait(self):
         # We do our nasty stuff in wait() to make things more complicated
         sys.exit(1)
 
@@ -180,7 +180,7 @@ class SleepCheck(BaseFrontendCheck):
 class SleepCheckPollFail(SleepCheck, special=True):
     '''Emulate a test failing in the polling phase.'''
 
-    def poll(self):
+    def run_complete(self):
         raise ValueError
 
 
@@ -188,7 +188,7 @@ class SleepCheckPollFailLate(SleepCheck, special=True):
     '''Emulate a test failing in the polling phase
     after the test has finished.'''
 
-    def poll(self):
+    def run_complete(self):
         if self._job.finished():
             raise ValueError
 

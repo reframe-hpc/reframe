@@ -3,13 +3,13 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import errno
 import os
 import signal
 import socket
 import stat
 import subprocess
 import time
-from datetime import datetime, timedelta
 
 import reframe.core.schedulers as sched
 import reframe.utility.os_ext as os_ext
@@ -22,21 +22,43 @@ class _TimeoutExpired(ReframeError):
     pass
 
 
-@register_scheduler('local', local=True)
-class LocalJobScheduler(sched.JobScheduler):
-    def __init__(self):
-        self._cancel_grace_period = 2
-        self._wait_poll_secs = 0.1
-
-        # Underlying process
+class _LocalJob(sched.Job):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self._proc = None
-
-        # Underlying process' stdout/stderr
         self._f_stdout = None
         self._f_stderr = None
+        self._signal = None
+        self._cancel_time = None
 
-    def completion_time(self, job):
-        return None
+    @property
+    def proc(self):
+        return self._proc
+
+    @property
+    def f_stdout(self):
+        return self._f_stdout
+
+    @property
+    def f_stderr(self):
+        return self._f_stderr
+
+    @property
+    def signal(self):
+        return self._signal
+
+    @property
+    def cancel_time(self):
+        return self._cancel_time
+
+
+@register_scheduler('local', local=True)
+class LocalJobScheduler(sched.JobScheduler):
+    CANCEL_GRACE_PERIOD = 2
+    WAIT_POLL_SECS = 0.001
+
+    def make_job(self, *args, **kwargs):
+        return _LocalJob(*args, **kwargs)
 
     def submit(self, job):
         # `chmod +x' first, because we will execute the script locally
@@ -44,21 +66,27 @@ class LocalJobScheduler(sched.JobScheduler):
                  os.stat(job.script_filename).st_mode | stat.S_IEXEC)
 
         # Run from the absolute path
-        self._f_stdout = open(job.stdout, 'w+')
-        self._f_stderr = open(job.stderr, 'w+')
+        f_stdout = open(job.stdout, 'w+')
+        f_stderr = open(job.stderr, 'w+')
 
         # The new process starts also a new session (session leader), so that
         # we can later kill any other processes that this might spawn by just
         # killing this one.
-        self._proc = os_ext.run_command_async(
+        proc = os_ext.run_command_async(
             os.path.abspath(job.script_filename),
-            stdout=self._f_stdout,
-            stderr=self._f_stderr,
-            start_new_session=True)
+            stdout=f_stdout,
+            stderr=f_stderr,
+            start_new_session=True
+        )
 
         # Update job info
-        job.jobid = self._proc.pid
-        job.nodelist = [socket.gethostname()]
+        job._jobid = proc.pid
+        job._nodelist = [socket.gethostname()]
+        job._proc = proc
+        job._f_stdout = f_stdout
+        job._f_stderr = f_stderr
+        job._submit_time = time.time()
+        job._state = 'RUNNING'
 
     def emit_preamble(self, job):
         return []
@@ -73,45 +101,23 @@ class LocalJobScheduler(sched.JobScheduler):
         '''Send SIGKILL to all the processes of the spawned job.'''
         try:
             os.killpg(job.jobid, signal.SIGKILL)
+            job._signal = signal.SIGKILL
         except (ProcessLookupError, PermissionError):
             # The process group may already be dead or assigned to a different
             # group, so ignore this error
-            getlogger().debug('pid %s already dead or assigned elsewhere' %
-                              job.jobid)
+            getlogger().debug(
+                f'pid {job.jobid} already dead or assigned elsewhere'
+            )
+        finally:
+            # Close file handles
+            job.f_stdout.close()
+            job.f_stderr.close()
+            job._state = 'FAILURE'
 
     def _term_all(self, job):
         '''Send SIGTERM to all the processes of the spawned job.'''
         os.killpg(job.jobid, signal.SIGTERM)
-
-    def _wait_all(self, job, timeout=0):
-        '''Wait for all the processes of spawned job to finish.
-
-        Keyword arguments:
-
-        timeout -- Timeout period for this wait call in seconds (may be a real
-                   number, too). If `None` or `0`, no timeout will be set.
-        '''
-        t_wait = datetime.now()
-        self._proc.wait(timeout=timeout or None)
-        t_wait = datetime.now() - t_wait
-        try:
-            # Wait for all processes in the process group to finish
-            while not timeout or t_wait.total_seconds() < timeout:
-                t_poll = datetime.now()
-                os.killpg(job.jobid, 0)
-                time.sleep(self._wait_poll_secs)
-                t_poll = datetime.now() - t_poll
-                t_wait += t_poll
-
-            # Final check
-            os.killpg(job.jobid, 0)
-            raise _TimeoutExpired
-        except (ProcessLookupError, PermissionError):
-            # Ignore also EPERM errors in case this process id is assigned
-            # elsewhere and we cannot query its status
-            getlogger().debug('pid %s already dead or assigned elsewhere' %
-                              job.jobid)
-            return
+        job._signal = signal.SIGTERM
 
     def cancel(self, job):
         '''Cancel job.
@@ -122,11 +128,7 @@ class LocalJobScheduler(sched.JobScheduler):
         This function waits for the spawned process tree to finish.
         '''
         self._term_all(job)
-
-        # Set the time limit to the grace period and let wait() do the final
-        # killing
-        job.time_limit = timedelta(seconds=self._cancel_grace_period)
-        self.wait(job)
+        job._cancel_time = time.time()
 
     def wait(self, job):
         '''Wait for the spawned job to finish.
@@ -137,32 +139,10 @@ class LocalJobScheduler(sched.JobScheduler):
         Upon return, the whole process tree of the spawned job process will be
         cleared, unless any of them has called `setsid()`.
         '''
-        if job.state is not None:
-            # Job has been already waited for
-            return
 
-        # Convert job's time_limit to seconds
-        if job.time_limit is not None:
-            timeout = job.time_limit.total_seconds()
-        else:
-            timeout = 0
-
-        try:
-            self._wait_all(job, timeout)
-            job.exitcode = self._proc.returncode
-            if job.exitcode != 0:
-                job.state = 'FAILURE'
-            else:
-                job.state = 'SUCCESS'
-        except (_TimeoutExpired, subprocess.TimeoutExpired):
-            getlogger().debug('job timed out')
-            job.state = 'TIMEOUT'
-        finally:
-            # Cleanup all the processes of this job
-            self._kill_all(job)
-            self._wait_all(job)
-            self._f_stdout.close()
-            self._f_stderr.close()
+        while not self.finished(job):
+            self.poll(job)
+            time.sleep(self.WAIT_POLL_SECS)
 
     def finished(self, job):
         '''Check if the spawned process has finished.
@@ -171,11 +151,56 @@ class LocalJobScheduler(sched.JobScheduler):
         the process has finished, you *must* call wait() to properly cleanup
         after it.
         '''
-        self._proc.poll()
-        if self._proc.returncode is None:
-            return False
+        if job.exception:
+            raise job.exception
 
-        return True
+        return job.state in ['SUCCESS', 'FAILURE', 'TIMEOUT']
+
+    def poll(self, *jobs):
+        for job in jobs:
+            self._poll_job(job)
+
+    def _poll_job(self, job):
+        if job is None or job.jobid is None:
+            return
+
+        try:
+            pid, status = os.waitpid(job.jobid, os.WNOHANG)
+        except OSError as e:
+            if e.errno == errno.ECHILD:
+                # No unwaited children
+                return
+            else:
+                raise e
+
+        if job.cancel_time:
+            # Job has been cancelled; give it a grace period and kill it
+            t_rem = self.CANCEL_GRACE_PERIOD - (time.time() - job.cancel_time)
+            if t_rem > 0:
+                time.sleep(t_rem)
+
+            self._kill_all(job)
+            return
+
+        if not pid:
+            # Job has not finished; check if we have reached a timeout
+            t_elapsed = time.time() - job.submit_time
+            if job.time_limit and t_elapsed > job.time_limit:
+                self._kill_all(job)
+                job._state = 'TIMEOUT'
+
+            return
+
+        # Job has finished; kill the whole session
+        self._kill_all(job)
+
+        # Retrieve the status of the job and return
+        if os.WIFEXITED(status):
+            job._exitcode = os.WEXITSTATUS(status)
+            job._state = 'FAILURE' if job.exitcode != 0 else 'SUCCESS'
+        elif os.WIFSIGNALED(status):
+            job._state = 'FAILURE'
+            job._signal = os.WTERMSIG(status)
 
 
 class _LocalNode(sched.Node):

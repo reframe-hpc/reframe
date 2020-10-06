@@ -333,7 +333,7 @@ def test_system_create():
     assert partition.fullname == 'testsys:gpu'
     assert partition.descr == 'GPU partition'
     assert partition.scheduler.registered_name == 'slurm'
-    assert partition.launcher.registered_name == 'srun'
+    assert partition.launcher_type.registered_name == 'srun'
     assert partition.access == []
     assert partition.container_environs == {}
     assert partition.local_env.modules == ['foogpu']
