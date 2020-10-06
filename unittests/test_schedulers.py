@@ -572,7 +572,9 @@ def test_cancel_term_ignore(minimal_job, scheduler, local_only):
     assert minimal_job.state == 'FAILURE'
     assert minimal_job.signal == signal.SIGKILL
 
-    # Verify that the spawned sleep is killed, too
+    # Verify that the spawned sleep is killed, too, but back off a bit in
+    # order to allow the sleep process to wake up and get the signal
+    time.sleep(0.01)
     assert_process_died(sleep_pid)
 
 
