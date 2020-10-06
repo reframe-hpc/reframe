@@ -16,13 +16,10 @@ class CudaAwareMPICheck(rfm.CompileOnlyRegressionTest):
         self.sourcesdir = ('https://github.com/NVIDIA-developer-blog/'
                            'code-samples.git')
         self.valid_systems = ['daint:gpu', 'dom:gpu',
-                              'kesch:cn', 'tiger:gpu',
+                              'tiger:gpu',
                               'arolla:cn', 'tsa:cn',
                               'ault:amdv100', 'ault:intelv100']
-        if self.current_system.name == 'kesch':
-            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
-            self.modules = ['cudatoolkit/8.0.61']
-        elif self.current_system.name in ['arolla', 'tsa']:
+        if self.current_system.name in ['arolla', 'tsa']:
             self.valid_prog_environs = ['PrgEnv-gnu']
             self.modules = ['cuda/10.1.243']
         elif self.current_system.name in ['ault']:
@@ -36,10 +33,7 @@ class CudaAwareMPICheck(rfm.CompileOnlyRegressionTest):
         self.sanity_patterns = sn.assert_found(r'Finished building'
                                                r' CUDA samples', self.stdout)
         self.num_tasks = 2
-        if self.current_system.name == 'kesch':
-            self.exclusive_access = True
-            nvidia_sm = '37'
-        elif self.current_system.name in ['arolla', 'tsa', 'ault']:
+        if self.current_system.name in ['arolla', 'tsa', 'ault']:
             self.exclusive_access = True
             nvidia_sm = '70'
         else:
@@ -77,7 +71,7 @@ class CudaAwareMPICheck(rfm.CompileOnlyRegressionTest):
 class CudaAwareMPIRuns(rfm.RunOnlyRegressionTest):
     def __init__(self):
         super().__init__()
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu',
                               'arolla:cn', 'tsa:cn',
                               'ault:amdv100', 'ault:intelv100']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
@@ -86,9 +80,7 @@ class CudaAwareMPIRuns(rfm.RunOnlyRegressionTest):
         elif self.current_system.name in ['ault']:
             self.valid_prog_environs = ['PrgEnv-gnu']
 
-        if self.current_system.name == 'kesch':
-            self.modules = []
-        elif self.current_system.name in ['arolla', 'tsa','ault']:
+        if self.current_system.name in ['arolla', 'tsa','ault']:
             self.valid_prog_environs = ['PrgEnv-gnu']
         else:
             self.modules = ['craype-accel-nvidia60']

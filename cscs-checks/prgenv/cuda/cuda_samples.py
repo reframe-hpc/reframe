@@ -11,14 +11,10 @@ import reframe.utility.sanity as sn
 class CudaSamples(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu',
                               'arolla:cn', 'tsa:cn',
                               'ault:amdv100', 'ault:intelv100']
-        if self.current_system.name == 'kesch':
-            self.valid_prog_environs += ['PrgEnv-cray-nompi',
-                                         'PrgEnv-gnu-nompi']
-            self.modules = ['cudatoolkit/8.0.61']
-        elif self.current_system.name in ['arolla', 'tsa']:
+        if self.current_system.name in ['arolla', 'tsa']:
             self.valid_prog_environs += ['PrgEnv-pgi',
                                          'PrgEnv-gnu-nompi',
                                          'PrgEnv-pgi-nompi']
@@ -32,10 +28,7 @@ class CudaSamples(rfm.RegressionTest):
                                         'PrgEnv-pgi']
             self.modules = ['craype-accel-nvidia60']
 
-        if self.current_system.name == 'kesch':
-            self.exclusive_access = True
-            self.nvidia_sm = '37'
-        elif self.current_system.name in ['arolla', 'tsa', 'ault']:
+        if self.current_system.name in ['arolla', 'tsa', 'ault']:
             self.exclusive_access = True
             self.nvidia_sm = '70'
         else:
