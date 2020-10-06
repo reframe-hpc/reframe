@@ -463,7 +463,8 @@ def main():
             site_config = config.load_config(converted)
 
         site_config.validate()
-        site_config.select_subconfig(options.system)
+        site_config.select_subconfig(options.system,
+                                     ignore_resolve_errors=True)
         for err in options.update_config(site_config):
             printer.warning(str(err))
 

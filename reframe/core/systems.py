@@ -319,7 +319,7 @@ class System:
             )
 
         # Restore configuration
-        site_config.select_subconfig(config_save)
+        site_config.select_subconfig(config_save, ignore_resolve_errors=True)
         return System(
             name=sysname,
             descr=site_config.get('systems/0/descr'),
