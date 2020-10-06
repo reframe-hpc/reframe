@@ -368,11 +368,12 @@ class SlurmJobScheduler(sched.JobScheduler):
     def poll(self, *jobs):
         '''Update the status of the jobs.'''
 
+        if jobs:
+            # Filter out non-jobs
+            jobs = [job for job in jobs if job is not None]
+
         if not jobs:
             return
-
-        # Filter out non-jobs
-        jobs = [job for job in jobs if job is not None]
 
         with rt.temp_environment(variables={'SLURM_TIME_FORMAT': '%s'}):
             t_start = time.strftime(
