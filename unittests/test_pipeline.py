@@ -25,7 +25,7 @@ def _run(test, partition, prgenv):
     test.compile()
     test.compile_wait()
     test.run()
-    test.wait()
+    test.run_wait()
     test.check_sanity()
     test.check_performance()
     test.cleanup(remove_files=True)

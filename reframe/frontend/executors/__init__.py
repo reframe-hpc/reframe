@@ -211,6 +211,10 @@ class RegressionTask:
     def succeeded(self):
         return self._current_stage in {'finalize', 'cleanup'}
 
+    @property
+    def completed(self):
+        return self.failed or self.succeeded
+
     def _notify_listeners(self, callback_name):
         for l in self._listeners:
             callback = getattr(l, callback_name)
@@ -263,17 +267,17 @@ class RegressionTask:
         self._safe_call(self.check.run)
         self._notify_listeners('on_task_run')
 
-    def wait(self):
-        self._safe_call(self.check.wait)
-        self.zombie = False
-
-    def poll(self):
-        finished = self._safe_call(self.check.poll)
-        if finished:
+    def run_complete(self):
+        done = self._safe_call(self.check.run_complete)
+        if done:
             self.zombie = True
             self._notify_listeners('on_task_exit')
 
-        return finished
+        return done
+
+    def run_wait(self):
+        self._safe_call(self.check.run_wait)
+        self.zombie = False
 
     def sanity(self):
         self._safe_call(self.check.sanity)

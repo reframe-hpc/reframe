@@ -18,7 +18,8 @@ import reframe.frontend.executors as executors
 import reframe.frontend.executors.policies as policies
 import reframe.utility as util
 import reframe.utility.os_ext as os_ext
-from reframe.core.exceptions import (JobNotStartedError,
+from reframe.core.exceptions import (AbortTaskError,
+                                     JobNotStartedError,
                                      ReframeForceExitError,
                                      TaskDependencyError)
 from reframe.frontend.loader import RegressionCheckLoader
@@ -67,7 +68,10 @@ def common_exec_ctx(temp_runtime):
                         policies.AsynchronousExecutionPolicy])
 def make_runner(request):
     def _make_runner(*args, **kwargs):
-        return executors.Runner(request.param(), *args, **kwargs)
+        # Use a much higher poll rate for the unit tests
+        policy = request.param()
+        policy._pollctl.SLEEP_MIN = 0.001
+        return executors.Runner(policy, *args, **kwargs)
 
     return _make_runner
 
@@ -98,12 +102,9 @@ def assert_runall(runner):
 def assert_all_dead(runner):
     stats = runner.stats
     for t in runner.stats.tasks():
-        try:
-            finished = t.check.poll()
-        except JobNotStartedError:
-            finished = True
-
-        assert finished
+        job = t.check.job
+        if job:
+            assert job.finished
 
 
 def num_failures_stage(runner, stage):
@@ -124,7 +125,7 @@ def test_runall(make_runner, make_cases, common_exec_ctx):
     time_start = time.time()
     runner.runall(make_cases())
     time_end = time.time()
-    assert 8 == runner.stats.num_cases()
+    assert 9 == runner.stats.num_cases()
     assert_runall(runner)
     assert 5 == len(runner.stats.failures())
     assert 2 == num_failures_stage(runner, 'setup')
@@ -164,7 +165,7 @@ def test_runall_skip_system_check(make_runner, make_cases, common_exec_ctx):
     runner = make_runner()
     runner.runall(make_cases(skip_system_check=True))
     stats = runner.stats
-    assert 9 == stats.num_cases()
+    assert 10 == stats.num_cases()
     assert_runall(runner)
     assert 5 == len(stats.failures())
     assert 2 == num_failures_stage(runner, 'setup')
@@ -177,7 +178,7 @@ def test_runall_skip_prgenv_check(make_runner, make_cases, common_exec_ctx):
     runner = make_runner()
     runner.runall(make_cases(skip_environ_check=True))
     stats = runner.stats
-    assert 9 == stats.num_cases()
+    assert 10 == stats.num_cases()
     assert_runall(runner)
     assert 5 == len(stats.failures())
     assert 2 == num_failures_stage(runner, 'setup')
@@ -191,7 +192,7 @@ def test_runall_skip_sanity_check(make_runner, make_cases, common_exec_ctx):
     runner.policy.skip_sanity_check = True
     runner.runall(make_cases())
     stats = runner.stats
-    assert 8 == stats.num_cases()
+    assert 9 == stats.num_cases()
     assert_runall(runner)
     assert 4 == len(stats.failures())
     assert 2 == num_failures_stage(runner, 'setup')
@@ -206,7 +207,7 @@ def test_runall_skip_performance_check(make_runner, make_cases,
     runner.policy.skip_performance_check = True
     runner.runall(make_cases())
     stats = runner.stats
-    assert 8 == stats.num_cases()
+    assert 9 == stats.num_cases()
     assert_runall(runner)
     assert 4 == len(stats.failures())
     assert 2 == num_failures_stage(runner, 'setup')
@@ -220,7 +221,7 @@ def test_strict_performance_check(make_runner, make_cases, common_exec_ctx):
     runner.policy.strict_check = True
     runner.runall(make_cases())
     stats = runner.stats
-    assert 8 == stats.num_cases()
+    assert 9 == stats.num_cases()
     assert_runall(runner)
     assert 6 == len(stats.failures())
     assert 2 == num_failures_stage(runner, 'setup')
@@ -535,6 +536,13 @@ def assert_interrupted_run(runner):
     assert 4 == len(runner.stats.failures())
     assert_all_dead(runner)
 
+    # Verify that failure reasons for the different tasks are correct
+    for t in runner.stats.tasks():
+        if isinstance(t.check, KeyboardInterruptCheck):
+            assert t.exc_info[0] == KeyboardInterrupt
+        else:
+            assert t.exc_info[0] == AbortTaskError
+
 
 def test_kbd_interrupt_in_wait_with_concurrency(async_runner, make_cases,
                                                 make_async_exec_ctx):
@@ -567,10 +575,6 @@ def test_kbd_interrupt_in_wait_with_limited_concurrency(
             KeyboardInterruptCheck(), SleepCheck(10),
             SleepCheck(10), SleepCheck(10)
         ]))
-        # FIXME: Dump everything in case Github #1369 appears
-        print(util.repr(runner))
-        print(runner.stats.failure_report())
-        print(util.repr(rt.runtime().site_config))
 
     assert_interrupted_run(runner)
 
@@ -605,36 +609,44 @@ def test_kbd_interrupt_in_setup_with_limited_concurrency(
     assert_interrupted_run(runner)
 
 
-def test_poll_fails_main_loop(async_runner, make_cases,
-                              make_async_exec_ctx):
+def test_run_complete_fails_main_loop(async_runner, make_cases,
+                                      make_async_exec_ctx):
     ctx = make_async_exec_ctx(1)
     next(ctx)
 
     runner, _ = async_runner
     num_checks = 3
-    runner.runall(make_cases([SleepCheckPollFail(10)
-                              for i in range(num_checks)]))
-
-    stats = runner.stats
-    assert num_checks == stats.num_cases()
+    runner.runall(make_cases([SleepCheckPollFail(10),
+                              SleepCheck(0.1), SleepCheckPollFail(10)]))
     assert_runall(runner)
-    assert num_checks == len(stats.failures())
+    stats = runner.stats
+    assert stats.num_cases() == num_checks
+    assert len(stats.failures()) == 2
+
+    # Verify that the succeeded test is the SleepCheck
+    for t in stats.tasks():
+        if not t.failed:
+            assert isinstance(t.check, SleepCheck)
 
 
-def test_poll_fails_busy_loop(async_runner, make_cases,
-                              make_async_exec_ctx):
+def test_run_complete_fails_busy_loop(async_runner, make_cases,
+                                      make_async_exec_ctx):
     ctx = make_async_exec_ctx(1)
     next(ctx)
 
     runner, _ = async_runner
     num_checks = 3
-    runner.runall(make_cases([SleepCheckPollFailLate(1/i)
-                              for i in range(1, num_checks+1)]))
-
-    stats = runner.stats
-    assert num_checks == stats.num_cases()
+    runner.runall(make_cases([SleepCheckPollFailLate(1),
+                              SleepCheck(0.1), SleepCheckPollFailLate(0.5)]))
     assert_runall(runner)
-    assert num_checks == len(stats.failures())
+    stats = runner.stats
+    assert stats.num_cases() == num_checks
+    assert len(stats.failures()) == 2
+
+    # Verify that the succeeded test is the SleepCheck
+    for t in stats.tasks():
+        if not t.failed:
+            assert isinstance(t.check, SleepCheck)
 
 
 def test_compile_fail_reschedule_main_loop(async_runner, make_cases,
