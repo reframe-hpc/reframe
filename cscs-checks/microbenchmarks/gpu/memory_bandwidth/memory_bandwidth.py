@@ -14,8 +14,9 @@ import reframe as rfm
 @rfm.simple_test
 class GpuBandwidthCheck(rfm.RegressionTest):
     def __init__(self):
-        self.valid_systems = ['kesch:cn', 'daint:gpu', 'dom:gpu', 'tiger:gpu',
-                              'arolla:cn', 'tsa:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu',
+                              'arolla:cn', 'tsa:cn',
+                              'ault:amdv100']
         self.valid_prog_environs = ['PrgEnv-gnu']
         if self.current_system.name in ['arolla', 'kesch', 'tsa']:
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
@@ -34,19 +35,27 @@ class GpuBandwidthCheck(rfm.RegressionTest):
 
         # Perform a single bandwidth test with a buffer size of 1024MB
         self.copy_size = 1073741824
- 
-        self.build_system.cxxflags = ['-I.', '-m64', '-arch=sm_%s' % nvidia_sm, '-std=c++11', '-DCOPY=%d' % self.copy_size]
+
+        self.build_system.cxxflags = ['-I.', '-m64', '-arch=sm_%s' % nvidia_sm,
+                                      '-std=c++11', '-lnvidia-ml',
+                                      '-DCOPY=%d' % self.copy_size]
         self.num_tasks = 0
-        self.num_tasks_per_node = 1
         if self.current_system.name in ['daint', 'dom', 'tiger']:
             self.modules = ['craype-accel-nvidia60']
-            self.num_gpus_per_node = 1
-        elif self.current_system.name == 'kesch':
-            self.modules = ['cudatoolkit/8.0.61']
-            self.num_gpus_per_node = 8
         elif self.current_system.name in ['arolla', 'tsa']:
             self.modules = ['cuda/10.1.243']
-            self.num_gpus_per_node = 8
+
+        # Gpus per node on each partition.
+        self.partition_num_gpus_per_node = {
+            'daint:gpu':      1,
+            'dom:gpu':        1,
+            'kesh:cn':        2,
+            'tiger:gpu':      2,
+            'arolla:cn':      2,
+            'tsa:cn':         2,
+            'ault:amdv100':   2,
+            'ault:intelv100': 4
+        }
 
         # perf_patterns and reference will be set by the sanity check function
         self.sanity_patterns = self.do_sanity_check()
@@ -59,13 +68,21 @@ class GpuBandwidthCheck(rfm.RegressionTest):
             'dom:gpu:h2d':  (11881, -0.1, None, 'MB/s'),
             'dom:gpu:d2h':  (12571, -0.1, None, 'MB/s'),
             'dom:gpu:d2d': (499000, -0.1, None, 'MB/s'),
-            'kesch:cn:h2d':   (7583, -0.1, None, 'MB/s'),
-            'kesch:cn:d2h':   (7584, -0.1, None, 'MB/s'),
-            'kesch:cn:d2d': (137408, -0.1, None, 'MB/s'),
+            'ault:amdv100:h2d':  (13189, -0.1, None, 'MB/s'),
+            'ault:amdv100:d2h':  (13141, -0.1, None, 'MB/s'),
+            'ault:amdv100:d2d': (777788, -0.1, None, 'MB/s'),
         }
         self.tags = {'diagnostic', 'benchmark', 'mch',
                      'craype', 'external-resources'}
         self.maintainers = ['AJ', 'SK']
+
+    @rfm.run_before('run')
+    def set_num_gpus_per_node(self):
+        if self.current_partition.fullname in self.partition_num_gpus_per_node:
+            self.num_gpus_per_node = self.partition_num_gpus_per_node.get(
+                self.current_partition.fullname)
+        else:
+            self.num_gpus_per_node = 1
 
     def _xfer_pattern(self, xfer_kind, devno, nodename):
         '''generates search pattern for performance analysis'''
@@ -76,9 +93,10 @@ class GpuBandwidthCheck(rfm.RegressionTest):
         else:
             direction = 'Device to device'
 
-        # Extract the bandwidth corresponding to the right node, transfer and device.
-        return (r'^[^,]*\[[^,]*\]\s*%s\s*bandwidth on device %d is \s*(\S+)\s*Mb/s.' % 
-                (direction,devno))
+        # Extract the bandwidth corresponding to the right node, transfer and
+        # device.
+        return (r'^[^,]*\[[^,]*\]\s*%s\s*bandwidth on device %d is \s*(\S+)\s*Mb/s.' %
+                (direction, devno))
 
     @sn.sanity_function
     def do_sanity_check(self):
