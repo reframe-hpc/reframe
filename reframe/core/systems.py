@@ -318,7 +318,9 @@ class System:
                 )
             )
 
-        # Restore configuration
+        # Restore configuration, but ignore unresolved sections or
+        # configuration parameters at the system level; if we came up to this
+        # point, then all is good at the partition level, which is enough.
         site_config.select_subconfig(config_save, ignore_resolve_errors=True)
         return System(
             name=sysname,
