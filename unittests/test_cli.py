@@ -152,6 +152,15 @@ def test_check_success(run_reframe, tmp_path, logfile):
     assert os.path.exists(tmp_path / 'report.json')
 
 
+def test_check_success_force_local(run_reframe, tmp_path, logfile):
+    # We explicitly use a system here with a non-local scheduler and pass the
+    # `--force-local` option
+    returncode, stdout, _ = run_reframe(system='testsys:gpu', local=True)
+    assert 'PASSED' in stdout
+    assert 'FAILED' not in stdout
+    assert returncode == 0
+
+
 def test_report_file_with_sessionid(run_reframe, tmp_path):
     returncode, stdout, _ = run_reframe(
         more_options=[
