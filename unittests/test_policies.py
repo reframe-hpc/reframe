@@ -64,6 +64,11 @@ def common_exec_ctx(temp_runtime):
     yield from temp_runtime(fixtures.TEST_CONFIG_FILE, 'generic')
 
 
+@pytest.fixture
+def testsys_exec_ctx(temp_runtime):
+    yield from temp_runtime(fixtures.TEST_CONFIG_FILE, 'testsys:gpu')
+
+
 @pytest.fixture(params=[policies.SerialExecutionPolicy,
                         policies.AsynchronousExecutionPolicy])
 def make_runner(request):
@@ -230,14 +235,21 @@ def test_strict_performance_check(make_runner, make_cases, common_exec_ctx):
     assert 1 == num_failures_stage(runner, 'cleanup')
 
 
-def test_force_local_execution(make_runner, make_cases, common_exec_ctx):
+# We explicitly ask for a system with a non-local scheduler here, to make sure
+# that the execution policies behave correctly with forced local tests
+def test_force_local_execution(make_runner, make_cases, testsys_exec_ctx):
     runner = make_runner()
     runner.policy.force_local = True
-    runner.runall(make_cases([HelloTest()]))
+    test = HelloTest()
+    test.valid_prog_environs = ['builtin-gcc']
+
+    runner.runall(make_cases([test]))
     assert_runall(runner)
     stats = runner.stats
     for t in stats.tasks():
         assert t.check.local
+
+    assert not stats.failures()
 
 
 def test_kbd_interrupt_within_test(make_runner, make_cases, common_exec_ctx):

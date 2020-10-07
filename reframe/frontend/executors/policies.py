@@ -110,8 +110,15 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
             task.compile()
             task.compile_wait()
             task.run()
+
+            # Pick the right scheduler
+            if task.check.local:
+                sched = self.local_scheduler
+            else:
+                sched = partition.scheduler
+
             while True:
-                partition.scheduler.poll(task.check.job)
+                sched.poll(task.check.job)
                 if task.run_complete():
                     break
 
@@ -349,14 +356,28 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def _poll_tasks(self):
         '''Update the counts of running checks per partition.'''
 
+        def split_jobs(tasks):
+            '''Split jobs into forced local and normal ones.'''
+            forced_local = []
+            normal = []
+            for t in tasks:
+                if t.check.local:
+                    forced_local.append(t.check.job)
+                else:
+                    normal.append(t.check.job)
+
+            return forced_local, normal
+
         getlogger().debug('updating counts for running test cases')
         for part in self._partitions:
             partname = part.fullname
             num_tasks = len(self._running_tasks[partname])
             getlogger().debug(f'polling {num_tasks} task(s) in {partname!r}')
-            part.scheduler.poll(
-                *(task.check.job for task in self._running_tasks[partname])
+            forced_local_jobs, part_jobs = split_jobs(
+                self._running_tasks[partname]
             )
+            part.scheduler.poll(*part_jobs)
+            self.local_scheduler.poll(*forced_local_jobs)
 
             # Trigger notifications for finished jobs
             for t in self._running_tasks[partname]:
