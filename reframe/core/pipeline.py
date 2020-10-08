@@ -1085,8 +1085,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self._current_environ = environ
         self._setup_paths()
         self._setup_job(**job_opts)
-        if self.perf_patterns is not None:
-            self._setup_perf_logging()
 
     def _copy_to_stagedir(self, path):
         self.logger.debug('copying %s to stage directory (%s)' %
@@ -1458,6 +1456,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         if self.perf_patterns is None:
             return
 
+        self._setup_perf_logging()
         with os_ext.change_dir(self._stagedir):
             # Check if default reference perf values are provided and
             # store all the variables tested in the performance check
