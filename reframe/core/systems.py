@@ -443,7 +443,7 @@ class System:
             'descr': self._descr,
             'hostnames': self._hostnames,
             'modules_system': self._modules_system.name,
-            'modules': [m.name for m in self._preload_env.modules],
+            'modules': [m for m in self._preload_env.modules],
             'variables': [
                 [name, value]
                 for name, value in self._preload_env.variables.items()
