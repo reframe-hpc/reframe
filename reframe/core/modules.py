@@ -421,7 +421,7 @@ class TModImpl(ModulesSystemImpl):
             completed = os_ext.run_command('modulecmd -V')
         except OSError as e:
             raise ConfigError(
-                'could not find a sane TMod installation:') from e
+                'could not find a sane TMod installation') from e
 
         version_match = re.search(r'^VERSION=(\S+)', completed.stdout,
                                   re.MULTILINE)
