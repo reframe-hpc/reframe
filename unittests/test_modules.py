@@ -25,7 +25,7 @@ def modules_system(request, monkeypatch):
     try:
         m = modules.ModulesSystem.create(*args)
     except ConfigError:
-        pytest.skip('{requst.param} not supported')
+        pytest.skip('{request.param} not supported')
 
     environ_save = env.snapshot()
     m.searchpath_add(fixtures.TEST_MODULES)
