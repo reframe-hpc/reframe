@@ -152,6 +152,15 @@ def test_check_success(run_reframe, tmp_path, logfile):
     assert os.path.exists(tmp_path / 'report.json')
 
 
+def test_check_success_force_local(run_reframe, tmp_path, logfile):
+    # We explicitly use a system here with a non-local scheduler and pass the
+    # `--force-local` option
+    returncode, stdout, _ = run_reframe(system='testsys:gpu', local=True)
+    assert 'PASSED' in stdout
+    assert 'FAILED' not in stdout
+    assert returncode == 0
+
+
 def test_report_file_with_sessionid(run_reframe, tmp_path):
     returncode, stdout, _ = run_reframe(
         more_options=[
@@ -179,7 +188,7 @@ def test_check_submit_success(run_reframe, remote_exec_ctx):
     assert 'PASSED' in stdout
 
     # Assert that we have run only one test case
-    assert 'Ran 1 test case(s)' in stdout
+    assert 'Ran 2 test case(s)' in stdout
     assert 0 == returncode
 
 
@@ -401,7 +410,7 @@ def test_execution_modes(run_reframe):
     assert 'Traceback' not in stderr
     assert 'FAILED' not in stdout
     assert 'PASSED' in stdout
-    assert 'Ran 1 test case' in stdout
+    assert 'Ran 2 test case' in stdout
 
 
 def test_no_ignore_check_conflicts(run_reframe):
@@ -521,6 +530,7 @@ def test_verbosity_with_check(run_reframe):
     returncode, stdout, stderr = run_reframe(
         more_options=['-vvvvv'],
         system='testsys',
+        action='list',
         checkpath=['unittests/resources/checks/hellocheck.py']
     )
     assert '' != stdout

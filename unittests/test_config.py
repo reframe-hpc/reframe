@@ -201,6 +201,18 @@ def test_select_subconfig_undefined_environment():
         site_config.select_subconfig()
 
 
+def test_select_subconfig_ignore_resolve_errors():
+    site_config = config.load_config('reframe/core/settings.py')
+    site_config['systems'][0]['partitions'][0]['environs'] += ['foo', 'bar']
+    site_config.select_subconfig(ignore_resolve_errors=True)
+
+
+def test_select_subconfig_ignore_no_section_errors():
+    site_config = config.load_config('reframe/core/settings.py')
+    site_config['environments'][0]['target_systems'] = ['foo']
+    site_config.select_subconfig(ignore_resolve_errors=True)
+
+
 def test_select_subconfig():
     site_config = config.load_config('unittests/resources/settings.py')
     site_config.select_subconfig('testsys')
@@ -333,7 +345,7 @@ def test_system_create():
     assert partition.fullname == 'testsys:gpu'
     assert partition.descr == 'GPU partition'
     assert partition.scheduler.registered_name == 'slurm'
-    assert partition.launcher.registered_name == 'srun'
+    assert partition.launcher_type.registered_name == 'srun'
     assert partition.access == []
     assert partition.container_environs == {}
     assert partition.local_env.modules == ['foogpu']

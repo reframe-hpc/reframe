@@ -16,6 +16,7 @@ import reframe.core.runtime as runtime
 import reframe.frontend.dependency as dependency
 from reframe.core.exceptions import (AbortTaskError, JobNotStartedError,
                                      ReframeForceExitError, TaskExit)
+from reframe.core.schedulers.local import LocalJobScheduler
 from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.statistics import TestStats
 
@@ -211,6 +212,10 @@ class RegressionTask:
     def succeeded(self):
         return self._current_stage in {'finalize', 'cleanup'}
 
+    @property
+    def completed(self):
+        return self.failed or self.succeeded
+
     def _notify_listeners(self, callback_name):
         for l in self._listeners:
             callback = getattr(l, callback_name)
@@ -263,17 +268,17 @@ class RegressionTask:
         self._safe_call(self.check.run)
         self._notify_listeners('on_task_run')
 
-    def wait(self):
-        self._safe_call(self.check.wait)
-        self.zombie = False
-
-    def poll(self):
-        finished = self._safe_call(self.check.poll)
-        if finished:
+    def run_complete(self):
+        done = self._safe_call(self.check.run_complete)
+        if done:
             self.zombie = True
             self._notify_listeners('on_task_exit')
 
-        return finished
+        return done
+
+    def run_wait(self):
+        self._safe_call(self.check.run_wait)
+        self.zombie = False
 
     def sanity(self):
         self._safe_call(self.check.sanity)
@@ -447,6 +452,9 @@ class ExecutionPolicy(abc.ABC):
         self.only_environs = None
         self.printer = None
         self.strict_check = False
+
+        # Local scheduler for running forced local jobs
+        self.local_scheduler = LocalJobScheduler()
 
         # Scheduler options
         self.sched_flex_alloc_nodes = None

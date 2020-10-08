@@ -105,15 +105,15 @@ class TestStats:
                     'time_setup': t.duration('setup'),
                     'time_total': t.duration('total')
                 }
-                partition = check.current_partition
-                environ = check.current_environ
-                if partition:
-                    entry['system'] = partition.fullname
-                    entry['scheduler'] = partition.scheduler.registered_name
 
-                if environ:
-                    entry['environment'] = environ.name
-
+                # We take partition and environment from the test case and not
+                # from the check, since if the test fails before `setup()`,
+                # these are not set inside the check.
+                partition = t.testcase.partition
+                environ = t.testcase.environ
+                entry['system'] = partition.fullname
+                entry['scheduler'] = partition.scheduler.registered_name
+                entry['environment'] = environ.name
                 if check.job:
                     entry['jobid'] = check.job.jobid
                     entry['job_stderr'] = check.stderr.evaluate()
