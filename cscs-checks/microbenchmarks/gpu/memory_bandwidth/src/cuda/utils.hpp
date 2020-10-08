@@ -107,6 +107,12 @@ public:
     return execTime; 
   }
 
+  ~XTimer()
+  {
+    cudaEventDestroy(startEvent);
+    cudaEventDestroy(stopEvent);
+  }
+
 };
 
 #endif

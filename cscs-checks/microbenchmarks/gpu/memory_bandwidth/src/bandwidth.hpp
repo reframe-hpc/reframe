@@ -6,11 +6,11 @@
 #include "types.hpp"
 #include "cuda/include.hpp"
 
-template<class dataFrom, class dataTo, typename memcpy>
-float copyBandwidth(size_t size, int device, int repeat)
+template<class dataFrom, class dataTo>
+float copyBandwidth(size_t size, int device, int repeat, XMemcpyKind cpyDir)
 {
   /*
-   Returns the average time taken for a copy from data_in to data_out done
+   Returns the average time taken for a copy from data_dst to data_src done
    several times. These types can represent either host data or device data.
    dataFrom and dataTo are RAII classes to handle both host and device data 
    in a much easier way (see types.hpp).
@@ -20,8 +20,8 @@ float copyBandwidth(size_t size, int device, int repeat)
   */
 
   // Declare and allocate the buffers.
-  dataFrom data_in(size);
-  dataTo data_out(size);
+  dataFrom data_src(size);
+  dataTo data_dst(size);
 
   // Create a cuda stream.
   XStream_t stream;
@@ -34,7 +34,7 @@ float copyBandwidth(size_t size, int device, int repeat)
   t.start();
   for ( int i = 0; i < repeat; i++ )
   {
-    XMemcpyAsync(data_out.data, data_in.data, size, memcpy::value, stream);
+    XMemcpyAsync(data_dst.data, data_src.data, size, cpyDir, stream);
   }
 
   // Do the timing
@@ -42,6 +42,81 @@ float copyBandwidth(size_t size, int device, int repeat)
 
   // Destroy the cuda stream
   XStreamDestroy(stream);
+
+  // Return the average time per copy.
+  return (execution_time/(float)repeat);
+}
+
+
+float p2pBandwidth(size_t size, int send_device, int recv_device, int repeat, int peerAccess)
+{
+  /*
+   Time the data transfer across different devices. The peerAccess argument enables or 
+   disables the direct memory access to another device.
+  */
+
+  // Set the sending device.
+  XSetDevice(send_device);
+  
+  // Check whether the sending device has peer access to the recv_device.
+  if (peerAccess && recv_device!=send_device)
+  {
+    int hasPeerAccess;
+    cudaDeviceCanAccessPeer(&hasPeerAccess, send_device, recv_device);
+    if (!hasPeerAccess)
+    {
+      return (float)-1;
+    }
+    
+    // Enable the peerAccess access.
+    cudaDeviceEnablePeerAccess(recv_device, 0);
+  }
+
+  // Allocate the send buffer.
+  DeviceData data_src(size);
+
+  // Allocate the receive buffer.
+  XSetDevice(recv_device);
+  DeviceData data_dst(size);
+
+  // Set the sending device again.
+  XSetDevice(send_device);
+
+  // Create the stream.
+  XStream_t stream;
+  XStreamCreate(&stream);
+
+  // Instantiate the timer.
+  XTimer t(stream);
+
+  // Start the timer and run the copy
+  t.start();
+  if (peerAccess)
+  {
+    for ( int i = 0; i < repeat; i++ )
+    {
+      XMemcpyAsync(data_dst.data, data_src.data, size, XMemcpyDeviceToDevice, stream);
+    }
+  }
+  else
+  {
+    for ( int i = 0; i < repeat; i++ )
+    {
+      cudaMemcpyPeerAsync(data_dst.data, recv_device, data_src.data, send_device, size, stream);
+    } 
+  }
+
+  // Do the timing
+  float execution_time = t.stop(); 
+
+  // Destroy the cuda stream
+  XStreamDestroy(stream);
+
+  // Unset the peer access
+  if (peerAccess && recv_device!=send_device)
+  {
+    cudaDeviceDisablePeerAccess(recv_device);
+  }
 
   // Return the average time per copy.
   return (execution_time/(float)repeat);

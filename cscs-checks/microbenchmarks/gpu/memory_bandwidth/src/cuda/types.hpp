@@ -5,36 +5,12 @@
 
 using XStream_t = cudaStream_t;
 
-struct XMemcpyBase {};
+// Memcpy types
+using XMemcpyKind = cudaMemcpyKind;
+XMemcpyKind XMemcpyHostToDevice = cudaMemcpyHostToDevice;
+XMemcpyKind XMemcpyDeviceToHost = cudaMemcpyDeviceToHost;
+XMemcpyKind XMemcpyDeviceToDevice = cudaMemcpyDeviceToDevice;
+XMemcpyKind XMemcpyHostToHost = cudaMemcpyHostToHost;
+XMemcpyKind XMemcpyDefault = cudaMemcpyDefault;
 
-struct XMemcpyDefault : XMemcpyBase
-{
-  static const cudaMemcpyKind value;
-};
-const cudaMemcpyKind XMemcpyDefault::value = cudaMemcpyDefault; 
-
-struct XMemcpyHostToDevice : XMemcpyBase
-{
-  static const cudaMemcpyKind value;
-};
-const cudaMemcpyKind XMemcpyHostToDevice::value = cudaMemcpyHostToDevice; 
-
-struct XMemcpyDeviceToHost : XMemcpyBase
-{
-  static const cudaMemcpyKind value;
-};
-const cudaMemcpyKind XMemcpyDeviceToHost::value = cudaMemcpyDeviceToHost;
- 
-struct XMemcpyDeviceToDevice : XMemcpyBase
-{
-  static const cudaMemcpyKind value;
-};
-const cudaMemcpyKind XMemcpyDeviceToDevice::value = cudaMemcpyDeviceToDevice;
- 
-struct XMemcpyHostToHost : XMemcpyBase
-{
-  static const cudaMemcpyKind value;
-};
-const cudaMemcpyKind XMemcpyHostToHost::value = cudaMemcpyHostToHost;
- 
 #endif

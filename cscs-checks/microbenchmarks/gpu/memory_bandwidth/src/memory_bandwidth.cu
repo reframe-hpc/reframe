@@ -1,25 +1,4 @@
-#include <iostream>
-#include <unistd.h>
-
-// Set default platform
-#if (!defined TARGET_CUDA || !defined TARGET_AMD)
-#  define TARGET_CUDA
-#endif
-
-#ifdef TARGET_CUDA
-# include "cuda/include.hpp"
-#else
-# error "TARGET NOT IMPLEMENTED"
-#endif
-
-#include "bandwidth.hpp"
-
-#ifndef COPY_SIZE
-# define COPY_SIZE 1073741824
-#endif
-#ifndef NUMBER_OF_COPIES
-# define NUMBER_OF_COPIES 20
-#endif
+#include "testHeaders.hpp"
 
 int main()
 {
@@ -58,7 +37,7 @@ int main()
   {
     XSetDevice(d);
     dSet.setCpuAffinity(d);
-    float bw = fact / copyBandwidth<HostData, DeviceData, XMemcpyHostToDevice>(copy_size, d, copy_repeats);
+    float bw = fact / copyBandwidth<HostData, DeviceData>(copy_size, d, copy_repeats, XMemcpyHostToDevice);
     printf("[%s] Host to device bandwidth on device %d is %.2f Mb/s.\n", nid_name, d, bw);
   }
 
@@ -69,7 +48,7 @@ int main()
   {
     XSetDevice(d);
     dSet.setCpuAffinity(d);
-    float bw = fact / copyBandwidth<DeviceData, HostData, XMemcpyDeviceToHost>(copy_size, d, copy_repeats);
+    float bw = fact / copyBandwidth<DeviceData, HostData>(copy_size, d, copy_repeats, XMemcpyDeviceToHost);
     printf("[%s] Device to host bandwidth on device %d is %.2f Mb/s.\n", nid_name, d, bw);
   }
 
@@ -80,7 +59,7 @@ int main()
   {
     XSetDevice(d);
     dSet.setCpuAffinity(d);
-    float bw = (float)2 * fact / copyBandwidth<DeviceData, DeviceData, XMemcpyDeviceToDevice>(copy_size, d, copy_repeats);
+    float bw = (float)2 * fact / copyBandwidth<DeviceData, DeviceData>(copy_size, d, copy_repeats, XMemcpyDeviceToDevice);
     printf("[%s] Device to device bandwidth on device %d is %.2f Mb/s.\n", nid_name, d, bw);
   }
 
