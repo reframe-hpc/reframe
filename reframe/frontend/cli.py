@@ -463,7 +463,13 @@ def main():
             site_config = config.load_config(converted)
 
         site_config.validate()
-        site_config.select_subconfig(options.system)
+
+        # We ignore errors about unresolved sections or configuration
+        # parameters here, because they might be defined at the individual
+        # partition level and will be caught when we will instantiating
+        # internally the system and partitions later on.
+        site_config.select_subconfig(options.system,
+                                     ignore_resolve_errors=True)
         for err in options.update_config(site_config):
             printer.warning(str(err))
 

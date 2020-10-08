@@ -515,7 +515,7 @@ def test_cancel_with_grace(minimal_job, scheduler, local_only):
 
     t_grace = datetime.now()
     minimal_job.cancel()
-    time.sleep(0.01)
+    time.sleep(0.1)
     minimal_job.wait()
     t_grace = datetime.now() - t_grace
 
@@ -530,7 +530,7 @@ def test_cancel_with_grace(minimal_job, scheduler, local_only):
 
     # Verify that the spawned sleep is killed, too, but back off a bit in
     # order to allow the sleep process to wake up and get the signal
-    time.sleep(0.01)
+    time.sleep(0.1)
     assert_process_died(sleep_pid)
 
 
@@ -556,7 +556,7 @@ def test_cancel_term_ignore(minimal_job, scheduler, local_only):
 
     # Stall a bit here to let the the spawned process start and install its
     # signal handler for SIGTERM
-    time.sleep(.1)
+    time.sleep(1)
 
     t_grace = datetime.now()
     minimal_job.cancel()
@@ -574,7 +574,7 @@ def test_cancel_term_ignore(minimal_job, scheduler, local_only):
 
     # Verify that the spawned sleep is killed, too, but back off a bit in
     # order to allow the sleep process to wake up and get the signal
-    time.sleep(0.01)
+    time.sleep(0.1)
     assert_process_died(sleep_pid)
 
 
