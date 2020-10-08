@@ -318,8 +318,10 @@ class System:
                 )
             )
 
-        # Restore configuration
-        site_config.select_subconfig(config_save)
+        # Restore configuration, but ignore unresolved sections or
+        # configuration parameters at the system level; if we came up to this
+        # point, then all is good at the partition level, which is enough.
+        site_config.select_subconfig(config_save, ignore_resolve_errors=True)
         return System(
             name=sysname,
             descr=site_config.get('systems/0/descr'),
@@ -441,7 +443,7 @@ class System:
             'descr': self._descr,
             'hostnames': self._hostnames,
             'modules_system': self._modules_system.name,
-            'modules': [m.name for m in self._preload_env.modules],
+            'modules': [m for m in self._preload_env.modules],
             'variables': [
                 [name, value]
                 for name, value in self._preload_env.variables.items()

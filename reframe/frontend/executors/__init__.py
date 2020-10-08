@@ -16,6 +16,7 @@ import reframe.core.runtime as runtime
 import reframe.frontend.dependency as dependency
 from reframe.core.exceptions import (AbortTaskError, JobNotStartedError,
                                      ReframeForceExitError, TaskExit)
+from reframe.core.schedulers.local import LocalJobScheduler
 from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.statistics import TestStats
 
@@ -451,6 +452,9 @@ class ExecutionPolicy(abc.ABC):
         self.only_environs = None
         self.printer = None
         self.strict_check = False
+
+        # Local scheduler for running forced local jobs
+        self.local_scheduler = LocalJobScheduler()
 
         # Scheduler options
         self.sched_flex_alloc_nodes = None
