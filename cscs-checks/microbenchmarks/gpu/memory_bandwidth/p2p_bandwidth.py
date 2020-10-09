@@ -54,8 +54,8 @@ class P2pBandwidthCheck(rfm.RegressionTest):
         self.__bwref = {
             'tsa:cn:p2p':  (172.5, -0.05, None, 'GB/s'),
             'tsa:cn:nop2p':  (79.6, -0.05, None, 'GB/s'),
-            'ault:amdv100:p2p':  (5.7, -0.05, None, 'GB/s'),
-            'ault:amdv100:nop2p':  (7.5, -0.05, None, 'GB/s'),
+            'ault:amdv100:p2p':  (5.7, -0.075, None, 'GB/s'),
+            'ault:amdv100:nop2p':  (7.5, -0.075, None, 'GB/s'),
  
         }
 

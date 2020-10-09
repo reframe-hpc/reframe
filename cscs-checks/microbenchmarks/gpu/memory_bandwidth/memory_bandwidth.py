@@ -18,7 +18,7 @@ class GpuBandwidthCheck(rfm.RegressionTest):
                               'arolla:cn', 'tsa:cn',
                               'ault:amdv100']
         self.valid_prog_environs = ['PrgEnv-gnu']
-        if self.current_system.name in ['arolla', 'kesch', 'tsa']:
+        if self.current_system.name in ['arolla', 'tsa']:
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
         if self.current_system.name in ['arolla', 'ault', 'tsa']:
             self.exclusive_access = True
@@ -29,9 +29,7 @@ class GpuBandwidthCheck(rfm.RegressionTest):
 
         # Set nvcc flags
         nvidia_sm = '60'
-        if self.current_system.name == 'kesch':
-            nvidia_sm = '37'
-        elif self.current_system.name in ['arolla', 'tsa']:
+        elif self.current_system.name in ['arolla', 'tsa', 'ault']:
             nvidia_sm = '70'
 
         # Perform a single bandwidth test with a buffer size of 1024MB
@@ -50,12 +48,10 @@ class GpuBandwidthCheck(rfm.RegressionTest):
         self.partition_num_gpus_per_node = {
             'daint:gpu':      1,
             'dom:gpu':        1,
-            'kesh:cn':        2,
             'tiger:gpu':      2,
             'arolla:cn':      2,
-            'tsa:cn':         2,
+            'tsa:cn':         8,
             'ault:amdv100':   2,
-            'ault:intelv100': 4
         }
 
         # perf_patterns and reference will be set by the sanity check function

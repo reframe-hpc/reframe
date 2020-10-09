@@ -1,23 +1,19 @@
 #ifndef __INCLUDED_CUDA_TOOLS__
 #define __INCLUDED_CUDA_TOOLS__
 
+#include<iostream>
 #include<nvml.h>
 
-#ifndef NO_ERROR_CHECK
-#  define nvmlCheck(err) { (err); }
-#else
-#  define nvmlCheck(err) { nvmlAssert((err), __FILE__, __LINE__); }
-   inline void nvmlAssert(nvmlResult_t err, const char *file, int line)
-   {
+static inline void nvmlCheck(nvmlReturn_t err)
+{
       if (err != NVML_SUCCESS) 
       {
          char nid[80];
          gethostname(nid,80);
-         fprintf(stderr,"A call to the nvml failed on node %s, at %s, %s %d\n", file, line);
+         std::cerr << "Call to the nvml API failed!" << std::endl;
          exit(err);
       }
-   }
-#endif
+}
 
 
 class DeviceSet

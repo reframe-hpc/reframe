@@ -4,16 +4,7 @@
 #include <iostream>
 #include <unistd.h>
 
-// Set default platform
-#if (!defined TARGET_CUDA || !defined TARGET_AMD)
-#  define TARGET_CUDA
-#endif
-
-#ifdef TARGET_CUDA
-# include "cuda/include.hpp"
-#else
-# error "TARGET NOT IMPLEMENTED"
-#endif
+#include "Xlib/runtime.hpp"
 
 #include "bandwidth.hpp"
 

@@ -4,7 +4,7 @@
 #include<iostream>
 
 #include "types.hpp"
-#include "cuda/include.hpp"
+#include "Xlib/runtime.hpp"
 
 template<class dataFrom, class dataTo>
 float copyBandwidth(size_t size, int device, int repeat, XMemcpyKind cpyDir)
@@ -23,7 +23,7 @@ float copyBandwidth(size_t size, int device, int repeat, XMemcpyKind cpyDir)
   dataFrom data_src(size);
   dataTo data_dst(size);
 
-  // Create a cuda stream.
+  // Create a X stream.
   XStream_t stream;
   XStreamCreate(&stream);
 
@@ -40,7 +40,7 @@ float copyBandwidth(size_t size, int device, int repeat, XMemcpyKind cpyDir)
   // Do the timing
   float execution_time = t.stop(); 
 
-  // Destroy the cuda stream
+  // Destroy the device stream
   XStreamDestroy(stream);
 
   // Return the average time per copy.
@@ -62,14 +62,14 @@ float p2pBandwidth(size_t size, int send_device, int recv_device, int repeat, in
   if (peerAccess && recv_device!=send_device)
   {
     int hasPeerAccess;
-    cudaDeviceCanAccessPeer(&hasPeerAccess, send_device, recv_device);
+    XDeviceCanAccessPeer(&hasPeerAccess, send_device, recv_device);
     if (!hasPeerAccess)
     {
       return (float)-1;
     }
     
     // Enable the peerAccess access.
-    cudaDeviceEnablePeerAccess(recv_device, 0);
+    XDeviceEnablePeerAccess(recv_device, 0);
   }
 
   // Allocate the send buffer.
@@ -102,20 +102,20 @@ float p2pBandwidth(size_t size, int send_device, int recv_device, int repeat, in
   {
     for ( int i = 0; i < repeat; i++ )
     {
-      cudaMemcpyPeerAsync(data_dst.data, recv_device, data_src.data, send_device, size, stream);
+      XMemcpyPeerAsync(data_dst.data, recv_device, data_src.data, send_device, size, stream);
     } 
   }
 
   // Do the timing
   float execution_time = t.stop(); 
 
-  // Destroy the cuda stream
+  // Destroy the X stream
   XStreamDestroy(stream);
 
   // Unset the peer access
   if (peerAccess && recv_device!=send_device)
   {
-    cudaDeviceDisablePeerAccess(recv_device);
+    XDeviceDisablePeerAccess(recv_device);
   }
 
   // Return the average time per copy.

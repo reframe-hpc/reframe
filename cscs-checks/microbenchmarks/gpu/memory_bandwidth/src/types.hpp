@@ -1,11 +1,7 @@
 #ifndef __INCLUDED_TYPES__
 #define __INCLUDED_TYPES__
 
-#if defined TARGET_CUDA
-#  include "cuda/utils.hpp"
-#elif defined TARGET_AMD
-#  include "rocm/utils.hpp"
-#endif
+#include "Xlib/runtime.hpp"
 
 class RAIIData
 {
@@ -45,6 +41,8 @@ public:
   DeviceData(size_t s) : size(s)
   {
     XMalloc(&data, size);
+    XMemset(data, 0, size);
+    XDeviceSynchronize();
   }
   ~DeviceData()
   {

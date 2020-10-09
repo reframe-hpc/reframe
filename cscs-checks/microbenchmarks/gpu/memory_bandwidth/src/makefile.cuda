@@ -1,0 +1,5 @@
+membandwidth:
+	nvcc memory_bandwidth.cu -std=c++11 -lnvidia-ml -O3
+
+p2pbandwidth:
+	nvcc p2p_bandwidth.cu -std=c++11 -lnvidia-ml -O3
