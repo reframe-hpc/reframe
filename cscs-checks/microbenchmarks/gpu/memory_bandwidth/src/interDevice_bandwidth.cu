@@ -51,11 +51,20 @@ int main()
 void p2pBandwidthMap(int devices, int p2p, size_t copy_size, int repeats, char * nid_name)
 {
   /*
-   This function only computes the P2P copy bandwith on the upper
-   triangle of the GPU to GPU matrix, assuming that the copies in
+   This function only evaluates the GPU to GPU copy bandwith on the upper
+   triangle of the GPU combination matrix, assuming that the copies in
    both directions should be the same.
 
-   If compiled with -DFULL, it will compute the full bandwidth matrix.
+   Instead, if you want the full matrix, compile with -DFULL.
+
+   Mote that this function sets the CPU affinity for the sending GPU.
+
+   Arguments:
+     - devices: number of devices
+     - p2p: bool flag to enable or not direct memory access across GPUs
+     - copy_size: in bytes, the copy size.
+     - repeats: number of copies to be carried out.
+.    - nid_name: node name - just for reporting purposes.
   */
 
 #ifndef FULL
@@ -64,7 +73,7 @@ void p2pBandwidthMap(int devices, int p2p, size_t copy_size, int repeats, char *
 # define LIMITS 0
 #endif
 
-  float fact = (float)copy_size/(float)1e3;
+  float fact = (float)copy_size/(float)1e6;
 
   // Create a device set to tune the device's cpu affinity.
   DeviceSet dSet;
@@ -73,11 +82,11 @@ void p2pBandwidthMap(int devices, int p2p, size_t copy_size, int repeats, char *
    Test the Peer to Peer bandwidth.
   */
   const char * p2pOut = (p2p ? "enabled" : "disabled");
-  printf("[%s] P2P Memory bandwidth (Mb/s) with peer access %s\n", nid_name, p2pOut);
+  printf("[%s] P2P Memory bandwidth (Gb/s) with peer access %s\n", nid_name, p2pOut);
   printf("[%s] %10s", nid_name, "From \\ To ");
   for (int ds = 0; ds < devices; ds++)
   {
-    printf("%12sGPU %2d", "", ds);
+    printf("%4sGPU %2d", "", ds);
   } printf("\n");
 
   for (int ds = 0; ds < devices; ds++)
@@ -88,14 +97,14 @@ void p2pBandwidthMap(int devices, int p2p, size_t copy_size, int repeats, char *
     printf("[%s] GPU %2d%4s", nid_name, ds, " ");
     for (int dr = 0; dr < LIMITS; dr++)
     {
-      printf("%18s", "X");
+      printf("%10s", "X");
     }
 
     for (int dr = LIMITS; dr < devices; dr++)
     {
       float same = ( (ds==dr) ? float(2) : float(1) );
       float bw = fact / p2pBandwidth(copy_size, ds, dr, repeats, p2p) * same;
-      printf("%18.2f", bw);
+      printf("%10.2f", bw);
     } printf("\n");
 
   }
