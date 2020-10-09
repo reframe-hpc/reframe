@@ -2,8 +2,8 @@
 /*
  Benchmark test case to measure the copy bandwidth across different devices within the same node.
  The output of this test is a matrix showing each bandwidth measure across each of the devices.
- For comparative purposes across devices, this matrix has an extra columns with the sum of the
- bandwidths from the same sending device.
+ For comparative purposes across devices, this matrix has an extra column with the sum of the
+ bandwidths from the same sending device (excluding itself).
 
  Test flags:
    - P2P: if defined, this flag enables the sending device to have direct access to
@@ -67,11 +67,11 @@ int main()
 void p2pBandwidthMap(int devices, int p2p, size_t copy_size, int repeats, char * nid_name)
 {
   /*
-   This function only evaluates the GPU to GPU copy bandwith on the upper
-   triangle of the GPU combination matrix, assuming that the copies in
-   both directions should be the same.
-
-   Instead, if you want the full matrix, compile with -DFULL.
+   This function evaluates the GPU to GPU copy bandwith in all GPU to GPU combinations.
+   If symmetry is assumed, compile with -DSYMM to compute only the upper matrix triangle.
+   The data is printed as a matrix (see description above). 
+  
+   ** The "Totals" column excludes the diagonal terms from the sum **
 
    Mote that this function sets the CPU affinity for the sending GPU.
 
@@ -98,7 +98,7 @@ void p2pBandwidthMap(int devices, int p2p, size_t copy_size, int repeats, char *
    Test the Peer to Peer bandwidth.
   */
   const char * p2pOut = (p2p ? "enabled" : "disabled");
-  printf("[%s] P2P Memory bandwidth (Gb/s) with peer access %s\n", nid_name, p2pOut);
+  printf("[%s] P2P Memory bandwidth (GB/s) with peer access %s\n", nid_name, p2pOut);
   printf("[%s] %10s", nid_name, "From \\ To ");
   for (int ds = 0; ds < devices; ds++)
   {
@@ -123,7 +123,10 @@ void p2pBandwidthMap(int devices, int p2p, size_t copy_size, int repeats, char *
     {
       float same = ( (ds==dr) ? float(2) : float(1) );
       float bw = fact / p2pBandwidth(copy_size, ds, dr, repeats, p2p) * same;
-      totals += bw;
+      if (ds != dr)
+      {
+        totals += bw;
+      }
       printf("%10.2f", bw);
     } printf("%10.2f\n", totals);
 

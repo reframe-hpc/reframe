@@ -20,6 +20,7 @@ class GpuBandwidthCheck(rfm.RegressionTest):
         self.valid_prog_environs = ['PrgEnv-gnu']
         if self.current_system.name in ['arolla', 'kesch', 'tsa']:
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
+        if self.current_system.name in ['arolla', 'ault', 'tsa']:
             self.exclusive_access = True
 
         self.build_system = 'SingleSource'

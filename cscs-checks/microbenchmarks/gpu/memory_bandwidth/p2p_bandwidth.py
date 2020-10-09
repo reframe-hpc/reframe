@@ -23,7 +23,7 @@ class P2pBandwidthCheck(rfm.RegressionTest):
         self.build_system = 'SingleSource'
         self.sourcepath = 'p2p_bandwidth.cu'
         self.executable = 'p2p_bandwidth.x'
-
+        self.exclusive_access = True
         # Set nvcc flags
         nvidia_sm = '70'
 
@@ -52,8 +52,11 @@ class P2pBandwidthCheck(rfm.RegressionTest):
         self.perf_patterns = {}
         self.reference = {}
         self.__bwref = {
-            'tsa:cn:p2p':  (928, -0.025, None, 'MB/s'),
-            'tsa:cn:nop2p':  (835, -0.025, None, 'MB/s'),
+            'tsa:cn:p2p':  (172.5, -0.05, None, 'GB/s'),
+            'tsa:cn:nop2p':  (79.6, -0.05, None, 'GB/s'),
+            'ault:amdv100:p2p':  (5.7, -0.05, None, 'GB/s'),
+            'ault:amdv100:nop2p':  (7.5, -0.05, None, 'GB/s'),
+ 
         }
 
         self.tags = {'diagnostic', 'benchmark', 'mch'}
