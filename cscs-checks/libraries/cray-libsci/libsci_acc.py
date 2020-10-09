@@ -69,7 +69,7 @@ class LibsciAccDgemmCheck(LibsciAccBaseCheck):
         }
         self.reference = {
             'daint:gpu': {
-                'dgemm_gpu': (4115.0, -0.1, None, 'GFLop/s'),
+                'dgemm_gpu': (2262.0, -0.1, None, 'GFLop/s'),
                 'dgemm_cpu': (45.0, -0.1, None, 'GFLop/s'),
             },
             'dom:gpu': {
