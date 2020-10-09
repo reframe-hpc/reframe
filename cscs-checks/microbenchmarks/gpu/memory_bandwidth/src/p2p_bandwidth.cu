@@ -1,4 +1,24 @@
+
+/*
+ Benchmark test case to measure the copy bandwidth across different devices within the same node.
+ The output of this test is a matrix showing each bandwidth measure across each of the devices.
+ For comparative purposes across devices, this matrix has an extra columns with the sum of the
+ bandwidths from the same sending device.
+
+ Test flags:
+   - P2P: if defined, this flag enables the sending device to have direct access to
+     the memory from the target device.
+   - SYMM: if defined, it computes only half of the matrix, assuming that the bandwidth is the
+     same both ways.
+*/
+
 #include "testHeaders.hpp"
+
+#ifdef P2P
+# define PEER_ACCESS 1
+#else
+# define PEER_ACCESS 0 
+#endif
 
 // Forward declaration of the bandwidth map function.
 void p2pBandwidthMap(int, int, size_t, int, char*);
@@ -27,12 +47,8 @@ int main()
   size_t copy_size = COPY_SIZE;
   int copy_repeats = NUMBER_OF_COPIES;
 
-  // P2P copy bandwidth without peer access.
-  p2pBandwidthMap(number_of_devices, 0, copy_size, copy_repeats, nid_name); 
-  printf("\n");
-
-  // P2P copy bandwidth with peer access.
-  p2pBandwidthMap(number_of_devices, 1, copy_size, copy_repeats, nid_name); 
+  // Do the device to device copy bandwidth.
+  p2pBandwidthMap(number_of_devices, PEER_ACCESS, copy_size, copy_repeats, nid_name); 
 
   // Do some basic error checking
   if (!XGetLastError())
@@ -64,11 +80,11 @@ void p2pBandwidthMap(int devices, int p2p, size_t copy_size, int repeats, char *
      - p2p: bool flag to enable or not direct memory access across GPUs
      - copy_size: in bytes, the copy size.
      - repeats: number of copies to be carried out.
-.    - nid_name: node name - just for reporting purposes.
+     - nid_name: node name - just for reporting purposes.
   */
 
-#ifndef FULL
-# define LIMITS ds+1
+#ifdef SYMM
+# define LIMITS ds
 #else
 # define LIMITS 0
 #endif
@@ -87,10 +103,13 @@ void p2pBandwidthMap(int devices, int p2p, size_t copy_size, int repeats, char *
   for (int ds = 0; ds < devices; ds++)
   {
     printf("%4sGPU %2d", "", ds);
-  } printf("\n");
+  } printf("%10s\n", "Totals");
 
   for (int ds = 0; ds < devices; ds++)
   {
+    // Track the sum of the bandwidths
+    float totals = 0; 
+ 
     // Set the CPU affinity to the sending device.
     dSet.setCpuAffinity(ds);
 
@@ -104,8 +123,9 @@ void p2pBandwidthMap(int devices, int p2p, size_t copy_size, int repeats, char *
     {
       float same = ( (ds==dr) ? float(2) : float(1) );
       float bw = fact / p2pBandwidth(copy_size, ds, dr, repeats, p2p) * same;
+      totals += bw;
       printf("%10.2f", bw);
-    } printf("\n");
+    } printf("%10.2f\n", totals);
 
   }
 
