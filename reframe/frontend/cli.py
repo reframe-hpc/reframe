@@ -20,8 +20,8 @@ import reframe.core.runtime as runtime
 import reframe.frontend.argparse as argparse
 import reframe.frontend.check_filters as filters
 import reframe.frontend.dependency as dependency
-import reframe.utility.os_ext as os_ext
-import reframe.utility.json as jsonext
+import reframe.utility.osext as osext
+import reframe.utility.jsonext as jsonext
 from reframe.core.exceptions import (
     EnvironError, ConfigError, ReframeError,
     ReframeDeprecationWarning, ReframeFatalError,
@@ -368,7 +368,7 @@ def main():
         help='Upgrade ReFrame 2.x configuration file to ReFrame 3.x syntax'
     )
     misc_options.add_argument(
-        '-V', '--version', action='version', version=os_ext.reframe_version()
+        '-V', '--version', action='version', version=osext.reframe_version()
     )
     misc_options.add_argument(
         '-v', '--verbose', action='count',
@@ -511,7 +511,7 @@ def main():
         printer.error('could not load module mappings: %s' % e)
         sys.exit(1)
 
-    if (os_ext.samefile(rt.stage_prefix, rt.output_prefix) and
+    if (osext.samefile(rt.stage_prefix, rt.output_prefix) and
         not site_config.get('general/0/keep_stage_files')):
         printer.error("stage and output refer to the same directory; "
                       "if this is on purpose, please use the "
@@ -554,8 +554,8 @@ def main():
         'hostname': socket.gethostname(),
         'prefix_output': rt.output_prefix,
         'prefix_stage': rt.stage_prefix,
-        'user': os_ext.osuser(),
-        'version': os_ext.reframe_version(),
+        'user': osext.osuser(),
+        'version': osext.reframe_version(),
         'workdir': os.getcwd(),
     }
 
@@ -745,7 +745,7 @@ def main():
 
                 # Generate the report for this session
                 report_file = os.path.normpath(
-                    os_ext.expandvars(rt.get_option('general/0/report_file'))
+                    osext.expandvars(rt.get_option('general/0/report_file'))
                 )
                 basedir = os.path.dirname(report_file)
                 if basedir:

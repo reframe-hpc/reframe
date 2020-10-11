@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import reframe as rfm
-import reframe.utility.os_ext as ext
+import reframe.utility.osext as ext
 import reframe.utility.sanity as sn
 
 

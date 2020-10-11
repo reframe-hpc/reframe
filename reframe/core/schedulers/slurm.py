@@ -14,7 +14,7 @@ from contextlib import suppress
 import reframe.core.environments as env
 import reframe.core.runtime as rt
 import reframe.core.schedulers as sched
-import reframe.utility.os_ext as os_ext
+import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
 from reframe.core.exceptions import (SpawnedProcessError,
                                      JobBlockedError,
@@ -65,7 +65,7 @@ def slurm_state_pending(state):
     return False
 
 
-_run_strict = functools.partial(os_ext.run_command, check=True)
+_run_strict = functools.partial(osext.run_command, check=True)
 
 
 class _SlurmJob(sched.Job):
@@ -256,15 +256,15 @@ class SlurmJobScheduler(sched.JobScheduler):
         return None
 
     def _merge_files(self, job):
-        with os_ext.change_dir(job.workdir):
+        with osext.change_dir(job.workdir):
             out_glob = glob.glob(job.stdout + '_*')
             err_glob = glob.glob(job.stderr + '_*')
             getlogger().debug(
                 'merging job array output files: %s' % ', '.join(out_glob))
-            os_ext.concat_files(job.stdout, *out_glob, overwrite=True)
+            osext.concat_files(job.stdout, *out_glob, overwrite=True)
             getlogger().debug(
                 'merging job array error files: %s' % ','.join(err_glob))
-            os_ext.concat_files(job.stderr, *err_glob, overwrite=True)
+            osext.concat_files(job.stderr, *err_glob, overwrite=True)
 
     def filternodes(self, job, nodes):
         # Collect options that restrict node selection, but we need to first
@@ -340,7 +340,7 @@ class SlurmJobScheduler(sched.JobScheduler):
         return _create_nodes(node_descriptions)
 
     def _get_nodes_by_name(self, nodespec):
-        completed = os_ext.run_command('scontrol -a show -o node %s' %
+        completed = osext.run_command('scontrol -a show -o node %s' %
                                        nodespec)
         node_descriptions = completed.stdout.splitlines()
         return _create_nodes(node_descriptions)
@@ -541,7 +541,7 @@ class SqueueJobScheduler(SlurmJobScheduler):
         # We don't run the command with check=True, because if the job has
         # finished already, squeue might return an error about an invalid
         # job id.
-        completed = os_ext.run_command(
+        completed = osext.run_command(
             f'squeue -h -j {",".join(job.jobid for job in jobs)} '
             f'-o "%%i|%%T|%%N|%%r"'
         )

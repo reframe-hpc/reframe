@@ -8,7 +8,7 @@ import os
 
 import reframe.core.fields as fields
 import reframe.utility as util
-import reframe.utility.os_ext as os_ext
+import reframe.utility.osext as osext
 import reframe.utility.typecheck as typ
 
 

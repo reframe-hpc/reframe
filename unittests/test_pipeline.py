@@ -10,7 +10,7 @@ import re
 
 import reframe as rfm
 import reframe.core.runtime as rt
-import reframe.utility.os_ext as os_ext
+import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 import unittests.fixtures as fixtures
 from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
@@ -1086,7 +1086,7 @@ def container_test(tmp_path):
 
 
 def _cray_cle_version():
-    completed = os_ext.run_command('cat /etc/opt/cray/release/cle-release')
+    completed = osext.run_command('cat /etc/opt/cray/release/cle-release')
     matched = re.match(r'^RELEASE=(\S+)', completed.stdout)
     if matched is None:
         return None

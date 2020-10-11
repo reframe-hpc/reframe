@@ -16,7 +16,7 @@ import reframe.core.config as config
 import reframe.core.environments as env
 import reframe.core.logging as logging
 import reframe.core.runtime as rt
-import reframe.utility.os_ext as os_ext
+import reframe.utility.osext as osext
 import unittests.fixtures as fixtures
 
 

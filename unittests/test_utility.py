@@ -13,8 +13,8 @@ import reframe
 import reframe.core.fields as fields
 import reframe.core.runtime as rt
 import reframe.utility as util
-import reframe.utility.json as jsonext
-import reframe.utility.os_ext as os_ext
+import reframe.utility.jsonext as jsonext
+import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 import unittests.fixtures as fixtures
 
@@ -24,7 +24,7 @@ from reframe.core.exceptions import (ConfigError,
 
 
 def test_command_success():
-    completed = os_ext.run_command('echo foobar')
+    completed = osext.run_command('echo foobar')
     assert completed.returncode == 0
     assert completed.stdout == 'foobar\n'
 
@@ -32,7 +32,7 @@ def test_command_success():
 def test_command_error():
     with pytest.raises(SpawnedProcessError,
                        match=r"command 'false' failed with exit code 1"):
-        os_ext.run_command('false', check=True)
+        osext.run_command('false', check=True)
 
 
 def test_command_timeout():
@@ -40,7 +40,7 @@ def test_command_timeout():
         SpawnedProcessTimeout, match=r"command 'sleep 3' timed out "
                                      r'after 2s') as exc_info:
 
-        os_ext.run_command('sleep 3', timeout=2)
+        osext.run_command('sleep 3', timeout=2)
 
     assert exc_info.value.timeout == 2
 
@@ -53,7 +53,7 @@ def test_command_async():
 
     t_launch = datetime.now()
     t_sleep  = t_launch
-    proc = os_ext.run_command_async('sleep 1')
+    proc = osext.run_command_async('sleep 1')
     t_launch = datetime.now() - t_launch
 
     proc.wait()
@@ -69,7 +69,7 @@ def test_copytree(tmp_path):
     dir_src.mkdir()
     dir_dst = tmp_path / 'dst'
     dir_dst.mkdir()
-    os_ext.copytree(str(dir_src), str(dir_dst), dirs_exist_ok=True)
+    osext.copytree(str(dir_src), str(dir_dst), dirs_exist_ok=True)
 
 
 def test_copytree_src_parent_of_dst(tmp_path):
@@ -77,7 +77,7 @@ def test_copytree_src_parent_of_dst(tmp_path):
     src_path = (dst_path / '..').resolve()
 
     with pytest.raises(ValueError):
-        os_ext.copytree(str(src_path), str(dst_path))
+        osext.copytree(str(src_path), str(dst_path))
 
 
 @pytest.fixture
@@ -88,7 +88,7 @@ def rmtree(tmp_path):
         fp.write('hello\n')
 
     def _rmtree(*args, **kwargs):
-        os_ext.rmtree(testdir, *args, **kwargs)
+        osext.rmtree(testdir, *args, **kwargs)
         assert not os.path.exists(testdir)
 
     return _rmtree
@@ -108,12 +108,12 @@ def test_rmtree_error(tmp_path):
     testdir.mkdir()
     os.rmdir(str(testdir))
     with pytest.raises(OSError):
-        os_ext.rmtree(testdir)
+        osext.rmtree(testdir)
 
 
 def test_inpath():
-    assert os_ext.inpath('/foo/bin', '/bin:/foo/bin:/usr/bin')
-    assert not os_ext.inpath('/foo/bin', '/bin:/usr/local/bin')
+    assert osext.inpath('/foo/bin', '/bin:/foo/bin:/usr/bin')
+    assert not osext.inpath('/foo/bin', '/bin:/usr/local/bin')
 
 
 @pytest.fixture
@@ -146,10 +146,10 @@ def test_subdirs(tempdirs):
                         os.path.join(prefix_name, 'loo'),
                         os.path.join(prefix_name, 'loo', 'bar')}
 
-    returned_subdirs = os_ext.subdirs(prefix_name)
+    returned_subdirs = osext.subdirs(prefix_name)
     assert [prefix_name] == returned_subdirs
 
-    returned_subdirs = os_ext.subdirs(prefix_name, recurse=True)
+    returned_subdirs = osext.subdirs(prefix_name, recurse=True)
     assert expected_subdirs == set(returned_subdirs)
 
 
@@ -167,49 +167,49 @@ def test_samefile(tempdirs):
     os.symlink(os.path.join(prefix_name, 'broken'),
                os.path.join(prefix_name, 'broken1'))
 
-    assert os_ext.samefile('/foo', '/foo')
-    assert os_ext.samefile('/foo', '/foo/')
-    assert os_ext.samefile('/foo/bar', '/foo//bar/')
-    assert os_ext.samefile(os.path.join(prefix_name, 'foo'),
+    assert osext.samefile('/foo', '/foo')
+    assert osext.samefile('/foo', '/foo/')
+    assert osext.samefile('/foo/bar', '/foo//bar/')
+    assert osext.samefile(os.path.join(prefix_name, 'foo'),
                            os.path.join(prefix_name, 'foolnk'))
-    assert os_ext.samefile(os.path.join(prefix_name, 'foo'),
+    assert osext.samefile(os.path.join(prefix_name, 'foo'),
                            os.path.join(prefix_name, 'foolnk1'))
-    assert not os_ext.samefile('/foo', '/bar')
-    assert os_ext.samefile('/foo', os.path.join(prefix_name, 'broken'))
-    assert os_ext.samefile(os.path.join(prefix_name, 'broken'),
+    assert not osext.samefile('/foo', '/bar')
+    assert osext.samefile('/foo', os.path.join(prefix_name, 'broken'))
+    assert osext.samefile(os.path.join(prefix_name, 'broken'),
                            os.path.join(prefix_name, 'broken1'))
 
 
 def test_is_interactive(monkeypatch):
     # Set `sys.ps1` to immitate an interactive session
     monkeypatch.setattr(sys, 'ps1', 'rfm>>> ', raising=False)
-    assert os_ext.is_interactive()
+    assert osext.is_interactive()
 
 
 def test_is_url():
     repo_https = 'https://github.com/eth-cscs/reframe.git'
     repo_ssh = 'git@github.com:eth-cscs/reframe.git'
-    assert os_ext.is_url(repo_https)
-    assert not os_ext.is_url(repo_ssh)
+    assert osext.is_url(repo_https)
+    assert not osext.is_url(repo_ssh)
 
 
 def test_git_repo_hash(monkeypatch):
     # A git branch hash consists of 8(short) or 40 characters.
-    assert len(os_ext.git_repo_hash()) == 8
-    assert len(os_ext.git_repo_hash(short=False)) == 40
-    assert os_ext.git_repo_hash(branch='invalid') is None
-    assert os_ext.git_repo_hash(branch='') is None
+    assert len(osext.git_repo_hash()) == 8
+    assert len(osext.git_repo_hash(short=False)) == 40
+    assert osext.git_repo_hash(branch='invalid') is None
+    assert osext.git_repo_hash(branch='') is None
 
     # Imitate a system with no git installed by emptying the PATH
     monkeypatch.setenv('PATH', '')
-    assert os_ext.git_repo_hash() is None
+    assert osext.git_repo_hash() is None
 
 
 def test_git_repo_exists():
-    assert os_ext.git_repo_exists('https://github.com/eth-cscs/reframe.git',
+    assert osext.git_repo_exists('https://github.com/eth-cscs/reframe.git',
                                   timeout=3)
-    assert not os_ext.git_repo_exists('reframe.git', timeout=3)
-    assert not os_ext.git_repo_exists('https://github.com/eth-cscs/xxx',
+    assert not osext.git_repo_exists('reframe.git', timeout=3)
+    assert not osext.git_repo_exists('https://github.com/eth-cscs/xxx',
                                       timeout=3)
 
 
@@ -219,60 +219,60 @@ def test_force_remove_file(tmp_path):
     fp_name = str(fp)
 
     assert os.path.exists(fp_name)
-    os_ext.force_remove_file(fp_name)
+    osext.force_remove_file(fp_name)
     assert not os.path.exists(fp_name)
 
     # Try to remove a non-existent file
-    os_ext.force_remove_file(fp_name)
+    osext.force_remove_file(fp_name)
 
 
 def test_expandvars_dollar():
     text = 'Hello, $(echo World)'
-    assert 'Hello, World' == os_ext.expandvars(text)
+    assert 'Hello, World' == osext.expandvars(text)
 
     # Test nested expansion
     text = '$(echo Hello, $(echo World))'
-    assert 'Hello, World' == os_ext.expandvars(text)
+    assert 'Hello, World' == osext.expandvars(text)
 
 
 def test_expandvars_backticks():
     text = 'Hello, `echo World`'
-    assert 'Hello, World' == os_ext.expandvars(text)
+    assert 'Hello, World' == osext.expandvars(text)
 
     # Test nested expansion
     text = '`echo Hello, `echo World``'
-    assert 'Hello, World' == os_ext.expandvars(text)
+    assert 'Hello, World' == osext.expandvars(text)
 
 
 def test_expandvars_mixed_syntax():
     text = '`echo Hello, $(echo World)`'
-    assert 'Hello, World' == os_ext.expandvars(text)
+    assert 'Hello, World' == osext.expandvars(text)
 
     text = '$(echo Hello, `echo World`)'
-    assert 'Hello, World' == os_ext.expandvars(text)
+    assert 'Hello, World' == osext.expandvars(text)
 
 
 def test_expandvars_error():
     text = 'Hello, $(foo)'
     with pytest.raises(SpawnedProcessError):
-        os_ext.expandvars(text)
+        osext.expandvars(text)
 
 
 def test_strange_syntax():
     text = 'Hello, $(foo`'
-    assert 'Hello, $(foo`' == os_ext.expandvars(text)
+    assert 'Hello, $(foo`' == osext.expandvars(text)
 
     text = 'Hello, `foo)'
-    assert 'Hello, `foo)' == os_ext.expandvars(text)
+    assert 'Hello, `foo)' == osext.expandvars(text)
 
 
 def test_expandvars_nocmd(monkeypatch):
     monkeypatch.setenv('FOO', 'World')
     text = 'Hello, $FOO'
-    assert 'Hello, World' == os_ext.expandvars(text)
+    assert 'Hello, World' == osext.expandvars(text)
 
     text = 'Hello, ${FOO}'
-    assert 'Hello, World' == os_ext.expandvars(text)
+    assert 'Hello, World' == osext.expandvars(text)
 
 
 @pytest.fixture
@@ -326,53 +326,53 @@ def assert_target_directory(src_prefix, dst_prefix, file_links=[]):
 
 
 def test_virtual_copy_nolinks(direntries):
-    os_ext.copytree_virtual(*direntries, dirs_exist_ok=True)
+    osext.copytree_virtual(*direntries, dirs_exist_ok=True)
     assert_target_directory(*direntries)
 
 
 def test_virtual_copy_nolinks_dirs_exist(direntries):
     with pytest.raises(FileExistsError):
-        os_ext.copytree_virtual(*direntries)
+        osext.copytree_virtual(*direntries)
 
 
 def test_virtual_copy_valid_links(direntries):
     file_links = ['bar/', 'foo/bar.txt', 'foo.txt']
-    os_ext.copytree_virtual(*direntries, file_links, dirs_exist_ok=True)
+    osext.copytree_virtual(*direntries, file_links, dirs_exist_ok=True)
     assert_target_directory(*direntries, file_links)
 
 
 def test_virtual_copy_inexistent_links(direntries):
     file_links = ['foobar/', 'foo/bar.txt', 'foo.txt']
     with pytest.raises(ValueError):
-        os_ext.copytree_virtual(*direntries, file_links, dirs_exist_ok=True)
+        osext.copytree_virtual(*direntries, file_links, dirs_exist_ok=True)
 
 
 def test_virtual_copy_absolute_paths(direntries):
     file_links = [direntries[0] / 'bar', 'foo/bar.txt', 'foo.txt']
     with pytest.raises(ValueError):
-        os_ext.copytree_virtual(*direntries, file_links, dirs_exist_ok=True)
+        osext.copytree_virtual(*direntries, file_links, dirs_exist_ok=True)
 
 
 def test_virtual_copy_irrelevant_paths(direntries):
     file_links = ['/bin', 'foo/bar.txt', 'foo.txt']
     with pytest.raises(ValueError):
-        os_ext.copytree_virtual(*direntries, file_links, dirs_exist_ok=True)
+        osext.copytree_virtual(*direntries, file_links, dirs_exist_ok=True)
 
     file_links = [os.path.dirname(direntries[0]), 'foo/bar.txt', 'foo.txt']
     with pytest.raises(ValueError):
-        os_ext.copytree_virtual(*direntries, file_links, dirs_exist_ok=True)
+        osext.copytree_virtual(*direntries, file_links, dirs_exist_ok=True)
 
 
 def test_virtual_copy_linkself(direntries):
     file_links = ['.']
     with pytest.raises(ValueError):
-        os_ext.copytree_virtual(*direntries, file_links, dirs_exist_ok=True)
+        osext.copytree_virtual(*direntries, file_links, dirs_exist_ok=True)
 
 
 def test_virtual_copy_linkparent(direntries):
     file_links = ['..']
     with pytest.raises(ValueError):
-        os_ext.copytree_virtual(*direntries, file_links, dirs_exist_ok=True)
+        osext.copytree_virtual(*direntries, file_links, dirs_exist_ok=True)
 
 
 def test_import_from_file_load_relpath():
@@ -407,7 +407,7 @@ def test_import_from_file_load_unknown_path():
 
 
 def test_import_from_file_load_directory_relative():
-    with os_ext.change_dir('reframe'):
+    with osext.change_dir('reframe'):
         module = util.import_module_from_file('../reframe')
         assert reframe.VERSION == module.VERSION
         assert 'reframe' == module.__name__
@@ -415,7 +415,7 @@ def test_import_from_file_load_directory_relative():
 
 
 def test_import_from_file_load_relative():
-    with os_ext.change_dir('reframe'):
+    with osext.change_dir('reframe'):
         # Load a module from a directory up
         module = util.import_module_from_file('../reframe/__init__.py')
         assert reframe.VERSION == module.VERSION
@@ -423,9 +423,9 @@ def test_import_from_file_load_relative():
         assert module is sys.modules.get('reframe')
 
         # Load a module from the current directory
-        module = util.import_module_from_file('utility/os_ext.py')
-        assert 'reframe.utility.os_ext' == module.__name__
-        assert module is sys.modules.get('reframe.utility.os_ext')
+        module = util.import_module_from_file('utility/osext.py')
+        assert 'reframe.utility.osext' == module.__name__
+        assert module is sys.modules.get('reframe.utility.osext')
 
 
 def test_import_from_file_load_outside_pkg():
@@ -577,7 +577,7 @@ def test_repr_default():
 
 def test_change_dir_working(tmpdir):
     wd_save = os.getcwd()
-    with os_ext.change_dir(tmpdir):
+    with osext.change_dir(tmpdir):
         assert os.getcwd() == tmpdir
 
     assert os.getcwd() == wd_save
@@ -586,7 +586,7 @@ def test_change_dir_working(tmpdir):
 def test_exception_propagation(tmpdir):
     wd_save = os.getcwd()
     try:
-        with os_ext.change_dir(tmpdir):
+        with osext.change_dir(tmpdir):
             raise RuntimeError
     except RuntimeError:
         assert os.getcwd() == wd_save
@@ -1190,7 +1190,7 @@ def test_ordered_set_reversed():
 
 
 def test_concat_files(tmpdir):
-    with os_ext.change_dir(tmpdir):
+    with osext.change_dir(tmpdir):
         file1 = 'in1.txt'
         file2 = 'in2.txt'
         concat_file = 'out.txt'
@@ -1200,7 +1200,7 @@ def test_concat_files(tmpdir):
         with open(file2, 'w') as f2:
             f2.write('Hello2')
 
-        os_ext.concat_files(concat_file, file1, file2, overwrite=True)
+        osext.concat_files(concat_file, file1, file2, overwrite=True)
         with open(concat_file) as cf:
             out = cf.read()
             assert out == 'Hello1\nHello2\n'
@@ -1213,18 +1213,18 @@ def test_unique_abs_paths():
     p4 = '/d/e//'
     p5 = '/d/e/f'
     expected_paths = [os.path.abspath('a/b'), '/d/e']
-    actual_paths = os_ext.unique_abs_paths(
+    actual_paths = osext.unique_abs_paths(
         [p1, p2, p3, p4, p5])
     assert expected_paths == actual_paths
 
     expected_paths = [os.path.abspath('a/b/c'),  os.path.abspath('a/b'),
                       '/d/e', '/d/e/f']
-    actual_paths = os_ext.unique_abs_paths(
+    actual_paths = osext.unique_abs_paths(
         [p1, p2, p3, p4, p5], prune_children=False)
     assert expected_paths == actual_paths
 
     with pytest.raises(TypeError):
-        os_ext.unique_abs_paths(None)
+        osext.unique_abs_paths(None)
 
 
 def test_cray_cdt_version(tmp_path, monkeypatch):
@@ -1234,7 +1234,7 @@ def test_cray_cdt_version(tmp_path, monkeypatch):
         fp.write('#%Module CDT 20.06\nblah blah\n')
 
     monkeypatch.setenv('MODULERCFILE', str(rcfile))
-    assert os_ext.cray_cdt_version() == '20.06'
+    assert osext.cray_cdt_version() == '20.06'
 
 
 def test_cray_cdt_version_unknown_fmt(tmp_path, monkeypatch):
@@ -1244,7 +1244,7 @@ def test_cray_cdt_version_unknown_fmt(tmp_path, monkeypatch):
         fp.write('random stuff')
 
     monkeypatch.setenv('MODULERCFILE', str(rcfile))
-    assert os_ext.cray_cdt_version() is None
+    assert osext.cray_cdt_version() is None
 
 
 def test_cray_cdt_version_empty_file(tmp_path, monkeypatch):
@@ -1252,14 +1252,14 @@ def test_cray_cdt_version_empty_file(tmp_path, monkeypatch):
     rcfile = tmp_path / 'rcfile'
     rcfile.touch()
     monkeypatch.setenv('MODULERCFILE', str(rcfile))
-    assert os_ext.cray_cdt_version() is None
+    assert osext.cray_cdt_version() is None
 
 
 def test_cray_cdt_version_no_such_file(tmp_path, monkeypatch):
     # Mock up a CDT file
     rcfile = tmp_path / 'rcfile'
     monkeypatch.setenv('MODULERCFILE', str(rcfile))
-    assert os_ext.cray_cdt_version() is None
+    assert osext.cray_cdt_version() is None
 
 
 def test_cray_cle_info(tmp_path):
@@ -1273,7 +1273,7 @@ def test_cray_cle_info(tmp_path):
                  'NETWORK=ari\n'
                  'PATCHSET=09-202003261814\n')
 
-    cle_info = os_ext.cray_cle_info(cle_info_file)
+    cle_info = osext.cray_cle_info(cle_info_file)
     assert cle_info.release == '7.0.UP01'
     assert cle_info.build == '7.0.1227'
     assert cle_info.date == '20200326'
@@ -1283,7 +1283,7 @@ def test_cray_cle_info(tmp_path):
 
 def test_cray_cle_info_no_such_file(tmp_path):
     cle_info_file = tmp_path / 'cle-release'
-    assert os_ext.cray_cle_info(cle_info_file) is None
+    assert osext.cray_cle_info(cle_info_file) is None
 
 
 def test_cray_cle_info_missing_parts(tmp_path):
@@ -1293,7 +1293,7 @@ def test_cray_cle_info_missing_parts(tmp_path):
         fp.write('RELEASE=7.0.UP01\n'
                  'PATCHSET=09-202003261814\n')
 
-    cle_info = os_ext.cray_cle_info(cle_info_file)
+    cle_info = osext.cray_cle_info(cle_info_file)
     assert cle_info.release == '7.0.UP01'
     assert cle_info.build is None
     assert cle_info.date is None
