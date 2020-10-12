@@ -1,6 +1,4 @@
-==========================================
- Tutorial 1: Getting Started with ReFrame
-==========================================
+========================================== Tutorial 1: Getting Started with ReFrame ==========================================
 
 .. versionadded:: 3.1
 
@@ -141,7 +139,7 @@ Here are the contents of the report file for our first ReFrame run:
 
 .. code-block:: console
 
-   cat ~/.reframe/reports/run-report-0.json
+   cat ~/.reframe/reports/run-report.json
 
 .. code-block:: javascript
 
