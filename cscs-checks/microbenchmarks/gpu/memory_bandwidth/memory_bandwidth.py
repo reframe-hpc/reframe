@@ -16,7 +16,7 @@ class GpuBandwidthCheck(rfm.RegressionTest):
     def __init__(self):
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu',
                               'arolla:cn', 'tsa:cn',
-                              'ault:amdv100']
+                              'ault:amdv100', 'ault:intelv100']
         self.valid_prog_environs = ['PrgEnv-gnu']
         if self.current_system.name in ['arolla', 'tsa']:
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
@@ -29,7 +29,7 @@ class GpuBandwidthCheck(rfm.RegressionTest):
 
         # Set nvcc flags
         nvidia_sm = '60'
-        elif self.current_system.name in ['arolla', 'tsa', 'ault']:
+        if self.current_system.name in ['arolla', 'tsa', 'ault']:
             nvidia_sm = '70'
 
         # Perform a single bandwidth test with a buffer size of 1024MB
@@ -52,6 +52,8 @@ class GpuBandwidthCheck(rfm.RegressionTest):
             'arolla:cn':      2,
             'tsa:cn':         8,
             'ault:amdv100':   2,
+            'ault:intelv100': 4,
+            'ault:amdvega':   3,
         }
 
         # perf_patterns and reference will be set by the sanity check function
@@ -68,6 +70,12 @@ class GpuBandwidthCheck(rfm.RegressionTest):
             'ault:amdv100:h2d':  (13189, -0.1, None, 'MB/s'),
             'ault:amdv100:d2h':  (13141, -0.1, None, 'MB/s'),
             'ault:amdv100:d2d': (777788, -0.1, None, 'MB/s'),
+            'ault:intelv100:h2d':  (13183, -0.1, None, 'MB/s'),
+            'ault:intelv100:d2h':  (12411, -0.1, None, 'MB/s'),
+            'ault:intelv100:d2d': (778200, -0.1, None, 'MB/s'),
+            'ault:amdvega:h2d':  (14000, -0.1, None, 'MB/s'),
+            'ault:amdvega:d2h':  (14000, -0.1, None, 'MB/s'),
+            'ault:amdvega:d2d': (575700, -0.1, None, 'MB/s'),
         }
         self.tags = {'diagnostic', 'benchmark', 'mch',
                      'craype', 'external-resources'}

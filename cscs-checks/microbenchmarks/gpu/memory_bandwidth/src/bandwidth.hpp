@@ -4,7 +4,7 @@
 #include<iostream>
 
 #include "types.hpp"
-#include "Xlib/runtime.hpp"
+#include "Xdevice/runtime.hpp"
 
 template<class dataFrom, class dataTo>
 float copyBandwidth(size_t size, int device, int repeat, XMemcpyKind cpyDir)

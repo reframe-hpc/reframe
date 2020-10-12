@@ -1,5 +1,5 @@
-#ifndef __DEFINED__XLIB_RUNTIME__
-#define __DEFINED__XLIB_RUNTIME__
+#ifndef __INCLUDED_XDEV_RUNTIME__
+#define __INCLUDED_XDEV_RUNTIME__
 
 // Set default platform
 #if (!defined TARGET_CUDA && !defined TARGET_HIP)
@@ -14,4 +14,4 @@
 # error "TARGET NOT IMPLEMENTED"
 #endif
 
-#endif // __DEFINED__XLIB_RUNTIME__
+#endif // __DEFINED__XDEV_RUNTIME__

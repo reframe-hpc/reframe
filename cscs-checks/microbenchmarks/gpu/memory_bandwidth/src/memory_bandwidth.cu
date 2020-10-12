@@ -9,8 +9,8 @@ int main()
   int number_of_devices;
   XGetDeviceCount(number_of_devices);
 
-  // Initialise the a DeviceSet instance to manage the devices.
-  DeviceSet dSet;
+  // Initialise the a Smi instance to manage the devices.
+  Smi smiHandle;
 
   // Make sure we've got devices aboard.g
   if (number_of_devices == 0) 
@@ -36,7 +36,7 @@ int main()
   for (int d = 0; d < number_of_devices; d++)
   {
     XSetDevice(d);
-    dSet.setCpuAffinity(d);
+    smiHandle.setCpuAffinity(d);
     float bw = fact / copyBandwidth<HostData, DeviceData>(copy_size, d, copy_repeats, XMemcpyHostToDevice);
     printf("[%s] Host to device bandwidth on device %d is %.2f Mb/s.\n", nid_name, d, bw);
   }
@@ -47,7 +47,7 @@ int main()
   for (int d = 0; d < number_of_devices; d++)
   {
     XSetDevice(d);
-    dSet.setCpuAffinity(d);
+    smiHandle.setCpuAffinity(d);
     float bw = fact / copyBandwidth<DeviceData, HostData>(copy_size, d, copy_repeats, XMemcpyDeviceToHost);
     printf("[%s] Device to host bandwidth on device %d is %.2f Mb/s.\n", nid_name, d, bw);
   }
@@ -58,7 +58,7 @@ int main()
   for (int d = 0; d < number_of_devices; d++)
   {
     XSetDevice(d);
-    dSet.setCpuAffinity(d);
+    smiHandle.setCpuAffinity(d);
     float bw = (float)2 * fact / copyBandwidth<DeviceData, DeviceData>(copy_size, d, copy_repeats, XMemcpyDeviceToDevice);
     printf("[%s] Device to device bandwidth on device %d is %.2f Mb/s.\n", nid_name, d, bw);
   }

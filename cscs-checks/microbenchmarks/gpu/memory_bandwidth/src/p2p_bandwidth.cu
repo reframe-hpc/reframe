@@ -1,15 +1,13 @@
 
 /*
- Benchmark test case to measure the copy bandwidth across different devices within the same node.
- The output of this test is a matrix showing each bandwidth measure across each of the devices.
- For comparative purposes across devices, this matrix has an extra column with the sum of the
- bandwidths from the same sending device (excluding itself).
+ Benchmark case to measure the copy bandwidth across different devices within the same node.
+ The output of this test is a matrix showing each of the bandwidths across each of the devices.
+ For comparative purposes, this matrix has an extra column with the sum of the bandwidths
+ from the same sending device (excluding itself - the matrix diagonal).
 
  Test flags:
-   - P2P: if defined, this flag enables the sending device to have direct access to
-     the memory from the target device.
-   - SYMM: if defined, it computes only half of the matrix, assuming that the bandwidth is the
-     same both ways.
+   - P2P:  Enables remote direct memory access from the sending to the receiving peer.
+   - SYMM: Assumes that the bandwidth matrix is symmetric and computes only the upper triangle.
 */
 
 #include "testHeaders.hpp"
@@ -68,19 +66,20 @@ void p2pBandwidthMap(int devices, int p2p, size_t copy_size, int repeats, char *
 {
   /*
    This function evaluates the GPU to GPU copy bandwith in all GPU to GPU combinations.
-   If symmetry is assumed, compile with -DSYMM to compute only the upper matrix triangle.
-   The data is printed as a matrix (see description above). 
+   If bandwidth symmetry is assumed (i.e. the bandwidth in both directions is the same), 
+   compile with -DSYMM to compute only the upper matrix triangle.
+   The resulting data is printed as a matrix (see description above). 
   
    ** The "Totals" column excludes the diagonal terms from the sum **
 
-   Mote that this function sets the CPU affinity for the sending GPU.
+   Note that this function sets the CPU affinity for the sending GPU.
 
    Arguments:
-     - devices: number of devices
-     - p2p: bool flag to enable or not direct memory access across GPUs
+     - devices:   number of devices
+     - p2p: bool  flag to enable or not direct memory access across GPUs
      - copy_size: in bytes, the copy size.
-     - repeats: number of copies to be carried out.
-     - nid_name: node name - just for reporting purposes.
+     - repeats:   number of copies to be carried out.
+     - nid_name:  node name - just for reporting purposes.
   */
 
 #ifdef SYMM
@@ -91,14 +90,14 @@ void p2pBandwidthMap(int devices, int p2p, size_t copy_size, int repeats, char *
 
   float fact = (float)copy_size/(float)1e6;
 
-  // Create a device set to tune the device's cpu affinity.
-  DeviceSet dSet;
+  // Fire up the system management interface to set the device's cpu affinity.
+  Smi smiHandle;
 
   /*
    Test the Peer to Peer bandwidth.
   */
   const char * p2pOut = (p2p ? "enabled" : "disabled");
-  printf("[%s] P2P Memory bandwidth (GB/s) with peer access %s\n", nid_name, p2pOut);
+  printf("[%s] P2P Memory bandwidth (GB/s) with remote direct memory access %s\n", nid_name, p2pOut);
   printf("[%s] %10s", nid_name, "From \\ To ");
   for (int ds = 0; ds < devices; ds++)
   {
@@ -111,7 +110,7 @@ void p2pBandwidthMap(int devices, int p2p, size_t copy_size, int repeats, char *
     float totals = 0; 
  
     // Set the CPU affinity to the sending device.
-    dSet.setCpuAffinity(ds);
+    smiHandle.setCpuAffinity(ds);
 
     printf("[%s] GPU %2d%4s", nid_name, ds, " ");
     for (int dr = 0; dr < LIMITS; dr++)
