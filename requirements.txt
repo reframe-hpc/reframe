@@ -1,6 +1,7 @@
 importlib_metadata
 jsonschema
 pytest>=5.0.0
+pytest-parallel
 coverage
 setuptools
 wcwidth
