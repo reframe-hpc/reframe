@@ -25,9 +25,8 @@ class LibsciAccDgemmCublasCheck(LibsciAccBaseCheck):
         self.descr = 'Test Cray LibSci on the GPU (dgemm with cublas alloc)'
         self.build_system = 'SingleSource'
         self.sourcesdir = None
-        self.sourcepath = (r'$CRAY_LIBSCI_ACC_DIR/examples/examples/gnu_cuda/'
-                           r'dgemm_cuda.c')
-        self.executable = 'dgemm.exe'
+        self.sourcepath = ('$CRAY_LIBSCI_ACC_DIR/examples/examples/gnu_cuda/'
+                           'dgemm_cuda.c')
         self.build_system.ldflags = ['-lcublas']
         self.sanity_patterns = sn.assert_found(r'(4096\s+){3}', self.stdout)
         regex = r'(\s+\d+){3}\s+(?P<gpu_flops>\S+)\s+(?P<cpu_flops>\S+)\s+'
@@ -39,12 +38,12 @@ class LibsciAccDgemmCublasCheck(LibsciAccBaseCheck):
         }
         self.reference = {
             'daint:gpu': {
-                'dgemm_gpu': (2263.0, -0.1, None, 'GFLop/s'),
-                'dgemm_cpu': (45.0, -0.1, None, 'GFLop/s'),
+                'dgemm_gpu': (4127.0, -0.05, None, 'GFLop/s'),
+                'dgemm_cpu': (45.0, -0.05, None, 'GFLop/s'),
             },
             'dom:gpu': {
-                'dgemm_gpu': (2263.0, -0.1, None, 'GFLop/s'),
-                'dgemm_cpu': (45.0, -0.1, None, 'GFLop/s'),
+                'dgemm_gpu': (4127.0, -0.05, None, 'GFLop/s'),
+                'dgemm_cpu': (45.0, -0.05, None, 'GFLop/s'),
             },
         }
 
@@ -56,9 +55,8 @@ class LibsciAccDgemmCheck(LibsciAccBaseCheck):
         self.descr = 'Test Cray LibSci on the GPU (dgemm with libsci alloc)'
         self.build_system = 'SingleSource'
         self.sourcesdir = None
-        self.sourcepath = (r'$CRAY_LIBSCI_ACC_DIR/examples/examples/c_simple/'
-                           r'dgemm_simple.c')
-        self.executable = 'dgemm.exe'
+        self.sourcepath = ('$CRAY_LIBSCI_ACC_DIR/examples/examples/c_simple/'
+                           'dgemm_simple.c')
         self.sanity_patterns = sn.assert_found(r'(4096\s+){3}', self.stdout)
         regex = r'(\s+\d+){3}\s+(?P<gpu_flops>\S+)\s+(?P<cpu_flops>\S+)\s+'
         self.perf_patterns = {
@@ -69,11 +67,11 @@ class LibsciAccDgemmCheck(LibsciAccBaseCheck):
         }
         self.reference = {
             'daint:gpu': {
-                'dgemm_gpu': (2262.0, -0.1, None, 'GFLop/s'),
-                'dgemm_cpu': (45.0, -0.1, None, 'GFLop/s'),
+                'dgemm_gpu': (2264.0, -0.05, None, 'GFLop/s'),
+                'dgemm_cpu': (45.0, -0.05, None, 'GFLop/s'),
             },
             'dom:gpu': {
-                'dgemm_gpu': (4115.0, -0.1, None, 'GFLop/s'),
-                'dgemm_cpu': (45.0, -0.1, None, 'GFLop/s'),
+                'dgemm_gpu': (2264.0, -0.05, None, 'GFLop/s'),
+                'dgemm_cpu': (45.0, -0.05, None, 'GFLop/s'),
             },
         }
