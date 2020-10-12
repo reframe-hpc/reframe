@@ -24,13 +24,15 @@ usage()
     echo "Usage: $0 [-h] [+docs]"
     echo "Bootstrap ReFrame by pulling all its dependencies"
     echo "  -P EXEC  Use EXEC as Python interpreter"
+    echo "  -O       Install optional packages using pip"
     echo "  -h       Print this help message and exit"
     echo "  +docs    Build also the documentation"
 }
 
 
-while getopts "hP:" opt; do
+while getopts "hOP:" opt; do
     case $opt in
+        "O") optional="pygelf" ;;
         "P") python=$OPTARG ;;
         "h") usage && exit 0 ;;
         "?") usage && exit 0 ;;
@@ -61,6 +63,10 @@ export PYTHONPATH=$(pwd)/external:$(pwd)/external/usr/lib/python$pyver/site-pack
 
 CMD $python -m pip install --no-cache-dir -q --upgrade pip --target=external/
 CMD $python -m pip install --use-feature=2020-resolver --no-cache-dir -q -r requirements.txt --target=external/ --upgrade
+
+if [ -n "$optional" ]; then
+    CMD $python -m pip install --use-feature=2020-resolver --no-cache-dir -q $optional --target=external/ --upgrade
+fi
 
 if [ x"$1" == x"+docs" ]; then
     CMD $python -m pip install --use-feature=2020-resolver --no-cache-dir -q -r docs/requirements.txt --target=external/ --upgrade
