@@ -143,7 +143,6 @@ site_configuration = {
             'handlers': [
                 {
                     'type': 'file',
-                    'name': '.rfm_unittest.log',
                     'level': 'debug',
                     'format': (
                         '[%(check_job_completion_time)s] %(levelname)s: '
