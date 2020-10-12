@@ -24,7 +24,7 @@ usage()
     echo "Usage: $0 [-h] [+docs]"
     echo "Bootstrap ReFrame by pulling all its dependencies"
     echo "  -P EXEC  Use EXEC as Python interpreter"
-    echo "  -O       Install optional packages using pip"
+    echo "  -O       Install optional Python packages using pip"
     echo "  -h       Print this help message and exit"
     echo "  +docs    Build also the documentation"
 }
