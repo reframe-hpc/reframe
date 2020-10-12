@@ -326,7 +326,7 @@ ReFrame can be used also to test applications that run inside a container.
 First, we need to enable the container platform support in ReFrame's configuration and, specifically, at the partition configuration level:
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 40-54
+   :lines: 38-52
    :emphasize-lines: 8-13
 
 For each partition, users can define a list of container platforms supported using the :js:attr:`container_platforms` configuration parameter.

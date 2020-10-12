@@ -317,7 +317,7 @@ class Job:
 
         .. versionadded:: 2.17
 
-        :type:`List[str]` or :type:`None`
+        :type: :class:`List[str]` or :class:`None`
         '''
         return self._nodelist
 
