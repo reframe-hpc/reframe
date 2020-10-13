@@ -42,15 +42,12 @@ class CudaSamples(rfm.RegressionTest):
         else:
             self.prebuild_cmds = []
 
-        self.build_system.options = [
-            'SMS="%s"' %
-            self.nvidia_sm,
-            'CUDA_PATH=$CUDA_HOME']
+        self.build_system.options = [f'SMS="{self.nvidia_sm}"',
+                                     f'CUDA_PATH=$CUDA_HOME']
         self.maintainers = ['JO']
         self.tags = {'production', 'external_resosurces'}
 
 
-@rfm.required_version('>=2.14')
 @rfm.simple_test
 class CudaDeviceQueryCheck(CudaSamples):
     def __init__(self):
@@ -66,21 +63,13 @@ class CudaDeviceQueryCheck(CudaSamples):
             self.stdout)
 
 
-class DependentCudaSamples(CudaSamples):
+@rfm.simple_test
+class CudaConcurrentKernelsCheck(CudaSamples):
     def __init__(self):
         super().__init__()
         self.depends_on('CudaDeviceQueryCheck')
-
-
-@rfm.required_version('>=2.14')
-@rfm.simple_test
-class CudaConcurrentKernelsCheck(DependentCudaSamples):
-    def __init__(self):
-        super().__init__()
         self.descr = 'CUDA concurrentKernels test'
-        self.sanity_patterns = sn.assert_found(
-            r'Test passed',
-            self.stdout)
+        self.sanity_patterns = sn.assert_found(r'Test passed', self.stdout)
 
     @rfm.require_deps
     def set_prebuild_cmds(self, CudaDeviceQueryCheck):
@@ -95,15 +84,13 @@ class CudaConcurrentKernelsCheck(DependentCudaSamples):
             'Samples', 'concurrentKernels', 'concurrentKernels')
 
 
-@rfm.required_version('>=2.14')
 @rfm.simple_test
-class CudaMatrixMultCublasCheck(DependentCudaSamples):
+class CudaMatrixMultCublasCheck(CudaSamples):
     def __init__(self):
         super().__init__()
+        self.depends_on('CudaDeviceQueryCheck')
         self.descr = 'CUDA simpleCUBLAS test'
-        self.sanity_patterns = sn.assert_found(
-            r'test passed',
-            self.stdout)
+        self.sanity_patterns = sn.assert_found(r'test passed', self.stdout)
 
     @rfm.require_deps
     def set_prebuild_cmds(self, CudaDeviceQueryCheck):
@@ -118,15 +105,13 @@ class CudaMatrixMultCublasCheck(DependentCudaSamples):
             'Samples', 'simpleCUBLAS', 'simpleCUBLAS')
 
 
-@rfm.required_version('>=2.14')
 @rfm.simple_test
-class CudaBandwidthCheck(DependentCudaSamples):
+class CudaBandwidthCheck(CudaSamples):
     def __init__(self):
         super().__init__()
+        self.depends_on('CudaDeviceQueryCheck')
         self.descr = 'CUDA simpleCUBLAS test'
-        self.sanity_patterns = sn.assert_found(
-            r'Result = PASS',
-            self.stdout)
+        self.sanity_patterns = sn.assert_found(r'Result = PASS', self.stdout)
 
     @rfm.require_deps
     def set_prebuild_cmds(self, CudaDeviceQueryCheck):
@@ -141,15 +126,14 @@ class CudaBandwidthCheck(DependentCudaSamples):
             'Samples', 'bandwidthTest', 'bandwidthTest')
 
 
-@rfm.required_version('>=2.14')
 @rfm.simple_test
-class CudaGraphsCGCheck(DependentCudaSamples):
+class CudaGraphsCGCheck(CudaSamples):
     def __init__(self):
         super().__init__()
+        self.depends_on('CudaDeviceQueryCheck')
         self.descr = 'CUDA simpleCUBLAS test'
         self.sanity_patterns = sn.assert_found(
-            r'Test Summary:  Error amount = 0.00000',
-            self.stdout)
+            r'Test Summary:  Error amount = 0.00000', self.stdout)
 
     @rfm.require_deps
     def set_prebuild_cmds(self, CudaDeviceQueryCheck):
