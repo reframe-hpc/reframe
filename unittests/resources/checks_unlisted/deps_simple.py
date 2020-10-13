@@ -23,7 +23,6 @@ class Test1(rfm.RunOnlyRegressionTest):
     def __init__(self, kind):
         kindspec = {
             'fully': rfm.DEPEND_FULLY,
-            'by_part': rfm.DEPEND_BY_PARTITION,
             'by_env': rfm.DEPEND_BY_ENV,
             'exact': rfm.DEPEND_EXACT,
         }

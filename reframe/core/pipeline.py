@@ -9,8 +9,7 @@
 
 __all__ = [
     'CompileOnlyRegressionTest', 'RegressionTest', 'RunOnlyRegressionTest',
-    'DEPEND_BY_ENV', 'DEPEND_EXACT', 'DEPEND_FULLY', 'DEPEND_BY_PARTITION',
-    'final'
+    'DEPEND_BY_ENV', 'DEPEND_EXACT', 'DEPEND_FULLY', 'final',
 ]
 
 
@@ -59,19 +58,11 @@ DEPEND_EXACT  = 1
 DEPEND_BY_ENV = 2
 
 #: Constant to be passed as the ``how`` argument of the
-#: :func:`RegressionTest.depends_on` method. It denotes that the test cases of
-#: the current test will depend only on the corresponding test cases of the
-#: target test that use the same partition.
-#:
-#:  This constant is directly available under the :mod:`reframe` module.
-DEPEND_BY_PARTITION = 3
-
-#: Constant to be passed as the ``how`` argument of the
 #: :func:`RegressionTest.depends_on` method. It denotes that each test case of
 #: this test depends on all the test cases of the target test.
 #:
 #:  This constant is directly available under the :mod:`reframe` module.
-DEPEND_FULLY  = 4
+DEPEND_FULLY  = 3
 
 
 def _run_hooks(name=None):
@@ -1602,14 +1593,12 @@ class RegressionTest(metaclass=RegressionTestMeta):
         def same_env_and_partition(src, dst):
             return src == dst
 
-        # Old syntax: depends_on(self, target, how=None, subdeps=None)
-        # New syntax: depends_on(self, target, when=None)
         if when is None:
             when = same_env_and_partition
         elif ('how' in kwargs or 'subdeps' in kwargs or args or
-            isinstance(when, int)):
+              isinstance(when, int)):
             msg = ("the arguments `how' and `subdeps' are deprecated, "
-                "please use the argument `when'")
+                   "please use the argument `when'")
             # user_deprecation_warning(msg)
 
             # if `when' is callable ignore other arguments, otherwise
@@ -1622,6 +1611,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
                         subdeps = args[0]
                     else:
                         subdeps = None
+
                 else:
                     how = kwargs.get('how', default=DEPEND_BY_ENV)
                     subdeps = kwargs.get('how', default=None)
@@ -1639,13 +1629,15 @@ class RegressionTest(metaclass=RegressionTestMeta):
                     if not subdeps:
                         return False
 
-                    return (src[0] == dst[0]) and (src[1] in subdeps) and (dst[1] in subdeps[src[1]])
+                    return ((src[0] == dst[0]) and (src[1] in subdeps) and
+                            (dst[1] in subdeps[src[1]]))
 
                 def same_partition(src, dst):
                     return src[0] == dst[0]
 
                 # Follow the old definitions
-                # DEPEND_BY_ENV used to mean same env, same partition & same system
+                # DEPEND_BY_ENV used to mean same env, same partition
+                # & same system
                 if how == DEPEND_BY_ENV:
                     when = same_env_and_partition
                 # DEPEND_BY_ENV used to mean same partition & same system
