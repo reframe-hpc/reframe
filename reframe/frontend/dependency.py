@@ -105,30 +105,13 @@ def build_deps(cases, default_cases=None):
         pname = c.partition.fullname
         ename = c.environ.name
         for dep in c.check.user_deps():
-            tname, how, subdeps = dep
-            if how == rfm.DEPEND_BY_PARTITION:
-                c.deps.extend(resolve_dep(c, cases_by_part,
-                                          default_cases_by_part, tname, pname))
-            elif how == rfm.DEPEND_BY_ENV:
-                c.deps.append(
-                    resolve_dep(c, cases_revmap, default_cases_revmap,
-                                tname, pname, ename)
-                )
-            elif how == rfm.DEPEND_EXACT:
-                for env, tenvs in subdeps.items():
-                    if env != (pname.split(':')[1], ename):
-                        continue
-
-                    for tp, te in tenvs:
-                        tp = re.sub(r':\S+', f':{tp}', pname)
-                        c.deps.append(
-                            resolve_dep(c, cases_revmap, default_cases_revmap,
-                                        tname, tp, te)
-                        )
-            elif how == rfm.DEPEND_FULLY:
-                c.deps.extend(
-                    resolve_dep(c, all_cases, default_all_cases, tname)
-                )
+            tname, when = dep
+            for d in resolve_dep(c, all_cases, default_all_cases, tname):
+                dep_cname = d.check.name
+                dep_pname = d.partition.fullname
+                dep_ename = d.environ.name
+                if not when or when((pname, ename), (dep_pname, dep_ename)):
+                    c.deps.append(d)
 
         graph[c] = util.OrderedSet(c.deps)
 

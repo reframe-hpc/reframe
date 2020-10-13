@@ -35,7 +35,8 @@ from reframe.core.containers import ContainerPlatform, ContainerPlatformField
 from reframe.core.deferrable import _DeferredExpression
 from reframe.core.exceptions import (BuildError, DependencyError,
                                      PipelineError, SanityError,
-                                     PerformanceError)
+                                     PerformanceError,
+                                     user_deprecation_warning)
 from reframe.core.meta import RegressionTestMeta
 from reframe.core.schedulers import Job
 
@@ -1564,7 +1565,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
     def user_deps(self):
         return util.SequenceView(self._userdeps)
 
-    def depends_on(self, target, how=DEPEND_BY_ENV, subdeps=None):
+    def depends_on(self, target, when=None, *args, **kwargs):
         '''Add a dependency to ``target`` in this test.
 
         :arg target: The name of the target test.
@@ -1587,8 +1588,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
             .. code-block:: python
 
                self.depends_on('T0', how=rfm.DEPEND_EXACT,
-                               subdeps={('P0', 'E0'): [('P0', 'E0'), ('P0', 'E1')],
-                                        ('P0', 'E1'): [('P0', 'E1')]})
+                               subdeps={'E0': ['E0', 'E1'], 'E1': ['E1']})
 
         For more details on how test dependencies work in ReFrame, please
         refer to `How Test Dependencies Work In ReFrame <dependencies.html>`__.
@@ -1599,17 +1599,68 @@ class RegressionTest(metaclass=RegressionTestMeta):
         if not isinstance(target, str):
             raise TypeError("target argument must be of type: `str'")
 
-        if not isinstance(how, int):
-            raise TypeError("how argument must be of type: `int'")
+        def same_env_and_partition(src, dst):
+            return src == dst
 
-        if (subdeps is not None and
-            not isinstance(subdeps, typ.Dict[typ.Tuple[str, str],
-                           typ.List[typ.Tuple[str, str]]])):
-            raise TypeError("subdeps argument must be of type "
-                            "`Dict[Tuple[str, str], List[Tuple[str, str]]]' "
-                            "or `None'")
+        # Old syntax: depends_on(self, target, how=None, subdeps=None)
+        # New syntax: depends_on(self, target, when=None)
+        if when is None:
+            when = same_env_and_partition
+        elif ('how' in kwargs or 'subdeps' in kwargs or args or
+            isinstance(when, int)):
+            msg = ("the arguments `how' and `subdeps' are deprecated, "
+                "please use the argument `when'")
+            # user_deprecation_warning(msg)
 
-        self._userdeps.append((target, how, subdeps))
+            # if `when' is callable ignore other arguments, otherwise
+            # fix the argument to be the appropriate callable
+            if when is not callable(when):
+                if isinstance(when, int):
+                    how = when
+                    # If there is an extra argument it should be subdeps
+                    if args:
+                        subdeps = args[0]
+                    else:
+                        subdeps = None
+                else:
+                    how = kwargs.get('how', default=DEPEND_BY_ENV)
+                    subdeps = kwargs.get('how', default=None)
+
+                # some sanity checking
+                if how is not None and not isinstance(how, int):
+                    raise TypeError("how argument must be of type: `int'")
+
+                if (subdeps is not None and
+                    not isinstance(subdeps, typ.Dict[str, typ.List[str]])):
+                    raise TypeError("subdeps argument must be of type "
+                                    "`Dict[str, List[str]]' or `None'")
+
+                def exact(src, dst):
+                    if not subdeps:
+                        return False
+
+                    return (src[0] == dst[0]) and (src[1] in subdeps) and (dst[1] in subdeps[src[1]])
+
+                def same_partition(src, dst):
+                    return src[0] == dst[0]
+
+                # Follow the old definitions
+                # DEPEND_BY_ENV used to mean same env, same partition & same system
+                if how == DEPEND_BY_ENV:
+                    when = same_env_and_partition
+                # DEPEND_BY_ENV used to mean same partition & same system
+                elif how == DEPEND_FULLY:
+                    when = same_partition
+                # DEPEND_EXACT allows dependencies inside the same partition
+                elif how == DEPEND_EXACT:
+                    when = exact
+                else:
+                    raise TypeError("invalid type of dependency")
+
+        if not callable(when):
+            raise TypeError("how argument must be callable")
+
+        self._userdeps.append((target, when))
 
     def getdep(self, target, environ=None):
         '''Retrieve the test case of a target dependency.

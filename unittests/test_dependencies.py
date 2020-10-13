@@ -72,11 +72,9 @@ def find_check(name, checks):
     return None
 
 
-def find_case(cname, pname, ename, cases):
+def find_case(cname, ename, cases):
     for c in cases:
-        if (c.check.name == cname and
-            c.partition.fullname == pname and
-            c.environ.name == ename):
+        if c.check.name == cname and c.environ.name == ename:
             return c
 
 
@@ -104,8 +102,8 @@ def loader():
 
 def test_eq_hash(loader, exec_ctx):
     cases = executors.generate_testcases(loader.load_all())
-    case0 = find_case('Test0', 'sys0:p0', 'e0', cases)
-    case1 = find_case('Test0', 'sys0:p0', 'e1', cases)
+    case0 = find_case('Test0', 'e0', cases)
+    case1 = find_case('Test0', 'e1', cases)
     case0_copy = case0.clone()
 
     assert case0 == case0_copy
@@ -128,22 +126,12 @@ def test_build_deps(loader, exec_ctx):
     dependency.validate_deps(deps)
 
     # Check DEPEND_FULLY dependencies
-    assert num_deps(deps, 'Test1_fully') == 16
-    for p0 in ['sys0:p0', 'sys0:p1']:
-        for p1 in ['sys0:p0', 'sys0:p1']:
-            for e0 in ['e0', 'e1']:
-                for e1 in ['e0', 'e1']:
-                    assert has_edge(deps,
-                                    Node('Test1_fully', p0, e0),
-                                    Node('Test0', p1, e1))
-
-    # Check DEPEND_BY_PARTITION dependencies
-    assert num_deps(deps, 'Test1_by_part') == 8
+    assert num_deps(deps, 'Test1_fully') == 8
     for p in ['sys0:p0', 'sys0:p1']:
         for e0 in ['e0', 'e1']:
             for e1 in ['e0', 'e1']:
                 assert has_edge(deps,
-                                Node('Test1_by_part', p, e0),
+                                Node('Test1_fully', p, e0),
                                 Node('Test0', p, e1))
 
     # Check DEPEND_BY_ENV
@@ -159,38 +147,37 @@ def test_build_deps(loader, exec_ctx):
                             Node('Test0', p, e))
 
     # Check DEPEND_EXACT
-    assert num_deps(deps, 'Test1_exact') == 3
-    assert has_edge(deps,
-                    Node('Test1_exact', 'sys0:p0', 'e0'),
-                    Node('Test0', 'sys0:p0', 'e0'))
-    assert has_edge(deps,
-                    Node('Test1_exact', 'sys0:p0', 'e0'),
-                    Node('Test0', 'sys0:p1', 'e1'))
-    assert has_edge(deps,
-                    Node('Test1_exact', 'sys0:p1', 'e1'),
-                    Node('Test0', 'sys0:p0', 'e1'))
+    assert num_deps(deps, 'Test1_exact') == 6
+    for p in ['sys0:p0', 'sys0:p1']:
+        assert has_edge(deps,
+                        Node('Test1_exact', p, 'e0'),
+                        Node('Test0', p, 'e0'))
+        assert has_edge(deps,
+                        Node('Test1_exact', p, 'e0'),
+                        Node('Test0', p, 'e1'))
+        assert has_edge(deps,
+                        Node('Test1_exact', p, 'e1'),
+                        Node('Test0', p, 'e1'))
 
     # Check in-degree of Test0
 
-    # 4 from Test1_fully,
-    # 2 from Test1_by_part,
-    # 1 from Test1_by_env,
-    # 1 from Test1_exact (only for p0),
-    # 1 from Test1_default
-    assert in_degree(deps, Node('Test0', 'sys0:p0', 'e0')) == 9
-    assert in_degree(deps, Node('Test0', 'sys0:p1', 'e0')) == 8
-
-    # 4 from Test1_fully,
-    # 2 from Test1_by_part,
+    # 2 from Test1_fully,
     # 1 from Test1_by_env,
     # 1 from Test1_exact,
     # 1 from Test1_default
-    assert in_degree(deps, Node('Test0', 'sys0:p0', 'e1')) == 9
-    assert in_degree(deps, Node('Test0', 'sys0:p1', 'e1')) == 9
+    assert in_degree(deps, Node('Test0', 'sys0:p0', 'e0')) == 5
+    assert in_degree(deps, Node('Test0', 'sys0:p1', 'e0')) == 5
+
+    # 2 from Test1_fully,
+    # 1 from Test1_by_env,
+    # 2 from Test1_exact,
+    # 1 from Test1_default
+    assert in_degree(deps, Node('Test0', 'sys0:p0', 'e1')) == 6
+    assert in_degree(deps, Node('Test0', 'sys0:p1', 'e1')) == 6
 
     # Pick a check to test getdep()
-    check_e0 = find_case('Test1_exact', 'sys0:p0', 'e0', cases).check
-    check_e1 = find_case('Test1_exact', 'sys0:p1', 'e1', cases).check
+    check_e0 = find_case('Test1_exact', 'e0', cases).check
+    check_e1 = find_case('Test1_exact', 'e1', cases).check
 
     with pytest.raises(DependencyError):
         check_e0.getdep('Test0')
@@ -222,8 +209,7 @@ def test_build_deps_unknown_test(loader, exec_ctx):
         if depkind == 'default':
             test1.depends_on('TestX')
         elif depkind == 'exact':
-            test1.depends_on('TestX', rfm.DEPEND_EXACT,
-                             {('p0', 'e0'): [('p0', 'e0')]})
+            test1.depends_on('TestX', rfm.DEPEND_EXACT, {'e0': ['e0']})
         elif depkind == 'fully':
             test1.depends_on('TestX', rfm.DEPEND_FULLY)
         elif depkind == 'by_env':
@@ -239,8 +225,7 @@ def test_build_deps_unknown_target_env(loader, exec_ctx):
     # Add some inexistent dependencies
     test0 = find_check('Test0', checks)
     test1 = find_check('Test1_default', checks)
-    test1.depends_on('Test0', rfm.DEPEND_EXACT,
-                     {('p0', 'e0'): [('p0', 'eX')]})
+    test1.depends_on('Test0', rfm.DEPEND_EXACT, {'e0': ['eX']})
     with pytest.raises(DependencyError):
         dependency.build_deps(executors.generate_testcases(checks))
 
@@ -251,8 +236,7 @@ def test_build_deps_unknown_source_env(loader, exec_ctx):
     # Add some inexistent dependencies
     test0 = find_check('Test0', checks)
     test1 = find_check('Test1_default', checks)
-    test1.depends_on('Test0', rfm.DEPEND_EXACT,
-                     {('p0', 'eX'): [('p0', 'e0')]})
+    test1.depends_on('Test0', rfm.DEPEND_EXACT, {'eX': ['e0']})
 
     # Unknown source is ignored, because it might simply be that the test
     # is not executed for eX
@@ -367,8 +351,8 @@ def test_cyclic_deps(make_test, exec_ctx):
 def test_cyclic_deps_by_env(make_test, exec_ctx):
     t0 = make_test('t0')
     t1 = make_test('t1')
-    t1.depends_on('t0', rfm.DEPEND_EXACT, {('p0', 'e0'): [('p0', 'e0')]})
-    t0.depends_on('t1', rfm.DEPEND_EXACT, {('p0', 'e1'): [('p0', 'e1')]})
+    t1.depends_on('t0', rfm.DEPEND_EXACT, {'e0': ['e0']})
+    t0.depends_on('t1', rfm.DEPEND_EXACT, {'e1': ['e1']})
     deps = dependency.build_deps(
         executors.generate_testcases([t0, t1])
     )
