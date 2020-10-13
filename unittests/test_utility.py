@@ -1337,15 +1337,25 @@ def modules_system(user_exec_ctx, monkeypatch):
 
 
 def test_find_modules(modules_system):
+    # The test modules will be found as many times as there are partitions and
+    # environments in the current system
+    current_system = rt.runtime().system
+    ntimes = sum(len(p.environs) for p in current_system.partitions)
+
     found_modules = [m[2] for m in util.find_modules('testmod')]
     if modules_system.name == 'nomod':
         assert found_modules == []
     else:
         assert found_modules == ['testmod_bar', 'testmod_base',
-                                 'testmod_boo', 'testmod_foo']
+                                 'testmod_boo', 'testmod_foo']*ntimes
 
 
 def test_find_modules_env_mapping(modules_system):
+    # The test modules will be found as many times as there are partitions and
+    # environments in the current system
+    current_system = rt.runtime().system
+    ntimes = sum(len(p.environs) for p in current_system.partitions)
+
     found_modules = [
         m[2] for m in util.find_modules('testmod',
                                         environ_mapping={
@@ -1356,7 +1366,7 @@ def test_find_modules_env_mapping(modules_system):
     if modules_system.name == 'nomod':
         assert found_modules == []
     else:
-        assert found_modules == ['testmod_bar', 'testmod_base']
+        assert found_modules == ['testmod_bar', 'testmod_base']*ntimes
 
 
 def test_find_modules_errors():

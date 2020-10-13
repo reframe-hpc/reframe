@@ -272,7 +272,8 @@ class _SiteConfig:
 
                 partition_names.add(partname)
 
-    def select_subconfig(self, system_fullname=None):
+    def select_subconfig(self, system_fullname=None,
+                         ignore_resolve_errors=False):
         if (self._local_system is not None and
             self._local_system == system_fullname):
             return
@@ -349,25 +350,29 @@ class _SiteConfig:
         required_sections = self._schema['required']
         for name in required_sections:
             if name not in self._local_config.keys():
-                raise ConfigError(f"section '{name}' not defined "
-                                  f"for system '{system_fullname}'")
+                if not ignore_resolve_errors:
+                    raise ConfigError(
+                        f"section '{name}' not defined "
+                        f"for system '{system_fullname}'"
+                    )
 
         # Verify that all environments defined by the system are defined for
         # the current system
-        sys_environs = {
-            *itertools.chain(*(p['environs']
-                               for p in systems[0]['partitions']))
-        }
-        found_environs = {
-            e['name'] for e in self._local_config['environments']
-        }
-        undefined_environs = sys_environs - found_environs
-        if undefined_environs:
-            env_descr = ', '.join(f"'{e}'" for e in undefined_environs)
-            raise ConfigError(
-                f"environments {env_descr} "
-                f"are not defined for '{system_fullname}'"
-            )
+        if not ignore_resolve_errors:
+            sys_environs = {
+                *itertools.chain(*(p['environs']
+                                   for p in systems[0]['partitions']))
+            }
+            found_environs = {
+                e['name'] for e in self._local_config['environments']
+            }
+            undefined_environs = sys_environs - found_environs
+            if undefined_environs:
+                env_descr = ', '.join(f"'{e}'" for e in undefined_environs)
+                raise ConfigError(
+                    f"environments {env_descr} "
+                    f"are not defined for '{system_fullname}'"
+                )
 
         self._local_system = system_fullname
 

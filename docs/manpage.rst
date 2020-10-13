@@ -647,6 +647,18 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
 
 
+.. envvar:: RFM_TRAP_JOB_ERRORS
+
+   Ignore job exit code
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated configuration parameter :js:attr:`trap_job_errors` general configuration parameter
+      ================================== ==================
+
+
 .. envvar:: RFM_IGNORE_REQNODENOTAVAIL
 
    Do not treat specially jobs in pending state with the reason ``ReqNodeNotAvail`` (Slurm only).

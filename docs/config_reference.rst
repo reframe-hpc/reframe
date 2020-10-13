@@ -1067,6 +1067,14 @@ General Configuration
    Ignore test name conflicts when loading tests.
 
 
+.. js:attribute:: .general[].trap_job_errors
+
+   :required: No
+   :default: ``false``
+
+   Trap command errors in the generated job scripts and let them exit immediately.
+
+
 .. js:attribute:: .general[].keep_stage_files
 
    :required: No
