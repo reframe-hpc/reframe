@@ -219,17 +219,6 @@ def test_build_deps_unknown_test(loader, exec_ctx):
             dependency.build_deps(executors.generate_testcases(checks))
 
 
-def test_build_deps_unknown_target_env(loader, exec_ctx):
-    checks = loader.load_all()
-
-    # Add some inexistent dependencies
-    test0 = find_check('Test0', checks)
-    test1 = find_check('Test1_default', checks)
-    test1.depends_on('Test0', rfm.DEPEND_EXACT, {'e0': ['eX']})
-    with pytest.raises(DependencyError):
-        dependency.build_deps(executors.generate_testcases(checks))
-
-
 def test_build_deps_unknown_source_env(loader, exec_ctx):
     checks = loader.load_all()
 
