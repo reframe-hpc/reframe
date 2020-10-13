@@ -9,7 +9,7 @@
 
 __all__ = [
     'CompileOnlyRegressionTest', 'RegressionTest', 'RunOnlyRegressionTest',
-    'DEPEND_BY_ENV', 'DEPEND_EXACT', 'DEPEND_FULLY', 'final',
+    'DEPEND_BY_ENV', 'DEPEND_EXACT', 'DEPEND_FULLY', 'final'
 ]
 
 
@@ -1560,31 +1560,34 @@ class RegressionTest(metaclass=RegressionTestMeta):
         '''Add a dependency to ``target`` in this test.
 
         :arg target: The name of the target test.
-        :arg how: How the dependency should be mapped in the test cases space.
-            This argument can accept any of the three constants
-            :attr:`DEPEND_EXACT`, :attr:`DEPEND_BY_ENV` (default),
-            :attr:`DEPEND_FULLY`.
-
-        :arg subdeps: An adjacency list representation of how this test's test
-            cases depend on those of the target test. This is only relevant if
-            ``how == DEPEND_EXACT``. The value of this argument is a
-            dictionary having as keys the names of this test's supported
-            programming environments. The values are lists of the programming
-            environments names of the target test that this test's test cases
-            will depend on. In the following example, this test's ``E0``
-            programming environment case will depend on both ``E0`` and ``E1``
-            test cases of the target test ``T0``, but its ``E1`` case will
-            depend only on the ``E1`` test case of ``T0``:
+        :arg when: A callable that defines the mapping of the dependencies.
+            The function the user passes should take as argument the source
+            and destination testcase. When case B depends on case `A' we
+            consider as source case `A' and destination case `B'. In the
+            following example, each case will depend on every case from T0,
+            that belongs in the same partition.
 
             .. code-block:: python
 
-               self.depends_on('T0', how=rfm.DEPEND_EXACT,
-                               subdeps={'E0': ['E0', 'E1'], 'E1': ['E1']})
+                def part_equal(src, dst):
+                    p0, _ = src
+                    p1, _  = dst
+                    return p0 == p1
+
+                self.depends_on('T0', when=part_equal)
+
+            By default each testcase will depend on the case from target
+            that has the same environment and partition, if it exists.
 
         For more details on how test dependencies work in ReFrame, please
         refer to `How Test Dependencies Work In ReFrame <dependencies.html>`__.
 
         .. versionadded:: 2.21
+
+        .. versionchanged:: 3.3
+           Dependencies between cases from different partitions are now allowed
+           and the arguments `how' and `subdeps' are  deprecated. You should
+           use the `when' argument.
 
         '''
         if not isinstance(target, str):
