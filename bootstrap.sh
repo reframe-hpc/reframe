@@ -21,18 +21,17 @@ CMD()
 
 usage()
 {
-    echo "Usage: $0 [-h] [+docs]"
+    echo "Usage: $0 [-h] [+docs] [+pygelf]"
     echo "Bootstrap ReFrame by pulling all its dependencies"
     echo "  -P EXEC  Use EXEC as Python interpreter"
-    echo "  -O       Install optional Python packages using pip"
     echo "  -h       Print this help message and exit"
     echo "  +docs    Build also the documentation"
+    echo "  +pygelf  Install also the pygelf Python package"
 }
 
 
-while getopts "hOP:" opt; do
+while getopts "hP:" opt; do
     case $opt in
-        "O") optional="pygelf" ;;
         "P") python=$OPTARG ;;
         "h") usage && exit 0 ;;
         "?") usage && exit 0 ;;
@@ -64,11 +63,11 @@ export PYTHONPATH=$(pwd)/external:$(pwd)/external/usr/lib/python$pyver/site-pack
 CMD $python -m pip install --no-cache-dir -q --upgrade pip --target=external/
 CMD $python -m pip install --use-feature=2020-resolver --no-cache-dir -q -r requirements.txt --target=external/ --upgrade
 
-if [ -n "$optional" ]; then
-    CMD $python -m pip install --use-feature=2020-resolver --no-cache-dir -q $optional --target=external/ --upgrade
+if [ x"$1" == x"+docs" -o x"$2" == x"+docs" ]; then
+    CMD $python -m pip install --use-feature=2020-resolver --no-cache-dir -q -r docs/requirements.txt --target=external/ --upgrade
+    make -C docs PYTHON=$python
 fi
 
-if [ x"$1" == x"+docs" ]; then
-    CMD $python -m pip install --use-feature=2020-resolver --no-cache-dir -q -r docs/requirements.txt --target=external/ --upgrade
-    make -C docs
+if [ x"$1" == x"+pygelf" -o x"$2" == x"+pygelf" ]; then
+    CMD $python -m pip install --use-feature=2020-resolver --no-cache-dir -q pygelf --target=external/ --upgrade
 fi
