@@ -70,13 +70,13 @@ int main(int argc, char **argv) {
   MPI_Get_library_version(mpilibversion, &resultlen);
   printf( "# MPI-%d.%d = %s", mpiversion, mpisubversion, mpilibversion);
 
-  rank = MPI::COMM_WORLD.Get_rank();
-  size = MPI::COMM_WORLD.Get_size();
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
   cout << "tid=0 out of 1 from rank " << rank << " out of " << size << "\n";
 
   //std::cout << " mpi_thread_queried=" << mpi_thread_required << std::endl;
 
-  MPI::Finalize();
+  MPI_Finalize();
 
   return 0;
 } /* end func main */
