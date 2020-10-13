@@ -792,9 +792,17 @@ def main():
         sys.exit(1)
     finally:
         try:
+            log_files = logging.log_files()
             if site_config.get('general/0/save_log_files'):
-                logging.save_log_files(rt.output_prefix)
+                log_files = logging.save_log_files(rt.output_prefix)
 
         except OSError as e:
             printer.error('could not save log file: %s' % e)
             sys.exit(1)
+        finally:
+            if not log_files:
+                msg = '<no log file was generated>'
+            else:
+                msg = f'{", ".join(repr(f) for f in log_files)}'
+
+            printer.info(f'Log file(s) saved in: {msg}')

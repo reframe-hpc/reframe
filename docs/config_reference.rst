@@ -729,9 +729,13 @@ The additional properties for the ``file`` handler are the following:
 
 .. object:: .logging[].handlers_perflog[].name
 
-   :required: Yes
+   :required: No
 
    The name of the file where this handler will write log records.
+   If not specified, ReFrame will create a log file prefixed with ``rfm-`` in the system's temporary directory.
+
+   .. versionchanged:: 3.3
+      The ``name`` parameter is no more required and the default log file resides in the system's temporary directory.
 
 
 .. js:attribute:: .logging[].handlers[].append

@@ -14,9 +14,9 @@ import re
 import shutil
 import sys
 import socket
+import tempfile
 import time
 
-import reframe
 import reframe.utility.color as color
 import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import ConfigError, LoggingError
@@ -194,7 +194,12 @@ def _create_logger(site_config, handlers_group):
 
 
 def _create_file_handler(site_config, config_prefix):
-    filename = site_config.get(f'{config_prefix}/name')
+    filename = os.path.expandvars(site_config.get(f'{config_prefix}/name'))
+    if not filename:
+        logfd, logfile = tempfile.mkstemp(suffix='.log', prefix='rfm-')
+        os.close(logfd)
+        filename = logfile
+
     timestamp = site_config.get(f'{config_prefix}/timestamp')
     if timestamp:
         basename, ext = os.path.splitext(filename)
@@ -551,11 +556,15 @@ def configure_logging(site_config):
     _context_logger = LoggerAdapter(_logger)
 
 
+def log_files():
+    return [hdlr.baseFilename for hdlr in _logger.handlers
+            if isinstance(hdlr, logging.FileHandler)]
+
+
 def save_log_files(dest):
     os.makedirs(dest, exist_ok=True)
-    for hdlr in _logger.handlers:
-        if isinstance(hdlr, logging.FileHandler):
-            shutil.copy(hdlr.baseFilename, dest, follow_symlinks=True)
+    return [shutil.copy(logfile, dest, follow_symlinks=True)
+            for logfile in log_files()]
 
 
 def getlogger():

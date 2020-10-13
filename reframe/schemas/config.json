@@ -60,8 +60,7 @@
                                 {"type": "string"}
                             ]
                         }
-                    },
-                    "required": ["name"]
+                    }
                 }
             ]
         },
@@ -423,6 +422,7 @@
         "logging/handlers*/*_format": "%(message)s",
         "logging/handlers*/*_datefmt": "%FT%T",
         "logging/handlers*/file_append": false,
+        "logging/handlers*/file_name": "",
         "logging/handlers*/file_timestamp": false,
         "logging/handlers*/filelog_append": true,
         "logging/handlers*/filelog_basedir": "./perflogs",
