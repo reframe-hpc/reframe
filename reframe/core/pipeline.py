@@ -1622,7 +1622,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         def same_env_and_partition(src, dst):
             return src == dst
 
-        if when is None:
+        if when is None and not 'how' in kwargs:
             when = same_env_and_partition
         elif ('how' in kwargs or 'subdeps' in kwargs or args or
               isinstance(when, int)):
