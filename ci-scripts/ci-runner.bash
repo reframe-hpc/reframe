@@ -125,6 +125,10 @@ if [ "X${MODULEUSE}" != "X" ]; then
     module use ${MODULEUSE}
 fi
 
+if [[ $(hostname) =~ kesch ]]; then
+    module load reframe
+fi
+
 # Bootstrap ReFrame
 ./bootstrap.sh
 
