@@ -6,11 +6,10 @@
 import os
 import reframe as rfm
 import reframe.utility.sanity as sn
-
+import reframe.utility.os_ext as osx
 
 class CudaSamples(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu',
                               'arolla:cn', 'tsa:cn',
                               'ault:amdv100', 'ault:intelv100']
@@ -35,17 +34,20 @@ class CudaSamples(rfm.RegressionTest):
             self.nvidia_sm = '60'
             self.modules = ['cudatoolkit']
 
-        self.sourcesdir = None
+        self.sourcesdir = 'https://github.com/NVIDIA/cuda-samples.git'
         self.build_system = 'Make'
-        if self.current_system.name in ['daint']:
-            self.prebuild_cmds = ['export CUDA_HOME=$CUDATOOLKIT_HOME']
-        else:
-            self.prebuild_cmds = []
-
         self.build_system.options = [f'SMS="{self.nvidia_sm}"',
                                      f'CUDA_PATH=$CUDA_HOME']
+        self.prebuild_cmds = ['git checkout v11.0']
         self.maintainers = ['JO']
         self.tags = {'production', 'external_resosurces'}
+
+    @rfm.run_before('compile')
+    def cdt2008_pgi_workaround(self):
+        if (self.current_environ.name == 'PrgEnv-pgi' and
+            osx.cray_cdt_version() == '20.08' and
+            self.current_system.name in ['daint', 'dom']):
+            self.variables['CUDA_HOME'] = '$CUDATOOLKIT_HOME'
 
 
 @rfm.simple_test
@@ -53,11 +55,9 @@ class CudaDeviceQueryCheck(CudaSamples):
     def __init__(self):
         super().__init__()
         self.descr = 'CUDA deviceQuery test.'
-        self.sourcesdir = 'https://github.com/NVIDIA/cuda-samples.git'
         self.num_tasks = 1
-        self.prebuild_cmds += ['git checkout v11.0',
-                               'cd Samples/deviceQuery']
-        self.executable = 'Samples/deviceQuery/deviceQuery'
+        self.prebuild_cmds += ['cd Samples/deviceQuery']
+        self.executable = 'Samples/{0}/{0}'.format('deviceQuery')
         self.sanity_patterns = sn.assert_found(
             r'Result = PASS',
             self.stdout)
@@ -67,83 +67,38 @@ class CudaDeviceQueryCheck(CudaSamples):
 class CudaConcurrentKernelsCheck(CudaSamples):
     def __init__(self):
         super().__init__()
-        self.depends_on('CudaDeviceQueryCheck')
         self.descr = 'CUDA concurrentKernels test'
+        self.executable = 'Samples/{0}/{0}'.format('concurrentKernels')
+        self.prebuild_cmds += ['cd Samples/concurrentKernels']
         self.sanity_patterns = sn.assert_found(r'Test passed', self.stdout)
-
-    @rfm.require_deps
-    def set_prebuild_cmds(self, CudaDeviceQueryCheck):
-        self.prebuild_cmds += ['cd %s' % os.path.join(
-            CudaDeviceQueryCheck().stagedir,
-            'Samples', 'concurrentKernels')]
-
-    @rfm.require_deps
-    def set_executable(self, CudaDeviceQueryCheck):
-        self.executable = os.path.join(
-            CudaDeviceQueryCheck().stagedir,
-            'Samples', 'concurrentKernels', 'concurrentKernels')
 
 
 @rfm.simple_test
 class CudaMatrixMultCublasCheck(CudaSamples):
     def __init__(self):
         super().__init__()
-        self.depends_on('CudaDeviceQueryCheck')
         self.descr = 'CUDA simpleCUBLAS test'
+        self.executable = 'Samples/{0}/{0}'.format('simpleCUBLAS')
+        self.prebuild_cmds += ['cd Samples/simpleCUBLAS']
         self.sanity_patterns = sn.assert_found(r'test passed', self.stdout)
-
-    @rfm.require_deps
-    def set_prebuild_cmds(self, CudaDeviceQueryCheck):
-        self.prebuild_cmds += ['cd %s' % os.path.join(
-            CudaDeviceQueryCheck().stagedir,
-            'Samples', 'simpleCUBLAS')]
-
-    @rfm.require_deps
-    def set_executable(self, CudaDeviceQueryCheck):
-        self.executable = os.path.join(
-            CudaDeviceQueryCheck().stagedir,
-            'Samples', 'simpleCUBLAS', 'simpleCUBLAS')
 
 
 @rfm.simple_test
 class CudaBandwidthCheck(CudaSamples):
     def __init__(self):
         super().__init__()
-        self.depends_on('CudaDeviceQueryCheck')
-        self.descr = 'CUDA simpleCUBLAS test'
+        self.descr = 'CUDA bandwidthTest test'
+        self.executable = 'Samples/{0}/{0}'.format('bandwidthTest')
+        self.prebuild_cmds += ['cd Samples/bandwidthTest']
         self.sanity_patterns = sn.assert_found(r'Result = PASS', self.stdout)
-
-    @rfm.require_deps
-    def set_prebuild_cmds(self, CudaDeviceQueryCheck):
-        self.prebuild_cmds += ['cd %s' % os.path.join(
-            CudaDeviceQueryCheck().stagedir,
-            'Samples', 'bandwidthTest')]
-
-    @rfm.require_deps
-    def set_executable(self, CudaDeviceQueryCheck):
-        self.executable = os.path.join(
-            CudaDeviceQueryCheck().stagedir,
-            'Samples', 'bandwidthTest', 'bandwidthTest')
 
 
 @rfm.simple_test
 class CudaGraphsCGCheck(CudaSamples):
     def __init__(self):
         super().__init__()
-        self.depends_on('CudaDeviceQueryCheck')
-        self.descr = 'CUDA simpleCUBLAS test'
+        self.descr = 'CUDA conjugateGradientCudaGraphs test'
+        self.executable = 'Samples/{0}/{0}'.format('conjugateGradientCudaGraphs')
+        self.prebuild_cmds += ['cd Samples/conjugateGradientCudaGraphs']
         self.sanity_patterns = sn.assert_found(
             r'Test Summary:  Error amount = 0.00000', self.stdout)
-
-    @rfm.require_deps
-    def set_prebuild_cmds(self, CudaDeviceQueryCheck):
-        self.prebuild_cmds += ['cd %s' % os.path.join(
-            CudaDeviceQueryCheck().stagedir,
-            'Samples', 'conjugateGradientCudaGraphs')]
-
-    @rfm.require_deps
-    def set_executable(self, CudaDeviceQueryCheck):
-        self.executable = os.path.join(
-            CudaDeviceQueryCheck().stagedir,
-            'Samples', 'conjugateGradientCudaGraphs',
-            'conjugateGradientCudaGraphs')
