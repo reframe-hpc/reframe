@@ -1,9 +1,14 @@
 importlib_metadata
 jsonschema
+
+# pytest >= 6.0.0 gives errors during installation
 pytest>=5.0.0,<6.0.0
 pytest-forked
 pytest-parallel
+
+# pytest-xdist is needed to provide the parallel unit test infrastructure
 pytest-xdist
+
 coverage
 setuptools
 wcwidth
