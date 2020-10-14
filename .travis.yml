@@ -10,7 +10,7 @@ install:
     - pip install codecov
 
 script:
-    - coverage run --source=reframe,unittests ./test_reframe.py
+    - coverage run --source=reframe ./test_reframe.py
     - coverage report -m
 
 after_success:

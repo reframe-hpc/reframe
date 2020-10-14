@@ -34,7 +34,7 @@ from reframe.core.containers import ContainerPlatform, ContainerPlatformField
 from reframe.core.deferrable import _DeferredExpression
 from reframe.core.exceptions import (BuildError, DependencyError,
                                      PipelineError, SanityError,
-                                     PerformanceError)
+                                     PerformanceError, user_deprecation_warning)
 from reframe.core.meta import RegressionTestMeta
 from reframe.core.schedulers import Job
 
@@ -46,7 +46,7 @@ from reframe.core.schedulers import Job
 #: dependencies will be explicitly specified by the user.
 #:
 #:  This constant is directly available under the :mod:`reframe` module.
-DEPEND_EXACT  = 1
+DEPEND_EXACT = 1
 
 #: Constant to be passed as the ``how`` argument of the
 #: :func:`RegressionTest.depends_on` method. It denotes that the test cases of
@@ -61,7 +61,7 @@ DEPEND_BY_ENV = 2
 #: this test depends on all the test cases of the target test.
 #:
 #:  This constant is directly available under the :mod:`reframe` module.
-DEPEND_FULLY  = 3
+DEPEND_FULLY = 3
 
 
 def _run_hooks(name=None):
@@ -611,15 +611,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: Time limit for this test.
     #:
     #: Time limit is specified as a string in the form
-    #: ``<days>d<hours>h<minutes>m<seconds>s``.
+    #: ``<days>d<hours>h<minutes>m<seconds>s`` or as number of seconds.
     #: If set to :class:`None`, no time limit will be set.
     #: The default time limit of the system partition's scheduler will be used.
     #:
-    #: The value is internaly kept as a :class:`datetime.timedelta` object.
-    #: For example '2h30m' is represented as
-    #: ``datetime.timedelta(hours=2, minutes=30)``
-    #:
-    #: :type: :class:`str` or :class:`datetime.timedelta`
+    #: :type: :class:`str` or :class:`float` or :class:`int`
     #: :default: ``'10m'``
     #:
     #: .. note::
@@ -631,7 +627,9 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:       The old syntax using a ``(h, m, s)`` tuple is deprecated.
     #:
     #:    .. versionchanged:: 3.2
-    #:       The old syntax using a ``(h, m, s)`` tuple is dropped.
+    #:       - The old syntax using a ``(h, m, s)`` tuple is dropped.
+    #:       - Support of `timedelta` objects is dropped.
+    #:       - Number values are now accepted.
     time_limit = fields.TimerField('time_limit', type(None))
 
     #: .. versionadded:: 2.8
@@ -1043,14 +1041,14 @@ class RegressionTest(metaclass=RegressionTestMeta):
                        self._current_partition.scheduler.registered_name))
 
         if self.local:
-            scheduler_type = getscheduler('local')
-            launcher_type = getlauncher('local')
+            scheduler = getscheduler('local')()
+            launcher = getlauncher('local')()
         else:
-            scheduler_type = self._current_partition.scheduler
-            launcher_type = self._current_partition.launcher
+            scheduler = self._current_partition.scheduler
+            launcher = self._current_partition.launcher_type()
 
-        self._job = Job.create(scheduler_type(),
-                               launcher_type(),
+        self._job = Job.create(scheduler,
+                               launcher,
                                name='rfm_%s_job' % self.name,
                                workdir=self._stagedir,
                                max_pending_time=self.max_pending_time,
@@ -1087,8 +1085,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self._current_environ = environ
         self._setup_paths()
         self._setup_job(**job_opts)
-        if self.perf_patterns is not None:
-            self._setup_perf_logging()
 
     def _copy_to_stagedir(self, path):
         self.logger.debug('copying %s to stage directory (%s)' %
@@ -1147,7 +1143,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         # Verify the sourcepath and determine the sourcepath in the stagedir
         if (os.path.isabs(self.sourcepath) or
-            os.path.normpath(self.sourcepath).startswith('..')):
+                os.path.normpath(self.sourcepath).startswith('..')):
             raise PipelineError(
                 'self.sourcepath is an absolute path or does not point to a '
                 'subfolder or a file contained in self.sourcesdir: ' +
@@ -1317,9 +1313,12 @@ class RegressionTest(metaclass=RegressionTestMeta):
                 self._job.prepare(
                     commands, environs,
                     login=rt.runtime().get_option('general/0/use_login_shell'),
+                    trap_errors=rt.runtime().get_option(
+                        'general/0/trap_job_errors'
+                    )
                 )
             except OSError as e:
-                raise PipelineError('failed to prepare job') from e
+                raise PipelineError('failed to prepare run job') from e
 
             self._job.submit()
 
@@ -1332,8 +1331,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
             self.num_tasks = self.job.num_tasks
 
     @final
-    def poll(self):
-        '''Poll the test's state.
+    def run_complete(self):
+        '''Check if the run phase has completed.
 
         :returns: :class:`True` if the associated job has finished,
             :class:`False` otherwise.
@@ -1343,12 +1342,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
         :raises reframe.core.exceptions.ReframeError: In case of errors.
 
         .. warning::
-
-           .. versionchanged:: 3.0
-              You may not override this method directly unless you are in
-              special test. See `here
-              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
-              more details.
+           You may not override this method directly unless you are in
+           special test. See `here
+           <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+           more details.
 
         '''
         if not self._job:
@@ -1356,24 +1353,43 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         return self._job.finished()
 
+    @final
+    def poll(self):
+        '''See :func:`run_complete`.
+
+        .. deprecated:: 3.2
+
+        '''
+        user_deprecation_warning('calling poll() is deprecated; '
+                                 'please use run_complete() instead')
+        return self.run_complete()
+
     @_run_hooks('post_run')
     @final
-    def wait(self):
-        '''Wait for this test to finish.
+    def run_wait(self):
+        '''Wait for the run phase of this test to finish.
 
         :raises reframe.core.exceptions.ReframeError: In case of errors.
 
         .. warning::
-
-           .. versionchanged:: 3.0
-              You may not override this method directly unless you are in
-              special test. See `here
-              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
-              more details.
+           You may not override this method directly unless you are in
+           special test. See `here
+           <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+           more details.
 
         '''
         self._job.wait()
         self.logger.debug('spawned job finished')
+
+    @final
+    def wait(self):
+        '''See :func:`run_wait`.
+
+        .. deprecated:: 3.2
+        '''
+        user_deprecation_warning('calling wait() is deprecated; '
+                                 'please use run_wait() instead')
+        self.run_wait()
 
     @_run_hooks()
     @final
@@ -1404,7 +1420,16 @@ class RegressionTest(metaclass=RegressionTestMeta):
               more details.
 
         '''
-        if self.sanity_patterns is None:
+        if rt.runtime().get_option('general/0/trap_job_errors'):
+            sanity_patterns = [
+                sn.assert_eq(self.job.exitcode, 0,
+                             msg='job exited with exit code {0}')
+            ]
+            if self.sanity_patterns is not None:
+                sanity_patterns.append(self.sanity_patterns)
+
+            self.sanity_patterns = sn.all(sanity_patterns)
+        elif self.sanity_patterns is None:
             raise SanityError('sanity_patterns not set')
 
         with os_ext.change_dir(self._stagedir):
@@ -1431,6 +1456,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         if self.perf_patterns is None:
             return
 
+        self._setup_perf_logging()
         with os_ext.change_dir(self._stagedir):
             # Check if default reference perf values are provided and
             # store all the variables tested in the performance check
@@ -1593,7 +1619,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
             raise TypeError("how argument must be of type: `int'")
 
         if (subdeps is not None and
-            not isinstance(subdeps, typ.Dict[str, typ.List[str]])):
+                not isinstance(subdeps, typ.Dict[str, typ.List[str]])):
             raise TypeError("subdeps argument must be of type "
                             "`Dict[str, List[str]]' or `None'")
 
@@ -1718,7 +1744,7 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
         Implemented as no-op.
         '''
 
-    def wait(self):
+    def run_wait(self):
         '''Wait for this test to finish.
 
         Implemented as no-op
