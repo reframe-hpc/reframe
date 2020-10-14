@@ -56,7 +56,7 @@ class CudaAwareMPICheck(rfm.CompileOnlyRegressionTest):
         if (self.current_environ.name == 'PrgEnv-pgi' and
             osx.cray_cdt_version() == '20.08' and
             self.current_system.name in ['daint', 'dom']):
-            self.variables += ['export CUDA_HOME=$CUDATOOLKIT_HOME']
+            self.variables['CUDA_HOME'] = '$CUDATOOLKIT_HOME'
 
     @rfm.run_before('compile')
     def set_compilers(self):
