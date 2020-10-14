@@ -20,7 +20,14 @@ from . import typecheck as typ
 
 
 def seconds_to_hms(seconds):
-    '''Convert time in seconds to a tuple of ``(hour, minutes, seconds)``.'''
+    '''Convert time in seconds to hours, minutes and seconds.
+
+    :arg seconds: The time in seconds.
+    :returns: A three-element tuple such as ``(hours, minutes, seconds)``.
+
+    :meta private:
+
+    '''
 
     m, s = divmod(seconds, 60)
     h, m = divmod(m, 60)
@@ -59,7 +66,11 @@ def _do_import_module_from_file(filename, module_name=None):
 
 
 def import_module_from_file(filename):
-    '''Import module from file.'''
+    '''Import module from file.
+
+    :arg filename: The path to the filename of a Python module.
+    :returns: The loaded Python module.
+    '''
 
     # Expand and sanitize filename
     filename = os.path.abspath(os.path.expandvars(filename))
@@ -85,8 +96,8 @@ def import_module_from_file(filename):
 
 
 def allx(iterable):
-    '''Same as the built-in all, except that it returns :class:`False` if
-    ``iterable`` is empty.
+    '''Same as the built-in :py:func:`all`, except that it returns :class:`False`
+    if ``iterable`` is empty.
     '''
 
     # Generators must be treated specially, because there is no way to get
@@ -107,10 +118,14 @@ def allx(iterable):
 
 
 def decamelize(s, delim='_'):
-    '''Decamelize the string ``s``.
+    '''Decamelize a string.
 
     For example, ``MyBaseClass`` will be converted to ``my_base_class``.
     The delimiter may be changed by setting the ``delim`` argument.
+
+    :arg s: A string in camel notation.
+    :arg delim: The delimiter that will be used to separate words.
+    :returns: The converted string.
     '''
 
     if not isinstance(s, str):
@@ -125,6 +140,11 @@ def decamelize(s, delim='_'):
 def toalphanum(s):
     '''Convert string ``s`` by replacing any non-alphanumeric character with
     ``_``.
+
+    :arg s: The string to convert.
+    :returns: The converted string.
+
+    :meta private:
     '''
 
     if not isinstance(s, str):
@@ -138,18 +158,23 @@ def toalphanum(s):
 
 def ppretty(value, htchar=' ', lfchar='\n', indent=4, basic_offset=0,
             repr=builtins.repr):
-    '''Format string of dictionaries, lists and tuples
+    '''Format value in a pretty way.
+
+    If value is a container, this function will recursively format the
+    container's elements.
 
     :arg value: The value to be formatted.
     :arg htchar: Horizontal-tab character.
     :arg lfchar: Linefeed character.
-    :arg indent: Number of htchar characters for every indentation level.
+    :arg indent: Number of ``htchar`` characters for every indentation level.
     :arg basic_offset: Basic offset for the representation, any additional
         indentation space is added to the ``basic_offset``.
-    :arg repr: The :func:`repr` to use for printing values. This function may
-        accept also all the arguments of :func:`ppretty` except the ``repr``.
+    :arg repr: A :py:func:`repr`-like function that will be used for printing
+        values. This function is allowed to accept all the arguments of
+        :func:`ppretty` except the ``repr`` argument.
 
-    :returns: a formatted string of the ``value``.
+    :returns: A formatted string of ``value``.
+
     '''
 
     ppretty2 = functools.partial(
@@ -218,7 +243,22 @@ def _tracked_repr(func):
 
 @_tracked_repr
 def repr(obj, htchar=' ', lfchar='\n', indent=4, basic_offset=0):
-    '''A debug repr() function printing all object attributes recursively'''
+    '''A debug |builtin.repr|_ replacement function printing all object attributes
+    recursively.
+
+    This function does not follow the standard |builtin.repr|_ convention, but
+    it prints each object as a set of key/value pairs along with its memory
+    location. It also keeps track of the already visited objects, and
+    abbreviates their representation.
+
+    :arg obj: The object to be dumped.
+        For the rest of the arguments, see :func:`ppretty`.
+    :returns: The formatted object dump.
+
+    .. _builtin.repr: https://docs.python.org/3/library/functions.html#repr
+    .. |builtin.repr| replace:: :js:func:`repr()`
+
+    '''
     if (isinstance(obj, list) or isinstance(obj, tuple) or
         isinstance(obj, set) or isinstance(obj, dict)):
         return ppretty(obj, basic_offset=basic_offset, repr=repr)
@@ -231,7 +271,18 @@ def repr(obj, htchar=' ', lfchar='\n', indent=4, basic_offset=0):
 
 
 def shortest(*iterables):
-    '''Return the shortest sequence.'''
+    '''Return the shortest sequence.
+
+    This function raises a :py:class:`TypeError` if any of the iterables is
+    not |Sized|_.
+
+    :arg iterables: The iterables to check.
+    :returns: The shortest iterable.
+
+    .. _Sized: https://docs.python.org/3/library/collections.abc.html#collections.abc.Sized
+    .. |Sized| replace:: :class:`Sized`
+
+    '''
 
     ret = None
     for seq in iterables:
@@ -249,7 +300,15 @@ def shortest(*iterables):
 
 
 def longest(*iterables):
-    '''Return the longest sequence.'''
+    '''Return the longest sequence.
+
+    This function raises a :py:class:`TypeError` if any of the iterables is
+    not |Sized|_.
+
+    :arg iterables: The iterables to check.
+    :returns: The longest iterable.
+
+    '''
 
     ret = None
     for seq in iterables:
@@ -321,8 +380,7 @@ def find_modules(substr, environ_mapping=None):
         environment names.
 
     :returns: An iterator that iterates over tuples of the module, partition
-    and environment name combinations that were found.
-
+        and environment name combinations that were found.
     '''
 
     import reframe.core.runtime as rt
@@ -362,36 +420,81 @@ def find_modules(substr, environ_mapping=None):
 class ScopedDict(UserDict):
     '''This is a special dict that imposes scopes on its keys.
 
-    When a key is not found it will be searched up in the scope hierarchy.'''
+    When a key is not found it will be searched up in the scope hierarchy.
+    If not found even at the global scope, a :class:`KeyError` will be raised.
+
+    A scoped dictionary is initialized using a two-level normal dictionary
+    that defines the different scopes and the keys inside them. Scopes can be
+    nested by concatenating them using the ``:`` separator by default:
+    ``scope:subscope``. Below is an example of a scoped dictionary that also
+    demonstrates the key lookup:
+
+    .. code-block:: python
+
+       d = ScopedDict({
+           'a': {'k1': 1, 'k2': 2},
+           'a:b': {'k1': 3, 'k3': 4},
+           '*': {'k1': 7, 'k3': 9, 'k4': 10}
+       })
+
+       assert d['a:k1'] == 1    # resolved in the scope 'a'
+       assert d['a:k3'] == 9    # resolved in the global scope
+       assert d['a:b:k1'] == 3  # resolved in the scope 'a:b'
+       assert d['a:b:k2'] == 2  # resolved in the scope 'a'
+       assert d['a:b:k4'] == 10 # resolved in the global scope
+       d['a:k5']    # KeyError
+       d['*:k2']    # KeyError
+
+    If no scope is specified in the key lookup, the global scope is assumed.
+    For example, ``d['k1']`` will return ``7``. The syntaxes ``d[':k1']`` and
+    ``d['*:k1']`` are all equivalent.
+    If you try to retrieve a whole scope, e.g., ``d['a:b']``,
+    :class:`KeyError` will be raised.
+
+    Key deletion follows the same resolution mechanism as key retrieval,
+    except that you are allowed to delete whole scopes. For example, ``del
+    d['*']`` will delete the global scope, such that subsequent access of
+    ``d['a:k3']`` will raise a :class:`KeyError`. If a key specification
+    matches both a key and scope, the key will be deleted and not the scope.
+
+    :arg mapping: A two-level mapping of the form
+
+      .. code-block:: python
+
+         {
+              scope1: {k1: v1, k2: v2},
+              scope2: {k1: v1, k3: v3}
+         }
+
+      Both the scope keys and the actual dictionary keys must be
+      strings, otherwise a :class:`TypeError` will be raised.
+
+    :arg scope_sep: A character that separates the scopes.
+    :arg global_scope: A key that represents the global scope.
+
+    '''
 
     def __init__(self, mapping={}, scope_sep=':', global_scope='*'):
-        '''Initialize a ScopedDict
-
-        Keyword arguments:
-        mapping -- A two-level mapping of the form
-                   mapping = {
-                        scope1: {k1: v1, k2: v2},
-                        scope2: {k1: v1, k3: v3}
-                   }
-
-                   Both the scope keys and the actual dictionary keys must be
-                   strings, otherwise TypeError will be raised
-
-        scope_sep -- character that separates the scopes
-        global_scope -- key to look up for the global scope'''
         super().__init__(mapping)
         self._scope_sep = scope_sep
         self._global_scope = global_scope
 
     @property
     def scope_separator(self):
+        '''The scope separator of this dictionary.'''
         return self._scope_sep
 
     @property
     def global_scope_mark(self):
+        '''The key representing the global scope of this dictionary.'''
         return self._global_scope
 
     def update(self, other):
+        '''Update this dictionary from the values of a two-level mapping as described
+        above.
+
+        :arg other: A two-level mapping defining scopes and keys.
+        '''
         if not isinstance(other, collections.abc.Mapping):
             raise TypeError('ScopedDict may only be initialized '
                             'from a mapping type')
@@ -491,7 +594,18 @@ class ScopedDict(UserDict):
 
 @functools.total_ordering
 class OrderedSet(collections.abc.MutableSet):
-    '''An ordered set.'''
+    '''An ordered set.
+
+    This container behaves like a normal set but remembers the insertion order
+    of its elements. It can also inter-operate with standard Python sets.
+
+    Operations between ordered sets respect the order of the elements of the
+    operands. For example, if ``x`` and ``y`` are both ordered sets, then ``x
+    | y`` will be a new ordered set with the (unique) elements of ``x`` and
+    ``y`` in the order they appear in ``x`` and ``y``. The same holds for all
+    the other set operations.
+
+    '''
 
     def __init__(self, *args):
         # We need to allow construction without arguments
@@ -532,17 +646,6 @@ class OrderedSet(collections.abc.MutableSet):
         return len(self.__data)
 
     # Set i/face
-    #
-    # Note on the complexity of the operators
-    #
-    # In every case below we first construct a set from the internal ordered
-    # dictionary's keys and then apply the operator. This step's complexity is
-    # O(len(self.__data.keys())). Since the complexity of the standard set
-    # operators are at the order of magnitute of the lenghts of the operands
-    # (ranging from O(min(len(a), len(b))) to O(len(a) + len(b))), this step
-    # does not change the complexity class; it just changes the constant
-    # factor.
-    #
     def __eq__(self, other):
         if isinstance(other, OrderedSet):
             if len(self) != len(other):
@@ -610,21 +713,31 @@ class OrderedSet(collections.abc.MutableSet):
         return ret
 
     def isdisjoint(self, other):
+        '''See same method in :py:class:`set`.'''
+
         if not isinstance(other, collections.abc.Set):
             return NotImplemented
 
         return set(self.__data.keys()).isdisjoint(other)
 
     def issubset(self, other):
+        '''See same method in :py:class:`set`.'''
+
         return self <= other
 
     def issuperset(self, other):
+        '''See same method in :py:class:`set`.'''
+
         return self >= other
 
     def symmetric_difference(self, other):
+        '''See same method in :py:class:`set`.'''
+
         return self ^ other
 
     def union(self, *others):
+        '''See same method in :py:class:`set`.'''
+
         ret = type(self)(self)
         for s in others:
             ret |= s
@@ -632,6 +745,8 @@ class OrderedSet(collections.abc.MutableSet):
         return ret
 
     def intersection(self, *others):
+        '''See same method in :py:class:`set`.'''
+
         ret = type(self)(self)
         for s in others:
             ret &= s
@@ -639,6 +754,8 @@ class OrderedSet(collections.abc.MutableSet):
         return ret
 
     def difference(self, *others):
+        '''See same method in :py:class:`set`.'''
+
         ret = type(self)(self)
         for s in others:
             ret -= s
@@ -648,21 +765,31 @@ class OrderedSet(collections.abc.MutableSet):
     # MutableSet i/face
 
     def add(self, elem):
+        '''See same method in :py:class:`set`.'''
+
         self.__data[elem] = None
 
     def remove(self, elem):
+        '''See same method in :py:class:`set`.'''
+
         del self.__data[elem]
 
     def discard(self, elem):
+        '''See same method in :py:class:`set`.'''
+
         try:
             self.remove(elem)
         except KeyError:
             pass
 
     def pop(self):
+        '''See same method in :py:class:`set`.'''
+
         return self.__data.popitem()[0]
 
     def clear(self):
+        '''See same method in :py:class:`set`.'''
+
         self.__data.clear()
 
     def __ior__(self, other):
@@ -709,7 +836,16 @@ class OrderedSet(collections.abc.MutableSet):
 
 
 class SequenceView(collections.abc.Sequence):
-    '''A read-only view of a sequence.'''
+    '''A read-only view of a sequence.
+
+    See :py:class:`collections.abc.Sequence` for a list of supported of
+    operations.
+
+    :arg container: The container to create a view on.
+    :raises TypeError: If the container does not fulfill the
+        :py:class:`collections.abc.Sequence` interface.
+
+    '''
 
     def __init__(self, container):
         if not isinstance(container, collections.abc.Sequence):
@@ -717,26 +853,44 @@ class SequenceView(collections.abc.Sequence):
 
         self.__container = container
 
-    def count(self, *args, **kwargs):
-        return self.__container.count(*args, **kwargs)
+    def count(self, value):
+        '''Count occurrences of ``value`` in the container.
 
-    def index(self, *args, **kwargs):
-        return self.__container.index(*args, **kwargs)
+        :arg value: The value to search for.
+        :returns: The number of occurrences.
+        '''
+        return self.__container.count(value)
 
-    def __contains__(self, *args, **kwargs):
-        return self.__container.__contains__(*args, **kwargs)
+    def index(self, value, start=0, stop=None):
+        '''Return first index of ``value``.
 
-    def __getitem__(self, *args, **kwargs):
-        return self.__container.__getitem__(*args, **kwargs)
+        :arg value: The value to search for.
+        :arg start: The starting position for searching.
+        :arg stop: The end position for searching. If :class:`None`, the end
+            position is the last element of the container.
+        :returns: The index of the first element found that equals ``value``.
+        :raises ValueError: if the value is not present.
+        '''
 
-    def __iter__(self, *args, **kwargs):
-        return self.__container.__iter__(*args, **kwargs)
+        if stop is None:
+            stop = len(self.__container)
 
-    def __len__(self, *args, **kwargs):
-        return self.__container.__len__(*args, **kwargs)
+        return self.__container.index(value, start, stop)
 
-    def __reversed__(self, *args, **kwargs):
-        return self.__container.__reversed__(*args, **kwargs)
+    def __contains__(self, value):
+        return self.__container.__contains__(value)
+
+    def __getitem__(self, index):
+        return self.__container.__getitem__(index)
+
+    def __iter__(self):
+        return self.__container.__iter__()
+
+    def __len__(self):
+        return self.__container.__len__()
+
+    def __reversed__(self):
+        return self.__container.__reversed__()
 
     def __add__(self, other):
         if not isinstance(other, collections.abc.Sequence):
@@ -761,7 +915,11 @@ class SequenceView(collections.abc.Sequence):
 
 
 class MappingView(collections.abc.Mapping):
-    '''A read-only view of a mapping.'''
+    '''A read-only view of a mapping.
+
+    See :py:class:`collections.abc.Mapping` for a list of supported of
+    operations.
+    '''
 
     def __init__(self, mapping):
         if not isinstance(mapping, collections.abc.Mapping):
@@ -769,38 +927,48 @@ class MappingView(collections.abc.Mapping):
 
         self.__mapping = mapping
 
-    def get(self, *args, **kwargs):
-        return self.__mapping.get(*args, **kwargs)
+    def get(self, key, default=None):
+        '''Return value mapped to ``key`` or ``default`` if ``key`` does not
+        exist.
 
-    def keys(self, *args, **kwargs):
-        return self.__mapping.keys(*args, **kwargs)
+        :arg key: The key to look up.
+        :arg default: The default value return if the key is not present.
+        :returns: The value associated to the requested key.
+        '''
+        return self.__mapping.get(key, default)
 
-    def items(self, *args, **kwargs):
-        return self.__mapping.items(*args, **kwargs)
+    def keys(self):
+        '''Return a set-like object providing a view on the underlying
+        mapping's keys.'''
+        return self.__mapping.keys()
 
-    def values(self, *args, **kwargs):
-        return self.__mapping.values(*args, **kwargs)
+    def items(self):
+        '''Return a set-like object providing a view on the underlying
+        mapping's items.'''
+        return self.__mapping.items()
 
-    def __contains__(self, *args, **kwargs):
-        return self.__mapping.__contains__(*args, **kwargs)
+    def values(self):
+        '''Return a set-like object providing a view on the underlying
+        mapping's values.'''
+        return self.__mapping.values()
 
-    def __getitem__(self, *args, **kwargs):
-        return self.__mapping.__getitem__(*args, **kwargs)
+    def __contains__(self, key):
+        return self.__mapping.__contains__(key)
 
-    def __iter__(self, *args, **kwargs):
-        return self.__mapping.__iter__(*args, **kwargs)
+    def __getitem__(self, key):
+        return self.__mapping.__getitem__(key)
 
-    def __len__(self, *args, **kwargs):
-        return self.__mapping.__len__(*args, **kwargs)
+    def __iter__(self):
+        return self.__mapping.__iter__()
+
+    def __len__(self):
+        return self.__mapping.__len__()
 
     def __eq__(self, other):
         if isinstance(other, MappingView):
             return self.__mapping == other.__mapping
 
         return self.__mapping.__eq__(other)
-
-    def __ne__(self, *args, **kwargs):
-        return self.__mapping.__ne__(*args, **kwargs)
 
     def __repr__(self):
         return '%s(%r)' % (type(self).__name__, self.__mapping)

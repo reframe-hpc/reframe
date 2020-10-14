@@ -196,7 +196,7 @@ def rmtree(*args, max_retries=3, **kwargs):
     '''Persistent version of ``shutil.rmtree()``.
 
     If ``shutil.rmtree()`` fails with ``ENOTEMPTY`` or ``EBUSY``, retry up to
-    ``max_retries`times to delete the directory.
+    ``max_retries`` times to delete the directory.
 
     This version of ``rmtree()`` is mostly provided to work around a race
     condition between when ``sacct`` reports a job as completed and when the

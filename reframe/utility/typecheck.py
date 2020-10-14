@@ -11,7 +11,8 @@ recursively check of all the elements of an aggregate data structure.
 Suppose you have a list of integers, suchs as ``[1, 2, 3]``, the following
 checks should hold:
 
-::
+.. code-block:: python
+
     l = [1, 2, 3]
     assert isinstance(l, List[int]) == True
     assert isinstance(l, List[float]) == False
@@ -20,7 +21,8 @@ checks should hold:
 Aggregate types can be combined in an arbitrary depth, so that can type check
 any complex data strcture:
 
-::
+.. code-block:: python
+
     d = {'a': [1, 2], 'b': [3, 4]}
     assert isisntance(d, Dict) == True
     assert isisntance(d, Dict[str, List[int]]) == True
@@ -49,7 +51,8 @@ this module.
 The type hierarchy of the types defined in this module is the following
 (example shown for List, but it is analogous for the rest of the types):
 
-::
+.. code-block:: none
+
           List
         /   |
        /    |
@@ -59,7 +62,6 @@ The type hierarchy of the types defined in this module is the following
 
 In the above example ``T`` may refer to any type, so that ``List[List[int]]``
 is an instance of ``List``, but not an instance of ``List[int]``.
-
 '''
 
 import abc
