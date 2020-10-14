@@ -49,13 +49,14 @@ class CudaAwareMPICheck(rfm.CompileOnlyRegressionTest):
         self.sanity_patterns = sn.assert_found(r'jacobi_cuda_aware_mpi',
                                                self.stdout)
         self.maintainers = ['JO']
-        self.tags = {'production', 'external_resources'}
+        self.tags = {'production', 'scs'}
 
     @rfm.run_before('compile')
-    def set_cuda_home(self):
-        if self.current_system.name in [
-                'daint', 'dom'] and osx.cray_cdt_version() == '20.08':
-            self.prebuild_cmds += ['export CUDA_HOME=$CUDATOOLKIT_HOME']
+    def cdt2008_pgi_workaround(self):
+        if (self.current_environ.name == 'PrgEnv-pgi' and
+            osx.cray_cdt_version() == '20.08' and
+            self.current_system.name in ['daint', 'dom']):
+            self.variables += ['export CUDA_HOME=$CUDATOOLKIT_HOME']
 
     @rfm.run_before('compile')
     def set_compilers(self):
