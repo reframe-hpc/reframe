@@ -125,13 +125,6 @@ if [ "X${MODULEUSE}" != "X" ]; then
     module use ${MODULEUSE}
 fi
 
-if [[ $(hostname) =~ tsa ]]; then
-    # FIXME: Temporary workaround until we have a reframe module on Tsa
-    module load python
-else
-    module load reframe
-fi
-
 # Bootstrap ReFrame
 ./bootstrap.sh
 
@@ -169,6 +162,7 @@ elif [ $CI_TUTORIAL -eq 1 ]; then
 else
     # Run unit tests with the scheduler backends
     tempdir=$(mktemp -d -p $SCRATCH)
+    echo "[INFO] export TMPDIR=$tempdir"
     export TMPDIR=$tempdir
     if [[ $(hostname) =~ dom ]]; then
         PATH_save=$PATH
