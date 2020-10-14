@@ -43,8 +43,15 @@ if [ -z $python ]; then
     python=python3
 fi
 
-pyver=$($python -V | sed -n 's/Python \([0-9]\+\)\.\([0-9]\+\)\..*/\1.\2/p')
+while [ -n "$1" ]; do
+    case "$1" in
+        "+docs") MAKEDOCS="true" && shift ;;
+        "+pygelf") PYGELF="true" && shift ;;
+        *) usage && exit 0 ;;
+    esac
+done
 
+pyver=$($python -V | sed -n 's/Python \([0-9]\+\)\.\([0-9]\+\)\..*/\1.\2/p')
 
 # Check if ensurepip is installed
 $python -m ensurepip --version &> /dev/null
@@ -63,11 +70,11 @@ export PYTHONPATH=$(pwd)/external:$(pwd)/external/usr/lib/python$pyver/site-pack
 CMD $python -m pip install --no-cache-dir -q --upgrade pip --target=external/
 CMD $python -m pip install --use-feature=2020-resolver --no-cache-dir -q -r requirements.txt --target=external/ --upgrade
 
-if [ x"$1" == x"+docs" -o x"$2" == x"+docs" ]; then
+if [ "$MAKEDOCS" == "true" ]; then
     CMD $python -m pip install --use-feature=2020-resolver --no-cache-dir -q -r docs/requirements.txt --target=external/ --upgrade
     make -C docs PYTHON=$python
 fi
 
-if [ x"$1" == x"+pygelf" -o x"$2" == x"+pygelf" ]; then
+if [ "$PYGELF" == "true" ]; then
     CMD $python -m pip install --use-feature=2020-resolver --no-cache-dir -q pygelf --target=external/ --upgrade
 fi
