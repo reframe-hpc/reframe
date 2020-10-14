@@ -23,6 +23,7 @@ class GpuBandwidthCheck(rfm.RegressionTest):
         if self.current_system.name in ['arolla', 'ault', 'tsa']:
             self.exclusive_access = True
 
+        self.exclusive_access = True
         self.build_system = 'SingleSource'
         self.sourcepath = 'memory_bandwidth.cu'
         self.executable = 'memory_bandwidth.x'
@@ -39,6 +40,7 @@ class GpuBandwidthCheck(rfm.RegressionTest):
                                       '-std=c++11', '-lnvidia-ml',
                                       '-DCOPY=%d' % self.copy_size]
         self.num_tasks = 0
+        self.num_tasks_per_node = 1
         if self.current_system.name in ['daint', 'dom', 'tiger']:
             self.modules = ['craype-accel-nvidia60']
         elif self.current_system.name in ['arolla', 'tsa']:
@@ -106,20 +108,17 @@ class GpuBandwidthCheck(rfm.RegressionTest):
     @sn.sanity_function
     def do_sanity_check(self):
         node_names = set(sn.extractall(
-            r'^\s*\[([^,]*)\]\s*Found %s device\(s\).' % self.num_gpus_per_node,
+            r'^\s*\[([^,]{1,20})\]\s*Found %s device\(s\).' % self.num_gpus_per_node,
             self.stdout, 1
         ))
-
         sn.evaluate(sn.assert_eq(
             self.job.num_tasks, len(node_names),
             msg='requested {0} node(s), got {1} (nodelist: %s)' %
             ','.join(sorted(node_names))))
-
         good_nodes = set(sn.extractall(
-            r'^[^,]*\[([^,]*)\]\s*Test Result\s*=\s*PASS',
+            r'^\s*\[([^,]{1,20})\]\s*Test Result\s*=\s*PASS',
             self.stdout, 1
         ))
-
         sn.evaluate(sn.assert_eq(
             node_names, good_nodes,
             msg='check failed on the following node(s): %s' %
