@@ -687,7 +687,6 @@ class TMod4Impl(TModImpl):
         else:
             cmd = 'load'
 
-        # print(f'#cscs load_module: {cmd} {module.name}')
         self._exec_module_command(
             cmd, str(module),
             msg="could not load module '%s' correctly" % module)
@@ -706,7 +705,6 @@ class TMod4Impl(TModImpl):
         else:
             cmd = 'load'
 
-        # print(f'#cscs emit_load_instr: {cmd} {module}')
         return f'module {cmd} {module}'
 
     def emit_unload_instr(self, module):
