@@ -47,7 +47,7 @@ while [ -n "$1" ]; do
     case "$1" in
         "+docs") MAKEDOCS="true" && shift ;;
         "+pygelf") PYGELF="true" && shift ;;
-        *) usage && exit 0 ;;
+        *) usage && exit 1 ;;
     esac
 done
 
@@ -68,13 +68,19 @@ export PATH=$(pwd)/external/usr/bin:$PATH
 export PYTHONPATH=$(pwd)/external:$(pwd)/external/usr/lib/python$pyver/site-packages:$PYTHONPATH
 
 CMD $python -m pip install --no-cache-dir -q --upgrade pip --target=external/
-CMD $python -m pip install --use-feature=2020-resolver --no-cache-dir -q -r requirements.txt --target=external/ --upgrade
 
-if [ "$MAKEDOCS" == "true" ]; then
+if [ -n "$PYGELF" ]; then
+    cp requirements.txt requirements_tmp.txt
+    sed -i -e 's/^#\.pygelf[[:space:]]\+//g' requirements.txt
+    CMD $python -m pip install --use-feature=2020-resolver --no-cache-dir -q -r requirements.txt --target=external/ --upgrade
+    mv requirements_tmp.txt requirements.txt
+else
+    CMD $python -m pip install --use-feature=2020-resolver --no-cache-dir -q -r requirements.txt --target=external/ --upgrade
+fi
+
+if [ -n "$MAKEDOCS" ]; then
     CMD $python -m pip install --use-feature=2020-resolver --no-cache-dir -q -r docs/requirements.txt --target=external/ --upgrade
     make -C docs PYTHON=$python
 fi
 
-if [ "$PYGELF" == "true" ]; then
-    CMD $python -m pip install --use-feature=2020-resolver --no-cache-dir -q pygelf --target=external/ --upgrade
-fi
+

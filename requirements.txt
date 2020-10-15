@@ -4,3 +4,4 @@ pytest>=5.0.0
 coverage
 setuptools
 wcwidth
+#.pygelf pygelf==0.3.6
