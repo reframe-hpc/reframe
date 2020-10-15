@@ -10,7 +10,8 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class CudaMemtest(rfm.RegressionTest):
     def __init__(self):
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu',
+                              'ault:amdv100', 'ault:intelv100']
         self.valid_prog_environs = ['PrgEnv-cray']
         self.descr = 'Flexible CUDA Memtest'
         self.maintainers = ['TM', 'SK']
