@@ -241,7 +241,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         return any(self._task_index[c].failed for c in task.testcase.deps)
 
     def deps_succeeded(self, task):
-        return all(self._task_index[c].succeeded for c in task.testcase.deps)
+        return all((c not in self._task_index or self._task_index[c].succeeded)
+                   for c in task.testcase.deps)
 
     def on_task_setup(self, task):
         partname = task.check.current_partition.fullname

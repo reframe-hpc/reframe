@@ -5,6 +5,7 @@
 
 import abc
 import copy
+import os
 import signal
 import sys
 import time
@@ -14,11 +15,13 @@ import reframe.core.environments as env
 import reframe.core.logging as logging
 import reframe.core.runtime as runtime
 import reframe.frontend.dependency as dependency
+import reframe.utility.json as jsonext
 from reframe.core.exceptions import (AbortTaskError, JobNotStartedError,
                                      ReframeForceExitError, TaskExit)
 from reframe.core.schedulers.local import LocalJobScheduler
 from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.statistics import TestStats
+
 
 ABORT_REASONS = (KeyboardInterrupt, ReframeForceExitError, AssertionError)
 
@@ -287,6 +290,11 @@ class RegressionTask:
         self._safe_call(self.check.performance)
 
     def finalize(self):
+        json_check = os.path.join(self.check.stagedir, 'rfm_check.json')
+        print(json_check)
+        with open(json_check, 'w') as f:
+            jsonext.dump(self.check, f)
+
         self._current_stage = 'finalize'
         self._notify_listeners('on_task_success')
 
@@ -366,7 +374,7 @@ class Runner:
     def stats(self):
         return self._stats
 
-    def runall(self, testcases):
+    def runall(self, testcases, testcases_og=None):
         num_checks = len({tc.check.name for tc in testcases})
         self._printer.separator('short double line',
                                 'Running %d check(s)' % num_checks)
@@ -375,7 +383,10 @@ class Runner:
         try:
             self._runall(testcases)
             if self._max_retries:
-                self._retry_failed(testcases)
+                if testcases_og:
+                    self._retry_failed(testcases_og)
+                else:
+                    self._retry_failed(testcases)
 
         finally:
             # Print the summary line
@@ -406,6 +417,17 @@ class Runner:
             failed_cases = dependency.toposort(cases_graph, is_subgraph=True)
             self._runall(failed_cases)
             failures = self._stats.failures()
+
+    def restore(self, testcases, retry_report):
+        index = {}
+        for run in retry_report['runs']:
+            for t in run['testcases']:
+                index[(t['name'], t['system'], t['environment'])] = t['stagedir']
+
+        for t in testcases:
+            idx = (t.check.name, t.partition.fullname, t.environ.name)
+            #RegressionTask(t).check._stagedir = index[idx]
+            RegressionTask(t).check.restore(index[idx])
 
     def _runall(self, testcases):
         def print_separator(check, prefix):

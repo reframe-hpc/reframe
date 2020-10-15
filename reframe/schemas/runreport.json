@@ -43,7 +43,7 @@
                                 "environment": {"type": ["string", "null"]},
                                 "fail_phase": {"type": ["string", "null"]},
                                 "fail_reason": {"type": ["string", "null"]},
-                                "jobid": {"type": ["number", "null"]},
+                                "jobid": {"type": ["string", "null"]},
                                 "job_stderr": {"type": ["string", "null"]},
                                 "job_stdout": {"type": ["string", "null"]},
                                 "name": {"type": "string"},

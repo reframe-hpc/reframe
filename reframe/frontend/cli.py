@@ -5,6 +5,7 @@
 
 import inspect
 import json
+import jsonschema
 import os
 import re
 import socket
@@ -292,6 +293,10 @@ def main():
              'may be retried (default: 0)'
     )
     run_options.add_argument(
+        '--retry-failed', metavar='NUM', action='store', default=None,
+        help='Retry failed tests in a given runreport'
+    )
+    run_options.add_argument(
         '--flex-alloc-nodes', action='store',
         dest='flex_alloc_nodes', metavar='{all|STATE|NUM}', default=None,
         help='Set strategy for the flexible node allocation (default: "idle").'
@@ -537,12 +542,53 @@ def main():
     printer.debug(format_env(options.env_vars))
 
     # Setup the check loader
-    loader = RegressionCheckLoader(
-        load_path=site_config.get('general/0/check_search_path'),
-        recurse=site_config.get('general/0/check_search_recursive'),
-        ignore_conflicts=site_config.get('general/0/ignore_check_conflicts')
-    )
+    if options.retry_failed:
+        with open(options.retry_failed) as f:
+            try:
+                restart_report = json.load(f)
+            except json.JSONDecodeError as e:
+                raise ReframeFatalError(
+                    f"invalid runreport: '{restart_report}'"
+                ) from e
 
+        schema_filename = os.path.join(reframe.INSTALL_PREFIX, 'reframe',
+                                       'schemas', 'runreport.json')
+        with open(schema_filename) as f:
+            try:
+                schema = json.load(f)
+            except json.JSONDecodeError as e:
+                raise ReframeFatalError(
+                    f"invalid schema: '{schema_filename}'"
+                ) from e
+
+        try:
+            jsonschema.validate(restart_report, schema)
+        except jsonschema.ValidationError as e:
+            raise ValueError(f"could not validate restart runreport: "
+                             f"'{restart_report}'") from e
+
+        failed_checks = set()
+        failed_checks_prefixes = set()
+        # for run in restart_report['runs']:
+        for testcase in restart_report['runs'][-1]['testcases']:
+            if testcase['result'] == 'failure':
+                failed_checks.add(hash(testcase['name']) ^
+                                  hash(testcase['system']) ^
+                                  hash(testcase['environment']))
+                failed_checks_prefixes.add(testcase['prefix'])
+
+        loader = RegressionCheckLoader(
+            load_path=site_config.get('general/0/check_search_path'),  #failed_checks_prefixes,
+            ignore_conflicts=site_config.get(
+                'general/0/ignore_check_conflicts')
+        )
+    else:
+        loader = RegressionCheckLoader(
+            load_path=site_config.get('general/0/check_search_path'),
+            recurse=site_config.get('general/0/check_search_recursive'),
+            ignore_conflicts=site_config.get(
+                'general/0/ignore_check_conflicts')
+        )
     def print_infoline(param, value):
         param = param + ':'
         printer.info(f"  {param.ljust(18)} {value}")
@@ -633,13 +679,26 @@ def main():
             for h in options.hooks:
                 type(c).disable_hook(h)
 
-        testcases = generate_testcases(checks_matched,
+        testcases_og = generate_testcases(checks_matched,
                                        options.skip_system_check,
                                        options.skip_prgenv_check,
                                        allowed_environs)
-        testgraph = dependency.build_deps(testcases)
-        dependency.validate_deps(testgraph)
-        testcases = dependency.toposort(testgraph)
+        if options.retry_failed:
+            failed_cases = [tc for tc in testcases_og
+                            if tc.__hash__() in failed_checks]
+
+            cases_graph = dependency.build_deps(failed_cases, testcases_og)
+            testcases = dependency.toposort(cases_graph, is_subgraph=True)
+            restored_tests = set()
+            for c in testcases:
+                for d in c.deps:
+                    if d.__hash__() not in failed_checks:
+                        restored_tests.add(d)
+
+        else:
+            testgraph = dependency.build_deps(testcases_og)
+            dependency.validate_deps(testgraph)
+            testcases = dependency.toposort(testgraph)
 
         # Manipulate ReFrame's environment
         if site_config.get('general/0/purge_environment'):
@@ -721,7 +780,10 @@ def main():
                 session_info['time_start'] = time.strftime(
                     '%FT%T%z', time.localtime(time_start),
                 )
-                runner.runall(testcases)
+                if options.retry_failed:
+                    runner.restore(restored_tests, restart_report)
+
+                runner.runall(testcases, testcases_og)
             finally:
                 time_end = time.time()
                 session_info['time_end'] = time.strftime(
