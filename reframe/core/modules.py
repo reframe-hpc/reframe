@@ -678,8 +678,8 @@ class TMod4Impl(TModImpl):
         #             msg += completed.args
         #         else:
         #             msg += ' '.join(completed.args)
-
-    raise EnvironError(msg)
+        #
+        #     raise EnvironError(msg)
 
     def load_module(self, module):
         if module.name.startswith('PrgEnv-'):
