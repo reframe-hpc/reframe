@@ -8,6 +8,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 import reframe.utility.os_ext as osx
 
+
 class CudaSamples(rfm.RegressionTest):
     def __init__(self):
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu',
@@ -98,7 +99,9 @@ class CudaGraphsCGCheck(CudaSamples):
     def __init__(self):
         super().__init__()
         self.descr = 'CUDA conjugateGradientCudaGraphs test'
-        self.executable = 'Samples/{0}/{0}'.format('conjugateGradientCudaGraphs')
+        self.executable = 'Samples/{0}/{0}'.format(
+            'conjugateGradientCudaGraphs'
+        )
         self.prebuild_cmds += ['cd Samples/conjugateGradientCudaGraphs']
         self.sanity_patterns = sn.assert_found(
             r'Test Summary:  Error amount = 0.00000', self.stdout)
