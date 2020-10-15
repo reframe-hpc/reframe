@@ -670,16 +670,16 @@ class TMod4Impl(TModImpl):
         completed = os_ext.run_command(command, check=True)
         namespace = {}
         exec(completed.stdout, {}, namespace)
-#         if not namespace['_mlstatus']:
-#             # _mlstatus is set by the TMod4 Python bindings
-#             if msg is None:
-#                 msg = 'modules system command failed: '
-#                 if isinstance(completed.args, str):
-#                     msg += completed.args
-#                 else:
-#                     msg += ' '.join(completed.args)
-# 
-#             raise EnvironError(msg)
+        # if not namespace['_mlstatus']:
+        #     # _mlstatus is set by the TMod4 Python bindings
+        #     if msg is None:
+        #         msg = 'modules system command failed: '
+        #         if isinstance(completed.args, str):
+        #             msg += completed.args
+        #         else:
+        #             msg += ' '.join(completed.args)
+
+    raise EnvironError(msg)
 
     def load_module(self, module):
         if module.name.startswith('PrgEnv-'):
@@ -716,17 +716,18 @@ class TMod4Impl(TModImpl):
         return f'module unload {module}'
 
     def conflicted_modules(self, module):
-         if module.name.startswith('PrgEnv-'):
-             show = 'saveshow'
-         else:
-             show = 'show'
- 
-         completed = self._run_module_command(
-             f'{show}', str(module), msg=f"745 could not show module {module} / {module.name}")
-         return [Module(m.group(1))
-                 for m in re.finditer(r'^conflict\s+(\S+)',
-                                      completed.stderr, re.MULTILINE)]
- 
+        if module.name.startswith('PrgEnv-'):
+            show = 'saveshow'
+        else:
+            show = 'show'
+
+        completed = self._run_module_command(
+            f'{show}', str(module), msg=f"could not show module {module}")
+        return [Module(m.group(1))
+                for m in re.finditer(r'^conflict\s+(\S+)',
+                                     completed.stderr, re.MULTILINE)]
+
+
 # }}}
 # {{{ lmod
 class LModImpl(TModImpl):
