@@ -20,6 +20,7 @@ from reframe.core.exceptions import (ConfigError, EnvironError,
 from reframe.utility import OrderedSet
 
 
+# {{{ module
 class Module:
     '''Module wrapper.
 
@@ -77,6 +78,8 @@ class Module:
         return self.fullname
 
 
+# }}}
+# {{{ ModulesSystem
 class ModulesSystem:
     '''A modules system.'''
 
@@ -330,6 +333,8 @@ class ModulesSystem:
         return str(self._backend)
 
 
+# }}}
+# {{{ ModulesSystemImpl
 class ModulesSystemImpl(abc.ABC):
     '''Abstract base class for module systems.'''
 
@@ -410,6 +415,8 @@ class ModulesSystemImpl(abc.ABC):
         return self.name() + ' ' + self.version()
 
 
+# }}}
+# {{{ tmod
 class TModImpl(ModulesSystemImpl):
     '''Base class for TMod Module system (Tcl).'''
 
@@ -548,6 +555,8 @@ class TModImpl(ModulesSystemImpl):
         return 'module unload %s' % module
 
 
+# }}}
+# {{{ tmod3
 class TMod31Impl(TModImpl):
     '''Module system for TMod (Tcl).'''
 
@@ -616,6 +625,8 @@ class TMod31Impl(TModImpl):
         exec(cmd)
 
 
+# }}}
+# {{{ tmod4
 class TMod4Impl(TModImpl):
     '''Module system for TMod 4.'''
 
@@ -659,18 +670,65 @@ class TMod4Impl(TModImpl):
         completed = os_ext.run_command(command, check=True)
         namespace = {}
         exec(completed.stdout, {}, namespace)
-        if not namespace['_mlstatus']:
-            # _mlstatus is set by the TMod4 Python bindings
-            if msg is None:
-                msg = 'modules system command failed: '
-                if isinstance(completed.args, str):
-                    msg += completed.args
-                else:
-                    msg += ' '.join(completed.args)
+#         if not namespace['_mlstatus']:
+#             # _mlstatus is set by the TMod4 Python bindings
+#             if msg is None:
+#                 msg = 'modules system command failed: '
+#                 if isinstance(completed.args, str):
+#                     msg += completed.args
+#                 else:
+#                     msg += ' '.join(completed.args)
+# 
+#             raise EnvironError(msg)
 
-            raise EnvironError(msg)
+    def load_module(self, module):
+        if module.name.startswith('PrgEnv-'):
+            cmd = 'restore'
+        else:
+            cmd = 'load'
 
+        # print(f'#cscs load_module: {cmd} {module.name}')
+        self._exec_module_command(
+            cmd, str(module),
+            msg="could not load module '%s' correctly" % module)
 
+    def unload_module(self, module):
+        if module.name.startswith('PrgEnv-'):
+            return
+
+        self._exec_module_command(
+            'unload', str(module),
+            msg="could not unload module '%s' correctly" % module)
+
+    def emit_load_instr(self, module):
+        if module.name.startswith('PrgEnv-'):
+            cmd = 'restore'
+        else:
+            cmd = 'load'
+
+        # print(f'#cscs emit_load_instr: {cmd} {module}')
+        return f'module {cmd} {module}'
+
+    def emit_unload_instr(self, module):
+        if module.name.startswith('PrgEnv-'):
+            return ''
+
+        return f'module unload {module}'
+
+    def conflicted_modules(self, module):
+         if module.name.startswith('PrgEnv-'):
+             show = 'saveshow'
+         else:
+             show = 'show'
+ 
+         completed = self._run_module_command(
+             f'{show}', str(module), msg=f"745 could not show module {module} / {module.name}")
+         return [Module(m.group(1))
+                 for m in re.finditer(r'^conflict\s+(\S+)',
+                                      completed.stderr, re.MULTILINE)]
+ 
+# }}}
+# {{{ lmod
 class LModImpl(TModImpl):
     '''Module system for Lmod (Tcl/Lua).'''
 
@@ -752,6 +810,8 @@ class LModImpl(TModImpl):
         self._exec_module_command('--force', 'purge')
 
 
+# }}}
+# {{{ nomod
 class NoModImpl(ModulesSystemImpl):
     '''A convenience class that implements a no-op a modules system.'''
 
