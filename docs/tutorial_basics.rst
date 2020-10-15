@@ -90,9 +90,9 @@ Now it's time to run our first test:
 .. code-block:: none
 
    [ReFrame Setup]
-     version:           3.1-dev2 (rev: 272e1aae)
-     command:           ./bin/reframe -c tutorials/basics/hello/hello1.py -r
-     launched by:       user@dhcp-133-44.cscs.ch
+     version:           3.3-dev0 (rev: 5d246bff)
+     command:           './bin/reframe -c tutorials/basics/hello/hello1.py -r'
+     launched by:       user@tresa.local
      working directory: '/Users/user/Repositories/reframe'
      settings file:     '<builtin>'
      check search path: '/Users/user/Repositories/reframe/tutorials/basics/hello/hello1.py'
@@ -100,18 +100,19 @@ Now it's time to run our first test:
      output directory:  '/Users/user/Repositories/reframe/output'
 
    [==========] Running 1 check(s)
-   [==========] Started on Fri Jul 24 11:05:46 2020
+   [==========] Started on Mon Oct 12 18:23:30 2020
 
    [----------] started processing HelloTest (HelloTest)
    [ RUN      ] HelloTest on generic:default using builtin
    [----------] finished processing HelloTest (HelloTest)
 
    [----------] waiting for spawned checks to finish
-   [       OK ] (1/1) HelloTest on generic:default using builtin [compile: 0.378s run: 0.299s total: 0.712s]
+   [       OK ] (1/1) HelloTest on generic:default using builtin [compile: 0.389s run: 0.406s total: 0.811s]
    [----------] all spawned checks have finished
 
    [  PASSED  ] Ran 1 test case(s) from 1 check(s) (0 failure(s))
-   [==========] Finished on Fri Jul 24 11:05:47 2020
+   [==========] Finished on Mon Oct 12 18:23:31 2020
+   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-00lf_tbi.log'
 
 
 Perfect! We have verified that we have a functioning C compiler in our system.
@@ -230,7 +231,7 @@ Let's run now the test:
 .. code-block:: none
 
    [ReFrame Setup]
-     version:           3.1-dev2 (rev: 50d8f227)
+     version:           3.3-dev0 (rev: 5d246bff)
      command:           './bin/reframe -c tutorials/basics/hello/hello2.py -r'
      launched by:       user@tresa.local
      working directory: '/Users/user/Repositories/reframe'
@@ -240,7 +241,7 @@ Let's run now the test:
      output directory:  '/Users/user/Repositories/reframe/output'
 
    [==========] Running 2 check(s)
-   [==========] Started on Mon Jul 20 21:03:21 2020
+   [==========] Started on Mon Oct 12 18:24:31 2020
 
    [----------] started processing HelloMultiLangTest_c (HelloMultiLangTest_c)
    [ RUN      ] HelloMultiLangTest_c on generic:default using builtin
@@ -248,15 +249,15 @@ Let's run now the test:
 
    [----------] started processing HelloMultiLangTest_cpp (HelloMultiLangTest_cpp)
    [ RUN      ] HelloMultiLangTest_cpp on generic:default using builtin
-   [     FAIL ] (1/2) HelloMultiLangTest_cpp on generic:default using builtin [compile: 0.003s run: n/a total: 0.015s]
+   [     FAIL ] (1/2) HelloMultiLangTest_cpp on generic:default using builtin [compile: 0.001s run: n/a total: 0.009s]
    [----------] finished processing HelloMultiLangTest_cpp (HelloMultiLangTest_cpp)
 
    [----------] waiting for spawned checks to finish
-   [       OK ] (2/2) HelloMultiLangTest_c on generic:default using builtin [compile: 1.257s run: 0.349s total: 1.642s]
+   [       OK ] (2/2) HelloMultiLangTest_c on generic:default using builtin [compile: 0.254s run: 0.286s total: 0.555s]
    [----------] all spawned checks have finished
 
    [  FAILED  ] Ran 2 test case(s) from 2 check(s) (1 failure(s))
-   [==========] Finished on Mon Jul 20 21:03:23 2020
+   [==========] Finished on Mon Oct 12 18:24:32 2020
 
    ==============================================================================
    SUMMARY OF FAILURES
@@ -266,13 +267,14 @@ Let's run now the test:
      * System partition: generic:default
      * Environment: builtin
      * Stage directory: /Users/user/Repositories/reframe/stage/generic/default/builtin/HelloMultiLangTest_cpp
-     * Node list: <None>
+     * Node list: None
      * Job type: local (id=None)
      * Maintainers: []
      * Failing phase: compile
      * Rerun with '-n HelloMultiLangTest_cpp -p builtin --system generic:default'
      * Reason: build system error: I do not know how to compile a C++ program
    ------------------------------------------------------------------------------
+   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-lbpo8oan.log'
 
 
 Oops! The C++ test has failed.
@@ -336,17 +338,17 @@ Let's now rerun our "Hello, World!" tests:
 .. code-block:: none
 
    [ReFrame Setup]
-     version:           3.1-dev0 (rev: 986c3505)
-     command:           './bin/reframe -C tutorials/config/mysettings.py -c tutorials/basics/hello/hello2.py -r'
+     version:           3.3-dev0 (rev: 5d246bff)
+     command:           './bin/reframe -C tutorials/config/settings.py -c tutorials/basics/hello/hello2.py -r'
      launched by:       user@tresa.local
      working directory: '/Users/user/Repositories/reframe'
-     settings file:     'tutorials/config/mysettings.py'
+     settings file:     'tutorials/config/settings.py'
      check search path: '/Users/user/Repositories/reframe/tutorials/basics/hello/hello2.py'
      stage directory:   '/Users/user/Repositories/reframe/stage'
      output directory:  '/Users/user/Repositories/reframe/output'
 
    [==========] Running 2 check(s)
-   [==========] Started on Sun Jun 21 19:36:22 2020
+   [==========] Started on Mon Oct 12 18:28:48 2020
 
    [----------] started processing HelloMultiLangTest_c (HelloMultiLangTest_c)
    [ RUN      ] HelloMultiLangTest_c on catalina:default using gnu
@@ -359,14 +361,15 @@ Let's now rerun our "Hello, World!" tests:
    [----------] finished processing HelloMultiLangTest_cpp (HelloMultiLangTest_cpp)
 
    [----------] waiting for spawned checks to finish
-   [       OK ] (1/4) HelloMultiLangTest_cpp on catalina:default using gnu [compile: 0.768s run: 1.131s total: 1.928s]
-   [       OK ] (2/4) HelloMultiLangTest_c on catalina:default using gnu [compile: 0.509s run: 2.194s total: 2.763s]
-   [       OK ] (3/4) HelloMultiLangTest_c on catalina:default using clang [compile: 0.255s run: 2.059s total: 2.345s]
-   [       OK ] (4/4) HelloMultiLangTest_cpp on catalina:default using clang [compile: 1.068s run: 0.236s total: 1.332s]
+   [       OK ] (1/4) HelloMultiLangTest_cpp on catalina:default using gnu [compile: 1.077s run: 1.475s total: 2.566s]
+   [       OK ] (2/4) HelloMultiLangTest_c on catalina:default using gnu [compile: 4.128s run: 2.860s total: 7.004s]
+   [       OK ] (3/4) HelloMultiLangTest_c on catalina:default using clang [compile: 0.241s run: 2.741s total: 2.998s]
+   [       OK ] (4/4) HelloMultiLangTest_cpp on catalina:default using clang [compile: 1.399s run: 0.356s total: 1.770s]
    [----------] all spawned checks have finished
 
    [  PASSED  ] Ran 4 test case(s) from 2 check(s) (0 failure(s))
-   [==========] Finished on Sun Jun 21 19:36:25 2020
+   [==========] Finished on Mon Oct 12 18:28:56 2020
+   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-a_dt6nro.log'
 
 
 Notice how the same tests are now tried with both the ``gnu`` and ``clang`` programming environments, without having to touch them at all!
@@ -407,7 +410,7 @@ Finally, we set the arguments to be passed to the generated executable in :attr:
 .. code-block:: none
 
    [ReFrame Setup]
-     version:           3.1-dev0 (rev: 986c3505)
+     version:           3.3-dev0 (rev: 5d246bff)
      command:           './bin/reframe -c tutorials/basics/hellomp/hellomp1.py -r'
      launched by:       user@tresa.local
      working directory: '/Users/user/Repositories/reframe'
@@ -417,7 +420,7 @@ Finally, we set the arguments to be passed to the generated executable in :attr:
      output directory:  '/Users/user/Repositories/reframe/output'
 
    [==========] Running 1 check(s)
-   [==========] Started on Mon Jun 22 00:58:27 2020
+   [==========] Started on Mon Oct 12 20:02:37 2020
 
    [----------] started processing HelloThreadedTest (HelloThreadedTest)
    [ RUN      ] HelloThreadedTest on catalina:default using gnu
@@ -425,12 +428,13 @@ Finally, we set the arguments to be passed to the generated executable in :attr:
    [----------] finished processing HelloThreadedTest (HelloThreadedTest)
 
    [----------] waiting for spawned checks to finish
-   [       OK ] (1/2) HelloThreadedTest on catalina:default using gnu [compile: 1.354s run: 1.250s total: 2.639s]
-   [       OK ] (2/2) HelloThreadedTest on catalina:default using clang [compile: 1.202s run: 0.238s total: 1.468s]
+   [       OK ] (1/2) HelloThreadedTest on catalina:default using gnu [compile: 1.591s run: 1.205s total: 2.816s]
+   [       OK ] (2/2) HelloThreadedTest on catalina:default using clang [compile: 1.141s run: 0.309s total: 1.465s]
    [----------] all spawned checks have finished
 
    [  PASSED  ] Ran 2 test case(s) from 1 check(s) (0 failure(s))
-   [==========] Finished on Mon Jun 22 00:58:29 2020
+   [==========] Finished on Mon Oct 12 20:02:40 2020
+   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-h_itoc1k.log'
 
 
 Everything looks fine, but let's inspect the actual output of one of the tests:
@@ -499,7 +503,7 @@ Let's run this version of the test now and see if it fails:
 .. code-block:: none
 
    [ReFrame Setup]
-     version:           3.1-dev0 (rev: e64355a3)
+     version:           3.3-dev0 (rev: 5d246bff)
      command:           './bin/reframe -c tutorials/basics/hellomp/hellomp2.py -r'
      launched by:       user@tresa.local
      working directory: '/Users/user/Repositories/reframe'
@@ -509,7 +513,7 @@ Let's run this version of the test now and see if it fails:
      output directory:  '/Users/user/Repositories/reframe/output'
 
    [==========] Running 1 check(s)
-   [==========] Started on Mon Jun 22 20:53:02 2020
+   [==========] Started on Mon Oct 12 20:04:59 2020
 
    [----------] started processing HelloThreadedExtendedTest (HelloThreadedExtendedTest)
    [ RUN      ] HelloThreadedExtendedTest on catalina:default using gnu
@@ -517,12 +521,12 @@ Let's run this version of the test now and see if it fails:
    [----------] finished processing HelloThreadedExtendedTest (HelloThreadedExtendedTest)
 
    [----------] waiting for spawned checks to finish
-   [     FAIL ] (1/2) HelloThreadedExtendedTest on catalina:default using gnu [compile: 1.003s run: 0.839s total: 1.871s]
-   [     FAIL ] (2/2) HelloThreadedExtendedTest on catalina:default using clang [compile: 0.790s run: 0.141s total: 0.954s]
+   [     FAIL ] (1/2) HelloThreadedExtendedTest on catalina:default using gnu [compile: 1.222s run: 0.891s total: 2.130s]
+   [     FAIL ] (2/2) HelloThreadedExtendedTest on catalina:default using clang [compile: 0.835s run: 0.167s total: 1.018s]
    [----------] all spawned checks have finished
 
    [  FAILED  ] Ran 2 test case(s) from 1 check(s) (2 failure(s))
-   [==========] Finished on Mon Jun 22 20:53:04 2020
+   [==========] Finished on Mon Oct 12 20:05:02 2020
 
    ==============================================================================
    SUMMARY OF FAILURES
@@ -533,11 +537,11 @@ Let's run this version of the test now and see if it fails:
      * Environment: gnu
      * Stage directory: /Users/user/Repositories/reframe/stage/catalina/default/gnu/HelloThreadedExtendedTest
      * Node list: tresa.local
-     * Job type: local (id=36805)
+     * Job type: local (id=60355)
      * Maintainers: []
      * Failing phase: sanity
      * Rerun with '-n HelloThreadedExtendedTest -p gnu --system catalina:default'
-     * Reason: sanity error: 13 != 16
+     * Reason: sanity error: 12 != 16
    ------------------------------------------------------------------------------
    FAILURE INFO for HelloThreadedExtendedTest
      * Test Description: HelloThreadedExtendedTest
@@ -545,12 +549,13 @@ Let's run this version of the test now and see if it fails:
      * Environment: clang
      * Stage directory: /Users/user/Repositories/reframe/stage/catalina/default/clang/HelloThreadedExtendedTest
      * Node list: tresa.local
-     * Job type: local (id=36815)
+     * Job type: local (id=60366)
      * Maintainers: []
      * Failing phase: sanity
      * Rerun with '-n HelloThreadedExtendedTest -p clang --system catalina:default'
-     * Reason: sanity error: 12 != 16
+     * Reason: sanity error: 6 != 16
    ------------------------------------------------------------------------------
+   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-zz7x_5c8.log'
 
 
 As expected, only some of lines are printed correctly which makes the test fail.
@@ -606,28 +611,28 @@ The :option:`--performance-report` will generate a short report at the end for e
 .. code-block:: none
 
    [ReFrame Setup]
-     version:           3.1-dev0 (rev: 9d92d0ec)
-     command:           './bin/reframe -c tutorials/basics/stream/stream.py -r --performance-report'
+     version:           3.3-dev0 (rev: 5d246bff)
+     command:           './bin/reframe -c tutorials/basics/stream/stream1.py -r --performance-report'
      launched by:       user@tresa.local
      working directory: '/Users/user/Repositories/reframe'
      settings file:     '/Users/user/Repositories/reframe/tutorials/config/settings.py'
-     check search path: '/Users/user/Repositories/reframe/tutorials/basics/stream/stream.py'
+     check search path: '/Users/user/Repositories/reframe/tutorials/basics/stream/stream1.py'
      stage directory:   '/Users/user/Repositories/reframe/stage'
      output directory:  '/Users/user/Repositories/reframe/output'
 
    [==========] Running 1 check(s)
-   [==========] Started on Wed Jun 24 00:17:59 2020
+   [==========] Started on Mon Oct 12 20:06:09 2020
 
    [----------] started processing StreamTest (StreamTest)
    [ RUN      ] StreamTest on catalina:default using gnu
    [----------] finished processing StreamTest (StreamTest)
 
    [----------] waiting for spawned checks to finish
-   [       OK ] (1/1) StreamTest on catalina:default using gnu [compile: 3.466s run: 2.283s total: 5.795s]
+   [       OK ] (1/1) StreamTest on catalina:default using gnu [compile: 1.386s run: 2.377s total: 3.780s]
    [----------] all spawned checks have finished
 
    [  PASSED  ] Ran 1 test case(s) from 1 check(s) (0 failure(s))
-   [==========] Finished on Wed Jun 24 00:18:05 2020
+   [==========] Finished on Mon Oct 12 20:06:13 2020
    ==============================================================================
    PERFORMANCE REPORT
    ------------------------------------------------------------------------------
@@ -635,11 +640,12 @@ The :option:`--performance-report` will generate a short report at the end for e
    - catalina:default
       - gnu
          * num_tasks: 1
-         * Copy: 25238.5 (no unit specified)
-         * Scale: 16837.3 (no unit specified)
-         * Add: 18431.8 (no unit specified)
-         * Triad: 18833.1 (no unit specified)
+         * Copy: 24326.7 None
+         * Scale: 16664.2 None
+         * Add: 18398.7 None
+         * Triad: 18930.6 None
    ------------------------------------------------------------------------------
+   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-gczplnic.log'
 
 
 -----------------------
@@ -799,9 +805,9 @@ We will only do so with the final versions of the tests from the previous sectio
 ..  code-block:: none
 
    [ReFrame Setup]
-     version:           3.1-dev0 (rev: 6e3204a7)
+     version:           3.3-dev0 (rev: cb974c13)
      command:           './bin/reframe -C tutorials/config/settings.py -c tutorials/basics/ -R -n HelloMultiLangTest|HelloThreadedExtended2Test|StreamWithRefTest --performance-report -r'
-     launched by:       user@daint101
+     launched by:       user@dom101
      working directory: '/users/user/Devel/reframe'
      settings file:     'tutorials/config/settings.py'
      check search path: (R) '/users/user/Devel/reframe/tutorials/basics'
@@ -809,7 +815,7 @@ We will only do so with the final versions of the tests from the previous sectio
      output directory:  '/users/user/Devel/reframe/output'
 
    [==========] Running 4 check(s)
-   [==========] Started on Thu Jun 25 19:48:41 2020
+   [==========] Started on Mon Oct 12 20:12:34 2020
 
    [----------] started processing HelloMultiLangTest_c (HelloMultiLangTest_c)
    [ RUN      ] HelloMultiLangTest_c on daint:login using gnu
@@ -863,49 +869,49 @@ We will only do so with the final versions of the tests from the previous sectio
    [----------] finished processing StreamWithRefTest (StreamWithRefTest)
 
    [----------] waiting for spawned checks to finish
-   [       OK ] ( 1/39) StreamWithRefTest on daint:login using gnu [compile: 2.516s run: 8.253s total: 10.904s]
-   [       OK ] ( 2/39) HelloThreadedExtended2Test on daint:gpu using intel [compile: 2.402s run: 26.498s total: 29.573s]
-   [       OK ] ( 3/39) HelloThreadedExtended2Test on daint:login using cray [compile: 0.936s run: 31.749s total: 33.515s]
-   [       OK ] ( 4/39) HelloThreadedExtended2Test on daint:login using intel [compile: 2.484s run: 38.162s total: 41.500s]
-   [       OK ] ( 5/39) HelloMultiLangTest_cpp on daint:mc using pgi [compile: 2.083s run: 45.088s total: 48.052s]
-   [       OK ] ( 6/39) HelloMultiLangTest_cpp on daint:mc using gnu [compile: 1.906s run: 50.757s total: 53.713s]
-   [       OK ] ( 7/39) HelloMultiLangTest_cpp on daint:gpu using intel [compile: 2.138s run: 57.063s total: 60.459s]
-   [       OK ] ( 8/39) HelloMultiLangTest_cpp on daint:login using intel [compile: 2.138s run: 66.385s total: 69.937s]
-   [       OK ] ( 9/39) HelloMultiLangTest_c on daint:mc using intel [compile: 1.900s run: 75.088s total: 78.428s]
-   [       OK ] (10/39) HelloMultiLangTest_c on daint:gpu using intel [compile: 1.903s run: 82.938s total: 86.443s]
-   [       OK ] (11/39) HelloMultiLangTest_c on daint:login using intel [compile: 1.911s run: 90.911s total: 94.586s]
-   [       OK ] (12/39) HelloThreadedExtended2Test on daint:login using gnu [compile: 2.181s run: 5.360s total: 44.519s]
-   [       OK ] (13/39) HelloMultiLangTest_cpp on daint:gpu using pgi [compile: 2.100s run: 17.950s total: 57.466s]
-   [       OK ] (14/39) HelloMultiLangTest_cpp on daint:gpu using gnu [compile: 2.148s run: 23.833s total: 63.556s]
-   [       OK ] (15/39) HelloMultiLangTest_cpp on daint:login using pgi [compile: 2.123s run: 27.244s total: 67.101s]
-   [       OK ] (16/39) HelloMultiLangTest_cpp on daint:login using gnu [compile: 1.925s run: 33.013s total: 72.699s]
-   [       OK ] (17/39) HelloMultiLangTest_c on daint:mc using pgi [compile: 1.760s run: 36.179s total: 75.724s]
-   [       OK ] (18/39) HelloMultiLangTest_c on daint:mc using gnu [compile: 1.643s run: 41.386s total: 80.980s]
-   [       OK ] (19/39) HelloMultiLangTest_c on daint:gpu using pgi [compile: 1.618s run: 44.076s total: 83.805s]
-   [       OK ] (20/39) HelloMultiLangTest_c on daint:gpu using gnu [compile: 1.784s run: 49.160s total: 89.222s]
-   [       OK ] (21/39) HelloMultiLangTest_c on daint:login using pgi [compile: 1.676s run: 51.922s total: 92.032s]
-   [       OK ] (22/39) HelloMultiLangTest_c on daint:login using gnu [compile: 1.747s run: 56.999s total: 97.205s]
-   [       OK ] (23/39) HelloThreadedExtended2Test on daint:mc using pgi [compile: 2.802s run: 16.336s total: 19.372s]
-   [       OK ] (24/39) HelloThreadedExtended2Test on daint:mc using gnu [compile: 2.146s run: 23.128s total: 25.670s]
-   [       OK ] (25/39) HelloThreadedExtended2Test on daint:gpu using gnu [compile: 2.165s run: 33.585s total: 36.414s]
-   [       OK ] (26/39) HelloMultiLangTest_cpp on daint:mc using cray [compile: 0.624s run: 47.468s total: 49.001s]
-   [       OK ] (27/39) HelloMultiLangTest_cpp on daint:gpu using cray [compile: 0.635s run: 56.551s total: 58.307s]
-   [       OK ] (28/39) HelloMultiLangTest_c on daint:mc using cray [compile: 0.328s run: 75.253s total: 76.864s]
-   [       OK ] (29/39) HelloMultiLangTest_c on daint:login using cray [compile: 0.374s run: 91.505s total: 93.322s]
-   [       OK ] (30/39) HelloThreadedExtended2Test on daint:mc using intel [compile: 2.458s run: 22.705s total: 25.399s]
-   [       OK ] (31/39) HelloThreadedExtended2Test on daint:gpu using pgi [compile: 2.715s run: 29.752s total: 32.867s]
-   [       OK ] (32/39) HelloMultiLangTest_cpp on daint:mc using intel [compile: 2.097s run: 54.858s total: 57.513s]
-   [       OK ] (33/39) HelloMultiLangTest_c on daint:gpu using cray [compile: 0.319s run: 86.715s total: 87.750s]
-   [       OK ] (34/39) HelloMultiLangTest_cpp on daint:login using cray [compile: 0.637s run: 71.388s total: 72.518s]
-   [       OK ] (35/39) HelloThreadedExtended2Test on daint:login using pgi [compile: 2.615s run: 43.999s total: 48.315s]
-   [       OK ] (36/39) StreamWithRefTest on daint:gpu using gnu [compile: 2.274s run: 17.018s total: 19.336s]
-   [       OK ] (37/39) HelloThreadedExtended2Test on daint:gpu using cray [compile: 0.917s run: 33.426s total: 34.523s]
-   [       OK ] (38/39) StreamWithRefTest on daint:mc using gnu [compile: 2.129s run: 16.200s total: 18.366s]
-   [       OK ] (39/39) HelloThreadedExtended2Test on daint:mc using cray [compile: 0.911s run: 52.870s total: 53.815s]
+   [       OK ] ( 1/39) HelloThreadedExtended2Test on daint:gpu using intel [compile: 2.271s run: 26.769s total: 29.055s]
+   [       OK ] ( 2/39) HelloMultiLangTest_c on daint:gpu using cray [compile: 0.154s run: 75.494s total: 75.661s]
+   [       OK ] ( 3/39) HelloThreadedExtended2Test on daint:mc using cray [compile: 0.778s run: 11.878s total: 12.671s]
+   [       OK ] ( 4/39) HelloThreadedExtended2Test on daint:mc using gnu [compile: 2.012s run: 19.736s total: 21.763s]
+   [       OK ] ( 5/39) HelloMultiLangTest_c on daint:mc using cray [compile: 0.139s run: 68.148s total: 68.302s]
+   [       OK ] ( 6/39) StreamWithRefTest on daint:login using gnu [compile: 4.640s run: 6.752s total: 11.859s]
+   [       OK ] ( 7/39) HelloThreadedExtended2Test on daint:login using intel [compile: 2.248s run: 36.810s total: 39.072s]
+   [       OK ] ( 8/39) HelloMultiLangTest_c on daint:login using cray [compile: 0.140s run: 82.924s total: 83.080s]
+   [       OK ] ( 9/39) HelloThreadedExtended2Test on daint:gpu using pgi [compile: 2.556s run: 23.535s total: 26.108s]
+   [       OK ] (10/39) HelloThreadedExtended2Test on daint:gpu using gnu [compile: 2.065s run: 29.922s total: 32.002s]
+   [       OK ] (11/39) HelloMultiLangTest_cpp on daint:gpu using intel [compile: 1.976s run: 55.048s total: 57.039s]
+   [       OK ] (12/39) HelloMultiLangTest_c on daint:gpu using intel [compile: 1.802s run: 78.871s total: 80.685s]
+   [       OK ] (13/39) HelloThreadedExtended2Test on daint:mc using intel [compile: 2.286s run: 16.886s total: 19.186s]
+   [       OK ] (14/39) HelloMultiLangTest_cpp on daint:mc using cray [compile: 0.462s run: 42.545s total: 43.022s]
+   [       OK ] (15/39) HelloMultiLangTest_cpp on daint:mc using intel [compile: 1.976s run: 46.582s total: 48.572s]
+   [       OK ] (16/39) HelloMultiLangTest_c on daint:mc using intel [compile: 1.736s run: 71.563s total: 73.316s]
+   [       OK ] (17/39) HelloThreadedExtended2Test on daint:login using pgi [compile: 2.611s run: 33.608s total: 36.235s]
+   [       OK ] (18/39) HelloThreadedExtended2Test on daint:login using gnu [compile: 2.020s run: 39.888s total: 42.523s]
+   [       OK ] (19/39) HelloMultiLangTest_cpp on daint:login using intel [compile: 2.013s run: 63.789s total: 65.815s]
+   [       OK ] (20/39) HelloMultiLangTest_c on daint:login using intel [compile: 1.809s run: 86.147s total: 87.970s]
+   [       OK ] (21/39) HelloMultiLangTest_cpp on daint:gpu using pgi [compile: 1.938s run: 52.444s total: 54.397s]
+   [       OK ] (22/39) HelloMultiLangTest_cpp on daint:gpu using gnu [compile: 1.788s run: 57.910s total: 59.714s]
+   [       OK ] (23/39) HelloMultiLangTest_c on daint:gpu using pgi [compile: 1.512s run: 76.705s total: 78.234s]
+   [       OK ] (24/39) HelloMultiLangTest_c on daint:gpu using gnu [compile: 1.543s run: 81.567s total: 83.138s]
+   [       OK ] (25/39) HelloMultiLangTest_cpp on daint:mc using gnu [compile: 1.778s run: 49.430s total: 51.224s]
+   [       OK ] (26/39) HelloMultiLangTest_c on daint:mc using pgi [compile: 1.564s run: 69.324s total: 70.910s]
+   [       OK ] (27/39) HelloMultiLangTest_c on daint:mc using gnu [compile: 1.531s run: 74.238s total: 75.795s]
+   [       OK ] (28/39) HelloMultiLangTest_cpp on daint:login using pgi [compile: 2.147s run: 60.996s total: 63.157s]
+   [       OK ] (29/39) HelloMultiLangTest_cpp on daint:login using gnu [compile: 1.813s run: 66.590s total: 68.418s]
+   [       OK ] (30/39) HelloMultiLangTest_c on daint:login using pgi [compile: 1.523s run: 84.018s total: 85.554s]
+   [       OK ] (31/39) HelloMultiLangTest_c on daint:login using gnu [compile: 1.514s run: 88.777s total: 90.327s]
+   [       OK ] (32/39) HelloMultiLangTest_cpp on daint:gpu using cray [compile: 0.451s run: 52.389s total: 52.865s]
+   [       OK ] (33/39) HelloMultiLangTest_cpp on daint:mc using pgi [compile: 2.002s run: 44.985s total: 47.000s]
+   [       OK ] (34/39) HelloMultiLangTest_cpp on daint:login using cray [compile: 0.474s run: 60.884s total: 61.375s]
+   [       OK ] (35/39) HelloThreadedExtended2Test on daint:gpu using cray [compile: 0.871s run: 23.620s total: 24.510s]
+   [       OK ] (36/39) HelloThreadedExtended2Test on daint:mc using pgi [compile: 2.535s run: 15.193s total: 17.744s]
+   [       OK ] (37/39) HelloThreadedExtended2Test on daint:login using cray [compile: 0.773s run: 33.721s total: 34.508s]
+   [       OK ] (38/39) StreamWithRefTest on daint:gpu using gnu [compile: 2.112s run: 6.108s total: 8.242s]
+   [       OK ] (39/39) StreamWithRefTest on daint:mc using gnu [compile: 2.062s run: 6.873s total: 8.948s]
    [----------] all spawned checks have finished
 
    [  PASSED  ] Ran 39 test case(s) from 4 check(s) (0 failure(s))
-   [==========] Finished on Thu Jun 25 19:51:00 2020
+   [==========] Finished on Mon Oct 12 20:14:10 2020
    ==============================================================================
    PERFORMANCE REPORT
    ------------------------------------------------------------------------------
@@ -913,25 +919,26 @@ We will only do so with the final versions of the tests from the previous sectio
    - daint:login
       - gnu
          * num_tasks: 1
-         * Copy: 72638.7 MB/s
-         * Scale: 45172.4 MB/s
-         * Add: 49001.9 MB/s
-         * Triad: 48925.2 MB/s
+         * Copy: 73243.6 MB/s
+         * Scale: 45575.6 MB/s
+         * Add: 49194.6 MB/s
+         * Triad: 49308.0 MB/s
    - daint:gpu
       - gnu
          * num_tasks: 1
-         * Copy: 50525.0 MB/s
-         * Scale: 34746.8 MB/s
-         * Add: 38144.5 MB/s
-         * Triad: 38459.9 MB/s
+         * Copy: 51542.8 MB/s
+         * Scale: 35071.5 MB/s
+         * Add: 38618.2 MB/s
+         * Triad: 39003.5 MB/s
    - daint:mc
       - gnu
          * num_tasks: 1
-         * Copy: 18931.9 MB/s
-         * Scale: 10460.8 MB/s
-         * Add: 11032.2 MB/s
-         * Triad: 11024.0 MB/s
+         * Copy: 19129.6 MB/s
+         * Scale: 10490.3 MB/s
+         * Add: 11116.9 MB/s
+         * Triad: 11065.5 MB/s
    ------------------------------------------------------------------------------
+   Log file(s) saved in: '/tmp/rfm-6yaunqqp.log'
 
 
 There it is!
@@ -1024,9 +1031,9 @@ Let's run our adapted test now:
 .. code-block:: none
 
    [ReFrame Setup]
-     version:           3.1-dev0 (rev: cf4efce5)
+     version:           3.3-dev0 (rev: cb974c13)
      command:           './bin/reframe -C tutorials/config/settings.py -c tutorials/basics/stream/stream3.py -r --performance-report'
-     launched by:       user@daint101
+     launched by:       user@dom101
      working directory: '/users/user/Devel/reframe'
      settings file:     'tutorials/config/settings.py'
      check search path: '/users/user/Devel/reframe/tutorials/basics/stream/stream3.py'
@@ -1034,7 +1041,7 @@ Let's run our adapted test now:
      output directory:  '/users/user/Devel/reframe/output'
 
    [==========] Running 1 check(s)
-   [==========] Started on Sat Jun 27 09:25:08 2020
+   [==========] Started on Mon Oct 12 20:16:03 2020
 
    [----------] started processing StreamMultiSysTest (StreamMultiSysTest)
    [ RUN      ] StreamMultiSysTest on daint:login using gnu
@@ -1052,22 +1059,22 @@ Let's run our adapted test now:
    [----------] finished processing StreamMultiSysTest (StreamMultiSysTest)
 
    [----------] waiting for spawned checks to finish
-   [       OK ] ( 1/12) StreamMultiSysTest on daint:mc using gnu [compile: 2.089s run: 8.441s total: 10.824s]
-   [       OK ] ( 2/12) StreamMultiSysTest on daint:gpu using pgi [compile: 2.174s run: 12.136s total: 14.812s]
-   [       OK ] ( 3/12) StreamMultiSysTest on daint:gpu using gnu [compile: 2.272s run: 18.251s total: 21.192s]
-   [       OK ] ( 4/12) StreamMultiSysTest on daint:login using pgi [compile: 2.317s run: 22.250s total: 25.389s]
-   [       OK ] ( 5/12) StreamMultiSysTest on daint:login using gnu [compile: 3.954s run: 28.739s total: 33.587s]
-   [       OK ] ( 6/12) StreamMultiSysTest on daint:mc using intel [compile: 2.382s run: 6.621s total: 9.167s]
-   [       OK ] ( 7/12) StreamMultiSysTest on daint:gpu using intel [compile: 2.373s run: 16.576s total: 19.265s]
-   [       OK ] ( 8/12) StreamMultiSysTest on daint:login using intel [compile: 2.607s run: 26.907s total: 30.021s]
-   [       OK ] ( 9/12) StreamMultiSysTest on daint:login using cray [compile: 1.055s run: 22.923s total: 24.242s]
-   [       OK ] (10/12) StreamMultiSysTest on daint:gpu using cray [compile: 0.828s run: 13.380s total: 14.379s]
-   [       OK ] (11/12) StreamMultiSysTest on daint:mc using pgi [compile: 2.164s run: 5.444s total: 7.661s]
-   [       OK ] (12/12) StreamMultiSysTest on daint:mc using cray [compile: 0.834s run: 5.281s total: 6.175s]
+   [       OK ] ( 1/12) StreamMultiSysTest on daint:gpu using pgi [compile: 2.092s run: 11.201s total: 13.307s]
+   [       OK ] ( 2/12) StreamMultiSysTest on daint:gpu using gnu [compile: 2.349s run: 17.140s total: 19.509s]
+   [       OK ] ( 3/12) StreamMultiSysTest on daint:login using pgi [compile: 2.230s run: 20.946s total: 23.189s]
+   [       OK ] ( 4/12) StreamMultiSysTest on daint:login using gnu [compile: 2.161s run: 27.093s total: 29.266s]
+   [       OK ] ( 5/12) StreamMultiSysTest on daint:mc using gnu [compile: 1.954s run: 7.904s total: 9.870s]
+   [       OK ] ( 6/12) StreamMultiSysTest on daint:gpu using intel [compile: 2.286s run: 14.686s total: 16.984s]
+   [       OK ] ( 7/12) StreamMultiSysTest on daint:login using intel [compile: 2.520s run: 24.427s total: 26.960s]
+   [       OK ] ( 8/12) StreamMultiSysTest on daint:mc using intel [compile: 2.312s run: 5.350s total: 7.678s]
+   [       OK ] ( 9/12) StreamMultiSysTest on daint:gpu using cray [compile: 0.672s run: 10.791s total: 11.476s]
+   [       OK ] (10/12) StreamMultiSysTest on daint:login using cray [compile: 0.706s run: 20.505s total: 21.229s]
+   [       OK ] (11/12) StreamMultiSysTest on daint:mc using cray [compile: 0.674s run: 2.763s total: 3.453s]
+   [       OK ] (12/12) StreamMultiSysTest on daint:mc using pgi [compile: 2.088s run: 5.124s total: 7.224s]
    [----------] all spawned checks have finished
 
    [  PASSED  ] Ran 12 test case(s) from 1 check(s) (0 failure(s))
-   [==========] Finished on Sat Jun 27 09:25:46 2020
+   [==========] Finished on Mon Oct 12 20:16:36 2020
    ==============================================================================
    PERFORMANCE REPORT
    ------------------------------------------------------------------------------
@@ -1075,79 +1082,80 @@ Let's run our adapted test now:
    - daint:login
       - gnu
          * num_tasks: 1
-         * Copy: 95919.2 MB/s
-         * Scale: 73725.6 MB/s
-         * Add: 79970.2 MB/s
-         * Triad: 79945.6 MB/s
+         * Copy: 95784.6 MB/s
+         * Scale: 73747.3 MB/s
+         * Add: 79138.3 MB/s
+         * Triad: 81253.3 MB/s
       - intel
          * num_tasks: 1
-         * Copy: 105229.2 MB/s
-         * Scale: 110150.2 MB/s
-         * Add: 115988.5 MB/s
-         * Triad: 115520.4 MB/s
+         * Copy: 103540.5 MB/s
+         * Scale: 109257.6 MB/s
+         * Add: 112189.8 MB/s
+         * Triad: 113440.8 MB/s
       - pgi
          * num_tasks: 1
-         * Copy: 99439.2 MB/s
-         * Scale: 73494.6 MB/s
-         * Add: 82817.2 MB/s
-         * Triad: 82274.6 MB/s
+         * Copy: 99071.7 MB/s
+         * Scale: 74721.3 MB/s
+         * Add: 81206.4 MB/s
+         * Triad: 78328.9 MB/s
       - cray
          * num_tasks: 1
-         * Copy: 99571.1 MB/s
-         * Scale: 75192.8 MB/s
-         * Add: 82857.8 MB/s
-         * Triad: 83870.1 MB/s
+         * Copy: 96664.5 MB/s
+         * Scale: 75637.4 MB/s
+         * Add: 74759.3 MB/s
+         * Triad: 73450.6 MB/s
    - daint:gpu
       - gnu
          * num_tasks: 1
-         * Copy: 42133.8 MB/s
-         * Scale: 37802.8 MB/s
-         * Add: 43161.1 MB/s
-         * Triad: 43702.8 MB/s
+         * Copy: 42293.7 MB/s
+         * Scale: 38095.1 MB/s
+         * Add: 43080.7 MB/s
+         * Triad: 43719.2 MB/s
       - intel
          * num_tasks: 1
-         * Copy: 52103.3 MB/s
-         * Scale: 53698.7 MB/s
-         * Add: 58640.6 MB/s
-         * Triad: 58879.8 MB/s
+         * Copy: 52563.0 MB/s
+         * Scale: 54316.5 MB/s
+         * Add: 59044.5 MB/s
+         * Triad: 59165.5 MB/s
       - pgi
          * num_tasks: 1
-         * Copy: 50590.9 MB/s
-         * Scale: 39557.3 MB/s
-         * Add: 44025.2 MB/s
-         * Triad: 44308.2 MB/s
+         * Copy: 50710.5 MB/s
+         * Scale: 39639.5 MB/s
+         * Add: 44104.5 MB/s
+         * Triad: 44143.7 MB/s
       - cray
          * num_tasks: 1
-         * Copy: 50448.1 MB/s
-         * Scale: 38780.0 MB/s
-         * Add: 43289.4 MB/s
-         * Triad: 43485.6 MB/s
+         * Copy: 51159.8 MB/s
+         * Scale: 39176.0 MB/s
+         * Add: 43588.8 MB/s
+         * Triad: 43866.8 MB/s
    - daint:mc
       - gnu
          * num_tasks: 1
-         * Copy: 48811.0 MB/s
-         * Scale: 38610.4 MB/s
-         * Add: 43688.6 MB/s
-         * Triad: 44017.7 MB/s
+         * Copy: 48744.5 MB/s
+         * Scale: 38774.7 MB/s
+         * Add: 43760.0 MB/s
+         * Triad: 44143.1 MB/s
       - intel
          * num_tasks: 1
-         * Copy: 52920.0 MB/s
-         * Scale: 49444.5 MB/s
-         * Add: 57869.0 MB/s
-         * Triad: 57948.5 MB/s
+         * Copy: 52707.0 MB/s
+         * Scale: 49011.8 MB/s
+         * Add: 57513.3 MB/s
+         * Triad: 57678.3 MB/s
       - pgi
          * num_tasks: 1
-         * Copy: 45228.7 MB/s
-         * Scale: 40545.9 MB/s
-         * Add: 44201.5 MB/s
-         * Triad: 44669.7 MB/s
+         * Copy: 46274.3 MB/s
+         * Scale: 40628.6 MB/s
+         * Add: 44352.4 MB/s
+         * Triad: 44630.2 MB/s
       - cray
          * num_tasks: 1
-         * Copy: 47148.2 MB/s
-         * Scale: 40026.3 MB/s
-         * Add: 44029.8 MB/s
-         * Triad: 44352.4 MB/s
+         * Copy: 46912.5 MB/s
+         * Scale: 40076.9 MB/s
+         * Add: 43639.0 MB/s
+         * Triad: 44068.3 MB/s
    ------------------------------------------------------------------------------
+   Log file(s) saved in: '/tmp/rfm-odx7qewe.log'
 
 
 Notice the improved performance of the benchmark in all partitions and the differences in performance between the different compilers.
