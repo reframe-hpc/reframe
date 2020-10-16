@@ -102,14 +102,14 @@ class GpuBandwidthCheck(rfm.RegressionTest):
 
         # Extract the bandwidth corresponding to the right node, transfer and
         # device.
-        return (r'^[^,]*\[[^,]*\]\s*%s\s*bandwidth on device %d is \s*(\S+)\s*Mb/s.' %
-                (direction, devno))
+        return (r'^[^,]*\[[^,]*\]\s*%s\s*bandwidth on device'
+                r' %d is \s*(\S+)\s*Mb/s.' % (direction, devno))
 
     @sn.sanity_function
     def do_sanity_check(self):
         node_names = set(sn.extractall(
-            r'^\s*\[([^,]{1,20})\]\s*Found %s device\(s\).' % self.num_gpus_per_node,
-            self.stdout, 1
+            r'^\s*\[([^,]{1,20})\]\s*Found %s device\(s\).'
+            % self.num_gpus_per_node, self.stdout, 1
         ))
         sn.evaluate(sn.assert_eq(
             self.job.num_tasks, len(node_names),

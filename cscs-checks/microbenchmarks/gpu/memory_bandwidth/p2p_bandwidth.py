@@ -77,8 +77,8 @@ class P2pBandwidthCheck(rfm.RegressionTest):
     @sn.sanity_function
     def do_sanity_check(self, p2p):
         node_names = set(sn.extractall(
-            r'^\s*\[([^,]{1,20})\]\s*Found %s device\(s\).' % self.num_gpus_per_node,
-            self.stdout, 1
+            r'^\s*\[([^,]{1,20})\]\s*Found %s device\(s\).'
+            % self.num_gpus_per_node, self.stdout, 1
         ))
         sn.evaluate(sn.assert_eq(
             self.job.num_tasks, len(node_names),
