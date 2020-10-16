@@ -8,7 +8,7 @@
 static inline void nvmlCheck(nvmlReturn_t err)
 {
 # ifdef DEBUG
-  if (err != NVML_SUCCESS) 
+  if (err != NVML_SUCCESS)
   {
     char nid[80];
     gethostname(nid, 80);

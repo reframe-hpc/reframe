@@ -22,6 +22,7 @@ public:
   HostData(size_t s) : size(s)
   {
     XMallocHost(&data, size);
+    memset(data, 0, size);
   }
   ~HostData()
   {

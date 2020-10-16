@@ -8,11 +8,11 @@
 static inline void checkError(cudaError_t errorCode)
 {
 #  ifndef DEBUG
-   if (errorCode != cudaSuccess) 
+   if (errorCode != cudaSuccess)
    {
       char nid[80];
       gethostname(nid,80);
-      std::cerr << "[" << nid << "] A call to the CUDA API returned an error :" << 
+      std::cerr << "[" << nid << "] A call to the CUDA API returned an error :" <<
         cudaGetErrorString(errorCode) << std::endl;
       exit(errorCode);
    }
@@ -56,7 +56,7 @@ void XDeviceSynchronize()
 
 void XGetDeviceCount(int &devices)
 {
-  checkError( cudaGetDeviceCount(&devices) ); 
+  checkError( cudaGetDeviceCount(&devices) );
 }
 
 void XSetDevice(int device)
@@ -70,7 +70,7 @@ void XStreamCreate(cudaStream_t * stream)
 }
 
 void XStreamDestroy(cudaStream_t stream)
-{ 
+{
   checkError( cudaStreamDestroy(stream) );
 }
 
@@ -95,7 +95,7 @@ void XMemcpyPeerAsync(void * dst, int peerDevId, void * src, int srcDevId, size_
 }
 
 int XGetLastError()
-{ 
+{
   cudaError_t err = cudaGetLastError();
   if (err != cudaSuccess)
   {
@@ -112,7 +112,7 @@ private:
   cudaEvent_t startEvent, stopEvent;
 
 public:
-  XTimer(cudaStream_t st = 0) : stream(st) 
+  XTimer(cudaStream_t st = 0) : stream(st)
   {
     cudaEventCreate(&startEvent);
     cudaEventCreate(&stopEvent);
@@ -120,7 +120,7 @@ public:
 
   void start()
   {
-    cudaEventRecord(startEvent, stream);   
+    cudaEventRecord(startEvent, stream);
   }
 
   float stop()
@@ -129,7 +129,7 @@ public:
     cudaEventSynchronize(stopEvent);
     float execTime = 0;
     cudaEventElapsedTime(&execTime, startEvent, stopEvent);
-    return execTime; 
+    return execTime;
   }
 
   ~XTimer()

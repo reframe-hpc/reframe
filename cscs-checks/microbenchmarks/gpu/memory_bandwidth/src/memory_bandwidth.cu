@@ -13,14 +13,14 @@ int main()
   Smi smiHandle;
 
   // Make sure we've got devices aboard.g
-  if (number_of_devices == 0) 
+  if (number_of_devices == 0)
   {
     std::cout << "No devices found on host " << nid_name << std::endl;
     return 1;
   }
   else
   {
-    printf("[%s] Found %d device(s).\n", nid_name, number_of_devices); 
+    printf("[%s] Found %d device(s).\n", nid_name, number_of_devices);
   }
 
   /*
@@ -67,7 +67,7 @@ int main()
   if (!XGetLastError())
   {
     printf("[%s] Test Result = PASS\n", nid_name);
-  } 
+  }
   else
   {
     printf("[%s] Test Result = FAIL\n", nid_name);

@@ -15,7 +15,7 @@
 #ifdef P2P
 # define PEER_ACCESS 1
 #else
-# define PEER_ACCESS 0 
+# define PEER_ACCESS 0
 #endif
 
 // Forward declaration of the bandwidth map function.
@@ -31,14 +31,14 @@ int main()
   XGetDeviceCount(number_of_devices);
 
   // Make sure we've got devices aboard.g
-  if (number_of_devices == 0) 
+  if (number_of_devices == 0)
   {
     std::cout << "No devices found on host " << nid_name << std::endl;
     return 1;
   }
   else
   {
-    printf("[%s] Found %d device(s).\n\n", nid_name, number_of_devices); 
+    printf("[%s] Found %d device(s).\n\n", nid_name, number_of_devices);
   }
 
   //Test parameters
@@ -46,13 +46,13 @@ int main()
   int copy_repeats = NUMBER_OF_COPIES;
 
   // Do the device to device copy bandwidth.
-  p2pBandwidthMap(number_of_devices, PEER_ACCESS, copy_size, copy_repeats, nid_name); 
+  p2pBandwidthMap(number_of_devices, PEER_ACCESS, copy_size, copy_repeats, nid_name);
 
   // Do some basic error checking
   if (!XGetLastError())
   {
     printf("[%s] Test Result = PASS\n", nid_name);
-  } 
+  }
   else
   {
     printf("[%s] Test Result = FAIL\n", nid_name);
@@ -66,10 +66,10 @@ void p2pBandwidthMap(int devices, int p2p, size_t copy_size, int repeats, char *
 {
   /*
    This function evaluates the GPU to GPU copy bandwith in all GPU to GPU combinations.
-   If bandwidth symmetry is assumed (i.e. the bandwidth in both directions is the same), 
+   If bandwidth symmetry is assumed (i.e. the bandwidth in both directions is the same),
    compile with -DSYMM to compute only the upper matrix triangle.
-   The resulting data is printed as a matrix (see description above). 
-  
+   The resulting data is printed as a matrix (see description above).
+
    ** The "Totals" column excludes the diagonal terms from the sum **
 
    Note that this function sets the CPU affinity for the sending GPU.
@@ -107,8 +107,8 @@ void p2pBandwidthMap(int devices, int p2p, size_t copy_size, int repeats, char *
   for (int ds = 0; ds < devices; ds++)
   {
     // Track the sum of the bandwidths
-    float totals = 0; 
- 
+    float totals = 0;
+
     // Set the CPU affinity to the sending device.
     smiHandle.setCpuAffinity(ds);
 

@@ -7,11 +7,11 @@
 static inline void checkError(hipError_t errorCode)
 {
 #  ifndef DEBUG
-   if (errorCode != hipSuccess) 
+   if (errorCode != hipSuccess)
    {
       char nid[80];
       gethostname(nid,80);
-      std::cerr << "[" << nid << "] A call to the HIP API returned an error :" << 
+      std::cerr << "[" << nid << "] A call to the HIP API returned an error :" <<
         hipGetErrorString(errorCode) << std::endl;
       exit(errorCode);
    }
@@ -56,7 +56,7 @@ void XDeviceSynchronize()
 
 void XGetDeviceCount(int &devices)
 {
-  checkError( hipGetDeviceCount(&devices) ); 
+  checkError( hipGetDeviceCount(&devices) );
 }
 
 void XSetDevice(int device)
@@ -70,7 +70,7 @@ void XStreamCreate(hipStream_t * stream)
 }
 
 void XStreamDestroy(hipStream_t stream)
-{ 
+{
   hipStreamDestroy(stream);
 }
 
@@ -95,7 +95,7 @@ void XMemcpyPeerAsync(void * dst, int peerDevId, void * src, int srcDevId, size_
 }
 
 int XGetLastError()
-{ 
+{
   hipError_t err = hipGetLastError();
   if (err != hipSuccess)
   {
@@ -112,7 +112,7 @@ private:
   hipEvent_t startEvent, stopEvent;
 
 public:
-  XTimer(hipStream_t st = 0) : stream(st) 
+  XTimer(hipStream_t st = 0) : stream(st)
   {
     hipEventCreate(&startEvent);
     hipEventCreate(&stopEvent);
@@ -120,7 +120,7 @@ public:
 
   void start()
   {
-    hipEventRecord(startEvent, stream);   
+    hipEventRecord(startEvent, stream);
   }
 
   float stop()
@@ -129,7 +129,7 @@ public:
     hipEventSynchronize(stopEvent);
     float execTime = 0;
     hipEventElapsedTime(&execTime, startEvent, stopEvent);
-    return execTime; 
+    return execTime;
   }
 
   ~XTimer()
