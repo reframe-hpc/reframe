@@ -14,6 +14,7 @@ from io import StringIO
 
 import reframe.core.config as config
 import reframe.core.environments as env
+import reframe.core.logging as logging
 import reframe.core.runtime as rt
 import reframe.utility.os_ext as os_ext
 import unittests.fixtures as fixtures
@@ -47,21 +48,13 @@ def run_command_inline(argv, funct, *args, **kwargs):
 
 
 @pytest.fixture
-def logfile():
-    path = pathlib.PosixPath('.rfm_unittest.log')
-    yield path
-    with suppress(FileNotFoundError):
-        path.unlink()
-
-
-@pytest.fixture
 def perflogdir(tmp_path):
     dirname = tmp_path / '.rfm-perflogs'
     yield dirname
 
 
 @pytest.fixture
-def run_reframe(tmp_path, logfile, perflogdir):
+def run_reframe(tmp_path, perflogdir):
     def _run_reframe(system='generic:default',
                      checkpath=['unittests/resources/checks/hellocheck.py'],
                      environs=['builtin-gcc'],
@@ -70,7 +63,6 @@ def run_reframe(tmp_path, logfile, perflogdir):
                      more_options=None,
                      mode=None,
                      config_file='unittests/resources/settings.py',
-                     logfile=str(logfile),
                      ignore_check_conflicts=True,
                      perflogdir=str(perflogdir)):
         import reframe.frontend.cli as cli
@@ -143,19 +135,29 @@ def remote_exec_ctx(user_exec_ctx):
     return partition, partition.environs[0]
 
 
-def test_check_success(run_reframe, tmp_path, logfile):
+def test_check_success(run_reframe, tmp_path):
     returncode, stdout, _ = run_reframe(more_options=['--save-log-files'])
     assert 'PASSED' in stdout
     assert 'FAILED' not in stdout
     assert returncode == 0
+
+    logfile = logging.log_files()[0]
     assert os.path.exists(tmp_path / 'output' / logfile)
     assert os.path.exists(tmp_path / 'report.json')
+
+
+def test_check_success_force_local(run_reframe, tmp_path):
+    # We explicitly use a system here with a non-local scheduler and pass the
+    # `--force-local` option
+    returncode, stdout, _ = run_reframe(system='testsys:gpu', local=True)
+    assert 'PASSED' in stdout
+    assert 'FAILED' not in stdout
+    assert returncode == 0
 
 
 def test_report_file_with_sessionid(run_reframe, tmp_path):
     returncode, stdout, _ = run_reframe(
         more_options=[
-            f'--save-log-files',
             f'--report-file={tmp_path / "rfm-report-{sessionid}.json"}'
         ]
     )
@@ -179,7 +181,7 @@ def test_check_submit_success(run_reframe, remote_exec_ctx):
     assert 'PASSED' in stdout
 
     # Assert that we have run only one test case
-    assert 'Ran 1 test case(s)' in stdout
+    assert 'Ran 2 test case(s)' in stdout
     assert 0 == returncode
 
 
@@ -325,17 +327,15 @@ def test_skip_prgenv_check_option(run_reframe):
     assert returncode == 0
 
 
-def test_sanity_of_checks(run_reframe, tmp_path, logfile):
+def test_sanity_of_checks(run_reframe, tmp_path):
     # This test will effectively load all the tests in the checks path and
     # will force a syntactic and runtime check at least for the constructor
     # of the checks
     returncode, *_ = run_reframe(
         action='list',
-        more_options=['--save-log-files'],
         checkpath=[]
     )
     assert returncode == 0
-    os.path.exists(tmp_path / 'output' / logfile)
 
 
 def test_unknown_system(run_reframe):
@@ -401,7 +401,7 @@ def test_execution_modes(run_reframe):
     assert 'Traceback' not in stderr
     assert 'FAILED' not in stdout
     assert 'PASSED' in stdout
-    assert 'Ran 1 test case' in stdout
+    assert 'Ran 2 test case' in stdout
 
 
 def test_no_ignore_check_conflicts(run_reframe):
@@ -521,6 +521,7 @@ def test_verbosity_with_check(run_reframe):
     returncode, stdout, stderr = run_reframe(
         more_options=['-vvvvv'],
         system='testsys',
+        action='list',
         checkpath=['unittests/resources/checks/hellocheck.py']
     )
     assert '' != stdout
