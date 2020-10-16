@@ -9,7 +9,7 @@ int main()
   int number_of_devices;
   XGetDeviceCount(number_of_devices);
 
-  // Initialise the a Smi instance to manage the devices.
+  // Initialise the Smi to manage the devices.
   Smi smiHandle;
 
   // Make sure we've got devices aboard.g
