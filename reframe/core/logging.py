@@ -195,9 +195,7 @@ def _create_logger(site_config, handlers_group):
 def _create_file_handler(site_config, config_prefix):
     filename = os.path.expandvars(site_config.get(f'{config_prefix}/name'))
     if not filename:
-        logfd, logfile = osext.mkstemp_path(suffix='.log', prefix='rfm-')
-        os.close(logfd)
-        filename = logfile
+        filename = osext.mkstemp_path(suffix='.log', prefix='rfm-')
 
     timestamp = site_config.get(f'{config_prefix}/timestamp')
     if timestamp:
