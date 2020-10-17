@@ -14,7 +14,6 @@ import re
 import shutil
 import sys
 import socket
-import tempfile
 import time
 
 import reframe.utility.color as color
@@ -196,7 +195,7 @@ def _create_logger(site_config, handlers_group):
 def _create_file_handler(site_config, config_prefix):
     filename = os.path.expandvars(site_config.get(f'{config_prefix}/name'))
     if not filename:
-        logfd, logfile = tempfile.mkstemp(suffix='.log', prefix='rfm-')
+        logfd, logfile = osext.mkstemp_path(suffix='.log', prefix='rfm-')
         os.close(logfd)
         filename = logfile
 

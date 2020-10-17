@@ -171,13 +171,13 @@ def test_samefile(tempdirs):
     assert osext.samefile('/foo', '/foo/')
     assert osext.samefile('/foo/bar', '/foo//bar/')
     assert osext.samefile(os.path.join(prefix_name, 'foo'),
-                           os.path.join(prefix_name, 'foolnk'))
+                          os.path.join(prefix_name, 'foolnk'))
     assert osext.samefile(os.path.join(prefix_name, 'foo'),
-                           os.path.join(prefix_name, 'foolnk1'))
+                          os.path.join(prefix_name, 'foolnk1'))
     assert not osext.samefile('/foo', '/bar')
     assert osext.samefile('/foo', os.path.join(prefix_name, 'broken'))
     assert osext.samefile(os.path.join(prefix_name, 'broken'),
-                           os.path.join(prefix_name, 'broken1'))
+                          os.path.join(prefix_name, 'broken1'))
 
 
 def test_is_interactive(monkeypatch):
@@ -197,8 +197,8 @@ def test_git_repo_hash(monkeypatch):
     # A git branch hash consists of 8(short) or 40 characters.
     assert len(osext.git_repo_hash()) == 8
     assert len(osext.git_repo_hash(short=False)) == 40
-    assert osext.git_repo_hash(branch='invalid') is None
-    assert osext.git_repo_hash(branch='') is None
+    assert osext.git_repo_hash(commit='invalid') is None
+    assert osext.git_repo_hash(commit='') is None
 
     # Imitate a system with no git installed by emptying the PATH
     monkeypatch.setenv('PATH', '')
@@ -207,10 +207,10 @@ def test_git_repo_hash(monkeypatch):
 
 def test_git_repo_exists():
     assert osext.git_repo_exists('https://github.com/eth-cscs/reframe.git',
-                                  timeout=3)
+                                 timeout=3)
     assert not osext.git_repo_exists('reframe.git', timeout=3)
     assert not osext.git_repo_exists('https://github.com/eth-cscs/xxx',
-                                      timeout=3)
+                                     timeout=3)
 
 
 def test_force_remove_file(tmp_path):
