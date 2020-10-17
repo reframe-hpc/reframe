@@ -460,7 +460,6 @@ def reframe_version():
 
     If ReFrame's installation contains the repository metadata, the
     repository's hash will be appended to the actual version.
-
     '''
     version = reframe.VERSION
     repo_hash = git_repo_hash()
@@ -470,17 +469,18 @@ def reframe_version():
         return version
 
 
-def expandvars(path):
-    '''Expand environment variables in ``path`` and perform any command
+def expandvars(s):
+    '''Expand environment variables in ``s`` and perform any command
     substitution.
 
-    This function is the same as ``os.path.expandvars()``, except that it
-    understands also the syntax: ``$(cmd)`` or `cmd`.
+    This function is the same as :py:func:`os.path.expandvars`, except that it
+    understands also the syntax of shell command substitution: ``$(cmd)`` or
+    ```cmd```.
     '''
     cmd_subst = re.compile(r'`(.*)`|\$\((.*)\)')
-    cmd_subst_m = cmd_subst.search(path)
+    cmd_subst_m = cmd_subst.search(s)
     if not cmd_subst_m:
-        return os.path.expandvars(path)
+        return os.path.expandvars(s)
 
     cmd = cmd_subst_m.groups()[0] or cmd_subst_m.groups()[1]
 
@@ -489,7 +489,7 @@ def expandvars(path):
 
     # Prepare stdout for inline use
     stdout = completed.stdout.replace('\n', ' ').strip()
-    return cmd_subst.sub(stdout, path)
+    return cmd_subst.sub(stdout, s)
 
 
 def concat_files(dst, *files, sep='\n', overwrite=False):
@@ -545,7 +545,8 @@ def unique_abs_paths(paths, prune_children=True):
 
 
 def cray_cdt_version():
-    '''Return the Cray CDT version or :class:`None` for non-Cray systems'''
+    '''Return the Cray Development Toolkit (CDT) version or :class:`None` for
+    non-Cray systems'''
     rcfile = os.getenv('MODULERCFILE', '/opt/cray/pe/cdt/default/modulerc')
     try:
         with open(rcfile) as fp:
@@ -563,10 +564,9 @@ def cray_cdt_version():
 
 
 def cray_cle_info(filename='/etc/opt/cray/release/cle-release'):
-    '''Return cray CLE release information.
+    '''Return the Cray Linux Environment (CLE) release information.
 
     :arg filename: The file that contains the CLE release information
-
     :returns: A named tuple with the following attributes that correspond to
         the release information: :attr:`release`, :attr:`build`, :attr:`date`,
         :attr:`arch`, :attr:`network`, :attr:`patchset`.
