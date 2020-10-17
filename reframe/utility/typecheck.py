@@ -8,7 +8,8 @@
 This module defines types for collections, such as lists, dictionaries etc.
 that you can use with the :py:func:`isinstance` builtin function to
 recursively type check of all the elements of the collection. Suppose you have
-a list of integers, suchs as ``[1, 2, 3]``, the following checks should be true:
+a list of integers, suchs as ``[1, 2, 3]``, the following checks should be
+true:
 
 .. code-block:: python
 
@@ -86,6 +87,7 @@ the rest of the types):
 In the above example :class:`T` may refer to any type, so that
 :class:`List[List[int]]` is an instance of :class:`List`, but not an instance
 of :class:`List[int]`.
+
 '''
 
 import abc

@@ -96,8 +96,8 @@ def import_module_from_file(filename):
 
 
 def allx(iterable):
-    '''Same as the built-in :py:func:`all`, except that it returns :class:`False`
-    if ``iterable`` is empty.
+    '''Same as the built-in :py:func:`all`, except that it returns
+    :class:`False` if ``iterable`` is empty.
     '''
 
     # Generators must be treated specially, because there is no way to get
@@ -243,8 +243,8 @@ def _tracked_repr(func):
 
 @_tracked_repr
 def repr(obj, htchar=' ', lfchar='\n', indent=4, basic_offset=0):
-    '''A debug |builtin.repr|_ replacement function printing all object attributes
-    recursively.
+    '''A debug |builtin.repr|_ replacement function printing all object
+    attributes recursively.
 
     This function does not follow the standard |builtin.repr|_ convention, but
     it prints each object as a set of key/value pairs along with its memory
@@ -279,9 +279,8 @@ def shortest(*iterables):
     :arg iterables: The iterables to check.
     :returns: The shortest iterable.
 
-    .. _Sized: https://docs.python.org/3/library/collections.abc.html#collections.abc.Sized
+    .. _Sized: https://docs.python.org/3/library/collections.abc.html#collections.abc.Sized # noqa: E501
     .. |Sized| replace:: :class:`Sized`
-
     '''
 
     ret = None
@@ -490,8 +489,8 @@ class ScopedDict(UserDict):
         return self._global_scope
 
     def update(self, other):
-        '''Update this dictionary from the values of a two-level mapping as described
-        above.
+        '''Update this dictionary from the values of a two-level mapping as
+        described above.
 
         :arg other: A two-level mapping defining scopes and keys.
         '''
