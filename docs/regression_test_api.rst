@@ -1,6 +1,6 @@
-========================
-ReFrame Programming APIs
-========================
+====================
+Regression Tests API
+====================
 
 This page provides a reference guide of the ReFrame API for writing regression tests covering all the relevant details.
 Internal data structures and APIs are covered only to the extent that this might be helpful to the final user of the framework.
@@ -133,8 +133,8 @@ Container Platforms
    :show-inheritance:
 
 
-The ``reframe`` module
-----------------------
+The :py:mod:`reframe` module
+----------------------------
 
 The :py:mod:`reframe` module offers direct access to the basic test classes, constants and decorators.
 

@@ -3,13 +3,12 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-'''Dynamic recursive type checking of aggregate data structures.
+'''Dynamic recursive type checking of collections.
 
-This module defines types for aggregate data structures, such as lists,
-dictionaries etc. that you can use with the ``isinstance`` builtin function to
-recursively check of all the elements of an aggregate data structure.
-Suppose you have a list of integers, suchs as ``[1, 2, 3]``, the following
-checks should hold:
+This module defines types for collections, such as lists, dictionaries etc.
+that you can use with the :py:func:`isinstance` builtin function to
+recursively type check of all the elements of the collection. Suppose you have
+a list of integers, suchs as ``[1, 2, 3]``, the following checks should be true:
 
 .. code-block:: python
 
@@ -18,8 +17,8 @@ checks should hold:
     assert isinstance(l, List[float]) == False
 
 
-Aggregate types can be combined in an arbitrary depth, so that can type check
-any complex data strcture:
+Aggregate types can be combined in an arbitrary depth, so that you can type
+check any complex data strcture:
 
 .. code-block:: python
 
@@ -28,28 +27,52 @@ any complex data strcture:
     assert isisntance(d, Dict[str, List[int]]) == True
 
 
-This module offers aggregate types:
+This module offers the following aggregate types:
 
-- ``List[T]``: This corresponds to a list with elements of type ``T``.
-- ``Set[T]``: This corresponds to a set with elements of type ``T``.
-- ``Dict[K,V]``: This corresponds to a dictionary with keys of type ``K`` and
-  values of type ``V``.
-- ``Tuple[T]``: This corresponds to a tuple with elements of type ``T``.
-- ``Tuple[T1,T2,...,Tn]``: This corresponds to a tuple with ``n`` elements,
-  whose types are exactly ``T1``, ``T2``, ..., ``Tn`` and in that order.
-- ``Str[patt]``: This corresponds to a string type, whose members are all the
-  strings matching the regular expression ``patt``.
+.. py:data:: List[T]
 
-This modules internally leverages metaclasses and the ``__isinstancecheck__()``
-method to customize the behaviour of the ``isinstance()`` builtin.
-By implementing also the ``__getitem__`` accessor method, it follows the
-look-and-feel of the type hints proposed in PEP484.
-This method returns a new type that is a subtype of the base container type.
-Using the facilities of ``abc.ABCMeta``, builtin types, such as ``list``,
-``str`` etc. are registered as subtypes of the base container types offered by
-this module.
-The type hierarchy of the types defined in this module is the following
-(example shown for List, but it is analogous for the rest of the types):
+   A list with elements of type :class:`T`.
+
+.. py:data:: Set[T]
+
+   A set with elements of type :class:`T`.
+
+.. py:data:: Dict[K,V]
+
+   A dictionary with keys of type :class:`K` and values of :class:`V`.
+
+.. py:data:: Tuple[T]
+
+   A tuple with elements of type :class:`T`.
+
+.. py:data:: Tuple[T1,T2,...,Tn]
+
+   A tuple with ``n`` elements, whose types are exactly :class:`T1`,
+   :class:`T2`, ..., :class:`Tn` in that order.
+
+
+.. py:data:: Str[patt]
+
+   A string type whose members are all the strings matching the regular
+   expression ``patt``.
+
+
+Implementation details
+----------------------
+
+Internally, this module leverages metaclasses and the
+:py:func:`__isinstancecheck__` method to customize the behaviour of the
+:py:func:`isinstance` builtin.
+
+By implementing also the :py:func:`__getitem__` accessor method, this module
+follows the look-and-feel of the type hints proposed in `PEP484
+<https://www.python.org/dev/peps/pep-0484/>`__. This method returns a new type
+that is a subtype of the base container type. Using the facilities of
+:py:class:`abc.ABCMeta`, builtin types, such as :py:class:`list`,
+:py:class:`str` etc. are registered as subtypes of the base container types
+offered by this module. The type hierarchy of the types defined in this module
+is the following (example shown for :class:`List`, but it is analogous for
+the rest of the types):
 
 .. code-block:: none
 
@@ -60,8 +83,9 @@ The type hierarchy of the types defined in this module is the following
     list  List[T]
 
 
-In the above example ``T`` may refer to any type, so that ``List[List[int]]``
-is an instance of ``List``, but not an instance of ``List[int]``.
+In the above example :class:`T` may refer to any type, so that
+:class:`List[List[int]]` is an instance of :class:`List`, but not an instance
+of :class:`List[int]`.
 '''
 
 import abc
@@ -201,7 +225,7 @@ class _MappingType(_TypeFactory):
         return ret
 
 
-class StrType(_ContainerType):
+class _StrType(_ContainerType):
     '''A metaclass for type checking string types.'''
 
     def __instancecheck__(cls, inst):
@@ -217,10 +241,10 @@ class StrType(_ContainerType):
     def __getitem__(cls, patt):
         if not isinstance(patt, str):
             raise TypeError('invalid type specification for string type: '
-                            'expected StrType[regex]')
+                            'expected _StrType[regex]')
 
-        ret = StrType("%s[r'%s']" % (cls.__name__, patt),
-                      cls._bases, cls._namespace)
+        ret = _StrType("%s[r'%s']" % (cls.__name__, patt),
+                       cls._bases, cls._namespace)
         ret._elem_type = patt
         ret.register_subtypes()
         cls.register(ret)
@@ -239,7 +263,7 @@ class Set(metaclass=_ContainerType):
     _subtypes = (set,)
 
 
-class Str(metaclass=StrType):
+class Str(metaclass=_StrType):
     _subtypes = (str,)
 
 
