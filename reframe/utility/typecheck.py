@@ -7,9 +7,8 @@
 
 This module defines types for collections, such as lists, dictionaries etc.
 that you can use with the :py:func:`isinstance` builtin function to
-recursively type check of all the elements of the collection. Suppose you have
-a list of integers, suchs as ``[1, 2, 3]``, the following checks should be
-true:
+recursively type check all the elements of the collection. Suppose you have a
+list of integers, suchs as ``[1, 2, 3]``, the following checks should be true:
 
 .. code-block:: python
 
@@ -40,7 +39,7 @@ This module offers the following aggregate types:
 
 .. py:data:: Dict[K,V]
 
-   A dictionary with keys of type :class:`K` and values of :class:`V`.
+   A dictionary with keys of type :class:`K` and values of type :class:`V`.
 
 .. py:data:: Tuple[T]
 

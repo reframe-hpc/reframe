@@ -134,7 +134,10 @@ def osgroup():
 
 def copytree(src, dst, symlinks=False, ignore=None, copy_function=shutil.copy2,
              ignore_dangling_symlinks=False, dirs_exist_ok=False):
-    '''Compatibility version of :py:func:`shutil.copytree()` for Python < 3.8.
+    '''Compatibility version of :py:func:`shutil.copytree` for Python < 3.8.
+
+    This function will automatically delegate to :py:func:`shutil.copytree`
+    for Python versions >= 3.8.
     '''
     if src == os.path.commonpath([src, dst]):
         raise ValueError("cannot copy recursively the parent directory "
@@ -245,14 +248,14 @@ def rmtree(*args, max_retries=3, **kwargs):
     condition between when ``sacct`` reports a job as completed and when the
     Slurm epilog runs. See `gh #291
     <https://github.com/eth-cscs/reframe/issues/291>`__ for more information.
-    Furthermore, it offers a work around for NFS file systems where a stale
+    Furthermore, it offers a work around for NFS file systems where stale
     file handles may be present during the :func:`rmtree` call, causing it to
     throw a busy device/resource error. See `gh #712
     <https://github.com/eth-cscs/reframe/issues/712>`__ for more information.
 
     ``args`` and ``kwargs`` are passed through to :py:func:`shutil.rmtree`.
 
-    If ``onerror`` is specified in ``kwargs`` and is not :class:`None`, this
+    If ``onerror`` is specified in ``kwargs`` and it is not :class:`None`, this
     function is completely equivalent to :py:func:`shutil.rmtree()`.
 
     :arg args: Arguments to be passed through to :py:func:`shutil.rmtree`.
@@ -333,8 +336,8 @@ def samefile(path1, path2):
     If paths exist, this is equivalent to :py:func:`os.path.samefile`. If only
     one of the paths exists and is a symbolic link, it will be followed and
     its final target will be compared to the other path. If both paths do not
-    exist, a simple string comparison will be performed (after they have been
-    normalized).
+    exist, a simple string comparison will be performed (after the paths have
+    been normalized).
     '''
 
     # normalise the paths first
@@ -391,7 +394,7 @@ def is_url(s):
 
 
 def git_clone(url, targetdir=None):
-    '''Clone git repository from a URL.
+    '''Clone a git repository from a URL.
 
     :arg url: The URL to clone from.
 
@@ -474,7 +477,7 @@ def expandvars(s):
     substitution.
 
     This function is the same as :py:func:`os.path.expandvars`, except that it
-    understands also the syntax of shell command substitution: ``$(cmd)`` or
+    also recognizes the syntax of shell command substitution: ``$(cmd)`` or
     ```cmd```.
     '''
     cmd_subst = re.compile(r'`(.*)`|\$\((.*)\)')

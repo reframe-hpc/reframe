@@ -243,8 +243,8 @@ def _tracked_repr(func):
 
 @_tracked_repr
 def repr(obj, htchar=' ', lfchar='\n', indent=4, basic_offset=0):
-    '''A debug |builtin.repr|_ replacement function printing all object
-    attributes recursively.
+    '''A |builtin.repr|_ replacement function for debugging purposes printing
+    all object attributes recursively.
 
     This function does not follow the standard |builtin.repr|_ convention, but
     it prints each object as a set of key/value pairs along with its memory
@@ -417,16 +417,16 @@ def find_modules(substr, environ_mapping=None):
 
 
 class ScopedDict(UserDict):
-    '''This is a special dict that imposes scopes on its keys.
+    '''This is a special dictionary that imposes scopes on its keys.
 
-    When a key is not found it will be searched up in the scope hierarchy.
+    When a key is not found, it will be searched up in the scope hierarchy.
     If not found even at the global scope, a :class:`KeyError` will be raised.
 
     A scoped dictionary is initialized using a two-level normal dictionary
     that defines the different scopes and the keys inside them. Scopes can be
     nested by concatenating them using the ``:`` separator by default:
     ``scope:subscope``. Below is an example of a scoped dictionary that also
-    demonstrates the key lookup:
+    demonstrates key lookup:
 
     .. code-block:: python
 
@@ -861,14 +861,16 @@ class SequenceView(collections.abc.Sequence):
         return self.__container.count(value)
 
     def index(self, value, start=0, stop=None):
-        '''Return first index of ``value``.
+        '''Return the first index of ``value``.
 
         :arg value: The value to search for.
-        :arg start: The starting position for searching.
-        :arg stop: The end position for searching. If :class:`None`, the end
-            position is the last element of the container.
+        :arg start: The position where the search starts.
+        :arg stop: The position where the search stops. The element at this
+            position is not looked at. If :class:`None`, this equals to the
+            sequence's length.
         :returns: The index of the first element found that equals ``value``.
         :raises ValueError: if the value is not present.
+
         '''
 
         if stop is None:
@@ -927,11 +929,11 @@ class MappingView(collections.abc.Mapping):
         self.__mapping = mapping
 
     def get(self, key, default=None):
-        '''Return value mapped to ``key`` or ``default`` if ``key`` does not
-        exist.
+        '''Return the value mapped to ``key`` or ``default``, if ``key`` does
+        not exist.
 
         :arg key: The key to look up.
-        :arg default: The default value return if the key is not present.
+        :arg default: The default value to return if the key is not present.
         :returns: The value associated to the requested key.
         '''
         return self.__mapping.get(key, default)
