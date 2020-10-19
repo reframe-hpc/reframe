@@ -1,8 +1,6 @@
 #ifndef __INCLUDED_BANDWIDTH__
 #define __INCLUDED_BANDWIDTH__
 
-#include<iostream>
-
 #include "types.hpp"
 #include "Xdevice/runtime.hpp"
 

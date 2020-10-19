@@ -30,7 +30,6 @@ public:
   Smi();
   void setCpuAffinity(int);
   ~Smi();
-
 };
 
 int Smi::rsmiIsActive = 0;
@@ -69,7 +68,6 @@ Smi::~Smi()
     rsmiCheck( rsmi_shut_down() );
     this->rsmiIsActive = 0;
   }
-
 }
 
 #endif

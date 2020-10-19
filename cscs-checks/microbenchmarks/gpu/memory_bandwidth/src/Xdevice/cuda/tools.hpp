@@ -1,9 +1,9 @@
 #ifndef __INCLUDED_CUDA_TOOLS__
 #define __INCLUDED_CUDA_TOOLS__
 
-#include<iostream>
+#include <iostream>
 #include <unistd.h>
-#include<nvml.h>
+#include <nvml.h>
 
 static inline void nvmlCheck(nvmlReturn_t err)
 {
@@ -29,7 +29,6 @@ public:
   Smi();
   void setCpuAffinity( int );
   ~Smi();
-
 };
 
 int Smi::nvmlIsActive = 0;
@@ -68,7 +67,6 @@ Smi::~Smi()
     nvmlCheck( nvmlShutdown() );
     this->nvmlIsActive = 0;
   }
-
 }
 
 #endif
