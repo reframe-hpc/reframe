@@ -19,6 +19,12 @@ CMD()
     echo -e "${BLUE}==>${NC}" ${YELLOW}$*${NC} && $*
 }
 
+CMD_M()
+{
+    msg=$1
+    shift && echo -e "${BLUE}==> [$msg]${NC}" ${YELLOW}$*${NC} && $*
+}
+
 usage()
 {
     echo "Usage: $0 [-h] [+docs] [+pygelf]"
@@ -70,17 +76,14 @@ export PYTHONPATH=$(pwd)/external:$(pwd)/external/usr/lib/python$pyver/site-pack
 CMD $python -m pip install --no-cache-dir -q --upgrade pip --target=external/
 
 if [ -n "$PYGELF" ]; then
-    tmp_requirements=$(mktemp requirements_XXX.txt)
-    sed -e 's/^#\.pygelf[[:space:]]\+//g' requirements.txt > $tmp_requirements
-    CMD $python -m pip install --use-feature=2020-resolver --no-cache-dir -q -r $tmp_requirements --target=external/ --upgrade
-    rm $tmp_requirements
+    tmp_requirements=$(mktemp)
+    sed -e 's/^#+pygelf%//g' requirements.txt > $tmp_requirements
+    CMD_M +pygelf $python -m pip install --use-feature=2020-resolver --no-cache-dir -q -r $tmp_requirements --target=external/ --upgrade && rm $tmp_requirements
 else
     CMD $python -m pip install --use-feature=2020-resolver --no-cache-dir -q -r requirements.txt --target=external/ --upgrade
 fi
 
 if [ -n "$MAKEDOCS" ]; then
-    CMD $python -m pip install --use-feature=2020-resolver --no-cache-dir -q -r docs/requirements.txt --target=external/ --upgrade
+    CMD_M +docs $python -m pip install --use-feature=2020-resolver --no-cache-dir -q -r docs/requirements.txt --target=external/ --upgrade
     make -C docs PYTHON=$python
 fi
-
-
