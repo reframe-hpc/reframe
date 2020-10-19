@@ -6,3 +6,4 @@ pytest-parallel==0.1.0
 coverage==5.3
 setuptools==50.3.0
 wcwidth==0.2.5
+#+pygelf%pygelf==0.3.6
