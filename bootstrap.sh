@@ -70,10 +70,10 @@ export PYTHONPATH=$(pwd)/external:$(pwd)/external/usr/lib/python$pyver/site-pack
 CMD $python -m pip install --no-cache-dir -q --upgrade pip --target=external/
 
 if [ -n "$PYGELF" ]; then
-    cp requirements.txt requirements_tmp.txt
-    sed -i -e 's/^#\.pygelf[[:space:]]\+//g' requirements.txt
-    CMD $python -m pip install --use-feature=2020-resolver --no-cache-dir -q -r requirements.txt --target=external/ --upgrade
-    mv requirements_tmp.txt requirements.txt
+    tmp_requirements=$(mktemp requirements_XXX.txt)
+    sed -e 's/^#\.pygelf[[:space:]]\+//g' requirements.txt > $tmp_requirements
+    CMD $python -m pip install --use-feature=2020-resolver --no-cache-dir -q -r $tmp_requirements --target=external/ --upgrade
+    rm $tmp_requirements
 else
     CMD $python -m pip install --use-feature=2020-resolver --no-cache-dir -q -r requirements.txt --target=external/ --upgrade
 fi
