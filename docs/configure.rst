@@ -10,7 +10,7 @@ This section will guide you through configuring ReFrame for your site.
 If you started using ReFrame from version 3.0, you can keep on reading this section, otherwise you are advised to have a look first at the :doc:`migration_2_to_3` page.
 
 
-ReFrame's configuration file can be either a JSON file or Python file storing the site configuration in a JSON-formatted string.
+ReFrame's configuration file can be either a JSON file or a Python file storing the site configuration in a JSON-formatted string.
 The latter format is useful in cases that you want to generate configuration parameters on-the-fly, since ReFrame will import that Python file and the load the resulting configuration.
 In the following we will use a Python-based configuration file also for historical reasons, since it was the only way to configure ReFrame in versions prior to 3.0.
 
@@ -65,10 +65,10 @@ Systems Configuration
 
 ReFrame allows you to configure multiple systems in the same configuration file.
 Each system is a different object inside the ``systems`` section.
-In our example we define only one system, namely Piz Daint:
+In our example we define three systems, a Mac laptop, Piz Daint and a generic fallback system:
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 11-73
+   :lines: 11-77
 
 Each system is associated with a set of properties, which in this case are the following:
 
@@ -76,7 +76,7 @@ Each system is associated with a set of properties, which in this case are the f
   This should be an alphanumeric string (dashes ``-`` are allowed) and it will be used to refer to this system in other contexts.
 * ``descr``: A detailed description of the system.
 * ``hostnames``: This is a list of hostname patterns following the `Python Regular Expression Syntax <https://docs.python.org/3/library/re.html#regular-expression-syntax>`__, which will be used by ReFrame when it tries to automatically select a configuration entry for the current system.
-* ``modules_system``: The environment modules system that should be used for loading environment modules on this system.
+* ``modules_system``: In our example, this is only defined for Piz Daint and refers to the environment modules system that should be used for loading environment modules on this system.
   In this case, the classic Tcl implementation of the `environment modules <https://sourceforge.net/projects/modules/files/Modules/modules-3.2.10/>`__.
 * ``partitions``: The list of partitions that are defined for this system.
   Each partition is defined as a separate object.
@@ -89,7 +89,7 @@ The ``login`` partition refers to the login nodes of the system, whereas the ``g
 Let's pick the ``gpu`` partition and look into it in more detail:
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 31-58
+   :lines: 38-52
 
 The basic properties of a partition are the following:
 
@@ -124,11 +124,12 @@ An environment can simply by empty, in which case it refers to the actual enviro
 In fact, this is what the generic fallback configuration of ReFrame does.
 
 Environments in ReFrame are configured under the ``environments`` section of the documentation.
-In our configuration example for Piz Daint, we define each ReFrame environment to correspond to each of the Cray-provided programming environments.
-In other systems, you could define a ReFrame environment to wrap a toolchain (MPI + compiler combination):
+For each environment referenced inside a partition, a definition of it must be present in this section.
+In our example, we define environments for all the basic compilers as well as default built-in one, which is used with the generic system configuration.
+In certain contexts, it is useful to see a ReFrame environment as a wrapper a programming toolchain (MPI + compiler combination):
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 74-125
+   :lines: 78-129
 
 Each environment is associated with a name.
 This name will be used to reference this environment in different contexts, as for example in the ``environs`` property of the system partitions.
@@ -150,7 +151,7 @@ Additionally, it allows for logging performance data from performance tests into
 Let's see how logging is defined in our example configuration, which also represents a typical one for logging:
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 126-162
+   :lines: 130-165
 
 Logging is configured under the ``logging`` section of the configuration, which is a list of logger objects.
 Unless you want to configure logging differently for different systems, a single logger object is enough.
@@ -181,7 +182,7 @@ In this particular example we use three handlers of two distinct types:
 
 It might initially seem confusing the fact that there are two ``level`` properties: one at the logger level and one at the handler level.
 Logging in ReFrame works hierarchically.
-When a message is logged, an log record is created, which contains metadata about the message being logged (log level, timestamp, ReFrame runtime information etc.).
+When a message is logged, a log record is created, which contains metadata about the message being logged (log level, timestamp, ReFrame runtime information etc.).
 This log record first goes into ReFrame's internal logger, where the record's level is checked against the logger's level (here  ``debug``).
 If the log record's level exceeds the log level threshold from the logger, it is forwarded to the logger's handlers.
 Then each handler filters the log record differently and takes care of formatting the log record's message appropriately.
@@ -195,14 +196,16 @@ Notice in the ``format`` property how the message to be logged is structured suc
 Apart from file logging, ReFrame offers more advanced performance logging capabilities through Syslog and Graylog.
 
 
+For a complete reference of logging configuration parameters, please refer to the :doc:`config_reference`.
+
+
 -----------------------------
 General configuration options
 -----------------------------
 
 General configuration options of the framework go under the ``general`` section of the configuration file.
-This section is optional.
-In this case, we define the search path for ReFrame test files to be the ``tutorial/`` subdirectory and we also instruct ReFrame to recursively search for tests there.
-There are several more options that can go into this section, but the reader is referred to the :doc:`config_reference` for the complete list.
+This section is optional and in fact, we do not define for our tutorial configuration file.
+However, there are several options that can go into this section, but the reader is referred to the :doc:`config_reference` for the complete list.
 
 
 ---------------------------
