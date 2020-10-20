@@ -166,15 +166,13 @@ elif [ $CI_TUTORIAL -eq 1 ]; then
 else
     # Run unit tests with the scheduler backends
     tempdir=$(mktemp -d -p $SCRATCH)
-    TMPDIR_save=$TMPDIR
-    echo "[INFO] export TMPDIR=$tempdir"
-    export TMPDIR=$tempdir
+    echo "[INFO] Using temporary directory: $tempdir"
     if [[ $(hostname) =~ dom ]]; then
         PATH_save=$PATH
         export PATH=/apps/dom/UES/karakasv/slurm-wrappers/bin:$PATH
         for backend in slurm pbs torque; do
             echo "[INFO] Running unit tests with ${backend}"
-            checked_exec ./test_reframe.py --workers=auto --forked \
+            checked_exec TMPDIR=$tempdir ./test_reframe.py --workers=auto --forked \
                          --rfm-user-config=config/cscs-ci.py \
                          -W=error::reframe.core.exceptions.ReframeDeprecationWarning \
                          --rfm-user-system=dom:${backend} -ra
@@ -182,13 +180,11 @@ else
         export PATH=$PATH_save
     else
         echo "[INFO] Running unit tests"
-        checked_exec ./test_reframe.py --workers=auto --forked \
+        checked_exec TMPDIR=$tempdir ./test_reframe.py --workers=auto --forked \
                      --rfm-user-config=config/cscs-ci.py \
                      -W=error::reframe.core.exceptions.ReframeDeprecationWarning -ra
     fi
 
-    echo "[INFO] restore TMPDIR=$TMPDIR_save"
-    export TMPDIR=$TMPDIR_save
     if [ $CI_EXITCODE -eq 0 ]; then
         /bin/rm -rf $tempdir
     fi
