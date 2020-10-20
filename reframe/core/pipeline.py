@@ -833,19 +833,18 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
     def __rfm_json_encode__(self):
         dump_dict = {
-            'modules': self.modules,
-            'variables': self.variables
+            'rfm_properties': {
+                'modules': self.modules,
+                'variables': self.variables,
+                'stagedir': self.stagedir,
+            }
         }
         return dump_dict
 
-    def restore(self, stagedir):
-        self._stagedir = stagedir
-        json_check = os.path.join(self._stagedir, 'rfm_check.json')
-        with open(json_check, 'r') as f:
-            json_check = json.load(f)
- 
-        self.modules = json_check['modules']
-        self.variables = json_check['variables']
+    def __rfm_json_restore__(self, dump_dict):
+        self.modules = dump_dict['modules']
+        self.variables = dump_dict['variables']
+        self._stagedir = dump_dict['stagedir']
 
     # Export read-only views to interesting fields
     @property

@@ -291,7 +291,6 @@ class RegressionTask:
 
     def finalize(self):
         json_check = os.path.join(self.check.stagedir, 'rfm_check.json')
-        print(json_check)
         with open(json_check, 'w') as f:
             jsonext.dump(self.check, f)
 
@@ -419,15 +418,16 @@ class Runner:
             failures = self._stats.failures()
 
     def restore(self, testcases, retry_report):
-        index = {}
+        stagedirs = {}
         for run in retry_report['runs']:
             for t in run['testcases']:
-                index[(t['name'], t['system'], t['environment'])] = t['stagedir']
+                idx = (t['name'], t['system'], t['environment'])
+                stagedirs[idx] = t['stagedir']
 
         for t in testcases:
             idx = (t.check.name, t.partition.fullname, t.environ.name)
-            #RegressionTask(t).check._stagedir = index[idx]
-            RegressionTask(t).check.restore(index[idx])
+            with open(os.path.join(stagedirs[idx], 'rfm_check.json')) as f:
+                jsonext.load(f, rfm_obj=RegressionTask(t).check)
 
     def _runall(self, testcases):
         def print_separator(check, prefix):
