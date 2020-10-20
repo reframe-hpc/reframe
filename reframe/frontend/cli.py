@@ -20,8 +20,8 @@ import reframe.core.runtime as runtime
 import reframe.frontend.argparse as argparse
 import reframe.frontend.check_filters as filters
 import reframe.frontend.dependency as dependency
-import reframe.utility.osext as osext
 import reframe.utility.jsonext as jsonext
+import reframe.utility.osext as osext
 from reframe.core.exceptions import (
     EnvironError, ConfigError, ReframeError,
     ReframeDeprecationWarning, ReframeFatalError, format_exception

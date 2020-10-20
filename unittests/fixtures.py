@@ -16,7 +16,6 @@ import reframe
 import reframe.core.config as config
 import reframe.core.modules as modules
 import reframe.core.runtime as rt
-import reframe.utility.osext as osext
 
 
 TEST_RESOURCES = os.path.join(

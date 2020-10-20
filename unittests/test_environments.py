@@ -9,7 +9,6 @@ import pytest
 
 import reframe.core.environments as env
 import reframe.core.runtime as rt
-import reframe.utility.osext as osext
 import unittests.fixtures as fixtures
 from reframe.core.exceptions import EnvironError
 

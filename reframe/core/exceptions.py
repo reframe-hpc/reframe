@@ -77,7 +77,7 @@ class ReframeFatalError(ReframeBaseError):
 
 
 class ReframeSyntaxError(ReframeError):
-    '''Raised when the syntax of regression tests iscorrect.'''
+    '''Raised when the syntax of regression tests is incorrect.'''
 
 
 class RegressionTestLoadError(ReframeError):

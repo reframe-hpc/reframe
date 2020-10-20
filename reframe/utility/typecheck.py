@@ -5,7 +5,7 @@
 
 '''Dynamic recursive type checking of collections.
 
-This module defines types for collections, such as lists, dictionaries etc.
+This module defines types for collections, such as lists, dictionaries etc.,
 that you can use with the :py:func:`isinstance` builtin function to
 recursively type check all the elements of the collection. Suppose you have a
 list of integers, suchs as ``[1, 2, 3]``, the following checks should be true:

@@ -8,7 +8,6 @@ import os
 import pytest
 
 import reframe.core.config as config
-import reframe.utility.osext as osext
 from reframe.core.exceptions import (ConfigError, ReframeDeprecationWarning)
 from reframe.core.systems import System
 

@@ -2,7 +2,7 @@
 ReFrame Errors
 ==============
 
-When writing ReFrame tests, you don't need to check of any exceptions raised.
+When writing ReFrame tests, you don't need to check for any exceptions raised.
 The runtime will take care of finalizing your test and continuing execution.
 
 Dealing with ReFrame errors is only useful if you are extending ReFrame's

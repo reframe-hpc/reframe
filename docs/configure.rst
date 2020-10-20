@@ -125,8 +125,8 @@ In fact, this is what the generic fallback configuration of ReFrame does.
 
 Environments in ReFrame are configured under the ``environments`` section of the documentation.
 For each environment referenced inside a partition, a definition of it must be present in this section.
-In our example, we define environments for all the basic compilers as well as default built-in one, which is used with the generic system configuration.
-In certain contexts, it is useful to see a ReFrame environment as a wrapper a programming toolchain (MPI + compiler combination):
+In our example, we define environments for all the basic compilers as well as a default built-in one, which is used with the generic system configuration.
+In certain contexts, it is useful to see a ReFrame environment as a wrapper of a programming toolchain (MPI + compiler combination):
 
 .. literalinclude:: ../tutorials/config/settings.py
    :lines: 78-129
@@ -204,7 +204,7 @@ General configuration options
 -----------------------------
 
 General configuration options of the framework go under the ``general`` section of the configuration file.
-This section is optional and in fact, we do not define for our tutorial configuration file.
+This section is optional and, in fact, we do not define it for our tutorial configuration file.
 However, there are several options that can go into this section, but the reader is referred to the :doc:`config_reference` for the complete list.
 
 

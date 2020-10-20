@@ -398,7 +398,7 @@ def git_clone(url, targetdir=None):
 
     :arg url: The URL to clone from.
 
-    :arg targetdir: The directory where the repository will cloned to. If
+    :arg targetdir: The directory where the repository will be cloned to. If
         :class:`None`, a new directory will be created with the repository
         name as if ``git clone {url}`` was issued.
     '''
