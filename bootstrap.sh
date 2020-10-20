@@ -19,13 +19,20 @@ CMD()
     echo -e "${BLUE}==>${NC}" ${YELLOW}$*${NC} && $*
 }
 
+CMD_M()
+{
+    msg=$1
+    shift && echo -e "${BLUE}==> [$msg]${NC}" ${YELLOW}$*${NC} && $*
+}
+
 usage()
 {
-    echo "Usage: $0 [-h] [+docs]"
+    echo "Usage: $0 [-h] [+docs] [+pygelf]"
     echo "Bootstrap ReFrame by pulling all its dependencies"
     echo "  -P EXEC  Use EXEC as Python interpreter"
     echo "  -h       Print this help message and exit"
     echo "  +docs    Build also the documentation"
+    echo "  +pygelf  Install also the pygelf Python package"
 }
 
 
@@ -42,8 +49,15 @@ if [ -z $python ]; then
     python=python3
 fi
 
-pyver=$($python -V | sed -n 's/Python \([0-9]\+\)\.\([0-9]\+\)\..*/\1.\2/p')
+while [ -n "$1" ]; do
+    case "$1" in
+        "+docs") MAKEDOCS="true" && shift ;;
+        "+pygelf") PYGELF="true" && shift ;;
+        *) usage && exit 1 ;;
+    esac
+done
 
+pyver=$($python -V | sed -n 's/Python \([0-9]\+\)\.\([0-9]\+\)\..*/\1.\2/p')
 
 # Check if ensurepip is installed
 $python -m ensurepip --version &> /dev/null
@@ -60,9 +74,16 @@ export PATH=$(pwd)/external/usr/bin:$PATH
 export PYTHONPATH=$(pwd)/external:$(pwd)/external/usr/lib/python$pyver/site-packages:$PYTHONPATH
 
 CMD $python -m pip install --no-cache-dir -q --upgrade pip --target=external/
-CMD $python -m pip install --use-feature=2020-resolver --no-cache-dir -q -r requirements.txt --target=external/ --upgrade
 
-if [ x"$1" == x"+docs" ]; then
-    CMD $python -m pip install --use-feature=2020-resolver --no-cache-dir -q -r docs/requirements.txt --target=external/ --upgrade
-    make -C docs
+if [ -n "$PYGELF" ]; then
+    tmp_requirements=$(mktemp)
+    sed -e 's/^#+pygelf%//g' requirements.txt > $tmp_requirements
+    CMD_M +pygelf $python -m pip install --use-feature=2020-resolver --no-cache-dir -q -r $tmp_requirements --target=external/ --upgrade && rm $tmp_requirements
+else
+    CMD $python -m pip install --use-feature=2020-resolver --no-cache-dir -q -r requirements.txt --target=external/ --upgrade
+fi
+
+if [ -n "$MAKEDOCS" ]; then
+    CMD_M +docs $python -m pip install --use-feature=2020-resolver --no-cache-dir -q -r docs/requirements.txt --target=external/ --upgrade
+    make -C docs PYTHON=$python
 fi
