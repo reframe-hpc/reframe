@@ -166,6 +166,7 @@ elif [ $CI_TUTORIAL -eq 1 ]; then
 else
     # Run unit tests with the scheduler backends
     tempdir=$(mktemp -d -p $SCRATCH)
+    TMPDIR_save=$TMPDIR
     echo "[INFO] export TMPDIR=$tempdir"
     export TMPDIR=$tempdir
     if [[ $(hostname) =~ dom ]]; then
@@ -186,6 +187,8 @@ else
                      -W=error::reframe.core.exceptions.ReframeDeprecationWarning -ra
     fi
 
+    echo "[INFO] restore TMPDIR=$TMPDIR_save"
+    export TMPDIR=$TMPDIR_save
     if [ $CI_EXITCODE -eq 0 ]; then
         /bin/rm -rf $tempdir
     fi
