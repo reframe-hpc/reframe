@@ -13,7 +13,7 @@ import re
 from collections import OrderedDict
 
 import reframe.core.fields as fields
-import reframe.utility.os_ext as os_ext
+import reframe.utility.osext as osext
 import reframe.utility.typecheck as types
 from reframe.core.exceptions import (ConfigError, EnvironError,
                                      SpawnedProcessError)
@@ -418,7 +418,7 @@ class TModImpl(ModulesSystemImpl):
     def __init__(self):
         # Try to figure out if we are indeed using the TCL version
         try:
-            completed = os_ext.run_command('modulecmd -V')
+            completed = osext.run_command('modulecmd -V')
         except OSError as e:
             raise ConfigError(
                 'could not find a sane TMod installation') from e
@@ -447,7 +447,7 @@ class TModImpl(ModulesSystemImpl):
         self._command = 'modulecmd python'
         try:
             # Try the Python bindings now
-            completed = os_ext.run_command(self._command)
+            completed = osext.run_command(self._command)
         except OSError as e:
             raise ConfigError(
                 'could not get the Python bindings for TMod: ' % e) from e
@@ -465,7 +465,7 @@ class TModImpl(ModulesSystemImpl):
     def _run_module_command(self, *args, msg=None):
         command = ' '.join([self._command, *args])
         try:
-            completed = os_ext.run_command(command, check=True)
+            completed = osext.run_command(command, check=True)
         except SpawnedProcessError as e:
             raise EnvironError(msg) from e
 
@@ -558,7 +558,7 @@ class TMod31Impl(TModImpl):
         try:
             modulecmd = os.getenv('MODULESHOME')
             modulecmd = os.path.join(modulecmd, 'modulecmd.tcl')
-            completed = os_ext.run_command(modulecmd)
+            completed = osext.run_command(modulecmd)
         except OSError as e:
             raise ConfigError(
                 'could not find a sane TMod31 installation: %s' % e) from e
@@ -587,7 +587,7 @@ class TMod31Impl(TModImpl):
 
         try:
             # Try the Python bindings now
-            completed = os_ext.run_command(self._command)
+            completed = osext.run_command(self._command)
         except OSError as e:
             raise ConfigError(
                 'could not get the Python bindings for TMod31: ' % e) from e
@@ -624,7 +624,7 @@ class TMod4Impl(TModImpl):
     def __init__(self):
         self._command = 'modulecmd python'
         try:
-            completed = os_ext.run_command(self._command + ' -V', check=True)
+            completed = osext.run_command(self._command + ' -V', check=True)
         except OSError as e:
             raise ConfigError(
                 'could not find a sane TMod4 installation') from e
@@ -656,7 +656,7 @@ class TMod4Impl(TModImpl):
 
     def _exec_module_command(self, *args, msg=None):
         command = ' '.join([self._command, *args])
-        completed = os_ext.run_command(command, check=True)
+        completed = osext.run_command(command, check=True)
         namespace = {}
         exec(completed.stdout, {}, namespace)
         if not namespace['_mlstatus']:
@@ -682,7 +682,7 @@ class LModImpl(TModImpl):
                               'environment variable LMOD_CMD is not defined')
 
         try:
-            completed = os_ext.run_command('%s --version' % lmod_cmd)
+            completed = osext.run_command('%s --version' % lmod_cmd)
         except OSError as e:
             raise ConfigError(
                 'could not find a sane Lmod installation: %s' % e)
@@ -696,7 +696,7 @@ class LModImpl(TModImpl):
         self._command = '%s python ' % lmod_cmd
         try:
             # Try the Python bindings now
-            completed = os_ext.run_command(self._command)
+            completed = osext.run_command(self._command)
         except OSError as e:
             raise ConfigError(
                 'could not get the Python bindings for Lmod: ' % e)

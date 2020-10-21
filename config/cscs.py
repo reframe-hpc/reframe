@@ -6,7 +6,7 @@
 # ReFrame CSCS settings
 #
 
-import reframe.utility.os_ext as os_ext
+import reframe.utility.osext as osext
 
 
 site_configuration = {
@@ -174,7 +174,7 @@ site_configuration = {
                     ],
                     'access': [
                         f'--constraint=gpu',
-                        f'--account={os_ext.osgroup()}'
+                        f'--account={osext.osgroup()}'
                     ],
                     'environs': [
                         'builtin',
@@ -221,7 +221,7 @@ site_configuration = {
                     ],
                     'access': [
                         f'--constraint=mc',
-                        f'--account={os_ext.osgroup()}'
+                        f'--account={osext.osgroup()}'
                     ],
                     'environs': [
                         'builtin',
@@ -323,7 +323,7 @@ site_configuration = {
                     ],
                     'access': [
                         f'--constraint=gpu',
-                        f'--account={os_ext.osgroup()}'
+                        f'--account={osext.osgroup()}'
                     ],
                     'environs': [
                         'builtin',
@@ -364,7 +364,7 @@ site_configuration = {
                     ],
                     'access': [
                         f'--constraint=mc',
-                        f'--account={os_ext.osgroup()}'
+                        f'--account={osext.osgroup()}'
                     ],
                     'environs': [
                         'builtin',

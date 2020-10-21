@@ -25,7 +25,7 @@ import reframe.core.fields as fields
 import reframe.core.logging as logging
 import reframe.core.runtime as rt
 import reframe.utility as util
-import reframe.utility.os_ext as os_ext
+import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
 from reframe.core.backends import (getlauncher, getscheduler)
@@ -716,7 +716,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         try:
             prefix = cls._rfm_custom_prefix
         except AttributeError:
-            if os_ext.is_interactive():
+            if osext.is_interactive():
                 prefix = os.getcwd()
             else:
                 prefix = os.path.abspath(os.path.dirname(inspect.getfile(cls)))
@@ -1091,7 +1091,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
                           (path, self._stagedir))
         self.logger.debug('symlinking files: %s' % self.readonly_files)
         try:
-            os_ext.copytree_virtual(
+            osext.copytree_virtual(
                 path, self._stagedir, self.readonly_files, dirs_exist_ok=True
             )
         except (OSError, ValueError, TypeError) as e:
@@ -1100,7 +1100,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
     def _clone_to_stagedir(self, url):
         self.logger.debug('cloning URL %s to stage directory (%s)' %
                           (url, self._stagedir))
-        os_ext.git_clone(self.sourcesdir, self._stagedir)
+        osext.git_clone(self.sourcesdir, self._stagedir)
 
     @_run_hooks('pre_compile')
     @final
@@ -1135,7 +1135,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
                     "sourcesdir `%s', but it will be interpreted "
                     "as relative to it." % (self.sourcepath, self.sourcesdir))
 
-            if os_ext.is_url(self.sourcesdir):
+            if osext.is_url(self.sourcesdir):
                 self._clone_to_stagedir(self.sourcesdir)
             else:
                 self._copy_to_stagedir(os.path.join(self._prefix,
@@ -1191,7 +1191,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
                                      launcher=getlauncher('local')(),
                                      name='rfm_%s_build' % self.name,
                                      workdir=self._stagedir)
-        with os_ext.change_dir(self._stagedir):
+        with osext.change_dir(self._stagedir):
             try:
                 self._build_job.prepare(
                     build_commands, environs,
@@ -1308,7 +1308,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
                 self._current_partition.get_resource(r, **v))
 
         self._job.options = resources_opts + self._job.options
-        with os_ext.change_dir(self._stagedir):
+        with osext.change_dir(self._stagedir):
             try:
                 self._job.prepare(
                     commands, environs,
@@ -1432,7 +1432,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         elif self.sanity_patterns is None:
             raise SanityError('sanity_patterns not set')
 
-        with os_ext.change_dir(self._stagedir):
+        with osext.change_dir(self._stagedir):
             success = sn.evaluate(self.sanity_patterns)
             if not success:
                 raise SanityError()
@@ -1457,7 +1457,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
             return
 
         self._setup_perf_logging()
-        with os_ext.change_dir(self._stagedir):
+        with osext.change_dir(self._stagedir):
             # Check if default reference perf values are provided and
             # store all the variables tested in the performance check
             has_default = False
@@ -1574,7 +1574,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         if remove_files:
             self.logger.debug('removing stage directory')
-            os_ext.rmtree(self._stagedir)
+            osext.rmtree(self._stagedir)
 
     # Dependency API
 
@@ -1690,7 +1690,7 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
         rest of execution is delegated to the :func:`RegressionTest.run()`.
         '''
         if self.sourcesdir:
-            if os_ext.is_url(self.sourcesdir):
+            if osext.is_url(self.sourcesdir):
                 self._clone_to_stagedir(self.sourcesdir)
             else:
                 self._copy_to_stagedir(os.path.join(self._prefix,

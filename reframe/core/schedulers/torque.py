@@ -12,7 +12,7 @@ import re
 import os
 import time
 
-import reframe.utility.os_ext as os_ext
+import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
 from reframe.core.exceptions import JobError, JobSchedulerError
 from reframe.core.logging import getlogger
@@ -50,7 +50,7 @@ class TorqueJobScheduler(PbsJobScheduler):
         if not jobs:
             return
 
-        completed = os_ext.run_command(
+        completed = osext.run_command(
             f'qstat -f {" ".join(job.jobid for job in jobs)}'
         )
 

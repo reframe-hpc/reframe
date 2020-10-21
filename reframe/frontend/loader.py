@@ -12,7 +12,7 @@ import collections
 import os
 
 import reframe.utility as util
-import reframe.utility.os_ext as os_ext
+import reframe.utility.osext as osext
 from reframe.core.exceptions import NameConflictError, RegressionTestLoadError
 from reframe.core.logging import getlogger
 
@@ -39,8 +39,8 @@ class RegressionCheckValidator(ast.NodeVisitor):
 class RegressionCheckLoader:
     def __init__(self, load_path, recurse=False, ignore_conflicts=False):
         # Expand any environment variables and symlinks
-        load_path = [os.path.realpath(os_ext.expandvars(p)) for p in load_path]
-        self._load_path = os_ext.unique_abs_paths(load_path, recurse)
+        load_path = [os.path.realpath(osext.expandvars(p)) for p in load_path]
+        self._load_path = osext.unique_abs_paths(load_path, recurse)
         self._recurse = recurse
         self._ignore_conflicts = ignore_conflicts
 

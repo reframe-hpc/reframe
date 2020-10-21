@@ -17,7 +17,7 @@ import reframe
 import reframe.core.fields as fields
 import reframe.core.settings as settings
 import reframe.utility as util
-import reframe.utility.os_ext as os_ext
+import reframe.utility.osext as osext
 import reframe.utility.typecheck as types
 from reframe.core.exceptions import (ConfigError,
                                      ReframeDeprecationWarning,
@@ -555,7 +555,7 @@ def convert_old_config(filename, newfilename=None):
 
 def _find_config_file():
     # The order of elements is important, since it defines the priority
-    username = os_ext.osuser()
+    username = osext.osuser()
     prefixes = [os.path.join(username, '.reframe')] if username else []
     prefixes += [reframe.INSTALL_PREFIX, '/etc/reframe.d']
     valid_exts = ['py', 'json']

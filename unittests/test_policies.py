@@ -17,7 +17,7 @@ import reframe.frontend.dependency as dependency
 import reframe.frontend.executors as executors
 import reframe.frontend.executors.policies as policies
 import reframe.utility as util
-import reframe.utility.os_ext as os_ext
+import reframe.utility.osext as osext
 from reframe.core.exceptions import (AbortTaskError,
                                      JobNotStartedError,
                                      ReframeForceExitError,
@@ -157,8 +157,8 @@ def test_runall(make_runner, make_cases, common_exec_ctx):
             'time_start': time.strftime(
                 '%FT%T%z', time.localtime(time_start),
             ),
-            'user': os_ext.osuser(),
-            'version': os_ext.reframe_version(),
+            'user': osext.osuser(),
+            'version': osext.reframe_version(),
             'workdir': os.getcwd()
         },
         'runs': run_stats
@@ -434,7 +434,7 @@ def _read_timestamps(tasks):
     begin_stamps = []
     end_stamps = []
     for t in tasks:
-        with os_ext.change_dir(t.check.stagedir):
+        with osext.change_dir(t.check.stagedir):
             with open(evaluate(t.check.stdout), 'r') as f:
                 begin_stamps.append(float(f.readline().strip()))
                 end_stamps.append(float(f.readline().strip()))
