@@ -1484,6 +1484,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
                     ref_tuple = (0, None, None, unit)
                     self.reference.update({'*': {name: ref_tuple}})
 
+            perf_logger = self._perf_logger
+            perf_attrs = ['var', 'value', 'ref', 'lower_thres', 'upper_thres',
+                          'unit']
+            for attr in perf_attrs:
+                perf_logger.extra['check_perf_all_%ss' % attr] = []
             # We first evaluate and log all performance values and then we
             # check them against the reference. This way we always log them
             # even if the don't meet the reference.
@@ -1496,9 +1501,36 @@ class RegressionTest(metaclass=RegressionTestMeta):
                         (tag, self._current_partition.fullname))
 
                 self._perfvalues[key] = (value, *self.reference[key])
-                self._perf_logger.log_performance(logging.INFO, tag, value,
-                                                  *self.reference[key])
+                for attr, val in zip(perf_attrs,
+                                     (tag, value, *self.reference[key])):
+                    perf_logger.extra['check_perf_all_%ss' % attr].append(
+                        '%s' % val)
 
+            for attr in perf_attrs:
+                perf_logger.extra['check_perf_all_%ss' % attr] = ','.join(
+                    perf_logger.extra['check_perf_all_%ss' % attr])
+
+            # If any handler has a formatter that contains a reference to
+            # single performance patterns, we assume we want a separate line
+            # for each performance pattern and call the logger for each.
+            log_separate_lines = False
+            if perf_logger.logger is not None:
+                for handler in perf_logger.logger.handlers:
+                    for attr in perf_attrs:
+                        if 'check_perf_%s' % attr in handler.formatter._fmt:
+                            log_separate_lines = True
+            if log_separate_lines:
+                for tag, expr in self.perf_patterns.items():
+                    value = sn.evaluate(expr)
+                    key = '%s:%s' % (self._current_partition.fullname, tag)
+                    self._perf_logger.log_performance(logging.INFO, tag, value,
+                                                      *self.reference[key])
+            else:
+                msg = 'sent by ' + perf_logger.extra['osuser']
+                perf_logger.log(logging.INFO, msg)
+
+            # All logging is done, now check performance values against
+            # reference values.
             for key, values in self._perfvalues.items():
                 val, ref, low_thres, high_thres, *_ = values
 
