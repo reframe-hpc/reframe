@@ -6,7 +6,7 @@
 import os
 import reframe as rfm
 import reframe.utility.sanity as sn
-import reframe.utility.os_ext as osx
+import reframe.utility.osext as osext
 
 
 class CudaSamples(rfm.RegressionTest):
@@ -46,7 +46,7 @@ class CudaSamples(rfm.RegressionTest):
     @rfm.run_before('compile')
     def cdt2008_pgi_workaround(self):
         if (self.current_environ.name == 'PrgEnv-pgi' and
-            osx.cray_cdt_version() == '20.08' and
+            osext.cray_cdt_version() == '20.08' and
             self.current_system.name in ['daint', 'dom']):
             self.variables['CUDA_HOME'] = '$CUDATOOLKIT_HOME'
 
