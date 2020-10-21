@@ -192,6 +192,29 @@ Finally, there is a special set of handlers for handling performance log message
 These are stored in the ``handlers_perflog`` property.
 The performance handler in this example will create a file per test and per system/partition combination and will append the performance data to it every time the test is run.
 Notice in the ``format`` property how the message to be logged is structured such that it can be easily parsed from post processing tools.
+In the previous example, each performance metric defined in :attr:`reframe.core.pipeline.RegressionTest.perf_patterns` is logged on a separate line. To change this behavior, log record attributes such as ``%(check_perf_value)s`` should be changed to ``%(check_perf_all_values)s``. The following example will log comma-separated lists of all performance metrics on a single line.
+
+.. code:: python
+
+    'handlers_perflog': [
+        {
+            'type': 'filelog',
+            'prefix': '%(check_system)s/%(check_partition)s',
+            'level': 'info',
+            'format': (
+                '%(check_job_completion_time)s|reframe %(version)s|'
+                '%(check_info)s|jobid=%(check_jobid)s|'
+                'perf_vars=%(check_perf_all_vars)s|'
+                'perf_values=%(check_perf_all_values)s|'
+                'perf_refs=%(check_perf_all_refs)s|'
+                'perf_lower_thress=%(check_perf_all_lower_thress)s|'
+                'perf_upper_thress=%(check_perf_all_upper_thress)s|'
+                'perf_units=%(check_perf_all_units)s)'
+            ),
+            'append': True
+        }
+    ]
+
 Apart from file logging, ReFrame offers more advanced performance logging capabilities through Syslog and Graylog.
 
 

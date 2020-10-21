@@ -699,7 +699,13 @@ All logging handlers share the following set of common attributes:
    - ``%(check_perf_upper_thres)s``: The upper threshold of the performance difference from the reference value expressed as a fractional value.
      See the :attr:`reframe.core.pipeline.RegressionTest.reference` attribute of regression tests for more details.
    - ``%(check_perf_value)s``: The performance value obtained for a certain performance variable.
-   - ``%(check_perf_var)s``: The name of the `performance variable <tutorial_basic.html#writing-a-performance-test>`__ being logged.
+   - ``%(check_perf_var)s``: The name of the `performance variable <tutorial_basics.html#writing-a-performance-test>`__ being logged.
+   - ``%(check_perf_all_lower_thress)s``: Comma-separated list of lower thresholds of the performance differences from the reference values expressed as fractional values.
+   - ``%(check_perf_all_refs)s``: Comma-separated list of reference performance values of all performance variables.
+   - ``%(check_perf_all_units)s``: Comma-separated list of units of measurement for the measured performance variables.
+   - ``%(check_perf_all_upper_thress)s``: Comma-separated list of upper thresholds of the performance differences from the reference values expressed as a fractional values.
+   - ``%(check_perf_all_values)s``: Comma-separated list of performance values obtained for all performance variables.
+   - ``%(check_perf_all_vars)s``: Comma-separated list of names of the `performance variables <tutorial_basics.html#writing-a-performance-test>`__ being logged.
    - ``%(osuser)s``: The name of the OS user running ReFrame.
    - ``%(osgroup)s``: The name of the OS group running ReFrame.
    - ``%(version)s``: The ReFrame version.
