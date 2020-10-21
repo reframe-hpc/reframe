@@ -7,19 +7,12 @@
 #define EXPAND128(x) EXPAND24(x) EXPAND64(x)
 #define EXPAND256(x) EXPAND128(x) EXPAND128(x)
 
-#include <stdio.h>
 #include <cstdint>
 #include <iostream>
 
-//using namespace std;
 
-#define NUM_NODES 200
-#define BUFFER_SIZE 400
-#define NODE_PADDING 128
-
-#if BUFFER_SIZE < NUM_NODES
-# error "NUM_NODES cannot exceed BUFFER_SIZE."
-#endif
+#define NODES 200
+#define NODE_PADDING 0
 
 static __device__ __forceinline__ uint32_t __clock()
 {
@@ -28,11 +21,13 @@ static __device__ __forceinline__ uint32_t __clock()
   return x;
 }
 
+
 struct Node
 {
   Node * next = nullptr;
   char _padding[NODE_PADDING];
 };
+
 
 __global__ void initList(Node * head)
 {
@@ -40,7 +35,7 @@ __global__ void initList(Node * head)
   Node * prev = new (head) Node();
 
   // Init the rest of the list
-  for (int n = 1; n <= NUM_NODES; n++)
+  for (int n = 1; n < NODES+1; n++)
   {
     Node * temp = new (&(head[n])) Node();
     prev->next = temp;
@@ -49,7 +44,19 @@ __global__ void initList(Node * head)
 
 }
 
-__global__ void pointer_chase(Node * head, Node * nodeOut)
+
+template < unsigned int repeat >
+__device__ __forceinline__ void ptrChase(Node ** ptr)
+{
+  (*ptr) = (*ptr)->next;
+  ptrChase<repeat-1>(ptr);
+}
+
+template<>
+__device__ __forceinline__ void  ptrChase<0>(Node ** ptr){}
+
+
+__global__ void pointer_chase(Node * head)
 {
   // Create a pointer to iterate through the list
   Node * ptr = head;
@@ -57,29 +64,41 @@ __global__ void pointer_chase(Node * head, Node * nodeOut)
   // start timer
   uint32_t start = __clock();
 
-  // Traverse the list
-  EXPAND64(ptr = ptr->next)
-
+  ptrChase<10>(&ptr);
+  
   // end cycle count
   uint32_t end = __clock();
 
-  printf("Chase took %d cycles.\n", end - start);
-  *nodeOut = *ptr;
+  printf("Chase took %d cycles per node jump.\n", (end - start)/(NODES-1));
+  head[0] = (*ptr);
+}
+
+void devicePointerChase()
+{
+  // Allocate device buffer for the list
+  Node * listBuffer;
+  cudaMalloc((void**)&listBuffer, sizeof(Node)*NODES);
+
+  // Initilize the list
+  initList<<<1,1>>>(listBuffer);
+
+  // Do the chase
+  pointer_chase<<<1,1>>>(listBuffer);
+  cudaDeviceSynchronize();
+
+  cudaFree(listBuffer);
+  cudaError_t err = cudaGetLastError();
+  if (cudaSuccess != err)
+  {
+    std::cerr << cudaGetErrorString(err) << std::endl;
+  }
 }
 
 int main()
 {
-  // Allocate device buffer for the list
-  Node * listBuffer;
-  cudaMalloc((void**)&listBuffer, sizeof(Node)*BUFFER_SIZE);
-  initList<<<1,1>>>(listBuffer);
-  Node * result = nullptr;
-  pointer_chase<<<1,1>>>(listBuffer, result);
-  cudaDeviceSynchronize();
-
-  unsigned char buf[sizeof(int)*2] ; 
-  
-  // placement new in buf 
-  int *pInt = new (buf) int(3);
-
+  for (int i = 0; i < 10; i++)
+  {
+    devicePointerChase();
+  }
+  printf("end.\n");
 }
