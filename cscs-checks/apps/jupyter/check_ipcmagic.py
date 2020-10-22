@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import reframe as rfm
-import reframe.utility.os_ext as os_ext
+import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 from reframe.core.backends import getlauncher
 
@@ -16,7 +16,7 @@ class IPCMagicCheck(rfm.RunOnlyRegressionTest):
         self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
         # FIXME: The following will not be needed after the Daint upgrade
-        cray_cdt_version = os_ext.cray_cdt_version() or '19.10'
+        cray_cdt_version = osext.cray_cdt_version() or '19.10'
         self.modules = [
             'ipcmagic',
             f'Horovod/0.19.1-CrayGNU-{cray_cdt_version}-tf-2.2.0'

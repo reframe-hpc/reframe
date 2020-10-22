@@ -17,7 +17,34 @@ import reframe.utility as utility
 
 
 class ReframeBaseError(BaseException):
-    '''Base exception for any ReFrame error.'''
+    '''Base exception for any ReFrame error.
+
+    This exception base class offers a specialized :func:`__str__` method that
+    concatenates the messages of a chain of exceptions by inspecting their
+    :py:data:`__cause__` field. For example, the following piece of code will
+    print ``error message 2: error message 1``:
+
+    .. code-block:: python
+
+       from reframe.core.exceptions import *
+
+
+       def foo():
+           raise ReframeError('error message 1)
+
+       def bar():
+           try:
+               foo()
+           except ReframeError as e:
+               raise ReframeError('error message 2') from e
+
+      if __name__ == '__main__':
+          try:
+              bar()
+          except Exception as e:
+              print(e)
+
+    '''
 
     def __init__(self, *args):
         self._message = str(args[0]) if args else None
@@ -50,7 +77,7 @@ class ReframeFatalError(ReframeBaseError):
 
 
 class ReframeSyntaxError(ReframeError):
-    '''Raised when the syntax of regression tests is not correct.'''
+    '''Raised when the syntax of regression tests is incorrect.'''
 
 
 class RegressionTestLoadError(ReframeError):
@@ -66,27 +93,20 @@ class TaskExit(ReframeError):
 
 
 class TaskDependencyError(ReframeError):
-    '''Raised inside a regression task when one of its dependencies has
-    failed.'''
+    '''Raised inside a regression task by the runtime when one of its
+    dependencies has failed.
+    '''
 
 
 class AbortTaskError(ReframeError):
-    '''Raised into a regression task to denote that it has been aborted due to
-    an external reason (e.g., keyboard interrupt, fatal error in other places
-    etc.)
+    '''Raised by the runtime inside a regression task to denote that it has
+    been aborted due to an external reason (e.g., keyboard interrupt, fatal
+    error in other places etc.)
     '''
 
 
 class ConfigError(ReframeError):
     '''Raised when a configuration error occurs.'''
-
-
-class UnknownSystemError(ConfigError):
-    '''Raised when the host system cannot be identified.'''
-
-
-class SystemAutodetectionError(UnknownSystemError):
-    '''Raised when the host system cannot be auto-detected'''
 
 
 class LoggingError(ReframeError):
@@ -102,7 +122,8 @@ class SanityError(ReframeError):
 
 
 class PerformanceError(ReframeError):
-    '''Raised to denote an error in performance checking.'''
+    '''Raised to denote an error in performance checking, e.g., when a
+    performance reference is not met.'''
 
 
 class PipelineError(ReframeError):
@@ -172,18 +193,22 @@ class SpawnedProcessError(ReframeError):
 
     @property
     def command(self):
+        '''The command that the spawned process tried to execute.'''
         return self._command
 
     @property
     def stdout(self):
+        '''The standard output of the process as a string.'''
         return self._stdout
 
     @property
     def stderr(self):
+        '''The standard error of the process as a string.'''
         return self._stderr
 
     @property
     def exitcode(self):
+        '''The exit code of the process.'''
         return self._exitcode
 
 
@@ -208,15 +233,16 @@ class SpawnedProcessTimeout(SpawnedProcessError):
 
     @property
     def timeout(self):
+        '''The timeout of the process.'''
         return self._timeout
 
 
 class JobSchedulerError(ReframeError):
-    pass
+    '''Raised when a job scheduler encounters an error condition.'''
 
 
 class JobError(ReframeError):
-    '''Job related errors.'''
+    '''Raised for job related errors.'''
 
     def __init__(self, msg=None, jobid=None):
         message = '[jobid=%s]' % jobid
@@ -228,6 +254,7 @@ class JobError(ReframeError):
 
     @property
     def jobid(self):
+        '''The job ID of the job that encountered the error.'''
         return self._jobid
 
 
@@ -236,7 +263,7 @@ class JobBlockedError(JobError):
 
 
 class JobNotStartedError(JobError):
-    '''Raised when trying to operate on a unstarted job.'''
+    '''Raised when trying an operation on a unstarted job.'''
 
 
 class DependencyError(ReframeError):
@@ -244,7 +271,7 @@ class DependencyError(ReframeError):
 
 
 class ReframeDeprecationWarning(DeprecationWarning):
-    '''Warning for deprecated features of the ReFrame framework.'''
+    '''Warning raised for deprecated features of the framework.'''
 
 
 warnings.filterwarnings('default', category=ReframeDeprecationWarning)
@@ -303,7 +330,11 @@ def format_exception(exc_type, exc_value, tb):
 
 def user_deprecation_warning(message):
     '''Raise a deprecation warning at the user stack frame that eventually
-    calls this.'''
+    calls this function.
+
+    As "user stack frame" is considered a stack frame that is outside the
+    :py:mod:`reframe` base module.
+    '''
 
     # Unroll the stack and issue the warning from the first stack frame that is
     # outside the framework.

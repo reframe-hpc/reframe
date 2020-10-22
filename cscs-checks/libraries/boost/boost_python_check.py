@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import reframe as rfm
-import reframe.utility.os_ext as os_ext
+import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 
 
@@ -14,7 +14,7 @@ class BoostPythonBindingsTest(rfm.RegressionTest):
         self.descr = f'Test for Boost {boostver} with Python bindings'
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['builtin']
-        cdt_version = os_ext.cray_cdt_version()
+        cdt_version = osext.cray_cdt_version()
         self.modules = [f'Boost/{boostver}-CrayGNU-{cdt_version}-python3']
         self.executable = f'python3 hello.py'
         self.sanity_patterns = sn.assert_found('hello, world', self.stdout)

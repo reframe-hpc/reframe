@@ -14,7 +14,6 @@ import time
 from datetime import datetime, timedelta
 
 import reframe.core.runtime as rt
-import reframe.utility.os_ext as os_ext
 import unittests.fixtures as fixtures
 from reframe.core.backends import (getlauncher, getscheduler)
 from reframe.core.environments import Environment
