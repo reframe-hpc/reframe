@@ -90,7 +90,7 @@ def test_copytree_dst_notdir(tmp_path, dirs_exist_ok):
     dir_src.mkdir()
     dst = tmp_path / 'dst'
     dst.touch()
-    with pytest.raises(FileExistsError):
+    with pytest.raises(FileExistsError, match=fr'{dst}'):
         osext.copytree(str(dir_src), str(dst), dirs_exist_ok=dirs_exist_ok)
 
 
@@ -99,7 +99,7 @@ def test_copytree_src_notdir(tmp_path, dirs_exist_ok):
     src.touch()
     dst = tmp_path / 'dst'
     dst.mkdir()
-    with pytest.raises(NotADirectoryError):
+    with pytest.raises(NotADirectoryError, match=fr'{src}'):
         osext.copytree(str(src), str(dst), dirs_exist_ok=dirs_exist_ok)
 
 
@@ -107,7 +107,7 @@ def test_copytree_src_does_not_exist(tmp_path, dirs_exist_ok):
     src = tmp_path / 'src'
     dst = tmp_path / 'dst'
     dst.mkdir()
-    with pytest.raises(FileNotFoundError):
+    with pytest.raises(FileNotFoundError, match=fr'{src}'):
         osext.copytree(str(src), str(dst), dirs_exist_ok=dirs_exist_ok)
 
 
