@@ -80,6 +80,37 @@ def test_copytree_src_parent_of_dst(tmp_path):
         osext.copytree(str(src_path), str(dst_path))
 
 
+@pytest.fixture(params=['dirs_exist_ok=True', 'dirs_exist_ok=False'])
+def dirs_exist_ok(request):
+    return 'True' in request.param
+
+
+def test_copytree_dst_notdir(tmp_path, dirs_exist_ok):
+    dir_src = tmp_path / 'src'
+    dir_src.mkdir()
+    dst = tmp_path / 'dst'
+    dst.touch()
+    with pytest.raises(FileExistsError, match=fr'{dst}'):
+        osext.copytree(str(dir_src), str(dst), dirs_exist_ok=dirs_exist_ok)
+
+
+def test_copytree_src_notdir(tmp_path, dirs_exist_ok):
+    src = tmp_path / 'src'
+    src.touch()
+    dst = tmp_path / 'dst'
+    dst.mkdir()
+    with pytest.raises(NotADirectoryError, match=fr'{src}'):
+        osext.copytree(str(src), str(dst), dirs_exist_ok=dirs_exist_ok)
+
+
+def test_copytree_src_does_not_exist(tmp_path, dirs_exist_ok):
+    src = tmp_path / 'src'
+    dst = tmp_path / 'dst'
+    dst.mkdir()
+    with pytest.raises(FileNotFoundError, match=fr'{src}'):
+        osext.copytree(str(src), str(dst), dirs_exist_ok=dirs_exist_ok)
+
+
 @pytest.fixture
 def rmtree(tmp_path):
     testdir = tmp_path / 'test'
