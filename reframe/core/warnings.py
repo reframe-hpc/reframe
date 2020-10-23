@@ -17,7 +17,7 @@ def _format_warning(message, category, filename, lineno, line=None):
     import reframe.utility.color as color
 
     if category != ReframeDeprecationWarning:
-        return _format_warning_orig
+        return _format_warning_orig(message, category, filename, lineno, line)
 
     if line is None:
         # Read in the line from the file
