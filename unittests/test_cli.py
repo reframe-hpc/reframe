@@ -152,6 +152,36 @@ def test_check_success(run_reframe, tmp_path, logfile):
     assert os.path.exists(tmp_path / 'report.json')
 
 
+def test_check_retry_failed(run_reframe, tmp_path, logfile):
+    returncode, stdout, _ = run_reframe(
+        checkpath=['unittests/resources/checks_unlisted/deps_complex.py'],
+    )
+    assert 'T0' in stdout
+    assert 'T1' in stdout
+    assert 'T2' in stdout
+    assert 'T3' in stdout
+    assert 'T4' in stdout
+    assert 'T5' in stdout
+    assert 'T6' in stdout
+    assert 'T7' in stdout
+    assert 'T8' in stdout
+    assert 'T9' in stdout
+    returncode, stdout, _ = run_reframe(
+        checkpath=['unittests/resources/checks_unlisted/deps_complex.py'],
+        more_options=['--retry-failed', f'{tmp_path}/report.json']
+    )
+    assert 'T0' not in stdout
+    assert 'T1' not in stdout
+    assert 'T2' in stdout
+    assert 'T3' not in stdout
+    assert 'T4' not in stdout
+    assert 'T5' not in stdout
+    assert 'T6' not in stdout
+    assert 'T7' in stdout
+    assert 'T8' in stdout
+    assert 'T9' in stdout
+
+
 def test_check_success_force_local(run_reframe, tmp_path, logfile):
     # We explicitly use a system here with a non-local scheduler and pass the
     # `--force-local` option
