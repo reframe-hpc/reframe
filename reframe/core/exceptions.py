@@ -277,7 +277,17 @@ class ReframeDeprecationWarning(DeprecationWarning):
 warnings.filterwarnings('default', category=ReframeDeprecationWarning)
 
 
-def user_frame(tb):
+def user_frame(exc_type, exc_value, tb):
+    '''Return a user frame from the exception's traceback.
+
+    As user frame is considered the first frame that is outside from
+    :mod:`reframe` module.
+
+    :returns: A frame object or :class:`None` if no user frame was found.
+
+    :meta private:
+
+    '''
     if not inspect.istraceback(tb):
         raise ValueError('could not retrieve frame: argument not a traceback')
 
@@ -289,43 +299,55 @@ def user_frame(tb):
     return None
 
 
-def format_exception(exc_type, exc_value, tb):
-    def format_user_frame(frame):
-        relpath = os.path.relpath(frame.filename)
-        return '%s:%s: %s\n%s' % (relpath, frame.lineno,
-                                  exc_value, ''.join(frame.code_context))
+def is_severe(exc_type, exc_value, tb):
+    '''Check if exception is a severe one.'''
+    soft_errors = (ReframeError,
+                   ConnectionError,
+                   FileExistsError,
+                   FileNotFoundError,
+                   IsADirectoryError,
+                   KeyboardInterrupt,
+                   NotADirectoryError,
+                   PermissionError,
+                   TimeoutError)
+    if isinstance(exc_value, soft_errors):
+        return False
+
+    # Treat specially type and value errors
+    type_error  = isinstance(exc_value, TypeError)
+    value_error = isinstance(exc_value, ValueError)
+    frame = user_frame(exc_type, exc_value, tb)
+    if (type_error or value_error) and frame is not None:
+        return False
+
+    return True
+
+
+def what(exc_type, exc_value, tb):
+    '''A short description of the error.'''
 
     if exc_type is None:
         return ''
 
-    if isinstance(exc_value, AbortTaskError):
-        return 'aborted due to %s' % type(exc_value.__cause__).__name__
+    reason = utility.decamelize(exc_type.__name__, ' ')
 
-    if isinstance(exc_value, ReframeError):
-        return '%s: %s' % (utility.decamelize(exc_type.__name__, ' '),
-                           exc_value)
-
-    if isinstance(exc_value, ReframeFatalError):
-        exc_str = '%s: %s' % (utility.decamelize(exc_type.__name__, ' '),
-                              exc_value)
-        tb_str = ''.join(traceback.format_exception(exc_type, exc_value, tb))
-        return '%s\n%s' % (exc_str, tb_str)
-
+    # We need frame information for user type and value errors
+    frame = user_frame(exc_type, exc_value, tb)
+    user_type_error  = isinstance(exc_value, TypeError)  and frame
+    user_value_error = isinstance(exc_value, ValueError) and frame
     if isinstance(exc_value, KeyboardInterrupt):
-        return 'cancelled by user'
+        reason = 'cancelled by user'
+    elif isinstance(exc_value, AbortTaskError):
+        reason = f'aborted due to {type(exc_value.__cause__).__name__}'
+    elif user_type_error or user_value_error:
+        relpath = os.path.relpath(frame.filename)
+        source = ''.join(frame.code_context)
+        reason += f': {relpath}:{frame.lineno}: {exc_value}\n{source}'
+    else:
+        if str(exc_value):
+            reason += f': {exc_value}'
 
-    if isinstance(exc_value, OSError):
-        return 'OS error: %s' % exc_value
-
-    frame = user_frame(tb)
-    if isinstance(exc_value, TypeError) and frame is not None:
-        return 'type error: ' + format_user_frame(frame)
-
-    if isinstance(exc_value, ValueError) and frame is not None:
-        return 'value error: ' + format_user_frame(frame)
-
-    exc_str = ''.join(traceback.format_exception(exc_type, exc_value, tb))
-    return 'unexpected error: %s\n%s' % (exc_value, exc_str)
+    return reason
 
 
 def user_deprecation_warning(message):
