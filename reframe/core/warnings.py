@@ -1,5 +1,6 @@
 import contextlib
 import inspect
+import os
 import warnings
 
 from reframe.core.exceptions import ReframeFatalError
@@ -30,6 +31,8 @@ def _format_warning(message, category, filename, lineno, line=None):
             except IndexError:
                 line = '<no line information>'
 
+    # Use a relative path
+    filename = os.path.relpath(filename)
     message = f'{filename}:{lineno}: WARNING: {message}\n{line}\n'
 
     # Ignore coloring if runtime has not been initialized; this can happen
