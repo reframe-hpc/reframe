@@ -1,5 +1,8 @@
+import contextlib
 import inspect
 import warnings
+
+from reframe.core.exceptions import ReframeFatalError
 
 
 class ReframeDeprecationWarning(DeprecationWarning):
@@ -28,8 +31,12 @@ def _format_warning(message, category, filename, lineno, line=None):
                 line = '<no line information>'
 
     message = f'{filename}:{lineno}: WARNING: {message}\n{line}\n'
-    if rt.runtime().get_option('general/0/colorize'):
-        message = color.colorize(message, color.YELLOW)
+
+    # Ignore coloring if runtime has not been initialized; this can happen
+    # when generating the documentation of deprecated APIs
+    with contextlib.suppress(ReframeFatalError):
+        if rt.runtime().get_option('general/0/colorize'):
+            message = color.colorize(message, color.YELLOW)
 
     return message
 
