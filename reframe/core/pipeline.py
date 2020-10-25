@@ -1611,7 +1611,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
             return udeps.part_env_equal
         # DEPEND_BY_ENV used to mean same partition & same system
         elif how == DEPEND_FULLY:
-           return  udeps.part_equal
+            return udeps.part_equal
         # DEPEND_EXACT allows dependencies inside the same partition
         elif how == DEPEND_EXACT:
             return exact

@@ -116,144 +116,169 @@ def test_eq_hash(loader, exec_ctx):
 
 
 def test_dependecies_when_functions():
-    t0_cases = [(p, e) for p in ['p0', 'p1']
-                       for e in ['e0', 'e1', 'e2']]
-    t1_cases = [(p, e) for p in ['p0', 'p1', 'p2']
-                       for e in ['e0', 'e1']]
+    t0_cases = [(p, e)
+                for p in ['p0', 'p1']
+                for e in ['e0', 'e1', 'e2']]
+    t1_cases = [(p, e)
+                for p in ['p0', 'p1', 'p2']
+                for e in ['e0', 'e1']]
 
     when = udeps.always
-    deps = {(t0, t1) for t0 in t0_cases
-                     for t1 in t1_cases
-                     if when(t0, t1)}
+    deps = {(t0, t1)
+            for t0 in t0_cases
+            for t1 in t1_cases
+            if when(t0, t1)}
 
     assert deps == {
-        (t0, t1) for t0 in t0_cases
-                 for t1 in t1_cases
+        (t0, t1)
+        for t0 in t0_cases
+        for t1 in t1_cases
     }
     assert len(deps) == 36
 
     when = udeps.part_equal
-    deps = {(t0, t1) for t0 in t0_cases
-                     for t1 in t1_cases
-                     if when(t0, t1)}
+    deps = {(t0, t1)
+            for t0 in t0_cases
+            for t1 in t1_cases
+            if when(t0, t1)}
     assert deps == {
-        (t0, t1) for t0 in t0_cases
-                 for t1 in t1_cases
-                 if t0[0] == t1[0]
+        (t0, t1)
+        for t0 in t0_cases
+        for t1 in t1_cases
+        if t0[0] == t1[0]
     }
     assert len(deps) == 12
 
     when = udeps.env_equal
-    deps = {(t0, t1) for t0 in t0_cases
-                     for t1 in t1_cases
-                     if when(t0, t1)}
+    deps = {(t0, t1)
+            for t0 in t0_cases
+            for t1 in t1_cases
+            if when(t0, t1)}
     assert deps == {
         (t0, t1) for t0 in t0_cases
-                 for t1 in t1_cases
-                 if t0[1] == t1[1]
+        for t1 in t1_cases
+        if t0[1] == t1[1]
     }
     assert len(deps) == 12
 
     when = udeps.part_env_equal
-    deps = {(t0, t1) for t0 in t0_cases
-                     for t1 in t1_cases
-                     if when(t0, t1)}
+    deps = {(t0, t1)
+            for t0 in t0_cases
+            for t1 in t1_cases
+            if when(t0, t1)}
     assert deps == {
-        (t0, t1) for t0 in t0_cases
-                 for t1 in t1_cases
-                 if (t0[0] == t1[0] and t0[1] == t1[1])
+        (t0, t1)
+        for t0 in t0_cases
+        for t1 in t1_cases
+        if (t0[0] == t1[0] and t0[1] == t1[1])
     }
     assert len(deps) == 4
 
     when = udeps.part_is('p0')
     deps = {(t0, t1) for t0 in t0_cases
-                     for t1 in t1_cases
-                     if when(t0, t1)}
+            for t1 in t1_cases
+            if when(t0, t1)}
     assert deps == {
-        (t0, t1) for t0 in t0_cases
-                 for t1 in t1_cases
-                 if (t0[0] == 'p0' and t1[0] == 'p0')
+        (t0, t1)
+        for t0 in t0_cases
+        for t1 in t1_cases
+        if (t0[0] == 'p0' and t1[0] == 'p0')
     }
     assert len(deps) == 6
 
     when = udeps.source(udeps.part_is('p0'))
-    deps = {(t0, t1) for t0 in t0_cases
-                     for t1 in t1_cases
-                     if when(t0, t1)}
+    deps = {(t0, t1)
+            for t0 in t0_cases
+            for t1 in t1_cases
+            if when(t0, t1)}
     assert deps == {
-        (t0, t1) for t0 in t0_cases
-                 for t1 in t1_cases
-                 if t0[0] == 'p0'
+        (t0, t1)
+        for t0 in t0_cases
+        for t1 in t1_cases
+        if t0[0] == 'p0'
     }
     assert len(deps) == 18
 
     when = udeps.dest(udeps.part_is('p0'))
-    deps = {(t0, t1) for t0 in t0_cases
-                     for t1 in t1_cases
-                     if when(t0, t1)}
+    deps = {(t0, t1)
+            for t0 in t0_cases
+            for t1 in t1_cases
+            if when(t0, t1)}
     assert deps == {
-        (t0, t1) for t0 in t0_cases
-                 for t1 in t1_cases
-                 if t1[0] == 'p0'
+        (t0, t1)
+        for t0 in t0_cases
+        for t1 in t1_cases
+        if t1[0] == 'p0'
     }
     assert len(deps) == 12
 
     when = udeps.env_is('e0')
-    deps = {(t0, t1) for t0 in t0_cases
-                     for t1 in t1_cases
-                     if when(t0, t1)}
+    deps = {(t0, t1)
+            for t0 in t0_cases
+            for t1 in t1_cases
+            if when(t0, t1)}
     assert deps == {
-        (t0, t1) for t0 in t0_cases
-                 for t1 in t1_cases
-                 if (t0[1] == 'e0' and t1[1] == 'e0')
+        (t0, t1)
+        for t0 in t0_cases
+        for t1 in t1_cases
+        if (t0[1] == 'e0' and t1[1] == 'e0')
     }
     assert len(deps) == 6
 
     when = udeps.source(udeps.env_is('e0'))
-    deps = {(t0, t1) for t0 in t0_cases
-                     for t1 in t1_cases
-                     if when(t0, t1)}
+    deps = {(t0, t1)
+            for t0 in t0_cases
+            for t1 in t1_cases
+            if when(t0, t1)}
     assert deps == {
-        (t0, t1) for t0 in t0_cases
-                 for t1 in t1_cases
-                 if t0[1] == 'e0'
+        (t0, t1)
+        for t0 in t0_cases
+        for t1 in t1_cases
+        if t0[1] == 'e0'
     }
     assert len(deps) == 12
 
     when = udeps.dest(udeps.env_is('e0'))
-    deps = {(t0, t1) for t0 in t0_cases
-                     for t1 in t1_cases
-                     if when(t0, t1)}
+    deps = {(t0, t1)
+            for t0 in t0_cases
+            for t1 in t1_cases
+            if when(t0, t1)}
     assert deps == {
-        (t0, t1) for t0 in t0_cases
-                 for t1 in t1_cases
-                 if t1[1] == 'e0'
+        (t0, t1)
+        for t0 in t0_cases
+        for t1 in t1_cases
+        if t1[1] == 'e0'
     }
     assert len(deps) == 18
 
     when = udeps.any(udeps.source(udeps.part_is('p0')),
                      udeps.dest(udeps.env_is('e1')))
-    deps = {(t0, t1) for t0 in t0_cases
-                     for t1 in t1_cases
-                     if when(t0, t1)}
+    deps = {(t0, t1)
+            for t0 in t0_cases
+            for t1 in t1_cases
+            if when(t0, t1)}
     assert deps == {
-        (t0, t1) for t0 in t0_cases
-                 for t1 in t1_cases
-                 if (t0[0] == 'p0' or t1[1] == 'e1')
+        (t0, t1)
+        for t0 in t0_cases
+        for t1 in t1_cases
+        if (t0[0] == 'p0' or t1[1] == 'e1')
     }
     assert len(deps) == 27
 
     when = udeps.all(udeps.source(udeps.part_is('p0')),
                      udeps.dest(udeps.env_is('e1')))
-    deps = {(t0, t1) for t0 in t0_cases
-                     for t1 in t1_cases
-                     if when(t0, t1)}
+    deps = {(t0, t1)
+            for t0 in t0_cases
+            for t1 in t1_cases
+            if when(t0, t1)}
     assert deps == {
-        (t0, t1) for t0 in t0_cases
-                 for t1 in t1_cases
-                 if (t0[0] == 'p0' and t1[1] == 'e1')
+        (t0, t1)
+        for t0 in t0_cases
+        for t1 in t1_cases
+        if (t0[0] == 'p0' and t1[1] == 'e1')
     }
     assert len(deps) == 9
+
 
 def test_build_deps_deprecated_syntax(loader, exec_ctx):
     class Test0(rfm.RegressionTest):
@@ -295,17 +320,17 @@ def test_build_deps_deprecated_syntax(loader, exec_ctx):
         t1 = Test1_deprecated('exact')
         when = t1._userdeps[0][1]
         t0_cases = [(p, e) for p in ['p0', 'p1']
-                           for e in ['e0', 'e1']]
+                    for e in ['e0', 'e1']]
         t1_cases = [(p, e) for p in ['p0', 'p1']
-                           for e in ['e0', 'e1']]
+                    for e in ['e0', 'e1']]
         deps = {(t0, t1) for t0 in t0_cases
-                         for t1 in t1_cases
-                         if when(t0, t1)}
+                for t1 in t1_cases
+                if when(t0, t1)}
         assert deps == {
             (t0, t1) for t0 in t0_cases
-                     for t1 in t1_cases
-                     if ((t0[0] == t1[0] and t0[1] == 'e0') or
-                         (t0[0] == t1[0] and t0[1] == 'e1' and t1[1] == 'e1'))
+            for t1 in t1_cases
+            if ((t0[0] == t1[0] and t0[1] == 'e0') or
+                (t0[0] == t1[0] and t0[1] == 'e1' and t1[1] == 'e1'))
         }
         assert len(deps) == 6
 
