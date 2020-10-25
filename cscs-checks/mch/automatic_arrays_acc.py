@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import reframe as rfm
-import reframe.utility.os_ext as os_ext
+import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 
 
@@ -80,7 +80,7 @@ class AutomaticArraysCheck(rfm.RegressionTest):
 
     @rfm.run_before('compile')
     def cdt2008_pgi_workaround(self):
-        cdt = os_ext.cray_cdt_version()
+        cdt = osext.cray_cdt_version()
         if not cdt:
             return
 

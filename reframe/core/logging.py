@@ -14,11 +14,10 @@ import re
 import shutil
 import sys
 import socket
-import tempfile
 import time
 
 import reframe.utility.color as color
-import reframe.utility.os_ext as os_ext
+import reframe.utility.osext as osext
 from reframe.core.exceptions import ConfigError, LoggingError
 
 
@@ -196,9 +195,7 @@ def _create_logger(site_config, handlers_group):
 def _create_file_handler(site_config, config_prefix):
     filename = os.path.expandvars(site_config.get(f'{config_prefix}/name'))
     if not filename:
-        logfd, logfile = tempfile.mkstemp(suffix='.log', prefix='rfm-')
-        os.close(logfd)
-        filename = logfile
+        filename = osext.mkstemp_path(suffix='.log', prefix='rfm-')
 
     timestamp = site_config.get(f'{config_prefix}/timestamp')
     if timestamp:
@@ -402,10 +399,10 @@ class LoggerAdapter(logging.LoggerAdapter):
                 'check_perf_lower_thres': None,
                 'check_perf_upper_thres': None,
                 'check_perf_unit': None,
-                'osuser':  os_ext.osuser()  or '<unknown>',
-                'osgroup': os_ext.osgroup() or '<unknown>',
+                'osuser':  osext.osuser()  or '<unknown>',
+                'osgroup': osext.osgroup() or '<unknown>',
                 'check_tags': None,
-                'version': os_ext.reframe_version(),
+                'version': osext.reframe_version(),
             }
         )
         self.check = check
