@@ -114,6 +114,7 @@ def test_eq_hash(loader, exec_ctx):
     assert case1 != case0
     assert hash(case1) != hash(case0)
 
+
 def test_dependecies_when_functions():
     t0_cases = [(p, e) for p in ['p0', 'p1']
                        for e in ['e0', 'e1', 'e2']]

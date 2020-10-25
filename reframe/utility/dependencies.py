@@ -42,7 +42,6 @@ def part_is(name):
     return _part_is
 
 
-
 def env_is(name):
     def _env_is(src, dst):
         if src and dst:
@@ -85,4 +84,3 @@ def all(*when_funcs):
         return builtins.all(fn(src, dst) for fn in when_funcs)
 
     return _all
-
