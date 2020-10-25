@@ -8,11 +8,13 @@ import pytest
 
 import reframe as rfm
 import reframe.core.runtime as rt
-import reframe.frontend.dependency as dependency
+import reframe.frontend.dependencies as dependencies
 import reframe.frontend.executors as executors
 import reframe.utility as util
+import reframe.utility.dependencies as udeps
 from reframe.core.environments import Environment
-from reframe.core.exceptions import DependencyError
+from reframe.core.exceptions import (DependencyError,
+                                     ReframeDeprecationWarning)
 from reframe.frontend.loader import RegressionCheckLoader
 
 import unittests.fixtures as fixtures
@@ -72,9 +74,10 @@ def find_check(name, checks):
     return None
 
 
-def find_case(cname, ename, cases):
+def find_case(cname, ename, partname, cases):
     for c in cases:
-        if c.check.name == cname and c.environ.name == ename:
+        if (c.check.name == cname and c.environ.name == ename
+            and c.partition.name == partname):
             return c
 
 
@@ -102,8 +105,8 @@ def loader():
 
 def test_eq_hash(loader, exec_ctx):
     cases = executors.generate_testcases(loader.load_all())
-    case0 = find_case('Test0', 'e0', cases)
-    case1 = find_case('Test0', 'e1', cases)
+    case0 = find_case('Test0', 'e0', 'p0', cases)
+    case1 = find_case('Test0', 'e1', 'p0', cases)
     case0_copy = case0.clone()
 
     assert case0 == case0_copy
@@ -111,130 +114,335 @@ def test_eq_hash(loader, exec_ctx):
     assert case1 != case0
     assert hash(case1) != hash(case0)
 
+def test_dependecies_when_functions():
+    t0_cases = [(p, e) for p in ['p0', 'p1']
+                       for e in ['e0', 'e1', 'e2']]
+    t1_cases = [(p, e) for p in ['p0', 'p1', 'p2']
+                       for e in ['e0', 'e1']]
+
+    when = udeps.always
+    deps = {(t0, t1) for t0 in t0_cases
+                     for t1 in t1_cases
+                     if when(t0, t1)}
+
+    assert deps == {
+        (t0, t1) for t0 in t0_cases
+                 for t1 in t1_cases
+    }
+    assert len(deps) == 36
+
+    when = udeps.part_equal
+    deps = {(t0, t1) for t0 in t0_cases
+                     for t1 in t1_cases
+                     if when(t0, t1)}
+    assert deps == {
+        (t0, t1) for t0 in t0_cases
+                 for t1 in t1_cases
+                 if t0[0] == t1[0]
+    }
+    assert len(deps) == 12
+
+    when = udeps.env_equal
+    deps = {(t0, t1) for t0 in t0_cases
+                     for t1 in t1_cases
+                     if when(t0, t1)}
+    assert deps == {
+        (t0, t1) for t0 in t0_cases
+                 for t1 in t1_cases
+                 if t0[1] == t1[1]
+    }
+    assert len(deps) == 12
+
+    when = udeps.part_env_equal
+    deps = {(t0, t1) for t0 in t0_cases
+                     for t1 in t1_cases
+                     if when(t0, t1)}
+    assert deps == {
+        (t0, t1) for t0 in t0_cases
+                 for t1 in t1_cases
+                 if (t0[0] == t1[0] and t0[1] == t1[1])
+    }
+    assert len(deps) == 4
+
+    when = udeps.part_is('p0')
+    deps = {(t0, t1) for t0 in t0_cases
+                     for t1 in t1_cases
+                     if when(t0, t1)}
+    assert deps == {
+        (t0, t1) for t0 in t0_cases
+                 for t1 in t1_cases
+                 if (t0[0] == 'p0' and t1[0] == 'p0')
+    }
+    assert len(deps) == 6
+
+    when = udeps.source(udeps.part_is('p0'))
+    deps = {(t0, t1) for t0 in t0_cases
+                     for t1 in t1_cases
+                     if when(t0, t1)}
+    assert deps == {
+        (t0, t1) for t0 in t0_cases
+                 for t1 in t1_cases
+                 if t0[0] == 'p0'
+    }
+    assert len(deps) == 18
+
+    when = udeps.dest(udeps.part_is('p0'))
+    deps = {(t0, t1) for t0 in t0_cases
+                     for t1 in t1_cases
+                     if when(t0, t1)}
+    assert deps == {
+        (t0, t1) for t0 in t0_cases
+                 for t1 in t1_cases
+                 if t1[0] == 'p0'
+    }
+    assert len(deps) == 12
+
+    when = udeps.env_is('e0')
+    deps = {(t0, t1) for t0 in t0_cases
+                     for t1 in t1_cases
+                     if when(t0, t1)}
+    assert deps == {
+        (t0, t1) for t0 in t0_cases
+                 for t1 in t1_cases
+                 if (t0[1] == 'e0' and t1[1] == 'e0')
+    }
+    assert len(deps) == 6
+
+    when = udeps.source(udeps.env_is('e0'))
+    deps = {(t0, t1) for t0 in t0_cases
+                     for t1 in t1_cases
+                     if when(t0, t1)}
+    assert deps == {
+        (t0, t1) for t0 in t0_cases
+                 for t1 in t1_cases
+                 if t0[1] == 'e0'
+    }
+    assert len(deps) == 12
+
+    when = udeps.dest(udeps.env_is('e0'))
+    deps = {(t0, t1) for t0 in t0_cases
+                     for t1 in t1_cases
+                     if when(t0, t1)}
+    assert deps == {
+        (t0, t1) for t0 in t0_cases
+                 for t1 in t1_cases
+                 if t1[1] == 'e0'
+    }
+    assert len(deps) == 18
+
+    when = udeps.any(udeps.source(udeps.part_is('p0')),
+                     udeps.dest(udeps.env_is('e1')))
+    deps = {(t0, t1) for t0 in t0_cases
+                     for t1 in t1_cases
+                     if when(t0, t1)}
+    assert deps == {
+        (t0, t1) for t0 in t0_cases
+                 for t1 in t1_cases
+                 if (t0[0] == 'p0' or t1[1] == 'e1')
+    }
+    assert len(deps) == 27
+
+    when = udeps.all(udeps.source(udeps.part_is('p0')),
+                     udeps.dest(udeps.env_is('e1')))
+    deps = {(t0, t1) for t0 in t0_cases
+                     for t1 in t1_cases
+                     if when(t0, t1)}
+    assert deps == {
+        (t0, t1) for t0 in t0_cases
+                 for t1 in t1_cases
+                 if (t0[0] == 'p0' and t1[1] == 'e1')
+    }
+    assert len(deps) == 9
+
+def test_build_deps_deprecated_syntax(loader, exec_ctx):
+    class Test0(rfm.RegressionTest):
+        def __init__(self):
+            self.valid_systems = ['sys0:p0', 'sys0:p1']
+            self.valid_prog_environs = ['e0', 'e1']
+            self.executable = 'echo'
+            self.executable_opts = [self.name]
+            self.sanity_patterns = sn.assert_found(self.name, self.stdout)
+
+    @rfm.parameterized_test(*([kind] for kind in ['fully', 'by_env',
+                                                  'exact']))
+    class Test1_deprecated(rfm.RunOnlyRegressionTest):
+        def __init__(self, kind):
+            kindspec = {
+                'fully': rfm.DEPEND_FULLY,
+                'by_env': rfm.DEPEND_BY_ENV,
+                'exact': rfm.DEPEND_EXACT,
+            }
+            self.valid_systems = ['sys0:p0', 'sys0:p1']
+            self.valid_prog_environs = ['e0', 'e1']
+            self.executable = 'echo'
+            self.executable_opts = [self.name]
+            if kindspec[kind] == rfm.DEPEND_EXACT:
+                self.depends_on('Test0', kindspec[kind],
+                                {'e0': ['e0', 'e1'], 'e1': ['e1']})
+            else:
+                self.depends_on('Test0', kindspec[kind])
+
+    with pytest.warns(ReframeDeprecationWarning):
+        t1 = Test1_deprecated('fully')
+        assert(t1._userdeps == [('Test0', udeps.part_equal)])
+
+    with pytest.warns(ReframeDeprecationWarning):
+        t1 = Test1_deprecated('by_env')
+        assert(t1._userdeps == [('Test0', udeps.part_env_equal)])
+
+    with pytest.warns(ReframeDeprecationWarning):
+        t1 = Test1_deprecated('exact')
+        when = t1._userdeps[0][1]
+        t0_cases = [(p, e) for p in ['p0', 'p1']
+                           for e in ['e0', 'e1']]
+        t1_cases = [(p, e) for p in ['p0', 'p1']
+                           for e in ['e0', 'e1']]
+        deps = {(t0, t1) for t0 in t0_cases
+                         for t1 in t1_cases
+                         if when(t0, t1)}
+        assert deps == {
+            (t0, t1) for t0 in t0_cases
+                     for t1 in t1_cases
+                     if ((t0[0] == t1[0] and t0[1] == 'e0') or
+                         (t0[0] == t1[0] and t0[1] == 'e1' and t1[1] == 'e1'))
+        }
+        assert len(deps) == 6
+
 
 def test_build_deps(loader, exec_ctx):
     checks = loader.load_all()
     cases = executors.generate_testcases(checks)
 
     # Test calling getdep() before having built the graph
-    t = find_check('Test1_exact', checks)
+    t = find_check('Test1_always', checks)
     with pytest.raises(DependencyError):
-        t.getdep('Test0', 'e0')
+        t.getdep('Test0', 'e0', 'p0')
 
     # Build dependencies and continue testing
-    deps = dependency.build_deps(cases)
-    dependency.validate_deps(deps)
+    deps = dependencies.build_deps(cases)
+    dependencies.validate_deps(deps)
 
-    # Check DEPEND_FULLY dependencies
-    assert num_deps(deps, 'Test1_fully') == 8
+    # Check dependencies for fully connected graph
+    assert num_deps(deps, 'Test1_always') == 16
+    for p0 in ['sys0:p0', 'sys0:p1']:
+        for p1 in ['sys0:p0', 'sys0:p1']:
+            for e0 in ['e0', 'e1']:
+                for e1 in ['e0', 'e1']:
+                    assert has_edge(deps,
+                                    Node('Test1_always', p0, e0),
+                                    Node('Test0', p1, e1))
+
+    # Check dependencies with same partition
+    assert num_deps(deps, 'Test1_part_equal') == 8
     for p in ['sys0:p0', 'sys0:p1']:
         for e0 in ['e0', 'e1']:
             for e1 in ['e0', 'e1']:
                 assert has_edge(deps,
-                                Node('Test1_fully', p, e0),
+                                Node('Test1_part_equal', p, e0),
                                 Node('Test0', p, e1))
 
-    # Check DEPEND_BY_ENV
-    assert num_deps(deps, 'Test1_by_env') == 4
+    # Check dependencies with same partition environment
+    assert num_deps(deps, 'Test1_part_env_equal') == 4
     assert num_deps(deps, 'Test1_default') == 4
     for p in ['sys0:p0', 'sys0:p1']:
         for e in ['e0', 'e1']:
             assert has_edge(deps,
-                            Node('Test1_by_env', p, e),
+                            Node('Test1_part_env_equal', p, e),
                             Node('Test0', p, e))
             assert has_edge(deps,
                             Node('Test1_default', p, e),
                             Node('Test0', p, e))
 
-    # Check DEPEND_EXACT
-    assert num_deps(deps, 'Test1_exact') == 6
-    for p in ['sys0:p0', 'sys0:p1']:
-        assert has_edge(deps,
-                        Node('Test1_exact', p, 'e0'),
-                        Node('Test0', p, 'e0'))
-        assert has_edge(deps,
-                        Node('Test1_exact', p, 'e0'),
-                        Node('Test0', p, 'e1'))
-        assert has_edge(deps,
-                        Node('Test1_exact', p, 'e1'),
-                        Node('Test0', p, 'e1'))
+    assert num_deps(deps, 'Test1_any') == 12
+    for p0 in ['sys0:p0', 'sys0:p1']:
+        for p1 in ['sys0:p0', 'sys0:p1']:
+            for e0 in ['e0', 'e1']:
+                for e1 in ['e0', 'e1']:
+                    if (p0 == 'sys0:p0' or e1 == 'e1'):
+                        assert has_edge(deps,
+                                        Node('Test1_any', p0, e0),
+                                        Node('Test0', p1, e1))
+
+    assert num_deps(deps, 'Test1_all') == 2
+    for p0 in ['sys0:p0', 'sys0:p1']:
+        for p1 in ['sys0:p0', 'sys0:p1']:
+            for e0 in ['e0', 'e1']:
+                for e1 in ['e0', 'e1']:
+                    if (p0 == 'sys0:p0' and p1 == 'sys0:p0' and e1 == 'e1'):
+                        assert has_edge(deps,
+                                        Node('Test1_any', p0, e0),
+                                        Node('Test0', p1, e1))
+
+    # Check custom dependencies
+    assert num_deps(deps, 'Test1_custom') == 1
+    assert has_edge(deps,
+                    Node('Test1_custom', 'sys0:p0', 'e0'),
+                    Node('Test0', 'sys0:p1', 'e1'))
 
     # Check in-degree of Test0
 
-    # 2 from Test1_fully,
-    # 1 from Test1_by_env,
-    # 1 from Test1_exact,
+    # 4 from Test1_always,
+    # 2 from Test1_part_equal,
+    # 1 from Test1_part_env_equal,
+    # 2 from Test1_any,
+    # 2 from Test1_all,
+    # 0 from Test1_custom,
     # 1 from Test1_default
-    assert in_degree(deps, Node('Test0', 'sys0:p0', 'e0')) == 5
-    assert in_degree(deps, Node('Test0', 'sys0:p1', 'e0')) == 5
+    assert in_degree(deps, Node('Test0', 'sys0:p0', 'e0')) == 12
 
-    # 2 from Test1_fully,
-    # 1 from Test1_by_env,
-    # 2 from Test1_exact,
+    # 4 from Test1_always,
+    # 2 from Test1_part_equal,
+    # 1 from Test1_part_env_equal,
+    # 2 from Test1_any,
+    # 0 from Test1_all,
+    # 0 from Test1_custom,
     # 1 from Test1_default
-    assert in_degree(deps, Node('Test0', 'sys0:p0', 'e1')) == 6
-    assert in_degree(deps, Node('Test0', 'sys0:p1', 'e1')) == 6
+    assert in_degree(deps, Node('Test0', 'sys0:p1', 'e0')) == 10
+
+    # 4 from Test1_always,
+    # 2 from Test1_part_equal,
+    # 1 from Test1_part_env_equal,
+    # 4 from Test1_any,
+    # 0 from Test1_all,
+    # 0 from Test1_custom,
+    # 1 from Test1_default
+    assert in_degree(deps, Node('Test0', 'sys0:p0', 'e1')) == 12
+
+    # 4 from Test1_always,
+    # 2 from Test1_part_equal,
+    # 1 from Test1_part_env_equal,
+    # 4 from Test1_any,
+    # 0 from Test1_all,
+    # 1 from Test1_custom,
+    # 1 from Test1_default
+    assert in_degree(deps, Node('Test0', 'sys0:p1', 'e1')) == 13
 
     # Pick a check to test getdep()
-    check_e0 = find_case('Test1_exact', 'e0', cases).check
-    check_e1 = find_case('Test1_exact', 'e1', cases).check
+    check_e0 = find_case('Test1_part_equal', 'e0', 'p0', cases).check
+    check_e1 = find_case('Test1_part_equal', 'e1', 'p0', cases).check
 
     with pytest.raises(DependencyError):
-        check_e0.getdep('Test0')
+        check_e0.getdep('Test0', 'p0')
 
     # Set the current environment
     check_e0._current_environ = Environment('e0')
     check_e1._current_environ = Environment('e1')
 
-    assert check_e0.getdep('Test0', 'e0').name == 'Test0'
-    assert check_e0.getdep('Test0', 'e1').name == 'Test0'
-    assert check_e1.getdep('Test0', 'e1').name == 'Test0'
+    assert check_e0.getdep('Test0', 'e0', 'p0').name == 'Test0'
+    assert check_e0.getdep('Test0', 'e1', 'p0').name == 'Test0'
+    assert check_e1.getdep('Test0', 'e1', 'p0').name == 'Test0'
     with pytest.raises(DependencyError):
-        check_e0.getdep('TestX', 'e0')
-
-    with pytest.raises(DependencyError):
-        check_e0.getdep('Test0', 'eX')
+        check_e0.getdep('TestX_deprecated', 'e0', 'p0')
 
     with pytest.raises(DependencyError):
-        check_e1.getdep('Test0', 'e0')
+        check_e0.getdep('Test0', 'eX', 'p0')
 
-
-def test_build_deps_unknown_test(loader, exec_ctx):
-    checks = loader.load_all()
-
-    # Add some inexistent dependencies
-    test0 = find_check('Test0', checks)
-    for depkind in ('default', 'fully', 'by_env', 'exact'):
-        test1 = find_check('Test1_' + depkind, checks)
-        if depkind == 'default':
-            test1.depends_on('TestX')
-        elif depkind == 'exact':
-            test1.depends_on('TestX', rfm.DEPEND_EXACT, {'e0': ['e0']})
-        elif depkind == 'fully':
-            test1.depends_on('TestX', rfm.DEPEND_FULLY)
-        elif depkind == 'by_env':
-            test1.depends_on('TestX', rfm.DEPEND_BY_ENV)
-
-        with pytest.raises(DependencyError):
-            dependency.build_deps(executors.generate_testcases(checks))
-
-
-def test_build_deps_unknown_source_env(loader, exec_ctx):
-    checks = loader.load_all()
-
-    # Add some inexistent dependencies
-    test0 = find_check('Test0', checks)
-    test1 = find_check('Test1_default', checks)
-    test1.depends_on('Test0', rfm.DEPEND_EXACT, {'eX': ['e0']})
-
-    # Unknown source is ignored, because it might simply be that the test
-    # is not executed for eX
-    deps = dependency.build_deps(executors.generate_testcases(checks))
-    assert num_deps(deps, 'Test1_default') == 4
+    with pytest.raises(DependencyError):
+        check_e1.getdep('Test0', 'e0', 'p1')
 
 
 def test_build_deps_empty(exec_ctx):
-    assert {} == dependency.build_deps([])
+    assert {} == dependencies.build_deps([])
 
 
 @pytest.fixture
@@ -283,8 +491,8 @@ def test_valid_deps(make_test, exec_ctx):
     t6.depends_on('t5')
     t7.depends_on('t5')
     t8.depends_on('t7')
-    dependency.validate_deps(
-        dependency.build_deps(
+    dependencies.validate_deps(
+        dependencies.build_deps(
             executors.generate_testcases([t0, t1, t2, t3, t4,
                                           t5, t6, t7, t8])
         )
@@ -321,13 +529,13 @@ def test_cyclic_deps(make_test, exec_ctx):
     t6.depends_on('t5')
     t7.depends_on('t5')
     t8.depends_on('t7')
-    deps = dependency.build_deps(
+    deps = dependencies.build_deps(
         executors.generate_testcases([t0, t1, t2, t3, t4,
                                       t5, t6, t7, t8])
     )
 
     with pytest.raises(DependencyError) as exc_info:
-        dependency.validate_deps(deps)
+        dependencies.validate_deps(deps)
 
     assert ('t4->t2->t1->t4' in str(exc_info.value) or
             't2->t1->t4->t2' in str(exc_info.value) or
@@ -340,20 +548,20 @@ def test_cyclic_deps(make_test, exec_ctx):
 def test_cyclic_deps_by_env(make_test, exec_ctx):
     t0 = make_test('t0')
     t1 = make_test('t1')
-    t1.depends_on('t0', rfm.DEPEND_EXACT, {'e0': ['e0']})
-    t0.depends_on('t1', rfm.DEPEND_EXACT, {'e1': ['e1']})
-    deps = dependency.build_deps(
+    t1.depends_on('t0', udeps.env_is('e0'))
+    t0.depends_on('t1', udeps.env_is('e1'))
+    deps = dependencies.build_deps(
         executors.generate_testcases([t0, t1])
     )
     with pytest.raises(DependencyError) as exc_info:
-        dependency.validate_deps(deps)
+        dependencies.validate_deps(deps)
 
     assert ('t1->t0->t1' in str(exc_info.value) or
             't0->t1->t0' in str(exc_info.value))
 
 
 def test_validate_deps_empty(exec_ctx):
-    dependency.validate_deps({})
+    dependencies.validate_deps({})
 
 
 def assert_topological_order(cases, graph):
@@ -420,11 +628,11 @@ def test_toposort(make_test, exec_ctx):
     t6.depends_on('t5')
     t7.depends_on('t5')
     t8.depends_on('t7')
-    deps = dependency.build_deps(
+    deps = dependencies.build_deps(
         executors.generate_testcases([t0, t1, t2, t3, t4,
                                       t5, t6, t7, t8])
     )
-    cases = dependency.toposort(deps)
+    cases = dependencies.toposort(deps)
     assert_topological_order(cases, deps)
 
 
@@ -451,11 +659,11 @@ def test_toposort_subgraph(make_test, exec_ctx):
     t3.depends_on('t2')
     t4.depends_on('t2')
     t4.depends_on('t3')
-    full_deps = dependency.build_deps(
+    full_deps = dependencies.build_deps(
         executors.generate_testcases([t0, t1, t2, t3, t4])
     )
-    partial_deps = dependency.build_deps(
+    partial_deps = dependencies.build_deps(
         executors.generate_testcases([t3, t4]), full_deps
     )
-    cases = dependency.toposort(partial_deps, is_subgraph=True)
+    cases = dependencies.toposort(partial_deps, is_subgraph=True)
     assert_topological_order(cases, partial_deps)

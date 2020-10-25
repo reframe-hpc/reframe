@@ -19,7 +19,7 @@ import reframe.core.logging as logging
 import reframe.core.runtime as runtime
 import reframe.frontend.argparse as argparse
 import reframe.frontend.check_filters as filters
-import reframe.frontend.dependency as dependency
+import reframe.frontend.dependencies as dependencies
 import reframe.utility.os_ext as os_ext
 import reframe.utility.json as jsonext
 from reframe.core.exceptions import (
@@ -637,9 +637,9 @@ def main():
                                        options.skip_system_check,
                                        options.skip_prgenv_check,
                                        allowed_environs)
-        testgraph = dependency.build_deps(testcases)
-        dependency.validate_deps(testgraph)
-        testcases = dependency.toposort(testgraph)
+        testgraph = dependencies.build_deps(testcases)
+        dependencies.validate_deps(testgraph)
+        testcases = dependencies.toposort(testgraph)
 
         # Manipulate ReFrame's environment
         if site_config.get('general/0/purge_environment'):

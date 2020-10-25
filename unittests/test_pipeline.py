@@ -646,7 +646,7 @@ def test_disabled_hooks(local_exec_ctx):
 
 
 def test_require_deps(local_exec_ctx):
-    import reframe.frontend.dependency as dependency
+    import reframe.frontend.dependencies as dependencies
     import reframe.frontend.executors as executors
 
     @fixtures.custom_prefix('unittests/resources/checks')
@@ -675,8 +675,8 @@ def test_require_deps(local_exec_ctx):
             self.z = T0().x + 2
 
     cases = executors.generate_testcases([T0(), T1()])
-    deps = dependency.build_deps(cases)
-    for c in dependency.toposort(deps):
+    deps = dependencies.build_deps(cases)
+    for c in dependencies.toposort(deps):
         _run(*c)
 
     for c in cases:

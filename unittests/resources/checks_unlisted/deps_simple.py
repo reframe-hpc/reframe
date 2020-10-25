@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import reframe as rfm
+import reframe.utility.dependencies as udeps
 import reframe.utility.sanity as sn
 
 
@@ -17,14 +18,28 @@ class Test0(rfm.RunOnlyRegressionTest):
         self.sanity_patterns = sn.assert_found(self.name, self.stdout)
 
 
-@rfm.parameterized_test(*([kind] for kind in ['fully', 'by_env',
-                                              'exact', 'default']))
+@rfm.parameterized_test(*([kind] for kind in ['default', 'always',
+                                              'part_equal', 'part_env_equal',
+                                              'custom', 'any', 'all']))
 class Test1(rfm.RunOnlyRegressionTest):
     def __init__(self, kind):
+        def custom_deps(src, dst):
+            return (
+                src[0] == 'p0' and
+                src[1] == 'e0' and
+                dst[0] == 'p1' and
+                dst[1] == 'e1'
+            )
+
         kindspec = {
-            'fully': rfm.DEPEND_FULLY,
-            'by_env': rfm.DEPEND_BY_ENV,
-            'exact': rfm.DEPEND_EXACT,
+            'always': udeps.always,
+            'part_equal': udeps.part_equal,
+            'part_env_equal': udeps.part_env_equal,
+            'any': udeps.any(udeps.source(udeps.part_is('p0')),
+                             udeps.dest(udeps.env_is('e1'))),
+            'all': udeps.all(udeps.part_is('p0'),
+                             udeps.dest(udeps.env_is('e0'))),
+            'custom': custom_deps,
         }
         self.valid_systems = ['sys0:p0', 'sys0:p1']
         self.valid_prog_environs = ['e0', 'e1']
@@ -33,8 +48,5 @@ class Test1(rfm.RunOnlyRegressionTest):
         self.sanity_patterns = sn.assert_found(self.name, self.stdout)
         if kind == 'default':
             self.depends_on('Test0')
-        elif kindspec[kind] == rfm.DEPEND_EXACT:
-            self.depends_on('Test0', kindspec[kind],
-                            {'e0': ['e0', 'e1'], 'e1': ['e1']})
         else:
             self.depends_on('Test0', kindspec[kind])

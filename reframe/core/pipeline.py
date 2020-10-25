@@ -25,6 +25,7 @@ import reframe.core.fields as fields
 import reframe.core.logging as logging
 import reframe.core.runtime as rt
 import reframe.utility as util
+import reframe.utility.dependencies as udeps
 import reframe.utility.os_ext as os_ext
 import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
@@ -1619,16 +1620,13 @@ class RegressionTest(metaclass=RegressionTestMeta):
         if not isinstance(target, str):
             raise TypeError("target argument must be of type: `str'")
 
-        def same_env_and_partition(src, dst):
-            return src == dst
-
         if when is None and not 'how' in kwargs:
-            when = same_env_and_partition
+            when = udeps.part_env_equal
         elif ('how' in kwargs or 'subdeps' in kwargs or args or
               isinstance(when, int)):
             msg = ("the arguments `how' and `subdeps' are deprecated, "
                    "please use the argument `when'")
-            # user_deprecation_warning(msg)
+            user_deprecation_warning(msg)
 
             # if `when' is callable ignore other arguments, otherwise
             # fix the argument to be the appropriate callable
@@ -1658,20 +1656,18 @@ class RegressionTest(metaclass=RegressionTestMeta):
                     if not subdeps:
                         return False
 
-                    return ((src[0] == dst[0]) and (src[1] in subdeps) and
+                    return ((src[0] == dst[0]) and
+                            (src[1] in subdeps) and
                             (dst[1] in subdeps[src[1]]))
-
-                def same_partition(src, dst):
-                    return src[0] == dst[0]
 
                 # Follow the old definitions
                 # DEPEND_BY_ENV used to mean same env, same partition
                 # & same system
                 if how == DEPEND_BY_ENV:
-                    when = same_env_and_partition
+                    when = udeps.part_env_equal
                 # DEPEND_BY_ENV used to mean same partition & same system
                 elif how == DEPEND_FULLY:
-                    when = same_partition
+                    when = udeps.part_equal
                 # DEPEND_EXACT allows dependencies inside the same partition
                 elif how == DEPEND_EXACT:
                     when = exact
@@ -1683,7 +1679,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         self._userdeps.append((target, when))
 
-    def getdep(self, target, environ=None):
+    def getdep(self, target, environ=None, part=None):
         '''Retrieve the test case of a target dependency.
 
         This is a low-level method. The :func:`@require_deps
@@ -1706,15 +1702,19 @@ class RegressionTest(metaclass=RegressionTestMeta):
         if environ is None:
             environ = self.current_environ.name
 
+        if part is None:
+            part = self.current_partition.name
+
         if self._case is None or self._case() is None:
             raise DependencyError('no test case is associated with this test')
 
         for d in self._case().deps:
-            if d.check.name == target and d.environ.name == environ:
+            if (d.check.name == target and d.environ.name == environ
+                and d.partition.name == part):
                 return d.check
 
-        raise DependencyError('could not resolve dependency to (%s, %s)' %
-                              (target, environ))
+        raise DependencyError(f'could not resolve dependency to ({target}, '
+                              f'{part}, {environ})')
 
     def __str__(self):
         return "%s(name='%s', prefix='%s')" % (type(self).__name__,
