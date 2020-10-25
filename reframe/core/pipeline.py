@@ -1583,6 +1583,41 @@ class RegressionTest(metaclass=RegressionTestMeta):
     def user_deps(self):
         return util.SequenceView(self._userdeps)
 
+    def _depends_on_func(self, how, subdeps=None, *args, **kwargs):
+        if args or kwargs:
+            raise ValueError('invalid arguments passed')
+
+        msg = ("the arguments `how' and `subdeps' are deprecated, "
+               "please use the argument `when'")
+        user_deprecation_warning(msg)
+        if (subdeps is not None and
+            not isinstance(subdeps, typ.Dict[str, typ.List[str]])):
+            raise TypeError("subdeps argument must be of type "
+                            "`Dict[str, List[str]]' or `None'")
+
+        # Now return a proper when function
+        def exact(src, dst):
+            if not subdeps:
+                return False
+
+            return ((src[0] == dst[0]) and
+                    (src[1] in subdeps) and
+                    (dst[1] in subdeps[src[1]]))
+
+        # Follow the old definitions
+        # DEPEND_BY_ENV used to mean same env, same partition
+        # & same system
+        if how == DEPEND_BY_ENV:
+            return udeps.part_env_equal
+        # DEPEND_BY_ENV used to mean same partition & same system
+        elif how == DEPEND_FULLY:
+           return  udeps.part_equal
+        # DEPEND_EXACT allows dependencies inside the same partition
+        elif how == DEPEND_EXACT:
+            return exact
+        else:
+            raise TypeError("invalid type of dependency")
+
     def depends_on(self, target, when=None, *args, **kwargs):
         '''Add a dependency to ``target`` in this test.
 
@@ -1620,59 +1655,13 @@ class RegressionTest(metaclass=RegressionTestMeta):
         if not isinstance(target, str):
             raise TypeError("target argument must be of type: `str'")
 
-        if when is None and not 'how' in kwargs:
+        if (isinstance(when, int) or 'how' in kwargs):
+            # We are probably using the old syntax; try to get a
+            # proper when function
+            when = self._depends_on_func(when, *args, **kwargs)
+
+        if when is None:
             when = udeps.part_env_equal
-        elif ('how' in kwargs or 'subdeps' in kwargs or args or
-              isinstance(when, int)):
-            msg = ("the arguments `how' and `subdeps' are deprecated, "
-                   "please use the argument `when'")
-            user_deprecation_warning(msg)
-
-            # if `when' is callable ignore other arguments, otherwise
-            # fix the argument to be the appropriate callable
-            if when is not callable(when):
-                if isinstance(when, int):
-                    how = when
-                    # If there is an extra argument it should be subdeps
-                    if args:
-                        subdeps = args[0]
-                    else:
-                        subdeps = None
-
-                else:
-                    how = kwargs.get('how', default=DEPEND_BY_ENV)
-                    subdeps = kwargs.get('how', default=None)
-
-                # some sanity checking
-                if how is not None and not isinstance(how, int):
-                    raise TypeError("how argument must be of type: `int'")
-
-                if (subdeps is not None and
-                    not isinstance(subdeps, typ.Dict[str, typ.List[str]])):
-                    raise TypeError("subdeps argument must be of type "
-                                    "`Dict[str, List[str]]' or `None'")
-
-                def exact(src, dst):
-                    if not subdeps:
-                        return False
-
-                    return ((src[0] == dst[0]) and
-                            (src[1] in subdeps) and
-                            (dst[1] in subdeps[src[1]]))
-
-                # Follow the old definitions
-                # DEPEND_BY_ENV used to mean same env, same partition
-                # & same system
-                if how == DEPEND_BY_ENV:
-                    when = udeps.part_env_equal
-                # DEPEND_BY_ENV used to mean same partition & same system
-                elif how == DEPEND_FULLY:
-                    when = udeps.part_equal
-                # DEPEND_EXACT allows dependencies inside the same partition
-                elif how == DEPEND_EXACT:
-                    when = exact
-                else:
-                    raise TypeError("invalid type of dependency")
 
         if not callable(when):
             raise TypeError("when argument must be callable")

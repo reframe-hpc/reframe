@@ -68,13 +68,11 @@ def build_deps(cases, default_cases=None):
     graph = collections.OrderedDict()
     for c in cases:
         pname = c.partition.name
-        # pname = c.partition.fullname
         ename = c.environ.name
         for dep in c.check.user_deps():
             tname, when = dep
             for d in resolve_dep(c, all_cases, default_all_cases, tname):
                 dep_pname = d.partition.name
-                # dep_pname = d.partition.fullname
                 dep_ename = d.environ.name
                 if when((pname, ename), (dep_pname, dep_ename)):
                     c.deps.append(d)
