@@ -24,8 +24,9 @@ import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 from reframe.core.exceptions import (
     EnvironError, ConfigError, ReframeError,
-    ReframeDeprecationWarning, ReframeFatalError, format_exception
+    ReframeFatalError, format_exception
 )
+from reframe.core.warnings import ReframeDeprecationWarning
 from reframe.frontend.executors import Runner, generate_testcases
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)

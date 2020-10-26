@@ -142,7 +142,7 @@ if [ $CI_GENERIC -eq 1 ]; then
     # Run unit tests for the public release
     echo "[INFO] Running unit tests with generic settings"
     checked_exec ./test_reframe.py --workers=auto --forked \
-                 -W=error::reframe.core.exceptions.ReframeDeprecationWarning -ra
+                 -W=error::reframe.core.warnings.ReframeDeprecationWarning -ra
     checked_exec ! ./bin/reframe.py --system=generic -l 2>&1 | \
         grep -- '--- Logging error ---'
 elif [ $CI_TUTORIAL -eq 1 ]; then
@@ -174,7 +174,7 @@ else
             echo "[INFO] Running unit tests with ${backend}"
             TMPDIR=$tempdir checked_exec ./test_reframe.py --workers=auto --forked \
                          --rfm-user-config=config/cscs-ci.py \
-                         -W=error::reframe.core.exceptions.ReframeDeprecationWarning \
+                         -W=error::reframe.core.warnings.ReframeDeprecationWarning \
                          --rfm-user-system=dom:${backend} -ra
         done
         export PATH=$PATH_save
@@ -182,7 +182,7 @@ else
         echo "[INFO] Running unit tests"
         TMPDIR=$tempdir checked_exec ./test_reframe.py --workers=auto --forked \
                      --rfm-user-config=config/cscs-ci.py \
-                     -W=error::reframe.core.exceptions.ReframeDeprecationWarning -ra
+                     -W=error::reframe.core.warnings.ReframeDeprecationWarning -ra
     fi
 
     if [ $CI_EXITCODE -eq 0 ]; then

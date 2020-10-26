@@ -19,10 +19,9 @@ import reframe.core.settings as settings
 import reframe.utility as util
 import reframe.utility.osext as osext
 import reframe.utility.typecheck as types
-from reframe.core.exceptions import (ConfigError,
-                                     ReframeDeprecationWarning,
-                                     ReframeFatalError)
+from reframe.core.exceptions import ConfigError, ReframeFatalError
 from reframe.core.logging import getlogger
+from reframe.core.warnings import ReframeDeprecationWarning
 from reframe.utility import ScopedDict
 
 

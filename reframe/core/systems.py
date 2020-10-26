@@ -155,7 +155,7 @@ class SystemPartition:
            Please use :attr:`launcher_type` instead.
         '''
 
-        from reframe.core.exceptions import user_deprecation_warning
+        from reframe.core.warnings import user_deprecation_warning
 
         user_deprecation_warning("the 'launcher' attribute is deprecated; "
                                  "please use 'launcher_type' instead")
