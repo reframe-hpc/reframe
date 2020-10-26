@@ -13,7 +13,7 @@ import os
 import re
 
 import reframe.utility.typecheck as types
-from reframe.core.exceptions import user_deprecation_warning
+from reframe.core.warnings import user_deprecation_warning
 from reframe.utility import ScopedDict
 
 

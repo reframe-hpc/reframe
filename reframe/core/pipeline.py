@@ -34,9 +34,10 @@ from reframe.core.containers import ContainerPlatform, ContainerPlatformField
 from reframe.core.deferrable import _DeferredExpression
 from reframe.core.exceptions import (BuildError, DependencyError,
                                      PipelineError, SanityError,
-                                     PerformanceError, user_deprecation_warning)
+                                     PerformanceError)
 from reframe.core.meta import RegressionTestMeta
 from reframe.core.schedulers import Job
+from reframe.core.warnings import user_deprecation_warning
 
 
 # Dependency kinds

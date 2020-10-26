@@ -270,13 +270,6 @@ class DependencyError(ReframeError):
     '''Raised when a dependency problem is encountered.'''
 
 
-class ReframeDeprecationWarning(DeprecationWarning):
-    '''Warning raised for deprecated features of the framework.'''
-
-
-warnings.filterwarnings('default', category=ReframeDeprecationWarning)
-
-
 def user_frame(tb):
     if not inspect.istraceback(tb):
         raise ValueError('could not retrieve frame: argument not a traceback')
@@ -326,24 +319,3 @@ def format_exception(exc_type, exc_value, tb):
 
     exc_str = ''.join(traceback.format_exception(exc_type, exc_value, tb))
     return 'unexpected error: %s\n%s' % (exc_value, exc_str)
-
-
-def user_deprecation_warning(message):
-    '''Raise a deprecation warning at the user stack frame that eventually
-    calls this function.
-
-    As "user stack frame" is considered a stack frame that is outside the
-    :py:mod:`reframe` base module.
-    '''
-
-    # Unroll the stack and issue the warning from the first stack frame that is
-    # outside the framework.
-    stack_level = 1
-    for s in inspect.stack():
-        module = inspect.getmodule(s.frame)
-        if module is None or not module.__name__.startswith('reframe'):
-            break
-
-        stack_level += 1
-
-    warnings.warn(message, ReframeDeprecationWarning, stacklevel=stack_level)

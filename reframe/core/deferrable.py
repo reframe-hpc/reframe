@@ -6,8 +6,6 @@
 import builtins
 import functools
 
-from reframe.core.exceptions import user_deprecation_warning
-
 
 def deferrable(func):
     '''Function decorator for converting a function to a deferred
