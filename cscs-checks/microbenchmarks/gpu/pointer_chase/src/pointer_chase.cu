@@ -365,7 +365,7 @@ int main(int argc, char ** argv)
     {
       std::cout << "--rand      : Initializes the linked list with nodes in random order." << std::endl;
       std::cout << "--stride #  : Sets the stride between the nodes in the list (in number of nodes)." << std::endl;
-      std::cout << "              If --rand is used, this parameter has no effect." << std::endl;
+      std::cout << "              If --rand is used, this parameter just changes the buffer size." << std::endl;
       std::cout << "--buffer #  : Sets the size of the buffer where the linked list is allocated on. " << std::endl;
       std::cout << "              The number indicates the size of the buffer in list nodes." << std::endl;
       std::cout << "--help (-h) : I guess you figured what this does already ;)" << std::endl;
