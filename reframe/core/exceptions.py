@@ -340,5 +340,4 @@ def what(exc_type, exc_value, tb):
         if str(exc_value):
             reason += f': {exc_value}'
 
-    exc_str = ''.join(traceback.format_exception(exc_type, exc_value, tb))
-    return 'unexpected error: %s\n%s' % (exc_value, exc_str)
+    return reason
