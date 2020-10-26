@@ -18,6 +18,7 @@ import reframe.core.environments as env
 import reframe.core.exceptions as errors
 import reframe.core.logging as logging
 import reframe.core.runtime as runtime
+import reframe.core.warnings as warnings
 import reframe.frontend.argparse as argparse
 import reframe.frontend.check_filters as filters
 import reframe.frontend.dependency as dependency
@@ -449,7 +450,7 @@ def main():
     try:
         try:
             site_config = config.load_config(options.config_file)
-        except errors.ReframeDeprecationWarning as e:
+        except warnings.ReframeDeprecationWarning as e:
             printer.warning(e)
             converted = config.convert_old_config(options.config_file)
             printer.warning(
