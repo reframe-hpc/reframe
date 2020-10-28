@@ -4,8 +4,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import reframe as rfm
-import reframe.utility.dependencies as udeps
 import reframe.utility.sanity as sn
+import reframe.utility.udeps as udeps
 
 
 @rfm.simple_test
@@ -20,7 +20,7 @@ class Test0(rfm.RunOnlyRegressionTest):
 
 @rfm.parameterized_test(*([kind] for kind in ['default', 'always',
                                               'part_equal', 'part_env_equal',
-                                              'custom', 'any', 'all']))
+                                              'custom', 'any', 'all', 'never']))
 class Test1(rfm.RunOnlyRegressionTest):
     def __init__(self, kind):
         def custom_deps(src, dst):
@@ -40,6 +40,7 @@ class Test1(rfm.RunOnlyRegressionTest):
             'all': udeps.all(udeps.part_is('p0'),
                              udeps.dest(udeps.env_is('e0'))),
             'custom': custom_deps,
+            'never': (lambda s, d: False),
         }
         self.valid_systems = ['sys0:p0', 'sys0:p1']
         self.valid_prog_environs = ['e0', 'e1']

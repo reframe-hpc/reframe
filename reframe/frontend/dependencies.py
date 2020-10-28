@@ -9,7 +9,6 @@
 
 import collections
 import itertools
-import re
 
 import reframe as rfm
 import reframe.utility as util
@@ -37,14 +36,17 @@ def build_deps(cases, default_cases=None):
 
         return ret
 
-    def resolve_dep(target, from_map, fallback_map, key):
-        errmsg = 'could not resolve dependency: %s -> %s' % (target, key)
+    all_cases_map = build_index(cases)
+    default_cases_map = build_index(default_cases)
+
+    def resolve_dep(src, dst):
+        errmsg = f'could not resolve dependency: {src} -> {dst}'
         try:
-            ret = from_map[key]
+            ret = all_cases_map[dst]
         except KeyError:
             # try to resolve the dependency in the fallback map
             try:
-                ret = fallback_map[key]
+                ret = default_cases_map[dst]
             except KeyError:
                 raise DependencyError(errmsg) from None
 
@@ -52,9 +54,6 @@ def build_deps(cases, default_cases=None):
             raise DependencyError(errmsg)
 
         return ret
-
-    all_cases = build_index(cases)
-    default_all_cases = build_index(default_cases)
 
     # NOTE on variable names
     #
@@ -67,14 +66,14 @@ def build_deps(cases, default_cases=None):
     # partitions and environments
     graph = collections.OrderedDict()
     for c in cases:
-        pname = c.partition.name
-        ename = c.environ.name
+        psrc = c.partition.name
+        esrc = c.environ.name
         for dep in c.check.user_deps():
             tname, when = dep
-            for d in resolve_dep(c, all_cases, default_all_cases, tname):
-                dep_pname = d.partition.name
-                dep_ename = d.environ.name
-                if when((pname, ename), (dep_pname, dep_ename)):
+            for d in resolve_dep(c, tname):
+                pdst = d.partition.name
+                edst = d.environ.name
+                if when((psrc, esrc), (pdst, edst)):
                     c.deps.append(d)
 
         graph[c] = util.OrderedSet(c.deps)

@@ -11,10 +11,10 @@ import reframe.core.runtime as rt
 import reframe.frontend.dependencies as dependencies
 import reframe.frontend.executors as executors
 import reframe.utility as util
-import reframe.utility.dependencies as udeps
+import reframe.utility.udeps as udeps
 from reframe.core.environments import Environment
-from reframe.core.exceptions import (DependencyError,
-                                     ReframeDeprecationWarning)
+from reframe.core.exceptions import DependencyError
+from reframe.core.warnings import ReframeDeprecationWarning
 from reframe.frontend.loader import RegressionCheckLoader
 
 import unittests.fixtures as fixtures
@@ -405,6 +405,9 @@ def test_build_deps(loader, exec_ctx):
                     Node('Test1_custom', 'sys0:p0', 'e0'),
                     Node('Test0', 'sys0:p1', 'e1'))
 
+    # Check dependencies of Test1_never
+    assert num_deps(deps, 'Test1_never') == 0
+
     # Check in-degree of Test0
 
     # 4 from Test1_always,
@@ -414,6 +417,7 @@ def test_build_deps(loader, exec_ctx):
     # 2 from Test1_all,
     # 0 from Test1_custom,
     # 1 from Test1_default
+    # 0 from Test1_never
     assert in_degree(deps, Node('Test0', 'sys0:p0', 'e0')) == 12
 
     # 4 from Test1_always,
@@ -423,6 +427,7 @@ def test_build_deps(loader, exec_ctx):
     # 0 from Test1_all,
     # 0 from Test1_custom,
     # 1 from Test1_default
+    # 0 from Test1_never
     assert in_degree(deps, Node('Test0', 'sys0:p1', 'e0')) == 10
 
     # 4 from Test1_always,
@@ -432,6 +437,7 @@ def test_build_deps(loader, exec_ctx):
     # 0 from Test1_all,
     # 0 from Test1_custom,
     # 1 from Test1_default
+    # 0 from Test1_never
     assert in_degree(deps, Node('Test0', 'sys0:p0', 'e1')) == 12
 
     # 4 from Test1_always,
@@ -441,6 +447,7 @@ def test_build_deps(loader, exec_ctx):
     # 0 from Test1_all,
     # 1 from Test1_custom,
     # 1 from Test1_default
+    # 0 from Test1_never
     assert in_degree(deps, Node('Test0', 'sys0:p1', 'e1')) == 13
 
     # Pick a check to test getdep()
