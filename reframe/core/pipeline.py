@@ -1587,10 +1587,9 @@ class RegressionTest(metaclass=RegressionTestMeta):
         if args or kwargs:
             raise ValueError('invalid arguments passed')
 
-        user_deprecation_warning("the arguments `how' and `subdeps' are "
-                                 "deprecated, please use the argument `when'")
-        if not isinstance(how, int):
-            raise TypeError("subdeps argument must be of type `int'")
+        user_deprecation_warning("the old syntax of dependencies is "
+                                 "deprecated, please pass a callable to "
+                                 "the `how' argument")
 
         if (subdeps is not None and
             not isinstance(subdeps, typ.Dict[str, typ.List[str]])):
@@ -1619,11 +1618,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
         else:
             raise ValueError(f"unknown value passed to 'how' argument: {how}")
 
-    def depends_on(self, target, when=None, *args, **kwargs):
+    def depends_on(self, target, how=None, *args, **kwargs):
         '''Add a dependency to ``target`` in this test.
 
         :arg target: The name of the target test.
-        :arg when: A callable that defines the mapping of the dependencies.
+        :arg how: A callable that defines the mapping of the dependencies.
             The function the user passes should take as argument the source
             and destination testcase. When case B depends on case `A' we
             consider as source case `A' and destination case `B'. In the
@@ -1637,7 +1636,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
                     p1, _  = dst
                     return p0 == p1
 
-                self.depends_on('T0', when=part_equal)
+                self.depends_on('T0', how=part_equal)
 
             By default each testcase will depend on the case from target
             that has the same environment and partition, if it exists.
@@ -1650,24 +1649,24 @@ class RegressionTest(metaclass=RegressionTestMeta):
         .. versionchanged:: 3.3
            Dependencies between cases from different partitions are now allowed
            and the arguments `how' and `subdeps' are  deprecated. You should
-           use the `when' argument.
+           pass a callable to the `how' argument.
 
         '''
         if not isinstance(target, str):
             raise TypeError("target argument must be of type: `str'")
 
-        if (isinstance(when, int) or 'how' in kwargs):
+        if (isinstance(how, int)):
             # We are probably using the old syntax; try to get a
-            # proper when function
-            when = self._depends_on_func(when, *args, **kwargs)
+            # proper how function
+            how = self._depends_on_func(how, *args, **kwargs)
 
-        if when is None:
-            when = udeps.part_env_equal
+        if how is None:
+            how = udeps.part_env_equal
 
-        if not callable(when):
-            raise TypeError("'when' argument must be callable")
+        if not callable(how):
+            raise TypeError("'how' argument must be callable")
 
-        self._userdeps.append((target, when))
+        self._userdeps.append((target, how))
 
     def getdep(self, target, environ=None, part=None):
         '''Retrieve the test case of a target dependency.
