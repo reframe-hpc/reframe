@@ -1000,7 +1000,7 @@ site_configuration = {
                 '--perflogdir=$APPS/UES/$USER/regression/maintenance/logs',
                 '--stage=$SCRATCH/regression/maintenance/stage',
                 '--report-file=$APPS/UES/$USER/regression/maintenance/reports/maint_report_{sessionid}.json',
-                '--reservation=maintenance',
+                '-Jreservation=maintenance',
                 '--save-log-files',
                 '--tag=maintenance',
                 '--timestamp=%F_%H-%M-%S'

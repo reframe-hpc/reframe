@@ -8,7 +8,7 @@ import os
 import pytest
 
 import reframe.core.fields as fields
-from reframe.core.exceptions import ReframeDeprecationWarning
+from reframe.core.warnings import ReframeDeprecationWarning
 from reframe.utility import ScopedDict
 
 
