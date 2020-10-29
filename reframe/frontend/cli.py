@@ -4,9 +4,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import inspect
+import itertools
 import json
 import os
 import re
+import shlex
 import socket
 import sys
 import time
@@ -475,6 +477,8 @@ def main():
             mode_args = site_config.get(f'modes/@{options.mode}/options')
 
             # Parse the mode's options and reparse the command-line
+            mode_args = list(itertools.chain(*[shlex.split(m)
+                                               for m in mode_args]))
             options = argparser.parse_args(mode_args)
             options = argparser.parse_args(namespace=options.cmd_options)
             options.update_config(site_config)
