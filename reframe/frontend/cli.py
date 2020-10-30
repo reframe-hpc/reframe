@@ -765,6 +765,7 @@ def main():
                 try:
                     with open(report_file, 'w') as fp:
                         jsonext.dump(json_report, fp, indent=2)
+                        fp.write('\n')
                 except OSError as e:
                     printer.warning(
                         f'failed to generate report in {report_file!r}: {e}'
