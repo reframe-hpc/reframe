@@ -40,7 +40,7 @@ def build_deps(cases, default_cases=None):
     default_cases_map = build_index(default_cases)
 
     def resolve_dep(src, dst):
-        errmsg = f'could not resolve dependency: {src} -> {dst}'
+        errmsg = f'could not resolve dependency: {src!r} -> {dst!r}'
         try:
             ret = all_cases_map[dst]
         except KeyError:

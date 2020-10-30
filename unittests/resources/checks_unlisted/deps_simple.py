@@ -18,9 +18,10 @@ class Test0(rfm.RunOnlyRegressionTest):
         self.sanity_patterns = sn.assert_found(self.name, self.stdout)
 
 
-@rfm.parameterized_test(*([kind] for kind in ['default', 'always',
+@rfm.parameterized_test(*([kind] for kind in ['default', 'fully',
                                               'part_equal', 'part_env_equal',
-                                              'custom', 'any', 'all', 'never']))
+                                              'custom', 'any', 'all',
+                                              'edgeless']))
 class Test1(rfm.RunOnlyRegressionTest):
     def __init__(self, kind):
         def custom_deps(src, dst):
@@ -32,7 +33,7 @@ class Test1(rfm.RunOnlyRegressionTest):
             )
 
         kindspec = {
-            'always': udeps.always,
+            'fully': udeps.fully,
             'part_equal': udeps.part_equal,
             'part_env_equal': udeps.part_env_equal,
             'any': udeps.any(udeps.source(udeps.part_is('p0')),
@@ -40,7 +41,7 @@ class Test1(rfm.RunOnlyRegressionTest):
             'all': udeps.all(udeps.part_is('p0'),
                              udeps.dest(udeps.env_is('e0'))),
             'custom': custom_deps,
-            'never': (lambda s, d: False),
+            'edgeless': (lambda s, d: False),
         }
         self.valid_systems = ['sys0:p0', 'sys0:p1']
         self.valid_prog_environs = ['e0', 'e1']

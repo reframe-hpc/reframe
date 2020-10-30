@@ -7,7 +7,7 @@ import builtins
 
 
 # Dependency `when' functions
-def always(src, dst):
+def fully(src, dst):
     return True
 
 

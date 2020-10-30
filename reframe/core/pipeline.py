@@ -1587,9 +1587,9 @@ class RegressionTest(metaclass=RegressionTestMeta):
         if args or kwargs:
             raise ValueError('invalid arguments passed')
 
-        user_deprecation_warning("the old syntax of dependencies is "
-                                 "deprecated, please pass a callable to "
-                                 "the `how' argument")
+        user_deprecation_warning("passing 'how' as an integer or passing "
+                                 "'subdeps' is deprecated; please have a "
+                                 "look at the user documentation")
 
         if (subdeps is not None and
             not isinstance(subdeps, typ.Dict[str, typ.List[str]])):
@@ -1603,6 +1603,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
             p0, e0 = src
             p1, e1 = dst
+
             # DEPEND_EXACT allows dependencies inside the same partition
             return ((p0 == p1) and (e0 in subdeps) and (e1 in subdeps[e0]))
 
@@ -1624,8 +1625,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
         :arg target: The name of the target test.
         :arg how: A callable that defines the mapping of the dependencies.
             The function the user passes should take as argument the source
-            and destination testcase. When case B depends on case `A' we
-            consider as source case `A' and destination case `B'. In the
+            and destination testcase. When case B depends on case 'A' we
+            consider as source case 'A' and destination case 'B'. In the
             following example, each case will depend on every case from T0,
             that belongs in the same partition.
 
@@ -1648,7 +1649,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         .. versionchanged:: 3.3
            Dependencies between cases from different partitions are now allowed
-           and the arguments `how' and `subdeps' are  deprecated. You should
+           and the arguments 'how' and 'subdeps' are  deprecated. You should
            pass a callable to the `how' argument.
 
         '''

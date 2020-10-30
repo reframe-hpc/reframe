@@ -115,7 +115,7 @@ def test_eq_hash(loader, exec_ctx):
     assert hash(case1) != hash(case0)
 
 
-def test_dependecies_when_functions():
+def test_dependecies_how_functions():
     t0_cases = [(p, e)
                 for p in ['p0', 'p1']
                 for e in ['e0', 'e1', 'e2']]
@@ -123,11 +123,11 @@ def test_dependecies_when_functions():
                 for p in ['p0', 'p1', 'p2']
                 for e in ['e0', 'e1']]
 
-    when = udeps.always
+    how = udeps.fully
     deps = {(t0, t1)
             for t0 in t0_cases
             for t1 in t1_cases
-            if when(t0, t1)}
+            if how(t0, t1)}
 
     assert deps == {
         (t0, t1)
@@ -136,11 +136,11 @@ def test_dependecies_when_functions():
     }
     assert len(deps) == 36
 
-    when = udeps.part_equal
+    how = udeps.part_equal
     deps = {(t0, t1)
             for t0 in t0_cases
             for t1 in t1_cases
-            if when(t0, t1)}
+            if how(t0, t1)}
     assert deps == {
         (t0, t1)
         for t0 in t0_cases
@@ -149,11 +149,11 @@ def test_dependecies_when_functions():
     }
     assert len(deps) == 12
 
-    when = udeps.env_equal
+    how = udeps.env_equal
     deps = {(t0, t1)
             for t0 in t0_cases
             for t1 in t1_cases
-            if when(t0, t1)}
+            if how(t0, t1)}
     assert deps == {
         (t0, t1) for t0 in t0_cases
         for t1 in t1_cases
@@ -161,11 +161,11 @@ def test_dependecies_when_functions():
     }
     assert len(deps) == 12
 
-    when = udeps.part_env_equal
+    how = udeps.part_env_equal
     deps = {(t0, t1)
             for t0 in t0_cases
             for t1 in t1_cases
-            if when(t0, t1)}
+            if how(t0, t1)}
     assert deps == {
         (t0, t1)
         for t0 in t0_cases
@@ -174,10 +174,10 @@ def test_dependecies_when_functions():
     }
     assert len(deps) == 4
 
-    when = udeps.part_is('p0')
+    how = udeps.part_is('p0')
     deps = {(t0, t1) for t0 in t0_cases
             for t1 in t1_cases
-            if when(t0, t1)}
+            if how(t0, t1)}
     assert deps == {
         (t0, t1)
         for t0 in t0_cases
@@ -186,11 +186,11 @@ def test_dependecies_when_functions():
     }
     assert len(deps) == 6
 
-    when = udeps.source(udeps.part_is('p0'))
+    how = udeps.source(udeps.part_is('p0'))
     deps = {(t0, t1)
             for t0 in t0_cases
             for t1 in t1_cases
-            if when(t0, t1)}
+            if how(t0, t1)}
     assert deps == {
         (t0, t1)
         for t0 in t0_cases
@@ -199,11 +199,11 @@ def test_dependecies_when_functions():
     }
     assert len(deps) == 18
 
-    when = udeps.dest(udeps.part_is('p0'))
+    how = udeps.dest(udeps.part_is('p0'))
     deps = {(t0, t1)
             for t0 in t0_cases
             for t1 in t1_cases
-            if when(t0, t1)}
+            if how(t0, t1)}
     assert deps == {
         (t0, t1)
         for t0 in t0_cases
@@ -212,11 +212,11 @@ def test_dependecies_when_functions():
     }
     assert len(deps) == 12
 
-    when = udeps.env_is('e0')
+    how = udeps.env_is('e0')
     deps = {(t0, t1)
             for t0 in t0_cases
             for t1 in t1_cases
-            if when(t0, t1)}
+            if how(t0, t1)}
     assert deps == {
         (t0, t1)
         for t0 in t0_cases
@@ -225,11 +225,11 @@ def test_dependecies_when_functions():
     }
     assert len(deps) == 6
 
-    when = udeps.source(udeps.env_is('e0'))
+    how = udeps.source(udeps.env_is('e0'))
     deps = {(t0, t1)
             for t0 in t0_cases
             for t1 in t1_cases
-            if when(t0, t1)}
+            if how(t0, t1)}
     assert deps == {
         (t0, t1)
         for t0 in t0_cases
@@ -238,11 +238,11 @@ def test_dependecies_when_functions():
     }
     assert len(deps) == 12
 
-    when = udeps.dest(udeps.env_is('e0'))
+    how = udeps.dest(udeps.env_is('e0'))
     deps = {(t0, t1)
             for t0 in t0_cases
             for t1 in t1_cases
-            if when(t0, t1)}
+            if how(t0, t1)}
     assert deps == {
         (t0, t1)
         for t0 in t0_cases
@@ -251,12 +251,12 @@ def test_dependecies_when_functions():
     }
     assert len(deps) == 18
 
-    when = udeps.any(udeps.source(udeps.part_is('p0')),
+    how = udeps.any(udeps.source(udeps.part_is('p0')),
                      udeps.dest(udeps.env_is('e1')))
     deps = {(t0, t1)
             for t0 in t0_cases
             for t1 in t1_cases
-            if when(t0, t1)}
+            if how(t0, t1)}
     assert deps == {
         (t0, t1)
         for t0 in t0_cases
@@ -265,12 +265,12 @@ def test_dependecies_when_functions():
     }
     assert len(deps) == 27
 
-    when = udeps.all(udeps.source(udeps.part_is('p0')),
+    how = udeps.all(udeps.source(udeps.part_is('p0')),
                      udeps.dest(udeps.env_is('e1')))
     deps = {(t0, t1)
             for t0 in t0_cases
             for t1 in t1_cases
-            if when(t0, t1)}
+            if how(t0, t1)}
     assert deps == {
         (t0, t1)
         for t0 in t0_cases
@@ -318,14 +318,13 @@ def test_build_deps_deprecated_syntax(loader, exec_ctx):
 
     with pytest.warns(ReframeDeprecationWarning):
         t1 = Test1_deprecated('exact')
-        when = t1._userdeps[0][1]
+        how = t1._userdeps[0][1]
         t0_cases = [(p, e) for p in ['p0', 'p1']
                     for e in ['e0', 'e1']]
         t1_cases = [(p, e) for p in ['p0', 'p1']
                     for e in ['e0', 'e1']]
         deps = {(t0, t1) for t0 in t0_cases
-                for t1 in t1_cases
-                if when(t0, t1)}
+                for t1 in t1_cases if how(t0, t1)}
         assert deps == {
             (t0, t1) for t0 in t0_cases
             for t1 in t1_cases
@@ -340,7 +339,7 @@ def test_build_deps(loader, exec_ctx):
     cases = executors.generate_testcases(checks)
 
     # Test calling getdep() before having built the graph
-    t = find_check('Test1_always', checks)
+    t = find_check('Test1_fully', checks)
     with pytest.raises(DependencyError):
         t.getdep('Test0', 'e0', 'p0')
 
@@ -349,13 +348,13 @@ def test_build_deps(loader, exec_ctx):
     dependencies.validate_deps(deps)
 
     # Check dependencies for fully connected graph
-    assert num_deps(deps, 'Test1_always') == 16
+    assert num_deps(deps, 'Test1_fully') == 16
     for p0 in ['sys0:p0', 'sys0:p1']:
         for p1 in ['sys0:p0', 'sys0:p1']:
             for e0 in ['e0', 'e1']:
                 for e1 in ['e0', 'e1']:
                     assert has_edge(deps,
-                                    Node('Test1_always', p0, e0),
+                                    Node('Test1_fully', p0, e0),
                                     Node('Test0', p1, e1))
 
     # Check dependencies with same partition
@@ -405,49 +404,49 @@ def test_build_deps(loader, exec_ctx):
                     Node('Test1_custom', 'sys0:p0', 'e0'),
                     Node('Test0', 'sys0:p1', 'e1'))
 
-    # Check dependencies of Test1_never
-    assert num_deps(deps, 'Test1_never') == 0
+    # Check dependencies of Test1_edgeless
+    assert num_deps(deps, 'Test1_edgeless') == 0
 
     # Check in-degree of Test0
 
-    # 4 from Test1_always,
+    # 4 from Test1_fully,
     # 2 from Test1_part_equal,
     # 1 from Test1_part_env_equal,
     # 2 from Test1_any,
     # 2 from Test1_all,
     # 0 from Test1_custom,
     # 1 from Test1_default
-    # 0 from Test1_never
+    # 0 from Test1_edgeless
     assert in_degree(deps, Node('Test0', 'sys0:p0', 'e0')) == 12
 
-    # 4 from Test1_always,
+    # 4 from Test1_fully,
     # 2 from Test1_part_equal,
     # 1 from Test1_part_env_equal,
     # 2 from Test1_any,
     # 0 from Test1_all,
     # 0 from Test1_custom,
     # 1 from Test1_default
-    # 0 from Test1_never
+    # 0 from Test1_edgeless
     assert in_degree(deps, Node('Test0', 'sys0:p1', 'e0')) == 10
 
-    # 4 from Test1_always,
+    # 4 from Test1_fully,
     # 2 from Test1_part_equal,
     # 1 from Test1_part_env_equal,
     # 4 from Test1_any,
     # 0 from Test1_all,
     # 0 from Test1_custom,
     # 1 from Test1_default
-    # 0 from Test1_never
+    # 0 from Test1_edgeless
     assert in_degree(deps, Node('Test0', 'sys0:p0', 'e1')) == 12
 
-    # 4 from Test1_always,
+    # 4 from Test1_fully,
     # 2 from Test1_part_equal,
     # 1 from Test1_part_env_equal,
     # 4 from Test1_any,
     # 0 from Test1_all,
     # 1 from Test1_custom,
     # 1 from Test1_default
-    # 0 from Test1_never
+    # 0 from Test1_edgeless
     assert in_degree(deps, Node('Test0', 'sys0:p1', 'e1')) == 13
 
     # Pick a check to test getdep()
