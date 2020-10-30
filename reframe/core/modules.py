@@ -13,7 +13,7 @@ import re
 from collections import OrderedDict
 
 import reframe.core.fields as fields
-import reframe.utility.os_ext as os_ext
+import reframe.utility.osext as osext
 import reframe.utility.typecheck as types
 from reframe.core.exceptions import (ConfigError, EnvironError,
                                      SpawnedProcessError)
@@ -151,6 +151,14 @@ class ModulesSystem:
     @property
     def backend(self):
         return(self._backend)
+
+    def available_modules(self, substr=None):
+        '''Return a list of available modules that contain ``substr`` in their
+        name.
+
+        :rtype: List[str]
+        '''
+        return [str(m) for m in self._backend.available_modules(substr or '')]
 
     def loaded_modules(self):
         '''Return a list of loaded modules.
@@ -326,6 +334,13 @@ class ModulesSystemImpl(abc.ABC):
     '''Abstract base class for module systems.'''
 
     @abc.abstractmethod
+    def available_modules(self, substr):
+        '''Return a list of available modules, whose name contains ``substr``.
+
+        This method returns a list of Module instances.
+        '''
+
+    @abc.abstractmethod
     def loaded_modules(self):
         '''Return a list of loaded modules.
 
@@ -403,10 +418,10 @@ class TModImpl(ModulesSystemImpl):
     def __init__(self):
         # Try to figure out if we are indeed using the TCL version
         try:
-            completed = os_ext.run_command('modulecmd -V')
+            completed = osext.run_command('modulecmd -V')
         except OSError as e:
             raise ConfigError(
-                'could not find a sane TMod installation: %s' % e) from e
+                'could not find a sane TMod installation') from e
 
         version_match = re.search(r'^VERSION=(\S+)', completed.stdout,
                                   re.MULTILINE)
@@ -418,7 +433,7 @@ class TModImpl(ModulesSystemImpl):
 
         version = version_match.group(1)
         try:
-            ver_major, ver_minor, *_ = [int(v) for v in version.split('.')]
+            ver_major, ver_minor = [int(v) for v in version.split('.')[:2]]
         except ValueError:
             raise ConfigError(
                 'could not parse TMod version string: ' + version) from None
@@ -432,7 +447,7 @@ class TModImpl(ModulesSystemImpl):
         self._command = 'modulecmd python'
         try:
             # Try the Python bindings now
-            completed = os_ext.run_command(self._command)
+            completed = osext.run_command(self._command)
         except OSError as e:
             raise ConfigError(
                 'could not get the Python bindings for TMod: ' % e) from e
@@ -450,7 +465,7 @@ class TModImpl(ModulesSystemImpl):
     def _run_module_command(self, *args, msg=None):
         command = ' '.join([self._command, *args])
         try:
-            completed = os_ext.run_command(command, check=True)
+            completed = osext.run_command(command, check=True)
         except SpawnedProcessError as e:
             raise EnvironError(msg) from e
 
@@ -469,6 +484,21 @@ class TModImpl(ModulesSystemImpl):
     def _exec_module_command(self, *args, msg=None):
         completed = self._run_module_command(*args, msg=msg)
         exec(completed.stdout)
+
+    def available_modules(self, substr):
+        completed = self._run_module_command(
+            'avail', '-t', substr, msg='could not retrieve available modules'
+        )
+        ret = []
+        for line in completed.stderr.split('\n'):
+            if not line or line[-1] == ':':
+                # Ignore empty lines and path entries
+                continue
+
+            module = re.sub(r'\(default\)', '', line)
+            ret.append(Module(module))
+
+        return ret
 
     def loaded_modules(self):
         try:
@@ -528,7 +558,7 @@ class TMod31Impl(TModImpl):
         try:
             modulecmd = os.getenv('MODULESHOME')
             modulecmd = os.path.join(modulecmd, 'modulecmd.tcl')
-            completed = os_ext.run_command(modulecmd)
+            completed = osext.run_command(modulecmd)
         except OSError as e:
             raise ConfigError(
                 'could not find a sane TMod31 installation: %s' % e) from e
@@ -542,7 +572,7 @@ class TMod31Impl(TModImpl):
 
         version = version_match.group(1)
         try:
-            ver_major, ver_minor, *_ = [int(v) for v in version.split('.')]
+            ver_major, ver_minor = [int(v) for v in version.split('.')[:2]]
         except ValueError:
             raise ConfigError(
                 'could not parse TMod31 version string: ' + version) from None
@@ -557,7 +587,7 @@ class TMod31Impl(TModImpl):
 
         try:
             # Try the Python bindings now
-            completed = os_ext.run_command(self._command)
+            completed = osext.run_command(self._command)
         except OSError as e:
             raise ConfigError(
                 'could not get the Python bindings for TMod31: ' % e) from e
@@ -594,7 +624,7 @@ class TMod4Impl(TModImpl):
     def __init__(self):
         self._command = 'modulecmd python'
         try:
-            completed = os_ext.run_command(self._command + ' -V', check=True)
+            completed = osext.run_command(self._command + ' -V', check=True)
         except OSError as e:
             raise ConfigError(
                 'could not find a sane TMod4 installation') from e
@@ -609,7 +639,7 @@ class TMod4Impl(TModImpl):
 
         version = version_match.group(1)
         try:
-            ver_major, ver_minor, *_ = [int(v) for v in version.split('.')]
+            ver_major, ver_minor = [int(v) for v in version.split('.')[:2]]
         except ValueError:
             raise ConfigError(
                 'could not parse TMod4 version string: ' + version) from None
@@ -626,7 +656,7 @@ class TMod4Impl(TModImpl):
 
     def _exec_module_command(self, *args, msg=None):
         command = ' '.join([self._command, *args])
-        completed = os_ext.run_command(command, check=True)
+        completed = osext.run_command(command, check=True)
         namespace = {}
         exec(completed.stdout, {}, namespace)
         if not namespace['_mlstatus']:
@@ -652,7 +682,7 @@ class LModImpl(TModImpl):
                               'environment variable LMOD_CMD is not defined')
 
         try:
-            completed = os_ext.run_command('%s --version' % lmod_cmd)
+            completed = osext.run_command('%s --version' % lmod_cmd)
         except OSError as e:
             raise ConfigError(
                 'could not find a sane Lmod installation: %s' % e)
@@ -666,7 +696,7 @@ class LModImpl(TModImpl):
         self._command = '%s python ' % lmod_cmd
         try:
             # Try the Python bindings now
-            completed = os_ext.run_command(self._command)
+            completed = osext.run_command(self._command)
         except OSError as e:
             raise ConfigError(
                 'could not get the Python bindings for Lmod: ' % e)
@@ -680,6 +710,21 @@ class LModImpl(TModImpl):
 
     def _module_command_failed(self, completed):
         return completed.stdout.strip() == 'false'
+
+    def available_modules(self, substr):
+        completed = self._run_module_command(
+            '-t', 'avail', substr, msg='could not retrieve available modules'
+        )
+        ret = []
+        for line in completed.stderr.split('\n'):
+            if not line or line[-1] == ':':
+                # Ignore empty lines and path entries
+                continue
+
+            module = re.sub(r'\(\S+\)', '', line)
+            ret.append(Module(module))
+
+        return ret
 
     def conflicted_modules(self, module):
         completed = self._run_module_command(
@@ -709,6 +754,9 @@ class LModImpl(TModImpl):
 
 class NoModImpl(ModulesSystemImpl):
     '''A convenience class that implements a no-op a modules system.'''
+
+    def available_modules(self, substr):
+        return []
 
     def loaded_modules(self):
         return []

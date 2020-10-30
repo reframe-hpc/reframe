@@ -42,7 +42,7 @@ class NvprofCheck(rfm.RegressionTest):
         self.executable_opts = [self.target_executable]
         # Reminder: NVreg_RestrictProfilingToAdminUsers=0 (RFC-16) needed since
         # cuda/10.1
-        self.post_run = ['cat /etc/modprobe.d/nvidia.conf']
+        self.postrun_cmds = ['cat /etc/modprobe.d/nvidia.conf']
         self.sanity_patterns = sn.all([
             sn.assert_found('Profiling application: %s' %
                             self.target_executable, self.stderr),

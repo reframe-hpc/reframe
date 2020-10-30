@@ -1,6 +1,6 @@
-========================
-ReFrame Programming APIs
-========================
+====================
+Regression Tests API
+====================
 
 This page provides a reference guide of the ReFrame API for writing regression tests covering all the relevant details.
 Internal data structures and APIs are covered only to the extent that this might be helpful to the final user of the framework.
@@ -13,6 +13,7 @@ Regression Test Base Classes
 .. automodule:: reframe.core.pipeline
    :members:
    :show-inheritance:
+
 
 
 Regression Test Class Decorators
@@ -119,6 +120,8 @@ It is up to the concrete build system implementations on how to use or not these
    :show-inheritance:
 
 
+.. _container-platforms:
+
 Container Platforms
 -------------------
 
@@ -128,3 +131,97 @@ Container Platforms
    :members:
    :exclude-members: ContainerPlatformField
    :show-inheritance:
+
+
+The :py:mod:`reframe` module
+----------------------------
+
+The :py:mod:`reframe` module offers direct access to the basic test classes, constants and decorators.
+
+
+.. py:class:: reframe.CompileOnlyRegressionTest
+
+   See :class:`reframe.core.pipeline.CompileOnlyRegressionTest`.
+
+
+.. py:class:: reframe.RegressionTest
+
+   See :class:`reframe.core.pipeline.RegressionTest`.
+
+
+.. py:class:: reframe.RunOnlyRegressionTest
+
+   See :class:`reframe.core.pipeline.RunOnlyRegressionTest`.
+
+.. py:attribute:: reframe.DEPEND_BY_ENV
+
+   See :attr:`reframe.core.pipeline.DEPEND_BY_ENV`.
+
+
+.. py:attribute:: reframe.DEPEND_EXACT
+
+   See :attr:`reframe.core.pipeline.DEPEND_EXACT`.
+
+
+.. py:attribute:: reframe.DEPEND_FULLY
+
+   See :attr:`reframe.core.pipeline.DEPEND_FULLY`.
+
+
+.. py:decorator:: reframe.parameterized_test
+
+   See :func:`@reframe.core.decorators.parameterized_test <reframe.core.decorators.parameterized_test>`.
+
+
+.. py:decorator:: reframe.require_deps
+
+   See :func:`@reframe.core.decorators.require_deps <reframe.core.decorators.require_deps>`.
+
+
+.. py:decorator:: reframe.required_version
+
+   See :func:`@reframe.core.decorators.required_version <reframe.core.decorators.required_version>`.
+
+
+.. py:decorator:: reframe.run_after
+
+   See :func:`@reframe.core.decorators.run_after <reframe.core.decorators.run_after>`.
+
+
+.. py:decorator:: reframe.run_before
+
+   See :func:`@reframe.core.decorators.run_before <reframe.core.decorators.run_before>`.
+
+
+.. py:decorator:: reframe.simple_test
+
+   See :func:`@reframe.core.decorators.simple_test <reframe.core.decorators.simple_test>`.
+
+
+
+.. _scheduler_options:
+
+Mapping of Test Attributes to Job Scheduler Backends
+----------------------------------------------------
+
+.. table::
+   :align: left
+
+   ============================ ============================= ========================================================================================== ==================
+   Test attribute               Slurm option                  Torque option                                                                              PBS option
+   ============================ ============================= ========================================================================================== ==================
+   :attr:`num_tasks`            :obj:`--ntasks`:sup:`1`       :obj:`-l nodes={num_tasks//num_tasks_per_node}:ppn={num_tasks_per_node*num_cpus_per_task}` :obj:`-l select={num_tasks//num_tasks_per_node}:mpiprocs={num_tasks_per_node}:ncpus={num_tasks_per_node*num_cpus_per_task}`
+   :attr:`num_tasks_per_node`   :obj:`--ntasks-per-node`      see :attr:`num_tasks`                                                                      see :attr:`num_tasks`
+   :attr:`num_tasks_per_core`   :obj:`--ntasks-per-core`      n/a                                                                                        n/a
+   :attr:`num_tasks_per_socket` :obj:`--ntasks-per-socket`    n/a                                                                                        n/a
+   :attr:`num_cpus_per_task`    :obj:`--cpus-per-task`        see :attr:`num_tasks`                                                                      see :attr:`num_tasks`
+   :attr:`time_limit`           :obj:`--time=hh:mm:ss`        :obj:`-l walltime=hh:mm:ss`                                                                :obj:`-l walltime=hh:mm::ss`
+   :attr:`exclusive_access`     :obj:`--exclusive`            n/a                                                                                        n/a
+   :attr:`use_smt`              :obj:`--hint=[no]multithread` n/a                                                                                        n/a
+   ============================ ============================= ========================================================================================== ==================
+
+
+If any of the attributes is set to :class:`None` it will not be emitted at all in the job script.
+In cases that the attribute is required, it will be set to ``1``.
+
+:sup:`1` The :obj:`--nodes` option may also be emitted if the :js:attr:`use_nodes_option <config_reference.html#schedulers-.use_nodes_option>` scheduler configuration parameter is set.

@@ -14,8 +14,8 @@ The syntax we use in the following to describe the different configuration objec
 
 .. |jq| replace:: :attr:`jq(1)`
 .. _jq: https://stedolan.github.io/jq/manual/
-.. |schemas/config.json| replace:: ``schemas/config.json``
-.. _schemas/config.json: https://github.com/eth-cscs/reframe/blob/master/schemas/config.json
+.. |schemas/config.json| replace:: ``reframe/schemas/config.json``
+.. _schemas/config.json: https://github.com/eth-cscs/reframe/blob/master/reframe/schemas/config.json
 .. |access| replace:: :attr:`access`
 .. _access: #.systems[].partitions[].access
 .. |basedir| replace:: :attr:`basedir`
@@ -246,6 +246,9 @@ System Partition Configuration
 				    'environs': ['builtin'],
 				}
 
+   - ``upcrun``: Parallel programs will be launched using the `UPC <https://upc.lbl.gov/>`__ ``upcrun`` command.
+   - ``upcxx-run``: Parallel programs will be launched using the `UPC++ <https://bitbucket.org/berkeleylab/upcxx/wiki/Home>`__ ``upcxx-run`` command.
+
 .. js:attribute:: .systems[].partitions[].access
 
    :required: No
@@ -295,7 +298,7 @@ System Partition Configuration
 .. js:attribute:: .systems[].partitions[].max_jobs
 
    :required: No
-   :default: ``1``
+   :default: ``8``
 
    The maximum number of concurrent regression tests that may be active (i.e., not completed) on this partition.
    This option is relevant only when ReFrame executes with the `asynchronous execution policy <pipeline.html#execution-policies>`__.
@@ -308,6 +311,9 @@ System Partition Configuration
 
    A list of job scheduler `resource specification <config_reference.html#custom-job-scheduler-resources>`__ objects.
 
+
+
+.. _container-platform-configuration:
 
 
 Container Platform Configuration
@@ -723,9 +729,13 @@ The additional properties for the ``file`` handler are the following:
 
 .. object:: .logging[].handlers_perflog[].name
 
-   :required: Yes
+   :required: No
 
    The name of the file where this handler will write log records.
+   If not specified, ReFrame will create a log file prefixed with ``rfm-`` in the system's temporary directory.
+
+   .. versionchanged:: 3.3
+      The ``name`` parameter is no more required and the default log file resides in the system's temporary directory.
 
 
 .. js:attribute:: .logging[].handlers[].append
@@ -957,6 +967,25 @@ Common scheduler options
    A list of systems or system/partitions combinations that this scheduler configuration is valid for.
    For a detailed description of this property, you may refer `here <#.environments[].target_systems>`__.
 
+.. js:attribute:: .schedulers[].use_nodes_option
+
+   :required: No
+   :default: ``false``
+
+   Always emit the ``--nodes`` Slurm option in the preamble of the job script.
+   This option is relevant to Slurm backends only.
+
+
+.. js:attribute:: .schedulers[].ignore_reqnodenotavail
+
+   :required: No
+   :default: ``false``
+
+   This option is relevant to the Slurm backends only.
+
+   If a job associated to a test is in pending state with the Slurm reason ``ReqNodeNotAvail`` and a list of unavailable nodes is also specified, ReFrame will check the status of the nodes and, if all of them are indeed down, it will cancel the job.
+   Sometimes, however, when Slurm's backfill algorithm takes too long to compute, Slurm will set the pending reason to ``ReqNodeNotAvail`` and mark all system nodes as unavailable, causing ReFrame to kill the job.
+   In such cases, you may set this parameter to ``true`` to avoid this.
 
 
 Execution Mode Configuration
@@ -1015,6 +1044,16 @@ General Configuration
 
 
 
+.. js:attribute:: .general[].clean_stagedir
+
+   :required: No
+   :default: ``true``
+
+   Clean stage directory of tests before populating it.
+
+   .. versionadded:: 3.1
+
+
 .. js:attribute:: .general[].colorize
 
    :required: No
@@ -1030,6 +1069,14 @@ General Configuration
    :default: ``false``
 
    Ignore test name conflicts when loading tests.
+
+
+.. js:attribute:: .general[].trap_job_errors
+
+   :required: No
+   :default: ``false``
+
+   Trap command errors in the generated job scripts and let them exit immediately.
 
 
 .. js:attribute:: .general[].keep_stage_files
@@ -1076,6 +1123,18 @@ General Configuration
    Purge any loaded environment modules before running any tests.
 
 
+.. js:attribute:: .general[].report_file
+
+   :required: No
+   :default: ``"${HOME}/.reframe/reports/run-report.json"``
+
+   The file where ReFrame will store its report.
+
+   .. versionadded:: 3.1
+   .. versionchanged:: 3.2
+      Default value has changed to avoid generating a report file per session.
+
+
 .. js:attribute:: .general[].save_log_files
 
    :required: No
@@ -1111,6 +1170,16 @@ General Configuration
    A list of environment modules to unload before executing any test.
    If specified using an the environment variable, a space separated list of modules is expected.
    If specified from the command line, multiple modules can be passed by passing the command line option multiple times.
+
+
+.. js:attribute:: .general[].use_login_shell
+
+   :required: No
+   :default: ``false``
+
+   Use a login shell for the generated job scripts.
+   This option will cause ReFrame to emit ``-l`` in the shebang of shell scripts.
+   This option, if set to ``true``, may cause ReFrame to fail, if the shell changes permanently to a different directory during its start up.
 
 
 .. js:attribute:: .general[].user_modules

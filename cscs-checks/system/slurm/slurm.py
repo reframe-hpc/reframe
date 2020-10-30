@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import reframe as rfm
+import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 
 
@@ -21,6 +22,7 @@ class SlurmSimpleBaseCheck(rfm.RunOnlyRegressionTest):
                      'production', 'single-node'}
         self.num_tasks_per_node = 1
         if self.current_system.name in ['arolla', 'kesch', 'tsa']:
+            self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-pgi']
             self.exclusive_access = True
 
         self.maintainers = ['RS', 'VH']
@@ -32,14 +34,12 @@ class SlurmCompiledBaseCheck(rfm.RegressionTest):
     def __init__(self):
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc',
-                              'kesch:cn', 'kesch:pn',
-                              'arolla:cn', 'arolla:pn',
-                              'tsa:cn', 'tsa:pn']
+                              'kesch:cn', 'kesch:pn']
         self.valid_prog_environs = ['PrgEnv-cray']
         self.tags = {'slurm', 'maintenance', 'ops',
                      'production', 'single-node'}
         self.num_tasks_per_node = 1
-        if self.current_system.name in ['arolla', 'kesch', 'tsa']:
+        if self.current_system.name in ['kesch']:
             self.exclusive_access = True
 
         self.maintainers = ['RS', 'VH']
@@ -96,11 +96,12 @@ class RequiredConstraintCheck(SlurmSimpleBaseCheck):
         super().__init__()
         self.valid_systems = ['daint:login', 'dom:login']
         self.executable = 'srun'
-        self.executable_opts = ['hostname']
+        self.executable_opts = ['-A', osext.osgroup(), 'hostname']
         self.sanity_patterns = sn.assert_found(
             r'error: You have to specify, at least, what sort of node you '
             r'need: -C gpu for GPU enabled nodes, or -C mc for multicore '
-            r'nodes.', self.stderr)
+            r'nodes.|ERROR: you must specify -C with one of the following: '
+            r'mc,gpu,storage', self.stderr)
 
 
 @rfm.simple_test
@@ -175,11 +176,8 @@ class ConstraintRequestCabinetGrouping(SlurmSimpleBaseCheck):
     @rfm.run_before('run')
     def set_slurm_constraint(self):
         cabinet = self.cabinets.get(self.current_partition.fullname)
-        constraint = f'--constraint={self.current_partition.name}'
         if cabinet:
-            constraint += f'&{cabinet}'
-
-        self.job.options += [constraint]
+            self.job.options += [f'--constraint={cabinet}']
 
 
 @rfm.simple_test

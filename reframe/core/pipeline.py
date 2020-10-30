@@ -7,9 +7,10 @@
 # Basic functionality for regression tests
 #
 
-__all__ = ['final', 'RegressionTest',
-           'RunOnlyRegressionTest', 'CompileOnlyRegressionTest',
-           'DEPEND_EXACT', 'DEPEND_BY_ENV', 'DEPEND_FULLY']
+__all__ = [
+    'CompileOnlyRegressionTest', 'RegressionTest', 'RunOnlyRegressionTest',
+    'DEPEND_BY_ENV', 'DEPEND_EXACT', 'DEPEND_FULLY', 'final'
+]
 
 
 import functools
@@ -24,7 +25,7 @@ import reframe.core.fields as fields
 import reframe.core.logging as logging
 import reframe.core.runtime as rt
 import reframe.utility as util
-import reframe.utility.os_ext as os_ext
+import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
 from reframe.core.backends import (getlauncher, getscheduler)
@@ -36,6 +37,7 @@ from reframe.core.exceptions import (BuildError, DependencyError,
                                      PerformanceError)
 from reframe.core.meta import RegressionTestMeta
 from reframe.core.schedulers import Job
+from reframe.core.warnings import user_deprecation_warning
 
 
 # Dependency kinds
@@ -45,7 +47,7 @@ from reframe.core.schedulers import Job
 #: dependencies will be explicitly specified by the user.
 #:
 #:  This constant is directly available under the :mod:`reframe` module.
-DEPEND_EXACT  = 1
+DEPEND_EXACT = 1
 
 #: Constant to be passed as the ``how`` argument of the
 #: :func:`RegressionTest.depends_on` method. It denotes that the test cases of
@@ -60,7 +62,7 @@ DEPEND_BY_ENV = 2
 #: this test depends on all the test cases of the target test.
 #:
 #:  This constant is directly available under the :mod:`reframe` module.
-DEPEND_FULLY  = 3
+DEPEND_FULLY = 3
 
 
 def _run_hooks(name=None):
@@ -75,8 +77,12 @@ def _run_hooks(name=None):
                 hook_name = 'xxx'
 
             func_names = set()
-            ret = []
+            disabled_hooks = set()
+            func_list = []
             for cls in type(obj).mro():
+                if hasattr(cls, '_rfm_disabled_hooks'):
+                    disabled_hooks |= cls._rfm_disabled_hooks
+
                 try:
                     funcs = cls._rfm_pipeline_hooks.get(hook_name, [])
                     if any(fn.__name__ in func_names for fn in funcs):
@@ -84,11 +90,13 @@ def _run_hooks(name=None):
                         continue
 
                     func_names |= {fn.__name__ for fn in funcs}
-                    ret += funcs
+                    func_list += funcs
                 except AttributeError:
                     pass
 
-            return ret
+            # Remove the disabled hooks before returning
+            return [fn for fn in func_list
+                    if fn.__name__ not in disabled_hooks]
 
         '''Run the hooks before and after func.'''
         @functools.wraps(func)
@@ -127,6 +135,16 @@ class RegressionTest(metaclass=RegressionTestMeta):
            Base constructor takes no arguments.
 
     '''
+
+    @classmethod
+    def disable_hook(cls, hook_name):
+        '''Disable pipeline hook by name.
+
+        :arg hook_name: The function name of the hook to be disabled.
+
+        :meta private:
+        '''
+        cls._rfm_disabled_hooks.add(hook_name)
 
     #: The name of the test.
     #:
@@ -214,6 +232,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:        :class:`None`.
     sourcesdir = fields.TypedField('sourcesdir', str, type(None))
 
+    #: .. versionadded:: 2.14
+    #:
     #: The build system to be used for this test.
     #: If not specified, the framework will try to figure it out automatically
     #: based on the value of :attr:`sourcepath`.
@@ -227,10 +247,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`str` or :class:`reframe.core.buildsystems.BuildSystem`.
     #: :default: :class:`None`.
-    #:
-    #: .. versionadded:: 2.14
     build_system = BuildSystemField('build_system', type(None))
 
+    #: .. versionadded:: 3.0
+    #:
     #: List of shell commands to be executed before compiling.
     #:
     #: These commands are emitted in the build script before the actual build
@@ -239,8 +259,18 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    prebuild_cmd = fields.TypedField('prebuild_cmd', typ.List[str])
+    prebuild_cmds = fields.TypedField('prebuild_cmds', typ.List[str])
 
+    #: .. deprecated:: 3.0
+    #:
+    #: Use :attr:`prebuild_cmds` instead.
+    prebuild_cmd = fields.DeprecatedField(
+        fields.TypedField('prebuild_cmds', typ.List[str]),
+        "'prebuild_cmd' is deprecated; please use 'prebuild_cmds' instead"
+    )
+
+    #: .. versionadded:: 3.0
+    #:
     #: List of shell commands to be executed after a successful compilation.
     #:
     #: These commands are emitted in the script after the actual build
@@ -249,7 +279,15 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    postbuild_cmd = fields.TypedField('postbuild_cmd', typ.List[str])
+    postbuild_cmds = fields.TypedField('postbuild_cmds', typ.List[str])
+
+    #: .. deprecated:: 3.0
+    #:
+    #: Use :attr:`postbuild_cmds` instead.
+    postbuild_cmd = fields.DeprecatedField(
+        fields.TypedField('postbuild_cmds', typ.List[str]),
+        "'postbuild_cmd' is deprecated; please use 'postbuild_cmds' instead"
+    )
 
     #: The name of the executable to be launched during the run phase.
     #:
@@ -263,6 +301,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: :default: ``[]``
     executable_opts = fields.TypedField('executable_opts', typ.List[str])
 
+    #: .. versionadded:: 2.20
+    #:
     #: The container platform to be used for launching this test.
     #:
     #: If this field is set, the test will run inside a container using the
@@ -283,11 +323,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: :type: :class:`str` or
     #:     :class:`reframe.core.containers.ContainerPlatform`.
     #: :default: :class:`None`.
-    #:
-    #: .. versionadded:: 2.20
     container_platform = ContainerPlatformField('container_platform',
                                                 type(None))
 
+    #: .. versionadded:: 3.0
+    #:
     #: List of shell commands to execute before launching this job.
     #:
     #: These commands do not execute in the context of ReFrame.
@@ -296,21 +336,34 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    #:
-    #: .. note::
-    #:    .. versionadded:: 2.10
-    pre_run = fields.TypedField('pre_run', typ.List[str])
+    prerun_cmds = fields.TypedField('prerun_cmds', typ.List[str])
 
+    #: .. deprecated:: 3.0
+    #:
+    #: Use :attr:`prerun_cmds` instead.
+    pre_run = fields.DeprecatedField(
+        fields.TypedField('prerun_cmds', typ.List[str]),
+        "'pre_run' is deprecated; please use 'prerun_cmds' instead"
+    )
+
+    #: .. versionadded:: 3.0
+    #:
     #: List of shell commands to execute after launching this job.
     #:
-    #: See :attr:`pre_run` for a more detailed description of the semantics.
+    #: See :attr:`prerun_cmds` for a more detailed description of the
+    #: semantics.
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
+    postrun_cmds = fields.TypedField('postrun_cmds', typ.List[str])
+
+    #: .. deprecated:: 3.0
     #:
-    #: .. note::
-    #:    .. versionadded:: 2.10
-    post_run = fields.TypedField('post_run', typ.List[str])
+    #: Use :attr:`postrun_cmds` instead.
+    post_run = fields.DeprecatedField(
+        fields.TypedField('postrun_cmds', typ.List[str]),
+        "'post_run' is deprecated; please use 'postrun_cmds' instead"
+    )
 
     #: List of files to be kept after the test finishes.
     #:
@@ -400,6 +453,9 @@ class RegressionTest(metaclass=RegressionTestMeta):
                                            int, type(None))
 
     #: Number of GPUs per node required by this test.
+    #: This attribute is translated internally to the ``_rfm_gpu`` resource.
+    #: For more information on test resources, have a look at the
+    #: :attr:`extra_resources` attribute.
     #:
     #: :type: integral
     #: :default: ``0``
@@ -440,15 +496,14 @@ class RegressionTest(metaclass=RegressionTestMeta):
     use_multithreading = fields.TypedField('use_multithreading',
                                            bool, type(None))
 
+    #: .. versionadded:: 3.0
+    #:
     #: The maximum time a job can be pending before starting running.
     #:
     #: Time duration is specified as of the :attr:`time_limit` attribute.
     #:
     #: :type: :class:`str` or :class:`datetime.timedelta`
     #: :default: :class:`None`
-    #:
-    #: .. versionadded:: 3.0
-    #:
     max_pending_time = fields.TimerField('max_pending_time', type(None))
 
     #: Specify whether this test needs exclusive access to nodes.
@@ -557,15 +612,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: Time limit for this test.
     #:
     #: Time limit is specified as a string in the form
-    #: ``<days>d<hours>h<minutes>m<seconds>s``.
+    #: ``<days>d<hours>h<minutes>m<seconds>s`` or as number of seconds.
     #: If set to :class:`None`, no time limit will be set.
     #: The default time limit of the system partition's scheduler will be used.
     #:
-    #: The value is internaly kept as a :class:`datetime.timedelta` object.
-    #: For example '2h30m' is represented as
-    #: ``datetime.timedelta(hours=2, minutes=30)``
-    #:
-    #: :type: :class:`str` or :class:`datetime.timedelta`
+    #: :type: :class:`str` or :class:`float` or :class:`int`
     #: :default: ``'10m'``
     #:
     #: .. note::
@@ -575,8 +626,15 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: .. warning::
     #:    .. versionchanged:: 3.0
     #:       The old syntax using a ``(h, m, s)`` tuple is deprecated.
+    #:
+    #:    .. versionchanged:: 3.2
+    #:       - The old syntax using a ``(h, m, s)`` tuple is dropped.
+    #:       - Support of `timedelta` objects is dropped.
+    #:       - Number values are now accepted.
     time_limit = fields.TimerField('time_limit', type(None))
 
+    #: .. versionadded:: 2.8
+    #:
     #: Extra resources for this test.
     #:
     #: This field is for specifying custom resources needed by this test. These
@@ -638,7 +696,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: :default: ``{}``
     #:
     #: .. note::
-    #:    .. versionadded:: 2.8
     #:    .. versionchanged:: 2.9
     #:       A new more powerful syntax was introduced
     #:       that allows also custom job script directive prefixes.
@@ -660,7 +717,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         try:
             prefix = cls._rfm_custom_prefix
         except AttributeError:
-            if os_ext.is_interactive():
+            if osext.is_interactive():
                 prefix = os.getcwd()
             else:
                 prefix = os.path.abspath(os.path.dirname(inspect.getfile(cls)))
@@ -684,12 +741,12 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self.valid_prog_environs = []
         self.valid_systems = []
         self.sourcepath = ''
-        self.prebuild_cmd = []
-        self.postbuild_cmd = []
+        self.prebuild_cmds = []
+        self.postbuild_cmds = []
         self.executable = os.path.join('.', self.name)
         self.executable_opts = []
-        self.pre_run = []
-        self.post_run = []
+        self.prerun_cmds = []
+        self.postrun_cmds = []
         self.keep_files = []
         self.readonly_files = []
         self.tags = set()
@@ -887,6 +944,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
         return self._job.stderr
 
     @property
+    def build_job(self):
+        return self._build_job
+
+    @property
     @sn.sanity_function
     def build_stdout(self):
         return self._build_job.stdout
@@ -908,11 +969,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
         partition and the current programming environment that the test is
         currently executing on.
 
+        .. versionadded:: 2.10
+
         :returns: a string with an informational message about this test
 
         .. note ::
-           .. versionadded:: 2.10
-
            When overriding this method, you should pay extra attention on how
            you use the :class:`RegressionTest`'s attributes, because this
            method may be called at any point of the test's lifetime.
@@ -981,14 +1042,14 @@ class RegressionTest(metaclass=RegressionTestMeta):
                        self._current_partition.scheduler.registered_name))
 
         if self.local:
-            scheduler_type = getscheduler('local')
-            launcher_type = getlauncher('local')
+            scheduler = getscheduler('local')()
+            launcher = getlauncher('local')()
         else:
-            scheduler_type = self._current_partition.scheduler
-            launcher_type = self._current_partition.launcher
+            scheduler = self._current_partition.scheduler
+            launcher = self._current_partition.launcher_type()
 
-        self._job = Job.create(scheduler_type(),
-                               launcher_type(),
+        self._job = Job.create(scheduler,
+                               launcher,
                                name='rfm_%s_job' % self.name,
                                workdir=self._stagedir,
                                max_pending_time=self.max_pending_time,
@@ -1025,22 +1086,22 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self._current_environ = environ
         self._setup_paths()
         self._setup_job(**job_opts)
-        if self.perf_patterns is not None:
-            self._setup_perf_logging()
 
     def _copy_to_stagedir(self, path):
         self.logger.debug('copying %s to stage directory (%s)' %
                           (path, self._stagedir))
         self.logger.debug('symlinking files: %s' % self.readonly_files)
         try:
-            os_ext.copytree_virtual(path, self._stagedir, self.readonly_files)
+            osext.copytree_virtual(
+                path, self._stagedir, self.readonly_files, dirs_exist_ok=True
+            )
         except (OSError, ValueError, TypeError) as e:
-            raise PipelineError('virtual copying of files failed') from e
+            raise PipelineError('copying of files failed') from e
 
     def _clone_to_stagedir(self, url):
         self.logger.debug('cloning URL %s to stage directory (%s)' %
                           (url, self._stagedir))
-        os_ext.git_clone(self.sourcesdir, self._stagedir)
+        osext.git_clone(self.sourcesdir, self._stagedir)
 
     @_run_hooks('pre_compile')
     @final
@@ -1075,7 +1136,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
                     "sourcesdir `%s', but it will be interpreted "
                     "as relative to it." % (self.sourcepath, self.sourcesdir))
 
-            if os_ext.is_url(self.sourcesdir):
+            if osext.is_url(self.sourcesdir):
                 self._clone_to_stagedir(self.sourcesdir)
             else:
                 self._copy_to_stagedir(os.path.join(self._prefix,
@@ -1083,7 +1144,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         # Verify the sourcepath and determine the sourcepath in the stagedir
         if (os.path.isabs(self.sourcepath) or
-            os.path.normpath(self.sourcepath).startswith('..')):
+                os.path.normpath(self.sourcepath).startswith('..')):
             raise PipelineError(
                 'self.sourcepath is an absolute path or does not point to a '
                 'subfolder or a file contained in self.sourcesdir: ' +
@@ -1118,9 +1179,9 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         # Prepare build job
         build_commands = [
-            *self.prebuild_cmd,
+            *self.prebuild_cmds,
             *self.build_system.emit_build_commands(self._current_environ),
-            *self.postbuild_cmd
+            *self.postbuild_cmds
         ]
         user_environ = env.Environment(type(self).__name__,
                                        self.modules, self.variables.items())
@@ -1131,10 +1192,13 @@ class RegressionTest(metaclass=RegressionTestMeta):
                                      launcher=getlauncher('local')(),
                                      name='rfm_%s_build' % self.name,
                                      workdir=self._stagedir)
-        with os_ext.change_dir(self._stagedir):
+        with osext.change_dir(self._stagedir):
             try:
-                self._build_job.prepare(build_commands, environs,
-                                        trap_errors=True)
+                self._build_job.prepare(
+                    build_commands, environs,
+                    login=rt.runtime().get_option('general/0/use_login_shell'),
+                    trap_errors=True
+                )
             except OSError as e:
                 raise PipelineError('failed to prepare build job') from e
 
@@ -1201,7 +1265,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
             self.executable_opts = []
             prepare_container = self.container_platform.emit_prepare_commands()
             if prepare_container:
-                self.pre_run += prepare_container
+                self.prerun_cmds += prepare_container
 
         self.job.num_tasks = self.num_tasks
         self.job.num_tasks_per_node = self.num_tasks_per_node
@@ -1212,7 +1276,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         exec_cmd = [self.job.launcher.run_command(self.job),
                     self.executable, *self.executable_opts]
-        commands = [*self.pre_run, ' '.join(exec_cmd), *self.post_run]
+        commands = [*self.prerun_cmds, ' '.join(exec_cmd), *self.postrun_cmds]
         user_environ = env.Environment(type(self).__name__,
                                        self.modules, self.variables.items())
         environs = [
@@ -1245,11 +1309,17 @@ class RegressionTest(metaclass=RegressionTestMeta):
                 self._current_partition.get_resource(r, **v))
 
         self._job.options = resources_opts + self._job.options
-        with os_ext.change_dir(self._stagedir):
+        with osext.change_dir(self._stagedir):
             try:
-                self._job.prepare(commands, environs)
+                self._job.prepare(
+                    commands, environs,
+                    login=rt.runtime().get_option('general/0/use_login_shell'),
+                    trap_errors=rt.runtime().get_option(
+                        'general/0/trap_job_errors'
+                    )
+                )
             except OSError as e:
-                raise PipelineError('failed to prepare job') from e
+                raise PipelineError('failed to prepare run job') from e
 
             self._job.submit()
 
@@ -1262,8 +1332,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
             self.num_tasks = self.job.num_tasks
 
     @final
-    def poll(self):
-        '''Poll the test's state.
+    def run_complete(self):
+        '''Check if the run phase has completed.
 
         :returns: :class:`True` if the associated job has finished,
             :class:`False` otherwise.
@@ -1273,12 +1343,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
         :raises reframe.core.exceptions.ReframeError: In case of errors.
 
         .. warning::
-
-           .. versionchanged:: 3.0
-              You may not override this method directly unless you are in
-              special test. See `here
-              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
-              more details.
+           You may not override this method directly unless you are in
+           special test. See `here
+           <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+           more details.
 
         '''
         if not self._job:
@@ -1286,24 +1354,43 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         return self._job.finished()
 
+    @final
+    def poll(self):
+        '''See :func:`run_complete`.
+
+        .. deprecated:: 3.2
+
+        '''
+        user_deprecation_warning('calling poll() is deprecated; '
+                                 'please use run_complete() instead')
+        return self.run_complete()
+
     @_run_hooks('post_run')
     @final
-    def wait(self):
-        '''Wait for this test to finish.
+    def run_wait(self):
+        '''Wait for the run phase of this test to finish.
 
         :raises reframe.core.exceptions.ReframeError: In case of errors.
 
         .. warning::
-
-           .. versionchanged:: 3.0
-              You may not override this method directly unless you are in
-              special test. See `here
-              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
-              more details.
+           You may not override this method directly unless you are in
+           special test. See `here
+           <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+           more details.
 
         '''
         self._job.wait()
         self.logger.debug('spawned job finished')
+
+    @final
+    def wait(self):
+        '''See :func:`run_wait`.
+
+        .. deprecated:: 3.2
+        '''
+        user_deprecation_warning('calling wait() is deprecated; '
+                                 'please use run_wait() instead')
+        self.run_wait()
 
     @_run_hooks()
     @final
@@ -1334,10 +1421,19 @@ class RegressionTest(metaclass=RegressionTestMeta):
               more details.
 
         '''
-        if self.sanity_patterns is None:
+        if rt.runtime().get_option('general/0/trap_job_errors'):
+            sanity_patterns = [
+                sn.assert_eq(self.job.exitcode, 0,
+                             msg='job exited with exit code {0}')
+            ]
+            if self.sanity_patterns is not None:
+                sanity_patterns.append(self.sanity_patterns)
+
+            self.sanity_patterns = sn.all(sanity_patterns)
+        elif self.sanity_patterns is None:
             raise SanityError('sanity_patterns not set')
 
-        with os_ext.change_dir(self._stagedir):
+        with osext.change_dir(self._stagedir):
             success = sn.evaluate(self.sanity_patterns)
             if not success:
                 raise SanityError()
@@ -1361,7 +1457,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
         if self.perf_patterns is None:
             return
 
-        with os_ext.change_dir(self._stagedir):
+        self._setup_perf_logging()
+        with osext.change_dir(self._stagedir):
             # Check if default reference perf values are provided and
             # store all the variables tested in the performance check
             has_default = False
@@ -1385,10 +1482,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
                 for var in variables:
                     name, unit = var
-                    ref_tuple = (0, None, None)
-                    if unit:
-                        ref_tuple += (unit,)
-
+                    ref_tuple = (0, None, None, unit)
                     self.reference.update({'*': {name: ref_tuple}})
 
             # We first evaluate and log all performance values and then we
@@ -1481,7 +1575,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         if remove_files:
             self.logger.debug('removing stage directory')
-            os_ext.rmtree(self._stagedir)
+            osext.rmtree(self._stagedir)
 
     # Dependency API
 
@@ -1526,7 +1620,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
             raise TypeError("how argument must be of type: `int'")
 
         if (subdeps is not None and
-            not isinstance(subdeps, typ.Dict[str, typ.List[str]])):
+                not isinstance(subdeps, typ.Dict[str, typ.List[str]])):
             raise TypeError("subdeps argument must be of type "
                             "`Dict[str, List[str]]' or `None'")
 
@@ -1597,7 +1691,7 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
         rest of execution is delegated to the :func:`RegressionTest.run()`.
         '''
         if self.sourcesdir:
-            if os_ext.is_url(self.sourcesdir):
+            if osext.is_url(self.sourcesdir):
                 self._clone_to_stagedir(self.sourcesdir)
             else:
                 self._copy_to_stagedir(os.path.join(self._prefix,
@@ -1651,7 +1745,7 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
         Implemented as no-op.
         '''
 
-    def wait(self):
+    def run_wait(self):
         '''Wait for this test to finish.
 
         Implemented as no-op

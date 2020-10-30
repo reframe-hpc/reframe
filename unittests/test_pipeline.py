@@ -10,7 +10,7 @@ import re
 
 import reframe as rfm
 import reframe.core.runtime as rt
-import reframe.utility.os_ext as os_ext
+import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 import unittests.fixtures as fixtures
 from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
@@ -25,7 +25,7 @@ def _run(test, partition, prgenv):
     test.compile()
     test.compile_wait()
     test.run()
-    test.wait()
+    test.run_wait()
     test.check_sanity()
     test.check_performance()
     test.cleanup(remove_files=True)
@@ -108,21 +108,6 @@ def remote_exec_ctx(user_system):
 
 
 @pytest.fixture
-def remote_exec_ctx(user_system):
-    partition = fixtures.partition_by_scheduler()
-    if partition is None:
-        pytest.skip('job submission not supported')
-
-    try:
-        environ = partition.environs[0]
-    except IndexError:
-        pytest.skip('no environments configured for partition: %s' %
-                    partition.fullname)
-
-    yield partition, environ
-
-
-@pytest.fixture
 def container_remote_exec_ctx(remote_exec_ctx):
     def _container_exec_ctx(platform):
         partition = remote_exec_ctx[0]
@@ -165,8 +150,8 @@ def test_hellocheck_make(remote_exec_ctx):
 
 def test_hellocheck_local(hellotest, local_exec_ctx):
     # Test also the prebuild/postbuild functionality
-    hellotest.prebuild_cmd = ['touch prebuild', 'mkdir prebuild_dir']
-    hellotest.postbuild_cmd = ['touch postbuild', 'mkdir postbuild_dir']
+    hellotest.prebuild_cmds = ['touch prebuild', 'mkdir prebuild_dir']
+    hellotest.postbuild_cmds = ['touch postbuild', 'mkdir postbuild_dir']
     hellotest.keep_files = ['prebuild', 'postbuild',
                             'prebuild_dir', 'postbuild_dir']
 
@@ -191,8 +176,8 @@ def test_hellocheck_local_prepost_run(hellotest, local_exec_ctx):
         return test.stagedir
 
     # Test also the prebuild/postbuild functionality
-    hellotest.pre_run = ['echo prerun: `pwd`']
-    hellotest.post_run = ['echo postrun: `pwd`']
+    hellotest.prerun_cmds = ['echo prerun: `pwd`']
+    hellotest.postrun_cmds = ['echo postrun: `pwd`']
     pre_run_path = sn.extractsingle(r'^prerun: (\S+)', hellotest.stdout, 1)
     post_run_path = sn.extractsingle(r'^postrun: (\S+)', hellotest.stdout, 1)
     hellotest.sanity_patterns = sn.all([
@@ -349,7 +334,7 @@ def test_sourcesdir_none_generated_sources(local_exec_ctx):
     class MyTest(rfm.RegressionTest):
         def __init__(self):
             self.sourcesdir = None
-            self.prebuild_cmd = [
+            self.prebuild_cmds = [
                 "printf '#include <stdio.h>\\n int main(){ "
                 "printf(\"Hello, World!\\\\n\"); return 0; }' > hello.c"
             ]
@@ -506,7 +491,7 @@ def test_run_hooks(local_exec_ctx):
 
         @rfm.run_before('run')
         def setflags(self):
-            self.post_run = ['echo hello > greetings.txt']
+            self.postrun_cmds = ['echo hello > greetings.txt']
 
         @rfm.run_after('run')
         def check_executable(self):
@@ -628,6 +613,36 @@ def test_overriden_hooks(local_exec_ctx):
     _run(test, *local_exec_ctx)
     assert test.var == 5
     assert test.foo == 10
+
+
+def test_disabled_hooks(local_exec_ctx):
+    @fixtures.custom_prefix('unittests/resources/checks')
+    class BaseTest(HelloTest):
+        def __init__(self):
+            super().__init__()
+            self.name = type(self).__name__
+            self.executable = os.path.join('.', self.name)
+            self.var = 0
+            self.foo = 0
+
+        @rfm.run_after('setup')
+        def x(self):
+            self.var += 1
+
+        @rfm.run_before('setup')
+        def y(self):
+            self.foo += 1
+
+    class MyTest(BaseTest):
+        @rfm.run_after('setup')
+        def x(self):
+            self.var += 5
+
+    test = MyTest()
+    MyTest.disable_hook('y')
+    _run(test, *local_exec_ctx)
+    assert test.var == 5
+    assert test.foo == 0
 
 
 def test_require_deps(local_exec_ctx):
@@ -757,6 +772,36 @@ def test_registration_of_tests():
             mod.AnotherBaseTest(2, 0),
             mod.AnotherBaseTest(2, 1),
             mod.MyBaseTest(10, 20)] == checks
+
+
+def test_trap_job_errors_without_sanity_patterns(local_exec_ctx):
+    rt.runtime().site_config.add_sticky_option('general/trap_job_errors', True)
+
+    @fixtures.custom_prefix('unittests/resources/checks')
+    class MyTest(rfm.RunOnlyRegressionTest):
+        def __init__(self):
+            self.valid_prog_environs = ['*']
+            self.valid_systems = ['*']
+            self.executable = 'exit 10'
+
+    with pytest.raises(SanityError, match='job exited with exit code 10'):
+        _run(MyTest(), *local_exec_ctx)
+
+
+def test_trap_job_errors_with_sanity_patterns(local_exec_ctx):
+    rt.runtime().site_config.add_sticky_option('general/trap_job_errors', True)
+
+    @fixtures.custom_prefix('unittests/resources/checks')
+    class MyTest(rfm.RunOnlyRegressionTest):
+        def __init__(self):
+            self.valid_prog_environs = ['*']
+            self.valid_systems = ['*']
+            self.prerun_cmds = ['echo hello']
+            self.executable = 'true'
+            self.sanity_patterns = sn.assert_not_found(r'hello', self.stdout)
+
+    with pytest.raises(SanityError):
+        _run(MyTest(), *local_exec_ctx)
 
 
 def _run_sanity(test, *exec_ctx, skip_perf=False):
@@ -1026,7 +1071,7 @@ def container_test(tmp_path):
                     'pwd', 'ls', 'cat /etc/os-release'
                 ]
                 self.container_platform.workdir = '/workdir'
-                self.pre_run = ['touch foo']
+                self.prerun_cmds = ['touch foo']
                 self.sanity_patterns = sn.all([
                     sn.assert_found(
                         r'^' + self.container_platform.workdir, self.stdout),
@@ -1041,7 +1086,7 @@ def container_test(tmp_path):
 
 
 def _cray_cle_version():
-    completed = os_ext.run_command('cat /etc/opt/cray/release/cle-release')
+    completed = osext.run_command('cat /etc/opt/cray/release/cle-release')
     matched = re.match(r'^RELEASE=(\S+)', completed.stdout)
     if matched is None:
         return None

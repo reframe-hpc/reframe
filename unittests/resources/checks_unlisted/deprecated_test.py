@@ -1,6 +1,7 @@
 import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.exceptions import user_deprecation_warning
+
+from reframe.core.warnings import user_deprecation_warning
 
 
 @rfm.simple_test

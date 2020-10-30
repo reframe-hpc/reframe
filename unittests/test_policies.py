@@ -3,15 +3,25 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import io
+import json
+import jsonschema
 import os
 import pytest
+import socket
+import sys
+import time
 
+import reframe
 import reframe.core.runtime as rt
 import reframe.frontend.dependency as dependency
 import reframe.frontend.executors as executors
 import reframe.frontend.executors.policies as policies
-import reframe.utility.os_ext as os_ext
-from reframe.core.exceptions import (JobNotStartedError,
+import reframe.utility as util
+import reframe.utility.jsonext as jsonext
+import reframe.utility.osext as osext
+from reframe.core.exceptions import (AbortTaskError,
+                                     JobNotStartedError,
                                      ReframeForceExitError,
                                      TaskDependencyError)
 from reframe.frontend.loader import RegressionCheckLoader
@@ -21,6 +31,7 @@ from unittests.resources.checks.hellocheck import HelloTest
 from unittests.resources.checks.frontend_checks import (
     BadSetupCheck,
     BadSetupCheckEarly,
+    CompileFailureCheck,
     KeyboardInterruptCheck,
     RetriesCheck,
     SelfKillCheck,
@@ -55,11 +66,19 @@ def common_exec_ctx(temp_runtime):
     yield from temp_runtime(fixtures.TEST_CONFIG_FILE, 'generic')
 
 
+@pytest.fixture
+def testsys_exec_ctx(temp_runtime):
+    yield from temp_runtime(fixtures.TEST_CONFIG_FILE, 'testsys:gpu')
+
+
 @pytest.fixture(params=[policies.SerialExecutionPolicy,
                         policies.AsynchronousExecutionPolicy])
 def make_runner(request):
     def _make_runner(*args, **kwargs):
-        return executors.Runner(request.param(), *args, **kwargs)
+        # Use a much higher poll rate for the unit tests
+        policy = request.param()
+        policy._pollctl.SLEEP_MIN = 0.001
+        return executors.Runner(policy, *args, **kwargs)
 
     return _make_runner
 
@@ -90,12 +109,9 @@ def assert_runall(runner):
 def assert_all_dead(runner):
     stats = runner.stats
     for t in runner.stats.tasks():
-        try:
-            finished = t.check.poll()
-        except JobNotStartedError:
-            finished = True
-
-        assert finished
+        job = t.check.job
+        if job:
+            assert job.finished
 
 
 def num_failures_stage(runner, stage):
@@ -103,24 +119,67 @@ def num_failures_stage(runner, stage):
     return len([t for t in stats.failures() if t.failed_stage == stage])
 
 
+def _validate_runreport(report):
+    schema_filename = 'reframe/schemas/runreport.json'
+    with open(schema_filename) as fp:
+        schema = json.loads(fp.read())
+
+    jsonschema.validate(json.loads(report), schema)
+
+
 def test_runall(make_runner, make_cases, common_exec_ctx):
     runner = make_runner()
+    time_start = time.time()
     runner.runall(make_cases())
-    stats = runner.stats
-    assert 8 == stats.num_cases()
+    time_end = time.time()
+    assert 9 == runner.stats.num_cases()
     assert_runall(runner)
-    assert 5 == len(stats.failures())
+    assert 5 == len(runner.stats.failures())
     assert 2 == num_failures_stage(runner, 'setup')
     assert 1 == num_failures_stage(runner, 'sanity')
     assert 1 == num_failures_stage(runner, 'performance')
     assert 1 == num_failures_stage(runner, 'cleanup')
+
+    # Create a run report and validate it
+    run_stats = runner.stats.json()
+    report = {
+        'session_info': {
+            'cmdline': ' '.join(sys.argv),
+            'config_file': rt.runtime().site_config.filename,
+            'data_version': '1.0',
+            'hostname': socket.gethostname(),
+            'num_cases': run_stats[0]['num_cases'],
+            'num_failures': run_stats[-1]['num_failures'],
+            'prefix_output': rt.runtime().output_prefix,
+            'prefix_stage': rt.runtime().stage_prefix,
+            'time_elapsed': time_end - time_start,
+            'time_end': time.strftime(
+                '%FT%T%z', time.localtime(time_end),
+            ),
+            'time_start': time.strftime(
+                '%FT%T%z', time.localtime(time_start),
+            ),
+            'user': osext.osuser(),
+            'version': osext.reframe_version(),
+            'workdir': os.getcwd()
+        },
+        'runs': run_stats
+    }
+
+    # We dump the report first, in order to get any object conversions right
+    final_report = None
+    with io.StringIO() as fp:
+        jsonext.dump(report, fp, indent=2)
+        final_report = fp.getvalue()
+
+    _validate_runreport(final_report)
 
 
 def test_runall_skip_system_check(make_runner, make_cases, common_exec_ctx):
     runner = make_runner()
     runner.runall(make_cases(skip_system_check=True))
     stats = runner.stats
-    assert 9 == stats.num_cases()
+    assert 10 == stats.num_cases()
     assert_runall(runner)
     assert 5 == len(stats.failures())
     assert 2 == num_failures_stage(runner, 'setup')
@@ -133,7 +192,7 @@ def test_runall_skip_prgenv_check(make_runner, make_cases, common_exec_ctx):
     runner = make_runner()
     runner.runall(make_cases(skip_environ_check=True))
     stats = runner.stats
-    assert 9 == stats.num_cases()
+    assert 10 == stats.num_cases()
     assert_runall(runner)
     assert 5 == len(stats.failures())
     assert 2 == num_failures_stage(runner, 'setup')
@@ -147,7 +206,7 @@ def test_runall_skip_sanity_check(make_runner, make_cases, common_exec_ctx):
     runner.policy.skip_sanity_check = True
     runner.runall(make_cases())
     stats = runner.stats
-    assert 8 == stats.num_cases()
+    assert 9 == stats.num_cases()
     assert_runall(runner)
     assert 4 == len(stats.failures())
     assert 2 == num_failures_stage(runner, 'setup')
@@ -162,7 +221,7 @@ def test_runall_skip_performance_check(make_runner, make_cases,
     runner.policy.skip_performance_check = True
     runner.runall(make_cases())
     stats = runner.stats
-    assert 8 == stats.num_cases()
+    assert 9 == stats.num_cases()
     assert_runall(runner)
     assert 4 == len(stats.failures())
     assert 2 == num_failures_stage(runner, 'setup')
@@ -176,7 +235,7 @@ def test_strict_performance_check(make_runner, make_cases, common_exec_ctx):
     runner.policy.strict_check = True
     runner.runall(make_cases())
     stats = runner.stats
-    assert 8 == stats.num_cases()
+    assert 9 == stats.num_cases()
     assert_runall(runner)
     assert 6 == len(stats.failures())
     assert 2 == num_failures_stage(runner, 'setup')
@@ -185,14 +244,21 @@ def test_strict_performance_check(make_runner, make_cases, common_exec_ctx):
     assert 1 == num_failures_stage(runner, 'cleanup')
 
 
-def test_force_local_execution(make_runner, make_cases, common_exec_ctx):
+# We explicitly ask for a system with a non-local scheduler here, to make sure
+# that the execution policies behave correctly with forced local tests
+def test_force_local_execution(make_runner, make_cases, testsys_exec_ctx):
     runner = make_runner()
     runner.policy.force_local = True
-    runner.runall(make_cases([HelloTest()]))
+    test = HelloTest()
+    test.valid_prog_environs = ['builtin-gcc']
+
+    runner.runall(make_cases([test]))
     assert_runall(runner)
     stats = runner.stats
     for t in stats.tasks():
         assert t.check.local
+
+    assert not stats.failures()
 
 
 def test_kbd_interrupt_within_test(make_runner, make_cases, common_exec_ctx):
@@ -377,7 +443,7 @@ def _read_timestamps(tasks):
     begin_stamps = []
     end_stamps = []
     for t in tasks:
-        with os_ext.change_dir(t.check.stagedir):
+        with osext.change_dir(t.check.stagedir):
             with open(evaluate(t.check.stdout), 'r') as f:
                 begin_stamps.append(float(f.readline().strip()))
                 end_stamps.append(float(f.readline().strip()))
@@ -491,6 +557,13 @@ def assert_interrupted_run(runner):
     assert 4 == len(runner.stats.failures())
     assert_all_dead(runner)
 
+    # Verify that failure reasons for the different tasks are correct
+    for t in runner.stats.tasks():
+        if isinstance(t.check, KeyboardInterruptCheck):
+            assert t.exc_info[0] == KeyboardInterrupt
+        else:
+            assert t.exc_info[0] == AbortTaskError
+
 
 def test_kbd_interrupt_in_wait_with_concurrency(async_runner, make_cases,
                                                 make_async_exec_ctx):
@@ -557,15 +630,54 @@ def test_kbd_interrupt_in_setup_with_limited_concurrency(
     assert_interrupted_run(runner)
 
 
-def test_poll_fails_in_main_loop(async_runner, make_cases,
-                                 make_async_exec_ctx):
+def test_run_complete_fails_main_loop(async_runner, make_cases,
+                                      make_async_exec_ctx):
     ctx = make_async_exec_ctx(1)
     next(ctx)
 
     runner, _ = async_runner
     num_checks = 3
-    runner.runall(make_cases([SleepCheckPollFail(10)
-                              for i in range(num_checks)]))
+    runner.runall(make_cases([SleepCheckPollFail(10),
+                              SleepCheck(0.1), SleepCheckPollFail(10)]))
+    assert_runall(runner)
+    stats = runner.stats
+    assert stats.num_cases() == num_checks
+    assert len(stats.failures()) == 2
+
+    # Verify that the succeeded test is the SleepCheck
+    for t in stats.tasks():
+        if not t.failed:
+            assert isinstance(t.check, SleepCheck)
+
+
+def test_run_complete_fails_busy_loop(async_runner, make_cases,
+                                      make_async_exec_ctx):
+    ctx = make_async_exec_ctx(1)
+    next(ctx)
+
+    runner, _ = async_runner
+    num_checks = 3
+    runner.runall(make_cases([SleepCheckPollFailLate(1),
+                              SleepCheck(0.1), SleepCheckPollFailLate(0.5)]))
+    assert_runall(runner)
+    stats = runner.stats
+    assert stats.num_cases() == num_checks
+    assert len(stats.failures()) == 2
+
+    # Verify that the succeeded test is the SleepCheck
+    for t in stats.tasks():
+        if not t.failed:
+            assert isinstance(t.check, SleepCheck)
+
+
+def test_compile_fail_reschedule_main_loop(async_runner, make_cases,
+                                           make_async_exec_ctx):
+    ctx = make_async_exec_ctx(1)
+    next(ctx)
+
+    runner, _ = async_runner
+    num_checks = 2
+    runner.runall(make_cases([SleepCheckPollFail(.1), CompileFailureCheck()]))
 
     stats = runner.stats
     assert num_checks == stats.num_cases()
@@ -573,16 +685,16 @@ def test_poll_fails_in_main_loop(async_runner, make_cases,
     assert num_checks == len(stats.failures())
 
 
-def test_poll_fails_in_busy_loop(async_runner, make_cases,
-                                 make_async_exec_ctx):
+def test_compile_fail_reschedule_busy_loop(async_runner, make_cases,
+                                           make_async_exec_ctx):
     ctx = make_async_exec_ctx(1)
     next(ctx)
 
     runner, _ = async_runner
-    num_checks = 3
-    runner.runall(make_cases([SleepCheckPollFailLate(1/i)
-                              for i in range(1, num_checks+1)]))
-
+    num_checks = 2
+    runner.runall(
+        make_cases([SleepCheckPollFailLate(1.5), CompileFailureCheck()])
+    )
     stats = runner.stats
     assert num_checks == stats.num_cases()
     assert_runall(runner)

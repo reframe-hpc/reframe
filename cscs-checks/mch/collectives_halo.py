@@ -138,7 +138,7 @@ class AlltoallvTest(CollectivesBaseTest):
                          })
         self.strict_check = False
         self.sourcesdir = 'https://github.com/eth-cscs/comm_overlap_bench.git'
-        self.prebuild_cmd = ['git checkout alltoallv']
+        self.prebuild_cmds = ['git checkout alltoallv']
 
 
 @rfm.parameterized_test(['default'], ['nocomm'], ['nocomp'])
@@ -158,4 +158,4 @@ class HaloExchangeTest(CollectivesBaseTest):
                              },
                          })
         self.sourcesdir = 'https://github.com/eth-cscs/comm_overlap_bench.git'
-        self.prebuild_cmd = ['git checkout barebones']
+        self.prebuild_cmds = ['git checkout barebones']

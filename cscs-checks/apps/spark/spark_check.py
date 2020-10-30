@@ -19,8 +19,8 @@ class SparkCheck(rfm.RunOnlyRegressionTest):
         self.valid_prog_environs = ['builtin']
         self.modules = ['Spark']
         self.sourcesdir = None
-        self.pre_run = ['start-all.sh']
-        self.post_run = ['stop-all.sh']
+        self.prerun_cmds = ['start-all.sh']
+        self.postrun_cmds = ['stop-all.sh']
         self.num_tasks = 2
         self.num_tasks_per_node = 1
         pi_value = sn.extractsingle(r'Pi is roughly\s+(?P<pi>\S+)',

@@ -22,6 +22,34 @@ class IbrunLauncher(JobLauncher):
         return ['ibrun']
 
 
+@register_launcher('upcrun')
+class UpcrunLauncher(JobLauncher):
+    '''Launcher for UPC applications.'''
+
+    def command(self, job):
+        cmd = ['upcrun']
+        if job.num_tasks_per_node:
+            num_nodes = job.num_tasks // job.num_tasks_per_node
+            cmd += ['-N', str(num_nodes)]
+
+        cmd += ['-n', str(job.num_tasks)]
+        return cmd
+
+
+@register_launcher('upcxx-run')
+class UpcxxrunLauncher(JobLauncher):
+    '''Launcher for UPC++ applications.'''
+
+    def command(self, job):
+        cmd = ['upcxx-run']
+        if job.num_tasks_per_node:
+            num_nodes = job.num_tasks // job.num_tasks_per_node
+            cmd += ['-N', str(num_nodes)]
+
+        cmd += ['-n', str(job.num_tasks)]
+        return cmd
+
+
 @register_launcher('alps')
 class AlpsLauncher(JobLauncher):
     def command(self, job):
@@ -58,7 +86,7 @@ class SrunAllocationLauncher(JobLauncher):
             ret += ['--job-name=%s' % job.name]
 
         if job.time_limit:
-            h, m, s = seconds_to_hms(job.time_limit.total_seconds())
+            h, m, s = seconds_to_hms(job.time_limit)
             ret += ['--time=%d:%d:%d' % (h, m, s)]
 
         if job.stdout:
@@ -82,27 +110,12 @@ class SrunAllocationLauncher(JobLauncher):
         if job.num_cpus_per_task:
             ret += ['--cpus-per-task=%s' % str(job.num_cpus_per_task)]
 
-        if job.sched_partition:
-            ret += ['--partition=%s' % str(job.sched_partition)]
-
         if job.sched_exclusive_access:
             ret += ['--exclusive']
 
         if job.use_smt is not None:
             hint = 'multithread' if job.use_smt else 'nomultithread'
             ret += ['--hint=%s' % hint]
-
-        if job.sched_partition:
-            ret += ['--partition=%s' % str(job.sched_partition)]
-
-        if job.sched_account:
-            ret += ['--account=%s' % str(job.sched_account)]
-
-        if job.sched_nodelist:
-            ret += ['--nodelist=%s' % str(job.sched_nodelist)]
-
-        if job.sched_exclude_nodelist:
-            ret += ['--exclude=%s' % str(job.sched_exclude_nodelist)]
 
         for opt in job.options:
             if opt.startswith('#'):

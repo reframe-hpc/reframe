@@ -1,0 +1,128 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://raw.githubusercontent.com/eth-cscs/reframe/master/reframe/schemas/runreport.json",
+    "title": "Validation schema for ReFrame's run report",
+    "type": "object",
+    "properties": {
+        "session_info": {
+            "type": "object",
+            "properties": {
+                "cmdline": {"type": "string"},
+                "config_file": {"type": ["string", "null"]},
+                "data_version": {"type": "string"},
+                "hostname": {"type": "string"},
+                "num_cases": {"type": "number"},
+                "num_failures": {"type": "number"},
+                "prefix_output": {"type": "string"},
+                "prefix_stage": {"type": "string"},
+                "time_elapsed": {"type": "number"},
+                "time_end": {"type": "string"},
+                "time_start": {"type": "string"},
+                "user": {"type": "string"},
+                "version": {"type": "string"},
+                "workdir": {"type": "string"}
+            },
+            "required": ["data_version"]
+        },
+        "runs": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "num_cases": {"type": "number"},
+                    "num_failures": {"type": "number"},
+                    "runid": {"type": "number"},
+                    "testcases": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "build_stderr": {"type": ["string", "null"]},
+                                "build_stdout": {"type": ["string", "null"]},
+                                "description": {"type": "string"},
+                                "environment": {"type": ["string", "null"]},
+                                "fail_info": {
+                                    "type": ["object", "null"],
+                                    "properties": {
+                                        "exc_type": {"type": "string"},
+                                        "exc_value": {"type": "string"},
+                                        "traceback": {
+                                            "type": "array",
+                                            "items": {"type": "string"}
+                                        }
+                                    },
+                                    "required": ["exc_type", "exc_value", "traceback"]
+                                },
+                                "fail_phase": {"type": ["string", "null"]},
+                                "fail_reason": {"type": ["string", "null"]},
+                                "fail_severe": {"type": "boolean"},
+                                "jobid": {"type": ["number", "null"]},
+                                "job_stderr": {"type": ["string", "null"]},
+                                "job_stdout": {"type": ["string", "null"]},
+                                "name": {"type": "string"},
+                                "maintainers": {
+                                    "type": "array",
+                                    "items": {"type": "string"}
+                                },
+                                "nodelist": {
+                                    "type": "array",
+                                    "items": {"type": "string"}
+                                },
+                                "outputdir": {"type": ["string", "null"]},
+                                "perfvars": {
+                                    "type": ["array", "null"],
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "name": {"type": "string"},
+                                            "reference": {
+                                                "type": ["number", "null"]
+                                            },
+                                            "thres_lower": {
+                                                "type": ["number", "null"]
+                                            },
+                                            "thres_upper": {
+                                                "type": ["number", "null"]
+                                            },
+                                            "unit": {"type": ["string", "null"]},
+                                            "value": {"type": "number"}
+                                        },
+                                        "required": [
+                                            "name", "reference",
+                                            "thres_lower", "thres_upper",
+                                            "unit", "value"
+                                        ]
+                                    }
+                                },
+                                "result": {
+                                    "type": "string",
+                                    "enum": ["success", "failure"]
+                                },
+                                "scheduler": {"type": ["string", "null"]},
+                                "stagedir": {"type": ["string", "null"]},
+                                "system": {"type": "string"},
+                                "tags": {
+                                    "type": "array",
+                                    "items": {"type": "string"}
+                                },
+                                "time_compile": {"type": ["number", "null"]},
+                                "time_performance": {"type": ["number", "null"]},
+                                "time_run": {"type": ["number", "null"]},
+                                "time_sanity": {"type": ["number", "null"]},
+                                "time_setup": {"type": ["number", "null"]},
+                                "time_total": {"type": ["number", "null"]}
+                            },
+                            "required": [
+                                "environment", "name", "result", "system"
+                            ]
+                        },
+                        "required": [
+                            "num_cases", "num_failures", "runid", "testcases"
+                        ]
+                    }
+                }
+            }
+        }
+    },
+    "required": ["runs"]
+}

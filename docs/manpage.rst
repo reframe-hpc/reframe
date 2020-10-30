@@ -219,6 +219,16 @@ Options controlling ReFrame output
 
    This option can also be set using the :envvar:`RFM_KEEP_STAGE_FILES` environment variable or the :js:attr:`keep_stage_files` general configuration parameter.
 
+.. option:: --dont-restage
+
+   Do not restage a test if its stage directory exists.
+   Normally, if the stage directory of a test exists, ReFrame will remove it and recreate it.
+   This option disables this behavior.
+
+   This option can also be set using the :envvar:`RFM_CLEAN_STAGEDIR` environment variable or the :js:attr:`clean_stagedir` general configuration parameter.
+
+   .. versionadded:: 3.1
+
 .. option:: --save-log-files
 
    Save ReFrame log files in the output directory before exiting.
@@ -226,6 +236,16 @@ Options controlling ReFrame output
 
 
    This option can also be set using the :envvar:`RFM_SAVE_LOG_FILES` environment variable or the :js:attr:`save_log_files` general configuration parameter.
+
+
+.. option:: --report-file=FILE
+
+   The file where ReFrame will store its report.
+   The ``FILE`` argument may contain the special placeholder ``{sessionid}``, in which case ReFrame will generate a new report each time it is run by appending a counter to the report file.
+
+   This option can also be set using the :envvar:`RFM_REPORT_FILE` environment variable or the :js:attr:`report_file` general configuration parameter.
+
+   .. versionadded:: 3.1
 
 
 -------------------------------------
@@ -283,44 +303,38 @@ Options controlling ReFrame execution
    The test stage and output directories will receive a ``_retry<N>`` suffix every time the test is retried.
 
 
+.. option:: --disable-hook=HOOK
+
+   Disable the pipeline hook named ``HOOK`` from all the tests that will run.
+   This feature is useful when you have implemented test workarounds as pipeline hooks, in which case you can quickly disable them from the command line.
+   This option may be specified multiple times in order to disable multiple hooks at the same time.
+
+   .. versionadded:: 3.2
+
+
 ----------------------------------
 Options controlling job submission
 ----------------------------------
 
-.. option:: -A, --account=NAME
-
-   Submit test-related jobs using the account ``NAME``.
-   This option is relevant only for the Slurm backend and translates to Slurm's ``--account`` option and it precedes any options specified in the :js:attr:`access` system partition configuration parameter.
-
-
-.. option:: -P, --partition=NAME
-
-   Submit test-related jobs using scheduler partition ``NAME``.
-   This option is relevant only for the Slurm, PBS and Torque backends and it translates to the ``--partition`` or ``-q`` scheduler options, respectively and it precedes any options specified in the :js:attr:`access` system partition configuration parameter.
-
-.. option:: --reservation=NAME
-
-   Submit test-related jobs on reservation ``NAME``.
-   This option is relevant only for the Slurm backend and translates to Slurm's ``--reservation`` option and it precedes any options specified in the :js:attr:`access` system partition configuration parameter.
-
-.. option:: --nodelist=NODES
-
-   Submit test-related jobs on the selected nodes.
-   This option is relevant only for the Slurm backend and translates to Slurm's ``--nodelist`` option and it precedes any options specified in the :js:attr:`access` system partition configuration parameter.
-   The same node range naming conventions as of Slurm apply.
-
-
-.. option:: --exclude-nodes=NODES
-
-   Do not submit test-related jobs on the selected nodes.
-   This option is relevant only for the Slurm backend and translates to Slurm's ``--exclude`` option and it precedes any options specified in the :js:attr:`access` system partition configuration parameter.
-   The same node range naming conventions as of Slurm apply.
-
-.. option:: --job-option=OPTION
+.. option:: -J, --job-option=OPTION
 
    Pass ``OPTION`` directly to the job scheduler backend.
-   This option will be emitted after any options specified in the :js:attr:`access` system partition configuration parameter.
+   The syntax of ``OPTION`` is ``-J key=value``.
+   If ``OPTION`` starts with ``-`` it will be passed verbatim to the backend job scheduler.
+   If ``OPTION`` starts with ``#`` it will be emitted verbatim in the job script.
+   Otherwise, ReFrame will pass ``--key=value`` or ``-k value`` (if ``key`` is a single character) to the backend scheduler.
+   Any job options specified with this command-line option will be emitted after any job options specified in the :js:attr:`access` system partition configuration parameter.
 
+   Especially for the Slurm backends, constraint options, such as ``-J constraint=value``, ``-J C=value``, ``-J --constraint=value`` or ``-J -C=value``, are going to be combined with any constraint options specified in the :js:attr:`access` system partition configuration parameter.
+   For example, if ``-C x`` is specified in the :js:attr:`access` and ``-J C=y`` is passed to the command-line, ReFrame will pass ``-C x&y`` as a constraint to the scheduler.
+   Notice, however, that if constraint options are specified through multiple :option:`-J` options, only the last one will be considered.
+   If you wish to completely overwrite any constraint options passed in :js:attr:`access`, you should consider passing explicitly the Slurm directive with ``-J '#SBATCH --constraint=new'``.
+
+   .. versionchanged:: 3.0
+      This option has become more flexible.
+
+   .. versionchanged:: 3.1
+      Use ``&`` to combine constraints.
 
 ------------------------
 Flexible node allocation
@@ -332,27 +346,22 @@ When allocating nodes automatically, ReFrame will take into account all node lim
 Nodes from this pool are allocated according to different policies.
 If no node can be selected, the test will be marked as a failure with an appropriate message.
 
-.. option:: --flex-alloc-nodes[=POLICY]
+.. option:: --flex-alloc-nodes=POLICY
 
    Set the flexible node allocation policy.
    Available values are the following:
 
    - ``all``: Flexible tests will be assigned as many tasks as needed in order to span over *all* the nodes of the node pool.
-   - ``idle``: Flexible tests will be assigned as many tasks as needed in order to span over the *idle* nodes of the node pool.
+   - ``STATE``: Flexible tests will be assigned as many tasks as needed in order to span over the nodes that are currently in state ``STATE``.
      Querying of the node state and submission of the test job are two separate steps not executed atomically.
-     It is therefore possible that the number of tasks assigned does not correspond to the actual idle nodes.
+     It is therefore possible that the number of tasks assigned does not correspond to the actual nodes in the given state.
 
-     This is the default policy.
+     If this option is not specified, the default allocation policy for flexible tests is 'idle'.
    - Any positive integer: Flexible tests will be assigned as many tasks as needed in order to span over the specified number of nodes from the node pool.
 
-.. option:: --flex-alloc-tasks[=POLICY]
+   .. versionchanged:: 3.1
+      It is now possible to pass an arbitrary node state as a flexible node allocation parameter.
 
-   .. deprecated:: 2.21
-
-      Please use |--flex-alloc-nodes|_ instead.
-
-.. |--flex-alloc-nodes| replace:: :attr:`--flex-alloc-nodes`
-.. _--flex-alloc-nodes: #cmdoption-flex-alloc-nodes
 
 ---------------------------------------
 Options controlling ReFrame environment
@@ -497,6 +506,10 @@ Miscellaneous options
 
    This option can also be set using the :envvar:`RFM_COLORIZE` environment variable or the :js:attr:`colorize` general configuration parameter.
 
+.. option:: --upgrade-config-file=OLD[:NEW]
+
+   Convert the old-style configuration file ``OLD``, place it into the new file ``NEW`` and exit.
+   If a new file is not given, a file in the system temporary directory will be created.
 
 .. option:: -v, --verbose
 
@@ -557,6 +570,21 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
 
 
+.. envvar:: RFM_CLEAN_STAGEDIR
+
+   Clean stage directory of tests before populating it.
+
+   .. versionadded:: 3.1
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     :option:`--dont-restage`
+      Associated configuration parameter :js:attr:`clean_stagedir` general configuration parameter
+      ================================== ==================
+
+
 .. envvar:: RFM_COLORIZE
 
    Enable output coloring.
@@ -583,7 +611,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
 
 
-.. envvar:: RFM_GRAYLOG_SERVER
+.. envvar:: RFM_GRAYLOG_ADDRESS
 
    The address of the Graylog server to send performance logs.
    The address is specified in ``host:port`` format.
@@ -597,6 +625,15 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
 
 
+.. versionadded:: 3.1
+
+
+.. envvar:: RFM_GRAYLOG_SERVER
+
+   .. deprecated:: 3.1
+      Please :envvar:`RFM_GRAYLOG_ADDRESS` instead.
+
+
 .. envvar:: RFM_IGNORE_CHECK_CONFLICTS
 
    Ignore tests with conflicting names when loading.
@@ -607,6 +644,31 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
       Associated command line option     :option:`--ignore-check-conflicts`
       Associated configuration parameter :js:attr:`ignore_check_conflicts` general configuration parameter
+      ================================== ==================
+
+
+.. envvar:: RFM_TRAP_JOB_ERRORS
+
+   Ignore job exit code
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated configuration parameter :js:attr:`trap_job_errors` general configuration parameter
+      ================================== ==================
+
+
+.. envvar:: RFM_IGNORE_REQNODENOTAVAIL
+
+   Do not treat specially jobs in pending state with the reason ``ReqNodeNotAvail`` (Slurm only).
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :js:attr:`ignore_reqnodenotavail` scheduler configuration parameter
       ================================== ==================
 
 
@@ -714,6 +776,21 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
 
 
+.. envvar:: RFM_REPORT_FILE
+
+   The file where ReFrame will store its report.
+
+   .. versionadded:: 3.1
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     :option:`--report-file`
+      Associated configuration parameter :js:attr:`report_file` general configuration parameter
+      ================================== ==================
+
+
 .. envvar:: RFM_SAVE_LOG_FILES
 
    Save ReFrame log files in the output directory before exiting.
@@ -739,6 +816,23 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       Associated configuration parameter :js:attr:`stagedir` system configuration parameter
       ================================== ==================
 
+
+.. envvar:: RFM_SYSLOG_ADDRESS
+
+   The address of the Syslog server to send performance logs.
+   The address is specified in ``host:port`` format.
+   If no port is specified, the address refers to a UNIX socket.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :js:attr:`address` syslog log handler configuration parameter
+      ================================== ==================
+
+
+.. versionadded:: 3.1
 
 .. envvar:: RFM_SYSTEM
 
@@ -780,6 +874,19 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
       Associated command line option     :option:`-u`
       Associated configuration parameter :js:attr:`unload_modules` general configuration parameter
+      ================================== ==================
+
+
+.. envvar:: RFM_USE_LOGIN_SHELL
+
+   Use a login shell for the generated job scripts.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :js:attr:`use_login_shell` general configuration parameter
       ================================== ==================
 
 

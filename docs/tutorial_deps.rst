@@ -1,5 +1,5 @@
 ===============================================
-Tutorial 3: Using Dependencies in ReFrame Tests
+Tutorial 2: Using Dependencies in ReFrame Tests
 ===============================================
 
 .. versionadded:: 2.21
@@ -12,16 +12,16 @@ You could have a build test, which all runtime tests would depend on.
 This is the approach we take with the following example, that fetches, builds and runs several `OSU benchmarks <http://mvapich.cse.ohio-state.edu/benchmarks/>`__.
 We first create a basic compile-only test, that fetches the benchmarks and builds them for the different programming environments:
 
-.. literalinclude:: ../tutorial/advanced/osu/osu_benchmarks.py
+.. literalinclude:: ../tutorials/deps/osu_benchmarks.py
    :lines: 92-106
 
 There is nothing particular to that test, except perhaps that you can set :attr:`sourcesdir <reframe.core.pipeline.RegressionTest.sourcesdir>` to ``None`` even for a test that needs to compile something.
-In such a case, you should at least provide the commands that fetch the code inside the :attr:`prebuild_cmd <reframe.core.pipeline.RegressionTest.prebuild_cmd>` attribute.
+In such a case, you should at least provide the commands that fetch the code inside the :attr:`prebuild_cmds <reframe.core.pipeline.RegressionTest.prebuild_cmds>` attribute.
 
 For the next test we need to use the OSU benchmark binaries that we just built, so as to run the MPI ping-pong benchmark.
 Here is the relevant part:
 
-.. literalinclude:: ../tutorial/advanced/osu/osu_benchmarks.py
+.. literalinclude:: ../tutorials/deps/osu_benchmarks.py
    :lines: 12-44
 
 First, since we will have multiple similar benchmarks, we move all the common functionality to the :class:`OSUBenchmarkTestBase` base class.
@@ -29,7 +29,7 @@ Again nothing new here; we are going to use two nodes for the benchmark and we s
 The new part comes in with the :class:`OSULatencyTest` test in the following line:
 
 
-.. literalinclude:: ../tutorial/advanced/osu/osu_benchmarks.py
+.. literalinclude:: ../tutorials/deps/osu_benchmarks.py
    :lines: 32
 
 Here we tell ReFrame that this test depends on a test named ``OSUBuildTest``.
@@ -45,7 +45,7 @@ If any of its dependencies fails, the current test will be marked as failure as 
 The next step for the :class:`OSULatencyTest` is to set its executable to point to the binary produced by the :class:`OSUBuildTest`.
 This is achieved with the following specially decorated function:
 
-.. literalinclude:: ../tutorial/advanced/osu/osu_benchmarks.py
+.. literalinclude:: ../tutorials/deps/osu_benchmarks.py
    :lines: 37-43
 
 The :func:`@require_deps <reframe.core.decorators.require_deps>` decorator will bind the arguments passed to the decorated function to the result of the dependency that each argument names.
@@ -61,12 +61,12 @@ This concludes the presentation of the :class:`OSULatencyTest` test. The :class:
 The :class:`OSUAllreduceTest` shown below is similar to the other two, except that it is parameterized.
 It is essentially a scalability test that is running the ``osu_allreduce`` executable created by the :class:`OSUBuildTest` for 2, 4, 8 and 16 nodes.
 
-.. literalinclude:: ../tutorial/advanced/osu/osu_benchmarks.py
+.. literalinclude:: ../tutorials/deps/osu_benchmarks.py
    :lines: 69-89
 
 The full set of OSU example tests is shown below:
 
-.. literalinclude:: ../tutorial/advanced/osu/osu_benchmarks.py
+.. literalinclude:: ../tutorials/deps/osu_benchmarks.py
 
 Notice that the order in which dependencies are defined in a test file is irrelevant.
 In this case, we define :class:`OSUBuildTest` at the end.
@@ -76,95 +76,106 @@ Here is the output when running the OSU tests with the asynchronous execution po
 
 .. code-block:: none
 
-  [==========] Running 7 check(s)
-  [==========] Started on Wed Mar 25 13:51:06 2020
+   [ReFrame Setup]
+     version:           3.3-dev0 (rev: cb974c13)
+     command:           './bin/reframe -C tutorials/config/settings.py -c tutorials/deps/osu_benchmarks.py -r'
+     launched by:       user@dom101
+     working directory: '/users/user/Devel/reframe'
+     settings file:     'tutorials/config/settings.py'
+     check search path: '/users/user/Devel/reframe/tutorials/deps/osu_benchmarks.py'
+     stage directory:   '/users/user/Devel/reframe/stage'
+     output directory:  '/users/user/Devel/reframe/output'
 
-  [----------] started processing OSUBuildTest (OSU benchmarks build test)
-  [ RUN      ] OSUBuildTest on daint:gpu using PrgEnv-gnu
-  [ RUN      ] OSUBuildTest on daint:gpu using PrgEnv-intel
-  [ RUN      ] OSUBuildTest on daint:gpu using PrgEnv-pgi
-  [----------] finished processing OSUBuildTest (OSU benchmarks build test)
+   [==========] Running 7 check(s)
+   [==========] Started on Mon Oct 12 20:19:40 2020
 
-  [----------] started processing OSULatencyTest (OSU latency test)
-  [ RUN      ] OSULatencyTest on daint:gpu using PrgEnv-gnu
-  [      DEP ] OSULatencyTest on daint:gpu using PrgEnv-gnu
-  [ RUN      ] OSULatencyTest on daint:gpu using PrgEnv-intel
-  [      DEP ] OSULatencyTest on daint:gpu using PrgEnv-intel
-  [ RUN      ] OSULatencyTest on daint:gpu using PrgEnv-pgi
-  [      DEP ] OSULatencyTest on daint:gpu using PrgEnv-pgi
-  [----------] finished processing OSULatencyTest (OSU latency test)
+   [----------] started processing OSUBuildTest (OSU benchmarks build test)
+   [ RUN      ] OSUBuildTest on daint:gpu using gnu
+   [ RUN      ] OSUBuildTest on daint:gpu using intel
+   [ RUN      ] OSUBuildTest on daint:gpu using pgi
+   [----------] finished processing OSUBuildTest (OSU benchmarks build test)
 
-  [----------] started processing OSUBandwidthTest (OSU bandwidth test)
-  [ RUN      ] OSUBandwidthTest on daint:gpu using PrgEnv-gnu
-  [      DEP ] OSUBandwidthTest on daint:gpu using PrgEnv-gnu
-  [ RUN      ] OSUBandwidthTest on daint:gpu using PrgEnv-intel
-  [      DEP ] OSUBandwidthTest on daint:gpu using PrgEnv-intel
-  [ RUN      ] OSUBandwidthTest on daint:gpu using PrgEnv-pgi
-  [      DEP ] OSUBandwidthTest on daint:gpu using PrgEnv-pgi
-  [----------] finished processing OSUBandwidthTest (OSU bandwidth test)
+   [----------] started processing OSULatencyTest (OSU latency test)
+   [ RUN      ] OSULatencyTest on daint:gpu using gnu
+   [      DEP ] OSULatencyTest on daint:gpu using gnu
+   [ RUN      ] OSULatencyTest on daint:gpu using intel
+   [      DEP ] OSULatencyTest on daint:gpu using intel
+   [ RUN      ] OSULatencyTest on daint:gpu using pgi
+   [      DEP ] OSULatencyTest on daint:gpu using pgi
+   [----------] finished processing OSULatencyTest (OSU latency test)
 
-  [----------] started processing OSUAllreduceTest_2 (OSU Allreduce test)
-  [ RUN      ] OSUAllreduceTest_2 on daint:gpu using PrgEnv-gnu
-  [      DEP ] OSUAllreduceTest_2 on daint:gpu using PrgEnv-gnu
-  [ RUN      ] OSUAllreduceTest_2 on daint:gpu using PrgEnv-intel
-  [      DEP ] OSUAllreduceTest_2 on daint:gpu using PrgEnv-intel
-  [ RUN      ] OSUAllreduceTest_2 on daint:gpu using PrgEnv-pgi
-  [      DEP ] OSUAllreduceTest_2 on daint:gpu using PrgEnv-pgi
-  [----------] finished processing OSUAllreduceTest_2 (OSU Allreduce test)
+   [----------] started processing OSUBandwidthTest (OSU bandwidth test)
+   [ RUN      ] OSUBandwidthTest on daint:gpu using gnu
+   [      DEP ] OSUBandwidthTest on daint:gpu using gnu
+   [ RUN      ] OSUBandwidthTest on daint:gpu using intel
+   [      DEP ] OSUBandwidthTest on daint:gpu using intel
+   [ RUN      ] OSUBandwidthTest on daint:gpu using pgi
+   [      DEP ] OSUBandwidthTest on daint:gpu using pgi
+   [----------] finished processing OSUBandwidthTest (OSU bandwidth test)
 
-  [----------] started processing OSUAllreduceTest_4 (OSU Allreduce test)
-  [ RUN      ] OSUAllreduceTest_4 on daint:gpu using PrgEnv-gnu
-  [      DEP ] OSUAllreduceTest_4 on daint:gpu using PrgEnv-gnu
-  [ RUN      ] OSUAllreduceTest_4 on daint:gpu using PrgEnv-intel
-  [      DEP ] OSUAllreduceTest_4 on daint:gpu using PrgEnv-intel
-  [ RUN      ] OSUAllreduceTest_4 on daint:gpu using PrgEnv-pgi
-  [      DEP ] OSUAllreduceTest_4 on daint:gpu using PrgEnv-pgi
-  [----------] finished processing OSUAllreduceTest_4 (OSU Allreduce test)
+   [----------] started processing OSUAllreduceTest_2 (OSU Allreduce test)
+   [ RUN      ] OSUAllreduceTest_2 on daint:gpu using gnu
+   [      DEP ] OSUAllreduceTest_2 on daint:gpu using gnu
+   [ RUN      ] OSUAllreduceTest_2 on daint:gpu using intel
+   [      DEP ] OSUAllreduceTest_2 on daint:gpu using intel
+   [ RUN      ] OSUAllreduceTest_2 on daint:gpu using pgi
+   [      DEP ] OSUAllreduceTest_2 on daint:gpu using pgi
+   [----------] finished processing OSUAllreduceTest_2 (OSU Allreduce test)
 
-  [----------] started processing OSUAllreduceTest_8 (OSU Allreduce test)
-  [ RUN      ] OSUAllreduceTest_8 on daint:gpu using PrgEnv-gnu
-  [      DEP ] OSUAllreduceTest_8 on daint:gpu using PrgEnv-gnu
-  [ RUN      ] OSUAllreduceTest_8 on daint:gpu using PrgEnv-intel
-  [      DEP ] OSUAllreduceTest_8 on daint:gpu using PrgEnv-intel
-  [ RUN      ] OSUAllreduceTest_8 on daint:gpu using PrgEnv-pgi
-  [      DEP ] OSUAllreduceTest_8 on daint:gpu using PrgEnv-pgi
-  [----------] finished processing OSUAllreduceTest_8 (OSU Allreduce test)
+   [----------] started processing OSUAllreduceTest_4 (OSU Allreduce test)
+   [ RUN      ] OSUAllreduceTest_4 on daint:gpu using gnu
+   [      DEP ] OSUAllreduceTest_4 on daint:gpu using gnu
+   [ RUN      ] OSUAllreduceTest_4 on daint:gpu using intel
+   [      DEP ] OSUAllreduceTest_4 on daint:gpu using intel
+   [ RUN      ] OSUAllreduceTest_4 on daint:gpu using pgi
+   [      DEP ] OSUAllreduceTest_4 on daint:gpu using pgi
+   [----------] finished processing OSUAllreduceTest_4 (OSU Allreduce test)
 
-  [----------] started processing OSUAllreduceTest_16 (OSU Allreduce test)
-  [ RUN      ] OSUAllreduceTest_16 on daint:gpu using PrgEnv-gnu
-  [      DEP ] OSUAllreduceTest_16 on daint:gpu using PrgEnv-gnu
-  [ RUN      ] OSUAllreduceTest_16 on daint:gpu using PrgEnv-intel
-  [      DEP ] OSUAllreduceTest_16 on daint:gpu using PrgEnv-intel
-  [ RUN      ] OSUAllreduceTest_16 on daint:gpu using PrgEnv-pgi
-  [      DEP ] OSUAllreduceTest_16 on daint:gpu using PrgEnv-pgi
-  [----------] finished processing OSUAllreduceTest_16 (OSU Allreduce test)
+   [----------] started processing OSUAllreduceTest_8 (OSU Allreduce test)
+   [ RUN      ] OSUAllreduceTest_8 on daint:gpu using gnu
+   [      DEP ] OSUAllreduceTest_8 on daint:gpu using gnu
+   [ RUN      ] OSUAllreduceTest_8 on daint:gpu using intel
+   [      DEP ] OSUAllreduceTest_8 on daint:gpu using intel
+   [ RUN      ] OSUAllreduceTest_8 on daint:gpu using pgi
+   [      DEP ] OSUAllreduceTest_8 on daint:gpu using pgi
+   [----------] finished processing OSUAllreduceTest_8 (OSU Allreduce test)
 
-  [----------] waiting for spawned checks to finish
-  [       OK ] ( 1/21) OSUBuildTest on daint:gpu using PrgEnv-pgi
-  [       OK ] ( 2/21) OSUBuildTest on daint:gpu using PrgEnv-gnu
-  [       OK ] ( 3/21) OSUBuildTest on daint:gpu using PrgEnv-intel
-  [       OK ] ( 4/21) OSUAllreduceTest_2 on daint:gpu using PrgEnv-pgi
-  [       OK ] ( 5/21) OSUAllreduceTest_4 on daint:gpu using PrgEnv-pgi
-  [       OK ] ( 6/21) OSUAllreduceTest_8 on daint:gpu using PrgEnv-pgi
-  [       OK ] ( 7/21) OSUAllreduceTest_16 on daint:gpu using PrgEnv-pgi
-  [       OK ] ( 8/21) OSUAllreduceTest_4 on daint:gpu using PrgEnv-gnu
-  [       OK ] ( 9/21) OSUAllreduceTest_16 on daint:gpu using PrgEnv-gnu
-  [       OK ] (10/21) OSUAllreduceTest_8 on daint:gpu using PrgEnv-gnu
-  [       OK ] (11/21) OSUAllreduceTest_16 on daint:gpu using PrgEnv-intel
-  [       OK ] (12/21) OSULatencyTest on daint:gpu using PrgEnv-pgi
-  [       OK ] (13/21) OSUAllreduceTest_2 on daint:gpu using PrgEnv-gnu
-  [       OK ] (14/21) OSULatencyTest on daint:gpu using PrgEnv-gnu
-  [       OK ] (15/21) OSUBandwidthTest on daint:gpu using PrgEnv-pgi
-  [       OK ] (16/21) OSUBandwidthTest on daint:gpu using PrgEnv-gnu
-  [       OK ] (17/21) OSUAllreduceTest_8 on daint:gpu using PrgEnv-intel
-  [       OK ] (18/21) OSUAllreduceTest_4 on daint:gpu using PrgEnv-intel
-  [       OK ] (19/21) OSULatencyTest on daint:gpu using PrgEnv-intel
-  [       OK ] (20/21) OSUAllreduceTest_2 on daint:gpu using PrgEnv-intel
-  [       OK ] (21/21) OSUBandwidthTest on daint:gpu using PrgEnv-intel
-  [----------] all spawned checks have finished
+   [----------] started processing OSUAllreduceTest_16 (OSU Allreduce test)
+   [ RUN      ] OSUAllreduceTest_16 on daint:gpu using gnu
+   [      DEP ] OSUAllreduceTest_16 on daint:gpu using gnu
+   [ RUN      ] OSUAllreduceTest_16 on daint:gpu using intel
+   [      DEP ] OSUAllreduceTest_16 on daint:gpu using intel
+   [ RUN      ] OSUAllreduceTest_16 on daint:gpu using pgi
+   [      DEP ] OSUAllreduceTest_16 on daint:gpu using pgi
+   [----------] finished processing OSUAllreduceTest_16 (OSU Allreduce test)
 
-  [  PASSED  ] Ran 21 test case(s) from 7 check(s) (0 failure(s))
-  [==========] Finished on Wed Mar 25 14:37:53 2020
+   [----------] waiting for spawned checks to finish
+   [       OK ] ( 1/21) OSUBuildTest on daint:gpu using pgi [compile: 28.225s run: 0.040s total: 28.277s]
+   [       OK ] ( 2/21) OSUBuildTest on daint:gpu using gnu [compile: 21.495s run: 66.686s total: 88.208s]
+   [       OK ] ( 3/21) OSUBuildTest on daint:gpu using intel [compile: 38.376s run: 37.468s total: 75.855s]
+   [       OK ] ( 4/21) OSUAllreduceTest_16 on daint:gpu using pgi [compile: 0.005s run: 14.180s total: 14.197s]
+   [       OK ] ( 5/21) OSUAllreduceTest_16 on daint:gpu using gnu [compile: 0.008s run: 17.997s total: 18.736s]
+   [       OK ] ( 6/21) OSUAllreduceTest_4 on daint:gpu using pgi [compile: 0.007s run: 18.581s total: 21.528s]
+   [       OK ] ( 7/21) OSUAllreduceTest_2 on daint:gpu using pgi [compile: 0.005s run: 45.562s total: 49.983s]
+   [       OK ] ( 8/21) OSUAllreduceTest_8 on daint:gpu using pgi [compile: 0.006s run: 49.313s total: 50.789s]
+   [       OK ] ( 9/21) OSUAllreduceTest_8 on daint:gpu using gnu [compile: 0.006s run: 48.884s total: 51.096s]
+   [       OK ] (10/21) OSUAllreduceTest_4 on daint:gpu using gnu [compile: 0.007s run: 48.169s total: 51.854s]
+   [       OK ] (11/21) OSULatencyTest on daint:gpu using pgi [compile: 0.006s run: 53.398s total: 60.785s]
+   [       OK ] (12/21) OSUAllreduceTest_2 on daint:gpu using gnu [compile: 0.005s run: 56.394s total: 61.531s]
+   [       OK ] (13/21) OSULatencyTest on daint:gpu using gnu [compile: 0.005s run: 55.499s total: 63.628s]
+   [       OK ] (14/21) OSUAllreduceTest_2 on daint:gpu using intel [compile: 0.006s run: 67.665s total: 70.079s]
+   [       OK ] (15/21) OSUAllreduceTest_16 on daint:gpu using intel [compile: 0.005s run: 73.259s total: 73.275s]
+   [       OK ] (16/21) OSULatencyTest on daint:gpu using intel [compile: 0.006s run: 97.960s total: 101.936s]
+   [       OK ] (17/21) OSUAllreduceTest_8 on daint:gpu using intel [compile: 0.006s run: 101.123s total: 101.933s]
+   [       OK ] (18/21) OSUAllreduceTest_4 on daint:gpu using intel [compile: 0.007s run: 100.592s total: 102.215s]
+   [       OK ] (19/21) OSUBandwidthTest on daint:gpu using pgi [compile: 0.005s run: 117.530s total: 123.408s]
+   [       OK ] (20/21) OSUBandwidthTest on daint:gpu using gnu [compile: 0.005s run: 117.174s total: 123.765s]
+   [       OK ] (21/21) OSUBandwidthTest on daint:gpu using intel [compile: 0.005s run: 160.484s total: 163.680s]
+   [----------] all spawned checks have finished
+
+   [  PASSED  ] Ran 21 test case(s) from 7 check(s) (0 failure(s))
+   [==========] Finished on Mon Oct 12 20:24:02 2020
+   Log file(s) saved in: '/tmp/rfm-m5zww8le.log'
 
 Before starting running the tests, ReFrame topologically sorts them based on their dependencies and schedules them for running using the selected execution policy.
 With the serial execution policy, ReFrame simply executes the tests to completion as they "arrive", since the tests are already topologically sorted.

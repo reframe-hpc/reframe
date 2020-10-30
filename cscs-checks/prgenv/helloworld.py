@@ -5,6 +5,7 @@
 
 from datetime import datetime
 
+import re
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -19,15 +20,16 @@ class HelloWorldBaseTest(rfm.RegressionTest):
             'cpp': 'C++',
             'f90': 'Fortran 90'
         }
-        self.descr = self.lang_names[lang] + ' Hello World'
+        self.descr = f'{self.lang_names[lang]} Hello World'
         self.sourcepath = 'hello_world'
         self.build_system = 'SingleSource'
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'kesch:cn', 'tiger:gpu', 'arolla:cn', 'arolla:pn',
-                              'tsa:cn', 'tsa:pn']
+                              'kesch:cn', 'tiger:gpu', 'arolla:cn',
+                              'arolla:pn', 'tsa:cn', 'tsa:pn']
 
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-cray_classic',
-                                    'PrgEnv-gnu', 'PrgEnv-intel', 'PrgEnv-pgi']
+                                    'PrgEnv-intel', 'PrgEnv-gnu', 'PrgEnv-pgi',
+                                    'PrgEnv-gnu-nocuda', 'PrgEnv-pgi-nocuda']
 
         if self.current_system.name in ['kesch', 'arolla', 'tsa']:
             self.exclusive_access = True
@@ -89,7 +91,8 @@ class HelloWorldBaseTest(rfm.RegressionTest):
 
     @rfm.run_before('compile')
     def setflags(self):
-        envname = self.current_environ.name.replace('-nompi', '')
+        envname = re.sub(r'(PrgEnv-\w+).*', lambda m: m.group(1),
+                         self.current_environ.name)
         prgenv_flags = self.prgenv_flags[envname]
         self.build_system.cflags = prgenv_flags
         self.build_system.cxxflags = prgenv_flags
@@ -104,14 +107,6 @@ class HelloWorldBaseTest(rfm.RegressionTest):
         elapsed = datetime.now() - self.compilation_time_seconds
         self.compilation_time_seconds = elapsed.total_seconds()
 
-    @rfm.run_before('compile')
-    def cray_linker_workaround(self):
-        # NOTE: Workaround for using CCE < 9.1 in CLE7.UP01.PS03 and above
-        # See Patch Set README.txt for more details.
-        if (self.current_system.name == 'dom' and
-            self.current_environ.name.startswith('PrgEnv-cray')):
-            self.variables['LINKER_X86_64'] = '/usr/bin/ld'
-
 
 @rfm.required_version('>=2.14')
 @rfm.parameterized_test(*([lang, linkage]
@@ -121,6 +116,10 @@ class HelloWorldTestSerial(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
         super().__init__('serial', lang, linkage)
         self.valid_systems += ['kesch:pn', 'arolla:pn', 'tsa:pn']
+        self.sourcesdir = 'src/serial'
+        self.valid_prog_environs += ['PrgEnv-gnu-nompi', 'PrgEnv-pgi-nompi',
+                                     'PrgEnv-gnu-nompi-nocuda',
+                                     'PrgEnf-pgi-nompi-nocuda']
         self.sourcepath += '_serial.' + lang
         self.descr += ' Serial ' + linkage.capitalize()
         self.prgenv_flags = {
@@ -140,7 +139,9 @@ class HelloWorldTestSerial(HelloWorldBaseTest):
         elif (self.current_system.name in ['arolla', 'tsa'] and
               linkage == 'dynamic'):
             self.valid_prog_environs += ['PrgEnv-pgi-nompi',
-                                         'PrgEnv-gnu-nompi']
+                                         'PrgEnv-pgi-nompi-nocuda',
+                                         'PrgEnv-gnu-nompi',
+                                         'PrgEnv-gnu-nompi-nocuda']
 
 
 @rfm.required_version('>=2.14')
@@ -151,6 +152,7 @@ class HelloWorldTestOpenMP(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
         super().__init__('openmp', lang, linkage)
         self.valid_systems += ['kesch:pn', 'arolla:pn', 'tsa:pn']
+        self.sourcesdir = 'src/openmp'
         self.sourcepath += '_openmp.' + lang
         self.descr += ' OpenMP ' + str.capitalize(linkage)
         self.prgenv_flags = {
@@ -173,7 +175,9 @@ class HelloWorldTestOpenMP(HelloWorldBaseTest):
         elif (self.current_system.name in ['arolla', 'tsa'] and
               linkage == 'dynamic'):
             self.valid_prog_environs += ['PrgEnv-pgi-nompi',
-                                         'PrgEnv-gnu-nompi']
+                                         'PrgEnv-pgi-nompi-nocuda',
+                                         'PrgEnv-gnu-nompi',
+                                         'PrgEnv-gnu-nompi-nocuda']
 
         # On SLURM there is no need to set OMP_NUM_THREADS if one defines
         # num_cpus_per_task, but adding for completeness and portability
@@ -189,6 +193,7 @@ class HelloWorldTestOpenMP(HelloWorldBaseTest):
 class HelloWorldTestMPI(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
         super().__init__('mpi', lang, linkage)
+        self.sourcesdir = 'src/mpi'
         self.sourcepath += '_mpi.' + lang
         self.descr += ' MPI ' + linkage.capitalize()
         self.prgenv_flags = {
@@ -214,6 +219,7 @@ class HelloWorldTestMPI(HelloWorldBaseTest):
 class HelloWorldTestMPIOpenMP(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
         super().__init__('mpi_openmp', lang, linkage)
+        self.sourcesdir = 'src/mpi_openmp'
         self.sourcepath += '_mpi_openmp.' + lang
         self.descr += ' MPI + OpenMP ' + linkage.capitalize()
         self.prgenv_flags = {

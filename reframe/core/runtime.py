@@ -13,7 +13,7 @@ from datetime import datetime
 
 import reframe.core.config as config
 import reframe.core.fields as fields
-import reframe.utility.os_ext as os_ext
+import reframe.utility.osext as osext
 from reframe.core.environments import (Environment, snapshot)
 from reframe.core.exceptions import ReframeFatalError
 from reframe.core.systems import System
@@ -24,9 +24,7 @@ class RuntimeContext:
 
     There is a single instance of this class globally in the framework.
 
-    .. note::
-       .. versionadded:: 2.13
-
+    .. versionadded:: 2.13
     '''
 
     def __init__(self, site_config):
@@ -38,12 +36,17 @@ class RuntimeContext:
     def _makedir(self, *dirs, wipeout=False):
         ret = os.path.join(*dirs)
         if wipeout:
-            os_ext.rmtree(ret, ignore_errors=True)
+            osext.rmtree(ret, ignore_errors=True)
 
         os.makedirs(ret, exist_ok=True)
         return ret
 
     def _format_dirs(self, *dirs):
+        if not self.get_option('general/0/clean_stagedir'):
+            # If stagedir is to be reused, no new stage directories will be
+            # used for retries
+            return dirs
+
         try:
             last = dirs[-1]
         except IndexError:
@@ -77,19 +80,19 @@ class RuntimeContext:
 
     @property
     def prefix(self):
-        return os_ext.expandvars(
+        return osext.expandvars(
             self.site_config.get('systems/0/prefix')
         )
 
     @property
     def stagedir(self):
-        return os_ext.expandvars(
+        return osext.expandvars(
             self.site_config.get('systems/0/stagedir')
         )
 
     @property
     def outputdir(self):
-        return os_ext.expandvars(
+        return osext.expandvars(
             self.site_config.get('systems/0/outputdir')
         )
 
@@ -101,7 +104,7 @@ class RuntimeContext:
             if h['type'] == 'filelog':
                 break
 
-        return os_ext.expandvars(
+        return osext.expandvars(
             self.site_config.get(f'logging/0/handlers_perflog/{i}/basedir')
         )
 
@@ -136,13 +139,14 @@ class RuntimeContext:
 
         return os.path.abspath(ret)
 
-    def make_stagedir(self, *dirs, wipeout=True):
+    def make_stagedir(self, *dirs):
+        wipeout = self.get_option('general/0/clean_stagedir')
         return self._makedir(self.stage_prefix,
                              *self._format_dirs(*dirs), wipeout=wipeout)
 
-    def make_outputdir(self, *dirs, wipeout=True):
+    def make_outputdir(self, *dirs):
         return self._makedir(self.output_prefix,
-                             *self._format_dirs(*dirs), wipeout=wipeout)
+                             *self._format_dirs(*dirs), wipeout=True)
 
     @property
     def modules_system(self):
@@ -175,10 +179,9 @@ def init_runtime(site_config):
 def runtime():
     '''Get the runtime context of the framework.
 
-    :returns: A :class:`reframe.core.runtime.RuntimeContext` object.
+    .. versionadded:: 2.13
 
-    .. note::
-       .. versionadded:: 2.13
+    :returns: A :class:`reframe.core.runtime.RuntimeContext` object.
     '''
     if _runtime_context is None:
         raise ReframeFatalError('no runtime context is configured')
@@ -210,15 +213,19 @@ def loadenv(*environs):
             commands += modules_system.emit_load_commands(m)
 
         for k, v in env.variables.items():
-            os.environ[k] = os_ext.expandvars(v)
+            os.environ[k] = osext.expandvars(v)
             commands.append('export %s=%s' % (k, v))
 
     return env_snapshot, commands
 
 
 def emit_loadenv_commands(*environs):
-    env_snapshot, commands = loadenv(*environs)
-    env_snapshot.restore()
+    env_snapshot = snapshot()
+    try:
+        _, commands = loadenv(*environs)
+    finally:
+        env_snapshot.restore()
+
     return commands
 
 
@@ -233,7 +240,7 @@ def is_env_loaded(environ):
     '''
     is_module_loaded = runtime().modules_system.is_module_loaded
     return (all(map(is_module_loaded, environ.modules)) and
-            all(os.environ.get(k, None) == os_ext.expandvars(v)
+            all(os.environ.get(k, None) == osext.expandvars(v)
                 for k, v in environ.variables.items()))
 
 

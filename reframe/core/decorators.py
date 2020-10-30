@@ -48,7 +48,7 @@ def _register_test(cls, args=None):
             try:
                 ret.append(_instantiate(cls, args))
             except Exception:
-                frame = user_frame(sys.exc_info()[2])
+                frame = user_frame(*sys.exc_info())
                 msg = "skipping test due to errors: %s: " % cls.__name__
                 msg += "use `-v' for more information\n"
                 msg += "  FILE: %s:%s" % (frame.filename, frame.lineno)
@@ -81,7 +81,6 @@ def simple_test(cls):
     available directly under the :mod:`reframe` module.
 
     .. versionadded:: 2.13
-
     '''
 
     _validate_test(cls)
@@ -102,10 +101,8 @@ def parameterized_test(*inst):
    .. versionadded:: 2.13
 
    .. note::
-
       This decorator does not instantiate any test.  It only registers them.
       The actual instantiation happens during the loading phase of the test.
-
     '''
     def _do_register(cls):
         _validate_test(cls)
@@ -124,6 +121,8 @@ def required_version(*versions):
     If the test is not compatible with the current ReFrame version it will be
     skipped.
 
+    .. versionadded:: 2.13
+
     :arg versions: A list of ReFrame version specifications that this test is
       allowed to run. A version specification string can have one of the
       following formats:
@@ -140,9 +139,6 @@ def required_version(*versions):
       ``@required_version('2.13', '>=2.16')``, in which case the test will be
       selected if *any* of the versions is satisfied, even if the versions
       specifications are conflicting.
-
-    .. versionadded:: 2.13
-
     '''
     if not versions:
         raise ValueError('no versions specified')
@@ -200,7 +196,6 @@ def run_before(stage):
     ``'run'``, ``'sanity'``, ``'performance'`` or ``'cleanup'``.
 
     .. versionadded:: 2.20
-
     '''
     return _runx('pre_' + stage)
 
@@ -212,7 +207,6 @@ def run_after(stage):
     :py:attr:`reframe.core.decorators.run_before`.
 
     .. versionadded:: 2.20
-
     '''
     return _runx('post_' + stage)
 
@@ -232,6 +226,9 @@ def require_deps(func):
 
     The converted arguments are essentially functions accepting a single
     argument, which is the target test's programming environment.
+
+    Additionally, this decorator will attach the function to run *after* the
+    test's setup phase, but *before* any other "post_setup" pipeline hook.
 
     This decorator is also directly available under the :mod:`reframe` module.
 
