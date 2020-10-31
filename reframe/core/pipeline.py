@@ -1022,7 +1022,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
     def _setup_paths(self):
         '''Setup the check's dynamic paths.'''
-        self.logger.debug('setting up paths')
+        self.logger.debug('Setting up test paths')
         try:
             runtime = rt.runtime()
             self._stagedir = runtime.make_stagedir(
@@ -1039,13 +1039,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
     def _setup_job(self, **job_opts):
         '''Setup the job related to this check.'''
 
-        self.logger.debug('setting up the job descriptor')
-
-        msg = 'job scheduler backend: {0}'
-        self.logger.debug(
-            msg.format('local' if self.is_local else
-                       self._current_partition.scheduler.registered_name))
-
         if self.local:
             scheduler = getscheduler('local')()
             launcher = getlauncher('local')()
@@ -1053,6 +1046,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
             scheduler = self._current_partition.scheduler
             launcher = self._current_partition.launcher_type()
 
+        self.logger.debug(
+            f'Setting up run job descriptor '
+            f'(scheduler: {scheduler.registered_name!r}, '
+            f'launcher: {launcher.registered_name!r})'
+        )
         self._job = Job.create(scheduler,
                                launcher,
                                name='rfm_%s_job' % self.name,
@@ -1063,7 +1061,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
                                **job_opts)
 
     def _setup_perf_logging(self):
-        self.logger.debug('setting up performance logging')
         self._perf_logger = logging.getperflogger(self)
 
     @_run_hooks()
@@ -1093,9 +1090,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self._setup_job(**job_opts)
 
     def _copy_to_stagedir(self, path):
-        self.logger.debug('copying %s to stage directory (%s)' %
-                          (path, self._stagedir))
-        self.logger.debug('symlinking files: %s' % self.readonly_files)
+        self.logger.debug(f'Copying {path} to stage directory')
+        self.logger.debug(f'Symlinking files: {self.readonly_files}')
         try:
             osext.copytree_virtual(
                 path, self._stagedir, self.readonly_files, dirs_exist_ok=True
@@ -1104,8 +1100,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
             raise PipelineError('copying of files failed') from e
 
     def _clone_to_stagedir(self, url):
-        self.logger.debug('cloning URL %s to stage directory (%s)' %
-                          (url, self._stagedir))
+        self.logger.debug(f'Cloning URL {url} into stage directory')
         osext.git_clone(self.sourcesdir, self._stagedir)
 
     @_run_hooks('pre_compile')
@@ -1137,9 +1132,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
             if commonpath:
                 self.logger.warn(
-                    "sourcepath `%s' seems to be a subdirectory of "
-                    "sourcesdir `%s', but it will be interpreted "
-                    "as relative to it." % (self.sourcepath, self.sourcesdir))
+                    f'sourcepath {self.sourcepath!r} is a subdirectory of '
+                    f'sourcesdir {self.sourcesdir!r}, but it will be '
+                    f'interpreted as relative to it'
+                )
 
             if osext.is_url(self.sourcesdir):
                 self._clone_to_stagedir(self.sourcesdir)
@@ -1157,7 +1153,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
             )
 
         staged_sourcepath = os.path.join(self._stagedir, self.sourcepath)
-        self.logger.debug('Staged sourcepath: %s' % staged_sourcepath)
         if os.path.isdir(staged_sourcepath):
             if not self.build_system:
                 # Try to guess the build system
@@ -1226,7 +1221,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         '''
         self._build_job.wait()
-        self.logger.debug('compilation finished')
 
         # FIXME: this check is not reliable for certain scheduler backends
         if self._build_job.exitcode != 0:
@@ -1316,6 +1310,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self._job.options = resources_opts + self._job.options
         with osext.change_dir(self._stagedir):
             try:
+                self.logger.debug('Generating the run script')
                 self._job.prepare(
                     commands, environs,
                     login=rt.runtime().get_option('general/0/use_login_shell'),
@@ -1328,9 +1323,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
             self._job.submit()
 
-        msg = ('spawned job (%s=%s)' %
-               ('pid' if self.is_local() else 'jobid', self._job.jobid))
-        self.logger.debug(msg)
+        self.logger.debug(f'Spawned run job (id={self.job.jobid})')
 
         # Update num_tasks if test is flexible
         if self.job.sched_flex_alloc_nodes:
@@ -1385,7 +1378,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         '''
         self._job.wait()
-        self.logger.debug('spawned job finished')
 
     @final
     def wait(self):
@@ -1539,7 +1531,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
     def _copy_to_outputdir(self):
         '''Copy check's interesting files to the output directory.'''
-        self.logger.debug('copying interesting files to output directory')
+        self.logger.debug('Copying test files to output directory')
         self._copy_job_files(self._job, self.outputdir)
         self._copy_job_files(self._build_job, self.outputdir)
 
@@ -1579,13 +1571,14 @@ class RegressionTest(metaclass=RegressionTestMeta):
         '''
         aliased = os.path.samefile(self._stagedir, self._outputdir)
         if aliased:
-            self.logger.debug('skipping copy to output dir '
-                              'since they alias each other')
+            self.logger.debug(
+                f'outputdir and stagedir are the same; copying skipped'
+            )
         else:
             self._copy_to_outputdir()
 
         if remove_files:
-            self.logger.debug('removing stage directory')
+            self.logger.debug('Removing stage directory')
             osext.rmtree(self._stagedir)
 
     # Dependency API

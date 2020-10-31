@@ -17,6 +17,7 @@ import reframe.utility.osext as osext
 import reframe.utility.typecheck as types
 from reframe.core.exceptions import (ConfigError, EnvironError,
                                      SpawnedProcessError)
+from reframe.core.logging import getlogger
 from reframe.utility import OrderedSet
 
 
@@ -85,6 +86,7 @@ class ModulesSystem:
 
     @classmethod
     def create(cls, modules_kind=None):
+        getlogger().debug(f'Initializing modules system {modules_kind!r}')
         if modules_kind is None or modules_kind == 'nomod':
             return ModulesSystem(NoModImpl())
         elif modules_kind == 'tmod31':

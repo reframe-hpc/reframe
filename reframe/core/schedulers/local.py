@@ -15,7 +15,6 @@ import reframe.core.schedulers as sched
 import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
 from reframe.core.exceptions import ReframeError
-from reframe.core.logging import getlogger
 
 
 class _TimeoutExpired(ReframeError):
@@ -105,9 +104,7 @@ class LocalJobScheduler(sched.JobScheduler):
         except (ProcessLookupError, PermissionError):
             # The process group may already be dead or assigned to a different
             # group, so ignore this error
-            getlogger().debug(
-                f'pid {job.jobid} already dead or assigned elsewhere'
-            )
+            self.log(f'pid {job.jobid} already dead or assigned elsewhere')
         finally:
             # Close file handles
             job.f_stdout.close()
@@ -169,12 +166,15 @@ class LocalJobScheduler(sched.JobScheduler):
         except OSError as e:
             if e.errno == errno.ECHILD:
                 # No unwaited children
+                self.log('no more unwaited children')
                 return
             else:
                 raise e
 
         if job.cancel_time:
             # Job has been cancelled; give it a grace period and kill it
+            self.log(f'Job {job.jobid} has been cancelled; '
+                     f'giving it a grace period')
             t_rem = self.CANCEL_GRACE_PERIOD - (time.time() - job.cancel_time)
             if t_rem > 0:
                 time.sleep(t_rem)
@@ -186,6 +186,7 @@ class LocalJobScheduler(sched.JobScheduler):
             # Job has not finished; check if we have reached a timeout
             t_elapsed = time.time() - job.submit_time
             if job.time_limit and t_elapsed > job.time_limit:
+                self.log(f'Job {job.jobid} timed out; kill it')
                 self._kill_all(job)
                 job._state = 'TIMEOUT'
 

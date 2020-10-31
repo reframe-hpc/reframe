@@ -97,7 +97,7 @@ def run_command_async(cmd,
 
     if log:
         from reframe.core.logging import getlogger
-        getlogger().debug('executing OS command: ' + cmd)
+        getlogger().debug2(f'Executing system command: {cmd!r}')
 
     if not shell:
         cmd = shlex.split(cmd)
