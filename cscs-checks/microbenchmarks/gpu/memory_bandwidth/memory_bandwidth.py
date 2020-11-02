@@ -3,9 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import contextlib
-import os
-
 import reframe.utility.sanity as sn
 import reframe as rfm
 
@@ -19,8 +16,6 @@ class GpuBandwidthCheck(rfm.RegressionTest):
         self.valid_prog_environs = ['PrgEnv-gnu']
         if self.current_system.name in ['arolla', 'tsa']:
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
-        if self.current_system.name in ['arolla', 'ault', 'tsa']:
-            self.exclusive_access = True
 
         self.exclusive_access = True
         self.build_system = 'SingleSource'
@@ -35,9 +30,9 @@ class GpuBandwidthCheck(rfm.RegressionTest):
         # Perform a single bandwidth test with a buffer size of 1024MB
         self.copy_size = 1073741824
 
-        self.build_system.cxxflags = ['-I.', '-m64', '-arch=sm_%s' % nvidia_sm,
+        self.build_system.cxxflags = ['-I.', '-m64', f'-arch=sm_{nvidia_sm}',
                                       '-std=c++11', '-lnvidia-ml',
-                                      '-DCOPY=%d' % self.copy_size]
+                                      f'-DCOPY={self.copy_size}']
         self.num_tasks = 0
         self.num_tasks_per_node = 1
         if self.current_system.name in ['daint', 'dom', 'tiger']:
@@ -49,7 +44,6 @@ class GpuBandwidthCheck(rfm.RegressionTest):
         self.partition_num_gpus_per_node = {
             'daint:gpu':      1,
             'dom:gpu':        1,
-            'tiger:gpu':      2,
             'arolla:cn':      2,
             'tsa:cn':         8,
             'ault:amdv100':   2,
@@ -114,15 +108,13 @@ class GpuBandwidthCheck(rfm.RegressionTest):
 
         # Extract the bandwidth corresponding to the right node, transfer and
         # device.
-        return (r'^[^,]*\[[^,]*\]\s*%s\s*bandwidth on device'
-                r' \d+ is \s*(\S+)\s*Mb/s.' % (direction))
+        return (rf'^[^,]*\[[^,]*\]\s*{direction}\s*bandwidth on device'
+                r' \d+ is \s*(\S+)\s*Mb/s.')
 
     @rfm.run_before('run')
     def set_num_gpus_per_node(self):
-        cp = self.current_partition.fullname
-        if cp in self.partition_num_gpus_per_node:
-            self.num_gpus_per_node = self.partition_num_gpus_per_node.get(
-                cp, 1)
+        self.num_gpus_per_node = self.partition_num_gpus_per_node.get(
+            self.current_partition.fullname, 1)
 
     @sn.sanity_function
     def do_sanity_check(self):

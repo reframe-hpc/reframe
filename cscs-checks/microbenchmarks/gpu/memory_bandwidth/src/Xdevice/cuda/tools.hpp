@@ -10,10 +10,8 @@ static inline void nvmlCheck(nvmlReturn_t err)
 # ifdef DEBUG
   if (err != NVML_SUCCESS)
   {
-    char nid[80];
-    gethostname(nid, 80);
     std::cerr << "Call to the nvml API failed!" << std::endl;
-    exit(err);
+    exit(1);
   }
 # endif
 }

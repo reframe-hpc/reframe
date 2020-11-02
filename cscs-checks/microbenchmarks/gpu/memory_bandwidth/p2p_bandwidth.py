@@ -3,36 +3,33 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import contextlib
-import os
-
 import reframe.utility.sanity as sn
 import reframe as rfm
 
 
-@rfm.required_version('>=2.16-dev0')
 @rfm.parameterized_test(['peerAccess'], ['noPeerAccess'])
 class P2pBandwidthCheck(rfm.RegressionTest):
     def __init__(self, peerAccess):
-        self.valid_systems = ['tsa:cn', 'ault:amdv100']
+        self.valid_systems = ['tsa:cn','arola:cn',
+                              'ault:amdv100', 'ault:intelv100']
         self.valid_prog_environs = ['PrgEnv-gnu']
         if self.current_system.name in ['arolla', 'tsa']:
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
-            self.exclusive_access = True
 
         self.build_system = 'SingleSource'
         self.sourcepath = 'p2p_bandwidth.cu'
         self.executable = 'p2p_bandwidth.x'
         self.exclusive_access = True
+
         # Set nvcc flags
         nvidia_sm = '70'
 
         # Perform a single bandwidth test with a buffer size of 1024MB
         copy_size = 1073741824
 
-        self.build_system.cxxflags = ['-I.', '-m64', '-arch=sm_%s' % nvidia_sm,
+        self.build_system.cxxflags = ['-I.', '-m64', f'-arch=sm_{nvidia_sm}',
                                       '-std=c++11', '-lnvidia-ml',
-                                      '-DCOPY=%d' % copy_size]
+                                      f'-DCOPY={copy_size}']
         if (peerAccess == 'peerAccess'):
             self.build_system.cxxflags += ['-DP2P']
             p2p = True
@@ -62,6 +59,9 @@ class P2pBandwidthCheck(rfm.RegressionTest):
                 'tsa:cn': {
                     'bw':   (172.5, -0.05, None, 'GB/s'),
                 },
+                'arola:cn': {
+                    'bw':   (172.5, -0.05, None, 'GB/s'),
+                },
                 'ault:amdv100': {
                     'bw':   (5.7, -0.1, None, 'GB/s'),
                 },
@@ -72,6 +72,9 @@ class P2pBandwidthCheck(rfm.RegressionTest):
         else:
             self.reference = {
                 'tsa:cn': {
+                    'bw': (79.6, -0.05, None, 'GB/s'),
+                },
+                'arola:cn': {
                     'bw': (79.6, -0.05, None, 'GB/s'),
                 },
                 'ault:amdv100': {
@@ -87,10 +90,8 @@ class P2pBandwidthCheck(rfm.RegressionTest):
 
     @rfm.run_before('run')
     def set_num_gpus_per_node(self):
-        cp = self.current_partition.fullname
-        if cp in self.partition_num_gpus_per_node:
-            self.num_gpus_per_node = self.partition_num_gpus_per_node.get(
-                cp, 1)
+        self.num_gpus_per_node = self.partition_num_gpus_per_node.get(
+            self.current_partition.fullname, 1)
 
     @sn.sanity_function
     def do_sanity_check(self):

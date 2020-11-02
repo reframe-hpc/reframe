@@ -3,8 +3,8 @@
 int main()
 {
 
-  char * nid_name = (char *)calloc(80,sizeof(char));
-  gethostname(nid_name,80);
+  char nid_name[HOSTNAME_SIZE];
+  gethostname(nid_name, HOSTNAME_SIZE);
 
   int number_of_devices;
   XGetDeviceCount(number_of_devices);
@@ -28,7 +28,7 @@ int main()
   */
   size_t copy_size = COPY_SIZE;
   int copy_repeats = NUMBER_OF_COPIES;
-  float fact = (float)copy_size/(float)1e3;
+  float fact = (float)copy_size/1e3;
 
   /*
    Test the Host to Device bandwidth.
