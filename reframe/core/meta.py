@@ -7,7 +7,7 @@
 # Met-class for creating regression tests.
 #
 
-from reframe.core.exceptions import user_deprecation_warning
+from reframe.core.warnings import user_deprecation_warning
 
 
 class RegressionTestMeta(type):

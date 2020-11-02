@@ -6,7 +6,7 @@
 import os
 
 import reframe as rfm
-import reframe.utility.os_ext as os_ext
+import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 
 
@@ -57,7 +57,7 @@ class TrilinosTest(rfm.RegressionTest):
     @rfm.run_before('compile')
     def cdt2006_workaround_intel(self):
         if (self.current_environ.name == 'PrgEnv-intel' and
-            os_ext.cray_cdt_version() == '20.06'):
+            osext.cray_cdt_version() == '20.06'):
             self.modules += ['cray-netcdf-hdf5parallel']
             self.prebuild_cmds = [
                 'ln -s $CRAY_NETCDF_HDF5PARALLEL_PREFIX/lib/pkgconfig/'
@@ -67,7 +67,7 @@ class TrilinosTest(rfm.RegressionTest):
 
     @rfm.run_before('compile')
     def cdt2006_workaround_dynamic(self):
-        if (os_ext.cray_cdt_version() == '20.06' and
+        if (osext.cray_cdt_version() == '20.06' and
             self.linkage == 'dynamic' and
             self.current_environ.name == 'PrgEnv-gnu'):
             self.variables['PATH'] = (

@@ -12,7 +12,7 @@ import subprocess
 import time
 
 import reframe.core.schedulers as sched
-import reframe.utility.os_ext as os_ext
+import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
 from reframe.core.exceptions import ReframeError
 from reframe.core.logging import getlogger
@@ -72,7 +72,7 @@ class LocalJobScheduler(sched.JobScheduler):
         # The new process starts also a new session (session leader), so that
         # we can later kill any other processes that this might spawn by just
         # killing this one.
-        proc = os_ext.run_command_async(
+        proc = osext.run_command_async(
             os.path.abspath(job.script_filename),
             stdout=f_stdout,
             stderr=f_stderr,

@@ -15,18 +15,15 @@ import traceback
 import reframe
 import reframe.core.config as config
 import reframe.core.environments as env
+import reframe.core.exceptions as errors
 import reframe.core.logging as logging
 import reframe.core.runtime as runtime
+import reframe.core.warnings as warnings
 import reframe.frontend.argparse as argparse
 import reframe.frontend.check_filters as filters
 import reframe.frontend.dependency as dependency
-import reframe.utility.os_ext as os_ext
-import reframe.utility.json as jsonext
-from reframe.core.exceptions import (
-    EnvironError, ConfigError, ReframeError,
-    ReframeDeprecationWarning, ReframeFatalError,
-    format_exception, SystemAutodetectionError
-)
+import reframe.utility.jsonext as jsonext
+import reframe.utility.osext as osext
 from reframe.frontend.executors import Runner, generate_testcases
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
@@ -368,7 +365,7 @@ def main():
         help='Upgrade ReFrame 2.x configuration file to ReFrame 3.x syntax'
     )
     misc_options.add_argument(
-        '-V', '--version', action='version', version=os_ext.reframe_version()
+        '-V', '--version', action='version', version=osext.reframe_version()
     )
     misc_options.add_argument(
         '-v', '--verbose', action='count',
@@ -453,7 +450,7 @@ def main():
     try:
         try:
             site_config = config.load_config(options.config_file)
-        except ReframeDeprecationWarning as e:
+        except warnings.ReframeDeprecationWarning as e:
             printer.warning(e)
             converted = config.convert_old_config(options.config_file)
             printer.warning(
@@ -483,7 +480,7 @@ def main():
             options.update_config(site_config)
 
         logging.configure_logging(site_config)
-    except (OSError, ConfigError) as e:
+    except (OSError, errors.ConfigError) as e:
         printer.error(f'failed to load configuration: {e}')
         sys.exit(1)
 
@@ -492,7 +489,7 @@ def main():
     printer.inc_verbosity(site_config.get('general/0/verbose'))
     try:
         runtime.init_runtime(site_config)
-    except ConfigError as e:
+    except errors.ConfigError as e:
         printer.error(f'failed to initialize runtime: {e}')
         sys.exit(1)
 
@@ -507,11 +504,11 @@ def main():
             for m in site_config.get('general/0/module_mappings'):
                 rt.modules_system.load_mapping(m)
 
-    except (ConfigError, OSError) as e:
+    except (errors.ConfigError, OSError) as e:
         printer.error('could not load module mappings: %s' % e)
         sys.exit(1)
 
-    if (os_ext.samefile(rt.stage_prefix, rt.output_prefix) and
+    if (osext.samefile(rt.stage_prefix, rt.output_prefix) and
         not site_config.get('general/0/keep_stage_files')):
         printer.error("stage and output refer to the same directory; "
                       "if this is on purpose, please use the "
@@ -554,8 +551,8 @@ def main():
         'hostname': socket.gethostname(),
         'prefix_output': rt.output_prefix,
         'prefix_stage': rt.stage_prefix,
-        'user': os_ext.osuser(),
-        'version': os_ext.reframe_version(),
+        'user': osext.osuser(),
+        'version': osext.reframe_version(),
         'workdir': os.getcwd(),
     }
 
@@ -580,7 +577,7 @@ def main():
         try:
             checks_found = loader.load_all()
         except OSError as e:
-            raise ReframeError from e
+            raise errors.ReframeError from e
 
         # Filter checks by name
         checks_matched = checks_found
@@ -651,7 +648,7 @@ def main():
         # Load the environment for the current system
         try:
             runtime.loadenv(rt.system.preload_environ)
-        except EnvironError as e:
+        except errors.EnvironError as e:
             printer.error("failed to load current system's environment; "
                           "please check your configuration")
             printer.debug(str(e))
@@ -660,7 +657,7 @@ def main():
         for m in site_config.get('general/0/user_modules'):
             try:
                 rt.modules_system.load_module(m, force=True)
-            except EnvironError as e:
+            except errors.EnvironError as e:
                 printer.warning("could not load module '%s' correctly: "
                                 "Skipping..." % m)
                 printer.debug(str(e))
@@ -695,7 +692,9 @@ def main():
                 errmsg = "invalid option for --flex-alloc-nodes: '{0}'"
                 sched_flex_alloc_nodes = int(options.flex_alloc_nodes)
                 if sched_flex_alloc_nodes <= 0:
-                    raise ConfigError(errmsg.format(options.flex_alloc_nodes))
+                    raise errors.ConfigError(
+                        errmsg.format(options.flex_alloc_nodes)
+                    )
             except ValueError:
                 sched_flex_alloc_nodes = options.flex_alloc_nodes
 
@@ -713,8 +712,9 @@ def main():
             try:
                 max_retries = int(options.max_retries)
             except ValueError:
-                raise ConfigError('--max-retries is not a valid integer: %s' %
-                                  max_retries) from None
+                raise errors.ConfigError(
+                    f'--max-retries is not a valid integer: {max_retries}'
+                ) from None
             runner = Runner(exec_policy, printer, max_retries)
             try:
                 time_start = time.time()
@@ -735,17 +735,17 @@ def main():
 
                 # Print a failure report if we had failures in the last run
                 if runner.stats.failures():
-                    printer.info(runner.stats.failure_report())
+                    runner.stats.print_failure_report(printer)
                     success = False
                     if options.failure_stats:
-                        printer.info(runner.stats.failure_stats())
+                        runner.stats.print_failure_stats(printer)
 
                 if options.performance_report:
                     printer.info(runner.stats.performance_report())
 
                 # Generate the report for this session
                 report_file = os.path.normpath(
-                    os_ext.expandvars(rt.get_option('general/0/report_file'))
+                    osext.expandvars(rt.get_option('general/0/report_file'))
                 )
                 basedir = os.path.dirname(report_file)
                 if basedir:
@@ -765,6 +765,7 @@ def main():
                 try:
                     with open(report_file, 'w') as fp:
                         jsonext.dump(json_report, fp, indent=2)
+                        fp.write('\n')
                 except OSError as e:
                     printer.warning(
                         f'failed to generate report in {report_file!r}: {e}'
@@ -784,11 +785,18 @@ def main():
 
     except KeyboardInterrupt:
         sys.exit(1)
-    except ReframeError as e:
+    except errors.ReframeError as e:
         printer.error(str(e))
         sys.exit(1)
-    except (Exception, ReframeFatalError):
-        printer.error(format_exception(*sys.exc_info()))
+    except (Exception, errors.ReframeFatalError):
+        exc_info = sys.exc_info()
+        tb = ''.join(traceback.format_exception(*exc_info))
+        printer.error(errors.what(*exc_info))
+        if errors.is_severe(*exc_info):
+            printer.error(tb)
+        else:
+            printer.verbose(tb)
+
         sys.exit(1)
     finally:
         try:
@@ -797,7 +805,7 @@ def main():
                 log_files = logging.save_log_files(rt.output_prefix)
 
         except OSError as e:
-            printer.error('could not save log file: %s' % e)
+            printer.error(f'could not save log file: {e}')
             sys.exit(1)
         finally:
             if not log_files:

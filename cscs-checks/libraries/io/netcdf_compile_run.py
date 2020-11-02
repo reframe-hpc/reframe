@@ -6,7 +6,6 @@
 import os
 
 import reframe as rfm
-import reframe.utility.os_ext as os_ext
 import reframe.utility.sanity as sn
 
 
