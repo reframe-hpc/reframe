@@ -7,25 +7,18 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.required_version('>=2.14')
 @rfm.simple_test
 class CUDAFortranCheck(rfm.RegressionTest):
     def __init__(self):
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-pgi']
         self.sourcepath = 'vecAdd_cuda.f90'
-
-        self.num_tasks = 1
         self.modules = ['craype-accel-nvidia60']
-
-        self.executable = self.name
         self.build_system = 'SingleSource'
         self.num_gpus_per_node = 1
-        self.num_tasks_per_node = 1
         result = sn.extractsingle(r'final result:\s+(?P<result>\d+\.?\d*)',
                                   self.stdout, 'result', float)
         self.sanity_patterns = sn.assert_reference(result, 1., -1e-5, 1e-5)
-
         self.maintainers = ['TM', 'AJ']
         self.tags = {'production', 'craype'}
 
