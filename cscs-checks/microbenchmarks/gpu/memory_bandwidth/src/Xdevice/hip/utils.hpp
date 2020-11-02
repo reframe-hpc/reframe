@@ -17,7 +17,7 @@ static inline void checkError(hipError_t errorCode)
       gethostname(nid, HOSTNAME_SIZE);
       std::cerr << "[" << nid << "] A call to the HIP API returned an error :" <<
         hipGetErrorString(errorCode) << std::endl;
-      exit(errorCode);
+      exit(1);
    }
 #  endif
 }

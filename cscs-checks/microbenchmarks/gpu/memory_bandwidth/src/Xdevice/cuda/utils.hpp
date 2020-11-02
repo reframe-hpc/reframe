@@ -18,7 +18,7 @@ static inline void checkError(cudaError_t errorCode)
       gethostname(nid, HOSTNAME_SIZE);
       std::cerr << "[" << nid << "] A call to the CUDA API returned an error :" <<
         cudaGetErrorString(errorCode) << std::endl;
-      exit(errorCode);
+      exit(1);
    }
 #  endif
 }

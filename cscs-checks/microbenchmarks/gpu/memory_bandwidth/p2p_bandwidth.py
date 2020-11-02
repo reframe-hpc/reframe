@@ -10,7 +10,7 @@ import reframe as rfm
 @rfm.parameterized_test(['peerAccess'], ['noPeerAccess'])
 class P2pBandwidthCheck(rfm.RegressionTest):
     def __init__(self, peerAccess):
-        self.valid_systems = ['tsa:cn','arola:cn',
+        self.valid_systems = ['tsa:cn', 'arola:cn',
                               'ault:amdv100', 'ault:intelv100']
         self.valid_prog_environs = ['PrgEnv-gnu']
         if self.current_system.name in ['arolla', 'tsa']:
@@ -50,8 +50,8 @@ class P2pBandwidthCheck(rfm.RegressionTest):
         self.sanity_patterns = self.do_sanity_check()
         self.perf_patterns = {
             'bw': sn.min(sn.extractall(
-                    r'^[^,]*\[[^\]]*\]\s+GPU\s+\d+\s+(\s*\d+.\d+\s)+',
-                    self.stdout, 1, float))
+                r'^[^,]*\[[^\]]*\]\s+GPU\s+\d+\s+(\s*\d+.\d+\s)+',
+                self.stdout, 1, float))
         }
 
         if p2p:
@@ -65,7 +65,7 @@ class P2pBandwidthCheck(rfm.RegressionTest):
                 'ault:amdv100': {
                     'bw':   (5.7, -0.1, None, 'GB/s'),
                 },
-                'ault:intelv100' : {
+                'ault:intelv100': {
                     'bw':   (31.0, -0.1, None, 'GB/s'),
                 }
             }
@@ -80,7 +80,7 @@ class P2pBandwidthCheck(rfm.RegressionTest):
                 'ault:amdv100': {
                     'bw': (7.5, -0.1, None, 'GB/s'),
                 },
-                'ault:intelv100' : {
+                'ault:intelv100': {
                     'bw': (33.6, -0.1, None, 'GB/s'),
                 }
             }
