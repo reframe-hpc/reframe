@@ -282,7 +282,7 @@ def user_frame(exc_type, exc_value, tb):
 
     '''
     if not inspect.istraceback(tb):
-        raise ValueError('could not retrieve frame: argument not a traceback')
+        return None
 
     for finfo in reversed(inspect.getinnerframes(tb)):
         relpath = os.path.relpath(finfo.filename, sys.path[0])
