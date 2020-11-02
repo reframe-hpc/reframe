@@ -21,7 +21,7 @@ class Test0(rfm.RunOnlyRegressionTest):
 @rfm.parameterized_test(*([kind] for kind in ['default', 'fully',
                                               'by_part', 'by_case',
                                               'custom', 'any', 'all',
-                                              'edgeless']))
+                                              'nodeps']))
 class Test1(rfm.RunOnlyRegressionTest):
     def __init__(self, kind):
         def custom_deps(src, dst):
