@@ -7,7 +7,7 @@
 # Met-class for creating regression tests.
 #
 
-from reframe.core.exceptions import user_deprecation_warning
+from reframe.core.warnings import user_deprecation_warning
 
 
 class RegressionTestMeta(type):
@@ -33,9 +33,11 @@ class RegressionTestMeta(type):
             except AttributeError:
                 pass
 
-        hooks['post_setup'] = fn_with_deps + hooks.get('post_setup', [])
-        cls._rfm_pipeline_hooks = hooks
+        if fn_with_deps:
+            hooks['post_setup'] = fn_with_deps + hooks.get('post_setup', [])
 
+        cls._rfm_pipeline_hooks = hooks
+        cls._rfm_disabled_hooks = set()
         cls._final_methods = {v.__name__ for v in namespace.values()
                               if hasattr(v, '_rfm_final')}
 
@@ -48,6 +50,9 @@ class RegressionTestMeta(type):
 
         for v in namespace.values():
             for b in bases:
+                if not hasattr(b, '_final_methods'):
+                    continue
+
                 if callable(v) and v.__name__ in b._final_methods:
                     msg = (f"'{cls.__qualname__}.{v.__name__}' attempts to "
                            f"override final method "

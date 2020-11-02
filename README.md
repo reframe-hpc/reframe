@@ -29,25 +29,37 @@ Users can create their own test hierarchies, create test factories for generatin
 
 ## Getting ReFrame
 
-You may install ReFrame directly from [PyPI](https://pypi.org/project/ReFrame-HPC/) through `pip`:
-
-```bash
-pip install reframe-hpc
-```
-
-ReFrame will be available in your PATH:
-
-```bash
-reframe -V
-```
-
-Alternatively, and especially if you want to contribute back to the framework, you may clone this repository:
+ReFrame is almost ready to run just after you clone it from Github.
+All you need is Python 3.6 or above and to run its bootstrap script:
 
 ```bash
 git clone https://github.com/eth-cscs/reframe.git
 cd reframe
+./bootstrap.sh
 ./bin/reframe -V
 ```
+
+### Other installation ways
+
+You can also install ReFrame through the following channels:
+
+- Through [PyPI](https://pypi.org/project/ReFrame-HPC/):
+
+  ```
+  pip install reframe-hpc
+  ```
+
+- Through [Spack](https://spack.io/):
+
+  ```
+  spack install reframe
+  ```
+
+- Through [EasyBuild](https://easybuild.readthedocs.io/):
+
+  ```
+  eb easybuild/easyconfigs/r/ReFrame/ReFrame-VERSION.eb -r
+  ```
 
 Finally, you may access all previous versions of ReFrame [here](https://github.com/eth-cscs/reframe/releases).
 
@@ -57,24 +69,22 @@ Finally, you may access all previous versions of ReFrame [here](https://github.c
 You may find the official documentation of the latest release and the current master in the following links:
 
 - [Latest release](https://reframe-hpc.readthedocs.io/en/stable)
-- [Current master](https://reframe-hpc.readthedocs.io)
+- [Current master](https://reframe-hpc.readthedocs.io/en/latest)
 
 
 ### Building the documentation locally
 
-You may build the documentation of the master locally either with Python 2 or Python 3.
-Here is how to do it:
+You may build the documentation of the master manually as follows:
 
 ```
-pip install -r docs/requirements.txt
-make -C docs latest
+./bootstrap.sh +docs
 ```
 
 For viewing it, you may do the following:
 
 ```
 cd docs/html
-python -m http.server # or python -m SimpleHTTPServer for Python 2
+python3 -m http.server
 ```
 
 The documentation is now up on [localhost:8000](http://localhost:8000), where you can navigate with your browser.

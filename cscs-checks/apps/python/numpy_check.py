@@ -11,7 +11,7 @@ class NumpyBaseTest(rfm.RunOnlyRegressionTest):
     def __init__(self):
         self.descr = 'Test a few typical numpy operations'
         self.valid_prog_environs = ['builtin']
-        self.modules = ['numpy/1.17.2-CrayGNU-19.10']
+        self.modules = ['numpy']
         self.reference = {
             'daint:gpu': {
                 'dot': (0.4, None, 0.05, 'seconds'),

@@ -13,7 +13,7 @@ import os
 import re
 
 import reframe.utility.typecheck as types
-from reframe.core.exceptions import user_deprecation_warning
+from reframe.core.warnings import user_deprecation_warning
 from reframe.utility import ScopedDict
 
 
@@ -110,18 +110,10 @@ class TimerField(TypedField):
     '''Stores a timer in the form of a :class:`datetime.timedelta` object'''
 
     def __init__(self, fieldname, *other_types):
-        super().__init__(fieldname, datetime.timedelta, str,
-                         types.Tuple[int, int, int], *other_types)
+        super().__init__(fieldname, str, int, float, *other_types)
 
     def __set__(self, obj, value):
         self._check_type(value)
-        if isinstance(value, tuple):
-            user_deprecation_warning(
-                "setting a timer field from a tuple is deprecated: "
-                "please use a string '<days>d<hours>h<minutes>m<seconds>s'")
-            h, m, s = value
-            value = datetime.timedelta(hours=h, minutes=m, seconds=s)
-
         if isinstance(value, str):
             time_match = re.match(r'^((?P<days>\d+)d)?'
                                   r'((?P<hours>\d+)h)?'
@@ -132,7 +124,11 @@ class TimerField(TypedField):
                 raise ValueError('invalid format for timer field')
 
             value = datetime.timedelta(
-                **{k: int(v) for k, v in time_match.groupdict().items() if v})
+                **{k: int(v) for k, v in time_match.groupdict().items() if v}
+            ).total_seconds()
+        elif isinstance(value, float) or isinstance(value, int):
+            if value < 0:
+                raise ValueError('timer field value cannot be negative')
 
         # Call Field's __set__() method, type checking is already performed
         Field.__set__(self, obj, value)

@@ -8,9 +8,9 @@ import os
 import pytest
 
 import reframe.core.config as config
-import reframe.utility.os_ext as os_ext
-from reframe.core.exceptions import (ConfigError, ReframeDeprecationWarning)
+from reframe.core.exceptions import ConfigError
 from reframe.core.systems import System
+from reframe.core.warnings import ReframeDeprecationWarning
 
 
 def test_load_config_fallback(monkeypatch):
@@ -28,6 +28,18 @@ def test_load_config_python_old_syntax():
         site_config = config.load_config(
             'unittests/resources/settings_old_syntax.py'
         )
+
+
+def test_load_config_nouser(monkeypatch):
+    import pwd
+
+    # Monkeypatch to simulate a system with no username
+    monkeypatch.setattr(pwd, 'getpwuid', lambda uid: None)
+    monkeypatch.delenv('LOGNAME', raising=False)
+    monkeypatch.delenv('USER', raising=False)
+    monkeypatch.delenv('LNAME', raising=False)
+    monkeypatch.delenv('USERNAME', raising=False)
+    config.load_config()
 
 
 def test_convert_old_config():
@@ -189,6 +201,18 @@ def test_select_subconfig_undefined_environment():
         site_config.select_subconfig()
 
 
+def test_select_subconfig_ignore_resolve_errors():
+    site_config = config.load_config('reframe/core/settings.py')
+    site_config['systems'][0]['partitions'][0]['environs'] += ['foo', 'bar']
+    site_config.select_subconfig(ignore_resolve_errors=True)
+
+
+def test_select_subconfig_ignore_no_section_errors():
+    site_config = config.load_config('reframe/core/settings.py')
+    site_config['environments'][0]['target_systems'] = ['foo']
+    site_config.select_subconfig(ignore_resolve_errors=True)
+
+
 def test_select_subconfig():
     site_config = config.load_config('unittests/resources/settings.py')
     site_config.select_subconfig('testsys')
@@ -229,7 +253,7 @@ def test_select_subconfig():
     assert site_config.get('systems/0/partitions/0/container_platforms') == []
     assert site_config.get('systems/0/partitions/0/modules') == []
     assert site_config.get('systems/0/partitions/0/variables') == []
-    assert site_config.get('systems/0/partitions/0/max_jobs') == 1
+    assert site_config.get('systems/0/partitions/0/max_jobs') == 8
     assert len(site_config['environments']) == 6
     assert site_config.get('environments/@PrgEnv-gnu/cc') == 'gcc'
     assert site_config.get('environments/0/cxx') == 'g++'
@@ -257,6 +281,11 @@ def test_select_subconfig():
     assert site_config.get('environments/@PrgEnv-gnu/cc') == 'cc'
     assert site_config.get('environments/0/cxx') == 'CC'
     assert site_config.get('general/0/check_search_path') == ['c:d']
+
+    # Test default values for non-existent name-addressable objects
+    # See https://github.com/eth-cscs/reframe/issues/1339
+    assert site_config.get('modes/@foo/options') == []
+    assert site_config.get('modes/10/options') == []
 
     # Test inexistent options
     site_config.select_subconfig('testsys')
@@ -316,7 +345,7 @@ def test_system_create():
     assert partition.fullname == 'testsys:gpu'
     assert partition.descr == 'GPU partition'
     assert partition.scheduler.registered_name == 'slurm'
-    assert partition.launcher.registered_name == 'srun'
+    assert partition.launcher_type.registered_name == 'srun'
     assert partition.access == []
     assert partition.container_environs == {}
     assert partition.local_env.modules == ['foogpu']

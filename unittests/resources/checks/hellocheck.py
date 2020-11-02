@@ -20,3 +20,15 @@ class HelloTest(rfm.RegressionTest):
         self.tags = {'foo', 'bar'}
         self.sanity_patterns = sn.assert_found(r'Hello, World\!', self.stdout)
         self.maintainers = ['VK']
+
+
+@rfm.simple_test
+class CompileOnlyHelloTest(rfm.CompileOnlyRegressionTest):
+    def __init__(self):
+        self.descr = 'Compile-only C Hello World test'
+
+        # All available systems are supported
+        self.valid_systems = ['*']
+        self.valid_prog_environs = ['*']
+        self.sourcepath = 'hello.c'
+        self.sanity_patterns = sn.assert_not_found(r'(?i)error', self.stdout)

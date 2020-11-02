@@ -8,18 +8,18 @@ import functools
 import os
 import pytest
 import re
+import signal
 import socket
-import tempfile
 import time
-import unittest
 from datetime import datetime, timedelta
 
 import reframe.core.runtime as rt
-import reframe.utility.os_ext as os_ext
 import unittests.fixtures as fixtures
 from reframe.core.backends import (getlauncher, getscheduler)
 from reframe.core.environments import Environment
-from reframe.core.exceptions import JobError, JobNotStartedError
+from reframe.core.exceptions import (
+    JobError, JobNotStartedError, JobSchedulerError
+)
 from reframe.core.launchers.local import LocalLauncher
 from reframe.core.schedulers import Job
 from reframe.core.schedulers.slurm import _SlurmNode, _create_nodes
@@ -67,7 +67,7 @@ def exec_ctx(temp_runtime, scheduler):
     next(rt)
     if scheduler.registered_name == 'squeue':
         # slurm backend fulfills the functionality of the squeue backend, so
-        # if squeue is not configured, use slurrm instead
+        # if squeue is not configured, use slurm instead
         partition = (fixtures.partition_by_scheduler('squeue') or
                      fixtures.partition_by_scheduler('slurm'))
     else:
@@ -104,14 +104,8 @@ def minimal_job(make_job):
 
 @pytest.fixture
 def fake_job(make_job):
-    ret = make_job(
-        sched_nodelist='nid000[00-17]',
-        sched_exclude_nodelist='nid00016',
-        sched_partition='foo',
-        sched_reservation='bar',
-        sched_account='spam',
-        sched_exclusive_access=True
-    )
+    ret = make_job(sched_exclusive_access=True,
+                   sched_options=['--account=spam'])
     ret.time_limit = '5m'
     ret.num_tasks = 16
     ret.num_tasks_per_node = 2
@@ -119,9 +113,9 @@ def fake_job(make_job):
     ret.num_tasks_per_socket = 1
     ret.num_cpus_per_task = 18
     ret.use_smt = True
-    ret.options = ['--gres=gpu:4',
-                   '#DW jobdw capacity=100GB',
-                   '#DW stage_in source=/foo']
+    ret.options += ['--gres=gpu:4',
+                    '#DW jobdw capacity=100GB',
+                    '#DW stage_in source=/foo']
     return ret
 
 
@@ -160,13 +154,9 @@ def _expected_slurm_directives(job):
         '#SBATCH --ntasks-per-socket=%s' % job.num_tasks_per_socket,
         '#SBATCH --cpus-per-task=%s' % job.num_cpus_per_task,
         '#SBATCH --hint=multithread',
-        '#SBATCH --nodelist=%s' % job.sched_nodelist,
-        '#SBATCH --exclude=%s' % job.sched_exclude_nodelist,
-        '#SBATCH --partition=%s' % job.sched_partition,
-        '#SBATCH --reservation=%s' % job.sched_reservation,
-        '#SBATCH --account=%s' % job.sched_account,
         '#SBATCH --exclusive',
         # Custom options and directives
+        '#SBATCH --account=spam',
         '#SBATCH --gres=gpu:4',
         '#DW jobdw capacity=100GB',
         '#DW stage_in source=/foo'
@@ -188,7 +178,7 @@ def _expected_pbs_directives(job):
         ':mem=100GB:cpu_type=haswell' % (num_nodes,
                                          job.num_tasks_per_node,
                                          num_cpus_per_node),
-        '#PBS -q %s' % job.sched_partition,
+        '#PBS --account=spam',
         '#PBS --gres=gpu:4',
         '#DW jobdw capacity=100GB',
         '#DW stage_in source=/foo'
@@ -205,7 +195,7 @@ def _expected_torque_directives(job):
         '#PBS -e %s' % job.stderr,
         '#PBS -l nodes=%s:ppn=%s:haswell' % (num_nodes, num_cpus_per_node),
         '#PBS -l mem=100GB',
-        '#PBS -q %s' % job.sched_partition,
+        '#PBS --account=spam',
         '#PBS --gres=gpu:4',
         '#DW jobdw capacity=100GB',
         '#DW stage_in source=/foo'
@@ -261,6 +251,18 @@ def test_prepare_without_smt(fake_job, slurm_only):
         assert re.search(r'--hint=nomultithread', fp.read()) is not None
 
 
+def test_prepare_nodes_option(temp_runtime, make_job, slurm_only):
+    rt = temp_runtime(fixtures.TEST_CONFIG_FILE, 'generic',
+                      {'schedulers/use_nodes_option': True})
+    next(rt)
+    job = make_job()
+    job.num_tasks = 16
+    job.num_tasks_per_node = 2
+    prepare_job(job)
+    with open(job.script_filename) as fp:
+        assert re.search(r'--nodes=8', fp.read()) is not None
+
+
 def test_submit(make_job, exec_ctx):
     minimal_job = make_job(sched_access=exec_ctx.access)
     prepare_job(minimal_job)
@@ -273,8 +275,9 @@ def test_submit(make_job, exec_ctx):
     sched_name = minimal_job.scheduler.registered_name
     if sched_name == 'local':
         assert [socket.gethostname()] == minimal_job.nodelist
-        assert 0 == minimal_job.exitcode
-    elif sched_name == ('slurm', 'squeue'):
+        assert minimal_job.exitcode == 0
+        assert minimal_job.state == 'SUCCESS'
+    elif sched_name == ('slurm', 'squeue', 'pbs', 'torque'):
         num_tasks_per_node = minimal_job.num_tasks_per_node or 1
         num_nodes = minimal_job.num_tasks // num_tasks_per_node
         assert num_nodes == len(minimal_job.nodelist)
@@ -296,6 +299,12 @@ def test_submit_timelimit(minimal_job, local_only):
 
     assert minimal_job.state == 'TIMEOUT'
 
+    # Additional scheduler-specific checks
+    sched_name = minimal_job.scheduler.registered_name
+    if sched_name == 'local':
+        assert minimal_job.signal == signal.SIGKILL
+        assert minimal_job.state == 'TIMEOUT'
+
 
 def test_submit_job_array(make_job, slurm_only, exec_ctx):
     job = make_job(sched_access=exec_ctx.access)
@@ -316,6 +325,14 @@ def test_cancel(make_job, exec_ctx):
     t_job = datetime.now()
     minimal_job.submit()
     minimal_job.cancel()
+
+    # We give some time to the local scheduler for the TERM signal to be
+    # delivered; if we poll immediately, the process may have not been killed
+    # yet, and the scheduler will assume that it's ignoring its signal, then
+    # wait for a grace period and send a KILL signal, which is not what we
+    # want to test here.
+    time.sleep(0.01)
+
     minimal_job.wait()
     t_job = datetime.now() - t_job
     assert minimal_job.finished()
@@ -325,6 +342,9 @@ def test_cancel(make_job, exec_ctx):
     sched_name = minimal_job.scheduler.registered_name
     if sched_name in ('slurm', 'squeue'):
         assert minimal_job.state == 'CANCELLED'
+    elif sched_name == 'local':
+        assert minimal_job.state == 'FAILURE'
+        assert minimal_job.signal == signal.SIGTERM
 
 
 def test_cancel_before_submit(minimal_job):
@@ -339,7 +359,7 @@ def test_wait_before_submit(minimal_job):
         minimal_job.wait()
 
 
-def test_poll(make_job, exec_ctx):
+def test_finished(make_job, exec_ctx):
     minimal_job = make_job(sched_access=exec_ctx.access)
     prepare_job(minimal_job, 'sleep 2')
     minimal_job.submit()
@@ -347,15 +367,62 @@ def test_poll(make_job, exec_ctx):
     minimal_job.wait()
 
 
-def test_poll_before_submit(minimal_job):
+def test_finished_before_submit(minimal_job):
     prepare_job(minimal_job, 'sleep 3')
     with pytest.raises(JobNotStartedError):
+        minimal_job.finished()
+
+
+def test_finished_raises_error(make_job, exec_ctx):
+    minimal_job = make_job(sched_access=exec_ctx.access)
+    prepare_job(minimal_job, 'echo hello')
+    minimal_job.submit()
+    minimal_job.wait()
+
+    # Emulate an error during polling and verify that it is raised correctly
+    # when finished() is called
+    minimal_job._exception = JobError('fake error')
+    with pytest.raises(JobError, match='fake error'):
         minimal_job.finished()
 
 
 def test_no_empty_lines_in_preamble(minimal_job):
     for line in minimal_job.scheduler.emit_preamble(minimal_job):
         assert line != ''
+
+
+def test_combined_access_constraint(make_job, slurm_only):
+    job = make_job(sched_access=['--constraint=c1'])
+    job.options = ['-C c2&c3']
+    prepare_job(job)
+    with open(job.script_filename) as fp:
+        script_content = fp.read()
+
+    assert re.search(r'(?m)--constraint=c1&c2&c3$', script_content)
+    assert re.search(r'(?m)--constraint=(c1|c2&c3)$', script_content) is None
+
+
+def test_combined_access_multiple_constraints(make_job, slurm_only):
+    job = make_job(sched_access=['--constraint=c1'])
+    job.options = ['--constraint=c2', '-C c3']
+    prepare_job(job)
+    with open(job.script_filename) as fp:
+        script_content = fp.read()
+
+    assert re.search(r'(?m)--constraint=c1&c3$', script_content)
+    assert re.search(r'(?m)--constraint=(c1|c2|c3)$', script_content) is None
+
+
+def test_combined_access_verbatim_constraint(make_job, slurm_only):
+    job = make_job(sched_access=['--constraint=c1'])
+    job.options = ['#SBATCH --constraint=c2', '#SBATCH -C c3']
+    prepare_job(job)
+    with open(job.script_filename) as fp:
+        script_content = fp.read()
+
+    assert re.search(r'(?m)--constraint=c1$', script_content)
+    assert re.search(r'(?m)^#SBATCH --constraint=c2$', script_content)
+    assert re.search(r'(?m)^#SBATCH -C c3$', script_content)
 
 
 def test_guess_num_tasks(minimal_job, scheduler):
@@ -391,23 +458,22 @@ def test_submit_max_pending_time(make_job, exec_ctx, scheduler):
         pytest.skip(f"max_pending_time not supported by the "
                     f"'{scheduler.registered_name}' scheduler")
 
-    def update_state(job):
+    minimal_job = make_job(sched_access=exec_ctx.access,
+                           max_pending_time=0.05)
+
+    # Monkey-patch the Job's state property to pretend that the job is always
+    # pending
+    def state(self):
         if scheduler.registered_name in ('slurm', 'squeue'):
-            job.state = 'PENDING'
+            return 'PENDING'
         elif scheduler.registered_name == 'torque':
-            job.state = 'QUEUED'
+            return 'QUEUED'
         else:
             # This should not happen
             assert 0
 
-    minimal_job = make_job(sched_access=exec_ctx.access)
+    type(minimal_job).state = property(state)
     prepare_job(minimal_job, 'sleep 30')
-
-    # Monkey patch `self._update_state` to simulate that the job is
-    # pending on the queue for enough time so it can be canceled due
-    # to exceeding the maximum pending time
-    minimal_job.scheduler._update_state = update_state
-    minimal_job._max_pending_time = timedelta(milliseconds=50)
     minimal_job.submit()
     with pytest.raises(JobError,
                        match='maximum pending time exceeded'):
@@ -426,7 +492,7 @@ def test_cancel_with_grace(minimal_job, scheduler, local_only):
     # This test emulates a spawned process that ignores the SIGTERM signal
     # and also spawns another process:
     #
-    #   reframe --- local job script --- sleep 10
+    #   reframe --- local job script --- sleep 5
     #                  (TERM IGN)
     #
     # We expect the job not to be cancelled immediately, since it ignores
@@ -435,7 +501,7 @@ def test_cancel_with_grace(minimal_job, scheduler, local_only):
     #
     # We also check that the additional spawned process is also killed.
     minimal_job.time_limit = '1m'
-    minimal_job.scheduler._cancel_grace_period = 2
+    minimal_job.scheduler.CANCEL_GRACE_PERIOD = 2
     prepare_job(minimal_job,
                 command='sleep 5 &',
                 pre_run=['trap -- "" TERM'],
@@ -448,18 +514,22 @@ def test_cancel_with_grace(minimal_job, scheduler, local_only):
 
     t_grace = datetime.now()
     minimal_job.cancel()
+    time.sleep(0.1)
+    minimal_job.wait()
     t_grace = datetime.now() - t_grace
 
-    minimal_job.wait()
     # Read pid of spawned sleep
     with open(minimal_job.stdout) as fp:
         sleep_pid = int(fp.read())
 
     assert t_grace.total_seconds() >= 2
     assert t_grace.total_seconds() < 5
-    assert minimal_job.state == 'TIMEOUT'
+    assert minimal_job.state == 'FAILURE'
+    assert minimal_job.signal == signal.SIGKILL
 
-    # Verify that the spawned sleep is killed, too
+    # Verify that the spawned sleep is killed, too, but back off a bit in
+    # order to allow the sleep process to wake up and get the signal
+    time.sleep(0.1)
     assert_process_died(sleep_pid)
 
 
@@ -476,7 +546,6 @@ def test_cancel_term_ignore(minimal_job, scheduler, local_only):
     #  implementation grants the sleep process a grace period and then
     #  kills it.
     minimal_job.time_limit = '1m'
-    minimal_job.scheduler._cancel_grace_period = 2
     prepare_job(minimal_job,
                 command=os.path.join(fixtures.TEST_RESOURCES_CHECKS,
                                      'src', 'sleep_deeply.sh'),
@@ -490,17 +559,21 @@ def test_cancel_term_ignore(minimal_job, scheduler, local_only):
 
     t_grace = datetime.now()
     minimal_job.cancel()
-    t_grace = datetime.now() - t_grace
+    time.sleep(0.1)
     minimal_job.wait()
+    t_grace = datetime.now() - t_grace
 
     # Read pid of spawned sleep
     with open(minimal_job.stdout) as fp:
         sleep_pid = int(fp.read())
 
     assert t_grace.total_seconds() >= 2
-    assert minimal_job.state == 'TIMEOUT'
+    assert minimal_job.state == 'FAILURE'
+    assert minimal_job.signal == signal.SIGKILL
 
-    # Verify that the spawned sleep is killed, too
+    # Verify that the spawned sleep is killed, too, but back off a bit in
+    # order to allow the sleep process to wake up and get the signal
+    time.sleep(0.1)
     assert_process_died(sleep_pid)
 
 
@@ -601,6 +674,24 @@ def slurm_nodes():
             'ExtSensorsTemp=n/s Reason=Foo/ '
             'failed [reframe_user@01 Jan 2018]',
 
+            'NodeName=nid00006 Arch=x86_64 CoresPerSocket=12 '
+            'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
+            'AvailableFeatures=f6 ActiveFeatures=f6 '
+            'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid00006'
+            'NodeHostName=nid00006 Version=10.00 OS=Linux '
+            'RealMemory=32220 AllocMem=0 FreeMem=10000 '
+            'Sockets=1 Boards=1 State=MAINT '
+            'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
+            'MCS_label=N/A Partitions=p4 '
+            'BootTime=01 Jan 2018 '
+            'SlurmdStartTime=01 Jan 2018 '
+            'CfgTRES=cpu=24,mem=32220M '
+            'AllocTRES= CapWatts=n/a CurrentWatts=100 '
+            'LowestJoules=100000000 ConsumedJoules=0 '
+            'ExtSensorsJoules=n/s ExtSensorsWatts=0 '
+            'ExtSensorsTemp=n/s Reason=Foo/ '
+            'failed [reframe_user@01 Jan 2018]',
+
             'Node invalid_node2 not found']
 
 
@@ -670,7 +761,7 @@ def test_flex_alloc_sched_access_idle_sequence_view(make_flexible_job):
 
     job = make_flexible_job('idle',
                             sched_access=SequenceView(['--constraint=f3']),
-                            sched_partition='p3')
+                            sched_options=['--partition=p3'])
     prepare_job(job)
     assert job.num_tasks == 4
 
@@ -703,7 +794,7 @@ def test_flex_alloc_constraint_idle(make_flexible_job):
 
 
 def test_flex_alloc_partition_idle(make_flexible_job):
-    job = make_flexible_job('idle', sched_partition='p2')
+    job = make_flexible_job('idle', sched_options=['--partition=p2'])
     with pytest.raises(JobError):
         prepare_job(job)
 
@@ -717,13 +808,13 @@ def test_flex_alloc_valid_constraint_opt(make_flexible_job):
 
 def test_flex_alloc_valid_multiple_constraints(make_flexible_job):
     job = make_flexible_job('all')
-    job.options = ['-C f1,f3']
+    job.options = ['-C f1&f3']
     prepare_job(job)
     assert job.num_tasks == 4
 
 
 def test_flex_alloc_valid_partition_cmd(make_flexible_job):
-    job = make_flexible_job('all', sched_partition='p2')
+    job = make_flexible_job('all', sched_options=['--partition=p2'])
     prepare_job(job)
     assert job.num_tasks == 8
 
@@ -744,13 +835,13 @@ def test_flex_alloc_valid_multiple_partitions(make_flexible_job):
 
 def test_flex_alloc_valid_constraint_partition(make_flexible_job):
     job = make_flexible_job('all')
-    job.options = ['-C f1,f2', '--partition=p1,p2']
+    job.options = ['-C f1&f2', '--partition=p1,p2']
     prepare_job(job)
     assert job.num_tasks == 4
 
 
 def test_flex_alloc_invalid_partition_cmd(make_flexible_job):
-    job = make_flexible_job('all', sched_partition='invalid')
+    job = make_flexible_job('all', sched_options=['--partition=invalid'])
     with pytest.raises(JobError):
         prepare_job(job)
 
@@ -772,7 +863,7 @@ def test_flex_alloc_invalid_constraint(make_flexible_job):
 def test_flex_alloc_valid_reservation_cmd(make_flexible_job):
     job = make_flexible_job('all',
                             sched_access=['--constraint=f2'],
-                            sched_reservation='dummy')
+                            sched_options=['--reservation=dummy'])
 
     prepare_job(job)
     assert job.num_tasks == 4
@@ -788,7 +879,7 @@ def test_flex_alloc_valid_reservation_option(make_flexible_job):
 def test_flex_alloc_exclude_nodes_cmd(make_flexible_job):
     job = make_flexible_job('all',
                             sched_access=['--constraint=f1'],
-                            sched_exclude_nodelist='nid00001')
+                            sched_options=['--exclude=nid00001'])
     prepare_job(job)
     assert job.num_tasks == 8
 
@@ -803,7 +894,7 @@ def test_flex_alloc_exclude_nodes_opt(make_flexible_job):
 def test_flex_alloc_no_num_tasks_per_node(make_flexible_job):
     job = make_flexible_job('all')
     job.num_tasks_per_node = None
-    job.options = ['-C f1,f2', '--partition=p1,p2']
+    job.options = ['-C f1&f2', '--partition=p1,p2']
     prepare_job(job)
     assert job.num_tasks == 1
 
@@ -815,9 +906,16 @@ def test_flex_alloc_not_enough_idle_nodes(make_flexible_job):
         prepare_job(job)
 
 
+def test_flex_alloc_maintenance_nodes(make_flexible_job):
+    job = make_flexible_job('maint')
+    job.options = ['--partition=p4']
+    prepare_job(job)
+    assert job.num_tasks == 4
+
+
 def test_flex_alloc_not_enough_nodes_constraint_partition(make_flexible_job):
     job = make_flexible_job('all')
-    job.options = ['-C f1,f2', '--partition=p1,p2']
+    job.options = ['-C f1&f2', '--partition=p1,p2']
     job.num_tasks = -8
     with pytest.raises(JobError):
         prepare_job(job)
@@ -825,7 +923,7 @@ def test_flex_alloc_not_enough_nodes_constraint_partition(make_flexible_job):
 
 def test_flex_alloc_enough_nodes_constraint_partition(make_flexible_job):
     job = make_flexible_job('all')
-    job.options = ['-C f1,f2', '--partition=p1,p2']
+    job.options = ['-C f1&f2', '--partition=p1,p2']
     job.num_tasks = -4
     prepare_job(job)
     assert job.num_tasks == 4
@@ -922,8 +1020,31 @@ def slurm_node_nopart():
     )
 
 
+@pytest.fixture
+def slurm_node_maintenance():
+    return _SlurmNode(
+        'NodeName=nid00006 Arch=x86_64 CoresPerSocket=12 '
+        'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
+        'AvailableFeatures=f6 ActiveFeatures=f6 '
+        'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid00006'
+        'NodeHostName=nid00006 Version=10.00 OS=Linux '
+        'RealMemory=32220 AllocMem=0 FreeMem=10000 '
+        'Sockets=1 Boards=1 State=MAINT '
+        'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
+        'MCS_label=N/A Partitions=p4 '
+        'BootTime=01 Jan 2018 '
+        'SlurmdStartTime=01 Jan 2018 '
+        'CfgTRES=cpu=24,mem=32220M '
+        'AllocTRES= CapWatts=n/a CurrentWatts=100 '
+        'LowestJoules=100000000 ConsumedJoules=0 '
+        'ExtSensorsJoules=n/s ExtSensorsWatts=0 '
+        'ExtSensorsTemp=n/s Reason=Foo/ '
+        'failed [reframe_user@01 Jan 2018]'
+    )
+
+
 def test_slurm_node_noname():
-    with pytest.raises(JobError):
+    with pytest.raises(JobSchedulerError):
         _SlurmNode(
             'Arch=x86_64 CoresPerSocket=12 '
             'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
@@ -976,14 +1097,17 @@ def test_str(slurm_node_allocated):
     assert 'nid00001' == str(slurm_node_allocated)
 
 
-def test_slurm_node_is_available(slurm_node_allocated,
-                                 slurm_node_idle,
-                                 slurm_node_drained,
-                                 slurm_node_nopart):
-    assert not slurm_node_allocated.is_available()
-    assert slurm_node_idle.is_available()
-    assert not slurm_node_drained.is_available()
-    assert not slurm_node_nopart.is_available()
+def test_slurm_node_in_state(slurm_node_allocated,
+                             slurm_node_idle,
+                             slurm_node_drained,
+                             slurm_node_nopart):
+    assert slurm_node_allocated.in_state('allocated')
+    assert slurm_node_idle.in_state('Idle')
+    assert slurm_node_drained.in_state('IDLE+Drain')
+    assert slurm_node_drained.in_state('IDLE')
+    assert slurm_node_drained.in_state('idle')
+    assert slurm_node_drained.in_state('DRAIN')
+    assert not slurm_node_nopart.in_state('IDLE')
 
 
 def test_slurm_node_is_down(slurm_node_allocated,
@@ -992,24 +1116,3 @@ def test_slurm_node_is_down(slurm_node_allocated,
     assert not slurm_node_allocated.is_down()
     assert not slurm_node_idle.is_down()
     assert slurm_node_nopart.is_down()
-
-
-class TestSlurmNode:
-    def setUp(self):
-        idle_node_description = (
-        )
-
-        idle_drained_node_description = (
-        )
-
-        no_partition_node_description = (
-        )
-
-        self.no_name_node_description = (
-        )
-
-        self.allocated_node = _SlurmNode(allocated_node_description)
-        self.allocated_node_copy = _SlurmNode(allocated_node_description)
-        self.idle_node = _SlurmNode(idle_node_description)
-        self.idle_drained = _SlurmNode(idle_drained_node_description)
-        self.no_partition_node = _SlurmNode(no_partition_node_description)

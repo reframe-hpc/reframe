@@ -14,16 +14,14 @@ import socket
 import tempfile
 
 import reframe
-import reframe.core.debug as debug
 import reframe.core.fields as fields
 import reframe.core.settings as settings
 import reframe.utility as util
-import reframe.utility.os_ext as os_ext
+import reframe.utility.osext as osext
 import reframe.utility.typecheck as types
-from reframe.core.exceptions import (ConfigError,
-                                     ReframeDeprecationWarning,
-                                     ReframeFatalError)
+from reframe.core.exceptions import ConfigError, ReframeFatalError
 from reframe.core.logging import getlogger
+from reframe.core.warnings import ReframeDeprecationWarning
 from reframe.utility import ScopedDict
 
 
@@ -50,7 +48,7 @@ class _SiteConfig:
         self._sticky_options = {}
 
         # Open and store the JSON schema for later validation
-        schema_filename = os.path.join(reframe.INSTALL_PREFIX,
+        schema_filename = os.path.join(reframe.INSTALL_PREFIX, 'reframe',
                                        'schemas', 'config.json')
         with open(schema_filename) as fp:
             try:
@@ -139,7 +137,6 @@ class _SiteConfig:
                     # Element addressable by name
                     x, found = x[1:], False
                     for obj in value:
-                        value, found = obj, True
                         if obj['name'] == x:
                             value, found = obj, True
                             break
@@ -274,7 +271,8 @@ class _SiteConfig:
 
                 partition_names.add(partname)
 
-    def select_subconfig(self, system_fullname=None):
+    def select_subconfig(self, system_fullname=None,
+                         ignore_resolve_errors=False):
         if (self._local_system is not None and
             self._local_system == system_fullname):
             return
@@ -351,25 +349,29 @@ class _SiteConfig:
         required_sections = self._schema['required']
         for name in required_sections:
             if name not in self._local_config.keys():
-                raise ConfigError(f"section '{name}' not defined "
-                                  f"for system '{system_fullname}'")
+                if not ignore_resolve_errors:
+                    raise ConfigError(
+                        f"section '{name}' not defined "
+                        f"for system '{system_fullname}'"
+                    )
 
         # Verify that all environments defined by the system are defined for
         # the current system
-        sys_environs = {
-            *itertools.chain(*(p['environs']
-                               for p in systems[0]['partitions']))
-        }
-        found_environs = {
-            e['name'] for e in self._local_config['environments']
-        }
-        undefined_environs = sys_environs - found_environs
-        if undefined_environs:
-            env_descr = ', '.join(f"'{e}'" for e in undefined_environs)
-            raise ConfigError(
-                f"environments {env_descr} "
-                f"are not defined for '{system_fullname}'"
-            )
+        if not ignore_resolve_errors:
+            sys_environs = {
+                *itertools.chain(*(p['environs']
+                                   for p in systems[0]['partitions']))
+            }
+            found_environs = {
+                e['name'] for e in self._local_config['environments']
+            }
+            undefined_environs = sys_environs - found_environs
+            if undefined_environs:
+                env_descr = ', '.join(f"'{e}'" for e in undefined_environs)
+                raise ConfigError(
+                    f"environments {env_descr} "
+                    f"are not defined for '{system_fullname}'"
+                )
 
         self._local_system = system_fullname
 
@@ -552,11 +554,9 @@ def convert_old_config(filename, newfilename=None):
 
 def _find_config_file():
     # The order of elements is important, since it defines the priority
-    prefixes = [
-        os.path.join(os.getlogin(), '.reframe'),
-        reframe.INSTALL_PREFIX,
-        '/etc/reframe.d'
-    ]
+    username = osext.osuser()
+    prefixes = [os.path.join(username, '.reframe')] if username else []
+    prefixes += [reframe.INSTALL_PREFIX, '/etc/reframe.d']
     valid_exts = ['py', 'json']
     for d in prefixes:
         for ext in valid_exts:

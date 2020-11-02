@@ -41,8 +41,8 @@ checked_exec()
 
 run_tutorial_checks()
 {
-    cmd="./bin/reframe -C tutorial/config/settings.py \
---save-log-files -r -t tutorial $@"
+    cmd="./bin/reframe -C tutorials/config/settings.py -J account=jenscscs \
+--save-log-files -r -c tutorials/ -R -x HelloThreadedExtendedTest $@"
     echo "[INFO] Running tutorial checks with \`$cmd'"
     checked_exec $cmd
 }
@@ -125,21 +125,12 @@ if [ "X${MODULEUSE}" != "X" ]; then
     module use ${MODULEUSE}
 fi
 
-if [[ $(hostname) =~ tsa ]]; then
-    # FIXME: Temporary workaround until we have a reframe module on Tsa
-    module load python
-else
+if [[ $(hostname) =~ kesch ]]; then
     module load reframe
 fi
 
-# Always install our requirements
-python3 -m venv venv.unittests
-source venv.unittests/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
-
-# FIXME: XALT is causing linking problems (see UES-823)
-module unload xalt
+# Bootstrap ReFrame
+./bootstrap.sh
 
 echo "[INFO] Loaded Modules"
 module list
@@ -150,15 +141,15 @@ echo "[INFO] Running unit tests on $(hostname) in ${CI_FOLDER}"
 if [ $CI_GENERIC -eq 1 ]; then
     # Run unit tests for the public release
     echo "[INFO] Running unit tests with generic settings"
-    checked_exec ./test_reframe.py \
-                 -W=error::reframe.core.exceptions.ReframeDeprecationWarning -ra
+    checked_exec ./test_reframe.py --workers=auto --forked \
+                 -W=error::reframe.core.warnings.ReframeDeprecationWarning -ra
     checked_exec ! ./bin/reframe.py --system=generic -l 2>&1 | \
         grep -- '--- Logging error ---'
 elif [ $CI_TUTORIAL -eq 1 ]; then
     # Run tutorial checks
     # Find modified or added tutorial checks
     tutorialchecks=( $(git diff origin/master...HEAD --name-only --oneline --no-merges | \
-                       grep -e '^tutorial/.*\.py') )
+                       grep -e '^tutorials/.*\.py') )
 
     if [ ${#tutorialchecks[@]} -ne 0 ]; then
         tutorialchecks_path=""
@@ -175,21 +166,23 @@ elif [ $CI_TUTORIAL -eq 1 ]; then
 else
     # Run unit tests with the scheduler backends
     tempdir=$(mktemp -d -p $SCRATCH)
+    echo "[INFO] Using temporary directory: $tempdir"
     if [[ $(hostname) =~ dom ]]; then
         PATH_save=$PATH
         export PATH=/apps/dom/UES/karakasv/slurm-wrappers/bin:$PATH
         for backend in slurm pbs torque; do
             echo "[INFO] Running unit tests with ${backend}"
-            checked_exec ./test_reframe.py --rfm-user-config=config/cscs-ci.py \
-                         -W=error::reframe.core.exceptions.ReframeDeprecationWarning \
-                         --rfm-user-system=dom:${backend} --basetemp=$tempdir -ra
+            TMPDIR=$tempdir checked_exec ./test_reframe.py --workers=auto --forked \
+                         --rfm-user-config=config/cscs-ci.py \
+                         -W=error::reframe.core.warnings.ReframeDeprecationWarning \
+                         --rfm-user-system=dom:${backend} -ra
         done
         export PATH=$PATH_save
     else
         echo "[INFO] Running unit tests"
-        checked_exec ./test_reframe.py --rfm-user-config=config/cscs-ci.py \
-                     -W=error::reframe.core.exceptions.ReframeDeprecationWarning \
-                     --basetemp=$tempdir -ra
+        TMPDIR=$tempdir checked_exec ./test_reframe.py --workers=auto --forked \
+                     --rfm-user-config=config/cscs-ci.py \
+                     -W=error::reframe.core.warnings.ReframeDeprecationWarning -ra
     fi
 
     if [ $CI_EXITCODE -eq 0 ]; then
@@ -216,5 +209,4 @@ else
         done
     fi
 fi
-deactivate
 exit $CI_EXITCODE

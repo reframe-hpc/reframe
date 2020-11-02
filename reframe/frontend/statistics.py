@@ -3,9 +3,9 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import reframe.core.debug as debug
+import traceback
 import reframe.core.runtime as rt
-from reframe.core.exceptions import StatisticsError
+import reframe.core.exceptions as errors
 
 
 class TestStats:
@@ -13,23 +13,23 @@ class TestStats:
 
     def __init__(self):
         # Tasks per run stored as follows: [[run0_tasks], [run1_tasks], ...]
-        self._tasks = [[]]
+        self._alltasks = [[]]
 
-    def __repr__(self):
-        return debug.repr(self)
+        # Data collected for all the runs of this session in JSON format
+        self._run_data = []
 
     def add_task(self, task):
         current_run = rt.runtime().current_run
-        if current_run == len(self._tasks):
-            self._tasks.append([])
+        if current_run == len(self._alltasks):
+            self._alltasks.append([])
 
-        self._tasks[current_run].append(task)
+        self._alltasks[current_run].append(task)
 
     def tasks(self, run=-1):
         try:
-            return self._tasks[run]
+            return self._alltasks[run]
         except IndexError:
-            raise StatisticsError('no such run: %s' % run) from None
+            raise errors.StatisticsError('no such run: %s' % run) from None
 
     def failures(self, run=-1):
         return [t for t in self.tasks(run) if t.failed]
@@ -47,8 +47,7 @@ class TestStats:
         report.append('SUMMARY OF RETRIES')
         report.append(line_width * '-')
         messages = {}
-
-        for run in range(1, len(self._tasks)):
+        for run in range(1, len(self._alltasks)):
             for t in self.tasks(run):
                 partition_name = ''
                 environ_name = ''
@@ -70,63 +69,153 @@ class TestStats:
 
         return '\n'.join(report)
 
-    def failure_report(self):
+    def json(self, force=False):
+        if not force and self._run_data:
+            return self._run_data
+
+        for runid, run in enumerate(self._alltasks):
+            testcases = []
+            num_failures = 0
+            for t in run:
+                check = t.check
+                partition = check.current_partition
+                entry = {
+                    'build_stderr': None,
+                    'build_stdout': None,
+                    'description': check.descr,
+                    'environment': None,
+                    'fail_reason': None,
+                    'fail_phase': None,
+                    'jobid': None,
+                    'job_stderr': None,
+                    'job_stdout': None,
+                    'name': check.name,
+                    'maintainers': check.maintainers,
+                    'nodelist': [],
+                    'outputdir': None,
+                    'perfvars': None,
+                    'result': None,
+                    'stagedir': None,
+                    'scheduler': None,
+                    'system': check.current_system.name,
+                    'tags': list(check.tags),
+                    'time_compile': t.duration('compile_complete'),
+                    'time_performance': t.duration('performance'),
+                    'time_run': t.duration('run_complete'),
+                    'time_sanity': t.duration('sanity'),
+                    'time_setup': t.duration('setup'),
+                    'time_total': t.duration('total')
+                }
+
+                # We take partition and environment from the test case and not
+                # from the check, since if the test fails before `setup()`,
+                # these are not set inside the check.
+                partition = t.testcase.partition
+                environ = t.testcase.environ
+                entry['system'] = partition.fullname
+                entry['scheduler'] = partition.scheduler.registered_name
+                entry['environment'] = environ.name
+                if check.job:
+                    entry['jobid'] = check.job.jobid
+                    entry['job_stderr'] = check.stderr.evaluate()
+                    entry['job_stdout'] = check.stdout.evaluate()
+                    entry['nodelist'] = check.job.nodelist or []
+
+                if check.build_job:
+                    entry['build_stderr'] = check.build_stderr.evaluate()
+                    entry['build_stdout'] = check.build_stdout.evaluate()
+
+                if t.failed:
+                    num_failures += 1
+                    entry['result'] = 'failure'
+                    entry['stagedir'] = check.stagedir
+                    entry['fail_phase'] = t.failed_stage
+                    if t.exc_info is not None:
+                        entry['fail_reason'] = errors.what(*t.exc_info)
+                        entry['fail_info'] = {
+                            'exc_type':  t.exc_info[0],
+                            'exc_value': t.exc_info[1],
+                            'traceback': t.exc_info[2]
+                        }
+                        entry['fail_severe'] = errors.is_severe(*t.exc_info)
+                else:
+                    entry['result'] = 'success'
+                    entry['outputdir'] = check.outputdir
+
+                if check.perf_patterns:
+                    # Record performance variables
+                    entry['perfvars'] = []
+                    for key, ref in check.perfvalues.items():
+                        var = key.split(':')[-1]
+                        val, ref, lower, upper, unit = ref
+                        entry['perfvars'].append({
+                            'name': var,
+                            'reference': ref,
+                            'thres_lower': lower,
+                            'thres_upper': upper,
+                            'unit': unit,
+                            'value': val
+                        })
+
+                testcases.append(entry)
+
+            self._run_data.append({
+                'num_cases': len(run),
+                'num_failures': num_failures,
+                'runid': runid,
+                'testcases': testcases
+            })
+
+        return self._run_data
+
+    def print_failure_report(self, printer):
         line_width = 78
-        report = [line_width * '=']
-        report.append('SUMMARY OF FAILURES')
-        current_run = rt.runtime().current_run
-        for tf in (t for t in self.tasks(current_run) if t.failed):
-            check = tf.check
-            partition = check.current_partition
-            partname = partition.fullname if partition else 'None'
-            environ_name = (check.current_environ.name
-                            if check.current_environ else 'None')
-            retry_info = ('(for the last of %s retries)' % current_run
-                          if current_run > 0 else '')
+        printer.info(line_width * '=')
+        printer.info('SUMMARY OF FAILURES')
+        run_report = self.json()[-1]
+        last_run = run_report['runid']
+        for r in run_report['testcases']:
+            if r['result'] == 'success':
+                continue
 
-            report.append(line_width * '-')
-            report.append('FAILURE INFO for %s %s' % (check.name, retry_info))
-            report.append('  * System partition: %s' % partname)
-            report.append('  * Environment: %s' % environ_name)
-            report.append('  * Stage directory: %s' % check.stagedir)
-            report.append('  * Node list: %s' %
-                          (','.join(check.job.nodelist)
-                           if check.job and check.job.nodelist else '<None>'))
-            job_type = 'local' if check.is_local() else 'batch job'
-            jobid = check.job.jobid if check.job else -1
-            report.append('  * Job type: %s (id=%s)' % (job_type, jobid))
-            report.append('  * Maintainers: %s' % check.maintainers)
-            report.append('  * Failing phase: %s' % tf.failed_stage)
-            report.append("  * Rerun with '-n %s -p %s --system %s'" %
-                          (check.name, environ_name, partname))
-            reason = '  * Reason: '
-            if tf.exc_info is not None:
-                from reframe.core.exceptions import format_exception
+            retry_info = (
+                f'(for the last of {last_run} retries)' if last_run > 0 else ''
+            )
+            printer.info(line_width * '-')
+            printer.info(f"FAILURE INFO for {r['name']} {retry_info}")
+            printer.info(f"  * Test Description: {r['description']}")
+            printer.info(f"  * System partition: {r['system']}")
+            printer.info(f"  * Environment: {r['environment']}")
+            printer.info(f"  * Stage directory: {r['stagedir']}")
+            nodelist = ','.join(r['nodelist']) if r['nodelist'] else None
+            printer.info(f"  * Node list: {nodelist}")
+            job_type = 'local' if r['scheduler'] == 'local' else 'batch job'
+            jobid = r['jobid']
+            printer.info(f"  * Job type: {job_type} (id={r['jobid']})")
+            printer.info(f"  * Maintainers: {r['maintainers']}")
+            printer.info(f"  * Failing phase: {r['fail_phase']}")
+            printer.info(f"  * Rerun with '-n {r['name']}"
+                         f" -p {r['environment']} --system {r['system']}'")
+            printer.info(f"  * Reason: {r['fail_reason']}")
 
-                reason += format_exception(*tf.exc_info)
-                report.append(reason)
-
-            elif tf.failed_stage == 'check_sanity':
-                report.append('Sanity check failure')
-            elif tf.failed_stage == 'check_performance':
-                report.append('Performance check failure')
+            tb = ''.join(traceback.format_exception(*r['fail_info'].values()))
+            if r['fail_severe']:
+                printer.info(tb)
             else:
-                # This shouldn't happen...
-                report.append('Unknown error.')
+                printer.verbose(tb)
 
-        report.append(line_width * '-')
-        return '\n'.join(report)
+        printer.info(line_width * '-')
 
-    def failure_stats(self):
+    def print_failure_stats(self, printer):
         failures = {}
         current_run = rt.runtime().current_run
         for tf in (t for t in self.tasks(current_run) if t.failed):
             check = tf.check
             partition = check.current_partition
-            partname = partition.fullname if partition else 'None'
+            partfullname = partition.fullname if partition else 'None'
             environ_name = (check.current_environ.name
                             if check.current_environ else 'None')
-            f = f'[{check.name}, {environ_name}, {partname}]'
+            f = f'[{check.name}, {environ_name}, {partfullname}]'
             if tf.failed_stage not in failures:
                 failures[tf.failed_stage] = []
 
@@ -157,11 +246,12 @@ class TestStats:
                 stats_body.append(row_format.format('', '', str(f)))
 
         if stats_body:
-            return '\n'.join([stats_start, stats_title, *stats_body,
-                              stats_end])
-        return ''
+            for line in (stats_start, stats_title, *stats_body, stats_end):
+                printer.info(line)
 
     def performance_report(self):
+        # FIXME: Adapt this function to use the JSON report
+
         line_width = 78
         report_start = line_width * '='
         report_title = 'PERFORMANCE REPORT'

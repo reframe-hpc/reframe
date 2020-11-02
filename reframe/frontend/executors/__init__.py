@@ -7,15 +7,16 @@ import abc
 import copy
 import signal
 import sys
+import time
 import weakref
 
-import reframe.core.debug as debug
 import reframe.core.environments as env
 import reframe.core.logging as logging
 import reframe.core.runtime as runtime
 import reframe.frontend.dependency as dependency
 from reframe.core.exceptions import (AbortTaskError, JobNotStartedError,
                                      ReframeForceExitError, TaskExit)
+from reframe.core.schedulers.local import LocalJobScheduler
 from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.statistics import TestStats
 
@@ -130,6 +131,63 @@ class RegressionTask:
         # Test case has finished, but has not been waited for yet
         self.zombie = False
 
+        # Timestamps for the start and finish phases of the pipeline
+        self._timestamps = {}
+
+    def duration(self, phase):
+        # Treat pseudo-phases first
+        if phase == 'compile_complete':
+            t_start = 'compile_start'
+            t_finish = 'compile_wait_finish'
+        elif phase == 'run_complete':
+            t_start = 'run_start'
+            t_finish = 'wait_finish'
+        elif phase == 'total':
+            t_start = 'setup_start'
+            t_finish = 'pipeline_end'
+        else:
+            t_start  = f'{phase}_start'
+            t_finish = f'{phase}_finish'
+
+        start = self._timestamps.get(t_start)
+        if not start:
+            return None
+
+        finish = self._timestamps.get(t_finish)
+        if not finish:
+            finish = self._timestamps.get('pipeline_end')
+
+        return finish - start
+
+    def pipeline_timings(self, phases):
+        def _tf(t):
+            return f'{t:.3f}s' if t else 'n/a'
+
+        msg = ''
+        for phase in phases:
+            if phase == 'compile_complete':
+                msg += f"compile: {_tf(self.duration('compile_complete'))} "
+            elif phase == 'run_complete':
+                msg += f"run: {_tf(self.duration('run_complete'))} "
+            else:
+                msg += f"{phase}: {_tf(self.duration(phase))} "
+
+        if msg:
+            msg = msg[:-1]
+
+        return msg
+
+    def pipeline_timings_all(self):
+        return self.pipeline_timings([
+            'setup', 'compile_complete', 'run_complete',
+            'sanity', 'performance', 'total'
+        ])
+
+    def pipeline_timings_basic(self):
+        return self.pipeline_timings([
+            'compile_complete', 'run_complete', 'total'
+        ])
+
     @property
     def testcase(self):
         return self._case
@@ -154,19 +212,41 @@ class RegressionTask:
     def succeeded(self):
         return self._current_stage in {'finalize', 'cleanup'}
 
+    @property
+    def completed(self):
+        return self.failed or self.succeeded
+
     def _notify_listeners(self, callback_name):
         for l in self._listeners:
             callback = getattr(l, callback_name)
             callback(self)
 
     def _safe_call(self, fn, *args, **kwargs):
+        class update_timestamps:
+            '''Context manager to set the start and finish timestamps.'''
+
+            # We use `this` to refer to the update_timestamps object, because
+            # we don't want to masquerade the self argument of our containing
+            # function
+            def __enter__(this):
+                if fn.__name__ != 'poll':
+                    stage = self._current_stage
+                    self._timestamps[f'{stage}_start'] = time.time()
+
+            def __exit__(this, exc_type, exc_value, traceback):
+                stage = self._current_stage
+                self._timestamps[f'{stage}_finish'] = time.time()
+                self._timestamps['pipeline_end'] = time.time()
+
         if fn.__name__ != 'poll':
             self._current_stage = fn.__name__
 
         try:
             with logging.logging_context(self.check) as logger:
-                logger.debug('entering stage: %s' % self._current_stage)
-                return fn(*args, **kwargs)
+                logger.debug(f'entering stage: {self._current_stage}')
+                with update_timestamps():
+                    return fn(*args, **kwargs)
+
         except ABORT_REASONS:
             self.fail()
             raise
@@ -188,17 +268,17 @@ class RegressionTask:
         self._safe_call(self.check.run)
         self._notify_listeners('on_task_run')
 
-    def wait(self):
-        self._safe_call(self.check.wait)
-        self.zombie = False
-
-    def poll(self):
-        finished = self._safe_call(self.check.poll)
-        if finished:
+    def run_complete(self):
+        done = self._safe_call(self.check.run_complete)
+        if done:
             self.zombie = True
             self._notify_listeners('on_task_exit')
 
-        return finished
+        return done
+
+    def run_wait(self):
+        self._safe_call(self.check.run_wait)
+        self.zombie = False
 
     def sanity(self):
         self._safe_call(self.check.sanity)
@@ -273,9 +353,6 @@ class Runner:
         self._policy.stats = self._stats
         self._policy.printer = self._printer
         signal.signal(signal.SIGTERM, _handle_sigterm)
-
-    def __repr__(self):
-        return debug.repr(self)
 
     @property
     def max_retries(self):
@@ -376,21 +453,16 @@ class ExecutionPolicy(abc.ABC):
         self.printer = None
         self.strict_check = False
 
+        # Local scheduler for running forced local jobs
+        self.local_scheduler = LocalJobScheduler()
+
         # Scheduler options
         self.sched_flex_alloc_nodes = None
-        self.sched_account = None
-        self.sched_partition = None
-        self.sched_reservation = None
-        self.sched_nodelist = None
-        self.sched_exclude_nodelist = None
         self.sched_options = []
 
         # Task event listeners
         self.task_listeners = []
         self.stats = None
-
-    def __repr__(self):
-        return debug.repr(self)
 
     def enter(self):
         pass

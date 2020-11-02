@@ -7,6 +7,9 @@
 # CSCS CI settings
 #
 
+import reframe.utility.osext as osext
+
+
 site_configuration = {
     'systems': [
         {
@@ -26,7 +29,8 @@ site_configuration = {
                     ],
                     'access': [
                         '--constraint=gpu',
-                        '--partition=cscsci'
+                        '--partition=cscsci',
+                        f'--account={osext.osgroup()}'
                     ],
                     'environs': [
                         'builtin'
@@ -61,7 +65,8 @@ site_configuration = {
                         'daint-gpu'
                     ],
                     'access': [
-                        '--constraint=gpu'
+                        '--constraint=gpu',
+                        f'--account={osext.osgroup()}'
                     ],
                     'environs': [
                         'builtin'
@@ -85,7 +90,8 @@ site_configuration = {
                         'daint-gpu'
                     ],
                     'access': [
-                        'proc=gpu'
+                        'proc=gpu',
+                        f'-A {osext.osgroup()}'
                     ],
                     'environs': [
                         'builtin'
@@ -101,7 +107,8 @@ site_configuration = {
                         'daint-gpu'
                     ],
                     'access': [
-                        '-l proc=gpu'
+                        '-l proc=gpu',
+                        f'-A {osext.osgroup()}'
                     ],
                     'environs': [
                         'builtin'
@@ -162,7 +169,7 @@ site_configuration = {
                         'builtin'
                     ],
                     'descr': 'Tsa compute nodes',
-                    'max_jobs': 10,
+                    'max_jobs': 20,
                     'resources': [
                         {
                             'name': '_rfm_gpu',
@@ -182,8 +189,6 @@ site_configuration = {
                 {
                     'name': 'default',
                     'scheduler': 'local',
-                    'modules': [],
-                    'access': [],
                     'environs': [
                         'builtin'
                     ],
@@ -208,7 +213,6 @@ site_configuration = {
             'handlers': [
                 {
                     'type': 'file',
-                    'name': 'reframe.log',
                     'level': 'debug',
                     'format': '[%(asctime)s] %(levelname)s: %(check_info)s: %(message)s',   # noqa: E501
                     'append': False

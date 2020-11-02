@@ -118,7 +118,7 @@ class KeyboardInterruptCheck(BaseFrontendCheck, special=True):
         if self.phase == 'setup':
             raise KeyboardInterrupt
 
-    def wait(self):
+    def run_wait(self):
         # We do our nasty stuff in wait() to make things more complicated
         if self.phase == 'wait':
             raise KeyboardInterrupt
@@ -134,7 +134,7 @@ class SystemExitCheck(BaseFrontendCheck, special=True):
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
 
-    def wait(self):
+    def run_wait(self):
         # We do our nasty stuff in wait() to make things more complicated
         sys.exit(1)
 
@@ -169,8 +169,8 @@ class SleepCheck(BaseFrontendCheck):
         print_timestamp = (
             "python3 -c \"from datetime import datetime; "
             "print(datetime.today().strftime('%s.%f'), flush=True)\"")
-        self.pre_run  = [print_timestamp]
-        self.post_run = [print_timestamp]
+        self.prerun_cmds  = [print_timestamp]
+        self.postrun_cmds = [print_timestamp]
         self.sanity_patterns = sn.assert_found(r'.*', self.stdout)
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
@@ -180,7 +180,7 @@ class SleepCheck(BaseFrontendCheck):
 class SleepCheckPollFail(SleepCheck, special=True):
     '''Emulate a test failing in the polling phase.'''
 
-    def poll(self):
+    def run_complete(self):
         raise ValueError
 
 
@@ -188,7 +188,7 @@ class SleepCheckPollFailLate(SleepCheck, special=True):
     '''Emulate a test failing in the polling phase
     after the test has finished.'''
 
-    def poll(self):
+    def run_complete(self):
         if self._job.finished():
             raise ValueError
 
@@ -199,10 +199,10 @@ class RetriesCheck(BaseFrontendCheck):
         self.sourcesdir = None
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
-        self.pre_run = ['current_run=$(cat %s)' % filename]
+        self.prerun_cmds = ['current_run=$(cat %s)' % filename]
         self.executable = 'echo $current_run'
-        self.post_run = ['((current_run++))',
-                         'echo $current_run > %s' % filename]
+        self.postrun_cmds = ['((current_run++))',
+                             'echo $current_run > %s' % filename]
         self.sanity_patterns = sn.assert_found('%d' % run_to_pass, self.stdout)
 
 
@@ -220,3 +220,13 @@ class SelfKillCheck(rfm.RunOnlyRegressionTest, special=True):
         super().run()
         time.sleep(0.5)
         os.kill(os.getpid(), signal.SIGTERM)
+
+
+class CompileFailureCheck(rfm.RegressionTest):
+    def __init__(self):
+        self.valid_systems = ['*']
+        self.valid_prog_environs = ['*']
+        self.sanity_patterns = sn.assert_found(r'hello', self.stdout)
+        self.sourcesdir = None
+        self.sourcepath = 'x.c'
+        self.prebuild_cmds = ['echo foo > x.c']

@@ -80,7 +80,7 @@ For example, some performance tests are tagged as "daily", others as "weekly", "
 
 ReFrame has also been integrated into NERSC's centralized data collection service used for facility and system monitoring, called the "Data Collect."
 The Data Collect stores data in an Elasticsearch instance, uses `Logstash <https://www.elastic.co/logstash>`__ to ingest log information about the Cori system, and provides a web-based GUI to display results via `Kibana <https://www.elastic.co/kibana>`__.
-Cray, in turn, provides the `Cray Lightweight Log Manager <https://pubs.cray.com/content/S-2393/CLE%206.0.UP05/xctm-series-system-administration-guide/cray-lightweight-log-management-llm-system>`__ on XC systems such as Cori, which provides a syslog interface.
+Cray, in turn, provides the Cray Lightweight Log Manager on XC systems such as Cori, which provides a syslog interface.
 ReFrame's support for Syslog, and the Python standard `logging <https://docs.python.org/3.8/library/logging.html>`__ library, enabled simple integration with NERSC's Data Collect
 The result of this integration with ReFrame to the Data Collect is that the results from each ReFrame test executed on Cori are visible via a Kibana query within a few seconds of the test completing.
 One can then configure Elasticsearch to alert a system administrator if a particular system functionality stops working, or if the performance of certain benchmarks suddenly declines.

@@ -41,7 +41,7 @@ class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
         super().__init__()
         self.descr = f'QuantumESPRESSO CPU check (version: {scale}, {variant})'
         self.valid_systems = ['daint:mc']
-        self.modules = ['QuantumESPRESSO/6.5-CrayIntel-19.10']
+        self.modules = ['QuantumESPRESSO']
         if scale == 'small':
             self.valid_systems += ['dom:mc']
             self.num_tasks = 216
@@ -93,7 +93,7 @@ class QuantumESPRESSOGpuCheck(QuantumESPRESSOCheck):
         super().__init__()
         self.descr = f'QuantumESPRESSO GPU check (version: {scale}, {variant})'
         self.valid_systems = ['daint:gpu']
-        self.modules = ['QuantumESPRESSO/6.5a1-CrayPGI-19.10-cuda-10.1']
+        self.modules = ['QuantumESPRESSO']
         self.num_gpus_per_node = 1
         if scale == 'small':
             self.valid_systems += ['dom:gpu']
@@ -117,20 +117,20 @@ class QuantumESPRESSOGpuCheck(QuantumESPRESSOCheck):
         references = {
             'maint': {
                 'small': {
-                    'dom:gpu': {'time': (60.0, None, 0.05, 's')},
-                    'daint:gpu': {'time': (60.0, None, 0.10, 's')}
+                    'dom:gpu': {'time': (61.0, None, 0.05, 's')},
+                    'daint:gpu': {'time': (61.0, None, 0.05, 's')}
                 },
                 'large': {
-                    'daint:gpu': {'time': (60.0, None, 0.10, 's')}
+                    'daint:gpu': {'time': (54.0, None, 0.05, 's')}
                 }
             },
             'prod': {
                 'small': {
-                    'dom:gpu': {'time': (60.0, None, 0.05, 's')},
-                    'daint:gpu': {'time': (60.0, None, 0.10, 's')}
+                    'dom:gpu': {'time': (61.0, None, 0.05, 's')},
+                    'daint:gpu': {'time': (61.0, None, 0.05, 's')}
                 },
                 'large': {
-                    'daint:gpu': {'time': (60.0, None, 0.10, 's')}
+                    'daint:gpu': {'time': (54.0, None, 0.05, 's')}
                 }
             }
         }

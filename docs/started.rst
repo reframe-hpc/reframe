@@ -7,11 +7,8 @@ Requirements
 
 * Python 3.6 or higher.
   Python 2 is not supported.
-* Required Python packages can be found in the ``requirements.txt`` file, which you can install as follows:
-
-  .. code:: bash
-
-     pip3 install -r requirements.txt
+* Required Python packages can be found in the ``requirements.txt`` file.
+  See :ref:`install-from-source` for more information on how to install ReFrame from source.
 
 
 ---------------------
@@ -44,6 +41,11 @@ ReFrame's latest stable version is available through different channels:
 
      pip install reframe-hpc
 
+  .. note::
+
+     The above method performs a bare installation of ReFrame not including unittests and tutorial examples.
+
+
 - As a `Spack <https://spack.io/>`__ package:
 
   .. code:: bash
@@ -58,6 +60,7 @@ ReFrame's latest stable version is available through different channels:
      eb easybuild/easyconfigs/r/ReFrame/ReFrame-VERSION.eb -r
 
 
+.. _install-from-source:
 
 -------------------------------
 Getting the Latest and Greatest
@@ -67,10 +70,24 @@ If you want the latest development version or any pre-release, you can clone ReF
 
 .. code:: bash
 
-    git clone https://github.com/eth-cscs/reframe.git
+   git clone https://github.com/eth-cscs/reframe.git
 
 
 Pre-release versions are denoted with the ``devX`` suffix and are `tagged <https://github.com/eth-cscs/reframe/releases>`__ in the repository.
+Preparing and running ReFrame from source is pretty straightforward.
+All you need is a Python 3.6+ installation with ``pip``:
+
+.. code:: bash
+
+   git clone https://github.com/eth-cscs/reframe.git
+   cd reframe
+   ./bootstrap.sh
+   ./bin/reframe -V
+
+.. note::
+   .. versionadded:: 3.1
+      The bootstrap script for ReFrame was added.
+      For previous ReFrame versions you should install its requirements using ``pip install -r requirements.txt`` in a Python virtual environment.
 
 
 Running the Unit Tests
@@ -168,6 +185,6 @@ As soon as you configure ReFrame specifically for your system, you may rerun the
 Where to Go from Here
 ---------------------
 
-The :doc:`configure` page guides you through the basic configuration aspects of ReFrame.
-The :doc:`tutorials` will allow you to get a first idea on how to write and run ReFrame tests.
-:doc:`topics` explain different aspects of the framework whereas the :doc:`manuals` provide complete reference guides for the command line interface, the configuration parameters and the programming APIs for writing tests.
+The easiest way to start with ReFrame is to go through :doc:`tutorial_basics`, which will guide you step-by-step in both writing your first tests and in configuring ReFrame.
+The :doc:`configure` page provides more details on the basic configuration aspects of ReFrame.
+:doc:`topics` explain different aspects of the framework whereas :doc:`manuals` provide complete reference guides for the command line interface, the configuration parameters and the programming APIs for writing tests.

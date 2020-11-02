@@ -91,6 +91,9 @@ The Cleanup Phase
 During this final stage of the pipeline, the test's resources are cleaned up.
 More specifically, if the test has finished successfully, all interesting test files (build/job scripts, build/job script output and any user-specified files) are copied to ReFrame's output directory and the stage directory of the test is deleted.
 
+.. note::
+   This phase might be deferred in case a test has dependents (see :ref:`cleaning-up-stage-files` for more details).
+
 
 Execution Policies
 ------------------
@@ -129,3 +132,19 @@ ReFrame tries to keep concurrency high by maintaining as many test cases as poss
 When the `concurrency limit <config_reference.html#.systems[].partitions[].max_jobs>`__ is reached, ReFrame will first try to free up execution slots by checking if any of the spawned jobs have finished, and it will fill that slots first before throttling execution.
 
 ReFrame uses polling to check the status of the spawned jobs, but it does so in a dynamic way, in order to ensure both responsiveness and avoid overloading the system job scheduler with excessive polling.
+
+Timing the Test Pipeline
+------------------------
+
+.. versionadded:: 3.0
+
+ReFrame keeps track of the time a test spends in every pipeline stage and reports that after each test finishes.
+However, it does so from its own perspective and not from that of the scheduler backend used.
+This has some practical implications:
+As soon as a test enters the "run" phase, ReFrame's timer for that phase starts ticking regardless if the associated job is pending.
+Similarly, the "run" phase ends as soon as ReFrame realizes it.
+This will happen after the associated job has finished.
+For this reason, the time spent in the pipeline's "run" phase should *not* be interpreted as the actual runtime of the test, especially if a non-local scheduler backend is used.
+
+Finally, the execution time of the "cleanup" phase is not reported when a test finishes, since it may be deferred in case that there exist tests that depend on that one.
+See :doc:`dependencies` for more information on how ReFrame treats tests with dependencies.

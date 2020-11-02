@@ -6,6 +6,7 @@
 import os
 
 import reframe as rfm
+import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 
 
@@ -19,8 +20,9 @@ class OpenCLCheck(rfm.RegressionTest):
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
         self.modules = ['craype-accel-nvidia60']
         self.build_system = 'Make'
+        self.sourcesdir = 'src/opencl'
         self.num_gpus_per_node = 1
-        self.executable = 'vecAdd_opencl'
+        self.executable = 'vecAdd'
 
         self.sanity_patterns = sn.assert_found('SUCCESS', self.stdout)
 
@@ -28,3 +30,12 @@ class OpenCLCheck(rfm.RegressionTest):
     def setflags(self):
         if self.current_environ.name == 'PrgEnv-pgi':
             self.build_system.cflags = ['-mmmx']
+
+    @rfm.run_before('compile')
+    def cdt2006_pgi_workaround(self):
+        cdt = osext.cray_cdt_version()
+        if not cdt:
+            return
+
+        if (self.current_environ.name == 'PrgEnv-pgi' and cdt == '20.08'):
+            self.variables.update({'CUDA_HOME': '$CUDATOOLKIT_HOME'})

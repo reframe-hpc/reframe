@@ -19,14 +19,14 @@ class RRTMGPTest(rfm.RegressionTest):
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'RRTMGP')
         self.tags = {'external-resources'}
-        self.prebuild_cmd = ['cp build/Makefile.conf.dom build/Makefile.conf']
+        self.prebuild_cmds = ['cp build/Makefile.conf.dom build/Makefile.conf']
         self.executable = 'python'
         self.executable_opts = [
             'util/scripts/run_tests.py',
             '--verbose', '--rel_diff_cut 1e-13',
             '--root ..', '--test ${INIFILE}_ncol-${NCOL}.ini'
         ]
-        self.pre_run = [
+        self.prerun_cmds = [
             'pwd',
             'module load netcdf-python/1.4.1-CrayGNU-19.06-python2',
             'cd test'

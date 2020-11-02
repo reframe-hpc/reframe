@@ -3,7 +3,9 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import os
 import reframe as rfm
+import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 
 
@@ -19,8 +21,9 @@ class OpenACCFortranCheck(rfm.RegressionTest):
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
                               'arolla:cn', 'tsa:cn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
+        self.sourcesdir = 'src/openacc'
         if self.num_tasks == 1:
-            self.sourcepath = 'vecAdd_openacc.f90'
+            self.sourcepath = 'vecAdd_openacc_nompi.f90'
             if self.current_system.name == 'kesch':
                 self.valid_prog_environs = ['PrgEnv-cray-nompi',
                                             'PrgEnv-pgi-nompi']
@@ -68,9 +71,10 @@ class OpenACCFortranCheck(rfm.RegressionTest):
                 self.build_system.fflags = ['-acc', '-ta=tesla:cc70']
 
     @rfm.run_before('compile')
-    def cray_linker_workaround(self):
-        # NOTE: Workaround for using CCE < 9.1 in CLE7.UP01.PS03 and above
-        # See Patch Set README.txt for more details.
-        if (self.current_system.name == 'dom' and
-            self.current_environ.name.startswith('PrgEnv-cray')):
-            self.variables['LINKER_X86_64'] = '/usr/bin/ld'
+    def cdt2008_pgi_workaround(self):
+        cdt = osext.cray_cdt_version()
+        if not cdt:
+            return
+
+        if (self.current_environ.name == 'PrgEnv-pgi' and cdt == '20.08'):
+            self.variables.update({'CUDA_HOME': '$CUDATOOLKIT_HOME'})

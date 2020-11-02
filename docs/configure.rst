@@ -5,13 +5,12 @@ Configuring ReFrame for Your Site
 ReFrame comes pre-configured with a minimal generic configuration that will allow you to run ReFrame on any system.
 This will allow you to run simple local tests using the default compiler of the system.
 Of course, ReFrame is much more powerful than that.
-This section will guide you through configuring ReFrame for your HPC cluster.
-We will use as a starting point a simplified configuration for the `Piz Daint <https://www.cscs.ch/computers/piz-daint/>`__ supercomputer at CSCS and we will elaborate along the way.
+This section will guide you through configuring ReFrame for your site.
 
 If you started using ReFrame from version 3.0, you can keep on reading this section, otherwise you are advised to have a look first at the :doc:`migration_2_to_3` page.
 
 
-ReFrame's configuration file can be either a JSON file or Python file storing the site configuration in a JSON-formatted string.
+ReFrame's configuration file can be either a JSON file or a Python file storing the site configuration in a JSON-formatted string.
 The latter format is useful in cases that you want to generate configuration parameters on-the-fly, since ReFrame will import that Python file and the load the resulting configuration.
 In the following we will use a Python-based configuration file also for historical reasons, since it was the only way to configure ReFrame in versions prior to 3.0.
 
@@ -50,10 +49,10 @@ We'll refer to these top-level properties as *sections*.
 These sections contain other objects which further define in detail the framework's behavior.
 If you are using a Python file to configure ReFrame, this big JSON configuration object is stored in a special variable called ``site_configuration``.
 
-We will explore the basic configuration of ReFrame through the following configuration file that permits ReFrame to run on Piz Daint.
+We will explore the basic configuration of ReFrame by looking into the configuration file of the tutorials, which permits ReFrame to run both on the Piz Daint supercomputer and a local computer.
 For the complete listing and description of all configuration options, you should refer to the :doc:`config_reference`.
 
-.. literalinclude:: ../tutorial/config/settings.py
+.. literalinclude:: ../tutorials/config/settings.py
    :lines: 10-
 
 There are three required sections that each configuration file must provide: ``systems``, ``environments`` and ``logging``.
@@ -66,10 +65,10 @@ Systems Configuration
 
 ReFrame allows you to configure multiple systems in the same configuration file.
 Each system is a different object inside the ``systems`` section.
-In our example we define only one system, namely Piz Daint:
+In our example we define three systems, a Mac laptop, Piz Daint and a generic fallback system:
 
-.. literalinclude:: ../tutorial/config/settings.py
-   :lines: 11-75
+.. literalinclude:: ../tutorials/config/settings.py
+   :lines: 11-77
 
 Each system is associated with a set of properties, which in this case are the following:
 
@@ -77,7 +76,7 @@ Each system is associated with a set of properties, which in this case are the f
   This should be an alphanumeric string (dashes ``-`` are allowed) and it will be used to refer to this system in other contexts.
 * ``descr``: A detailed description of the system.
 * ``hostnames``: This is a list of hostname patterns following the `Python Regular Expression Syntax <https://docs.python.org/3/library/re.html#regular-expression-syntax>`__, which will be used by ReFrame when it tries to automatically select a configuration entry for the current system.
-* ``modules_system``: The environment modules system that should be used for loading environment modules on this system.
+* ``modules_system``: In our example, this is only defined for Piz Daint and refers to the environment modules system that should be used for loading environment modules on this system.
   In this case, the classic Tcl implementation of the `environment modules <https://sourceforge.net/projects/modules/files/Modules/modules-3.2.10/>`__.
 * ``partitions``: The list of partitions that are defined for this system.
   Each partition is defined as a separate object.
@@ -89,8 +88,8 @@ In the example shown here, we define three partitions that none of them correspo
 The ``login`` partition refers to the login nodes of the system, whereas the ``gpu`` and ``mc`` partitions refer to two different set of nodes in the same cluster that are effectively separated using Slurm constraints.
 Let's pick the ``gpu`` partition and look into it in more detail:
 
-.. literalinclude:: ../tutorial/config/settings.py
-   :lines: 31-51
+.. literalinclude:: ../tutorials/config/settings.py
+   :lines: 38-52
 
 The basic properties of a partition are the following:
 
@@ -125,34 +124,22 @@ An environment can simply by empty, in which case it refers to the actual enviro
 In fact, this is what the generic fallback configuration of ReFrame does.
 
 Environments in ReFrame are configured under the ``environments`` section of the documentation.
-In our configuration example for Piz Daint, we define each ReFrame environment to correspond to each of the Cray-provided programming environments.
-In other systems, you could define a ReFrame environment to wrap a toolchain (MPI + compiler combination):
+For each environment referenced inside a partition, a definition of it must be present in this section.
+In our example, we define environments for all the basic compilers as well as a default built-in one, which is used with the generic system configuration.
+In certain contexts, it is useful to see a ReFrame environment as a wrapper of a programming toolchain (MPI + compiler combination):
 
-.. literalinclude:: ../tutorial/config/settings.py
-   :lines: 76-93
+.. literalinclude:: ../tutorials/config/settings.py
+   :lines: 78-129
 
 Each environment is associated with a name.
 This name will be used to reference this environment in different contexts, as for example in the ``environs`` property of the system partitions.
-This environment definition is minimal, since the default values for the rest of the properties serve our purpose.
+A programming environment in ReFrame is essentially a collection of environment modules, environment variables and compiler definitions.
 
-An important feature in ReFrame's configuration, is that you can define section objects differently for different systems or system partitions.
-In the following, for demonstration purposes, we define ``PrgEnv-gnu`` differently for the ``mc`` partition of the ``daint`` system (notice the condensed form of writing this as ``daint:mc``):
-
-.. code-block:: python
-
-        {
-            'name': 'PrgEnv-gnu',
-            'modules': ['PrgEnv-gnu', 'openmpi'],
-            'cc':  'mpicc',
-            'cxx': 'mpicxx',
-            'ftn': 'mpif90',
-            'target_systems': ['daint:mc']
-        }
-
-This environment loads different modules and sets the compilers differently, but the most important part is the ``target_systems`` property.
-This property is a list of systems or system/partition combinations (as in this case) where this definition of the environment is in effect.
-This means that ``PrgEnv-gnu`` will defined this way only for regression tests running on ``daint:mc``.
-For all the other systems, it will be defined as shown before.
+An important feature in ReFrame's configuration, is that you can define section objects differently for different systems or system partitions by using the ``target_systems`` property.
+Notice, for example, how the ``gnu`` environment is defined differently for the system ``daint`` compared to the generic definition.
+The ``target_systems`` property is a list of systems or system/partition combinations where this definition of the environment is in effect.
+This means that ``gnu`` will be defined this way only for regression tests running on ``daint``.
+For all the other systems, it will be defined using the first definition.
 
 
 ---------------------
@@ -163,8 +150,8 @@ ReFrame has a powerful logging mechanism that gives fine grained control over wh
 Additionally, it allows for logging performance data from performance tests into different channels.
 Let's see how logging is defined in our example configuration, which also represents a typical one for logging:
 
-.. literalinclude:: ../tutorial/config/settings.py
-   :lines: 94-130
+.. literalinclude:: ../tutorials/config/settings.py
+   :lines: 130-165
 
 Logging is configured under the ``logging`` section of the configuration, which is a list of logger objects.
 Unless you want to configure logging differently for different systems, a single logger object is enough.
@@ -195,7 +182,7 @@ In this particular example we use three handlers of two distinct types:
 
 It might initially seem confusing the fact that there are two ``level`` properties: one at the logger level and one at the handler level.
 Logging in ReFrame works hierarchically.
-When a message is logged, an log record is created, which contains metadata about the message being logged (log level, timestamp, ReFrame runtime information etc.).
+When a message is logged, a log record is created, which contains metadata about the message being logged (log level, timestamp, ReFrame runtime information etc.).
 This log record first goes into ReFrame's internal logger, where the record's level is checked against the logger's level (here  ``debug``).
 If the log record's level exceeds the log level threshold from the logger, it is forwarded to the logger's handlers.
 Then each handler filters the log record differently and takes care of formatting the log record's message appropriately.
@@ -209,14 +196,16 @@ Notice in the ``format`` property how the message to be logged is structured suc
 Apart from file logging, ReFrame offers more advanced performance logging capabilities through Syslog and Graylog.
 
 
+For a complete reference of logging configuration parameters, please refer to the :doc:`config_reference`.
+
+
 -----------------------------
 General configuration options
 -----------------------------
 
 General configuration options of the framework go under the ``general`` section of the configuration file.
-This section is optional.
-In this case, we define the search path for ReFrame test files to be the ``tutorial/`` subdirectory and we also instruct ReFrame to recursively search for tests there.
-There are several more options that can go into this section, but the reader is referred to the :doc:`config_reference` for the complete list.
+This section is optional and, in fact, we do not define it for our tutorial configuration file.
+However, there are several options that can go into this section, but the reader is referred to the :doc:`config_reference` for the complete list.
 
 
 ---------------------------
@@ -250,16 +239,16 @@ To better understand this, let's assume that we have the following ``environment
 
     'environments': [
         {
-            'name': 'PrgEnv-cray',
-            'modules': ['PrgEnv-cray']
+            'name': 'cray',
+            'modules': ['cray']
         },
         {
-            'name': 'PrgEnv-gnu',
-            'modules': ['PrgEnv-gnu']
+            'name': 'gnu',
+            'modules': ['gnu']
         },
         {
-            'name': 'PrgEnv-gnu',
-            'modules': ['PrgEnv-gnu', 'openmpi'],
+            'name': 'gnu',
+            'modules': ['gnu', 'openmpi'],
             'cc':  'mpicc',
             'cxx': 'mpicxx',
             'ftn': 'mpif90',
@@ -268,7 +257,7 @@ To better understand this, let's assume that we have the following ``environment
     ],
 
 
-If the selected system is ``foo``, then ReFrame will use the second definition of ``PrgEnv-gnu`` which is specific to the ``foo`` system.
+If the selected system is ``foo``, then ReFrame will use the second definition of ``gnu`` which is specific to the ``foo`` system.
 
 You can override completely the system auto-selection process by specifying a system or system/partition combination with the ``--system`` option, e.g., ``--system=daint`` or ``--system=daint:gpu``.
 
@@ -284,135 +273,122 @@ Let's see some concrete examples:
 
 * Query the current system's partitions:
 
-  .. code::
+  .. code-block:: console
 
-     ./bin/reframe -C tutorial/config/settings.py --system=daint --show-config=systems/0/partitions
+     ./bin/reframe -C tutorials/config/settings.py --system=daint --show-config=systems/0/partitions
 
   .. code:: javascript
 
-			[
-			  {
-			    "name": "login",
-			    "descr": "Login nodes",
-			    "scheduler": "local",
-			    "launcher": "local",
-			    "environs": [
-			      "PrgEnv-cray",
-			      "PrgEnv-gnu",
-			      "PrgEnv-intel",
-			      "PrgEnv-pgi"
-			    ],
-			    "max_jobs": 4
-			  },
-			  {
-			    "name": "gpu",
-			    "descr": "Hybrid nodes (Haswell/P100)",
-			    "scheduler": "slurm",
-			    "launcher": "srun",
-			    "modules": [
-			      "daint-gpu"
-			    ],
-			    "access": [
-			      "--constraint=gpu"
-			    ],
-			    "environs": [
-			      "PrgEnv-cray",
-			      "PrgEnv-gnu",
-			      "PrgEnv-intel",
-			      "PrgEnv-pgi"
-			    ],
-			    "container_platforms": [
-			      {
-			        "name": "Singularity",
-			        "modules": [
-			          "Singularity"
-			        ]
-			      }
-			    ],
-			    "max_jobs": 100
-			  },
-			  {
-			    "name": "mc",
-			    "descr": "Multicore nodes (Broadwell)",
-			    "scheduler": "slurm",
-			    "launcher": "srun",
-			    "modules": [
-			      "daint-mc"
-			    ],
-			    "access": [
-			      "--constraint=mc"
-			    ],
-			    "environs": [
-			      "PrgEnv-cray",
-			      "PrgEnv-gnu",
-			      "PrgEnv-intel",
-			      "PrgEnv-pgi"
-			    ],
-			    "container_platforms": [
-			      {
-			        "name": "Singularity",
-			        "modules": [
-			          "Singularity"
-			        ]
-			      }
-			    ],
-			    "max_jobs": 100
-			  }
-			]
+     [
+       {
+         "name": "login",
+         "descr": "Login nodes",
+         "scheduler": "local",
+         "launcher": "local",
+         "environs": [
+           "gnu",
+           "intel",
+           "pgi",
+           "cray"
+         ],
+         "max_jobs": 10
+       },
+       {
+         "name": "gpu",
+         "descr": "Hybrid nodes",
+         "scheduler": "slurm",
+         "launcher": "srun",
+         "access": [
+           "-C gpu",
+           "-A csstaff"
+         ],
+         "environs": [
+           "gnu",
+           "intel",
+           "pgi",
+           "cray"
+         ],
+         "max_jobs": 100
+       },
+       {
+         "name": "mc",
+         "descr": "Multicore nodes",
+         "scheduler": "slurm",
+         "launcher": "srun",
+         "access": [
+           "-C mc",
+           "-A csstaff"
+         ],
+         "environs": [
+           "gnu",
+           "intel",
+           "pgi",
+           "cray"
+         ],
+         "max_jobs": 100
+       }
+     ]
 
   Check how the output changes if we explicitly set system to ``daint:login``:
 
-  .. code::
+  .. code-block:: console
 
-     ./bin/reframe -C tutorial/config/settings.py --system=daint:login --show-config=systems/0/partitions
+     ./bin/reframe -C tutorials/config/settings.py --system=daint:login --show-config=systems/0/partitions
 
 
   .. code:: javascript
 
-			[
-			  {
-			    "name": "login",
-			    "descr": "Login nodes",
-			    "scheduler": "local",
-			    "launcher": "local",
-			    "environs": [
-			      "PrgEnv-cray",
-			      "PrgEnv-gnu",
-			      "PrgEnv-intel",
-			      "PrgEnv-pgi"
-			    ],
-			    "max_jobs": 4
-			  }
-			]
+     [
+       {
+         "name": "login",
+         "descr": "Login nodes",
+         "scheduler": "local",
+         "launcher": "local",
+         "environs": [
+           "gnu",
+           "intel",
+           "pgi",
+           "cray"
+         ],
+         "max_jobs": 10
+       }
+     ]
+
 
   ReFrame will internally represent system ``daint`` as having a single partition only.
   Notice also how you can use indexes to objects elements inside a list.
 
 * Query an environment configuration:
 
-  .. code::
+  .. code-block:: console
 
-     ./bin/reframe -C tutorial/config/settings.py --system=daint --show-config=environments/@PrgEnv-gnu
+     ./bin/reframe -C tutorials/config/settings.py --system=daint --show-config=environments/@gnu
 
   .. code:: javascript
 
-			{
-			  "name": "PrgEnv-gnu",
-			  "modules": [
-			    "PrgEnv-gnu"
-			  ]
-			}
+     {
+       "name": "gnu",
+       "modules": [
+         "PrgEnv-gnu"
+       ],
+       "cc": "cc",
+       "cxx": "CC",
+       "ftn": "ftn",
+       "target_systems": [
+         "daint"
+       ]
+     }
 
   If an object has a ``name`` property you can address it by name using the ``@name`` syntax, instead of its index.
 
 * Query an environment's compiler:
 
-  .. code::
+  .. code-block:: console
 
-     ./bin/reframe -C tutorial/config/settings.py --system=daint --show-config=environments/@PrgEnv-gnu/cxx
+     ./bin/reframe -C tutorials/config/settings.py --system=daint --show-config=environments/@gnu/cxx
 
   .. code:: javascript
 
      "CC"
 
-  Notice that although the C++ compiler is not defined in the environment's definitions, ReFrame will print the default value, if you explicitly query its value.
+  If you explicitly query a configuration value which is not defined in the configuration file, ReFrame will print its default value.

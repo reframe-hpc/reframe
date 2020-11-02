@@ -6,8 +6,6 @@
 import builtins
 import functools
 
-from reframe.core.exceptions import user_deprecation_warning
-
 
 def deferrable(func):
     '''Function decorator for converting a function to a deferred
@@ -76,6 +74,9 @@ class _DeferredExpression:
     def __iter__(self):
         '''Evaluate the deferred expression and iterate over the result.'''
         return iter(self.evaluate())
+
+    def __rfm_json_encode__(self):
+        return self.evaluate()
 
     # Overload Python operators to be able to defer any expression
     #
@@ -338,20 +339,3 @@ class _DeferredExpression:
     @deferrable
     def __invert__(a):
         return ~a
-
-
-def evaluate(expr):
-    user_deprecation_warning('evaluate() is deprecated: '
-                             'please use reframe.utility.sanity.evaluate')
-
-    if isinstance(expr, _DeferredExpression):
-        return expr.evaluate()
-    else:
-        return expr
-
-
-@deferrable
-def make_deferrable(a):
-    user_deprecation_warning('make_deferrable() is deprecated: '
-                             'please use reframe.utility.sanity.defer')
-    return a

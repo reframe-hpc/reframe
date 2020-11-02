@@ -16,21 +16,16 @@ class MpiTCheck(rfm.RegressionTest):
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu', 'PrgEnv-pgi',
                                     'PrgEnv-intel', 'PrgEnv-cray_classic']
         self.build_system = 'SingleSource'
+        self.sourcesdir = 'src/mpi_t'
         self.sourcepath = 'mpit_vars.c'
+        src_ref_files = ['mpit_categories.ref', 'mpit_perf_vars.ref',
+                         'mpit_control_vars.ref', self.sourcepath]
         self.num_tasks_per_node = 1
         self.variables = {'MPITEST_VERBOSE': '1', 'MPICH_VERSION_DISPLAY': '1'}
         self.rpt = 'rpt'
         self.executable_opts = [f'&> {self.rpt}']
         self.maintainers = ['JG']
         self.tags = {'production', 'craype', 'maintenance'}
-
-    @rfm.run_before('compile')
-    def cray_linker_workaround(self):
-        # NOTE: Workaround for using CCE < 9.1 in CLE7.UP01.PS03 and above
-        # See Patch Set README.txt for more details.
-        if (self.current_system.name == 'dom' and
-            self.current_environ.name.startswith('PrgEnv-cray')):
-            self.variables['LINKER_X86_64'] = '/usr/bin/ld'
 
     @rfm.run_before('sanity')
     def set_sanity(self):

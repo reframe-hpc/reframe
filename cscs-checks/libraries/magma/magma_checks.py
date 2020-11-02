@@ -16,7 +16,7 @@ class MagmaCheck(rfm.RegressionTest):
         self.num_gpus_per_node = 1
         self.sanity_patterns = sn.assert_found(r'Result = PASS', self.stdout)
 
-        self.prebuild_cmd = ['patch < patch.txt']
+        self.prebuild_cmds = ['patch < patch.txt']
         self.build_system = 'Make'
         self.valid_prog_environs = ['builtin']
         self.build_system.makefile = 'Makefile_%s' % subtest

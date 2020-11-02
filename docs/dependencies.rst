@@ -142,7 +142,7 @@ Resolving dependencies
 As shown in the :doc:`tutorial_deps`, test dependencies would be of limited usage if you were not able to use the results or information of the target tests.
 Let's reiterate over the :func:`set_executable` function of the :class:`OSULatencyTest` that we presented previously:
 
-.. literalinclude:: ../tutorial/advanced/osu/osu_benchmarks.py
+.. literalinclude:: ../tutorials/deps/osu_benchmarks.py
    :lines: 32-38
 
 The ``@require_deps`` decorator does some magic -- we will unravel this shortly -- with the function arguments of the :func:`set_executable` function and binds them to the target test dependencies by their name.
@@ -170,3 +170,14 @@ In fact, you can rewrite :func:`set_executable` function as follows:
 Now it's easier to understand what the ``@require_deps`` decorator does behind the scenes.
 It binds the function arguments to a partial realization of the :func:`getdep` function and attaches the decorated function as an after-setup hook.
 In fact, any ``@require_deps``-decorated function will be invoked before any other after-setup hook.
+
+
+.. _cleaning-up-stage-files:
+
+Cleaning up stage files
+-----------------------
+
+In principle, the output of a test might be needed by its dependent tests.
+As a result, the stage directory of the test will only be cleaned up after all of its *immediate* dependent tests have finished successfully.
+If any of its children has failed, the cleanup phase will be skipped, such that all the test's files will remain in the stage directory.
+This allows users to reproduce manually the error of a failed test with dependencies, since all the needed resources of the failing test are left in their original location.

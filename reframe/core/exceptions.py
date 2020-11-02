@@ -17,7 +17,34 @@ import reframe.utility as utility
 
 
 class ReframeBaseError(BaseException):
-    '''Base exception for any ReFrame error.'''
+    '''Base exception for any ReFrame error.
+
+    This exception base class offers a specialized :func:`__str__` method that
+    concatenates the messages of a chain of exceptions by inspecting their
+    :py:data:`__cause__` field. For example, the following piece of code will
+    print ``error message 2: error message 1``:
+
+    .. code-block:: python
+
+       from reframe.core.exceptions import *
+
+
+       def foo():
+           raise ReframeError('error message 1)
+
+       def bar():
+           try:
+               foo()
+           except ReframeError as e:
+               raise ReframeError('error message 2') from e
+
+      if __name__ == '__main__':
+          try:
+              bar()
+          except Exception as e:
+              print(e)
+
+    '''
 
     def __init__(self, *args):
         self._message = str(args[0]) if args else None
@@ -50,7 +77,7 @@ class ReframeFatalError(ReframeBaseError):
 
 
 class ReframeSyntaxError(ReframeError):
-    '''Raised when the syntax of regression tests is not correct.'''
+    '''Raised when the syntax of regression tests is incorrect.'''
 
 
 class RegressionTestLoadError(ReframeError):
@@ -66,27 +93,20 @@ class TaskExit(ReframeError):
 
 
 class TaskDependencyError(ReframeError):
-    '''Raised inside a regression task when one of its dependencies has
-    failed.'''
+    '''Raised inside a regression task by the runtime when one of its
+    dependencies has failed.
+    '''
 
 
 class AbortTaskError(ReframeError):
-    '''Raised into a regression task to denote that it has been aborted due to
-    an external reason (e.g., keyboard interrupt, fatal error in other places
-    etc.)
+    '''Raised by the runtime inside a regression task to denote that it has
+    been aborted due to an external reason (e.g., keyboard interrupt, fatal
+    error in other places etc.)
     '''
 
 
 class ConfigError(ReframeError):
     '''Raised when a configuration error occurs.'''
-
-
-class UnknownSystemError(ConfigError):
-    '''Raised when the host system cannot be identified.'''
-
-
-class SystemAutodetectionError(UnknownSystemError):
-    '''Raised when the host system cannot be auto-detected'''
 
 
 class LoggingError(ReframeError):
@@ -102,7 +122,8 @@ class SanityError(ReframeError):
 
 
 class PerformanceError(ReframeError):
-    '''Raised to denote an error in performance checking.'''
+    '''Raised to denote an error in performance checking, e.g., when a
+    performance reference is not met.'''
 
 
 class PipelineError(ReframeError):
@@ -172,18 +193,22 @@ class SpawnedProcessError(ReframeError):
 
     @property
     def command(self):
+        '''The command that the spawned process tried to execute.'''
         return self._command
 
     @property
     def stdout(self):
+        '''The standard output of the process as a string.'''
         return self._stdout
 
     @property
     def stderr(self):
+        '''The standard error of the process as a string.'''
         return self._stderr
 
     @property
     def exitcode(self):
+        '''The exit code of the process.'''
         return self._exitcode
 
 
@@ -208,11 +233,16 @@ class SpawnedProcessTimeout(SpawnedProcessError):
 
     @property
     def timeout(self):
+        '''The timeout of the process.'''
         return self._timeout
 
 
+class JobSchedulerError(ReframeError):
+    '''Raised when a job scheduler encounters an error condition.'''
+
+
 class JobError(ReframeError):
-    '''Job related errors.'''
+    '''Raised for job related errors.'''
 
     def __init__(self, msg=None, jobid=None):
         message = '[jobid=%s]' % jobid
@@ -224,6 +254,7 @@ class JobError(ReframeError):
 
     @property
     def jobid(self):
+        '''The job ID of the job that encountered the error.'''
         return self._jobid
 
 
@@ -232,23 +263,26 @@ class JobBlockedError(JobError):
 
 
 class JobNotStartedError(JobError):
-    '''Raised when trying to operate on a unstarted job.'''
+    '''Raised when trying an operation on a unstarted job.'''
 
 
 class DependencyError(ReframeError):
     '''Raised when a dependency problem is encountered.'''
 
 
-class ReframeDeprecationWarning(DeprecationWarning):
-    '''Warning for deprecated features of the ReFrame framework.'''
+def user_frame(exc_type, exc_value, tb):
+    '''Return a user frame from the exception's traceback.
 
+    As user frame is considered the first frame that is outside from
+    :mod:`reframe` module.
 
-warnings.filterwarnings('default', category=ReframeDeprecationWarning)
+    :returns: A frame object or :class:`None` if no user frame was found.
 
+    :meta private:
 
-def user_frame(tb):
+    '''
     if not inspect.istraceback(tb):
-        raise ValueError('could not retrieve frame: argument not a traceback')
+        return None
 
     for finfo in reversed(inspect.getinnerframes(tb)):
         relpath = os.path.relpath(finfo.filename, sys.path[0])
@@ -258,57 +292,52 @@ def user_frame(tb):
     return None
 
 
-def format_exception(exc_type, exc_value, tb):
-    def format_user_frame(frame):
-        relpath = os.path.relpath(frame.filename)
-        return '%s:%s: %s\n%s' % (relpath, frame.lineno,
-                                  exc_value, ''.join(frame.code_context))
+def is_severe(exc_type, exc_value, tb):
+    '''Check if exception is a severe one.'''
+    soft_errors = (ReframeError,
+                   ConnectionError,
+                   FileExistsError,
+                   FileNotFoundError,
+                   IsADirectoryError,
+                   KeyboardInterrupt,
+                   NotADirectoryError,
+                   PermissionError,
+                   TimeoutError)
+    if isinstance(exc_value, soft_errors):
+        return False
+
+    # Treat specially type and value errors
+    type_error  = isinstance(exc_value, TypeError)
+    value_error = isinstance(exc_value, ValueError)
+    frame = user_frame(exc_type, exc_value, tb)
+    if (type_error or value_error) and frame is not None:
+        return False
+
+    return True
+
+
+def what(exc_type, exc_value, tb):
+    '''A short description of the error.'''
 
     if exc_type is None:
         return ''
 
-    if isinstance(exc_value, AbortTaskError):
-        return 'aborted due to %s' % type(exc_value.__cause__).__name__
+    reason = utility.decamelize(exc_type.__name__, ' ')
 
-    if isinstance(exc_value, ReframeError):
-        return '%s: %s' % (utility.decamelize(exc_type.__name__, ' '),
-                           exc_value)
-
-    if isinstance(exc_value, ReframeFatalError):
-        exc_str = '%s: %s' % (utility.decamelize(exc_type.__name__, ' '),
-                              exc_value)
-        tb_str = ''.join(traceback.format_exception(exc_type, exc_value, tb))
-        return '%s\n%s' % (exc_str, tb_str)
-
+    # We need frame information for user type and value errors
+    frame = user_frame(exc_type, exc_value, tb)
+    user_type_error  = isinstance(exc_value, TypeError)  and frame
+    user_value_error = isinstance(exc_value, ValueError) and frame
     if isinstance(exc_value, KeyboardInterrupt):
-        return 'cancelled by user'
+        reason = 'cancelled by user'
+    elif isinstance(exc_value, AbortTaskError):
+        reason = f'aborted due to {type(exc_value.__cause__).__name__}'
+    elif user_type_error or user_value_error:
+        relpath = os.path.relpath(frame.filename)
+        source = ''.join(frame.code_context)
+        reason += f': {relpath}:{frame.lineno}: {exc_value}\n{source}'
+    else:
+        if str(exc_value):
+            reason += f': {exc_value}'
 
-    if isinstance(exc_value, OSError):
-        return 'OS error: %s' % exc_value
-
-    frame = user_frame(tb)
-    if isinstance(exc_value, TypeError) and frame is not None:
-        return 'type error: ' + format_user_frame(frame)
-
-    if isinstance(exc_value, ValueError) and frame is not None:
-        return 'value error: ' + format_user_frame(frame)
-
-    exc_str = ''.join(traceback.format_exception(exc_type, exc_value, tb))
-    return 'unexpected error: %s\n%s' % (exc_value, exc_str)
-
-
-def user_deprecation_warning(message):
-    '''Raise a deprecation warning at the user stack frame that eventually
-    calls this.'''
-
-    # Unroll the stack and issue the warning from the first stack frame that is
-    # outside the framework.
-    stack_level = 1
-    for s in inspect.stack():
-        module = inspect.getmodule(s.frame)
-        if module is None or not module.__name__.startswith('reframe'):
-            break
-
-        stack_level += 1
-
-    warnings.warn(message, ReframeDeprecationWarning, stacklevel=stack_level)
+    return reason
