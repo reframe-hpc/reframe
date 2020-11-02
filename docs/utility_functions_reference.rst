@@ -33,8 +33,10 @@ Type Checking Utilities
    :show-inheritance:
 
 
-Dependencies Utilities
---------------------------------
+.. _test-case-deps-management:
+
+Test Case Dependencies Management
+---------------------------------
 
 .. automodule:: reframe.utility.udeps
    :members:
