@@ -717,10 +717,14 @@ class RegressionTest(metaclass=RegressionTestMeta):
         try:
             prefix = cls._rfm_custom_prefix
         except AttributeError:
-            if osext.is_interactive():
-                prefix = os.getcwd()
-            else:
-                prefix = os.path.abspath(os.path.dirname(inspect.getfile(cls)))
+            try:
+                prefix = cls._rfm_base_test_prefix
+            except AttributeError:
+                if osext.is_interactive():
+                    prefix = os.getcwd()
+                else:
+                    prefix = os.path.abspath(
+                        os.path.dirname(inspect.getfile(cls)))
 
         obj._rfm_init(name, prefix)
         return obj
@@ -729,9 +733,15 @@ class RegressionTest(metaclass=RegressionTestMeta):
         pass
 
     @classmethod
-    def __init_subclass__(cls, *, special=False, **kwargs):
+    def __init_subclass__(cls, *, special=False, base_test=False, **kwargs):
         super().__init_subclass__(**kwargs)
         cls._rfm_special_test = special
+
+        # Insert the base test path as the prefix if the class is marked
+        # as a base test.
+        if base_test:
+            cls._rfm_base_test_prefix = os.path.abspath(
+                os.path.dirname(inspect.getfile(cls)))
 
     def _rfm_init(self, name=None, prefix=None):
         if name is not None:
