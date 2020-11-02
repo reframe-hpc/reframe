@@ -212,6 +212,15 @@ def test_dependecies_how_functions():
     }
     assert len(deps) == 32
 
+
+def test_dependecies_how_functions_undoc():
+    t0_cases = [(p, e)
+                for p in ['p0', 'p1']
+                for e in ['e0', 'e1', 'e2']]
+    t1_cases = [(p, e)
+                for p in ['p0', 'p1', 'p2']
+                for e in ['e0', 'e1']]
+
     how = udeps.part_is('p0')
     deps = {(t0, t1) for t0 in t0_cases
             for t1 in t1_cases
@@ -442,8 +451,8 @@ def test_build_deps(loader, exec_ctx):
                     Node('Test1_custom', 'sys0:p0', 'e0'),
                     Node('Test0', 'sys0:p1', 'e1'))
 
-    # Check dependencies of Test1_edgeless
-    assert num_deps(deps, 'Test1_edgeless') == 0
+    # Check dependencies of Test1_nodeps
+    assert num_deps(deps, 'Test1_nodeps') == 0
 
     # Check in-degree of Test0
 
@@ -454,7 +463,7 @@ def test_build_deps(loader, exec_ctx):
     # 2 from Test1_all,
     # 0 from Test1_custom,
     # 1 from Test1_default
-    # 0 from Test1_edgeless
+    # 0 from Test1_nodeps
     assert in_degree(deps, Node('Test0', 'sys0:p0', 'e0')) == 12
 
     # 4 from Test1_fully,
@@ -464,7 +473,7 @@ def test_build_deps(loader, exec_ctx):
     # 0 from Test1_all,
     # 0 from Test1_custom,
     # 1 from Test1_default
-    # 0 from Test1_edgeless
+    # 0 from Test1_nodeps
     assert in_degree(deps, Node('Test0', 'sys0:p1', 'e0')) == 10
 
     # 4 from Test1_fully,
@@ -474,7 +483,7 @@ def test_build_deps(loader, exec_ctx):
     # 0 from Test1_all,
     # 0 from Test1_custom,
     # 1 from Test1_default
-    # 0 from Test1_edgeless
+    # 0 from Test1_nodeps
     assert in_degree(deps, Node('Test0', 'sys0:p0', 'e1')) == 12
 
     # 4 from Test1_fully,
@@ -484,7 +493,7 @@ def test_build_deps(loader, exec_ctx):
     # 0 from Test1_all,
     # 1 from Test1_custom,
     # 1 from Test1_default
-    # 0 from Test1_edgeless
+    # 0 from Test1_nodeps
     assert in_degree(deps, Node('Test0', 'sys0:p1', 'e1')) == 13
 
     # Pick a check to test getdep()

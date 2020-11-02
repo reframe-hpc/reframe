@@ -41,7 +41,7 @@ class Test1(rfm.RunOnlyRegressionTest):
             'all': udeps.all(udeps.part_is('p0'),
                              udeps.dest(udeps.env_is('e0'))),
             'custom': custom_deps,
-            'edgeless': (lambda s, d: False),
+            'nodeps': lambda s, d: False,
         }
         self.valid_systems = ['sys0:p0', 'sys0:p1']
         self.valid_prog_environs = ['e0', 'e1']
