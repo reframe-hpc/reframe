@@ -3,29 +3,70 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+'''Dependecies `how` functions.
+
+This module defines various functions that can be used with the dependencies.
+You can find out more about the existing options that the test case subgraph
+can be split `here <dependencies.html>`__.
+
+'''
+
 import builtins
 
 
-# Dependency `when' functions
 def fully(src, dst):
+    '''Creates a fully connected graph.
+    '''
     return True
 
 
-# fully connected in the same partition
-def part_equal(src, dst):
+def by_part(src, dst):
+    '''The test cases are split in fully connected components per partition.
+    Test cases from different partitions are independent.
+    '''
     return src[0] == dst[0]
 
 
-# different partitions but same env
-def env_equal(src, dst):
+def by_xpart(src, dst):
+    '''The test cases are split in fully connected components that do not
+    contain the same partition. Test cases from the same partition are
+    independent.
+    '''
+    return src[0] != dst[0]
+
+
+def by_env(src, dst):
+    '''The test cases are split in fully connected components per environment.
+    Test cases from different environments are independent.
+    '''
     return src[1] == dst[1]
 
 
-# same env and part, which is the default also
-def part_env_equal(src, dst):
+def by_xenv(src, dst):
+    '''The test cases are split in fully connected components that do not
+    contain the same environment. Test cases from the same environment are
+    independent.
+    '''
+    return src[1] != dst[1]
+
+
+def by_case(src, dst):
+    ''' If not specified differently, test cases on different partitions or
+    programming environments are independent. This is the default behavior
+    of the depends_on() function.
+    '''
     return src == dst
 
 
+def by_xcase(src, dst):
+    '''The test cases are split in fully connected components that do not
+    contain the same environment and the same partition. Test cases from
+    the same environment and the same partition are independent.
+    '''
+    return src != dst
+
+
+# Undocumented 'how' functions
 def part_is(name):
     def _part_is(src, dst):
         if src and dst:

@@ -31,3 +31,11 @@ Type Checking Utilities
 .. automodule:: reframe.utility.typecheck
    :members:
    :show-inheritance:
+
+
+Dependencies Utilities
+--------------------------------
+
+.. automodule:: reframe.utility.udeps
+   :members:
+   :show-inheritance:

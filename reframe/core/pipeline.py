@@ -1610,10 +1610,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
         # Follow the old definitions
         # DEPEND_BY_ENV used to mean same env and same partition
         if how == DEPEND_BY_ENV:
-            return udeps.part_env_equal
+            return udeps.by_case
         # DEPEND_BY_ENV used to mean same partition
         elif how == DEPEND_FULLY:
-            return udeps.part_equal
+            return udeps.by_part
         elif how == DEPEND_EXACT:
             return exact
         else:
@@ -1632,12 +1632,12 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
             .. code-block:: python
 
-                def part_equal(src, dst):
+                def by_part(src, dst):
                     p0, _ = src
                     p1, _  = dst
                     return p0 == p1
 
-                self.depends_on('T0', how=part_equal)
+                self.depends_on('T0', how=by_part)
 
             By default each testcase will depend on the case from target
             that has the same environment and partition, if it exists.
@@ -1662,7 +1662,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
             how = self._depends_on_func(how, *args, **kwargs)
 
         if how is None:
-            how = udeps.part_env_equal
+            how = udeps.by_case
 
         if not callable(how):
             raise TypeError("'how' argument must be callable")

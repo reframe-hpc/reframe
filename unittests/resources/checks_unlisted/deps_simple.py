@@ -19,7 +19,7 @@ class Test0(rfm.RunOnlyRegressionTest):
 
 
 @rfm.parameterized_test(*([kind] for kind in ['default', 'fully',
-                                              'part_equal', 'part_env_equal',
+                                              'by_part', 'by_case',
                                               'custom', 'any', 'all',
                                               'edgeless']))
 class Test1(rfm.RunOnlyRegressionTest):
@@ -34,8 +34,8 @@ class Test1(rfm.RunOnlyRegressionTest):
 
         kindspec = {
             'fully': udeps.fully,
-            'part_equal': udeps.part_equal,
-            'part_env_equal': udeps.part_env_equal,
+            'by_part': udeps.by_part,
+            'by_case': udeps.by_case,
             'any': udeps.any(udeps.source(udeps.part_is('p0')),
                              udeps.dest(udeps.env_is('e1'))),
             'all': udeps.all(udeps.part_is('p0'),
