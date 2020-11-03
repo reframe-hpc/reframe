@@ -18,6 +18,7 @@ from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
                                      SanityError)
 from reframe.frontend.loader import RegressionCheckLoader
 from unittests.resources.checks.hellocheck import HelloTest
+from unittests.resources.checks.hellocheck_base import HelloBaseTest
 
 
 def _run(test, partition, prgenv):
@@ -242,6 +243,13 @@ def test_compile_only_warning(local_exec_ctx):
             self.valid_prog_environs = ['*']
             self.valid_systems = ['*']
             self.sanity_patterns = sn.assert_found(r'warning', self.stderr)
+
+    _run(MyTest(), *local_exec_ctx)
+
+
+def test_base_test(local_exec_ctx):
+    class MyTest(HelloBaseTest):
+        pass
 
     _run(MyTest(), *local_exec_ctx)
 
