@@ -476,11 +476,8 @@ def main():
         if options.mode:
             mode_args = site_config.get(f'modes/@{options.mode}/options')
 
-            # `argparser.parse_args` treats the options given through
-            # arguments and through the command line in a different way.
-            # To mimic the behaviour of the command line when the options
-            # and values are separated by a space, they need to be split
-            # as follows
+            # We lexically split the mode options, because otherwise spaces
+            # will be treated as part of the option argument; see GH bug #1554
             mode_args = list(itertools.chain.from_iterable(shlex.split(m)
                                                            for m in mode_args))
             # Parse the mode's options and reparse the command-line
