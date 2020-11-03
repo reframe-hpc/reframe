@@ -58,10 +58,12 @@ def test_spawned_process_error():
     with pytest.raises(
             exc.ReframeError,
             match=(r"command 'foo bar' failed with exit code 1:\n"
-                   r"=== STDOUT ===\n"
+                   r"--- stdout ---\n"
                    r'partial output\n'
-                   r"=== STDERR ===\n"
-                   r"error message")
+                   r"--- stdout ---\n"
+                   r"--- stderr ---\n"
+                   r"error message\n"
+                   r"--- stderr ---")
     ):
         raise e
 
@@ -74,10 +76,12 @@ def test_spawned_process_error_list_args():
     with pytest.raises(
             exc.ReframeError,
             match=(r"command 'foo bar' failed with exit code 1:\n"
-                   r"=== STDOUT ===\n"
+                   r"--- stdout ---\n"
                    r'partial output\n'
-                   r"=== STDERR ===\n"
-                   r"error message")
+                   r"--- stdout ---\n"
+                   r"--- stderr ---\n"
+                   r"error message\n"
+                   r"--- stderr ---")
     ):
         raise e
 
@@ -90,9 +94,11 @@ def test_spawned_process_error_nostdout():
     with pytest.raises(
             exc.ReframeError,
             match=(r"command 'foo bar' failed with exit code 1:\n"
-                   r"=== STDOUT ===\n"
-                   r"=== STDERR ===\n"
-                   r"error message")
+                   r"--- stdout ---\n"
+                   r"--- stdout ---\n"
+                   r"--- stderr ---\n"
+                   r"error message\n"
+                   r"--- stderr ---")
     ):
         raise e
 
@@ -103,9 +109,11 @@ def test_spawned_process_error_nostderr():
     with pytest.raises(
             exc.ReframeError,
             match=(r"command 'foo bar' failed with exit code 1:\n"
-                   r"=== STDOUT ===\n"
+                   r"--- stdout ---\n"
                    r'partial output\n'
-                   r"=== STDERR ===")
+                   r"--- stdout ---\n"
+                   r"--- stderr ---\n"
+                   r"--- stderr ---")
     ):
         raise e
 
@@ -115,10 +123,12 @@ def test_spawned_process_timeout():
     e = exc.SpawnedProcessTimeout(*exc_args)
     with pytest.raises(exc.ReframeError,
                        match=(r"command 'foo bar' timed out after 10s:\n"
-                              r"=== STDOUT ===\n"
+                              r"--- stdout ---\n"
                               r'partial output\n'
-                              r"=== STDERR ===\n"
-                              r"partial error")):
+                              r"--- stdout ---\n"
+                              r"--- stderr ---\n"
+                              r"partial error\n"
+                              r"--- stderr ---")):
         raise e
 
 
@@ -127,9 +137,11 @@ def test_spawned_process_timeout_nostdout():
     e = exc.SpawnedProcessTimeout(*exc_args)
     with pytest.raises(exc.ReframeError,
                        match=(r"command 'foo bar' timed out after 10s:\n"
-                              r"=== STDOUT ===\n"
-                              r"=== STDERR ===\n"
-                              r"partial error")):
+                              r"--- stdout ---\n"
+                              r"--- stdout ---\n"
+                              r"--- stderr ---\n"
+                              r"partial error\n"
+                              r"--- stderr ---")):
         raise e
 
 
@@ -138,9 +150,11 @@ def test_spawned_process_timeout_nostderr():
     e = exc.SpawnedProcessTimeout(*exc_args)
     with pytest.raises(exc.ReframeError,
                        match=(r"command 'foo bar' timed out after 10s:\n"
-                              r"=== STDOUT ===\n"
+                              r"--- stdout ---\n"
                               r'partial output\n'
-                              r"=== STDERR ===")):
+                              r"--- stdout ---\n"
+                              r"--- stderr ---\n"
+                              r"--- stderr ---")):
         raise e
 
 

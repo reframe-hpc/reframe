@@ -253,7 +253,7 @@ class _SiteConfig:
                     )
                     return sysname
 
-        raise ConfigError(f"could not find a matching configuration entry "
+        raise ConfigError(f"could not find a configuration entry "
                           f"for the current system: '{hostname}'")
 
     def validate(self):
@@ -306,7 +306,7 @@ class _SiteConfig:
         )
         if not systems:
             raise ConfigError(
-                f"could not find a matching configuration entry "
+                f"could not find a configuration entry "
                 f"for the requested system: '{system_name}'"
             )
 
