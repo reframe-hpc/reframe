@@ -131,8 +131,8 @@ site_configuration = {
         {
             'name': 'unittest',
             'options': [
-                '-c', 'unittests/resources/checks/hellocheck.py',
-                '-p', 'builtin-gcc',
+                '-c unittests/resources/checks/hellocheck.py',
+                '-p builtin-gcc',
                 '--force-local'
             ]
         }
