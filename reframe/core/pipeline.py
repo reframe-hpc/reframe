@@ -14,6 +14,7 @@ __all__ = [
 
 
 import functools
+import glob
 import inspect
 import itertools
 import numbers
@@ -371,7 +372,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: By default, the framework saves the standard output, the standard error
     #: and the generated shell script that was used to run this test.
     #:
-    #: These files will be copied over to the framework’s output directory
+    #: These files will be copied over to the test's output directory
     #: during the :func:`cleanup` phase.
     #:
     #: Directories are also accepted in this field.
@@ -380,6 +381,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
+    #:
+    #: .. versionchanged:: 3.3
+    #:    This field accepts now also file glob patterns.
+    #:
     keep_files = fields.TypedField('keep_files', typ.List[str])
 
     #: List of files or directories (relative to the :attr:`sourcesdir`) that
@@ -1539,16 +1544,22 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self._copy_job_files(self._job, self.outputdir)
         self._copy_job_files(self._build_job, self.outputdir)
 
-        # Copy files specified by the user
-        for f in self.keep_files:
-            f_orig = f
-            if not os.path.isabs(f):
-                f = os.path.join(self._stagedir, f)
-
-            if os.path.isfile(f):
-                shutil.copy(f, self.outputdir)
-            elif os.path.isdir(f):
-                shutil.copytree(f, os.path.join(self.outputdir, f_orig))
+        with osext.change_dir(self.stagedir):
+            # Copy files specified by the user, but expand any glob patterns
+            keep_files = itertools.chain(
+                *(glob.iglob(f) for f in self.keep_files)
+            )
+            for f in keep_files:
+                f = os.path.abspath(f)
+                if os.path.isdir(f):
+                    # We need to keep the directory structure when copying
+                    # over to outputdir
+                    dst = os.path.join(
+                        self.outputdir, os.path.relpath(f, self.stagedir)
+                    )
+                    osext.copytree(f, dst, dirs_exist_ok=True)
+                else:
+                    shutil.copy2(f, self.outputdir)
 
     @_run_hooks()
     @final

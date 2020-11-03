@@ -150,10 +150,9 @@ def test_hellocheck_make(remote_exec_ctx):
 
 def test_hellocheck_local(hellotest, local_exec_ctx):
     # Test also the prebuild/postbuild functionality
-    hellotest.prebuild_cmds = ['touch prebuild', 'mkdir prebuild_dir']
+    hellotest.prebuild_cmds = ['touch prebuild', 'mkdir -p  prebuild_dir/foo']
     hellotest.postbuild_cmds = ['touch postbuild', 'mkdir postbuild_dir']
-    hellotest.keep_files = ['prebuild', 'postbuild',
-                            'prebuild_dir', 'postbuild_dir']
+    hellotest.keep_files = ['prebuild', 'postbuild', '*dir']
 
     # Force local execution of the test; just for testing .local
     hellotest.local = True
@@ -164,7 +163,8 @@ def test_hellocheck_local(hellotest, local_exec_ctx):
         hellotest.build_stdout.evaluate(),
         hellotest.build_stderr.evaluate(),
         hellotest.job.script_filename,
-        *hellotest.keep_files
+        'prebuild', 'postbuild', 'prebuild_dir',
+        'prebuild_dir/foo', 'postbuild_dir'
     ]
     for f in must_keep:
         assert os.path.exists(os.path.join(hellotest.outputdir, f))

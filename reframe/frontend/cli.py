@@ -4,9 +4,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import inspect
+import itertools
 import json
 import os
 import re
+import shlex
 import socket
 import sys
 import time
@@ -474,6 +476,10 @@ def main():
         if options.mode:
             mode_args = site_config.get(f'modes/@{options.mode}/options')
 
+            # We lexically split the mode options, because otherwise spaces
+            # will be treated as part of the option argument; see GH bug #1554
+            mode_args = list(itertools.chain.from_iterable(shlex.split(m)
+                                                           for m in mode_args))
             # Parse the mode's options and reparse the command-line
             options = argparser.parse_args(mode_args)
             options = argparser.parse_args(namespace=options.cmd_options)
@@ -765,6 +771,7 @@ def main():
                 try:
                     with open(report_file, 'w') as fp:
                         jsonext.dump(json_report, fp, indent=2)
+                        fp.write('\n')
                 except OSError as e:
                     printer.warning(
                         f'failed to generate report in {report_file!r}: {e}'
