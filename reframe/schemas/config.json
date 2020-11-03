@@ -31,8 +31,8 @@
         },
         "loglevel": {
             "type": "string",
-            "enum": ["critical", "error", "warning",
-                     "info", "verbose", "debug", "undefined"]
+            "enum": ["critical", "error", "warning", "info",
+                     "verbose", "debug", "debug2", "undefined"]
         },
         "handler_common": {
             "type": "object",
