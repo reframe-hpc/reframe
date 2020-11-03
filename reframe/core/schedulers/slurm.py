@@ -387,8 +387,9 @@ class SlurmJobScheduler(sched.JobScheduler):
             fr'(?P<nodespec>.*)', completed.stdout, re.MULTILINE)
         )
         if not state_match:
-            getlogger().debug('job state not matched (stdout follows)\n%s' %
-                              completed.stdout)
+            self.log(
+                f'Job state not matched (stdout follows)\n{completed.stdout}'
+            )
             return
 
         job_info = {}
