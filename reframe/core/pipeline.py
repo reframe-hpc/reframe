@@ -16,7 +16,6 @@ __all__ = [
 import functools
 import inspect
 import itertools
-import json
 import numbers
 import os
 import shutil
@@ -832,19 +831,18 @@ class RegressionTest(metaclass=RegressionTestMeta):
             self._cdt_environ = env.Environment('__rfm_cdt_environ')
 
     def __rfm_json_encode__(self):
-        dump_dict = {
+        return {
             'rfm_properties': {
                 'modules': self.modules,
                 'variables': self.variables,
                 'stagedir': self.stagedir,
             }
         }
-        return dump_dict
 
-    def __rfm_json_restore__(self, dump_dict):
-        self.modules = dump_dict['modules']
-        self.variables = dump_dict['variables']
-        self._stagedir = dump_dict['stagedir']
+    def __rfm_json_restore__(self, jsonobj):
+        self.modules = jsonobj['modules']
+        self.variables = jsonobj['variables']
+        self._stagedir = jsonobj['stagedir']
 
     # Export read-only views to interesting fields
     @property

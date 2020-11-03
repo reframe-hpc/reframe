@@ -77,6 +77,7 @@ class TestStats:
             num_failures = 0
             for t in run:
                 check = t.check
+                print('\nxxx', check.prefix)
                 partition = check.current_partition
                 entry = {
                     'build_stderr': None,
@@ -116,7 +117,7 @@ class TestStats:
                 entry['scheduler'] = partition.scheduler.registered_name
                 entry['environment'] = environ.name
                 if check.job:
-                    entry['jobid'] = f'{check.job.jobid}'
+                    entry['jobid'] = str(check.job.jobid)
                     entry['job_stderr'] = check.stderr.evaluate()
                     entry['job_stdout'] = check.stdout.evaluate()
                     entry['nodelist'] = check.job.nodelist or []
@@ -128,7 +129,6 @@ class TestStats:
                 if t.failed:
                     num_failures += 1
                     entry['result'] = 'failure'
-                    # entry['stagedir'] = check.stagedir
                     entry['fail_phase'] = t.failed_stage
                     if t.exc_info is not None:
                         entry['fail_reason'] = format_exception(*t.exc_info)

@@ -82,6 +82,44 @@ def format_check(check, detailed=False):
     return '\n'.join(lines)
 
 
+def get_report_file(report_filename):
+    with open(report_filename) as fp:
+        try:
+            restart_report = json.load(fp)
+        except json.JSONDecodeError as e:
+            raise ReframeError(
+                f"could not load report file: '{restart_report!r}'"
+            ) from e
+
+    schema_filename = os.path.join(reframe.INSTALL_PREFIX, 'reframe',
+                                   'schemas', 'runreport.json')
+    with open(schema_filename) as f:
+        try:
+            schema = json.load(f)
+        except json.JSONDecodeError as e:
+            raise ReframeFatalError(
+                f"invalid schema: '{schema_filename}'"
+            ) from e
+
+    try:
+        jsonschema.validate(restart_report, schema)
+    except jsonschema.ValidationError as e:
+        raise ValueError(f"could not validate report file: "
+                         f"'{restart_report!r}'") from e
+
+    return restart_report
+
+def get_failed_checks_from_report(restart_report):
+    failed_checks = set()
+    for testcase in restart_report['runs'][-1]['testcases']:
+        if testcase['result'] == 'failure':
+            failed_checks.add(hash(testcase['name']) ^
+                              hash(testcase['system']) ^
+                              hash(testcase['environment']))
+
+    return failed_checks
+
+
 def format_env(envvars):
     ret = '[ReFrame Environment]\n'
     notset = '<not set>'
@@ -292,9 +330,10 @@ def main():
         help='Set the maximum number of times a failed regression test '
              'may be retried (default: 0)'
     )
-    run_options.add_argument(
-        '--retry-failed', metavar='NUM', action='store', default=None,
-        help='Retry failed tests in a given runreport'
+    output_options.add_argument(
+        '--retry-failed', action='store', nargs='?', const='',
+        metavar='FILE',
+        help='Retry failed tests in a given runreport '
     )
     run_options.add_argument(
         '--flex-alloc-nodes', action='store',
@@ -542,53 +581,27 @@ def main():
     printer.debug(format_env(options.env_vars))
 
     # Setup the check loader
-    if options.retry_failed:
-        with open(options.retry_failed) as f:
-            try:
-                restart_report = json.load(f)
-            except json.JSONDecodeError as e:
-                raise ReframeFatalError(
-                    f"invalid runreport: '{restart_report}'"
-                ) from e
+    if options.retry_failed is not None:
+        if options.retry_failed:
+            filename = options.retry_failed
+        else:
+            filename = os_ext.expandvars(
+                site_config.get('general/report_file'))
 
-        schema_filename = os.path.join(reframe.INSTALL_PREFIX, 'reframe',
-                                       'schemas', 'runreport.json')
-        with open(schema_filename) as f:
-            try:
-                schema = json.load(f)
-            except json.JSONDecodeError as e:
-                raise ReframeFatalError(
-                    f"invalid schema: '{schema_filename}'"
-                ) from e
+        restart_report = get_report_file(filename)
+        failed_checks = get_failed_checks_from_report(restart_report)
 
-        try:
-            jsonschema.validate(restart_report, schema)
-        except jsonschema.ValidationError as e:
-            raise ValueError(f"could not validate restart runreport: "
-                             f"'{restart_report}'") from e
-
-        failed_checks = set()
-        failed_checks_prefixes = set()
-        # for run in restart_report['runs']:
-        for testcase in restart_report['runs'][-1]['testcases']:
-            if testcase['result'] == 'failure':
-                failed_checks.add(hash(testcase['name']) ^
-                                  hash(testcase['system']) ^
-                                  hash(testcase['environment']))
-                failed_checks_prefixes.add(testcase['prefix'])
-
-        loader = RegressionCheckLoader(
-            load_path=site_config.get('general/0/check_search_path'),  #failed_checks_prefixes,
-            ignore_conflicts=site_config.get(
-                'general/0/ignore_check_conflicts')
-        )
+        loader_recurse = False
     else:
-        loader = RegressionCheckLoader(
-            load_path=site_config.get('general/0/check_search_path'),
-            recurse=site_config.get('general/0/check_search_recursive'),
-            ignore_conflicts=site_config.get(
-                'general/0/ignore_check_conflicts')
-        )
+        loader_recurse = site_config.get('general/0/check_search_recursive')
+
+    loader = RegressionCheckLoader(
+        load_path=site_config.get('general/0/check_search_path'),
+        recurse=loader_recurse,
+        ignore_conflicts=site_config.get(
+            'general/0/ignore_check_conflicts')
+    )
+
     def print_infoline(param, value):
         param = param + ':'
         printer.info(f"  {param.ljust(18)} {value}")
@@ -683,7 +696,7 @@ def main():
                                        options.skip_system_check,
                                        options.skip_prgenv_check,
                                        allowed_environs)
-        if options.retry_failed:
+        if options.retry_failed is not None:
             failed_cases = [tc for tc in testcases_og
                             if tc.__hash__() in failed_checks]
 
@@ -780,7 +793,7 @@ def main():
                 session_info['time_start'] = time.strftime(
                     '%FT%T%z', time.localtime(time_start),
                 )
-                if options.retry_failed:
+                if options.retry_failed is not None:
                     runner.restore(restored_tests, restart_report)
 
                 runner.runall(testcases, testcases_og)

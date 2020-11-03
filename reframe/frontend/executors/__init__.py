@@ -290,9 +290,9 @@ class RegressionTask:
         self._safe_call(self.check.performance)
 
     def finalize(self):
-        json_check = os.path.join(self.check.stagedir, 'rfm_check.json')
-        with open(json_check, 'w') as f:
-            jsonext.dump(self.check, f)
+        json_check = os.path.join(self.check.stagedir, '.rfm_testcase.json')
+        with open(json_check, 'w') as fp:
+            jsonext.dump(self.check, fp)
 
         self._current_stage = 'finalize'
         self._notify_listeners('on_task_success')
@@ -426,7 +426,7 @@ class Runner:
 
         for t in testcases:
             idx = (t.check.name, t.partition.fullname, t.environ.name)
-            with open(os.path.join(stagedirs[idx], 'rfm_check.json')) as f:
+            with open(os.path.join(stagedirs[idx], '.rfm_testcase.json')) as f:
                 jsonext.load(f, rfm_obj=RegressionTask(t).check)
 
     def _runall(self, testcases):
