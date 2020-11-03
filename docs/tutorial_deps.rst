@@ -2,7 +2,7 @@
 Tutorial 2: Using Dependencies in ReFrame Tests
 ===============================================
 
-.. versionadded:: 3.4
+.. versionadded:: 3.3
 
 
 A ReFrame test may define dependencies to other tests.
@@ -16,7 +16,7 @@ We first create a basic run-only test, that fetches the benchmarks:
 .. literalinclude:: ../tutorials/deps/osu_benchmarks.py
    :lines: 112-123
 
-This test doesn't need any specific programming environment, just the `builtin` environment in the `login` partition.
+This test doesn't need any specific programming environment, we pick the `gnu` environment in the `login` partition.
 The build tests would then copy the benchmark and build them for the different programming environments:
 
 .. literalinclude:: ../tutorials/deps/osu_benchmarks.py
@@ -29,7 +29,7 @@ The new part comes in with the :class:`OSUBuildTest` test in the following line:
 
 Here we tell ReFrame that this test depends on a test named ``OSUDownloadTest``.
 This test may or may not be defined in the same test file; all ReFrame needs is the test name.
-The :func:`depends_on() <reframe.core.pipeline.RegressionTest.depends_on>` function will create dependencies between the individual test cases of the :class:`OSUBuildTest` and the :class:`OSUDownloadTest`, such that all the instances of :class:`OSUBuildTest` will depend on the outcome of the :class:`OSUDownloadTest` using ``builtin``, but not on the outcome of the other :class:`OSUBuildTest` instances.
+The :func:`depends_on() <reframe.core.pipeline.RegressionTest.depends_on>` function will create dependencies between the individual test cases of the :class:`OSUBuildTest` and the :class:`OSUDownloadTest`, such that all the instances of :class:`OSUBuildTest` will depend on the outcome of the :class:`OSUDownloadTest` using ``gnu``, but not on the outcome of the other :class:`OSUBuildTest` instances.
 This behaviour can be changed, but it is covered in detail in :doc:`dependencies`.
 You can create arbitrary test dependency graphs, but they need to be acyclic.
 If ReFrame detects cyclic dependencies, it will refuse to execute the set of tests and will issue an error pointing out the cycle.
@@ -106,10 +106,10 @@ Here is the output when running the OSU tests with the asynchronous execution po
      output directory:  '/path/to/reframe/output'
 
    [==========] Running 8 check(s)
-   [==========] Started on Tue Nov  3 09:07:19 2020
+   [==========] Started on Tue Nov  3 13:20:28 2020
 
    [----------] started processing OSUDownloadTest (OSU benchmarks download sources)
-   [ RUN      ] OSUDownloadTest on daint:login using builtin
+   [ RUN      ] OSUDownloadTest on daint:login using gnu
    [----------] finished processing OSUDownloadTest (OSU benchmarks download sources)
 
    [----------] started processing OSUBuildTest (OSU benchmarks build test)
@@ -176,33 +176,33 @@ Here is the output when running the OSU tests with the asynchronous execution po
    [----------] finished processing OSUAllreduceTest_16 (OSU Allreduce test)
 
    [----------] waiting for spawned checks to finish
-   [       OK ] ( 1/22) OSUDownloadTest on daint:login using builtin [compile: 0.008s run: 2.290s total: 2.321s]
-   [       OK ] ( 2/22) OSUBuildTest on daint:login using gnu [compile: 19.934s run: 0.032s total: 83.055s]
-   [       OK ] ( 3/22) OSUBuildTest on daint:login using pgi [compile: 27.271s run: 55.764s total: 83.050s]
-   [       OK ] ( 4/22) OSUBuildTest on daint:login using intel [compile: 35.764s run: 36.284s total: 99.353s]
-   [       OK ] ( 5/22) OSULatencyTest on daint:gpu using pgi [compile: 0.005s run: 12.013s total: 22.614s]
-   [       OK ] ( 6/22) OSUAllreduceTest_2 on daint:gpu using pgi [compile: 0.006s run: 17.876s total: 22.600s]
-   [       OK ] ( 7/22) OSUAllreduceTest_4 on daint:gpu using pgi [compile: 0.005s run: 19.411s total: 22.604s]
-   [       OK ] ( 8/22) OSUAllreduceTest_8 on daint:gpu using pgi [compile: 0.006s run: 20.925s total: 22.608s]
-   [       OK ] ( 9/22) OSUAllreduceTest_16 on daint:gpu using pgi [compile: 0.005s run: 22.595s total: 22.613s]
-   [       OK ] (10/22) OSUAllreduceTest_4 on daint:gpu using gnu [compile: 0.005s run: 19.094s total: 23.036s]
-   [       OK ] (11/22) OSUAllreduceTest_16 on daint:gpu using gnu [compile: 0.006s run: 22.103s total: 23.025s]
-   [       OK ] (12/22) OSUAllreduceTest_8 on daint:gpu using gnu [compile: 0.007s run: 20.923s total: 23.340s]
-   [       OK ] (13/22) OSUAllreduceTest_2 on daint:gpu using intel [compile: 0.008s run: 20.634s total: 23.274s]
-   [       OK ] (14/22) OSUAllreduceTest_8 on daint:gpu using intel [compile: 0.006s run: 22.411s total: 23.279s]
-   [       OK ] (15/22) OSULatencyTest on daint:gpu using gnu [compile: 0.005s run: 29.278s total: 40.611s]
-   [       OK ] (16/22) OSUAllreduceTest_4 on daint:gpu using intel [compile: 0.007s run: 23.751s total: 25.519s]
-   [       OK ] (17/22) OSUAllreduceTest_16 on daint:gpu using intel [compile: 0.005s run: 25.742s total: 25.761s]
-   [       OK ] (18/22) OSULatencyTest on daint:gpu using intel [compile: 0.007s run: 25.195s total: 30.090s]
-   [       OK ] (19/22) OSUAllreduceTest_2 on daint:gpu using gnu [compile: 0.008s run: 43.811s total: 49.329s]
-   [       OK ] (20/22) OSUBandwidthTest on daint:gpu using pgi [compile: 0.008s run: 73.940s total: 82.628s]
-   [       OK ] (21/22) OSUBandwidthTest on daint:gpu using gnu [compile: 0.008s run: 73.129s total: 82.926s]
-   [       OK ] (22/22) OSUBandwidthTest on daint:gpu using intel [compile: 0.006s run: 81.195s total: 85.084s]
+   [       OK ] ( 1/22) OSUDownloadTest on daint:login using gnu [compile: 0.005s run: 3.373s total: 3.408s]
+   [       OK ] ( 2/22) OSUBuildTest on daint:login using gnu [compile: 22.410s run: 0.035s total: 87.728s]
+   [       OK ] ( 3/22) OSUBuildTest on daint:login using pgi [compile: 27.725s run: 59.918s total: 87.691s]
+   [       OK ] ( 4/22) OSUBuildTest on daint:login using intel [compile: 37.437s run: 32.771s total: 98.034s]
+   [       OK ] ( 5/22) OSUAllreduceTest_2 on daint:gpu using pgi [compile: 0.007s run: 139.339s total: 144.402s]
+   [       OK ] ( 6/22) OSUAllreduceTest_4 on daint:gpu using pgi [compile: 0.007s run: 140.896s total: 144.395s]
+   [       OK ] ( 7/22) OSUAllreduceTest_8 on daint:gpu using pgi [compile: 0.006s run: 142.451s total: 144.372s]
+   [       OK ] ( 8/22) OSUAllreduceTest_16 on daint:gpu using pgi [compile: 0.005s run: 144.342s total: 144.368s]
+   [       OK ] ( 9/22) OSUAllreduceTest_4 on daint:gpu using gnu [compile: 0.007s run: 140.555s total: 144.833s]
+   [       OK ] (10/22) OSUAllreduceTest_16 on daint:gpu using gnu [compile: 0.005s run: 143.642s total: 144.778s]
+   [       OK ] (11/22) OSUAllreduceTest_8 on daint:gpu using gnu [compile: 0.007s run: 142.456s total: 145.151s]
+   [       OK ] (12/22) OSUAllreduceTest_2 on daint:gpu using gnu [compile: 0.005s run: 139.685s total: 145.510s]
+   [       OK ] (13/22) OSUBandwidthTest on daint:gpu using gnu [compile: 0.009s run: 193.440s total: 200.818s]
+   [       OK ] (14/22) OSUBandwidthTest on daint:gpu using pgi [compile: 0.006s run: 194.465s total: 201.080s]
+   [       OK ] (15/22) OSULatencyTest on daint:gpu using intel [compile: 0.009s run: 278.603s total: 283.389s]
+   [       OK ] (16/22) OSUAllreduceTest_4 on daint:gpu using intel [compile: 0.006s run: 281.112s total: 283.365s]
+   [       OK ] (17/22) OSULatencyTest on daint:gpu using pgi [compile: 0.006s run: 285.499s total: 293.712s]
+   [       OK ] (18/22) OSUAllreduceTest_2 on daint:gpu using intel [compile: 0.006s run: 280.693s total: 283.756s]
+   [       OK ] (19/22) OSUAllreduceTest_8 on daint:gpu using intel [compile: 0.006s run: 282.550s total: 283.971s]
+   [       OK ] (20/22) OSUAllreduceTest_16 on daint:gpu using intel [compile: 0.005s run: 284.573s total: 284.596s]
+   [       OK ] (21/22) OSULatencyTest on daint:gpu using gnu [compile: 0.006s run: 286.186s total: 295.202s]
+   [       OK ] (22/22) OSUBandwidthTest on daint:gpu using intel [compile: 0.005s run: 340.005s total: 343.927s]
    [----------] all spawned checks have finished
 
    [  PASSED  ] Ran 22 test case(s) from 8 check(s) (0 failure(s))
-   [==========] Finished on Tue Nov  3 09:10:26 2020
-   Log file(s) saved in: '/tmp/rfm-wbx399cp.log'
+   [==========] Finished on Tue Nov  3 13:27:54 2020
+   Log file(s) saved in: '/tmp/rfm-n4lrqiqf.log'
 
 Before starting running the tests, ReFrame topologically sorts them based on their dependencies and schedules them for running using the selected execution policy.
 With the serial execution policy, ReFrame simply executes the tests to completion as they "arrive", since the tests are already topologically sorted.
