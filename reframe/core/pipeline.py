@@ -1620,15 +1620,29 @@ class RegressionTest(metaclass=RegressionTestMeta):
             raise ValueError(f"unknown value passed to 'how' argument: {how}")
 
     def depends_on(self, target, how=None, *args, **kwargs):
-        '''Add a dependency to ``target`` in this test.
+        '''Add a dependency to another test.
 
-        :arg target: The name of the target test.
-        :arg how: A callable that defines the mapping of the dependencies.
-            The function the user passes should take as argument the source
-            and destination testcase. When case B depends on case 'A' we
-            consider as source case 'A' and destination case 'B'. In the
-            following example, each case will depend on every case from T0,
-            that belongs in the same partition.
+        :arg target: The name of the test that this one will depend on.
+        :arg how: A callable that defines how the test cases of this test
+            depend on the the test cases of the target test.
+            This callable should accept two arguments:
+
+            - The source test case (i.e., a test case of this test)
+              represented as a two-element tuple containing the names of the
+              partition and the environment of the current test case.
+            - Test destination test case (i.e., a test case of the target
+              test) represented as a two-element tuple containing the names of
+              the partition and the environment of the current target test case.
+
+            It should return :class:`True` if a dependency between the source
+            and destination test cases exists, :class:`False` otherwise.
+
+            This function will be called multiple times by the framework when
+            the test DAG is constructed, in order to determine the
+            connectivity of the two tests.
+
+            In the following example, this test depends on ``T1`` when their
+            partitions match, otherwise their test cases are independent.
 
             .. code-block:: python
 
@@ -1639,18 +1653,29 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
                 self.depends_on('T0', how=by_part)
 
-            By default each testcase will depend on the case from target
-            that has the same environment and partition, if it exists.
+            The framework offers already a set of predefined relations between
+            the test cases of inter-dependent tests. See the
+            :mod:`reframe.utility.udeps` for more details.
 
-        For more details on how test dependencies work in ReFrame, please
-        refer to `How Test Dependencies Work In ReFrame <dependencies.html>`__.
+            The default ``how`` function is
+            :func:`reframe.utility.udeps.by_case`, where test cases on
+            different partitions and environments are independent.
+
+        .. seealso::
+           - :doc:`dependencies`
+           - :ref:`test-case-deps-management`
+
+
 
         .. versionadded:: 2.21
 
         .. versionchanged:: 3.3
-           Dependencies between cases from different partitions are now allowed
-           and the arguments 'how' and 'subdeps' are  deprecated. You should
-           pass a callable to the `how' argument.
+           Dependencies between test cases from different partitions are now allowed.
+           The ``how`` argument now accepts a callable.
+
+         .. deprecated:: 3.3
+            Passing an integer to the ``how`` argument as well as using the
+            ``subdeps`` argument is deprecated.
 
         '''
         if not isinstance(target, str):
