@@ -33,7 +33,7 @@ site_configuration = {
                     'descr': 'Login nodes',
                     'scheduler': 'local',
                     'launcher': 'local',
-                    'environs': ['gnu', 'intel', 'pgi', 'cray'],
+                    'environs': ['gnu', 'intel', 'pgi', 'cray', 'builtin'],
                 },
                 {
                     'name': 'gpu',
