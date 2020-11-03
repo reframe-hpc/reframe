@@ -6,6 +6,7 @@
 import reframe as rfm
 import reframe.utility.sanity as sn
 
+
 class HelloBaseTest(rfm.RunOnlyRegressionTest, base_test=True):
     def __init__(self):
         self.executable = './hello.sh'
@@ -15,4 +16,3 @@ class HelloBaseTest(rfm.RunOnlyRegressionTest, base_test=True):
         self.valid_systems = ['*']
         self.sanity_patterns = sn.assert_found(
             r'Hello, World\!', self.stdout)
-
