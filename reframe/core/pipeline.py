@@ -1643,7 +1643,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
               partition and the environment of the current test case.
             - Test destination test case (i.e., a test case of the target
               test) represented as a two-element tuple containing the names of
-              the partition and the environment of the current target test case.
+              the partition and the environment of the current target test
+              case.
 
             It should return :class:`True` if a dependency between the source
             and destination test cases exists, :class:`False` otherwise.
@@ -1681,8 +1682,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
         .. versionadded:: 2.21
 
         .. versionchanged:: 3.3
-           Dependencies between test cases from different partitions are now allowed.
-           The ``how`` argument now accepts a callable.
+           Dependencies between test cases from different partitions are now
+           allowed. The ``how`` argument now accepts a callable.
 
          .. deprecated:: 3.3
             Passing an integer to the ``how`` argument as well as using the

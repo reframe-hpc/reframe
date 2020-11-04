@@ -76,8 +76,9 @@ def find_check(name, checks):
 
 def find_case(cname, ename, partname, cases):
     for c in cases:
-        if (c.check.name == cname and c.environ.name == ename
-            and c.partition.name == partname):
+        if (c.check.name == cname and
+            c.environ.name == ename and
+            c.partition.name == partname):
             return c
 
 
