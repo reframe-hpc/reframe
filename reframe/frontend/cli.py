@@ -4,9 +4,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import inspect
+import itertools
 import json
 import os
 import re
+import shlex
 import socket
 import sys
 import time
@@ -21,7 +23,7 @@ import reframe.core.runtime as runtime
 import reframe.core.warnings as warnings
 import reframe.frontend.argparse as argparse
 import reframe.frontend.check_filters as filters
-import reframe.frontend.dependency as dependency
+import reframe.frontend.dependencies as dependencies
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 from reframe.frontend.executors import Runner, generate_testcases
@@ -474,6 +476,10 @@ def main():
         if options.mode:
             mode_args = site_config.get(f'modes/@{options.mode}/options')
 
+            # We lexically split the mode options, because otherwise spaces
+            # will be treated as part of the option argument; see GH bug #1554
+            mode_args = list(itertools.chain.from_iterable(shlex.split(m)
+                                                           for m in mode_args))
             # Parse the mode's options and reparse the command-line
             options = argparser.parse_args(mode_args)
             options = argparser.parse_args(namespace=options.cmd_options)
@@ -634,9 +640,9 @@ def main():
                                        options.skip_system_check,
                                        options.skip_prgenv_check,
                                        allowed_environs)
-        testgraph = dependency.build_deps(testcases)
-        dependency.validate_deps(testgraph)
-        testcases = dependency.toposort(testgraph)
+        testgraph = dependencies.build_deps(testcases)
+        dependencies.validate_deps(testgraph)
+        testcases = dependencies.toposort(testgraph)
 
         # Manipulate ReFrame's environment
         if site_config.get('general/0/purge_environment'):

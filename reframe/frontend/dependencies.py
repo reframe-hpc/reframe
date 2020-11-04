@@ -24,39 +24,29 @@ def build_deps(cases, default_cases=None):
     '''
 
     # Index cases for quick access
-    def build_partition_index(cases):
-        if cases is None:
-            return {}
-
-        ret = {}
-        for c in cases:
-            cname, pname = c.check.name, c.partition.fullname
-            ret.setdefault((cname, pname), [])
-            ret[cname, pname].append(c)
-
-        return ret
-
-    def build_cases_index(cases):
+    def build_index(cases):
         if cases is None:
             return {}
 
         ret = {}
         for c in cases:
             cname = c.check.name
-            pname = c.partition.fullname
-            ename = c.environ.name
-            ret.setdefault((cname, pname, ename), c)
+            ret.setdefault(cname, [])
+            ret[cname].append(c)
 
         return ret
 
-    def resolve_dep(target, from_map, fallback_map, *args):
-        errmsg = 'could not resolve dependency: %s -> %s' % (target, args)
+    all_cases_map = build_index(cases)
+    default_cases_map = build_index(default_cases)
+
+    def resolve_dep(src, dst):
+        errmsg = f'could not resolve dependency: {src!r} -> {dst!r}'
         try:
-            ret = from_map[args]
+            ret = all_cases_map[dst]
         except KeyError:
             # try to resolve the dependency in the fallback map
             try:
-                ret = fallback_map[args]
+                ret = default_cases_map[dst]
             except KeyError:
                 raise DependencyError(errmsg) from None
 
@@ -64,11 +54,6 @@ def build_deps(cases, default_cases=None):
             raise DependencyError(errmsg)
 
         return ret
-
-    cases_by_part = build_partition_index(cases)
-    cases_revmap  = build_cases_index(cases)
-    default_cases_by_part = build_partition_index(default_cases)
-    default_cases_revmap  = build_cases_index(default_cases)
 
     # NOTE on variable names
     #
@@ -81,29 +66,15 @@ def build_deps(cases, default_cases=None):
     # partitions and environments
     graph = collections.OrderedDict()
     for c in cases:
-        cname = c.check.name
-        pname = c.partition.fullname
-        ename = c.environ.name
+        psrc = c.partition.name
+        esrc = c.environ.name
         for dep in c.check.user_deps():
-            tname, how, subdeps = dep
-            if how == rfm.DEPEND_FULLY:
-                c.deps.extend(resolve_dep(c, cases_by_part,
-                                          default_cases_by_part, tname, pname))
-            elif how == rfm.DEPEND_BY_ENV:
-                c.deps.append(
-                    resolve_dep(c, cases_revmap, default_cases_revmap,
-                                tname, pname, ename)
-                )
-            elif how == rfm.DEPEND_EXACT:
-                for env, tenvs in subdeps.items():
-                    if env != ename:
-                        continue
-
-                    for te in tenvs:
-                        c.deps.append(
-                            resolve_dep(c, cases_revmap, default_cases_revmap,
-                                        tname, pname, te)
-                        )
+            tname, when = dep
+            for d in resolve_dep(c, tname):
+                pdst = d.partition.name
+                edst = d.environ.name
+                if when((psrc, esrc), (pdst, edst)):
+                    c.deps.append(d)
 
         graph[c] = util.OrderedSet(c.deps)
 

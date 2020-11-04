@@ -14,7 +14,7 @@ import time
 
 import reframe
 import reframe.core.runtime as rt
-import reframe.frontend.dependency as dependency
+import reframe.frontend.dependencies as dependencies
 import reframe.frontend.executors as executors
 import reframe.frontend.executors.policies as policies
 import reframe.utility as util
@@ -91,9 +91,9 @@ def make_cases(make_loader):
 
         cases = executors.generate_testcases(checks, *args, **kwargs)
         if sort:
-            depgraph = dependency.build_deps(cases)
-            dependency.validate_deps(depgraph)
-            cases = dependency.toposort(depgraph)
+            depgraph = dependencies.build_deps(cases)
+            dependencies.validate_deps(depgraph)
+            cases = dependencies.toposort(depgraph)
 
         return cases
 
