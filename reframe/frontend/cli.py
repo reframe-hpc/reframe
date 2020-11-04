@@ -33,7 +33,7 @@ from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.printer import PrettyPrinter
 
 
-def format_check(check, detailed=False):
+def format_check(check, index_of_deps, detailed=False):
     def fmt_list(x):
         if not x:
             return '<none>'
@@ -52,7 +52,6 @@ def format_check(check, detailed=False):
         node_alloc_scheme = f'flexible (minimum {-check.num_tasks} task(s))'
 
     check_info = {
-        'Dependencies': fmt_list([d[0] for d in check.user_deps()]),
         'Description': check.descr,
         'Environment modules': fmt_list(check.modules),
         'Location': location,
@@ -64,7 +63,8 @@ def format_check(check, detailed=False):
         },
         'Tags': fmt_list(check.tags),
         'Valid environments': fmt_list(check.valid_prog_environs),
-        'Valid systems': fmt_list(check.valid_systems)
+        'Valid systems': fmt_list(check.valid_systems),
+        'Dependencies': fmt_list([d[0] for d in check.user_deps()])
     }
     lines = [f'- {check.name}:']
     for prop, val in check_info.items():
@@ -77,6 +77,20 @@ def format_check(check, detailed=False):
 
         lines.append('')
 
+    lines.append('    Dependencies for current system:')
+    no_deps = True
+    # The check might be valid for this system, but if no environment
+    # is valid we won't have any test case in the index_of_deps.
+    if check.name in index_of_deps:
+        for t, deps in index_of_deps[check.name]:
+            for d in deps:
+                no_deps = False
+                lines.append(f'      {t} -> {d}')
+
+    if no_deps:
+        lines.append('      <none>')
+
+    lines.append('')
     return '\n'.join(lines)
 
 
@@ -88,9 +102,9 @@ def format_env(envvars):
     return ret
 
 
-def list_checks(checks, printer, detailed=False):
+def list_checks(checks, printer, index_of_deps, detailed=False):
     printer.info('[List of matched checks]')
-    printer.info('\n'.join(format_check(c, detailed) for c in checks))
+    printer.info('\n'.join(format_check(c, index_of_deps, detailed) for c in checks))
     printer.info(f'Found {len(checks)} check(s)')
 
 
@@ -670,10 +684,15 @@ def main():
 
         options.flex_alloc_nodes = options.flex_alloc_nodes or 'idle'
 
+        index_of_deps = {}
+        for t in testcases:
+            index_of_deps.setdefault(t.check.name, [])
+            index_of_deps[t.check.name].append((t, t.deps))
+
         # Act on checks
         success = True
         if options.list or options.list_detailed:
-            list_checks(list(checks_matched), printer, options.list_detailed)
+            list_checks(list(checks_matched), printer, index_of_deps, options.list_detailed)
         elif options.run:
             # Setup the execution policy
             if options.exec_policy == 'serial':
