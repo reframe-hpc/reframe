@@ -109,6 +109,148 @@ def generate_report_filename(filepatt):
     return filepatt.format(sessionid=new_id)
 
 
+def locate_and_load_tests(options, loader, ci_tag=[]):
+    # Locate and load checks
+    try:
+        checks_found = loader.load_all()
+    except OSError as e:
+        raise errors.ReframeError from e
+
+    # Filter checks by name
+    checks_matched = checks_found
+    if options.exclude_names:
+        for name in options.exclude_names:
+            checks_matched = filter(filters.have_not_name(name),
+                                    checks_matched)
+
+    if options.names:
+        checks_matched = filter(filters.have_name('|'.join(options.names)),
+                                checks_matched)
+
+    # Filter checks by tags
+    for tag in options.tags:
+        checks_matched = filter(filters.have_tag(tag), checks_matched)
+
+    # Filter checks by ci tags
+    for tag in ci_tag:
+        checks_matched = filter(filters.have_tag(tag), checks_matched)
+
+    # Filter checks by prgenv
+    if not options.skip_prgenv_check:
+        for prgenv in options.prgenv:
+            checks_matched = filter(filters.have_prgenv(prgenv),
+                                    checks_matched)
+
+    # Filter checks by system
+    if not options.skip_system_check:
+        checks_matched = filter(
+            filters.have_partition(rt.system.partitions), checks_matched)
+
+    if options.gpu_only:
+        checks_matched = filter(filters.have_gpu_only(), checks_matched)
+    elif options.cpu_only:
+        checks_matched = filter(filters.have_cpu_only(), checks_matched)
+
+    # Determine the allowed programming environments
+    allowed_environs = {e.name
+                        for env_patt in options.prgenv
+                        for p in rt.system.partitions
+                        for e in p.environs if re.match(env_patt, e.name)}
+
+    # Generate the test cases, validate dependencies and sort them
+    checks_matched = list(checks_matched)
+
+    # Disable hooks
+    for c in checks_matched:
+        for h in options.hooks:
+            type(c).disable_hook(h)
+
+    testcases = generate_testcases(checks_matched,
+                                    options.skip_system_check,
+                                    options.skip_prgenv_check,
+                                    allowed_environs)
+    testgraph = dependency.build_deps(testcases)
+    # dependency.validate_deps(testgraph)
+    # testcases = dependency.toposort(testgraph)
+
+    return testgraph
+
+# TODO place this function in a proper module
+# TODO define mechanism on how to propagate command line options, currently
+#      we are passing site_config, but that's clearly a bad design
+#      read below the options we need to propagate or make available to each
+#      ci invokation
+#      An alternative design would be to have environment variables exported
+#      during the trigger phase of reframe that would influence the tests
+#      individually
+def generate_ci_pipeline_file(ci_pipeline_file, testgraph, site_config):
+    import reframe.utility as util
+
+    def _hash_test_names(test):
+        # Need to hash the test names to make them yaml compatible
+        cname = test.check.name
+        pname = test.partition.fullname
+        ename = test.environ.name
+        # still need to convert characters because partitions
+        # can have the : char, for example
+        return util.toalphanum(cname + "_" + pname + "_" + ename)
+
+    tests, graphdepth = dependencies.toposortdepth(testgraph)
+    # TODO Should be using py-yaml lib here
+    with open(ci_pipeline_file, 'w') as pipeline_file:
+        pipeline_file.write('stages:\n')
+        for i in range(graphdepth+1):
+            pipeline_file.write(f'    - rfm-stage-{i}\n')
+        pipeline_file.write('\n')
+        for c, k in tests.items():
+            pipeline_file.write(f'{_hash_test_names(c)}:\n')
+            depth = k['depth']
+            pipeline_file.write(f'    stage: rfm-stage-{depth}\n')
+            pipeline_file.write(f'    script:\n')
+            # TODO there are some options that need  to be revisited
+            # - about the test folder: reframe's -c option
+            # - about the configuration file to use: reframe's -C option
+            # - about the artifacts artifacts: {paths: [jobs_scratch_dir], when: always}
+
+            # TODO there are some missing options:
+            # - about other potentially important options:
+            # + --keep-stage-files
+            # + --ignore-check-conflicts
+            # + -p
+            # + --gpu-only
+            # + --cpu-only
+            # + -A
+            # + -P
+            # + --reservation
+            # + --skip-performance-check
+            # + --nodelist
+            # + --exclude-nodes
+            # + --skip-system-check
+            # + --skip-prgenv-check
+            # + --mode
+            # + --max-retries
+            # + -M
+            # + -m
+            # + --module-mappings
+            # + --failure-stats
+            # + --performance-report
+            load_path='-c '.join(site_config.get('general/0/check_search_path'))
+            recurse='-R' if site_config.get('general/0/check_search_recursive') else ''
+            ignore_conflicts='--ignore-check-conflicts' if site_config.get('general/0/ignore_check_conflicts') else ''
+            pipeline_file.write(f'        - {reframe.INSTALL_PREFIX}/bin/reframe -C {site_config.filename} -c {load_path} {recurse} {ignore_conflicts} --prefix rfm_tests_stage_dir -n {c.check.name} -r\n')
+
+            if k['depends']:
+                pipeline_file.write(f'    needs:\n')
+                for d in k['depends']:
+                    pipeline_file.write(f'        - {_hash_test_names(d)}\n')
+            else:
+                pipeline_file.write(f'    needs: []\n')
+
+            pipeline_file.write(f'    artifacts:\n')
+            pipeline_file.write(f'        paths: \n')
+            pipeline_file.write(f'            - rfm_tests_stage_dir \n')
+            pipeline_file.write('\n')
+
 def main():
     # Setup command line options
     argparser = argparse.ArgumentParser()
@@ -297,6 +439,19 @@ def main():
         '--disable-hook', action='append', metavar='NAME', dest='hooks',
         default=[], help='Disable a pipeline hook for this run'
     )
+    run_options.add_argument(
+        '--ci-generate-pipeline', action='store', metavar='FILE',
+        help="Store ci pipeline in yaml FILE",
+        envvar='RFM_CI_PIPELINE_FILE',
+        configvar='general/ci_pipeline_file'
+    )
+    run_options.add_argument(
+        '--ci-pipeline-tags', action='append', metavar='OPT', default=[],
+        help="Select the ci pipeline stages from tags FILE",
+        envvar='RFM_CI_PIPELINE_TAGS',
+        configvar='general/ci_pipeline_tags'
+    )
+
     env_options.add_argument(
         '-M', '--map-module', action='append', metavar='MAPPING',
         dest='module_mappings', default=[],
@@ -572,71 +727,51 @@ def main():
     print_infoline('stage directory', repr(session_info['prefix_stage']))
     print_infoline('output directory', repr(session_info['prefix_output']))
     printer.info('')
+
+    if site_config.get('general/0/ci_pipeline_file'):
+        ci_pipeline_file = site_config.get('general/0/ci_pipeline_file')
+
+    ci_tags=site_config.get('general/0/ci_pipeline_tags')
+
+    # if one is defined but one is not defined
+    if ci_pipeline_file or ci_tags and not (ci_pipeline_file and ci_tags):
+        printer.error("options `--ci-pipeline-file' and `--ci-tags' "
+                        "must be used together")
+        sys.exit(1)
+
     try:
-        # Locate and load checks
-        try:
-            checks_found = loader.load_all()
-        except OSError as e:
-            raise errors.ReframeError from e
-
-        # Filter checks by name
-        checks_matched = checks_found
-        if options.exclude_names:
-            for name in options.exclude_names:
-                checks_matched = filter(filters.have_not_name(name),
-                                        checks_matched)
-
-        if options.names:
-            checks_matched = filter(filters.have_name('|'.join(options.names)),
-                                    checks_matched)
-
-        # Filter checks by tags
-        for tag in options.tags:
-            checks_matched = filter(filters.have_tag(tag), checks_matched)
-
-        # Filter checks by prgenv
-        if not options.skip_prgenv_check:
-            for prgenv in options.prgenv:
-                checks_matched = filter(filters.have_prgenv(prgenv),
-                                        checks_matched)
-
-        # Filter checks by system
-        if not options.skip_system_check:
-            checks_matched = filter(
-                filters.have_partition(rt.system.partitions), checks_matched)
-
         # Filter checks further
         if options.gpu_only and options.cpu_only:
             printer.error("options `--gpu-only' and `--cpu-only' "
                           "are mutually exclusive")
             sys.exit(1)
 
-        if options.gpu_only:
-            checks_matched = filter(filters.have_gpu_only(), checks_matched)
-        elif options.cpu_only:
-            checks_matched = filter(filters.have_cpu_only(), checks_matched)
+        if ci_tags:
+            for tag in ci_tags:
+                testgraph = locate_and_load_tests(options, loader, ci_tag=tag)
+                dependency.validate_deps(testgraph)
+                generate_ci_pipeline_file(ci_pipeline_file, testgraph, site_config)
 
-        # Determine the allowed programming environments
-        allowed_environs = {e.name
-                            for env_patt in options.prgenv
-                            for p in rt.system.partitions
-                            for e in p.environs if re.match(env_patt, e.name)}
+            sys.exit(0)
 
-        # Generate the test cases, validate dependencies and sort them
-        checks_matched = list(checks_matched)
-
-        # Disable hooks
-        for c in checks_matched:
-            for h in options.hooks:
-                type(c).disable_hook(h)
-
-        testcases = generate_testcases(checks_matched,
-                                       options.skip_system_check,
-                                       options.skip_prgenv_check,
-                                       allowed_environs)
-        testgraph = dependency.build_deps(testcases)
+        testgraph = locate_and_load_tests(options, loader, ci_tag=tag)
         dependency.validate_deps(testgraph)
         testcases = dependency.toposort(testgraph)
+
+        # # TODO: proper exit reframe in case we have ci-generate
+        # if site_config.get('general/0/ci_pipeline_file'):
+        #     ci_pipeline_file = site_config.get('general/0/ci_pipeline_file')
+        #     # TODO filter based on tags and generate set of stages based on the tags
+        #     generate_ci_pipeline_file(ci_pipeline_file, testgraph, site_config)
+        #     sys.exit(0)
+
+
+
+
+
+
+
+
 
         # Manipulate ReFrame's environment
         if site_config.get('general/0/purge_environment'):
