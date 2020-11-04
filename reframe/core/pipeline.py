@@ -832,11 +832,9 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
     def __rfm_json_encode__(self):
         return {
-            'rfm_properties': {
-                'modules': self.modules,
-                'variables': self.variables,
-                'stagedir': self.stagedir,
-            }
+            'modules': self.modules,
+            'variables': self.variables,
+            'stagedir': self.stagedir,
         }
 
     def __rfm_json_restore__(self, jsonobj):

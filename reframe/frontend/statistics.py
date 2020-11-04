@@ -77,7 +77,6 @@ class TestStats:
             num_failures = 0
             for t in run:
                 check = t.check
-                print('\nxxx', check.prefix)
                 partition = check.current_partition
                 entry = {
                     'build_stderr': None,
