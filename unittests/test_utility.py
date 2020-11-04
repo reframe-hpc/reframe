@@ -406,6 +406,30 @@ def test_virtual_copy_linkparent(direntries):
         osext.copytree_virtual(*direntries, file_links, dirs_exist_ok=True)
 
 
+def test_virtual_copy_symlinks_dirs_exist(tmp_path):
+    src = tmp_path / 'src'
+    src.mkdir()
+    dst = tmp_path / 'dst'
+    dst.mkdir()
+    foo = src / 'foo'
+    foo.write_text('Hello Foo')
+    foo_link = src / 'foo.link'
+    foo_link.symlink_to(foo)
+    osext.copytree_virtual(src, dst, symlinks=False, dirs_exist_ok=True)
+    assert (dst / 'foo').exists()
+    assert (dst / 'foo.link').exists()
+    assert (dst / 'foo.link').read_text() == 'Hello Foo'
+    assert not (dst / 'foo.link').is_symlink()
+
+    dst = tmp_path / 'dst_with_links'
+    dst.mkdir()
+    osext.copytree_virtual(src, dst, symlinks=True, dirs_exist_ok=True)
+    assert (dst / 'foo').exists()
+    assert (dst / 'foo.link').exists()
+    assert (dst / 'foo.link').read_text() == 'Hello Foo'
+    assert (dst / 'foo.link').is_symlink()
+
+
 def test_import_from_file_load_relpath():
     module = util.import_module_from_file('reframe/__init__.py')
     assert reframe.VERSION == module.VERSION
