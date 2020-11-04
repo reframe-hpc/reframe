@@ -104,7 +104,9 @@ def format_env(envvars):
 
 def list_checks(checks, printer, index_of_deps, detailed=False):
     printer.info('[List of matched checks]')
-    printer.info('\n'.join(format_check(c, index_of_deps, detailed) for c in checks))
+    printer.info(
+        '\n'.join(format_check(c, index_of_deps, detailed) for c in checks)
+    )
     printer.info(f'Found {len(checks)} check(s)')
 
 
@@ -692,7 +694,8 @@ def main():
         # Act on checks
         success = True
         if options.list or options.list_detailed:
-            list_checks(list(checks_matched), printer, index_of_deps, options.list_detailed)
+            list_checks(list(checks_matched), printer, index_of_deps,
+                        options.list_detailed)
         elif options.run:
             # Setup the execution policy
             if options.exec_policy == 'serial':
