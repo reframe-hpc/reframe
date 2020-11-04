@@ -34,8 +34,8 @@ class _ReframeJsonDecoder(json.JSONDecoder):
                                   *args, **kwargs)
 
     def object_hook(self, obj):
-        if 'rfm_properties' in obj:
-            self.rfm_obj.__rfm_json_restore__(obj['rfm_properties'])
+        if 'modules' in obj:
+            self.rfm_obj.__rfm_json_restore__(obj)
             return self.rfm_obj
 
         return obj
