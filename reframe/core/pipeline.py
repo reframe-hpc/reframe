@@ -29,6 +29,7 @@ import reframe.utility as util
 import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
+import reframe.utility.udeps as udeps
 from reframe.core.backends import (getlauncher, getscheduler)
 from reframe.core.buildsystems import BuildSystemField
 from reframe.core.containers import ContainerPlatform, ContainerPlatformField
@@ -1586,51 +1587,119 @@ class RegressionTest(metaclass=RegressionTestMeta):
     def user_deps(self):
         return util.SequenceView(self._userdeps)
 
-    def depends_on(self, target, how=DEPEND_BY_ENV, subdeps=None):
-        '''Add a dependency to ``target`` in this test.
+    def _depends_on_func(self, how, subdeps=None, *args, **kwargs):
+        if args or kwargs:
+            raise ValueError('invalid arguments passed')
 
-        :arg target: The name of the target test.
-        :arg how: How the dependency should be mapped in the test cases space.
-            This argument can accept any of the three constants
-            :attr:`DEPEND_EXACT`, :attr:`DEPEND_BY_ENV` (default),
-            :attr:`DEPEND_FULLY`.
+        user_deprecation_warning("passing 'how' as an integer or passing "
+                                 "'subdeps' is deprecated; please have a "
+                                 "look at the user documentation")
 
-        :arg subdeps: An adjacency list representation of how this test's test
-            cases depend on those of the target test. This is only relevant if
-            ``how == DEPEND_EXACT``. The value of this argument is a
-            dictionary having as keys the names of this test's supported
-            programming environments. The values are lists of the programming
-            environments names of the target test that this test's test cases
-            will depend on. In the following example, this test's ``E0``
-            programming environment case will depend on both ``E0`` and ``E1``
-            test cases of the target test ``T0``, but its ``E1`` case will
-            depend only on the ``E1`` test case of ``T0``:
+        if (subdeps is not None and
+            not isinstance(subdeps, typ.Dict[str, typ.List[str]])):
+            raise TypeError("subdeps argument must be of type "
+                            "`Dict[str, List[str]]' or `None'")
+
+        # Now return a proper when function
+        def exact(src, dst):
+            if not subdeps:
+                return False
+
+            p0, e0 = src
+            p1, e1 = dst
+
+            # DEPEND_EXACT allows dependencies inside the same partition
+            return ((p0 == p1) and (e0 in subdeps) and (e1 in subdeps[e0]))
+
+        # Follow the old definitions
+        # DEPEND_BY_ENV used to mean same env and same partition
+        if how == DEPEND_BY_ENV:
+            return udeps.by_case
+        # DEPEND_BY_ENV used to mean same partition
+        elif how == DEPEND_FULLY:
+            return udeps.by_part
+        elif how == DEPEND_EXACT:
+            return exact
+        else:
+            raise ValueError(f"unknown value passed to 'how' argument: {how}")
+
+    def depends_on(self, target, how=None, *args, **kwargs):
+        '''Add a dependency to another test.
+
+        :arg target: The name of the test that this one will depend on.
+        :arg how: A callable that defines how the test cases of this test
+            depend on the the test cases of the target test.
+            This callable should accept two arguments:
+
+            - The source test case (i.e., a test case of this test)
+              represented as a two-element tuple containing the names of the
+              partition and the environment of the current test case.
+            - Test destination test case (i.e., a test case of the target
+              test) represented as a two-element tuple containing the names of
+              the partition and the environment of the current target test
+              case.
+
+            It should return :class:`True` if a dependency between the source
+            and destination test cases exists, :class:`False` otherwise.
+
+            This function will be called multiple times by the framework when
+            the test DAG is constructed, in order to determine the
+            connectivity of the two tests.
+
+            In the following example, this test depends on ``T1`` when their
+            partitions match, otherwise their test cases are independent.
 
             .. code-block:: python
 
-               self.depends_on('T0', how=rfm.DEPEND_EXACT,
-                               subdeps={'E0': ['E0', 'E1'], 'E1': ['E1']})
+                def by_part(src, dst):
+                    p0, _ = src
+                    p1, _  = dst
+                    return p0 == p1
 
-        For more details on how test dependencies work in ReFrame, please
-        refer to `How Test Dependencies Work In ReFrame <dependencies.html>`__.
+                self.depends_on('T0', how=by_part)
+
+            The framework offers already a set of predefined relations between
+            the test cases of inter-dependent tests. See the
+            :mod:`reframe.utility.udeps` for more details.
+
+            The default ``how`` function is
+            :func:`reframe.utility.udeps.by_case`, where test cases on
+            different partitions and environments are independent.
+
+        .. seealso::
+           - :doc:`dependencies`
+           - :ref:`test-case-deps-management`
+
+
 
         .. versionadded:: 2.21
+
+        .. versionchanged:: 3.3
+           Dependencies between test cases from different partitions are now
+           allowed. The ``how`` argument now accepts a callable.
+
+         .. deprecated:: 3.3
+            Passing an integer to the ``how`` argument as well as using the
+            ``subdeps`` argument is deprecated.
 
         '''
         if not isinstance(target, str):
             raise TypeError("target argument must be of type: `str'")
 
-        if not isinstance(how, int):
-            raise TypeError("how argument must be of type: `int'")
+        if (isinstance(how, int)):
+            # We are probably using the old syntax; try to get a
+            # proper how function
+            how = self._depends_on_func(how, *args, **kwargs)
 
-        if (subdeps is not None and
-                not isinstance(subdeps, typ.Dict[str, typ.List[str]])):
-            raise TypeError("subdeps argument must be of type "
-                            "`Dict[str, List[str]]' or `None'")
+        if how is None:
+            how = udeps.by_case
 
-        self._userdeps.append((target, how, subdeps))
+        if not callable(how):
+            raise TypeError("'how' argument must be callable")
 
-    def getdep(self, target, environ=None):
+        self._userdeps.append((target, how))
+
+    def getdep(self, target, environ=None, part=None):
         '''Retrieve the test case of a target dependency.
 
         This is a low-level method. The :func:`@require_deps
@@ -1653,15 +1722,20 @@ class RegressionTest(metaclass=RegressionTestMeta):
         if environ is None:
             environ = self.current_environ.name
 
+        if part is None:
+            part = self.current_partition.name
+
         if self._case is None or self._case() is None:
             raise DependencyError('no test case is associated with this test')
 
         for d in self._case().deps:
-            if d.check.name == target and d.environ.name == environ:
+            if (d.check.name == target and
+                d.environ.name == environ and
+                d.partition.name == part):
                 return d.check
 
-        raise DependencyError('could not resolve dependency to (%s, %s)' %
-                              (target, environ))
+        raise DependencyError(f'could not resolve dependency to ({target!r}, '
+                              f'{part!r}, {environ!r})')
 
     def __str__(self):
         return "%s(name='%s', prefix='%s')" % (type(self).__name__,

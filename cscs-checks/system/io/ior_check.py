@@ -3,8 +3,9 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import os
 import getpass
+import os
+import re
 
 import reframe as rfm
 import reframe.utility.sanity as sn
@@ -12,7 +13,7 @@ import reframe.utility.sanity as sn
 
 class IorCheck(rfm.RegressionTest):
     def __init__(self, base_dir):
-        self.descr = 'IOR check (%s)' % base_dir
+        self.descr = f'IOR check ({base_dir})'
         self.tags = {'ops', base_dir}
         self.base_dir = base_dir
         self.username = getpass.getuser()
@@ -85,7 +86,7 @@ class IorCheck(rfm.RegressionTest):
         self.build_system = 'Make'
 
         vpe = 'valid_prog_environs'
-        penv = self.fs[base_dir][cur_sys].get(vpe, ['PrgEnv-cray'])
+        penv = self.fs[base_dir][cur_sys].get(vpe, ['builtin'])
         self.valid_prog_environs = penv
 
         self.build_system.options = ['posix', 'mpiio']
@@ -145,4 +146,5 @@ class IorReadCheck(IorCheck):
                 r'^Max Read:\s+(?P<read_bw>\S+) MiB/sec', self.stdout,
                 'read_bw', float)
         }
+        self.depends_on(re.sub(r'IorReadCheck', 'IorWriteCheck', self.name))
         self.tags |= {'read'}
