@@ -111,12 +111,7 @@ def generate_report_filename(filepatt):
     return filepatt.format(sessionid=new_id)
 
 
-def locate_and_load_tests(options, loader, ci_tag=[]):
-    # Locate and load checks
-    try:
-        checks_found = loader.load_all()
-    except OSError as e:
-        raise errors.ReframeError from e
+def filter_checks(checks_found, options, rt, loader, ci_tag=None):
 
     # Filter checks by name
     checks_matched = checks_found
@@ -134,8 +129,8 @@ def locate_and_load_tests(options, loader, ci_tag=[]):
         checks_matched = filter(filters.have_tag(tag), checks_matched)
 
     # Filter checks by ci tags
-    for tag in ci_tag:
-        checks_matched = filter(filters.have_tag(tag), checks_matched)
+    if ci_tag:
+        checks_matched = filter(filters.have_tag(ci_tag), checks_matched)
 
     # Filter checks by prgenv
     if not options.skip_prgenv_check:
@@ -159,23 +154,10 @@ def locate_and_load_tests(options, loader, ci_tag=[]):
                         for p in rt.system.partitions
                         for e in p.environs if re.match(env_patt, e.name)}
 
-    # Generate the test cases, validate dependencies and sort them
+    # Generate the test cases, validate dependency and sort them
     checks_matched = list(checks_matched)
 
-    # Disable hooks
-    for c in checks_matched:
-        for h in options.hooks:
-            type(c).disable_hook(h)
-
-    testcases = generate_testcases(checks_matched,
-                                    options.skip_system_check,
-                                    options.skip_prgenv_check,
-                                    allowed_environs)
-    testgraph = dependency.build_deps(testcases)
-    # dependency.validate_deps(testgraph)
-    # testcases = dependency.toposort(testgraph)
-
-    return testgraph
+    return checks_matched
 
 # TODO place this function in a proper module
 # TODO define mechanism on how to propagate command line options, currently
@@ -185,73 +167,67 @@ def locate_and_load_tests(options, loader, ci_tag=[]):
 #      An alternative design would be to have environment variables exported
 #      during the trigger phase of reframe that would influence the tests
 #      individually
-def generate_ci_pipeline_file(ci_pipeline_file, testgraph, site_config):
+def generate_ci_pipeline_file(ci_pipeline_file, ci_tags, checks_found, options, rt, loader, site_config):
     import reframe.utility as util
+    import yaml
 
-    def _hash_test_names(test):
-        # Need to hash the test names to make them yaml compatible
-        cname = test.check.name
-        pname = test.partition.fullname
-        ename = test.environ.name
-        # still need to convert characters because partitions
-        # can have the : char, for example
-        return util.toalphanum(cname + "_" + pname + "_" + ename)
+    stages = {
+        'stages': [f'rfm-stage-{m}' for m in ci_tags]
+    }
 
-    tests, graphdepth = dependencies.toposortdepth(testgraph)
-    # TODO Should be using py-yaml lib here
     with open(ci_pipeline_file, 'w') as pipeline_file:
-        pipeline_file.write('stages:\n')
-        for i in range(graphdepth+1):
-            pipeline_file.write(f'    - rfm-stage-{i}\n')
-        pipeline_file.write('\n')
-        for c, k in tests.items():
-            pipeline_file.write(f'{_hash_test_names(c)}:\n')
-            depth = k['depth']
-            pipeline_file.write(f'    stage: rfm-stage-{depth}\n')
-            pipeline_file.write(f'    script:\n')
-            # TODO there are some options that need  to be revisited
-            # - about the test folder: reframe's -c option
-            # - about the configuration file to use: reframe's -C option
-            # - about the artifacts artifacts: {paths: [jobs_scratch_dir], when: always}
+        for entry in yaml.safe_dump(stages, indent=2).split('\n'):
+            pipeline_file.write(f'{entry}\n')
 
-            # TODO there are some missing options:
-            # - about other potentially important options:
-            # + --keep-stage-files
-            # + --ignore-check-conflicts
-            # + -p
-            # + --gpu-only
-            # + --cpu-only
-            # + -A
-            # + -P
-            # + --reservation
-            # + --skip-performance-check
-            # + --nodelist
-            # + --exclude-nodes
-            # + --skip-system-check
-            # + --skip-prgenv-check
-            # + --mode
-            # + --max-retries
-            # + -M
-            # + -m
-            # + --module-mappings
-            # + --failure-stats
-            # + --performance-report
+    for tag in ci_tags:
+        pipeline = {}
+        checks_matched = filter_checks(checks_found, options, rt, loader, ci_tag=tag)
+
+        # TODO there are some options that need  to be revisited
+        # - about the test folder: reframe's -c option
+        # - about the configuration file to use: reframe's -C option
+        # - about the artifacts artifacts: {paths: [jobs_scratch_dir], when: always}
+
+        # TODO there are some missing options:
+        # - about other potentially important options:
+        # + --keep-stage-files
+        # + --ignore-check-conflicts
+        # + -p
+        # + --gpu-only
+        # + --cpu-only
+        # + -A
+        # + -P
+        # + --reservation
+        # + --skip-performance-check
+        # + --nodelist
+        # + --exclude-nodes
+        # + --skip-system-check
+        # + --skip-prgenv-check
+        # + --mode
+        # + --max-retries
+        # + -M
+        # + -m
+        # + --module-mappings
+        # + --failure-stats
+        # + --performance-report
+        for test in checks_matched:
             load_path='-c '.join(site_config.get('general/0/check_search_path'))
             recurse='-R' if site_config.get('general/0/check_search_recursive') else ''
             ignore_conflicts='--ignore-check-conflicts' if site_config.get('general/0/ignore_check_conflicts') else ''
-            pipeline_file.write(f'        - {reframe.INSTALL_PREFIX}/bin/reframe -C {site_config.filename} -c {load_path} {recurse} {ignore_conflicts} --prefix rfm_tests_stage_dir -n {c.check.name} -r\n')
+            pipeline[f'{test.name}'] = {
+                'stage' : f'rfm-stage-{tag}',
+                'script' : [
+                    f'{reframe.INSTALL_PREFIX}/bin/reframe -C {site_config.filename} -c {load_path} {recurse} {ignore_conflicts} --prefix rfm_tests_stage_dir -n {test.name} -r'
+                ],
+                'artifacts' : {
+                    'paths' : 'rfm_tests_stage_dir'
+                }
+            }
 
-            if k['depends']:
-                pipeline_file.write(f'    needs:\n')
-                for d in k['depends']:
-                    pipeline_file.write(f'        - {_hash_test_names(d)}\n')
-            else:
-                pipeline_file.write(f'    needs: []\n')
+        with open(ci_pipeline_file, 'a') as pipeline_file:
+            for entry in yaml.safe_dump(pipeline, indent=2).split('\n'):
+                pipeline_file.write(f'{entry}\n')
 
-            pipeline_file.write(f'    artifacts:\n')
-            pipeline_file.write(f'        paths: \n')
-            pipeline_file.write(f'            - rfm_tests_stage_dir \n')
-            pipeline_file.write('\n')
 
 def main():
     # Setup command line options
@@ -448,10 +424,10 @@ def main():
         configvar='general/ci_pipeline_file'
     )
     run_options.add_argument(
-        '--ci-pipeline-tags', action='append', metavar='OPT', default=[],
+        '--ci-tags', action='append', metavar='OPT', default=[],
         help="Select the ci pipeline stages from tags FILE",
-        envvar='RFM_CI_PIPELINE_TAGS',
-        configvar='general/ci_pipeline_tags'
+        envvar='RFM_CI_TAGS',
+        configvar='general/ci_tags'
     )
 
     env_options.add_argument(
@@ -734,49 +710,49 @@ def main():
     print_infoline('output directory', repr(session_info['prefix_output']))
     printer.info('')
 
+    ci_pipeline_file = None
     if site_config.get('general/0/ci_pipeline_file'):
         ci_pipeline_file = site_config.get('general/0/ci_pipeline_file')
 
-    ci_tags=site_config.get('general/0/ci_pipeline_tags')
+    ci_tags=site_config.get('general/0/ci_tags')
 
     # if one is defined but one is not defined
-    if ci_pipeline_file or ci_tags and not (ci_pipeline_file and ci_tags):
+    if (ci_pipeline_file or ci_tags) and not (ci_pipeline_file and ci_tags):
         printer.error("options `--ci-pipeline-file' and `--ci-tags' "
                         "must be used together")
         sys.exit(1)
 
     try:
+        # Locate and load checks
+        try:
+            checks_found = loader.load_all()
+        except OSError as e:
+            raise errors.ReframeError from e
+
         # Filter checks further
         if options.gpu_only and options.cpu_only:
             printer.error("options `--gpu-only' and `--cpu-only' "
                           "are mutually exclusive")
             sys.exit(1)
 
+        # TODO: The -l flag is processed after this. So we generate the files no matter what!
         if ci_tags:
-            for tag in ci_tags:
-                testgraph = locate_and_load_tests(options, loader, ci_tag=tag)
-                dependency.validate_deps(testgraph)
-                generate_ci_pipeline_file(ci_pipeline_file, testgraph, site_config)
-
+            generate_ci_pipeline_file(ci_pipeline_file, ci_tags, checks_found, options, rt, loader, site_config)
             sys.exit(0)
 
-        testgraph = locate_and_load_tests(options, loader, ci_tag=tag)
+        checks_matched = filter_checks(checks_found, options, rt, loader)
+        # Disable hooks
+        for c in checks_matched:
+            for h in options.hooks:
+                type(c).disable_hook(h)
+
+        testcases = generate_testcases(checks_matched,
+                                        options.skip_system_check,
+                                        options.skip_prgenv_check,
+                                        allowed_environs)
+        testgraph = dependency.build_deps(testcases)
         dependency.validate_deps(testgraph)
         testcases = dependency.toposort(testgraph)
-
-        # # TODO: proper exit reframe in case we have ci-generate
-        # if site_config.get('general/0/ci_pipeline_file'):
-        #     ci_pipeline_file = site_config.get('general/0/ci_pipeline_file')
-        #     # TODO filter based on tags and generate set of stages based on the tags
-        #     generate_ci_pipeline_file(ci_pipeline_file, testgraph, site_config)
-        #     sys.exit(0)
-
-
-
-
-
-
-
 
 
         # Manipulate ReFrame's environment
