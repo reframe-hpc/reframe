@@ -40,6 +40,18 @@ def format_check(check, index_of_deps, detailed=False):
 
         return ', '.join(x)
 
+    def fmt_deps():
+        no_deps = True
+        ret = []
+        for t, deps in index_of_deps[check.name]:
+            for d in deps:
+                ret.append(f'{t} -> {d}')
+
+        if ret:
+            return '\n      '.join(ret)
+        else:
+            return '<none>'
+
     location = inspect.getfile(type(check))
     if not detailed:
         return f'- {check.name} (found in {location!r})'
@@ -64,7 +76,8 @@ def format_check(check, index_of_deps, detailed=False):
         'Tags': fmt_list(check.tags),
         'Valid environments': fmt_list(check.valid_prog_environs),
         'Valid systems': fmt_list(check.valid_systems),
-        'Dependencies': fmt_list([d[0] for d in check.user_deps()])
+        'Dependencies': fmt_list([d[0] for d in check.user_deps()]),
+        'Dependencies for current system' : fmt_deps()
     }
     lines = [f'- {check.name}:']
     for prop, val in check_info.items():
@@ -77,20 +90,6 @@ def format_check(check, index_of_deps, detailed=False):
 
         lines.append('')
 
-    lines.append('    Dependencies for current system:')
-    no_deps = True
-    # The check might be valid for this system, but if no environment
-    # is valid we won't have any test case in the index_of_deps.
-    if check.name in index_of_deps:
-        for t, deps in index_of_deps[check.name]:
-            for d in deps:
-                no_deps = False
-                lines.append(f'      {t} -> {d}')
-
-    if no_deps:
-        lines.append('      <none>')
-
-    lines.append('')
     return '\n'.join(lines)
 
 
@@ -102,8 +101,14 @@ def format_env(envvars):
     return ret
 
 
-def list_checks(checks, printer, index_of_deps, detailed=False):
+def list_checks(testcases, printer, detailed=False):
     printer.info('[List of matched checks]')
+    index_of_deps = {}
+    for t in testcases:
+        index_of_deps.setdefault(t.check.name, [])
+        index_of_deps[t.check.name].append((t, t.deps))
+
+    checks = set(t.check for t in testcases)
     printer.info(
         '\n'.join(format_check(c, index_of_deps, detailed) for c in checks)
     )
@@ -686,16 +691,10 @@ def main():
 
         options.flex_alloc_nodes = options.flex_alloc_nodes or 'idle'
 
-        index_of_deps = {}
-        for t in testcases:
-            index_of_deps.setdefault(t.check.name, [])
-            index_of_deps[t.check.name].append((t, t.deps))
-
         # Act on checks
         success = True
         if options.list or options.list_detailed:
-            list_checks(list(checks_matched), printer, index_of_deps,
-                        options.list_detailed)
+            list_checks(testcases, printer, options.list_detailed)
         elif options.run:
             # Setup the execution policy
             if options.exec_policy == 'serial':
