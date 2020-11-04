@@ -63,11 +63,11 @@ Again nothing new here; we are going to use two nodes for the benchmark and we s
 As done previously, we define the dependencies with the the following line:
 
 .. literalinclude:: ../tutorials/deps/osu_benchmarks.py
-   :lines: 32
+   :lines: 33
 
 Here we tell ReFrame that this test depends on a test named ``OSUBuildTest`` "by environment."
-This means that the test cases of this test will depend on the test cases of the ``OSUBuildTest`` that use the same environment.
-The partition will be different in this case.
+This means that the test cases of this test will only depend on the test cases of the ``OSUBuildTest`` that use the same environment;
+partitions may be different.
 
 The next step for the :class:`OSULatencyTest` is to set its executable to point to the binary produced by the :class:`OSUBuildTest`.
 This is achieved with the following specially decorated function:
