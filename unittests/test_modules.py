@@ -145,8 +145,11 @@ def _emit_load_commands_tmod(modules_system):
 def _emit_load_commands_tmod4(modules_system):
     emit_cmds = modules_system.emit_load_commands
     assert [emit_cmds('foo')] == ['module load foo']
+    assert [emit_cmds('foo', collection=True)] == ['module restore foo']
     assert [emit_cmds('foo/1.2')] == ['module load foo/1.2']
     assert [emit_cmds('m0')] == ['module load m1', 'module load m2']
+    assert [emit_cmds('m0', collection=True)] == ['module restore m1',
+                                                  'module restoreE m2']
 
 
 def _emit_load_commands_lmod(modules_system):
@@ -181,8 +184,10 @@ def _emit_unload_commands_tmod(modules_system):
 def _emit_unload_commands_tmod4(modules_system):
     emit_cmds = modules_system.emit_unload_commands
     assert [emit_cmds('foo')] == ['module unload foo']
+    assert [emit_cmds('foo', collection=True)] == []
     assert [emit_cmds('foo/1.2')] == ['module unload foo/1.2']
     assert [emit_cmds('m0')] == ['module unload m2', 'module unload m1']
+    assert [emit_cmds('m0', collection=True)] == []
 
 
 def _emit_unload_commands_lmod(modules_system):
@@ -203,6 +208,7 @@ def test_module_construction():
     m = modules.Module('foo/1.2')
     assert m.name == 'foo'
     assert m.version == '1.2'
+    assert m.collection == False
     with pytest.raises(ValueError):
         modules.Module('')
 
@@ -214,6 +220,9 @@ def test_module_construction():
 
     with pytest.raises(TypeError):
         modules.Module(23)
+
+    m = modules.Module('foo/1.2', collection=True)
+    assert m.collection == True
 
 
 def test_module_equal():
@@ -227,6 +236,7 @@ def test_module_equal():
     assert modules.Module('foo/1.2') != modules.Module('foo/1.3')
     assert modules.Module('foo') != modules.Module('bar')
     assert modules.Module('foo') != modules.Module('foobar')
+    assert modules.Module('foo') != modules.Module('foo', collection=True)
 
 
 @pytest.fixture

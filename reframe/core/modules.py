@@ -28,7 +28,7 @@ class Module:
     implementation should deal only with that.
     '''
 
-    def __init__(self, name):
+    def __init__(self, name, collection=False):
         if not isinstance(name, str):
             raise TypeError('module name not a string')
 
@@ -41,6 +41,9 @@ class Module:
         except ValueError:
             self._name, self._version = name, None
 
+        # This module represents a "module collection" in TMod4
+        self._collection = collection
+
     @property
     def name(self):
         return self._name
@@ -48,6 +51,10 @@ class Module:
     @property
     def version(self):
         return self._version
+
+    @property
+    def collection(self):
+        return self._collection
 
     @property
     def fullname(self):
@@ -65,6 +72,9 @@ class Module:
     def __eq__(self, other):
         if not isinstance(other, type(self)):
             return NotImplemented
+
+        if self.collection != other.collection:
+            return False
 
         if not self.version or not other.version:
             return self.name == other.name
@@ -169,14 +179,20 @@ class ModulesSystem:
         '''
         return [str(m) for m in self._backend.loaded_modules()]
 
-    def conflicted_modules(self, name):
+    def conflicted_modules(self, name, collection=False):
         '''Return the list of the modules conflicting with module ``name``.
 
         If module ``name`` resolves to multiple real modules, then the returned
         list will be the concatenation of the conflict lists of all the real
         modules.
 
-        :rtype: List[str]
+        :arg name: The name of the module.
+        :arg collection: The module is a "module collection" (TMod4 only).
+        :returns: A list of conflicting module names.
+
+        .. versionchanged:: 3.3
+           The ``collection`` argument was added.
+
         '''
         ret = []
         for m in self.resolve_module(name):
@@ -184,18 +200,24 @@ class ModulesSystem:
 
         return ret
 
-    def _conflicted_modules(self, name):
-        return [str(m) for m in self._backend.conflicted_modules(Module(name))]
+    def _conflicted_modules(self, name, collection=False):
+        return [
+            str(m)
+            for m in self._backend.conflicted_modules(Module(name, collection))
+        ]
 
-    def load_module(self, name, force=False):
+    def load_module(self, name, force=False, collection=False):
         '''Load the module ``name``.
 
-        If ``force`` is set, forces the loading, unloading first any
-        conflicting modules currently loaded. If module ``name`` refers to
-        multiple real modules, all of the target modules will be loaded.
-
+        :arg force: If set, forces the loading, unloading first any
+            conflicting modules currently loaded. If module ``name`` refers to
+            multiple real modules, all of the target modules will be loaded.
+        :arg collection: The module is a "module collection" (TMod4 only)
         :returns: the list of unloaded modules as strings.
-        :rtype: List[str]
+
+        .. versionchanged:: 3.3
+           The ``collection`` argument was added.
+
         '''
         ret = []
         for m in self.resolve_module(name):
@@ -203,8 +225,8 @@ class ModulesSystem:
 
         return ret
 
-    def _load_module(self, name, force=False):
-        module = Module(name)
+    def _load_module(self, name, force=False, collection=False):
+        module = Module(name, collection)
         loaded_modules = self._backend.loaded_modules()
         if module in loaded_modules:
             # Do not try to load the module if it is already present
@@ -222,17 +244,23 @@ class ModulesSystem:
         self._backend.load_module(module)
         return [str(m) for m in unload_list]
 
-    def unload_module(self, name):
+    def unload_module(self, name, collection=False):
         '''Unload module ``name``.
 
-        If module ``name`` refers to multiple real modules, all the referred to
-        modules will be unloaded in reverse order.
+        :arg name: The name of the module to unload. If module ``name`` is
+            resolved to multiple real modules, all the referred to modules
+            will be unloaded in reverse order.
+        :arg collection: The module is a "module collection" (TMod4 only)
+
+        .. versionchanged:: 3.3
+           The ``collection`` argument was added.
+
         '''
         for m in reversed(self.resolve_module(name)):
             self._unload_module(m)
 
-    def _unload_module(self, name):
-        self._backend.unload_module(Module(name))
+    def _unload_module(self, name, collection=False):
+        self._backend.unload_module(Module(name, collection))
 
     def is_module_loaded(self, name):
         '''Check if module ``name`` is loaded.
@@ -311,22 +339,38 @@ class ModulesSystem:
         '''Remove ``dirs`` from the module system search path.'''
         return self._backend.searchpath_remove(*dirs)
 
-    def emit_load_commands(self, name):
+    def emit_load_commands(self, name, collection=False):
         '''Return the appropriate shell command for loading module ``name``.
 
-        :rtype: List[str]
-        '''
-        return [self._backend.emit_load_instr(Module(name))
-                for name in self.resolve_module(name)]
+        :arg name: The name of the module to load.
+        :arg collection: The module is a "module collection" (TMod4 only)
+        :returns: A list of shell commands.
 
-    def emit_unload_commands(self, name):
+        .. versionchanged:: 3.3
+           The ``collection`` argument was added.
+
+        '''
+        ret = []
+        for name in self.resolve_module(name):
+            cmds = self._backend.emit_load_instr(Module(name, collection))
+            if cmds:
+                ret.append(cmds)
+
+        return ret
+
+    def emit_unload_commands(self, name, collection=False):
         '''Return the appropriate shell command for unloading module
         ``name``.
 
         :rtype: List[str]
         '''
-        return [self._backend.emit_unload_instr(Module(name))
-                for name in reversed(self.resolve_module(name))]
+        ret = []
+        for name in self.resolve_module(name):
+            cmds = self._backend.emit_unload_instr(Module(name, collection))
+            if cmds:
+                ret.append(cmds)
+
+        return ret
 
     def __str__(self):
         return str(self._backend)
@@ -671,6 +715,44 @@ class TMod4Impl(TModImpl):
                     msg += ' '.join(completed.args)
 
             raise EnvironError(msg)
+
+    def load_module(self, module):
+        if module.collection:
+            self._exec_module_command(
+                'restore', str(module),
+                msg="could not restore module collection '{module}'"
+            )
+            return []
+        else:
+            return super().load_module(module)
+
+    def unload_module(self, module):
+        if module.collection:
+            # Module collection are not unloaded
+            return
+
+        super().unload_module(module)
+
+    def conflicted_modules(self, module):
+        if module.collection:
+            # Conflicts have no meaning in module collection. The modules
+            # system will take care of these when restoring a module
+            # collection
+            return []
+
+        return super().conflicted_modules(module)
+
+    def emit_load_instr(self, module):
+        if module.collection:
+            return f'module restore {module}'
+
+        return super().emit_load_instr(module)
+
+    def emit_unload_instr(self, module):
+        if module.collection:
+            return ''
+
+        return super().emit_unload_instr(module)
 
 
 class LModImpl(TModImpl):
