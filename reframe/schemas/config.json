@@ -31,8 +31,8 @@
         },
         "loglevel": {
             "type": "string",
-            "enum": ["critical", "error", "warning",
-                     "info", "verbose", "debug"]
+            "enum": ["critical", "error", "warning", "info",
+                     "verbose", "debug", "debug2", "undefined"]
         },
         "handler_common": {
             "type": "object",
@@ -416,7 +416,7 @@
         "general/use_login_shell": false,
         "general/user_modules": [],
         "general/verbose": 0,
-        "logging/level": "debug",
+        "logging/level": "undefined",
         "logging/target_systems": ["*"],
         "logging/handlers*/*_level": "info",
         "logging/handlers*/*_format": "%(message)s",

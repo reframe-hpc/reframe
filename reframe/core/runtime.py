@@ -16,6 +16,7 @@ import reframe.core.fields as fields
 import reframe.utility.osext as osext
 from reframe.core.environments import (Environment, snapshot)
 from reframe.core.exceptions import ReframeFatalError
+from reframe.core.logging import getlogger
 from reframe.core.systems import System
 
 
@@ -141,12 +142,18 @@ class RuntimeContext:
 
     def make_stagedir(self, *dirs):
         wipeout = self.get_option('general/0/clean_stagedir')
-        return self._makedir(self.stage_prefix,
-                             *self._format_dirs(*dirs), wipeout=wipeout)
+        ret = self._makedir(self.stage_prefix,
+                            *self._format_dirs(*dirs), wipeout=wipeout)
+        getlogger().debug(
+            f'Created stage directory {ret!r} [clean_stagedir: {wipeout}]'
+        )
+        return ret
 
     def make_outputdir(self, *dirs):
-        return self._makedir(self.output_prefix,
-                             *self._format_dirs(*dirs), wipeout=True)
+        ret = self._makedir(self.output_prefix,
+                            *self._format_dirs(*dirs), wipeout=True)
+        getlogger().debug(f'Created output directory {ret!r}')
+        return ret
 
     @property
     def modules_system(self):
