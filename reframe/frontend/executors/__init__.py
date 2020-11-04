@@ -13,7 +13,7 @@ import weakref
 import reframe.core.environments as env
 import reframe.core.logging as logging
 import reframe.core.runtime as runtime
-import reframe.frontend.dependency as dependency
+import reframe.frontend.dependencies as dependencies
 from reframe.core.exceptions import (AbortTaskError, JobNotStartedError,
                                      ReframeForceExitError, TaskExit)
 from reframe.core.schedulers.local import LocalJobScheduler
@@ -402,8 +402,8 @@ class Runner:
 
             # Clone failed cases and rebuild dependencies among them
             failed_cases = [t.testcase.clone() for t in failures]
-            cases_graph = dependency.build_deps(failed_cases, cases)
-            failed_cases = dependency.toposort(cases_graph, is_subgraph=True)
+            cases_graph = dependencies.build_deps(failed_cases, cases)
+            failed_cases = dependencies.toposort(cases_graph, is_subgraph=True)
             self._runall(failed_cases)
             failures = self._stats.failures()
 
