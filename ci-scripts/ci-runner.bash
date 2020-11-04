@@ -42,7 +42,7 @@ checked_exec()
 run_tutorial_checks()
 {
     cmd="./bin/reframe -C tutorials/config/settings.py -J account=jenscscs \
---save-log-files -r -c tutorials/ -R -x HelloThreadedExtendedTest $@"
+--save-log-files --flex-alloc-nodes=2 -r -c tutorials/ -R -x HelloThreadedExtendedTest $@"
     echo "[INFO] Running tutorial checks with \`$cmd'"
     checked_exec $cmd
 }
