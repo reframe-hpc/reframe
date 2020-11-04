@@ -97,19 +97,19 @@ class RegressionCheckLoader:
         # Warn in case of old syntax
         if hasattr(module, '_get_checks'):
             getlogger().warning(
-                '%s: _get_checks() is no more supported in test files: '
-                'please use @reframe.simple_test or '
-                '@reframe.parameterized_test decorators' % module.__file__
+                f'{module.__file__}: _get_checks() is no more supported '
+                f'in test files: please use @reframe.simple_test or '
+                f'@reframe.parameterized_test decorators'
             )
 
         if not hasattr(module, '_rfm_gettests'):
-            getlogger().debug('no tests registered')
+            getlogger().debug('No tests registered')
             return []
 
         candidates = module._rfm_gettests()
         if not isinstance(candidates, collections.abc.Sequence):
             getlogger().warning(
-                f'tests not registered correctly in {module.__name__!r}'
+                f'Tests not registered correctly in {module.__name__!r}'
             )
             return []
 
