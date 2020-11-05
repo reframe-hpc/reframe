@@ -750,17 +750,32 @@ class RegressionTest(metaclass=RegressionTestMeta):
     @classmethod
     def _set_parameter_space(cls, obj):
         '''
-        Pick the parameter sets from the queue cls._rfm_param_queue and loop over the dict
-        inserting the parameters into obj.
+        Adds to obj.__dict__ the keys corresponding to the test parameters.
         '''
-
         # Don't do anything if the test is not a parametrised test
-        if not hasattr(cls, '_rfm_expanded_param_space'):
+        if not cls._rfm_params:
             return
 
-        # Set the parameter values for the test case
-        for key, value in next(cls._rfm_expanded_param_space).items():
-            obj.__dict__[key] = value
+        # Test if the we have the parameter space iterator and set
+        # the values of the test parameters.
+        if hasattr(cls, '_rfm_param_space_iter'):
+            try:
+                tmp = next(cls._rfm_param_space_iter)
+                for index, key in enumerate(cls._rfm_params):
+                    obj.__dict__[key] = tmp[index]
+
+                return
+
+            # Delete the iterator if we have exhausted the parameter
+            # space
+            except StopIteration:
+                del cls._rfm_param_space_iter
+
+        # If the param space is not present anymore, it's because we
+        # have already instantiated the full parameter space. However
+        # this will get called if the instance is copied.
+        for key in cls._rfm_params:
+            obj.__dict__[key] = None
 
     @classmethod
     def is_abstract_test(cls):

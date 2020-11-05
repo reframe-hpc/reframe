@@ -74,7 +74,7 @@ def _validate_test(cls):
                                  'subclass of RegressionTest')
 
     if (cls.is_abstract_test()):
-        raise ValueError(f'Decodated test ({cls.__qualname__}) is an'
+        raise ValueError(f'Decorated test ({cls.__qualname__}) is an'
                          f' abstract test.')
 
 
@@ -96,19 +96,13 @@ def test(cls):
             _register_test(cls)
             return cls
 
-        # We create a single test for all possible combinations in the parameter space.
-        # The different combinations are added to an expanded parameter set.
-        _rfm_expanded_param_space = []
-        for inst in itertools.product(*[cls._rfm_params.get(k) for k in cls._rfm_params]):
+        # Create iterator to cycle through all possible combinations in the parameter space.
+        def _param_space_iterator(cls):
+            return itertools.product(*[cls._rfm_params.get(k) for k in cls._rfm_params])
 
-            param_set = {}
-            for i, parameter in enumerate(cls._rfm_params):
-                param_set[parameter] = inst[i]
-
-            _rfm_expanded_param_space.append(param_set)
+        cls._rfm_param_space_iter = _param_space_iterator(cls)
+        for inst in _param_space_iterator(cls):
             _register_test(cls)
-
-        cls._rfm_expanded_param_space = iter(itertools.cycle(_rfm_expanded_param_space))
 
         return cls
 
