@@ -196,7 +196,7 @@ class ModulesSystem:
         '''
         ret = []
         for m in self.resolve_module(name):
-            ret += self._conflicted_modules(m)
+            ret += self._conflicted_modules(m, collection)
 
         return ret
 
@@ -205,6 +205,15 @@ class ModulesSystem:
             str(m)
             for m in self._backend.conflicted_modules(Module(name, collection))
         ]
+
+    def execute(self, cmd, *args):
+        '''Execute an arbitrary module command.
+
+        :arg cmd: The command to execute, e.g., ``load``, ``restore`` etc.
+        :arg args: The arguments to pass to the command.
+        :returns: The command output.
+        '''
+        return self._backend.execute(cmd, *args)
 
     def load_module(self, name, force=False, collection=False):
         '''Load the module ``name``.
@@ -221,7 +230,7 @@ class ModulesSystem:
         '''
         ret = []
         for m in self.resolve_module(name):
-            ret += self._load_module(m, force)
+            ret += self._load_module(m, force, collection)
 
         return ret
 
@@ -257,7 +266,7 @@ class ModulesSystem:
 
         '''
         for m in reversed(self.resolve_module(name)):
-            self._unload_module(m)
+            self._unload_module(m, collection)
 
     def _unload_module(self, name, collection=False):
         self._backend.unload_module(Module(name, collection))
@@ -377,7 +386,14 @@ class ModulesSystem:
 
 
 class ModulesSystemImpl(abc.ABC):
-    '''Abstract base class for module systems.'''
+    '''Abstract base class for module systems.
+
+    :meta private:
+    '''
+
+    @abc.abstractmethod
+    def execute(self, cmd, *args):
+        '''Execute an arbitrary command of the module system.'''
 
     @abc.abstractmethod
     def available_modules(self, substr):
@@ -527,9 +543,10 @@ class TModImpl(ModulesSystemImpl):
     def _module_command_failed(self, completed):
         return re.search(r'ERROR', completed.stderr) is not None
 
-    def _exec_module_command(self, *args, msg=None):
-        completed = self._run_module_command(*args, msg=msg)
+    def execute(self, cmd, *args, msg=None):
+        completed = self._run_module_command(cmd, *args, msg=msg)
         exec(completed.stdout)
+        return completed.stderr
 
     def available_modules(self, substr):
         completed = self._run_module_command(
@@ -556,7 +573,7 @@ class TModImpl(ModulesSystemImpl):
 
     def conflicted_modules(self, module):
         completed = self._run_module_command(
-            'show', str(module), msg="could not show module '%s'" % module)
+            'show', str(module), msg=f"could not show module '{module}'")
         return [Module(m.group(1))
                 for m in re.finditer(r'^conflict\s+(\S+)',
                                      completed.stderr, re.MULTILINE)]
@@ -565,33 +582,31 @@ class TModImpl(ModulesSystemImpl):
         return module in self.loaded_modules()
 
     def load_module(self, module):
-        self._exec_module_command(
-            'load', str(module),
-            msg="could not load module '%s' correctly" % module)
+        self.execute('load', str(module),
+                     msg=f"could not load module '{module}' correctly")
 
     def unload_module(self, module):
-        self._exec_module_command(
-            'unload', str(module),
-            msg="could not unload module '%s' correctly" % module)
+        self.execute('unload', str(module),
+                     msg=f"could not unload module '{module}' correctly")
 
     def unload_all(self):
-        self._exec_module_command('purge')
+        self.execute('purge')
 
     def searchpath(self):
         path = os.getenv('MODULEPATH', '')
         return path.split(':')
 
     def searchpath_add(self, *dirs):
-        self._exec_module_command('use', *dirs)
+        self.execute('use', *dirs)
 
     def searchpath_remove(self, *dirs):
-        self._exec_module_command('unuse', *dirs)
+        self.execute('unuse', *dirs)
 
     def emit_load_instr(self, module):
-        return 'module load %s' % module
+        return f'module load {module}'
 
     def emit_unload_instr(self, module):
-        return 'module unload %s' % module
+        return f'module unload {module}'
 
 
 class TMod31Impl(TModImpl):
@@ -645,8 +660,8 @@ class TMod31Impl(TModImpl):
     def name(self):
         return 'tmod31'
 
-    def _exec_module_command(self, *args, msg=None):
-        completed = self._run_module_command(*args, msg=msg)
+    def execute(self, cmd, *args, msg=None):
+        completed = self._run_module_command(cmd, *args, msg=msg)
         exec_match = re.search(r'^exec\s\'', completed.stdout)
         if exec_match is None:
             raise ConfigError('could not use the python bindings')
@@ -660,6 +675,7 @@ class TMod31Impl(TModImpl):
                 cmd = content_file.read()
 
         exec(cmd)
+        return completed.stderr
 
 
 class TMod4Impl(TModImpl):
@@ -700,9 +716,9 @@ class TMod4Impl(TModImpl):
     def name(self):
         return 'tmod4'
 
-    def _exec_module_command(self, *args, msg=None):
-        command = ' '.join([self._command, *args])
-        completed = osext.run_command(command, check=True)
+    def execute(self, cmd, *args, msg=None):
+        command = ' '.join([self._command, cmd, *args])
+        completed = osext.run_command(command, check=False)
         namespace = {}
         exec(completed.stdout, {}, namespace)
         if not namespace['_mlstatus']:
@@ -715,6 +731,8 @@ class TMod4Impl(TModImpl):
                     msg += ' '.join(completed.args)
 
             raise EnvironError(msg)
+
+        return completed.stderr
 
     def load_module(self, module):
         if module.collection:
@@ -755,7 +773,7 @@ class TMod4Impl(TModImpl):
         return super().emit_unload_instr(module)
 
 
-class LModImpl(TModImpl):
+class LModImpl(TMod4Impl):
     '''Module system for Lmod (Tcl/Lua).'''
 
     def __init__(self):
@@ -811,6 +829,12 @@ class LModImpl(TModImpl):
         return ret
 
     def conflicted_modules(self, module):
+        if module.collection:
+            # Conflicts have no meaning in module collection. The modules
+            # system will take care of these when restoring a module
+            # collection
+            return []
+
         completed = self._run_module_command(
             'show', str(module), msg="could not show module '%s'" % module)
 
@@ -830,10 +854,25 @@ class LModImpl(TModImpl):
 
         return ret
 
+    def load_module(self, module):
+        if module.collection:
+            self.execute('restore', str(module),
+                         msg="could not restore module collection '{module}'")
+            return []
+        else:
+            return super().load_module(module)
+
+    def unload_module(self, module):
+        if module.collection:
+            # Module collection are not unloaded
+            return
+
+        super().unload_module(module)
+
     def unload_all(self):
         # Currently, we don't take any provision for sticky modules in Lmod, so
         # we forcefully unload everything.
-        self._exec_module_command('--force', 'purge')
+        self.execute('--force', 'purge')
 
 
 class NoModImpl(ModulesSystemImpl):
@@ -847,6 +886,9 @@ class NoModImpl(ModulesSystemImpl):
 
     def conflicted_modules(self, module):
         return []
+
+    def execute(self, cmd, *args):
+        return ''
 
     def load_module(self, module):
         pass

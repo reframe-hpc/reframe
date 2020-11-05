@@ -10,6 +10,7 @@ import pytest
 import reframe.core.environments as env
 import reframe.core.modules as modules
 import reframe.utility as util
+import reframe.utility.osext as osext
 import unittests.fixtures as fixtures
 from reframe.core.exceptions import ConfigError, EnvironError
 from reframe.core.runtime import runtime
@@ -44,6 +45,39 @@ def test_searchpath(modules_system):
         assert fixtures.TEST_MODULES not in modules_system.searchpath
 
 
+@pytest.fixture
+def module_collection(modules_system, tmp_path):
+    import secrets
+
+    if modules_system.name not in ['tmod4', 'lmod']:
+        pytest.skip(f'test unsupported with {modules_system.name!r}')
+
+    # Generate a "random" name for the collection, because it is going to be
+    # placed under the $HOME/.module or $HOME/.lmod.d
+    coll_name = secrets.token_hex(8)
+    coll_name = 'lala'
+
+    # Create modules collections with conflicting modules
+    modules_system.load_module('testmod_base')
+    modules_system.load_module('testmod_foo')
+    modules_system.execute('save', coll_name)
+    # completed = osext.run_command(f'module save {coll_name}', shell=True)
+    # print(completed.stderr)
+    # print(completed.stdout)
+    modules_system.unload_module('testmod_foo')
+    modules_system.unload_module('testmod_base')
+
+    yield coll_name
+
+    # Remove the temporary collection
+    if modules_system.name == 'lmod':
+        prefix = os.path.join(os.environ['HOME'], '.lmod.d')
+    else:
+        prefix = os.path.join(os.environ['HOME'], '.module')
+
+    os.remove(os.path.join(prefix, coll_name))
+
+
 def test_module_load(modules_system):
     if modules_system.name == 'nomod':
         modules_system.load_module('foo')
@@ -66,6 +100,14 @@ def test_module_load(modules_system):
         assert 'TESTMOD_FOO' not in os.environ
 
 
+def test_module_load_collection(modules_system, module_collection):
+    # Load a conflicting module first
+    modules_system.load_module('testmod_bar')
+    modules_system.load_module(module_collection, collection=True)
+    assert modules_system.is_module_loaded('testmod_base')
+    assert modules_system.is_module_loaded('testmod_foo')
+
+
 def test_module_load_force(modules_system):
     if modules_system.name == 'nomod':
         modules_system.load_module('foo', force=True)
@@ -81,6 +123,16 @@ def test_module_load_force(modules_system):
         assert not modules_system.is_module_loaded('testmod_foo')
         assert 'testmod_foo' in unloaded
         assert 'TESTMOD_BAR' in os.environ
+
+
+def test_module_load_force_collection(modules_system, module_collection):
+    # Load a conflicting module first
+    modules_system.load_module('testmod_bar')
+    unloaded = modules_system.load_module(module_collection,
+                                          force=True, collection=True)
+    assert unloaded == []
+    assert modules_system.is_module_loaded('testmod_base')
+    assert modules_system.is_module_loaded('testmod_foo')
 
 
 def test_module_unload_all(modules_system):
@@ -257,6 +309,9 @@ def modules_system_emu():
 
         def conflicted_modules(self, module):
             return []
+
+        def execute(self, cmd, *args):
+            return ''
 
         def load_module(self, module):
             self.load_seq.append(module.name)
