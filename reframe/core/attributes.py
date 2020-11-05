@@ -9,6 +9,7 @@
 
 import copy
 
+
 class InputParameter:
     '''
     Input paramter and (name + values) and other attributes to deal with the
@@ -16,6 +17,7 @@ class InputParameter:
 
     TODO: Type checking.
     '''
+
     def __init__(self, name, values=None, inherit_params=False, filt_params=None):
         '''
         name: parameter name
@@ -31,11 +33,12 @@ class InputParameter:
 
         # The values arg must be a list.
         if not isinstance(values, list):
-            raise ValueError(f'Parameter values must be defined in a list.') from None
+            raise ValueError(
+                f'Parameter values must be defined in a list.') from None
 
         # Default filter is no filter.
         if filt_params is None:
-            filt_params = lambda x: x
+            def filt_params(x): return x
 
         self.name = name
         self.values = values
@@ -58,6 +61,7 @@ class ParameterPack:
     The parameters are store in a dictionary for a more efficient lookup.
     The add method is the interface used to add new parameters to the reframe test.
     '''
+
     def __init__(self):
         self.parameter_map = {}
 
@@ -67,15 +71,18 @@ class ParameterPack:
         If the parameter is already present in it, raise an error.
         '''
         if name not in self.parameter_map:
-            self.parameter_map[name] = InputParameter(name, defaults, inherit_params, filt_params)
+            self.parameter_map[name] = InputParameter(
+                name, defaults, inherit_params, filt_params)
         else:
-            raise ValueError('Cannot double-define a parameter in the same class.')
+            raise ValueError(
+                'Cannot double-define a parameter in the same class.')
 
 
 class RegressionTestAttributes:
     '''
     Storage class hosting all the reframe class attributes.
     '''
+
     def __init__(self):
         self._rfm_parameter_stage = ParameterPack()
 
@@ -109,7 +116,8 @@ class RegressionTestAttributes:
                                 raise KeyError(f'Parameter space conflict (on {key}) '
                                                f'due to multiple inheritance.') from None
 
-                        temp_parameter_space[key] = base_params.get(key, []) + temp_parameter_space.get(key, [])
+                        temp_parameter_space[key] = base_params.get(
+                            key, []) + temp_parameter_space.get(key, [])
 
             else:
                 # The base class does not have the attribute cls._rfm_params
@@ -158,4 +166,3 @@ class RegressionTestAttributes:
             if key in long_dict:
                 raise AttributeError(f'Attribute {key} clashes with other variables'
                                      f'present in the namespace of class {name}')
-

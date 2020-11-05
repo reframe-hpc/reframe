@@ -10,6 +10,7 @@
 from reframe.core.warnings import user_deprecation_warning
 from reframe.core.attributes import RegressionTestAttributes
 
+
 class RegressionTestMeta(type):
     @classmethod
     def __prepare__(cls, name, bases, **kwargs):

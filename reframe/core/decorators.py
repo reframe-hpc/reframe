@@ -78,7 +78,6 @@ def _validate_test(cls):
                          f' abstract test.')
 
 
-
 def test(cls):
     '''Class decorator for registering tests with ReFrame.
 
