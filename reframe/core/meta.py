@@ -17,11 +17,23 @@ class RegressionTestMeta(type):
         namespace = super().__prepare__(name, bases, **kwargs)
 
         # Extend the class attributes to the RegressionTest class
-        namespace['_rfm_attributes'] = RegressionTestAttributes()
+        namespace['__rfm_attributes'] = RegressionTestAttributes()
 
         # Attribute to add a regression test parameter as:
         # `rfm_parameter('P0', [0,1,2,3])`.
-        namespace['rfm_parameter'] = namespace['_rfm_attributes']._rfm_parameter_stage.add
+        namespace['rfm_parameter'] = namespace['__rfm_attributes']._rfm_parameter_stage.add
+
+        # Attribute to purge a list of test parameters.
+        namespace['rfm_purge_parameters'] = namespace['__rfm_attributes']._rfm_parameter_stage.purge_parameters
+
+        # Attribute to purge the entire parameter space.
+        namespace['rfm_purge_all_parameters'] = namespace['__rfm_attributes']._rfm_parameter_stage.purge_all_parameters
+
+        # Method to build the parameter space
+        namespace['_rfm_build_parameter_space'] = namespace['__rfm_attributes'].build_parameter_space
+
+        # Method to check that the test parameter space does not clash with the RegressionTest namespace
+        namespace['_rfm_namespace_clash_check'] = namespace['__rfm_attributes'].namespace_clash_check
 
         return namespace
 
@@ -29,12 +41,12 @@ class RegressionTestMeta(type):
         super().__init__(name, bases, namespace, **kwargs)
 
         # Set up the regression test parameter space
-        cls._rfm_params = cls._rfm_attributes.build_parameter_space(bases)
+        cls._rfm_params = cls._rfm_build_parameter_space(bases)
 
         # Make illegal to have a parameter clashing with any of the RegressionTest
         # class variables
-        cls._rfm_attributes.check_namespace_clashing(cls.__dict__, cls._rfm_params,
-                                                     cls.__qualname__)
+        cls._rfm_namespace_clash_check(cls.__dict__, cls._rfm_params,
+                                       cls.__qualname__)
 
         # Set up the hooks for the pipeline stages based on the _rfm_attach
         # attribute; all dependencies will be resolved first in the post-setup

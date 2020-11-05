@@ -60,6 +60,8 @@ class ParameterPack:
 
     def __init__(self):
         self.parameter_map = {}
+        self.purge_parameter_space = False
+        self.parameter_blacklist = set()
 
     def add(self, name, defaults=None, inherit_params=False, filt_params=None):
         '''
@@ -73,6 +75,20 @@ class ParameterPack:
             raise ValueError(
                 'Cannot double-define a parameter in the same class.')
 
+    def purge_all_parameters(self):
+        '''
+        Set the purge_parameter_space flag to true, which blocks the inheritance
+        of the full parameter space.
+        '''
+        self.purge_parameter_space = True
+
+    def purge_parameters(self, params_to_purge=None):
+        '''
+        Override the inheritance of a given set of parameters.
+        '''
+        for param in params_to_purge:
+            self.parameter_blacklist.add(param)
+
 
 class RegressionTestAttributes:
     '''
@@ -85,6 +101,12 @@ class RegressionTestAttributes:
     def get_parameter_stage(self):
         return self._rfm_parameter_stage.parameter_map
 
+    def _purge_all_parameters(self):
+        return self._rfm_parameter_stage.purge_parameter_space
+
+    def _parameter_blacklist(self):
+        return self._rfm_parameter_stage.parameter_blacklist
+
     def _inherit_parameter_space(self, bases):
         '''
         Build the parameter space from the base clases.
@@ -93,30 +115,34 @@ class RegressionTestAttributes:
         temp_parameter_space = {}
 
         # Iterate over the base classes and inherit the parameter space
-        for b in bases:
-            if hasattr(b, '_rfm_params'):
-                base_params = b._rfm_params
-                for key in base_params:
-                    if key in self.get_parameter_stage() and not self.get_parameter_stage().get(key).inherit_params:
+        if not self._purge_all_parameters():
+            for b in bases:
+                if hasattr(b, '_rfm_params'):
+                    base_params = b._rfm_params
+                    for key in base_params:
+                        if ((key in self.get_parameter_stage() and
+                             not self.get_parameter_stage().get(key).inherit_params) or
+                            key in self._parameter_blacklist()):
 
-                        # Do not inherit a given parameter if the current class wants to override it.
-                        pass
+                            # Do not inherit a given parameter if the current class wants to override it.
+                            pass
 
-                    else:
+                        else:
 
-                        # With multiple inheritance, a single parameter could be doubly defined
-                        # and lead to repeated values.
-                        if key in temp_parameter_space:
-                            if not (temp_parameter_space[key] == [] or base_params[key] == []):
-                                raise KeyError(f'Parameter space conflict (on {key}) '
-                                               f'due to multiple inheritance.') from None
+                            # With multiple inheritance, a single parameter could be doubly defined
+                            # and lead to repeated values.
+                            if key in temp_parameter_space:
+                                if not (temp_parameter_space[key] == [] or
+                                        base_params[key] == []):
+                                    raise KeyError(f'Parameter space conflict (on {key}) '
+                                                   f'due to multiple inheritance.') from None
 
-                        temp_parameter_space[key] = base_params.get(
-                            key, []) + temp_parameter_space.get(key, [])
+                            temp_parameter_space[key] = base_params.get(
+                                key, []) + temp_parameter_space.get(key, [])
 
-            else:
-                # The base class does not have the attribute cls._rfm_params
-                pass
+                else:
+                    # The base class does not have the attribute cls._rfm_params
+                    pass
 
         return temp_parameter_space
 
@@ -145,7 +171,7 @@ class RegressionTestAttributes:
         return param_space
 
     @staticmethod
-    def check_namespace_clashing(dict_a, dict_b, name=None):
+    def namespace_clash_check(dict_a, dict_b, name=None):
         '''
          Check that these two dictionaries do not have any overlapping keys.
         '''
