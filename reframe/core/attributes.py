@@ -7,15 +7,11 @@
 # attribute extension to the RegressionTest classes.
 #
 
-import copy
-
 
 class InputParameter:
     '''
     Input paramter and (name + values) and other attributes to deal with the
     test parameter inheritance/chaining.
-
-    TODO: Type checking.
     '''
 
     def __init__(self, name, values=None, inherit_params=False, filt_params=None):
@@ -99,7 +95,7 @@ class RegressionTestAttributes:
         # Iterate over the base classes and inherit the parameter space
         for b in bases:
             if hasattr(b, '_rfm_params'):
-                base_params = copy.deepcopy(b._rfm_params)
+                base_params = b._rfm_params
                 for key in base_params:
                     if key in self.get_parameter_stage() and not self.get_parameter_stage().get(key).inherit_params:
 
@@ -110,7 +106,6 @@ class RegressionTestAttributes:
 
                         # With multiple inheritance, a single parameter could be doubly defined
                         # and lead to repeated values.
-                        # TODO: add type checking here too.
                         if key in temp_parameter_space:
                             if not (temp_parameter_space[key] == [] or base_params[key] == []):
                                 raise KeyError(f'Parameter space conflict (on {key}) '
