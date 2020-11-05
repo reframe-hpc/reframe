@@ -5,6 +5,7 @@
 
 import abc
 import copy
+import json
 import os
 import signal
 import sys
@@ -290,9 +291,14 @@ class RegressionTask:
         self._safe_call(self.check.performance)
 
     def finalize(self):
-        json_check = os.path.join(self.check.stagedir, '.rfm_testcase.json')
-        with open(json_check, 'w') as fp:
-            jsonext.dump(self.check, fp)
+        try:
+            json_check = os.path.join(self.check.stagedir,
+                                      '.rfm_testcase.json')
+            with open(json_check, 'w') as fp:
+                jsonext.dump(self.check, fp)
+        except OSError:
+            self._printer.warning(f'check {RegressionTask(t).check.name} '
+                                  f'can not be dumped')
 
         self._current_stage = 'finalize'
         self._notify_listeners('on_task_success')
@@ -416,18 +422,6 @@ class Runner:
             failed_cases = dependency.toposort(cases_graph, is_subgraph=True)
             self._runall(failed_cases)
             failures = self._stats.failures()
-
-    def restore(self, testcases, retry_report):
-        stagedirs = {}
-        for run in retry_report['runs']:
-            for t in run['testcases']:
-                idx = (t['name'], t['system'], t['environment'])
-                stagedirs[idx] = t['stagedir']
-
-        for t in testcases:
-            idx = (t.check.name, t.partition.fullname, t.environ.name)
-            with open(os.path.join(stagedirs[idx], '.rfm_testcase.json')) as f:
-                jsonext.load(f, rfm_obj=RegressionTask(t).check)
 
     def _runall(self, testcases):
         def print_separator(check, prefix):

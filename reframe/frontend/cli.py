@@ -28,7 +28,8 @@ from reframe.core.exceptions import (
     ReframeDeprecationWarning, ReframeFatalError,
     format_exception, SystemAutodetectionError
 )
-from reframe.frontend.executors import Runner, generate_testcases
+from reframe.frontend.executors import (RegressionTask, Runner,
+                                        generate_testcases)
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
 from reframe.frontend.loader import RegressionCheckLoader
@@ -109,6 +110,7 @@ def get_report_file(report_filename):
 
     return restart_report
 
+
 def get_failed_checks_from_report(restart_report):
     failed_checks = set()
     for testcase in restart_report['runs'][-1]['testcases']:
@@ -118,6 +120,24 @@ def get_failed_checks_from_report(restart_report):
                               hash(testcase['environment']))
 
     return failed_checks
+
+
+def restore(testcases, retry_report, printer):
+    stagedirs = {}
+    for run in retry_report['runs']:
+        for t in run['testcases']:
+            idx = (t['name'], t['system'], t['environment'])
+            stagedirs[idx] = t['stagedir']
+
+    for i, t in enumerate(testcases):
+        idx = (t.check.name, t.partition.fullname, t.environ.name)
+        try:
+            with open(os.path.join(stagedirs[idx],
+                                   '.rfm_testcase.json')) as f:
+                jsonext.load(f, rfm_obj=RegressionTask(t).check)
+        except (OSError, json.JSONDecodeError):
+            printer.warning(f'check {RegressionTask(t).check.name} '
+                            f'can not be restored')
 
 
 def format_env(envvars):
@@ -692,15 +712,16 @@ def main():
             for h in options.hooks:
                 type(c).disable_hook(h)
 
-        testcases_og = generate_testcases(checks_matched,
-                                       options.skip_system_check,
-                                       options.skip_prgenv_check,
-                                       allowed_environs)
+        testcases_unfiltered = generate_testcases(checks_matched,
+                                                  options.skip_system_check,
+                                                  options.skip_prgenv_check,
+                                                  allowed_environs)
         if options.retry_failed is not None:
-            failed_cases = [tc for tc in testcases_og
+            failed_cases = [tc for tc in testcases_unfiltered
                             if tc.__hash__() in failed_checks]
 
-            cases_graph = dependency.build_deps(failed_cases, testcases_og)
+            cases_graph = dependency.build_deps(failed_cases,
+                                                testcases_unfiltered)
             testcases = dependency.toposort(cases_graph, is_subgraph=True)
             restored_tests = set()
             for c in testcases:
@@ -709,7 +730,7 @@ def main():
                         restored_tests.add(d)
 
         else:
-            testgraph = dependency.build_deps(testcases_og)
+            testgraph = dependency.build_deps(testcases_unfiltered)
             dependency.validate_deps(testgraph)
             testcases = dependency.toposort(testgraph)
 
@@ -794,9 +815,9 @@ def main():
                     '%FT%T%z', time.localtime(time_start),
                 )
                 if options.retry_failed is not None:
-                    runner.restore(restored_tests, restart_report)
+                    restore(restored_tests, restart_report, printer)
 
-                runner.runall(testcases, testcases_og)
+                runner.runall(testcases, testcases_unfiltered)
             finally:
                 time_end = time.time()
                 session_info['time_end'] = time.strftime(
