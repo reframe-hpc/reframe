@@ -780,8 +780,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
     @classmethod
     def is_abstract_test(cls):
         ''' Checks if the test is an abstract test '''
-        for key in cls._rfm_params:
-            if (cls._rfm_params[key] == []):
+        if len(filter(lambda x: x==[], cls._rfm_params.values())) == 0:
                 return True
 
         return False
