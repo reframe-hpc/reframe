@@ -780,10 +780,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
     @classmethod
     def is_abstract_test(cls):
         ''' Checks if the test is an abstract test '''
-        if len(filter(lambda x: x==[], cls._rfm_params.values())) == 0:
-                return True
+        if list(filter(lambda x: x==[], cls._rfm_params.values())) == []:
+                return False
 
-        return False
+        return True
 
     def _append_parameters_to_name(self):
         if self._rfm_params:
