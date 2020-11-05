@@ -8,7 +8,7 @@
 #
 
 __all__ = [
-    'parameterized_test', 'simple_test', 'required_version',
+    'test', 'parameterized_test', 'simple_test', 'required_version',
     'require_deps', 'run_before', 'run_after'
 ]
 
@@ -18,6 +18,7 @@ import functools
 import inspect
 import sys
 import traceback
+import itertools
 
 import reframe
 from reframe.core.exceptions import ReframeSyntaxError, user_frame
@@ -72,6 +73,47 @@ def _validate_test(cls):
         raise ReframeSyntaxError('the decorated class must be a '
                                  'subclass of RegressionTest')
 
+    if (cls.is_abstract_test()):
+        raise ValueError(f'Decodated test ({cls.__qualname__}) is an'
+                         f' abstract test.')
+
+
+
+def test(cls):
+    '''Class decorator for registering tests with ReFrame.
+
+    The decorated class must derive from
+    :class:`reframe.core.pipeline.RegressionTest`.  This decorator is also
+    available directly under the :mod:`reframe` module.
+
+    .. versionadded:: #.##
+    '''
+    def _do_register(cls):
+        _validate_test(cls)
+
+        # If cls is not a parametrised test, register as is and return
+        if not cls._rfm_params:
+            _register_test(cls)
+            return cls
+
+        # We create a single test for all possible combinations in the parameter space.
+        # The different combinations are added to an expanded parameter set.
+        _rfm_expanded_param_space = []
+        for inst in itertools.product(*[cls._rfm_params.get(k) for k in cls._rfm_params]):
+
+            param_set = {}
+            for i, parameter in enumerate(cls._rfm_params):
+                param_set[parameter] = inst[i]
+
+            _rfm_expanded_param_space.append(param_set)
+            _register_test(cls)
+
+        cls._rfm_expanded_param_space = iter(itertools.cycle(_rfm_expanded_param_space))
+
+        return cls
+
+    return _do_register(cls)
+
 
 def simple_test(cls):
     '''Class decorator for registering parameterless tests with ReFrame.
@@ -81,11 +123,11 @@ def simple_test(cls):
     available directly under the :mod:`reframe` module.
 
     .. versionadded:: 2.13
+
+    .. to be deprecated
     '''
 
-    _validate_test(cls)
-    _register_test(cls)
-    return cls
+    return test(cls)
 
 
 def parameterized_test(*inst):
@@ -103,6 +145,8 @@ def parameterized_test(*inst):
    .. note::
       This decorator does not instantiate any test.  It only registers them.
       The actual instantiation happens during the loading phase of the test.
+
+    .. to be deprecated
     '''
     def _do_register(cls):
         _validate_test(cls)

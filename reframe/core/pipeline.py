@@ -710,9 +710,19 @@ class RegressionTest(metaclass=RegressionTestMeta):
     def __new__(cls, *args, **kwargs):
         obj = super().__new__(cls)
 
+        # Abort the class instantiation if the test is an abstract test.
+        if cls.is_abstract_test():
+            raise ValueError('Cannot instantiate an abstract test.') from None
+
+        # Set the test parameters in the object
+        cls._set_parameter_space(obj)
+
         # Create a test name from the class name and the constructor's
         # arguments
         name = cls.__qualname__
+        name += obj._append_parameters_to_name()
+
+        # or alternatively, if the parameterized test was defined the old way.
         if args or kwargs:
             arg_names = map(lambda x: util.toalphanum(str(x)),
                             itertools.chain(args, kwargs.values()))
@@ -736,6 +746,36 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
     def __init__(self):
         pass
+
+    @classmethod
+    def _set_parameter_space(cls, obj):
+        '''
+        Pick the parameter sets from the queue cls._rfm_param_queue and loop over the dict
+        inserting the parameters into obj.
+        '''
+
+        # Don't do anything if the test is not a parametrised test
+        if not hasattr(cls, '_rfm_expanded_param_space'):
+            return
+
+        # Set the parameter values for the test case
+        for key, value in next(cls._rfm_expanded_param_space).items():
+            obj.__dict__[key] = value
+
+    @classmethod
+    def is_abstract_test(cls):
+        ''' Checks if the test is an abstract test '''
+        for key in cls._rfm_params:
+            if (cls._rfm_params[key] == []):
+                return True
+
+        return False
+
+    def _append_parameters_to_name(self):
+        if self._rfm_params:
+            return '_' + '_'.join([str(self.__dict__[key]) for key in self._rfm_params])
+        else:
+            return ''
 
     @classmethod
     def __init_subclass__(cls, *, special=False, base_test=False, **kwargs):
