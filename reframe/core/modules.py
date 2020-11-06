@@ -721,8 +721,10 @@ class TMod4Impl(TModImpl):
         completed = osext.run_command(command, check=False)
         namespace = {}
         exec(completed.stdout, {}, namespace)
-        if not namespace['_mlstatus']:
-            # _mlstatus is set by the TMod4 Python bindings
+
+        # _mlstatus is set by the TMod4 only if the command was unsuccessful,
+        # but Lmod sets it always
+        if not namespace.get('_mlstatus', True):
             if msg is None:
                 msg = 'modules system command failed: '
                 if isinstance(completed.args, str):
@@ -736,10 +738,8 @@ class TMod4Impl(TModImpl):
 
     def load_module(self, module):
         if module.collection:
-            self._exec_module_command(
-                'restore', str(module),
-                msg="could not restore module collection '{module}'"
-            )
+            self.execute('restore', str(module),
+                         msg="could not restore module collection '{module}'")
             return []
         else:
             return super().load_module(module)
