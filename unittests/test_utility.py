@@ -8,6 +8,7 @@ import pytest
 import random
 import shutil
 import sys
+import time
 
 import reframe
 import reframe.core.fields as fields
@@ -49,19 +50,17 @@ def test_command_timeout():
 
 
 def test_command_async():
-    from datetime import datetime
-
-    t_launch = datetime.now()
+    t_launch = time.time()
     t_sleep  = t_launch
     proc = osext.run_command_async('sleep 1')
-    t_launch = datetime.now() - t_launch
+    t_launch = time.time() - t_launch
 
     proc.wait()
-    t_sleep = datetime.now() - t_sleep
+    t_sleep = time.time() - t_sleep
 
     # Now check the timings
-    assert t_launch.seconds < 1
-    assert t_sleep.seconds >= 1
+    assert t_launch < 1
+    assert t_sleep >= 1
 
 
 def test_copytree(tmp_path):
