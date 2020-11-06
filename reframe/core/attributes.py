@@ -63,14 +63,14 @@ class ParameterPack:
         self.purge_parameter_space = False
         self.parameter_blacklist = set()
 
-    def add(self, name, defaults=None, inherit_params=False, filt_params=None):
+    def add(self, name, values=None, inherit_params=False, filt_params=None):
         '''
         Insert a new parameter in the dictionary.
         If the parameter is already present in it, raise an error.
         '''
         if name not in self.parameter_map:
             self.parameter_map[name] = InputParameter(
-                name, defaults, inherit_params, filt_params)
+                name, values, inherit_params, filt_params)
         else:
             raise ValueError(
                 'Cannot double-define a parameter in the same class.')
@@ -82,7 +82,7 @@ class ParameterPack:
         '''
         self.purge_parameter_space = True
 
-    def purge_parameters(self, params_to_purge=None):
+    def purge_parameters(self, *params_to_purge):
         '''
         Override the inheritance of a given set of parameters.
         '''
