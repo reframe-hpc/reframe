@@ -10,6 +10,16 @@ import reframe.utility.sanity as sn
 import reframe.utility.udeps as udeps
 
 OSU_BENCH_VERSION = '5.6.3'
+NUM_NODES = 7
+
+def tsa_node_pairs():
+    def nodeid(n):
+        return f'tsa-pp{n+8:03}'
+
+    for u in range(NUM_NODES):
+        for v in range(NUM_NODES):
+            if u < v:
+                yield (nodeid(u), nodeid(v))
 
 
 @rfm.simple_test
@@ -60,17 +70,16 @@ class OSUBaseRunTest(rfm.RunOnlyRegressionTest):
             '*': {'latency': (0, None, None, 'us')}
         }
         self.executable_opts = ['-x', '1000', '-i', '20000']
-        # self.exclusive_access = True
+        self.exclusive_access = True
         self.depends_on('OSUBuildTest', udeps.fully)
 
 
-@rfm.parameterized_test(*([1 << i] for i in range(5)))
-class OSUAlltoAllvTest(OSUBaseRunTest):
-    NUM_NODES = 2
+@rfm.parameterized_test(*([1 << i] for i in range(6)))
+class OSUAlltoallvTest(OSUBaseRunTest):
 
     def __init__(self, num_tasks_per_node):
         super().__init__()
-        self.num_tasks = self.NUM_NODES*num_tasks_per_node
+        self.num_tasks = NUM_NODES*num_tasks_per_node
         self.num_tasks_per_node = num_tasks_per_node
 
     @rfm.require_deps
@@ -81,15 +90,20 @@ class OSUAlltoAllvTest(OSUBaseRunTest):
         )
 
 
-def tsa_node_pairs():
-    def nodeid(n):
-        return f'tsa-pp{n+9:03}'
+@rfm.parameterized_test(*([1 << i] for i in range(6)))
+class OSUAllgathervTest(OSUBaseRunTest):
 
-    num_nodes = 7
-    for u in range(num_nodes):
-        for v in range(num_nodes):
-            if u < v:
-                yield (nodeid(u), nodeid(v))
+    def __init__(self, num_tasks_per_node):
+        super().__init__()
+        self.num_tasks = NUM_NODES*num_tasks_per_node
+        self.num_tasks_per_node = num_tasks_per_node
+
+    @rfm.require_deps
+    def set_executable(self, OSUBuildTest):
+        self.executable = os.path.join(
+            OSUBuildTest(part='login').stagedir,
+            'mpi', 'collective', 'osu_allgatherv'
+        )
 
 
 @rfm.parameterized_test(*tsa_node_pairs())
