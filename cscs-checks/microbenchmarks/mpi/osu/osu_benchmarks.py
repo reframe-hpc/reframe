@@ -81,6 +81,7 @@ class OSUAlltoallvTest(OSUBaseRunTest):
         super().__init__()
         self.num_tasks = NUM_NODES*num_tasks_per_node
         self.num_tasks_per_node = num_tasks_per_node
+        self.executable_opts += ['-f']
 
     @rfm.require_deps
     def set_executable(self, OSUBuildTest):
@@ -97,12 +98,30 @@ class OSUAllgathervTest(OSUBaseRunTest):
         super().__init__()
         self.num_tasks = NUM_NODES*num_tasks_per_node
         self.num_tasks_per_node = num_tasks_per_node
+        self.executable_opts += ['-f']
 
     @rfm.require_deps
     def set_executable(self, OSUBuildTest):
         self.executable = os.path.join(
             OSUBuildTest(part='login').stagedir,
             'mpi', 'collective', 'osu_allgatherv'
+        )
+
+
+@rfm.parameterized_test(*([1 << i] for i in range(6)))
+class OSUIBcastTest(OSUBaseRunTest):
+
+    def __init__(self, num_tasks_per_node):
+        super().__init__()
+        self.num_tasks = NUM_NODES*num_tasks_per_node
+        self.num_tasks_per_node = num_tasks_per_node
+        self.executable_opts += ['-f']
+
+    @rfm.require_deps
+    def set_executable(self, OSUBuildTest):
+        self.executable = os.path.join(
+            OSUBuildTest(part='login').stagedir,
+            'mpi', 'collective', 'osu_ibcast'
         )
 
 
