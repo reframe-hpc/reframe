@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import inspect
 import reframe.core.runtime as rt
 from reframe.core.exceptions import format_exception, StatisticsError
 
@@ -83,6 +84,7 @@ class TestStats:
                     'build_stdout': None,
                     'description': check.descr,
                     'prefix': check.prefix,
+                    'filename': inspect.getfile(type(check)),
                     'environment': None,
                     'fail_reason': None,
                     'fail_phase': None,

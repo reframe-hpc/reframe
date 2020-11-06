@@ -40,6 +40,8 @@
                                 "build_stderr": {"type": ["string", "null"]},
                                 "build_stdout": {"type": ["string", "null"]},
                                 "description": {"type": "string"},
+                                "prefix": {"type": "string"},
+                                "filename": {"type": "string"},
                                 "environment": {"type": ["string", "null"]},
                                 "fail_phase": {"type": ["string", "null"]},
                                 "fail_reason": {"type": ["string", "null"]},
@@ -100,7 +102,7 @@
                                 "time_total": {"type": ["number", "null"]}
                             },
                             "required": [
-                                "environment", "name", "result", "system"
+                                "environment", "name", "result", "system", "filename"
                             ]
                         },
                         "required": [

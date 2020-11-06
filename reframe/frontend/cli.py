@@ -122,6 +122,11 @@ def get_failed_checks_from_report(restart_report):
     return failed_checks
 
 
+def get_filenames_from_report(restart_report):
+    return list({testcase['filename']
+                for testcase in restart_report['runs'][-1]['testcases']})
+
+
 def restore(testcases, retry_report, printer):
     stagedirs = {}
     for run in retry_report['runs']:
@@ -610,13 +615,14 @@ def main():
 
         restart_report = get_report_file(filename)
         failed_checks = get_failed_checks_from_report(restart_report)
-
+        load_paths = get_filenames_from_report(restart_report)
         loader_recurse = False
     else:
         loader_recurse = site_config.get('general/0/check_search_recursive')
+        load_paths = site_config.get('general/0/check_search_path')
 
     loader = RegressionCheckLoader(
-        load_path=site_config.get('general/0/check_search_path'),
+        load_path=load_paths,
         recurse=loader_recurse,
         ignore_conflicts=site_config.get(
             'general/0/ignore_check_conflicts')

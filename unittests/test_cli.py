@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import itertools
+import json
 import os
 import pathlib
 import pytest
@@ -156,30 +157,25 @@ def test_check_retry_failed(run_reframe, tmp_path, logfile):
     returncode, stdout, _ = run_reframe(
         checkpath=['unittests/resources/checks_unlisted/deps_complex.py'],
     )
-    assert 'T0' in stdout
-    assert 'T1' in stdout
-    assert 'T2' in stdout
-    assert 'T3' in stdout
-    assert 'T4' in stdout
-    assert 'T5' in stdout
-    assert 'T6' in stdout
-    assert 'T7' in stdout
-    assert 'T8' in stdout
-    assert 'T9' in stdout
     returncode, stdout, _ = run_reframe(
         checkpath=['unittests/resources/checks_unlisted/deps_complex.py'],
         more_options=['--retry-failed', f'{tmp_path}/report.json']
     )
-    assert 'T0' not in stdout
-    assert 'T1' not in stdout
-    assert 'T2' in stdout
-    assert 'T3' not in stdout
-    assert 'T4' not in stdout
-    assert 'T5' not in stdout
-    assert 'T6' not in stdout
-    assert 'T7' in stdout
-    assert 'T8' in stdout
-    assert 'T9' in stdout
+    with open(f'{tmp_path}/report.json') as fp:
+        report = json.load(fp)
+
+    report_summary = {t['name']: t['fail_phase']
+        for run in report['runs']
+        for t in run['testcases']
+    }
+
+    assert report_summary['T2'] == 'sanity'
+    assert report_summary['T7'] == 'startup'
+    assert report_summary['T8'] == 'setup'
+    assert report_summary['T9'] == 'startup'
+
+    assert all(i not in report_summary.keys()
+               for i in ['T0', 'T1', 'T3', 'T4', 'T5', 'T6'])
 
 
 def test_check_success_force_local(run_reframe, tmp_path, logfile):
