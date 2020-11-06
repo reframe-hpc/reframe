@@ -122,7 +122,7 @@ System Configuration
    :required: No
    :default: ``[]``
 
-   Environment modules to be loaded always when running on this system.
+   A list of `environment module objects <#module-objects>`__ to be loaded always when running on this system.
    These modules modify the ReFrame environment.
    This is useful in cases where a particular module is needed, for example, to submit jobs on a specific system.
 
@@ -280,7 +280,7 @@ System Partition Configuration
    :required: No
    :default: ``[]``
 
-   A list of environment modules to be loaded before running a regression test on this partition.
+  A list of `environment module objects <#module-objects>`__ to be loaded before running a regression test on this partition.
 
 
 .. js:attribute:: .systems[].partitions[].variables
@@ -339,7 +339,7 @@ ReFrame can launch containerized applications, but you need to configure properl
    :required: No
    :default: ``[]``
 
-  List of environment modules to be loaded when running containerized tests using this container platform.
+   A list of `environment module objects <#module-objects>`__ to be loaded when running containerized tests using this container platform.
 
 
 .. js:attribute:: .systems[].partitions[].container_platforms[].variables
@@ -458,7 +458,7 @@ They are associated with `system partitions <#system-partition-configuration>`__
    :required: No
    :default: ``[]``
 
-   A list of environment modules to be loaded when this environment is loaded.
+   A list of `environment module objects <#module-objects>`__ to be loaded when this environment is loaded.
 
 
 .. js:attribute:: .environments[].variables
@@ -1176,7 +1176,7 @@ General Configuration
    :required: No
    :default: ``[]``
 
-   A list of environment modules to unload before executing any test.
+   A list of `environment module objects <#module-objects>`__ to unload before executing any test.
    If specified using an the environment variable, a space separated list of modules is expected.
    If specified from the command line, multiple modules can be passed by passing the command line option multiple times.
 
@@ -1196,7 +1196,7 @@ General Configuration
    :required: No
    :default: ``[]``
 
-   A list of environment modules to be loaded before executing any test.
+   A list of `environment module objects <#module-objects>`__ to be loaded before executing any test.
    If specified using an the environment variable, a space separated list of modules is expected.
    If specified from the command line, multiple modules can be passed by passing the command line option multiple times.
 
@@ -1209,3 +1209,32 @@ General Configuration
    Increase the verbosity level of the output.
    The higher the number, the more verbose the output will be.
    If specified from the command line, the command line option must be specified multiple times to increase the verbosity level more than once.
+
+
+Module Objects
+--------------
+
+.. versionadded:: 3.3
+
+
+A *module object* in ReFrame's configuration represents an environment module.
+It can either be a simple string or a JSON object with the following attributes:
+
+.. js:attribute:: .name
+
+   :required: Yes
+
+   The name of the module.
+
+
+.. js:attribute:: .collection
+
+   :required: No
+   :default: ``false``
+
+   A boolean value indicating whether this module refers to a module collection.
+   Module collections are treated differently from simple modules when loading.
+
+.. seealso::
+
+   - Module collections with `Environment Modules <https://modules.readthedocs.io/en/latest/MIGRATING.html#module-collection>`__ and `Lmod <https://lmod.readthedocs.io/en/latest/010_user.html#user-collections>`__.

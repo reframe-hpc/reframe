@@ -73,6 +73,9 @@ class Environment:
           collection.
 
         :type: :class:`List[Dict[str, object]]`
+
+        .. versionadded:: 3.3
+
         '''
 
         return util.SequenceView(self._modules)
