@@ -38,4 +38,4 @@ RUN \
   ./bootstrap.sh
 
 WORKDIR /root/reframe
-CMD ["/bin/bash", "-c", "./test_reframe.py -v"]
+CMD ["/bin/bash", "-c", "./test_reframe.py --rfm-user-config=ci-scripts/configs/tmod4.py -v"]

@@ -38,4 +38,4 @@ RUN \
   ./bootstrap.sh
 
 WORKDIR /root/reframe
-CMD ["/bin/bash", "-c", "./test_reframe.py -v"]
+CMD ["/bin/bash", "-c", "./test_reframe.py --rfm-user-config=ci-scripts/configs/lmod.py -v"]

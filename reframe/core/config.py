@@ -111,7 +111,7 @@ class _SiteConfig:
     def remove_sticky_option(self, option):
         self._sticky_options.pop(option, None)
 
-    @_normalize_syntax({'.*/modules$': normalize_module_list})
+    @_normalize_syntax({'.*/.*modules$': normalize_module_list})
     def get(self, option, default=None):
         '''Retrieve value of option.
 

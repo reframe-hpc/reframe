@@ -687,7 +687,7 @@ def main():
             rt.modules_system.unload_all()
         else:
             for m in site_config.get('general/0/unload_modules'):
-                rt.modules_system.unload_module(m)
+                rt.modules_system.unload_module(**m)
 
         # Load the environment for the current system
         try:
@@ -699,13 +699,15 @@ def main():
             printer.debug(str(e))
             raise
 
-        printer.debug(f'Loading user modules from command line')
+        printer.debug('Loading user modules from command line')
         for m in site_config.get('general/0/user_modules'):
             try:
-                rt.modules_system.load_module(m, force=True)
+                rt.modules_system.load_module(**m, force=True)
             except errors.EnvironError as e:
-                printer.warning("could not load module '%s' correctly: "
-                                "Skipping..." % m)
+                printer.warning(
+                    f'could not load module {m["name"]!r} correctly; '
+                    f'skipping...'
+                )
                 printer.debug(str(e))
 
         options.flex_alloc_nodes = options.flex_alloc_nodes or 'idle'
