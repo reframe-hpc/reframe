@@ -212,12 +212,12 @@ def loadenv(*environs):
     env_snapshot = snapshot()
     commands = []
     for env in environs:
-        for m in env.modules:
-            conflicted = modules_system.load_module(m, force=True)
+        for m in env.modules_detailed:
+            conflicted = modules_system.load_module(**m, force=True)
             for c in conflicted:
                 commands += modules_system.emit_unload_commands(c)
 
-            commands += modules_system.emit_load_commands(m)
+            commands += modules_system.emit_load_commands(**m)
 
         for k, v in env.variables.items():
             os.environ[k] = osext.expandvars(v)

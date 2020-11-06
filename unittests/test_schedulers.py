@@ -518,18 +518,17 @@ def test_cancel_with_grace(minimal_job, scheduler, local_only):
     # signal handler for SIGTERM
     time.sleep(1)
 
-    t_grace = datetime.now()
+    t_grace = time.time()
     minimal_job.cancel()
     time.sleep(0.1)
     minimal_job.wait()
-    t_grace = datetime.now() - t_grace
+    t_grace = time.time() - t_grace
 
     # Read pid of spawned sleep
     with open(minimal_job.stdout) as fp:
         sleep_pid = int(fp.read())
 
-    assert t_grace.total_seconds() >= 2
-    assert t_grace.total_seconds() < 5
+    assert t_grace >= 2 and t_grace < 5
     assert minimal_job.state == 'FAILURE'
     assert minimal_job.signal == signal.SIGKILL
 
@@ -563,17 +562,17 @@ def test_cancel_term_ignore(minimal_job, scheduler, local_only):
     # signal handler for SIGTERM
     time.sleep(1)
 
-    t_grace = datetime.now()
+    t_grace = time.time()
     minimal_job.cancel()
     time.sleep(0.1)
     minimal_job.wait()
-    t_grace = datetime.now() - t_grace
+    t_grace = time.time() - t_grace
 
     # Read pid of spawned sleep
     with open(minimal_job.stdout) as fp:
         sleep_pid = int(fp.read())
 
-    assert t_grace.total_seconds() >= 2
+    assert t_grace >= 2 and t_grace < 5
     assert minimal_job.state == 'FAILURE'
     assert minimal_job.signal == signal.SIGKILL
 

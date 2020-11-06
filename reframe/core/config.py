@@ -5,6 +5,7 @@
 
 import copy
 import fnmatch
+import functools
 import itertools
 import json
 import jsonschema
@@ -19,6 +20,7 @@ import reframe.core.settings as settings
 import reframe.utility as util
 import reframe.utility.osext as osext
 import reframe.utility.typecheck as types
+from reframe.core.environments import normalize_module_list
 from reframe.core.exceptions import ConfigError, ReframeFatalError
 from reframe.core.logging import getlogger
 from reframe.core.warnings import ReframeDeprecationWarning
@@ -37,6 +39,29 @@ def _match_option(opt, opt_map):
             return v
 
     raise KeyError(opt)
+
+
+def _normalize_syntax(conv):
+    '''Normalize syntax for options accepting multiple syntaxes'''
+
+    def _do_normalize(fn):
+
+        @functools.wraps(fn)
+        def _get(site_config, option, *args, **kwargs):
+            ret = fn(site_config, option, *args, **kwargs)
+            if option is None:
+                return ret
+
+            for opt_patt, norm_fn in conv.items():
+                if re.match(opt_patt, option):
+                    ret = norm_fn(ret)
+                    break
+
+            return ret
+
+        return _get
+
+    return _do_normalize
 
 
 class _SiteConfig:
@@ -86,6 +111,7 @@ class _SiteConfig:
     def remove_sticky_option(self, option):
         self._sticky_options.pop(option, None)
 
+    @_normalize_syntax({'.*/modules$': normalize_module_list})
     def get(self, option, default=None):
         '''Retrieve value of option.
 
