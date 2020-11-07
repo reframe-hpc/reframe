@@ -76,7 +76,9 @@ def format_check(check, check_deps, detailed=False):
         'Tags': fmt_list(check.tags),
         'Valid environments': fmt_list(check.valid_prog_environs),
         'Valid systems': fmt_list(check.valid_systems),
-        'Dependencies (conceptual)': fmt_list(d[0] for d in check.user_deps()),
+        'Dependencies (conceptual)': fmt_list(
+            [d[0] for d in check.user_deps()]
+        ),
         'Dependencies (actual)': fmt_deps()
     }
     lines = [f'- {check.name}:']
