@@ -64,8 +64,15 @@ class RegressionCheckLoader:
         with open(filename, 'r') as f:
             source_tree = ast.parse(f.read(), filename)
 
+        msg = f'Validating {filename!r}: '
         validator = RegressionCheckValidator()
         validator.visit(source_tree)
+        if validator.valid:
+            msg += 'OK'
+        else:
+            msg += 'not a test file'
+
+        getlogger().debug(msg)
         return validator.valid
 
     @property
@@ -90,16 +97,20 @@ class RegressionCheckLoader:
         # Warn in case of old syntax
         if hasattr(module, '_get_checks'):
             getlogger().warning(
-                '%s: _get_checks() is no more supported in test files: '
-                'please use @reframe.simple_test or '
-                '@reframe.parameterized_test decorators' % module.__file__
+                f'{module.__file__}: _get_checks() is no more supported '
+                f'in test files: please use @reframe.simple_test or '
+                f'@reframe.parameterized_test decorators'
             )
 
         if not hasattr(module, '_rfm_gettests'):
+            getlogger().debug('No tests registered')
             return []
 
         candidates = module._rfm_gettests()
         if not isinstance(candidates, collections.abc.Sequence):
+            getlogger().warning(
+                f'Tests not registered correctly in {module.__name__!r}'
+            )
             return []
 
         ret = []
@@ -122,6 +133,7 @@ class RegressionCheckLoader:
                 else:
                     raise NameConflictError(msg)
 
+        getlogger().debug(f'  > Loaded {len(ret)} test(s)')
         return ret
 
     def load_from_file(self, filename, **check_args):
@@ -153,8 +165,10 @@ class RegressionCheckLoader:
         If a prefix exists, it will be prepended to each path.'''
         checks = []
         for d in self._load_path:
+            getlogger().debug(f'Looking for tests in {d!r}')
             if not os.path.exists(d):
                 continue
+
             if os.path.isdir(d):
                 checks.extend(self.load_from_dir(d, self._recurse))
             else:

@@ -33,7 +33,6 @@ site_configuration = {
     ],
     'logging': [
         {
-            'level': 'debug',
             'handlers': [
                 {
                     'type': 'stream',

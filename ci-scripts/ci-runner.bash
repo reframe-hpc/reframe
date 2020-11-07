@@ -42,7 +42,7 @@ checked_exec()
 run_tutorial_checks()
 {
     cmd="./bin/reframe -C tutorials/config/settings.py -J account=jenscscs \
---save-log-files -r -c tutorials/ -R -x HelloThreadedExtendedTest $@"
+--save-log-files --flex-alloc-nodes=2 -r -c tutorials/ -R -x HelloThreadedExtendedTest $@"
     echo "[INFO] Running tutorial checks with \`$cmd'"
     checked_exec $cmd
 }
@@ -125,8 +125,9 @@ if [ "X${MODULEUSE}" != "X" ]; then
     module use ${MODULEUSE}
 fi
 
-if [[ $(hostname) =~ kesch ]]; then
-    module load reframe
+parallel_opts="--workers=auto --forked"
+if [[ $(hostname) =~ tsa ]]; then
+    parallel_opts=""
 fi
 
 # Bootstrap ReFrame
@@ -141,7 +142,7 @@ echo "[INFO] Running unit tests on $(hostname) in ${CI_FOLDER}"
 if [ $CI_GENERIC -eq 1 ]; then
     # Run unit tests for the public release
     echo "[INFO] Running unit tests with generic settings"
-    checked_exec ./test_reframe.py --workers=auto --forked \
+    checked_exec ./test_reframe.py ${parallel_opts} \
                  -W=error::reframe.core.warnings.ReframeDeprecationWarning -ra
     checked_exec ! ./bin/reframe.py --system=generic -l 2>&1 | \
         grep -- '--- Logging error ---'
@@ -172,7 +173,7 @@ else
         export PATH=/apps/dom/UES/karakasv/slurm-wrappers/bin:$PATH
         for backend in slurm pbs torque; do
             echo "[INFO] Running unit tests with ${backend}"
-            TMPDIR=$tempdir checked_exec ./test_reframe.py --workers=auto --forked \
+            TMPDIR=$tempdir checked_exec ./test_reframe.py ${parallel_opts} \
                          --rfm-user-config=config/cscs-ci.py \
                          -W=error::reframe.core.warnings.ReframeDeprecationWarning \
                          --rfm-user-system=dom:${backend} -ra
@@ -180,7 +181,7 @@ else
         export PATH=$PATH_save
     else
         echo "[INFO] Running unit tests"
-        TMPDIR=$tempdir checked_exec ./test_reframe.py --workers=auto --forked \
+        TMPDIR=$tempdir checked_exec ./test_reframe.py ${parallel_opts} \
                      --rfm-user-config=config/cscs-ci.py \
                      -W=error::reframe.core.warnings.ReframeDeprecationWarning -ra
     fi

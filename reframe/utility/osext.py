@@ -97,7 +97,7 @@ def run_command_async(cmd,
 
     if log:
         from reframe.core.logging import getlogger
-        getlogger().debug('executing OS command: ' + cmd)
+        getlogger().debug2(f'[CMD] {cmd!r}')
 
     if not shell:
         cmd = shlex.split(cmd)
@@ -174,7 +174,8 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=shutil.copy2,
     ignore_paths = ignore(src, os.listdir(src)) if ignore else {}
     for f in files:
         if f not in ignore_paths:
-            copy_function(os.path.join(src, f), os.path.join(dst, f))
+            copy_function(os.path.join(src, f), os.path.join(dst, f),
+                          follow_symlinks=not symlinks)
 
     for d in subdirs:
         if d not in ignore_paths:
