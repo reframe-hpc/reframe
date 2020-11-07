@@ -217,7 +217,7 @@ def test_run_only_no_srcdir(local_exec_ctx):
     _run(test, *local_exec_ctx)
 
 
-def test_run_only_srcdir_with_symlink(local_exec_ctx):
+def test_run_only_preserve_symlinks(local_exec_ctx):
     @fixtures.custom_prefix('unittests/resources/checks')
     class MyTest(rfm.RunOnlyRegressionTest):
         def __init__(self):
@@ -227,7 +227,8 @@ def test_run_only_srcdir_with_symlink(local_exec_ctx):
             self.valid_prog_environs = ['*']
             self.valid_systems = ['*']
             self.sanity_patterns = sn.assert_found(
-                r'Hello, World\!', self.stdout)
+                r'Hello, World\!', self.stdout
+            )
 
         @rfm.run_after('run')
         def check_symlinks(self):
