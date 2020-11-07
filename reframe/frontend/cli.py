@@ -33,12 +33,24 @@ from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.printer import PrettyPrinter
 
 
-def format_check(check, detailed=False):
+def format_check(check, check_deps, detailed=False):
     def fmt_list(x):
         if not x:
             return '<none>'
 
         return ', '.join(x)
+
+    def fmt_deps():
+        no_deps = True
+        lines = []
+        for t, deps in check_deps:
+            for d in deps:
+                lines.append(f'- {t} -> {d}')
+
+        if lines:
+            return '\n      '.join(lines)
+        else:
+            return '<none>'
 
     location = inspect.getfile(type(check))
     if not detailed:
@@ -52,7 +64,6 @@ def format_check(check, detailed=False):
         node_alloc_scheme = f'flexible (minimum {-check.num_tasks} task(s))'
 
     check_info = {
-        'Dependencies': fmt_list([d[0] for d in check.user_deps()]),
         'Description': check.descr,
         'Environment modules': fmt_list(check.modules),
         'Location': location,
@@ -64,14 +75,18 @@ def format_check(check, detailed=False):
         },
         'Tags': fmt_list(check.tags),
         'Valid environments': fmt_list(check.valid_prog_environs),
-        'Valid systems': fmt_list(check.valid_systems)
+        'Valid systems': fmt_list(check.valid_systems),
+        'Dependencies (conceptual)': fmt_list(
+            [d[0] for d in check.user_deps()]
+        ),
+        'Dependencies (actual)': fmt_deps()
     }
     lines = [f'- {check.name}:']
     for prop, val in check_info.items():
         lines.append(f'    {prop}:')
         if isinstance(val, dict):
             for k, v in val.items():
-                lines.append(f'      {k}: {v}')
+                lines.append(f'      - {k}: {v}')
         else:
             lines.append(f'      {val}')
 
@@ -88,9 +103,19 @@ def format_env(envvars):
     return ret
 
 
-def list_checks(checks, printer, detailed=False):
+def list_checks(testcases, printer, detailed=False):
     printer.info('[List of matched checks]')
-    printer.info('\n'.join(format_check(c, detailed) for c in checks))
+
+    # Collect dependencies per test
+    deps = {}
+    for t in testcases:
+        deps.setdefault(t.check.name, [])
+        deps[t.check.name].append((t, t.deps))
+
+    checks = set(t.check for t in testcases)
+    printer.info(
+        '\n'.join(format_check(c, deps[c.name], detailed) for c in checks)
+    )
     printer.info(f'Found {len(checks)} check(s)')
 
 
@@ -713,7 +738,7 @@ def main():
         # Act on checks
         success = True
         if options.list or options.list_detailed:
-            list_checks(checks_matched, printer, options.list_detailed)
+            list_checks(testcases, printer, options.list_detailed)
         elif options.run:
             # Setup the execution policy
             if options.exec_policy == 'serial':
