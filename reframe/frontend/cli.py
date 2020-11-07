@@ -33,7 +33,7 @@ from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.printer import PrettyPrinter
 
 
-def format_check(check, index_of_deps, detailed=False):
+def format_check(check, check_deps, detailed=False):
     def fmt_list(x):
         if not x:
             return '<none>'
@@ -42,13 +42,13 @@ def format_check(check, index_of_deps, detailed=False):
 
     def fmt_deps():
         no_deps = True
-        ret = []
-        for t, deps in index_of_deps[check.name]:
+        lines = []
+        for t, deps in check_deps:
             for d in deps:
-                ret.append(f'{t} -> {d}')
+                lines.append(f'- {t} -> {d}')
 
-        if ret:
-            return '\n      '.join(ret)
+        if lines:
+            return '\n      '.join(lines)
         else:
             return '<none>'
 
@@ -76,15 +76,15 @@ def format_check(check, index_of_deps, detailed=False):
         'Tags': fmt_list(check.tags),
         'Valid environments': fmt_list(check.valid_prog_environs),
         'Valid systems': fmt_list(check.valid_systems),
-        'Dependencies': fmt_list([d[0] for d in check.user_deps()]),
-        'Dependencies for current system' : fmt_deps()
+        'Dependencies (conceptual)': fmt_list(d[0] for d in check.user_deps()),
+        'Dependencies (actual)': fmt_deps()
     }
     lines = [f'- {check.name}:']
     for prop, val in check_info.items():
         lines.append(f'    {prop}:')
         if isinstance(val, dict):
             for k, v in val.items():
-                lines.append(f'      {k}: {v}')
+                lines.append(f'      - {k}: {v}')
         else:
             lines.append(f'      {val}')
 
@@ -103,14 +103,16 @@ def format_env(envvars):
 
 def list_checks(testcases, printer, detailed=False):
     printer.info('[List of matched checks]')
-    index_of_deps = {}
+
+    # Collect dependencies per test
+    deps = {}
     for t in testcases:
-        index_of_deps.setdefault(t.check.name, [])
-        index_of_deps[t.check.name].append((t, t.deps))
+        deps.setdefault(t.check.name, [])
+        deps[t.check.name].append((t, t.deps))
 
     checks = set(t.check for t in testcases)
     printer.info(
-        '\n'.join(format_check(c, index_of_deps, detailed) for c in checks)
+        '\n'.join(format_check(c, deps[c.name], detailed) for c in checks)
     )
     printer.info(f'Found {len(checks)} check(s)')
 
