@@ -30,10 +30,22 @@ def test_command_success():
     assert completed.stdout == 'foobar\n'
 
 
+def test_command_success_cmd_seq():
+    completed = osext.run_command(['echo', 'foobar'])
+    assert completed.returncode == 0
+    assert completed.stdout == 'foobar\n'
+
+
 def test_command_error():
     with pytest.raises(SpawnedProcessError,
                        match=r"command 'false' failed with exit code 1"):
         osext.run_command('false', check=True)
+
+
+def test_command_error_cmd_seq():
+    with pytest.raises(SpawnedProcessError,
+                       match=r"command 'false' failed with exit code 1"):
+        osext.run_command(['false'], check=True)
 
 
 def test_command_timeout():
