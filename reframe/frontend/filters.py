@@ -12,21 +12,21 @@ def re_compile(patt):
     try:
         return re.compile(patt)
     except re.error:
-        raise ReframeError("invalid regex: '%s'" % patt)
+        raise ReframeError(f'invalid regex: {patt!r}')
 
 
 def have_name(patt):
     regex = re_compile(patt)
 
-    def _fn(c):
-        return regex.match(c.name)
+    def _fn(case):
+        return regex.match(case.check.name)
 
     return _fn
 
 
 def have_not_name(patt):
-    def _fn(c):
-        return not have_name(patt)(c)
+    def _fn(case):
+        return not have_name(patt)(case)
 
     return _fn
 
@@ -34,8 +34,8 @@ def have_not_name(patt):
 def have_tag(patt):
     regex = re_compile(patt)
 
-    def _fn(c):
-        return any(regex.match(p) for p in c.tags)
+    def _fn(case):
+        return any(regex.match(p) for p in case.check.tags)
 
     return _fn
 
@@ -43,31 +43,31 @@ def have_tag(patt):
 def have_prgenv(patt):
     regex = re_compile(patt)
 
-    def _fn(c):
-        if '*' in c.valid_prog_environs:
+    def _fn(case):
+        if '*' in case.check.valid_prog_environs:
             return True
         else:
-            return any(regex.match(p) for p in c.valid_prog_environs)
+            return regex.match(case.environ.name)
 
     return _fn
 
 
 def have_partition(partitions):
-    def _fn(c):
-        return any([c.supports_system(s.fullname) for s in partitions])
+    def _fn(case):
+        return case.check.supports_system(case.partition.fullname)
 
     return _fn
 
 
 def have_gpu_only():
-    def _fn(c):
-        return c.num_gpus_per_node > 0
+    def _fn(case):
+        return case.check.num_gpus_per_node > 0
 
     return _fn
 
 
 def have_cpu_only():
-    def _fn(c):
-        return c.num_gpus_per_node == 0
+    def _fn(case):
+        return case.check.num_gpus_per_node == 0
 
     return _fn
