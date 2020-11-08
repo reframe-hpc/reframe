@@ -441,9 +441,8 @@ class ModulesSystemImpl(abc.ABC):
     def version(self):
         '''Return the version of this module system.'''
 
-    @property
     @abc.abstractmethod
-    def modulecmd(self):
+    def modulecmd(self, *args):
         '''The low level command to use for issuing module commads'''
 
     @abc.abstractmethod
@@ -513,7 +512,7 @@ class TModImpl(ModulesSystemImpl):
         self._version = version
         try:
             # Try the Python bindings now
-            completed = osext.run_command(self.modulecmd)
+            completed = osext.run_command(self.modulecmd())
         except OSError as e:
             raise ConfigError(
                 'could not get the Python bindings for TMod: ' % e) from e
@@ -528,15 +527,14 @@ class TModImpl(ModulesSystemImpl):
     def version(self):
         return self._version
 
-    @property
-    def modulecmd(self):
-        return 'modulecmd python'
+    def modulecmd(self, *args):
+        return ' '.join(['modulecmd', 'python', *args])
 
     def execute(self, cmd, *args):
-        command = [self.modulecmd, cmd, *args]
-        completed = os_ext.run_command(command)
+        modulecmd = self.modulecmd(cmd, *args)
+        completed = osext.run_command(modulecmd)
         if re.search(r'ERROR', completed.stderr) is not None:
-            raise SpawnedProcessError(command,
+            raise SpawnedProcessError(modulecmd,
                                       completed.stdout,
                                       completed.stderr,
                                       completed.returncode)
@@ -545,9 +543,7 @@ class TModImpl(ModulesSystemImpl):
         return completed.stderr
 
     def available_modules(self, substr):
-        output = self.execute(
-            'avail', '-t', substr, msg='could not retrieve available modules'
-        )
+        output = self.execute('avail', '-t', substr)
         ret = []
         for line in output.split('\n'):
             if not line or line[-1] == ':':
@@ -568,9 +564,7 @@ class TModImpl(ModulesSystemImpl):
             return []
 
     def conflicted_modules(self, module):
-        output = self.execute(
-            'show', str(module), msg=f"could not show module '{module}'"
-        )
+        output = self.execute('show', str(module))
         return [Module(m.group(1))
                 for m in re.finditer(r'^conflict\s+(\S+)',
                                      output, re.MULTILINE)]
@@ -579,12 +573,10 @@ class TModImpl(ModulesSystemImpl):
         return module in self.loaded_modules()
 
     def load_module(self, module):
-        self.execute('load', str(module),
-                     msg=f"could not load module '{module}' correctly")
+        self.execute('load', str(module))
 
     def unload_module(self, module):
-        self.execute('unload', str(module),
-                     msg=f"could not unload module '{module}' correctly")
+        self.execute('unload', str(module))
 
     def unload_all(self):
         self.execute('purge')
@@ -657,15 +649,14 @@ class TMod31Impl(TModImpl):
     def name(self):
         return 'tmod31'
 
-    @property
-    def modulecmd(self):
-        return self._command
+    def modulecmd(self, *args):
+        return ' '.join([self._command, *args])
 
-    def execute(self, cmd, *args, msg=None):
-        command = [self.modulecmd, cmd, *args]
-        completed = os_ext.run_command(command)
+    def execute(self, cmd, *args):
+        modulecmd = self.modulecmd(cmd, *args)
+        completed = osext.run_command(modulecmd)
         if re.search(r'ERROR', completed.stderr) is not None:
-            raise SpawnedProcessError(command,
+            raise SpawnedProcessError(modulecmd,
                                       completed.stdout,
                                       completed.stderr,
                                       completed.returncode)
@@ -689,7 +680,7 @@ class TMod4Impl(TModImpl):
 
     def __init__(self):
         try:
-            completed = osext.run_command(self.modulecmd + ' -V', check=True)
+            completed = osext.run_command(self.modulecmd('-V'), check=True)
         except OSError as e:
             raise ConfigError(
                 'could not find a sane TMod4 installation') from e
@@ -719,34 +710,28 @@ class TMod4Impl(TModImpl):
     def name(self):
         return 'tmod4'
 
-    @property
-    def modulecmd(self):
-        return 'modulecmd python'
+    def modulecmd(self, *args):
+        return ' '.join(['modulecmd', 'python', *args])
 
-    def execute(self, cmd, *args, msg=None):
-        command = ' '.join([self._command, cmd, *args])
-        completed = osext.run_command(command, check=False)
+    def execute(self, cmd, *args):
+        modulecmd = self.modulecmd(cmd, *args)
+        completed = osext.run_command(modulecmd, check=False)
         namespace = {}
         exec(completed.stdout, {}, namespace)
 
         # _mlstatus is set by the TMod4 only if the command was unsuccessful,
         # but Lmod sets it always
         if not namespace.get('_mlstatus', True):
-            if msg is None:
-                msg = 'modules system command failed: '
-                if isinstance(completed.args, str):
-                    msg += completed.args
-                else:
-                    msg += ' '.join(completed.args)
-
-            raise EnvironError(msg)
+            raise SpawnedProcessError(modulecmd,
+                                      completed.stdout,
+                                      completed.stderr,
+                                      completed.returncode)
 
         return completed.stderr
 
     def load_module(self, module):
         if module.collection:
-            self.execute('restore', str(module),
-                         msg="could not restore module collection '{module}'")
+            self.execute('restore', str(module))
             return []
         else:
             return super().load_module(module)
@@ -785,13 +770,13 @@ class LModImpl(TMod4Impl):
 
     def __init__(self):
         # Try to figure out if we are indeed using LMOD
-        lmod_cmd = os.getenv('LMOD_CMD')
-        if lmod_cmd is None:
+        self._lmod_cmd = os.getenv('LMOD_CMD')
+        if self._lmod_cmd is None:
             raise ConfigError('could not find a sane Lmod installation: '
                               'environment variable LMOD_CMD is not defined')
 
         try:
-            completed = osext.run_command('%s --version' % lmod_cmd)
+            completed = osext.run_command(f'{self._lmod_cmd} --version')
         except OSError as e:
             raise ConfigError(
                 'could not find a sane Lmod installation: %s' % e)
@@ -802,10 +787,9 @@ class LModImpl(TMod4Impl):
             raise ConfigError('could not retrieve Lmod version')
 
         self._version = version_match.group(1)
-        self._command = '%s python ' % lmod_cmd
         try:
             # Try the Python bindings now
-            completed = osext.run_command(self._command)
+            completed = osext.run_command(self.modulecmd())
         except OSError as e:
             raise ConfigError(
                 'could not get the Python bindings for Lmod: ' % e)
@@ -817,10 +801,11 @@ class LModImpl(TMod4Impl):
     def name(self):
         return 'lmod'
 
+    def modulecmd(self, *args):
+        return ' '.join([self._lmod_cmd, 'python', *args])
+
     def available_modules(self, substr):
-        output = self.execute(
-            '-t', 'avail', substr, msg='could not retrieve available modules'
-        )
+        output = self.execute('-t', 'avail', substr)
         ret = []
         for line in output.split('\n'):
             if not line or line[-1] == ':':
@@ -839,9 +824,7 @@ class LModImpl(TMod4Impl):
             # collection
             return []
 
-        output = self.execute(
-            'show', str(module), msg=f"could not show module '{module}'"
-        )
+        output = self.execute('show', str(module))
 
         # Lmod accepts both Lua and and Tcl syntax
         # The following test allows incorrect syntax, e.g., `conflict
@@ -861,8 +844,7 @@ class LModImpl(TMod4Impl):
 
     def load_module(self, module):
         if module.collection:
-            self.execute('restore', str(module),
-                         msg="could not restore module collection '{module}'")
+            self.execute('restore', str(module))
             return []
         else:
             return super().load_module(module)
@@ -914,8 +896,7 @@ class NoModImpl(ModulesSystemImpl):
     def version(self):
         return '1.0'
 
-    @property
-    def modulecmd(self):
+    def modulecmd(self, *args):
         return ''
 
     def unload_all(self):

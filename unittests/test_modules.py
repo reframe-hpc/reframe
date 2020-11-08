@@ -12,7 +12,9 @@ import reframe.core.modules as modules
 import reframe.utility as util
 import reframe.utility.osext as osext
 import unittests.fixtures as fixtures
-from reframe.core.exceptions import ConfigError, EnvironError
+from reframe.core.exceptions import (ConfigError,
+                                     EnvironError,
+                                     SpawnedProcessError)
 from reframe.core.runtime import runtime
 
 
@@ -83,7 +85,7 @@ def test_module_load(modules_system):
         modules_system.load_module('foo')
         modules_system.unload_module('foo')
     else:
-        with pytest.raises(EnvironError):
+        with pytest.raises(SpawnedProcessError):
             modules_system.load_module('foo')
 
         assert not modules_system.is_module_loaded('foo')
