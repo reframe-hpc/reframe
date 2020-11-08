@@ -336,6 +336,10 @@ def modules_system_emu():
         def version(self):
             return '1.0'
 
+        @property
+        def modulecmd(self):
+            return ''
+
         def unload_all(self):
             self._loaded_modules.clear()
 

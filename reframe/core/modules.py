@@ -441,6 +441,11 @@ class ModulesSystemImpl(abc.ABC):
     def version(self):
         '''Return the version of this module system.'''
 
+    @property
+    @abc.abstractmethod
+    def modulecmd(self):
+        '''The low level command to use for issuing module commads'''
+
     @abc.abstractmethod
     def unload_all(self):
         '''Unload all loaded modules.'''
@@ -506,10 +511,9 @@ class TModImpl(ModulesSystemImpl):
                 (version, self.MIN_VERSION))
 
         self._version = version
-        self._command = 'modulecmd python'
         try:
             # Try the Python bindings now
-            completed = osext.run_command(self._command)
+            completed = osext.run_command(self.modulecmd)
         except OSError as e:
             raise ConfigError(
                 'could not get the Python bindings for TMod: ' % e) from e
@@ -524,36 +528,28 @@ class TModImpl(ModulesSystemImpl):
     def version(self):
         return self._version
 
-    def _run_module_command(self, *args, msg=None):
-        command = ' '.join([self._command, *args])
-        try:
-            completed = osext.run_command(command, check=True)
-        except SpawnedProcessError as e:
-            raise EnvironError(msg) from e
+    @property
+    def modulecmd(self):
+        return 'modulecmd python'
 
-        if self._module_command_failed(completed):
-            err = SpawnedProcessError(command,
+    def execute(self, cmd, *args):
+        command = [self.modulecmd, cmd, *args]
+        completed = os_ext.run_command(command)
+        if re.search(r'ERROR', completed.stderr) is not None:
+            raise SpawnedProcessError(command,
                                       completed.stdout,
                                       completed.stderr,
                                       completed.returncode)
-            raise EnvironError(msg) from err
 
-        return completed
-
-    def _module_command_failed(self, completed):
-        return re.search(r'ERROR', completed.stderr) is not None
-
-    def execute(self, cmd, *args, msg=None):
-        completed = self._run_module_command(cmd, *args, msg=msg)
         exec(completed.stdout)
         return completed.stderr
 
     def available_modules(self, substr):
-        completed = self._run_module_command(
+        output = self.execute(
             'avail', '-t', substr, msg='could not retrieve available modules'
         )
         ret = []
-        for line in completed.stderr.split('\n'):
+        for line in output.split('\n'):
             if not line or line[-1] == ':':
                 # Ignore empty lines and path entries
                 continue
@@ -572,11 +568,12 @@ class TModImpl(ModulesSystemImpl):
             return []
 
     def conflicted_modules(self, module):
-        completed = self._run_module_command(
-            'show', str(module), msg=f"could not show module '{module}'")
+        output = self.execute(
+            'show', str(module), msg=f"could not show module '{module}'"
+        )
         return [Module(m.group(1))
                 for m in re.finditer(r'^conflict\s+(\S+)',
-                                     completed.stderr, re.MULTILINE)]
+                                     output, re.MULTILINE)]
 
     def is_module_loaded(self, module):
         return module in self.loaded_modules()
@@ -660,19 +657,26 @@ class TMod31Impl(TModImpl):
     def name(self):
         return 'tmod31'
 
+    @property
+    def modulecmd(self):
+        return self._command
+
     def execute(self, cmd, *args, msg=None):
-        completed = self._run_module_command(cmd, *args, msg=msg)
-        exec_match = re.search(r'^exec\s\'', completed.stdout)
+        command = [self.modulecmd, cmd, *args]
+        completed = os_ext.run_command(command)
+        if re.search(r'ERROR', completed.stderr) is not None:
+            raise SpawnedProcessError(command,
+                                      completed.stdout,
+                                      completed.stderr,
+                                      completed.returncode)
+
+        exec_match = re.search(r"^exec\s'(\S+)'", completed.stdout,
+                               re.MULTILINE)
         if exec_match is None:
             raise ConfigError('could not use the python bindings')
-        else:
-            cmd = completed.stdout
-            exec_match = re.search(r'^exec\s\'(\S+)\'', cmd,
-                                   re.MULTILINE)
-            if exec_match is None:
-                raise ConfigError('could not use the python bindings')
-            with open(exec_match.group(1), 'r') as content_file:
-                cmd = content_file.read()
+
+        with open(exec_match.group(1), 'r') as content_file:
+            cmd = content_file.read()
 
         exec(cmd)
         return completed.stderr
@@ -684,9 +688,8 @@ class TMod4Impl(TModImpl):
     MIN_VERSION = (4, 1)
 
     def __init__(self):
-        self._command = 'modulecmd python'
         try:
-            completed = osext.run_command(self._command + ' -V', check=True)
+            completed = osext.run_command(self.modulecmd + ' -V', check=True)
         except OSError as e:
             raise ConfigError(
                 'could not find a sane TMod4 installation') from e
@@ -715,6 +718,10 @@ class TMod4Impl(TModImpl):
 
     def name(self):
         return 'tmod4'
+
+    @property
+    def modulecmd(self):
+        return 'modulecmd python'
 
     def execute(self, cmd, *args, msg=None):
         command = ' '.join([self._command, cmd, *args])
@@ -810,15 +817,12 @@ class LModImpl(TMod4Impl):
     def name(self):
         return 'lmod'
 
-    def _module_command_failed(self, completed):
-        return completed.stdout.strip() == 'false'
-
     def available_modules(self, substr):
-        completed = self._run_module_command(
+        output = self.execute(
             '-t', 'avail', substr, msg='could not retrieve available modules'
         )
         ret = []
-        for line in completed.stderr.split('\n'):
+        for line in output.split('\n'):
             if not line or line[-1] == ':':
                 # Ignore empty lines and path entries
                 continue
@@ -835,15 +839,16 @@ class LModImpl(TMod4Impl):
             # collection
             return []
 
-        completed = self._run_module_command(
-            'show', str(module), msg="could not show module '%s'" % module)
+        output = self.execute(
+            'show', str(module), msg=f"could not show module '{module}'"
+        )
 
         # Lmod accepts both Lua and and Tcl syntax
         # The following test allows incorrect syntax, e.g., `conflict
         # ('package"(`, but we expect this to be caught by the Lmod framework
         # in earlier stages.
         ret = []
-        for m in re.finditer(r'conflict\s*(\S+)', completed.stderr):
+        for m in re.finditer(r'conflict\s*(\S+)', output):
             conflict_arg = m.group(1)
             if conflict_arg.startswith('('):
                 # Lua syntax
@@ -908,6 +913,10 @@ class NoModImpl(ModulesSystemImpl):
 
     def version(self):
         return '1.0'
+
+    @property
+    def modulecmd(self):
+        return ''
 
     def unload_all(self):
         pass
