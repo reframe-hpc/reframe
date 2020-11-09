@@ -28,6 +28,11 @@ void XMallocHost(void ** data, size_t size)
   checkError( cudaMallocHost(data, size) );
 }
 
+void XHostAlloc(void** pHost, size_t size, unsigned int flags)
+{
+  checkError( cudaHostAlloc(pHost, size, flags) );
+}
+
 void XFreeHost(void * data)
 {
   checkError( cudaFreeHost(data) );
@@ -96,6 +101,16 @@ void XDeviceDisablePeerAccess(int peer)
 void XMemcpyPeerAsync(void * dst, int peerDevId, void * src, int srcDevId, size_t size, cudaStream_t stream)
 {
   checkError( cudaMemcpyPeerAsync(dst, peerDevId, src, srcDevId, size, stream) );
+}
+
+void XMemcpy(void * in, void * out, size_t size, cudaMemcpyKind dir)
+{
+  checkError( cudaMemcpy(out, in, size, dir) );
+}
+
+void XHostGetDevicePointer(void** device, void* host, unsigned int flags)
+{
+  checkError( cudaHostGetDevicePointer(device, host, flags) );
 }
 
 int XGetLastError()

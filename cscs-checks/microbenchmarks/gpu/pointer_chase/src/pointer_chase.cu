@@ -6,6 +6,9 @@
 #include <chrono>
 #include <set>
 
+// Include the CUDA/HIP wrappers from the other test for now.
+#include "../../memory_bandwidth/src/Xdevice/runtime.hpp"
+
 /*
  ~~ GPU Linked list pointer chase algorithm ~~
  Times in clock cycles the time it takes to jump from one node to the next
@@ -52,26 +55,10 @@ void checkErrors()
 }
 
 
-static __device__ __forceinline__ uint32_t __clock()
-{
-  uint32_t x;
-  asm volatile ("mov.u32 %0, %%clock;" : "=r"(x) :: "memory");
-  return x;
-}
-
-
-static __device__ __forceinline__ uint32_t __smId()
-{
-  uint32_t x;
-  asm volatile ("mov.u32 %0, %%smid;" : "=r"(x) :: "memory");
-  return x;
-}
-
-
 static __device__ uint32_t __clockLatency()
 {
-  uint32_t start = __clock();
-  uint32_t end = __clock();
+  uint32_t start = __ownClock();
+  uint32_t end = __ownClock();
   return end-start;
 }
 
@@ -83,13 +70,18 @@ __global__ void clockLatency()
 }
 
 
+/*
+ * Linked list definitions
+ */
+
+// The node
 struct Node
 {
   Node * next = nullptr;
   char _padding[8*NODE_PADDING];
 };
 
-
+// List serial initializer
 __global__ void initialize_list(Node * head, int stride = 1)
 {
   // Set the head
@@ -105,7 +97,7 @@ __global__ void initialize_list(Node * head, int stride = 1)
 
 }
 
-
+// List random initializer
 __global__ void initialize_random_list(Node * buffer, uint32_t *indices)
 {
   // Set the head
@@ -121,7 +113,7 @@ __global__ void initialize_random_list(Node * buffer, uint32_t *indices)
 
 }
 
-
+// Simple list traverse without any timers
 __global__ void simple_traverse(Node * __restrict__ buffer, uint32_t headIndex)
 {
   uint32_t count = 0;
@@ -148,25 +140,38 @@ __global__ void simple_traverse(Node * __restrict__ buffer, uint32_t headIndex)
 # define __VOLATILE__
 #endif
 
-
+/*
+ * Timed list traversal. This implementation is recursive (because it's less code) so you have to
+ * watch out to not exceed the recursion limits. The functions are force-inlined, so the PTX code
+ * looks identical as if you were to unwrap the recursion manually.
+ *
+ * Depending on the compiler flags used, the timing can either measure each node jump, or the entire
+ * list traversal as a whole.
+ */
 template < unsigned int repeat >
 __device__ __forceinline__ void nextNode( __VOLATILE__ Node ** ptr, uint32_t * timings, Node ** ptrs)
 {
-#ifdef TIME_EACH_STEP
-  uint32_t t1 = __clock();
-#endif
+# ifdef TIME_EACH_STEP
+  uint32_t t1 = __ownClock();
+# endif
   (*ptr) = (*ptr)->next;
-#ifdef TIME_EACH_STEP
+# ifdef TIME_EACH_STEP
   (*ptrs) = (Node*)(*ptr);  // Data dep. to prevent ILP.
-  *timings = __clock() -t1; // Time the jump
-#endif
+  *timings = __ownClock() - t1; // Time the jump
+# endif
+
+  // Keep traversing the list.
   nextNode<repeat-1>(ptr, timings+1, ptrs+1);
 }
 
+// Specialize the function to break the recursion.
 template<>
 __device__ __forceinline__ void  nextNode<0>( __VOLATILE__ Node ** ptr, uint32_t * timings, Node ** ptrs){}
 
 
+/* List traversal to make a singly-linked list circular. This is just to have a data dependency and
+ * cover from a potential compiler optimization that might throw the list traversal away.
+ */
 __global__ void make_circular(Node * __restrict__ buffer, uint32_t headIndex)
 {
 
@@ -180,14 +185,14 @@ __global__ void make_circular(Node * __restrict__ buffer, uint32_t headIndex)
 
 #ifndef TIME_EACH_STEP
   // start timer
-  uint32_t start = __clock();
+  uint32_t start = __ownClock();
 #endif
 
   nextNode<NODES-1>(&ptr, timings, ptrs);
 
 #ifndef TIME_EACH_STEP
   // end cycle count
-  uint32_t end = __clock();
+  uint32_t end = __ownClock();
   sum = end - start;
 #else
   printf("Latency for each node jump:\n");
@@ -229,7 +234,7 @@ struct List
     printf(" - Number of nodes: %d:\n", n);
     printf(" - Total buffer size: %10.2f MB:\n", float(sizeof(Node)*buffSize)/1024.0/1024);
     clockLatency<<<1,1>>>();
-    cudaDeviceSynchronize();
+    XDeviceSynchronize();
   }
 
   void initialize(int mode=0)
@@ -243,7 +248,7 @@ struct List
     if (mode == 0)
     {
       initialize_list<<<1,1>>>(buffer, stride);
-      cudaDeviceSynchronize();
+      XDeviceSynchronize();
     }
     else
     {
@@ -282,29 +287,29 @@ struct List
         s.insert(currentIndex);
       }
       uint32_t * d_nodeIndices;
-      cudaMalloc((void**)&d_nodeIndices, sizeof(uint32_t)*NODES);
-      cudaMemcpy(d_nodeIndices, nodeIndices, sizeof(uint32_t)*NODES, cudaMemcpyHostToDevice);
+      XMalloc((void**)&d_nodeIndices, sizeof(uint32_t)*NODES);
+      XMemcpy(d_nodeIndices, nodeIndices, sizeof(uint32_t)*NODES, XMemcpyHostToDevice);
       initialize_random_list<<<1,1>>>(buffer, d_nodeIndices);
       headIndex = nodeIndices[0];
       free(nodeIndices);
-      cudaFree(d_nodeIndices);
+      XFree(d_nodeIndices);
     }
 
-    cudaDeviceSynchronize();
-    checkErrors();
+    XDeviceSynchronize();
+    //checkErrors();
   }
 
   void traverse()
   {
     simple_traverse<<<1,1>>>(buffer, headIndex);
-    cudaDeviceSynchronize();
-    checkErrors();
+    XDeviceSynchronize();
+    //checkErrors();
   }
   void time_traversal()
   {
     make_circular<<<1,1>>>(buffer, headIndex);
-    cudaDeviceSynchronize();
-    checkErrors();
+    XDeviceSynchronize();
+    //checkErrors();
   }
 
 };
@@ -315,11 +320,11 @@ struct DeviceList : public List
   DeviceList(size_t n, size_t buffSize, size_t stride) : List(buffSize, stride)
   {
     List::info(n, buffSize);
-    cudaMalloc((void**)&buffer, sizeof(Node)*buffSize);
+    XMalloc((void**)&buffer, sizeof(Node)*buffSize);
   }
   ~DeviceList()
   {
-    cudaFree(buffer);
+    XFree(buffer);
   }
 };
 
@@ -329,12 +334,12 @@ struct HostList : public List
   HostList(size_t n, size_t buffSize, size_t stride) : List(buffSize,stride)
   {
     List::info(n, buffSize);
-    cudaHostAlloc((void**)&h_buffer, sizeof(Node)*buffSize, cudaHostAllocMapped);
-    cudaHostGetDevicePointer((void**)&buffer, (void*)h_buffer, 0);
+    XHostAlloc((void**)&h_buffer, sizeof(Node)*buffSize, XHostAllocMapped);
+    XHostGetDevicePointer((void**)&buffer, (void*)h_buffer, 0);
   }
   ~HostList()
   {
-    cudaFreeHost(buffer);
+    XFreeHost(buffer);
   }
 };
 

@@ -5,6 +5,10 @@
 #include <unistd.h>
 #include <nvml.h>
 
+/*
+ * NVML - SMI tools
+ */
+
 static inline void nvmlCheck(nvmlReturn_t err)
 {
 # ifdef DEBUG
@@ -65,6 +69,28 @@ Smi::~Smi()
     nvmlCheck( nvmlShutdown() );
     this->nvmlIsActive = 0;
   }
+}
+
+
+/*
+ * ASM tools
+ */
+
+__device__ __forceinline__ uint32_t __ownClock()
+{
+  // Clock counter
+  uint32_t x;
+  asm volatile ("mov.u32 %0, %%clock;" : "=r"(x) :: "memory");
+  return x;
+}
+
+
+static __device__ __forceinline__ uint32_t __smId()
+{
+  // SM ID
+  uint32_t x;
+  asm volatile ("mov.u32 %0, %%smid;" : "=r"(x) :: "memory");
+  return x;
 }
 
 #endif
