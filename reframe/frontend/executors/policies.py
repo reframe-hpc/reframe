@@ -10,8 +10,6 @@ import math
 import sys
 import time
 
-from datetime import datetime
-
 from reframe.core.exceptions import (TaskDependencyError, TaskExit)
 from reframe.core.logging import (getlogger, VERBOSE)
 from reframe.frontend.executors import (ExecutionPolicy, RegressionTask,
