@@ -25,6 +25,7 @@ import reframe.core.warnings as warnings
 import reframe.frontend.argparse as argparse
 import reframe.frontend.check_filters as filters
 import reframe.frontend.dependencies as dependencies
+import reframe.frontend.runreport as runreport
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 
@@ -100,68 +101,6 @@ def format_check(check, check_deps, detailed=False):
     return '\n'.join(lines)
 
 
-def get_report_file(report_filename):
-    with open(report_filename) as fp:
-        try:
-            restart_report = json.load(fp)
-        except json.JSONDecodeError as e:
-            raise ReframeError(
-                f"could not load report file: '{restart_report!r}'"
-            ) from e
-
-    schema_filename = os.path.join(reframe.INSTALL_PREFIX, 'reframe',
-                                   'schemas', 'runreport.json')
-    with open(schema_filename) as f:
-        try:
-            schema = json.load(f)
-        except json.JSONDecodeError as e:
-            raise ReframeFatalError(
-                f"invalid schema: '{schema_filename}'"
-            ) from e
-
-    try:
-        jsonschema.validate(restart_report, schema)
-    except jsonschema.ValidationError as e:
-        raise ValueError(f"could not validate report file: "
-                         f"'{restart_report!r}'") from e
-
-    return restart_report
-
-
-def get_failed_checks_from_report(restart_report):
-    failed_checks = set()
-    for testcase in restart_report['runs'][-1]['testcases']:
-        if testcase['result'] == 'failure':
-            failed_checks.add(hash(testcase['name']) ^
-                              hash(testcase['system']) ^
-                              hash(testcase['environment']))
-
-    return failed_checks
-
-
-def get_filenames_from_report(restart_report):
-    return list({testcase['filename']
-                 for testcase in restart_report['runs'][-1]['testcases']})
-
-
-def restore(testcases, retry_report, printer):
-    stagedirs = {}
-    for run in retry_report['runs']:
-        for t in run['testcases']:
-            idx = (t['name'], t['system'], t['environment'])
-            stagedirs[idx] = t['stagedir']
-
-    for i, t in enumerate(testcases):
-        idx = (t.check.name, t.partition.fullname, t.environ.name)
-        try:
-            with open(os.path.join(stagedirs[idx],
-                                   '.rfm_testcase.json')) as f:
-                jsonext.load(f, rfm_obj=RegressionTask(t).check)
-        except (OSError, json.JSONDecodeError):
-            printer.warning(f'check {RegressionTask(t).check.name} '
-                            f'can not be restored')
-
-
 def format_env(envvars):
     ret = '[ReFrame Environment]\n'
     notset = '<not set>'
@@ -184,23 +123,6 @@ def list_checks(testcases, printer, detailed=False):
         '\n'.join(format_check(c, deps[c.name], detailed) for c in checks)
     )
     printer.info(f'Found {len(checks)} check(s)')
-
-
-def generate_report_filename(filepatt):
-    if '{sessionid}' not in filepatt:
-        return filepatt
-
-    search_patt = os.path.basename(filepatt).replace('{sessionid}', r'(\d+)')
-    new_id = -1
-    basedir = os.path.dirname(filepatt) or '.'
-    for filename in os.listdir(basedir):
-        match = re.match(search_patt, filename)
-        if match:
-            found_id = int(match.group(1))
-            new_id = max(found_id, new_id)
-
-    new_id += 1
-    return filepatt.format(sessionid=new_id)
 
 
 def logfiles_message():
@@ -654,23 +576,27 @@ def main():
 
     # Setup the check loader
     if options.retry_failed is not None:
+        # We need to load the failed checks only from a report
         if options.retry_failed:
             filename = options.retry_failed
         else:
-            filename = os_ext.expandvars(
-                site_config.get('general/report_file'))
+            filename = runreport.next_report_filename(
+                osext.expandvars(site_config.get('general/0/report_file')),
+                new=False
+            )
 
-        restart_report = get_report_file(filename)
-        failed_checks = get_failed_checks_from_report(restart_report)
-        load_paths = get_filenames_from_report(restart_report)
-        loader_recurse = False
+        report = runreport.load_report(filename)
+        check_search_path = list(report.slice('filename', unique=True))
+        check_search_recursive = False
     else:
-        loader_recurse = site_config.get('general/0/check_search_recursive')
-        load_paths = site_config.get('general/0/check_search_path')
+        check_search_recursive = site_config.get(
+            'general/0/check_search_recursive'
+        )
+        check_search_path = site_config.get('general/0/check_search_path')
 
     loader = RegressionCheckLoader(
-        load_path=load_paths,
-        recurse=loader_recurse,
+        load_path=check_search_path,
+        recurse=check_search_recursive,
         ignore_conflicts=site_config.get(
             'general/0/ignore_check_conflicts')
     )
@@ -682,7 +608,7 @@ def main():
     session_info = {
         'cmdline': ' '.join(sys.argv),
         'config_file': rt.site_config.filename,
-        'data_version': '1.0',
+        'data_version': '1.1',
         'hostname': socket.gethostname(),
         'prefix_output': rt.output_prefix,
         'prefix_stage': rt.stage_prefix,
@@ -790,18 +716,18 @@ def main():
                                                   options.skip_prgenv_check,
                                                   allowed_environs)
         if options.retry_failed is not None:
-            failed_cases = [tc for tc in testcases_unfiltered
-                            if tc.__hash__() in failed_checks]
+            # Filter the cases based on the report
+            failed_cases = []
+            for tc in testcases_unfiltered:
+                case = report.case(*tc)
+                if case and case['result'] == 'failure':
+                    failed_cases.append(tc)
 
-            cases_graph = dependencies.build_deps(failed_cases,
-                                                  testcases_unfiltered)
-            testcases = dependencies.toposort(cases_graph, is_subgraph=True)
-            restored_tests = set()
-            for c in testcases:
-                for d in c.deps:
-                    if d.__hash__() not in failed_checks:
-                        restored_tests.add(d)
-
+            testgraph = dependencies.build_deps(failed_cases,
+                                                testcases_unfiltered)
+            testcases = dependencies.toposort(testgraph, is_subgraph=True)
+            print(testcases)
+            testcases = report.restore_deps(testcases)
         else:
             testgraph = dependencies.build_deps(testcases_unfiltered)
             dependencies.validate_deps(testgraph)
@@ -898,9 +824,6 @@ def main():
                 session_info['time_start'] = time.strftime(
                     '%FT%T%z', time.localtime(time_start),
                 )
-                if options.retry_failed is not None:
-                    restore(restored_tests, restart_report, printer)
-
                 runner.runall(testcases, testcases_unfiltered)
             finally:
                 time_end = time.time()
@@ -941,7 +864,7 @@ def main():
                     'session_info': session_info,
                     'runs': run_stats
                 }
-                report_file = generate_report_filename(report_file)
+                report_file = runreport.next_report_filename(report_file)
                 try:
                     with open(report_file, 'w') as fp:
                         jsonext.dump(json_report, fp, indent=2)

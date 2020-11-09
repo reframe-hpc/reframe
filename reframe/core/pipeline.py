@@ -1754,6 +1754,15 @@ class RegressionTest(metaclass=RegressionTestMeta):
         return "%s(name='%s', prefix='%s')" % (type(self).__name__,
                                                self.name, self.prefix)
 
+    def __hash__(self):
+        return hash(self.name)
+
+    def __eq__(self, other):
+        if not isinstance(other, RegressionTest):
+            return NotImplemented
+
+        return self.name == other.name
+
 
 class RunOnlyRegressionTest(RegressionTest, special=True):
     '''Base class for run-only regression tests.
