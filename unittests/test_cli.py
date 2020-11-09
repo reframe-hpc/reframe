@@ -164,6 +164,17 @@ def test_report_file_with_sessionid(run_reframe, tmp_path):
     assert os.path.exists(tmp_path / 'rfm-report-0.json')
 
 
+def test_report_ends_with_newline(run_reframe, tmp_path):
+    returncode, stdout, _ = run_reframe(
+        more_options=[
+            f'--report-file={tmp_path / "rfm-report.json"}'
+        ]
+    )
+    assert returncode == 0
+    with open(tmp_path / 'rfm-report.json') as fp:
+        assert fp.read()[-1] == '\n'
+
+
 def test_check_submit_success(run_reframe, remote_exec_ctx):
     # This test will run on the auto-detected system
     partition, environ = remote_exec_ctx

@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import io
 import json
 import jsonschema
 import os
@@ -13,10 +14,11 @@ import time
 
 import reframe
 import reframe.core.runtime as rt
-import reframe.frontend.dependency as dependency
+import reframe.frontend.dependencies as dependencies
 import reframe.frontend.executors as executors
 import reframe.frontend.executors.policies as policies
 import reframe.utility as util
+import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 from reframe.core.exceptions import (AbortTaskError,
                                      JobNotStartedError,
@@ -89,9 +91,9 @@ def make_cases(make_loader):
 
         cases = executors.generate_testcases(checks, *args, **kwargs)
         if sort:
-            depgraph = dependency.build_deps(cases)
-            dependency.validate_deps(depgraph)
-            cases = dependency.toposort(depgraph)
+            depgraph = dependencies.build_deps(cases)
+            dependencies.validate_deps(depgraph)
+            cases = dependencies.toposort(depgraph)
 
         return cases
 
@@ -122,7 +124,7 @@ def _validate_runreport(report):
     with open(schema_filename) as fp:
         schema = json.loads(fp.read())
 
-    jsonschema.validate(report, schema)
+    jsonschema.validate(json.loads(report), schema)
 
 
 def test_runall(make_runner, make_cases, common_exec_ctx):
@@ -163,7 +165,14 @@ def test_runall(make_runner, make_cases, common_exec_ctx):
         },
         'runs': run_stats
     }
-    _validate_runreport(report)
+
+    # We dump the report first, in order to get any object conversions right
+    final_report = None
+    with io.StringIO() as fp:
+        jsonext.dump(report, fp, indent=2)
+        final_report = fp.getvalue()
+
+    _validate_runreport(final_report)
 
 
 def test_runall_skip_system_check(make_runner, make_cases, common_exec_ctx):

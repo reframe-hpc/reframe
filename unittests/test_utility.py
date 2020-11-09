@@ -80,6 +80,37 @@ def test_copytree_src_parent_of_dst(tmp_path):
         osext.copytree(str(src_path), str(dst_path))
 
 
+@pytest.fixture(params=['dirs_exist_ok=True', 'dirs_exist_ok=False'])
+def dirs_exist_ok(request):
+    return 'True' in request.param
+
+
+def test_copytree_dst_notdir(tmp_path, dirs_exist_ok):
+    dir_src = tmp_path / 'src'
+    dir_src.mkdir()
+    dst = tmp_path / 'dst'
+    dst.touch()
+    with pytest.raises(FileExistsError, match=fr'{dst}'):
+        osext.copytree(str(dir_src), str(dst), dirs_exist_ok=dirs_exist_ok)
+
+
+def test_copytree_src_notdir(tmp_path, dirs_exist_ok):
+    src = tmp_path / 'src'
+    src.touch()
+    dst = tmp_path / 'dst'
+    dst.mkdir()
+    with pytest.raises(NotADirectoryError, match=fr'{src}'):
+        osext.copytree(str(src), str(dst), dirs_exist_ok=dirs_exist_ok)
+
+
+def test_copytree_src_does_not_exist(tmp_path, dirs_exist_ok):
+    src = tmp_path / 'src'
+    dst = tmp_path / 'dst'
+    dst.mkdir()
+    with pytest.raises(FileNotFoundError, match=fr'{src}'):
+        osext.copytree(str(src), str(dst), dirs_exist_ok=dirs_exist_ok)
+
+
 @pytest.fixture
 def rmtree(tmp_path):
     testdir = tmp_path / 'test'
@@ -373,6 +404,26 @@ def test_virtual_copy_linkparent(direntries):
     file_links = ['..']
     with pytest.raises(ValueError):
         osext.copytree_virtual(*direntries, file_links, dirs_exist_ok=True)
+
+
+@pytest.fixture(params=['symlinks=True', 'symlinks=False'])
+def symlinks(request):
+    return 'True' in request.param
+
+
+def test_virtual_copy_symlinks_dirs_exist(tmp_path, symlinks):
+    src = tmp_path / 'src'
+    src.mkdir()
+    dst = tmp_path / 'dst'
+    dst.mkdir()
+    foo = src / 'foo'
+    foo.touch()
+    foo_link = src / 'foo.link'
+    foo_link.symlink_to(foo)
+    osext.copytree_virtual(src, dst, symlinks=symlinks, dirs_exist_ok=True)
+    assert (dst / 'foo').exists()
+    assert (dst / 'foo.link').exists()
+    assert (dst / 'foo.link').is_symlink() == symlinks
 
 
 def test_import_from_file_load_relpath():

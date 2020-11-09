@@ -579,7 +579,7 @@ You may define different logger objects per system but *not* per partition.
 .. js:attribute:: .logging[].level
 
    :required: No
-   :default: ``"debug"``
+   :default: ``"undefined"``
 
    The level associated with this logger object.
    There are the following levels in decreasing severity order:
@@ -590,8 +590,17 @@ You may define different logger objects per system but *not* per partition.
    - ``info``: Informational messages.
    - ``verbose``: More informational messages.
    - ``debug``: Debug messages.
+   - ``debug2``: Further debug messages.
+   - ``undefined``: This is the lowest level; do not filter any message.
 
    If a message is logged by the framework, its severity level will be checked by the logger and if it is higher from the logger's level, it will be passed down to its handlers.
+
+
+   .. versionadded:: 3.3
+      The ``debug2`` and ``undefined`` levels are added.
+
+   .. versionchanged:: 3.3
+      The default level is now ``undefined``.
 
 
 .. js:attribute:: .logging[].handlers

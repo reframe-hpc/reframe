@@ -8,6 +8,7 @@ import re
 
 import reframe.utility as utility
 from reframe.core.backends import (getlauncher, getscheduler)
+from reframe.core.logging import getlogger
 from reframe.core.modules import ModulesSystem
 from reframe.core.environments import (Environment, ProgEnvironment)
 
@@ -22,6 +23,7 @@ class SystemPartition:
     def __init__(self, parent, name, sched_type, launcher_type,
                  descr, access, container_environs, resources,
                  local_env, environs, max_jobs):
+        getlogger().debug(f'Initializing system partition {name!r}')
         self._parent_system = parent
         self._name = name
         self._sched_type = sched_type
@@ -155,7 +157,7 @@ class SystemPartition:
            Please use :attr:`launcher_type` instead.
         '''
 
-        from reframe.core.exceptions import user_deprecation_warning
+        from reframe.core.warnings import user_deprecation_warning
 
         user_deprecation_warning("the 'launcher' attribute is deprecated; "
                                  "please use 'launcher_type' instead")
@@ -245,6 +247,7 @@ class System:
     def __init__(self, name, descr, hostnames, modules_system,
                  preload_env, prefix, outputdir,
                  resourcesdir, stagedir, partitions):
+        getlogger().debug(f'Initializing system {name!r}')
         self._name = name
         self._descr = descr
         self._hostnames = hostnames

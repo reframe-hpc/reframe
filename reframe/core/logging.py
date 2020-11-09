@@ -34,6 +34,7 @@ WARNING  = 30
 INFO     = 20
 VERBOSE  = 19
 DEBUG    = 10
+DEBUG2   = 9
 NOTSET   = 0
 
 
@@ -44,6 +45,7 @@ _log_level_names = {
     INFO:     'info',
     VERBOSE:  'verbose',
     DEBUG:    'debug',
+    DEBUG2:   'debug2',
     NOTSET:   'undefined'
 }
 
@@ -54,6 +56,7 @@ _log_level_values = {
     'info':      INFO,
     'verbose':   VERBOSE,
     'debug':     DEBUG,
+    'debug2':    DEBUG2,
     'undefined': NOTSET,
     'notset':    NOTSET
 }
@@ -376,6 +379,9 @@ class Logger(logging.Logger):
     def debug(self, message, *args, **kwargs):
         self.log(DEBUG, message, *args, **kwargs)
 
+    def debug2(self, message, *args, **kwargs):
+        self.log(DEBUG2, message, *args, **kwargs)
+
 
 class LoggerAdapter(logging.LoggerAdapter):
     def __init__(self, logger=None, check=None):
@@ -475,6 +481,9 @@ class LoggerAdapter(logging.LoggerAdapter):
     def log(self, level, msg, *args, **kwargs):
         if self.logger:
             super().log(level, msg, *args, **kwargs)
+
+    def debug2(self, message, *args, **kwargs):
+        self.log(DEBUG2, message, *args, **kwargs)
 
     def verbose(self, message, *args, **kwargs):
         self.log(VERBOSE, message, *args, **kwargs)

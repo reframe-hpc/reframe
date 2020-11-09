@@ -97,7 +97,7 @@ def run_command_async(cmd,
 
     if log:
         from reframe.core.logging import getlogger
-        getlogger().debug('executing OS command: ' + cmd)
+        getlogger().debug2(f'[CMD] {cmd!r}')
 
     if not shell:
         cmd = shlex.split(cmd)
@@ -156,12 +156,26 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=shutil.copy2,
         return shutil.copytree(src, dst, symlinks, ignore, copy_function,
                                ignore_dangling_symlinks)
 
-    # dst exists; manually descend into the subdirectories
+    # dst exists; manually descend into the subdirectories, but do some sanity
+    # checking first
+
+    # We raise the following errors to comply with the copytree()'s behaviour
+
+    if not os.path.isdir(dst):
+        raise FileExistsError(errno.EEXIST, 'File exists', dst)
+
+    if not os.path.exists(src):
+        raise FileNotFoundError(errno.ENOENT, 'No such file or directory', src)
+
+    if not os.path.isdir(src):
+        raise NotADirectoryError(errno.ENOTDIR, 'Not a directory', src)
+
     _, subdirs, files = list(os.walk(src))[0]
     ignore_paths = ignore(src, os.listdir(src)) if ignore else {}
     for f in files:
         if f not in ignore_paths:
-            copy_function(os.path.join(src, f), os.path.join(dst, f))
+            copy_function(os.path.join(src, f), os.path.join(dst, f),
+                          follow_symlinks=not symlinks)
 
     for d in subdirs:
         if d not in ignore_paths:
