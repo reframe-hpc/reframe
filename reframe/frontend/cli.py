@@ -3,24 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-from reframe.frontend.printer import PrettyPrinter
-from reframe.frontend.loader import RegressionCheckLoader
-from reframe.frontend.executors.policies import (SerialExecutionPolicy,
-                                                 AsynchronousExecutionPolicy)
-from reframe.frontend.executors import Runner, generate_testcases
-import reframe.utility.osext as osext
-import reframe.utility.jsonext as jsonext
-import reframe.frontend.dependencies as dependencies
-from reframe.frontend.executors import (RegressionTask, Runner,
-                                        generate_testcases)
-from reframe.core.exceptions import (
-    EnvironError, ConfigError, ReframeError,
-    ReframeDeprecationWarning, ReframeFatalError,
-    format_exception, SystemAutodetectionError
-)
-import reframe.utility.json as jsonext
-import reframe.utility.os_ext as os_ext
-import reframe.frontend.dependency as dependency
 import inspect
 import itertools
 import json
@@ -42,6 +24,18 @@ import reframe.core.runtime as runtime
 import reframe.core.warnings as warnings
 import reframe.frontend.argparse as argparse
 import reframe.frontend.check_filters as filters
+import reframe.frontend.dependencies as dependencies
+import reframe.utility.jsonext as jsonext
+import reframe.utility.osext as osext
+
+
+from reframe.frontend.printer import PrettyPrinter
+from reframe.frontend.loader import RegressionCheckLoader
+from reframe.frontend.executors.policies import (SerialExecutionPolicy,
+                                                 AsynchronousExecutionPolicy)
+from reframe.frontend.executors import Runner, generate_testcases
+from reframe.frontend.executors import (RegressionTask, Runner,
+                                        generate_testcases)
 
 
 def format_check(check, check_deps, detailed=False):
@@ -799,9 +793,9 @@ def main():
             failed_cases = [tc for tc in testcases_unfiltered
                             if tc.__hash__() in failed_checks]
 
-            cases_graph = dependency.build_deps(failed_cases,
-                                                testcases_unfiltered)
-            testcases = dependency.toposort(cases_graph, is_subgraph=True)
+            cases_graph = dependencies.build_deps(failed_cases,
+                                                  testcases_unfiltered)
+            testcases = dependencies.toposort(cases_graph, is_subgraph=True)
             restored_tests = set()
             for c in testcases:
                 for d in c.deps:
@@ -809,9 +803,9 @@ def main():
                         restored_tests.add(d)
 
         else:
-            testgraph = dependency.build_deps(testcases_unfiltered)
-            dependency.validate_deps(testgraph)
-            testcases = dependency.toposort(testgraph)
+            testgraph = dependencies.build_deps(testcases_unfiltered)
+            dependencies.validate_deps(testgraph)
+            testcases = dependencies.toposort(testgraph)
 
         # FIXME: These two should be reconsidered
         printer.debug(f'Generated {len(testcases)} test case(s)')

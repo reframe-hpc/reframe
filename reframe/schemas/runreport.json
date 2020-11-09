@@ -49,7 +49,7 @@
                                         "exc_type": {"type": "string"},
                                         "exc_value": {"type": "string"},
                                         "traceback": {
-                                            "type": "array",
+                                            "type": ["array", "null"],
                                             "items": {"type": "string"}
                                         }
                                     },

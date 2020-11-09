@@ -16,7 +16,7 @@ import reframe.core.environments as env
 import reframe.core.logging as logging
 import reframe.core.runtime as runtime
 import reframe.frontend.dependencies as dependencies
-import reframe.utility.json as jsonext
+import reframe.utility.jsonext as jsonext
 from reframe.core.exceptions import (AbortTaskError, JobNotStartedError,
                                      ReframeForceExitError, TaskExit)
 from reframe.core.schedulers.local import LocalJobScheduler

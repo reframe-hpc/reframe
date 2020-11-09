@@ -146,7 +146,7 @@ def test_check_success(run_reframe, tmp_path):
     assert os.path.exists(tmp_path / 'report.json')
 
 
-def test_check_retry_failed(run_reframe, tmp_path, logfile):
+def test_check_retry_failed(run_reframe, tmp_path):
     returncode, stdout, _ = run_reframe(
         checkpath=['unittests/resources/checks_unlisted/deps_complex.py'],
     )
@@ -157,11 +157,11 @@ def test_check_retry_failed(run_reframe, tmp_path, logfile):
     with open(f'{tmp_path}/report.json') as fp:
         report = json.load(fp)
 
-    report_summary = {t['name']: t['fail_phase']
-                      for run in report['runs']
-                      for t in run['testcases']
-                      }
-
+    report_summary = {
+        t['name']: t['fail_phase']
+        for run in report['runs']
+        for t in run['testcases']
+    }
     assert report_summary['T2'] == 'sanity'
     assert report_summary['T7'] == 'startup'
     assert report_summary['T8'] == 'setup'
