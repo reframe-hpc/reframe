@@ -48,24 +48,19 @@ def test_searchpath(modules_system):
 
 
 @pytest.fixture
-def module_collection(modules_system, tmp_path):
-    import secrets
-
+def module_collection(modules_system, tmp_path, monkeypatch):
     if modules_system.name not in ['tmod4', 'lmod']:
         pytest.skip(f'test unsupported with {modules_system.name!r}')
 
-    # Generate a "random" name for the collection, because it is going to be
-    # placed under the $HOME/.module or $HOME/.lmod.d
-    coll_name = secrets.token_hex(8)
-    coll_name = 'lala'
+    # Both Lmod and Tmod4 place collections under the user's HOME directory,
+    # that's why we monkeypatch it
+    monkeypatch.setenv('HOME', str(tmp_path))
+    coll_name = 'test_collection'
 
     # Create modules collections with conflicting modules
     modules_system.load_module('testmod_base')
     modules_system.load_module('testmod_foo')
     modules_system.execute('save', coll_name)
-    # completed = osext.run_command(f'module save {coll_name}', shell=True)
-    # print(completed.stderr)
-    # print(completed.stdout)
     modules_system.unload_module('testmod_foo')
     modules_system.unload_module('testmod_base')
 

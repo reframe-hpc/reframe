@@ -15,7 +15,7 @@ RUN \
   apt-get -y install gcc && \
   apt-get -y install make && \
   apt-get -y install git && \
-  apt-get -y install python3
+  apt-get -y install python3 python3-pip
 
 # Required utilities
 RUN apt-get -y install wget
@@ -33,9 +33,7 @@ ENV BASH_ENV=/usr/local/lmod/lmod/init/profile
 
 # Install ReFrame from the current directory
 COPY . /root/reframe/
-RUN \
-  cd reframe \
-  ./bootstrap.sh
+RUN cd reframe && ./bootstrap.sh
 
 WORKDIR /root/reframe
 CMD ["/bin/bash", "-c", "./test_reframe.py --rfm-user-config=ci-scripts/configs/lmod.py -v"]

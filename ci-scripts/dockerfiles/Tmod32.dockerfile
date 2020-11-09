@@ -21,9 +21,7 @@ RUN yum -y install environment-modules
 
 # Install ReFrame from the current directory
 COPY . /root/reframe/
-RUN \
-  cd reframe \
-  ./bootstrap.sh
+RUN cd reframe && ./bootstrap.sh
 
 WORKDIR /root/reframe
 CMD ["/bin/bash", "-c", "./test_reframe.py --rfm-user-config=ci-scripts/configs/tmod32.py -v"]
