@@ -224,7 +224,20 @@ def test_is_url():
     assert not osext.is_url(repo_ssh)
 
 
-def test_git_repo_hash(monkeypatch):
+@pytest.fixture
+def no_git_installed():
+    try:
+        completed = osext.run_command(f'git --version', check=True, log=False)
+    except (SpawnedProcessError, FileNotFoundError):
+        return True
+
+    return False
+
+
+def test_git_repo_hash(monkeypatch, no_git_installed):
+    if no_git_installed:
+        pytest.skip('no git installation found on system')
+
     # A git branch hash consists of 8(short) or 40 characters.
     assert len(osext.git_repo_hash()) == 8
     assert len(osext.git_repo_hash(short=False)) == 40
@@ -236,7 +249,10 @@ def test_git_repo_hash(monkeypatch):
     assert osext.git_repo_hash() is None
 
 
-def test_git_repo_exists():
+def test_git_repo_exists(no_git_installed):
+    if no_git_installed:
+        pytest.skip('no git installation found on system')
+
     assert osext.git_repo_exists('https://github.com/eth-cscs/reframe.git',
                                  timeout=3)
     assert not osext.git_repo_exists('reframe.git', timeout=3)
