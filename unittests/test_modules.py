@@ -262,7 +262,7 @@ def test_module_construction():
     m = modules.Module('foo/1.2')
     assert m.name == 'foo'
     assert m.version == '1.2'
-    assert m.collection == False
+    assert m.collection is False
     with pytest.raises(ValueError):
         modules.Module('')
 
@@ -276,7 +276,7 @@ def test_module_construction():
         modules.Module(23)
 
     m = modules.Module('foo/1.2', collection=True)
-    assert m.collection == True
+    assert m.collection is True
 
 
 def test_module_equal():
