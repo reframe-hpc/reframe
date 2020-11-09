@@ -42,7 +42,7 @@ checked_exec()
 run_tutorial_checks()
 {
     cmd="./bin/reframe -C tutorials/config/settings.py -J account=jenscscs \
---save-log-files -r -c tutorials/ -R -x HelloThreadedExtendedTest $@"
+--save-log-files --flex-alloc-nodes=2 -r -c tutorials/ -R -x HelloThreadedExtendedTest $@"
     echo "[INFO] Running tutorial checks with \`$cmd'"
     checked_exec $cmd
 }
@@ -125,11 +125,9 @@ if [ "X${MODULEUSE}" != "X" ]; then
     module use ${MODULEUSE}
 fi
 
+parallel_opts="--workers=auto --forked"
 if [[ $(hostname) =~ tsa ]]; then
-    # FIXME: Temporary workaround until we have a reframe module on Tsa
-    module load python
-else
-    module load reframe
+    parallel_opts=""
 fi
 
 # Bootstrap ReFrame
@@ -144,8 +142,8 @@ echo "[INFO] Running unit tests on $(hostname) in ${CI_FOLDER}"
 if [ $CI_GENERIC -eq 1 ]; then
     # Run unit tests for the public release
     echo "[INFO] Running unit tests with generic settings"
-    checked_exec ./test_reframe.py \
-                 -W=error::reframe.core.exceptions.ReframeDeprecationWarning -ra
+    checked_exec ./test_reframe.py ${parallel_opts} \
+                 -W=error::reframe.core.warnings.ReframeDeprecationWarning -ra
     checked_exec ! ./bin/reframe.py --system=generic -l 2>&1 | \
         grep -- '--- Logging error ---'
 elif [ $CI_TUTORIAL -eq 1 ]; then
@@ -169,21 +167,23 @@ elif [ $CI_TUTORIAL -eq 1 ]; then
 else
     # Run unit tests with the scheduler backends
     tempdir=$(mktemp -d -p $SCRATCH)
+    echo "[INFO] Using temporary directory: $tempdir"
     if [[ $(hostname) =~ dom ]]; then
         PATH_save=$PATH
         export PATH=/apps/dom/UES/karakasv/slurm-wrappers/bin:$PATH
         for backend in slurm pbs torque; do
             echo "[INFO] Running unit tests with ${backend}"
-            checked_exec ./test_reframe.py --rfm-user-config=config/cscs-ci.py \
-                         -W=error::reframe.core.exceptions.ReframeDeprecationWarning \
-                         --rfm-user-system=dom:${backend} --basetemp=$tempdir -ra
+            TMPDIR=$tempdir checked_exec ./test_reframe.py ${parallel_opts} \
+                         --rfm-user-config=config/cscs-ci.py \
+                         -W=error::reframe.core.warnings.ReframeDeprecationWarning \
+                         --rfm-user-system=dom:${backend} -ra
         done
         export PATH=$PATH_save
     else
         echo "[INFO] Running unit tests"
-        checked_exec ./test_reframe.py --rfm-user-config=config/cscs-ci.py \
-                     -W=error::reframe.core.exceptions.ReframeDeprecationWarning \
-                     --basetemp=$tempdir -ra
+        TMPDIR=$tempdir checked_exec ./test_reframe.py ${parallel_opts} \
+                     --rfm-user-config=config/cscs-ci.py \
+                     -W=error::reframe.core.warnings.ReframeDeprecationWarning -ra
     fi
 
     if [ $CI_EXITCODE -eq 0 ]; then

@@ -27,12 +27,24 @@
         },
         "modules_list": {
             "type": "array",
-            "items": {"type": "string"}
+            "items": {
+                "anyOf": [
+                    {"type": "string"},
+                    {
+                        "type": "object",
+                        "properties": {
+                            "name": {"type": "string"},
+                            "collection": {"type": "boolean"}
+                        },
+                        "required": ["name"]
+                    }
+                ]
+            }
         },
         "loglevel": {
             "type": "string",
-            "enum": ["critical", "error", "warning",
-                     "info", "verbose", "debug"]
+            "enum": ["critical", "error", "warning", "info",
+                     "verbose", "debug", "debug2", "undefined"]
         },
         "handler_common": {
             "type": "object",
@@ -60,8 +72,7 @@
                                 {"type": "string"}
                             ]
                         }
-                    },
-                    "required": ["name"]
+                    }
                 }
             ]
         },
@@ -417,12 +428,13 @@
         "general/use_login_shell": false,
         "general/user_modules": [],
         "general/verbose": 0,
-        "logging/level": "debug",
+        "logging/level": "undefined",
         "logging/target_systems": ["*"],
         "logging/handlers*/*_level": "info",
         "logging/handlers*/*_format": "%(message)s",
         "logging/handlers*/*_datefmt": "%FT%T",
         "logging/handlers*/file_append": false,
+        "logging/handlers*/file_name": "",
         "logging/handlers*/file_timestamp": false,
         "logging/handlers*/filelog_append": true,
         "logging/handlers*/filelog_basedir": "./perflogs",

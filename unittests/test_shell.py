@@ -10,7 +10,7 @@ import tempfile
 import time
 
 import reframe.core.shell as shell
-import reframe.utility.os_ext as os_ext
+import reframe.utility.osext as osext
 from reframe.core.exceptions import SpawnedProcessError
 
 
@@ -86,7 +86,7 @@ def test_trap_error(script_file):
         gen.write('echo hello')
 
     with pytest.raises(SpawnedProcessError) as cm:
-        os_ext.run_command(str(script_file), check=True)
+        osext.run_command(str(script_file), check=True)
 
     exc = cm.value
     assert 'hello' not in exc.stdout
@@ -98,7 +98,7 @@ def test_trap_exit(script_file):
     with shell.generate_script(script_file, trap_exit=True) as gen:
         gen.write('echo hello')
 
-    completed = os_ext.run_command(str(script_file), check=True)
+    completed = osext.run_command(str(script_file), check=True)
     assert 'hello' in completed.stdout
     assert 0 == completed.returncode
     assert '-reframe: script exiting with exit code: 0' in completed.stdout
@@ -110,7 +110,7 @@ def test_trap_signal(script_file):
         gen.write('echo hello')
 
     f_stdout = tempfile.NamedTemporaryFile(mode='w+', delete=False)
-    proc = os_ext.run_command_async(str(script_file), stdout=f_stdout,
+    proc = osext.run_command_async(str(script_file), stdout=f_stdout,
                                     start_new_session=True)
 
     # Yield for some time to allow the script to start

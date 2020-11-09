@@ -28,6 +28,28 @@ from . import OrderedSet
 
 
 def run_command(cmd, check=False, timeout=None, shell=False, log=True):
+    '''Run command synchronously.
+
+    This function will block until the command executes or the timeout is
+    reached. It essentially calls :func:`run_command_async` and waits for the
+    command's completion.
+
+    :arg cmd: The command to execute as a string or a sequence. See
+        :func:`run_command_async` for more details.
+    :arg check: Raise an error if the command exits with a non-zero exit code.
+    :arg timeout: Timeout in seconds.
+    :arg shell: Spawn a new shell to execute the command.
+    :arg log: Log the execution of the command through ReFrame's logging
+        facility.
+    :returns: A :py:class:`subprocess.CompletedProcess` object with
+        information about the command's outcome.
+    :raises reframe.core.exceptions.SpawnedProcessError: If ``check``
+        is :class:`True` and the command fails.
+    :raises reframe.core.exceptions.SpawnedProcessTimeout: If the command
+        times out.
+
+    '''
+
     try:
         proc = run_command_async(cmd, shell=shell, start_new_session=True,
                                  log=log)
@@ -38,7 +60,7 @@ def run_command(cmd, check=False, timeout=None, shell=False, log=True):
                                     proc.stdout.read(),
                                     proc.stderr.read(), timeout) from None
 
-    completed = subprocess.CompletedProcess(args=shlex.split(cmd),
+    completed = subprocess.CompletedProcess(cmd,
                                             returncode=proc.returncode,
                                             stdout=proc_stdout,
                                             stderr=proc_stderr)
@@ -57,11 +79,33 @@ def run_command_async(cmd,
                       shell=False,
                       log=True,
                       **popen_args):
+    '''Run command asynchronously.
+
+    A wrapper to :py:class:`subprocess.Popen` with the following tweaks:
+
+    - It always passes ``universal_newlines=True`` to :py:class:`Popen`.
+    - If ``shell=False`` and ``cmd`` is a string, it will lexically split
+      ``cmd`` using ``shlex.split(cmd)``.
+
+    :arg cmd: The command to run either as a string or a sequence of arguments.
+    :arg stdout: Same as the corresponding argument of :py:class:`Popen`.
+        Default is :py:obj:`subprocess.PIPE`.
+    :arg stderr: Same as the corresponding argument of :py:class:`Popen`.
+        Default is :py:obj:`subprocess.PIPE`.
+    :arg shell: Same as the corresponding argument of :py:class:`Popen`.
+    :arg log: Log the execution of the command through ReFrame's logging
+        facility.
+    :arg popen_args: Any additional arguments to be passed to
+        :py:class:`Popen`.
+    :returns: A new :py:class:`Popen` object.
+
+    '''
+
     if log:
         from reframe.core.logging import getlogger
-        getlogger().debug('executing OS command: ' + cmd)
+        getlogger().debug2(f'[CMD] {cmd!r}')
 
-    if not shell:
+    if isinstance(cmd, str) and not shell:
         cmd = shlex.split(cmd)
 
     return subprocess.Popen(args=cmd,
@@ -75,7 +119,7 @@ def run_command_async(cmd,
 def osuser():
     '''Return the name of the current OS user.
 
-    If the name cannot be retrieved, :class:`None` will be returned.
+    If the user name cannot be retrieved, :class:`None` will be returned.
     '''
     try:
         return getpass.getuser()
@@ -86,7 +130,7 @@ def osuser():
 def osgroup():
     '''Return the group name of the current OS user.
 
-    If the name cannot be retrieved, :class:`None` will be returned.
+    If the group name cannot be retrieved, :class:`None` will be returned.
     '''
     try:
         return grp.getgrgid(os.getgid()).gr_name
@@ -96,7 +140,10 @@ def osgroup():
 
 def copytree(src, dst, symlinks=False, ignore=None, copy_function=shutil.copy2,
              ignore_dangling_symlinks=False, dirs_exist_ok=False):
-    '''Compatibility version of :py:func:`shutil.copytree()` for Python <= 3.8
+    '''Compatibility version of :py:func:`shutil.copytree` for Python < 3.8.
+
+    This function will automatically delegate to :py:func:`shutil.copytree`
+    for Python versions >= 3.8.
     '''
     if src == os.path.commonpath([src, dst]):
         raise ValueError("cannot copy recursively the parent directory "
@@ -115,12 +162,26 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=shutil.copy2,
         return shutil.copytree(src, dst, symlinks, ignore, copy_function,
                                ignore_dangling_symlinks)
 
-    # dst exists; manually descend into the subdirectories
+    # dst exists; manually descend into the subdirectories, but do some sanity
+    # checking first
+
+    # We raise the following errors to comply with the copytree()'s behaviour
+
+    if not os.path.isdir(dst):
+        raise FileExistsError(errno.EEXIST, 'File exists', dst)
+
+    if not os.path.exists(src):
+        raise FileNotFoundError(errno.ENOENT, 'No such file or directory', src)
+
+    if not os.path.isdir(src):
+        raise NotADirectoryError(errno.ENOTDIR, 'Not a directory', src)
+
     _, subdirs, files = list(os.walk(src))[0]
     ignore_paths = ignore(src, os.listdir(src)) if ignore else {}
     for f in files:
         if f not in ignore_paths:
-            copy_function(os.path.join(src, f), os.path.join(dst, f))
+            copy_function(os.path.join(src, f), os.path.join(dst, f),
+                          follow_symlinks=not symlinks)
 
     for d in subdirs:
         if d not in ignore_paths:
@@ -131,16 +192,21 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=shutil.copy2,
     return dst
 
 
-def copytree_virtual(src, dst, file_links=[],
+def copytree_virtual(src, dst, file_links=None,
                      symlinks=False, copy_function=shutil.copy2,
                      ignore_dangling_symlinks=False, dirs_exist_ok=False):
-    '''Copy `dst` to `src`, but create symlinks for the files in `file_links`.
+    '''Copy ``src`` to ``dst``, but create symlinks for the files listed in
+    ``file_links``.
 
-    If `file_links` is empty, this is equivalent to `copytree()`.  The rest of
-    the arguments are passed as-is to `copytree()`.  Paths in `file_links` must
-    be relative to `src`. If you try to pass `.` in `file_links`, `OSError`
-    will be raised.'''
+    If ``file_links`` is empty or :class:`None`, this is equivalent to
+    :func:`copytree()`. The rest of the arguments are passed as-is to
+    :func:`copytree()`. Paths in ``file_links`` must be relative to ``src``.
+    If you try to pass ``'.'`` in ``file_links``, an :py:class:`OSError` will
+    be raised.
 
+    '''
+
+    file_links = file_links or []
     if not hasattr(file_links, '__iter__'):
         raise TypeError('expecting an iterable as file_links')
 
@@ -193,24 +259,31 @@ def copytree_virtual(src, dst, file_links=[],
 
 
 def rmtree(*args, max_retries=3, **kwargs):
-    '''Persistent version of ``shutil.rmtree()``.
+    '''Persistent version of :py:func:`shutil.rmtree`.
 
-    If ``shutil.rmtree()`` fails with ``ENOTEMPTY`` or ``EBUSY``, retry up to
-    ``max_retries`times to delete the directory.
+    If :py:func:`shutil.rmtree` fails with ``ENOTEMPTY`` or ``EBUSY``, ignore
+    the error and retry up to ``max_retries`` times to delete the directory.
 
-    This version of ``rmtree()`` is mostly provided to work around a race
+    This version of :func:`rmtree` is mostly provided to work around a race
     condition between when ``sacct`` reports a job as completed and when the
-    Slurm epilog runs. See https://github.com/eth-cscs/reframe/issues/291 for
-    more information.
-    Furthermore, it offers a work around for nfs file systems where a ``.nfs*``
-    file may be present during the ``rmtree()`` call which throws a busy
-    device/resource error. See https://github.com/eth-cscs/reframe/issues/712
-    for more information.
+    Slurm epilog runs. See `gh #291
+    <https://github.com/eth-cscs/reframe/issues/291>`__ for more information.
+    Furthermore, it offers a work around for NFS file systems where stale
+    file handles may be present during the :func:`rmtree` call, causing it to
+    throw a busy device/resource error. See `gh #712
+    <https://github.com/eth-cscs/reframe/issues/712>`__ for more information.
 
-    ``args`` and ``kwargs`` are passed through to ``shutil.rmtree()``.
+    ``args`` and ``kwargs`` are passed through to :py:func:`shutil.rmtree`.
 
-    If ``onerror``  is specified in  ``kwargs`` and is not  :class:`None`, this
-    function is completely equivalent to ``shutil.rmtree()``.
+    If ``onerror`` is specified in ``kwargs`` and it is not :class:`None`, this
+    function is completely equivalent to :py:func:`shutil.rmtree()`.
+
+    :arg args: Arguments to be passed through to :py:func:`shutil.rmtree`.
+    :arg max_reties: Maximum number of retries if the target directory cannot
+        be deleted.
+    :arg kwargs: Keyword arguments to be passed through to
+        :py:func:`shutil.rmtree`.
+
     '''
     if 'onerror' in kwargs and kwargs['onerror'] is not None:
         shutil.rmtree(*args, **kwargs)
@@ -230,19 +303,32 @@ def rmtree(*args, max_retries=3, **kwargs):
 
 
 def inpath(entry, pathvar):
-    '''Check if entry is in pathvar. pathvar is a string of the form
-    `entry1:entry2:entry3`.'''
+    '''Check if entry is in path.
+
+    :arg entry: The entry to look for.
+    :arg pathvar: A path variable in the form `'entry1:entry2:entry3'`.
+    :returns: :class:`True` if the entry exists in the path variable,
+        :class:`False` otherwise.
+    '''
     return entry in set(pathvar.split(':'))
 
 
 def is_interactive():
-    '''Returns whether the given Python session is interactive'''
+    '''Check if the current Python session is interactive.'''
     return hasattr(sys, 'ps1') or sys.flags.interactive
 
 
 def subdirs(dirname, recurse=False):
-    '''Returns a list of dirname + its subdirectories. If recurse is True,
-    recursion is performed in pre-order.'''
+    '''Get the list of subdirectories of ``dirname`` including ``dirname``.
+
+    If ``recurse`` is :class:`True`, this function will retrieve all
+    subdirectories in pre-order.
+
+    :arg dirname: The directory to start searching.
+    :arg recurse: If :class:`True`, then recursively search for subdirectories.
+    :returns: The list of subdirectories found.
+    '''
+
     dirs = []
     if os.path.isdir(dirname):
         dirs.append(dirname)
@@ -254,7 +340,10 @@ def subdirs(dirname, recurse=False):
 
 
 def follow_link(path):
-    '''Return the final target of a symlink chain'''
+    '''Return the final target of a symlink chain.
+
+    If ``path`` is not a symlink, it will be returned as is.
+    '''
     while os.path.islink(path):
         path = os.readlink(path)
 
@@ -264,11 +353,12 @@ def follow_link(path):
 def samefile(path1, path2):
     '''Check if paths refer to the same file.
 
-    If paths exist, this is equivalent to `os.path.samefile()`. If only one of
-    the paths exists, it will be followed if it is a symbolic link and its
-    final target will be compared to the other path. If both paths do not
-    exist, a simple string comparison will be performed (after they have been
-    normalized).'''
+    If paths exist, this is equivalent to :py:func:`os.path.samefile`. If only
+    one of the paths exists and is a symbolic link, it will be followed and
+    its final target will be compared to the other path. If both paths do not
+    exist, a simple string comparison will be performed (after the paths have
+    been normalized).
+    '''
 
     # normalise the paths first
     path1 = os.path.normpath(path1)
@@ -280,13 +370,20 @@ def samefile(path1, path2):
 
 
 def mkstemp_path(*args, **kwargs):
+    '''Create a temporary file and return its path.
+
+    This is a wrapper to :py:func:`tempfile.mkstemp` except that it closes the
+    temporary file as soon as it creates it and returns the path.
+
+    ``args`` and ``kwargs`` passed through to :py:func:`tempfile.mkstemp`.
+    '''
     fd, path = tempfile.mkstemp(*args, **kwargs)
     os.close(fd)
     return path
 
 
 def force_remove_file(filename):
-    '''Remove filename ignoring errors if the file does not exist.'''
+    '''Remove filename ignoring :py:class:`FileNotFoundError`.'''
     try:
         os.remove(filename)
     except FileNotFoundError:
@@ -294,8 +391,10 @@ def force_remove_file(filename):
 
 
 class change_dir:
-    '''Context manager which changes the current working directory to the
-       provided one.'''
+    '''Context manager to temporarily change the current working directory.
+
+    :arg dir_name: The directory to temporarily change to.
+    '''
 
     def __init__(self, dir_name):
         self._wd_save = os.getcwd()
@@ -315,7 +414,14 @@ def is_url(s):
 
 
 def git_clone(url, targetdir=None):
-    '''Clone git repository from a URL.'''
+    '''Clone a git repository from a URL.
+
+    :arg url: The URL to clone from.
+
+    :arg targetdir: The directory where the repository will be cloned to. If
+        :class:`None`, a new directory will be created with the repository
+        name as if ``git clone {url}`` was issued.
+    '''
     if not git_repo_exists(url):
         raise ReframeError('git repository does not exist')
 
@@ -324,7 +430,13 @@ def git_clone(url, targetdir=None):
 
 
 def git_repo_exists(url, timeout=5):
-    '''Check if URL refers to git valid repository.'''
+    '''Check if URL refers to a valid Git repository.
+
+    :arg url: The URL to check.
+    :arg timeout: Timeout in seconds.
+    :returns: :class:`True` if URL is a Git repository, :class:`False`
+        otherwise or if timeout is reached.
+    '''
     try:
         os.environ['GIT_TERMINAL_PROMPT'] = '0'
         run_command('git ls-remote -h %s' % url, check=True,
@@ -335,26 +447,25 @@ def git_repo_exists(url, timeout=5):
         return True
 
 
-def git_repo_hash(branch='HEAD', short=True, wd=None):
-    '''Return the SHA1 hash of a git repository.
+def git_repo_hash(commit='HEAD', short=True, wd=None):
+    '''Return the SHA1 hash of a Git commit.
 
-    :arg branch: The branch to look at.
+    :arg commit: The commit to look at.
     :arg short: Return a short hash. This always corresponds to the first 8
         characters of the long hash. We don't rely on Git for the short hash,
         since depending on the version it might return either 7 or 8
         characters.
     :arg wd: Change to this directory before retrieving the hash. If ``None``,
         ReFrame's install prefix will be used.
-    :returns: The repository has or ``None`` if the hash could not be
+    :returns: The Git commit hash or ``None`` if the hash could not be
         retrieved.
-
     '''
     try:
         wd = wd or reframe.INSTALL_PREFIX
         with change_dir(wd):
             # Do not log this command, since we need to call this function
             # from the logger
-            completed = run_command('git rev-parse %s' % branch,
+            completed = run_command(f'git rev-parse {commit}',
                                     check=True, log=False)
 
     except (SpawnedProcessError, FileNotFoundError):
@@ -372,7 +483,6 @@ def reframe_version():
 
     If ReFrame's installation contains the repository metadata, the
     repository's hash will be appended to the actual version.
-
     '''
     version = reframe.VERSION
     repo_hash = git_repo_hash()
@@ -382,17 +492,18 @@ def reframe_version():
         return version
 
 
-def expandvars(path):
-    '''Expand environment variables in ``path`` and
-        perform any command substitution
+def expandvars(s):
+    '''Expand environment variables in ``s`` and perform any command
+    substitution.
 
-    This function is the same as ``os.path.expandvars()``, except that it
-    understands also the syntax: $(cmd)`` or `cmd`.
+    This function is the same as :py:func:`os.path.expandvars`, except that it
+    also recognizes the syntax of shell command substitution: ``$(cmd)`` or
+    ```cmd```.
     '''
     cmd_subst = re.compile(r'`(.*)`|\$\((.*)\)')
-    cmd_subst_m = cmd_subst.search(path)
+    cmd_subst_m = cmd_subst.search(s)
     if not cmd_subst_m:
-        return os.path.expandvars(path)
+        return os.path.expandvars(s)
 
     cmd = cmd_subst_m.groups()[0] or cmd_subst_m.groups()[1]
 
@@ -401,7 +512,7 @@ def expandvars(path):
 
     # Prepare stdout for inline use
     stdout = completed.stdout.replace('\n', ' ').strip()
-    return cmd_subst.sub(stdout, path)
+    return cmd_subst.sub(stdout, s)
 
 
 def concat_files(dst, *files, sep='\n', overwrite=False):
@@ -457,7 +568,8 @@ def unique_abs_paths(paths, prune_children=True):
 
 
 def cray_cdt_version():
-    '''Return the Cray CDT version or :class:`None` for non-Cray systems'''
+    '''Return the Cray Development Toolkit (CDT) version or :class:`None` for
+    non-Cray systems'''
     rcfile = os.getenv('MODULERCFILE', '/opt/cray/pe/cdt/default/modulerc')
     try:
         with open(rcfile) as fp:
@@ -475,10 +587,9 @@ def cray_cdt_version():
 
 
 def cray_cle_info(filename='/etc/opt/cray/release/cle-release'):
-    '''Return cray CLE release information.
+    '''Return the Cray Linux Environment (CLE) release information.
 
     :arg filename: The file that contains the CLE release information
-
     :returns: A named tuple with the following attributes that correspond to
         the release information: :attr:`release`, :attr:`build`, :attr:`date`,
         :attr:`arch`, :attr:`network`, :attr:`patchset`.

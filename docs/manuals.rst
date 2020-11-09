@@ -8,5 +8,4 @@ ReFrame Manuals
 
    manpage
    config_reference
-   regression_test_api
-   sanity_functions_reference
+   programming_apis

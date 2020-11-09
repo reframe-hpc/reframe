@@ -8,8 +8,22 @@ import os
 
 import reframe.core.fields as fields
 import reframe.utility as util
-import reframe.utility.os_ext as os_ext
 import reframe.utility.typecheck as typ
+
+
+def normalize_module_list(modules):
+    '''Normalize module list.
+
+    :meta private:
+    '''
+    ret = []
+    for m in modules:
+        if isinstance(m, str):
+            ret.append({'name': m, 'collection': False})
+        else:
+            ret.append(m)
+
+    return ret
 
 
 class Environment:
@@ -26,7 +40,8 @@ class Environment:
         modules = modules or []
         variables = variables or []
         self._name = name
-        self._modules = list(modules)
+        self._modules = normalize_module_list(modules)
+        self._module_names = [m['name'] for m in self._modules]
         self._variables = collections.OrderedDict(variables)
 
     @property
@@ -43,6 +58,26 @@ class Environment:
 
         :type: :class:`List[str]`
         '''
+        return util.SequenceView(self._module_names)
+
+    @property
+    def modules_detailed(self):
+        '''A view of the modules associated with this environment in a detailed
+        format.
+
+        Each module is represented as a dictionary with the following
+        attributes:
+
+        - ``name``: the name of the module.
+        - ``collection``: :class:`True` if the module name refers to a module
+          collection.
+
+        :type: :class:`List[Dict[str, object]]`
+
+        .. versionadded:: 3.3
+
+        '''
+
         return util.SequenceView(self._modules)
 
     @property

@@ -15,7 +15,7 @@ import weakref
 import reframe.core.environments as env
 import reframe.core.logging as logging
 import reframe.core.runtime as runtime
-import reframe.frontend.dependency as dependency
+import reframe.frontend.dependencies as dependencies
 import reframe.utility.json as jsonext
 from reframe.core.exceptions import (AbortTaskError, JobNotStartedError,
                                      ReframeForceExitError, TaskExit)
@@ -62,8 +62,8 @@ class TestCase:
                 self.partition.fullname == other.partition.fullname)
 
     def __repr__(self):
-        return '(%r, %r, %r)' % (self.check.name,
-                                 self.partition.fullname, self.environ.name)
+        c, p, e = self.check.name, self.partition.fullname, self.environ.name
+        return f'({c!r}, {p!r}, {e!r})'
 
     @property
     def check(self):
@@ -247,7 +247,7 @@ class RegressionTask:
 
         try:
             with logging.logging_context(self.check) as logger:
-                logger.debug(f'entering stage: {self._current_stage}')
+                logger.debug(f'Entering stage: {self._current_stage}')
                 with update_timestamps():
                     return fn(*args, **kwargs)
 
@@ -312,7 +312,7 @@ class RegressionTask:
         self._notify_listeners('on_task_failure')
 
     def abort(self, cause=None):
-        logging.getlogger().debug('aborting: %s' % self.check.info())
+        logging.getlogger().debug2('Aborting test case: {self.testcase!r}')
         exc = AbortTaskError()
         exc.__cause__ = cause
         try:
@@ -418,8 +418,8 @@ class Runner:
 
             # Clone failed cases and rebuild dependencies among them
             failed_cases = [t.testcase.clone() for t in failures]
-            cases_graph = dependency.build_deps(failed_cases, cases)
-            failed_cases = dependency.toposort(cases_graph, is_subgraph=True)
+            cases_graph = dependencies.build_deps(failed_cases, cases)
+            failed_cases = dependencies.toposort(cases_graph, is_subgraph=True)
             self._runall(failed_cases)
             failures = self._stats.failures()
 

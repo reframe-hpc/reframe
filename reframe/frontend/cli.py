@@ -3,11 +3,31 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+from reframe.frontend.printer import PrettyPrinter
+from reframe.frontend.loader import RegressionCheckLoader
+from reframe.frontend.executors.policies import (SerialExecutionPolicy,
+                                                 AsynchronousExecutionPolicy)
+from reframe.frontend.executors import Runner, generate_testcases
+import reframe.utility.osext as osext
+import reframe.utility.jsonext as jsonext
+import reframe.frontend.dependencies as dependencies
+from reframe.frontend.executors import (RegressionTask, Runner,
+                                        generate_testcases)
+from reframe.core.exceptions import (
+    EnvironError, ConfigError, ReframeError,
+    ReframeDeprecationWarning, ReframeFatalError,
+    format_exception, SystemAutodetectionError
+)
+import reframe.utility.json as jsonext
+import reframe.utility.os_ext as os_ext
+import reframe.frontend.dependency as dependency
 import inspect
+import itertools
 import json
 import jsonschema
 import os
 import re
+import shlex
 import socket
 import sys
 import time
@@ -16,32 +36,35 @@ import traceback
 import reframe
 import reframe.core.config as config
 import reframe.core.environments as env
+import reframe.core.exceptions as errors
 import reframe.core.logging as logging
 import reframe.core.runtime as runtime
+import reframe.core.warnings as warnings
 import reframe.frontend.argparse as argparse
 import reframe.frontend.check_filters as filters
-import reframe.frontend.dependency as dependency
-import reframe.utility.os_ext as os_ext
-import reframe.utility.json as jsonext
-from reframe.core.exceptions import (
-    EnvironError, ConfigError, ReframeError,
-    ReframeDeprecationWarning, ReframeFatalError,
-    format_exception, SystemAutodetectionError
-)
-from reframe.frontend.executors import (RegressionTask, Runner,
-                                        generate_testcases)
-from reframe.frontend.executors.policies import (SerialExecutionPolicy,
-                                                 AsynchronousExecutionPolicy)
-from reframe.frontend.loader import RegressionCheckLoader
-from reframe.frontend.printer import PrettyPrinter
+<< << << < HEAD
+== == == =
+>>>>>> > master
 
 
-def format_check(check, detailed=False):
+def format_check(check, check_deps, detailed=False):
     def fmt_list(x):
         if not x:
             return '<none>'
 
         return ', '.join(x)
+
+    def fmt_deps():
+        no_deps = True
+        lines = []
+        for t, deps in check_deps:
+            for d in deps:
+                lines.append(f'- {t} -> {d}')
+
+        if lines:
+            return '\n      '.join(lines)
+        else:
+            return '<none>'
 
     location = inspect.getfile(type(check))
     if not detailed:
@@ -55,7 +78,6 @@ def format_check(check, detailed=False):
         node_alloc_scheme = f'flexible (minimum {-check.num_tasks} task(s))'
 
     check_info = {
-        'Dependencies': fmt_list([d[0] for d in check.user_deps()]),
         'Description': check.descr,
         'Environment modules': fmt_list(check.modules),
         'Location': location,
@@ -67,14 +89,18 @@ def format_check(check, detailed=False):
         },
         'Tags': fmt_list(check.tags),
         'Valid environments': fmt_list(check.valid_prog_environs),
-        'Valid systems': fmt_list(check.valid_systems)
+        'Valid systems': fmt_list(check.valid_systems),
+        'Dependencies (conceptual)': fmt_list(
+            [d[0] for d in check.user_deps()]
+        ),
+        'Dependencies (actual)': fmt_deps()
     }
     lines = [f'- {check.name}:']
     for prop, val in check_info.items():
         lines.append(f'    {prop}:')
         if isinstance(val, dict):
             for k, v in val.items():
-                lines.append(f'      {k}: {v}')
+                lines.append(f'      - {k}: {v}')
         else:
             lines.append(f'      {val}')
 
@@ -124,7 +150,7 @@ def get_failed_checks_from_report(restart_report):
 
 def get_filenames_from_report(restart_report):
     return list({testcase['filename']
-                for testcase in restart_report['runs'][-1]['testcases']})
+                 for testcase in restart_report['runs'][-1]['testcases']})
 
 
 def restore(testcases, retry_report, printer):
@@ -153,9 +179,19 @@ def format_env(envvars):
     return ret
 
 
-def list_checks(checks, printer, detailed=False):
+def list_checks(testcases, printer, detailed=False):
     printer.info('[List of matched checks]')
-    printer.info('\n'.join(format_check(c, detailed) for c in checks))
+
+    # Collect dependencies per test
+    deps = {}
+    for t in testcases:
+        deps.setdefault(t.check.name, [])
+        deps[t.check.name].append((t, t.deps))
+
+    checks = set(t.check for t in testcases)
+    printer.info(
+        '\n'.join(format_check(c, deps[c.name], detailed) for c in checks)
+    )
     printer.info(f'Found {len(checks)} check(s)')
 
 
@@ -174,6 +210,17 @@ def generate_report_filename(filepatt):
 
     new_id += 1
     return filepatt.format(sessionid=new_id)
+
+
+def logfiles_message():
+    log_files = logging.log_files()
+    msg = 'Log file(s) saved in: '
+    if not log_files:
+        msg += '<no log file was generated>'
+    else:
+        msg += f'{", ".join(repr(f) for f in log_files)}'
+
+    return msg
 
 
 def main():
@@ -437,7 +484,7 @@ def main():
         help='Upgrade ReFrame 2.x configuration file to ReFrame 3.x syntax'
     )
     misc_options.add_argument(
-        '-V', '--version', action='version', version=os_ext.reframe_version()
+        '-V', '--version', action='version', version=osext.reframe_version()
     )
     misc_options.add_argument(
         '-v', '--verbose', action='count',
@@ -502,7 +549,8 @@ def main():
 
     if options.upgrade_config_file is not None:
         old_config, *new_config = options.upgrade_config_file.split(
-            ':', maxsplit=1)
+            ':', maxsplit=1
+        )
         new_config = new_config[0] if new_config else None
 
         try:
@@ -515,14 +563,14 @@ def main():
             f'Conversion successful! '
             f'The converted file can be found at {new_config!r}.'
         )
-
         sys.exit(0)
 
     # Now configure ReFrame according to the user configuration file
     try:
         try:
+            printer.debug('Loading user configuration')
             site_config = config.load_config(options.config_file)
-        except ReframeDeprecationWarning as e:
+        except warnings.ReframeDeprecationWarning as e:
             printer.warning(e)
             converted = config.convert_old_config(options.config_file)
             printer.warning(
@@ -546,23 +594,30 @@ def main():
         if options.mode:
             mode_args = site_config.get(f'modes/@{options.mode}/options')
 
+            # We lexically split the mode options, because otherwise spaces
+            # will be treated as part of the option argument; see GH bug #1554
+            mode_args = list(itertools.chain.from_iterable(shlex.split(m)
+                                                           for m in mode_args))
             # Parse the mode's options and reparse the command-line
             options = argparser.parse_args(mode_args)
             options = argparser.parse_args(namespace=options.cmd_options)
             options.update_config(site_config)
 
         logging.configure_logging(site_config)
-    except (OSError, ConfigError) as e:
+    except (OSError, errors.ConfigError) as e:
         printer.error(f'failed to load configuration: {e}')
+        printer.error(logfiles_message())
         sys.exit(1)
 
     logging.getlogger().colorize = site_config.get('general/0/colorize')
     printer.colorize = site_config.get('general/0/colorize')
     printer.inc_verbosity(site_config.get('general/0/verbose'))
     try:
+        printer.debug('Initializing runtime')
         runtime.init_runtime(site_config)
-    except ConfigError as e:
+    except errors.ConfigError as e:
         printer.error(f'failed to initialize runtime: {e}')
+        printer.error(logfiles_message())
         sys.exit(1)
 
     rt = runtime.runtime()
@@ -576,15 +631,16 @@ def main():
             for m in site_config.get('general/0/module_mappings'):
                 rt.modules_system.load_mapping(m)
 
-    except (ConfigError, OSError) as e:
+    except (errors.ConfigError, OSError) as e:
         printer.error('could not load module mappings: %s' % e)
         sys.exit(1)
 
-    if (os_ext.samefile(rt.stage_prefix, rt.output_prefix) and
+    if (osext.samefile(rt.stage_prefix, rt.output_prefix) and
         not site_config.get('general/0/keep_stage_files')):
         printer.error("stage and output refer to the same directory; "
                       "if this is on purpose, please use the "
                       "'--keep-stage-files' option.")
+        printer.error(logfiles_message())
         sys.exit(1)
 
     # Show configuration after everything is set up
@@ -639,8 +695,8 @@ def main():
         'hostname': socket.gethostname(),
         'prefix_output': rt.output_prefix,
         'prefix_stage': rt.stage_prefix,
-        'user': os_ext.osuser(),
-        'version': os_ext.reframe_version(),
+        'user': osext.osuser(),
+        'version': osext.reframe_version(),
         'workdir': os.getcwd(),
     }
 
@@ -664,34 +720,55 @@ def main():
         # Locate and load checks
         try:
             checks_found = loader.load_all()
+            printer.verbose(f'Loaded {len(checks_found)} test(s)')
         except OSError as e:
-            raise ReframeError from e
+            raise errors.ReframeError from e
 
         # Filter checks by name
         checks_matched = checks_found
         if options.exclude_names:
             for name in options.exclude_names:
-                checks_matched = filter(filters.have_not_name(name),
-                                        checks_matched)
+                checks_matched = [c for c in checks_matched
+                                  if filters.have_not_name(name)(c)]
 
         if options.names:
-            checks_matched = filter(filters.have_name('|'.join(options.names)),
-                                    checks_matched)
+            checks_matched = [c for c in checks_matched
+                              if filters.have_name('|'.join(options.names))(c)]
+
+        printer.verbose(
+            f'Filtering test(s) by name: {len(checks_matched)} remaining'
+        )
 
         # Filter checks by tags
         for tag in options.tags:
-            checks_matched = filter(filters.have_tag(tag), checks_matched)
+            checks_matched = [c for c in checks_matched
+                              if filters.have_tag(tag)(c)]
+
+        printer.verbose(
+            f'Filtering test(s) by tags: {len(checks_matched)} remaining'
+        )
 
         # Filter checks by prgenv
         if not options.skip_prgenv_check:
             for prgenv in options.prgenv:
-                checks_matched = filter(filters.have_prgenv(prgenv),
-                                        checks_matched)
+                checks_matched = [c for c in checks_matched
+                                  if filters.have_prgenv(prgenv)(c)]
+
+        printer.verbose(
+            f'Filtering test(s) by programming environment: '
+            f'{len(list(checks_matched))} remaining'
+        )
 
         # Filter checks by system
         if not options.skip_system_check:
-            checks_matched = filter(
-                filters.have_partition(rt.system.partitions), checks_matched)
+            partitions = rt.system.partitions
+            checks_matched = [c for c in checks_matched
+                              if filters.have_partition(partitions)(c)]
+
+        printer.verbose(
+            f'Filtering test(s) by system: '
+            f'{len(list(checks_matched))} remaining'
+        )
 
         # Filter checks further
         if options.gpu_only and options.cpu_only:
@@ -700,18 +777,17 @@ def main():
             sys.exit(1)
 
         if options.gpu_only:
-            checks_matched = filter(filters.have_gpu_only(), checks_matched)
+            checks_matched = [c for c in checks_matched
+                              if filters.have_gpu_only()(c)]
         elif options.cpu_only:
-            checks_matched = filter(filters.have_cpu_only(), checks_matched)
+            checks_matched = [c for c in checks_matched
+                              if filters.have_cpu_only()(c)]
 
         # Determine the allowed programming environments
         allowed_environs = {e.name
                             for env_patt in options.prgenv
                             for p in rt.system.partitions
                             for e in p.environs if re.match(env_patt, e.name)}
-
-        # Generate the test cases, validate dependencies and sort them
-        checks_matched = list(checks_matched)
 
         # Disable hooks
         for c in checks_matched:
@@ -740,28 +816,36 @@ def main():
             dependency.validate_deps(testgraph)
             testcases = dependency.toposort(testgraph)
 
+        # FIXME: These two should be reconsidered
+        printer.debug(f'Generated {len(testcases)} test case(s)')
+        printer.debug('Building and validating the test DAG')
+
         # Manipulate ReFrame's environment
         if site_config.get('general/0/purge_environment'):
             rt.modules_system.unload_all()
         else:
             for m in site_config.get('general/0/unload_modules'):
-                rt.modules_system.unload_module(m)
+                rt.modules_system.unload_module(**m)
 
         # Load the environment for the current system
         try:
+            printer.debug(f'Loading environment for current system')
             runtime.loadenv(rt.system.preload_environ)
-        except EnvironError as e:
+        except errors.EnvironError as e:
             printer.error("failed to load current system's environment; "
                           "please check your configuration")
             printer.debug(str(e))
             raise
 
+        printer.debug('Loading user modules from command line')
         for m in site_config.get('general/0/user_modules'):
             try:
-                rt.modules_system.load_module(m, force=True)
-            except EnvironError as e:
-                printer.warning("could not load module '%s' correctly: "
-                                "Skipping..." % m)
+                rt.modules_system.load_module(**m, force=True)
+            except errors.EnvironError as e:
+                printer.warning(
+                    f'could not load module {m["name"]!r} correctly; '
+                    f'skipping...'
+                )
                 printer.debug(str(e))
 
         options.flex_alloc_nodes = options.flex_alloc_nodes or 'idle'
@@ -769,7 +853,7 @@ def main():
         # Act on checks
         success = True
         if options.list or options.list_detailed:
-            list_checks(list(checks_matched), printer, options.list_detailed)
+            list_checks(testcases, printer, options.list_detailed)
         elif options.run:
             # Setup the execution policy
             if options.exec_policy == 'serial':
@@ -794,7 +878,9 @@ def main():
                 errmsg = "invalid option for --flex-alloc-nodes: '{0}'"
                 sched_flex_alloc_nodes = int(options.flex_alloc_nodes)
                 if sched_flex_alloc_nodes <= 0:
-                    raise ConfigError(errmsg.format(options.flex_alloc_nodes))
+                    raise errors.ConfigError(
+                        errmsg.format(options.flex_alloc_nodes)
+                    )
             except ValueError:
                 sched_flex_alloc_nodes = options.flex_alloc_nodes
 
@@ -812,8 +898,9 @@ def main():
             try:
                 max_retries = int(options.max_retries)
             except ValueError:
-                raise ConfigError('--max-retries is not a valid integer: %s' %
-                                  max_retries) from None
+                raise errors.ConfigError(
+                    f'--max-retries is not a valid integer: {max_retries}'
+                ) from None
             runner = Runner(exec_policy, printer, max_retries)
             try:
                 time_start = time.time()
@@ -837,17 +924,17 @@ def main():
 
                 # Print a failure report if we had failures in the last run
                 if runner.stats.failures():
-                    printer.info(runner.stats.failure_report())
+                    runner.stats.print_failure_report(printer)
                     success = False
                     if options.failure_stats:
-                        printer.info(runner.stats.failure_stats())
+                        runner.stats.print_failure_stats(printer)
 
                 if options.performance_report:
                     printer.info(runner.stats.performance_report())
 
                 # Generate the report for this session
                 report_file = os.path.normpath(
-                    os_ext.expandvars(rt.get_option('general/0/report_file'))
+                    osext.expandvars(rt.get_option('general/0/report_file'))
                 )
                 basedir = os.path.dirname(report_file)
                 if basedir:
@@ -867,6 +954,7 @@ def main():
                 try:
                     with open(report_file, 'w') as fp:
                         jsonext.dump(json_report, fp, indent=2)
+                        fp.write('\n')
                 except OSError as e:
                     printer.warning(
                         f'failed to generate report in {report_file!r}: {e}'
@@ -886,17 +974,27 @@ def main():
 
     except KeyboardInterrupt:
         sys.exit(1)
-    except ReframeError as e:
+    except errors.ReframeError as e:
         printer.error(str(e))
         sys.exit(1)
-    except (Exception, ReframeFatalError):
-        printer.error(format_exception(*sys.exc_info()))
+    except (Exception, errors.ReframeFatalError):
+        exc_info = sys.exc_info()
+        tb = ''.join(traceback.format_exception(*exc_info))
+        printer.error(errors.what(*exc_info))
+        if errors.is_severe(*exc_info):
+            printer.error(tb)
+        else:
+            printer.verbose(tb)
+
         sys.exit(1)
     finally:
         try:
+            log_files = logging.log_files()
             if site_config.get('general/0/save_log_files'):
-                logging.save_log_files(rt.output_prefix)
+                log_files = logging.save_log_files(rt.output_prefix)
 
         except OSError as e:
-            printer.error('could not save log file: %s' % e)
+            printer.error(f'could not save log file: {e}')
             sys.exit(1)
+        finally:
+            printer.info(logfiles_message())

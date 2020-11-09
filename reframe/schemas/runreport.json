@@ -43,8 +43,21 @@
                                 "prefix": {"type": "string"},
                                 "filename": {"type": "string"},
                                 "environment": {"type": ["string", "null"]},
+                                "fail_info": {
+                                    "type": ["object", "null"],
+                                    "properties": {
+                                        "exc_type": {"type": "string"},
+                                        "exc_value": {"type": "string"},
+                                        "traceback": {
+                                            "type": "array",
+                                            "items": {"type": "string"}
+                                        }
+                                    },
+                                    "required": ["exc_type", "exc_value", "traceback"]
+                                },
                                 "fail_phase": {"type": ["string", "null"]},
                                 "fail_reason": {"type": ["string", "null"]},
+                                "fail_severe": {"type": "boolean"},
                                 "jobid": {"type": ["string", "null"]},
                                 "job_stderr": {"type": ["string", "null"]},
                                 "job_stdout": {"type": ["string", "null"]},

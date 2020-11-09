@@ -4,8 +4,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import inspect
+import traceback
 import reframe.core.runtime as rt
-from reframe.core.exceptions import format_exception, StatisticsError
+import reframe.core.exceptions as errors
 
 
 class TestStats:
@@ -29,7 +30,7 @@ class TestStats:
         try:
             return self._alltasks[run]
         except IndexError:
-            raise StatisticsError('no such run: %s' % run) from None
+            raise errors.StatisticsError('no such run: %s' % run) from None
 
     def failures(self, run=-1):
         return [t for t in self.tasks(run) if t.failed]
@@ -132,7 +133,13 @@ class TestStats:
                     entry['result'] = 'failure'
                     entry['fail_phase'] = t.failed_stage
                     if t.exc_info is not None:
-                        entry['fail_reason'] = format_exception(*t.exc_info)
+                        entry['fail_reason'] = errors.what(*t.exc_info)
+                        entry['fail_info'] = {
+                            'exc_type':  t.exc_info[0],
+                            'exc_value': t.exc_info[1],
+                            'traceback': t.exc_info[2]
+                        }
+                        entry['fail_severe'] = errors.is_severe(*t.exc_info)
                 else:
                     entry['result'] = 'success'
                     entry['outputdir'] = check.outputdir
@@ -163,10 +170,10 @@ class TestStats:
 
         return self._run_data
 
-    def failure_report(self):
+    def print_failure_report(self, printer):
         line_width = 78
-        report = [line_width * '=']
-        report.append('SUMMARY OF FAILURES')
+        printer.info(line_width * '=')
+        printer.info('SUMMARY OF FAILURES')
         run_report = self.json()[-1]
         last_run = run_report['runid']
         for r in run_report['testcases']:
@@ -176,27 +183,32 @@ class TestStats:
             retry_info = (
                 f'(for the last of {last_run} retries)' if last_run > 0 else ''
             )
-            report.append(line_width * '-')
-            report.append(f"FAILURE INFO for {r['name']} {retry_info}")
-            report.append(f"  * Test Description: {r['description']}")
-            report.append(f"  * System partition: {r['system']}")
-            report.append(f"  * Environment: {r['environment']}")
-            report.append(f"  * Stage directory: {r['stagedir']}")
+            printer.info(line_width * '-')
+            printer.info(f"FAILURE INFO for {r['name']} {retry_info}")
+            printer.info(f"  * Test Description: {r['description']}")
+            printer.info(f"  * System partition: {r['system']}")
+            printer.info(f"  * Environment: {r['environment']}")
+            printer.info(f"  * Stage directory: {r['stagedir']}")
             nodelist = ','.join(r['nodelist']) if r['nodelist'] else None
-            report.append(f"  * Node list: {nodelist}")
+            printer.info(f"  * Node list: {nodelist}")
             job_type = 'local' if r['scheduler'] == 'local' else 'batch job'
             jobid = r['jobid']
-            report.append(f"  * Job type: {job_type} (id={r['jobid']})")
-            report.append(f"  * Maintainers: {r['maintainers']}")
-            report.append(f"  * Failing phase: {r['fail_phase']}")
-            report.append(f"  * Rerun with '-n {r['name']}"
-                          f" -p {r['environment']} --system {r['system']}'")
-            report.append(f"  * Reason: {r['fail_reason']}")
+            printer.info(f"  * Job type: {job_type} (id={r['jobid']})")
+            printer.info(f"  * Maintainers: {r['maintainers']}")
+            printer.info(f"  * Failing phase: {r['fail_phase']}")
+            printer.info(f"  * Rerun with '-n {r['name']}"
+                         f" -p {r['environment']} --system {r['system']}'")
+            printer.info(f"  * Reason: {r['fail_reason']}")
 
-        report.append(line_width * '-')
-        return '\n'.join(report)
+            tb = ''.join(traceback.format_exception(*r['fail_info'].values()))
+            if r['fail_severe']:
+                printer.info(tb)
+            else:
+                printer.verbose(tb)
 
-    def failure_stats(self):
+        printer.info(line_width * '-')
+
+    def print_failure_stats(self, printer):
         failures = {}
         current_run = rt.runtime().current_run
         for tf in (t for t in self.tasks(current_run) if t.failed):
@@ -236,9 +248,8 @@ class TestStats:
                 stats_body.append(row_format.format('', '', str(f)))
 
         if stats_body:
-            return '\n'.join([stats_start, stats_title, *stats_body,
-                              stats_end])
-        return ''
+            for line in (stats_start, stats_title, *stats_body, stats_end):
+                printer.info(line)
 
     def performance_report(self):
         # FIXME: Adapt this function to use the JSON report

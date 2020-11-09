@@ -48,7 +48,7 @@ def _register_test(cls, args=None):
             try:
                 ret.append(_instantiate(cls, args))
             except Exception:
-                frame = user_frame(sys.exc_info()[2])
+                frame = user_frame(*sys.exc_info())
                 msg = "skipping test due to errors: %s: " % cls.__name__
                 msg += "use `-v' for more information\n"
                 msg += "  FILE: %s:%s" % (frame.filename, frame.lineno)

@@ -14,7 +14,6 @@ import time
 from datetime import datetime, timedelta
 
 import reframe.core.runtime as rt
-import reframe.utility.os_ext as os_ext
 import unittests.fixtures as fixtures
 from reframe.core.backends import (getlauncher, getscheduler)
 from reframe.core.environments import Environment
@@ -484,7 +483,13 @@ def test_submit_max_pending_time(make_job, exec_ctx, scheduler):
 def assert_process_died(pid):
     try:
         os.kill(pid, 0)
-        pytest.fail('process %s is still alive' % pid)
+        if os.getpid() == 1:
+            # We are running in a container; so pid is likely a zombie; reap it
+            if os.waitpid(pid, os.WNOHANG)[0] == 0:
+                pytest.fail(f'process {pid} is still alive')
+        else:
+            pytest.fail(f'process {pid} is still alive')
+
     except (ProcessLookupError, PermissionError):
         pass
 
@@ -513,18 +518,17 @@ def test_cancel_with_grace(minimal_job, scheduler, local_only):
     # signal handler for SIGTERM
     time.sleep(1)
 
-    t_grace = datetime.now()
+    t_grace = time.time()
     minimal_job.cancel()
     time.sleep(0.1)
     minimal_job.wait()
-    t_grace = datetime.now() - t_grace
+    t_grace = time.time() - t_grace
 
     # Read pid of spawned sleep
     with open(minimal_job.stdout) as fp:
         sleep_pid = int(fp.read())
 
-    assert t_grace.total_seconds() >= 2
-    assert t_grace.total_seconds() < 5
+    assert t_grace >= 2 and t_grace < 5
     assert minimal_job.state == 'FAILURE'
     assert minimal_job.signal == signal.SIGKILL
 
@@ -558,17 +562,17 @@ def test_cancel_term_ignore(minimal_job, scheduler, local_only):
     # signal handler for SIGTERM
     time.sleep(1)
 
-    t_grace = datetime.now()
+    t_grace = time.time()
     minimal_job.cancel()
     time.sleep(0.1)
     minimal_job.wait()
-    t_grace = datetime.now() - t_grace
+    t_grace = time.time() - t_grace
 
     # Read pid of spawned sleep
     with open(minimal_job.stdout) as fp:
         sleep_pid = int(fp.read())
 
-    assert t_grace.total_seconds() >= 2
+    assert t_grace >= 2 and t_grace < 5
     assert minimal_job.state == 'FAILURE'
     assert minimal_job.signal == signal.SIGKILL
 
