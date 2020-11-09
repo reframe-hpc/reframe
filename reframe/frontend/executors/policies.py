@@ -13,7 +13,7 @@ import time
 from datetime import datetime
 
 from reframe.core.exceptions import (TaskDependencyError, TaskExit)
-from reframe.core.logging import getlogger
+from reframe.core.logging import (getlogger, VERBOSE)
 from reframe.frontend.executors import (ExecutionPolicy, RegressionTask,
                                         TaskEventListener, ABORT_REASONS)
 
@@ -61,12 +61,10 @@ class _PollController:
         return self
 
     def snooze(self):
-        from reframe.core.logging import getlogger
-
         t_elapsed = time.time() - self._t_init
         self._num_polls += 1
-        getlogger().debug(
-            f'poll rate control: sleeping for {self._sleep_duration}s '
+        getlogger().debug2(
+            f'Poll rate control: sleeping for {self._sleep_duration}s '
             f'(current poll rate: {self._num_polls/t_elapsed} polls/s)'
         )
         time.sleep(self._sleep_duration)
@@ -167,7 +165,9 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
                                          'sanity',
                                          'performance',
                                          'total'])
-        getlogger().verbose(f"==> {timings}")
+        getlogger().info(f'==> test failed during {task.failed_stage!r}: '
+                         f'test staged in {task.check.stagedir!r}')
+        getlogger().verbose(f'==> {timings}')
 
     def on_task_success(self, task):
         timings = task.pipeline_timings(['compile_complete',
@@ -181,7 +181,8 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
                                          'sanity',
                                          'performance',
                                          'total'])
-        getlogger().verbose(f"==> {timings}")
+        getlogger().verbose(f'==> {timings}')
+
         # update reference count of dependencies
         for c in task.testcase.deps:
             self._task_index[c].ref_count -= 1
@@ -227,14 +228,14 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self.task_listeners.append(self)
 
     def _remove_from_running(self, task):
-        getlogger().debug(
-            'removing task from running list: %s' % task.check.info()
+        getlogger().debug2(
+            f'Removing task from the running list: {task.testcase}'
         )
         try:
             partname = task.check.current_partition.fullname
             self._running_tasks[partname].remove(task)
         except (ValueError, AttributeError, KeyError):
-            getlogger().debug('not in running tasks')
+            getlogger().debug2('Task was not running')
             pass
 
     def deps_failed(self, task):
@@ -259,12 +260,18 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             self._remove_from_running(task)
             self.printer.status('FAIL', msg, just='right')
 
-        getlogger().verbose(f"==> {task.pipeline_timings_all()}")
+        stagedir = task.check.stagedir
+        if not stagedir:
+            stagedir = '<not available>'
+
+        getlogger().info(f'==> test failed during {task.failed_stage!r}: '
+                         f'test staged in {stagedir!r}')
+        getlogger().verbose(f'==> timings: {task.pipeline_timings_all()}')
 
     def on_task_success(self, task):
         msg = f'{task.check.info()} [{task.pipeline_timings_basic()}]'
         self.printer.status('OK', msg, just='right')
-        getlogger().verbose(f"==> {task.pipeline_timings_all()}")
+        getlogger().verbose(f'==> timings: {task.pipeline_timings_all()}')
 
         # update reference count of dependencies
         for c in task.testcase.deps:
@@ -328,8 +335,10 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
             if len(self._running_tasks[partname]) >= partition.max_jobs:
                 # Make sure that we still exceeded the job limit
-                getlogger().debug('reached job limit (%s) for partition %s' %
-                                  (partition.max_jobs, partname))
+                getlogger().debug2(
+                    f'Reached concurrency limit for partition {partname!r}: '
+                    f'{partition.max_jobs} job(s)'
+                )
                 self._poll_tasks()
 
             if len(self._running_tasks[partname]) < partition.max_jobs:
@@ -368,11 +377,10 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
             return forced_local, normal
 
-        getlogger().debug('updating counts for running test cases')
         for part in self._partitions:
             partname = part.fullname
             num_tasks = len(self._running_tasks[partname])
-            getlogger().debug(f'polling {num_tasks} task(s) in {partname!r}')
+            getlogger().debug2(f'Polling {num_tasks} task(s) in {partname!r}')
             forced_local_jobs, part_jobs = split_jobs(
                 self._running_tasks[partname]
             )
@@ -392,18 +400,19 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._waiting_tasks[:] = still_waiting
 
     def _finalize_all(self):
-        getlogger().debug('finalizing tasks: %s', len(self._completed_tasks))
+        getlogger().debug2(f'Finalizing {len(self._completed_tasks)} task(s)')
         while True:
             try:
                 task = self._completed_tasks.pop()
             except IndexError:
                 break
 
-            getlogger().debug('finalizing task: %s' % task.check.info())
+            getlogger().debug2(f'Finalizing task {task.testcase}')
             with contextlib.suppress(TaskExit):
                 self._finalize_task(task)
 
     def _finalize_task(self, task):
+        getlogger().debug2(f'Finalizing task {task.testcase}')
         if not self.skip_sanity_check:
             task.sanity()
 
@@ -414,12 +423,12 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def _failall(self, cause):
         '''Mark all tests as failures'''
+        getlogger().debug2(f'Aborting all tasks due to {type(cause).__name__}')
         for task in list(itertools.chain(*self._running_tasks.values())):
             task.abort(cause)
 
         self._running_tasks = {}
         for ready_list in self._ready_tasks.values():
-            getlogger().debug('ready list size: %s' % len(ready_list))
             for task in ready_list:
                 task.abort(cause)
 
@@ -429,8 +438,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             task.abort(cause)
 
     def _reschedule(self, task):
-        getlogger().debug('scheduling test case for running')
-
+        getlogger().debug2(f'Scheduling test case {task.testcase} for running')
         task.compile()
         task.compile_wait()
         task.run()
@@ -450,16 +458,17 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 num_rescheduled += 1
 
             if num_rescheduled:
-                getlogger().debug('rescheduled %s job(s) on %s' %
-                                  (num_rescheduled, partname))
+                getlogger().debug2(
+                    f'Rescheduled {num_rescheduled} job(s) on {partname!r}'
+                )
 
     def exit(self):
         self.printer.separator('short single line',
                                'waiting for spawned checks to finish')
         while (countall(self._running_tasks) or self._waiting_tasks or
                self._completed_tasks or countall(self._ready_tasks)):
-            getlogger().debug(f'running tasks: '
-                              f'{countall(self._running_tasks)}')
+            getlogger().debug2(f'Running tasks: '
+                               f'{countall(self._running_tasks)}')
             try:
                 self._poll_tasks()
 

@@ -7,7 +7,7 @@
 # CSCS CI settings
 #
 
-import reframe.utility.os_ext as os_ext
+import reframe.utility.osext as osext
 
 
 site_configuration = {
@@ -30,7 +30,7 @@ site_configuration = {
                     'access': [
                         '--constraint=gpu',
                         '--partition=cscsci',
-                        f'--account={os_ext.osgroup()}'
+                        f'--account={osext.osgroup()}'
                     ],
                     'environs': [
                         'builtin'
@@ -66,7 +66,7 @@ site_configuration = {
                     ],
                     'access': [
                         '--constraint=gpu',
-                        f'--account={os_ext.osgroup()}'
+                        f'--account={osext.osgroup()}'
                     ],
                     'environs': [
                         'builtin'
@@ -91,7 +91,7 @@ site_configuration = {
                     ],
                     'access': [
                         'proc=gpu',
-                        f'-A {os_ext.osgroup()}'
+                        f'-A {osext.osgroup()}'
                     ],
                     'environs': [
                         'builtin'
@@ -108,7 +108,7 @@ site_configuration = {
                     ],
                     'access': [
                         '-l proc=gpu',
-                        f'-A {os_ext.osgroup()}'
+                        f'-A {osext.osgroup()}'
                     ],
                     'environs': [
                         'builtin'
@@ -209,11 +209,10 @@ site_configuration = {
     ],
     'logging': [
         {
-            'level': 'debug',
             'handlers': [
                 {
                     'type': 'file',
-                    'level': 'debug',
+                    'level': 'debug2',
                     'format': '[%(asctime)s] %(levelname)s: %(check_info)s: %(message)s',   # noqa: E501
                     'append': False
                 },

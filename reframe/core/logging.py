@@ -14,11 +14,10 @@ import re
 import shutil
 import sys
 import socket
-import tempfile
 import time
 
 import reframe.utility.color as color
-import reframe.utility.os_ext as os_ext
+import reframe.utility.osext as osext
 from reframe.core.exceptions import ConfigError, LoggingError
 
 
@@ -35,6 +34,7 @@ WARNING  = 30
 INFO     = 20
 VERBOSE  = 19
 DEBUG    = 10
+DEBUG2   = 9
 NOTSET   = 0
 
 
@@ -45,6 +45,7 @@ _log_level_names = {
     INFO:     'info',
     VERBOSE:  'verbose',
     DEBUG:    'debug',
+    DEBUG2:   'debug2',
     NOTSET:   'undefined'
 }
 
@@ -55,6 +56,7 @@ _log_level_values = {
     'info':      INFO,
     'verbose':   VERBOSE,
     'debug':     DEBUG,
+    'debug2':    DEBUG2,
     'undefined': NOTSET,
     'notset':    NOTSET
 }
@@ -196,9 +198,7 @@ def _create_logger(site_config, handlers_group):
 def _create_file_handler(site_config, config_prefix):
     filename = os.path.expandvars(site_config.get(f'{config_prefix}/name'))
     if not filename:
-        logfd, logfile = tempfile.mkstemp(suffix='.log', prefix='rfm-')
-        os.close(logfd)
-        filename = logfile
+        filename = osext.mkstemp_path(suffix='.log', prefix='rfm-')
 
     timestamp = site_config.get(f'{config_prefix}/timestamp')
     if timestamp:
@@ -379,6 +379,9 @@ class Logger(logging.Logger):
     def debug(self, message, *args, **kwargs):
         self.log(DEBUG, message, *args, **kwargs)
 
+    def debug2(self, message, *args, **kwargs):
+        self.log(DEBUG2, message, *args, **kwargs)
+
 
 class LoggerAdapter(logging.LoggerAdapter):
     def __init__(self, logger=None, check=None):
@@ -402,10 +405,10 @@ class LoggerAdapter(logging.LoggerAdapter):
                 'check_perf_lower_thres': None,
                 'check_perf_upper_thres': None,
                 'check_perf_unit': None,
-                'osuser':  os_ext.osuser()  or '<unknown>',
-                'osgroup': os_ext.osgroup() or '<unknown>',
+                'osuser':  osext.osuser()  or '<unknown>',
+                'osgroup': osext.osgroup() or '<unknown>',
                 'check_tags': None,
-                'version': os_ext.reframe_version(),
+                'version': osext.reframe_version(),
             }
         )
         self.check = check
@@ -478,6 +481,9 @@ class LoggerAdapter(logging.LoggerAdapter):
     def log(self, level, msg, *args, **kwargs):
         if self.logger:
             super().log(level, msg, *args, **kwargs)
+
+    def debug2(self, message, *args, **kwargs):
+        self.log(DEBUG2, message, *args, **kwargs)
 
     def verbose(self, message, *args, **kwargs):
         self.log(VERBOSE, message, *args, **kwargs)

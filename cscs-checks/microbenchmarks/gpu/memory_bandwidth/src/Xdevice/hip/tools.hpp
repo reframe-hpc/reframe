@@ -11,10 +11,8 @@ static inline void rsmiCheck(rsmi_status_t err)
 # ifdef DEBUG
   if(err != RSMI_STATUS_SUCCESS)
   {
-    char nid[80];
-    gethostname(nid, 80);
     std::cerr << "Call to the rsmi API failed!" << std::endl;
-    exit(err);
+    exit(1);
   }
 # endif
 }

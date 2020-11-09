@@ -3,15 +3,8 @@
 
 #include "Xdevice/runtime.hpp"
 
-class RAIIData
-{
-public:
-  RAIIData() {};
-  virtual ~RAIIData() {};
-};
-
 // Class managing host data.
-class HostData : public RAIIData
+class HostData
 {
 private:
   size_t size;
@@ -31,7 +24,7 @@ public:
 };
 
 // Class managing device data
-class DeviceData : public RAIIData
+class DeviceData
 {
 private:
   size_t size;

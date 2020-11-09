@@ -3,14 +3,10 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import contextlib
-import os
-
 import reframe.utility.sanity as sn
 import reframe as rfm
 
 
-@rfm.required_version('>=2.16-dev0')
 @rfm.simple_test
 class GpuBandwidthCheck(rfm.RegressionTest):
     def __init__(self):
@@ -20,8 +16,6 @@ class GpuBandwidthCheck(rfm.RegressionTest):
         self.valid_prog_environs = ['PrgEnv-gnu']
         if self.current_system.name in ['arolla', 'tsa']:
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
-        if self.current_system.name in ['arolla', 'ault', 'tsa']:
-            self.exclusive_access = True
 
         self.exclusive_access = True
         self.build_system = 'SingleSource'
@@ -36,9 +30,9 @@ class GpuBandwidthCheck(rfm.RegressionTest):
         # Perform a single bandwidth test with a buffer size of 1024MB
         self.copy_size = 1073741824
 
-        self.build_system.cxxflags = ['-I.', '-m64', '-arch=sm_%s' % nvidia_sm,
+        self.build_system.cxxflags = ['-I.', '-m64', f'-arch=sm_{nvidia_sm}',
                                       '-std=c++11', '-lnvidia-ml',
-                                      '-DCOPY=%d' % self.copy_size]
+                                      f'-DCOPY={self.copy_size}']
         self.num_tasks = 0
         self.num_tasks_per_node = 1
         if self.current_system.name in ['daint', 'dom', 'tiger']:
@@ -50,7 +44,6 @@ class GpuBandwidthCheck(rfm.RegressionTest):
         self.partition_num_gpus_per_node = {
             'daint:gpu':      1,
             'dom:gpu':        1,
-            'tiger:gpu':      2,
             'arolla:cn':      2,
             'tsa:cn':         8,
             'ault:amdv100':   2,
@@ -60,38 +53,51 @@ class GpuBandwidthCheck(rfm.RegressionTest):
 
         # perf_patterns and reference will be set by the sanity check function
         self.sanity_patterns = self.do_sanity_check()
-        self.perf_patterns = {}
-        self.reference = {}
-        self.__bwref = {
-            'daint:gpu:h2d':  (11881, -0.1, None, 'MB/s'),
-            'daint:gpu:d2h':  (12571, -0.1, None, 'MB/s'),
-            'daint:gpu:d2d': (499000, -0.1, None, 'MB/s'),
-            'dom:gpu:h2d':  (11881, -0.1, None, 'MB/s'),
-            'dom:gpu:d2h':  (12571, -0.1, None, 'MB/s'),
-            'dom:gpu:d2d': (499000, -0.1, None, 'MB/s'),
-            'ault:amdv100:h2d':  (13189, -0.1, None, 'MB/s'),
-            'ault:amdv100:d2h':  (13141, -0.1, None, 'MB/s'),
-            'ault:amdv100:d2d': (777788, -0.1, None, 'MB/s'),
-            'ault:intelv100:h2d':  (13183, -0.1, None, 'MB/s'),
-            'ault:intelv100:d2h':  (12411, -0.1, None, 'MB/s'),
-            'ault:intelv100:d2d': (778200, -0.1, None, 'MB/s'),
-            'ault:amdvega:h2d':  (14000, -0.1, None, 'MB/s'),
-            'ault:amdvega:d2h':  (14000, -0.1, None, 'MB/s'),
-            'ault:amdvega:d2d': (575700, -0.1, None, 'MB/s'),
+        self.perf_patterns = {
+            'h2d': sn.min(sn.extractall(self._xfer_pattern('h2d'),
+                                        self.stdout, 1, float)),
+            'd2h': sn.min(sn.extractall(self._xfer_pattern('d2h'),
+                                        self.stdout, 1, float)),
+            'd2d': sn.min(sn.extractall(self._xfer_pattern('d2d'),
+                                        self.stdout, 1, float)),
+        }
+        self.reference = {
+            'daint:gpu': {
+                'h2d': (11881, -0.1, None, 'MB/s'),
+                'd2h': (12571, -0.1, None, 'MB/s'),
+                'd2d': (499000, -0.1, None, 'MB/s')
+            },
+            'dom:gpu': {
+                'h2d': (11881, -0.1, None, 'MB/s'),
+                'd2h': (12571, -0.1, None, 'MB/s'),
+                'd2d': (499000, -0.1, None, 'MB/s')
+            },
+            'tsa:cn': {
+                'h2d': (13000, -0.1, None, 'MB/s'),
+                'd2h': (12416, -0.1, None, 'MB/s'),
+                'd2d': (777000, -0.1, None, 'MB/s')
+            },
+            'ault:amdv100': {
+                'h2d': (13189, -0.1, None, 'MB/s'),
+                'd2h': (13141, -0.1, None, 'MB/s'),
+                'd2d': (777788, -0.1, None, 'MB/s')
+            },
+            'ault:intelv100': {
+                'h2d': (13183, -0.1, None, 'MB/s'),
+                'd2h': (13411, -0.1, None, 'MB/s'),
+                'd2d': (778200, -0.1, None, 'MB/s')
+            },
+            'ault:amdvega': {
+                'h2d': (14000, -0.1, None, 'MB/s'),
+                'd2h': (14000, -0.1, None, 'MB/s'),
+                'd2d': (575700, -0.1, None, 'MB/s')
+            },
         }
         self.tags = {'diagnostic', 'benchmark', 'mch',
                      'craype', 'external-resources'}
         self.maintainers = ['AJ', 'SK']
 
-    @rfm.run_before('run')
-    def set_num_gpus_per_node(self):
-        if self.current_partition.fullname in self.partition_num_gpus_per_node:
-            self.num_gpus_per_node = self.partition_num_gpus_per_node.get(
-                self.current_partition.fullname)
-        else:
-            self.num_gpus_per_node = 1
-
-    def _xfer_pattern(self, xfer_kind, devno, nodename):
+    def _xfer_pattern(self, xfer_kind):
         '''generates search pattern for performance analysis'''
         if xfer_kind == 'h2d':
             direction = 'Host to device'
@@ -102,8 +108,13 @@ class GpuBandwidthCheck(rfm.RegressionTest):
 
         # Extract the bandwidth corresponding to the right node, transfer and
         # device.
-        return (r'^[^,]*\[[^,]*\]\s*%s\s*bandwidth on device'
-                r' %d is \s*(\S+)\s*Mb/s.' % (direction, devno))
+        return (rf'^[^,]*\[[^,]*\]\s*{direction}\s*bandwidth on device'
+                r' \d+ is \s*(\S+)\s*Mb/s.')
+
+    @rfm.run_before('run')
+    def set_num_gpus_per_node(self):
+        self.num_gpus_per_node = self.partition_num_gpus_per_node.get(
+            self.current_partition.fullname, 1)
 
     @sn.sanity_function
     def do_sanity_check(self):
@@ -124,20 +135,5 @@ class GpuBandwidthCheck(rfm.RegressionTest):
             msg='check failed on the following node(s): %s' %
             ','.join(sorted(node_names - good_nodes)))
         )
-
-        # Sanity is fine, fill in the perf. patterns based on the exact node id
-        for nodename in node_names:
-            for xfer_kind in ('h2d', 'd2h', 'd2d'):
-                for devno in range(self.num_gpus_per_node):
-                    perfvar = 'bw_%s_%s_gpu_%s' % (xfer_kind, nodename, devno)
-                    self.perf_patterns[perfvar] = sn.extractsingle(
-                        self._xfer_pattern(xfer_kind, devno, nodename),
-                        self.stdout, 1, float, 0
-                    )
-                    partname = self.current_partition.fullname
-                    refkey = '%s:%s' % (partname, perfvar)
-                    bwkey = '%s:%s' % (partname, xfer_kind)
-                    with contextlib.suppress(KeyError):
-                        self.reference[refkey] = self.__bwref[bwkey]
 
         return True

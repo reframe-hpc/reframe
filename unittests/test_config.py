@@ -8,9 +8,9 @@ import os
 import pytest
 
 import reframe.core.config as config
-import reframe.utility.os_ext as os_ext
-from reframe.core.exceptions import (ConfigError, ReframeDeprecationWarning)
+from reframe.core.exceptions import ConfigError
 from reframe.core.systems import System
+from reframe.core.warnings import ReframeDeprecationWarning
 
 
 def test_load_config_fallback(monkeypatch):

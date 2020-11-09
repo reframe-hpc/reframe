@@ -7,14 +7,18 @@
 
 static inline void checkError(cudaError_t errorCode)
 {
-#  ifndef DEBUG
+#  ifdef DEBUG
+#    ifndef HOSTNAME_SIZE
+#      define HOSTNAME_SIZE 80
+#    endif
+
    if (errorCode != cudaSuccess)
    {
-      char nid[80];
-      gethostname(nid,80);
+      char nid[HOSTNAME_SIZE];
+      gethostname(nid, HOSTNAME_SIZE);
       std::cerr << "[" << nid << "] A call to the CUDA API returned an error :" <<
         cudaGetErrorString(errorCode) << std::endl;
-      exit(errorCode);
+      exit(1);
    }
 #  endif
 }

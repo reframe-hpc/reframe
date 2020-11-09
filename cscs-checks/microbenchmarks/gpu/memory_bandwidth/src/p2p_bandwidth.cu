@@ -24,8 +24,8 @@ void p2pBandwidthMap(int, int, size_t, int, char*);
 
 int main()
 {
-  char* nid_name = (char*)calloc(80, sizeof(char));
-  gethostname(nid_name, 80);
+  char nid_name[HOSTNAME_SIZE];
+  gethostname(nid_name, HOSTNAME_SIZE);
 
   int number_of_devices;
   XGetDeviceCount(number_of_devices);
@@ -88,7 +88,7 @@ void p2pBandwidthMap(int devices, int p2p, size_t copy_size, int repeats, char *
 # define LIMITS 0
 #endif
 
-  float fact = (float)copy_size/(float)1e6;
+  float fact = (float)copy_size/1e6;
 
   // Fire up the system management interface to set the device's cpu affinity.
   Smi smiHandle;

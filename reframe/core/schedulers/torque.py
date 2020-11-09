@@ -12,10 +12,9 @@ import re
 import os
 import time
 
-import reframe.utility.os_ext as os_ext
+import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
 from reframe.core.exceptions import JobError, JobSchedulerError
-from reframe.core.logging import getlogger
 from reframe.core.schedulers.pbs import PbsJobScheduler, _run_strict
 
 
@@ -50,7 +49,7 @@ class TorqueJobScheduler(PbsJobScheduler):
         if not jobs:
             return
 
-        completed = os_ext.run_command(
+        completed = osext.run_command(
             f'qstat -f {" ".join(job.jobid for job in jobs)}'
         )
 
@@ -60,10 +59,8 @@ class TorqueJobScheduler(PbsJobScheduler):
         # Otherwise, it will return with return code 0 and print information
         # only for the jobs it could find.
         if completed.returncode == 153:
-            getlogger().debug(
-                'return code = 153: jobids not known by scheduler, '
-                'assuming all jobs completed'
-            )
+            self.log('Return code is 153: jobids not known by scheduler, '
+                     'assuming all jobs completed')
             for job in jobs:
                 job._state = 'COMPLETED'
 
@@ -87,10 +84,8 @@ class TorqueJobScheduler(PbsJobScheduler):
 
         for job in jobs:
             if job.jobid not in jobinfo:
-                getlogger().debug(
-                    f'jobid {job.jobid} not known to scheduler, '
-                    f'assuming job completed'
-                )
+                self.log(f'Job {job.jobid} not known to scheduler, '
+                         f'assuming job completed')
                 job._state = 'COMPLETED'
                 job._completed = True
                 continue
@@ -100,9 +95,7 @@ class TorqueJobScheduler(PbsJobScheduler):
                 r'^\s*job_state = (?P<state>[A-Z])', info, re.MULTILINE
             )
             if not state_match:
-                getlogger().debug(
-                    f'job state not found (job info follows):\n{info}'
-                )
+                self.log(f'Job state not found (job info follows):\n{info}')
                 continue
 
             state = state_match.group('state')

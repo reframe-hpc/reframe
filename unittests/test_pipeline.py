@@ -10,7 +10,7 @@ import re
 
 import reframe as rfm
 import reframe.core.runtime as rt
-import reframe.utility.os_ext as os_ext
+import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 import unittests.fixtures as fixtures
 from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
@@ -150,10 +150,9 @@ def test_hellocheck_make(remote_exec_ctx):
 
 def test_hellocheck_local(hellotest, local_exec_ctx):
     # Test also the prebuild/postbuild functionality
-    hellotest.prebuild_cmds = ['touch prebuild', 'mkdir prebuild_dir']
+    hellotest.prebuild_cmds = ['touch prebuild', 'mkdir -p  prebuild_dir/foo']
     hellotest.postbuild_cmds = ['touch postbuild', 'mkdir postbuild_dir']
-    hellotest.keep_files = ['prebuild', 'postbuild',
-                            'prebuild_dir', 'postbuild_dir']
+    hellotest.keep_files = ['prebuild', 'postbuild', '*dir']
 
     # Force local execution of the test; just for testing .local
     hellotest.local = True
@@ -164,7 +163,8 @@ def test_hellocheck_local(hellotest, local_exec_ctx):
         hellotest.build_stdout.evaluate(),
         hellotest.build_stderr.evaluate(),
         hellotest.job.script_filename,
-        *hellotest.keep_files
+        'prebuild', 'postbuild', 'prebuild_dir',
+        'prebuild_dir/foo', 'postbuild_dir'
     ]
     for f in must_keep:
         assert os.path.exists(os.path.join(hellotest.outputdir, f))
@@ -215,6 +215,26 @@ def test_run_only_no_srcdir(local_exec_ctx):
     test = MyTest()
     assert test.sourcesdir is None
     _run(test, *local_exec_ctx)
+
+
+def test_run_only_preserve_symlinks(local_exec_ctx):
+    @fixtures.custom_prefix('unittests/resources/checks')
+    class MyTest(rfm.RunOnlyRegressionTest):
+        def __init__(self):
+            self.executable = './hello.sh.link'
+            self.executable_opts = ['Hello, World!']
+            self.local = True
+            self.valid_prog_environs = ['*']
+            self.valid_systems = ['*']
+            self.sanity_patterns = sn.assert_found(
+                r'Hello, World\!', self.stdout
+            )
+
+        @rfm.run_after('run')
+        def check_symlinks(self):
+            assert os.path.islink(os.path.join(self.stagedir, 'hello.sh.link'))
+
+    _run(MyTest(), *local_exec_ctx)
 
 
 def test_compile_only_failure(local_exec_ctx):
@@ -646,7 +666,7 @@ def test_disabled_hooks(local_exec_ctx):
 
 
 def test_require_deps(local_exec_ctx):
-    import reframe.frontend.dependency as dependency
+    import reframe.frontend.dependencies as dependencies
     import reframe.frontend.executors as executors
 
     @fixtures.custom_prefix('unittests/resources/checks')
@@ -675,8 +695,8 @@ def test_require_deps(local_exec_ctx):
             self.z = T0().x + 2
 
     cases = executors.generate_testcases([T0(), T1()])
-    deps = dependency.build_deps(cases)
-    for c in dependency.toposort(deps):
+    deps = dependencies.build_deps(cases)
+    for c in dependencies.toposort(deps):
         _run(*c)
 
     for c in cases:
@@ -1086,7 +1106,7 @@ def container_test(tmp_path):
 
 
 def _cray_cle_version():
-    completed = os_ext.run_command('cat /etc/opt/cray/release/cle-release')
+    completed = osext.run_command('cat /etc/opt/cray/release/cle-release')
     matched = re.match(r'^RELEASE=(\S+)', completed.stdout)
     if matched is None:
         return None

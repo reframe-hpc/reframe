@@ -5,7 +5,7 @@
 
 import reframe as rfm
 import reframe.utility.sanity as sn
-import reframe.utility.os_ext as os_ext
+import reframe.utility.osext as osext
 
 
 @rfm.required_version('>=2.16')
@@ -17,7 +17,7 @@ class TensorFlow2HorovodTest(rfm.RunOnlyRegressionTest):
         self.valid_prog_environs = ['builtin']
 
         # FIXME: The following will not be needed after the Daint upgrade
-        cray_cdt_version = os_ext.cray_cdt_version() or '19.10'
+        cray_cdt_version = osext.cray_cdt_version() or '19.10'
         self.modules = [f'Horovod/0.19.1-CrayGNU-{cray_cdt_version}-tf-2.2.0']
         self.sourcesdir = None
         self.num_tasks_per_node = 1

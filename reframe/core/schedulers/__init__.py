@@ -16,7 +16,7 @@ import reframe.core.shell as shell
 import reframe.utility.typecheck as typ
 from reframe.core.exceptions import JobError, JobNotStartedError
 from reframe.core.launchers import JobLauncher
-from reframe.core.logging import getlogger
+from reframe.core.logging import (getlogger, DEBUG2)
 
 
 class JobScheduler(abc.ABC):
@@ -101,6 +101,14 @@ class JobScheduler(abc.ABC):
 
         :meta private:
         '''
+
+    def log(self, message, level=DEBUG2):
+        '''Convenience method for logging debug messages from the scheduler
+        backends.
+
+        :meta private:
+        '''
+        getlogger().log(level, f'[S] {self.registered_name}: {message}')
 
 
 class Job:
@@ -328,6 +336,7 @@ class Job:
     def prepare(self, commands, environs=None, **gen_opts):
         environs = environs or []
         if self.num_tasks <= 0:
+            getlogger().debug(f'[F] Flexible node allocation requested')
             num_tasks_per_node = self.num_tasks_per_node or 1
             min_num_tasks = (-self.num_tasks if self.num_tasks else
                              num_tasks_per_node)
@@ -336,17 +345,17 @@ class Job:
                 guessed_num_tasks = self.guess_num_tasks()
             except NotImplementedError as e:
                 raise JobError('flexible node allocation is not supported by '
-                               'this backend') from e
+                               'this scheduler backend') from e
 
             if guessed_num_tasks < min_num_tasks:
                 raise JobError(
                     'could not satisfy the minimum task requirement: '
                     'required %s, found %s' %
-                    (min_num_tasks, guessed_num_tasks))
+                    (min_num_tasks, guessed_num_tasks)
+                )
 
             self.num_tasks = guessed_num_tasks
-            getlogger().debug('flex_alloc_nodes: setting num_tasks to %s' %
-                              self.num_tasks)
+            getlogger().debug(f'[F] Setting num_tasks to {self.num_tasks}')
 
         with shell.generate_script(self.script_filename,
                                    **gen_opts) as builder:
@@ -365,8 +374,9 @@ class Job:
             return self.sched_flex_alloc_nodes * num_tasks_per_node
 
         available_nodes = self.scheduler.allnodes()
-        getlogger().debug('flex_alloc_nodes: total available nodes: %s ' %
-                          len(available_nodes))
+        getlogger().debug(
+            f'[F] Total available nodes: {len(available_nodes)}'
+        )
 
         # Try to guess the number of tasks now
         available_nodes = self.scheduler.filternodes(self, available_nodes)
@@ -374,7 +384,7 @@ class Job:
             available_nodes = {n for n in available_nodes
                                if n.in_state(self.sched_flex_alloc_nodes)}
             getlogger().debug(
-                f'flex_alloc_nodes: selecting nodes in state '
+                f'[F] Selecting nodes in state '
                 f'{self.sched_flex_alloc_nodes!r}: '
                 f'available nodes now: {len(available_nodes)}'
             )

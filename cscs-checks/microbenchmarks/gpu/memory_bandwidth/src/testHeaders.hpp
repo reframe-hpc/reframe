@@ -14,5 +14,8 @@
 #ifndef NUMBER_OF_COPIES
 # define NUMBER_OF_COPIES 20
 #endif
+#ifndef HOSTNAME_SIZE
+# define HOSTNAME_SIZE 80
+#endif
 
 #endif
