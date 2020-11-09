@@ -32,7 +32,7 @@ class OSUDownloadTest(rfm.RunOnlyRegressionTest):
         self.executable = 'wget'
         self.executable_opts = [(
             f'http://mvapich.cse.ohio-state.edu/download/mvapich/'
-             'osu-micro-benchmarks-{OSU_BENCH_VERSION}.tar.gz'
+            'osu-micro-benchmarks-{OSU_BENCH_VERSION}.tar.gz'
         )]
         self.postrun_cmds = [
             f'tar xzf osu-micro-benchmarks-{OSU_BENCH_VERSION}.tar.gz'
