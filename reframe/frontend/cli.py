@@ -42,9 +42,6 @@ import reframe.core.runtime as runtime
 import reframe.core.warnings as warnings
 import reframe.frontend.argparse as argparse
 import reframe.frontend.check_filters as filters
-<< << << < HEAD
-== == == =
->>>>>> > master
 
 
 def format_check(check, check_deps, detailed=False):
