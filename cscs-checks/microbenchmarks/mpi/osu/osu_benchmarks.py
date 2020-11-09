@@ -12,6 +12,7 @@ import reframe.utility.udeps as udeps
 OSU_BENCH_VERSION = '5.6.3'
 NUM_NODES = 7
 
+
 def tsa_node_pairs():
     def nodeid(n):
         return f'tsa-pp{n+8:03}'
@@ -29,8 +30,10 @@ class OSUDownloadTest(rfm.RunOnlyRegressionTest):
         self.valid_systems = ['tsa:login']
         self.valid_prog_environs = ['PrgEnv-gnu-nocuda']
         self.executable = 'wget'
-        self.executable_opts = [
-            f'http://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-{OSU_BENCH_VERSION}.tar.gz']
+        self.executable_opts = [(
+            f'http://mvapich.cse.ohio-state.edu/download/mvapich/'
+             'osu-micro-benchmarks-{OSU_BENCH_VERSION}.tar.gz'
+        )]
         self.postrun_cmds = [
             f'tar xzf osu-micro-benchmarks-{OSU_BENCH_VERSION}.tar.gz'
         ]
