@@ -18,8 +18,7 @@ class AllocSpeedTest(rfm.RegressionTest):
                               'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
         if hugepages == 'no':
-            self.valid_systems += ['kesch:cn', 'kesch:pn',
-                                   'arolla:cn', 'arolla:pn',
+            self.valid_systems += ['arolla:cn', 'arolla:pn',
                                    'tsa:cn', 'tsa:pn']
         else:
             if self.current_system.name in {'dom', 'daint', 'tiger'}:
@@ -50,12 +49,6 @@ class AllocSpeedTest(rfm.RegressionTest):
                 },
                 'daint:mc': {
                     'time': (1.41, None, 0.05, 's')
-                },
-                'kesch:cn': {
-                    'time': (1.41, None, 0.10, 's')
-                },
-                'kesch:pn': {
-                    'time': (0.70, None, 0.10, 's')
                 },
             },
             '2M': {

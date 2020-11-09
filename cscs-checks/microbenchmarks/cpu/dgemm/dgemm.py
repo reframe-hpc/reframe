@@ -20,13 +20,13 @@ class DGEMMTest(rfm.RegressionTest):
         self.valid_systems = [
             'daint:gpu', 'daint:mc',
             'dom:gpu', 'dom:mc',
-            'kesch:cn', 'kesch:pn', 'tiger:gpu',
+            'tiger:gpu',
             'arolla:cn', 'arolla:pn',
             'tsa:cn', 'tsa:pn'
         ]
         if self.current_system.name in ['daint', 'dom', 'tiger']:
             self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel']
-        if self.current_system.name in ['arolla', 'kesch', 'tsa']:
+        if self.current_system.name in ['arolla', 'tsa']:
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
 
         self.num_tasks = 0
@@ -39,8 +39,6 @@ class DGEMMTest(rfm.RegressionTest):
             'daint:mc': (860.0, -0.15, None, 'Gflop/s'),
             'dom:gpu': (300.0, -0.15, None, 'Gflop/s'),
             'dom:mc': (860.0, -0.15, None, 'Gflop/s'),
-            'kesch:cn': (300.0, -0.15, None, 'Gflop/s'),
-            'kesch:pn': (300.0, -0.15, None, 'Gflop/s'),
         }
         self.maintainers = ['AJ', 'VH']
         self.tags = {'benchmark', 'diagnostic', 'craype'}
@@ -59,7 +57,6 @@ class DGEMMTest(rfm.RegressionTest):
             ]
 
         if self.current_partition.fullname in ['arolla:cn', 'arolla:pn',
-                                               'kesch:cn', 'kesch:pn',
                                                'tsa:cn', 'tsa:pn']:
             self.build_system.cflags += ['-I$EBROOTOPENBLAS/include']
             self.build_system.ldflags = ['-L$EBROOTOPENBLAS/lib', '-lopenblas',
@@ -77,8 +74,6 @@ class DGEMMTest(rfm.RegressionTest):
             self.num_cpus_per_task = 16
         elif self.current_partition.fullname in ['arolla:pn', 'tsa:pn']:
             self.num_cpus_per_task = 40
-        elif self.current_partition.fullname in ['kesch:cn', 'kesch:pn']:
-            self.num_cpus_per_task = 12
 
         if self.num_cpus_per_task:
             self.variables = {

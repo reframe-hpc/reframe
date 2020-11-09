@@ -120,37 +120,6 @@ site_configuration = {
             ]
         },
         {
-            'name': 'kesch',
-            'descr': 'Kesch MCH',
-            'hostnames': [
-                r'keschln-\d+'
-            ],
-            'modules_system': 'tmod',
-            'resourcesdir': '/apps/common/UES/reframe/resources',
-            'partitions': [
-                {
-                    'name': 'cn',
-                    'scheduler': 'slurm',
-                    'access': [
-                        '--partition=cn-regression'
-                    ],
-                    'environs': [
-                        'builtin'
-                    ],
-                    'descr': 'Kesch compute nodes',
-                    'resources': [
-                        {
-                            'name': '_rfm_gpu',
-                            'options': [
-                                '--gres=gpu:{num_gpus_per_node}'
-                            ]
-                        }
-                    ],
-                    'launcher': 'srun'
-                }
-            ]
-        },
-        {
             'name': 'tsa',
             'descr': 'Tsa MCH',
             'hostnames': [

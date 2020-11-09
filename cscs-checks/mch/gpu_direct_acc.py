@@ -14,7 +14,7 @@ import reframe.utility.sanity as sn
 class GpuDirectAccCheck(rfm.RegressionTest):
     def __init__(self):
         self.descr = 'tests gpu-direct for Fortran OpenACC'
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu',
                               'arolla:cn', 'tsa:cn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
         if self.current_system.name in ['daint', 'dom', 'tiger']:
@@ -30,18 +30,10 @@ class GpuDirectAccCheck(rfm.RegressionTest):
             self.num_tasks = 2
             self.num_gpus_per_node = 1
             self.num_tasks_per_node = 1
-        elif self.current_system.name == 'kesch':
-            self.exclusive_access = True
-            self.modules = ['cudatoolkit/8.0.61']
-            self.variables = {
-                'CRAY_ACCEL_TARGET': 'nvidia35',
-                'MV2_USE_CUDA': '1',
-                'G2G': '1'
-            }
             self.num_tasks = 8
             self.num_gpus_per_node = 8
             self.num_tasks_per_node = 8
-        elif self.current_system.name in ['arolla', 'tsa']:
+        if self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
             self.variables = {
                 'G2G': '1'
@@ -69,8 +61,6 @@ class GpuDirectAccCheck(rfm.RegressionTest):
             self.build_system.fflags = ['-acc']
             if self.current_system.name in ['daint', 'dom']:
                 self.build_system.fflags += ['-ta=tesla:cc60', '-Mnorpath']
-            elif self.current_system.name == 'kesch':
-                self.build_system.fflags += ['-ta=tesla:cc35']
             elif self.current_system.name in ['arolla', 'tsa']:
                 self.build_system.fflags += ['-ta=tesla:cc70']
 
