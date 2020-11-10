@@ -13,13 +13,17 @@ class GPUShmemTest(rfm.RegressionTest):
     def __init__(self):
         self.sourcepath = 'shmem.cu'
         self.build_system = 'SingleSource'
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu']
+        self.valid_systems = ['daint:gpu', 'dom:gpu',
+                              'ault:amdv100', 'ault:intelv100']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.num_tasks = 0
         self.num_tasks_per_node = 1
         self.num_gpus_per_node = 1
-        if self.current_system.name in {'daint', 'dom', 'tiger'}:
+        if self.current_system.name in {'daint', 'dom'}:
             self.modules = ['craype-accel-nvidia60']
+
+        elif self.current_system.name in {'ault'}:
+            self.modules = ['cuda']
 
         self.sanity_patterns = sn.assert_eq(
             sn.count(sn.findall(r'Bandwidth', self.stdout)),
@@ -38,6 +42,9 @@ class GPUShmemTest(rfm.RegressionTest):
             },
             'daint:gpu': {
                 'bandwidth': (8850, -0.01, 9520/8850. - 1, 'GB/s')
+            },
+            'ault:amdv100': {
+                'bandwidth': (13020, -0.01, None, 'GB/s')
             }
         }
 
