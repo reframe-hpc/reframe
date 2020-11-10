@@ -243,8 +243,6 @@ def git_only():
         pytest.skip('no git installation found on system')
 
 
-
-
 def test_git_repo_hash(monkeypatch, git_only):
     try:
         completed = osext.run_command('git status', check=True, log=False)
