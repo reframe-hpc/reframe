@@ -45,6 +45,9 @@
 # define LIST_TYPE DeviceList
 #endif
 
+#ifndef HOSTNAME_SIZE
+# define HOSTNAME_SIZE 80
+#endif
 __device__ uint32_t __clockLatency()
 {
   uint32_t start = __ownClock();
@@ -162,7 +165,7 @@ __device__ __forceinline__ void  nextNode<0>( __VOLATILE__ Node ** ptr, uint32_t
 /* List traversal to make a singly-linked list circular. This is just to have a data dependency and
  * cover from a potential compiler optimization that might throw the list traversal away.
  */
-__global__ void make_circular(Node * __restrict__ buffer, uint32_t headIndex)
+__global__ void make_circular(Node * __restrict__ buffer, uint32_t headIndex, int dev_id, char * nid)
 {
 
   // These are used to prevent ILP when timing each jump.
@@ -185,10 +188,10 @@ __global__ void make_circular(Node * __restrict__ buffer, uint32_t headIndex)
   uint32_t end = __ownClock();
   sum = end - start;
 #else
-  printf("Latency for each node jump:\n");
+  printf("[%s] Latency for each node jump (device %d):\n", nid, dev_id);
   for (uint32_t i = 0; i < NODES-1; i++)
   {
-    printf("%d\n", timings[i]);
+    printf("[%s] %d\n", nid, timings[i]);
     sum += timings[i];
   }
   if (ptr == ptrs[0])
@@ -197,7 +200,7 @@ __global__ void make_circular(Node * __restrict__ buffer, uint32_t headIndex)
   }
 #endif
 
-  printf("Chase took on average %d cycles per node jump (SM %d).\n", sum/(NODES-1), __smId());
+  printf("[%s] On device %d, the chase took on average %d cycles per node jump.\n", nid, dev_id, sum/(NODES-1));
 
   // Join the tail with the head (just for the data dependency).
   if (ptr->next == nullptr)
@@ -290,9 +293,12 @@ struct List
     simple_traverse<<<1,1>>>(buffer, headIndex);
     XDeviceSynchronize();
   }
-  void time_traversal()
+  void time_traversal(int dev_id, char * nid)
   {
-    make_circular<<<1,1>>>(buffer, headIndex);
+    char * d_nid;
+    XMalloc((void**)&d_nid, sizeof(char)*HOSTNAME_SIZE);
+    XMemcpy(d_nid, nid, sizeof(char)*HOSTNAME_SIZE, XMemcpyHostToDevice);
+    make_circular<<<1,1>>>(buffer, headIndex, dev_id, d_nid);
     XDeviceSynchronize();
   }
 
@@ -303,7 +309,9 @@ struct DeviceList : public List
 {
   DeviceList(size_t n, size_t buffSize, size_t stride) : List(buffSize, stride)
   {
+#   ifdef DEBUG
     List::info(n, buffSize);
+#   endif
     XMalloc((void**)&buffer, sizeof(Node)*buffSize);
   }
   ~DeviceList()
@@ -329,13 +337,13 @@ struct HostList : public List
 
 
 template < class LIST >
-void devicePointerChase(int m, size_t buffSize, size_t stride)
+void devicePointerChase(int m, size_t buffSize, size_t stride, int dev_id, char * nid)
 {
   LIST l(NODES, buffSize, stride);
 
   l.initialize(m);
   l.traverse(); // warmup kernel
-  l.time_traversal();
+  l.time_traversal(dev_id, nid);
 
 }
 
@@ -382,7 +390,30 @@ int main(int argc, char ** argv)
     return 1;
   }
 
+  // Get the node name
+  char nid_name[HOSTNAME_SIZE];
+  gethostname(nid_name, HOSTNAME_SIZE);
 
-  // Run the pointer chase.
-  devicePointerChase<LIST_TYPE>(list_init, buffSize, stride);
+  // Make sure we've got devices aboard.
+  int num_devices;
+  XGetDeviceCount(num_devices);
+  if (num_devices == 0)
+  {
+    std::cout << "No devices found on host " << nid_name << std::endl;
+    return 1;
+  }
+  else
+  {
+    printf("[%s] Found %d device(s).\n", nid_name, num_devices);
+  }
+
+  // Run the pointer chase on each device in the node.
+  for (int i = 0; i < num_devices; i++)
+  {
+    XSetDevice(i);
+    devicePointerChase<LIST_TYPE>(list_init, buffSize, stride, i, nid_name);
+  }
+
+  printf("[%s] Pointer chase complete.\n", nid_name);
+  return 0;
 }
