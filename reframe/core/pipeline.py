@@ -1048,10 +1048,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
         except OSError as e:
             raise PipelineError('failed to set up paths') from e
 
-    def _setup_job(self, **job_opts):
+    def _setup_job(self, local, name, **job_opts):
         '''Setup the job related to this check.'''
 
-        if self.local:
+        if local:
             scheduler = getscheduler('local')()
             launcher = getlauncher('local')()
         else:
@@ -1059,39 +1059,18 @@ class RegressionTest(metaclass=RegressionTestMeta):
             launcher = self._current_partition.launcher_type()
 
         self.logger.debug(
-            f'Setting up run job descriptor '
+            f'Setting up {name} job descriptor '
             f'(scheduler: {scheduler.registered_name!r}, '
             f'launcher: {launcher.registered_name!r})'
         )
-        self._job = Job.create(scheduler,
-                               launcher,
-                               name='rfm_%s_job' % self.name,
-                               workdir=self._stagedir,
-                               max_pending_time=self.max_pending_time,
-                               sched_access=self._current_partition.access,
-                               sched_exclusive_access=self.exclusive_access,
-                               **job_opts)
-
-    def _setup_build_job(self, **job_opts):
-        '''Setup the build job related to this check.'''
-
-        if self.local or self.build_locally:
-            scheduler = getscheduler('local')()
-            launcher = getlauncher('local')()
-        else:
-            scheduler = self._current_partition.scheduler
-            launcher = self._current_partition.launcher_type()
-
-        self.logger.debug(
-            f'Setting up build job descriptor '
-            f'(scheduler: {scheduler.registered_name!r}, '
-            f'launcher: {launcher.registered_name!r})'
-        )
-        self._build_job = Job.create(scheduler,
-                                     launcher,
-                                     name='rfm_%s_build' % self.name,
-                                     workdir=self._stagedir,
-                                     sched_exclusive_access=self.exclusive_access)
+        return Job.create(scheduler,
+                          launcher,
+                          name=name,
+                          workdir=self._stagedir,
+                          max_pending_time=self.max_pending_time,
+                          sched_access=self._current_partition.access,
+                          sched_exclusive_access=self.exclusive_access,
+                          **job_opts)
 
     def _setup_perf_logging(self):
         self._perf_logger = logging.getperflogger(self)
@@ -1120,8 +1099,12 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self._current_partition = partition
         self._current_environ = environ
         self._setup_paths()
-        self._setup_job(**job_opts)
-        self._setup_build_job(**job_opts)
+        self._job = self._setup_job(self.local,
+                                    f'rfm_{self.name}_job',
+                                    **job_opts)
+        self._build_job = self._setup_job(self.local or self.build_locally,
+                                          f'rfm_%{self.name}_build',
+                                          **job_opts)
 
     def _copy_to_stagedir(self, path):
         self.logger.debug(f'Copying {path} to stage directory')
@@ -1802,7 +1785,9 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
         self._current_partition = partition
         self._current_environ = environ
         self._setup_paths()
-        self._setup_job(**job_opts)
+        self._job = self._setup_job(self.local,
+                                    f'rfm_{self.name}_job',
+                                    **job_opts)
 
     def compile(self):
         '''The compilation phase of the regression test pipeline.
@@ -1857,7 +1842,9 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
         self._current_partition = partition
         self._current_environ = environ
         self._setup_paths()
-        self._setup_build_job(**job_opts)
+        self._build_job = self._setup_job(self.local or self.build_locally,
+                                          f'rfm_%{self.name}_build',
+                                          **job_opts)
 
     @property
     @sn.sanity_function
