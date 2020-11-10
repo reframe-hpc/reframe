@@ -77,7 +77,7 @@ class GpuBandwidthCheck(rfm.RegressionTest):
             'ault:amda100': {
                 'h2d': (25500, -0.1, None, 'MB/s'),
                 'd2h': (26170, -0.1, None, 'MB/s'),
-                'd2d': (132250, -0.1, None, 'MB/s')
+                'd2d': (1322500, -0.1, None, 'MB/s')
             },
             'ault:amdv100': {
                 'h2d': (13189, -0.1, None, 'MB/s'),
