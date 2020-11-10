@@ -84,13 +84,12 @@ __device__ __forceinline__ uint32_t __ownClock()
   return x;
 }
 
-
-static __device__ __forceinline__ uint32_t __smId()
+__device__ __forceinline__ int __smId()
 {
   // SM ID
   uint32_t x;
   asm volatile ("mov.u32 %0, %%smid;" : "=r"(x) :: "memory");
-  return x;
+  return (int)x;
 }
 
 #endif

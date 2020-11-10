@@ -28,6 +28,11 @@ void XMallocHost(void ** data, size_t size)
   checkError( hipHostMalloc(data, size) );
 }
 
+void XHostMalloc(void** pHost, size_t size, unsigned int flags)
+{
+  checkError( hipHostMalloc(pHost, size, flags) );
+}
+
 void XFreeHost(void * data)
 {
   checkError( hipHostFree(data) );
@@ -96,6 +101,16 @@ void XDeviceDisablePeerAccess(int peer)
 void XMemcpyPeerAsync(void * dst, int peerDevId, void * src, int srcDevId, size_t size, hipStream_t stream)
 {
   checkError( hipMemcpyPeerAsync(dst, peerDevId, src, srcDevId, size, stream) );
+}
+
+void XMemcpy(void * in, void * out, size_t size, hipMemcpyKind dir)
+{
+  checkError( hipMemcpy(out, in, size, dir) );
+}
+
+void XHostGetDevicePointer(void** device, void* host, unsigned int flags)
+{
+  checkError( hipHostGetDevicePointer(device, host, flags) );
 }
 
 int XGetLastError()

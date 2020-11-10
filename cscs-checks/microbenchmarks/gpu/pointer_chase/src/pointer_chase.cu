@@ -45,17 +45,7 @@
 # define LIST_TYPE DeviceList
 #endif
 
-void checkErrors()
-{
-  cudaError_t err = cudaGetLastError();
-  if (cudaSuccess != err)
-  {
-    std::cerr << cudaGetErrorString(err) << std::endl;
-  }
-}
-
-
-static __device__ uint32_t __clockLatency()
+__device__ uint32_t __clockLatency()
 {
   uint32_t start = __ownClock();
   uint32_t end = __ownClock();
@@ -227,11 +217,11 @@ struct List
 
   List(size_t bSize, size_t st) : buffSize(bSize), stride(st) {};
 
-  static void info(size_t n, size_t buffSize)
+  void info(size_t n, size_t buffSize)
   {
     printf("Creating Linked list:\n");
-    printf(" - Node size: %d\n", sizeof(Node));
-    printf(" - Number of nodes: %d:\n", n);
+    printf(" - Node size: %lu\n", sizeof(Node));
+    printf(" - Number of nodes: %lu:\n", n);
     printf(" - Total buffer size: %10.2f MB:\n", float(sizeof(Node)*buffSize)/1024.0/1024);
     clockLatency<<<1,1>>>();
     XDeviceSynchronize();
@@ -268,21 +258,18 @@ struct List
         uint32_t currentIndex = (uint32_t)(unif(rng)*buffSize);
 
         // If already present in the set, find another alternative index.
-        if(s.find(currentIndex) != s.end())
+        while (s.find(currentIndex) != s.end())
         {
-          while (s.find(currentIndex) != s.end())
+          if (currentIndex < NODES-1)
           {
-            if (currentIndex < NODES-1)
-            {
-              currentIndex++;
-            }
-            else
-            {
-              currentIndex = 0;
-            }
+            currentIndex++;
           }
-
+          else
+          {
+            currentIndex = 0;
+          }
         }
+
         nodeIndices[i] = currentIndex;
         s.insert(currentIndex);
       }
@@ -296,20 +283,17 @@ struct List
     }
 
     XDeviceSynchronize();
-    //checkErrors();
   }
 
   void traverse()
   {
     simple_traverse<<<1,1>>>(buffer, headIndex);
     XDeviceSynchronize();
-    //checkErrors();
   }
   void time_traversal()
   {
     make_circular<<<1,1>>>(buffer, headIndex);
     XDeviceSynchronize();
-    //checkErrors();
   }
 
 };
@@ -334,7 +318,7 @@ struct HostList : public List
   HostList(size_t n, size_t buffSize, size_t stride) : List(buffSize,stride)
   {
     List::info(n, buffSize);
-    XHostAlloc((void**)&h_buffer, sizeof(Node)*buffSize, XHostAllocMapped);
+    XHostMalloc((void**)&h_buffer, sizeof(Node)*buffSize, XHostAllocMapped);
     XHostGetDevicePointer((void**)&buffer, (void*)h_buffer, 0);
   }
   ~HostList()

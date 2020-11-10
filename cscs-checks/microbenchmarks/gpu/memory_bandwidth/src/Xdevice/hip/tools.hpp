@@ -68,4 +68,23 @@ Smi::~Smi()
   }
 }
 
+
+/*
+ * ASM tools
+ */
+
+__device__ __forceinline__ uint32_t __ownClock()
+{
+  // Clock counter
+    uint64_t x;
+    asm volatile ("s_memtime %0" : "=r"(x));
+    return (uint32_t)x;
+}
+
+__device__ __forceinline__ int __smId()
+{
+  // NOT possible to retrieve the workgroup ID with AMD GPUs
+  return -1;
+}
+
 #endif

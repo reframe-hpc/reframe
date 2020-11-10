@@ -28,7 +28,7 @@ void XMallocHost(void ** data, size_t size)
   checkError( cudaMallocHost(data, size) );
 }
 
-void XHostAlloc(void** pHost, size_t size, unsigned int flags)
+void XHostMalloc(void** pHost, size_t size, unsigned int flags)
 {
   checkError( cudaHostAlloc(pHost, size, flags) );
 }
