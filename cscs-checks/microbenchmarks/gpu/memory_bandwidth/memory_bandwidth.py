@@ -110,7 +110,6 @@ class GpuBandwidthCheck(rfm.RegressionTest):
 
         self.build_system.cxxflags += [f'-arch=sm_{nvidia_sm}']
 
-
     @rfm.run_before('run')
     def set_num_gpus_per_node(self):
         self.num_gpus_per_node = self.partition_num_gpus_per_node.get(
