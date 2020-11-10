@@ -43,9 +43,9 @@ void XMalloc(void ** data, size_t size)
   checkError( cudaMalloc(data, size) );
 }
 
-void XMemcpyAsync(void * in, void * out, size_t size, cudaMemcpyKind dir, cudaStream_t stream)
+void XMemcpyAsync(void * dst, void * src, size_t size, cudaMemcpyKind dir, cudaStream_t stream)
 {
-  checkError( cudaMemcpyAsync(out, in, size, dir, stream) );
+  checkError( cudaMemcpyAsync(dst, src, size, dir, stream) );
 }
 
 void XMemset( void * in, int val, size_t size)
@@ -103,9 +103,9 @@ void XMemcpyPeerAsync(void * dst, int peerDevId, void * src, int srcDevId, size_
   checkError( cudaMemcpyPeerAsync(dst, peerDevId, src, srcDevId, size, stream) );
 }
 
-void XMemcpy(void * in, void * out, size_t size, cudaMemcpyKind dir)
+void XMemcpy(void * dst, void * src, size_t size, cudaMemcpyKind dir)
 {
-  checkError( cudaMemcpy(out, in, size, dir) );
+  checkError( cudaMemcpy(dst, src, size, dir) );
 }
 
 void XHostGetDevicePointer(void** device, void* host, unsigned int flags)

@@ -43,9 +43,9 @@ void XMalloc(void ** data, size_t size)
   checkError( hipMalloc(data, size) );
 }
 
-void XMemcpyAsync(void * in, void * out, size_t size, hipMemcpyKind dir, hipStream_t stream)
+void XMemcpyAsync(void * dst, void * src, size_t size, hipMemcpyKind dir, hipStream_t stream)
 {
-  checkError( hipMemcpyAsync(out, in, size, dir, stream) );
+  checkError( hipMemcpyAsync(dst, src, size, dir, stream) );
 }
 
 void XMemset( void * in, int val, size_t size)
@@ -103,9 +103,9 @@ void XMemcpyPeerAsync(void * dst, int peerDevId, void * src, int srcDevId, size_
   checkError( hipMemcpyPeerAsync(dst, peerDevId, src, srcDevId, size, stream) );
 }
 
-void XMemcpy(void * in, void * out, size_t size, hipMemcpyKind dir)
+void XMemcpy(void * dst, void * src, size_t size, hipMemcpyKind dir)
 {
-  checkError( hipMemcpy(out, in, size, dir) );
+  checkError( hipMemcpy(dst, src, size, dir) );
 }
 
 void XHostGetDevicePointer(void** device, void* host, unsigned int flags)
