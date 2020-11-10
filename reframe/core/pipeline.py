@@ -708,6 +708,14 @@ class RegressionTest(metaclass=RegressionTestMeta):
     extra_resources = fields.TypedField('extra_resources',
                                         typ.Dict[str, typ.Dict[str, object]])
 
+    #: .. versionadded:: 3.3
+    #:
+    #: Always build this test locally.
+    #:
+    #: :type: boolean
+    #: :default: :class:`True`
+    build_locally = fields.TypedField('build_locally', bool)
+
     def __new__(cls, *args, **kwargs):
         obj = super().__new__(cls)
 
@@ -776,6 +784,9 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         # True only if check is to be run locally
         self.local = False
+
+        # True only if check is to be built locally
+        self.build_locally = True
 
         # Static directories of the regression check
         self._prefix = os.path.abspath(prefix)
@@ -1061,6 +1072,27 @@ class RegressionTest(metaclass=RegressionTestMeta):
                                sched_exclusive_access=self.exclusive_access,
                                **job_opts)
 
+    def _setup_build_job(self, **job_opts):
+        '''Setup the build job related to this check.'''
+
+        if self.local or self.build_locally:
+            scheduler = getscheduler('local')()
+            launcher = getlauncher('local')()
+        else:
+            scheduler = self._current_partition.scheduler
+            launcher = self._current_partition.launcher_type()
+
+        self.logger.debug(
+            f'Setting up build job descriptor '
+            f'(scheduler: {scheduler.registered_name!r}, '
+            f'launcher: {launcher.registered_name!r})'
+        )
+        self._build_job = Job.create(scheduler,
+                                     launcher,
+                                     name='rfm_%s_build' % self.name,
+                                     workdir=self._stagedir,
+                                     sched_exclusive_access=self.exclusive_access)
+
     def _setup_perf_logging(self):
         self._perf_logger = logging.getperflogger(self)
 
@@ -1089,6 +1121,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self._current_environ = environ
         self._setup_paths()
         self._setup_job(**job_opts)
+        self._setup_build_job(**job_opts)
 
     def _copy_to_stagedir(self, path):
         self.logger.debug(f'Copying {path} to stage directory')
@@ -1190,10 +1223,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
         environs = [self._current_partition.local_env, self._current_environ,
                     user_environ, self._cdt_environ]
 
-        self._build_job = Job.create(getscheduler('local')(),
-                                     launcher=getlauncher('local')(),
-                                     name='rfm_%s_build' % self.name,
-                                     workdir=self._stagedir)
         with osext.change_dir(self._stagedir):
             try:
                 self._build_job.prepare(
@@ -1750,6 +1779,31 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
     module.
     '''
 
+    @_run_hooks()
+    def setup(self, partition, environ, **job_opts):
+        '''The setup phase of the regression test pipeline.
+
+        :arg partition: The system partition to set up this test for.
+        :arg environ: The environment to set up this test for.
+        :arg job_opts: Options to be passed through to the backend scheduler.
+            When overriding this method users should always pass through
+            ``job_opts`` to the base class method.
+        :raises reframe.core.exceptions.ReframeError: In case of errors.
+
+        .. warning::
+
+           .. versionchanged:: 3.0
+              You may not override this method directly unless you are in
+              special test. See `here
+              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+              more details.
+
+        '''
+        self._current_partition = partition
+        self._current_environ = environ
+        self._setup_paths()
+        self._setup_job(**job_opts)
+
     def compile(self):
         '''The compilation phase of the regression test pipeline.
 
@@ -1792,10 +1846,6 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
     module.
     '''
 
-    def _rfm_init(self, *args, **kwargs):
-        super()._rfm_init(*args, **kwargs)
-        self.local = True
-
     @_run_hooks()
     def setup(self, partition, environ, **job_opts):
         '''The setup stage of the regression test pipeline.
@@ -1807,6 +1857,7 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
         self._current_partition = partition
         self._current_environ = environ
         self._setup_paths()
+        self._setup_build_job(**job_opts)
 
     @property
     @sn.sanity_function
