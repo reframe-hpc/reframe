@@ -1764,23 +1764,10 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
 
     @_run_hooks()
     def setup(self, partition, environ, **job_opts):
-        '''The setup phase of the regression test pipeline.
+        '''The setup stage of the regression test pipeline.
 
-        :arg partition: The system partition to set up this test for.
-        :arg environ: The environment to set up this test for.
-        :arg job_opts: Options to be passed through to the backend scheduler.
-            When overriding this method users should always pass through
-            ``job_opts`` to the base class method.
-        :raises reframe.core.exceptions.ReframeError: In case of errors.
-
-        .. warning::
-
-           .. versionchanged:: 3.0
-              You may not override this method directly unless you are in
-              special test. See `here
-              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
-              more details.
-
+        Similar to the :func:`RegressionTest.setup`, except that no job
+        descriptor is set up for the build of this test.
         '''
         self._current_partition = partition
         self._current_environ = environ
