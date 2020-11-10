@@ -1,0 +1,7 @@
+.git
+__pycache__
+cscs-checks
+external
+Jenkinsfile*
+*.md
+*.log
