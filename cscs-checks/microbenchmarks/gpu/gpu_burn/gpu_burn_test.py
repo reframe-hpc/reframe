@@ -13,8 +13,10 @@ import reframe.utility.sanity as sn
 class GpuBurnTest(rfm.RegressionTest):
     def __init__(self):
         self.valid_systems = ['daint:gpu', 'dom:gpu',
-                              'kesch:cn', 'tiger:gpu'
-                              'arolla:cn', 'tsa:cn']
+                              'kesch:cn', 'tiger:gpu',
+                              'arolla:cn', 'tsa:cn',
+                              'ault:amdv100', 'ault:intelv100',
+                              'ault:amda100']
         self.descr = 'GPU burn test'
         self.valid_prog_environs = ['PrgEnv-gnu']
 
@@ -32,23 +34,15 @@ class GpuBurnTest(rfm.RegressionTest):
             self.exclusive_access = True
             self.modules = ['cuda/10.1.243']
             self.executable_opts = ['-d', '40']
-            self.num_gpus_per_node = 8
-            gpu_arch = '70'
         elif self.current_system.name in {'daint', 'dom', 'tiger'}:
             self.modules = ['craype-accel-nvidia60']
             self.executable_opts = ['-d', '20']
-            self.num_gpus_per_node = 1
-            gpu_arch = '60'
-        else:
-            self.num_gpus_per_node = 1
-            gpu_arch = None
+        elif self.current_system.name in {'ault'}:
+            self.modules = ['cuda']
+            self.executable_opts = ['-d', '20']
 
         self.sourcepath = 'gpu_burn.cu'
         self.build_system = 'SingleSource'
-        if gpu_arch:
-            self.build_system.cxxflags = ['-arch=compute_%s' % gpu_arch,
-                                          '-code=sm_%s' % gpu_arch]
-
         self.build_system.ldflags = ['-lcuda', '-lcublas', '-lnvidia-ml']
         self.sanity_patterns = sn.assert_eq(
             sn.count(sn.findall('OK', self.stdout)), self.num_tasks_assigned)
@@ -92,3 +86,37 @@ class GpuBurnTest(rfm.RegressionTest):
     @sn.sanity_function
     def num_tasks_assigned(self):
         return self.job.num_tasks * self.num_gpus_per_node
+
+    @rfm.run_before('compile')
+    def set_gpu_arch(self):
+        cs = self.current_system.name
+        cp = self.current_partition.fullname
+        gpu_arch = None
+        if cs in {'dom', 'daint'}:
+            gpu_arch = '60'
+        elif cs in {'arola', 'tsa'}:
+            gpu_arch = '70'
+        elif cp in {'ault:amdv100', 'ault:intelv100'}:
+            gpu_arch = '70'
+        elif cp in {'ault:amda100'}:
+            gpu_arch = '80'
+
+        if gpu_arch:
+            self.build_system.cxxflags = ['-arch=compute_%s' % gpu_arch,
+                                          '-code=sm_%s' % gpu_arch]
+
+    @rfm.run_before('run')
+    def set_gpus_per_node(self):
+        cs = self.current_system.name
+        cp = self.current_partition.fullname
+        if cs in {'dom', 'daint'}:
+            self.num_gpus_per_node = 1
+        elif cs in {'arola', 'tsa'}:
+            self.num_gpus_per_node = 8
+        elif cp in {'ault:amda100', 'ault:intelv100'}:
+            self.num_gpus_per_node = 4
+        elif cp in {'ault:amdv100'}:
+            self.num_gpus_per_node = 2
+        else
+            self.num_gpus_per_node = 1
+
