@@ -10,8 +10,11 @@ import pytest
 import reframe.core.environments as env
 import reframe.core.modules as modules
 import reframe.utility as util
+import reframe.utility.osext as osext
 import unittests.fixtures as fixtures
-from reframe.core.exceptions import ConfigError, EnvironError
+from reframe.core.exceptions import (ConfigError,
+                                     EnvironError,
+                                     SpawnedProcessError)
 from reframe.core.runtime import runtime
 
 
@@ -44,12 +47,40 @@ def test_searchpath(modules_system):
         assert fixtures.TEST_MODULES not in modules_system.searchpath
 
 
+@pytest.fixture
+def module_collection(modules_system, tmp_path, monkeypatch):
+    if modules_system.name not in ['tmod4', 'lmod']:
+        pytest.skip(f'test unsupported with {modules_system.name!r}')
+
+    # Both Lmod and Tmod4 place collections under the user's HOME directory,
+    # that's why we monkeypatch it
+    monkeypatch.setenv('HOME', str(tmp_path))
+    coll_name = 'test_collection'
+
+    # Create modules collections with conflicting modules
+    modules_system.load_module('testmod_base')
+    modules_system.load_module('testmod_foo')
+    modules_system.execute('save', coll_name)
+    modules_system.unload_module('testmod_foo')
+    modules_system.unload_module('testmod_base')
+
+    yield coll_name
+
+    # Remove the temporary collection
+    if modules_system.name == 'lmod':
+        prefix = os.path.join(os.environ['HOME'], '.lmod.d')
+    else:
+        prefix = os.path.join(os.environ['HOME'], '.module')
+
+    os.remove(os.path.join(prefix, coll_name))
+
+
 def test_module_load(modules_system):
     if modules_system.name == 'nomod':
         modules_system.load_module('foo')
         modules_system.unload_module('foo')
     else:
-        with pytest.raises(EnvironError):
+        with pytest.raises(SpawnedProcessError):
             modules_system.load_module('foo')
 
         assert not modules_system.is_module_loaded('foo')
@@ -64,6 +95,14 @@ def test_module_load(modules_system):
         assert not modules_system.is_module_loaded('testmod_foo')
         assert 'testmod_foo' not in modules_system.loaded_modules()
         assert 'TESTMOD_FOO' not in os.environ
+
+
+def test_module_load_collection(modules_system, module_collection):
+    # Load a conflicting module first
+    modules_system.load_module('testmod_bar')
+    modules_system.load_module(module_collection, collection=True)
+    assert modules_system.is_module_loaded('testmod_base')
+    assert modules_system.is_module_loaded('testmod_foo')
 
 
 def test_module_load_force(modules_system):
@@ -81,6 +120,16 @@ def test_module_load_force(modules_system):
         assert not modules_system.is_module_loaded('testmod_foo')
         assert 'testmod_foo' in unloaded
         assert 'TESTMOD_BAR' in os.environ
+
+
+def test_module_load_force_collection(modules_system, module_collection):
+    # Load a conflicting module first
+    modules_system.load_module('testmod_bar')
+    unloaded = modules_system.load_module(module_collection,
+                                          force=True, collection=True)
+    assert unloaded == []
+    assert modules_system.is_module_loaded('testmod_base')
+    assert modules_system.is_module_loaded('testmod_foo')
 
 
 def test_module_unload_all(modules_system):
@@ -145,8 +194,11 @@ def _emit_load_commands_tmod(modules_system):
 def _emit_load_commands_tmod4(modules_system):
     emit_cmds = modules_system.emit_load_commands
     assert [emit_cmds('foo')] == ['module load foo']
+    assert [emit_cmds('foo', collection=True)] == ['module restore foo']
     assert [emit_cmds('foo/1.2')] == ['module load foo/1.2']
     assert [emit_cmds('m0')] == ['module load m1', 'module load m2']
+    assert [emit_cmds('m0', collection=True)] == ['module restore m1',
+                                                  'module restoreE m2']
 
 
 def _emit_load_commands_lmod(modules_system):
@@ -181,8 +233,10 @@ def _emit_unload_commands_tmod(modules_system):
 def _emit_unload_commands_tmod4(modules_system):
     emit_cmds = modules_system.emit_unload_commands
     assert [emit_cmds('foo')] == ['module unload foo']
+    assert [emit_cmds('foo', collection=True)] == []
     assert [emit_cmds('foo/1.2')] == ['module unload foo/1.2']
     assert [emit_cmds('m0')] == ['module unload m2', 'module unload m1']
+    assert [emit_cmds('m0', collection=True)] == []
 
 
 def _emit_unload_commands_lmod(modules_system):
@@ -203,6 +257,7 @@ def test_module_construction():
     m = modules.Module('foo/1.2')
     assert m.name == 'foo'
     assert m.version == '1.2'
+    assert m.collection is False
     with pytest.raises(ValueError):
         modules.Module('')
 
@@ -214,6 +269,9 @@ def test_module_construction():
 
     with pytest.raises(TypeError):
         modules.Module(23)
+
+    m = modules.Module('foo/1.2', collection=True)
+    assert m.collection is True
 
 
 def test_module_equal():
@@ -227,6 +285,7 @@ def test_module_equal():
     assert modules.Module('foo/1.2') != modules.Module('foo/1.3')
     assert modules.Module('foo') != modules.Module('bar')
     assert modules.Module('foo') != modules.Module('foobar')
+    assert modules.Module('foo') != modules.Module('foo', collection=True)
 
 
 @pytest.fixture
@@ -247,6 +306,9 @@ def modules_system_emu():
 
         def conflicted_modules(self, module):
             return []
+
+        def execute(self, cmd, *args):
+            return ''
 
         def load_module(self, module):
             self.load_seq.append(module.name)
@@ -270,6 +332,10 @@ def modules_system_emu():
 
         def version(self):
             return '1.0'
+
+        @property
+        def modulecmd(self):
+            return ''
 
         def unload_all(self):
             self._loaded_modules.clear()
