@@ -14,7 +14,8 @@ class GPUShmemTest(rfm.RegressionTest):
         self.sourcepath = 'shmem.cu'
         self.build_system = 'SingleSource'
         self.valid_systems = ['daint:gpu', 'dom:gpu',
-                              'ault:amdv100', 'ault:intelv100']
+                              'ault:amdv100', 'ault:intelv100',
+                              'ault:amda100']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.num_tasks = 0
         self.num_tasks_per_node = 1
@@ -38,13 +39,16 @@ class GPUShmemTest(rfm.RegressionTest):
             # theoretical limit for P100:
             # 8 [B/cycle] * 1.328 [GHz] * 16 [bankwidth] * 56 [SM] = 9520 GB/s
             'dom:gpu': {
-                'bandwidth': (8850, -0.01, 9520/8850. - 1, 'GB/s')
+                'bandwidth': (8850, -0.01, 9520/8850 - 1, 'GB/s')
             },
             'daint:gpu': {
-                'bandwidth': (8850, -0.01, 9520/8850. - 1, 'GB/s')
+                'bandwidth': (8850, -0.01, 9520/8850 - 1, 'GB/s')
             },
             'ault:amdv100': {
                 'bandwidth': (13020, -0.01, None, 'GB/s')
+            },
+            'ault:amda100': {
+                'bandwidth': (18139, -0.01, None, 'GB/s')
             }
         }
 

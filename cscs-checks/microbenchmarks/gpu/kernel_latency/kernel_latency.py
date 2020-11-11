@@ -70,6 +70,9 @@ class KernelLatencyTest(rfm.RegressionTest):
                 'ault:amdv100': {
                     'latency': (7.15, None, 0.10, 'us')
                 },
+                'ault:amda100': {
+                    'latency': (9.65, None, 0.10, 'us')
+                },
             },
             'async': {
                 'dom:gpu': {
@@ -84,6 +87,10 @@ class KernelLatencyTest(rfm.RegressionTest):
                 'ault:amdv100': {
                     'latency': (1.83, None, 0.10, 'us')
                 },
+               'ault:amda100': {
+                    'latency': (2.7, None, 0.10, 'us')
+                },
+
             },
         }
 

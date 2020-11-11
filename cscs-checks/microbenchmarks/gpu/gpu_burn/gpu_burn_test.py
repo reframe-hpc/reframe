@@ -39,7 +39,7 @@ class GpuBurnTest(rfm.RegressionTest):
             self.executable_opts = ['-d', '20']
         elif self.current_system.name in {'ault'}:
             self.modules = ['cuda']
-            self.executable_opts = ['-d', '20']
+            self.executable_opts = ['-d', '10']
 
         self.sourcepath = 'gpu_burn.cu'
         self.build_system = 'SingleSource'
@@ -72,6 +72,10 @@ class GpuBurnTest(rfm.RegressionTest):
             },
             'tsa:cn': {
                 'perf': (5861, -0.10, None, 'Gflop/s'),
+                'max_temp': (0, None, None, 'Celsius')
+            },
+            'ault:amda100': {
+                'perf': (17552, -0.10, None, 'Gflop/s'),
                 'max_temp': (0, None, None, 'Celsius')
             },
         }
