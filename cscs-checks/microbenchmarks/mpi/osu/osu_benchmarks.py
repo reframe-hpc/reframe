@@ -32,7 +32,7 @@ class OSUDownloadTest(rfm.RunOnlyRegressionTest):
         self.valid_prog_environs = ['PrgEnv-gnu-nocuda']
         self.executable = 'wget'
         self.executable_opts = [
-            f'http://mvapich.cse.ohio-state.edu/download/mvapich/' \
+            f'http://mvapich.cse.ohio-state.edu/download/mvapich/'
             f'osu-micro-benchmarks-{OSU_BENCH_VERSION}.tar.gz'
         ]
         self.postrun_cmds = [
@@ -78,7 +78,7 @@ class OSUBaseRunTest(rfm.RunOnlyRegressionTest):
         self.depends_on('OSUBuildTest', udeps.fully)
 
 
-#@rfm.parameterized_test(*([1 << i] for i in range(1)))
+# @rfm.parameterized_test(*([1 << i] for i in range(1)))
 @rfm.parameterized_test([2])
 class OSUAlltoallvTest(OSUBaseRunTest):
 
@@ -96,7 +96,7 @@ class OSUAlltoallvTest(OSUBaseRunTest):
         )
 
 
-#@rfm.parameterized_test(*([1 << i] for i in range(1)))
+# @rfm.parameterized_test(*([1 << i] for i in range(1)))
 @rfm.parameterized_test([2])
 class OSUAllgathervTest(OSUBaseRunTest):
 
@@ -114,7 +114,7 @@ class OSUAllgathervTest(OSUBaseRunTest):
         )
 
 
-#@rfm.parameterized_test(*([1 << i] for i in range(1)))
+# @rfm.parameterized_test(*([1 << i] for i in range(1)))
 @rfm.parameterized_test([2])
 class OSUIBcastTest(OSUBaseRunTest):
 
@@ -132,18 +132,24 @@ class OSUIBcastTest(OSUBaseRunTest):
         )
 
 
-@rfm.parameterized_test(*([np, s]
-                        for np in tsa_node_pairs()
-                        for s in ['map_cpu:0', 'map_cpu:20']))
+@rfm.parameterized_test(*((np, c)
+                          for np in tsa_node_pairs()
+                          for c in [0, 20]))
 class OSULatencyTest(OSUBaseRunTest):
-    def __init__(self, node_pairs, socket):
+    def __init__(self, node_pairs, cpu_no):
         super().__init__()
         self.num_tasks = 2
         self.num_tasks_per_node = 1
         self.node_pairs = node_pairs
-        self.socket = socket
+        self.cpu_no = cpu_no
         self.executable_opts += ['-m', '8']
-        self.sanity_patterns = sn.assert_found(r'^8\s', self.stdout)
+        cpu_pinned = sn.count(
+            sn.extractall(rf'CPU affinity: \[\s+{cpu_no}\]', self.stdout)
+        )
+        self.sanity_patterns = sn.all([
+            sn.assert_eq(cpu_pinned, 2),
+            sn.assert_found(r'^8\s', self.stdout),
+        ])
 
     @rfm.require_deps
     def set_executable(self, OSUBuildTest):
@@ -153,11 +159,15 @@ class OSULatencyTest(OSUBaseRunTest):
         )
 
     @rfm.run_before('run')
-    def set_nodelist(self):
+    def prepare_run(self):
         self.job.options += [
-                f'--nodelist={",".join(self.node_pairs)}',
-                f'--cpu-bind={self.socket}'
+            f'--nodelist={",".join(self.node_pairs)}'
         ]
+        self.job.launcher.options = [f'--cpu-bind=map_cpu:{self.cpu_no}']
+
+        # Run the affinity program first
+        launcher_cmd = self.job.launcher.run_command(self.job)
+        self.prerun_cmds = [f'{launcher_cmd} ./affinity']
 
 
 @rfm.parameterized_test(*tsa_node_pairs())
