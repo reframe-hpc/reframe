@@ -79,13 +79,13 @@ class OSUBaseRunTest(rfm.RunOnlyRegressionTest):
 
 
 # @rfm.parameterized_test(*([1 << i] for i in range(1)))
-@rfm.parameterized_test([2])
+@rfm.simple_test
 class OSUAlltoallvTest(OSUBaseRunTest):
 
-    def __init__(self, num_tasks_per_node):
+    def __init__(self):
         super().__init__()
-        self.num_tasks = NUM_NODES*num_tasks_per_node
-        self.num_tasks_per_node = num_tasks_per_node
+        self.num_tasks = NUM_NODES*2
+        self.num_tasks_per_node = 2
         self.executable_opts += ['-f']
 
     @rfm.require_deps
@@ -95,15 +95,25 @@ class OSUAlltoallvTest(OSUBaseRunTest):
             'mpi', 'collective', 'osu_alltoallv'
         )
 
+    @rfm.run_before('run')
+    def prepare_run(self):
+        #self.job.options += [
+        #    f'--nodelist={",".join(self.node_pairs)}'
+        #]
+
+        # Run the affinity program first
+        launcher_cmd = self.job.launcher.run_command(self.job)
+        self.prerun_cmds = [f'{launcher_cmd} ./affinity']
+
 
 # @rfm.parameterized_test(*([1 << i] for i in range(1)))
-@rfm.parameterized_test([2])
+@rfm.simple_test
 class OSUAllgathervTest(OSUBaseRunTest):
 
-    def __init__(self, num_tasks_per_node):
+    def __init__(self):
         super().__init__()
-        self.num_tasks = NUM_NODES*num_tasks_per_node
-        self.num_tasks_per_node = num_tasks_per_node
+        self.num_tasks = NUM_NODES*2
+        self.num_tasks_per_node = 2
         self.executable_opts += ['-f']
 
     @rfm.require_deps
@@ -113,15 +123,25 @@ class OSUAllgathervTest(OSUBaseRunTest):
             'mpi', 'collective', 'osu_allgatherv'
         )
 
+    @rfm.run_before('run')
+    def prepare_run(self):
+        #self.job.options += [
+        #    f'--nodelist={",".join(self.node_pairs)}'
+        #]
+
+        # Run the affinity program first
+        launcher_cmd = self.job.launcher.run_command(self.job)
+        self.prerun_cmds = [f'{launcher_cmd} ./affinity']
+
 
 # @rfm.parameterized_test(*([1 << i] for i in range(1)))
-@rfm.parameterized_test([2])
+@rfm.simple_test
 class OSUIBcastTest(OSUBaseRunTest):
 
-    def __init__(self, num_tasks_per_node):
+    def __init__(self):
         super().__init__()
-        self.num_tasks = NUM_NODES*num_tasks_per_node
-        self.num_tasks_per_node = num_tasks_per_node
+        self.num_tasks = NUM_NODES*2
+        self.num_tasks_per_node = 2
         self.executable_opts += ['-f']
 
     @rfm.require_deps
@@ -130,6 +150,16 @@ class OSUIBcastTest(OSUBaseRunTest):
             OSUBuildTest(part='login').stagedir,
             'mpi', 'collective', 'osu_ibcast'
         )
+
+    @rfm.run_before('run')
+    def prepare_run(self):
+        #self.job.options += [
+        #    f'--nodelist={",".join(self.node_pairs)}'
+        #]
+
+        # Run the affinity program first
+        launcher_cmd = self.job.launcher.run_command(self.job)
+        self.prerun_cmds = [f'{launcher_cmd} ./affinity']
 
 
 @rfm.parameterized_test(*((np, c)
@@ -177,6 +207,7 @@ class OSUBandwidthTest(OSUBaseRunTest):
         self.num_tasks = 2
         self.num_tasks_per_node = 1
         self.node_pairs = node_pairs
+        self.executable_opts = ['-x', '1000', '-i', '10000']
 
     @rfm.require_deps
     def set_executable(self, OSUBuildTest):
