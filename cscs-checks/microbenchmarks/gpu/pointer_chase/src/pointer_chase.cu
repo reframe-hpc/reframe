@@ -67,32 +67,47 @@ __global__ void clockLatency()
  * Linked list definitions
  */
 
-// The node
 struct Node
 {
+  /* The node */
   Node * next = nullptr;
   char _padding[8*NODE_PADDING];
 };
 
-// List serial initializer
-__global__ void initialize_list(Node * head, int stride = 1)
+
+/*
+ *  Kernels and device functions
+ */
+
+__global__ void initialize_list(Node * buffer, int stride = 1)
 {
+  /* List serial initializer.
+   * - buffer: where the list is to be placed.
+   * - stride: argument controls the number of empty node spaces
+   *   in between two consecutive list nodes.
+   */
+
   // Set the head
-  Node * prev = new (&(head[0])) Node();
+  Node * prev = new (&(buffer[0])) Node();
 
   // Init the rest of the list
   for (int n = 1; n < NODES; n++)
   {
-    Node * temp = new (&(head[n*stride])) Node();
+    Node * temp = new (&(buffer[n*stride])) Node();
     prev->next = temp;
     prev = temp;
   }
 
 }
 
-// List random initializer
 __global__ void initialize_random_list(Node * buffer, uint32_t *indices)
 {
+  /* List random initializer
+   * - buffer: where the list is to be placed.
+   * - indices: array containing the node ordering indices as offsets in
+   *     the buffer.
+   */
+
   // Set the head
   Node * prev = new (&(buffer[indices[0]])) Node();
 
@@ -106,9 +121,13 @@ __global__ void initialize_random_list(Node * buffer, uint32_t *indices)
 
 }
 
-// Simple list traverse without any timers
 __global__ void simple_traverse(Node * __restrict__ buffer, uint32_t headIndex)
 {
+  /* Simple list traverse - no timing is done here
+   * - buffer: where the list is
+   * - headIndex: index in the buffer where the head of the list is
+   */
+
   uint32_t count = 0;
   Node * head = &(buffer[headIndex]);
   Node * ptr = head;
@@ -144,6 +163,10 @@ __global__ void simple_traverse(Node * __restrict__ buffer, uint32_t headIndex)
 template < unsigned int repeat >
 __device__ __forceinline__ void nextNode( __VOLATILE__ Node ** ptr, uint32_t * timings, Node ** ptrs)
 {
+  /*
+   * Go to the next node in the list
+   */
+
 # ifdef TIME_EACH_STEP
   uint32_t t1 = __ownClock();
 # endif
@@ -162,11 +185,11 @@ template<>
 __device__ __forceinline__ void  nextNode<0>( __VOLATILE__ Node ** ptr, uint32_t * timings, Node ** ptrs){}
 
 
-/* List traversal to make a singly-linked list circular. This is just to have a data dependency and
- * cover from a potential compiler optimization that might throw the list traversal away.
- */
-__global__ void make_circular(Node * __restrict__ buffer, uint32_t headIndex, int dev_id, char * nid)
+__global__ void timed_list_traversal(Node * __restrict__ buffer, uint32_t headIndex, int dev_id, char * nid)
 {
+  /* Timed List traversal - we make a singly-linked list circular just to have a data dep. and
+   * prevent from compiler optimisations.
+   */
 
   // These are used to prevent ILP when timing each jump.
   __shared__ uint32_t timings[NODES-1];
@@ -211,8 +234,24 @@ __global__ void make_circular(Node * __restrict__ buffer, uint32_t headIndex, in
 }
 
 
+/*
+ * List structure definitions
+ */
+
 struct List
 {
+  /*
+   * Contains the buffer where the list is stored, the index in this buffer where the head
+   * of the list is, the buffer size, and the stride in between nodes (this last one is only
+   * meaningful if the list is not initialised as random).
+   *
+   * The member functions are:
+   *  - info: prints the list details.
+   *  - initialize: populatest the buffer with the list nodes.
+   *  - traverse: simple list traversal.
+   *  - timed_traverse: traverses the list and measures the number of cycles per node jump.
+   */
+
   Node * buffer = nullptr;
   uint32_t headIndex = 0;
   size_t buffSize;
@@ -232,6 +271,11 @@ struct List
 
   void initialize(int mode=0)
   {
+    /*
+     * mode 0 initializes the list as serial.
+     * mode 1 initializes the list in a random order.
+     */
+
     if (mode < 0 || mode > 1)
     {
       printf("Unknown list initialization scheme. Default to 0.");
@@ -276,6 +320,8 @@ struct List
         nodeIndices[i] = currentIndex;
         s.insert(currentIndex);
       }
+
+      // Copy the node indices to the device and init the random list
       uint32_t * d_nodeIndices;
       XMalloc((void**)&d_nodeIndices, sizeof(uint32_t)*NODES);
       XMemcpy(d_nodeIndices, nodeIndices, sizeof(uint32_t)*NODES, XMemcpyHostToDevice);
@@ -290,15 +336,26 @@ struct List
 
   void traverse()
   {
+    /*
+     * Simple list traversal - NOT timed.
+     */
     simple_traverse<<<1,1>>>(buffer, headIndex);
     XDeviceSynchronize();
   }
+
   void time_traversal(int dev_id, char * nid)
   {
+    /*
+     * Timed list traversal
+     */
+
+    // Copy the node id into the device to print the info from the kernel.
     char * d_nid;
     XMalloc((void**)&d_nid, sizeof(char)*HOSTNAME_SIZE);
     XMemcpy(d_nid, nid, sizeof(char)*HOSTNAME_SIZE, XMemcpyHostToDevice);
-    make_circular<<<1,1>>>(buffer, headIndex, dev_id, d_nid);
+
+    // Time the pointer chase
+    timed_list_traversal<<<1,1>>>(buffer, headIndex, dev_id, d_nid);
     XDeviceSynchronize();
   }
 
@@ -307,6 +364,10 @@ struct List
 
 struct DeviceList : public List
 {
+  /*
+   * List allocated in device memory
+   */
+
   DeviceList(size_t n, size_t buffSize, size_t stride) : List(buffSize, stride)
   {
 #   ifdef DEBUG
@@ -314,21 +375,30 @@ struct DeviceList : public List
 #   endif
     XMalloc((void**)&buffer, sizeof(Node)*buffSize);
   }
+
   ~DeviceList()
   {
     XFree(buffer);
   }
 };
 
+
 struct HostList : public List
 {
+  /*
+   * List allocated in pinned host memory
+   */
+
   Node * h_buffer;
   HostList(size_t n, size_t buffSize, size_t stride) : List(buffSize,stride)
   {
+#   ifdef DEBUG
     List::info(n, buffSize);
+#   endif
     XHostMalloc((void**)&h_buffer, sizeof(Node)*buffSize, XHostAllocMapped);
     XHostGetDevicePointer((void**)&buffer, (void*)h_buffer, 0);
   }
+
   ~HostList()
   {
     XFreeHost(buffer);
@@ -339,6 +409,10 @@ struct HostList : public List
 template < class LIST >
 void devicePointerChase(int m, size_t buffSize, size_t stride, int dev_id, char * nid)
 {
+  /*
+   * Driver to manage the whole allocation, list traversal, etc.
+   */
+
   LIST l(NODES, buffSize, stride);
 
   l.initialize(m);
@@ -350,7 +424,7 @@ void devicePointerChase(int m, size_t buffSize, size_t stride, int dev_id, char 
 int main(int argc, char ** argv)
 {
   // Set program defaults before parsing the command line args.
-  int list_init = 0;
+  int list_init_mode = 0;
   size_t stride = 1;
   size_t buffSize = NODES*stride;
 
@@ -370,12 +444,13 @@ int main(int argc, char ** argv)
     }
     else if (str == "--rand")
     {
-      list_init = 1;
+      list_init_mode = 1;
     }
     else if (str == "--stride")
     {
       stride = std::stoi((std::string)argv[++i]);
-      buffSize = NODES*stride;
+      if (buffSize < NODES*stride)
+          buffSize = NODES*stride;
     }
     else if (str == "--buffer")
     {
@@ -411,7 +486,7 @@ int main(int argc, char ** argv)
   for (int i = 0; i < num_devices; i++)
   {
     XSetDevice(i);
-    devicePointerChase<LIST_TYPE>(list_init, buffSize, stride, i, nid_name);
+    devicePointerChase<LIST_TYPE>(list_init_mode, buffSize, stride, i, nid_name);
   }
 
   printf("[%s] Pointer chase complete.\n", nid_name);
