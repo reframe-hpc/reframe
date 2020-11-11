@@ -503,7 +503,33 @@ void remotePointerChase(int num_devices, int init_mode, size_t buffSize, size_t 
 # define LIMITS 0
 #endif
 
+# ifndef TIME_EACH_STEP
   auto fetch = [](uint32_t* t){return t[0]/(NODES-1);};
+# else
+# ifdef MAX_LATENCY
+  auto fetch = [](uint32_t* t)
+  {
+    uint32_t max = 0;
+    for (int i = 0; i < NODES-1; i++)
+    {
+      if (t[i] > max)
+        max = t[i];
+    }
+    return max;
+  };
+# else
+  auto fetch = [](uint32_t* t)
+  {
+    uint32_t min = ~0;
+    for (int i = 0; i < NODES-1; i++)
+    {
+      if (t[i] < min)
+        min = t[i];
+    }
+    return min;
+  };
+# endif
+# endif
 
   printf("[%s] Memory latency (cycles) with remote direct memory access\n", nid);
   printf("[%s] %10s", nid, "From \\ To ");
@@ -525,7 +551,10 @@ void remotePointerChase(int num_devices, int init_mode, size_t buffSize, size_t 
 
     for (int i = LIMITS; i < num_devices; i++)
     {
-      uint32_t timer = fetch(generalPointerChase< LIST >(i, j, init_mode, buffSize, stride));
+
+      uint32_t * timer_ptr = generalPointerChase< LIST >(i, j, init_mode, buffSize, stride);
+      uint32_t timer = fetch(timer_ptr);
+      delete [] timer_ptr;
       if (i != j)
       {
         totals += timer;
