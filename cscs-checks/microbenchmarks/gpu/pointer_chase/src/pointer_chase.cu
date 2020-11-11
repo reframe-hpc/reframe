@@ -5,6 +5,7 @@
 #include <random>
 #include <chrono>
 #include <set>
+#include <memory>
 
 // Include the CUDA/HIP wrappers from the other test for now.
 #include "../../memory_bandwidth/src/Xdevice/runtime.hpp"
@@ -161,7 +162,7 @@ __global__ void simple_traverse(Node * __restrict__ buffer, uint32_t headIndex)
  * list traversal as a whole.
  */
 template < unsigned int repeat >
-__device__ __forceinline__ void nextNode( __VOLATILE__ Node ** ptr, uint32_t * timings, Node ** ptrs)
+__device__ __forceinline__ void nextNode( __VOLATILE__ Node ** ptr, uint32_t * timer, Node ** ptrs)
 {
   /*
    * Go to the next node in the list
@@ -173,28 +174,27 @@ __device__ __forceinline__ void nextNode( __VOLATILE__ Node ** ptr, uint32_t * t
   (*ptr) = (*ptr)->next;
 # ifdef TIME_EACH_STEP
   (*ptrs) = (Node*)(*ptr);  // Data dep. to prevent ILP.
-  *timings = __ownClock() - t1; // Time the jump
+  *timer = __ownClock() - t1; // Time the jump
 # endif
 
   // Keep traversing the list.
-  nextNode<repeat-1>(ptr, timings+1, ptrs+1);
+  nextNode<repeat-1>(ptr, timer+1, ptrs+1);
 }
 
 // Specialize the function to break the recursion.
 template<>
-__device__ __forceinline__ void  nextNode<0>( __VOLATILE__ Node ** ptr, uint32_t * timings, Node ** ptrs){}
+__device__ __forceinline__ void  nextNode<0>( __VOLATILE__ Node ** ptr, uint32_t * timer, Node ** ptrs){}
 
 
-__global__ void timed_list_traversal(Node * __restrict__ buffer, uint32_t headIndex, int dev_id, char * nid)
+__global__ void timed_list_traversal(Node * __restrict__ buffer, uint32_t headIndex, uint32_t * timer)
 {
   /* Timed List traversal - we make a singly-linked list circular just to have a data dep. and
    * prevent from compiler optimisations.
    */
 
   // These are used to prevent ILP when timing each jump.
-  __shared__ uint32_t timings[NODES-1];
+  __shared__ uint32_t s_timer[NODES-1];
   __shared__ Node * ptrs[NODES-1];
-  uint32_t sum = 0;
 
   // Create a pointer to iterate through the list
   __VOLATILE__ Node * ptr = &(buffer[headIndex]);
@@ -204,26 +204,22 @@ __global__ void timed_list_traversal(Node * __restrict__ buffer, uint32_t headIn
   uint32_t start = __ownClock();
 #endif
 
-  nextNode<NODES-1>(&ptr, timings, ptrs);
+  nextNode<NODES-1>(&ptr, s_timer, ptrs);
 
 #ifndef TIME_EACH_STEP
   // end cycle count
   uint32_t end = __ownClock();
-  sum = end - start;
+  timer[0] = end - start;
 #else
-  printf("[%s] Latency for each node jump (device %d):\n", nid, dev_id);
   for (uint32_t i = 0; i < NODES-1; i++)
   {
-    printf("[%s] %d\n", nid, timings[i]);
-    sum += timings[i];
+    timer[i] = s_timer[i];
   }
   if (ptr == ptrs[0])
   {
     printf("This is some data dependency that will never be executed.");
   }
 #endif
-
-  printf("[%s] On device %d, the chase took on average %d cycles per node jump.\n", nid, dev_id, sum/(NODES-1));
 
   // Join the tail with the head (just for the data dependency).
   if (ptr->next == nullptr)
@@ -254,10 +250,22 @@ struct List
 
   Node * buffer = nullptr;
   uint32_t headIndex = 0;
+  uint32_t * timer = nullptr;
+  uint32_t * d_timer = nullptr;
   size_t buffSize;
   size_t stride;
 
-  List(size_t bSize, size_t st) : buffSize(bSize), stride(st) {};
+  List(size_t bSize, size_t st) : buffSize(bSize), stride(st)
+  {
+    // Allocate the buffers to store the timings measured in the kernel
+    timer = new uint32_t[NODES];
+    XMalloc((void**)&d_timer, sizeof(uint32_t)*(NODES));
+  };
+
+  virtual ~List()
+  {
+    XFree(d_timer);
+  }
 
   void info(size_t n, size_t buffSize)
   {
@@ -278,7 +286,7 @@ struct List
 
     if (mode < 0 || mode > 1)
     {
-      printf("Unknown list initialization scheme. Default to 0.");
+      printf("Unknown list initialization scheme. Defaulting back to 0.");
       mode = 0;
     }
 
@@ -343,20 +351,17 @@ struct List
     XDeviceSynchronize();
   }
 
-  void time_traversal(int dev_id, char * nid)
+  void time_traversal()
   {
     /*
      * Timed list traversal
      */
 
-    // Copy the node id into the device to print the info from the kernel.
-    char * d_nid;
-    XMalloc((void**)&d_nid, sizeof(char)*HOSTNAME_SIZE);
-    XMemcpy(d_nid, nid, sizeof(char)*HOSTNAME_SIZE, XMemcpyHostToDevice);
-
-    // Time the pointer chase
-    timed_list_traversal<<<1,1>>>(buffer, headIndex, dev_id, d_nid);
+    timed_list_traversal<<<1,1>>>(buffer, headIndex, d_timer);
     XDeviceSynchronize();
+
+    // Copy the timing data back to the host
+    XMemcpy(timer, d_timer, sizeof(uint32_t)*(NODES-1), XMemcpyDeviceToHost);
   }
 
 };
@@ -407,19 +412,129 @@ struct HostList : public List
 
 
 template < class LIST >
-void devicePointerChase(int m, size_t buffSize, size_t stride, int dev_id, char * nid)
+uint32_t * generalPointerChase(int local_device, int remote_device, int init_mode, size_t buffSize, size_t stride)
 {
   /*
    * Driver to manage the whole allocation, list traversal, etc.
+   * It returns the array containing the timings. Note that these values will depend on whether the
+   * flag -DTIME_EACH_STEP was defined or not (see top of the file).
+   *
+   * - local_device: ID of the device where the allocation of the list takes place
+   * - remote_device: ID of the device doing the pointer chase.
+   * - init_mode: see the class List.
+   * - buff_size: Size (in nodes) of the buffer.
+   * - stride: Gap (in nodes) between two consecutive nodes. This only applies if init_mode is 0.
    */
 
+  XSetDevice(remote_device);
   LIST l(NODES, buffSize, stride);
+  l.initialize(init_mode);
 
-  l.initialize(m);
-  l.traverse(); // warmup kernel
-  l.time_traversal(dev_id, nid);
+  // Check if we have remote memory access.
+  XSetDevice(local_device);
+  bool peerAccessSet = false;
+  if (local_device!=remote_device)
+  {
+    int hasPeerAccess;
+    XDeviceCanAccessPeer(&hasPeerAccess, local_device, remote_device);
+    if (!hasPeerAccess)
+    {
+      printf("Devices have no peer access.\n");
+      exit(1);
+    }
 
+    // Enable the peerAccess access.
+    peerAccessSet = true;
+    XDeviceEnablePeerAccess(remote_device, 0);
+  }
+
+  // Warm-up kernel
+  l.traverse();
+
+  // Time the pointer chase
+  l.time_traversal();
+
+  if (peerAccessSet)
+    XDeviceDisablePeerAccess(remote_device);
+
+   // Set again the device where the allocations were placed, so it can take care of it's
+   // own deallocations in the List destructor.
+   XSetDevice(remote_device);
+
+   return l.timer;
 }
+
+
+template < class LIST >
+void localPointerChase(int num_devices, int init_mode, size_t buffSize, size_t stride, char * nid)
+{
+  /*
+   * Specialised pointer chase on a single device.
+   */
+  for (int gpu_id = 0; gpu_id < num_devices; gpu_id++)
+  {
+    uint32_t* timer = generalPointerChase< LIST >(gpu_id, gpu_id, init_mode, buffSize, stride);
+
+    // Print the timings of the pointer chase
+#   ifndef TIME_EACH_STEP
+    printf("[%s] On device %d, the chase took on average %d cycles per node jump.\n", nid, gpu_id, timer[0]/(NODES-1));
+#   else
+    printf("[%s] Latency for each node jump (device %d):\n", nid, gpu_id);
+    for (uint32_t i = 0; i < NODES-1; i++)
+    {
+      printf("[%s][device %d] %d\n", nid, gpu_id, timer[i]);
+    }
+#   endif
+    delete [] timer;
+  }
+}
+
+
+template < class LIST >
+void remotePointerChase(int num_devices, int init_mode, size_t buffSize, size_t stride, char * nid)
+{
+  /*
+   * Specialised pointer chase to allocate the list in one device, and do the pointer chase from another device.
+   */
+
+#ifdef SYMM
+# define LIMITS j
+#else
+# define LIMITS 0
+#endif
+
+  auto fetch = [](uint32_t* t){return t[0]/(NODES-1);};
+
+  printf("[%s] Memory latency (cycles) with remote direct memory access\n", nid);
+  printf("[%s] %10s", nid, "From \\ To ");
+  for (int ds = 0; ds < num_devices; ds++)
+  {
+    printf("%4sGPU %2d", "", ds);
+  } printf("%10s\n", "Totals");
+
+  for (int j = 0; j < num_devices; j++)
+  {
+    // Track the sum of the latencies
+    uint32_t totals = 0;
+
+    printf("[%s] GPU %2d%4s", nid, j, " ");
+    for (int i = 0; i < LIMITS; i++)
+    {
+      printf("%10s", "X");
+    }
+
+    for (int i = LIMITS; i < num_devices; i++)
+    {
+      uint32_t timer = fetch(generalPointerChase< LIST >(i, j, init_mode, buffSize, stride));
+      if (i != j)
+      {
+        totals += timer;
+      }
+      printf("%10d", timer);
+    } printf("%10d\n", totals);
+  }
+}
+
 
 int main(int argc, char ** argv)
 {
@@ -482,12 +597,8 @@ int main(int argc, char ** argv)
     printf("[%s] Found %d device(s).\n", nid_name, num_devices);
   }
 
-  // Run the pointer chase on each device in the node.
-  for (int i = 0; i < num_devices; i++)
-  {
-    XSetDevice(i);
-    devicePointerChase<LIST_TYPE>(list_init_mode, buffSize, stride, i, nid_name);
-  }
+  localPointerChase<LIST_TYPE>(num_devices, list_init_mode, buffSize, stride, nid_name);
+  remotePointerChase<LIST_TYPE>(num_devices, list_init_mode, buffSize, stride, nid_name);
 
   printf("[%s] Pointer chase complete.\n", nid_name);
   return 0;
