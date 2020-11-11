@@ -8,6 +8,7 @@ import os
 import reframe as rfm
 import reframe.utility.sanity as sn
 import reframe.utility.udeps as udeps
+from reframe.core.launchers import JobLauncher
 
 OSU_BENCH_VERSION = '5.6.3'
 NUM_NODES = 7
@@ -30,10 +31,10 @@ class OSUDownloadTest(rfm.RunOnlyRegressionTest):
         self.valid_systems = ['tsa:login']
         self.valid_prog_environs = ['PrgEnv-gnu-nocuda']
         self.executable = 'wget'
-        self.executable_opts = [(
-            f'http://mvapich.cse.ohio-state.edu/download/mvapich/'
-            'osu-micro-benchmarks-{OSU_BENCH_VERSION}.tar.gz'
-        )]
+        self.executable_opts = [
+            f'http://mvapich.cse.ohio-state.edu/download/mvapich/' \
+            f'osu-micro-benchmarks-{OSU_BENCH_VERSION}.tar.gz'
+        ]
         self.postrun_cmds = [
             f'tar xzf osu-micro-benchmarks-{OSU_BENCH_VERSION}.tar.gz'
         ]
@@ -77,7 +78,8 @@ class OSUBaseRunTest(rfm.RunOnlyRegressionTest):
         self.depends_on('OSUBuildTest', udeps.fully)
 
 
-@rfm.parameterized_test(*([1 << i] for i in range(6)))
+#@rfm.parameterized_test(*([1 << i] for i in range(1)))
+@rfm.parameterized_test([2])
 class OSUAlltoallvTest(OSUBaseRunTest):
 
     def __init__(self, num_tasks_per_node):
@@ -94,7 +96,8 @@ class OSUAlltoallvTest(OSUBaseRunTest):
         )
 
 
-@rfm.parameterized_test(*([1 << i] for i in range(6)))
+#@rfm.parameterized_test(*([1 << i] for i in range(1)))
+@rfm.parameterized_test([2])
 class OSUAllgathervTest(OSUBaseRunTest):
 
     def __init__(self, num_tasks_per_node):
@@ -111,7 +114,8 @@ class OSUAllgathervTest(OSUBaseRunTest):
         )
 
 
-@rfm.parameterized_test(*([1 << i] for i in range(6)))
+#@rfm.parameterized_test(*([1 << i] for i in range(1)))
+@rfm.parameterized_test([2])
 class OSUIBcastTest(OSUBaseRunTest):
 
     def __init__(self, num_tasks_per_node):
@@ -128,8 +132,36 @@ class OSUIBcastTest(OSUBaseRunTest):
         )
 
 
-@rfm.parameterized_test(*tsa_node_pairs())
+@rfm.parameterized_test(*([np, s]
+                        for np in tsa_node_pairs()
+                        for s in ['map_cpu:0', 'map_cpu:20']))
 class OSULatencyTest(OSUBaseRunTest):
+    def __init__(self, node_pairs, socket):
+        super().__init__()
+        self.num_tasks = 2
+        self.num_tasks_per_node = 1
+        self.node_pairs = node_pairs
+        self.socket = socket
+        self.executable_opts += ['-m', '8']
+        self.sanity_patterns = sn.assert_found(r'^8\s', self.stdout)
+
+    @rfm.require_deps
+    def set_executable(self, OSUBuildTest):
+        self.executable = os.path.join(
+            OSUBuildTest(part='login').stagedir,
+            'mpi', 'pt2pt', 'osu_latency'
+        )
+
+    @rfm.run_before('run')
+    def set_nodelist(self):
+        self.job.options += [
+                f'--nodelist={",".join(self.node_pairs)}',
+                f'--cpu-bind={self.socket}'
+        ]
+
+
+@rfm.parameterized_test(*tsa_node_pairs())
+class OSUBandwidthTest(OSUBaseRunTest):
     def __init__(self, *node_pairs):
         super().__init__()
         self.num_tasks = 2
@@ -140,7 +172,7 @@ class OSULatencyTest(OSUBaseRunTest):
     def set_executable(self, OSUBuildTest):
         self.executable = os.path.join(
             OSUBuildTest(part='login').stagedir,
-            'mpi', 'pt2pt', 'osu_latency'
+            'mpi', 'pt2pt', 'osu_bw'
         )
 
     @rfm.run_before('run')
