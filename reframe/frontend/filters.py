@@ -40,25 +40,6 @@ def have_tag(patt):
     return _fn
 
 
-def have_prgenv(patt):
-    regex = re_compile(patt)
-
-    def _fn(case):
-        if '*' in case.check.valid_prog_environs:
-            return True
-        else:
-            return regex.match(case.environ.name)
-
-    return _fn
-
-
-def have_partition(partitions):
-    def _fn(case):
-        return case.check.supports_system(case.partition.fullname)
-
-    return _fn
-
-
 def have_gpu_only():
     def _fn(case):
         return case.check.num_gpus_per_node > 0
