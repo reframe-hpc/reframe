@@ -73,7 +73,7 @@ class OSUBaseRunTest(rfm.RunOnlyRegressionTest):
             '*': {'latency': (0, None, None, 'us')}
         }
         self.executable_opts = ['-x', '1000', '-i', '5000']
-        #self.exclusive_access = True
+        self.exclusive_access = True
         self.depends_on('OSUBuildTest', udeps.fully)
 
 
