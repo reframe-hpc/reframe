@@ -257,13 +257,13 @@ def test_git_repo_hash(git_only):
 
 
 def test_git_repo_hash_no_git(git_only, monkeypatch):
-    # Imitate a system with no git installed by emptying the PATH
+    # Emulate a system with no git installed
     monkeypatch.setenv('PATH', '')
     assert osext.git_repo_hash() is None
 
 
 def test_git_repo_hash_no_git_repo(git_only, monkeypatch, tmp_path):
-    # Imitate a system with no git installed by emptying the PATH
+    # Emulate trying to get the hash from somewhere where there is no repo
     monkeypatch.setenv('GIT_DIR', str(tmp_path))
     assert osext.git_repo_hash() is None
 
