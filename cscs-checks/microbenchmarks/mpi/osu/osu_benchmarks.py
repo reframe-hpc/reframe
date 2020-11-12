@@ -78,9 +78,10 @@ class OSUBaseRunTest(rfm.RunOnlyRegressionTest):
 
 
 @rfm.parameterized_test(
-        ['tsa-pp008','tsa-pp009','tsa-pp010'],
-        ['tsa-pp011','tsa-pp012','tsa-pp013','tsa-pp014'],
-        ['tsa-pp008','tsa-pp009','tsa-pp010','tsa-pp011','tsa-pp012','tsa-pp013','tsa-pp014']
+    ['tsa-pp008', 'tsa-pp009', 'tsa-pp010'],
+    ['tsa-pp011', 'tsa-pp012', 'tsa-pp013', 'tsa-pp014'],
+    ['tsa-pp008', 'tsa-pp009', 'tsa-pp010', 'tsa-pp011', 'tsa-pp012',
+     'tsa-pp013', 'tsa-pp014']
 )
 class OSUAlltoallvTest(OSUBaseRunTest):
 
@@ -109,9 +110,10 @@ class OSUAlltoallvTest(OSUBaseRunTest):
         self.prerun_cmds = [f'{launcher_cmd} ./affinity']
 
 @rfm.parameterized_test(
-        ['tsa-pp008','tsa-pp009','tsa-pp010'],
-        ['tsa-pp011','tsa-pp012','tsa-pp013','tsa-pp014'],
-        ['tsa-pp008','tsa-pp009','tsa-pp010','tsa-pp011','tsa-pp012','tsa-pp013','tsa-pp014']
+    ['tsa-pp008', 'tsa-pp009', 'tsa-pp010'],
+    ['tsa-pp011', 'tsa-pp012', 'tsa-pp013', 'tsa-pp014'],
+    ['tsa-pp008', 'tsa-pp009', 'tsa-pp010', 'tsa-pp011', 'tsa-pp012',
+     'tsa-pp013', 'tsa-pp014']
 )
 @rfm.simple_test
 class OSUAllgathervTest(OSUBaseRunTest):
@@ -142,9 +144,10 @@ class OSUAllgathervTest(OSUBaseRunTest):
 
 
 @rfm.parameterized_test(
-        ['tsa-pp008','tsa-pp009','tsa-pp010'],
-        ['tsa-pp011','tsa-pp012','tsa-pp013','tsa-pp014'],
-        ['tsa-pp008','tsa-pp009','tsa-pp010','tsa-pp011','tsa-pp012','tsa-pp013','tsa-pp014']
+    ['tsa-pp008', 'tsa-pp009', 'tsa-pp010'],
+    ['tsa-pp011', 'tsa-pp012', 'tsa-pp013', 'tsa-pp014'],
+    ['tsa-pp008', 'tsa-pp009', 'tsa-pp010', 'tsa-pp011', 'tsa-pp012',
+     'tsa-pp013', 'tsa-pp014']
 )
 class OSUIBcastTest(OSUBaseRunTest):
 
@@ -230,4 +233,3 @@ class OSUBandwidthTest(OSUBaseRunTest):
     @rfm.run_before('run')
     def set_nodelist(self):
         self.job.options += [f'--nodelist={",".join(self.node_pairs)}']
-
