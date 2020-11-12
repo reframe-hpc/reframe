@@ -223,6 +223,13 @@ class OSUBandwidthTest(OSUBaseRunTest):
         self.num_tasks_per_node = 1
         self.node_pairs = node_pairs
         self.executable_opts = ['-x', '1000', '-i', '1500']
+        self.perf_patterns = {
+            'bandwidth': sn.extractsingle(r'^8\s+(?P<bandwidth>\S+)',
+                                        self.stdout, 'bandwitdh', float)
+        }
+        self.reference = {
+            '*': {'bandwidth': (0, None, None, 'MB/s')}
+        }
 
     @rfm.require_deps
     def set_executable(self, OSUBuildTest):
