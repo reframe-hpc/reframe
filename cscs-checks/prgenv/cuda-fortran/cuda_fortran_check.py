@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import reframe as rfm
+import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 
 
@@ -23,9 +24,13 @@ class CUDAFortranCheck(rfm.RegressionTest):
         self.tags = {'production', 'craype'}
 
     @rfm.run_before('compile')
-    def setflags(self):
-        # FIXME CUDA_HOME should not be set this way
-        self.build_system.fflags = [
-            'CUDA_HOME=$CUDATOOLKIT_HOME',
-            '-ta=tesla:cc60', '-Mcuda=cuda10.2'
-        ]
+    def cdt2006_pgi_workaround(self):
+        cdt = osext.cray_cdt_version()
+        if not cdt:
+            return
+
+        if (self.current_environ.name == 'PrgEnv-pgi' and cdt == '20.08'):
+            self.build_system.fflags = [
+                'CUDA_HOME=$CUDATOOLKIT_HOME',
+                '-ta=tesla:cc60', '-Mcuda=cuda10.2'
+            ]
