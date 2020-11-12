@@ -109,6 +109,7 @@ class OSUAlltoallvTest(OSUBaseRunTest):
         launcher_cmd = self.job.launcher.run_command(self.job)
         self.prerun_cmds = [f'{launcher_cmd} ./affinity']
 
+
 @rfm.parameterized_test(
     ['tsa-pp008', 'tsa-pp009', 'tsa-pp010'],
     ['tsa-pp011', 'tsa-pp012', 'tsa-pp013', 'tsa-pp014'],
