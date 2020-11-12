@@ -427,6 +427,12 @@ It does so by leveraging the selected system's environment modules system.
 
    This option can also be set using the :envvar:`RFM_MODULE_MAPPINGS` environment variable or the :js:attr:`module_mappings` general configuration parameter.
 
+   .. versionchanged:: 3.3
+      If the mapping replaces a module collection, all new names must refer to module collections, too.
+
+   .. seealso::
+      Module collections with `Environment Modules <https://modules.readthedocs.io/en/latest/MIGRATING.html#module-collection>`__ and `Lmod <https://lmod.readthedocs.io/en/latest/010_user.html#user-collections>`__.
+
 
 .. option:: --module-mappings=FILE
 
