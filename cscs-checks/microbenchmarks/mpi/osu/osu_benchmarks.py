@@ -29,6 +29,7 @@ class OSUDownloadTest(rfm.RunOnlyRegressionTest):
         self.descr = 'OSU benchmarks download sources'
         self.valid_systems = ['tsa:login']
         self.valid_prog_environs = ['PrgEnv-gnu-nocuda']
+        self.tags = {'production'}
         self.executable = 'wget'
         self.executable_opts = [
             f'http://mvapich.cse.ohio-state.edu/download/mvapich/'
@@ -50,6 +51,7 @@ class OSUBuildTest(rfm.CompileOnlyRegressionTest):
         self.build_system.max_concurrency = 8
         self.sanity_patterns = sn.assert_not_found('error', self.stderr)
         self.depends_on('OSUDownloadTest')
+        self.tags = {'production'}
 
     @rfm.require_deps
     def set_sourcedir(self, OSUDownloadTest):
