@@ -65,6 +65,7 @@ class OSUBaseRunTest(rfm.RunOnlyRegressionTest):
         self.valid_prog_environs = ['PrgEnv-gnu-nocuda']
         self.sanity_patterns = sn.assert_found(r'^1048576', self.stdout)
         self.maintainers = ['MKr, AJ']
+        self.tags = {'production'}
         self.perf_patterns = {
             'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
                                         self.stdout, 'latency', float)
