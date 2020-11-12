@@ -8,7 +8,6 @@ import os
 import reframe as rfm
 import reframe.utility.sanity as sn
 import reframe.utility.udeps as udeps
-from reframe.core.launchers import JobLauncher
 
 OSU_BENCH_VERSION = '5.6.3'
 NUM_NODES = 7
@@ -73,20 +72,24 @@ class OSUBaseRunTest(rfm.RunOnlyRegressionTest):
         self.reference = {
             '*': {'latency': (0, None, None, 'us')}
         }
-        self.executable_opts = ['-x', '1000', '-i', '20000']
-        self.exclusive_access = True
+        self.executable_opts = ['-x', '1000', '-i', '5000']
+        #self.exclusive_access = True
         self.depends_on('OSUBuildTest', udeps.fully)
 
 
-# @rfm.parameterized_test(*([1 << i] for i in range(1)))
-@rfm.simple_test
+@rfm.parameterized_test(
+        ['tsa-pp008','tsa-pp009','tsa-pp010'],
+        ['tsa-pp011','tsa-pp012','tsa-pp013','tsa-pp014'],
+        ['tsa-pp008','tsa-pp009','tsa-pp010','tsa-pp011','tsa-pp012','tsa-pp013','tsa-pp014']
+)
 class OSUAlltoallvTest(OSUBaseRunTest):
 
-    def __init__(self):
+    def __init__(self, *node_list):
         super().__init__()
-        self.num_tasks = NUM_NODES*2
+        self.num_tasks = len(node_list)*2
         self.num_tasks_per_node = 2
         self.executable_opts += ['-f']
+        self.node_list = node_list
 
     @rfm.require_deps
     def set_executable(self, OSUBuildTest):
@@ -97,24 +100,28 @@ class OSUAlltoallvTest(OSUBaseRunTest):
 
     @rfm.run_before('run')
     def prepare_run(self):
-        #self.job.options += [
-        #    f'--nodelist={",".join(self.node_pairs)}'
-        #]
+        self.job.options += [
+            f'--nodelist={",".join(self.node_list)}'
+        ]
 
         # Run the affinity program first
         launcher_cmd = self.job.launcher.run_command(self.job)
         self.prerun_cmds = [f'{launcher_cmd} ./affinity']
 
-
-# @rfm.parameterized_test(*([1 << i] for i in range(1)))
+@rfm.parameterized_test(
+        ['tsa-pp008','tsa-pp009','tsa-pp010'],
+        ['tsa-pp011','tsa-pp012','tsa-pp013','tsa-pp014'],
+        ['tsa-pp008','tsa-pp009','tsa-pp010','tsa-pp011','tsa-pp012','tsa-pp013','tsa-pp014']
+)
 @rfm.simple_test
 class OSUAllgathervTest(OSUBaseRunTest):
 
-    def __init__(self):
+    def __init__(self, *node_list):
         super().__init__()
-        self.num_tasks = NUM_NODES*2
+        self.num_tasks = len(node_list)*2
         self.num_tasks_per_node = 2
         self.executable_opts += ['-f']
+        self.node_list = node_list
 
     @rfm.require_deps
     def set_executable(self, OSUBuildTest):
@@ -125,24 +132,28 @@ class OSUAllgathervTest(OSUBaseRunTest):
 
     @rfm.run_before('run')
     def prepare_run(self):
-        #self.job.options += [
-        #    f'--nodelist={",".join(self.node_pairs)}'
-        #]
+        self.job.options += [
+            f'--nodelist={",".join(self.node_list)}'
+        ]
 
         # Run the affinity program first
         launcher_cmd = self.job.launcher.run_command(self.job)
         self.prerun_cmds = [f'{launcher_cmd} ./affinity']
 
 
-# @rfm.parameterized_test(*([1 << i] for i in range(1)))
-@rfm.simple_test
+@rfm.parameterized_test(
+        ['tsa-pp008','tsa-pp009','tsa-pp010'],
+        ['tsa-pp011','tsa-pp012','tsa-pp013','tsa-pp014'],
+        ['tsa-pp008','tsa-pp009','tsa-pp010','tsa-pp011','tsa-pp012','tsa-pp013','tsa-pp014']
+)
 class OSUIBcastTest(OSUBaseRunTest):
 
-    def __init__(self):
+    def __init__(self, *node_list):
         super().__init__()
-        self.num_tasks = NUM_NODES*2
+        self.num_tasks = len(node_list)*2
         self.num_tasks_per_node = 2
         self.executable_opts += ['-f']
+        self.node_list = node_list
 
     @rfm.require_deps
     def set_executable(self, OSUBuildTest):
@@ -153,9 +164,9 @@ class OSUIBcastTest(OSUBaseRunTest):
 
     @rfm.run_before('run')
     def prepare_run(self):
-        #self.job.options += [
-        #    f'--nodelist={",".join(self.node_pairs)}'
-        #]
+        self.job.options += [
+            f'--nodelist={",".join(self.node_list)}'
+        ]
 
         # Run the affinity program first
         launcher_cmd = self.job.launcher.run_command(self.job)
@@ -207,7 +218,7 @@ class OSUBandwidthTest(OSUBaseRunTest):
         self.num_tasks = 2
         self.num_tasks_per_node = 1
         self.node_pairs = node_pairs
-        self.executable_opts = ['-x', '1000', '-i', '10000']
+        self.executable_opts = ['-x', '1000', '-i', '1500']
 
     @rfm.require_deps
     def set_executable(self, OSUBuildTest):
@@ -219,3 +230,4 @@ class OSUBandwidthTest(OSUBaseRunTest):
     @rfm.run_before('run')
     def set_nodelist(self):
         self.job.options += [f'--nodelist={",".join(self.node_pairs)}']
+
