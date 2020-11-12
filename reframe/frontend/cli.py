@@ -646,7 +646,7 @@ def main():
         # Filter test cases by name
         if options.exclude_names:
             for name in options.exclude_names:
-                testcases = filter(filters.have_not(name), testcases_all)
+                testcases = filter(filters.have_not_name(name), testcases_all)
 
         if options.names:
             testcases = filter(
