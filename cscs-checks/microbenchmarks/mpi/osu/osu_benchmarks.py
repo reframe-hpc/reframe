@@ -87,8 +87,8 @@ class OSUAlltoallvTest(OSUBaseRunTest):
 
     def __init__(self, *node_list):
         super().__init__()
-        self.num_tasks = len(node_list)*2
         self.num_tasks_per_node = 2
+        self.num_tasks = len(node_list)*self.num_tasks_per_node
         self.executable_opts += ['-f']
         self.node_list = node_list
 
@@ -116,13 +116,12 @@ class OSUAlltoallvTest(OSUBaseRunTest):
     ['tsa-pp008', 'tsa-pp009', 'tsa-pp010', 'tsa-pp011', 'tsa-pp012',
      'tsa-pp013', 'tsa-pp014']
 )
-@rfm.simple_test
 class OSUAllgathervTest(OSUBaseRunTest):
 
     def __init__(self, *node_list):
         super().__init__()
-        self.num_tasks = len(node_list)*2
         self.num_tasks_per_node = 2
+        self.num_tasks = len(node_list)*self.num_tasks_per_node
         self.executable_opts += ['-f']
         self.node_list = node_list
 
@@ -154,8 +153,8 @@ class OSUIBcastTest(OSUBaseRunTest):
 
     def __init__(self, *node_list):
         super().__init__()
-        self.num_tasks = len(node_list)*2
         self.num_tasks_per_node = 2
+        self.num_tasks = len(node_list)*self.num_tasks_per_node
         self.executable_opts += ['-f']
         self.node_list = node_list
 
