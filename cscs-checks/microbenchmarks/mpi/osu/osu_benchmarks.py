@@ -224,8 +224,8 @@ class OSUBandwidthTest(OSUBaseRunTest):
         self.node_pairs = node_pairs
         self.executable_opts = ['-x', '1000', '-i', '1500']
         self.perf_patterns = {
-            'bandwidth': sn.extractsingle(r'^8\s+(?P<bandwidth>\S+)',
-                                        self.stdout, 'bandwitdh', float)
+            'bandwidth': sn.extractsingle(r'^4194304\s+(?P<bandwidth>\S+)',
+                                           self.stdout, 'bandwidth', float)
         }
         self.reference = {
             '*': {'bandwidth': (0, None, None, 'MB/s')}
