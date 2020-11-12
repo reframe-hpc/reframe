@@ -131,6 +131,24 @@ def container_local_exec_ctx(local_user_exec_ctx):
     return _container_exec_ctx
 
 
+def test_eq():
+    class T0(rfm.RegressionTest):
+        def __init__(self):
+            self.name = 'T0'
+
+    class T1(rfm.RegressionTest):
+        def __init__(self):
+            self.name = 'T0'
+
+    t0, t1 = T0(), T1()
+    assert t0 == t1
+    assert hash(t0) == hash(t1)
+
+    t1.name = 'T1'
+    assert t0 != t1
+    assert hash(t0) != hash(t1)
+
+
 def test_environ_setup(hellotest, local_exec_ctx):
     # Use test environment for the regression check
     hellotest.variables = {'_FOO_': '1', '_BAR_': '2'}
@@ -150,10 +168,9 @@ def test_hellocheck_make(remote_exec_ctx):
 
 def test_hellocheck_local(hellotest, local_exec_ctx):
     # Test also the prebuild/postbuild functionality
-    hellotest.prebuild_cmds = ['touch prebuild', 'mkdir prebuild_dir']
+    hellotest.prebuild_cmds = ['touch prebuild', 'mkdir -p  prebuild_dir/foo']
     hellotest.postbuild_cmds = ['touch postbuild', 'mkdir postbuild_dir']
-    hellotest.keep_files = ['prebuild', 'postbuild',
-                            'prebuild_dir', 'postbuild_dir']
+    hellotest.keep_files = ['prebuild', 'postbuild', '*dir']
 
     # Force local execution of the test; just for testing .local
     hellotest.local = True
@@ -164,7 +181,8 @@ def test_hellocheck_local(hellotest, local_exec_ctx):
         hellotest.build_stdout.evaluate(),
         hellotest.build_stderr.evaluate(),
         hellotest.job.script_filename,
-        *hellotest.keep_files
+        'prebuild', 'postbuild', 'prebuild_dir',
+        'prebuild_dir/foo', 'postbuild_dir'
     ]
     for f in must_keep:
         assert os.path.exists(os.path.join(hellotest.outputdir, f))
@@ -215,6 +233,26 @@ def test_run_only_no_srcdir(local_exec_ctx):
     test = MyTest()
     assert test.sourcesdir is None
     _run(test, *local_exec_ctx)
+
+
+def test_run_only_preserve_symlinks(local_exec_ctx):
+    @fixtures.custom_prefix('unittests/resources/checks')
+    class MyTest(rfm.RunOnlyRegressionTest):
+        def __init__(self):
+            self.executable = './hello.sh.link'
+            self.executable_opts = ['Hello, World!']
+            self.local = True
+            self.valid_prog_environs = ['*']
+            self.valid_systems = ['*']
+            self.sanity_patterns = sn.assert_found(
+                r'Hello, World\!', self.stdout
+            )
+
+        @rfm.run_after('run')
+        def check_symlinks(self):
+            assert os.path.islink(os.path.join(self.stagedir, 'hello.sh.link'))
+
+    _run(MyTest(), *local_exec_ctx)
 
 
 def test_compile_only_failure(local_exec_ctx):
@@ -646,7 +684,7 @@ def test_disabled_hooks(local_exec_ctx):
 
 
 def test_require_deps(local_exec_ctx):
-    import reframe.frontend.dependency as dependency
+    import reframe.frontend.dependencies as dependencies
     import reframe.frontend.executors as executors
 
     @fixtures.custom_prefix('unittests/resources/checks')
@@ -675,8 +713,8 @@ def test_require_deps(local_exec_ctx):
             self.z = T0().x + 2
 
     cases = executors.generate_testcases([T0(), T1()])
-    deps = dependency.build_deps(cases)
-    for c in dependency.toposort(deps):
+    deps = dependencies.build_deps(cases)
+    for c in dependencies.toposort(deps):
         _run(*c)
 
     for c in cases:

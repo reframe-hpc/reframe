@@ -8,6 +8,7 @@ import pytest
 import random
 import shutil
 import sys
+import time
 
 import reframe
 import reframe.core.fields as fields
@@ -29,10 +30,22 @@ def test_command_success():
     assert completed.stdout == 'foobar\n'
 
 
+def test_command_success_cmd_seq():
+    completed = osext.run_command(['echo', 'foobar'])
+    assert completed.returncode == 0
+    assert completed.stdout == 'foobar\n'
+
+
 def test_command_error():
     with pytest.raises(SpawnedProcessError,
                        match=r"command 'false' failed with exit code 1"):
         osext.run_command('false', check=True)
+
+
+def test_command_error_cmd_seq():
+    with pytest.raises(SpawnedProcessError,
+                       match=r"command 'false' failed with exit code 1"):
+        osext.run_command(['false'], check=True)
 
 
 def test_command_timeout():
@@ -49,19 +62,17 @@ def test_command_timeout():
 
 
 def test_command_async():
-    from datetime import datetime
-
-    t_launch = datetime.now()
+    t_launch = time.time()
     t_sleep  = t_launch
     proc = osext.run_command_async('sleep 1')
-    t_launch = datetime.now() - t_launch
+    t_launch = time.time() - t_launch
 
     proc.wait()
-    t_sleep = datetime.now() - t_sleep
+    t_sleep = time.time() - t_sleep
 
     # Now check the timings
-    assert t_launch.seconds < 1
-    assert t_sleep.seconds >= 1
+    assert t_launch < 1
+    assert t_sleep >= 1
 
 
 def test_copytree(tmp_path):
@@ -224,19 +235,40 @@ def test_is_url():
     assert not osext.is_url(repo_ssh)
 
 
-def test_git_repo_hash(monkeypatch):
+@pytest.fixture
+def git_only():
+    try:
+        completed = osext.run_command('git --version', check=True, log=False)
+    except (SpawnedProcessError, FileNotFoundError):
+        pytest.skip('no git installation found on system')
+
+    try:
+        completed = osext.run_command('git status', check=True, log=False)
+    except (SpawnedProcessError, FileNotFoundError):
+        pytest.skip('not inside a git repository')
+
+
+def test_git_repo_hash(git_only):
     # A git branch hash consists of 8(short) or 40 characters.
     assert len(osext.git_repo_hash()) == 8
     assert len(osext.git_repo_hash(short=False)) == 40
     assert osext.git_repo_hash(commit='invalid') is None
     assert osext.git_repo_hash(commit='') is None
 
-    # Imitate a system with no git installed by emptying the PATH
+
+def test_git_repo_hash_no_git(git_only, monkeypatch):
+    # Emulate a system with no git installed
     monkeypatch.setenv('PATH', '')
     assert osext.git_repo_hash() is None
 
 
-def test_git_repo_exists():
+def test_git_repo_hash_no_git_repo(git_only, monkeypatch, tmp_path):
+    # Emulate trying to get the hash from somewhere where there is no repo
+    monkeypatch.setenv('GIT_DIR', str(tmp_path))
+    assert osext.git_repo_hash() is None
+
+
+def test_git_repo_exists(git_only):
     assert osext.git_repo_exists('https://github.com/eth-cscs/reframe.git',
                                  timeout=3)
     assert not osext.git_repo_exists('reframe.git', timeout=3)
@@ -404,6 +436,26 @@ def test_virtual_copy_linkparent(direntries):
     file_links = ['..']
     with pytest.raises(ValueError):
         osext.copytree_virtual(*direntries, file_links, dirs_exist_ok=True)
+
+
+@pytest.fixture(params=['symlinks=True', 'symlinks=False'])
+def symlinks(request):
+    return 'True' in request.param
+
+
+def test_virtual_copy_symlinks_dirs_exist(tmp_path, symlinks):
+    src = tmp_path / 'src'
+    src.mkdir()
+    dst = tmp_path / 'dst'
+    dst.mkdir()
+    foo = src / 'foo'
+    foo.touch()
+    foo_link = src / 'foo.link'
+    foo_link.symlink_to(foo)
+    osext.copytree_virtual(src, dst, symlinks=symlinks, dirs_exist_ok=True)
+    assert (dst / 'foo').exists()
+    assert (dst / 'foo.link').exists()
+    assert (dst / 'foo.link').is_symlink() == symlinks
 
 
 def test_import_from_file_load_relpath():
