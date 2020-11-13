@@ -64,18 +64,12 @@ class GridToolsGPUBuildCheck(GridToolsBuildCheck):
         ]
 
 
-@rfm.parameterized_test(['horizontal_diffusion/cpu_kfirst_double'],
-                        ['horizontal_diffusion/cpu_ifirst_double'])
-class GridToolsCPURunCheck(rfm.RunOnlyRegressionTest):
-    def __init__(self, variant):
-        # Check if this is a device check
-        self.descr = 'GridTools CPU run test'
-        self.depends_on('GridToolsCPUBuildCheck')
+class GridToolsRunCheck(rfm.RunOnlyRegressionTest):
+    def __init__(self):
         self.valid_prog_environs = ['builtin']
         self.modules = ['CMake', 'Boost']
 
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'daint:mc', 'dom:mc']
-        self.num_gpus_per_node = 0
+        self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.num_tasks = 1
 
         self.sanity_patterns = sn.assert_found(r'PASSED', self.stdout)
@@ -83,6 +77,19 @@ class GridToolsCPURunCheck(rfm.RunOnlyRegressionTest):
             'timer': sn.extractsingle(r'"series" : \[(?P<timer>\S+)\]',
                                       self.stdout, 'timer', float)
         }
+
+
+@rfm.parameterized_test(['horizontal_diffusion/cpu_kfirst_double'],
+                        ['horizontal_diffusion/cpu_ifirst_double'])
+class GridToolsCPURunCheck(GridToolsRunCheck):
+    def __init__(self, variant):
+        super().__init__()
+        # Check if this is a device check
+        self.descr = 'GridTools CPU run test'
+        self.depends_on('GridToolsCPUBuildCheck')
+
+        self.valid_systems += ['daint:mc', 'dom:mc']
+        self.num_gpus_per_node = 0
 
         self.variant_data = {
             'horizontal_diffusion/cpu_kfirst_double': {
@@ -139,24 +146,15 @@ class GridToolsCPURunCheck(rfm.RunOnlyRegressionTest):
 
 @rfm.parameterized_test(['horizontal_diffusion/gpu_double'],
                         ['horizontal_diffusion/gpu_horizontal_double'])
-class GridToolsGPURunCheck(rfm.RunOnlyRegressionTest):
+class GridToolsGPURunCheck(GridToolsRunCheck):
     def __init__(self, variant):
+        super().__init__()
         # Check if this is a device check
         self.descr = 'GridTools GPU run test'
         self.depends_on('GridToolsGPUBuildCheck')
-        self.valid_prog_environs = ['builtin']
-        self.modules = ['CMake', 'Boost']
         self.modules.append('cudatoolkit')
 
-        self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.num_gpus_per_node = 1
-        self.num_tasks = 1
-
-        self.sanity_patterns = sn.assert_found(r'PASSED', self.stdout)
-        self.perf_patterns = {
-            'timer': sn.extractsingle(r'"series" : \[(?P<timer>\S+)\]',
-                                      self.stdout, 'timer', float)
-        }
 
         self.variant_data = {
             'horizontal_diffusion/gpu_double': {
