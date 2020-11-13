@@ -1500,7 +1500,7 @@ def test_attr_validator():
     has_no_str = util.attr_validator(lambda x: not isinstance(x, str))
 
     d = D()
-    assert has_no_str(d)[0] == True
+    assert has_no_str(d)[0]
 
     # Check when a list element does not validate
     d.y.y[1] = 'foo'
