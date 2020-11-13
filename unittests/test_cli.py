@@ -541,6 +541,19 @@ def test_verbosity_with_check(run_reframe):
     assert 0 == returncode
 
 
+def test_load_user_modules(run_reframe, user_exec_ctx):
+    with rt.module_use('unittests/modules'):
+        returncode, stdout, stderr = run_reframe(
+            more_options=['-m testmod_foo'],
+            action='list'
+        )
+
+    assert stdout != ''
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert returncode == 0
+
+
 def test_unload_module(run_reframe, user_exec_ctx):
     # This test is mostly for ensuring coverage. `run_reframe()` restores
     # the current environment, so it is not easy to verify that the modules

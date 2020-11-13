@@ -131,6 +131,24 @@ def container_local_exec_ctx(local_user_exec_ctx):
     return _container_exec_ctx
 
 
+def test_eq():
+    class T0(rfm.RegressionTest):
+        def __init__(self):
+            self.name = 'T0'
+
+    class T1(rfm.RegressionTest):
+        def __init__(self):
+            self.name = 'T0'
+
+    t0, t1 = T0(), T1()
+    assert t0 == t1
+    assert hash(t0) == hash(t1)
+
+    t1.name = 'T1'
+    assert t0 != t1
+    assert hash(t0) != hash(t1)
+
+
 def test_environ_setup(hellotest, local_exec_ctx):
     # Use test environment for the regression check
     hellotest.variables = {'_FOO_': '1', '_BAR_': '2'}
@@ -695,7 +713,7 @@ def test_require_deps(local_exec_ctx):
             self.z = T0().x + 2
 
     cases = executors.generate_testcases([T0(), T1()])
-    deps = dependencies.build_deps(cases)
+    deps, _ = dependencies.build_deps(cases)
     for c in dependencies.toposort(deps):
         _run(*c)
 

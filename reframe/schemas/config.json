@@ -27,7 +27,19 @@
         },
         "modules_list": {
             "type": "array",
-            "items": {"type": "string"}
+            "items": {
+                "anyOf": [
+                    {"type": "string"},
+                    {
+                        "type": "object",
+                        "properties": {
+                            "name": {"type": "string"},
+                            "collection": {"type": "boolean"}
+                        },
+                        "required": ["name"]
+                    }
+                ]
+            }
         },
         "loglevel": {
             "type": "string",
