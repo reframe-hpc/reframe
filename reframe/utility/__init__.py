@@ -270,6 +270,120 @@ def repr(obj, htchar=' ', lfchar='\n', indent=4, basic_offset=0):
     return f'{type(obj).__name__}({r})@{hex(id(obj))}'
 
 
+def attr_validator(validate_fn):
+    '''Validate object attributes recursively.
+
+    This returns a function which you can call with the object to check. It
+    will return :class:`True` if the :func:`validate_fn` returns :class:`True`
+    for all object attributes recursively. If the object to be validate is an
+    iterable, its elements will be validated individually.
+
+    :arg validate_fn: A callable that validates an object. It takes a single
+        argument, which is the object to validate.
+
+    :returns: A validation function that will perform the actual validation.
+        It accepts a single argument, which is the object to validate. It
+        returns a two-element tuple, containing the result of the validation
+        as a boolean and a formatted string indicating the faulty attribute.
+
+    .. note::
+       Objects defining :attr:`__slots__` are passed directly to the
+       ``validate_fn`` function.
+
+    '''
+
+    # Already visited objects
+    visited = set()
+    depth = 0
+
+    def _do_validate(obj, path=None):
+        def _fmt(path):
+            ret = ''
+            for p in path:
+                t, name = p
+                if t == 'A':
+                    ret += f'.{name}'
+                elif t == 'I':
+                    ret += f'[{name}]'
+                elif t == 'K':
+                    ret += f'[{name!r}]'
+
+            # Remove leading '.'
+            return ret[1:] if ret[0] == '.' else ret
+
+        nonlocal depth
+
+        def _clean_cache():
+            nonlocal depth
+
+            depth -= 1
+            if depth == 0:
+                # We are exiting the top-level call
+                visited.clear()
+
+        depth += 1
+        visited.add(id(obj))
+        if path is None:
+            path = [('A', type(obj).__name__)]
+
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                if id(v) in visited:
+                    continue
+
+                path.append(('K', k))
+                valid, _ = _do_validate(v, path)
+                if not valid:
+                    _clean_cache()
+                    return False, _fmt(path)
+
+                path.pop()
+
+            _clean_cache()
+            return True, _fmt(path)
+
+        if (isinstance(obj, list) or
+            isinstance(obj, tuple) or
+            isinstance(obj, set)):
+            for i, x in enumerate(obj):
+                if id(x) in visited:
+                    continue
+
+                path.append(('I', i))
+                valid, _ = _do_validate(x, path)
+                if not valid:
+                    _clean_cache()
+                    return False, _fmt(path)
+
+                path.pop()
+
+            _clean_cache()
+            return True, _fmt(path)
+
+        valid = validate_fn(obj)
+        if not valid:
+            _clean_cache()
+            return False, _fmt(path)
+
+        if hasattr(obj, '__dict__'):
+            for k, v in obj.__dict__.items():
+                if id(v) in visited:
+                    continue
+
+                path.append(('A', k))
+                valid, _ = _do_validate(v, path)
+                if not valid:
+                    _clean_cache()
+                    return False, _fmt(path)
+
+                path.pop()
+
+        _clean_cache()
+        return True, _fmt(path)
+
+    return _do_validate
+
+
 def shortest(*iterables):
     '''Return the shortest sequence.
 

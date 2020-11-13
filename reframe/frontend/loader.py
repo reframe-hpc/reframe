@@ -9,105 +9,14 @@
 
 import ast
 import collections.abc
-import functools
 import inspect
+import io
 import os
 
 import reframe.utility as util
 import reframe.utility.osext as osext
 from reframe.core.exceptions import NameConflictError, RegressionTestLoadError
 from reframe.core.logging import getlogger
-
-
-def _cache_object(fn):
-    cache = {}
-
-    @functools.wraps(fn)
-    def _func(obj, *args, **kwargs):
-        addr = id(obj)
-        try:
-            return cache[addr]
-        except KeyError:
-            cache[addr] = fn(obj, *args, **kwargs)
-            return cache[addr]
-
-    return _func
-
-
-def _validator(validate_fn):
-    '''Validate an object recursively, making sure that validate_fn is True
-    for each attribute.'''
-
-    # Already visited objects
-    visited = set()
-
-    def _do_validate(obj, path=None):
-        def _fmt(path):
-            ret = ''
-            for p in path:
-                t, name = p
-                if t == 'A':
-                    ret += f'.{name}'
-                elif t == 'I':
-                    ret += f'[{name}]'
-
-            return ret
-
-#        print(util.repr(obj))
-
-        visited.add(id(obj))
-        if path is None:
-            path = [('A', type(obj).__name__)]
-
-        print(path)
-        if isinstance(obj, dict):
-            for k, v in obj.items():
-                if id(v) in visited:
-                    continue
-
-                valid, _ = _do_validate(v, path)
-                if not valid:
-                    path.append(('I', k))
-                    return False, _fmt(path)
-
-                path.pop()
-
-            return True, _fmt(path)
-
-        if (isinstance(obj, list) or
-            isinstance(obj, tuple) or
-            isinstance(obj, set)):
-            for i, x in enumerate(obj):
-                if id(x) in visited:
-                    continue
-
-                valid, _ = _do_validate(x, path)
-                if not valid:
-                    path.append(('I', i))
-                    return False, _fmt(path)
-
-                path.pop()
-
-            return True, _fmt(path)
-
-        if not hasattr(obj, '__dict__'):
-            valid = validate_fn(obj)
-            return valid, _fmt(path)
-
-        for k, v in obj.__dict__.items():
-            if id(v) in visited:
-                continue
-
-            path.append(('A', k))
-            valid, _ = _do_validate(v, path)
-            if not valid:
-                return False, _fmt(path)
-
-            path.pop()
-
-        return True, _fmt(path)
-
-    return _do_validate
 
 
 class RegressionCheckValidator(ast.NodeVisitor):
@@ -183,14 +92,34 @@ class RegressionCheckLoader:
                 return False
 
         # Check that the test has no generator
-        has_generator = _validator(
+        has_no_generator = util.attr_validator(
             lambda obj: not inspect.isgenerator(obj)
         )
-        valid, attr = has_generator(check)
+        valid, attr = has_no_generator(check)
         if not valid:
-            getlogger().warning(f'{attr} is a generator')
+            getlogger().warning(
+                f'{attr!r} is a generator object; '
+                f'generator objects are not allowed inside '
+                f'the __init__() method of a test; '
+                f'consider using a pipeline hook instead'
+            )
+            return False
 
-        return valid
+        # Check that the test has IO object
+        has_no_io = util.attr_validator(
+            lambda obj: not isinstance(obj, io.IOBase)
+        )
+        valid, attr = has_no_io(check)
+        if not valid:
+            getlogger().warning(
+                f'{attr!r} is a file object; '
+                f'file objects are not allowed inside '
+                f'the __init__() method of a test; '
+                f'consider using a pipeline hook instead'
+            )
+            return False
+
+        return True
 
     @property
     def load_path(self):

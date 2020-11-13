@@ -156,21 +156,6 @@ class CleanupFailTest(rfm.RunOnlyRegressionTest):
         raise Exception
 
 
-@rfm.simple_test
-class TestWithGenerator(rfm.RunOnlyRegressionTest):
-    '''This test is invalid in ReFrame and the loader must not load it'''
-
-    def __init__(self):
-        self.valid_systems = ['*']
-        self.valid_prog_environs = ['*']
-
-        def foo():
-            yield True
-
-        self.x = foo()
-        self.sanity_patterns = sn.defer(foo())
-
-
 class SleepCheck(BaseFrontendCheck):
     _next_id = 0
 
@@ -247,3 +232,32 @@ class CompileFailureCheck(rfm.RegressionTest):
         self.sourcesdir = None
         self.sourcepath = 'x.c'
         self.prebuild_cmds = ['echo foo > x.c']
+
+
+# The following tests do not validate and should not be loaded
+
+@rfm.simple_test
+class TestWithGenerator(rfm.RunOnlyRegressionTest):
+    '''This test is invalid in ReFrame and the loader must not load it'''
+
+    def __init__(self):
+        self.valid_systems = ['*']
+        self.valid_prog_environs = ['*']
+
+        def foo():
+            yield True
+
+        self.sanity_patterns = sn.defer(foo())
+
+
+@rfm.simple_test
+class TestWithFileObject(rfm.RunOnlyRegressionTest):
+    '''This test is invalid in ReFrame and the loader must not load it'''
+
+    def __init__(self):
+        self.valid_systems = ['*']
+        self.valid_prog_environs = ['*']
+        with open(__file__) as fp:
+            pass
+
+        self.x = fp

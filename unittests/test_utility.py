@@ -1483,3 +1483,45 @@ def test_jsonext_dumps():
     assert '{"foo": ["bar"]}' == jsonext.dumps({'foo': sn.defer(['bar'])})
     assert '{"foo":["bar"]}' == jsonext.dumps({'foo': sn.defer(['bar'])},
                                               separators=(',', ':'))
+
+
+def test_attr_validator():
+    class C:
+        def __init__(self):
+            self.x = 3
+            self.y = [1, 2, 3]
+            self.z = {'a': 1, 'b': 2}
+
+    class D:
+        def __init__(self):
+            self.x = 1
+            self.y = C()
+
+    has_no_str = util.attr_validator(lambda x: not isinstance(x, str))
+
+    d = D()
+    assert has_no_str(d)[0] == True
+
+    # Check when a list element does not validate
+    d.y.y[1] = 'foo'
+    assert has_no_str(d) == (False, 'D.y.y[1]')
+    d.y.y[1] = 2
+
+    # Check when a dict element does not validate
+    d.y.z['a'] = 'b'
+    assert has_no_str(d) == (False, "D.y.z['a']")
+    d.y.z['a'] = 1
+
+    # Check when an attribute does not validate
+    d.x = 'foo'
+    assert has_no_str(d) == (False, 'D.x')
+    d.x = 1
+
+    # Check when an attribute does not validate
+    d.y.x = 'foo'
+    assert has_no_str(d) == (False, 'D.y.x')
+    d.y.x = 3
+
+    # Check when an attribute does not validate against a custom type
+    has_no_c = util.attr_validator(lambda x: not isinstance(x, C))
+    assert has_no_c(d) == (False, 'D.y')
