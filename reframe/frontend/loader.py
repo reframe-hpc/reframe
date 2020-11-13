@@ -91,9 +91,7 @@ class RegressionCheckLoader:
                 )
                 return False
 
-        is_copyable = util.attr_validator(
-            lambda obj: util.is_copyable(obj)
-        )
+        is_copyable = util.attr_validator(lambda obj: util.is_copyable(obj))
         valid, attr = is_copyable(check)
         if not valid:
             getlogger().warning(
