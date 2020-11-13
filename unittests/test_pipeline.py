@@ -16,6 +16,7 @@ import unittests.fixtures as fixtures
 from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
                                      ReframeSyntaxError, PerformanceError,
                                      SanityError)
+from reframe.core.schedulers.slurm import _SlurmJob
 from reframe.frontend.loader import RegressionCheckLoader
 from unittests.resources.checks.hellocheck import HelloTest
 
@@ -168,6 +169,21 @@ def test_hellocheck_local(hellotest, local_exec_ctx):
     ]
     for f in must_keep:
         assert os.path.exists(os.path.join(hellotest.outputdir, f))
+
+
+def test_hellocheck_remote_building(testsys_system):
+    @fixtures.custom_prefix('unittests/resources/checks')
+    class MyTest(HelloTest):
+        def __init__(self):
+            super().__init__()
+            self.build_locally = False
+
+    test = MyTest()
+    partition = fixtures.partition_by_name('gpu')
+    environ = partition.environment('builtin-gcc')
+    test.setup(partition, environ)
+
+    assert isinstance(test._build_job, _SlurmJob)
 
 
 def test_hellocheck_local_prepost_run(hellotest, local_exec_ctx):
