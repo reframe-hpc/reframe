@@ -22,8 +22,8 @@ import reframe.core.logging as logging
 import reframe.core.runtime as runtime
 import reframe.core.warnings as warnings
 import reframe.frontend.argparse as argparse
-import reframe.frontend.check_filters as filters
 import reframe.frontend.dependencies as dependencies
+import reframe.frontend.filters as filters
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 from reframe.frontend.executors import Runner, generate_testcases
@@ -627,64 +627,8 @@ def main():
         except OSError as e:
             raise errors.ReframeError from e
 
-        # Filter checks by name
-        checks_matched = checks_found
-        if options.exclude_names:
-            for name in options.exclude_names:
-                checks_matched = [c for c in checks_matched
-                                  if filters.have_not_name(name)(c)]
-
-        if options.names:
-            checks_matched = [c for c in checks_matched
-                              if filters.have_name('|'.join(options.names))(c)]
-
-        printer.verbose(
-            f'Filtering test(s) by name: {len(checks_matched)} remaining'
-        )
-
-        # Filter checks by tags
-        for tag in options.tags:
-            checks_matched = [c for c in checks_matched
-                              if filters.have_tag(tag)(c)]
-
-        printer.verbose(
-            f'Filtering test(s) by tags: {len(checks_matched)} remaining'
-        )
-
-        # Filter checks by prgenv
-        if not options.skip_prgenv_check:
-            for prgenv in options.prgenv:
-                checks_matched = [c for c in checks_matched
-                                  if filters.have_prgenv(prgenv)(c)]
-
-        printer.verbose(
-            f'Filtering test(s) by programming environment: '
-            f'{len(list(checks_matched))} remaining'
-        )
-
-        # Filter checks by system
-        if not options.skip_system_check:
-            partitions = rt.system.partitions
-            checks_matched = [c for c in checks_matched
-                              if filters.have_partition(partitions)(c)]
-
-        printer.verbose(
-            f'Filtering test(s) by system: '
-            f'{len(list(checks_matched))} remaining'
-        )
-
-        # Filter checks further
-        if options.gpu_only and options.cpu_only:
-            printer.error("options `--gpu-only' and `--cpu-only' "
-                          "are mutually exclusive")
-            sys.exit(1)
-
-        if options.gpu_only:
-            checks_matched = [c for c in checks_matched
-                              if filters.have_gpu_only()(c)]
-        elif options.cpu_only:
-            checks_matched = [c for c in checks_matched
-                              if filters.have_cpu_only()(c)]
+        # Generate all possible test cases first; we will need them for
+        # resolving dependencies after filtering
 
         # Determine the allowed programming environments
         allowed_environs = {e.name
@@ -692,20 +636,85 @@ def main():
                             for p in rt.system.partitions
                             for e in p.environs if re.match(env_patt, e.name)}
 
-        # Disable hooks
-        for c in checks_matched:
-            for h in options.hooks:
-                type(c).disable_hook(h)
+        testcases_all = generate_testcases(checks_found,
+                                           options.skip_system_check,
+                                           options.skip_prgenv_check,
+                                           allowed_environs)
+        testcases = testcases_all
+        printer.verbose(f'Generated {len(testcases)} test case(s)')
 
-        testcases = generate_testcases(checks_matched,
-                                       options.skip_system_check,
-                                       options.skip_prgenv_check,
-                                       allowed_environs)
-        printer.debug(f'Generated {len(testcases)} test case(s)')
-        printer.debug('Building and validating the test DAG')
-        testgraph = dependencies.build_deps(testcases)
+        # Filter test cases by name
+        if options.exclude_names:
+            for name in options.exclude_names:
+                testcases = filter(filters.have_not_name(name), testcases_all)
+
+        if options.names:
+            testcases = filter(
+                filters.have_name('|'.join(options.names)), testcases_all
+            )
+
+        testcases = list(testcases)
+        printer.verbose(
+            f'Filtering test cases(s) by name: {len(testcases)} remaining'
+        )
+
+        # Filter test cases by tags
+        for tag in options.tags:
+            testcases = filter(filters.have_tag(tag), testcases_all)
+
+        testcases = list(testcases)
+        printer.verbose(
+            f'Filtering test cases(s) by tags: {len(testcases)} remaining'
+        )
+
+        # Filter test cases further
+        if options.gpu_only and options.cpu_only:
+            printer.error("options `--gpu-only' and `--cpu-only' "
+                          "are mutually exclusive")
+            sys.exit(1)
+
+        if options.gpu_only:
+            testcases = filter(filters.have_gpu_only(), testcases_all)
+        elif options.cpu_only:
+            testcases = filter(filters.have_cpu_only(), testcases_all)
+
+        # Prepare for running
+        printer.debug('Building and validating the full test DAG')
+        testgraph, skipped_cases = dependencies.build_deps(testcases_all)
+        if skipped_cases:
+            # Some cases were skipped, so adjust testcases
+            testcases = list(set(testcases) - set(skipped_cases))
+            printer.verbose(
+                f'Filtering test case(s) due to unresolved dependencies: '
+                f'{len(testcases)} remaining'
+            )
+
         dependencies.validate_deps(testgraph)
+        printer.debug('Full test DAG:')
+        printer.debug(dependencies.format_deps(testgraph))
+        if len(testcases) != len(testcases_all):
+            testgraph = dependencies.prune_deps(testgraph, testcases)
+            printer.debug('Pruned test DAG')
+            printer.debug(dependencies.format_deps(testgraph))
+
         testcases = dependencies.toposort(testgraph)
+        printer.verbose(f'Final number of test cases: {len(testcases)}')
+
+        # Disable hooks
+        for tc in testcases:
+            for h in options.hooks:
+                type(tc.check).disable_hook(h)
+
+        # Act on checks
+        if options.list or options.list_detailed:
+            list_checks(testcases, printer, options.list_detailed)
+            sys.exit(0)
+
+        if not options.run:
+            printer.error(f"No action specified. Please specify `-l'/`-L' for "
+                          f"listing or `-r' for running. "
+                          f"Try `{argparser.prog} -h' for more options.")
+            sys.exit(1)
 
         # Manipulate ReFrame's environment
         if site_config.get('general/0/purge_environment'):
@@ -737,125 +746,116 @@ def main():
 
         options.flex_alloc_nodes = options.flex_alloc_nodes or 'idle'
 
-        # Act on checks
-        success = True
-        if options.list or options.list_detailed:
-            list_checks(testcases, printer, options.list_detailed)
-        elif options.run:
-            # Setup the execution policy
-            if options.exec_policy == 'serial':
-                exec_policy = SerialExecutionPolicy()
-            elif options.exec_policy == 'async':
-                exec_policy = AsynchronousExecutionPolicy()
-            else:
-                # This should not happen, since choices are handled by
-                # argparser
-                printer.error("unknown execution policy `%s': Exiting...")
-                sys.exit(1)
+        # Run the tests
 
-            exec_policy.skip_system_check = options.skip_system_check
-            exec_policy.force_local = options.force_local
-            exec_policy.strict_check = options.strict
-            exec_policy.skip_sanity_check = options.skip_sanity_check
-            exec_policy.skip_performance_check = options.skip_performance_check
-            exec_policy.keep_stage_files = site_config.get(
-                'general/0/keep_stage_files'
-            )
-            try:
-                errmsg = "invalid option for --flex-alloc-nodes: '{0}'"
-                sched_flex_alloc_nodes = int(options.flex_alloc_nodes)
-                if sched_flex_alloc_nodes <= 0:
-                    raise errors.ConfigError(
-                        errmsg.format(options.flex_alloc_nodes)
-                    )
-            except ValueError:
-                sched_flex_alloc_nodes = options.flex_alloc_nodes
-
-            exec_policy.sched_flex_alloc_nodes = sched_flex_alloc_nodes
-            parsed_job_options = []
-            for opt in options.job_options:
-                if opt.startswith('-') or opt.startswith('#'):
-                    parsed_job_options.append(opt)
-                elif len(opt) == 1:
-                    parsed_job_options.append(f'-{opt}')
-                else:
-                    parsed_job_options.append(f'--{opt}')
-
-            exec_policy.sched_options = parsed_job_options
-            try:
-                max_retries = int(options.max_retries)
-            except ValueError:
-                raise errors.ConfigError(
-                    f'--max-retries is not a valid integer: {max_retries}'
-                ) from None
-            runner = Runner(exec_policy, printer, max_retries)
-            try:
-                time_start = time.time()
-                session_info['time_start'] = time.strftime(
-                    '%FT%T%z', time.localtime(time_start),
-                )
-                runner.runall(testcases)
-            finally:
-                time_end = time.time()
-                session_info['time_end'] = time.strftime(
-                    '%FT%T%z', time.localtime(time_end)
-                )
-                session_info['time_elapsed'] = time_end - time_start
-
-                # Print a retry report if we did any retries
-                if runner.stats.failures(run=0):
-                    printer.info(runner.stats.retry_report())
-
-                # Print a failure report if we had failures in the last run
-                if runner.stats.failures():
-                    runner.stats.print_failure_report(printer)
-                    success = False
-                    if options.failure_stats:
-                        runner.stats.print_failure_stats(printer)
-
-                if options.performance_report:
-                    printer.info(runner.stats.performance_report())
-
-                # Generate the report for this session
-                report_file = os.path.normpath(
-                    osext.expandvars(rt.get_option('general/0/report_file'))
-                )
-                basedir = os.path.dirname(report_file)
-                if basedir:
-                    os.makedirs(basedir, exist_ok=True)
-
-                # Build final JSON report
-                run_stats = runner.stats.json()
-                session_info.update({
-                    'num_cases': run_stats[0]['num_cases'],
-                    'num_failures': run_stats[-1]['num_failures']
-                })
-                json_report = {
-                    'session_info': session_info,
-                    'runs': run_stats
-                }
-                report_file = generate_report_filename(report_file)
-                try:
-                    with open(report_file, 'w') as fp:
-                        jsonext.dump(json_report, fp, indent=2)
-                        fp.write('\n')
-                except OSError as e:
-                    printer.warning(
-                        f'failed to generate report in {report_file!r}: {e}'
-                    )
-
+        # Setup the execution policy
+        if options.exec_policy == 'serial':
+            exec_policy = SerialExecutionPolicy()
+        elif options.exec_policy == 'async':
+            exec_policy = AsynchronousExecutionPolicy()
         else:
-            printer.error("No action specified. Please specify `-l'/`-L' for "
-                          "listing or `-r' for running. "
-                          "Try `%s -h' for more options." %
-                          argparser.prog)
+            # This should not happen, since choices are handled by
+            # argparser
+            printer.error("unknown execution policy `%s': Exiting...")
             sys.exit(1)
+
+        exec_policy.skip_system_check = options.skip_system_check
+        exec_policy.force_local = options.force_local
+        exec_policy.strict_check = options.strict
+        exec_policy.skip_sanity_check = options.skip_sanity_check
+        exec_policy.skip_performance_check = options.skip_performance_check
+        exec_policy.keep_stage_files = site_config.get(
+            'general/0/keep_stage_files'
+        )
+        try:
+            errmsg = "invalid option for --flex-alloc-nodes: '{0}'"
+            sched_flex_alloc_nodes = int(options.flex_alloc_nodes)
+            if sched_flex_alloc_nodes <= 0:
+                raise errors.ConfigError(
+                    errmsg.format(options.flex_alloc_nodes)
+                )
+        except ValueError:
+            sched_flex_alloc_nodes = options.flex_alloc_nodes
+
+        exec_policy.sched_flex_alloc_nodes = sched_flex_alloc_nodes
+        parsed_job_options = []
+        for opt in options.job_options:
+            if opt.startswith('-') or opt.startswith('#'):
+                parsed_job_options.append(opt)
+            elif len(opt) == 1:
+                parsed_job_options.append(f'-{opt}')
+            else:
+                parsed_job_options.append(f'--{opt}')
+
+        exec_policy.sched_options = parsed_job_options
+        try:
+            max_retries = int(options.max_retries)
+        except ValueError:
+            raise errors.ConfigError(
+                f'--max-retries is not a valid integer: {max_retries}'
+            ) from None
+
+        runner = Runner(exec_policy, printer, max_retries)
+        try:
+            time_start = time.time()
+            session_info['time_start'] = time.strftime(
+                '%FT%T%z', time.localtime(time_start),
+            )
+            runner.runall(testcases)
+        finally:
+            time_end = time.time()
+            session_info['time_end'] = time.strftime(
+                '%FT%T%z', time.localtime(time_end)
+            )
+            session_info['time_elapsed'] = time_end - time_start
+
+            # Print a retry report if we did any retries
+            if runner.stats.failures(run=0):
+                printer.info(runner.stats.retry_report())
+
+            # Print a failure report if we had failures in the last run
+            success = True
+            if runner.stats.failures():
+                success = False
+                runner.stats.print_failure_report(printer)
+                if options.failure_stats:
+                    runner.stats.print_failure_stats(printer)
+
+            if options.performance_report:
+                printer.info(runner.stats.performance_report())
+
+            # Generate the report for this session
+            report_file = os.path.normpath(
+                osext.expandvars(rt.get_option('general/0/report_file'))
+            )
+            basedir = os.path.dirname(report_file)
+            if basedir:
+                os.makedirs(basedir, exist_ok=True)
+
+            # Build final JSON report
+            run_stats = runner.stats.json()
+            session_info.update({
+                'num_cases': run_stats[0]['num_cases'],
+                'num_failures': run_stats[-1]['num_failures']
+            })
+            json_report = {
+                'session_info': session_info,
+                'runs': run_stats
+            }
+            report_file = generate_report_filename(report_file)
+            try:
+                with open(report_file, 'w') as fp:
+                    jsonext.dump(json_report, fp, indent=2)
+                    fp.write('\n')
+            except OSError as e:
+                printer.warning(
+                    f'failed to generate report in {report_file!r}: {e}'
+                )
 
         if not success:
             sys.exit(1)
 
         sys.exit(0)
-
     except KeyboardInterrupt:
         sys.exit(1)
     except errors.ReframeError as e:

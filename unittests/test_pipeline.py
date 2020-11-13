@@ -713,7 +713,7 @@ def test_require_deps(local_exec_ctx):
             self.z = T0().x + 2
 
     cases = executors.generate_testcases([T0(), T1()])
-    deps = dependencies.build_deps(cases)
+    deps, _ = dependencies.build_deps(cases)
     for c in dependencies.toposort(deps):
         _run(*c)
 
