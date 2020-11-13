@@ -73,13 +73,28 @@ Smi::~Smi()
  * ASM tools
  */
 
-__device__ __forceinline__ uint32_t __ownClock()
+template< class T >
+__device__ __forceinline__ T __XClock()
 {
   // Clock counter
-    uint64_t x;
-    asm volatile ("s_memtime %0" : "=r"(x));
-    return (uint32_t)x;
+  uint64_t x;
+  asm volatile ("s_memtime %0; \t\n"
+                "s_waitcnt lgkmcnt(0);"
+                : "=r"(x)
+               );
+  return (T)x;
 }
+
+__device__ __forceinline__ uint32_t XClock()
+{
+  return __XClock<uint32_t>();
+}
+
+__device__ __forceinline__ uint64_t XClock64()
+{
+  return __XClock<uint64_t>();
+}
+
 
 __device__ __forceinline__ int __smId()
 {

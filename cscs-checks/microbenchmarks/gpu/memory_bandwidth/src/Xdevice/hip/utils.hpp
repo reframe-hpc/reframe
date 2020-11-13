@@ -2,6 +2,7 @@
 #define __INCLUDED_HIP_UTILS__
 
 #include <iostream>
+#include <unistd.h>
 #include <hip/hip_runtime.h>
 
 static inline void checkError(hipError_t errorCode)
