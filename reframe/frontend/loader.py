@@ -91,31 +91,15 @@ class RegressionCheckLoader:
                 )
                 return False
 
-        # Check that the test has no generator
-        has_no_generator = util.attr_validator(
-            lambda obj: not inspect.isgenerator(obj)
+        is_copyable = util.attr_validator(
+            lambda obj: util.is_copyable(obj)
         )
-        valid, attr = has_no_generator(check)
+        valid, attr = is_copyable(check)
         if not valid:
             getlogger().warning(
-                f'{attr!r} is a generator object; '
-                f'generator objects are not allowed inside '
-                f'the __init__() method of a test; '
-                f'consider using a pipeline hook instead'
-            )
-            return False
-
-        # Check that the test has IO object
-        has_no_io = util.attr_validator(
-            lambda obj: not isinstance(obj, io.IOBase)
-        )
-        valid, attr = has_no_io(check)
-        if not valid:
-            getlogger().warning(
-                f'{attr!r} is a file object; '
-                f'file objects are not allowed inside '
-                f'the __init__() method of a test; '
-                f'consider using a pipeline hook instead'
+                f'{attr!r} is not copyable; not copyable attributes are not '
+                f'allowed inside the __init__() method; '
+                f'consider setting them in a pipeline hook instead'
             )
             return False
 

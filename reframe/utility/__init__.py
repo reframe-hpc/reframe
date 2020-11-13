@@ -14,6 +14,7 @@ import os
 import re
 import sys
 import types
+import weakref
 
 from collections import UserDict
 from . import typecheck as typ
@@ -270,6 +271,24 @@ def repr(obj, htchar=' ', lfchar='\n', indent=4, basic_offset=0):
     return f'{type(obj).__name__}({r})@{hex(id(obj))}'
 
 
+def _is_builtin_type(cls):
+    # NOTE: The set of types is copied from the copy.deepcopy() implementation
+    builtin_types = (type(None), int, float, bool, complex, str, tuple,
+                     bytes, frozenset, type, range, slice, property,
+                     type(Ellipsis), type(NotImplemented), weakref.ref,
+                     types.BuiltinFunctionType, types.FunctionType)
+
+    if not isinstance(cls, type):
+        return False
+
+    return any(t == cls for t in builtin_types)
+
+
+def _is_function_type(cls):
+    return (isinstance(cls, types.BuiltinFunctionType) or
+            isinstance(cls, types.FunctionType))
+
+
 def attr_validator(validate_fn):
     '''Validate object attributes recursively.
 
@@ -289,6 +308,8 @@ def attr_validator(validate_fn):
     .. note::
        Objects defining :attr:`__slots__` are passed directly to the
        ``validate_fn`` function.
+
+    .. versionadded:: 3.3
 
     '''
 
@@ -365,6 +386,10 @@ def attr_validator(validate_fn):
             _clean_cache()
             return False, _fmt(path)
 
+        # Stop here if obj is a built-in type
+        if isinstance(obj, type) and _is_builtin_type(obj):
+            return True, _fmt(path)
+
         if hasattr(obj, '__dict__'):
             for k, v in obj.__dict__.items():
                 if id(v) in visited:
@@ -382,6 +407,61 @@ def attr_validator(validate_fn):
         return True, _fmt(path)
 
     return _do_validate
+
+
+def is_copyable(obj):
+    '''Check if an object can be copied with :py:func:`copy.deepcopy`, without
+    performing the copy.
+
+    This is a superset of :func:`is_picklable`. It returns :class:`True` also
+    in the following cases:
+
+    - The object defines a :func:`__copy__` method.
+    - The object defines a :func:`__deepcopy__` method.
+    - The object is a function.
+    - The object is a builtin type.
+
+    .. versionadded:: 3.3
+
+    '''
+
+    if hasattr(obj, '__copy__') or hasattr(obj, '__deepcopy__'):
+        return True
+
+    if _is_function_type(obj):
+        return True
+
+    if _is_builtin_type(obj):
+        return True
+
+    return is_picklable(obj)
+
+
+def is_picklable(obj):
+    '''Check if an object can be pickled.
+
+    .. versionadded:: 3.3
+
+    '''
+
+    if isinstance(obj, type):
+        return False
+
+    if hasattr(obj, '__reduce_ex__'):
+        try:
+            obj.__reduce_ex__(4)
+            return True
+        except TypeError:
+            return False
+
+    if hasattr(obj, '__reduce__'):
+        try:
+            obj.__reduce__()
+            return True
+        except TypeError:
+            return False
+
+    return False
 
 
 def shortest(*iterables):
