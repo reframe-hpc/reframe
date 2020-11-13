@@ -32,6 +32,20 @@ site_configuration = {
                     'launcher': 'local'
                 },
                 {
+                    'name': 'amda100',
+                    'scheduler': 'slurm',
+                    'access': [
+                        '-pamda100'
+                    ],
+                    'environs': [
+                        'builtin',
+                        'PrgEnv-gnu'
+                    ],
+                    'descr': 'AMD Naples 32c + 4x NVIDIA A100',
+                    'max_jobs': 100,
+                    'launcher': 'srun'
+                },
+                {
                     'name': 'amdv100',
                     'scheduler': 'slurm',
                     'access': [

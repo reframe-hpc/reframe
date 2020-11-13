@@ -10,9 +10,10 @@ import reframe as rfm
 @rfm.simple_test
 class GpuBandwidthCheck(rfm.RegressionTest):
     def __init__(self):
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu',
+        self.valid_systems = ['daint:gpu', 'dom:gpu',
                               'arolla:cn', 'tsa:cn',
-                              'ault:amdv100', 'ault:intelv100']
+                              'ault:amdv100', 'ault:intelv100',
+                              'ault:amda100']
         self.valid_prog_environs = ['PrgEnv-gnu']
         if self.current_system.name in ['arolla', 'tsa']:
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
@@ -22,20 +23,15 @@ class GpuBandwidthCheck(rfm.RegressionTest):
         self.sourcepath = 'memory_bandwidth.cu'
         self.executable = 'memory_bandwidth.x'
 
-        # Set nvcc flags
-        nvidia_sm = '60'
-        if self.current_system.name in ['arolla', 'tsa', 'ault']:
-            nvidia_sm = '70'
-
         # Perform a single bandwidth test with a buffer size of 1024MB
         self.copy_size = 1073741824
 
-        self.build_system.cxxflags = ['-I.', '-m64', f'-arch=sm_{nvidia_sm}',
+        self.build_system.cxxflags = ['-I.', '-m64',
                                       '-std=c++11', '-lnvidia-ml',
                                       f'-DCOPY={self.copy_size}']
         self.num_tasks = 0
         self.num_tasks_per_node = 1
-        if self.current_system.name in ['daint', 'dom', 'tiger']:
+        if self.current_system.name in ['daint', 'dom']:
             self.modules = ['craype-accel-nvidia60']
         elif self.current_system.name in ['arolla', 'tsa']:
             self.modules = ['cuda/10.1.243']
@@ -46,6 +42,7 @@ class GpuBandwidthCheck(rfm.RegressionTest):
             'dom:gpu':        1,
             'arolla:cn':      2,
             'tsa:cn':         8,
+            'ault:amda100':   4,
             'ault:amdv100':   2,
             'ault:intelv100': 4,
             'ault:amdvega':   3,
@@ -77,6 +74,11 @@ class GpuBandwidthCheck(rfm.RegressionTest):
                 'd2h': (12416, -0.1, None, 'MB/s'),
                 'd2d': (777000, -0.1, None, 'MB/s')
             },
+            'ault:amda100': {
+                'h2d': (25500, -0.1, None, 'MB/s'),
+                'd2h': (26170, -0.1, None, 'MB/s'),
+                'd2d': (1322500, -0.1, None, 'MB/s')
+            },
             'ault:amdv100': {
                 'h2d': (13189, -0.1, None, 'MB/s'),
                 'd2h': (13141, -0.1, None, 'MB/s'),
@@ -97,6 +99,22 @@ class GpuBandwidthCheck(rfm.RegressionTest):
                      'craype', 'external-resources'}
         self.maintainers = ['AJ', 'SK']
 
+    @rfm.run_before('compile')
+    def set_nvidia_sm_arch(self):
+        nvidia_sm = '60'
+        if self.current_system.name in ['arolla', 'tsa', 'ault']:
+            nvidia_sm = '70'
+
+        if self.current_partition.fullname == 'ault:amda100':
+            nvidia_sm = '80'
+
+        self.build_system.cxxflags += [f'-arch=sm_{nvidia_sm}']
+
+    @rfm.run_before('run')
+    def set_num_gpus_per_node(self):
+        self.num_gpus_per_node = self.partition_num_gpus_per_node.get(
+            self.current_partition.fullname, 1)
+
     def _xfer_pattern(self, xfer_kind):
         '''generates search pattern for performance analysis'''
         if xfer_kind == 'h2d':
@@ -110,11 +128,6 @@ class GpuBandwidthCheck(rfm.RegressionTest):
         # device.
         return (rf'^[^,]*\[[^,]*\]\s*{direction}\s*bandwidth on device'
                 r' \d+ is \s*(\S+)\s*Mb/s.')
-
-    @rfm.run_before('run')
-    def set_num_gpus_per_node(self):
-        self.num_gpus_per_node = self.partition_num_gpus_per_node.get(
-            self.current_partition.fullname, 1)
 
     @sn.sanity_function
     def do_sanity_check(self):
