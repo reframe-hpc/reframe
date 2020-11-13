@@ -176,8 +176,8 @@ Here is the output when running the OSU tests with the asynchronous execution po
    [----------] finished processing OSUAllreduceTest_16 (OSU Allreduce test)
 
    [----------] waiting for spawned checks to finish
-   [       OK ] ( 1/22) OSUDownloadTest On daint:login using gnu [compile: 0.005s run: 3.373s total: 3.408s]
-   [       OK ] ( 2/22) OSUBuildTest On daint:login using gnu [compile: 22.410s run: 0.035s total: 87.728s]
+   [       OK ] ( 1/22) OSUDownloadTest on daint:login using gnu [compile: 0.005s run: 3.373s total: 3.408s]
+   [       OK ] ( 2/22) OSUBuildTest on daint:login using gnu [compile: 22.410s run: 0.035s total: 87.728s]
    [       OK ] ( 3/22) OSUBuildTest on daint:login using pgi [compile: 27.725s run: 59.918s total: 87.691s]
    [       OK ] ( 4/22) OSUBuildTest on daint:login using intel [compile: 37.437s run: 32.771s total: 98.034s]
    [       OK ] ( 5/22) OSUAllreduceTest_2 on daint:gpu using pgi [compile: 0.007s run: 139.339s total: 144.402s]

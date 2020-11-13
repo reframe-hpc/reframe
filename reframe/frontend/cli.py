@@ -22,8 +22,8 @@ import reframe.core.logging as logging
 import reframe.core.runtime as runtime
 import reframe.core.warnings as warnings
 import reframe.frontend.argparse as argparse
-import reframe.frontend.filters as filters
 import reframe.frontend.dependencies as dependencies
+import reframe.frontend.filters as filters
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 from reframe.frontend.executors import Runner, generate_testcases
