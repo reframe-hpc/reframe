@@ -261,3 +261,8 @@ class TestWithFileObject(rfm.RunOnlyRegressionTest):
             pass
 
         self.x = fp
+
+
+@rfm.simple_test
+class EmptyInvalidTest(rfm.RegressionTest):
+    pass

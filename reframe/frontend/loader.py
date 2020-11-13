@@ -81,7 +81,7 @@ class RegressionCheckLoader:
         import reframe.utility as util
 
         name = type(check).__name__
-        checkfile = inspect.getfile(type(check))
+        checkfile = os.path.relpath(inspect.getfile(type(check)))
         required_attrs = ['valid_systems', 'valid_prog_environs']
         for attr in required_attrs:
             if getattr(check, attr) is None:
@@ -97,7 +97,8 @@ class RegressionCheckLoader:
         valid, attr = is_copyable(check)
         if not valid:
             getlogger().warning(
-                f'{attr!r} is not copyable; not copyable attributes are not '
+                f'{checkfile}: {attr!r} is not copyable; '
+                f'not copyable attributes are not '
                 f'allowed inside the __init__() method; '
                 f'consider setting them in a pipeline hook instead'
             )
