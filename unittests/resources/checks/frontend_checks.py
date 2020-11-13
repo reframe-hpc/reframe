@@ -54,6 +54,7 @@ class BadSetupCheckEarly(BaseFrontendCheck):
 class NoSystemCheck(BaseFrontendCheck):
     def __init__(self):
         super().__init__()
+        self.valid_systems = []
         self.valid_prog_environs = ['*']
 
 
@@ -62,6 +63,7 @@ class NoPrgEnvCheck(BaseFrontendCheck):
     def __init__(self):
         super().__init__()
         self.valid_systems = ['*']
+        self.valid_prog_environs = []
 
 
 @rfm.simple_test
@@ -154,6 +156,21 @@ class CleanupFailTest(rfm.RunOnlyRegressionTest):
         raise Exception
 
 
+@rfm.simple_test
+class TestWithGenerator(rfm.RunOnlyRegressionTest):
+    '''This test is invalid in ReFrame and the loader must not load it'''
+
+    def __init__(self):
+        self.valid_systems = ['*']
+        self.valid_prog_environs = ['*']
+
+        def foo():
+            yield True
+
+        self.x = foo()
+        self.sanity_patterns = sn.defer(foo())
+
+
 class SleepCheck(BaseFrontendCheck):
     _next_id = 0
 
@@ -169,7 +186,7 @@ class SleepCheck(BaseFrontendCheck):
         print_timestamp = (
             "python3 -c \"from datetime import datetime; "
             "print(datetime.today().strftime('%s.%f'), flush=True)\"")
-        self.prerun_cmds  = [print_timestamp]
+        self.prerun_cmds = [print_timestamp]
         self.postrun_cmds = [print_timestamp]
         self.sanity_patterns = sn.assert_found(r'.*', self.stdout)
         self.valid_systems = ['*']

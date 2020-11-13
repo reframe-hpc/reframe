@@ -8,4 +8,11 @@ import reframe as rfm
 
 @rfm.simple_test
 class EmptyTest(rfm.RegressionTest):
+    def __init__(self):
+        self.valid_systems = []
+        self.valid_prog_environs = []
+
+
+@rfm.simple_test
+class EmptyInvalidTest(rfm.RegressionTest):
     pass
