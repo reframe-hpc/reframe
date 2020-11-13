@@ -784,8 +784,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         # True only if check is to be run locally
         self.local = False
-
-        # True only if check is to be built locally
         self.build_locally = True
 
         # Static directories of the regression check
@@ -1048,10 +1046,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
         except OSError as e:
             raise PipelineError('failed to set up paths') from e
 
-    def _setup_job(self, local, name, **job_opts):
+    def _setup_job(self, name, force_local=False, **job_opts):
         '''Setup the job related to this check.'''
 
-        if local:
+        if force_local:
             scheduler = getscheduler('local')()
             launcher = getlauncher('local')()
         else:
@@ -1059,7 +1057,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
             launcher = self._current_partition.launcher_type()
 
         self.logger.debug(
-            f'Setting up {name} job descriptor '
+            f'Setting up job {name!r} '
             f'(scheduler: {scheduler.registered_name!r}, '
             f'launcher: {launcher.registered_name!r})'
         )
@@ -1099,11 +1097,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self._current_partition = partition
         self._current_environ = environ
         self._setup_paths()
-        self._job = self._setup_job(self.local,
-                                    f'rfm_{self.name}_job',
+        self._job = self._setup_job(f'rfm_{self.name}_job',
+                                    self.local,
                                     **job_opts)
-        self._build_job = self._setup_job(self.local or self.build_locally,
-                                          f'rfm_%{self.name}_build',
+        self._build_job = self._setup_job(f'rfm_%{self.name}_build',
+                                          self.local or self.build_locally,
                                           **job_opts)
 
     def _copy_to_stagedir(self, path):
@@ -1766,14 +1764,14 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
     def setup(self, partition, environ, **job_opts):
         '''The setup stage of the regression test pipeline.
 
-        Similar to the :func:`RegressionTest.setup`, except that no job
-        descriptor is set up for the build of this test.
+        Similar to the :func:`RegressionTest.setup`, except that no build job
+        is created for this test.
         '''
         self._current_partition = partition
         self._current_environ = environ
         self._setup_paths()
-        self._job = self._setup_job(self.local,
-                                    f'rfm_{self.name}_job',
+        self._job = self._setup_job(f'rfm_{self.name}_job',
+                                    self.local,
                                     **job_opts)
 
     def compile(self):
@@ -1822,15 +1820,15 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
     def setup(self, partition, environ, **job_opts):
         '''The setup stage of the regression test pipeline.
 
-        Similar to the :func:`RegressionTest.setup`, except that no job
-        descriptor is set up for this test.
+        Similar to the :func:`RegressionTest.setup`, except that no run job
+        is created for this test.
         '''
         # No need to setup the job for compile-only checks
         self._current_partition = partition
         self._current_environ = environ
         self._setup_paths()
-        self._build_job = self._setup_job(self.local or self.build_locally,
-                                          f'rfm_%{self.name}_build',
+        self._build_job = self._setup_job(f'rfm_%{self.name}_build',
+                                          self.local or self.build_locally,
                                           **job_opts)
 
     @property
