@@ -710,7 +710,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
     #: .. versionadded:: 3.3
     #:
-    #: Always build this test locally.
+    #: Always build the source code for this test locally. If set to
+    #: :class:`False`, ReFrame will spawn a build job on the partition where
+    #: the test will run. Setting this to :class:`False` is useful when
+    #: cross-compilation is not supported on the system where ReFrame is run.
     #:
     #: :type: boolean
     #: :default: :class:`True`
