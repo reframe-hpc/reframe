@@ -173,9 +173,7 @@ def test_hellocheck_local(hellotest, local_exec_ctx):
 def test_hellocheck_build_remotely(hellotest, remote_exec_ctx):
     hellotest.build_locally = False
     _run(hellotest, *remote_exec_ctx)
-    assert not test.build_job.scheduler.is_local
-
-    assert not isinstance(test.build_job, _SlurmJob)
+    assert not hellotest.build_job.scheduler.is_local
 
 
 def test_hellocheck_local_prepost_run(hellotest, local_exec_ctx):
