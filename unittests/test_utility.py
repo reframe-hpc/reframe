@@ -235,19 +235,40 @@ def test_is_url():
     assert not osext.is_url(repo_ssh)
 
 
-def test_git_repo_hash(monkeypatch):
+@pytest.fixture
+def git_only():
+    try:
+        completed = osext.run_command('git --version', check=True, log=False)
+    except (SpawnedProcessError, FileNotFoundError):
+        pytest.skip('no git installation found on system')
+
+    try:
+        completed = osext.run_command('git status', check=True, log=False)
+    except (SpawnedProcessError, FileNotFoundError):
+        pytest.skip('not inside a git repository')
+
+
+def test_git_repo_hash(git_only):
     # A git branch hash consists of 8(short) or 40 characters.
     assert len(osext.git_repo_hash()) == 8
     assert len(osext.git_repo_hash(short=False)) == 40
     assert osext.git_repo_hash(commit='invalid') is None
     assert osext.git_repo_hash(commit='') is None
 
-    # Imitate a system with no git installed by emptying the PATH
+
+def test_git_repo_hash_no_git(git_only, monkeypatch):
+    # Emulate a system with no git installed
     monkeypatch.setenv('PATH', '')
     assert osext.git_repo_hash() is None
 
 
-def test_git_repo_exists():
+def test_git_repo_hash_no_git_repo(git_only, monkeypatch, tmp_path):
+    # Emulate trying to get the hash from somewhere where there is no repo
+    monkeypatch.setenv('GIT_DIR', str(tmp_path))
+    assert osext.git_repo_hash() is None
+
+
+def test_git_repo_exists(git_only):
     assert osext.git_repo_exists('https://github.com/eth-cscs/reframe.git',
                                  timeout=3)
     assert not osext.git_repo_exists('reframe.git', timeout=3)

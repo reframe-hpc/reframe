@@ -4,7 +4,8 @@
 
 FROM centos:7
 
-WORKDIR /root
+# ReFrame user
+RUN useradd -ms /bin/bash rfmuser
 
 # ReFrame requirements
 RUN \
@@ -19,9 +20,13 @@ RUN \
 # Install Tmod 3.2
 RUN yum -y install environment-modules
 
-# Install ReFrame from the current directory
-COPY . /root/reframe/
-RUN cd reframe && ./bootstrap.sh
+USER rfmuser
 
-WORKDIR /root/reframe
+# Install ReFrame from the current directory
+COPY --chown=rfmuser . /home/rfmuser/reframe/
+
+WORKDIR /home/rfmuser/reframe
+
+RUN ./bootstrap.sh
+
 CMD ["/bin/bash", "-c", "./test_reframe.py --rfm-user-config=ci-scripts/configs/tmod32.py -v"]
