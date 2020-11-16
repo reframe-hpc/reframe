@@ -91,7 +91,7 @@ def make_cases(make_loader):
 
         cases = executors.generate_testcases(checks, *args, **kwargs)
         if sort:
-            depgraph = dependencies.build_deps(cases)
+            depgraph, _ = dependencies.build_deps(cases)
             dependencies.validate_deps(depgraph)
             cases = dependencies.toposort(depgraph)
 

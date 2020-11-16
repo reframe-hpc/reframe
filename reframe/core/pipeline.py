@@ -169,7 +169,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:        Support for wildcards is dropped.
     #:
     valid_prog_environs = fields.TypedField('valid_prog_environs',
-                                            typ.List[str])
+                                            typ.List[str], type(None))
 
     #: List of systems supported by this test.
     #: The general syntax for systems is ``<sysname>[:<partname>]``.
@@ -178,7 +178,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    valid_systems = fields.TypedField('valid_systems', typ.List[str])
+    valid_systems = fields.TypedField('valid_systems',
+                                      typ.List[str], type(None))
 
     #: A detailed description of the test.
     #:
@@ -744,8 +745,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
             self.name = name
 
         self.descr = self.name
-        self.valid_prog_environs = []
-        self.valid_systems = []
+        self.valid_prog_environs = None
+        self.valid_systems = None
         self.sourcepath = ''
         self.prebuild_cmds = []
         self.postbuild_cmds = []
