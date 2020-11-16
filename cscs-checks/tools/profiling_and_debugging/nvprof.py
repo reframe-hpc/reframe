@@ -12,8 +12,7 @@ import reframe.utility.sanity as sn
 class NvprofCheck(rfm.RegressionTest):
     def __init__(self):
         self.descr = 'Checks the nvprof tool'
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu',
-                              'arolla:cn', 'tsa:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.num_gpus_per_node = 1
         self.num_tasks_per_node = 1

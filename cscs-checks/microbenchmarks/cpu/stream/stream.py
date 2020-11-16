@@ -19,9 +19,7 @@ class StreamTest(rfm.RegressionTest):
         self.descr = 'STREAM Benchmark'
         self.exclusive_access = True
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'tiger:gpu', 'arolla:cn', 'arolla:pn', 'tsa:cn',
-                              'tsa:pn']
-
+                              'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi',
                                     'PrgEnv-cray_classic']

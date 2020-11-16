@@ -12,14 +12,13 @@ import reframe.utility.sanity as sn
 class OpenaccCudaCpp(rfm.RegressionTest):
     def __init__(self):
         self.descr = 'test for OpenACC, CUDA, MPI, and C++'
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu',
-                              'arolla:cn', 'tsa:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn']
         self.valid_prog_environs = ['PrgEnv-cce', 'PrgEnv-cray',
                                     'PrgEnv-pgi']
         self.build_system = 'Make'
         self.build_system.fflags = ['-O2']
 
-        if self.current_system.name in ['daint', 'dom', 'tiger']:
+        if self.current_system.name in ['daint', 'dom']:
             self.modules = ['craype-accel-nvidia60']
             self.num_tasks = 12
             self.num_tasks_per_node = 12
@@ -52,7 +51,7 @@ class OpenaccCudaCpp(rfm.RegressionTest):
 
         elif self.current_environ.name.startswith('PrgEnv-pgi'):
             self.build_system.fflags += ['-acc']
-            if self.current_system.name in ['daint', 'dom', 'tiger']:
+            if self.current_system.name in ['daint', 'dom']:
                 self.build_system.fflags += ['-ta:tesla:cc60']
                 self.build_system.ldflags = ['-acc', '-ta:tesla:cc60',
                                              '-Mnorpath', '-lstdc++']

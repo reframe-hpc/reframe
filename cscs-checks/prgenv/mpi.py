@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import os
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -35,8 +34,7 @@ class MpiInitTest(rfm.RegressionTest):
     '''
 
     def __init__(self, required_thread):
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'tiger:gpu']
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi']
         self.build_system = 'SingleSource'
@@ -75,8 +73,7 @@ class MpiInitTest(rfm.RegressionTest):
 class MpiHelloTest(rfm.RegressionTest):
     def __init__(self):
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'tiger:gpu', 'arolla:cn', 'arolla:pn', 'tsa:cn',
-                              'tsa:pn']
+                              'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn']
         self.valid_prog_environs = ['PrgEnv-cray']
         if self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True

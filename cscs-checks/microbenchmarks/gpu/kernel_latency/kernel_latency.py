@@ -13,14 +13,13 @@ class KernelLatencyTest(rfm.RegressionTest):
     def __init__(self, kernel_version):
         # List known partitions here so as to avoid specifying them every time
         # with --system
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu',
-                              'arolla:cn', 'tsa:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn']
         self.num_tasks = 0
         self.num_tasks_per_node = 1
         self.sourcepath = 'kernel_latency.cu'
         self.build_system = 'SingleSource'
         self.build_system.cxxflags = ['-std=c++11', '-O3']
-        if self.current_system.name in {'dom', 'daint', 'tiger'}:
+        if self.current_system.name in {'dom', 'daint'}:
             self.num_gpus_per_node = 1
             gpu_arch = '60'
             self.modules = ['craype-accel-nvidia60']

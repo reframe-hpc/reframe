@@ -12,14 +12,12 @@ import reframe.utility.sanity as sn
 class GpuDirectCudaCheck(rfm.RegressionTest):
     def __init__(self):
         self.descr = 'tests gpu-direct for CUDA'
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu',
-                              'arolla:cn', 'tsa:cn']
-
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.sourcepath = 'gpu_direct_cuda.cu'
         self.build_system = 'SingleSource'
         self.build_system.ldflags = ['-lcublas', '-lcudart']
-        if self.current_system.name in ['daint', 'dom', 'tiger']:
+        if self.current_system.name in ['daint', 'dom']:
             self.modules = ['craype-accel-nvidia60']
             self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
             self.build_system.cxxflags = ['-ccbin CC', '-arch=sm_60']

@@ -14,8 +14,7 @@ from reframe.core.launchers import LauncherWrapper
 class CudaGdbCheck(rfm.RegressionTest):
     def __init__(self):
         self.valid_prog_environs = ['PrgEnv-gnu']
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu',
-                              'arolla:cn', 'tsa:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn']
         self.num_gpus_per_node = 1
         self.num_tasks_per_node = 1
         self.sourcesdir = 'src/Cuda'

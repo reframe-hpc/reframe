@@ -12,7 +12,7 @@ import reframe.utility.sanity as sn
 class AlltoallTest(rfm.RegressionTest):
     def __init__(self, variant):
         self.strict_check = False
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu']
+        self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.descr = 'Alltoall OSU microbenchmark'
         self.build_system = 'Make'
         self.build_system.makefile = 'Makefile_alltoall'
@@ -55,10 +55,8 @@ class AlltoallTest(rfm.RegressionTest):
 @rfm.simple_test
 class FlexAlltoallTest(rfm.RegressionTest):
     def __init__(self):
-        self.valid_systems = ['daint:gpu', 'daint:mc',
-                              'dom:gpu', 'dom:mc', 'tiger:gpu',
-                              'arolla:cn', 'arolla:pn',
-                              'tsa:cn', 'tsa:pn']
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+                              'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn']
         self.valid_prog_environs = ['PrgEnv-cray']
         if self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
@@ -82,7 +80,7 @@ class AllreduceTest(rfm.RegressionTest):
         self.strict_check = False
         self.valid_systems = ['daint:gpu', 'daint:mc']
         if variant == 'small':
-            self.valid_systems += ['dom:gpu', 'dom:mc', 'tiger:gpu']
+            self.valid_systems += ['dom:gpu', 'dom:mc']
 
         self.descr = 'Allreduce OSU microbenchmark'
         self.build_system = 'Make'
@@ -163,8 +161,8 @@ class P2PBaseTest(rfm.RegressionTest):
 class P2PCPUBandwidthTest(P2PBaseTest):
     def __init__(self):
         super().__init__()
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'tiger:gpu',
-                              'dom:gpu', 'dom:mc', 'arolla:cn', 'tsa:cn']
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+                              'arolla:cn', 'tsa:cn']
         self.executable = './p2p_osu_bw'
         self.executable_opts = ['-x', '100', '-i', '1000']
 
@@ -197,8 +195,8 @@ class P2PCPUBandwidthTest(P2PBaseTest):
 class P2PCPULatencyTest(P2PBaseTest):
     def __init__(self):
         super().__init__()
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'tiger:gpu',
-                              'dom:gpu', 'dom:mc', 'arolla:cn', 'tsa:cn']
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+                              'arolla:cn', 'tsa:cn']
         self.executable_opts = ['-x', '100', '-i', '1000']
 
         self.executable = './p2p_osu_latency'
@@ -231,8 +229,7 @@ class P2PCPULatencyTest(P2PBaseTest):
 class G2GBandwidthTest(P2PBaseTest):
     def __init__(self):
         super().__init__()
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu',
-                              'arolla:cn', 'tsa:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn']
         self.num_gpus_per_node = 1
         self.executable = './p2p_osu_bw'
         self.executable_opts = ['-x', '100', '-i', '1000', '-d',
@@ -253,7 +250,7 @@ class G2GBandwidthTest(P2PBaseTest):
             'bw': sn.extractsingle(r'^4194304\s+(?P<bw>\S+)',
                                    self.stdout, 'bw', float)
         }
-        if self.current_system.name in ['daint', 'dom', 'tiger']:
+        if self.current_system.name in ['daint', 'dom']:
             self.num_gpus_per_node  = 1
             self.modules = ['craype-accel-nvidia60']
             self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
@@ -270,8 +267,7 @@ class G2GBandwidthTest(P2PBaseTest):
 class G2GLatencyTest(P2PBaseTest):
     def __init__(self):
         super().__init__()
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu',
-                              'arolla:cn', 'tsa:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn']
         self.num_gpus_per_node = 1
         self.executable = './p2p_osu_latency'
         self.executable_opts = ['-x', '100', '-i', '1000', '-d',
@@ -289,7 +285,7 @@ class G2GLatencyTest(P2PBaseTest):
             'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
                                         self.stdout, 'latency', float)
         }
-        if self.current_system.name in ['daint', 'dom', 'tiger']:
+        if self.current_system.name in ['daint', 'dom']:
             self.num_gpus_per_node  = 1
             self.modules = ['craype-accel-nvidia60']
             self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}

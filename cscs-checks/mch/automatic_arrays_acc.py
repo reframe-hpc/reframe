@@ -11,10 +11,9 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class AutomaticArraysCheck(rfm.RegressionTest):
     def __init__(self):
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu',
-                              'arolla:cn', 'tsa:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-cce', 'PrgEnv-pgi']
-        if self.current_system.name in ['daint', 'dom', 'tiger']:
+        if self.current_system.name in ['daint', 'dom']:
             self.modules = ['craype-accel-nvidia60']
         elif self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
@@ -58,7 +57,7 @@ class AutomaticArraysCheck(rfm.RegressionTest):
             self.build_system.fflags += ['-acc']
             if self.current_system.name in ['arolla', 'tsa']:
                 self.build_system.fflags += ['-ta=tesla,cc70']
-            elif self.current_system.name in ['daint', 'dom', 'tiger']:
+            elif self.current_system.name in ['daint', 'dom']:
                 self.build_system.fflags += ['-ta=tesla,cc60', '-Mnorpath']
         else:
             envname = self.current_environ.name

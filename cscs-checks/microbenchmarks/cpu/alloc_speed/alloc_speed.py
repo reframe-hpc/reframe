@@ -14,22 +14,14 @@ class AllocSpeedTest(rfm.RegressionTest):
         self.sourcepath = 'alloc_speed.cpp'
         self.build_system = 'SingleSource'
         self.build_system.cxxflags = ['-O3', '-std=c++11']
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'tiger:gpu']
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-gnu']
         if hugepages == 'no':
             self.valid_systems += ['arolla:cn', 'arolla:pn',
                                    'tsa:cn', 'tsa:pn']
         else:
-            if self.current_system.name in {'dom', 'daint', 'tiger'}:
+            if self.current_system.name in {'dom', 'daint'}:
                 self.modules = ['craype-hugepages%s' % hugepages]
-
-        if self.current_system.name in {'tiger'}:
-            self.extra_resources = {
-                'mem-per-cpu': {
-                    'mem_per_cpu': 0
-                }
-            }
 
         self.sanity_patterns = sn.assert_found('4096 MB', self.stdout)
         self.perf_patterns = {

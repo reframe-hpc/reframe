@@ -3,8 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import os
-
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -12,8 +10,7 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class GpuBurnTest(rfm.RegressionTest):
     def __init__(self):
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu'
-                              'arolla:cn', 'tsa:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn']
         self.descr = 'GPU burn test'
         self.valid_prog_environs = ['PrgEnv-gnu']
 
@@ -23,7 +20,7 @@ class GpuBurnTest(rfm.RegressionTest):
             self.executable_opts = ['-d', '40']
             self.num_gpus_per_node = 8
             gpu_arch = '70'
-        elif self.current_system.name in {'daint', 'dom', 'tiger'}:
+        elif self.current_system.name in {'daint', 'dom'}:
             self.modules = ['craype-accel-nvidia60']
             self.executable_opts = ['-d', '20']
             self.num_gpus_per_node = 1

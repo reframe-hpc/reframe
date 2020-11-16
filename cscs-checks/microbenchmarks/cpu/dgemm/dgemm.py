@@ -17,14 +17,9 @@ class DGEMMTest(rfm.RegressionTest):
 
         # the perf patterns are automaticaly generated inside sanity
         self.perf_patterns = {}
-        self.valid_systems = [
-            'daint:gpu', 'daint:mc',
-            'dom:gpu', 'dom:mc',
-            'tiger:gpu',
-            'arolla:cn', 'arolla:pn',
-            'tsa:cn', 'tsa:pn'
-        ]
-        if self.current_system.name in ['daint', 'dom', 'tiger']:
+        self.valid_systems = [ 'daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+                               'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn']
+        if self.current_system.name in ['daint', 'dom']:
             self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel']
         if self.current_system.name in ['arolla', 'tsa']:
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
@@ -68,8 +63,6 @@ class DGEMMTest(rfm.RegressionTest):
             self.num_cpus_per_task = 12
         elif self.current_partition.fullname in ['daint:mc', 'dom:mc']:
             self.num_cpus_per_task = 36
-        elif self.current_partition.fullname in ['tiger:gpu']:
-            self.num_cpus_per_task = 18
         elif self.current_partition.fullname in ['arolla:cn', 'tsa:cn']:
             self.num_cpus_per_task = 16
         elif self.current_partition.fullname in ['arolla:pn', 'tsa:pn']:

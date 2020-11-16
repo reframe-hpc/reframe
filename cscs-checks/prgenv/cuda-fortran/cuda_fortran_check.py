@@ -11,7 +11,7 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class CUDAFortranCheck(rfm.RegressionTest):
     def __init__(self):
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu']
+        self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.valid_prog_environs = ['PrgEnv-pgi']
         self.sourcepath = 'vecAdd_cuda.f90'
         self.modules = ['craype-accel-nvidia60']

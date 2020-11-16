@@ -14,8 +14,7 @@ class ScaLAPACKTest(rfm.RegressionTest):
         self.linkage = linkage
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'scalapack')
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:mc',
-                              'dom:gpu']
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:mc', 'dom:gpu']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel']
         self.num_tasks = 16
