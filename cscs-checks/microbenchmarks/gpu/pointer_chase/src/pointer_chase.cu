@@ -8,9 +8,6 @@
 #include <memory>
 #include <queue>
 
-// Include the CUDA/HIP wrappers from the other test for now.
-#include "../../memory_bandwidth/src/Xdevice/runtime.hpp"
-
 /*
  ~~ GPU Linked list pointer chase algorithm ~~
  Times in clock cycles the time it takes to jump from one node to the next
@@ -53,7 +50,7 @@
 
 
 // Include the CUDA/HIP wrappers from the other test for now.
-#include "../../memory_bandwidth/src/Xdevice/runtime.hpp"
+#include "Xdevice/runtime.hpp"
 
 // List structure
 #include "pChase_list.hpp"
