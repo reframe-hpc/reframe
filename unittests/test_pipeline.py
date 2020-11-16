@@ -16,7 +16,6 @@ import unittests.fixtures as fixtures
 from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
                                      ReframeSyntaxError, PerformanceError,
                                      SanityError)
-from reframe.core.schedulers.slurm import _SlurmJob
 from reframe.frontend.loader import RegressionCheckLoader
 from unittests.resources.checks.hellocheck import HelloTest
 
@@ -132,6 +131,24 @@ def container_local_exec_ctx(local_user_exec_ctx):
     return _container_exec_ctx
 
 
+def test_eq():
+    class T0(rfm.RegressionTest):
+        def __init__(self):
+            self.name = 'T0'
+
+    class T1(rfm.RegressionTest):
+        def __init__(self):
+            self.name = 'T0'
+
+    t0, t1 = T0(), T1()
+    assert t0 == t1
+    assert hash(t0) == hash(t1)
+
+    t1.name = 'T1'
+    assert t0 != t1
+    assert hash(t0) != hash(t1)
+
+
 def test_environ_setup(hellotest, local_exec_ctx):
     # Use test environment for the regression check
     hellotest.variables = {'_FOO_': '1', '_BAR_': '2'}
@@ -171,19 +188,10 @@ def test_hellocheck_local(hellotest, local_exec_ctx):
         assert os.path.exists(os.path.join(hellotest.outputdir, f))
 
 
-def test_hellocheck_remote_building(testsys_system):
-    @fixtures.custom_prefix('unittests/resources/checks')
-    class MyTest(HelloTest):
-        def __init__(self):
-            super().__init__()
-            self.build_locally = False
-
-    test = MyTest()
-    partition = fixtures.partition_by_name('gpu')
-    environ = partition.environment('builtin-gcc')
-    test.setup(partition, environ)
-
-    assert isinstance(test._build_job, _SlurmJob)
+def test_hellocheck_build_remotely(hellotest, remote_exec_ctx):
+    hellotest.build_locally = False
+    _run(hellotest, *remote_exec_ctx)
+    assert not hellotest.build_job.scheduler.is_local
 
 
 def test_hellocheck_local_prepost_run(hellotest, local_exec_ctx):
@@ -711,7 +719,7 @@ def test_require_deps(local_exec_ctx):
             self.z = T0().x + 2
 
     cases = executors.generate_testcases([T0(), T1()])
-    deps = dependencies.build_deps(cases)
+    deps, _ = dependencies.build_deps(cases)
     for c in dependencies.toposort(deps):
         _run(*c)
 
