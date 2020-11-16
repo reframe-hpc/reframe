@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import functools
 import itertools
 import pytest
 
@@ -392,7 +393,7 @@ def test_build_deps(loader, exec_ctx):
         t.getdep('Test0', 'e0', 'p0')
 
     # Build dependencies and continue testing
-    deps = dependencies.build_deps(cases)
+    deps, _ = dependencies.build_deps(cases)
     dependencies.validate_deps(deps)
 
     # Check dependencies for fully connected graph
@@ -522,7 +523,7 @@ def test_build_deps(loader, exec_ctx):
 
 
 def test_build_deps_empty(exec_ctx):
-    assert {} == dependencies.build_deps([])
+    assert {} == dependencies.build_deps([])[0]
 
 
 @pytest.fixture
@@ -575,7 +576,7 @@ def test_valid_deps(make_test, exec_ctx):
         dependencies.build_deps(
             executors.generate_testcases([t0, t1, t2, t3, t4,
                                           t5, t6, t7, t8])
-        )
+        )[0]
     )
 
 
@@ -609,7 +610,7 @@ def test_cyclic_deps(make_test, exec_ctx):
     t6.depends_on('t5')
     t7.depends_on('t5')
     t8.depends_on('t7')
-    deps = dependencies.build_deps(
+    deps, _ = dependencies.build_deps(
         executors.generate_testcases([t0, t1, t2, t3, t4,
                                       t5, t6, t7, t8])
     )
@@ -630,7 +631,7 @@ def test_cyclic_deps_by_env(make_test, exec_ctx):
     t1 = make_test('t1')
     t1.depends_on('t0', udeps.env_is('e0'))
     t0.depends_on('t1', udeps.env_is('e1'))
-    deps = dependencies.build_deps(
+    deps, _ = dependencies.build_deps(
         executors.generate_testcases([t0, t1])
     )
     with pytest.raises(DependencyError) as exc_info:
@@ -642,6 +643,28 @@ def test_cyclic_deps_by_env(make_test, exec_ctx):
 
 def test_validate_deps_empty(exec_ctx):
     dependencies.validate_deps({})
+
+
+def test_skip_unresolved_deps(make_test, temp_runtime):
+    rt = temp_runtime(fixtures.TEST_CONFIG_FILE, system='sys0:p0')
+    next(rt)
+
+    t0 = make_test('t0')
+    t1 = make_test('t1')
+    t2 = make_test('t2')
+    t3 = make_test('t3')
+    t3.valid_systems = ['sys0:p1']
+    t1.depends_on('t0')
+    t2.depends_on('t0')
+    t2.depends_on('t3')
+    deps, skipped_cases = dependencies.build_deps(
+        executors.generate_testcases([t0, t1, t2, t3])
+    )
+
+    assert len(skipped_cases) == 2
+
+    skipped_tests = {c.check.name for c in skipped_cases}
+    assert skipped_tests == {'t2'}
 
 
 def assert_topological_order(cases, graph):
@@ -678,6 +701,61 @@ def assert_topological_order(cases, graph):
     assert cases_order in valid_orderings
 
 
+def test_prune_deps(make_test, exec_ctx):
+    #
+    #       t0       +-->t5<--+
+    #       ^        |        |
+    #       |        |        |
+    #   +-->t1<--+   t6       t7
+    #   |        |            ^
+    #   t2<------t3           |
+    #   ^        ^            |
+    #   |        |            t8
+    #   +---t4---+
+    #
+    t0 = make_test('t0')
+    t1 = make_test('t1')
+    t2 = make_test('t2')
+    t3 = make_test('t3')
+    t4 = make_test('t4')
+    t5 = make_test('t5')
+    t6 = make_test('t6')
+    t7 = make_test('t7')
+    t8 = make_test('t8')
+    t1.depends_on('t0')
+    t2.depends_on('t1')
+    t3.depends_on('t1')
+    t3.depends_on('t2')
+    t4.depends_on('t2')
+    t4.depends_on('t3')
+    t6.depends_on('t5')
+    t7.depends_on('t5')
+    t8.depends_on('t7')
+
+    testcases_all = executors.generate_testcases([t0, t1, t2, t3, t4,
+                                                  t5, t6, t7, t8])
+    testcases = executors.generate_testcases([t3, t7])
+    full_deps, _ = dependencies.build_deps(testcases_all)
+    pruned_deps = dependencies.prune_deps(full_deps, testcases)
+
+    # Check the connectivity
+    assert len(pruned_deps) == 6*4
+    for p in ['sys0:p0', 'sys0:p1']:
+        for e in ['e0', 'e1']:
+            node = functools.partial(Node, pname=p, ename=e)
+            assert has_edge(pruned_deps, node('t3'), node('t2'))
+            assert has_edge(pruned_deps, node('t3'), node('t1'))
+            assert has_edge(pruned_deps, node('t2'), node('t1'))
+            assert has_edge(pruned_deps, node('t1'), node('t0'))
+            assert has_edge(pruned_deps, node('t7'), node('t5'))
+            assert len(pruned_deps[node('t3')]) == 2
+            assert len(pruned_deps[node('t2')]) == 1
+            assert len(pruned_deps[node('t1')]) == 1
+            assert len(pruned_deps[node('t7')]) == 1
+            assert len(pruned_deps[node('t5')]) == 0
+            assert len(pruned_deps[node('t0')]) == 0
+
+
 def test_toposort(make_test, exec_ctx):
     #
     #       t0       +-->t5<--+
@@ -708,7 +786,7 @@ def test_toposort(make_test, exec_ctx):
     t6.depends_on('t5')
     t7.depends_on('t5')
     t8.depends_on('t7')
-    deps = dependencies.build_deps(
+    deps, _ = dependencies.build_deps(
         executors.generate_testcases([t0, t1, t2, t3, t4,
                                       t5, t6, t7, t8])
     )
@@ -739,10 +817,10 @@ def test_toposort_subgraph(make_test, exec_ctx):
     t3.depends_on('t2')
     t4.depends_on('t2')
     t4.depends_on('t3')
-    full_deps = dependencies.build_deps(
+    full_deps, _ = dependencies.build_deps(
         executors.generate_testcases([t0, t1, t2, t3, t4])
     )
-    partial_deps = dependencies.build_deps(
+    partial_deps, _ = dependencies.build_deps(
         executors.generate_testcases([t3, t4]), full_deps
     )
     cases = dependencies.toposort(partial_deps, is_subgraph=True)
