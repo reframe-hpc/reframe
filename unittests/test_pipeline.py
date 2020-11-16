@@ -18,7 +18,7 @@ from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
                                      SanityError)
 from reframe.frontend.loader import RegressionCheckLoader
 from unittests.resources.checks.hellocheck import HelloTest
-from unittests.resources.checks.hellocheck_base import HelloBaseTest
+from unittests.resources.checks.pinnedcheck import PinnedTest
 
 
 def _run(test, partition, prgenv):
@@ -248,11 +248,11 @@ def test_compile_only_warning(local_exec_ctx):
 
 
 def test_base_test(local_exec_ctx):
-    class MyTest(HelloBaseTest):
+    class MyTest(PinnedTest):
         pass
 
-    _run(MyTest(), *local_exec_ctx)
-
+    pinned = Mytest()
+    assert 'unittests/resources/checks' in pinned._rfm_pinned_prefix
 
 def test_supports_system(hellotest, testsys_system):
     hellotest.valid_systems = ['*']
