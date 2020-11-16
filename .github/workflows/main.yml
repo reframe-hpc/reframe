@@ -1,0 +1,62 @@
+name: ReFrame CI
+
+on: [pull_request]
+
+jobs:
+  unittest:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8, 3.9]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    - name: Generic Unittests
+      run: |
+        ./test_reframe.py
+
+  coverage:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup Python for Coverage
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+    - name: Coverage Calculation
+      run: |
+        pip install -r requirements.txt
+        pip install codecov
+        coverage run --source=reframe ./test_reframe.py
+        coverage report -m
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v1
+      with:
+        fail_ci_if_error: true
+
+  modulestest:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        modules-version: [Lmod, Tmod32, Tmod4]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build Image for ${{ matrix.modules-version }}
+      run: |
+        docker build -f ci-scripts/dockerfiles/${{ matrix.modules-version }}.dockerfile -t reframe:${{ matrix.modules-version }} .
+    - name: Run Unittests
+      run: |
+        docker run reframe:${{ matrix.modules-version }}

@@ -2,7 +2,7 @@
   <img src="docs/_static/img/reframe_logo-full.png" width=400>
 </a>
 
-[![Build Status](https://travis-ci.org/eth-cscs/reframe.svg?branch=master)](https://travis-ci.org/eth-cscs/reframe)
+[![Build Status](https://github.com/eth-cscs/reframe/workflows/ReFrame%20CI/badge.svg)](https://github.com/production/reframe/actions?query=workflow%3A%22ReFrame+CI%22)
 [![Documentation Status](https://readthedocs.org/projects/reframe-hpc/badge/?version=latest)](https://reframe-hpc.readthedocs.io/en/latest/?badge=latest)
 [![codecov.io](https://codecov.io/gh/eth-cscs/reframe/branch/master/graph/badge.svg)](https://codecov.io/github/eth-cscs/reframe)<br/>
 ![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/eth-cscs/reframe?include_prereleases)
