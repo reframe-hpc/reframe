@@ -82,15 +82,18 @@ class TestStats:
                 entry = {
                     'build_stderr': None,
                     'build_stdout': None,
+                    'dependencies': [
+                        d[0] for d in t.check.user_deps()
+                    ],
                     'description': check.descr,
                     'environment': None,
-                    'fail_reason': None,
                     'fail_phase': None,
+                    'fail_reason': None,
                     'jobid': None,
                     'job_stderr': None,
                     'job_stdout': None,
-                    'name': check.name,
                     'maintainers': check.maintainers,
+                    'name': check.name,
                     'nodelist': [],
                     'outputdir': None,
                     'perfvars': None,
