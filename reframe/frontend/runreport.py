@@ -56,19 +56,18 @@ class _RunReport:
         c, p, e = check.name, part.fullname, env.name
         return self._cases_index.get((c, p, e))
 
-    def restore_deps(self, testcases):
-        '''Restore state of successful dependencies in testcases
+    def restore_dangling(self, graph):
+        '''Restore dangling dependencies in graph from the report data.
 
-        Returns the updated tescases.
+        Returns the updated graph.
         '''
 
-        for tc in testcases:
-            for d in tc.deps:
-                print(d)
-                if self.case(*d)['result'] == 'success':
+        for tc, deps in graph.items():
+            for d in deps:
+                if d not in graph:
                     self._do_restore(d)
 
-        return testcases
+        return graph
 
     def _do_restore(self, testcase):
         dump_file = os.path.join(self.case(*testcase)['stagedir'],

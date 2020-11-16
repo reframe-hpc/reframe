@@ -250,6 +250,10 @@ def main():
               'programming environment matching PATTERN')
     )
     select_options.add_argument(
+        '--failed', action='store_true',
+        help="Select failed test cases (only when '--restore-session' is used)"
+    )
+    select_options.add_argument(
         '--gpu-only', action='store_true',
         help='Select only GPU checks'
     )
@@ -315,10 +319,10 @@ def main():
         help='Set the maximum number of times a failed regression test '
              'may be retried (default: 0)'
     )
-    output_options.add_argument(
-        '--retry-failed', action='store', nargs='?', const='',
-        metavar='FILE',
-        help='Retry failed tests in a given runreport '
+    run_options.add_argument(
+        '--restore-session', action='store', nargs='?', const='',
+        metavar='REPORT',
+        help='Restore a testing session from REPORT file'
     )
     run_options.add_argument(
         '--flex-alloc-nodes', action='store',
@@ -575,10 +579,10 @@ def main():
     printer.debug(format_env(options.env_vars))
 
     # Setup the check loader
-    if options.retry_failed is not None:
+    if options.restore_session is not None:
         # We need to load the failed checks only from a report
-        if options.retry_failed:
-            filename = options.retry_failed
+        if options.restore_session:
+            filename = options.restore_session
         else:
             filename = runreport.next_report_filename(
                 osext.expandvars(site_config.get('general/0/report_file')),
@@ -692,6 +696,30 @@ def main():
         elif options.cpu_only:
             testcases = filter(filters.have_cpu_only(), testcases)
 
+        testcases = list(testcases)
+        printer.verbose(
+            f'Filtering test cases(s) by other attributes: '
+            f'{len(testcases)} remaining'
+        )
+
+        # Filter in failed cases
+        if options.failed:
+            if options.restore_session is None:
+                printer.error(
+                    "the option '--failed' can only be used "
+                    "in combination with the '--restore-session' option"
+                )
+                sys.exit(1)
+
+            testcases = list(filter(
+                lambda t: report.case(*t)['result'] == 'failure',
+                testcases
+            ))
+            printer.verbose(
+                f'Filtering successful test case(s): '
+                f'{len(testcases)} remaining'
+            )
+
         # Prepare for running
         printer.debug('Building and validating the full test DAG')
         testgraph, skipped_cases = dependencies.build_deps(testcases_all)
@@ -707,11 +735,19 @@ def main():
         printer.debug('Full test DAG:')
         printer.debug(dependencies.format_deps(testgraph))
         if len(testcases) != len(testcases_all):
-            testgraph = dependencies.prune_deps(testgraph, testcases)
+            testgraph = dependencies.prune_deps(
+                testgraph, testcases,
+                max_depth=1 if options.restore_session is not None else None
+            )
             printer.debug('Pruned test DAG')
             printer.debug(dependencies.format_deps(testgraph))
+            printer.info(dependencies.format_deps(testgraph))
+            testgraph = report.restore_dangling(testgraph)
 
-        testcases = dependencies.toposort(testgraph)
+        testcases = dependencies.toposort(
+            testgraph,
+            is_subgraph=options.restore_session is not None
+        )
         printer.verbose(f'Final number of test cases: {len(testcases)}')
 
         # Disable hooks
@@ -815,7 +851,7 @@ def main():
             session_info['time_start'] = time.strftime(
                 '%FT%T%z', time.localtime(time_start),
             )
-            runner.runall(testcases)
+            runner.runall(testcases, testcases_all)
         finally:
             time_end = time.time()
             session_info['time_end'] = time.strftime(
@@ -856,7 +892,7 @@ def main():
                 'session_info': session_info,
                 'runs': run_stats
             }
-            report_file = generate_report_filename(report_file)
+            report_file = runreport.next_report_filename(report_file)
             try:
                 with open(report_file, 'w') as fp:
                     jsonext.dump(json_report, fp, indent=2)
