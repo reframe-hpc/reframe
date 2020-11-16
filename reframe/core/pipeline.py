@@ -1100,7 +1100,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self._job = self._setup_job(f'rfm_{self.name}_job',
                                     self.local,
                                     **job_opts)
-        self._build_job = self._setup_job(f'rfm_%{self.name}_build',
+        self._build_job = self._setup_job(f'rfm_{self.name}_build',
                                           self.local or self.build_locally,
                                           **job_opts)
 
@@ -1827,7 +1827,7 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
         self._current_partition = partition
         self._current_environ = environ
         self._setup_paths()
-        self._build_job = self._setup_job(f'rfm_%{self.name}_build',
+        self._build_job = self._setup_job(f'rfm_{self.name}_build',
                                           self.local or self.build_locally,
                                           **job_opts)
 
