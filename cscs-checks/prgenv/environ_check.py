@@ -52,34 +52,25 @@ class EnvironmentCheck(rfm.RunOnlyRegressionTest):
                         ['cray-R'], ['cray-tpsl'], ['cray-tpsl-64'],
                         ['cudatoolkit'], ['gcc'], ['papi'], ['pmi'])
 class CrayVariablesCheck(rfm.RunOnlyRegressionTest):
-    def __init__(self, variant):
-        self.variant = variant
+    def __init__(self, module_name):
         self.descr = 'Check for standard Cray variables'
         self.valid_systems = ['daint:login', 'dom:login']
         self.valid_prog_environs = ['builtin']
-
         self.executable = 'module'
-        self.executable_opts = ['show', variant]
-
-        mod_name = variant.upper().replace('-', '_')
-
+        self.executable_opts = ['show', module_name]
+        envvar_prefix = module_name.upper().replace('-', '_')
         self.sanity_patterns = sn.all([
-            sn.assert_found(f'{mod_name}_PREFIX', self.stderr),
-            sn.assert_found(f'{mod_name}_VERSION', self.stderr)
+            sn.assert_found(f'{envvar_prefix}_PREFIX', self.stderr),
+            sn.assert_found(f'{envvar_prefix}_VERSION', self.stderr)
         ])
+
+        # These modules should be fixed in later releases
+        cdt = osext.cray_cdt_version()
+        if (cdt and cdt <= '20.10' and
+            module_name in ['cray-petsc-complex',
+                            'cray-petsc-complex-64',
+                            'cudatoolkit', 'gcc']):
+            self.valid_systems = []
 
         self.maintainers = ['EK', 'VH']
         self.tags = {'production', 'craype'}
-
-    @rfm.run_before('sanity')
-    def cdt_workaround(self):
-        cdt = osext.cray_cdt_version()
-        if not cdt:
-            return
-
-        # these modules should be fixed in later releases
-        if (cdt <= '20.10' and
-            self.variant in ['cray-petsc-complex',
-                             'cray-petsc-complex-64',
-                             'cudatoolkit', 'gcc']):
-            self.sanity_patterns = sn.assert_true(True)
