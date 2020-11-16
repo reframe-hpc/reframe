@@ -209,7 +209,170 @@ With the serial execution policy, ReFrame simply executes the tests to completio
 In the asynchronous execution policy, tests are spawned and not waited for.
 If a test's dependencies have not yet completed, it will not start its execution and a ``DEP`` message will be printed to denote this.
 
-Finally, ReFrame's runtime takes care of properly cleaning up the resources of the tests respecting dependencies.
+ReFrame's runtime takes care of properly cleaning up the resources of the tests respecting dependencies.
 Normally when an individual test finishes successfully, its stage directory is cleaned up.
 However, if other tests are depending on this one, this would be catastrophic, since most probably the dependent tests would need the outcome of this test.
 ReFrame fixes that by not cleaning up the stage directory of a test until all its dependent tests have finished successfully.
+
+When selecting tests using the test filtering options, such as the :option:`-t`, :option:`-n` etc., ReFrame will automatically select any dependencies of these tests as well.
+For example, if we select only the :class:`OSULatencyTest` for running, ReFrame will also select the :class:`OSUBuildTest` and the :class:`OSUDownloadTest`:
+
+.. code-block:: none
+
+   $ ./bin/reframe -C tutorials/config/settings.py -c tutorials/deps/osu_benchmarks.py -n OSULatencyTest -l
+   [ReFrame Setup]
+     version:           3.3-dev2 (rev: 8ded20cd)
+     command:           './bin/reframe -C tutorials/config/settings.py -c tutorials/deps/osu_benchmarks.py -n OSULatencyTest -l'
+     launched by:       user@dom101
+     working directory: '/users/user/Devel/reframe'
+     settings file:     'tutorials/config/settings.py'
+     check search path: '/users/user/Devel/reframe/tutorials/deps/osu_benchmarks.py'
+     stage directory:   '/users/user/Devel/reframe/stage'
+     output directory:  '/users/user/Devel/reframe/output'
+
+   [List of matched checks]
+   - OSUDownloadTest (found in '/users/user/Devel/reframe/tutorials/deps/osu_benchmarks.py')
+   - OSUBuildTest (found in '/users/user/Devel/reframe/tutorials/deps/osu_benchmarks.py')
+   - OSULatencyTest (found in '/users/user/Devel/reframe/tutorials/deps/osu_benchmarks.py')
+   Found 3 check(s)
+   Log file(s) saved in: '/tmp/rfm-4c15g820.log'
+
+
+Finally, when ReFrame cannot resolve a dependency of a test, it will issue a warning and skip it completely.
+In the following example, we restrict the run of the :class:`OSULatencyTest` to the ``daint:gpu`` partition.
+This is problematic, since its dependencies cannot run on this partition.
+As a result, the test will be skipped:
+
+.. code-block:: none
+
+   $ ./bin/reframe -C tutorials/config/settings.py -c tutorials/deps/osu_benchmarks.py -n OSULatencyTest -r --system=daint:gpu -l
+   [ReFrame Setup]
+     version:           3.3-dev2 (rev: 8ded20cd)
+     command:           './bin/reframe -C tutorials/config/settings.py -c tutorials/deps/osu_benchmarks.py -n OSULatencyTest -r --system=daint:gpu -l'
+     launched by:       user@dom101
+     working directory: '/users/user/Devel/reframe'
+     settings file:     'tutorials/config/settings.py'
+     check search path: '/users/user/Devel/reframe/tutorials/deps/osu_benchmarks.py'
+     stage directory:   '/users/user/Devel/reframe/stage'
+     output directory:  '/users/user/Devel/reframe/output'
+
+   ./bin/reframe: could not resolve dependency: ('OSULatencyTest', 'daint:gpu', 'gnu') -> 'OSUBuildTest'; skipping test case...
+   ./bin/reframe: could not resolve dependency: ('OSULatencyTest', 'daint:gpu', 'intel') -> 'OSUBuildTest'; skipping test case...
+   ./bin/reframe: could not resolve dependency: ('OSULatencyTest', 'daint:gpu', 'pgi') -> 'OSUBuildTest'; skipping test case...
+   ./bin/reframe: could not resolve dependency: ('OSUBandwidthTest', 'daint:gpu', 'gnu') -> 'OSUBuildTest'; skipping test case...
+   ./bin/reframe: could not resolve dependency: ('OSUBandwidthTest', 'daint:gpu', 'intel') -> 'OSUBuildTest'; skipping test case...
+   ./bin/reframe: could not resolve dependency: ('OSUBandwidthTest', 'daint:gpu', 'pgi') -> 'OSUBuildTest'; skipping test case...
+   ./bin/reframe: could not resolve dependency: ('OSUAllreduceTest_2', 'daint:gpu', 'gnu') -> 'OSUBuildTest'; skipping test case...
+   ./bin/reframe: could not resolve dependency: ('OSUAllreduceTest_2', 'daint:gpu', 'intel') -> 'OSUBuildTest'; skipping test case...
+   ./bin/reframe: could not resolve dependency: ('OSUAllreduceTest_2', 'daint:gpu', 'pgi') -> 'OSUBuildTest'; skipping test case...
+   ./bin/reframe: could not resolve dependency: ('OSUAllreduceTest_4', 'daint:gpu', 'gnu') -> 'OSUBuildTest'; skipping test case...
+   ./bin/reframe: could not resolve dependency: ('OSUAllreduceTest_4', 'daint:gpu', 'intel') -> 'OSUBuildTest'; skipping test case...
+   ./bin/reframe: could not resolve dependency: ('OSUAllreduceTest_4', 'daint:gpu', 'pgi') -> 'OSUBuildTest'; skipping test case...
+   ./bin/reframe: could not resolve dependency: ('OSUAllreduceTest_8', 'daint:gpu', 'gnu') -> 'OSUBuildTest'; skipping test case...
+   ./bin/reframe: could not resolve dependency: ('OSUAllreduceTest_8', 'daint:gpu', 'intel') -> 'OSUBuildTest'; skipping test case...
+   ./bin/reframe: could not resolve dependency: ('OSUAllreduceTest_8', 'daint:gpu', 'pgi') -> 'OSUBuildTest'; skipping test case...
+   ./bin/reframe: could not resolve dependency: ('OSUAllreduceTest_16', 'daint:gpu', 'gnu') -> 'OSUBuildTest'; skipping test case...
+   ./bin/reframe: could not resolve dependency: ('OSUAllreduceTest_16', 'daint:gpu', 'intel') -> 'OSUBuildTest'; skipping test case...
+   ./bin/reframe: could not resolve dependency: ('OSUAllreduceTest_16', 'daint:gpu', 'pgi') -> 'OSUBuildTest'; skipping test case...
+   [List of matched checks]
+
+   Found 0 check(s)
+   Log file(s) saved in: '/tmp/rfm-v4e8rtgm.log'
+
+
+Listing Dependencies
+--------------------
+
+You can view the dependencies of a test by using the :option:`-L` option:
+
+
+.. code-block:: none
+
+   < ... omitted ... >
+
+   - OSULatencyTest:
+       Description:
+         OSU latency test
+
+       Environment modules:
+         <none>
+
+       Location:
+         /users/user/Devel/reframe/tutorials/deps/osu_benchmarks.py
+
+       Maintainers:
+         <none>
+
+       Node allocation:
+         standard (2 task(s))
+
+       Pipeline hooks:
+         - post_setup: set_executable
+
+       Tags:
+         <none>
+
+       Valid environments:
+         gnu, pgi, intel
+
+       Valid systems:
+         daint:gpu
+
+       Dependencies (conceptual):
+         OSUBuildTest
+
+       Dependencies (actual):
+         - ('OSULatencyTest', 'daint:gpu', 'gnu') -> ('OSUBuildTest', 'daint:login', 'gnu')
+         - ('OSULatencyTest', 'daint:gpu', 'intel') -> ('OSUBuildTest', 'daint:login', 'intel')
+         - ('OSULatencyTest', 'daint:gpu', 'pgi') -> ('OSUBuildTest', 'daint:login', 'pgi')
+
+   < ... omitted ... >
+
+
+Dependencies are not only listed conceptually, e.g., "test A depends on test B," but also in a way that shows how they are actually interpreted between the different test cases of the tests.
+The test dependencies do not change conceptually, but their actual interpretation might change from system to system or from programming environment to programming environment.
+The following listing shows how the actual test cases dependencies are formed when we select only the ``gnu`` programming environment for running:
+
+
+.. code-block:: none
+   :emphasize-lines: 35
+
+   < ... omitted ... >
+
+   - OSULatencyTest:
+       Description:
+         OSU latency test
+
+       Environment modules:
+         <none>
+
+       Location:
+         /users/karakasv/Devel/reframe/tutorials/deps/osu_benchmarks.py
+
+       Maintainers:
+         <none>
+
+       Node allocation:
+         standard (2 task(s))
+
+       Pipeline hooks:
+         - post_setup: set_executable
+
+       Tags:
+         <none>
+
+       Valid environments:
+         gnu, pgi, intel
+
+       Valid systems:
+         daint:gpu
+
+       Dependencies (conceptual):
+         OSUBuildTest
+
+       Dependencies (actual):
+         - ('OSULatencyTest', 'daint:gpu', 'gnu') -> ('OSUBuildTest', 'daint:login', 'gnu')
+
+   < ... omitted ... >
+
+For more information on test dependencies, you can have a look at :doc:`dependencies`.
