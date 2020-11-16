@@ -17,8 +17,8 @@ class DGEMMTest(rfm.RegressionTest):
 
         # the perf patterns are automaticaly generated inside sanity
         self.perf_patterns = {}
-        self.valid_systems = [ 'daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                               'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn']
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+                              'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn']
         if self.current_system.name in ['daint', 'dom']:
             self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel']
         if self.current_system.name in ['arolla', 'tsa']:
