@@ -950,6 +950,17 @@ class RegressionTest(metaclass=RegressionTestMeta):
         return self._job.stderr
 
     @property
+    def hooks(self):
+        ret = {}
+        for c in inspect.getmro(type(self)):
+            if hasattr(c, '_rfm_pipeline_hooks'):
+                for k, v in c._rfm_pipeline_hooks.items():
+                    ret.setdefault(k, [])
+                    ret[k].extend(v)
+
+        return ret
+
+    @property
     def build_job(self):
         return self._build_job
 

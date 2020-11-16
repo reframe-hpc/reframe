@@ -63,13 +63,6 @@ def format_check(check, check_deps, detailed=False):
     else:
         node_alloc_scheme = f'flexible (minimum {-check.num_tasks} task(s))'
 
-    hooks = {}
-    for c in inspect.getmro(type(check)):
-        if hasattr(c, '_rfm_pipeline_hooks'):
-            for k, v in c._rfm_pipeline_hooks.items():
-                hooks.setdefault(k, [])
-                hooks[k].extend(v)
-
     check_info = {
         'Description': check.descr,
         'Environment modules': fmt_list(check.modules),
@@ -78,7 +71,7 @@ def format_check(check, check_deps, detailed=False):
         'Node allocation': node_alloc_scheme,
         'Pipeline hooks': {
             k: fmt_list(fn.__name__ for fn in v)
-            for k, v in hooks.items()
+            for k, v in check.hooks.items()
         },
         'Tags': fmt_list(check.tags),
         'Valid environments': fmt_list(check.valid_prog_environs),
