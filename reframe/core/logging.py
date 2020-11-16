@@ -212,7 +212,7 @@ def _create_file_handler(site_config, config_prefix):
 
 def _create_filelog_handler(site_config, config_prefix):
     basedir = os.path.abspath(site_config.get(f'{config_prefix}/basedir'))
-    prefix  = site_config.get(f'{config_prefix}/prefix')
+    prefix = site_config.get(f'{config_prefix}/prefix')
     filename_patt = os.path.join(basedir, prefix)
     append = site_config.get(f'{config_prefix}/append')
     return MultiFileHandler(filename_patt, mode='a+' if append else 'w+')
@@ -385,9 +385,7 @@ class Logger(logging.Logger):
 
 class LoggerAdapter(logging.LoggerAdapter):
     def __init__(self, logger=None, check=None):
-        super().__init__(
-            logger,
-            {
+        extra_vars = {
                 'check_name': 'reframe',
                 'check_jobid': '-1',
                 'check_job_completion_time': None,
@@ -405,12 +403,25 @@ class LoggerAdapter(logging.LoggerAdapter):
                 'check_perf_lower_thres': None,
                 'check_perf_upper_thres': None,
                 'check_perf_unit': None,
-                'osuser':  osext.osuser()  or '<unknown>',
+                'osuser':  osext.osuser() or '<unknown>',
                 'osgroup': osext.osgroup() or '<unknown>',
                 'check_tags': None,
                 'version': osext.reframe_version(),
             }
-        )
+
+        self.user_log_vars = []
+        if logger:
+            log_vars = []
+            for h in logger.handlers:
+                fmt = re.findall(r'\%\((check_\S+?)\)s', h.formatter._fmt)
+                log_vars.extend(fmt)
+
+            for v in set(log_vars):
+                if v not in extra_vars:
+                    extra_vars[v] = None
+                    self.user_log_vars.append(v)
+
+        super().__init__(logger, extra_vars)
         self.check = check
         self.colorize = False
 
@@ -428,6 +439,7 @@ class LoggerAdapter(logging.LoggerAdapter):
 
     def _update_check_extras(self):
         '''Return a dictionary with all the check-specific information.'''
+
         if self.check is None:
             return
 
@@ -447,10 +459,16 @@ class LoggerAdapter(logging.LoggerAdapter):
             self.extra['check_environ'] = self.check.current_environ.name
 
         if self.check.job:
-            self.extra['check_jobid'] = self.check.job.jobid
             if self.check.job.completion_time:
                 ct = self.check.job.completion_time
                 self.extra['check_job_completion_time_unix'] = ct
+
+        for v in self.user_log_vars:
+            _, *var_name = v.split('_')
+            if var_name[0] == 'job' and self.check.job:
+                self.extra[v] = getattr(self.check.job, '_'.join(var_name[1:]))
+            else:
+                self.extra[v] = getattr(self.check, '_'.join(var_name))
 
     def log_performance(self, level, tag, value, ref,
                         low_thres, upper_thres, unit=None, *, msg=None):
