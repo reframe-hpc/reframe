@@ -247,11 +247,12 @@ def test_compile_only_warning(local_exec_ctx):
     _run(MyTest(), *local_exec_ctx)
 
 
-def test_base_test(local_exec_ctx):
+def test_pinned_test(local_exec_ctx):
     class MyTest(PinnedTest):
         pass
 
-    pinned = Mytest()
+    pinned = MyTest()
+    assert hasattr(pinned, '_rfm_pinned_prefix')
     assert 'unittests/resources/checks' in pinned._rfm_pinned_prefix
 
 def test_supports_system(hellotest, testsys_system):
