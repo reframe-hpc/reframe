@@ -294,7 +294,7 @@ def attr_validator(validate_fn):
 
     This returns a function which you can call with the object to check. It
     will return :class:`True` if the :func:`validate_fn` returns :class:`True`
-    for all object attributes recursively. If the object to be validate is an
+    for all object attributes recursively. If the object to be validated is an
     iterable, its elements will be validated individually.
 
     :arg validate_fn: A callable that validates an object. It takes a single
