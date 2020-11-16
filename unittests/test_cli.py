@@ -490,7 +490,6 @@ def test_filtering_multiple_criteria(run_reframe):
     )
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
-    print(stdout)
     assert 'Found 1 check(s)' in stdout
     assert returncode == 0
 
