@@ -711,10 +711,14 @@ def main():
                 )
                 sys.exit(1)
 
-            testcases = list(filter(
-                lambda t: report.case(*t)['result'] == 'failure',
-                testcases
-            ))
+            def _case_failed(t):
+                rec = report.case(*t)
+                if rec and rec['result'] == 'failure':
+                    return True
+                else:
+                    return False
+
+            testcases = list(filter(_case_failed, testcases))
             printer.verbose(
                 f'Filtering successful test case(s): '
                 f'{len(testcases)} remaining'
@@ -741,7 +745,6 @@ def main():
             )
             printer.debug('Pruned test DAG')
             printer.debug(dependencies.format_deps(testgraph))
-            printer.info(dependencies.format_deps(testgraph))
             testgraph = report.restore_dangling(testgraph)
 
         testcases = dependencies.toposort(
