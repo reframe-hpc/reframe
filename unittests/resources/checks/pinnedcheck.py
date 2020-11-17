@@ -4,8 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import reframe as rfm
-import reframe.utility.sanity as sn
 
 
 class PinnedTest(rfm.RunOnlyRegressionTest, pin_prefix=True):
-    pass
+    '''A simple base test for verifying that prefix pinning works correctly'''

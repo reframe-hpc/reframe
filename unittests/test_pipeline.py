@@ -252,8 +252,9 @@ def test_pinned_test(local_exec_ctx):
         pass
 
     pinned = MyTest()
-    assert hasattr(pinned, '_rfm_pinned_prefix')
-    assert 'unittests/resources/checks' in pinned._rfm_pinned_prefix
+    expected_prefix = os.path.join(os.getcwd(), 'unittests/resources/checks')
+    assert pinned._prefix == expected_prefix
+
 
 def test_supports_system(hellotest, testsys_system):
     hellotest.valid_systems = ['*']

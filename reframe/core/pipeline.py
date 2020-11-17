@@ -729,7 +729,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
                     prefix = cls._rfm_pinned_prefix
                 except AttributeError:
                     prefix = os.path.abspath(
-                        os.path.dirname(inspect.getfile(cls)))
+                        os.path.dirname(inspect.getfile(cls))
+                    )
 
         obj._rfm_init(name, prefix)
         return obj
@@ -746,7 +747,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
         # library with resources in it.
         if pin_prefix:
             cls._rfm_pinned_prefix = os.path.abspath(
-                os.path.dirname(inspect.getfile(cls)))
+                os.path.dirname(inspect.getfile(cls))
+            )
 
     def _rfm_init(self, name=None, prefix=None):
         if name is not None:
