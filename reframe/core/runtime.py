@@ -16,6 +16,7 @@ import reframe.core.fields as fields
 import reframe.utility.osext as osext
 from reframe.core.environments import (Environment, snapshot)
 from reframe.core.exceptions import ReframeFatalError
+from reframe.core.logging import getlogger
 from reframe.core.systems import System
 
 
@@ -141,12 +142,18 @@ class RuntimeContext:
 
     def make_stagedir(self, *dirs):
         wipeout = self.get_option('general/0/clean_stagedir')
-        return self._makedir(self.stage_prefix,
-                             *self._format_dirs(*dirs), wipeout=wipeout)
+        ret = self._makedir(self.stage_prefix,
+                            *self._format_dirs(*dirs), wipeout=wipeout)
+        getlogger().debug(
+            f'Created stage directory {ret!r} [clean_stagedir: {wipeout}]'
+        )
+        return ret
 
     def make_outputdir(self, *dirs):
-        return self._makedir(self.output_prefix,
-                             *self._format_dirs(*dirs), wipeout=True)
+        ret = self._makedir(self.output_prefix,
+                            *self._format_dirs(*dirs), wipeout=True)
+        getlogger().debug(f'Created output directory {ret!r}')
+        return ret
 
     @property
     def modules_system(self):
@@ -205,12 +212,12 @@ def loadenv(*environs):
     env_snapshot = snapshot()
     commands = []
     for env in environs:
-        for m in env.modules:
-            conflicted = modules_system.load_module(m, force=True)
+        for m in env.modules_detailed:
+            conflicted = modules_system.load_module(**m, force=True)
             for c in conflicted:
                 commands += modules_system.emit_unload_commands(c)
 
-            commands += modules_system.emit_load_commands(m)
+            commands += modules_system.emit_load_commands(**m)
 
         for k, v in env.variables.items():
             os.environ[k] = osext.expandvars(v)

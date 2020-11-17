@@ -181,14 +181,16 @@ class SpawnedProcessError(ReframeError):
         lines = [
             f"command '{self.command}' failed with exit code {self.exitcode}:"
         ]
-        lines.append('=== STDOUT ===')
+        lines.append('--- stdout ---')
         if stdout:
             lines.append(stdout)
 
-        lines.append('=== STDERR ===')
+        lines.append('--- stdout ---')
+        lines.append('--- stderr ---')
         if stderr:
             lines.append(stderr)
 
+        lines.append('--- stderr ---')
         self._message = '\n'.join(lines)
 
     @property
@@ -221,14 +223,16 @@ class SpawnedProcessTimeout(SpawnedProcessError):
 
         # Format message
         lines = [f"command '{self.command}' timed out after {self.timeout}s:"]
-        lines.append('=== STDOUT ===')
+        lines.append('--- stdout ---')
         if self._stdout:
             lines.append(self._stdout)
 
-        lines.append('=== STDERR ===')
+        lines.append('--- stdout ---')
+        lines.append('--- stderr ---')
         if self._stderr:
             lines.append(self._stderr)
 
+        lines.append('--- stderr ---')
         self._message = '\n'.join(lines)
 
     @property

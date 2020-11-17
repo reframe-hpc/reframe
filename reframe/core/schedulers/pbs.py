@@ -21,7 +21,6 @@ import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
 from reframe.core.config import settings
 from reframe.core.exceptions import JobSchedulerError
-from reframe.core.logging import getlogger
 from reframe.utility import seconds_to_hms
 
 
@@ -148,7 +147,6 @@ class PbsJobScheduler(sched.JobScheduler):
         if time_from_submit < PBS_CANCEL_DELAY:
             time.sleep(PBS_CANCEL_DELAY - time_from_submit)
 
-        getlogger().debug(f'cancelling job (id={job.jobid})')
         _run_strict(f'qdel {job.jobid}', timeout=self._submit_timeout)
         job._cancelled = True
 

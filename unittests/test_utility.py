@@ -8,6 +8,7 @@ import pytest
 import random
 import shutil
 import sys
+import time
 
 import reframe
 import reframe.core.fields as fields
@@ -29,10 +30,22 @@ def test_command_success():
     assert completed.stdout == 'foobar\n'
 
 
+def test_command_success_cmd_seq():
+    completed = osext.run_command(['echo', 'foobar'])
+    assert completed.returncode == 0
+    assert completed.stdout == 'foobar\n'
+
+
 def test_command_error():
     with pytest.raises(SpawnedProcessError,
                        match=r"command 'false' failed with exit code 1"):
         osext.run_command('false', check=True)
+
+
+def test_command_error_cmd_seq():
+    with pytest.raises(SpawnedProcessError,
+                       match=r"command 'false' failed with exit code 1"):
+        osext.run_command(['false'], check=True)
 
 
 def test_command_timeout():
@@ -49,19 +62,17 @@ def test_command_timeout():
 
 
 def test_command_async():
-    from datetime import datetime
-
-    t_launch = datetime.now()
+    t_launch = time.time()
     t_sleep  = t_launch
     proc = osext.run_command_async('sleep 1')
-    t_launch = datetime.now() - t_launch
+    t_launch = time.time() - t_launch
 
     proc.wait()
-    t_sleep = datetime.now() - t_sleep
+    t_sleep = time.time() - t_sleep
 
     # Now check the timings
-    assert t_launch.seconds < 1
-    assert t_sleep.seconds >= 1
+    assert t_launch < 1
+    assert t_sleep >= 1
 
 
 def test_copytree(tmp_path):
@@ -224,19 +235,40 @@ def test_is_url():
     assert not osext.is_url(repo_ssh)
 
 
-def test_git_repo_hash(monkeypatch):
+@pytest.fixture
+def git_only():
+    try:
+        completed = osext.run_command('git --version', check=True, log=False)
+    except (SpawnedProcessError, FileNotFoundError):
+        pytest.skip('no git installation found on system')
+
+    try:
+        completed = osext.run_command('git status', check=True, log=False)
+    except (SpawnedProcessError, FileNotFoundError):
+        pytest.skip('not inside a git repository')
+
+
+def test_git_repo_hash(git_only):
     # A git branch hash consists of 8(short) or 40 characters.
     assert len(osext.git_repo_hash()) == 8
     assert len(osext.git_repo_hash(short=False)) == 40
     assert osext.git_repo_hash(commit='invalid') is None
     assert osext.git_repo_hash(commit='') is None
 
-    # Imitate a system with no git installed by emptying the PATH
+
+def test_git_repo_hash_no_git(git_only, monkeypatch):
+    # Emulate a system with no git installed
     monkeypatch.setenv('PATH', '')
     assert osext.git_repo_hash() is None
 
 
-def test_git_repo_exists():
+def test_git_repo_hash_no_git_repo(git_only, monkeypatch, tmp_path):
+    # Emulate trying to get the hash from somewhere where there is no repo
+    monkeypatch.setenv('GIT_DIR', str(tmp_path))
+    assert osext.git_repo_hash() is None
+
+
+def test_git_repo_exists(git_only):
     assert osext.git_repo_exists('https://github.com/eth-cscs/reframe.git',
                                  timeout=3)
     assert not osext.git_repo_exists('reframe.git', timeout=3)
@@ -404,6 +436,26 @@ def test_virtual_copy_linkparent(direntries):
     file_links = ['..']
     with pytest.raises(ValueError):
         osext.copytree_virtual(*direntries, file_links, dirs_exist_ok=True)
+
+
+@pytest.fixture(params=['symlinks=True', 'symlinks=False'])
+def symlinks(request):
+    return 'True' in request.param
+
+
+def test_virtual_copy_symlinks_dirs_exist(tmp_path, symlinks):
+    src = tmp_path / 'src'
+    src.mkdir()
+    dst = tmp_path / 'dst'
+    dst.mkdir()
+    foo = src / 'foo'
+    foo.touch()
+    foo_link = src / 'foo.link'
+    foo_link.symlink_to(foo)
+    osext.copytree_virtual(src, dst, symlinks=symlinks, dirs_exist_ok=True)
+    assert (dst / 'foo').exists()
+    assert (dst / 'foo.link').exists()
+    assert (dst / 'foo.link').is_symlink() == symlinks
 
 
 def test_import_from_file_load_relpath():
@@ -1431,3 +1483,111 @@ def test_jsonext_dumps():
     assert '{"foo": ["bar"]}' == jsonext.dumps({'foo': sn.defer(['bar'])})
     assert '{"foo":["bar"]}' == jsonext.dumps({'foo': sn.defer(['bar'])},
                                               separators=(',', ':'))
+
+
+def test_attr_validator():
+    class C:
+        def __init__(self):
+            self.x = 3
+            self.y = [1, 2, 3]
+            self.z = {'a': 1, 'b': 2}
+
+    class D:
+        def __init__(self):
+            self.x = 1
+            self.y = C()
+
+    has_no_str = util.attr_validator(lambda x: not isinstance(x, str))
+
+    d = D()
+    assert has_no_str(d)[0]
+
+    # Check when a list element does not validate
+    d.y.y[1] = 'foo'
+    assert has_no_str(d) == (False, 'D.y.y[1]')
+    d.y.y[1] = 2
+
+    # Check when a dict element does not validate
+    d.y.z['a'] = 'b'
+    assert has_no_str(d) == (False, "D.y.z['a']")
+    d.y.z['a'] = 1
+
+    # Check when an attribute does not validate
+    d.x = 'foo'
+    assert has_no_str(d) == (False, 'D.x')
+    d.x = 1
+
+    # Check when an attribute does not validate
+    d.y.x = 'foo'
+    assert has_no_str(d) == (False, 'D.y.x')
+    d.y.x = 3
+
+    # Check when an attribute does not validate against a custom type
+    has_no_c = util.attr_validator(lambda x: not isinstance(x, C))
+    assert has_no_c(d) == (False, 'D.y')
+
+
+def test_is_picklable():
+    class X:
+        pass
+
+    x = X()
+    assert util.is_picklable(x)
+    assert not util.is_picklable(X)
+
+    assert util.is_picklable(1)
+    assert util.is_picklable([1, 2])
+    assert util.is_picklable((1, 2))
+    assert util.is_picklable({1, 2})
+    assert util.is_picklable({'a': 1, 'b': 2})
+
+    class Y:
+        def __reduce_ex__(self, proto):
+            raise TypeError
+
+    y = Y()
+    assert not util.is_picklable(y)
+
+    class Z:
+        def __reduce__(self):
+            return TypeError
+
+    # This is still picklable, because __reduce_ex__() is preferred
+    z = Z()
+    assert util.is_picklable(z)
+
+    def foo():
+        yield
+
+    assert not util.is_picklable(foo)
+    assert not util.is_picklable(foo())
+
+
+def test_is_copyable():
+    class X:
+        pass
+
+    x = X()
+    assert util.is_copyable(x)
+
+    class Y:
+        def __copy__(self):
+            pass
+
+    y = Y()
+    assert util.is_copyable(y)
+
+    class Z:
+        def __deepcopy__(self, memo):
+            pass
+
+    z = Z()
+    assert util.is_copyable(z)
+
+    def foo():
+        yield
+
+    assert util.is_copyable(foo)
+    assert util.is_copyable(len)
+    assert util.is_copyable(int)
+    assert not util.is_copyable(foo())

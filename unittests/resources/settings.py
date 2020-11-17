@@ -44,7 +44,9 @@ site_configuration = {
                     'descr': 'GPU partition',
                     'scheduler': 'slurm',
                     'launcher': 'srun',
-                    'modules': ['foogpu'],
+
+                    # Use the extensive syntax here
+                    'modules': [{'name': 'foogpu', 'collection': False}],
                     'variables': [['FOO_GPU', 'yes']],
                     'resources': [
                         {
@@ -88,7 +90,7 @@ site_configuration = {
     'environments': [
         {
             'name': 'PrgEnv-gnu',
-            'modules': ['PrgEnv-gnu'],
+            'modules': [{'name': 'PrgEnv-gnu', 'collection': False}],
         },
         {
             'name': 'PrgEnv-gnu',
@@ -131,8 +133,8 @@ site_configuration = {
         {
             'name': 'unittest',
             'options': [
-                '-c', 'unittests/resources/checks/hellocheck.py',
-                '-p', 'builtin-gcc',
+                '-c unittests/resources/checks/hellocheck.py',
+                '-p builtin-gcc',
                 '--force-local'
             ]
         }

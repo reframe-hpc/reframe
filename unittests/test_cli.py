@@ -481,6 +481,19 @@ def test_list_with_details(run_reframe):
     assert returncode == 0
 
 
+def test_filtering_multiple_criteria(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        checkpath=['unittests/resources/checks'],
+        action='list',
+        more_options=['-t', 'foo', '-n', 'hellocheck',
+                      '--ignore-check-conflicts']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert 'Found 1 check(s)' in stdout
+    assert returncode == 0
+
+
 def test_show_config_all(run_reframe):
     # Just make sure that this option does not make the frontend crash
     returncode, stdout, stderr = run_reframe(
@@ -539,6 +552,19 @@ def test_verbosity_with_check(run_reframe):
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert 0 == returncode
+
+
+def test_load_user_modules(run_reframe, user_exec_ctx):
+    with rt.module_use('unittests/modules'):
+        returncode, stdout, stderr = run_reframe(
+            more_options=['-m testmod_foo'],
+            action='list'
+        )
+
+    assert stdout != ''
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert returncode == 0
 
 
 def test_unload_module(run_reframe, user_exec_ctx):

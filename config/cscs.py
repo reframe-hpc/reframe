@@ -32,6 +32,20 @@ site_configuration = {
                     'launcher': 'local'
                 },
                 {
+                    'name': 'amda100',
+                    'scheduler': 'slurm',
+                    'access': [
+                        '-pamda100'
+                    ],
+                    'environs': [
+                        'builtin',
+                        'PrgEnv-gnu'
+                    ],
+                    'descr': 'AMD Naples 32c + 4x NVIDIA A100',
+                    'max_jobs': 100,
+                    'launcher': 'srun'
+                },
+                {
                     'name': 'amdv100',
                     'scheduler': 'slurm',
                     'access': [
@@ -944,12 +958,11 @@ site_configuration = {
     ],
     'logging': [
         {
-            'level': 'debug',
             'handlers': [
                 {
                     'type': 'file',
                     'name': 'reframe.log',
-                    'level': 'debug',
+                    'level': 'debug2',
                     'format': '[%(asctime)s] %(levelname)s: %(check_info)s: %(message)s',   # noqa: E501
                     'append': False
                 },
