@@ -360,6 +360,19 @@ def main():
         envvar='RFM_UNLOAD_MODULES ,', configvar='general/unload_modules'
     )
     env_options.add_argument(
+        '--unuse-module-path', action='append', metavar='PATH',
+        dest='unuse_module_paths', default=[],
+        help='Unuse module path PATH before running any regression check',
+        envvar='RFM_UNUSE_MODULE_PATHS :',
+        configvar='general/unuse_module_paths'
+    )
+    env_options.add_argument(
+        '--use-module-path', action='append', metavar='PATH',
+        dest='use_module_paths', default=[],
+        help='Use module path PATH before running any regression check',
+        envvar='RFM_USE_MODULE_PATHS :', configvar='general/use_module_paths'
+    )
+    env_options.add_argument(
         '--purge-env', action='store_true', dest='purge_env', default=False,
         help='Unload all modules before running any regression check',
         envvar='RFM_PURGE_ENVIRONMENT', configvar='general/purge_environment'
@@ -732,6 +745,28 @@ def main():
                           "please check your configuration")
             printer.debug(str(e))
             raise
+
+        printer.debug('Unusing module paths from command line')
+        for d in site_config.get('general/0/unuse_module_paths'):
+            try:
+                rt.modules_system.searchpath_remove(d)
+            except errors.EnvironError as e:
+                printer.warning(
+                    f'could not unuse module path {d["name"]!r} correctly; '
+                    f'skipping...'
+                )
+                printer.debug(str(e))
+
+        printer.debug('Using module paths from command line')
+        for d in site_config.get('general/0/use_module_paths'):
+            try:
+                rt.modules_system.searchpath_add(d)
+            except errors.EnvironError as e:
+                printer.warning(
+                    f'could not use module path {d["name"]!r} correctly; '
+                    f'skipping...'
+                )
+                printer.debug(str(e))
 
         printer.debug('Loading user modules from command line')
         for m in site_config.get('general/0/user_modules'):

@@ -591,6 +591,43 @@ def test_unload_module(run_reframe, user_exec_ctx):
     assert returncode == 0
 
 
+def test_unuse_module_path(run_reframe, user_exec_ctx, monkeypatch):
+    ms = rt.runtime().modules_system
+    if ms.name == 'nomod':
+        pytest.skip('no modules system found')
+
+    # We need to have MODULEPATH set to unuse a module
+    monkeypatch.setenv('MODULEPATH', '')
+
+    module_path = os.path.abspath('unittests/modules')
+    returncode, stdout, stderr = run_reframe(
+        config_file = fixtures.USER_CONFIG_FILE,
+            more_options=[f'--unuse-module-path={module_path}'], action='run'
+    )
+
+    assert stdout != ''
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert returncode == 0
+
+
+def test_use_module_path(run_reframe, user_exec_ctx):
+    ms = rt.runtime().modules_system
+    if ms.name == 'nomod':
+        pytest.skip('no modules system found')
+
+    module_path = os.path.abspath('unittests/modules')
+    returncode, stdout, stderr = run_reframe(
+        config_file = fixtures.USER_CONFIG_FILE,
+        more_options=[f'--use-module-path={module_path}'], action='run'
+    )
+
+    assert stdout != ''
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert returncode == 0
+
+
 def test_failure_stats(run_reframe):
     returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks/frontend_checks.py'],

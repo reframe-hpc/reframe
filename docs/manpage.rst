@@ -387,6 +387,26 @@ It does so by leveraging the selected system's environment modules system.
    This option can also be set using the :envvar:`RFM_UNLOAD_MODULES` environment variable or the :js:attr:`unload_modules` general configuration parameter.
 
 
+.. option:: --unuse-module-path=PATH
+
+   Unuse module path ``PATH`` before acting on any tests.
+   This option may be specified multiple times, in which case all specified modules paths will be unused in order.
+
+   This option can also be set using the :envvar:`RFM_UNUSE_MODULE_PATHS` environment variable or the :js:attr:`unuse_module_paths` general configuration parameter.
+
+   .. versionadded:: 3.3
+
+
+.. option:: --use-module-path=PATH
+
+   Use module path ``PATH`` before acting on any tests.
+   This option may be specified multiple times, in which case all specified module paths will be used in order.
+
+   This option can also be set using the :envvar:`RFM_USE_MODULE_PATHS` environment variable or the :js:attr:`use_module_paths` general configuration parameter.
+
+   .. versionadded:: 3.3
+
+
 .. option:: --purge-env
 
    Unload all environment modules before acting on any tests.
@@ -880,6 +900,36 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
       Associated command line option     :option:`-u`
       Associated configuration parameter :js:attr:`unload_modules` general configuration parameter
+      ================================== ==================
+
+
+.. versionadded:: 3.3
+
+.. envvar:: RFM_UNUSE_MODULE_PATHS
+
+   A colon-separated list of module paths to be unused before acting on any tests.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     :option:`--unuse-module-path`
+      Associated configuration parameter :js:attr:`unuse_module_paths` general configuration parameter
+      ================================== ==================
+
+
+.. versionadded:: 3.3
+
+.. envvar:: RFM_USE_MODULE_PATHS
+
+   A colon-separated list of module paths to be used before acting on any tests.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     :option:`--use-module-path`
+      Associated configuration parameter :js:attr:`use_module_paths` general configuration parameter
       ================================== ==================
 
 
