@@ -31,6 +31,11 @@ class _RunReport:
                 c, p, e = tc['name'], tc['system'], tc['environment']
                 self._cases_index[c, p, e] = tc
 
+        # Index also the restored cases
+        for tc in self._report['restored_cases']:
+            c, p, e = tc['name'], tc['system'], tc['environment']
+            self._cases_index[c, p, e] = tc
+
     def __getattr__(self, name):
         return getattr(self._report, name)
 
@@ -62,22 +67,30 @@ class _RunReport:
         Returns the updated graph.
         '''
 
+        restored = []
         for tc, deps in graph.items():
             for d in deps:
                 if d not in graph:
+                    restored.append(d)
                     self._do_restore(d)
 
-        return graph
+        return graph, restored
 
     def _do_restore(self, testcase):
-        dump_file = os.path.join(self.case(*testcase)['stagedir'],
-                                 '.rfm_testcase.json')
+        tc = self.case(*testcase)
+        if tc is None:
+            raise errors.ReframeError(
+                f'could not restore testcase {testcase!r}: '
+                f'not found in the report file'
+            )
+
+        dump_file = os.path.join(tc['stagedir'], '.rfm_testcase.json')
         try:
             with open(dump_file) as fp:
                 jsonext.load(fp, rfm_obj=testcase.check)
         except (OSError, json.JSONDecodeError) as e:
             raise errors.ReframeError(
-                f'could not restore testase {testcase!r}') from e
+                f'could not restore testcase {testcase!r}') from e
 
 
 def next_report_filename(filepatt, new=True):

@@ -146,13 +146,16 @@ def test_check_success(run_reframe, tmp_path):
     assert os.path.exists(tmp_path / 'report.json')
 
 
-def test_check_retry_failed(run_reframe, tmp_path):
+def test_check_restore_session_failed(run_reframe, tmp_path):
     returncode, stdout, _ = run_reframe(
         checkpath=['unittests/resources/checks_unlisted/deps_complex.py'],
     )
     returncode, stdout, _ = run_reframe(
         checkpath=['unittests/resources/checks_unlisted/deps_complex.py'],
-        more_options=['--retry-failed', f'{tmp_path}/report.json']
+        more_options=[
+            f'--restore-session={tmp_path}/report.json',
+            f'--failed'
+        ]
     )
     with open(f'{tmp_path}/report.json') as fp:
         report = json.load(fp)

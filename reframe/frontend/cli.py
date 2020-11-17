@@ -745,7 +745,8 @@ def main():
             )
             printer.debug('Pruned test DAG')
             printer.debug(dependencies.format_deps(testgraph))
-            testgraph = report.restore_dangling(testgraph)
+            if options.restore_session is not None:
+                testgraph, restored_cases = report.restore_dangling(testgraph)
 
         testcases = dependencies.toposort(
             testgraph,
@@ -893,8 +894,13 @@ def main():
             })
             json_report = {
                 'session_info': session_info,
-                'runs': run_stats
+                'runs': run_stats,
+                'restored_cases': []
             }
+            if options.restore_session is not None:
+                for c in restored_cases:
+                    json_report['restored_cases'].append(report.case(*c))
+
             report_file = runreport.next_report_filename(report_file)
             try:
                 with open(report_file, 'w') as fp:
