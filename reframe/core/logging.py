@@ -459,6 +459,7 @@ class LoggerAdapter(logging.LoggerAdapter):
             self.extra['check_environ'] = self.check.current_environ.name
 
         if self.check.job:
+            self.extra['check_jobid'] = self.check.job.jobid
             if self.check.job.completion_time:
                 ct = self.check.job.completion_time
                 self.extra['check_job_completion_time_unix'] = ct
