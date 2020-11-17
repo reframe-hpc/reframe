@@ -8,12 +8,21 @@ import reframe as rfm
 
 import os
 
+
+class Pchase:
+    '''
+    Public storage class to avoid writing the parameters below multiple times.
+    '''
+    valid_systems = ['ault:intelv100', 'ault:amdv100',
+                     'ault:amda100', 'ault:amdvega']
+    valid_prog_environs = ['PrgEnv-gnu']
+
+
 @rfm.simple_test
 class CompileGpuPointerChase(rfm.CompileOnlyRegressionTest):
     def __init__(self):
-        self.valid_systems = ['ault:intelv100', 'ault:amdv100',
-                              'ault:amda100', 'ault:amdvega']
-        self.valid_prog_environs = ['PrgEnv-gnu']
+        self.valid_systems = Pchase.valid_systems
+        self.valid_prog_environs = Pchase.valid_prog_environs
         self.exclusive_access = True
         self.build_system = 'Make'
         self.num_tasks = 0
@@ -58,9 +67,8 @@ class CompileGpuPointerChase(rfm.CompileOnlyRegressionTest):
 class GpuPointerChaseBase(rfm.RunOnlyRegressionTest):
     def __init__(self):
         self.depends_on('CompileGpuPointerChase')
-        self.valid_systems = ['ault:intelv100', 'ault:amdv100',
-                              'ault:amda100', 'ault:amdvega']
-        self.valid_prog_environs = ['PrgEnv-gnu']
+        self.valid_systems = Pchase.valid_systems
+        self.valid_prog_environs = Pchase.valid_prog_environs
         self.num_tasks = 0
         self.num_tasks_per_node = 1
         self.exclusive_access = True
@@ -89,12 +97,12 @@ class GpuPointerChaseBase(rfm.RunOnlyRegressionTest):
 
         # Check that every node has the right number of GPUs
         healthy_nodes = len(set(sn.extractall(
-            r'^\s*\[([^,]*)\]\s*Found %d device\(s\).' % self.num_gpus_per_node,
+            r'^\s*\[([^\]]*)\]\s*Found %d device\(s\).' % self.num_gpus_per_node,
             self.stdout, 1)))
 
         # Check that every node has made it to the end.
         nodes_at_end = len(set(sn.extractall(
-            r'^\s*\[([^,]{1,20})\]\s*Pointer chase complete.',
+            r'^\s*\[([^\]]*)\]\s*Pointer chase complete.',
             self.stdout, 1)))
         return sn.evaluate(sn.assert_eq(
             sn.assert_eq(self.job.num_tasks, healthy_nodes),
@@ -105,9 +113,9 @@ class GpuPointerChaseBase(rfm.RunOnlyRegressionTest):
 class GpuPointerChaseSingle(GpuPointerChaseBase):
     def __init__(self, stride):
         super().__init__()
-
+        self.executable_opts = ['--stride', f'{stride}']
         self.perf_patterns = {
-            'average': sn.min(sn.extractall(r'^\s*\[[^\]]{1,20}\]\s* On device \d+, '
+            'average': sn.min(sn.extractall(r'^\s*\[[^\]]*\]\s* On device \d+, '
                                             r'the chase took on average (\d+) '
                                             r'cycles per node jump.',
                                             self.stdout, 1, int)),
@@ -152,7 +160,7 @@ class GpuPointerChaseSingle(GpuPointerChaseBase):
         elif stride == 4:
             self.reference = {
                 'ault:amda100': {
-                    'average': (118, None, 0.1, 'clock cycles')
+                    'average': (198, None, 0.1, 'clock cycles')
                 },
                 'ault:amdv100': {
                     'average': (200, None, 0.1, 'clock cycles')
