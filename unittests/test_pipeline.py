@@ -18,6 +18,7 @@ from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
                                      SanityError)
 from reframe.frontend.loader import RegressionCheckLoader
 from unittests.resources.checks.hellocheck import HelloTest
+from unittests.resources.checks.pinnedcheck import PinnedTest
 
 
 def _run(test, partition, prgenv):
@@ -282,6 +283,15 @@ def test_compile_only_warning(local_exec_ctx):
             self.sanity_patterns = sn.assert_found(r'warning', self.stderr)
 
     _run(MyTest(), *local_exec_ctx)
+
+
+def test_pinned_test(local_exec_ctx):
+    class MyTest(PinnedTest):
+        pass
+
+    pinned = MyTest()
+    expected_prefix = os.path.join(os.getcwd(), 'unittests/resources/checks')
+    assert pinned._prefix == expected_prefix
 
 
 def test_supports_system(hellotest, testsys_system):
