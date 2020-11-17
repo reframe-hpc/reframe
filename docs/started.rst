@@ -15,8 +15,7 @@ Requirements
 Optional Requirements
 ---------------------
 
-If you want to run the framework's unit tests, you will also need a C compiler available through `cc` that is able to compile a "Hello, World!" program and recognize the ``-O3`` option.
-Furthermore, the `GNU Make <https://www.gnu.org/software/make/>`__ tool is needed to run the unittests relying on a build system.
+If you want to run the framework's unit tests, you will need a C compiler available through `cc` that is able to compile a "Hello, World!" program and recognize the ``-O3`` option, as well as the `GNU Make <https://www.gnu.org/software/make/>`__ build tool.
 
 
 .. note::
