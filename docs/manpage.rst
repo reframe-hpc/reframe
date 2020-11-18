@@ -387,12 +387,13 @@ It does so by leveraging the selected system's environment modules system.
    This option can also be set using the :envvar:`RFM_UNLOAD_MODULES` environment variable or the :js:attr:`unload_modules` general configuration parameter.
 
 
-.. option:: --unuse-module-path=PATH
+.. option:: --module-path=PATH
 
-   Unuse module path ``PATH`` before acting on any tests.
-   This option may be specified multiple times, in which case all specified modules paths will be unused in order.
+   Use module path ``PATH`` before acting on any tests.
+   Paths prepended with the `-` character are going to be unused.
+   This option may be specified multiple times, in which case all specified module paths will be (un)used in order.
 
-   This option can also be set using the :envvar:`RFM_UNUSE_MODULE_PATHS` environment variable or the :js:attr:`unuse_module_paths` general configuration parameter.
+   This option can also be set using the :envvar:`RFM_MODULE_PATHS` environment variable or the :js:attr:`unuse_module_paths` general configuration parameter.
 
    .. versionadded:: 3.3
 
@@ -920,16 +921,17 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
 .. versionadded:: 3.3
 
-.. envvar:: RFM_USE_MODULE_PATHS
+.. envvar:: RFM_MODULE_PATHS
 
    A colon-separated list of module paths to be used before acting on any tests.
+   A module path is going to be unused if it's prepended by the `-` character.
 
    .. table::
       :align: left
 
       ================================== ==================
-      Associated command line option     :option:`--use-module-path`
-      Associated configuration parameter :js:attr:`use_module_paths` general configuration parameter
+      Associated command line option     :option:`--module-path`
+      Associated configuration parameter :js:attr:`module_paths` general configuration parameter
       ================================== ==================
 
 

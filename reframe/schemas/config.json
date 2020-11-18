@@ -385,11 +385,7 @@
                         "items": {"type": "string"}
                     },
                     "use_login_shell": {"type": "boolean"},
-                    "unuse_module_paths": {
-                        "type": "array",
-                        "items": {"type": "string"}
-                    },
-                    "use_module_paths": {
+                    "module_paths": {
                         "type": "array",
                         "items": {"type": "string"}
                     },

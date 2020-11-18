@@ -596,18 +596,17 @@ def test_unuse_module_path(run_reframe, user_exec_ctx, monkeypatch):
     if ms.name == 'nomod':
         pytest.skip('no modules system found')
 
-    # We need to have MODULEPATH set to unuse a module
-    monkeypatch.setenv('MODULEPATH', '')
-    module_path = os.path.abspath('unittests/modules')
+    module_path = 'unittests/modules'
+    monkeypatch.setenv('MODULEPATH', module_path)
     returncode, stdout, stderr = run_reframe(
-        config_file=fixtures.USER_CONFIG_FILE,
-        more_options=[f'--unuse-module-path={module_path}'], action='run'
+        more_options=[f'--module-path=-{module_path}', '-m testmod_foo'],
+        config_file=fixtures.USER_CONFIG_FILE, action='run'
     )
 
-    assert stdout != ''
-    assert 'Traceback' not in stdout
-    assert 'Traceback' not in stderr
-    assert returncode == 0
+    # Here we test that ReFrame fails to run because 'testmod_foo' cannot
+    # be found and therefore the module name is included in the given error
+    assert 'testmod_foo' in stdout
+    assert returncode == 1
 
 
 def test_use_module_path(run_reframe, user_exec_ctx):
@@ -615,13 +614,12 @@ def test_use_module_path(run_reframe, user_exec_ctx):
     if ms.name == 'nomod':
         pytest.skip('no modules system found')
 
-    module_path = os.path.abspath('unittests/modules')
+    module_path = 'unittests/modules'
     returncode, stdout, stderr = run_reframe(
-        config_file=fixtures.USER_CONFIG_FILE,
-        more_options=[f'--use-module-path={module_path}'], action='run'
+        more_options=[f'--module-path={module_path}', '-m testmod_foo'],
+        config_file=fixtures.USER_CONFIG_FILE, action='run'
     )
 
-    assert stdout != ''
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert returncode == 0
