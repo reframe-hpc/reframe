@@ -19,6 +19,7 @@ class GpuDirectAccCheck(rfm.RegressionTest):
             self.modules = ['craype-accel-nvidia60']
             self.variables = {
                 'MPICH_RDMA_ENABLED_CUDA': '1',
+                'CRAY_CUDA_MPS': '1',
             }
             self.num_tasks = 2
             self.num_gpus_per_node = 1
