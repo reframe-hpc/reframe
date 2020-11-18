@@ -16,6 +16,9 @@ def normalize_module_list(modules):
 
     :meta private:
     '''
+    if modules is None:
+        return None
+
     ret = []
     for m in modules:
         if isinstance(m, str):
