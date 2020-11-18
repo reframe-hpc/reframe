@@ -181,9 +181,9 @@ class RegressionTest(metaclass=RegressionTestMeta):
     valid_systems = fields.TypedField('valid_systems', typ.List[str])
 
     #: Logging of arbitrary information in per test basis
-    #: :type: :class:`typ.Dict[str, object]`
-    #: :default: ``{}``
-    log_extra = fields.TypedField('log_extra', typ.Dict[str, object])
+    #: :type: :class:`str`
+    #: :default: ``''``
+    log_extra = fields.TypedField('log_extra', str)
 
     #: A detailed description of the test.
     #:
@@ -749,7 +749,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
             self.name = name
 
         self.descr = self.name
-        self.log_extra = {}
+        self.log_extra = ''
         self.valid_prog_environs = []
         self.valid_systems = []
         self.sourcepath = ''
