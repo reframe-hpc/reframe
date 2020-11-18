@@ -148,6 +148,17 @@ class RegressionTest(metaclass=RegressionTestMeta):
         '''
         cls._rfm_disabled_hooks.add(hook_name)
 
+    @classmethod
+    def hooks(cls):
+        ret = {}
+        for c in cls.mro():
+            if hasattr(c, '_rfm_pipeline_hooks'):
+                for kind, hook in c._rfm_pipeline_hooks.items():
+                    ret.setdefault(kind, [])
+                    ret[kind] += hook
+
+        return ret
+
     #: The name of the test.
     #:
     #: :type: string that can contain any character except ``/``
@@ -948,17 +959,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
         :type: :class:`str`.
         '''
         return self._job.stderr
-
-    @property
-    def hooks(self):
-        ret = {}
-        for c in inspect.getmro(type(self)):
-            if hasattr(c, '_rfm_pipeline_hooks'):
-                for k, v in c._rfm_pipeline_hooks.items():
-                    ret.setdefault(k, [])
-                    ret[k].extend(v)
-
-        return ret
 
     @property
     def build_job(self):
