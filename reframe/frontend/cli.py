@@ -601,7 +601,7 @@ def main():
     session_info = {
         'cmdline': ' '.join(sys.argv),
         'config_file': rt.site_config.filename,
-        'data_version': '1.0',
+        'data_version': '1.1',
         'hostname': socket.gethostname(),
         'prefix_output': rt.output_prefix,
         'prefix_stage': rt.stage_prefix,
