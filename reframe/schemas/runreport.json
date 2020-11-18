@@ -39,6 +39,19 @@
                             "properties": {
                                 "build_stderr": {"type": ["string", "null"]},
                                 "build_stdout": {"type": ["string", "null"]},
+                                "dependencies_actual": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                },
+                                "dependencies_conceptual": {
+                                    "type": "array",
+                                    "items": {"type": "string"}
+                                },
                                 "description": {"type": "string"},
                                 "environment": {"type": ["string", "null"]},
                                 "fail_info": {
