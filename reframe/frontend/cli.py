@@ -747,7 +747,7 @@ def main():
                     rt.modules_system.searchpath_remove(d[1:])
                 except errors.EnvironError as e:
                     printer.warning(
-                        f'could not unuse module path {d["name"]!r} correctly; '
+                        f'could not unuse module path {d} correctly; '
                         f'skipping...'
                     )
                     printer.verbose(str(e))
