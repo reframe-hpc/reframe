@@ -562,9 +562,6 @@ class SqueueJobScheduler(SlurmJobScheduler):
                 job_match = jobinfo[job.jobid]
             except KeyError:
                 job._state = 'CANCELLED' if job.is_cancelling else 'COMPLETED'
-                if job.exitcode is None:
-                    job._exitcode = 0
-
                 continue
 
             # Join the states with ',' in case of job arrays
