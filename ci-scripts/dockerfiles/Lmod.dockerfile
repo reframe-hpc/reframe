@@ -14,6 +14,8 @@ RUN useradd -ms /bin/bash rfmuser
 # ReFrame requirements
 RUN \
   apt-get -y update && \
+  apt-get -y install ca-certificates && \
+  update-ca-certificates && \
   apt-get -y install gcc && \
   apt-get -y install make && \
   apt-get -y install git && \
