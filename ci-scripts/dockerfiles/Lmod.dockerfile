@@ -7,7 +7,9 @@ FROM ubuntu:20.04
 ENV TZ=Europe/Zurich
 ENV DEBIAN_FRONTEND=noninteractive
 ENV _LMOD_VER=8.4.12
-WORKDIR /root
+
+# ReFrame user
+RUN useradd -ms /bin/bash rfmuser
 
 # ReFrame requirements
 RUN \
@@ -28,12 +30,15 @@ RUN \
   cd Lmod-${_LMOD_VER} && \
   ./configure && make install
 
-
 ENV BASH_ENV=/usr/local/lmod/lmod/init/profile
 
-# Install ReFrame from the current directory
-COPY . /root/reframe/
-RUN cd reframe && ./bootstrap.sh
+USER rfmuser
 
-WORKDIR /root/reframe
+# Install ReFrame from the current directory
+COPY --chown=rfmuser . /home/rfmuser/reframe/
+
+WORKDIR /home/rfmuser/reframe
+
+RUN ./bootstrap.sh
+
 CMD ["/bin/bash", "-c", "./test_reframe.py --rfm-user-config=ci-scripts/configs/lmod.py -v"]

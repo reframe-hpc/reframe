@@ -54,6 +54,7 @@ class BadSetupCheckEarly(BaseFrontendCheck):
 class NoSystemCheck(BaseFrontendCheck):
     def __init__(self):
         super().__init__()
+        self.valid_systems = []
         self.valid_prog_environs = ['*']
 
 
@@ -62,6 +63,7 @@ class NoPrgEnvCheck(BaseFrontendCheck):
     def __init__(self):
         super().__init__()
         self.valid_systems = ['*']
+        self.valid_prog_environs = []
 
 
 @rfm.simple_test
@@ -169,7 +171,7 @@ class SleepCheck(BaseFrontendCheck):
         print_timestamp = (
             "python3 -c \"from datetime import datetime; "
             "print(datetime.today().strftime('%s.%f'), flush=True)\"")
-        self.prerun_cmds  = [print_timestamp]
+        self.prerun_cmds = [print_timestamp]
         self.postrun_cmds = [print_timestamp]
         self.sanity_patterns = sn.assert_found(r'.*', self.stdout)
         self.valid_systems = ['*']
@@ -230,3 +232,37 @@ class CompileFailureCheck(rfm.RegressionTest):
         self.sourcesdir = None
         self.sourcepath = 'x.c'
         self.prebuild_cmds = ['echo foo > x.c']
+
+
+# The following tests do not validate and should not be loaded
+
+@rfm.simple_test
+class TestWithGenerator(rfm.RunOnlyRegressionTest):
+    '''This test is invalid in ReFrame and the loader must not load it'''
+
+    def __init__(self):
+        self.valid_systems = ['*']
+        self.valid_prog_environs = ['*']
+
+        def foo():
+            yield True
+
+        self.sanity_patterns = sn.defer(foo())
+
+
+@rfm.simple_test
+class TestWithFileObject(rfm.RunOnlyRegressionTest):
+    '''This test is invalid in ReFrame and the loader must not load it'''
+
+    def __init__(self):
+        self.valid_systems = ['*']
+        self.valid_prog_environs = ['*']
+        with open(__file__) as fp:
+            pass
+
+        self.x = fp
+
+
+@rfm.simple_test
+class EmptyInvalidTest(rfm.RegressionTest):
+    pass

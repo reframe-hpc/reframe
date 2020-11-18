@@ -13,6 +13,7 @@ import itertools
 import reframe as rfm
 import reframe.utility as util
 from reframe.core.exceptions import DependencyError
+from reframe.core.logging import getlogger
 
 
 def build_deps(cases, default_cases=None):
@@ -44,7 +45,7 @@ def build_deps(cases, default_cases=None):
         try:
             ret = all_cases_map[dst]
         except KeyError:
-            # try to resolve the dependency in the fallback map
+            # Try to resolve the dependency in the fallback map
             try:
                 ret = default_cases_map[dst]
             except KeyError:
@@ -65,16 +66,22 @@ def build_deps(cases, default_cases=None):
     # We use an ordered dict here, because we need to keep the order of
     # partitions and environments
     graph = collections.OrderedDict()
+    skipped_cases = []
     for c in cases:
         psrc = c.partition.name
         esrc = c.environ.name
-        for dep in c.check.user_deps():
-            tname, when = dep
-            for d in resolve_dep(c, tname):
-                pdst = d.partition.name
-                edst = d.environ.name
-                if when((psrc, esrc), (pdst, edst)):
-                    c.deps.append(d)
+        try:
+            for dep in c.check.user_deps():
+                tname, when = dep
+                for d in resolve_dep(c, tname):
+                    pdst = d.partition.name
+                    edst = d.environ.name
+                    if when((psrc, esrc), (pdst, edst)):
+                        c.deps.append(d)
+        except DependencyError as e:
+            getlogger().warning(f'{e}; skipping test case...')
+            skipped_cases.append(c)
+            continue
 
         graph[c] = util.OrderedSet(c.deps)
 
@@ -83,12 +90,18 @@ def build_deps(cases, default_cases=None):
         for v in adjacent:
             v.in_degree += 1
 
-    return graph
+    return graph, skipped_cases
 
 
-def print_deps(graph):
+def format_deps(graph, indent=2):
+    lines = []
     for c, deps in graph.items():
-        print(c, '->', deps)
+        lines.append(f'{" "*indent}{c} -> [{", ".join(str(d) for d in deps)}]')
+
+    if not lines:
+        lines = [' '*indent + '<empty>']
+
+    return '\n'.join(lines)
 
 
 def _reduce_deps(graph):
@@ -143,6 +156,27 @@ def validate_deps(graph):
             visited.add(node)
 
         sources -= visited
+
+
+def prune_deps(graph, testcases):
+    '''Prune the graph so that it contains only the specified cases and their
+    dependencies.
+
+    Graph is assumed to by a DAG.
+    '''
+
+    pruned_graph = {}
+    for tc in testcases:
+        unvisited = [tc]
+        while unvisited:
+            node = unvisited.pop()
+            pruned_graph.setdefault(node, util.OrderedSet())
+            for adj in graph[node]:
+                pruned_graph[node].add(adj)
+                if adj not in pruned_graph:
+                    unvisited.append(adj)
+
+    return pruned_graph
 
 
 def toposort(graph, is_subgraph=False):

@@ -13,9 +13,16 @@ import reframe as rfm
 from reframe.core.pipeline import RegressionTest
 
 
+class _Base(RegressionTest):
+    def __init__(self):
+        self.valid_systems = ['*']
+        self.valid_prog_environs = ['*']
+
+
 @rfm.parameterized_test(*((x, y) for x in range(3) for y in range(2)))
-class MyBaseTest(RegressionTest):
+class MyBaseTest(_Base):
     def __init__(self, a, b):
+        super().__init__()
         self.a = a
         self.b = b
 
@@ -33,8 +40,9 @@ class MyBaseTest(RegressionTest):
 @rfm.parameterized_test(
     *({'a': x, 'b': y} for x in range(3) for y in range(2))
 )
-class AnotherBaseTest(RegressionTest):
+class AnotherBaseTest(_Base):
     def __init__(self, a, b):
+        super().__init__()
         self.a = a
         self.b = b
 
