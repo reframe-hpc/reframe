@@ -22,7 +22,7 @@ class OpenACCFortranCheck(rfm.RegressionTest):
         self.sourcesdir = 'src/openacc'
         if self.num_tasks == 1:
             self.sourcepath = 'vecAdd_openacc_nompi.f90'
-            if self.current_system.name == 'tsa':
+            if self.current_system.name in ['arolla', 'tsa']:
                 self.valid_prog_environs = ['PrgEnv-pgi-nompi']
         else:
             self.sourcepath = 'vecAdd_openacc_mpi.f90'
