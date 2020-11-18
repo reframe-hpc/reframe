@@ -81,7 +81,7 @@ __device__ __forceinline__ T __XSyncClock()
   // is not guaranteed to be present in "x" on return.
   uint64_t x;
   asm volatile (
-                "s_waitcnt vmcnt(0) & vscnt(0) & lgkmcnt(0) & expcnt(0);\n\t"
+                "s_waitcnt vmcnt(0) & lgkmcnt(0) & expcnt(0);\n\t"
                 "s_memtime %0;"
                 : "=r"(x)
                );
@@ -111,12 +111,19 @@ __device__ __forceinline__ T __XClock()
   return (T)x;
 }
 
-using XClock = __XClock<uint32_t>;
-using XClock64 = __XClock<uint64_t>;
+__device__ uint32_t XClock()
+{
+  return __XClock<uint32_t>();
+}
+
+__device__ uint64_t XClock64()
+{
+  return  __XClock<uint64_t>();
+}
 
 
 template < class T = uint32_t>
-class __Xclocks
+class __XClocks
 {
   /*
    * XClocks timer tool

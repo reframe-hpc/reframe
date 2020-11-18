@@ -129,8 +129,6 @@ public:
   {
     return XClock() - startClock;
   }
-  // Use a data dependency (i.e. store the address of a given variable) to force the compiler to wait.
-
 };
 
 template<>
