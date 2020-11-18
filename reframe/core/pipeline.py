@@ -714,13 +714,13 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: :class:`False`, ReFrame will spawn a build job on the partition where
     #: the test will run. Setting this to :class:`False` is useful when
     #: cross-compilation is not supported on the system where ReFrame is run.
-    #: ReFrame checks the exitcode from the scheduler, but certain scheduler
-    #: backends don't set the exitcode. In those cases, it's the user's
-    #: responsibility to check whether the building failed, by adding the
-    #: apropriate sanity checks.
+    #: Normally, ReFrame will mark the test as a failure if the spawned job
+    #: exits with a non-zero exit code. However, certain scheduler backends,
+    #: such as the ``squeue`` do not set it. In such cases, it is the user's
+    #: responsibility to check whether the build phase failed by adding an
+    #: appropriate sanity check.
     #:
-    #: :type: boolean
-    #: :default: :class:`True`
+    #: :type: boolean : :default: :class:`True`
     build_locally = fields.TypedField('build_locally', bool)
 
     def __new__(cls, *args, **kwargs):
@@ -1241,10 +1241,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
         '''
         self._build_job.wait()
 
-        # This check is not reliable for certain scheduler backends.
-        # When the exitcode is None it's the responsibility of the user to
-        # check whether the building failed, by adding sanity checks.
-        if self._build_job.exitcode and self._build_job.exitcode != 0:
+        # We raise a BuildError when we an exit code and it is non zero
+        if self._build_job.exitcode:
             raise BuildError(self._build_job.stdout, self._build_job.stderr)
 
     @_run_hooks('pre_run')
