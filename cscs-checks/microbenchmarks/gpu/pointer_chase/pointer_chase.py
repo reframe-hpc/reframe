@@ -13,8 +13,11 @@ class Pchase:
     '''
     Public storage class to avoid writing the parameters below multiple times.
     '''
-    valid_systems = ['ault:intelv100', 'ault:amdv100',
-                     'ault:amda100', 'ault:amdvega']
+    single_device = ['daint:gpu', 'dom:gpu']
+    multi_device = ['ault:intelv100', 'ault:amdv100',
+                    'ault:amda100', 'ault:amdvega',
+                    'tsa:cn']
+    valid_systems = single_device+multi_device
     valid_prog_environs = ['PrgEnv-gnu']
 
 
@@ -57,7 +60,7 @@ class CompileGpuPointerChase(rfm.CompileOnlyRegressionTest):
         # Deal with the AMD options
         amd_trgt = None
         if cp == 'ault:amdvega':
-            amd_trgt = 'gfx908'
+            amd_trgt = 'gfx906,gfx908'
 
         if amd_trgt:
             self.build_system.cxxflags += [f'--amdgpu-target={amd_trgt}']
@@ -67,7 +70,6 @@ class CompileGpuPointerChase(rfm.CompileOnlyRegressionTest):
 class GpuPointerChaseBase(rfm.RunOnlyRegressionTest):
     def __init__(self):
         self.depends_on('CompileGpuPointerChase')
-        self.valid_systems = Pchase.valid_systems
         self.valid_prog_environs = Pchase.valid_prog_environs
         self.num_tasks = 0
         self.num_tasks_per_node = 1
@@ -106,16 +108,17 @@ class GpuPointerChaseBase(rfm.RunOnlyRegressionTest):
             self.stdout, 1)))
         return sn.evaluate(sn.assert_eq(
             sn.assert_eq(self.job.num_tasks, healthy_nodes),
-            sn.assert_eq(self.job.num_tasks, nodes_at_end)))
+	    sn.assert_eq(self.job.num_tasks, nodes_at_end)))
 
 
-@rfm.parameterized_test([1], [2], [4], [4096])
+#@rfm.parameterized_test([1], [2], [4], [4096])
 class GpuPointerChaseSingle(GpuPointerChaseBase):
     def __init__(self, stride):
         super().__init__()
+        self.valid_systems = Pchase.valid_systems
         self.executable_opts = ['--stride', f'{stride}']
         self.perf_patterns = {
-            'average': sn.min(sn.extractall(r'^\s*\[[^\]]*\]\s* On device \d+, '
+            'average': sn.max(sn.extractall(r'^\s*\[[^\]]*\]\s* On device \d+, '
                                             r'the chase took on average (\d+) '
                                             r'cycles per node jump.',
                                             self.stdout, 1, int)),
@@ -193,3 +196,30 @@ class GpuPointerChaseSingle(GpuPointerChaseBase):
                     'average': (800, None, 0.1, 'clock cycles')
                 },
             }
+
+
+@rfm.simple_test
+class GpuPointerChaseMulti(GpuPointerChaseBase):
+    def __init__(self):
+        super().__init__()
+        self.valid_systems = Pchase.mulit_device
+        self.executable_opts = ['--multiGPU']
+        self.perf_patterns = {
+            'average': sn.max(sn.extractall(r'^\s*\[[^\]]*\]\s*GPU\s*\d+\s+(\s*\d+.\s+)+',
+                                            self.stdout, 1, int)),
+        }
+
+        self.reference = {
+            'ault:amda100': {
+                'average': (668, None, 0.1, 'clock cycles')
+            },
+            'ault:amdv100': {
+                'average': (611, None, 0.1, 'clock cycles')
+            },
+            'ault:amdvega': {
+                'average': (1010, None, 0.1, 'clock cycles')
+            },
+            'tsa:cn': {
+                'average': (2760, None, 0.1, 'clock cycles')
+            },
+        }

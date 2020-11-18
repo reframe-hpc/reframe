@@ -74,9 +74,35 @@ Smi::~Smi()
  */
 
 template< class T >
+__device__ __forceinline__ T __XSyncClock()
+{
+  // Force the completion of other pending operations before requesting the
+  // clock counter. The clock counter is read "asyncrhonously" and its value
+  // is not guaranteed to be present in "x" on return.
+  uint64_t x;
+  asm volatile (
+                "s_waitcnt vmcnt(0) & vscnt(0) & lgkmcnt(0) & expcnt(0);\n\t"
+                "s_memtime %0;"
+                : "=r"(x)
+               );
+  return (T)x;
+}
+
+__device__ __forceinline__ uint32_t XSyncClock()
+{
+  return __XSyncClock<uint32_t>();
+}
+
+__device__ __forceinline__ uint64_t XSyncClock64()
+{
+  return __XSyncClock<uint64_t>();
+}
+
+template< class T >
 __device__ __forceinline__ T __XClock()
 {
-  // Clock counter
+  // Retrieve the clock couner and forces a wait on the associated
+  // memory operation.
   uint64_t x;
   asm volatile ("s_memtime %0; \t\n"
                 "s_waitcnt lgkmcnt(0);"
@@ -85,15 +111,32 @@ __device__ __forceinline__ T __XClock()
   return (T)x;
 }
 
-__device__ __forceinline__ uint32_t XClock()
-{
-  return __XClock<uint32_t>();
-}
+using XClock = __XClock<uint32_t>;
+using XClock64 = __XClock<uint64_t>;
 
-__device__ __forceinline__ uint64_t XClock64()
+
+template < class T = uint32_t>
+class __Xclocks
 {
-  return __XClock<uint64_t>();
-}
+  /*
+   * XClocks timer tool
+   * Tracks the number of clock cycles between a call to the start
+   * and end member functions.
+   */
+public:
+  T startClock;
+  __device__ void start()
+  {
+    startClock = __XSyncClock<T>();
+  }
+  __device__ T end()
+  {
+    return __XClock<T>() - startClock;
+  }
+};
+
+using XClocks = __XClocks<>;
+using XClocks64 = __XClocks<uint64_t>;
 
 
 __device__ __forceinline__ int __smId()

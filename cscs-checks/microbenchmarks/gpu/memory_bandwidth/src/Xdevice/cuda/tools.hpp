@@ -92,6 +92,63 @@ __device__ __forceinline__ uint64_t XClock64()
   return x;
 }
 
+__device__ __forceinline__ uint32_t XSyncClock()
+{
+  // Clock counter with a preceeding barrier.
+  uint32_t x;
+  asm volatile ("bar.sync	0;\n\t"
+                "mov.u32 %0, %%clock;" : "=r"(x) :: "memory");
+  return x;
+}
+
+__device__ __forceinline__ uint64_t XSyncClock64()
+{
+  // Clock counter with a preceeding barrier.
+  uint64_t x;
+  asm volatile ("bar.sync	0;\n\t"
+                "mov.u64 %0, %%clock64;" : "=l"(x) :: "memory");
+  return x;
+}
+
+
+template<class T = uint32_t>
+class __XClocks
+{
+  /*
+   * XClocks timer tool
+   * Tracks the number of clock cycles between a call to the start
+   * and end member functions.
+   */
+public:
+  T startClock;
+  __device__ void start()
+  {
+    startClock = XSyncClock();
+  }
+  __device__ T end()
+  {
+    return XClock() - startClock;
+  }
+  // Use a data dependency (i.e. store the address of a given variable) to force the compiler to wait.
+
+};
+
+template<>
+void __XClocks<uint64_t>::start()
+{
+  this->startClock = XSyncClock64();
+}
+
+template<>
+uint64_t __XClocks<uint64_t>::end()
+{
+  return XClock64() - this->startClock;
+}
+
+using XClocks64 = __XClocks<uint64_t>;
+using XClocks = __XClocks<>;
+
+
 __device__ __forceinline__ int __smId()
 {
   // SM ID

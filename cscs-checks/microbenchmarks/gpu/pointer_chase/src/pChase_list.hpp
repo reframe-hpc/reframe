@@ -127,12 +127,13 @@ __device__ __forceinline__ void nextNode( __VOLATILE__ Node ** ptr, uint32_t * t
    */
 
 # ifdef TIME_EACH_STEP
-  uint32_t t1 = XClock();
+  XClocks clocks;
+  clocks.start();
 # endif
   (*ptr) = (*ptr)->next;
 # ifdef TIME_EACH_STEP
   (*ptrs) = (Node*)(*ptr);  // Data dep. to prevent ILP.
-  *timer = XClock() - t1; // Time the jump
+  *timer = clocks.end(); // Time the jump
 # endif
 
   // Keep traversing the list.
@@ -159,15 +160,15 @@ __global__ void timed_list_traversal(Node * __restrict__ buffer, uint32_t headIn
 
 #ifndef TIME_EACH_STEP
   // start timer
-  uint32_t start = XClock();
+  XClocks clocks;
+  clocks.start();
 #endif
 
   nextNode<NODES-1>(&ptr, s_timer, ptrs);
 
 #ifndef TIME_EACH_STEP
   // end cycle count
-  uint32_t end = XClock();
-  timer[0] = end - start;
+  timer[0] = clocks.end();
 #else
   for (uint32_t i = 0; i < NODES-1; i++)
   {
