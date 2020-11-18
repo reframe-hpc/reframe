@@ -201,7 +201,8 @@ class TestStats:
             printer.info(f"  * Job type: {job_type} (id={r['jobid']})")
             printer.info(f"  * Dependencies (conceptual): "
                          f"{r['dependencies_conceptual']}")
-            printer.info(f"  * Dependencies (actual): {r['dependencies_actual']}")
+            printer.info(f"  * Dependencies (actual): "
+                         f"{r['dependencies_actual']}")
             printer.info(f"  * Maintainers: {r['maintainers']}")
             printer.info(f"  * Failing phase: {r['fail_phase']}")
             printer.info(f"  * Rerun with '-n {r['name']}"
