@@ -169,7 +169,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:        Support for wildcards is dropped.
     #:
     valid_prog_environs = fields.TypedField('valid_prog_environs',
-                                            typ.List[str])
+                                            typ.List[str], type(None))
 
     #: List of systems supported by this test.
     #: The general syntax for systems is ``<sysname>[:<partname>]``.
@@ -178,7 +178,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    valid_systems = fields.TypedField('valid_systems', typ.List[str])
+    valid_systems = fields.TypedField('valid_systems',
+                                      typ.List[str], type(None))
 
     #: A detailed description of the test.
     #:
@@ -726,7 +727,12 @@ class RegressionTest(metaclass=RegressionTestMeta):
             if osext.is_interactive():
                 prefix = os.getcwd()
             else:
-                prefix = os.path.abspath(os.path.dirname(inspect.getfile(cls)))
+                try:
+                    prefix = cls._rfm_pinned_prefix
+                except AttributeError:
+                    prefix = os.path.abspath(
+                        os.path.dirname(inspect.getfile(cls))
+                    )
 
         obj._rfm_init(name, prefix)
         return obj
@@ -735,17 +741,24 @@ class RegressionTest(metaclass=RegressionTestMeta):
         pass
 
     @classmethod
-    def __init_subclass__(cls, *, special=False, **kwargs):
+    def __init_subclass__(cls, *, special=False, pin_prefix=False, **kwargs):
         super().__init_subclass__(**kwargs)
         cls._rfm_special_test = special
+
+        # Insert the prefix to pin the test to if the test lives in a test
+        # library with resources in it.
+        if pin_prefix:
+            cls._rfm_pinned_prefix = os.path.abspath(
+                os.path.dirname(inspect.getfile(cls))
+            )
 
     def _rfm_init(self, name=None, prefix=None):
         if name is not None:
             self.name = name
 
         self.descr = self.name
-        self.valid_prog_environs = []
-        self.valid_systems = []
+        self.valid_prog_environs = None
+        self.valid_systems = None
         self.sourcepath = ''
         self.prebuild_cmds = []
         self.postbuild_cmds = []

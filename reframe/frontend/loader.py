@@ -8,7 +8,9 @@
 #
 
 import ast
-import collections
+import collections.abc
+import inspect
+import io
 import os
 
 import reframe.utility as util
@@ -75,6 +77,33 @@ class RegressionCheckLoader:
         getlogger().debug(msg)
         return validator.valid
 
+    def _validate_check(self, check):
+        import reframe.utility as util
+
+        name = type(check).__name__
+        checkfile = os.path.relpath(inspect.getfile(type(check)))
+        required_attrs = ['valid_systems', 'valid_prog_environs']
+        for attr in required_attrs:
+            if getattr(check, attr) is None:
+                getlogger().warning(
+                    f'{checkfile}: {attr!r} not defined for test {name!r}; '
+                    f'skipping...'
+                )
+                return False
+
+        is_copyable = util.attr_validator(lambda obj: util.is_copyable(obj))
+        valid, attr = is_copyable(check)
+        if not valid:
+            getlogger().warning(
+                f'{checkfile}: {attr!r} is not copyable; '
+                f'not copyable attributes are not '
+                f'allowed inside the __init__() method; '
+                f'consider setting them in a pipeline hook instead'
+            )
+            return False
+
+        return True
+
     @property
     def load_path(self):
         return self._load_path
@@ -118,6 +147,9 @@ class RegressionCheckLoader:
             if not isinstance(c, RegressionTest):
                 continue
 
+            if not self._validate_check(c):
+                continue
+
             testfile = module.__file__
             try:
                 conflicted = self._loaded[c.name]
@@ -125,11 +157,11 @@ class RegressionCheckLoader:
                 self._loaded[c.name] = testfile
                 ret.append(c)
             else:
-                msg = ("%s: test `%s' already defined in `%s'" %
-                       (testfile, c.name, conflicted))
+                msg = (f'{testfile}: test {c.name!r} '
+                       f'already defined in {conflicted!r}')
 
                 if self._ignore_conflicts:
-                    getlogger().warning(msg + '; ignoring...')
+                    getlogger().warning(f'{msg}; skipping...')
                 else:
                     raise NameConflictError(msg)
 
