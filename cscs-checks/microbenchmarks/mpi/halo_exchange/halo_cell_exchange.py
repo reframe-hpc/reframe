@@ -99,6 +99,5 @@ class HaloCellExchangeTest(rfm.RegressionTest):
         if self.current_system.name in ['daint', 'dom']:
             if self.current_environ.name == 'PrgEnv-pgi':
                 self.variables = {
-                        'CUDA_HOME': '$CUDATOOLKIT_HOME',
+                    'CUDA_HOME': '$CUDATOOLKIT_HOME',
                 }
-
