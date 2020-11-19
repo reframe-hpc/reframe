@@ -3,15 +3,14 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import ast
 import os
-
 import reframe as rfm
 import reframe.utility.sanity as sn
 
 
 class GridToolsBuildCheck(rfm.CompileOnlyRegressionTest):
     def __init__(self):
-        # Check if this is a device check
         self.valid_prog_environs = ['builtin']
         self.modules = ['CMake', 'Boost']
         self.valid_systems = ['daint:gpu', 'dom:gpu']
@@ -71,6 +70,15 @@ class GridToolsRunCheck(rfm.RunOnlyRegressionTest):
             'timer': sn.extractsingle(r'"series" : \[(?P<timer>\S+)\]',
                                       self.stdout, 'timer', float)
         }
+        self.perf_patterns = {
+            'timer': extract_avg(self.stdout)
+        }
+
+
+@sn.sanity_function
+def extract_avg(data):
+    return sn.avg(ast.literal_eval(str(sn.extractsingle(
+                  r'"series" : \[(?P<timers>.+)\]', data, 'timers', str))))
 
 
 @rfm.parameterized_test(['horizontal_diffusion/cpu_kfirst_double'],
@@ -78,7 +86,6 @@ class GridToolsRunCheck(rfm.RunOnlyRegressionTest):
 class GridToolsCPURunCheck(GridToolsRunCheck):
     def __init__(self, variant):
         super().__init__()
-        # Check if this is a device check
         self.descr = 'GridTools CPU run test'
         self.depends_on('GridToolsCPUBuildCheck')
         self.valid_systems += ['daint:mc', 'dom:mc']
@@ -86,7 +93,7 @@ class GridToolsCPURunCheck(GridToolsRunCheck):
         self.variant_data = {
             'horizontal_diffusion/cpu_kfirst_double': {
                 'executable_opts': [
-                    '256', '256', '80', '1',
+                    '256', '256', '80', '3',
                     '--gtest_filter=horizontal_diffusion/cpu_kfirst_double*'
                 ],
                 'reference': {
@@ -106,7 +113,7 @@ class GridToolsCPURunCheck(GridToolsRunCheck):
             },
             'horizontal_diffusion/cpu_ifirst_double': {
                 'executable_opts': [
-                    '256', '256', '80', '1',
+                    '256', '256', '80', '3',
                     '--gtest_filter=horizontal_diffusion/cpu_ifirst_double*'
                 ],
                 'reference': {
@@ -143,7 +150,6 @@ class GridToolsCPURunCheck(GridToolsRunCheck):
 class GridToolsGPURunCheck(GridToolsRunCheck):
     def __init__(self, variant):
         super().__init__()
-        # Check if this is a device check
         self.descr = 'GridTools GPU run test'
         self.depends_on('GridToolsGPUBuildCheck')
         self.modules.append('cudatoolkit')
@@ -151,29 +157,29 @@ class GridToolsGPURunCheck(GridToolsRunCheck):
         self.variant_data = {
             'horizontal_diffusion/gpu_double': {
                 'executable_opts': [
-                    '256', '256', '80', '1',
+                    '512', '512', '160', '3',
                     '--gtest_filter=horizontal_diffusion/gpu_double*'
                 ],
                 'reference': {
                     'daint:gpu': {
-                        'timer': (0.0006, None, 0.1, 's')
+                        'timer': (0.004, None, 0.1, 's')
                     },
                     'dom:gpu': {
-                        'timer': (0.0066, None, 0.1, 's')
+                        'timer': (0.004, None, 0.1, 's')
                     }
                 }
             },
             'horizontal_diffusion/gpu_horizontal_double': {
                 'executable_opts': [
-                    '256', '256', '80', '1',
+                    '512', '512', '160', '3',
                     '--gtest_filter=horizontal_diffusion/gpu_horizontal_double*'
                 ],
                 'reference': {
                     'daint:gpu': {
-                        'timer': (0.0004, None, 0.1, 's')
+                        'timer': (0.003, None, 0.1, 's')
                     },
                     'dom:gpu': {
-                        'timer': (0.0004, None, 0.1, 's')
+                        'timer': (0.003, None, 0.1, 's')
                     }
                 }
             }
