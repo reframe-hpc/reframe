@@ -175,7 +175,7 @@ void print_device_table(int num_devices, std::queue<uint32_t> q, const char * wh
 }
 
 template < class LIST >
-void remotePointerChase(int num_devices, int init_mode, size_t buffSize, size_t stride, char * nid)
+void remotePointerChase(int num_devices, int init_mode, size_t buffSize, size_t stride, char * nid, int summarize)
 {
   /*
    * Specialised pointer chase to allocate the list in one device, and do the pointer chase from another device.
@@ -220,8 +220,18 @@ void remotePointerChase(int num_devices, int init_mode, size_t buffSize, size_t 
 #     ifndef TIME_EACH_STEP
       q_average.push(fetch(timer_ptr));
 #     else
-      q_min.push(fetchMin(timer_ptr));
-      q_max.push(fetchMax(timer_ptr));
+      if (summarize)
+      {
+        q_min.push(fetchMin(timer_ptr));
+        q_max.push(fetchMax(timer_ptr));
+      }
+      else
+      {
+        for (int n = 0; n < NODES-1; n++)
+        {
+          printf("[%s][device %d][device %d] %d\n", nid, j, i, timer_ptr[n]);
+        }
+      }
 #     endif
       delete [] timer_ptr;
     }
@@ -232,11 +242,14 @@ void remotePointerChase(int num_devices, int init_mode, size_t buffSize, size_t 
   what = "Average";
   print_device_table(num_devices, q_average, what.c_str(), nid);
 # else
-  what = "Min.";
-  print_device_table(num_devices, q_min, what.c_str(), nid);
-  printf("\n");
-  what = "Max.";
-  print_device_table(num_devices, q_max, what.c_str(), nid);
+  if (summarize)
+  {
+    what = "Min.";
+    print_device_table(num_devices, q_min, what.c_str(), nid);
+    printf("\n");
+    what = "Max.";
+    print_device_table(num_devices, q_max, what.c_str(), nid);
+  }
 # endif
 
 }
@@ -249,6 +262,7 @@ int main(int argc, char ** argv)
   size_t stride = 1;
   size_t buffSize = NODES*stride;
   int multiGPU = 0;
+  int print_mode = 0;
 
   // Parse the command line args.
   for (int i = 0; i < argc; i++)
@@ -263,6 +277,8 @@ int main(int argc, char ** argv)
       std::cout << "              The number indicates the size of the buffer in list nodes." << std::endl;
       std::cout << "--multiGPU  : Runs the pointer chase algo using all device-pair combinations." << std::endl;
       std::cout << "              This measures the device-to-device memory latency." << std::endl;
+      std::cout << "--summary   : When timing each node jump individually and used alongside --multiGPU, " << std::endl;
+      std::cout << "              this collapses the output into two tables with the min and max latencies." << std::endl;
       std::cout << "--help (-h) : I guess you figured what this does already ;)" << std::endl;
       return 0;
     }
@@ -283,6 +299,10 @@ int main(int argc, char ** argv)
     else if (str == "--multiGPU")
     {
       multiGPU = 1;
+    }
+    else if (str == "--summary")
+    {
+      print_mode = 1;
     }
   }
 
@@ -316,7 +336,7 @@ int main(int argc, char ** argv)
   }
   else
   {
-    remotePointerChase<LIST_TYPE>(num_devices, list_init_mode, buffSize, stride, nid_name);
+    remotePointerChase<LIST_TYPE>(num_devices, list_init_mode, buffSize, stride, nid_name, print_mode);
   }
 
   printf("[%s] Pointer chase complete.\n", nid_name);

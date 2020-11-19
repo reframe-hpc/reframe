@@ -7,7 +7,7 @@ import reframe.utility.sanity as sn
 import reframe as rfm
 
 import os
-
+from math import ceil
 
 class Pchase:
     '''
@@ -19,6 +19,11 @@ class Pchase:
                     'tsa:cn']
     valid_systems = single_device+multi_device
     valid_prog_environs = ['PrgEnv-gnu']
+
+
+#
+# PChase tests tracking the averaged latencies for all node jumps
+#
 
 
 @rfm.simple_test
@@ -48,10 +53,12 @@ class CompileGpuPointerChase(rfm.CompileOnlyRegressionTest):
 
         # Deal with the NVIDIA options first
         nvidia_sm = None
-        if cp[-4:] == 'v100':
+        if cp in {'tsa:cn', 'ault:intelv100', 'ault:amdv100'}:
             nvidia_sm = '70'
-        elif cp[-4:] == 'a100':
+        elif cp == 'ault:amda100':
             nvidia_sm = '80'
+        elif cp in {'dom:gpu', 'daint:gpu'}:
+            nvidia_sm == '60'
 
         if nvidia_sm:
             self.build_system.cxxflags += [f'-arch=sm_{nvidia_sm}']
@@ -69,18 +76,12 @@ class CompileGpuPointerChase(rfm.CompileOnlyRegressionTest):
 
 class GpuPointerChaseBase(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        self.depends_on('CompileGpuPointerChase')
         self.valid_prog_environs = Pchase.valid_prog_environs
         self.num_tasks = 0
         self.num_tasks_per_node = 1
         self.exclusive_access = True
         self.sanity_patterns = self.do_sanity_check()
         self.maintainers = ['JO']
-
-    @rfm.require_deps
-    def set_executable(self, CompileGpuPointerChase):
-        self.executable = os.path.join(
-            CompileGpuPointerChase().stagedir, 'pChase.x')
 
     @rfm.run_before('run')
     def set_num_gpus_per_node(self):
@@ -98,21 +99,33 @@ class GpuPointerChaseBase(rfm.RunOnlyRegressionTest):
     def do_sanity_check(self):
 
         # Check that every node has the right number of GPUs
-        healthy_nodes = len(set(sn.extractall(
+        # Store this nodes in case they're used later by the perf functions.
+        self.my_nodes = set(sn.extractall(
             r'^\s*\[([^\]]*)\]\s*Found %d device\(s\).' % self.num_gpus_per_node,
-            self.stdout, 1)))
+            self.stdout, 1))
 
         # Check that every node has made it to the end.
         nodes_at_end = len(set(sn.extractall(
             r'^\s*\[([^\]]*)\]\s*Pointer chase complete.',
             self.stdout, 1)))
         return sn.evaluate(sn.assert_eq(
-            sn.assert_eq(self.job.num_tasks, healthy_nodes),
+            sn.assert_eq(self.job.num_tasks, len(self.my_nodes)),
 	    sn.assert_eq(self.job.num_tasks, nodes_at_end)))
 
 
-#@rfm.parameterized_test([1], [2], [4], [4096])
-class GpuPointerChaseSingle(GpuPointerChaseBase):
+class GpuPointerChaseDep(GpuPointerChaseBase):
+    def __init__(self):
+        super().__init__()
+        self.depends_on('CompileGpuPointerChase')
+
+    @rfm.require_deps
+    def set_executable(self, CompileGpuPointerChase):
+        self.executable = os.path.join(
+            CompileGpuPointerChase().stagedir, 'pChase.x')
+
+
+@rfm.parameterized_test([1], [2], [4], [4096])
+class GpuPointerChaseSingle(GpuPointerChaseDep):
     def __init__(self, stride):
         super().__init__()
         self.valid_systems = Pchase.valid_systems
@@ -166,7 +179,7 @@ class GpuPointerChaseSingle(GpuPointerChaseBase):
                     'average': (198, None, 0.1, 'clock cycles')
                 },
                 'ault:amdv100': {
-                    'average': (200, None, 0.1, 'clock cycles')
+                    'average': (204, None, 0.1, 'clock cycles')
                 },
                 'dom:gpu': {
                     'average': (260, None, 0.1, 'clock cycles')
@@ -199,10 +212,10 @@ class GpuPointerChaseSingle(GpuPointerChaseBase):
 
 
 @rfm.simple_test
-class GpuPointerChaseMulti(GpuPointerChaseBase):
+class GpuPointerChaseMultiAgg(GpuPointerChaseDep):
     def __init__(self):
         super().__init__()
-        self.valid_systems = Pchase.mulit_device
+        self.valid_systems = Pchase.multi_device
         self.executable_opts = ['--multiGPU']
         self.perf_patterns = {
             'average': sn.max(sn.extractall(r'^\s*\[[^\]]*\]\s*GPU\s*\d+\s+(\s*\d+.\s+)+',
@@ -223,3 +236,241 @@ class GpuPointerChaseMulti(GpuPointerChaseBase):
                 'average': (2760, None, 0.1, 'clock cycles')
             },
         }
+
+
+#
+# PChase tests tracking the individual latencies of each node jump
+#
+
+
+@rfm.simple_test
+class CompileGpuPointerChaseFine(CompileGpuPointerChase):
+    '''
+    Compile the pChase code to time each node jump.
+    '''
+    def __init__(self):
+        super().__init__()
+
+    @rfm.run_before('compile')
+    def set_cxxflags(self):
+        self.build_system.cxxflags += ['-DTIME_EACH_STEP']
+
+
+class GpuPointerChaseFineDep(GpuPointerChaseBase):
+    def __init__(self):
+        super().__init__()
+        self.depends_on('CompileGpuPointerChaseFine')
+
+    @rfm.require_deps
+    def set_executable(self, CompileGpuPointerChaseFine):
+        self.executable = os.path.join(
+            CompileGpuPointerChaseFine().stagedir, 'pChase.x')
+
+    @sn.sanity_function
+    def get_all_latencies(self, pattern):
+        return sn.extractall(pattern, self.stdout, 1, int)
+
+
+class L1_filter:
+    def filter_out_L1_hits(self, L1, all_latencies):
+        '''
+        Return a list with the latencies that are above 20% L1.
+        '''
+        return list(filter(lambda x: x>1.2*L1, all_latencies))
+
+
+@rfm.simple_test
+class GpuPointerChaseL1(GpuPointerChaseFineDep, L1_filter):
+    '''
+    Check L1 latency, L1 miss rate and average latency of an L1 miss.
+    '''
+    def __init__(self):
+        super().__init__()
+        self.valid_systems = Pchase.valid_systems
+        self.perf_patterns = {
+            'L1_latency': self.max_L1_latency(),
+            'L1_miss_rate': self.L1_miss_rate(),
+            'L1_miss_latency': self.L1_miss_latency(),
+        }
+
+        self.reference = {
+           'dom:gpu': {
+                'L1_latency': (112, None, 0.1, 'clock cycles')
+            },
+           'daint:gpu': {
+                'L1_latency': (112, None, 0.1, 'clock cycles')
+            },
+            'ault:amda100': {
+                'L1_latency': (70, None, 0.1, 'clock cycles'),
+                'L1_misses': (25.4, None, 0.1, '%'),
+            },
+            'ault:amdv100': {
+                'L1_latency': (39, None, 0.1, 'clock cycles'),
+                'L1_misses': (25.4, None, 0.1, '%'),
+                'L1_miss_latency': (208, None, 0.1, 'clock cycles'),
+            },
+            'ault:amdvega': {
+                'L1_latency': (164, None, 0.1, 'clock cycles'),
+                'L1_miss_rate': (23.8, None, 0.1, '%'),
+                'L1_miss_latency': (840, None, 0.1, 'clock cycles'),
+            },
+        }
+
+    @staticmethod
+    def target_str(node, device):
+        return r'^\s*\[%s\]\[device %d\]\s*(\d+)' % (node, device)
+
+    @sn.sanity_function
+    def max_L1_latency(self):
+        '''
+        Max. L1 latency amongst all devices.
+        '''
+        l1_latency = []
+        for n in self.my_nodes:
+            for d in range(self.num_gpus_per_node):
+                l1_latency.append(
+                    sn.min(self.get_all_latencies(self.target_str(n,d)))
+                )
+
+        # Return the data from the worst performing device
+        return sn.max(l1_latency)
+
+    def get_L1_misses(self, n, d, all_latencies=None):
+        '''
+        The idea here is to get the lowest value and model the L1 hits as the
+        values with a latency up to 20% higher than this lowest value. Every
+        other node jump with a higher latency will be counted as an L1 miss.
+        '''
+        if all_latencies is None:
+            all_latencies = self.get_all_latencies(self.target_str(n,d))
+
+        L1 = sn.min(all_latencies)
+        return self.filter_out_L1_hits(L1, all_latencies)
+
+    @sn.sanity_function
+    def L1_miss_rate(self):
+        '''
+        Calculate the rate of L1 misses based on the model implemented by the
+        get_L1_misses sanity function. Return the worst performing rate from
+        all nodes/devices.
+        '''
+        l1_miss_rate = []
+        for n in self.my_nodes:
+            for d in range(self.num_gpus_per_node):
+                all_lat = sn.evaluate(
+                    self.get_all_latencies(self.target_str(n,d))
+                )
+                l1_miss_rate.append(
+                    len(self.get_L1_misses(n,d,all_lat))/len(all_lat)
+                )
+
+        return max(l1_miss_rate)*100
+
+    @sn.sanity_function
+    def L1_miss_latency(self):
+        '''
+        Count the average number of cycles taken only by the node jumps
+        with an L1 miss. Return the worst performing values for all
+        nodes/devices.
+        '''
+        l1_miss_latency = []
+        for n in self.my_nodes:
+            for d in range(self.num_gpus_per_node):
+                l1_miss_latency.append(
+                    ceil(sn.evaluate(sn.avg(self.get_L1_misses(n,d))))
+                )
+
+        return max(l1_miss_latency)
+
+
+@rfm.simple_test
+class GpuPointerChaseL1P2P(GpuPointerChaseFineDep, L1_filter):
+    '''
+    Pointer chase through P2P, checking L1 miss rates and L1 miss
+    latency averaged amogst all devices in each node.
+    '''
+    def __init__(self):
+        super().__init__()
+        self.valid_systems = Pchase.multi_device
+        self.executable_opts = ['--multiGPU']
+        self.perf_patterns = {
+            'L1_latency': self.max_L1_latency(),
+            'L1_miss_rate': self.L1_miss_rate(),
+            'L1_miss_latency': self.L1_miss_latency()
+        }
+        self.reference = {
+            'ault:amda100': {
+                'L1_latency': (70, None, 0.1, 'clock cycles'),
+            },
+            'ault:amdv100': {
+                'L1_latency': (39, None, 0.1, 'clock cycles'),
+            },
+            'ault:amdvega': {
+                'L1_latency': (164, None, 0.1, 'clock cycles'),
+                'L1_miss_rate': (19.3, None, 0.1, '%'),
+                'L1_miss_latency': (2200, None, 0.1, 'clock cycles'),
+            },
+        }
+
+    @staticmethod
+    def target_str(node, d1, d2):
+        return r'^\s*\[%s\]\[device %d\]\[device %d\]\s*(\d+)' % (node, d1, d2)
+
+    @sn.sanity_function
+    def max_L1_latency(self):
+        '''
+        Max. L1 latency amongst all devices.
+        '''
+        l1_latency = []
+        for n in self.my_nodes:
+            for d1 in range(self.num_gpus_per_node):
+                for d2 in range(self.num_gpus_per_node):
+                    l1_latency.append(
+                        sn.min(self.get_all_latencies(
+                            self.target_str(n, d1, d2))
+                        )
+                    )
+
+        # Return the data from the worst performing device
+        return sn.max(l1_latency)
+
+    @sn.sanity_function
+    def L1_miss_rate(self):
+        '''
+        Calculates the L1 miss rate across P2P list traversals.
+        '''
+        total_node_jumps = 0
+        total_L1_misses = 0
+        for n in self.my_nodes:
+            for d1 in range(self.num_gpus_per_node):
+                for d2 in range(self.num_gpus_per_node):
+                    if(d1 != d2):
+                        all_lat = sn.evaluate(self.get_all_latencies(
+                            self.target_str(n, d1, d2)
+                        ))
+                        L1 = min(all_lat)
+                        total_L1_misses += len(
+                            self.filter_out_L1_hits(L1, all_lat)
+                        )
+                        total_node_jumps += len(all_lat)
+
+        return total_L1_misses/total_node_jumps
+
+    @sn.sanity_function
+    def L1_miss_latency(self):
+        '''
+        Calculate the latency of all L1 misses across all P2P list traversals
+        '''
+        L1_misses = []
+        for n in self.my_nodes:
+            for d1 in range(self.num_gpus_per_node):
+                for d2 in range(self.num_gpus_per_node):
+                    if (d1 != d2):
+                        all_lat = sn.evaluate(self.get_all_latencies(
+                            self.target_str(n, d1, d2)
+                        ))
+                        L1 = min(all_lat)
+                        L1_misses += self.filter_out_L1_hits(L1, all_lat)
+
+        return int(sn.evaluate(sn.avg(L1_misses)))
+
