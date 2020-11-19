@@ -13,24 +13,18 @@ class KernelLatencyTest(rfm.RegressionTest):
     def __init__(self, kernel_version):
         # List known partitions here so as to avoid specifying them every time
         # with --system
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
-                              'arolla:cn', 'tsa:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn']
         self.num_tasks = 0
         self.num_tasks_per_node = 1
         self.sourcepath = 'kernel_latency.cu'
         self.build_system = 'SingleSource'
         self.build_system.cxxflags = ['-std=c++11', '-O3']
-        if self.current_system.name in {'dom', 'daint', 'tiger'}:
+        if self.current_system.name in {'dom', 'daint'}:
             self.num_gpus_per_node = 1
             gpu_arch = '60'
             self.modules = ['craype-accel-nvidia60']
             self.valid_prog_environs = ['PrgEnv-cray_classic', 'PrgEnv-cray',
                                         'PrgEnv-pgi', 'PrgEnv-gnu']
-        elif self.current_system.name == 'kesch':
-            self.num_gpus_per_node = 16
-            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
-            self.modules = ['cudatoolkit/8.0.61']
-            gpu_arch = '37'
         elif self.current_system.name in ['arolla', 'tsa']:
             self.num_gpus_per_node = 8
             self.valid_prog_environs = ['PrgEnv-pgi']
@@ -76,9 +70,6 @@ class KernelLatencyTest(rfm.RegressionTest):
                 'daint:gpu': {
                     'latency': (6.6, None, 0.10, 'us')
                 },
-                'kesch:cn': {
-                    'latency': (13.7, None, 0.10, 'us')
-                },
             },
             'async': {
                 'dom:gpu': {
@@ -86,9 +77,6 @@ class KernelLatencyTest(rfm.RegressionTest):
                 },
                 'daint:gpu': {
                     'latency': (2.2, None, 0.10, 'us')
-                },
-                'kesch:cn': {
-                    'latency': (5.7, None, 0.10, 'us')
                 },
             },
         }

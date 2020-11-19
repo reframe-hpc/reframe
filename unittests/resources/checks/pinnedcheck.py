@@ -6,8 +6,5 @@
 import reframe as rfm
 
 
-@rfm.simple_test
-class EmptyTest(rfm.RegressionTest):
-    def __init__(self):
-        self.valid_systems = []
-        self.valid_prog_environs = []
+class PinnedTest(rfm.RunOnlyRegressionTest, pin_prefix=True):
+    '''A simple base test for verifying that prefix pinning works correctly'''

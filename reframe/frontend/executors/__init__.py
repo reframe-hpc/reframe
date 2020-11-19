@@ -402,7 +402,7 @@ class Runner:
 
             # Clone failed cases and rebuild dependencies among them
             failed_cases = [t.testcase.clone() for t in failures]
-            cases_graph = dependencies.build_deps(failed_cases, cases)
+            cases_graph, _ = dependencies.build_deps(failed_cases, cases)
             failed_cases = dependencies.toposort(cases_graph, is_subgraph=True)
             self._runall(failed_cases)
             failures = self._stats.failures()
