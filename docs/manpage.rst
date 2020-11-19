@@ -389,21 +389,10 @@ It does so by leveraging the selected system's environment modules system.
 
 .. option:: --module-path=PATH
 
-   Use module path ``PATH`` before acting on any tests.
-   Paths prepended with the `-` character are going to be unused.
-   This option may be specified multiple times, in which case all specified module paths will be (un)used in order.
-
-   This option can also be set using the :envvar:`RFM_MODULE_PATHS` environment variable or the :js:attr:`unuse_module_paths` general configuration parameter.
-
-   .. versionadded:: 3.3
-
-
-.. option:: --use-module-path=PATH
-
-   Use module path ``PATH`` before acting on any tests.
-   This option may be specified multiple times, in which case all specified module paths will be used in order.
-
-   This option can also be set using the :envvar:`RFM_USE_MODULE_PATHS` environment variable or the :js:attr:`use_module_paths` general configuration parameter.
+   Use ``PATH`` to manipulate the ``MODULEPATH`` before acting on any tests.
+   Paths starting with the `-` character are going to be removed from the ``MODULEPATH``, while the ones starting with the `+` character are going to be added to it.
+   In all other cases, ``PATH`` will completely override MODULEPATH.
+   This option may be specified multiple times, in which case all the paths specified will be added or removed in order.
 
    .. versionadded:: 3.3
 
@@ -916,22 +905,6 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
       Associated command line option     :option:`--unuse-module-path`
       Associated configuration parameter :js:attr:`unuse_module_paths` general configuration parameter
-      ================================== ==================
-
-
-.. versionadded:: 3.3
-
-.. envvar:: RFM_MODULE_PATHS
-
-   A colon-separated list of module paths to be used before acting on any tests.
-   A module path is going to be unused if it's prepended by the `-` character.
-
-   .. table::
-      :align: left
-
-      ================================== ==================
-      Associated command line option     :option:`--module-path`
-      Associated configuration parameter :js:attr:`module_paths` general configuration parameter
       ================================== ==================
 
 

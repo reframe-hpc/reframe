@@ -600,7 +600,8 @@ def test_unuse_module_path(run_reframe, user_exec_ctx, monkeypatch):
     monkeypatch.setenv('MODULEPATH', module_path)
     returncode, stdout, stderr = run_reframe(
         more_options=[f'--module-path=-{module_path}', '-m testmod_foo'],
-        config_file=fixtures.USER_CONFIG_FILE, action='run'
+        config_file=fixtures.USER_CONFIG_FILE, action='run',
+        system=rt.runtime().system.name
     )
 
     # Here we test that ReFrame fails to run because 'testmod_foo' cannot
@@ -616,8 +617,9 @@ def test_use_module_path(run_reframe, user_exec_ctx):
 
     module_path = 'unittests/modules'
     returncode, stdout, stderr = run_reframe(
-        more_options=[f'--module-path={module_path}', '-m testmod_foo'],
-        config_file=fixtures.USER_CONFIG_FILE, action='run'
+        more_options=[f'--module-path=+{module_path}', '-m testmod_foo'],
+        config_file=fixtures.USER_CONFIG_FILE, action='run',
+        system=rt.runtime().system.name
     )
 
     assert 'Traceback' not in stdout

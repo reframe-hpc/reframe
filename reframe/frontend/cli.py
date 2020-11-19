@@ -363,8 +363,6 @@ def main():
         '--module-path', action='append', metavar='PATH',
         dest='module_paths', default=[],
         help='(Un)use module path PATH before running any regression check',
-        envvar='RFM_MODULE_PATHS :',
-        configvar='general/module_paths'
     )
     env_options.add_argument(
         '--purge-env', action='store_true', dest='purge_env', default=False,
@@ -741,7 +739,7 @@ def main():
             raise
 
         printer.debug('(Un)using module paths from command line')
-        for d in site_config.get('general/0/module_paths'):
+        for d in options.module_paths:
             if d.startswith('-'):
                 try:
                     rt.modules_system.searchpath_remove(d[1:])
@@ -751,7 +749,19 @@ def main():
                         f'skipping...'
                     )
                     printer.verbose(str(e))
+            elif d.startswith('+'):
+                try:
+                    rt.modules_system.searchpath_add(d[1:])
+                except errors.EnvironError as e:
+                    printer.warning(
+                        f'could not use module path {d} correctly; '
+                        f'skipping...'
+                    )
+                    printer.verbose(str(e))
             else:
+                rt.modules_system.searchpath_remove(
+                    *rt.modules_system.searchpath
+                )
                 rt.modules_system.searchpath_add(d)
 
         printer.debug('Loading user modules from command line')
