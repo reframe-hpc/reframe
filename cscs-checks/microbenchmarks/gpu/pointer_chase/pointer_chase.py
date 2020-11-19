@@ -343,6 +343,7 @@ class GpuPointerChaseL1(GpuPointerChaseFineDep, L1_filter):
             'ault:amda100': {
                 'L1_latency': (70, None, 0.1, 'clock cycles'),
                 'L1_misses': (25.4, None, 0.1, '%'),
+                'L1_miss_latency': (243, None, 0.1, 'clock cycles'),
             },
             'ault:amdv100': {
                 'L1_latency': (39, None, 0.1, 'clock cycles'),
@@ -446,9 +447,13 @@ class GpuPointerChaseL1P2P(GpuPointerChaseFineDep, L1_filter):
             },
             'ault:amda100': {
                 'L1_latency': (70, None, 0.1, 'clock cycles'),
+                'L1_miss_rate': (25.4, None, 0.1, '%'),
+                'L1_miss_latency': (822, None, 0.1, 'clock cycles'),
             },
             'ault:amdv100': {
                 'L1_latency': (39, None, 0.1, 'clock cycles'),
+                'L1_miss_rate': (25.4, None, 0.1, '%'),
+                'L1_miss_latency': (2620, None, 0.1, 'clock cycles'),
             },
             'ault:amdvega': {
                 'L1_latency': (164, None, 0.1, 'clock cycles'),
