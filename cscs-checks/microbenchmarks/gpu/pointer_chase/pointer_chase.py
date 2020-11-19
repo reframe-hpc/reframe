@@ -47,7 +47,7 @@ class CompileGpuPointerChase(rfm.CompileOnlyRegressionTest):
         else:
             self.prebuild_cmds = ['cp makefile.cuda Makefile']
 
-    @rfm.run_before('compile')
+    @rfm.run_after('setup')
     def set_gpu_arch(self):
         cp = self.current_partition.fullname
 
@@ -62,7 +62,10 @@ class CompileGpuPointerChase(rfm.CompileOnlyRegressionTest):
 
         if nvidia_sm:
             self.build_system.cxxflags += [f'-arch=sm_{nvidia_sm}']
-            self.modules += ['cuda']
+            if cp in {'dom:gpu', 'daint:gpu'}:
+                self.modules += ['cudatoolkit']
+            else:
+                self.modules += ['cuda']
 
         # Deal with the AMD options
         amd_trgt = None
@@ -330,10 +333,16 @@ class GpuPointerChaseL1(GpuPointerChaseFineDep, L1_filter):
 
         self.reference = {
            'dom:gpu': {
-                'L1_latency': (112, None, 0.1, 'clock cycles')
+                'L1_latency': (112, None, 0.1, 'clock cycles'),
+                'L1_miss_rate': (33.3, None, 0.1, '%'),
+                'L1_miss_latency': (268, None, 0.1, 'clock cycles'),
+
             },
            'daint:gpu': {
-                'L1_latency': (112, None, 0.1, 'clock cycles')
+                'L1_latency': (112, None, 0.1, 'clock cycles'),
+                'L1_miss_rate': (33.3, None, 0.1, '%'),
+                'L1_miss_latency': (268, None, 0.1, 'clock cycles'),
+
             },
             'tsa:cn': {
                 'L1_latency': (38, None, 0.1, 'clock cycles'),
