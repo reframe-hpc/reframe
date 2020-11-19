@@ -86,7 +86,9 @@ class GpuPointerChaseBase(rfm.RunOnlyRegressionTest):
     @rfm.run_before('run')
     def set_num_gpus_per_node(self):
         cp = self.current_partition.fullname
-        if cp in {'ault:intelv100', 'ault:amda100'}:
+        if cp == 'tsa:cn':
+            self.num_gpus_per_node = 8
+        elif cp in {'ault:intelv100', 'ault:amda100'}:
             self.num_gpus_per_node = 4
         elif cp in {'ault:amdv100'}:
             self.num_gpus_per_node = 2
@@ -126,116 +128,147 @@ class GpuPointerChaseDep(GpuPointerChaseBase):
 
 @rfm.parameterized_test([1], [2], [4], [4096])
 class GpuPointerChaseSingle(GpuPointerChaseDep):
+    '''
+    Pointer chase on a single device with increasing stride.
+    '''
     def __init__(self, stride):
         super().__init__()
         self.valid_systems = Pchase.valid_systems
         self.executable_opts = ['--stride', f'{stride}']
         self.perf_patterns = {
-            'average': sn.max(sn.extractall(r'^\s*\[[^\]]*\]\s* On device \d+, '
-                                            r'the chase took on average (\d+) '
-                                            r'cycles per node jump.',
-                                            self.stdout, 1, int)),
+            'average_latency': sn.max(sn.extractall(
+                r'^\s*\[[^\]]*\]\s* On device \d+, '
+                r'the chase took on average (\d+) '
+                r'cycles per node jump.', self.stdout, 1, int)
+            ),
         }
 
         if stride == 1:
             self.reference = {
+                'tsa:cn': {
+                    'average_latency': (80, None, 0.1, 'clock cycles')
+                },
                 'ault:amda100': {
-                    'average': (76, None, 0.1, 'clock cycles')
+                    'average_latency': (76, None, 0.1, 'clock cycles')
                 },
                 'ault:amdv100': {
-                    'average': (77, None, 0.1, 'clock cycles')
+                    'average_latency': (77, None, 0.1, 'clock cycles')
                 },
                 'dom:gpu': {
-                    'average': (143, None, 0.1, 'clock cycles')
+                    'average_latency': (143, None, 0.1, 'clock cycles')
                 },
                 'daint:gpu': {
-                    'average': (143, None, 0.1, 'clock cycles')
+                    'average_latency': (143, None, 0.1, 'clock cycles')
                 },
                 'ault:amdvega': {
-                    'average': (225, None, 0.1, 'clock cycles')
+                    'average_latency': (225, None, 0.1, 'clock cycles')
                 },
             }
         elif stride == 2:
             self.reference = {
+                'tsa:cn': {
+                    'average_latency': (120, None, 0.1, 'clock cycles')
+                },
                 'ault:amda100': {
-                    'average': (116, None, 0.1, 'clock cycles')
+                    'average_latency': (116, None, 0.1, 'clock cycles')
                 },
                 'ault:amdv100': {
-                    'average': (118, None, 0.1, 'clock cycles')
+                    'average_latency': (118, None, 0.1, 'clock cycles')
                 },
                 'dom:gpu': {
-                    'average': (181, None, 0.1, 'clock cycles')
+                    'average_latency': (181, None, 0.1, 'clock cycles')
                 },
                 'daint:gpu': {
-                    'average': (181, None, 0.1, 'clock cycles')
+                    'average_latency': (181, None, 0.1, 'clock cycles')
                 },
                 'ault:amdvega': {
-                    'average': (300, None, 0.1, 'clock cycles')
+                    'average_latency': (300, None, 0.1, 'clock cycles')
                 },
             }
         elif stride == 4:
             self.reference = {
+                'tsa:cn': {
+                    'average_latency': (204, None, 0.1, 'clock cycles')
+                },
                 'ault:amda100': {
-                    'average': (198, None, 0.1, 'clock cycles')
+                    'average_latency': (198, None, 0.1, 'clock cycles')
                 },
                 'ault:amdv100': {
-                    'average': (204, None, 0.1, 'clock cycles')
+                    'average_latency': (204, None, 0.1, 'clock cycles')
                 },
                 'dom:gpu': {
-                    'average': (260, None, 0.1, 'clock cycles')
+                    'average_latency': (260, None, 0.1, 'clock cycles')
                 },
                 'daint:gpu': {
-                    'average': (260, None, 0.1, 'clock cycles')
+                    'average_latency': (260, None, 0.1, 'clock cycles')
                 },
                 'ault:amdvega': {
-                    'average': (470, None, 0.1, 'clock cycles')
+                    'average_latency': (470, None, 0.1, 'clock cycles')
                 },
             }
         elif stride == 4096:
             self.reference = {
+                'tsa:cn': {
+                    'average_latency': (220, None, 0.1, 'clock cycles')
+                },
                 'ault:amda100': {
-                    'average': (206, None, 0.1, 'clock cycles')
+                    'average_latency': (206, None, 0.1, 'clock cycles')
                 },
                 'ault:amdv100': {
-                    'average': (220, None, 0.1, 'clock cycles')
+                    'average_latency': (220, None, 0.1, 'clock cycles')
                 },
                 'dom:gpu': {
-                    'average': (260, None, 0.1, 'clock cycles')
+                    'average_latency': (260, None, 0.1, 'clock cycles')
                 },
                 'daint:gpu': {
-                    'average': (260, None, 0.1, 'clock cycles')
+                    'average_latency': (260, None, 0.1, 'clock cycles')
                 },
                 'ault:amdvega': {
-                    'average': (800, None, 0.1, 'clock cycles')
+                    'average_latency': (800, None, 0.1, 'clock cycles')
                 },
             }
 
 
 @rfm.simple_test
-class GpuPointerChaseMultiAgg(GpuPointerChaseDep):
+class GpuPointerChaseAverageP2PLatency(GpuPointerChaseDep):
+    '''
+    Average inter-node P2P latency.
+    '''
     def __init__(self):
         super().__init__()
         self.valid_systems = Pchase.multi_device
         self.executable_opts = ['--multiGPU']
         self.perf_patterns = {
-            'average': sn.max(sn.extractall(r'^\s*\[[^\]]*\]\s*GPU\s*\d+\s+(\s*\d+.\s+)+',
-                                            self.stdout, 1, int)),
+            'average_latency': self.average_P2P_latency(),
         }
 
         self.reference = {
             'ault:amda100': {
-                'average': (668, None, 0.1, 'clock cycles')
+                'average_latency': (223, None, 0.1, 'clock cycles')
             },
             'ault:amdv100': {
-                'average': (611, None, 0.1, 'clock cycles')
+                'average_latency': (611, None, 0.1, 'clock cycles')
             },
             'ault:amdvega': {
-                'average': (1010, None, 0.1, 'clock cycles')
+                'average_latency': (336, None, 0.1, 'clock cycles')
             },
             'tsa:cn': {
-                'average': (2760, None, 0.1, 'clock cycles')
+                'average_latency': (394, None, 0.1, 'clock cycles')
             },
         }
+
+    @sn.sanity_function
+    def average_P2P_latency(self):
+        '''
+        Extract the average P2P latency. Note that the pChase code
+        returns a table with the cummulative latency for all P2P
+        list traversals.
+        '''
+        return int(sn.evaluate(sn.max(sn.extractall(
+                   r'^\s*\[[^\]]*\]\s*GPU\s*\d+\s+(\s*\d+.\s+)+',
+                   self.stdout, 1, int)
+                   ))/(self.num_gpus_per_node-1)
+               )
 
 
 #
@@ -272,17 +305,19 @@ class GpuPointerChaseFineDep(GpuPointerChaseBase):
 
 
 class L1_filter:
-    def filter_out_L1_hits(self, L1, all_latencies):
+    def filter_out_L1_hits(self, threshold, all_latencies):
         '''
-        Return a list with the latencies that are above 20% L1.
+        Return a list with the latencies that are above 20% threshold.
         '''
-        return list(filter(lambda x: x>1.2*L1, all_latencies))
+        return list(filter(lambda x: x>1.2*threshold, all_latencies))
 
 
 @rfm.simple_test
 class GpuPointerChaseL1(GpuPointerChaseFineDep, L1_filter):
     '''
-    Check L1 latency, L1 miss rate and average latency of an L1 miss.
+    Pointer chase for all the devices present on each node.
+    The traversal is done with unit stride, checking the L1 latency,
+    L1 miss rate and average latency of an L1 miss.
     '''
     def __init__(self):
         super().__init__()
@@ -299,6 +334,11 @@ class GpuPointerChaseL1(GpuPointerChaseFineDep, L1_filter):
             },
            'daint:gpu': {
                 'L1_latency': (112, None, 0.1, 'clock cycles')
+            },
+            'tsa:cn': {
+                'L1_latency': (38, None, 0.1, 'clock cycles'),
+                'L1_miss_rate': (25.4, None, 0.1, '%'),
+                'L1_miss_latency': (240, None, 0.1, 'clock cycles'),
             },
             'ault:amda100': {
                 'L1_latency': (70, None, 0.1, 'clock cycles'),
@@ -337,9 +377,9 @@ class GpuPointerChaseL1(GpuPointerChaseFineDep, L1_filter):
 
     def get_L1_misses(self, n, d, all_latencies=None):
         '''
-        The idea here is to get the lowest value and model the L1 hits as the
-        values with a latency up to 20% higher than this lowest value. Every
-        other node jump with a higher latency will be counted as an L1 miss.
+        The idea here is to get the lowest value and model the L1 hits as
+        implemented in the self.filter_out_L1_hits function. Every
+        node jump returned by this function will be counted as an L1 miss.
         '''
         if all_latencies is None:
             all_latencies = self.get_all_latencies(self.target_str(n,d))
@@ -399,6 +439,11 @@ class GpuPointerChaseL1P2P(GpuPointerChaseFineDep, L1_filter):
             'L1_miss_latency': self.L1_miss_latency()
         }
         self.reference = {
+            'tsa:cn': {
+                'L1_latency': (38, None, 0.1, 'clock cycles'),
+                'L1_miss_rate': (25.4, None, 0.1, '%'),
+                'L1_miss_latency': (1463, None, 0.1, 'clock cycles'),
+            },
             'ault:amda100': {
                 'L1_latency': (70, None, 0.1, 'clock cycles'),
             },
@@ -454,7 +499,7 @@ class GpuPointerChaseL1P2P(GpuPointerChaseFineDep, L1_filter):
                         )
                         total_node_jumps += len(all_lat)
 
-        return total_L1_misses/total_node_jumps
+        return (total_L1_misses/total_node_jumps)*100
 
     @sn.sanity_function
     def L1_miss_latency(self):
