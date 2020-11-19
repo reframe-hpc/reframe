@@ -312,7 +312,8 @@ def test_submit_job_array(make_job, slurm_only, exec_ctx):
     prepare_job(job, command='echo "Task id: ${SLURM_ARRAY_TASK_ID}"')
     job.submit()
     job.wait()
-    assert job.exitcode == 0
+    if job.scheduler.registered_name == 'slurm':
+        assert job.exitcode == 0
     with open(job.stdout) as fp:
         output = fp.read()
         assert all([re.search('Task id: 0', output),
