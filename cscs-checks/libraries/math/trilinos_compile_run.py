@@ -14,8 +14,7 @@ import reframe.utility.sanity as sn
 @rfm.parameterized_test(['static'], ['dynamic'])
 class TrilinosTest(rfm.RegressionTest):
     def __init__(self, linkage):
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'tiger:gpu']
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
         # NOTE: PrgEnv-cray in dynamic does not work because of CrayBug/809265
         self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel']
         # NOTE: PrgEnv-cray_classic does not support trilinos

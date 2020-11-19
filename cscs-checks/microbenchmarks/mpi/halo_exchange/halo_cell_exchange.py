@@ -14,7 +14,7 @@ class HaloCellExchangeTest(rfm.RegressionTest):
         self.sourcepath = 'halo_cell_exchange.c'
         self.build_system = 'SingleSource'
         self.build_system.cflags = ['-O2']
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn',
+        self.valid_systems = ['daint:gpu', 'dom:gpu',
                               'arolla:cn', 'tsa:cn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi',
                                     'PrgEnv-gnu']
@@ -89,18 +89,15 @@ class HaloCellExchangeTest(rfm.RegressionTest):
                 'time_6_10000': (1.540580e-05, None, 0.50, 's'),
                 'time_6_1000000': (9.179296e-04, None, 0.50, 's')
             },
-            'kesch:cn': {
-                'time_2_10': (2.280450e-06, None, 0.50, 's'),
-                'time_2_10000': (8.059907e-06, None, 0.50, 's'),
-                'time_2_1000000': (5.959686e-04, None, 0.50, 's'),
-                'time_4_10': (2.951527e-06, None, 0.50, 's'),
-                'time_4_10000': (1.258132e-05, None, 0.50, 's'),
-                'time_4_1000000': (8.539153e-04, None, 0.50, 's'),
-                'time_6_10': (3.740311e-06, None, 0.50, 's'),
-                'time_6_10000': (1.448979e-05, None, 0.50, 's'),
-                'time_6_1000000': (8.432294e-04, None, 0.50, 's')
-            },
         }
 
         self.maintainers = ['AJ']
         self.tags = {'benchmark'}
+
+    @rfm.run_before('compile')
+    def pgi_workaround(self):
+        if self.current_system.name in ['daint', 'dom']:
+            if self.current_environ.name == 'PrgEnv-pgi':
+                self.variables = {
+                    'CUDA_HOME': '$CUDATOOLKIT_HOME',
+                }

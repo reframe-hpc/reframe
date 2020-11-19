@@ -11,13 +11,8 @@ import reframe.utility.sanity as sn
 class CudaStressTest(rfm.RegressionTest):
     def __init__(self):
         self.descr = 'MCH CUDA stress test'
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
-                              'arolla:cn', 'tsa:cn']
-        if self.current_system.name == 'kesch':
-            self.exclusive_access = True
-            self.valid_prog_environs = ['PrgEnv-gnu-nompi']
-            self.modules = ['cudatoolkit/8.0.61']
-        elif self.current_system.name in ['arolla', 'tsa']:
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn']
+        if self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-gnu-nompi',
                                         'PrgEnv-pgi', 'PrgEnv-pgi-nompi']
@@ -42,9 +37,6 @@ class CudaStressTest(rfm.RegressionTest):
             'dom:gpu': {
                 'time': (1.39758, None, 0.05, 's')
             },
-            'kesch:cn': {
-                'time': (2.25, None, 0.05, 's')
-            }
         }
         self.tags = {'production', 'mch', 'craype'}
         self.maintainers = ['MKr', 'AJ']
