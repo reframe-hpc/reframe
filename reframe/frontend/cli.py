@@ -71,7 +71,7 @@ def format_check(check, check_deps, detailed=False):
         'Node allocation': node_alloc_scheme,
         'Pipeline hooks': {
             k: fmt_list(fn.__name__ for fn in v)
-            for k, v in type(check).hooks().items()
+            for k, v in check.pipeline_hooks().items()
         },
         'Tags': fmt_list(check.tags),
         'Valid environments': fmt_list(check.valid_prog_environs),

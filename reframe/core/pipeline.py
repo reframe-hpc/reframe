@@ -149,7 +149,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         cls._rfm_disabled_hooks.add(hook_name)
 
     @classmethod
-    def hooks(cls):
+    def pipeline_hooks(cls):
         ret = {}
         for c in cls.mro():
             if hasattr(c, '_rfm_pipeline_hooks'):
