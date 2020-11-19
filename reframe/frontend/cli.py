@@ -594,7 +594,7 @@ def main():
     session_info = {
         'cmdline': ' '.join(sys.argv),
         'config_file': rt.site_config.filename,
-        'data_version': '1.0',
+        'data_version': '1.1',
         'hostname': socket.gethostname(),
         'prefix_output': rt.output_prefix,
         'prefix_stage': rt.stage_prefix,
@@ -646,11 +646,11 @@ def main():
         # Filter test cases by name
         if options.exclude_names:
             for name in options.exclude_names:
-                testcases = filter(filters.have_not_name(name), testcases_all)
+                testcases = filter(filters.have_not_name(name), testcases)
 
         if options.names:
             testcases = filter(
-                filters.have_name('|'.join(options.names)), testcases_all
+                filters.have_name('|'.join(options.names)), testcases
             )
 
         testcases = list(testcases)
@@ -660,7 +660,7 @@ def main():
 
         # Filter test cases by tags
         for tag in options.tags:
-            testcases = filter(filters.have_tag(tag), testcases_all)
+            testcases = filter(filters.have_tag(tag), testcases)
 
         testcases = list(testcases)
         printer.verbose(
@@ -674,9 +674,9 @@ def main():
             sys.exit(1)
 
         if options.gpu_only:
-            testcases = filter(filters.have_gpu_only(), testcases_all)
+            testcases = filter(filters.have_gpu_only(), testcases)
         elif options.cpu_only:
-            testcases = filter(filters.have_cpu_only(), testcases_all)
+            testcases = filter(filters.have_cpu_only(), testcases)
 
         # Prepare for running
         printer.debug('Building and validating the full test DAG')

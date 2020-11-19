@@ -10,7 +10,7 @@ def uniqueID
 
 stage('Initialization') {
     node('master') {
-        try {
+        catchError(stageResult: 'FAILURE') {
             uniqueID = "${env.ghprbActualCommit[0..6]}-${env.BUILD_ID}"
             echo 'Environment Variables:'
             echo sh(script: 'env|sort', returnStdout: true)
@@ -55,19 +55,7 @@ stage('Initialization') {
                 currentBuild.result = 'ABORTED'
                 return
             }
-
             currentBuild.result = 'SUCCESS'
-        } catch(err) {
-            println err.toString()
-            if (err.toString().contains('exit code 143')) {
-                currentBuild.result = "ABORTED"
-            }
-            else if (err.toString().contains('Queue task was cancelled')) {
-                currentBuild.result = "ABORTED"
-            }
-            else {
-                currentBuild.result = "FAILURE"
-            }
         }
     }
 }
@@ -101,22 +89,8 @@ stage('Unittest') {
         }
     }
 
-    try {
+    catchError(stageResult: 'FAILURE') {
         parallel builds
-        currentBuild.result = "SUCCESS"
-    } catch(err) {
-        if (err.toString().contains('exit code 143')) {
-            currentBuild.result = "ABORTED"
-            println "The Unittest was cancelled. Aborting....."
-        }
-        else if (err.toString().contains('Queue task was cancelled')) {
-            currentBuild.result = "ABORTED"
-            println "The Queue task was cancelled. Aborting....."
-        }
-        else {
-            currentBuild.result = "FAILURE"
-            println "The Unittest failed. Exiting....."
-        }
     }
 }
 
@@ -127,7 +101,7 @@ stage('Tutorial Check') {
         return
     }
     else {
-        try {
+        catchError(stageResult: 'FAILURE') {
             if (!('daint' in machinesToRun)) {
                 return
             }
@@ -140,20 +114,6 @@ stage('Tutorial Check') {
                     sh("""${loginBash}
                           bash ${reframeDir}/${bashScript} -f ${reframeDir} -i '' -t""")
                 }
-            }
-            currentBuild.result = "SUCCESS"
-        } catch(err) {
-            if (err.toString().contains('exit code 143')) {
-                currentBuild.result = "ABORTED"
-                println "The Tutorial Check was cancelled. Aborting....."
-            }
-            else if (err.toString().contains('Queue task was cancelled')) {
-                currentBuild.result = "ABORTED"
-                println "The Queue task was cancelled. Aborting....."
-            }
-            else {
-                currentBuild.result = "FAILURE"
-                println "The Tutorial Check failed. Exiting....."
             }
         }
     }
@@ -181,22 +141,8 @@ stage('Cleanup') {
                 }
             }
         }
-        try {
+        catchError(stageResult: 'FAILURE') {
             parallel builds
-            currentBuild.result = "SUCCESS"
-        } catch(err) {
-            if (err.toString().contains('exit code 143')) {
-                currentBuild.result = "ABORTED"
-                println "The Cleanup was cancelled. Aborting....."
-            }
-            else if (err.toString().contains('Queue task was cancelled')) {
-                currentBuild.result = "ABORTED"
-                println "The Queue task was cancelled. Aborting....."
-            }
-            else {
-                currentBuild.result = "FAILURE"
-                println "The Cleanup failed. Exiting....."
-            }
         }
     }
 }
@@ -218,21 +164,7 @@ stage('Cleanup Stale') {
         }
     }
 
-    try {
+    catchError(stageResult: 'FAILURE') {
         parallel builds
-        currentBuild.result = "SUCCESS"
-    } catch(err) {
-        if (err.toString().contains('exit code 143')) {
-            currentBuild.result = "ABORTED"
-            println "The Build step was cancelled. Aborting....."
-        }
-        else if (err.toString().contains('Queue task was cancelled')) {
-            currentBuild.result = "ABORTED"
-            println "The Queue task was cancelled. Aborting....."
-        }
-        else {
-            currentBuild.result = "FAILURE"
-            println "The Build step failed. Exiting....."
-        }
     }
 }
