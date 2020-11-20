@@ -9,25 +9,19 @@ import reframe.utility.sanity as sn
 
 
 @rfm.simple_test
-class OpenCLCheck(rfm.RegressionTest):
+class CUDAFortranCheck(rfm.RegressionTest):
     def __init__(self):
-        self.maintainers = ['TM', 'SK']
-        self.tags = {'production', 'craype'}
-
         self.valid_systems = ['daint:gpu', 'dom:gpu']
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
+        self.valid_prog_environs = ['PrgEnv-pgi']
+        self.sourcepath = 'vecAdd_cuda.f90'
         self.modules = ['craype-accel-nvidia60']
-        self.build_system = 'Make'
-        self.sourcesdir = 'src/opencl'
+        self.build_system = 'SingleSource'
         self.num_gpus_per_node = 1
-        self.executable = 'vecAdd'
-
-        self.sanity_patterns = sn.assert_found('SUCCESS', self.stdout)
-
-    @rfm.run_before('compile')
-    def setflags(self):
-        if self.current_environ.name == 'PrgEnv-pgi':
-            self.build_system.cflags = ['-mmmx']
+        result = sn.extractsingle(r'final result:\s+(?P<result>\d+\.?\d*)',
+                                  self.stdout, 'result', float)
+        self.sanity_patterns = sn.assert_reference(result, 1., -1e-5, 1e-5)
+        self.maintainers = ['TM', 'AJ']
+        self.tags = {'production', 'craype'}
 
     @rfm.run_before('compile')
     def cdt2006_pgi_workaround(self):
@@ -36,4 +30,7 @@ class OpenCLCheck(rfm.RegressionTest):
             return
 
         if (self.current_environ.name == 'PrgEnv-pgi' and cdt == '20.08'):
-            self.variables.update({'CUDA_HOME': '$CUDATOOLKIT_HOME'})
+            self.build_system.fflags = [
+                'CUDA_HOME=$CUDATOOLKIT_HOME',
+                '-ta=tesla:cc60', '-Mcuda=cuda10.2'
+            ]

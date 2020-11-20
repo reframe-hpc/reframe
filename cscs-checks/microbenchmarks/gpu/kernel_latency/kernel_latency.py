@@ -11,16 +11,27 @@ import reframe.utility.sanity as sn
 @rfm.parameterized_test(['sync'], ['async'])
 class KernelLatencyTest(rfm.RegressionTest):
     def __init__(self, kernel_version):
+<<<<<<< HEAD
         self.valid_systems = ['daint:gpu', 'dom:gpu',
                               'arolla:cn', 'tsa:cn',
                               'ault:amdv100', 'ault:intelv100',
                               'ault:amda100']
+=======
+        # List known partitions here so as to avoid specifying them every time
+        # with --system
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn']
+>>>>>>> master
         self.num_tasks = 0
         self.num_tasks_per_node = 1
         self.sourcepath = 'kernel_latency.cu'
         self.build_system = 'SingleSource'
         self.build_system.cxxflags = ['-std=c++11', '-O3']
         if self.current_system.name in {'dom', 'daint'}:
+<<<<<<< HEAD
+=======
+            self.num_gpus_per_node = 1
+            gpu_arch = '60'
+>>>>>>> master
             self.modules = ['craype-accel-nvidia60']
             self.valid_prog_environs = ['PrgEnv-cray_classic', 'PrgEnv-cray',
                                         'PrgEnv-pgi', 'PrgEnv-gnu']
@@ -87,10 +98,9 @@ class KernelLatencyTest(rfm.RegressionTest):
                 'ault:amdv100': {
                     'latency': (1.83, None, 0.10, 'us')
                 },
-               'ault:amda100': {
+                'ault:amda100': {
                     'latency': (2.7, None, 0.10, 'us')
                 },
-
             },
         }
 
