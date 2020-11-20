@@ -147,11 +147,23 @@ class GpuPointerChaseClockLatency(GpuPointerChaseDep):
         }
 
         self.reference = {
+            'daint:gpu': {
+                'clock_latency': (56, None, 0.1, 'cycles'),
+            },
+            'dom:gpu': {
+                'clock_latency': (56, None, 0.1, 'cycles'),
+            },
+            'tsa:cn': {
+                'clock_latency': (8, None, 0.1, 'cycles'),
+            },
             'ault:amda100': {
                 'clock_latency': (7, None, 0.1, 'cycles'),
             },
             'ault:amdv100': {
                 'clock_latency': (8, None, 0.1, 'cycles'),
+            },
+            'ault:amdvega': {
+                'clock_latency': (40, None, 0.1, 'cycles'),
             },
         }
 
