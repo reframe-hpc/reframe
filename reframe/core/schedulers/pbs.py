@@ -264,3 +264,8 @@ class PbsJobScheduler(sched.JobScheduler):
                 if (time.time() - job.submit_time >= job.max_pending_time):
                     self.cancel(job)
                     job._exception = JobError('maximum pending time exceeded')
+
+
+@register_scheduler('torque')
+class TorqueJobScheduler(PbsJobScheduler):
+    TASKS_OPT = '-l nodes={num_nodes}:ppn={num_cpus_per_node}'
