@@ -47,6 +47,9 @@ class GPUShmemTest(rfm.RegressionTest):
             'ault:amdv100': {
                 'bandwidth': (13020, -0.01, None, 'GB/s')
             },
+            'ault:intelv100': {
+                'bandwidth': (13020, -0.01, None, 'GB/s')
+            },
             'ault:amda100': {
                 'bandwidth': (18139, -0.01, None, 'GB/s')
             }

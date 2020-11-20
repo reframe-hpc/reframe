@@ -78,6 +78,14 @@ class GpuBurnTest(rfm.RegressionTest):
                 'perf': (17552, -0.10, None, 'Gflop/s'),
                 'max_temp': (0, None, None, 'Celsius')
             },
+            'ault:amdv100': {
+                'perf': (6203, -0.10, None, 'Gflop/s'),
+                'max_temp': (0, None, None, 'Celsius')
+            },
+            'ault:intelv100': {
+                'perf': (6203, -0.10, None, 'Gflop/s'),
+                'max_temp': (0, None, None, 'Celsius')
+            },
         }
 
         self.num_tasks = 0
