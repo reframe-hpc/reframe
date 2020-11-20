@@ -53,7 +53,7 @@
 #include "Xdevice/runtime.hpp"
 
 // List structure
-#include "pChase_list.hpp"
+#include "linked_list.hpp"
 
 
 template < class LIST >
@@ -66,7 +66,7 @@ uint32_t * generalPointerChase(int local_device, int remote_device, int init_mod
    *
    * - local_device: ID of the device where the allocation of the list takes place
    * - remote_device: ID of the device doing the pointer chase.
-   * - init_mode: see the class List.
+   * - init_mode: see the List class.
    * - buff_size: Size (in nodes) of the buffer.
    * - stride: Gap (in nodes) between two consecutive nodes. This only applies if init_mode is 0.
    */
@@ -143,6 +143,10 @@ void localPointerChase(int num_devices, int init_mode, size_t buffSize, size_t s
 
 void print_device_table(int num_devices, std::queue<uint32_t> q, const char * what, const char * nid)
 {
+  /*
+   * Print the data in a table format - useful when doing P2P list traversals.
+   */
+
   printf("[%s] %s memory latency (in clock cycles) with remote direct memory access\n", nid, what);
   printf("[%s] %10s", nid, "From \\ To ");
   for (int ds = 0; ds < num_devices; ds++)
@@ -174,11 +178,14 @@ void print_device_table(int num_devices, std::queue<uint32_t> q, const char * wh
   }
 }
 
+
 template < class LIST >
 void remotePointerChase(int num_devices, int init_mode, size_t buffSize, size_t stride, char * nid, int summarize)
 {
   /*
    * Specialised pointer chase to allocate the list in one device, and do the pointer chase from another device.
+   * - summarize: if different than zero, the results will be printed in a table format with the function above.
+   *   Otherwise, every single result will be printed out.
    */
 
 # ifndef TIME_EACH_STEP

@@ -9,12 +9,14 @@
 
 __global__ void clockLatency(int * clk)
 {
+  // This returns the clock latency when reading the 64-bit clock counter.
   clk[0] = XClockLatency<int>();
 }
 
 
 void printClockLatency(char * nid, int dev)
 {
+  /* Prints the latency of reading the clock cycles */
   int * clk_d;
   int clk;
   XSetDevice(dev);
@@ -128,7 +130,11 @@ template < unsigned int repeat >
 __device__ __forceinline__ void nextNode( __VOLATILE__ Node ** ptr, uint32_t * timer, Node ** ptrs)
 {
   /*
-   * Go to the next node in the list
+   * Recursive function to traverse the list.
+   * - ptr: Pointer of a pointer to a node in the linked list.
+   * - timer: Array to store the timings of each individual node jump.
+   *   Only used if this option is activated (-DTIME_EACH_STEP)
+   * - ptrs: Just used to have a data dependency to block ILP.
    */
 
 # ifdef TIME_EACH_STEP
@@ -138,7 +144,7 @@ __device__ __forceinline__ void nextNode( __VOLATILE__ Node ** ptr, uint32_t * t
   (*ptr) = (*ptr)->next;
 # ifdef TIME_EACH_STEP
   (*ptrs) = (Node*)(*ptr);  // Data dep. to prevent ILP.
-  *timer = clocks.end(); // Time the jump
+  *timer = clocks.end();    // Time the jump
 # endif
 
   // Keep traversing the list.
@@ -153,7 +159,7 @@ __device__ __forceinline__ void  nextNode<0>( __VOLATILE__ Node ** ptr, uint32_t
 __global__ void timed_list_traversal(Node * __restrict__ buffer, uint32_t headIndex, uint32_t * timer)
 {
   /* Timed List traversal - we make a singly-linked list circular just to have a data dep. and
-   * prevent from compiler optimisations.
+   * cover from compiler optimisations.
    */
 
   // These are used to prevent ILP when timing each jump.
@@ -169,6 +175,7 @@ __global__ void timed_list_traversal(Node * __restrict__ buffer, uint32_t headIn
   clocks.start();
 #endif
 
+  // Traverse the list
   nextNode<NODES-1>(&ptr, s_timer, ptrs);
 
 #ifndef TIME_EACH_STEP
@@ -207,7 +214,7 @@ struct List
    *
    * The member functions are:
    *  - info: prints the list details.
-   *  - initialize: populatest the buffer with the list nodes.
+   *  - initialize: populate the buffer with the list nodes.
    *  - traverse: simple list traversal.
    *  - timed_traverse: traverses the list and measures the number of cycles per node jump.
    */
