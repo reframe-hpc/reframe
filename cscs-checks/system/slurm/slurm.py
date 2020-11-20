@@ -187,3 +187,57 @@ class MemoryOverconsumptionCheck(SlurmCompiledBaseCheck):
     @rfm.run_before('run')
     def set_memory_limit(self):
         self.job.options += ['--mem=2000']
+
+
+@rfm.simple_test
+class MemoryMpiCheck(SlurmCompiledBaseCheck):
+    def __init__(self):
+        super().__init__()
+        self.valid_systems.append('eiger:mc')
+        self.time_limit = '5m'
+        self.sourcepath = 'eatmemory_mpi.c'
+        self.tags.add('mem')
+        self.executable_opts = ['100%']
+        self.sanity_patterns = sn.assert_found(r'(oom-kill)|(Killed)',
+                                               self.stderr)
+        # {{{ perf
+        regex = (r'^Eating 256 MB\/mpi \*\d+mpi = -\d+ MB Mem: total: \d+ GB, '
+                 r'free: \d+ GB, avail: \d+ GB, using: (\d+) GB')
+        self.perf_patterns = {
+            'max_cn_memory': sn.getattr(self, 'reference_meminfo'),
+            'max_allocated_memory': sn.max(sn.extractall(regex, self.stdout, 1,
+                                           int)),
+        }
+        no_limit = (0, None, None, 'GB')
+        self.reference = {
+            '*': {
+                'max_cn_memory': no_limit,
+                'max_allocated_memory': (sn.getattr(self, 'reference_meminfo'),
+                                         -0.05, 0.05, 'GB'),
+            }
+        }
+        # }}}
+
+    # {{{ hooks
+    @rfm.run_before('run')
+    def set_tasks(self):
+        tasks_per_node = {
+            'dom:mc': 36,
+            'daint:mc': 36,
+            'dom:gpu': 12,
+            'daint:gpu': 12,
+            'eiger:mc': 128,
+        }
+        self.num_tasks_per_node = \
+            tasks_per_node[self.current_partition.fullname]
+        self.num_tasks = self.num_tasks_per_node
+        self.job.launcher.options = ['-u']
+
+    @rfm.run_before('sanity')
+    def get_meminfo(self):
+        regex_mem = r'^Currently avail memory: (\d+)'
+        # regex_mem = r'^Currently total memory: (\d+)'
+        self.reference_meminfo = \
+            sn.extractsingle(regex_mem, self.stdout, 1,
+                             conv=lambda x: int(int(x) / 1024**3))
+    # }}}
