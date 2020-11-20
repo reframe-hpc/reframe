@@ -122,7 +122,6 @@ class KernelLatencyTest(rfm.RegressionTest):
             self.build_system.cxxflags += ['-arch=compute_%s' % gpu_arch,
                                            '-code=sm_%s' % gpu_arch]
 
-
     @rfm.run_before('run')
     def set_num_gpus_per_node(self):
         cp = self.current_partition.fullname

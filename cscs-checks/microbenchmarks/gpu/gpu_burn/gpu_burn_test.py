@@ -114,6 +114,5 @@ class GpuBurnTest(rfm.RegressionTest):
             self.num_gpus_per_node = 4
         elif cp in {'ault:amdv100'}:
             self.num_gpus_per_node = 2
-        else
+        else:
             self.num_gpus_per_node = 1
-
