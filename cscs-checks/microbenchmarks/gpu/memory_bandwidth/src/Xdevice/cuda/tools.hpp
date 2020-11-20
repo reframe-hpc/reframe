@@ -147,6 +147,14 @@ using XClocks64 = __XClocks<uint64_t>;
 using XClocks = __XClocks<>;
 
 
+template<class T>
+__device__ T XClockLatency()
+{
+  uint64_t start = XClock64();
+  uint64_t end   = XClock64();
+  return (T)(end-start);
+}
+
 __device__ __forceinline__ int __smId()
 {
   // SM ID

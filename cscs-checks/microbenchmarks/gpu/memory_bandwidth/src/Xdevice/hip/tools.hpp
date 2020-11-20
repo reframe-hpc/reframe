@@ -83,7 +83,7 @@ __device__ __forceinline__ T __XSyncClock()
   asm volatile (
                 "s_waitcnt vmcnt(0) & lgkmcnt(0) & expcnt(0);\n\t"
                 "s_memtime %0;"
-                : "=r"(x)
+                : "=s"(x)
                );
   return (T)x;
 }
@@ -106,7 +106,7 @@ __device__ __forceinline__ T __XClock()
   uint64_t x;
   asm volatile ("s_memtime %0; \t\n"
                 "s_waitcnt lgkmcnt(0);"
-                : "=r"(x)
+                : "=s"(x)
                );
   return (T)x;
 }
@@ -144,6 +144,34 @@ public:
 
 using XClocks = __XClocks<>;
 using XClocks64 = __XClocks<uint64_t>;
+
+
+__device__ void __clockLatency64( uint64_t * clk)
+{
+  /*
+   * There's a bit of a weird compiler behaviour when computing the
+   * clock latency by doing 2 consecutive calls to XClock. To go
+   * around this issue, we implement this straight with inline asm.
+   */
+  uint64_t c0, c1;
+  asm volatile ("s_memtime %[a];\n\t"
+                "s_waitcnt lgkmcnt(0);\n\t"
+                "s_memtime %[b];\n\t"
+                "s_waitcnt lgkmcnt(0);\n\t"
+                "s_mov_b64 %[c] %[a];\n\t"
+                "s_mov_b64 %[d] %[b];\n\t"
+                "s_waitcnt lgkmcnt(0);\n\t"
+                :[a]"=s"(c0), [b]"=s"(c1), [c]"=r"(clk[0]), [d]"=r"(clk[1]) :: "memory");
+}
+
+
+template <class T>
+__device__ T XClockLatency()
+{
+  uint64_t c[2];
+  __clockLatency64(c);
+  return (T)(c[1]-c[0]);
+}
 
 
 __device__ __forceinline__ int __smId()

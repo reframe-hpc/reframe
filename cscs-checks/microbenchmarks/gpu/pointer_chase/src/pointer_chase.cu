@@ -263,6 +263,7 @@ int main(int argc, char ** argv)
   size_t buffSize = NODES*stride;
   int multiGPU = 0;
   int print_mode = 0;
+  int clock = 0;
 
   // Parse the command line args.
   for (int i = 0; i < argc; i++)
@@ -279,6 +280,7 @@ int main(int argc, char ** argv)
       std::cout << "              This measures the device-to-device memory latency." << std::endl;
       std::cout << "--summary   : When timing each node jump individually and used alongside --multiGPU, " << std::endl;
       std::cout << "              this collapses the output into two tables with the min and max latencies." << std::endl;
+      std::cout << "--clock     : Skip all the above and just print the clock latency for all devices." << std::endl;
       std::cout << "--help (-h) : I guess you figured what this does already ;)" << std::endl;
       return 0;
     }
@@ -303,6 +305,10 @@ int main(int argc, char ** argv)
     else if (str == "--summary")
     {
       print_mode = 1;
+    }
+    else if (str == "--clock")
+    {
+      clock = 1;
     }
   }
 
@@ -330,13 +336,23 @@ int main(int argc, char ** argv)
     printf("[%s] Found %d device(s).\n", nid_name, num_devices);
   }
 
-  if (!multiGPU)
+  if (clock)
   {
-    localPointerChase<LIST_TYPE>(num_devices, list_init_mode, buffSize, stride, nid_name);
+    for (int i = 0; i < num_devices; i++)
+    {
+      printClockLatency(nid_name,i);
+    }
   }
   else
   {
-    remotePointerChase<LIST_TYPE>(num_devices, list_init_mode, buffSize, stride, nid_name, print_mode);
+    if (!multiGPU)
+    {
+      localPointerChase<LIST_TYPE>(num_devices, list_init_mode, buffSize, stride, nid_name);
+    }
+    else
+    {
+      remotePointerChase<LIST_TYPE>(num_devices, list_init_mode, buffSize, stride, nid_name, print_mode);
+    }
   }
 
   printf("[%s] Pointer chase complete.\n", nid_name);

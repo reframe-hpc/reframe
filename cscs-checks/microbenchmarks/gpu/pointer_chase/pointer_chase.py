@@ -129,6 +129,33 @@ class GpuPointerChaseDep(GpuPointerChaseBase):
             CompileGpuPointerChase().stagedir, 'pChase.x')
 
 
+@rfm.simple_test
+class GpuPointerChaseClockLatency(GpuPointerChaseDep):
+    '''
+    Check the clock latencies. This can be thought of the
+    measuring error.
+    '''
+    def __init__(self):
+        super().__init__()
+        self.valid_systems = Pchase.valid_systems
+        self.executable_opts = ['--clock']
+        self.perf_patterns = {
+            'clock_latency': sn.max(sn.extractall(
+                r'^\s*\[[^\]]*\]\s*The clock latency on device \d+ '
+                r'is (\d+) cycles.', self.stdout, 1, int)
+            ),
+        }
+
+        self.reference = {
+            'ault:amda100': {
+                'clock_latency': (7, None, 0.1, 'cycles'),
+            },
+            'ault:amdv100': {
+                'clock_latency': (8, None, 0.1, 'cycles'),
+            },
+        }
+
+
 @rfm.parameterized_test([1], [2], [4], [4096])
 class GpuPointerChaseSingle(GpuPointerChaseDep):
     '''
@@ -350,9 +377,9 @@ class GpuPointerChaseL1(GpuPointerChaseFineDep, L1_filter):
                 'L1_miss_latency': (240, None, 0.1, 'clock cycles'),
             },
             'ault:amda100': {
-                'L1_latency': (70, None, 0.1, 'clock cycles'),
+                'L1_latency': (42, None, 0.1, 'clock cycles'),
                 'L1_misses': (25.4, None, 0.1, '%'),
-                'L1_miss_latency': (243, None, 0.1, 'clock cycles'),
+                'L1_miss_latency': (215, None, 0.1, 'clock cycles'),
             },
             'ault:amdv100': {
                 'L1_latency': (39, None, 0.1, 'clock cycles'),
@@ -455,9 +482,9 @@ class GpuPointerChaseL1P2P(GpuPointerChaseFineDep, L1_filter):
                 'L1_miss_latency': (1463, None, 0.1, 'clock cycles'),
             },
             'ault:amda100': {
-                'L1_latency': (70, None, 0.1, 'clock cycles'),
+                'L1_latency': (42, None, 0.1, 'clock cycles'),
                 'L1_miss_rate': (25.4, None, 0.1, '%'),
-                'L1_miss_latency': (822, None, 0.1, 'clock cycles'),
+                'L1_miss_latency': (792, None, 0.1, 'clock cycles'),
             },
             'ault:amdv100': {
                 'L1_latency': (39, None, 0.1, 'clock cycles'),

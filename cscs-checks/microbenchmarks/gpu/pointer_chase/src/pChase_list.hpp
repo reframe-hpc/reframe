@@ -7,18 +7,23 @@
  */
 
 
-__device__ uint32_t __clockLatency()
+__global__ void clockLatency(int * clk)
 {
-  uint32_t start = XClock();
-  uint32_t end = XClock();
-  return end-start;
+  clk[0] = XClockLatency<int>();
 }
 
 
-__global__ void clockLatency()
+void printClockLatency(char * nid, int dev)
 {
-  uint32_t clkLatency = __clockLatency();
-  printf(" - Clock latency is %d.\n", clkLatency);
+  int * clk_d;
+  int clk;
+  XSetDevice(dev);
+  XMalloc((void**)&clk_d, sizeof(int));
+  clockLatency<<<1,1>>>(clk_d);
+  XDeviceSynchronize();
+  XMemcpy(&clk, clk_d, sizeof(int), XMemcpyDeviceToHost);
+  XFree(clk_d);
+  printf("[%s] The clock latency on device %d is %d cycles.\n", nid, dev, clk);
 }
 
 
@@ -127,7 +132,7 @@ __device__ __forceinline__ void nextNode( __VOLATILE__ Node ** ptr, uint32_t * t
    */
 
 # ifdef TIME_EACH_STEP
-  XClocks clocks;
+  XClocks64 clocks;
   clocks.start();
 # endif
   (*ptr) = (*ptr)->next;
@@ -160,7 +165,7 @@ __global__ void timed_list_traversal(Node * __restrict__ buffer, uint32_t headIn
 
 #ifndef TIME_EACH_STEP
   // start timer
-  XClocks clocks;
+  XClocks64 clocks;
   clocks.start();
 #endif
 
@@ -232,7 +237,6 @@ struct List
     printf(" - Node size: %lu\n", sizeof(Node));
     printf(" - Number of nodes: %lu:\n", n);
     printf(" - Total buffer size: %10.2f MB:\n", float(sizeof(Node)*buffSize)/1024.0/1024);
-    clockLatency<<<1,1>>>();
     XDeviceSynchronize();
   }
 
