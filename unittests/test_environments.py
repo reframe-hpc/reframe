@@ -255,6 +255,9 @@ def test_emit_loadenv_commands_with_confict(base_environ, user_runtime,
 def test_emit_loadenv_commands_mapping_with_conflict(base_environ,
                                                      user_runtime,
                                                      modules_system):
+    if modules_system.name == 'tmod4':
+        pytest.skip('test scenario not valid for tmod4')
+
     e0 = env.Environment(name='e0', modules=['testmod_ext'])
     ms = rt.runtime().modules_system
     ms.load_mapping('testmod_ext: testmod_ext testmod_foo')
