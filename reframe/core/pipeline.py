@@ -148,6 +148,17 @@ class RegressionTest(metaclass=RegressionTestMeta):
         '''
         cls._rfm_disabled_hooks.add(hook_name)
 
+    @classmethod
+    def pipeline_hooks(cls):
+        ret = {}
+        for c in cls.mro():
+            if hasattr(c, '_rfm_pipeline_hooks'):
+                for kind, hook in c._rfm_pipeline_hooks.items():
+                    ret.setdefault(kind, [])
+                    ret[kind] += hook
+
+        return ret
+
     #: The name of the test.
     #:
     #: :type: string that can contain any character except ``/``
