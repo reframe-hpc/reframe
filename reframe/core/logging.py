@@ -165,7 +165,40 @@ def _format_time_rfc3339(timestamp, datefmt):
     return re.sub(r'(%)?\:z', tz_rfc3339, time.strftime(datefmt, timestamp))
 
 
-class RFC3339Formatter(logging.Formatter):
+class DynamicFieldFormatter(logging.Formatter):
+    def __init__(self, fmt=None, datefmt=None, style='%'):
+        super().__init__(fmt, datefmt, style)
+        self.__extras = {}
+        fmt = re.findall(r'\%\((check_\S+?)\)s', fmt)
+        for v in set(fmt):
+            if v not in self.__extras:
+                self.__extras[v] = None
+
+    def _fmt_check_attr(self, val):
+        if isinstance(val, list) or isinstance(val, tuple):
+            return ','.join(val)
+        else:
+            return val
+
+    def format(self, record):
+        if record.check:
+            for spec in self.__extras.keys():
+                _, *attr = spec.split('_')
+                if spec in record.__dict__.keys():
+                    continue
+
+                record.__dict__[spec] = self.__extras[spec]
+                if attr[0] == 'job' and record.check.job:
+                    self.__extras[spec] = self._fmt_check_attr(
+                        getattr(record.check.job, '_'.join(attr[1:])))
+                else:
+                    self.__extras[spec] = self._fmt_check_attr(
+                        getattr(record.check, '_'.join(attr)))
+
+        return super().format(record)
+
+
+class RFC3339Formatter(DynamicFieldFormatter):
     def formatTime(self, record, datefmt=None):
         datefmt = datefmt or self.default_time_format
         if '%:z' not in datefmt:
@@ -385,7 +418,9 @@ class Logger(logging.Logger):
 
 class LoggerAdapter(logging.LoggerAdapter):
     def __init__(self, logger=None, check=None):
-        extra_vars = {
+        super().__init__(
+            logger,
+            {
                 'check_name': 'reframe',
                 'check_jobid': '-1',
                 'check_job_completion_time': None,
@@ -408,20 +443,8 @@ class LoggerAdapter(logging.LoggerAdapter):
                 'check_tags': None,
                 'version': osext.reframe_version(),
             }
-
-        self.user_log_vars = []
-        if logger:
-            log_vars = []
-            for h in logger.handlers:
-                fmt = re.findall(r'\%\((check_\S+?)\)s', h.formatter._fmt)
-                log_vars.extend(fmt)
-
-            for v in set(log_vars):
-                if v not in extra_vars:
-                    extra_vars[v] = None
-                    self.user_log_vars.append(v)
-
-        super().__init__(logger, extra_vars)
+        )
+        self.extra['check'] = check
         self.check = check
         self.colorize = False
 
@@ -463,13 +486,6 @@ class LoggerAdapter(logging.LoggerAdapter):
             if self.check.job.completion_time:
                 ct = self.check.job.completion_time
                 self.extra['check_job_completion_time_unix'] = ct
-
-        for v in self.user_log_vars:
-            _, *var_name = v.split('_')
-            if var_name[0] == 'job' and self.check.job:
-                self.extra[v] = getattr(self.check.job, '_'.join(var_name[1:]))
-            else:
-                self.extra[v] = getattr(self.check, '_'.join(var_name))
 
     def log_performance(self, level, tag, value, ref,
                         low_thres, upper_thres, unit=None, *, msg=None):
