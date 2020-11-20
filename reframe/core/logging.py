@@ -169,10 +169,9 @@ class DynamicFieldFormatter(logging.Formatter):
     def __init__(self, fmt=None, datefmt=None, style='%'):
         super().__init__(fmt, datefmt, style)
         self.__extras = {}
-        fmt = re.findall(r'\%\((check_\S+?)\)s', fmt)
-        for v in set(fmt):
-            if v not in self.__extras:
-                self.__extras[v] = None
+        log_vars = re.findall(r'\%\((check_\S+?)\)s', fmt)
+        for v in set(log_vars):
+            self.__extras.setdefault(v, None)
 
     def _fmt_check_attr(self, val):
         if isinstance(val, list) or isinstance(val, tuple):
