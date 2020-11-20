@@ -467,7 +467,7 @@ def test_submit_max_pending_time(make_job, exec_ctx, scheduler):
     def state(self):
         if scheduler.registered_name in ('slurm', 'squeue'):
             return 'PENDING'
-        elif scheduler.registered_name == 'torque':
+        elif scheduler.registered_name in ('pbs', 'torque'):
             return 'QUEUED'
         else:
             # This should not happen
