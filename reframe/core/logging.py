@@ -258,7 +258,7 @@ def _create_file_handler(site_config, config_prefix):
 
 def _create_filelog_handler(site_config, config_prefix):
     basedir = os.path.abspath(site_config.get(f'{config_prefix}/basedir'))
-    prefix = site_config.get(f'{config_prefix}/prefix')
+    prefix  = site_config.get(f'{config_prefix}/prefix')
     filename_patt = os.path.join(basedir, prefix)
     append = site_config.get(f'{config_prefix}/append')
     return MultiFileHandler(filename_patt, mode='a+' if append else 'w+')
@@ -450,7 +450,7 @@ class LoggerAdapter(logging.LoggerAdapter):
                 'check_perf_lower_thres': None,
                 'check_perf_upper_thres': None,
                 'check_perf_unit': None,
-                'osuser':  osext.osuser() or '<unknown>',
+                'osuser':  osext.osuser()  or '<unknown>',
                 'osgroup': osext.osgroup() or '<unknown>',
                 'version': osext.reframe_version(),
             }
