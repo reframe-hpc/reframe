@@ -35,6 +35,9 @@ def fake_check():
                            getlauncher('local')(),
                            'fakejob')
     test.job._completion_time = time.time()
+    test.custom = 'hello extras'
+    test.custom_list = ['custom', 'attr']
+    test.custom_dict = {'a': 1, 'b': 2}
     return test
 
 
@@ -42,7 +45,8 @@ def fake_check():
 def rfc3339formatter():
     return rlog.RFC3339Formatter(
         fmt='[%(asctime)s] %(levelname)s: %(check_name)s: %(message)s',
-        datefmt='%FT%T')
+        datefmt='%FT%T'
+    )
 
 
 @pytest.fixture
@@ -146,12 +150,23 @@ def test_logger_levels(logfile, logger_with_check):
     assert _pattern_in_logfile('foo', logfile)
 
 
+def test_logger_dynamic_attributes(logfile, logger_with_check):
+    formatter = rlog.RFC3339Formatter('%(check_custom)s|%(check_custom_list)s|'
+                                      '%(check_foo)s|%(check_custom_dict)s')
+    logger_with_check.logger.handlers[0].setFormatter(formatter)
+    logger_with_check.info('xxx')
+    assert _pattern_in_logfile(
+        r'hello extras\|custom,attr\|None\|a=1,b=2', logfile
+    )
+
+
 def test_rfc3339_timezone_extension(logfile, logger_with_check,
                                     logger_without_check):
     formatter = rlog.RFC3339Formatter(
         fmt=('[%(asctime)s] %(levelname)s: %(check_name)s: '
              'ct:%(check_job_completion_time)s: %(message)s'),
-        datefmt='%FT%T%:z')
+        datefmt='%FT%T%:z'
+    )
     logger_with_check.logger.handlers[0].setFormatter(formatter)
     logger_with_check.info('foo')
     logger_without_check.info('foo')

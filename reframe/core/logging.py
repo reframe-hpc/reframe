@@ -9,7 +9,6 @@ import logging
 import logging.handlers
 import numbers
 import os
-import pprint
 import re
 import shutil
 import sys
@@ -145,7 +144,7 @@ class MultiFileHandler(logging.FileHandler):
         except OSError as e:
             raise LoggingError('logging failed') from e
 
-        self.baseFilename = os.path.join(dirname, record.check_name + '.log')
+        self.baseFilename = os.path.join(dirname, record.check.name + '.log')
         self.stream = self._streams.get(self.baseFilename, None)
         super().emit(record)
         self._streams[self.baseFilename] = self.stream
@@ -165,39 +164,54 @@ def _format_time_rfc3339(timestamp, datefmt):
     return re.sub(r'(%)?\:z', tz_rfc3339, time.strftime(datefmt, timestamp))
 
 
-class DynamicFieldFormatter(logging.Formatter):
+def _xfmt(val):
+    if isinstance(val, str):
+        return val
+
+    if isinstance(val, collections.abc.Mapping):
+        return ','.join(f'{k}={v}' for k, v in val.items())
+
+    if isinstance(val, collections.abc.Iterable):
+        return ','.join(val)
+
+    return val
+
+
+class CheckFieldFormatter(logging.Formatter):
+    '''Log formatter that dynamically looks up format specifiers inside a
+    regression test.'''
+
     def __init__(self, fmt=None, datefmt=None, style='%'):
         super().__init__(fmt, datefmt, style)
-        self.__extras = {}
-        log_vars = re.findall(r'\%\((check_\S+?)\)s', fmt)
-        for v in set(log_vars):
-            self.__extras.setdefault(v, None)
 
-    def _fmt_check_attr(self, val):
-        if isinstance(val, list) or isinstance(val, tuple):
-            return ','.join(val)
-        else:
-            return val
+        # NOTE: This will work only when style='%'
+        self.__extras = {
+            spec: None for spec in re.findall(r'\%\((check_\S+?)\)s', fmt)
+        }
+
+        # Set the default value for 'check_name'
+        if 'check_name' in self.__extras:
+            self.__extras['check_name'] = 'reframe'
 
     def format(self, record):
+        # Fill in the check-specific record attributes
         if record.check:
-            for spec in self.__extras.keys():
-                _, *attr = spec.split('_')
-                if spec in record.__dict__.keys():
+            for spec in self.__extras:
+                if hasattr(record, spec):
+                    # Attribute set elsewhere
                     continue
 
-                record.__dict__[spec] = self.__extras[spec]
-                if attr[0] == 'job' and record.check.job:
-                    self.__extras[spec] = self._fmt_check_attr(
-                        getattr(record.check.job, '_'.join(attr[1:])))
-                else:
-                    self.__extras[spec] = self._fmt_check_attr(
-                        getattr(record.check, '_'.join(attr)))
+                attr = spec.split('_', maxsplit=1)[1]
+                val = getattr(record.check, attr, None)
+                record.__dict__[spec] = _xfmt(val)
+        else:
+            # Update record with the dynamic extras even if check is not set
+            record.__dict__.update(self.__extras)
 
         return super().format(record)
 
 
-class RFC3339Formatter(DynamicFieldFormatter):
+class RFC3339Formatter(CheckFieldFormatter):
     def formatTime(self, record, datefmt=None):
         datefmt = datefmt or self.default_time_format
         if '%:z' not in datefmt:
@@ -420,7 +434,9 @@ class LoggerAdapter(logging.LoggerAdapter):
         super().__init__(
             logger,
             {
-                'check_name': 'reframe',
+                # Here we only set the format specifiers that do not
+                # correspond directly to check attributes
+                'check': check,
                 'check_jobid': '-1',
                 'check_job_completion_time': None,
                 'check_job_completion_time_unix': None,
@@ -428,9 +444,6 @@ class LoggerAdapter(logging.LoggerAdapter):
                 'check_system': None,
                 'check_partition': None,
                 'check_environ': None,
-                'check_outputdir': None,
-                'check_stagedir': None,
-                'check_num_tasks': None,
                 'check_perf_var': None,
                 'check_perf_value': None,
                 'check_perf_ref': None,
@@ -439,11 +452,9 @@ class LoggerAdapter(logging.LoggerAdapter):
                 'check_perf_unit': None,
                 'osuser':  osext.osuser() or '<unknown>',
                 'osgroup': osext.osgroup() or '<unknown>',
-                'check_tags': None,
                 'version': osext.reframe_version(),
             }
         )
-        self.extra['check'] = check
         self.check = check
         self.colorize = False
 
@@ -465,12 +476,7 @@ class LoggerAdapter(logging.LoggerAdapter):
         if self.check is None:
             return
 
-        self.extra['check_name'] = self.check.name
         self.extra['check_info'] = self.check.info()
-        self.extra['check_outputdir'] = self.check.outputdir
-        self.extra['check_stagedir'] = self.check.stagedir
-        self.extra['check_num_tasks'] = self.check.num_tasks
-        self.extra['check_tags'] = ','.join(self.check.tags)
         if self.check.current_system:
             self.extra['check_system'] = self.check.current_system.name
 
