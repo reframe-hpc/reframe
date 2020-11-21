@@ -19,6 +19,7 @@ import reframe.core.logging as rlog
 import reframe.core.runtime as rt
 import reframe.core.settings as settings
 import reframe.utility as util
+import reframe.utility.sanity as sn
 from reframe.core.exceptions import ConfigError, ReframeError
 from reframe.core.backends import (getlauncher, getscheduler)
 from reframe.core.schedulers import Job
@@ -29,6 +30,10 @@ def fake_check():
     class _FakeCheck(rfm.RegressionTest):
         pass
 
+    @sn.sanity_function
+    def error():
+        raise BaseException
+
     # A bit hacky, but we don't want to run a full test every time
     test = _FakeCheck()
     test._job = Job.create(getscheduler('local')(),
@@ -38,6 +43,8 @@ def fake_check():
     test.custom = 'hello extras'
     test.custom_list = ['custom', 'attr']
     test.custom_dict = {'a': 1, 'b': 2}
+    test.deferred = sn.defer('hello')
+    test.deferred_error = error()
     return test
 
 
@@ -156,8 +163,17 @@ def test_logger_dynamic_attributes(logfile, logger_with_check):
     logger_with_check.logger.handlers[0].setFormatter(formatter)
     logger_with_check.info('xxx')
     assert _pattern_in_logfile(
-        r'hello extras\|custom,attr\|None\|a=1,b=2', logfile
+        r'hello extras\|custom,attr\|<undefined>\|a=1,b=2', logfile
     )
+
+
+def test_logger_dynamic_attributes_deferrables(logfile, logger_with_check):
+    formatter = rlog.RFC3339Formatter(
+        '%(check_deferred)s|%(check_deferred_error)s'
+    )
+    logger_with_check.logger.handlers[0].setFormatter(formatter)
+    logger_with_check.info('xxx')
+    assert _pattern_in_logfile(r'hello\|<error>', logfile)
 
 
 def test_rfc3339_timezone_extension(logfile, logger_with_check,

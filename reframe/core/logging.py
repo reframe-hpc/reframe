@@ -165,6 +165,17 @@ def _format_time_rfc3339(timestamp, datefmt):
 
 
 def _xfmt(val):
+    from reframe.core.deferrable import _DeferredExpression
+
+    if val is None:
+        return '<undefined>'
+
+    if isinstance(val, _DeferredExpression):
+        try:
+            return val.evaluate()
+        except BaseException:
+            return '<error>'
+
     if isinstance(val, str):
         return val
 
@@ -222,7 +233,7 @@ class RFC3339Formatter(CheckFieldFormatter):
 
     def format(self, record):
         datefmt = self.datefmt or self.default_time_format
-        if record.check_job_completion_time_unix is not None:
+        if record.check_job_completion_time_unix != _xfmt(None):
             ct = self.converter(record.check_job_completion_time_unix)
             record.check_job_completion_time = _format_time_rfc3339(
                 ct, datefmt
@@ -437,21 +448,21 @@ class LoggerAdapter(logging.LoggerAdapter):
                 # Here we only set the format specifiers that do not
                 # correspond directly to check attributes
                 'check': check,
-                'check_jobid': '-1',
-                'check_job_completion_time': None,
-                'check_job_completion_time_unix': None,
+                'check_jobid': _xfmt(None),
+                'check_job_completion_time': _xfmt(None),
+                'check_job_completion_time_unix': _xfmt(None),
                 'check_info': 'reframe',
-                'check_system': None,
-                'check_partition': None,
-                'check_environ': None,
-                'check_perf_var': None,
-                'check_perf_value': None,
-                'check_perf_ref': None,
-                'check_perf_lower_thres': None,
-                'check_perf_upper_thres': None,
-                'check_perf_unit': None,
-                'osuser':  osext.osuser()  or '<unknown>',
-                'osgroup': osext.osgroup() or '<unknown>',
+                'check_system': _xfmt(None),
+                'check_partition': _xfmt(None),
+                'check_environ': _xfmt(None),
+                'check_perf_var': _xfmt(None),
+                'check_perf_value': _xfmt(None),
+                'check_perf_ref': _xfmt(None),
+                'check_perf_lower_thres': _xfmt(None),
+                'check_perf_upper_thres': _xfmt(None),
+                'check_perf_unit': _xfmt(None),
+                'osuser':  _xfmt(osext.osuser()),
+                'osgroup': _xfmt(osext.osgroup()),
                 'version': osext.reframe_version(),
             }
         )
