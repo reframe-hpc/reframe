@@ -7,11 +7,15 @@ FROM ubuntu:20.04
 ENV TZ=Europe/Zurich
 ENV DEBIAN_FRONTEND=noninteractive
 ENV _TMOD_VER=4.6.0
-WORKDIR /root
+
+# ReFrame user
+RUN useradd -ms /bin/bash rfmuser
 
 # ReFrame requirements
 RUN \
   apt-get -y update && \
+  apt-get -y install ca-certificates && \
+  update-ca-certificates && \
   apt-get -y install gcc && \
   apt-get -y install make && \
   apt-get -y install git && \
@@ -31,9 +35,13 @@ RUN \
 
 ENV BASH_ENV=/usr/local/Modules/init/profile.sh
 
-# Install ReFrame from the current directory
-COPY . /root/reframe/
-RUN cd reframe && ./bootstrap.sh
+USER rfmuser
 
-WORKDIR /root/reframe
+# Install ReFrame from the current directory
+COPY --chown=rfmuser . /home/rfmuser/reframe/
+
+WORKDIR /home/rfmuser/reframe
+
+RUN ./bootstrap.sh
+
 CMD ["/bin/bash", "-c", "./test_reframe.py --rfm-user-config=ci-scripts/configs/tmod4.py -v"]

@@ -14,19 +14,12 @@ class MultiDeviceOpenaccTest(rfm.RegressionTest):
             'Allocate one accelerator per MPI task using OpenACC on '
             'multi-device nodes with additional CUDA, MPI, and C++ calls'
         )
-        self.valid_systems = ['arolla:cn', 'tsa:cn', 'kesch:cn']
+        self.valid_systems = ['arolla:cn', 'tsa:cn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
         self.build_system = 'Make'
         self.build_system.makefile = 'Makefile.multi_device_openacc'
         self.build_system.fflags = ['-O2']
-        if self.current_system.name == 'kesch':
-            self.exclusive_access = True
-            self.modules = ['cudatoolkit/8.0.61']
-            self.num_tasks = 9
-            self.num_tasks_per_node = 9
-            self.num_gpus_per_node = 8
-            self.build_system.options = ['NVCC_FLAGS="-arch=compute_37"']
-        elif self.current_system.name in ['arolla', 'tsa']:
+        if self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
             self.modules = ['cuda/10.1.243']
             self.num_tasks = 9
@@ -44,14 +37,7 @@ class MultiDeviceOpenaccTest(rfm.RegressionTest):
     def setflags(self):
         if self.current_environ.name.startswith('PrgEnv-pgi'):
             self.build_system.fflags += ['-acc']
-            if self.current_system.name == 'kesch':
-                self.build_system.fflags += ['-ta=tesla,cc35,cuda8.0']
-                self.build_system.ldflags = [
-                    '-acc', '-ta:tesla:cc35,cuda8.0', '-lstdc++',
-                    '-L/global/opt/nvidia/cudatoolkit/8.0.61/lib64',
-                    '-lcublas', '-lcudart'
-                ]
-            elif self.current_system.name in ['arolla', 'tsa']:
+            if self.current_system.name in ['arolla', 'tsa']:
                 self.build_system.fflags += ['-ta=tesla,cc70,cuda10.1']
                 self.build_system.ldflags = [
                     '-acc', '-ta:tesla:cc70,cuda10.1', '-lstdc++',

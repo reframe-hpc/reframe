@@ -26,9 +26,9 @@ class NCOBaseTest(rfm.RunOnlyRegressionTest):
     def __init__(self):
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'CDO-NCO')
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'kesch:pn', 'arolla:pn', 'tsa:pn']
-        if self.current_system.name in ['arolla', 'kesch', 'tsa']:
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu',
+                              'dom:mc', 'arolla:pn', 'tsa:pn']
+        if self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-gnu-nompi',
                                         'PrgEnv-gnu-nompi-nocuda']
@@ -88,7 +88,7 @@ class NCO_CDOModuleCompatibilityTest(NCOBaseTest):
         self.sanity_patterns = sn.assert_not_found(
             r'(?i)error|conflict|unsupported|failure', self.stderr)
 
-        if self.current_system.name in ['arolla', 'kesch', 'tsa']:
+        if self.current_system.name in ['arolla', 'tsa']:
             cdo_name = 'cdo'
         else:
             cdo_name = 'CDO'

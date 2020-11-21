@@ -148,6 +148,17 @@ class RegressionTest(metaclass=RegressionTestMeta):
         '''
         cls._rfm_disabled_hooks.add(hook_name)
 
+    @classmethod
+    def pipeline_hooks(cls):
+        ret = {}
+        for c in cls.mro():
+            if hasattr(c, '_rfm_pipeline_hooks'):
+                for kind, hook in c._rfm_pipeline_hooks.items():
+                    ret.setdefault(kind, [])
+                    ret[kind] += hook
+
+        return ret
+
     #: The name of the test.
     #:
     #: :type: string that can contain any character except ``/``
@@ -169,7 +180,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:        Support for wildcards is dropped.
     #:
     valid_prog_environs = fields.TypedField('valid_prog_environs',
-                                            typ.List[str])
+                                            typ.List[str], type(None))
 
     #: List of systems supported by this test.
     #: The general syntax for systems is ``<sysname>[:<partname>]``.
@@ -178,7 +189,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    valid_systems = fields.TypedField('valid_systems', typ.List[str])
+    valid_systems = fields.TypedField('valid_systems',
+                                      typ.List[str], type(None))
 
     #: A detailed description of the test.
     #:
@@ -708,6 +720,21 @@ class RegressionTest(metaclass=RegressionTestMeta):
     extra_resources = fields.TypedField('extra_resources',
                                         typ.Dict[str, typ.Dict[str, object]])
 
+    #: .. versionadded:: 3.3
+    #:
+    #: Always build the source code for this test locally. If set to
+    #: :class:`False`, ReFrame will spawn a build job on the partition where
+    #: the test will run. Setting this to :class:`False` is useful when
+    #: cross-compilation is not supported on the system where ReFrame is run.
+    #: Normally, ReFrame will mark the test as a failure if the spawned job
+    #: exits with a non-zero exit code. However, certain scheduler backends,
+    #: such as the ``squeue`` do not set it. In such cases, it is the user's
+    #: responsibility to check whether the build phase failed by adding an
+    #: appropriate sanity check.
+    #:
+    #: :type: boolean : :default: :class:`True`
+    build_locally = fields.TypedField('build_locally', bool)
+
     def __new__(cls, *args, **kwargs):
         obj = super().__new__(cls)
 
@@ -726,7 +753,12 @@ class RegressionTest(metaclass=RegressionTestMeta):
             if osext.is_interactive():
                 prefix = os.getcwd()
             else:
-                prefix = os.path.abspath(os.path.dirname(inspect.getfile(cls)))
+                try:
+                    prefix = cls._rfm_pinned_prefix
+                except AttributeError:
+                    prefix = os.path.abspath(
+                        os.path.dirname(inspect.getfile(cls))
+                    )
 
         obj._rfm_init(name, prefix)
         return obj
@@ -735,17 +767,24 @@ class RegressionTest(metaclass=RegressionTestMeta):
         pass
 
     @classmethod
-    def __init_subclass__(cls, *, special=False, **kwargs):
+    def __init_subclass__(cls, *, special=False, pin_prefix=False, **kwargs):
         super().__init_subclass__(**kwargs)
         cls._rfm_special_test = special
+
+        # Insert the prefix to pin the test to if the test lives in a test
+        # library with resources in it.
+        if pin_prefix:
+            cls._rfm_pinned_prefix = os.path.abspath(
+                os.path.dirname(inspect.getfile(cls))
+            )
 
     def _rfm_init(self, name=None, prefix=None):
         if name is not None:
             self.name = name
 
         self.descr = self.name
-        self.valid_prog_environs = []
-        self.valid_systems = []
+        self.valid_prog_environs = None
+        self.valid_systems = None
         self.sourcepath = ''
         self.prebuild_cmds = []
         self.postbuild_cmds = []
@@ -776,6 +815,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         # True only if check is to be run locally
         self.local = False
+        self.build_locally = True
 
         # Static directories of the regression check
         self._prefix = os.path.abspath(prefix)
@@ -1037,10 +1077,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
         except OSError as e:
             raise PipelineError('failed to set up paths') from e
 
-    def _setup_job(self, **job_opts):
+    def _setup_job(self, name, force_local=False, **job_opts):
         '''Setup the job related to this check.'''
 
-        if self.local:
+        if force_local:
             scheduler = getscheduler('local')()
             launcher = getlauncher('local')()
         else:
@@ -1048,18 +1088,18 @@ class RegressionTest(metaclass=RegressionTestMeta):
             launcher = self._current_partition.launcher_type()
 
         self.logger.debug(
-            f'Setting up run job descriptor '
+            f'Setting up job {name!r} '
             f'(scheduler: {scheduler.registered_name!r}, '
             f'launcher: {launcher.registered_name!r})'
         )
-        self._job = Job.create(scheduler,
-                               launcher,
-                               name='rfm_%s_job' % self.name,
-                               workdir=self._stagedir,
-                               max_pending_time=self.max_pending_time,
-                               sched_access=self._current_partition.access,
-                               sched_exclusive_access=self.exclusive_access,
-                               **job_opts)
+        return Job.create(scheduler,
+                          launcher,
+                          name=name,
+                          workdir=self._stagedir,
+                          max_pending_time=self.max_pending_time,
+                          sched_access=self._current_partition.access,
+                          sched_exclusive_access=self.exclusive_access,
+                          **job_opts)
 
     def _setup_perf_logging(self):
         self._perf_logger = logging.getperflogger(self)
@@ -1088,7 +1128,12 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self._current_partition = partition
         self._current_environ = environ
         self._setup_paths()
-        self._setup_job(**job_opts)
+        self._job = self._setup_job(f'rfm_{self.name}_job',
+                                    self.local,
+                                    **job_opts)
+        self._build_job = self._setup_job(f'rfm_{self.name}_build',
+                                          self.local or self.build_locally,
+                                          **job_opts)
 
     def _copy_to_stagedir(self, path):
         self.logger.debug(f'Copying {path} to stage directory')
@@ -1190,10 +1235,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
         environs = [self._current_partition.local_env, self._current_environ,
                     user_environ, self._cdt_environ]
 
-        self._build_job = Job.create(getscheduler('local')(),
-                                     launcher=getlauncher('local')(),
-                                     name='rfm_%s_build' % self.name,
-                                     workdir=self._stagedir)
         with osext.change_dir(self._stagedir):
             try:
                 self._build_job.prepare(
@@ -1224,8 +1265,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
         '''
         self._build_job.wait()
 
-        # FIXME: this check is not reliable for certain scheduler backends
-        if self._build_job.exitcode != 0:
+        # We raise a BuildError when we an exit code and it is non zero
+        if self._build_job.exitcode:
             raise BuildError(self._build_job.stdout, self._build_job.stderr)
 
     @_run_hooks('pre_run')
@@ -1759,6 +1800,20 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
     module.
     '''
 
+    @_run_hooks()
+    def setup(self, partition, environ, **job_opts):
+        '''The setup stage of the regression test pipeline.
+
+        Similar to the :func:`RegressionTest.setup`, except that no build job
+        is created for this test.
+        '''
+        self._current_partition = partition
+        self._current_environ = environ
+        self._setup_paths()
+        self._job = self._setup_job(f'rfm_{self.name}_job',
+                                    self.local,
+                                    **job_opts)
+
     def compile(self):
         '''The compilation phase of the regression test pipeline.
 
@@ -1801,21 +1856,20 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
     module.
     '''
 
-    def _rfm_init(self, *args, **kwargs):
-        super()._rfm_init(*args, **kwargs)
-        self.local = True
-
     @_run_hooks()
     def setup(self, partition, environ, **job_opts):
         '''The setup stage of the regression test pipeline.
 
-        Similar to the :func:`RegressionTest.setup`, except that no job
-        descriptor is set up for this test.
+        Similar to the :func:`RegressionTest.setup`, except that no run job
+        is created for this test.
         '''
         # No need to setup the job for compile-only checks
         self._current_partition = partition
         self._current_environ = environ
         self._setup_paths()
+        self._build_job = self._setup_job(f'rfm_{self.name}_build',
+                                          self.local or self.build_locally,
+                                          **job_opts)
 
     @property
     @sn.sanity_function

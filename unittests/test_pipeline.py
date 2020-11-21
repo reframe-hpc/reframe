@@ -18,6 +18,7 @@ from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
                                      SanityError)
 from reframe.frontend.loader import RegressionCheckLoader
 from unittests.resources.checks.hellocheck import HelloTest
+from unittests.resources.checks.pinnedcheck import PinnedTest
 
 
 def _run(test, partition, prgenv):
@@ -188,6 +189,12 @@ def test_hellocheck_local(hellotest, local_exec_ctx):
         assert os.path.exists(os.path.join(hellotest.outputdir, f))
 
 
+def test_hellocheck_build_remotely(hellotest, remote_exec_ctx):
+    hellotest.build_locally = False
+    _run(hellotest, *remote_exec_ctx)
+    assert not hellotest.build_job.scheduler.is_local
+
+
 def test_hellocheck_local_prepost_run(hellotest, local_exec_ctx):
     @sn.sanity_function
     def stagedir(test):
@@ -282,6 +289,15 @@ def test_compile_only_warning(local_exec_ctx):
             self.sanity_patterns = sn.assert_found(r'warning', self.stderr)
 
     _run(MyTest(), *local_exec_ctx)
+
+
+def test_pinned_test(local_exec_ctx):
+    class MyTest(PinnedTest):
+        pass
+
+    pinned = MyTest()
+    expected_prefix = os.path.join(os.getcwd(), 'unittests/resources/checks')
+    assert pinned._prefix == expected_prefix
 
 
 def test_supports_system(hellotest, testsys_system):
@@ -617,6 +633,10 @@ def test_inherited_hooks(local_exec_ctx):
     _run(test, *local_exec_ctx)
     assert test.var == 2
     assert test.foo == 1
+    assert test.pipeline_hooks() == {
+        'post_setup': [DerivedTest.z, BaseTest.x],
+        'pre_run': [C.y],
+    }
 
 
 def test_overriden_hooks(local_exec_ctx):
@@ -713,7 +733,7 @@ def test_require_deps(local_exec_ctx):
             self.z = T0().x + 2
 
     cases = executors.generate_testcases([T0(), T1()])
-    deps = dependencies.build_deps(cases)
+    deps, _ = dependencies.build_deps(cases)
     for c in dependencies.toposort(deps):
         _run(*c)
 
