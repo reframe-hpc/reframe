@@ -379,7 +379,7 @@ class Runner:
     def stats(self):
         return self._stats
 
-    def runall(self, testcases, testcases_og=None):
+    def runall(self, testcases, restored_cases=None):
         num_checks = len({tc.check.name for tc in testcases})
         self._printer.separator('short double line',
                                 'Running %d check(s)' % num_checks)
@@ -388,10 +388,8 @@ class Runner:
         try:
             self._runall(testcases)
             if self._max_retries:
-                if testcases_og:
-                    self._retry_failed(testcases_og)
-                else:
-                    self._retry_failed(testcases)
+                restored_cases = restored_cases or []
+                self._retry_failed(testcases + restored_cases)
 
         finally:
             # Print the summary line

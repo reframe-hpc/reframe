@@ -747,6 +747,8 @@ def main():
             printer.debug(dependencies.format_deps(testgraph))
             if options.restore_session is not None:
                 testgraph, restored_cases = report.restore_dangling(testgraph)
+        else:
+            restored_cases = []
 
         testcases = dependencies.toposort(
             testgraph,
@@ -855,7 +857,7 @@ def main():
             session_info['time_start'] = time.strftime(
                 '%FT%T%z', time.localtime(time_start),
             )
-            runner.runall(testcases, testcases_all)
+            runner.runall(testcases, restored_cases)
         finally:
             time_end = time.time()
             session_info['time_end'] = time.strftime(
