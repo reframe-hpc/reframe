@@ -738,6 +738,8 @@ def main():
         dependencies.validate_deps(testgraph)
         printer.debug('Full test DAG:')
         printer.debug(dependencies.format_deps(testgraph))
+
+        restored_cases = []
         if len(testcases) != len(testcases_all):
             testgraph = dependencies.prune_deps(
                 testgraph, testcases,
@@ -747,8 +749,6 @@ def main():
             printer.debug(dependencies.format_deps(testgraph))
             if options.restore_session is not None:
                 testgraph, restored_cases = report.restore_dangling(testgraph)
-        else:
-            restored_cases = []
 
         testcases = dependencies.toposort(
             testgraph,
