@@ -14,6 +14,7 @@ import os
 import re
 import sys
 import types
+import weakref
 
 from collections import UserDict
 from . import typecheck as typ
@@ -268,6 +269,199 @@ def repr(obj, htchar=' ', lfchar='\n', indent=4, basic_offset=0):
 
     r = ppretty(obj.__dict__, htchar, lfchar, indent, basic_offset, repr)
     return f'{type(obj).__name__}({r})@{hex(id(obj))}'
+
+
+def _is_builtin_type(cls):
+    # NOTE: The set of types is copied from the copy.deepcopy() implementation
+    builtin_types = (type(None), int, float, bool, complex, str, tuple,
+                     bytes, frozenset, type, range, slice, property,
+                     type(Ellipsis), type(NotImplemented), weakref.ref,
+                     types.BuiltinFunctionType, types.FunctionType)
+
+    if not isinstance(cls, type):
+        return False
+
+    return any(t == cls for t in builtin_types)
+
+
+def _is_function_type(cls):
+    return (isinstance(cls, types.BuiltinFunctionType) or
+            isinstance(cls, types.FunctionType))
+
+
+def attr_validator(validate_fn):
+    '''Validate object attributes recursively.
+
+    This returns a function which you can call with the object to check. It
+    will return :class:`True` if the :func:`validate_fn` returns :class:`True`
+    for all object attributes recursively. If the object to be validated is an
+    iterable, its elements will be validated individually.
+
+    :arg validate_fn: A callable that validates an object. It takes a single
+        argument, which is the object to validate.
+
+    :returns: A validation function that will perform the actual validation.
+        It accepts a single argument, which is the object to validate. It
+        returns a two-element tuple, containing the result of the validation
+        as a boolean and a formatted string indicating the faulty attribute.
+
+    .. note::
+       Objects defining :attr:`__slots__` are passed directly to the
+       ``validate_fn`` function.
+
+    .. versionadded:: 3.3
+
+    '''
+
+    # Already visited objects
+    visited = set()
+    depth = 0
+
+    def _do_validate(obj, path=None):
+        def _fmt(path):
+            ret = ''
+            for p in path:
+                t, name = p
+                if t == 'A':
+                    ret += f'.{name}'
+                elif t == 'I':
+                    ret += f'[{name}]'
+                elif t == 'K':
+                    ret += f'[{name!r}]'
+
+            # Remove leading '.'
+            return ret[1:] if ret[0] == '.' else ret
+
+        nonlocal depth
+
+        def _clean_cache():
+            nonlocal depth
+
+            depth -= 1
+            if depth == 0:
+                # We are exiting the top-level call
+                visited.clear()
+
+        depth += 1
+        visited.add(id(obj))
+        if path is None:
+            path = [('A', type(obj).__name__)]
+
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                if id(v) in visited:
+                    continue
+
+                path.append(('K', k))
+                valid, _ = _do_validate(v, path)
+                if not valid:
+                    _clean_cache()
+                    return False, _fmt(path)
+
+                path.pop()
+
+            _clean_cache()
+            return True, _fmt(path)
+
+        if (isinstance(obj, list) or
+            isinstance(obj, tuple) or
+            isinstance(obj, set)):
+            for i, x in enumerate(obj):
+                if id(x) in visited:
+                    continue
+
+                path.append(('I', i))
+                valid, _ = _do_validate(x, path)
+                if not valid:
+                    _clean_cache()
+                    return False, _fmt(path)
+
+                path.pop()
+
+            _clean_cache()
+            return True, _fmt(path)
+
+        valid = validate_fn(obj)
+        if not valid:
+            _clean_cache()
+            return False, _fmt(path)
+
+        # Stop here if obj is a built-in type
+        if isinstance(obj, type) and _is_builtin_type(obj):
+            return True, _fmt(path)
+
+        if hasattr(obj, '__dict__'):
+            for k, v in obj.__dict__.items():
+                if id(v) in visited:
+                    continue
+
+                path.append(('A', k))
+                valid, _ = _do_validate(v, path)
+                if not valid:
+                    _clean_cache()
+                    return False, _fmt(path)
+
+                path.pop()
+
+        _clean_cache()
+        return True, _fmt(path)
+
+    return _do_validate
+
+
+def is_copyable(obj):
+    '''Check if an object can be copied with :py:func:`copy.deepcopy`, without
+    performing the copy.
+
+    This is a superset of :func:`is_picklable`. It returns :class:`True` also
+    in the following cases:
+
+    - The object defines a :func:`__copy__` method.
+    - The object defines a :func:`__deepcopy__` method.
+    - The object is a function.
+    - The object is a builtin type.
+
+    .. versionadded:: 3.3
+
+    '''
+
+    if hasattr(obj, '__copy__') or hasattr(obj, '__deepcopy__'):
+        return True
+
+    if _is_function_type(obj):
+        return True
+
+    if _is_builtin_type(obj):
+        return True
+
+    return is_picklable(obj)
+
+
+def is_picklable(obj):
+    '''Check if an object can be pickled.
+
+    .. versionadded:: 3.3
+
+    '''
+
+    if isinstance(obj, type):
+        return False
+
+    if hasattr(obj, '__reduce_ex__'):
+        try:
+            obj.__reduce_ex__(4)
+            return True
+        except TypeError:
+            return False
+
+    if hasattr(obj, '__reduce__'):
+        try:
+            obj.__reduce__()
+            return True
+        except TypeError:
+            return False
+
+    return False
 
 
 def shortest(*iterables):

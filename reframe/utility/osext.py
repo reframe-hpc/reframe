@@ -34,7 +34,8 @@ def run_command(cmd, check=False, timeout=None, shell=False, log=True):
     reached. It essentially calls :func:`run_command_async` and waits for the
     command's completion.
 
-    :arg cmd: The command to execute as a string.
+    :arg cmd: The command to execute as a string or a sequence. See
+        :func:`run_command_async` for more details.
     :arg check: Raise an error if the command exits with a non-zero exit code.
     :arg timeout: Timeout in seconds.
     :arg shell: Spawn a new shell to execute the command.
@@ -46,6 +47,7 @@ def run_command(cmd, check=False, timeout=None, shell=False, log=True):
         is :class:`True` and the command fails.
     :raises reframe.core.exceptions.SpawnedProcessTimeout: If the command
         times out.
+
     '''
 
     try:
@@ -58,7 +60,7 @@ def run_command(cmd, check=False, timeout=None, shell=False, log=True):
                                     proc.stdout.read(),
                                     proc.stderr.read(), timeout) from None
 
-    completed = subprocess.CompletedProcess(args=shlex.split(cmd),
+    completed = subprocess.CompletedProcess(cmd,
                                             returncode=proc.returncode,
                                             stdout=proc_stdout,
                                             stderr=proc_stderr)
@@ -79,9 +81,13 @@ def run_command_async(cmd,
                       **popen_args):
     '''Run command asynchronously.
 
-    This creates a :py:class:`subprocess.Popen` with
-    ``universal_newlines=True`` and returns.
+    A wrapper to :py:class:`subprocess.Popen` with the following tweaks:
 
+    - It always passes ``universal_newlines=True`` to :py:class:`Popen`.
+    - If ``shell=False`` and ``cmd`` is a string, it will lexically split
+      ``cmd`` using ``shlex.split(cmd)``.
+
+    :arg cmd: The command to run either as a string or a sequence of arguments.
     :arg stdout: Same as the corresponding argument of :py:class:`Popen`.
         Default is :py:obj:`subprocess.PIPE`.
     :arg stderr: Same as the corresponding argument of :py:class:`Popen`.
@@ -97,9 +103,9 @@ def run_command_async(cmd,
 
     if log:
         from reframe.core.logging import getlogger
-        getlogger().debug('executing OS command: ' + cmd)
+        getlogger().debug2(f'[CMD] {cmd!r}')
 
-    if not shell:
+    if isinstance(cmd, str) and not shell:
         cmd = shlex.split(cmd)
 
     return subprocess.Popen(args=cmd,
@@ -174,7 +180,8 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=shutil.copy2,
     ignore_paths = ignore(src, os.listdir(src)) if ignore else {}
     for f in files:
         if f not in ignore_paths:
-            copy_function(os.path.join(src, f), os.path.join(dst, f))
+            copy_function(os.path.join(src, f), os.path.join(dst, f),
+                          follow_symlinks=not symlinks)
 
     for d in subdirs:
         if d not in ignore_paths:
