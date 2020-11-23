@@ -315,6 +315,7 @@ def test_sticky_options():
     site_config.select_subconfig('testsys:login')
     site_config.add_sticky_option('environments/cc', 'clang')
     site_config.add_sticky_option('modes/options', ['foo'])
+    assert site_config.is_sticky_option('modes/options')
     assert site_config.get('environments/@PrgEnv-gnu/cc') == 'clang'
     assert site_config.get('environments/@PrgEnv-cray/cc') == 'clang'
     assert site_config.get('environments/@PrgEnv-cray/cxx') == 'CC'

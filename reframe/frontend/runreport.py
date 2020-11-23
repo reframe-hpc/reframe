@@ -36,6 +36,9 @@ class _RunReport:
             c, p, e = tc['name'], tc['system'], tc['environment']
             self._cases_index[c, p, e] = tc
 
+    def __getitem__(self, key):
+        return self._report[key]
+
     def __getattr__(self, name):
         return getattr(self._report, name)
 
@@ -51,10 +54,14 @@ class _RunReport:
                 continue
 
             if when is None:
-                returned.add(val)
+                if unique:
+                    returned.add(val)
+
                 yield val
             elif tc[when[0]] == when[1]:
-                returned.add(val)
+                if unique:
+                    returned.add(val)
+
                 yield val
 
     def case(self, check, part, env):

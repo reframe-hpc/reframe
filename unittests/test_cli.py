@@ -15,6 +15,7 @@ from io import StringIO
 
 import reframe.core.config as config
 import reframe.core.environments as env
+import reframe.frontend.runreport as runreport
 import reframe.core.logging as logging
 import reframe.core.runtime as rt
 import unittests.fixtures as fixtures
@@ -147,31 +148,58 @@ def test_check_success(run_reframe, tmp_path):
 
 
 def test_check_restore_session_failed(run_reframe, tmp_path):
-    returncode, stdout, _ = run_reframe(
+    run_reframe(
         checkpath=['unittests/resources/checks_unlisted/deps_complex.py'],
     )
     returncode, stdout, _ = run_reframe(
-        checkpath=['unittests/resources/checks_unlisted/deps_complex.py'],
+        checkpath=[],
         more_options=[
-            f'--restore-session={tmp_path}/report.json',
-            f'--failed'
+            f'--restore-session={tmp_path}/report.json', '--failed'
         ]
     )
-    with open(f'{tmp_path}/report.json') as fp:
-        report = json.load(fp)
+    report = runreport.load_report(f'{tmp_path}/report.json')
+    assert set(report.slice('name', when=('fail_phase', 'sanity'))) == {'T2'}
+    assert set(report.slice('name',
+                            when=('fail_phase', 'startup'))) == {'T7', 'T9'}
+    assert set(report.slice('name', when=('fail_phase', 'setup'))) == {'T8'}
+    assert report['runs'][-1]['num_cases'] == 4
 
-    report_summary = {
-        t['name']: t['fail_phase']
-        for run in report['runs']
-        for t in run['testcases']
-    }
-    assert report_summary['T2'] == 'sanity'
-    assert report_summary['T7'] == 'startup'
-    assert report_summary['T8'] == 'setup'
-    assert report_summary['T9'] == 'startup'
+    restored = {r['name'] for r in report['restored_cases']}
+    assert restored == {'T1', 'T6'}
 
-    assert all(i not in report_summary.keys()
-               for i in ['T0', 'T1', 'T3', 'T4', 'T5', 'T6'])
+
+def test_check_restore_session_succeeded_test(run_reframe, tmp_path):
+    run_reframe(
+        checkpath=['unittests/resources/checks_unlisted/deps_complex.py'],
+        more_options=['--keep-stage-files']
+    )
+    returncode, stdout, _ = run_reframe(
+        checkpath=[],
+        more_options=[
+            f'--restore-session={tmp_path}/report.json', '-n', 'T1'
+        ]
+    )
+    report = runreport.load_report(f'{tmp_path}/report.json')
+    assert report['runs'][-1]['num_cases'] == 1
+    assert report['runs'][-1]['testcases'][0]['name'] == 'T1'
+
+    restored = {r['name'] for r in report['restored_cases']}
+    assert restored == {'T4', 'T5'}
+
+
+def test_check_restore_session_check_search_path(run_reframe, tmp_path):
+    run_reframe(
+        checkpath=['unittests/resources/checks_unlisted/deps_complex.py']
+    )
+    returncode, stdout, _ = run_reframe(
+        checkpath=[f'{tmp_path}/foo'],
+        more_options=[
+            f'--restore-session={tmp_path}/report.json', '-n', 'T1', '-R'
+        ],
+        action='list'
+    )
+    assert returncode == 0
+    assert 'Found 0 check(s)' in stdout
 
 
 def test_check_success_force_local(run_reframe, tmp_path):
@@ -184,7 +212,7 @@ def test_check_success_force_local(run_reframe, tmp_path):
 
 
 def test_report_file_with_sessionid(run_reframe, tmp_path):
-    returncode, stdout, _ = run_reframe(
+    returncode, _, _ = run_reframe(
         more_options=[
             f'--report-file={tmp_path / "rfm-report-{sessionid}.json"}'
         ]

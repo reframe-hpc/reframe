@@ -592,6 +592,19 @@ def main():
         report = runreport.load_report(filename)
         check_search_path = list(report.slice('filename', unique=True))
         check_search_recursive = False
+
+        # If `-c` or `-R` are passed explicitly outside the configuration
+        # file, override the values set from the report file
+        if site_config.is_sticky_option('general/check_search_path'):
+            check_search_path = site_config.get(
+                'general/0/check_search_path'
+            )
+
+        if site_config.is_sticky_option('general/check_search_recursive'):
+            check_search_recursive = site_config.get(
+                'general/0/check_search_recursive'
+            )
+
     else:
         check_search_recursive = site_config.get(
             'general/0/check_search_recursive'
@@ -602,7 +615,8 @@ def main():
         load_path=check_search_path,
         recurse=check_search_recursive,
         ignore_conflicts=site_config.get(
-            'general/0/ignore_check_conflicts')
+            'general/0/ignore_check_conflicts'
+        )
     )
 
     def print_infoline(param, value):
