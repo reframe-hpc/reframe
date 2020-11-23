@@ -95,9 +95,11 @@ def test(cls):
             _register_test(cls)
             return cls
 
-        # Create iterator to cycle through all possible combinations in the parameter space.
+        # Create iterator to cycle through all possible combinations in the
+        # parameter space.
         def _param_space_iterator(cls):
-            return itertools.product(*[cls._rfm_params.get(k) for k in cls._rfm_params])
+            return itertools.product(*[cls._rfm_params.get(k)
+                                       for k in cls._rfm_params])
 
         cls._rfm_param_space_iter = _param_space_iterator(cls)
         for inst in _param_space_iterator(cls):

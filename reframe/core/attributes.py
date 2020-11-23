@@ -14,7 +14,8 @@ class InputParameter:
     test parameter inheritance/chaining.
     '''
 
-    def __init__(self, name, values=None, inherit_params=False, filt_params=None):
+    def __init__(self, name, values=None,
+                 inherit_params=False, filt_params=None):
         '''
         name: parameter name
         values: parameter values
@@ -111,7 +112,8 @@ class RegressionTestAttributes:
         '''
         Build the parameter space from the base clases.
         '''
-        # Temporary dict where we build the parameter space from the base clases
+        # Temporary dict where we build the parameter space from the base
+        # clases
         temp_parameter_space = {}
 
         # Iterate over the base classes and inherit the parameter space
@@ -124,7 +126,8 @@ class RegressionTestAttributes:
                              not self.get_parameter_stage().get(key).inherit_params) or
                             key in self._parameter_blacklist()):
 
-                            # Do not inherit a given parameter if the current class wants to override it.
+                            # Do not inherit a given parameter if the current
+                            # class wants to override it.
                             pass
 
                         else:
@@ -141,7 +144,8 @@ class RegressionTestAttributes:
                                 key, []) + temp_parameter_space.get(key, [])
 
                 else:
-                    # The base class does not have the attribute cls._rfm_params
+                    # The base class does not have the attribute
+                    # cls._rfm_params
                     pass
 
         return temp_parameter_space
@@ -152,7 +156,8 @@ class RegressionTestAttributes:
         Do the inherit+filter operations as defined in the for each input parameter in the
         parameter stage.
         '''
-        # Loop over the parameter stage. Each element is an instance of InputParameter.
+        # Loop over the parameter stage. Each element is an instance of
+        # InputParameter.
         for name, p in self.get_parameter_stage().items():
             parameter_space[name] = p.filt_params(parameter_space.get(name, [])) + p.values if (
                 p.inherit_params) else p.values
