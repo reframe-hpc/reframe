@@ -354,7 +354,7 @@ class ModulesSystem:
         return self._backend.searchpath_remove(*dirs)
 
     def emit_load_commands(self, name, collection=False):
-        '''Return the appropriate shell command for loading a module.
+        '''Return the appropriate shell commands for loading a module.
 
         Module mappings are not taken into account by this function.
 
@@ -373,7 +373,7 @@ class ModulesSystem:
         return [self._backend.emit_load_instr(Module(name, collection))]
 
     def emit_unload_commands(self, name, collection=False):
-        '''Return the appropriate shell command for unloading a module.
+        '''Return the appropriate shell commands for unloading a module.
 
         Module mappings are not taken into account by this function.
 
