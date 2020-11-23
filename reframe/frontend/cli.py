@@ -745,7 +745,7 @@ def main():
                     rt.modules_system.searchpath_remove(d[1:])
                 except errors.EnvironError as e:
                     printer.warning(
-                        f'could not unuse module path {d} correctly; '
+                        f'could not remove module path {d} correctly; '
                         f'skipping...'
                     )
                     printer.verbose(str(e))
@@ -754,14 +754,17 @@ def main():
                     rt.modules_system.searchpath_add(d[1:])
                 except errors.EnvironError as e:
                     printer.warning(
-                        f'could not use module path {d} correctly; '
+                        f'could not add module path {d} correctly; '
                         f'skipping...'
                     )
                     printer.verbose(str(e))
             else:
-                rt.modules_system.searchpath_remove(
-                    *rt.modules_system.searchpath
-                )
+                # Here we make sure that we don't try to remove an empty path
+                # from the searchpath
+                searchpath = [p for p in rt.modules_system.searchpath if p]
+                if searchpath:
+                    rt.modules_system.searchpath_remove(*searchpath)
+
                 rt.modules_system.searchpath_add(d)
 
         printer.debug('Loading user modules from command line')

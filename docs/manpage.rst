@@ -389,8 +389,8 @@ It does so by leveraging the selected system's environment modules system.
 
 .. option:: --module-path=PATH
 
-   Use ``PATH`` to manipulate the ``MODULEPATH`` before acting on any tests.
-   Paths starting with the `-` character are going to be removed from the ``MODULEPATH``, while the ones starting with the `+` character are going to be added to it.
+   Manipulate the ``MODULEPATH`` environment variable before acting on any tests.
+   If ``PATH`` starts with the `-` character it will be removed from the ``MODULEPATH``, whereas if it starts with the `+` character, it will be added to it.
    In all other cases, ``PATH`` will completely override MODULEPATH.
    This option may be specified multiple times, in which case all the paths specified will be added or removed in order.
 
