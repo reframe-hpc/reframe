@@ -215,7 +215,6 @@ class ModulesSystem:
         '''
         return self._backend.execute(cmd, *args)
 
-
     def load_module(self, name, force=False, collection=False):
         '''Load the module ``name``.
 
@@ -402,15 +401,13 @@ class ModulesSystemImpl(abc.ABC):
         try:
             exec_output = self._execute(cmd, *args)
         except SpawnedProcessError as e:
-            raise EnvironError from e
+            raise EnvironError('could not execute module operation') from e
 
         return exec_output
-
 
     @abc.abstractmethod
     def _execute(self, cmd, *args):
         '''Execute an arbitrary command of the module system.'''
-
 
     @abc.abstractmethod
     def available_modules(self, substr):

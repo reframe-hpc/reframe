@@ -12,9 +12,7 @@ import reframe.core.modules as modules
 import reframe.utility as util
 import reframe.utility.osext as osext
 import unittests.fixtures as fixtures
-from reframe.core.exceptions import (ConfigError,
-                                     EnvironError,
-                                     SpawnedProcessError)
+from reframe.core.exceptions import (ConfigError, EnvironError)
 from reframe.core.runtime import runtime
 
 

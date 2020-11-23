@@ -10,7 +10,7 @@ import pytest
 import reframe.core.environments as env
 import reframe.core.runtime as rt
 import unittests.fixtures as fixtures
-from reframe.core.exceptions import (EnvironError, SpawnedProcessError)
+from reframe.core.exceptions import EnvironError
 
 
 @pytest.fixture
