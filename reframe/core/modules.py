@@ -222,7 +222,6 @@ class ModulesSystem:
             conflicting modules currently loaded. If module ``name`` refers to
             multiple real modules, all of the target modules will be loaded.
         :arg collection: The module is a "module collection" (TMod4 only)
-
         :returns: A list of two-element tuples, where each tuple contains the
             module that was loaded and the list of modules that had to be
             unloaded first due to conflicts. This list will be normally of
@@ -355,14 +354,17 @@ class ModulesSystem:
         return self._backend.searchpath_remove(*dirs)
 
     def emit_load_commands(self, name, collection=False):
-        '''Return the appropriate shell command for loading module ``name``.
+        '''Return the appropriate shell command for loading a module.
+
+        Module mappings are not taken into account by this function.
 
         :arg name: The name of the module to load.
         :arg collection: The module is a "module collection" (TMod4 only)
         :returns: A list of shell commands.
 
         .. versionchanged:: 3.3
-           The ``collection`` argument was added.
+           The ``collection`` argument was added and module mappings are no
+           more taken into account by this function.
 
         '''
 
@@ -371,10 +373,18 @@ class ModulesSystem:
         return [self._backend.emit_load_instr(Module(name, collection))]
 
     def emit_unload_commands(self, name, collection=False):
-        '''Return the appropriate shell command for unloading module
-        ``name``.
+        '''Return the appropriate shell command for unloading a module.
 
-        :rtype: List[str]
+        Module mappings are not taken into account by this function.
+
+        :arg name: The name of the module to unload.
+        :arg collection: The module is a "module collection" (TMod4 only)
+        :returns: A list of shell commands.
+
+        .. versionchanged:: 3.3
+           The ``collection`` argument was added and module mappings are no
+           more taken into account by this function.
+
         '''
 
         # See comment in emit_load_commands()
