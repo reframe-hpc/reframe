@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import os
 import reframe as rfm
 import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
@@ -201,10 +202,6 @@ class MemoryMpiCheck(SlurmCompiledBaseCheck):
         self.sanity_patterns = sn.assert_found(r'(oom-kill)|(Killed)',
                                                self.stderr)
         # {{{ perf
-        regex_mem = r'^Currently avail memory: (\d+)'
-        self.reference_meminfo = \
-            sn.extractsingle(regex_mem, self.stdout, 1,
-                             conv=lambda x: int(int(x) / 1024**3))
         regex = (r'^Eating 256 MB\/mpi \*\d+mpi = -\d+ MB Mem: total: \d+ GB, '
                  r'free: \d+ GB, avail: \d+ GB, using: (\d+) GB')
         self.perf_patterns = {
@@ -236,4 +233,12 @@ class MemoryMpiCheck(SlurmCompiledBaseCheck):
             tasks_per_node[self.current_partition.fullname]
         self.num_tasks = self.num_tasks_per_node
         self.job.launcher.options = ['-u']
+
+    @rfm.run_after('run')
+    def get_meminfo(self):
+        regex_mem = r'^Currently avail memory: (\d+)'
+        abs_path = os.path.join(self.stagedir, str(self.stdout))
+        self.reference_meminfo = \
+            sn.extractsingle(regex_mem, abs_path, 1,
+                             conv=lambda x: int(int(x) / 1024**3))
     # }}}
