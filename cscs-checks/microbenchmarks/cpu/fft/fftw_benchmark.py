@@ -13,18 +13,14 @@ class FFTWTest(rfm.RegressionTest):
     def __init__(self, exec_mode):
         self.sourcepath = 'fftw_benchmark.c'
         self.build_system = 'SingleSource'
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu']
+        self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.modules = ['cray-fftw']
         self.num_tasks_per_node = 12
         self.num_gpus_per_node = 0
         self.sanity_patterns = sn.assert_eq(
             sn.count(sn.findall(r'execution time', self.stdout)), 1)
         self.build_system.cflags = ['-O2']
-        if self.current_system.name == 'kesch':
-            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
-            self.build_system.cflags += ['-I$FFTW_INC', '-L$FFTW_DIR',
-                                         '-lfftw3']
-        elif self.current_system.name in {'daint', 'dom', 'tiger'}:
+        if self.current_system.name in {'daint', 'dom'}:
             # Cray FFTW library is not officially supported for the PGI
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
 
@@ -44,9 +40,6 @@ class FFTWTest(rfm.RegressionTest):
                 'daint:gpu': {
                     'fftw_exec_time': (0.59, None, 0.05, 's'),
                 },
-                'kesch:cn': {
-                    'fftw_exec_time': (0.61, None, 0.05, 's'),
-                }
             }
         else:
             self.num_tasks = 72
@@ -58,9 +51,6 @@ class FFTWTest(rfm.RegressionTest):
                 'daint:gpu': {
                     'fftw_exec_time': (0.47, None, 0.50, 's'),
                 },
-                'kesch:cn': {
-                    'fftw_exec_time': (1.58, None, 0.50, 's'),
-                }
             }
 
         self.maintainers = ['AJ']

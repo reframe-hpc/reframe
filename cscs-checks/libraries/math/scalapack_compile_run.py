@@ -14,20 +14,12 @@ class ScaLAPACKTest(rfm.RegressionTest):
         self.linkage = linkage
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'scalapack')
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:mc',
-                              'dom:gpu', 'kesch:cn']
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:mc', 'dom:gpu']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel']
         self.num_tasks = 16
         self.num_tasks_per_node = 8
         self.variables = {'CRAYPE_LINK_TYPE': linkage}
-        if self.current_system.name == 'kesch':
-            self.exclusive_access = True
-            self.valid_prog_environs = ['PrgEnv-cray']
-            if linkage == 'static':
-                # Static linkage not supported on Kesch
-                self.valid_prog_environs = []
-
         self.build_system = 'SingleSource'
         self.build_system.fflags = ['-O3']
         self.maintainers = ['CB', 'LM']

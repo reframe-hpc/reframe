@@ -5,7 +5,5 @@ proc ModulesHelp { } {
 
 module-whatis { Helper module for ReFrame unit tests }
 
-conflict testmod_boo
-conflict testmod_bar
-
-setenv TESTMOD_BOO "BOO"
+module load testmod_base
+module load testmod_bar

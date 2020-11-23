@@ -20,11 +20,9 @@ import reframe.utility.sanity as sn
 class LibSciAccSymLinkTest(rfm.RunOnlyRegressionTest):
     def __init__(self, lib_name):
         self.descr = 'LibSciAcc symlink check of %s' % lib_name
-
         self.valid_systems = [
             'daint:login', 'daint:gpu',
             'dom:login', 'dom:gpu',
-            'tiger:login', 'tiger:gpu'
         ]
         regex = (r'libsci_acc_(?P<prgenv>[A-Za-z]+)_((?P<cver>[A-Za-z0-9]+)_)'
                  r'?(?P<version>\S+)')

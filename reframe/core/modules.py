@@ -82,7 +82,7 @@ class Module:
             return self.name == other.name and self.version == other.version
 
     def __repr__(self):
-        return '%s(%s)' % (type(self).__name__, self.fullname)
+        return f'{type(self).__name__}({self.fullname}, {self.collection})'
 
     def __str__(self):
         return self.fullname
@@ -222,15 +222,20 @@ class ModulesSystem:
             conflicting modules currently loaded. If module ``name`` refers to
             multiple real modules, all of the target modules will be loaded.
         :arg collection: The module is a "module collection" (TMod4 only)
-        :returns: the list of unloaded modules as strings.
+        :returns: A list of two-element tuples, where each tuple contains the
+            module that was loaded and the list of modules that had to be
+            unloaded first due to conflicts. This list will be normally of
+            size one, but it can be longer if there is mapping that maps
+            module ``name`` to multiple other modules.
 
         .. versionchanged:: 3.3
-           The ``collection`` argument was added.
+           - The ``collection`` argument was added.
+           - This function now returns a list of tuples.
 
         '''
         ret = []
         for m in self.resolve_module(name):
-            ret += self._load_module(m, force, collection)
+            ret.append((m, self._load_module(m, force, collection)))
 
         return ret
 
@@ -349,37 +354,41 @@ class ModulesSystem:
         return self._backend.searchpath_remove(*dirs)
 
     def emit_load_commands(self, name, collection=False):
-        '''Return the appropriate shell command for loading module ``name``.
+        '''Return the appropriate shell commands for loading a module.
+
+        Module mappings are not taken into account by this function.
 
         :arg name: The name of the module to load.
         :arg collection: The module is a "module collection" (TMod4 only)
         :returns: A list of shell commands.
 
         .. versionchanged:: 3.3
-           The ``collection`` argument was added.
+           The ``collection`` argument was added and module mappings are no
+           more taken into account by this function.
 
         '''
-        ret = []
-        for name in self.resolve_module(name):
-            cmds = self._backend.emit_load_instr(Module(name, collection))
-            if cmds:
-                ret.append(cmds)
 
-        return ret
+        # We don't consider module mappings here, because we cannot treat
+        # correctly possible conflicts
+        return [self._backend.emit_load_instr(Module(name, collection))]
 
     def emit_unload_commands(self, name, collection=False):
-        '''Return the appropriate shell command for unloading module
-        ``name``.
+        '''Return the appropriate shell commands for unloading a module.
 
-        :rtype: List[str]
+        Module mappings are not taken into account by this function.
+
+        :arg name: The name of the module to unload.
+        :arg collection: The module is a "module collection" (TMod4 only)
+        :returns: A list of shell commands.
+
+        .. versionchanged:: 3.3
+           The ``collection`` argument was added and module mappings are no
+           more taken into account by this function.
+
         '''
-        ret = []
-        for name in self.resolve_module(name):
-            cmds = self._backend.emit_unload_instr(Module(name, collection))
-            if cmds:
-                ret.append(cmds)
 
-        return ret
+        # See comment in emit_load_commands()
+        return [self._backend.emit_unload_instr(Module(name, collection))]
 
     def __str__(self):
         return str(self._backend)
