@@ -80,7 +80,7 @@ def test_module_load(modules_system):
         modules_system.load_module('foo')
         modules_system.unload_module('foo')
     else:
-        with pytest.raises(SpawnedProcessError):
+        with pytest.raises(EnvironError):
             modules_system.load_module('foo')
 
         assert not modules_system.is_module_loaded('foo')
@@ -307,7 +307,7 @@ def modules_system_emu():
         def conflicted_modules(self, module):
             return []
 
-        def execute(self, cmd, *args):
+        def _execute(self, cmd, *args):
             return ''
 
         def load_module(self, module):

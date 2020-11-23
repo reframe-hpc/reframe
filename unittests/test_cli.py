@@ -599,15 +599,13 @@ def test_unuse_module_path(run_reframe, user_exec_ctx, monkeypatch):
     module_path = 'unittests/modules'
     monkeypatch.setenv('MODULEPATH', module_path)
     returncode, stdout, stderr = run_reframe(
-        more_options=[f'--module-path=-{module_path}', '-m testmod_foo'],
+        more_options=[f'--module-path=-{module_path}', '--module=testmod_foo'],
         config_file=fixtures.USER_CONFIG_FILE, action='run',
         system=rt.runtime().system.name
     )
-
-    # Here we test that ReFrame fails to run because 'testmod_foo' cannot
-    # be found and therefore the module name is included in the given error
-    assert 'testmod_foo' in stdout
-    assert returncode == 1
+    assert "could not load module 'testmod_foo' correctly" in stdout
+    assert 'Traceback' not in stderr
+    assert returncode == 0
 
 
 def test_use_module_path(run_reframe, user_exec_ctx):
@@ -617,13 +615,14 @@ def test_use_module_path(run_reframe, user_exec_ctx):
 
     module_path = 'unittests/modules'
     returncode, stdout, stderr = run_reframe(
-        more_options=[f'--module-path=+{module_path}', '-m testmod_foo'],
+        more_options=[f'--module-path=+{module_path}', '--module=testmod_foo'],
         config_file=fixtures.USER_CONFIG_FILE, action='run',
         system=rt.runtime().system.name
     )
 
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
+    assert "could not load module 'testmod_foo' correctly" not in stdout
     assert returncode == 0
 
 
@@ -634,13 +633,14 @@ def test_overwrite_module_path(run_reframe, user_exec_ctx):
 
     module_path = 'unittests/modules'
     returncode, stdout, stderr = run_reframe(
-        more_options=[f'--module-path={module_path}', '-m testmod_foo'],
+        more_options=[f'--module-path={module_path}', '--module=testmod_foo'],
         config_file=fixtures.USER_CONFIG_FILE, action='run',
         system=rt.runtime().system.name
     )
 
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
+    assert "could not load module 'testmod_foo' correctly" not in stdout
     assert returncode == 0
 
 

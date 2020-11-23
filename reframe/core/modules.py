@@ -215,6 +215,7 @@ class ModulesSystem:
         '''
         return self._backend.execute(cmd, *args)
 
+
     def load_module(self, name, force=False, collection=False):
         '''Load the module ``name``.
 
@@ -391,9 +392,25 @@ class ModulesSystemImpl(abc.ABC):
     :meta private:
     '''
 
-    @abc.abstractmethod
     def execute(self, cmd, *args):
+        '''Execute an arbitrary module command using the modules backend.
+
+        :arg cmd: The command to execute, e.g., ``load``, ``restore`` etc.
+        :arg args: The arguments to pass to the command.
+        :returns: The command output.
+        '''
+        try:
+            exec_output = self._execute(cmd, *args)
+        except SpawnedProcessError as e:
+            raise EnvironError from e
+
+        return exec_output
+
+
+    @abc.abstractmethod
+    def _execute(self, cmd, *args):
         '''Execute an arbitrary command of the module system.'''
+
 
     @abc.abstractmethod
     def available_modules(self, substr):
@@ -530,7 +547,7 @@ class TModImpl(ModulesSystemImpl):
     def modulecmd(self, *args):
         return ' '.join(['modulecmd', 'python', *args])
 
-    def execute(self, cmd, *args):
+    def _execute(self, cmd, *args):
         modulecmd = self.modulecmd(cmd, *args)
         completed = osext.run_command(modulecmd)
         if re.search(r'ERROR', completed.stderr) is not None:
@@ -652,7 +669,7 @@ class TMod31Impl(TModImpl):
     def modulecmd(self, *args):
         return ' '.join([self._command, *args])
 
-    def execute(self, cmd, *args):
+    def _execute(self, cmd, *args):
         modulecmd = self.modulecmd(cmd, *args)
         completed = osext.run_command(modulecmd)
         if re.search(r'ERROR', completed.stderr) is not None:
@@ -713,7 +730,7 @@ class TMod4Impl(TModImpl):
     def modulecmd(self, *args):
         return ' '.join(['modulecmd', 'python', *args])
 
-    def execute(self, cmd, *args):
+    def _execute(self, cmd, *args):
         modulecmd = self.modulecmd(cmd, *args)
         completed = osext.run_command(modulecmd, check=False)
         namespace = {}
@@ -874,7 +891,7 @@ class NoModImpl(ModulesSystemImpl):
     def conflicted_modules(self, module):
         return []
 
-    def execute(self, cmd, *args):
+    def _execute(self, cmd, *args):
         return ''
 
     def load_module(self, module):

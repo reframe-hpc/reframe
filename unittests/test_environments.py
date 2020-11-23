@@ -258,7 +258,7 @@ def test_emit_loadenv_failure(user_runtime):
 
     # Suppress the module load error and verify that the original environment
     # is preserved
-    with contextlib.suppress(SpawnedProcessError):
+    with contextlib.suppress(EnvironError):
         rt.emit_loadenv_commands(environ)
 
     assert rt.snapshot() == snap
