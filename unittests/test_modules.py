@@ -112,13 +112,13 @@ def test_module_load_force(modules_system):
         modules_system.load_module('testmod_foo')
 
         unloaded = modules_system.load_module('testmod_foo', force=True)
-        assert 0 == len(unloaded)
+        assert unloaded == [('testmod_foo', [])]
         assert modules_system.is_module_loaded('testmod_foo')
 
         unloaded = modules_system.load_module('testmod_bar', force=True)
         assert modules_system.is_module_loaded('testmod_bar')
         assert not modules_system.is_module_loaded('testmod_foo')
-        assert 'testmod_foo' in unloaded
+        assert unloaded == [('testmod_bar', ['testmod_foo'])]
         assert 'TESTMOD_BAR' in os.environ
 
 
@@ -127,7 +127,7 @@ def test_module_load_force_collection(modules_system, module_collection):
     modules_system.load_module('testmod_bar')
     unloaded = modules_system.load_module(module_collection,
                                           force=True, collection=True)
-    assert unloaded == []
+    assert unloaded == [('test_collection', [])]
     assert modules_system.is_module_loaded('testmod_base')
     assert modules_system.is_module_loaded('testmod_foo')
 
@@ -165,7 +165,7 @@ def test_module_available_all(modules_system):
         assert modules == []
     else:
         assert (modules == ['testmod_bar', 'testmod_base',
-                            'testmod_boo', 'testmod_foo'])
+                            'testmod_boo', 'testmod_ext', 'testmod_foo'])
 
 
 def test_module_available_substr(modules_system):
