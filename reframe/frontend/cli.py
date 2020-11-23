@@ -770,7 +770,6 @@ def main():
         printer.debug('Loading user modules from command line')
         for m in site_config.get('general/0/user_modules'):
             try:
-                import pdb; pdb.set_trace()
                 rt.modules_system.load_module(**m, force=True)
             except errors.EnvironError as e:
                 printer.warning(
