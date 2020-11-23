@@ -360,6 +360,11 @@ def main():
         envvar='RFM_UNLOAD_MODULES ,', configvar='general/unload_modules'
     )
     env_options.add_argument(
+        '--module-path', action='append', metavar='PATH',
+        dest='module_paths', default=[],
+        help='(Un)use module path PATH before running any regression check',
+    )
+    env_options.add_argument(
         '--purge-env', action='store_true', dest='purge_env', default=False,
         help='Unload all modules before running any regression check',
         envvar='RFM_PURGE_ENVIRONMENT', configvar='general/purge_environment'
@@ -732,6 +737,35 @@ def main():
                           "please check your configuration")
             printer.debug(str(e))
             raise
+
+        printer.debug('(Un)using module paths from command line')
+        for d in options.module_paths:
+            if d.startswith('-'):
+                try:
+                    rt.modules_system.searchpath_remove(d[1:])
+                except errors.EnvironError as e:
+                    printer.warning(
+                        f'could not remove module path {d} correctly; '
+                        f'skipping...'
+                    )
+                    printer.verbose(str(e))
+            elif d.startswith('+'):
+                try:
+                    rt.modules_system.searchpath_add(d[1:])
+                except errors.EnvironError as e:
+                    printer.warning(
+                        f'could not add module path {d} correctly; '
+                        f'skipping...'
+                    )
+                    printer.verbose(str(e))
+            else:
+                # Here we make sure that we don't try to remove an empty path
+                # from the searchpath
+                searchpath = [p for p in rt.modules_system.searchpath if p]
+                if searchpath:
+                    rt.modules_system.searchpath_remove(*searchpath)
+
+                rt.modules_system.searchpath_add(d)
 
         printer.debug('Loading user modules from command line')
         for m in site_config.get('general/0/user_modules'):
