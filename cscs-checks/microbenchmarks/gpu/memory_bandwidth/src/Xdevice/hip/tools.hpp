@@ -149,19 +149,15 @@ using XClocks64 = __XClocks<uint64_t>;
 __device__ void __clockLatency64( uint64_t * clk)
 {
   /*
-   * There's a bit of a weird compiler behaviour when computing the
-   * clock latency by doing 2 consecutive calls to XClock. To go
-   * around this issue, we implement this straight with inline asm.
+   * Expose the latency of a clock read.
    */
-  uint64_t c0, c1;
-  asm volatile ("s_memtime %[a];\n\t"
+  asm volatile (
+                "s_waitcnt lgkmcnt(0);\n\t"
+                "s_memtime %[a];\n\t"
                 "s_waitcnt lgkmcnt(0);\n\t"
                 "s_memtime %[b];\n\t"
                 "s_waitcnt lgkmcnt(0);\n\t"
-                "s_mov_b64 %[c] %[a];\n\t"
-                "s_mov_b64 %[d] %[b];\n\t"
-                "s_waitcnt lgkmcnt(0);\n\t"
-                :[a]"=s"(c0), [b]"=s"(c1), [c]"=r"(clk[0]), [d]"=r"(clk[1]) :: "memory");
+                :[a]"=r"(clk[0]), [b]"=r"(clk[1]) :: "memory");
 }
 
 
