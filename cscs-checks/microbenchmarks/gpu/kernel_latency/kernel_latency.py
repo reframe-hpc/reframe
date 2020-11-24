@@ -14,44 +14,26 @@ class KernelLatencyTest(rfm.RegressionTest):
         self.valid_systems = ['daint:gpu', 'dom:gpu',
                               'arolla:cn', 'tsa:cn',
                               'ault:amdv100', 'ault:intelv100',
-                              'ault:amda100']
-        self.num_tasks = 0
-        self.num_tasks_per_node = 1
-        self.sourcepath = 'kernel_latency.cu'
-        self.build_system = 'SingleSource'
-        self.build_system.cxxflags = ['-std=c++11', '-O3']
-        if self.current_system.name in {'dom', 'daint'}:
-            self.num_gpus_per_node = 1
-            gpu_arch = '60'
-            self.modules = ['craype-accel-nvidia60']
+                              'ault:amda100', 'ault:amdvega']
+        cs = self.current_system.name
+        if cs in {'dom', 'daint'}:
             self.valid_prog_environs = ['PrgEnv-cray_classic', 'PrgEnv-cray',
                                         'PrgEnv-pgi', 'PrgEnv-gnu']
-        elif self.current_system.name in ['arolla', 'tsa']:
+        elif cs in {'arolla', 'tsa'}:
             self.valid_prog_environs = ['PrgEnv-pgi']
-            self.modules = ['cuda/10.1.243']
-        elif self.current_system.name in ['ault']:
+        elif cs in {'ault'}:
             self.valid_prog_environs = ['PrgEnv-gnu']
-            self.modules = ['cuda']
-        else:
-            self.num_gpus_per_node = 1
-            self.valid_systems = ['*']
-            self.valid_prog_environs = ['*']
 
+        self.num_tasks = 0
+        self.num_tasks_per_node = 1
+        self.build_system = 'Make'
+        self.executable = 'kernel_latency.x'
         if kernel_version == 'sync':
             self.build_system.cppflags = ['-D SYNCKERNEL=1']
         else:
             self.build_system.cppflags = ['-D SYNCKERNEL=0']
 
-        self.sanity_patterns = sn.all([
-            sn.assert_eq(
-                sn.count(sn.findall(r'\[\S+\] Found \d+ gpu\(s\)',
-                                    self.stdout)),
-                self.num_tasks_assigned),
-            sn.assert_eq(
-                sn.count(sn.findall(r'\[\S+\] \[gpu \d+\] Kernel launch '
-                                    r'latency: \S+ us', self.stdout)),
-                self.num_tasks_assigned * self.num_gpus_per_node)
-        ])
+        self.sanity_patterns = self.count_gpus()
 
         self.perf_patterns = {
             'latency': sn.max(sn.extractall(
@@ -75,6 +57,9 @@ class KernelLatencyTest(rfm.RegressionTest):
                 'ault:amda100': {
                     'latency': (9.65, None, 0.10, 'us')
                 },
+                'ault:amdv100': {
+                    'latency': (15.1, None, 0.10, 'us')
+                },
             },
             'async': {
                 'dom:gpu': {
@@ -92,6 +77,9 @@ class KernelLatencyTest(rfm.RegressionTest):
                 'ault:amda100': {
                     'latency': (2.7, None, 0.10, 'us')
                 },
+                'ault:amdvega': {
+                    'latency': (2.64, None, 0.10, 'us')
+                },
             },
         }
 
@@ -105,22 +93,42 @@ class KernelLatencyTest(rfm.RegressionTest):
     def num_tasks_assigned(self):
         return self.job.num_tasks
 
-    @rfm.run_before('compile')
+    @rfm.run_after('setup')
+    def select_makefile(self):
+        cp = self.current_partition.fullname
+        if cp == 'ault:amdvega':
+            self.prebuild_cmds = ['cp makefile.hip Makefile']
+        else:
+            self.prebuild_cmds = ['cp makefile.cuda Makefile']
+
+    @rfm.run_after('setup')
     def set_gpu_arch(self):
         cp = self.current_partition.fullname
-        cs = self.current_system.name
-        gpu_arch = None
-        if cs in {'dom', 'daint'}:
-            gpu_arch = '60'
-        elif (cs in {'arola', 'tsa'} or
-              cp in {'ault:amdv100', 'ault:intelv100'}):
-            gpu_arch = '70'
-        elif cp in {'ault:amda100'}:
-            gpu_arch = '80'
 
-        if gpu_arch:
-            self.build_system.cxxflags += ['-arch=compute_%s' % gpu_arch,
-                                           '-code=sm_%s' % gpu_arch]
+        # Deal with the NVIDIA options first
+        nvidia_sm = None
+        if cp in {'tsa:cn', 'ault:intelv100', 'ault:amdv100'}:
+            nvidia_sm = '70'
+        elif cp == 'ault:amda100':
+            nvidia_sm = '80'
+        elif cp in {'dom:gpu', 'daint:gpu'}:
+            nvidia_sm == '60'
+
+        if nvidia_sm:
+            self.build_system.cxxflags += [f'-arch=sm_{nvidia_sm}']
+            if cp in {'dom:gpu', 'daint:gpu'}:
+                self.modules += ['cudatoolkit']
+            else:
+                self.modules += ['cuda']
+
+        # Deal with the AMD options
+        amd_trgt = None
+        if cp == 'ault:amdvega':
+            amd_trgt = 'gfx906,gfx908'
+
+        if amd_trgt:
+            self.build_system.cxxflags += [f'--amdgpu-target={amd_trgt}']
+            self.modules += ['rocm']
 
     @rfm.run_before('run')
     def set_num_gpus_per_node(self):
@@ -134,3 +142,24 @@ class KernelLatencyTest(rfm.RegressionTest):
             self.num_gpus_per_node = 4
         elif cp in {'ault:amdav100'}:
             self.num_gpus_per_node = 2
+        elif cp in {'ault:amdvega'}:
+            self.num_gpus_per_node = 3
+
+    @sn.sanity_function
+    def count_gpus(self):
+        return sn.all([
+            sn.assert_eq(
+                sn.count(
+                    sn.findall(r'\[\S+\] Found \d+ gpu\(s\)',
+                               self.stdout)
+                ),
+                self.num_tasks_assigned
+            ),
+            sn.assert_eq(
+                sn.count(
+                    sn.findall(r'\[\S+\] \[gpu \d+\] Kernel launch '
+                               r'latency: \S+ us', self.stdout)
+                ),
+                self.num_tasks_assigned * self.num_gpus_per_node
+            )
+        ])
