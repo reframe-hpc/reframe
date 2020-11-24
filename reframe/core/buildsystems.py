@@ -375,6 +375,7 @@ class SingleSource(BuildSystem):
             raise BuildSystemError(
                 'a source file is required when using the %s build system' %
                 type(self).__name__)
+
         cc = self._cc(environ)
         cxx = self._cxx(environ)
         ftn = self._ftn(environ)
