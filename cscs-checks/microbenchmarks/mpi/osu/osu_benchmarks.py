@@ -10,12 +10,12 @@ import reframe.utility.sanity as sn
 import reframe.utility.udeps as udeps
 
 OSU_BENCH_VERSION = '5.6.3'
-NUM_NODES = 7
+NUM_NODES = 6
 
 
 def tsa_node_pairs():
     def nodeid(n):
-        return f'tsa-pp{n+8:03}'
+        return f'tsa-pp{n+15:03}'
 
     for u in range(NUM_NODES):
         for v in range(NUM_NODES):
