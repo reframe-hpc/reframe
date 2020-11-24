@@ -81,8 +81,8 @@ class OSUBaseRunTest(rfm.RunOnlyRegressionTest):
 
 
 @rfm.parameterized_test(
-    ['tsa-pp015', 'tsa-pp016', 'tsa-pp017'],
-    ['tsa-pp018', 'tsa-pp019', 'tsa-pp020']
+    ['tsa-pp015', 'tsa-pp016', 'tsa-pp017',
+     'tsa-pp018', 'tsa-pp019', 'tsa-pp020']
 )
 class OSUAlltoallvTest(OSUBaseRunTest):
 
@@ -112,8 +112,8 @@ class OSUAlltoallvTest(OSUBaseRunTest):
 
 
 @rfm.parameterized_test(
-    ['tsa-pp015', 'tsa-pp016', 'tsa-pp017'],
-    ['tsa-pp018', 'tsa-pp019', 'tsa-pp020']
+    ['tsa-pp015', 'tsa-pp016', 'tsa-pp017',
+     'tsa-pp018', 'tsa-pp019', 'tsa-pp020']
 )
 class OSUAllgathervTest(OSUBaseRunTest):
 
@@ -143,8 +143,8 @@ class OSUAllgathervTest(OSUBaseRunTest):
 
 
 @rfm.parameterized_test(
-    ['tsa-pp015', 'tsa-pp016', 'tsa-pp017'],
-    ['tsa-pp018', 'tsa-pp019', 'tsa-pp020']
+    ['tsa-pp015', 'tsa-pp016', 'tsa-pp017',
+     'tsa-pp018', 'tsa-pp019', 'tsa-pp020']
 )
 class OSUIBcastTest(OSUBaseRunTest):
 
@@ -221,7 +221,7 @@ class OSUBandwidthTest(OSUBaseRunTest):
         self.executable_opts = ['-x', '1000', '-i', '1500']
         self.perf_patterns = {
             'bandwidth': sn.extractsingle(r'^4194304\s+(?P<bandwidth>\S+)',
-                                           self.stdout, 'bandwidth', float)
+                                          self.stdout, 'bandwidth', float)
         }
         self.reference = {
             '*': {'bandwidth': (0, None, None, 'MB/s')}
