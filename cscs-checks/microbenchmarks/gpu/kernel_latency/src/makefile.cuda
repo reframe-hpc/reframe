@@ -1,0 +1,2 @@
+test:
+	nvcc -O3 -std=c++11 ${CXXFLAGS} -lnvidia-ml kernel_latency.cu -o kernel_latency.x

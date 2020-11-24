@@ -2,7 +2,8 @@
 #include <chrono>
 #include <ratio>
 #include <unistd.h>
-#include <cuda.h>
+
+#include "Xdevice/runtime.hpp"
 
 __global__ void null_kernel() {
 };
@@ -13,27 +14,20 @@ int main(int argc, char* argv[]) {
     hostname[255]='\0';
     gethostname(hostname, 255);
 
-    cudaError_t error;
     int gpu_count = 0;
+    XGetDeviceCount(&gpu_count);
 
-    error = cudaGetDeviceCount(&gpu_count);
-
-    if (error == cudaSuccess) {
-        if (gpu_count <= 0) {
-            std::cout << "[" << hostname << "] " << "Could not find any gpu\n";
-            return 1;
-        }
-        std::cout << "[" << hostname << "] " << "Found " << gpu_count << " gpu(s)\n";
-    }
-    else{
-        std::cout << "[" << hostname << "] " << "Error getting gpu count, exiting...\n";
+    if (gpu_count <= 0) {
+        std::cout << "[" << hostname << "] " << "Could not find any gpu\n";
         return 1;
     }
+    std::cout << "[" << hostname << "] " << "Found " << gpu_count << " gpu(s)\n";
 
-    for (int i = 0; i < gpu_count; i++) {
+    for (int i = 0; i < gpu_count; i++)
+    {
+        XSetDevice(i);
 
-        cudaSetDevice(i);
-        // Single kernel launch to initialize cuda runtime
+        // Warm-up kernel
         null_kernel<<<1, 1>>>();
 
         auto t_start = std::chrono::system_clock::now();
@@ -42,16 +36,20 @@ int main(int argc, char* argv[]) {
         for (int j = 0; j < kernel_count; ++j) {
             null_kernel<<<1, 1>>>();
             #if SYNCKERNEL == 1
-            cudaDeviceSynchronize();
+            XDeviceSynchronize();
             #endif
         }
 
         #if SYNCKERNEL != 1
-        cudaDeviceSynchronize();
+        XDeviceSynchronize();
         #endif
 
+        // End the timing
         auto t_end = std::chrono::system_clock::now();
-        std::cout << "[" << hostname << "] " << "[gpu " << i << "] " <<  "Kernel launch latency: " << std::chrono::duration_cast<std::chrono::duration<double, std::micro>>(t_end - t_start).count() / kernel_count << " us\n";
+        std::cout << "[" << hostname << "] " << "[gpu " << i << "] " <<
+            "Kernel launch latency: " <<
+            std::chrono::duration_cast<std::chrono::duration<double, std::micro>>(t_end - t_start).count() / kernel_count <<
+            " us\n";
     }
 
     return 0;

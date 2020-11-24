@@ -64,9 +64,9 @@ void XDeviceSynchronize()
   checkError( hipDeviceSynchronize() );
 }
 
-void XGetDeviceCount(int &devices)
+void XGetDeviceCount(int * devices)
 {
-  checkError( hipGetDeviceCount(&devices) );
+  checkError( hipGetDeviceCount(devices) );
 }
 
 void XSetDevice(int device)

@@ -63,9 +63,9 @@ void XDeviceSynchronize()
   checkError( cudaDeviceSynchronize() );
 }
 
-void XGetDeviceCount(int &devices)
+void XGetDeviceCount(int * devices)
 {
-  checkError( cudaGetDeviceCount(&devices) );
+  checkError( cudaGetDeviceCount(devices) );
 }
 
 void XSetDevice(int device)
