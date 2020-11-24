@@ -81,10 +81,8 @@ class OSUBaseRunTest(rfm.RunOnlyRegressionTest):
 
 
 @rfm.parameterized_test(
-    ['tsa-pp008', 'tsa-pp009', 'tsa-pp010'],
-    ['tsa-pp011', 'tsa-pp012', 'tsa-pp013', 'tsa-pp014'],
-    ['tsa-pp008', 'tsa-pp009', 'tsa-pp010', 'tsa-pp011', 'tsa-pp012',
-     'tsa-pp013', 'tsa-pp014']
+    ['tsa-pp015', 'tsa-pp016', 'tsa-pp017'],
+    ['tsa-pp018', 'tsa-pp019', 'tsa-pp020']
 )
 class OSUAlltoallvTest(OSUBaseRunTest):
 
@@ -114,10 +112,8 @@ class OSUAlltoallvTest(OSUBaseRunTest):
 
 
 @rfm.parameterized_test(
-    ['tsa-pp008', 'tsa-pp009', 'tsa-pp010'],
-    ['tsa-pp011', 'tsa-pp012', 'tsa-pp013', 'tsa-pp014'],
-    ['tsa-pp008', 'tsa-pp009', 'tsa-pp010', 'tsa-pp011', 'tsa-pp012',
-     'tsa-pp013', 'tsa-pp014']
+    ['tsa-pp015', 'tsa-pp016', 'tsa-pp017'],
+    ['tsa-pp018', 'tsa-pp019', 'tsa-pp020']
 )
 class OSUAllgathervTest(OSUBaseRunTest):
 
@@ -147,10 +143,8 @@ class OSUAllgathervTest(OSUBaseRunTest):
 
 
 @rfm.parameterized_test(
-    ['tsa-pp008', 'tsa-pp009', 'tsa-pp010'],
-    ['tsa-pp011', 'tsa-pp012', 'tsa-pp013', 'tsa-pp014'],
-    ['tsa-pp008', 'tsa-pp009', 'tsa-pp010', 'tsa-pp011', 'tsa-pp012',
-     'tsa-pp013', 'tsa-pp014']
+    ['tsa-pp015', 'tsa-pp016', 'tsa-pp017'],
+    ['tsa-pp018', 'tsa-pp019', 'tsa-pp020']
 )
 class OSUIBcastTest(OSUBaseRunTest):
 
