@@ -375,7 +375,6 @@ class SingleSource(BuildSystem):
             raise BuildSystemError(
                 'a source file is required when using the %s build system' %
                 type(self).__name__)
-
         cc = self._cc(environ)
         cxx = self._cxx(environ)
         ftn = self._ftn(environ)
@@ -426,8 +425,9 @@ class SingleSource(BuildSystem):
             cmd_parts += [nvcc, *cppflags, *cxxflags, self.srcfile,
                           '-o', executable, *ldflags]
         else:
-            BuildSystemError('could not guess language of file: %s' %
-                             self.srcfile)
+            raise BuildSystemError(
+                f'could not guess language of file: {self.srcfile}'
+            )
 
         return [' '.join(cmd_parts)]
 

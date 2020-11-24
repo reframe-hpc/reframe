@@ -235,3 +235,20 @@ def test_compiler_pick(lang):
     }
     assert ([f'{compilers[lang]} {build_system.srcfile} -o foo.x'] ==
             build_system.emit_build_commands(ProgEnvironment('testenv')))
+
+
+def test_singlesource_unknown_language():
+    build_system = bs.SingleSource()
+    build_system.cc = 'cc'
+    build_system.cxx = 'CC'
+    build_system.ftn = 'ftn'
+    build_system.nvcc = 'nvcc'
+    build_system.srcfile = 'foo.bar'
+    compilers = {
+        'C': build_system.cc,
+        'C++': build_system.cxx,
+        'Fortran': build_system.ftn,
+        'CUDA': build_system.nvcc
+    }
+    with pytest.raises(BuildSystemError, match='could not guess language'):
+        build_system.emit_build_commands(ProgEnvironment('testenv'))
