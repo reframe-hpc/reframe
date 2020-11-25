@@ -17,48 +17,83 @@ class FileSystemCommandCheck(rfm.RunOnlyRegressionTest):
         self.num_tasks = 1
         self.num_tasks_per_node = 1
 
-        self.sanity_patterns = sn.assert_found(r'real \d*\.?\d*\n0', self.stdout)
-#        self.sanity_patterns = sn.assert_found(r'real.+\nuser.+\nsys.+\n0', self.stdout)
+        self.sanity_patterns = sn.assert_found(r'0', self.stdout)
         self.perf_patterns = {
-            'real_time': sn.extractsingle(r'real (?P<time>\d*\.?\d*)\n0',
-                                          self.stdout, 'timer', float)
+            'real': sn.extractsingle(r'\nreal.+m(?P<real>\S+)s',
+                                     self.stderr, 'real', float)
         }
         self.postrun_cmds = ['echo $?']
         self.tags = {'ops', 'diagnostic'}
         self.maintainers = ['CB']
 
 
-@rfm.parameterized_test(['scratch_snx1600'],
-                        ['scratch_snx3000'])
+@rfm.parameterized_test(['scratch/snx1600'],
+                        ['scratch/snx3000'])
 class FileSystemChangeDirCheck(FileSystemCommandCheck):  
     def __init__(self, variant):
         super().__init__()
         self.descr = 'Change directory to scratch test' 
         self.variant_data = {
-            'scratch_snx1600': {
+            'scratch/snx1600': {
                 'executable_opts': ['/scratch/snx1600'],
                 'reference': {
                     'daint:login': {
-                        'wall_time': (0.1, None, 0.1, 's')
+                        'real': (0.1, None, 0.1, 's')
                     },
                     'daint:login': {
-                        'wall_time': (0.1, None, 0.1, 's')
+                        'real': (0.1, None, 0.1, 's')
                     }
                 }
             },
-            'scratch_snx3000': {
+            'scratch/snx3000': {
                 'executable_opts': ['/scratch/snx3000'],
                 'reference': {
                     'daint:login': {
-                        'wall_time': (0.1, None, 0.1, 's')
+                        'real': (0.1, None, 0.1, 's')
                     },
                     'daint:login': {
-                        'wall_time': (0.1, None, 0.1, 's')
+                        'real': (0.1, None, 0.1, 's')
                     }
                 }
             }
         }
 
-        self.executable = '/usr/bin/time -f "real %e" timeout -k 1 5 cd'
+        self.executable = 'time cd'
+        self.executable_opts = self.variant_data[variant]['executable_opts']
+        self.reference = self.variant_data[variant]['reference']
+
+
+@rfm.parameterized_test(['scratch/snx1600'],
+                        ['scratch/snx3000'])
+class FileSystemLsDirCheck(FileSystemCommandCheck):
+    def __init__(self, variant):
+        super().__init__()
+        self.descr = 'ls of directory in scratch test'
+        self.variant_data = {
+            'scratch/snx1600': {
+                'executable_opts': ['/scratch/snx1600'],
+                'reference': {
+                    'daint:login': {
+                        'real': (0.1, None, 0.1, 's')
+                    },
+                    'daint:login': {
+                        'real': (0.1, None, 0.1, 's')
+                    }
+                }
+            },
+            'scratch/snx3000': {
+                'executable_opts': ['/scratch/snx3000'],
+                'reference': {
+                    'daint:login': {
+                        'real': (0.1, None, 0.1, 's')
+                    },
+                    'daint:login': {
+                        'real': (0.1, None, 0.1, 's')
+                    }
+                }
+            }
+        }
+
+        self.executable = 'time ls'
         self.executable_opts = self.variant_data[variant]['executable_opts']
         self.reference = self.variant_data[variant]['reference']
