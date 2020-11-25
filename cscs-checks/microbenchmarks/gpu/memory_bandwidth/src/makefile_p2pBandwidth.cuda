@@ -1,2 +1,2 @@
 test:
-	nvcc p2p_bandwidth.cu -std=c++11 ${CXXFLAGS} -lnvidia-ml -O3
+	nvcc p2p_bandwidth.cu -std=c++11 ${CXXFLAGS} -lnvidia-ml -O3 -o p2p_bandwidth.x
