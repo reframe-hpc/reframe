@@ -48,7 +48,7 @@ class GPUShmemTest(rfm.RegressionTest):
                 'bandwidth': (18139, -0.01, None, 'GB/s')
             },
             'ault:amdvega': {
-                'bandwidth': (9209, -0.01, None, 'GB/s')
+                'bandwidth': (9060, -0.01, None, 'GB/s')
             }
         }
 
