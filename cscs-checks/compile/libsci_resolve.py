@@ -12,8 +12,7 @@ class LibSciResolveBaseTest(rfm.CompileOnlyRegressionTest):
         self.sourcesdir = 'src/libsci_resolve'
         self.sourcepath = 'libsci_resolve.f90'
         self.valid_systems = ['daint:login', 'daint:gpu',
-                              'dom:login', 'dom:gpu',
-                              'tiger:login', 'tiger:gpu']
+                              'dom:login', 'dom:gpu']
         self.modules = ['craype-haswell']
         self.maintainers = ['AJ', 'LM']
         self.tags = {'production', 'craype'}

@@ -14,8 +14,7 @@ from reframe.core.launchers import LauncherWrapper
 class CudaGdbCheck(rfm.RegressionTest):
     def __init__(self):
         self.valid_prog_environs = ['PrgEnv-gnu']
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
-                              'arolla:cn', 'tsa:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn']
         self.num_gpus_per_node = 1
         self.num_tasks_per_node = 1
         self.sourcesdir = 'src/Cuda'
@@ -23,11 +22,7 @@ class CudaGdbCheck(rfm.RegressionTest):
         self.executable_opts = ['-x .in.cudagdb ./cuda_gdb_check']
         # unload xalt to avoid runtime error:
         self.prerun_cmds = ['unset LD_PRELOAD']
-        if self.current_system.name == 'kesch':
-            self.exclusive_access = True
-            self.modules = ['cudatoolkit/8.0.61']
-            nvidia_sm = '37'
-        elif self.current_system.name in ['arolla', 'tsa']:
+        if self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
             self.modules = ['cuda/10.1.243']
             nvidia_sm = '70'
@@ -42,10 +37,7 @@ class CudaGdbCheck(rfm.RegressionTest):
         self.build_system.cxxflags = ['-g', '-G', '-arch=sm_%s' % nvidia_sm]
         self.build_system.ldflags = ['-g', '-fopenmp', '-lstdc++']
 
-        if self.current_system.name == 'kesch':
-            self.build_system.ldflags = ['-g', '-fopenmp', '-lcublas',
-                                         '-lcudart', '-lm']
-        elif self.current_system.name in ['arolla', 'tsa']:
+        if self.current_system.name in ['arolla', 'tsa']:
             self.build_system.ldflags += ['-L$EBROOTCUDA/lib64',
                                           '-lcudart', '-lm']
 

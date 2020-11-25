@@ -633,6 +633,10 @@ def test_inherited_hooks(local_exec_ctx):
     _run(test, *local_exec_ctx)
     assert test.var == 2
     assert test.foo == 1
+    assert test.pipeline_hooks() == {
+        'post_setup': [DerivedTest.z, BaseTest.x],
+        'pre_run': [C.y],
+    }
 
 
 def test_overriden_hooks(local_exec_ctx):
