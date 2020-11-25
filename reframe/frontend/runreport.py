@@ -10,6 +10,7 @@ import re
 
 import reframe as rfm
 import reframe.core.exceptions as errors
+import reframe.utility as util
 import reframe.utility.jsonext as jsonext
 
 
@@ -94,7 +95,7 @@ class _RunReport:
         dump_file = os.path.join(tc['stagedir'], '.rfm_testcase.json')
         try:
             with open(dump_file) as fp:
-                jsonext.load(fp, rfm_obj=testcase.check)
+                testcase._check = jsonext.load(fp)
         except (OSError, json.JSONDecodeError) as e:
             raise errors.ReframeError(
                 f'could not restore testcase {testcase!r}') from e
@@ -148,21 +149,3 @@ def load_report(filename):
         )
 
     return _RunReport(report)
-
-
-def restore(testcases, retry_report, printer):
-    stagedirs = {}
-    for run in retry_report['runs']:
-        for t in run['testcases']:
-            idx = (t['name'], t['system'], t['environment'])
-            stagedirs[idx] = t['stagedir']
-
-    for i, t in enumerate(testcases):
-        idx = (t.check.name, t.partition.fullname, t.environ.name)
-        try:
-            with open(os.path.join(stagedirs[idx],
-                                   '.rfm_testcase.json')) as f:
-                jsonext.load(f, rfm_obj=RegressionTask(t).check)
-        except (OSError, json.JSONDecodeError):
-            printer.warning(f'check {RegressionTask(t).check.name} '
-                            f'can not be restored')

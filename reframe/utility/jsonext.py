@@ -7,6 +7,18 @@ import inspect
 import json
 import traceback
 
+import reframe.utility as util
+
+
+class JSONSerializable:
+    def __rfm_json_encode__(self):
+        ret = {
+            '__rfm_class__': type(self).__qualname__,
+            '__rfm_file__': inspect.getfile(type(self))
+        }
+        ret.update(self.__dict__)
+        return ret
+
 
 class _ReframeJsonEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -20,10 +32,16 @@ class _ReframeJsonEncoder(json.JSONEncoder):
         if isinstance(obj, BaseException):
             return str(obj)
 
+        if isinstance(obj, set):
+            return list(obj)
+
         if inspect.istraceback(obj):
             return traceback.format_tb(obj)
 
-        return json.JSONEncoder.default(self, obj)
+        try:
+            return json.JSONEncoder.default(self, obj)
+        except TypeError:
+            return None
 
 
 def dump(obj, fp, **kwargs):
@@ -36,23 +54,43 @@ def dumps(obj, **kwargs):
     return json.dumps(obj, **kwargs)
 
 
+def _object_hook(json):
+    filename = json.pop('__rfm_file__', None)
+    typename = json.pop('__rfm_class__', None)
+    if filename is None or typename is None:
+        return json
+
+    mod = util.import_module_from_file(filename)
+    cls = getattr(mod, typename)
+    obj = cls.__new__(cls)
+    obj.__dict__.update(json)
+    return obj
+
+
 class _ReframeJsonDecoder(json.JSONDecoder):
     def __init__(self, *args, **kwargs):
-        if 'rfm_obj' in kwargs:
-            self.rfm_obj = kwargs['rfm_obj']
-            del kwargs['rfm_obj']
-
-        json.JSONDecoder.__init__(self, object_hook=self.object_hook,
-                                  *args, **kwargs)
+        self.__target = kwargs.pop('_target', None)
+        super().__init__(object_hook=self.object_hook, *args, **kwargs)
 
     def object_hook(self, obj):
-        if 'modules' in obj:
-            self.rfm_obj.__rfm_json_restore__(obj)
-            return self.rfm_obj
+        target_typename = type(self.__target).__qualname__
+        if '__rfm_class__' not in obj:
+            return obj
 
-        return obj
+        if target_typename != obj['__rfm_class__']:
+            return obj
+
+        if hasattr(self.__target, '__rfm_json_decode__'):
+            return self.__target.__rfm_json_decode__(obj)
+        else:
+            return obj
 
 
 def load(fp, **kwargs):
-    kwargs['cls'] = _ReframeJsonDecoder
+    kwargs['object_hook'] = _object_hook
     return json.load(fp, **kwargs)
+
+
+def loads(s, **kwargs):
+    kwargs['object_hook'] = _object_hook
+    return json.loads(s, **kwargs)

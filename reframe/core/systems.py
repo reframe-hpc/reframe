@@ -7,13 +7,14 @@ import json
 import re
 
 import reframe.utility as utility
+import reframe.utility.jsonext as jsonext
 from reframe.core.backends import (getlauncher, getscheduler)
 from reframe.core.logging import getlogger
 from reframe.core.modules import ModulesSystem
 from reframe.core.environments import (Environment, ProgEnvironment)
 
 
-class SystemPartition:
+class SystemPartition(jsonext.JSONSerializable):
     '''A representation of a system partition inside ReFrame.
 
     .. warning::
@@ -237,7 +238,7 @@ class SystemPartition:
         return json.dumps(self.json(), indent=2)
 
 
-class System:
+class System(jsonext.JSONSerializable):
     '''A representation of a system inside ReFrame.
 
     .. warning::

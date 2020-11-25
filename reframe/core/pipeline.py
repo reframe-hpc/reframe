@@ -26,6 +26,7 @@ import reframe.core.fields as fields
 import reframe.core.logging as logging
 import reframe.core.runtime as rt
 import reframe.utility as util
+import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
@@ -125,7 +126,7 @@ def final(fn):
     return _wrapped
 
 
-class RegressionTest(metaclass=RegressionTestMeta):
+class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     '''Base class for regression tests.
 
     All regression tests must eventually inherit from this class.
@@ -837,18 +838,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
         else:
             # Just an empty environment
             self._cdt_environ = env.Environment('__rfm_cdt_environ')
-
-    def __rfm_json_encode__(self):
-        return {
-            'modules': self.modules,
-            'variables': self.variables,
-            'stagedir': self.stagedir,
-        }
-
-    def __rfm_json_restore__(self, jsonobj):
-        self.modules = jsonobj['modules']
-        self.variables = jsonobj['variables']
-        self._stagedir = jsonobj['stagedir']
 
     # Export read-only views to interesting fields
     @property

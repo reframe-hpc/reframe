@@ -33,12 +33,12 @@ class TestCase:
     '''
 
     def __init__(self, check, partition, environ):
-        self.__check_orig = check
-        self.__check = copy.deepcopy(check)
-        self.__partition = copy.deepcopy(partition)
-        self.__environ = copy.deepcopy(environ)
-        self.__check._case = weakref.ref(self)
-        self.__deps = []
+        self._check_orig = check
+        self._check = copy.deepcopy(check)
+        self._partition = copy.deepcopy(partition)
+        self._environ = copy.deepcopy(environ)
+        self._check._case = weakref.ref(self)
+        self._deps = []
 
         # Incoming dependencies
         self.in_degree = 0
@@ -46,7 +46,7 @@ class TestCase:
     def __iter__(self):
         # Allow unpacking a test case with a single liner:
         #       c, p, e = case
-        return iter([self.__check, self.__partition, self.__environ])
+        return iter([self._check, self._partition, self._environ])
 
     def __hash__(self):
         return (hash(self.check.name) ^
@@ -67,19 +67,19 @@ class TestCase:
 
     @property
     def check(self):
-        return self.__check
+        return self._check
 
     @property
     def partition(self):
-        return self.__partition
+        return self._partition
 
     @property
     def environ(self):
-        return self.__environ
+        return self._environ
 
     @property
     def deps(self):
-        return self.__deps
+        return self._deps
 
     @property
     def num_dependents(self):
@@ -87,7 +87,7 @@ class TestCase:
 
     def clone(self):
         # Return a fresh clone, i.e., one based on the original check
-        return TestCase(self.__check_orig, self.__partition, self.__environ)
+        return TestCase(self._check_orig, self._partition, self._environ)
 
 
 def generate_testcases(checks,
@@ -292,13 +292,11 @@ class RegressionTask:
 
     def finalize(self):
         try:
-            json_check = os.path.join(self.check.stagedir,
-                                      '.rfm_testcase.json')
-            with open(json_check, 'w') as fp:
-                jsonext.dump(self.check, fp)
-        except OSError:
-            self._printer.warning(f'check {RegressionTask(t).check.name} '
-                                  f'can not be dumped')
+            jsonfile = os.path.join(self.check.stagedir, '.rfm_testcase.json')
+            with open(jsonfile, 'w') as fp:
+                jsonext.dump(self.check, fp, indent=2)
+        except OSError as e:
+            self._printer.warning(f'could not dump test case {self.case}: {e}')
 
         self._current_stage = 'finalize'
         self._notify_listeners('on_task_success')
