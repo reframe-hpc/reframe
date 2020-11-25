@@ -136,6 +136,7 @@ class P2pBandwidthCheck(rfm.RegressionTest):
         elif cp in {'ault:amdav100'}:
             self.num_gpus_per_node = 2
         elif cp in {'ault:amdvega'}:
+            self.num_gpus_per_node = 3
 
     @sn.sanity_function
     def do_sanity_check(self):
