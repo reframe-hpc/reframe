@@ -757,19 +757,19 @@ def main():
         for d in options.module_paths:
             if d.startswith('-'):
                 module_paths.setdefault('-', [])
-                module_paths.append(d[1:])
+                module_paths['-'].append(d[1:])
             elif d.startswith('+'):
                 module_paths.setdefault('+', [])
-                module_paths.append(d[1:])
+                module_paths['+'].append(d[1:])
             else:
                 module_paths.setdefault('x', [])
-                module_paths.append(d)
+                module_paths['x'].append(d)
 
         for op, paths in module_paths.items():
             if op == '+':
                 module_use(*paths)
             elif op == '-':
-                module_use(*paths)
+                module_unuse(*paths)
             else:
                 # First empty the current module path in a portable way
                 searchpath = [p for p in rt.modules_system.searchpath if p]
