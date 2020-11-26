@@ -628,6 +628,101 @@ site_configuration = {
             ]
         },
         {
+            'name': 'eiger',
+            'descr': 'Alps Cray EX Supercomputer',
+            'hostnames': [
+                'eiger'
+            ],
+            'modules_system': 'lmod',
+            'resourcesdir': '/apps/common/UES/reframe/resources',
+            'partitions': [
+                {
+                    'name': 'login',
+                    'scheduler': 'local',
+                    'modules': [],
+                    'environs': [
+                        'builtin',
+                        'PrgEnv-cray',
+                        'PrgEnv-gnu',
+                        'PrgEnv-aocc'
+                    ],
+                    'descr': 'Login nodes',
+                    'max_jobs': 4,
+                    'launcher': 'local'
+                },
+                {
+                    'name': 'mc_lowmem',
+                    'descr': 'Multicore nodes (AMD EPYC 7742, 256GB/cn)',
+                    'scheduler': 'slurm',
+                    'access': [
+                        '--exclude=nid00[1512-1703,1768-1927]'
+                        # f'--constraint=mc',
+                    ],
+                    'environs': [
+                        'builtin',
+                        'PrgEnv-cray',
+                        'PrgEnv-gnu',
+                        'PrgEnv-aocc'
+                    ],
+                    'max_jobs': 100,
+                    'resources': [
+                        {
+                            'name': 'bcast',
+                            'options': ['--bcast={path}']
+                        },
+                        {
+                            'name': 'switches',
+                            'options': [
+                                '--switches={num_switches}'
+                            ]
+                        },
+                        {
+                            'name': 'mem-per-cpu',
+                            'options': [
+                                '--mem-per-cpu={mem_per_cpu}'
+                            ]
+                        },
+                    ],
+                    'launcher': 'srun'
+                },
+                {
+                    'name': 'mc_himem',
+                    'descr': 'Multicore nodes (AMD EPYC 7742, 512GB/cn)',
+                    'scheduler': 'slurm',
+                    'access': [
+                        '--exclude=nid00[1000-1003,1006-1191,1256-1415]'
+                        # f'--constraint=mc',
+                    ],
+                    'environs': [
+                        'builtin',
+                        'PrgEnv-cray',
+                        'PrgEnv-gnu',
+                        'PrgEnv-aocc'
+                    ],
+                    'max_jobs': 100,
+                    'resources': [
+                        {
+                            'name': 'bcast',
+                            'options': ['--bcast={path}']
+                        },
+                        {
+                            'name': 'switches',
+                            'options': [
+                                '--switches={num_switches}'
+                            ]
+                        },
+                        {
+                            'name': 'mem-per-cpu',
+                            'options': [
+                                '--mem-per-cpu={mem_per_cpu}'
+                            ]
+                        },
+                    ],
+                    'launcher': 'srun'
+                },
+            ]
+        },
+        {
             'name': 'generic',
             'descr': 'Generic fallback system',
             'partitions': [
@@ -772,6 +867,33 @@ site_configuration = {
             'cc': 'gcc',
             'cxx': 'g++',
             'ftn': 'gfortran'
+        },
+        {
+            'name': 'PrgEnv-cray',
+            'target_systems': [
+                'alps', 'eiger', 'rigi', 'pilatus'
+            ],
+            'modules': [
+                {'name': 'PrgEnv-cray', 'collection': True}
+            ]
+        },
+        {
+            'name': 'PrgEnv-gnu',
+            'target_systems': [
+                'alps', 'eiger', 'rigi', 'pilatus'
+            ],
+            'modules': [
+                {'name': 'PrgEnv-gnu', 'collection': True}
+            ]
+        },
+        {
+            'name': 'PrgEnv-aocc',
+            'target_systems': [
+                'alps', 'eiger', 'rigi', 'pilatus'
+            ],
+            'modules': [
+                {'name': 'PrgEnv-aocc', 'collection': True}
+            ]
         },
         {
             'name': 'PrgEnv-cray',
