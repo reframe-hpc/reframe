@@ -1,2 +1,2 @@
 kernel_latency:
-	nvcc -O3 -std=c++11 ${CXXFLAGS} -lnvidia-ml $@.cu -o $@.x
+	nvcc -O3 -std=c++11 ${CXXFLAGS} $@.cu -o $@.x

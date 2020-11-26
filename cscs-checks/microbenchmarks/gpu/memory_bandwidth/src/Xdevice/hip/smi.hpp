@@ -19,23 +19,14 @@ static inline void rsmiCheck(rsmi_status_t err)
 
 Smi::Smi()
 {
-  if (!(this->rsmiIsActive))
+  if (!(this->smiIsActive))
   {
     rsmiCheck( rsmi_init(0) );
-    this->rsmiIsActive = 1;
+    this->smiIsActive = 1;
     rsmiCheck( rsmi_num_monitor_devices(&numberOfDevices) );
   }
 
   this->activeSmiInstances += 1;
-}
-
-void Smi::checkGpuIdIsSensible(int id)
-{
-  if (id < 0 || id >= numberOfDevices)
-  {
-    std::cerr << "Requested device ID is out of range from the existing devices." << std::endl;
-    exit(1);
-  }
 }
 
 void Smi::setCpuAffinity(int id)
@@ -61,10 +52,10 @@ float Smi::getGpuTemp(int id)
 Smi::~Smi()
 {
   this->activeSmiInstances -= 1;
-  if (this->rsmiIsActive)
+  if (!(this->activeSmiInstances))
   {
     rsmiCheck( rsmi_shut_down() );
-    this->rsmiIsActive = 0;
+    this->smiIsActive = 0;
   }
 }
 

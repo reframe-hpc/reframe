@@ -18,23 +18,14 @@ static inline void nvmlCheck(nvmlReturn_t err)
 
 Smi::Smi()
 {
-  if (!(this->nvmlIsActive))
+  if (!(this->smiIsActive))
   {
     nvmlCheck( nvmlInit() );
-    this->nvmlIsActive = 1;
+    this->smiIsActive = 1;
     nvmlCheck( nvmlDeviceGetCount(&numberOfDevices) );
   }
 
   this->activeSmiInstances += 1;
-}
-
-void Smi::checkGpuIdIsSensible(int id)
-{
-  if (id < 0 || id >= numberOfDevices)
-  {
-    std::cerr << "Requested device ID is out of range of the existing devices." << std::endl;
-    exit(1);
-  }
 }
 
 void Smi::setCpuAffinity(int id)
@@ -64,7 +55,7 @@ float Smi::getGpuTemp(int id)
 Smi::~Smi()
 {
   this->activeSmiInstances -= 1;
-  if (this->nvmlIsActive)
+  if (!(this->activeSmiInstances))
   {
     nvmlCheck( nvmlShutdown() );
     this->nvmlIsActive = 0;
