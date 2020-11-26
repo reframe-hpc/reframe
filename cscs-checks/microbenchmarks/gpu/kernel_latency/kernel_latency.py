@@ -112,7 +112,7 @@ class KernelLatencyTest(rfm.RegressionTest):
         elif cp == 'ault:amda100':
             nvidia_sm = '80'
         elif cp in {'dom:gpu', 'daint:gpu'}:
-            nvidia_sm == '60'
+            nvidia_sm = '60'
 
         if nvidia_sm:
             self.build_system.cxxflags += [f'-arch=sm_{nvidia_sm}']
