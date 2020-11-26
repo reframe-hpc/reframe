@@ -96,5 +96,3 @@ class GPUShmemTest(rfm.RegressionTest):
         if amd_trgt:
             self.build_system.cxxflags += [f'--amdgpu-target={amd_trgt}']
             self.modules += ['rocm']
-
-
