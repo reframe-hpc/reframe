@@ -1508,6 +1508,12 @@ class _C(jsonext.JSONSerializable):
         self.x = x
         self.y = y
         self.z = None
+        self.w = {1, 2}
+
+    def __rfm_json_decode__(self, json):
+        # Sets are converted to lists when encoding, we need to manually
+        # change them back to sets
+        self.w = set(json['w'])
 
     def __eq__(self, other):
         if not isinstance(other, _C):
@@ -1515,7 +1521,8 @@ class _C(jsonext.JSONSerializable):
 
         return (self.x == other.x and
                 self.y == other.y and
-                self.z == other.z)
+                self.z == other.z and
+                self.w == other.w)
 
 
 def test_jsonext_load(tmp_path):

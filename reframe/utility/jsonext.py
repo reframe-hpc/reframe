@@ -64,6 +64,9 @@ def _object_hook(json):
     cls = getattr(mod, typename)
     obj = cls.__new__(cls)
     obj.__dict__.update(json)
+    if hasattr(obj, '__rfm_json_decode__'):
+        obj.__rfm_json_decode__(json)
+
     return obj
 
 
