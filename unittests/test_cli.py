@@ -591,13 +591,13 @@ def test_unload_module(run_reframe, user_exec_ctx):
     assert returncode == 0
 
 
-def test_unuse_module_path(run_reframe, user_exec_ctx, monkeypatch):
+def test_unuse_module_path(run_reframe, user_exec_ctx):
     ms = rt.runtime().modules_system
     if ms.name == 'nomod':
         pytest.skip('no modules system found')
 
     module_path = 'unittests/modules'
-    monkeypatch.setenv('MODULEPATH', module_path)
+    ms.searchpath_add(module_path)
     returncode, stdout, stderr = run_reframe(
         more_options=[f'--module-path=-{module_path}', '--module=testmod_foo'],
         config_file=fixtures.USER_CONFIG_FILE, action='run',
@@ -632,6 +632,11 @@ def test_overwrite_module_path(run_reframe, user_exec_ctx):
         pytest.skip('no modules system found')
 
     module_path = 'unittests/modules'
+    try:
+        module_path += f':{os.environ["MODULEPATH"]}'
+    except KeyError:
+        pass
+
     returncode, stdout, stderr = run_reframe(
         more_options=[f'--module-path={module_path}', '--module=testmod_foo'],
         config_file=fixtures.USER_CONFIG_FILE, action='run',
