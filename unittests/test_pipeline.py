@@ -189,6 +189,12 @@ def test_hellocheck_local(hellotest, local_exec_ctx):
         assert os.path.exists(os.path.join(hellotest.outputdir, f))
 
 
+def test_hellocheck_build_remotely(hellotest, remote_exec_ctx):
+    hellotest.build_locally = False
+    _run(hellotest, *remote_exec_ctx)
+    assert not hellotest.build_job.scheduler.is_local
+
+
 def test_hellocheck_local_prepost_run(hellotest, local_exec_ctx):
     @sn.sanity_function
     def stagedir(test):
@@ -627,6 +633,10 @@ def test_inherited_hooks(local_exec_ctx):
     _run(test, *local_exec_ctx)
     assert test.var == 2
     assert test.foo == 1
+    assert test.pipeline_hooks() == {
+        'post_setup': [DerivedTest.z, BaseTest.x],
+        'pre_run': [C.y],
+    }
 
 
 def test_overriden_hooks(local_exec_ctx):

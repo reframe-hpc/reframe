@@ -1,4 +1,7 @@
 /*
+ * Modified for CSCS by Javier Otero (javier.otero@cscs.ch) to
+ * support both HIP and CUDA.
+ *
  * Modifications for CSCS by Mark Klein (klein@cscs.ch)
  * - NVML bindings
  * - Reduced output
@@ -438,43 +441,14 @@ void listenClients(std::vector<int> clientFd, std::vector<pid_t> clientPid, int 
             // Printing progress (if a child has initted already)
             if (childReport) {
                 float elapsed = fminf((float)(thisTime-startTime)/(float)runTime*100.0f, 100.0f);
-                // printf("\r%s: ",hostname);
-                // printf("%.1f%%  ", elapsed);
-                // printf("proc'd: ");
-                // for (size_t i = 0; i < clientCalcs.size(); ++i) {
-                // printf("%d (%.0f Gflop/s) ", clientCalcs.at(i), clientGflops.at(i));
-                // if (i != clientCalcs.size() - 1)
-                // printf("- ");
-                // }
-                // printf("  errors: ");
                 for (size_t i = 0; i < clientErrors.size(); ++i) {
                     std::string note = "%d ";
-                    // if (clientCalcs.at(i) == -1)
-                    // note += " (DIED!)";
-                    // else if (clientErrors.at(i))
-                    // note += " (WARNING!)";
-
-                    // printf(note.c_str(), clientErrors.at(i));
-                    // if (i != clientCalcs.size() - 1)
-                    // printf("- ");
                 }
-                // printf("  temps: ");
-                // for (size_t i = 0; i < clientTemp.size(); ++i) {
-                // printf(clientTemp.at(i) != 0 ? "%d C " : "-- ", clientTemp.at(i));
-                // if (i != clientCalcs.size() - 1)
-                // printf("- ");
-                // }
 
                 fflush(stdout);
 
                 if (nextReport < elapsed) {
                     nextReport = elapsed + 2.0f;
-                    // printf("\n\tSummary at:   ");
-                    // fflush(stdout);
-                    // system("date"); // Printing a date
-                    // fflush(stdout);
-                    // printf("\n");
-                    // printf("\t(checkpoint)\n");
                     for (size_t i = 0; i < clientErrors.size(); ++i) {
                         if (clientErrors.at(i))
                             clientFaulty.at(i) = true;
@@ -497,18 +471,13 @@ void listenClients(std::vector<int> clientFd, std::vector<pid_t> clientPid, int 
                 break;
     }
 
-    // printf("\nKilling processes.. ");
     fflush(stdout);
     for (size_t i = 0; i < clientPid.size(); ++i)
         kill(clientPid.at(i), 15);
 
-    // kill(tempPid, 15);
-    // close(tempHandle);
-
     while (wait(NULL) != -1);
     printf("Node %s:\n", hostname);
 
-    // printf(" Tested %d GPUs: ", (int)clientPid.size());
     for (size_t i = 0; i < clientPid.size(); ++i) {
         printf("  GPU %2d(%s): %4.0f GF/s  %i Celsius\n", (int)i,clientFaulty.at(i) ? "FAULTY" : "OK", clientGflops.at(i), clientTemp.at(i));
     }
@@ -516,7 +485,6 @@ void listenClients(std::vector<int> clientFd, std::vector<pid_t> clientPid, int 
 }
 
 template<class T> void launch(int runLength, bool useDoubles) {
-    //    std::system("nvidia-smi -L");
 
     // Initializing A and B with random data
     T *A = (T*) malloc(sizeof(T)*SIZE*SIZE);

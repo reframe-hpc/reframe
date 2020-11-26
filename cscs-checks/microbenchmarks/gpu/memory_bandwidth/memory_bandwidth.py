@@ -13,40 +13,20 @@ class GpuBandwidthCheck(rfm.RegressionTest):
         self.valid_systems = ['daint:gpu', 'dom:gpu',
                               'arolla:cn', 'tsa:cn',
                               'ault:amdv100', 'ault:intelv100',
-                              'ault:amda100']
+                              'ault:amda100', 'ault:amdvega']
         self.valid_prog_environs = ['PrgEnv-gnu']
         if self.current_system.name in ['arolla', 'tsa']:
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
 
-        self.exclusive_access = True
-        self.build_system = 'SingleSource'
-        self.sourcepath = 'memory_bandwidth.cu'
-        self.executable = 'memory_bandwidth.x'
-
         # Perform a single bandwidth test with a buffer size of 1024MB
         self.copy_size = 1073741824
 
-        self.build_system.cxxflags = ['-I.', '-m64',
-                                      '-std=c++11', '-lnvidia-ml',
-                                      f'-DCOPY={self.copy_size}']
+        self.build_system = 'Make'
+        self.executable = 'memory_bandwidth.x'
+        self.build_system.cxxflags = [f'-DCOPY={self.copy_size}']
         self.num_tasks = 0
         self.num_tasks_per_node = 1
-        if self.current_system.name in ['daint', 'dom']:
-            self.modules = ['craype-accel-nvidia60']
-        elif self.current_system.name in ['arolla', 'tsa']:
-            self.modules = ['cuda/10.1.243']
-
-        # Gpus per node on each partition.
-        self.partition_num_gpus_per_node = {
-            'daint:gpu':      1,
-            'dom:gpu':        1,
-            'arolla:cn':      2,
-            'tsa:cn':         8,
-            'ault:amda100':   4,
-            'ault:amdv100':   2,
-            'ault:intelv100': 4,
-            'ault:amdvega':   3,
-        }
+        self.exclusive_access = True
 
         # perf_patterns and reference will be set by the sanity check function
         self.sanity_patterns = self.do_sanity_check()
@@ -99,21 +79,57 @@ class GpuBandwidthCheck(rfm.RegressionTest):
                      'craype', 'external-resources'}
         self.maintainers = ['AJ', 'SK']
 
-    @rfm.run_before('compile')
-    def set_nvidia_sm_arch(self):
-        nvidia_sm = '60'
-        if self.current_system.name in ['arolla', 'tsa', 'ault']:
+    @rfm.run_after('setup')
+    def select_makefile(self):
+        cp = self.current_partition.fullname
+        if cp == 'ault:amdvega':
+            self.prebuild_cmds = ['cp makefile_memoryBandwidth.hip Makefile']
+        else:
+            self.prebuild_cmds = ['cp makefile_memoryBandwidth.cuda Makefile']
+
+    @rfm.run_after('setup')
+    def set_gpu_arch(self):
+        cp = self.current_partition.fullname
+
+        # Deal with the NVIDIA options first
+        nvidia_sm = None
+        if cp in {'tsa:cn', 'ault:intelv100', 'ault:amdv100'}:
             nvidia_sm = '70'
-
-        if self.current_partition.fullname == 'ault:amda100':
+        elif cp == 'ault:amda100':
             nvidia_sm = '80'
+        elif cp in {'dom:gpu', 'daint:gpu'}:
+            nvidia_sm = '60'
 
-        self.build_system.cxxflags += [f'-arch=sm_{nvidia_sm}']
+        if nvidia_sm:
+            self.build_system.cxxflags += [f'-arch=sm_{nvidia_sm}']
+            if cp in {'dom:gpu', 'daint:gpu'}:
+                self.modules += ['cudatoolkit']
+            else:
+                self.modules += ['cuda']
+
+        # Deal with the AMD options
+        amd_trgt = None
+        if cp == 'ault:amdvega':
+            amd_trgt = 'gfx906,gfx908'
+
+        if amd_trgt:
+            self.build_system.cxxflags += [f'--amdgpu-target={amd_trgt}']
+            self.modules += ['rocm']
 
     @rfm.run_before('run')
     def set_num_gpus_per_node(self):
-        self.num_gpus_per_node = self.partition_num_gpus_per_node.get(
-            self.current_partition.fullname, 1)
+        cp = self.current_partition.fullname
+        cs = self.current_system.name
+        if cs in {'dom', 'daint'}:
+            self.num_gpus_per_node = 1
+        elif cs in {'arola', 'tsa'}:
+            self.num_gpus_per_node = 8
+        elif cp in {'ault:amda100', 'ault:intelv100'}:
+            self.num_gpus_per_node = 4
+        elif cp in {'ault:amdav100'}:
+            self.num_gpus_per_node = 2
+        elif cp in {'ault:amdvega'}:
+            self.num_gpus_per_node = 3
 
     def _xfer_pattern(self, xfer_kind):
         '''generates search pattern for performance analysis'''

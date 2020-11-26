@@ -24,19 +24,13 @@ class HelloWorldBaseTest(rfm.RegressionTest):
         self.sourcepath = 'hello_world'
         self.build_system = 'SingleSource'
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'kesch:cn', 'tiger:gpu', 'arolla:cn',
-                              'arolla:pn', 'tsa:cn', 'tsa:pn']
-
+                              'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-cray_classic',
                                     'PrgEnv-intel', 'PrgEnv-gnu', 'PrgEnv-pgi',
                                     'PrgEnv-gnu-nocuda', 'PrgEnv-pgi-nocuda']
 
-        if self.current_system.name in ['kesch', 'arolla', 'tsa']:
+        if self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
-
-        # Removing static compilation from kesch
-        if (self.current_system.name in ['kesch'] and linkage == 'static'):
-            self.valid_prog_environs = []
 
         self.compilation_time_seconds = None
 
@@ -115,7 +109,7 @@ class HelloWorldBaseTest(rfm.RegressionTest):
 class HelloWorldTestSerial(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
         super().__init__('serial', lang, linkage)
-        self.valid_systems += ['kesch:pn', 'arolla:pn', 'tsa:pn']
+        self.valid_systems += ['arolla:pn', 'tsa:pn']
         self.sourcesdir = 'src/serial'
         self.valid_prog_environs += ['PrgEnv-gnu-nompi', 'PrgEnv-pgi-nompi',
                                      'PrgEnv-gnu-nompi-nocuda',
@@ -129,14 +123,11 @@ class HelloWorldTestSerial(HelloWorldBaseTest):
             'PrgEnv-intel': [],
             'PrgEnv-pgi': []
         }
+
         self.num_tasks = 1
         self.num_tasks_per_node = 1
         self.num_cpus_per_task = 1
-        if self.current_system.name == 'kesch' and linkage == 'dynamic':
-            self.valid_prog_environs += ['PrgEnv-cray-nompi',
-                                         'PrgEnv-pgi-nompi',
-                                         'PrgEnv-gnu-nompi']
-        elif (self.current_system.name in ['arolla', 'tsa'] and
+        if (self.current_system.name in ['arolla', 'tsa'] and
               linkage == 'dynamic'):
             self.valid_prog_environs += ['PrgEnv-pgi-nompi',
                                          'PrgEnv-pgi-nompi-nocuda',
@@ -151,7 +142,7 @@ class HelloWorldTestSerial(HelloWorldBaseTest):
 class HelloWorldTestOpenMP(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
         super().__init__('openmp', lang, linkage)
-        self.valid_systems += ['kesch:pn', 'arolla:pn', 'tsa:pn']
+        self.valid_systems += ['arolla:pn', 'tsa:pn']
         self.sourcesdir = 'src/openmp'
         self.sourcepath += '_openmp.' + lang
         self.descr += ' OpenMP ' + str.capitalize(linkage)
@@ -162,17 +153,11 @@ class HelloWorldTestOpenMP(HelloWorldBaseTest):
             'PrgEnv-intel': ['-qopenmp'],
             'PrgEnv-pgi': ['-mp']
         }
-        if self.current_system.name == 'kesch':
-            self.prgenv_flags['PrgEnv-cray'] = ['-homp']
 
         self.num_tasks = 1
         self.num_tasks_per_node = 1
         self.num_cpus_per_task = 4
-        if self.current_system.name == 'kesch' and linkage == 'dynamic':
-            self.valid_prog_environs += ['PrgEnv-cray-nompi',
-                                         'PrgEnv-pgi-nompi',
-                                         'PrgEnv-gnu-nompi']
-        elif (self.current_system.name in ['arolla', 'tsa'] and
+        if (self.current_system.name in ['arolla', 'tsa'] and
               linkage == 'dynamic'):
             self.valid_prog_environs += ['PrgEnv-pgi-nompi',
                                          'PrgEnv-pgi-nompi-nocuda',
@@ -229,8 +214,6 @@ class HelloWorldTestMPIOpenMP(HelloWorldBaseTest):
             'PrgEnv-intel': ['-qopenmp'],
             'PrgEnv-pgi': ['-mp']
         }
-        if self.current_system.name == 'kesch':
-            self.prgenv_flags['PrgEnv-cray'] = ['-homp']
 
         self.num_tasks = 6
         self.num_tasks_per_node = 3

@@ -13,8 +13,7 @@ import reframe.utility.sanity as sn
 class HPCGCheckRef(rfm.RegressionTest):
     def __init__(self):
         self.descr = 'HPCG reference benchmark'
-        self.valid_systems = ['daint:mc', 'daint:gpu', 'dom:gpu', 'dom:mc',
-                              'tiger:gpu']
+        self.valid_systems = ['daint:mc', 'daint:gpu', 'dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-gnu']
         if self.current_system.name in {'daint', 'dom'}:
             self.modules = ['craype-hugepages8M']

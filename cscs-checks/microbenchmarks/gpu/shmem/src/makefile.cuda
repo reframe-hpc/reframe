@@ -1,2 +1,2 @@
-kernel_latency:
+shmem:
 	nvcc -O3 -std=c++11 ${CXXFLAGS} $@.cu -o $@.x

@@ -1,15 +1,14 @@
 
 // Shared memory bandwidth benchmark
 // contributed by Sebastian Keller
-// 
+//
 // Relevant nvprof metrics:
 // nvprof -m shared_load_throughput,shared_store_throughput
 
 #include <iostream>
-
 #include <malloc.h>
-#include <cuda.h>
-#include <cuda_runtime.h>
+
+#include "Xdevice/runtime.hpp"
 
 
 #define NTHREADS 256
@@ -17,27 +16,12 @@
 // length of the thread block swap chain (must be even)
 #define SHARED_SEGMENTS 4
 
-static void HandleError( cudaError_t err,
-                         const char *file,
-                         int line ) {
-    if (err != cudaSuccess) {
-        printf( "%s in %s at line %d\n", cudaGetErrorString( err ),
-                file, line );
-        exit( EXIT_FAILURE );
-    }
-}
-#define HANDLE_ERROR( err ) (HandleError( err, __FILE__, __LINE__ ))
-
 template <class T>
 __device__ void swap(T* a, T* b)
 {
-    T tmp;
-    tmp = *a;
+    T tmp = *a;
     *a = *b;
-    // +1 isn't needed to prevent code elimination by the
-    // compiler, but is added in case it gets smarter in
-    // a future version
-    *b = tmp + T{1};
+    *b = tmp;
 }
 
 template <class T>
@@ -65,32 +49,28 @@ __global__ void test_shmem(T* glob_mem)
 template <class T>
 double test_bw(long size)
 {
-    T* buffer = (T*)malloc(size);
-    T* dev_buffer; 
-    HANDLE_ERROR( cudaMalloc((void**)&dev_buffer, size) );
+    T* dev_buffer;
+    XMalloc((void**)&dev_buffer, size);
     int nblocks = size / (NTHREADS * sizeof(T));
 
-    cudaEvent_t start, stop;
-    HANDLE_ERROR( cudaEventCreate(&start) );
-    HANDLE_ERROR( cudaEventCreate(&stop) );
-    HANDLE_ERROR( cudaEventRecord(start,0) );
+    // Create a stream to attach the timer to.
+    XStream_t stream;
+    XStreamCreate(&stream);
 
-    test_shmem<<<nblocks, NTHREADS>>>(dev_buffer);
+    // Instantiate the timer
+    XTimer t(stream);
 
-    HANDLE_ERROR( cudaEventRecord(stop,0) );
-    HANDLE_ERROR( cudaEventSynchronize(stop) );
-    float gpu_time;
-    HANDLE_ERROR( cudaEventElapsedTime( &gpu_time, start, stop ) );
+    t.start();
+    test_shmem<<<nblocks, NTHREADS, 0, stream>>>(dev_buffer);
+
     // convert to seconds
-    gpu_time /= 1000;
+    double gpu_time = t.stop()/double(1000);
 
     // 2 writes + 2 reads per swap
     double nbytes = NITER * size * (SHARED_SEGMENTS-1) * 4;
 
-    cudaEventDestroy(start);
-    cudaEventDestroy(stop);
-    free(buffer);
-    cudaFree(dev_buffer);
+    XStreamDestroy(stream);
+    XFree(dev_buffer);
 
     return nbytes / gpu_time;
 }

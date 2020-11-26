@@ -20,28 +20,12 @@ static inline void nvmlCheck(nvmlReturn_t err)
 # endif
 }
 
-class Smi
-{
-private:
-  static int nvmlIsActive;
-  static int activeSmiInstances;
-  unsigned int numberOfDevices;
-
-public:
-  Smi();
-  void setCpuAffinity( int );
-  ~Smi();
-};
-
-int Smi::nvmlIsActive = 0;
-int Smi::activeSmiInstances = 0;
-
 Smi::Smi()
 {
-  if (!(this->nvmlIsActive))
+  if (!(this->smiIsActive))
   {
     nvmlCheck( nvmlInit() );
-    this->nvmlIsActive = 1;
+    this->smiIsActive = 1;
     nvmlCheck( nvmlDeviceGetCount(&numberOfDevices) );
   }
 
@@ -50,21 +34,32 @@ Smi::Smi()
 
 void Smi::setCpuAffinity(int id)
 {
-  if (id < 0 || id >= numberOfDevices)
-  {
-    std::cerr << "Requested device ID is out of range of the existing devices." << std::endl;
-    return;
-  }
+  checkGpuIdIsSensible(id);
 
   nvmlDevice_t device;
   nvmlCheck( nvmlDeviceGetHandleByIndex(id, &device) );
   nvmlCheck( nvmlDeviceSetCpuAffinity(device) );
 }
 
+float Smi::getGpuTemp(int id)
+{
+  // Check that the gpu id is sensible
+  checkGpuIdIsSensible(id);
+
+  // Get device handle
+  nvmlDevice_t device;
+  nvmlCheck( nvmlDeviceGetHandleByIndex(id, &device) );
+
+  // Get the temperature
+  unsigned int temperature;
+  nvmlCheck( nvmlDeviceGetTemperature(device, NVML_TEMPERATURE_GPU, &temperature) );
+  return float(temperature);
+}
+
 Smi::~Smi()
 {
   this->activeSmiInstances -= 1;
-  if (this->nvmlIsActive)
+  if (!(this->activeSmiInstances))
   {
     nvmlCheck( nvmlShutdown() );
     this->nvmlIsActive = 0;
