@@ -12,9 +12,10 @@ import reframe as rfm
 import reframe.core.exceptions as errors
 import reframe.utility as util
 import reframe.utility.jsonext as jsonext
+from reframe.utility.versioning import Version
 
 
-DATA_VERSION = '1.1'
+DATA_VERSION = '1.2'
 _SCHEMA = os.path.join(rfm.INSTALL_PREFIX, 'reframe/schemas/runreport.json')
 
 
@@ -141,11 +142,12 @@ def load_report(filename):
         raise errors.ReframeError(f'invalid report {filename!r}') from e
 
     # Check if the report data is compatible
-    data_ver = report['session_info']['data_version']
-    if data_ver != DATA_VERSION:
+    found_ver = Version(report['session_info']['data_version'])
+    required_ver = Version(DATA_VERSION)
+    if found_ver.major != required_ver.major or found_ver < required_ver:
         raise errors.ReframeError(
             f'incompatible report data versions: '
-            f'found {data_ver!r}, required {DATA_VERSION!r}'
+            f'found {found_ver}, required >= {required_ver}'
         )
 
     return _RunReport(report)

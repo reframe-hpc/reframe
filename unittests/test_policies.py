@@ -212,7 +212,7 @@ def test_runall(make_runner, make_cases, common_exec_ctx, tmp_path):
         runreport.load_report(tmp_path / 'invalid.json')
 
     # Generate a report with an incorrect data version
-    report['session_info']['data_version'] = 'not-a-version'
+    report['session_info']['data_version'] = '10.0'
     with open(tmp_path / 'invalid-version.json', 'w') as fp:
         jsonext.dump(report, fp)
 

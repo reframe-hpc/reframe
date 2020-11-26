@@ -14,7 +14,12 @@ def test_version_format():
     Version('1.2.3')
     Version('1.2-dev0')
     Version('1.2-dev5')
-    Version('1.2.3-dev2')
+    v = Version('1.2.3-dev2')
+    assert v.major == 1
+    assert v.minor == 2
+    assert v.patch_level == 3
+    assert v.dev_number == 2
+
     with pytest.raises(ValueError):
         Version(None)
 
