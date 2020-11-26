@@ -10,7 +10,7 @@ import pytest
 import reframe.core.environments as env
 import reframe.core.runtime as rt
 import unittests.fixtures as fixtures
-from reframe.core.exceptions import (EnvironError, SpawnedProcessError)
+from reframe.core.exceptions import EnvironError
 
 
 @pytest.fixture
@@ -252,13 +252,30 @@ def test_emit_loadenv_commands_with_confict(base_environ, user_runtime,
     assert expected_commands == rt.emit_loadenv_commands(env0)
 
 
+def test_emit_loadenv_commands_mapping_with_conflict(base_environ,
+                                                     user_runtime,
+                                                     modules_system):
+    if modules_system.name == 'tmod4':
+        pytest.skip('test scenario not valid for tmod4')
+
+    e0 = env.Environment(name='e0', modules=['testmod_ext'])
+    ms = rt.runtime().modules_system
+    ms.load_mapping('testmod_ext: testmod_ext testmod_foo')
+    expected_commands = [
+        ms.emit_load_commands('testmod_ext')[0],
+        ms.emit_unload_commands('testmod_bar')[0],
+        ms.emit_load_commands('testmod_foo')[0],
+    ]
+    assert expected_commands == rt.emit_loadenv_commands(e0)
+
+
 def test_emit_loadenv_failure(user_runtime):
     snap = rt.snapshot()
     environ = env.Environment('test', modules=['testmod_foo', 'testmod_xxx'])
 
     # Suppress the module load error and verify that the original environment
     # is preserved
-    with contextlib.suppress(SpawnedProcessError):
+    with contextlib.suppress(EnvironError):
         rt.emit_loadenv_commands(environ)
 
     assert rt.snapshot() == snap

@@ -1429,8 +1429,8 @@ def test_find_modules(modules_system):
     if modules_system.name == 'nomod':
         assert found_modules == []
     else:
-        assert found_modules == ['testmod_bar', 'testmod_base',
-                                 'testmod_boo', 'testmod_foo']*ntimes
+        assert found_modules == ['testmod_bar', 'testmod_base', 'testmod_boo',
+                                 'testmod_ext', 'testmod_foo']*ntimes
 
 
 def test_find_modules_env_mapping(modules_system):

@@ -83,17 +83,24 @@ class TestStats:
                 entry = {
                     'build_stderr': None,
                     'build_stdout': None,
+                    'dependencies_actual': [
+                        (d.check.name, d.partition.fullname, d.environ.name)
+                        for d in t.testcase.deps
+                    ],
+                    'dependencies_conceptual': [
+                        d[0] for d in t.check.user_deps()
+                    ],
                     'description': check.descr,
                     'prefix': check.prefix,
                     'filename': inspect.getfile(type(check)),
                     'environment': None,
-                    'fail_reason': None,
                     'fail_phase': None,
+                    'fail_reason': None,
                     'jobid': None,
                     'job_stderr': None,
                     'job_stdout': None,
-                    'name': check.name,
                     'maintainers': check.maintainers,
+                    'name': check.name,
                     'nodelist': [],
                     'outputdir': None,
                     'perfvars': None,
@@ -194,6 +201,10 @@ class TestStats:
             job_type = 'local' if r['scheduler'] == 'local' else 'batch job'
             jobid = r['jobid']
             printer.info(f"  * Job type: {job_type} (id={r['jobid']})")
+            printer.info(f"  * Dependencies (conceptual): "
+                         f"{r['dependencies_conceptual']}")
+            printer.info(f"  * Dependencies (actual): "
+                         f"{r['dependencies_actual']}")
             printer.info(f"  * Maintainers: {r['maintainers']}")
             printer.info(f"  * Failing phase: {r['fail_phase']}")
             printer.info(f"  * Rerun with '-n {r['name']}"

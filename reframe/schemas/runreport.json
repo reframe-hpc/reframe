@@ -8,9 +8,20 @@
             "properties": {
                 "build_stderr": {"type": ["string", "null"]},
                 "build_stdout": {"type": ["string", "null"]},
+                "dependencies_actual": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "dependencies_conceptual": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                },
                 "description": {"type": "string"},
-                "prefix": {"type": "string"},
-                "filename": {"type": "string"},
                 "environment": {"type": ["string", "null"]},
                 "fail_info": {
                     "type": ["object", "null"],
@@ -27,14 +38,15 @@
                 "fail_phase": {"type": ["string", "null"]},
                 "fail_reason": {"type": ["string", "null"]},
                 "fail_severe": {"type": "boolean"},
+                "filename": {"type": "string"},
                 "jobid": {"type": ["string", "null"]},
                 "job_stderr": {"type": ["string", "null"]},
                 "job_stdout": {"type": ["string", "null"]},
-                "name": {"type": "string"},
                 "maintainers": {
                     "type": "array",
                     "items": {"type": "string"}
                 },
+                "name": {"type": "string"},
                 "nodelist": {
                     "type": "array",
                     "items": {"type": "string"}
@@ -65,6 +77,7 @@
                         ]
                     }
                 },
+                "prefix": {"type": "string"},
                 "result": {
                     "type": "string",
                     "enum": ["success", "failure"]
