@@ -35,6 +35,14 @@ public:
   ~Smi();
 
   /*
+   * Gets the number of devices.
+   *
+   * Parameters:
+   *   + n: address of the integer where to return the number of devices.
+   */
+  void getNumberOfDevices(int * n);
+
+  /*
    * Test wheter the requested GPU id is within the range of available IDs in the curent node.
    *
    * This function can exit the program if the requested value is outside the valid range.
@@ -71,6 +79,12 @@ int Smi::activeSmiInstances = 0;
 /*
  * Member functions with a common implementation across platforms.
  */
+
+void Smi::getNumberOfDevices(int n)
+{
+  *n = this->numberOfDevices;
+}
+
 void Smi::checkGpuIdIsSensible(int id)
 {
   if (id < 0 || id >= numberOfDevices)
