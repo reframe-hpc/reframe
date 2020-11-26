@@ -17,22 +17,6 @@ static inline void rsmiCheck(rsmi_status_t err)
 # endif
 }
 
-class Smi
-{
-private:
-  static int rsmiIsActive;
-  static int activeSmiInstances;
-  unsigned int numberOfDevices;
-
-public:
-  Smi();
-  void setCpuAffinity(int);
-  ~Smi();
-};
-
-int Smi::rsmiIsActive = 0;
-int Smi::activeSmiInstances = 0;
-
 Smi::Smi()
 {
   if (!(this->rsmiIsActive))
@@ -45,17 +29,33 @@ Smi::Smi()
   this->activeSmiInstances += 1;
 }
 
-void Smi::setCpuAffinity(int id)
+void Smi::checkGpuIdIsSensible(int id)
 {
   if (id < 0 || id >= numberOfDevices)
   {
     std::cerr << "Requested device ID is out of range from the existing devices." << std::endl;
-    return;
+    exit(1);
   }
+}
+
+void Smi::setCpuAffinity(int id)
+{
+  checkGpuIdIsSensible(id);
 
   uint32_t numa_node;
   rsmiCheck( rsmi_topo_numa_affinity_get( id, &numa_node) );
   numa_run_on_node(numa_node);
+}
+
+float Smi::getGpuTemp(int id)
+{
+  // Check that the GPU id is correct
+  checkGpuIdIsSensible(id);
+
+  // Get the temperature reading
+  int64_t temperature;
+  rsmiCheck( rsmi_dev_temp_metric_get(id, RSMI_TEMP_TYPE_FIRST, RSMI_TEMP_CURRENT, &temperature) );
+  return float(temperature)/1000.f;
 }
 
 Smi::~Smi()
