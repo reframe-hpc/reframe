@@ -58,7 +58,7 @@ Smi::~Smi()
   if (!(this->activeSmiInstances))
   {
     nvmlCheck( nvmlShutdown() );
-    this->nvmlIsActive = 0;
+    this->smiIsActive = 0;
   }
 }
 
