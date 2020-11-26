@@ -1,4 +1,7 @@
 /*
+ * Modified for CSCS by Javier Otero (javier.otero@cscs.ch) to
+ * support both HIP and CUDA.
+ *
  * Modifications for CSCS by Mark Klein (klein@cscs.ch)
  * - NVML bindings
  * - Reduced output
@@ -435,6 +438,7 @@ void listenClients(std::vector<int> clientFd, std::vector<pid_t> clientPid, int 
                 for (size_t i = 0; i < clientErrors.size(); ++i) {
                     std::string note = "%d ";
                 }
+
                 fflush(stdout);
 
                 if (nextReport < elapsed) {

@@ -104,15 +104,10 @@ class P2pBandwidthCheck(rfm.RegressionTest):
             nvidia_sm = '70'
         elif cp == 'ault:amda100':
             nvidia_sm = '80'
-        elif cp in {'dom:gpu', 'daint:gpu'}:
-            nvidia_sm == '60'
 
         if nvidia_sm:
             self.build_system.cxxflags += [f'-arch=sm_{nvidia_sm}']
-            if cp in {'dom:gpu', 'daint:gpu'}:
-                self.modules += ['cudatoolkit']
-            else:
-                self.modules += ['cuda']
+            self.modules += ['cuda']
 
         # Deal with the AMD options
         amd_trgt = None
@@ -127,9 +122,7 @@ class P2pBandwidthCheck(rfm.RegressionTest):
     def set_num_gpus_per_node(self):
         cp = self.current_partition.fullname
         cs = self.current_system.name
-        if cs in {'dom', 'daint'}:
-            self.num_gpus_per_node = 1
-        elif cs in {'arola', 'tsa'}:
+        if cs in {'arola', 'tsa'}:
             self.num_gpus_per_node = 8
         elif cp in {'ault:amda100', 'ault:intelv100'}:
             self.num_gpus_per_node = 4

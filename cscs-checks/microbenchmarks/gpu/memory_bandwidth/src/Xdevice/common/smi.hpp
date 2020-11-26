@@ -1,0 +1,83 @@
+#ifndef __DEFINED_COMMON_SMI__
+#define __DEFINED_COMMON_SMI__
+
+#include <iostream>
+
+class Smi
+{
+private:
+  /*
+   * Indicator that shows if the Smi class has any active instances.
+   *
+   * This is set to 1 if the activeSmiInstances is greater that 0.
+   *
+   */
+  static int smiIsActive;
+
+  /*
+   * Active instance counter.
+   *
+   * This counter is incrementer/decremented in the class constructor/destructor.
+   *
+   */
+  static int activeSmiInstances;
+
+  /*
+   * Number of present devices in the current node.
+   *
+   * This gets set during the class construction.
+   *
+   */
+  unsigned int numberOfDevices;
+
+public:
+  Smi();
+  ~Smi();
+
+  /*
+   * Test wheter the requested GPU id is within the range of available IDs in the curent node.
+   *
+   * This function can exit the program if the requested value is outside the valid range.
+   *
+   * Parameters:
+   *   + id: requested device ID.
+   */
+  void checkGpuIdIsSensible(int id);
+
+  /*
+   * Pin the host thread to a CPU with affinity to a given device.
+   *
+   * Parameters:
+   *   + id: ID of the device that must have affinity with the pinned CPU.
+   */
+  void setCpuAffinity(int id);
+
+  /*
+   * Get the current temperature of a given device.
+   *
+   * Parameters:
+   *   + id: ID of the device from which to read the temperature.
+   */
+  float getGpuTemp(int id);
+};
+
+/*
+ * Default values for the static members.
+ */
+int Smi::smiIsActive = 0;
+int Smi::activeSmiInstances = 0;
+
+
+/*
+ * Member functions with a common implementation across platforms.
+ */
+void Smi::checkGpuIdIsSensible(int id)
+{
+  if (id < 0 || id >= numberOfDevices)
+  {
+    std::cerr << "Requested device ID is out of range from the existing devices." << std::endl;
+    exit(1);
+  }
+}
+
+#endif
