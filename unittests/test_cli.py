@@ -58,7 +58,7 @@ def perflogdir(tmp_path):
 def run_reframe(tmp_path, perflogdir):
     def _run_reframe(system='generic:default',
                      checkpath=['unittests/resources/checks/hellocheck.py'],
-                     environs=['builtin-gcc'],
+                     environs=['builtin'],
                      local=True,
                      action='run',
                      more_options=None,
@@ -301,7 +301,7 @@ def test_check_sanity_failure(run_reframe, tmp_path):
     assert returncode != 0
     assert os.path.exists(
         tmp_path / 'stage' / 'generic' / 'default' /
-        'builtin-gcc' / 'SanityFailureCheck'
+        'builtin' / 'SanityFailureCheck'
     )
 
 
@@ -314,7 +314,7 @@ def test_dont_restage(run_reframe, tmp_path):
     # Place a random file in the test's stage directory and rerun with
     # `--dont-restage` and `--max-retries`
     stagedir = (tmp_path / 'stage' / 'generic' / 'default' /
-                'builtin-gcc' / 'SanityFailureCheck')
+                'builtin' / 'SanityFailureCheck')
     (stagedir / 'foobar').touch()
     returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks/frontend_checks.py'],
@@ -361,7 +361,7 @@ def test_performance_check_failure(run_reframe, tmp_path, perflogdir):
     assert returncode != 0
     assert os.path.exists(
         tmp_path / 'stage' / 'generic' / 'default' /
-        'builtin-gcc' / 'PerformanceFailureCheck'
+        'builtin' / 'PerformanceFailureCheck'
     )
     assert os.path.exists(perflogdir / 'generic' /
                           'default' / 'PerformanceFailureCheck.log')

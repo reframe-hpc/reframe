@@ -73,7 +73,7 @@ def hellotest():
 @pytest.fixture
 def local_exec_ctx(generic_system):
     partition = fixtures.partition_by_name('default')
-    environ = fixtures.environment_by_name('builtin-gcc', partition)
+    environ = fixtures.environment_by_name('builtin', partition)
     yield partition, environ
 
 
@@ -461,7 +461,7 @@ def test_extra_resources(testsys_system):
 
     test = MyTest()
     partition = fixtures.partition_by_name('gpu')
-    environ = partition.environment('builtin-gcc')
+    environ = partition.environment('builtin')
     _run(test, partition, environ)
     expected_job_options = {'--gres=gpu:2',
                             '#DW jobdw capacity=100GB',
@@ -852,7 +852,7 @@ def _run_sanity(test, *exec_ctx, skip_perf=False):
 @pytest.fixture
 def dummy_gpu_exec_ctx(testsys_system):
     partition = fixtures.partition_by_name('gpu')
-    environ = fixtures.environment_by_name('builtin-gcc', partition)
+    environ = fixtures.environment_by_name('builtin', partition)
     yield partition, environ
 
 

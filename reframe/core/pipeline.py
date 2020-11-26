@@ -1753,6 +1753,10 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     def __hash__(self):
         return hash(self.name)
 
+    def __rfm_json_decode__(self, json):
+        # 'tags' are decoded as list, so we convert them to a set
+        self.tags = set(json['tags'])
+
 
 class RunOnlyRegressionTest(RegressionTest, special=True):
     '''Base class for run-only regression tests.

@@ -36,7 +36,7 @@ site_configuration = {
                     'name': 'login',
                     'scheduler': 'local',
                     'launcher': 'local',
-                    'environs': ['PrgEnv-cray', 'PrgEnv-gnu', 'builtin-gcc'],
+                    'environs': ['PrgEnv-cray', 'PrgEnv-gnu'],
                     'descr': 'Login nodes'
                 },
                 {
@@ -61,7 +61,7 @@ site_configuration = {
                             ]
                         }
                     ],
-                    'environs': ['PrgEnv-gnu', 'builtin-gcc'],
+                    'environs': ['PrgEnv-gnu', 'builtin'],
                     'max_jobs': 10
                 }
             ]
@@ -111,12 +111,6 @@ site_configuration = {
             'ftn': ''
         },
         {
-            'name': 'builtin-gcc',
-            'cc': 'gcc',
-            'cxx': 'g++',
-            'ftn': 'gfortran'
-        },
-        {
             'name': 'e0',
             'modules': ['m0']
         },
@@ -134,7 +128,7 @@ site_configuration = {
             'name': 'unittest',
             'options': [
                 '-c unittests/resources/checks/hellocheck.py',
-                '-p builtin-gcc',
+                '-p builtin',
                 '--force-local'
             ]
         }

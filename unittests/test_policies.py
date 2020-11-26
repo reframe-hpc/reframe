@@ -296,7 +296,7 @@ def test_force_local_execution(make_runner, make_cases, testsys_exec_ctx):
     runner = make_runner()
     runner.policy.force_local = True
     test = HelloTest()
-    test.valid_prog_environs = ['builtin-gcc']
+    test.valid_prog_environs = ['builtin']
 
     runner.runall(make_cases([test]))
     assert_runall(runner)
