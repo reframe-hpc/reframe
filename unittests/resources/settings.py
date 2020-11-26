@@ -19,7 +19,7 @@ site_configuration = {
                     'descr': 'Login nodes',
                     'scheduler': 'local',
                     'launcher': 'local',
-                    'environs': ['builtin-gcc']
+                    'environs': ['builtin']
                 }
             ]
         },

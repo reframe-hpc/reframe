@@ -14,8 +14,8 @@ import reframe.utility as util
 import reframe.utility.jsonext as jsonext
 
 
+DATA_VERSION = '1.1'
 _SCHEMA = os.path.join(rfm.INSTALL_PREFIX, 'reframe/schemas/runreport.json')
-_DATA_VERSION = '1.1'
 
 
 class _RunReport:
@@ -142,10 +142,10 @@ def load_report(filename):
 
     # Check if the report data is compatible
     data_ver = report['session_info']['data_version']
-    if data_ver != _DATA_VERSION:
+    if data_ver != DATA_VERSION:
         raise errors.ReframeError(
             f'incompatible report data versions: '
-            f'found {data_ver!r}, required {_DATA_VERSION!r}'
+            f'found {data_ver!r}, required {DATA_VERSION!r}'
         )
 
     return _RunReport(report)
