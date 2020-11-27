@@ -37,7 +37,7 @@ class FileSystemChangeDirCheck(FileSystemCommandCheck):
             'daint:login': {
                 'real': (0.1, None, 0.1, 's')
             },
-            'daint:login': {
+            'dom:login': {
                 'real': (0.1, None, 0.1, 's')
             }
         }
@@ -55,7 +55,7 @@ class FileSystemLsDirCheck(FileSystemCommandCheck):
             'daint:login': {
                 'real': (0.1, None, 0.1, 's')
             },
-            'daint:login': {
+            'dom:login': {
                 'real': (0.1, None, 0.1, 's')
             }
         }
