@@ -109,6 +109,8 @@ class ModulesSystem:
             return ModulesSystem(TMod4Impl())
         elif modules_kind == 'lmod':
             return ModulesSystem(LModImpl())
+        elif modules_kind == 'slack':
+            return ModulesSystem(SpackImpl())
         else:
             raise ConfigError('unknown module system: %s' % modules_kind)
 
@@ -939,3 +941,111 @@ class NoModImpl(ModulesSystemImpl):
 
     def emit_unload_instr(self, module):
         return ''
+
+
+class SpackImpl(ModulesSystemImpl):
+    '''Base class for TMod Module system (Tcl).'''
+
+    def __init__(self):
+        # Try to figure out if we are indeed using the TCL version
+        try:
+            completed = osext.run_command('spack -V')
+        except OSError as e:
+            raise ConfigError(
+                'could not find a sane Spack installation') from e
+
+        self._version = completed.stdout.strip()
+
+        # self._version = version
+        # try:
+        #     # Try the Python bindings now
+        #     completed = osext.run_command(self.modulecmd())
+        # except OSError as e:
+        #     raise ConfigError(
+        #         'could not get the Python bindings for TMod: ' % e) from e
+
+        # if re.search(r'Unknown shell type', completed.stderr):
+        #     raise ConfigError(
+        #         'Python is not supported by this TMod installation')
+
+    def name(self):
+        return 'spack'
+
+    def version(self):
+        return self._version
+
+    def modulecmd(self, *args):
+        return ' '.join(['spack', *args])
+
+    def _execute(self, cmd, *args):
+        modulecmd = self.modulecmd(cmd, *args)
+        completed = osext.run_command(modulecmd)
+        if re.search(r'Error', completed.stderr) is not None:
+            raise SpawnedProcessError(modulecmd,
+                                      completed.stdout,
+                                      completed.stderr,
+                                      completed.returncode)
+
+        return completed.stdout
+
+    def available_modules(self, substr):
+        output = self.execute('find', '--format', '{name}-{version}-{hash}',
+                              substr)
+        ret = []
+        for line in output.split('\n'):
+            if not line or line[-1] == ':':
+                # Ignore empty lines and path entries
+                continue
+
+            ret.append(Module(line))
+
+        return ret
+
+    def _module_full_name(self, name):
+        return self.execute('find', '--format', '{name}-{version}-{hash}',
+                            name)
+
+    def loaded_modules(self):
+        try:
+            hashes = '/'.join(
+                [m for m in os.environ['SPACK_LOADED_HASHES'].split(':') if m])
+            if hashes:
+                output = self.execute('find', '--loaded', '--format',
+                                      '{name}-{version}-{hash}', f'/{hashes}')
+                return [Module(m) for m in output.split('\n') if m]
+            else:
+                return []
+        except KeyError:
+            return []
+
+    def conflicted_modules(self, module):
+        pass
+
+    def is_module_loaded(self, module):
+        module = self._module_full_name(module.name)
+        module = Module(module)
+        return module in self.loaded_modules()
+
+    def load_module(self, module):
+        pass
+
+    def unload_module(self, module):
+        pass
+
+    def unload_all(self):
+        pass
+
+    def searchpath(self):
+        pass
+
+    def searchpath_add(self, *dirs):
+        pass
+
+    def searchpath_remove(self, *dirs):
+        pass
+
+    def emit_load_instr(self, module):
+        return f'spack load {module}'
+
+    def emit_unload_instr(self, module):
+        return f'spack unload {module}'
