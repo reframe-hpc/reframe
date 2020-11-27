@@ -109,7 +109,7 @@ class ModulesSystem:
             return ModulesSystem(TMod4Impl())
         elif modules_kind == 'lmod':
             return ModulesSystem(LModImpl())
-        elif modules_kind == 'slack':
+        elif modules_kind == 'spack':
             return ModulesSystem(SpackImpl())
         else:
             raise ConfigError('unknown module system: %s' % modules_kind)
