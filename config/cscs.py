@@ -639,7 +639,6 @@ site_configuration = {
                 {
                     'name': 'login',
                     'scheduler': 'local',
-                    'modules': [],
                     'environs': [
                         'builtin',
                         'PrgEnv-cray',
@@ -655,8 +654,8 @@ site_configuration = {
                     'descr': 'Multicore nodes (AMD EPYC 7742, 256GB/cn)',
                     'scheduler': 'slurm',
                     'access': [
+                        # FIXME: update when the constraint will be ready
                         '--exclude=nid00[1512-1703,1768-1927]'
-                        # f'--constraint=mc',
                     ],
                     'environs': [
                         'builtin',
@@ -676,12 +675,6 @@ site_configuration = {
                                 '--switches={num_switches}'
                             ]
                         },
-                        {
-                            'name': 'mem-per-cpu',
-                            'options': [
-                                '--mem-per-cpu={mem_per_cpu}'
-                            ]
-                        },
                     ],
                     'launcher': 'srun'
                 },
@@ -690,8 +683,8 @@ site_configuration = {
                     'descr': 'Multicore nodes (AMD EPYC 7742, 512GB/cn)',
                     'scheduler': 'slurm',
                     'access': [
+                        # FIXME: update when the constraint will be ready
                         '--exclude=nid00[1000-1003,1006-1191,1256-1415]'
-                        # f'--constraint=mc',
                     ],
                     'environs': [
                         'builtin',
