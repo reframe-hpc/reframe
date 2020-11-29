@@ -32,7 +32,7 @@ import reframe.utility.typecheck as typ
 import reframe.utility.udeps as udeps
 from reframe.core.backends import (getlauncher, getscheduler)
 from reframe.core.buildsystems import BuildSystemField
-from reframe.core.containers import ContainerPlatform, ContainerPlatformField
+from reframe.core.containers import ContainerPlatformField
 from reframe.core.deferrable import _DeferredExpression
 from reframe.core.exceptions import (BuildError, DependencyError,
                                      PipelineError, SanityError,
