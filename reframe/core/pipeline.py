@@ -275,14 +275,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: :default: ``[]``
     prebuild_cmds = fields.TypedField('prebuild_cmds', typ.List[str])
 
-    #: .. deprecated:: 3.0
-    #:
-    #: Use :attr:`prebuild_cmds` instead.
-    prebuild_cmd = fields.DeprecatedField(
-        fields.TypedField('prebuild_cmds', typ.List[str]),
-        "'prebuild_cmd' is deprecated; please use 'prebuild_cmds' instead"
-    )
-
     #: .. versionadded:: 3.0
     #:
     #: List of shell commands to be executed after a successful compilation.
@@ -294,14 +286,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: :type: :class:`List[str]`
     #: :default: ``[]``
     postbuild_cmds = fields.TypedField('postbuild_cmds', typ.List[str])
-
-    #: .. deprecated:: 3.0
-    #:
-    #: Use :attr:`postbuild_cmds` instead.
-    postbuild_cmd = fields.DeprecatedField(
-        fields.TypedField('postbuild_cmds', typ.List[str]),
-        "'postbuild_cmd' is deprecated; please use 'postbuild_cmds' instead"
-    )
 
     #: The name of the executable to be launched during the run phase.
     #:
@@ -352,14 +336,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: :default: ``[]``
     prerun_cmds = fields.TypedField('prerun_cmds', typ.List[str])
 
-    #: .. deprecated:: 3.0
-    #:
-    #: Use :attr:`prerun_cmds` instead.
-    pre_run = fields.DeprecatedField(
-        fields.TypedField('prerun_cmds', typ.List[str]),
-        "'pre_run' is deprecated; please use 'prerun_cmds' instead"
-    )
-
     #: .. versionadded:: 3.0
     #:
     #: List of shell commands to execute after launching this job.
@@ -370,14 +346,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: :type: :class:`List[str]`
     #: :default: ``[]``
     postrun_cmds = fields.TypedField('postrun_cmds', typ.List[str])
-
-    #: .. deprecated:: 3.0
-    #:
-    #: Use :attr:`postrun_cmds` instead.
-    post_run = fields.DeprecatedField(
-        fields.TypedField('postrun_cmds', typ.List[str]),
-        "'post_run' is deprecated; please use 'postrun_cmds' instead"
-    )
 
     #: List of files to be kept after the test finishes.
     #:
