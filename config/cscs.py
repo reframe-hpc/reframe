@@ -666,10 +666,6 @@ site_configuration = {
                     'max_jobs': 100,
                     'resources': [
                         {
-                            'name': 'bcast',
-                            'options': ['--bcast={path}']
-                        },
-                        {
                             'name': 'switches',
                             'options': [
                                 '--switches={num_switches}'
@@ -694,10 +690,6 @@ site_configuration = {
                     ],
                     'max_jobs': 100,
                     'resources': [
-                        {
-                            'name': 'bcast',
-                            'options': ['--bcast={path}']
-                        },
                         {
                             'name': 'switches',
                             'options': [
