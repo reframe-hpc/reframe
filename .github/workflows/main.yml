@@ -47,24 +47,15 @@ jobs:
       run: |
         docker run reframe:${{ matrix.modules-version }}
 
-  flake8:
-    if: github.event_name == 'pull_request'
+  unusedimports:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
-    - name: Changed Python Files
-      run: |
-        echo 'CHANGED_PYTHON_FILES<<EOF' >> $GITHUB_ENV
-        git diff --name-only ${{ github.event.pull_request.base.sha }}..${{ github.sha }} | grep '.py' >> $GITHUB_ENV
-        echo 'EOF' >> $GITHUB_ENV
-    - uses: actions/setup-python@v2
-      with:
-        python-version: 3.8
-    - name: Unused Imports Check
-      run: |
-        pip install flake8
-        echo 'Checking Python Files:'
-        for f in "$CHANGED_PYTHON_FILES"; do echo "$f"; done
-        flake8 --select F401 $CHANGED_PYTHON_FILES
+    - name: Lint Code Base
+      uses: github/super-linter@v3
+      env:
+        VALIDATE_ALL_CODEBASE: false
+        VALIDATE_PYTHON_FLAKE8: true
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
