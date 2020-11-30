@@ -7,12 +7,10 @@ import contextlib
 import io
 import itertools
 import os
-import pathlib
 import pytest
 import re
 import sys
 
-import reframe.core.config as config
 import reframe.core.environments as env
 import reframe.core.logging as logging
 import reframe.core.runtime as rt

@@ -3,8 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import abc
-import functools
 import pytest
 
 import reframe.core.buildsystems as bs

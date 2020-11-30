@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import os
-import pathlib
 import pytest
 import re
 
@@ -14,8 +13,7 @@ import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 import unittests.fixtures as fixtures
 from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
-                                     ReframeSyntaxError, PerformanceError,
-                                     SanityError)
+                                     PerformanceError, SanityError)
 from reframe.frontend.loader import RegressionCheckLoader
 from unittests.resources.checks.hellocheck import HelloTest
 from unittests.resources.checks.pinnedcheck import PinnedTest
@@ -812,7 +810,6 @@ def test_name_compileonly_test():
 
 
 def test_registration_of_tests():
-    import sys
     import unittests.resources.checks_unlisted.good as mod
 
     checks = mod._rfm_gettests()
