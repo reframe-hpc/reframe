@@ -922,21 +922,6 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
 
 
-.. versionadded:: 3.3
-
-.. envvar:: RFM_UNUSE_MODULE_PATHS
-
-   A colon-separated list of module paths to be unused before acting on any tests.
-
-   .. table::
-      :align: left
-
-      ================================== ==================
-      Associated command line option     :option:`--unuse-module-path`
-      Associated configuration parameter :js:attr:`unuse_module_paths` general configuration parameter
-      ================================== ==================
-
-
 .. envvar:: RFM_USE_LOGIN_SHELL
 
    Use a login shell for the generated job scripts.
