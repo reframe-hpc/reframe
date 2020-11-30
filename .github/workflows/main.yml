@@ -48,7 +48,6 @@ jobs:
         docker run reframe:${{ matrix.modules-version }}
 
   unusedimports:
-    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
