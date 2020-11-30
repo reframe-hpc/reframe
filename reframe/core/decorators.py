@@ -102,6 +102,10 @@ def test(cls):
                                        for k in cls._rfm_params])
 
         cls._rfm_param_space_iter = _param_space_iterator(cls)
+
+        # Register the test for each of the parameter space combinations. This
+        # does **not** feed the params to the test. That is done during the
+        # object creation.
         for inst in _param_space_iterator(cls):
             _register_test(cls)
 

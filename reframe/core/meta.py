@@ -16,24 +16,31 @@ class RegressionTestMeta(type):
     def __prepare__(cls, name, bases, **kwargs):
         namespace = super().__prepare__(name, bases, **kwargs)
 
-        # Extend the class attributes to the RegressionTest class
-        namespace['__rfm_attributes'] = RegressionTestAttributes()
+        # Extend the RegressionTest class with the directives defined in the
+        # RegressionTestAttributes class.
+        rfm_attr = RegressionTestAttributes()
+        namespace['__rfm_attributes'] = rfm_attr
 
         # Attribute to add a regression test parameter as:
         # `rfm_parameter('P0', [0,1,2,3])`.
-        namespace['rfm_parameter'] = namespace['__rfm_attributes']._rfm_parameter_stage.add
+        namespace['parameter'] = rfm_attr._rfm_parameter_stage.add
 
         # Attribute to purge a list of test parameters.
-        namespace['rfm_purge_parameters'] = namespace['__rfm_attributes']._rfm_parameter_stage.purge_parameters
+        namespace['purge_parameters'] = (rfm_attr
+                                         )._rfm_parameter_stage.purge_parameters
 
         # Attribute to purge the entire parameter space.
-        namespace['rfm_purge_all_parameters'] = namespace['__rfm_attributes']._rfm_parameter_stage.purge_all_parameters
+        namespace['purge_all_parameters'] = (rfm_attr._rfm_parameter_stage
+                                             ).purge_all_parameters
 
         # Method to build the parameter space
-        namespace['_rfm_build_parameter_space'] = namespace['__rfm_attributes'].build_parameter_space
+        namespace['_rfm_build_parameter_space'] = (rfm_attr
+                                                   ).build_parameter_space
 
-        # Method to check that the test parameter space does not clash with the RegressionTest namespace
-        namespace['_rfm_namespace_clash_check'] = namespace['__rfm_attributes'].namespace_clash_check
+        # Method to check that the test parameter space does not clash with the
+        # RegressionTest namespace
+        namespace['_rfm_namespace_clash_check'] = (rfm_attr
+                                                   ).namespace_clash_check
 
         return namespace
 
