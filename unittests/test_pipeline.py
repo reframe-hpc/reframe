@@ -457,6 +457,21 @@ def test_sourcepath_upref(local_exec_ctx):
         test.compile()
 
 
+def test_sourcepath_non_existent(local_exec_ctx):
+    @fixtures.custom_prefix('unittests/resources/checks')
+    class MyTest(rfm.CompileOnlyRegressionTest):
+        def __init__(self):
+            self.valid_prog_environs = ['*']
+            self.valid_systems = ['*']
+
+    test = MyTest()
+    test.setup(*local_exec_ctx)
+    test.sourcepath = 'non_existent.c'
+    test.compile()
+    with pytest.raises(BuildError):
+        test.compile_wait()
+
+
 def test_extra_resources(testsys_system):
     @fixtures.custom_prefix('unittests/resources/checks')
     class MyTest(HelloTest):
