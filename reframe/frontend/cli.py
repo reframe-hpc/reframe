@@ -16,7 +16,6 @@ import traceback
 
 import reframe
 import reframe.core.config as config
-import reframe.core.environments as env
 import reframe.core.exceptions as errors
 import reframe.core.logging as logging
 import reframe.core.runtime as runtime

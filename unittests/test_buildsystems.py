@@ -233,3 +233,10 @@ def test_compiler_pick(lang):
     }
     assert ([f'{compilers[lang]} {build_system.srcfile} -o foo.x'] ==
             build_system.emit_build_commands(ProgEnvironment('testenv')))
+
+
+def test_singlesource_unknown_language():
+    build_system = bs.SingleSource()
+    build_system.srcfile = 'foo.bar'
+    with pytest.raises(BuildSystemError, match='could not guess language'):
+        build_system.emit_build_commands(ProgEnvironment('testenv'))
