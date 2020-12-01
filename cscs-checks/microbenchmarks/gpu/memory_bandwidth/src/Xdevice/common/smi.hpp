@@ -48,7 +48,7 @@ public:
    * This function can exit the program if the requested value is outside the valid range.
    *
    * Parameters:
-   *   + id: requested device ID.
+   *   + id: Device ID.
    */
   void checkGpuIdIsSensible(int id);
 
@@ -56,7 +56,7 @@ public:
    * Pin the host thread to a CPU with affinity to a given device.
    *
    * Parameters:
-   *   + id: ID of the device that must have affinity with the pinned CPU.
+   *   + id: Device ID.
    */
   void setCpuAffinity(int id);
 
@@ -64,9 +64,29 @@ public:
    * Get the current temperature of a given device.
    *
    * Parameters:
-   *   + id: ID of the device from which to read the temperature.
+   *   + id: Device ID.
    */
   float getGpuTemp(int id);
+
+  /*
+   * Get the total memory size present in a device.
+   *
+   * Parameters:
+   *   + id: Device id.
+   *   + mSize: Size (in bytes) of the total memory.
+   *
+   */
+  void getDeviceMemorySize(int id, size_t * mSize);
+
+  /*
+   * Get the available memory size in a given device.
+   *
+   * Parameters:
+   *   + id: Device id.
+   *   + mSize: Size (in bytes) of the available memory.
+   *
+   */
+  void getDeviceAvailMemorySize(int id, size_t * mSize);
 };
 
 /*
@@ -80,7 +100,7 @@ int Smi::activeSmiInstances = 0;
  * Member functions with a common implementation across platforms.
  */
 
-void Smi::getNumberOfDevices(int n)
+void Smi::getNumberOfDevices(int * n)
 {
   *n = this->numberOfDevices;
 }
