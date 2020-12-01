@@ -628,6 +628,86 @@ site_configuration = {
             ]
         },
         {
+            'name': 'pilatus',
+            'descr': 'Alps Cray EX Supercomputer (TDS)',
+            'hostnames': [
+                'pilatus'
+            ],
+            'modules_system': 'lmod',
+            'resourcesdir': '/apps/common/UES/reframe/resources',
+            'partitions': [
+                {
+                    'name': 'login',
+                    'scheduler': 'local',
+                    'environs': [
+                        'builtin',
+                        'PrgEnv-cray',
+                        'PrgEnv-gnu',
+                        'PrgEnv-aocc'
+                    ],
+                    'descr': 'Login nodes',
+                    'max_jobs': 4,
+                    'launcher': 'local'
+                },
+                {
+                    'name': 'mc_lowmem',
+                    'descr': 'Multicore nodes (AMD EPYC 7742, 256GB/cn)',
+                    'scheduler': 'slurm',
+                    'access': [
+                        # FIXME: update when the constraint will be ready
+                        '--exclude=nid00[1512-1543,1550-1555,1558-1559,1566-1569,1584-1589,1598-1599,1604-1605,1608-1675,1682-1683,1698-1699,1768-1771,1776-1777,1780-1785,1788-1789,1792-1795,1798-1801,1806-1809,1812-1813,1816-1817,1820-1821,1826-1827,1832-1927]'
+                    ],
+                    'environs': [
+                        'builtin',
+                        'PrgEnv-cray',
+                        'PrgEnv-gnu',
+                        'PrgEnv-aocc'
+                    ],
+                    'max_jobs': 100,
+                    'resources': [
+                        {
+                            'name': 'switches',
+                            'options': [
+                                '--switches={num_switches}'
+                            ]
+                        },
+                    ],
+                    'launcher': 'srun'
+                },
+                {
+                    'name': 'mc_himem',
+                    'descr': 'Multicore nodes (AMD EPYC 7742, 512GB/cn)',
+                    'scheduler': 'slurm',
+                    'access': [
+                        # FIXME: update when the constraint will be ready
+                        '--exclude=nid00[1004-1191,1260-1261,1264-1267,1274-1275,1278-1279,1282-1283,1286-1355,1364-1367,1372-1381,1388-1391,1394-1395,1398-1403,1406-1407,1414-1415]'
+                    ],
+                    'environs': [
+                        'builtin',
+                        'PrgEnv-cray',
+                        'PrgEnv-gnu',
+                        'PrgEnv-aocc'
+                    ],
+                    'max_jobs': 100,
+                    'resources': [
+                        {
+                            'name': 'switches',
+                            'options': [
+                                '--switches={num_switches}'
+                            ]
+                        },
+                        {
+                            'name': 'mem-per-cpu',
+                            'options': [
+                                '--mem-per-cpu={mem_per_cpu}'
+                            ]
+                        },
+                    ],
+                    'launcher': 'srun'
+                },
+            ]
+        },
+        {
             'name': 'eiger',
             'descr': 'Alps Cray EX Supercomputer',
             'hostnames': [
