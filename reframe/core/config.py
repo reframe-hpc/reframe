@@ -229,9 +229,9 @@ class _SiteConfig:
 
         if hasattr(mod, 'settings'):
             # Looks like an old style config
-            raise ReframeDeprecationWarning(
+            raise ConfigError(
                 f"the syntax of the configuration file '{filename}' "
-                f"is deprecated"
+                f"is no longer supported"
             )
 
         mod = util.import_module_from_file(filename)

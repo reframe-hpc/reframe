@@ -24,7 +24,7 @@ def test_load_config_python():
 
 
 def test_load_config_python_old_syntax():
-    with pytest.raises(ReframeDeprecationWarning):
+    with pytest.raises(ConfigError):
         site_config = config.load_config(
             'unittests/resources/settings_old_syntax.py'
         )

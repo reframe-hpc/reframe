@@ -14,22 +14,17 @@ Updating Your Site Configuration
 --------------------------------
 
 As described in `Configuring ReFrame for Your Site <configure.html>`__, ReFrame's configuration file has changed substantially.
-However, you don't need to manually update your configuration; ReFrame will do that automatically for you.
-As soon as it detects an old-style configuration file, it will convert it to the new syntax save it in a temporary file:
-
-
-.. code-block:: none
-
-   $ ./bin/reframe -C unittests/resources/settings_old_syntax.py -l
-   ./bin/reframe: the syntax of the configuration file 'unittests/resources/settings_old_syntax.py' is deprecated
-   ./bin/reframe: configuration file has been converted to the new syntax here: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/tmph5n8u3kf.py'
-
-Alternatively, you can convert any old configuration file using the command line option :option:`--upgrade-config-file`:
+However, you can convert any old configuration file using the command line option :option:`--upgrade-config-file`:
 
 .. code-block:: none
 
    $ ./bin/reframe --upgrade-config-file unittests/resources/settings_old_syntax.py:new_config.py
    Conversion successful! The converted file can be found at 'new_config.py'.
+
+.. warning::
+   .. versionchanged:: 3.4
+      The old configuration syntax in no longer supported.
+
 
 Another important change is that default locations for looking up a configuration file has changed (see `Configuring ReFrame for Your Site <configure.html>`__ for more details).
 That practically means that if you were relying on ReFrame loading your ``reframe/settings.py`` by default, this is no longer true.
@@ -39,7 +34,7 @@ You have to move it to any of the default settings locations or set the correspo
    The conversion tool will create a JSON configuration file if the extension of the target file is ``.json``.
 
 
-Automatic conversion limitations
+Configuration conversion limitations
 ================================
 
 ReFrame does a pretty good job in converting correctly your old configuration files, but there are some limitations:
