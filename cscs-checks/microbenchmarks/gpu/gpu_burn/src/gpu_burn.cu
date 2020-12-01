@@ -54,105 +54,183 @@
 #include <time.h>
 #include <cstdlib>
 
-#include <nvml.h>
+#include "Xdevice/runtime.hpp"
+#include "Xdevice/smi.hpp"
 #include <cuda.h>
 #include "cublas_v2.h"
 
-// Actually, there are no rounding errors due to results being accumulated in an arbitrary order..
+#include <thread>
+#include <type_traits>
+#include <vector>
+#include <array>
+#include <mutex>
+#include <algorithm>
+#include <functional>
+#include <memory>
+
+// Actually, there are no rounding errors due to results being accumulated in an arbitrary order.
 // Therefore EPSILON = 0.0f is OK
 #define EPSILON 0.001f
 #define EPSILOND 0.0000001
 
-extern "C" __global__ void compareF(float *C, int *faultyElems, size_t iters) {
-    size_t iterStep = blockDim.x*blockDim.y*gridDim.x*gridDim.y;
-    size_t myIndex = (blockIdx.y*blockDim.y + threadIdx.y)* // Y
-		     gridDim.x*blockDim.x + // W
-		     blockIdx.x*blockDim.x + threadIdx.x; // X
+namespace kernels
+{
+  template<class T>
+  __global__ void compare(T *C, int *numberOfErrors, size_t iters) {
+      size_t iterStep = blockDim.x*blockDim.y*gridDim.x*gridDim.y;
+      size_t myIndex = (blockIdx.y*blockDim.y + threadIdx.y)* // Y
+                        gridDim.x*blockDim.x + // W
+                        blockIdx.x*blockDim.x + threadIdx.x; // X
 
-    int myFaulty = 0;
-    for (size_t i = 1; i < iters; ++i)
-        if (fabsf(C[myIndex] - C[myIndex + i*iterStep]) > EPSILON)
-            myFaulty++;
+      int localErrors = 0;
+      for (size_t i = 1; i < iters; ++i)
+          if (fabs(C[myIndex] - C[myIndex + i*iterStep]) > EPSILOND)
+              localErrors++;
 
-    atomicAdd(faultyElems, myFaulty);
+      atomicAdd(numberOfErrors, localErrors);
+  }
 }
 
-extern "C" __global__ void compareD(double *C, int *faultyElems, size_t iters) {
-    size_t iterStep = blockDim.x*blockDim.y*gridDim.x*gridDim.y;
-    size_t myIndex = (blockIdx.y*blockDim.y + threadIdx.y)* // Y
-                     gridDim.x*blockDim.x + // W
-		     blockIdx.x*blockDim.x + threadIdx.x; // X
+template <class T> class FirePit
+{
+private:
+  int deviceId;
 
-    int myFaulty = 0;
-    for (size_t i = 1; i < iters; ++i)
-        if (fabs(C[myIndex] - C[myIndex + i*iterStep]) > EPSILOND)
-            myFaulty++;
+  // SMI handle to do system queries.
+  Smi * smi_handle;
 
-    atomicAdd(faultyElems, myFaulty);
+  size_t AvailDeviceMemory;
+  size_t iters;
+  size_t d_resultSize;
+
+  long long int totalErrors;
+
+  static const int g_blockSize = 16;
+  T * d_C;
+  T * d_A;
+  T * d_B;
+  int * d_numberOfErrors;
+
+  cublasHandle_t d_cublas;
+
+public:
+  FirePit(int id, Smi * smi_hand) : deviceId(id), smi_handle(smi_hand)
+  {
+      // Set the device and pin thread to CPU with
+      XSetDevice(deviceId);
+      smi_handle->setCpuAffinity(deviceId);
+
+      // Create blas plan
+      cublasCreate(&d_cublas);
+      cublasSetPointerMode(d_cublas, CUBLAS_POINTER_MODE_HOST);
+
+      totalErrors = 0;
+  }
+  ~FirePit()
+  {
+      XFree(d_C);
+      XFree(d_A);
+      XFree(d_B);
+      XFree(d_numberOfErrors);
+      cublasDestroy(d_cublas);
+  }
+
+  unsigned long long int getErrors()
+  {
+      unsigned long long int tempErrs = totalErrors;
+      totalErrors = 0;
+      return tempErrs;
+  }
+
+  size_t getIters()
+  {
+      return iters;
+  }
+
+  size_t availMemory()
+  {
+      size_t freeMem;
+      smi_handle->getDeviceAvailMemorySize(deviceId, &freeMem);
+      return freeMem;
+  }
+
+  void initBuffers(T * h_A, T * h_B)
+  {
+      size_t useBytes = (size_t)((double)availMemory()*USEMEM);
+      size_t d_resultSize = sizeof(T)*SIZE*SIZE;
+      iters = (useBytes - 2*d_resultSize)/d_resultSize; // We remove A and B sizes
+      XMalloc((void**)&d_C, iters*d_resultSize);
+      XMalloc((void**)&d_A, d_resultSize);
+      XMalloc((void**)&d_B, d_resultSize);
+      XMalloc((void**)&d_numberOfErrors, sizeof(int));
+
+      // Populating matrices A and B
+      XMemcpy(d_A, h_A, d_resultSize, XMemcpyHostToDevice);
+      XMemcpy(d_B, h_B, d_resultSize, XMemcpyHostToDevice);
+  }
+
+  void compute()
+  {
+      // See function specialisations below.
+      std::cout << "compute function not implemented for this type." << std::endl;
+      exit(1);
+  }
+
+  void compare() {
+      int numberOfErrors;
+      XMemset(d_numberOfErrors, 0, sizeof(int));
+      dim3 block(g_blockSize,g_blockSize);
+      dim3 grid(SIZE/g_blockSize,SIZE/g_blockSize);
+      kernels::compare<T><<<grid,block>>>((T*)d_C,(int*)d_numberOfErrors,(size_t)iters);
+
+      XMemcpy(&numberOfErrors, d_numberOfErrors, sizeof(int), XMemcpyDeviceToHost);
+      if (numberOfErrors) {
+          totalErrors += (long long int)numberOfErrors;
+          printf("WE FOUND %d FAULTY ELEMENTS from GPU %d\n", numberOfErrors, deviceId);
+      }
+  }
+};
+
+template<>
+void FirePit<double>::compute()
+{
+    static const double alpha = 1.0;
+    static const double beta = 0.0;
+    for (size_t i = 0; i < iters; ++i)
+    {
+        cublasDgemm(d_cublas,
+                    CUBLAS_OP_N, CUBLAS_OP_N,
+                    SIZE, SIZE, SIZE,
+                    &alpha,
+                    (const double*)d_A, SIZE,
+                    (const double*)d_B, SIZE,
+                    &beta,
+                    d_C + i*SIZE*SIZE, SIZE);
+    }
+}
+
+template<>
+void FirePit<float>::compute()
+{
+    static const float alpha = 1.0;
+    static const float beta = 0.0;
+    for (size_t i = 0; i < iters; ++i)
+    {
+        cublasSgemm(d_cublas,
+                    CUBLAS_OP_N, CUBLAS_OP_N,
+                    SIZE, SIZE, SIZE,
+                    &alpha,
+                    (const float*)d_A, SIZE,
+                    (const float*)d_B, SIZE,
+                    &beta,
+                    d_C + i*SIZE*SIZE, SIZE);
+    }
 }
 
 
 void checkError(int rCode, std::string desc = "") {
-    static std::map<int, std::string> g_errorStrings;
-    if (!g_errorStrings.size()) {
-        g_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_INVALID_VALUE, "CUDA_ERROR_INVALID_VALUE"));
-        g_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_OUT_OF_MEMORY, "CUDA_ERROR_OUT_OF_MEMORY"));
-        g_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_NOT_INITIALIZED, "CUDA_ERROR_NOT_INITIALIZED"));
-        g_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_DEINITIALIZED, "CUDA_ERROR_DEINITIALIZED"));
-        g_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_NO_DEVICE, "CUDA_ERROR_NO_DEVICE"));
-        g_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_INVALID_DEVICE, "CUDA_ERROR_INVALID_DEVICE"));
-        g_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_INVALID_IMAGE, "CUDA_ERROR_INVALID_IMAGE"));
-        g_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_INVALID_CONTEXT, "CUDA_ERROR_INVALID_CONTEXT"));
-        g_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_MAP_FAILED, "CUDA_ERROR_MAP_FAILED"));
-        g_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_UNMAP_FAILED, "CUDA_ERROR_UNMAP_FAILED"));
-        g_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_ARRAY_IS_MAPPED, "CUDA_ERROR_ARRAY_IS_MAPPED"));
-        g_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_ALREADY_MAPPED, "CUDA_ERROR_ALREADY_MAPPED"));
-        g_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_NO_BINARY_FOR_GPU, "CUDA_ERROR_NO_BINARY_FOR_GPU"));
-        g_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_ALREADY_ACQUIRED, "CUDA_ERROR_ALREADY_ACQUIRED"));
-        g_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_NOT_MAPPED, "CUDA_ERROR_NOT_MAPPED"));
-        g_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_NOT_MAPPED_AS_ARRAY, "CUDA_ERROR_NOT_MAPPED_AS_ARRAY"));
-        g_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_NOT_MAPPED_AS_POINTER, "CUDA_ERROR_NOT_MAPPED_AS_POINTER"));
-        g_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_UNSUPPORTED_LIMIT, "CUDA_ERROR_UNSUPPORTED_LIMIT"));
-        g_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_CONTEXT_ALREADY_IN_USE, "CUDA_ERROR_CONTEXT_ALREADY_IN_USE"));
-        g_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_INVALID_SOURCE, "CUDA_ERROR_INVALID_SOURCE"));
-        g_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_FILE_NOT_FOUND, "CUDA_ERROR_FILE_NOT_FOUND"));
-        g_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_SHARED_OBJECT_SYMBOL_NOT_FOUND, "CUDA_ERROR_SHARED_OBJECT_SYMBOL_NOT_FOUND"));
-        g_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_SHARED_OBJECT_INIT_FAILED, "CUDA_ERROR_SHARED_OBJECT_INIT_FAILED"));
-        g_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_OPERATING_SYSTEM, "CUDA_ERROR_OPERATING_SYSTEM"));
-        g_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_INVALID_HANDLE, "CUDA_ERROR_INVALID_HANDLE"));
-        g_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_NOT_FOUND, "CUDA_ERROR_NOT_FOUND"));
-        g_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_NOT_READY, "CUDA_ERROR_NOT_READY"));
-        g_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_LAUNCH_FAILED, "CUDA_ERROR_LAUNCH_FAILED"));
-        g_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES, "CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES"));
-        g_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_LAUNCH_TIMEOUT, "CUDA_ERROR_LAUNCH_TIMEOUT"));
-        g_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_LAUNCH_INCOMPATIBLE_TEXTURING, "CUDA_ERROR_LAUNCH_INCOMPATIBLE_TEXTURING"));
-        g_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_PRIMARY_CONTEXT_ACTIVE, "CUDA_ERROR_PRIMARY_CONTEXT_ACTIVE"));
-        g_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_CONTEXT_IS_DESTROYED, "CUDA_ERROR_CONTEXT_IS_DESTROYED"));
-        g_errorStrings.insert(std::pair<int, std::string>(CUDA_ERROR_UNKNOWN, "CUDA_ERROR_UNKNOWN"));
-    }
-
-    if (rCode != CUDA_SUCCESS)
-        throw ((desc == "") ?
-            std::string("Error: ") :
-            (std::string("Error in \"") + desc + std::string("\": "))) + g_errorStrings[rCode];
 }
-
 void checkError(cublasStatus_t rCode, std::string desc = "") {
-    static std::map<cublasStatus_t, std::string> g_errorStrings;
-    if (!g_errorStrings.size()) {
-        g_errorStrings.insert(std::pair<cublasStatus_t, std::string>(CUBLAS_STATUS_NOT_INITIALIZED, "CUBLAS_STATUS_NOT_INITIALIZED"));
-        g_errorStrings.insert(std::pair<cublasStatus_t, std::string>(CUBLAS_STATUS_ALLOC_FAILED, "CUBLAS_STATUS_ALLOC_FAILED"));
-        g_errorStrings.insert(std::pair<cublasStatus_t, std::string>(CUBLAS_STATUS_INVALID_VALUE, "CUBLAS_STATUS_INVALID_VALUE"));
-        g_errorStrings.insert(std::pair<cublasStatus_t, std::string>(CUBLAS_STATUS_ARCH_MISMATCH, "CUBLAS_STATUS_ARCH_MISMATCH"));
-        g_errorStrings.insert(std::pair<cublasStatus_t, std::string>(CUBLAS_STATUS_MAPPING_ERROR, "CUBLAS_STATUS_MAPPING_ERROR"));
-        g_errorStrings.insert(std::pair<cublasStatus_t, std::string>(CUBLAS_STATUS_EXECUTION_FAILED, "CUBLAS_STATUS_EXECUTION_FAILED"));
-        g_errorStrings.insert(std::pair<cublasStatus_t, std::string>(CUBLAS_STATUS_INTERNAL_ERROR, "CUBLAS_STATUS_INTERNAL_ERROR"));
-    }
-
-    if (rCode != CUBLAS_STATUS_SUCCESS)
-        throw ((desc == "") ?
-            std::string("Error: ") :
-            (std::string("Error in \"") + desc + std::string("\": "))) + g_errorStrings[rCode];
 }
 
 template <class T> class GPU_Test {
@@ -161,7 +239,6 @@ template <class T> class GPU_Test {
             checkError(cuDeviceGet(&d_dev, d_devNumber));
             checkError(cuCtxCreate(&d_ctx, 0, d_dev));
             bind();
-            //checkError(cublasInit());
             checkError(cublasCreate(&d_cublas), "init");
             d_error = 0;
         }
@@ -170,9 +247,7 @@ template <class T> class GPU_Test {
             checkError(cuMemFree(d_Cdata), "Free A");
             checkError(cuMemFree(d_Adata), "Free B");
             checkError(cuMemFree(d_Bdata), "Free C");
-            // printf("Freed memory for dev %d\n", d_devNumber);
             cublasDestroy(d_cublas);
-            // printf("Uninitted cublas\n");
         }
 
         unsigned long long int getErrors() {
@@ -206,9 +281,6 @@ template <class T> class GPU_Test {
         void initBuffers(T *A, T *B) {
             bind();
             size_t useBytes = (size_t)((double)availMemory()*USEMEM);
-            // printf("Initialized device %d with %lu MB of memory (%lu MB available, using %lu MB of it), %s\n",
-            // d_devNumber, totalMemory()/1024ul/1024ul, availMemory()/1024ul/1024ul, useBytes/1024ul/1024ul,
-            // d_doubles ? "using DOUBLES" : "using FLOATS");
             size_t d_resultSize = sizeof(T)*SIZE*SIZE;
             d_iters = (useBytes - 2*d_resultSize)/d_resultSize; // We remove A and B sizes
             // printf("Results are %d bytes each, thus performing %d iterations\n", d_resultSize, d_iters);
@@ -254,9 +326,9 @@ template <class T> class GPU_Test {
             dim3 grid(SIZE/g_blockSize,SIZE/g_blockSize);
             //checkError(cuLaunchGrid(d_function, SIZE/g_blockSize, SIZE/g_blockSize), "Launch grid");
             if(d_doubles)
-                compareD<<<grid,block>>>((double*)d_Cdata,(int*)d_faultyElemData,(size_t)d_iters);
+                kernels::compare<double><<<grid,block>>>((double*)d_Cdata,(int*)d_faultyElemData,(size_t)d_iters);
             else
-                compareF<<<grid,block>>>((float*)d_Cdata,(int*)d_faultyElemData,(size_t)d_iters);
+                kernels::compare<float><<<grid,block>>>((float*)d_Cdata,(int*)d_faultyElemData,(size_t)d_iters);
 
             checkError(cuMemcpyDtoH(&faultyElems, d_faultyElemData, sizeof(int)), "Read faultyelemdata");
             if (faultyElems) {
@@ -288,11 +360,9 @@ template <class T> class GPU_Test {
             cublasHandle_t d_cublas;
 };
 
-// Returns the number of devices
-int initCuda() {
-    checkError(cuInit(0));
+int getNumDevices() {
     int deviceCount = 0;
-    checkError(cuDeviceGetCount(&deviceCount));
+    XGetDeviceCount(&deviceCount);
 
     if (!deviceCount)
         throw std::string("No CUDA devices");
@@ -303,6 +373,68 @@ int initCuda() {
         #endif
 
     return deviceCount;
+}
+
+int initCuda() {
+    int deviceCount = 0;
+    XGetDeviceCount(&deviceCount);
+
+    if (!deviceCount)
+        throw std::string("No CUDA devices");
+
+        #ifdef USEDEV
+        if (USEDEV >= deviceCount)
+            throw std::string("Not enough devices for USEDEV");
+        #endif
+
+    return deviceCount;
+}
+
+template<class T>
+void startFire(int devId,
+               Smi * smi_handle, T *A, T *B,
+               volatile bool & burn,
+               std::mutex & mtx,
+               volatile std::pair<size_t, unsigned long long int> & ops,
+               volatile unsigned long long int & err
+               )
+{
+    FirePit<T> *fp;
+    try {
+        fp = new FirePit<T>(devId, smi_handle);
+        fp->initBuffers(A, B);
+    }
+    catch (std::string e) {
+        fprintf(stderr, "Couldn't init a GPU test: %s\n", e.c_str());
+        exit(124);
+    }
+
+    {   // Store the number of iterations
+        std::lock_guard<std::mutex> lg(mtx);
+        ops.first = fp->getIters();
+    }
+
+    // Hold off any computation until master says go.
+    while(!burn){};
+
+    // The actual work
+    try {
+        while (burn) {
+            fp->compute();
+            fp->compare();
+
+            // Make the rest a critical section
+            std::lock_guard<std::mutex> lg(mtx);
+            ops.second++;
+            err += fp->getErrors();
+        }
+    }
+    catch (std::string e) {
+        fprintf(stderr, "Failure during compute: %s\n", e.c_str());
+        std::lock_guard<std::mutex> lg(mtx);
+        ops.first = 0;
+        exit(111);
+    }
 }
 
 template<class T> void startBurn(int index, int writeFd, T *A, T *B, bool doubles) {
@@ -337,20 +469,27 @@ template<class T> void startBurn(int index, int writeFd, T *A, T *B, bool double
     }
 }
 
-void updateTemps(std::vector<int> *temps) {
-    const int readSize = 10240;
+void refreshTemperatures(Smi * smi_handle, std::vector<int> *temps)
+{
     static int gpuIter = 0;
-    char data[readSize+1];
-    unsigned int device_count, i;
-    int curPos = 0;
-    nvmlInit();
-    nvmlDeviceGetCount(&device_count);
-    for (i = 0; i < device_count; i++) {
-        nvmlDevice_t device;
-        nvmlDeviceGetHandleByIndex(i, &device);
-        unsigned int tempValue;
-        nvmlDeviceGetTemperature ( device, NVML_TEMPERATURE_GPU, &tempValue);
-        temps->at(gpuIter) = (int)tempValue;
+    int device_count;
+    smi_handle->getNumberOfDevices(&device_count);
+    for (unsigned int i = 0; i < device_count; i++)
+    {
+        temps->at(gpuIter) = (int)(smi_handle->getGpuTemp(i));
+        gpuIter = (gpuIter+1)%(temps->size());
+    }
+}
+
+void updateTemps(std::vector<int> *temps)
+{
+    static int gpuIter = 0;
+    int device_count;
+    Smi smi_handle = Smi();
+    smi_handle.getNumberOfDevices(&device_count);
+    for (unsigned int i = 0; i < device_count; i++)
+    {
+        temps->at(gpuIter) = (int)(smi_handle.getGpuTemp(i));
         gpuIter = (gpuIter+1)%(temps->size());
     }
 }
@@ -391,10 +530,9 @@ void listenClients(std::vector<int> clientFd, std::vector<pid_t> clientPid, int 
         clientFaulty.push_back(false);
     }
 
-    int changeCount;
     float nextReport = 2.0f;
     bool childReport = false;
-    while ((changeCount = select(maxHandle+1, &waitHandles, NULL, NULL, NULL))) {
+    while ((select(maxHandle+1, &waitHandles, NULL, NULL, NULL))) {
         size_t thisTime = time(0);
         struct timespec thisTimeSpec;
         clock_gettime(CLOCK_REALTIME, &thisTimeSpec);
@@ -477,6 +615,81 @@ void listenClients(std::vector<int> clientFd, std::vector<pid_t> clientPid, int 
     }
     printf("\n");
 }
+
+template<class T> void lighter(int duration)
+{
+    // Initializing A and B with random data
+    T *A = (T*) malloc(sizeof(T)*SIZE*SIZE);
+    T *B = (T*) malloc(sizeof(T)*SIZE*SIZE);
+    srand(10);
+    for (size_t i = 0; i < SIZE*SIZE; ++i) {
+        A[i] = (T)((double)(rand()%1000000)/100000.0);
+        B[i] = (T)((double)(rand()%1000000)/100000.0);
+    }
+
+    // Initialise the SMI
+    Smi * smi_handle = new Smi();
+
+    // Here burn is a switch that holds and breaks the work done by the slave threads.
+    bool burn = false;
+
+    // Schedule the work in all threads, but don't do any just yet.
+    int devCount = getNumDevices();
+
+    std::vector<std::thread> threads;
+    std::mutex * mutexes = new std::mutex[devCount];
+
+    // The number of ops are stored in a pair, where the first element has the number of iterations per
+    // compute call, and the second element counts the number of times this compute function was called.
+    std::pair<size_t, unsigned long long int> * ops = new std::pair<size_t, unsigned long long int>[devCount];
+
+    // Error counter.
+    unsigned long long int * err = new unsigned long long int[devCount];
+
+    for (int i = 0; i < devCount; i++)
+    {
+        /* Init the counters for each thread
+         * The ops & errors are counted separately on a per-device
+         * basis. Therefore, we assign a different mutex to each thread.
+         * Note that we don't really need mutexes if we're just counting
+         * the ops & err at the end of the burn, but they are included to
+         * give this function full control over the output from each thread.
+         */
+        ops[i] = std::pair<size_t, unsigned long long int>(0, 0);
+        err[i] = 0;
+        std::mutex * m = new (&mutexes[i]) std::mutex();
+
+        // Launch the thread
+        threads.push_back(std::thread(startFire<T>,
+                                      i, smi_handle,
+                                      A, B,
+                                      std::ref(burn),
+                                      std::ref(*m),
+                                      std::ref(ops[i]),
+                                      std::ref(err[i])
+                          )
+        );
+    }
+
+    // Burn-time.
+    burn = true;
+    std::this_thread::sleep_for( std::chrono::seconds(duration) );
+
+    // Burn-time done.
+    burn = false;
+
+    // Join all threads
+    std::for_each(threads.begin(), threads.end(), std::mem_fn(&std::thread::join));
+
+    // Cleanup
+    free(A);
+    free(B);
+    delete smi_handle;
+    delete [] mutexes;
+    delete [] ops;
+    delete [] err;
+}
+
 
 template<class T> void launch(int runLength, bool useDoubles) {
 
@@ -565,6 +778,8 @@ int main(int argc, char **argv) {
         launch<double>(runLength, useDoubles);
     else
         launch<float>(runLength, useDoubles);
+
+    lighter<double>(runLength);
 
     return 0;
 }
