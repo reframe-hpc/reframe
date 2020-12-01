@@ -315,6 +315,10 @@ template<class T> void launch(int duration)
         B[i] = (T)((double)(rand()%1000000)/100000.0);
     }
 
+    char hostname[256];
+    hostname[255]='\0';
+    gethostname(hostname,255);
+
     // Initialise the SMI
     Smi * smi_handle = new Smi();
 
@@ -324,6 +328,9 @@ template<class T> void launch(int duration)
     int devCount;
     XGetDeviceCount(&devCount);
     std::vector<std::thread> threads;
+
+    // Print device count
+    printf("[%s] Found %d device(s).\n", hostname, devCount);
 
     // All the burn info is stored in instances of the BurnTracker class.
     BurnTracker * trackThreads = new BurnTracker[devCount];
@@ -352,7 +359,7 @@ template<class T> void launch(int duration)
     for (int i = 0; i < devCount; i++)
     {
         double flops = trackThreads[i].read();
-        printf("  GPU %2d(%s): %4.0f GF/s  %d Celsius\n", i, flops < 0.0 ? "FAULTY" : "OK", flops, (int)smi_handle->getGpuTemp(i));
+        printf("[%s] GPU %2d(%s): %4.0f GF/s  %d Celsius\n", hostname, i, flops < 0.0 ? "FAULTY" : "OK", flops, (int)smi_handle->getGpuTemp(i));
     }
 
     // Join all threads
