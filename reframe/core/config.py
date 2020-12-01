@@ -15,11 +15,8 @@ import socket
 import tempfile
 
 import reframe
-import reframe.core.fields as fields
 import reframe.core.settings as settings
 import reframe.utility as util
-import reframe.utility.osext as osext
-import reframe.utility.typecheck as types
 from reframe.core.environments import normalize_module_list
 from reframe.core.exceptions import ConfigError, ReframeFatalError
 from reframe.core.logging import getlogger

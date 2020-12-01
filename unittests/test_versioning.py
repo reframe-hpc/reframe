@@ -5,7 +5,6 @@
 
 import pytest
 
-from reframe.frontend.loader import RegressionCheckLoader
 from reframe.utility.versioning import Version, VersionValidator
 
 

@@ -6,7 +6,6 @@
 import contextlib
 import io
 import itertools
-import json
 import os
 import pytest
 import re

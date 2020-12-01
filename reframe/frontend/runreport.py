@@ -10,7 +10,6 @@ import re
 
 import reframe as rfm
 import reframe.core.exceptions as errors
-import reframe.utility as util
 import reframe.utility.jsonext as jsonext
 from reframe.utility.versioning import Version
 

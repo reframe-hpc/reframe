@@ -6,7 +6,6 @@
 import inspect
 import itertools
 import json
-import jsonschema
 import os
 import re
 import shlex
@@ -34,8 +33,6 @@ from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
 from reframe.frontend.executors import Runner, generate_testcases
-from reframe.frontend.executors import (RegressionTask, Runner,
-                                        generate_testcases)
 
 
 def format_check(check, check_deps, detailed=False):

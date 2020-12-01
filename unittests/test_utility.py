@@ -6,12 +6,10 @@
 import os
 import pytest
 import random
-import shutil
 import sys
 import time
 
 import reframe
-import reframe.core.fields as fields
 import reframe.core.runtime as rt
 import reframe.utility as util
 import reframe.utility.jsonext as jsonext

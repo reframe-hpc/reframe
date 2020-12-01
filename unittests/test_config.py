@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import json
-import os
 import pytest
 
 import reframe.core.config as config

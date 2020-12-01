@@ -6,12 +6,11 @@
 import contextlib
 import functools
 import itertools
-import math
 import sys
 import time
 
 from reframe.core.exceptions import (TaskDependencyError, TaskExit)
-from reframe.core.logging import (getlogger, VERBOSE)
+from reframe.core.logging import getlogger
 from reframe.frontend.executors import (ExecutionPolicy, RegressionTask,
                                         TaskEventListener, ABORT_REASONS)
 

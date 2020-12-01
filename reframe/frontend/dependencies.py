@@ -11,7 +11,6 @@ import collections
 import itertools
 import sys
 
-import reframe as rfm
 import reframe.utility as util
 from reframe.core.exceptions import DependencyError
 from reframe.core.logging import getlogger

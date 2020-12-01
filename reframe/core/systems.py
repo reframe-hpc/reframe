@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import json
-import re
 
 import reframe.utility as utility
 import reframe.utility.jsonext as jsonext

@@ -5,14 +5,12 @@
 
 import abc
 import copy
-import json
 import os
 import signal
 import sys
 import time
 import weakref
 
-import reframe.core.environments as env
 import reframe.core.logging as logging
 import reframe.core.runtime as runtime
 import reframe.frontend.dependencies as dependencies

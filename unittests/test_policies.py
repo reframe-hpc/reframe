@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import io
 import json
 import jsonschema
 import os
@@ -12,17 +11,14 @@ import socket
 import sys
 import time
 
-import reframe
 import reframe.core.runtime as rt
 import reframe.frontend.dependencies as dependencies
 import reframe.frontend.executors as executors
 import reframe.frontend.executors.policies as policies
 import reframe.frontend.runreport as runreport
-import reframe.utility as util
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 from reframe.core.exceptions import (AbortTaskError,
-                                     JobNotStartedError,
                                      ReframeError,
                                      ReframeForceExitError,
                                      TaskDependencyError)
