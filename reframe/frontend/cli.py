@@ -600,11 +600,20 @@ def main():
         # If `-c` or `-R` are passed explicitly outside the configuration
         # file, override the values set from the report file
         if site_config.is_sticky_option('general/check_search_path'):
+            printer.warning(
+                'Ignoring check search path set in the report file: '
+                'search path set explicitly in the command-line or '
+                'the environment'
+            )
             check_search_path = site_config.get(
                 'general/0/check_search_path'
             )
 
         if site_config.is_sticky_option('general/check_search_recursive'):
+            printer.warning(
+                'Ignoring check search recursive option from the report file: '
+                'option set explicitly in the command-line or the environment'
+            )
             check_search_recursive = site_config.get(
                 'general/0/check_search_recursive'
             )
