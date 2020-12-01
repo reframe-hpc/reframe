@@ -4,13 +4,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import json
-import os
 import pytest
 
 import reframe.core.config as config
 from reframe.core.exceptions import ConfigError
 from reframe.core.systems import System
-from reframe.core.warnings import ReframeDeprecationWarning
 
 
 def test_load_config_fallback(monkeypatch):
