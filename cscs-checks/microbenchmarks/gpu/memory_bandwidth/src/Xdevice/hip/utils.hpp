@@ -44,9 +44,14 @@ void XMalloc(void ** data, size_t size)
   checkError( hipMalloc(data, size) );
 }
 
-void XMemcpyAsync(void * dst, void * src, size_t size, hipMemcpyKind dir, hipStream_t stream)
+void XMemcpy(void * out, void * in, size_t size, hipMemcpyKind dir)
 {
-  checkError( hipMemcpyAsync(dst, src, size, dir, stream) );
+  checkError( hipMemcpy(out, in, size, dir) );
+}
+
+void XMemcpyAsync(void * out, void * in, size_t size, hipMemcpyKind dir, hipStream_t stream)
+{
+  checkError( hipMemcpyAsync(out, in, size, dir, stream) );
 }
 
 void XMemset( void * in, int val, size_t size)

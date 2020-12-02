@@ -49,6 +49,21 @@ float Smi::getGpuTemp(int id)
   return float(temperature)/1000.f;
 }
 
+void Smi::getDeviceMemorySize(int id, size_t * sMem)
+{
+  uint64_t total;
+  rsmiCheck( rsmi_dev_memory_total_get((uint32_t)id, RSMI_MEM_TYPE_FIRST, &total) );
+  *sMem = (size_t)total;
+}
+
+void Smi::getDeviceAvailMemorySize(int id, size_t * sMem)
+{
+  uint64_t used;
+  this->getDeviceMemorySize(id, sMem);
+  rsmiCheck( rsmi_dev_memory_usage_get((uint32_t)id, RSMI_MEM_TYPE_FIRST, &used) );
+  sMem[0] -= (size_t)used;
+}
+
 Smi::~Smi()
 {
   this->activeSmiInstances -= 1;
