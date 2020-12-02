@@ -7,10 +7,7 @@ import os
 import pytest
 
 import reframe as rfm
-from reframe.core.exceptions import (ConfigError, NameConflictError,
-                                     RegressionTestLoadError,
-                                     ReframeSyntaxError)
-from reframe.core.systems import System
+from reframe.core.exceptions import (NameConflictError, ReframeSyntaxError)
 from reframe.frontend.loader import RegressionCheckLoader
 
 
