@@ -1092,6 +1092,12 @@ class RegressionTest(metaclass=RegressionTestMeta):
               <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
               more details.
 
+           .. versionchanged:: 3.4
+              Overriding this method directly unless you are in
+              special test. See `here
+              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+              more details.
+
         '''
         self._current_partition = partition
         self._current_environ = environ
@@ -1129,6 +1135,12 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
            .. versionchanged:: 3.0
               You may not override this method directly unless you are in
+              special test. See `here
+              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+              more details.
+
+           .. versionchanged:: 3.4
+              Overriding this method directly unless you are in
               special test. See `here
               <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
               more details.
@@ -1230,6 +1242,12 @@ class RegressionTest(metaclass=RegressionTestMeta):
               <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
               more details.
 
+           .. versionchanged:: 3.4
+              Overriding this method directly unless you are in
+              special test. See `here
+              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+              more details.
+
         '''
         self._build_job.wait()
 
@@ -1252,6 +1270,13 @@ class RegressionTest(metaclass=RegressionTestMeta):
               special test. See `here
               <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
               more details.
+
+           .. versionchanged:: 3.4
+              Overriding this method directly unless you are in
+              special test. See `here
+              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+              more details.
+
         '''
         if not self.current_system or not self._current_partition:
             raise PipelineError('no system or system partition is set')
@@ -1357,6 +1382,13 @@ class RegressionTest(metaclass=RegressionTestMeta):
            <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
            more details.
 
+
+           .. versionchanged:: 3.4
+              Overriding this method directly unless you are in
+              special test. See `here
+              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+              more details.
+
         '''
         if not self._job:
             return True
@@ -1386,6 +1418,14 @@ class RegressionTest(metaclass=RegressionTestMeta):
            special test. See `here
            <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
            more details.
+
+           .. versionchanged:: 3.4
+              Overriding this method directly unless you are in
+              special test. See `here
+              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+              more details.
+
+
 
         '''
         self._job.wait()
@@ -1428,6 +1468,14 @@ class RegressionTest(metaclass=RegressionTestMeta):
               <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
               more details.
 
+           .. versionchanged:: 3.4
+              Overriding this method directly unless you are in
+              special test. See `here
+              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+              more details.
+
+
+
         '''
         if rt.runtime().get_option('general/0/trap_job_errors'):
             sanity_patterns = [
@@ -1460,6 +1508,14 @@ class RegressionTest(metaclass=RegressionTestMeta):
               special test. See `here
               <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
               more details.
+
+           .. versionchanged:: 3.4
+              Overriding this method directly unless you are in
+              special test. See `here
+              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+              more details.
+
+
 
         '''
         if self.perf_patterns is None:
@@ -1578,6 +1634,14 @@ class RegressionTest(metaclass=RegressionTestMeta):
               special test. See `here
               <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
               more details.
+
+           .. versionchanged:: 3.4
+              Overriding this method directly unless you are in
+              special test. See `here
+              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+              more details.
+
+
 
         '''
         aliased = os.path.samefile(self._stagedir, self._outputdir)

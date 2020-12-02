@@ -66,6 +66,7 @@ Pipeline methods and hooks
 ReFrame 2.20 introduced a new powerful mechanism for attaching arbitrary functions hooks at the different pipeline stages.
 This mechanism provides an easy way to configure and extend the functionality of a test, eliminating essentially the need to override pipeline stages for this purpose.
 ReFrame 3.0 deprecates the old practice of overriding pipeline stage methods in favor of using pipeline hooks.
+From ReFrame 3.4, overriding pipeline stage methods is no longer allowed.
 In the old syntax, it was quite common to override the ``setup()`` method, in order to configure your test based on the current programming environment or the current system partition.
 The following is a typical example of that:
 
@@ -93,7 +94,7 @@ Alternatively, this example could have been written as follows:
            self.build_system.cflags = ['-qopenmp']
 
 
-This syntax now issues a deprecation warning.
+This syntax is no longer valid and a ``ReframeSyntaxError`` is raised.
 Rewriting this using pipeline hooks is quite straightforward and leads to nicer and more intuitive code:
 
 .. code:: python
@@ -108,6 +109,10 @@ Rewriting this using pipeline hooks is quite straightforward and leads to nicer 
 
 You could equally attach this function to run after the "setup" phase with ``@rfm.run_after('setup')``, as in the original example, but attaching it to the "compile" phase makes more sense.
 However, you can't attach this function *before* the "setup" phase, because the ``current_environ`` will not be available and it will be still ``None``.
+
+.. warning::
+   .. versionchanged:: 3.4
+      Overriding a pipeline stage method is no longer allowed and a ``ReframeSyntaxError`` is raised.
 
 
 --------------------------------
@@ -125,7 +130,7 @@ In this case, all you have to do is mark your test class as "special", and ReFra
            super().setup(partition, environ, **job_opts)
 
 
-If you try to override the ``setup()`` method in any of the subclasses of ``MyExtendedTest``, you will still get a deprecation warning, which a desired behavior since the subclasses should be normal tests.
+If you try to override the ``setup()`` method in any of the subclasses of ``MyExtendedTest``, will again result in a ``ReframeSyntaxError``, which a desired behavior since the subclasses should be normal tests.
 
 
 Getting schedulers and launchers by name

@@ -8,9 +8,9 @@ import pytest
 
 import reframe as rfm
 from reframe.core.exceptions import (ConfigError, NameConflictError,
-                                     RegressionTestLoadError)
+                                     RegressionTestLoadError,
+                                     ReframeSyntaxError)
 from reframe.core.systems import System
-from reframe.core.warnings import ReframeDeprecationWarning
 from reframe.frontend.loader import RegressionCheckLoader
 
 
@@ -83,72 +83,62 @@ def test_load_bad_init(loader):
 
 
 def test_special_test():
-    with pytest.warns(ReframeDeprecationWarning):
+    with pytest.raises(ReframeSyntaxError):
         @rfm.simple_test
-        class TestDeprecated(rfm.RegressionTest):
+        class TestOverride(rfm.RegressionTest):
             def setup(self, partition, environ, **job_opts):
                 super().setup(system, environ, **job_opts)
 
-    with pytest.warns(ReframeDeprecationWarning):
+    with pytest.raises(ReframeSyntaxError):
         @rfm.simple_test
-        class TestDeprecatedRunOnly(rfm.RunOnlyRegressionTest):
+        class TestOverrideRunOnly(rfm.RunOnlyRegressionTest):
             def setup(self, partition, environ, **job_opts):
                 super().setup(system, environ, **job_opts)
 
-    with pytest.warns(ReframeDeprecationWarning):
+    with pytest.raises(ReframeSyntaxError):
         @rfm.simple_test
-        class TestDeprecatedCompileOnly(rfm.CompileOnlyRegressionTest):
+        class TestOverrideCompileOnly(rfm.CompileOnlyRegressionTest):
             def setup(self, partition, environ, **job_opts):
                 super().setup(system, environ, **job_opts)
 
-    with pytest.warns(ReframeDeprecationWarning):
-        @rfm.simple_test
-        class TestDeprecatedCompileOnlyDerived(TestDeprecatedCompileOnly):
-            def setup(self, partition, environ, **job_opts):
-                super().setup(system, environ, **job_opts)
+    @rfm.simple_test
+    class TestSimple(rfm.RegressionTest):
+        def __init__(self):
+            pass
 
-    with pytest.warns(None) as warnings:
-        @rfm.simple_test
-        class TestSimple(rfm.RegressionTest):
-            def __init__(self):
-                pass
+    @rfm.simple_test
+    class TestSpecial(rfm.RegressionTest, special=True):
+        def __init__(self):
+            pass
 
-        @rfm.simple_test
-        class TestSpecial(rfm.RegressionTest, special=True):
-            def __init__(self):
-                pass
+        def setup(self, partition, environ, **job_opts):
+            super().setup(system, environ, **job_opts)
 
-            def setup(self, partition, environ, **job_opts):
-                super().setup(system, environ, **job_opts)
+    @rfm.simple_test
+    class TestSpecialRunOnly(rfm.RunOnlyRegressionTest,
+                             special=True):
+        def __init__(self):
+            pass
 
-        @rfm.simple_test
-        class TestSpecialRunOnly(rfm.RunOnlyRegressionTest,
+        def setup(self, partition, environ, **job_opts):
+            super().setup(system, environ, **job_opts)
+
+        def run(self):
+            super().run()
+
+    @rfm.simple_test
+    class TestSpecialCompileOnly(rfm.CompileOnlyRegressionTest,
                                  special=True):
-            def __init__(self):
-                pass
+        def __init__(self):
+            pass
 
-            def setup(self, partition, environ, **job_opts):
-                super().setup(system, environ, **job_opts)
+        def setup(self, partition, environ, **job_opts):
+            super().setup(system, environ, **job_opts)
 
-            def run(self):
-                super().run()
+        def run(self):
+            super().run()
 
-        @rfm.simple_test
-        class TestSpecialCompileOnly(rfm.CompileOnlyRegressionTest,
-                                     special=True):
-            def __init__(self):
-                pass
-
-            def setup(self, partition, environ, **job_opts):
-                super().setup(system, environ, **job_opts)
-
-            def run(self):
-                super().run()
-
-    assert not any(isinstance(w.message, ReframeDeprecationWarning)
-                   for w in warnings)
-
-    with pytest.warns(ReframeDeprecationWarning) as warnings:
+    with pytest.raises(ReframeSyntaxError):
         @rfm.simple_test
         class TestSpecialDerived(TestSpecial):
             def __init__(self):
@@ -157,21 +147,16 @@ def test_special_test():
             def setup(self, partition, environ, **job_opts):
                 super().setup(system, environ, **job_opts)
 
-            def run(self):
-                super().run()
-
-    assert len(warnings) == 2
-
     @rfm.simple_test
     class TestFinal(rfm.RegressionTest):
         def __init__(self):
             pass
 
         @rfm.final
-        def my_new_final(seld):
+        def my_new_final(self):
             pass
 
-    with pytest.warns(ReframeDeprecationWarning):
+    with pytest.raises(ReframeSyntaxError):
         @rfm.simple_test
         class TestFinalDerived(TestFinal):
             def my_new_final(self, a, b):
