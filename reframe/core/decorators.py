@@ -78,14 +78,14 @@ def _validate_test(cls):
                          f' abstract test.')
 
 
-def test(cls):
+def simple_test(cls):
     '''Class decorator for registering tests with ReFrame.
 
     The decorated class must derive from
     :class:`reframe.core.pipeline.RegressionTest`.  This decorator is also
     available directly under the :mod:`reframe` module.
 
-    .. versionadded:: #.##
+    .. versionadded:: 2.13
     '''
     def _do_register(cls):
         _validate_test(cls)
@@ -112,21 +112,6 @@ def test(cls):
         return cls
 
     return _do_register(cls)
-
-
-def simple_test(cls):
-    '''Class decorator for registering parameterless tests with ReFrame.
-
-    The decorated class must derive from
-    :class:`reframe.core.pipeline.RegressionTest`.  This decorator is also
-    available directly under the :mod:`reframe` module.
-
-    .. versionadded:: 2.13
-
-    .. to be deprecated
-    '''
-
-    return test(cls)
 
 
 def parameterized_test(*inst):

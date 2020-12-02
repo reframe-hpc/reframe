@@ -25,14 +25,6 @@ class RegressionTestMeta(type):
         # `rfm_parameter('P0', [0,1,2,3])`.
         namespace['parameter'] = rfm_attr._rfm_parameter_stage.add
 
-        # Attribute to purge a list of test parameters.
-        namespace['purge_parameters'] = (rfm_attr
-                                         )._rfm_parameter_stage.purge_parameters
-
-        # Attribute to purge the entire parameter space.
-        namespace['purge_all_parameters'] = (rfm_attr._rfm_parameter_stage
-                                             ).purge_all_parameters
-
         # Method to build the parameter space
         namespace['_rfm_build_parameter_space'] = (rfm_attr
                                                    ).build_parameter_space
@@ -50,8 +42,8 @@ class RegressionTestMeta(type):
         # Set up the regression test parameter space
         cls._rfm_params = cls._rfm_build_parameter_space(bases)
 
-        # Make illegal to have a parameter clashing with any of the RegressionTest
-        # class variables
+        # Make illegal to have a parameter clashing with any of the
+        # RegressionTest class variables
         cls._rfm_namespace_clash_check(cls.__dict__, cls._rfm_params,
                                        cls.__qualname__)
 
