@@ -10,12 +10,12 @@ import reframe.utility.sanity as sn
 import reframe.utility.udeps as udeps
 
 OSU_BENCH_VERSION = '5.6.3'
-NUM_NODES = 6
+NUM_NODES = 10
 
 
 def tsa_node_pairs():
     def nodeid(n):
-        return f'tsa-pp{n+15:03}'
+        return f'tsa-pp{n+11:03}'
 
     for u in range(NUM_NODES):
         for v in range(NUM_NODES):
@@ -72,9 +72,9 @@ class OSUBaseRunTest(rfm.RunOnlyRegressionTest):
             'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
                                         self.stdout, 'latency', float)
         }
-        self.reference = {
-            '*': {'latency': (0, None, None, 'us')}
-        }
+        #MKr self.reference = {
+        #MKr     '*': {'latency': (1.25, -0.05, 0.05, 'us')}
+        #MKr }
         self.executable_opts = ['-x', '1000', '-i', '5000']
         self.exclusive_access = True
         self.depends_on('OSUBuildTest', udeps.fully)
@@ -191,6 +191,14 @@ class OSULatencyTest(OSUBaseRunTest):
             sn.assert_eq(cpu_pinned, 2),
             sn.assert_found(r'^8\s', self.stdout),
         ])
+        if cpu_no == 0:
+            self.reference = {
+                '*': {'latency': (1.25, -0.05, 0.05, 'us')}
+            }
+        elif cpu_no == 20:
+            self.reference = {
+                '*': {'latency': (1.45, -0.05, 0.05, 'us')}
+            }
 
     @rfm.require_deps
     def set_executable(self, OSUBuildTest):
