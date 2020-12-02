@@ -38,12 +38,12 @@ void XMalloc(void ** data, size_t size)
   checkError( cudaMalloc(data, size) );
 }
 
-void XMemcpy(void * in, void * out, size_t size, cudaMemcpyKind dir)
+void XMemcpy(void * out, void * in, size_t size, cudaMemcpyKind dir)
 {
   checkError( cudaMemcpy(out, in, size, dir) );
 }
 
-void XMemcpyAsync(void * in, void * out, size_t size, cudaMemcpyKind dir, cudaStream_t stream)
+void XMemcpyAsync(void * out, void * in, size_t size, cudaMemcpyKind dir, cudaStream_t stream)
 {
   checkError( cudaMemcpyAsync(out, in, size, dir, stream) );
 }
