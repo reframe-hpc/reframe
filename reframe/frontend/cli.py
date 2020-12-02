@@ -16,7 +16,6 @@ import traceback
 
 import reframe
 import reframe.core.config as config
-import reframe.core.environments as env
 import reframe.core.exceptions as errors
 import reframe.core.logging as logging
 import reframe.core.runtime as runtime
@@ -71,7 +70,7 @@ def format_check(check, check_deps, detailed=False):
         'Node allocation': node_alloc_scheme,
         'Pipeline hooks': {
             k: fmt_list(fn.__name__ for fn in v)
-            for k, v in type(check)._rfm_pipeline_hooks.items()
+            for k, v in check.pipeline_hooks().items()
         },
         'Tags': fmt_list(check.tags),
         'Valid environments': fmt_list(check.valid_prog_environs),
@@ -358,6 +357,11 @@ def main():
         dest='unload_modules', default=[],
         help='Unload module MOD before running any regression check',
         envvar='RFM_UNLOAD_MODULES ,', configvar='general/unload_modules'
+    )
+    env_options.add_argument(
+        '--module-path', action='append', metavar='PATH',
+        dest='module_paths', default=[],
+        help='(Un)use module path PATH before running any regression check',
     )
     env_options.add_argument(
         '--purge-env', action='store_true', dest='purge_env', default=False,
@@ -732,6 +736,48 @@ def main():
                           "please check your configuration")
             printer.debug(str(e))
             raise
+
+        def module_use(*paths):
+            try:
+                rt.modules_system.searchpath_add(*paths)
+            except errors.EnvironError as e:
+                printer.warning(f'could not add module paths correctly')
+                printer.debug(str(e))
+
+        def module_unuse(*paths):
+            try:
+                rt.modules_system.searchpath_remove(*paths)
+            except errors.EnvironError as e:
+                printer.warning(f'could not remove module paths correctly')
+                printer.debug(str(e))
+
+        printer.debug('(Un)using module paths from command line')
+        module_paths = {}
+        for d in options.module_paths:
+            if d.startswith('-'):
+                module_paths.setdefault('-', [])
+                module_paths['-'].append(d[1:])
+            elif d.startswith('+'):
+                module_paths.setdefault('+', [])
+                module_paths['+'].append(d[1:])
+            else:
+                module_paths.setdefault('x', [])
+                module_paths['x'].append(d)
+
+        for op, paths in module_paths.items():
+            if op == '+':
+                module_use(*paths)
+            elif op == '-':
+                module_unuse(*paths)
+            else:
+                # First empty the current module path in a portable way
+                searchpath = [p for p in rt.modules_system.searchpath if p]
+                if searchpath:
+                    rt.modules_system.searchpath_remove(*searchpath)
+
+                # Treat `A:B` syntax as well in this case
+                paths = itertools.chain(*(p.split(':') for p in paths))
+                module_use(*paths)
 
         printer.debug('Loading user modules from command line')
         for m in site_config.get('general/0/user_modules'):
