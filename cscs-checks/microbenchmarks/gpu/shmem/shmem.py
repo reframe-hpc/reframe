@@ -64,9 +64,9 @@ class GPUShmemTest(rfm.RegressionTest):
     def select_makefile(self):
         cp = self.current_partition.fullname
         if cp == 'ault:amdvega':
-            self.prebuild_cmds = ['cp makefile.hip Makefile']
+            self.build_system.makefile = 'makefile.hip'
         else:
-            self.prebuild_cmds = ['cp makefile.cuda Makefile']
+            self.build_system.makefile = 'makefile.cuda'
 
     @rfm.run_after('setup')
     def set_gpu_arch(self):
@@ -91,7 +91,7 @@ class GPUShmemTest(rfm.RegressionTest):
         # Deal with the AMD options
         amd_trgt = None
         if cp == 'ault:amdvega':
-            amd_trgt = 'gfx906,gfx908'
+            amd_trgt = 'gfx906'
 
         if amd_trgt:
             self.build_system.cxxflags += [f'--amdgpu-target={amd_trgt}']

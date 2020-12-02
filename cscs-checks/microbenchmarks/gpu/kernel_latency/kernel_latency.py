@@ -33,7 +33,7 @@ class KernelLatencyTest(rfm.RegressionTest):
         else:
             self.build_system.cppflags = ['-D SYNCKERNEL=0']
 
-        self.sanity_patterns = self.count_gpus()
+        self.sanity_patterns = self.assert_count_gpus()
 
         self.perf_patterns = {
             'latency': sn.max(sn.extractall(
@@ -57,7 +57,7 @@ class KernelLatencyTest(rfm.RegressionTest):
                 'ault:amda100': {
                     'latency': (9.65, None, 0.10, 'us')
                 },
-                'ault:amdv100': {
+                'ault:amdvega': {
                     'latency': (15.1, None, 0.10, 'us')
                 },
             },
@@ -97,9 +97,9 @@ class KernelLatencyTest(rfm.RegressionTest):
     def select_makefile(self):
         cp = self.current_partition.fullname
         if cp == 'ault:amdvega':
-            self.prebuild_cmds = ['cp makefile.hip Makefile']
+            self.build_system.makefile = 'makefile.hip'
         else:
-            self.prebuild_cmds = ['cp makefile.cuda Makefile']
+            self.build_system.makefile = 'makefile.cuda'
 
     @rfm.run_after('setup')
     def set_gpu_arch(self):
@@ -124,7 +124,7 @@ class KernelLatencyTest(rfm.RegressionTest):
         # Deal with the AMD options
         amd_trgt = None
         if cp == 'ault:amdvega':
-            amd_trgt = 'gfx906,gfx908'
+            amd_trgt = 'gfx906'
 
         if amd_trgt:
             self.build_system.cxxflags += [f'--amdgpu-target={amd_trgt}']
@@ -146,7 +146,7 @@ class KernelLatencyTest(rfm.RegressionTest):
             self.num_gpus_per_node = 3
 
     @sn.sanity_function
-    def count_gpus(self):
+    def assert_count_gpus(self):
         return sn.all([
             sn.assert_eq(
                 sn.count(

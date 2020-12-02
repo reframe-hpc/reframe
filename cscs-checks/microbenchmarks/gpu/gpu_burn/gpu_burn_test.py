@@ -91,8 +91,8 @@ class GpuBurnTest(rfm.RegressionTest):
             gpu_arch = '80'
 
         if gpu_arch:
-            self.build_system.cxxflags = ['-arch=compute_%s' % gpu_arch,
-                                          '-code=sm_%s' % gpu_arch]
+            self.build_system.cxxflags = [f'-arch=compute_{gpu_arch}',
+                                          f'-code=sm_{gpu_arch}']
 
     @rfm.run_before('run')
     def set_gpus_per_node(self):
