@@ -16,7 +16,6 @@ class CudaAwareMPICheck(rfm.CompileOnlyRegressionTest):
         self.sourcesdir = ('https://github.com/NVIDIA-developer-blog/'
                            'code-samples.git')
         self.valid_systems = ['daint:gpu', 'dom:gpu',
-                              'tiger:gpu',
                               'arolla:cn', 'tsa:cn',
                               'ault:amdv100', 'ault:intelv100']
         if self.current_system.name in ['arolla', 'tsa']:
@@ -72,8 +71,7 @@ class CudaAwareMPICheck(rfm.CompileOnlyRegressionTest):
 class CudaAwareMPIRuns(rfm.RunOnlyRegressionTest):
     def __init__(self):
         self.depends_on('CudaAwareMPICheck')
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu',
-                              'arolla:cn', 'tsa:cn',
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn',
                               'ault:amdv100', 'ault:intelv100']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
         if self.current_system.name in ['arolla', 'tsa', 'daint', 'dom']:
@@ -107,7 +105,6 @@ class CudaAwareMPIOneNodeCheck(CudaAwareMPIRuns):
         self.partition_num_gpus_per_node = {
             'daint:gpu':      1,
             'dom:gpu':        1,
-            'tiger:gpu':      2,
             'arolla:cn':      2,
             'tsa:cn':         2,
             'ault:amdv100':   2,

@@ -20,7 +20,6 @@ from reframe.core.exceptions import (SpawnedProcessError,
                                      JobBlockedError,
                                      JobError,
                                      JobSchedulerError)
-from reframe.core.logging import getlogger
 from reframe.utility import seconds_to_hms
 
 
@@ -157,7 +156,7 @@ class SlurmJobScheduler(sched.JobScheduler):
         parsed_args, _ = jobarr_parser.parse_known_args(job.options)
         if parsed_args.array:
             job._is_array = True
-            getlogger().debug('Slurm job is a job array')
+            self.log('Slurm job is a job array')
 
         # Slurm replaces '%a' by the corresponding SLURM_ARRAY_TASK_ID
         outfile_fmt = '--output={0}' + ('_%a' if job.is_array else '')
@@ -259,11 +258,10 @@ class SlurmJobScheduler(sched.JobScheduler):
         with osext.change_dir(job.workdir):
             out_glob = glob.glob(job.stdout + '_*')
             err_glob = glob.glob(job.stderr + '_*')
-            getlogger().debug(
-                'merging job array output files: %s' % ', '.join(out_glob))
+            self.log(f'merging job array output files: {", ".join(out_glob)}')
             osext.concat_files(job.stdout, *out_glob, overwrite=True)
-            getlogger().debug(
-                'merging job array error files: %s' % ','.join(err_glob))
+
+            self.log(f'merging job array error files: {", ".join(err_glob)}')
             osext.concat_files(job.stderr, *err_glob, overwrite=True)
 
     def filternodes(self, job, nodes):
@@ -286,43 +284,38 @@ class SlurmJobScheduler(sched.JobScheduler):
         if reservation:
             reservation = reservation.strip()
             nodes &= self._get_reservation_nodes(reservation)
-            getlogger().debug(
-                'flex_alloc_nodes: filtering nodes by reservation %s: '
-                'available nodes now: %s' % (reservation, len(nodes)))
+            self.log(f'[F] Filtering nodes by reservation {reservation}: '
+                     f'available nodes now: {len(nodes)}')
 
         if partitions:
             partitions = set(partitions.strip().split(','))
         else:
             default_partition = self._get_default_partition()
             partitions = {default_partition} if default_partition else set()
-            getlogger().debug('flex_alloc_nodes: default partition: %s' %
-                              default_partition)
+            self.log(
+                f'[F] No partition specified; using {default_partition!r}'
+            )
 
         nodes = {n for n in nodes if n.partitions >= partitions}
-        getlogger().debug(
-            'flex_alloc_nodes: filtering nodes by partition(s) %s: '
-            'available nodes now: %s' % (partitions, len(nodes)))
-
+        self.log(f'[F] Filtering nodes by partition(s) {partitions}: '
+                 f'available nodes now: {len(nodes)}')
         if constraints:
             constraints = set(constraints.strip().split('&'))
             nodes = {n for n in nodes if n.active_features >= constraints}
-            getlogger().debug(
-                'flex_alloc_nodes: filtering nodes by constraint(s) %s: '
-                'available nodes now: %s' % (constraints, len(nodes)))
+            self.log(f'[F] Filtering nodes by constraint(s) {constraints}: '
+                     f'available nodes now: {len(nodes)}')
 
         if nodelist:
             nodelist = nodelist.strip()
             nodes &= self._get_nodes_by_name(nodelist)
-            getlogger().debug(
-                'flex_alloc_nodes: filtering nodes by nodelist: %s '
-                'available nodes now: %s' % (nodelist, len(nodes)))
+            self.log(f'[F] Filtering nodes by nodelist: {nodelist}: '
+                     f'available nodes now: {len(nodes)}')
 
         if exclude_nodes:
             exclude_nodes = exclude_nodes.strip()
             nodes -= self._get_nodes_by_name(exclude_nodes)
-            getlogger().debug(
-                'flex_alloc_nodes: excluding node(s): %s '
-                'available nodes now: %s' % (exclude_nodes, len(nodes)))
+            self.log(f'[F] Excluding node(s): {exclude_nodes}: '
+                     f'available nodes now: {len(nodes)}')
 
         return nodes
 
@@ -341,7 +334,7 @@ class SlurmJobScheduler(sched.JobScheduler):
 
     def _get_nodes_by_name(self, nodespec):
         completed = osext.run_command('scontrol -a show -o node %s' %
-                                       nodespec)
+                                      nodespec)
         node_descriptions = completed.stdout.splitlines()
         return _create_nodes(node_descriptions)
 
@@ -394,8 +387,9 @@ class SlurmJobScheduler(sched.JobScheduler):
             fr'(?P<nodespec>.*)', completed.stdout, re.MULTILINE)
         )
         if not state_match:
-            getlogger().debug('job state not matched (stdout follows)\n%s' %
-                              completed.stdout)
+            self.log(
+                f'Job state not matched (stdout follows)\n{completed.stdout}'
+            )
             return
 
         job_info = {}
@@ -436,6 +430,7 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         t_pending = time.time() - job.submit_time
         if t_pending >= job.max_pending_time:
+            self.log(f'maximum pending time for job exceeded; cancelling it')
             self.cancel(job)
             job._exception = JobError('maximum pending time exceeded')
 
@@ -469,6 +464,7 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         if reason in self._cancel_reasons:
             if reason == 'ReqNodeNotAvail' and reason_details:
+                self.log('Job blocked due to ReqNodeNotAvail')
                 node_match = re.match(
                     r'UnavailableNodes:(?P<node_names>\S+)?',
                     reason_details.strip()
@@ -478,6 +474,8 @@ class SlurmJobScheduler(sched.JobScheduler):
                     if node_names:
                         # Retrieve the info of the unavailable nodes
                         # and check if they are indeed down
+                        self.log(f'Checking if nodes {node_names!r} '
+                                 f'are indeed unavailable')
                         nodes = self._get_nodes_by_name(node_names)
                         if not any(n.is_down() for n in nodes):
                             return
@@ -511,7 +509,6 @@ class SlurmJobScheduler(sched.JobScheduler):
             self._merge_files(job)
 
     def cancel(self, job):
-        getlogger().debug(f'cancelling job (id={job.jobid})')
         _run_strict(f'scancel {job.jobid}', timeout=self._submit_timeout)
         job._is_cancelling = True
 
@@ -565,9 +562,6 @@ class SqueueJobScheduler(SlurmJobScheduler):
                 job_match = jobinfo[job.jobid]
             except KeyError:
                 job._state = 'CANCELLED' if job.is_cancelling else 'COMPLETED'
-                if job.exitcode is None:
-                    job._exitcode = 0
-
                 continue
 
             # Join the states with ',' in case of job arrays

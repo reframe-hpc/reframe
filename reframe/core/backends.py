@@ -19,8 +19,7 @@ _launchers = {}
 _scheduler_backend_modules = [
     'reframe.core.schedulers.local',
     'reframe.core.schedulers.slurm',
-    'reframe.core.schedulers.pbs',
-    'reframe.core.schedulers.torque'
+    'reframe.core.schedulers.pbs'
 ]
 _schedulers = {}
 

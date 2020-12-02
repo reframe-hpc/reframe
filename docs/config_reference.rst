@@ -122,7 +122,7 @@ System Configuration
    :required: No
    :default: ``[]``
 
-   Environment modules to be loaded always when running on this system.
+   A list of `environment module objects <#module-objects>`__ to be loaded always when running on this system.
    These modules modify the ReFrame environment.
    This is useful in cases where a particular module is needed, for example, to submit jobs on a specific system.
 
@@ -280,7 +280,7 @@ System Partition Configuration
    :required: No
    :default: ``[]``
 
-   A list of environment modules to be loaded before running a regression test on this partition.
+  A list of `environment module objects <#module-objects>`__ to be loaded before running a regression test on this partition.
 
 
 .. js:attribute:: .systems[].partitions[].variables
@@ -339,7 +339,7 @@ ReFrame can launch containerized applications, but you need to configure properl
    :required: No
    :default: ``[]``
 
-  List of environment modules to be loaded when running containerized tests using this container platform.
+   A list of `environment module objects <#module-objects>`__ to be loaded when running containerized tests using this container platform.
 
 
 .. js:attribute:: .systems[].partitions[].container_platforms[].variables
@@ -458,7 +458,7 @@ They are associated with `system partitions <#system-partition-configuration>`__
    :required: No
    :default: ``[]``
 
-   A list of environment modules to be loaded when this environment is loaded.
+   A list of `environment module objects <#module-objects>`__ to be loaded when this environment is loaded.
 
 
 .. js:attribute:: .environments[].variables
@@ -579,7 +579,7 @@ You may define different logger objects per system but *not* per partition.
 .. js:attribute:: .logging[].level
 
    :required: No
-   :default: ``"debug"``
+   :default: ``"undefined"``
 
    The level associated with this logger object.
    There are the following levels in decreasing severity order:
@@ -590,8 +590,17 @@ You may define different logger objects per system but *not* per partition.
    - ``info``: Informational messages.
    - ``verbose``: More informational messages.
    - ``debug``: Debug messages.
+   - ``debug2``: Further debug messages.
+   - ``undefined``: This is the lowest level; do not filter any message.
 
    If a message is logged by the framework, its severity level will be checked by the logger and if it is higher from the logger's level, it will be passed down to its handlers.
+
+
+   .. versionadded:: 3.3
+      The ``debug2`` and ``undefined`` levels are added.
+
+   .. versionchanged:: 3.3
+      The default level is now ``undefined``.
 
 
 .. js:attribute:: .logging[].handlers
@@ -686,12 +695,8 @@ All logging handlers share the following set of common attributes:
      If specific formatting is desired, the ``check_job_completion_time`` should be used instead.
    - ``%(check_name)s``: The name of the regression test on behalf of which ReFrame is currently executing.
      If ReFrame is not executing in the context of a regression test, ``reframe`` will be printed instead.
-   - ``%(check_num_tasks)s``: The number of tasks assigned to the regression test.
-   - ``%(check_outputdir)s``: The output directory associated with the currently executing test.
    - ``%(check_partition)s``: The system partition where this test is currently executing.
-   - ``%(check_stagedir)s``: The stage directory associated with the currently executing test.
    - ``%(check_system)s``: The system where this test is currently executing.
-   - ``%(check_tags)s``: The tags associated with this test.
    - ``%(check_perf_lower_thres)s``: The lower threshold of the performance difference from the reference value expressed as a fractional value.
      See the :attr:`reframe.core.pipeline.RegressionTest.reference` attribute of regression tests for more details.
    - ``%(check_perf_ref)s``: The reference performance value of a certain performance variable.
@@ -700,9 +705,18 @@ All logging handlers share the following set of common attributes:
      See the :attr:`reframe.core.pipeline.RegressionTest.reference` attribute of regression tests for more details.
    - ``%(check_perf_value)s``: The performance value obtained for a certain performance variable.
    - ``%(check_perf_var)s``: The name of the `performance variable <tutorial_basic.html#writing-a-performance-test>`__ being logged.
+   - ``%(check_ATTR)s``: This will log the value of the attribute ``ATTR`` of the currently executing regression test.
+     Mappings will be logged as ``k1=v1,k2=v2,..`` and all other iterables, except strings, will be logged as comma-separated lists.
+     If ``ATTR`` is not an attribute of the test, ``%(check_ATTR)s`` will be logged as ``<undefined>``.
+     This allows users to log arbitrary attributes of their tests.
+     For the complete list of test attributes, please refer to :doc:`regression_test_api`.
    - ``%(osuser)s``: The name of the OS user running ReFrame.
    - ``%(osgroup)s``: The name of the OS group running ReFrame.
    - ``%(version)s``: The ReFrame version.
+
+
+.. versionadded:: 3.3
+   The ability to log arbitrary test attributes was added.
 
 
 .. js:attribute:: .logging[].handlers[].datefmt
@@ -1167,7 +1181,7 @@ General Configuration
    :required: No
    :default: ``[]``
 
-   A list of environment modules to unload before executing any test.
+   A list of `environment module objects <#module-objects>`__ to unload before executing any test.
    If specified using an the environment variable, a space separated list of modules is expected.
    If specified from the command line, multiple modules can be passed by passing the command line option multiple times.
 
@@ -1187,7 +1201,7 @@ General Configuration
    :required: No
    :default: ``[]``
 
-   A list of environment modules to be loaded before executing any test.
+   A list of `environment module objects <#module-objects>`__ to be loaded before executing any test.
    If specified using an the environment variable, a space separated list of modules is expected.
    If specified from the command line, multiple modules can be passed by passing the command line option multiple times.
 
@@ -1200,3 +1214,32 @@ General Configuration
    Increase the verbosity level of the output.
    The higher the number, the more verbose the output will be.
    If specified from the command line, the command line option must be specified multiple times to increase the verbosity level more than once.
+
+
+Module Objects
+--------------
+
+.. versionadded:: 3.3
+
+
+A *module object* in ReFrame's configuration represents an environment module.
+It can either be a simple string or a JSON object with the following attributes:
+
+.. js:attribute:: .name
+
+   :required: Yes
+
+   The name of the module.
+
+
+.. js:attribute:: .collection
+
+   :required: No
+   :default: ``false``
+
+   A boolean value indicating whether this module refers to a module collection.
+   Module collections are treated differently from simple modules when loading.
+
+.. seealso::
+
+   Module collections with `Environment Modules <https://modules.readthedocs.io/en/latest/MIGRATING.html#module-collection>`__ and `Lmod <https://lmod.readthedocs.io/en/latest/010_user.html#user-collections>`__.

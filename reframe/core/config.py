@@ -5,6 +5,7 @@
 
 import copy
 import fnmatch
+import functools
 import itertools
 import json
 import jsonschema
@@ -14,14 +15,11 @@ import socket
 import tempfile
 
 import reframe
-import reframe.core.fields as fields
 import reframe.core.settings as settings
 import reframe.utility as util
-import reframe.utility.osext as osext
-import reframe.utility.typecheck as types
+from reframe.core.environments import normalize_module_list
 from reframe.core.exceptions import ConfigError, ReframeFatalError
 from reframe.core.logging import getlogger
-from reframe.core.warnings import ReframeDeprecationWarning
 from reframe.utility import ScopedDict
 
 
@@ -37,6 +35,29 @@ def _match_option(opt, opt_map):
             return v
 
     raise KeyError(opt)
+
+
+def _normalize_syntax(conv):
+    '''Normalize syntax for options accepting multiple syntaxes'''
+
+    def _do_normalize(fn):
+
+        @functools.wraps(fn)
+        def _get(site_config, option, *args, **kwargs):
+            ret = fn(site_config, option, *args, **kwargs)
+            if option is None:
+                return ret
+
+            for opt_patt, norm_fn in conv.items():
+                if re.match(opt_patt, option):
+                    ret = norm_fn(ret)
+                    break
+
+            return ret
+
+        return _get
+
+    return _do_normalize
 
 
 class _SiteConfig:
@@ -86,6 +107,7 @@ class _SiteConfig:
     def remove_sticky_option(self, option):
         self._sticky_options.pop(option, None)
 
+    @_normalize_syntax({'.*/.*modules$': normalize_module_list})
     def get(self, option, default=None):
         '''Retrieve value of option.
 
@@ -203,9 +225,10 @@ class _SiteConfig:
 
         if hasattr(mod, 'settings'):
             # Looks like an old style config
-            raise ReframeDeprecationWarning(
-                f"the syntax of the configuration file '{filename}' "
-                f"is deprecated"
+            raise ConfigError(
+                f"the syntax of the configuration file {filename!r} "
+                f"is no longer supported; please convert it using the "
+                f"'--upgrade-config-file' option"
             )
 
         mod = util.import_module_from_file(filename)
@@ -229,17 +252,29 @@ class _SiteConfig:
         return _SiteConfig(config, filename)
 
     def _detect_system(self):
+        getlogger().debug('Detecting system')
         if os.path.exists('/etc/xthostname'):
             # Get the cluster name on Cray systems
+            getlogger().debug(
+                "Found '/etc/xthostname': will use this to get the system name"
+            )
             with open('/etc/xthostname') as fp:
                 hostname = fp.read()
         else:
             hostname = socket.gethostname()
 
+        getlogger().debug(
+            f'Looking for a matching configuration entry '
+            f'for system {hostname!r}'
+        )
         for system in self._site_config['systems']:
             for patt in system['hostnames']:
                 if re.match(patt, hostname):
-                    return system['name']
+                    sysname = system['name']
+                    getlogger().debug(
+                        f'Configuration found: picking system {sysname!r}'
+                    )
+                    return sysname
 
         raise ConfigError(f"could not find a configuration entry "
                           f"for the current system: '{hostname}'")
@@ -278,6 +313,7 @@ class _SiteConfig:
             return
 
         system_fullname = system_fullname or self._detect_system()
+        getlogger().debug(f'Selecting subconfig for {system_fullname!r}')
         try:
             system_name, part_name = system_fullname.split(':', maxsplit=1)
         except ValueError:
@@ -554,13 +590,21 @@ def convert_old_config(filename, newfilename=None):
 
 def _find_config_file():
     # The order of elements is important, since it defines the priority
-    username = osext.osuser()
-    prefixes = [os.path.join(username, '.reframe')] if username else []
-    prefixes += [reframe.INSTALL_PREFIX, '/etc/reframe.d']
+    homedir = os.getenv('HOME')
+    prefixes = [os.path.join(homedir, '.reframe')] if homedir else []
+    prefixes += [
+        reframe.INSTALL_PREFIX,
+        '/etc/reframe.d'
+    ]
     valid_exts = ['py', 'json']
+    getlogger().debug('Looking for a suitable configuration file')
     for d in prefixes:
+        if not d:
+            continue
+
         for ext in valid_exts:
             filename = os.path.join(d, f'settings.{ext}')
+            getlogger().debug(f'Trying {filename!r}')
             if os.path.exists(filename):
                 return filename
 
@@ -572,8 +616,9 @@ def load_config(filename=None):
         filename = _find_config_file()
         if filename is None:
             # Return the generic configuration
-            getlogger().debug('no configuration found; '
+            getlogger().debug('No configuration found; '
                               'falling back to a generic one')
             return _SiteConfig(settings.site_configuration, '<builtin>')
 
+    getlogger().debug(f'Loading configuration file: {filename!r}')
     return _SiteConfig.create(filename)

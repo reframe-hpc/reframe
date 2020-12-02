@@ -3,8 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import os
-
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -27,7 +25,7 @@ class NvmlCheck(rfm.RegressionTest):
 
     def __init__(self):
         self.descr = 'check GPU compute mode'
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu']
+        self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.modules = ['craype-accel-nvidia60']
         self.build_system = 'SingleSource'

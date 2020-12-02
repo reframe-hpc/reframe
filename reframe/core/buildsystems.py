@@ -426,8 +426,9 @@ class SingleSource(BuildSystem):
             cmd_parts += [nvcc, *cppflags, *cxxflags, self.srcfile,
                           '-o', executable, *ldflags]
         else:
-            BuildSystemError('could not guess language of file: %s' %
-                             self.srcfile)
+            raise BuildSystemError(
+                f'could not guess language of file: {self.srcfile}'
+            )
 
         return [' '.join(cmd_parts)]
 

@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import os
 import reframe as rfm
 import reframe.utility.sanity as sn
 import reframe.utility.osext as osext
@@ -11,8 +10,7 @@ import reframe.utility.osext as osext
 
 class CudaSamples(rfm.RegressionTest):
     def __init__(self):
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu',
-                              'arolla:cn', 'tsa:cn',
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn',
                               'ault:amdv100', 'ault:intelv100']
         if self.current_system.name in ['arolla', 'tsa']:
             self.valid_prog_environs += ['PrgEnv-pgi',

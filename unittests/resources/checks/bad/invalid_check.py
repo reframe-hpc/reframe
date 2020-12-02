@@ -8,7 +8,9 @@ import reframe as rfm
 
 @rfm.simple_test
 class SomeTest(rfm.RegressionTest):
-    pass
+    def __init__(self):
+        self.valid_systems = []
+        self.valid_prog_environs = []
 
 
 class NotATest:

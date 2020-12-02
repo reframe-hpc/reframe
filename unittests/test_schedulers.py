@@ -312,7 +312,8 @@ def test_submit_job_array(make_job, slurm_only, exec_ctx):
     prepare_job(job, command='echo "Task id: ${SLURM_ARRAY_TASK_ID}"')
     job.submit()
     job.wait()
-    assert job.exitcode == 0
+    if job.scheduler.registered_name == 'slurm':
+        assert job.exitcode == 0
     with open(job.stdout) as fp:
         output = fp.read()
         assert all([re.search('Task id: 0', output),
@@ -454,7 +455,7 @@ def test_guess_num_tasks(minimal_job, scheduler):
 
 
 def test_submit_max_pending_time(make_job, exec_ctx, scheduler):
-    if scheduler.registered_name in ('local', 'pbs'):
+    if scheduler.registered_name in ('local'):
         pytest.skip(f"max_pending_time not supported by the "
                     f"'{scheduler.registered_name}' scheduler")
 
@@ -466,7 +467,7 @@ def test_submit_max_pending_time(make_job, exec_ctx, scheduler):
     def state(self):
         if scheduler.registered_name in ('slurm', 'squeue'):
             return 'PENDING'
-        elif scheduler.registered_name == 'torque':
+        elif scheduler.registered_name in ('pbs', 'torque'):
             return 'QUEUED'
         else:
             # This should not happen
@@ -483,7 +484,13 @@ def test_submit_max_pending_time(make_job, exec_ctx, scheduler):
 def assert_process_died(pid):
     try:
         os.kill(pid, 0)
-        pytest.fail('process %s is still alive' % pid)
+        if os.getpid() == 1:
+            # We are running in a container; so pid is likely a zombie; reap it
+            if os.waitpid(pid, os.WNOHANG)[0] == 0:
+                pytest.fail(f'process {pid} is still alive')
+        else:
+            pytest.fail(f'process {pid} is still alive')
+
     except (ProcessLookupError, PermissionError):
         pass
 
@@ -512,18 +519,17 @@ def test_cancel_with_grace(minimal_job, scheduler, local_only):
     # signal handler for SIGTERM
     time.sleep(1)
 
-    t_grace = datetime.now()
+    t_grace = time.time()
     minimal_job.cancel()
     time.sleep(0.1)
     minimal_job.wait()
-    t_grace = datetime.now() - t_grace
+    t_grace = time.time() - t_grace
 
     # Read pid of spawned sleep
     with open(minimal_job.stdout) as fp:
         sleep_pid = int(fp.read())
 
-    assert t_grace.total_seconds() >= 2
-    assert t_grace.total_seconds() < 5
+    assert t_grace >= 2 and t_grace < 5
     assert minimal_job.state == 'FAILURE'
     assert minimal_job.signal == signal.SIGKILL
 
@@ -557,17 +563,17 @@ def test_cancel_term_ignore(minimal_job, scheduler, local_only):
     # signal handler for SIGTERM
     time.sleep(1)
 
-    t_grace = datetime.now()
+    t_grace = time.time()
     minimal_job.cancel()
     time.sleep(0.1)
     minimal_job.wait()
-    t_grace = datetime.now() - t_grace
+    t_grace = time.time() - t_grace
 
     # Read pid of spawned sleep
     with open(minimal_job.stdout) as fp:
         sleep_pid = int(fp.read())
 
-    assert t_grace.total_seconds() >= 2
+    assert t_grace >= 2 and t_grace < 5
     assert minimal_job.state == 'FAILURE'
     assert minimal_job.signal == signal.SIGKILL
 

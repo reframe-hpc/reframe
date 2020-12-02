@@ -4,13 +4,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import json
-import os
 import pytest
 
 import reframe.core.config as config
 from reframe.core.exceptions import ConfigError
 from reframe.core.systems import System
-from reframe.core.warnings import ReframeDeprecationWarning
 
 
 def test_load_config_fallback(monkeypatch):
@@ -24,7 +22,7 @@ def test_load_config_python():
 
 
 def test_load_config_python_old_syntax():
-    with pytest.raises(ReframeDeprecationWarning):
+    with pytest.raises(ConfigError):
         site_config = config.load_config(
             'unittests/resources/settings_old_syntax.py'
         )
@@ -225,7 +223,8 @@ def test_select_subconfig():
     assert site_config.get('systems/0/prefix') == '.rfm_testing'
     assert (site_config.get('systems/0/resourcesdir') ==
             '.rfm_testing/resources')
-    assert site_config.get('systems/0/modules') == ['foo/1.0']
+    assert site_config.get('systems/0/modules') == [{'name': 'foo/1.0',
+                                                     'collection': False}]
     assert site_config.get('systems/0/variables') == [['FOO_CMD', 'foobar']]
     assert site_config.get('systems/0/modules_system') == 'nomod'
     assert site_config.get('systems/0/outputdir') == ''
@@ -260,7 +259,7 @@ def test_select_subconfig():
     assert site_config.get('environments/@PrgEnv-cray/cc') == 'cc'
     assert site_config.get('environments/1/cxx') == 'CC'
     assert (site_config.get('environments/@PrgEnv-cray/modules') ==
-            ['PrgEnv-cray'])
+            [{'name': 'PrgEnv-cray', 'collection': False}])
     assert len(site_config.get('general')) == 1
     assert site_config.get('general/0/check_search_path') == ['a:b']
 
@@ -273,7 +272,9 @@ def test_select_subconfig():
     assert len(site_config.get('systems/0/partitions/0/resources')) == 2
     assert (site_config.get('systems/0/partitions/0/resources/@gpu/name') ==
             'gpu')
-    assert site_config.get('systems/0/partitions/0/modules') == ['foogpu']
+    assert site_config.get('systems/0/partitions/0/modules') == [
+        {'name': 'foogpu', 'collection': False}
+    ]
     assert (site_config.get('systems/0/partitions/0/variables') ==
             [['FOO_GPU', 'yes']])
     assert site_config.get('systems/0/partitions/0/max_jobs') == 10

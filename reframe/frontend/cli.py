@@ -16,14 +16,13 @@ import traceback
 
 import reframe
 import reframe.core.config as config
-import reframe.core.environments as env
 import reframe.core.exceptions as errors
 import reframe.core.logging as logging
 import reframe.core.runtime as runtime
 import reframe.core.warnings as warnings
 import reframe.frontend.argparse as argparse
-import reframe.frontend.check_filters as filters
-import reframe.frontend.dependency as dependency
+import reframe.frontend.dependencies as dependencies
+import reframe.frontend.filters as filters
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 from reframe.frontend.executors import Runner, generate_testcases
@@ -33,12 +32,24 @@ from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.printer import PrettyPrinter
 
 
-def format_check(check, detailed=False):
+def format_check(check, check_deps, detailed=False):
     def fmt_list(x):
         if not x:
             return '<none>'
 
         return ', '.join(x)
+
+    def fmt_deps():
+        no_deps = True
+        lines = []
+        for t, deps in check_deps:
+            for d in deps:
+                lines.append(f'- {t} -> {d}')
+
+        if lines:
+            return '\n      '.join(lines)
+        else:
+            return '<none>'
 
     location = inspect.getfile(type(check))
     if not detailed:
@@ -52,7 +63,6 @@ def format_check(check, detailed=False):
         node_alloc_scheme = f'flexible (minimum {-check.num_tasks} task(s))'
 
     check_info = {
-        'Dependencies': fmt_list([d[0] for d in check.user_deps()]),
         'Description': check.descr,
         'Environment modules': fmt_list(check.modules),
         'Location': location,
@@ -60,18 +70,22 @@ def format_check(check, detailed=False):
         'Node allocation': node_alloc_scheme,
         'Pipeline hooks': {
             k: fmt_list(fn.__name__ for fn in v)
-            for k, v in type(check)._rfm_pipeline_hooks.items()
+            for k, v in check.pipeline_hooks().items()
         },
         'Tags': fmt_list(check.tags),
         'Valid environments': fmt_list(check.valid_prog_environs),
-        'Valid systems': fmt_list(check.valid_systems)
+        'Valid systems': fmt_list(check.valid_systems),
+        'Dependencies (conceptual)': fmt_list(
+            [d[0] for d in check.user_deps()]
+        ),
+        'Dependencies (actual)': fmt_deps()
     }
     lines = [f'- {check.name}:']
     for prop, val in check_info.items():
         lines.append(f'    {prop}:')
         if isinstance(val, dict):
             for k, v in val.items():
-                lines.append(f'      {k}: {v}')
+                lines.append(f'      - {k}: {v}')
         else:
             lines.append(f'      {val}')
 
@@ -88,9 +102,19 @@ def format_env(envvars):
     return ret
 
 
-def list_checks(checks, printer, detailed=False):
+def list_checks(testcases, printer, detailed=False):
     printer.info('[List of matched checks]')
-    printer.info('\n'.join(format_check(c, detailed) for c in checks))
+
+    # Collect dependencies per test
+    deps = {}
+    for t in testcases:
+        deps.setdefault(t.check.name, [])
+        deps[t.check.name].append((t, t.deps))
+
+    checks = set(t.check for t in testcases)
+    printer.info(
+        '\n'.join(format_check(c, deps[c.name], detailed) for c in checks)
+    )
     printer.info(f'Found {len(checks)} check(s)')
 
 
@@ -111,147 +135,16 @@ def generate_report_filename(filepatt):
     return filepatt.format(sessionid=new_id)
 
 
-def locate_and_load_tests(options, loader, ci_tag=[]):
-    # Locate and load checks
-    try:
-        checks_found = loader.load_all()
-    except OSError as e:
-        raise errors.ReframeError from e
+def logfiles_message():
+    log_files = logging.log_files()
+    msg = 'Log file(s) saved in: '
+    if not log_files:
+        msg += '<no log file was generated>'
+    else:
+        msg += f'{", ".join(repr(f) for f in log_files)}'
 
-    # Filter checks by name
-    checks_matched = checks_found
-    if options.exclude_names:
-        for name in options.exclude_names:
-            checks_matched = filter(filters.have_not_name(name),
-                                    checks_matched)
+    return msg
 
-    if options.names:
-        checks_matched = filter(filters.have_name('|'.join(options.names)),
-                                checks_matched)
-
-    # Filter checks by tags
-    for tag in options.tags:
-        checks_matched = filter(filters.have_tag(tag), checks_matched)
-
-    # Filter checks by ci tags
-    for tag in ci_tag:
-        checks_matched = filter(filters.have_tag(tag), checks_matched)
-
-    # Filter checks by prgenv
-    if not options.skip_prgenv_check:
-        for prgenv in options.prgenv:
-            checks_matched = filter(filters.have_prgenv(prgenv),
-                                    checks_matched)
-
-    # Filter checks by system
-    if not options.skip_system_check:
-        checks_matched = filter(
-            filters.have_partition(rt.system.partitions), checks_matched)
-
-    if options.gpu_only:
-        checks_matched = filter(filters.have_gpu_only(), checks_matched)
-    elif options.cpu_only:
-        checks_matched = filter(filters.have_cpu_only(), checks_matched)
-
-    # Determine the allowed programming environments
-    allowed_environs = {e.name
-                        for env_patt in options.prgenv
-                        for p in rt.system.partitions
-                        for e in p.environs if re.match(env_patt, e.name)}
-
-    # Generate the test cases, validate dependencies and sort them
-    checks_matched = list(checks_matched)
-
-    # Disable hooks
-    for c in checks_matched:
-        for h in options.hooks:
-            type(c).disable_hook(h)
-
-    testcases = generate_testcases(checks_matched,
-                                    options.skip_system_check,
-                                    options.skip_prgenv_check,
-                                    allowed_environs)
-    testgraph = dependency.build_deps(testcases)
-    # dependency.validate_deps(testgraph)
-    # testcases = dependency.toposort(testgraph)
-
-    return testgraph
-
-# TODO place this function in a proper module
-# TODO define mechanism on how to propagate command line options, currently
-#      we are passing site_config, but that's clearly a bad design
-#      read below the options we need to propagate or make available to each
-#      ci invokation
-#      An alternative design would be to have environment variables exported
-#      during the trigger phase of reframe that would influence the tests
-#      individually
-def generate_ci_pipeline_file(ci_pipeline_file, testgraph, site_config):
-    import reframe.utility as util
-
-    def _hash_test_names(test):
-        # Need to hash the test names to make them yaml compatible
-        cname = test.check.name
-        pname = test.partition.fullname
-        ename = test.environ.name
-        # still need to convert characters because partitions
-        # can have the : char, for example
-        return util.toalphanum(cname + "_" + pname + "_" + ename)
-
-    tests, graphdepth = dependencies.toposortdepth(testgraph)
-    # TODO Should be using py-yaml lib here
-    with open(ci_pipeline_file, 'w') as pipeline_file:
-        pipeline_file.write('stages:\n')
-        for i in range(graphdepth+1):
-            pipeline_file.write(f'    - rfm-stage-{i}\n')
-        pipeline_file.write('\n')
-        for c, k in tests.items():
-            pipeline_file.write(f'{_hash_test_names(c)}:\n')
-            depth = k['depth']
-            pipeline_file.write(f'    stage: rfm-stage-{depth}\n')
-            pipeline_file.write(f'    script:\n')
-            # TODO there are some options that need  to be revisited
-            # - about the test folder: reframe's -c option
-            # - about the configuration file to use: reframe's -C option
-            # - about the artifacts artifacts: {paths: [jobs_scratch_dir], when: always}
-
-            # TODO there are some missing options:
-            # - about other potentially important options:
-            # + --keep-stage-files
-            # + --ignore-check-conflicts
-            # + -p
-            # + --gpu-only
-            # + --cpu-only
-            # + -A
-            # + -P
-            # + --reservation
-            # + --skip-performance-check
-            # + --nodelist
-            # + --exclude-nodes
-            # + --skip-system-check
-            # + --skip-prgenv-check
-            # + --mode
-            # + --max-retries
-            # + -M
-            # + -m
-            # + --module-mappings
-            # + --failure-stats
-            # + --performance-report
-            load_path='-c '.join(site_config.get('general/0/check_search_path'))
-            recurse='-R' if site_config.get('general/0/check_search_recursive') else ''
-            ignore_conflicts='--ignore-check-conflicts' if site_config.get('general/0/ignore_check_conflicts') else ''
-            pipeline_file.write(f'        - {reframe.INSTALL_PREFIX}/bin/reframe -C {site_config.filename} -c {load_path} {recurse} {ignore_conflicts} --prefix rfm_tests_stage_dir -n {c.check.name} -r\n')
-
-            if k['depends']:
-                pipeline_file.write(f'    needs:\n')
-                for d in k['depends']:
-                    pipeline_file.write(f'        - {_hash_test_names(d)}\n')
-            else:
-                pipeline_file.write(f'    needs: []\n')
-
-            pipeline_file.write(f'    artifacts:\n')
-            pipeline_file.write(f'        paths: \n')
-            pipeline_file.write(f'            - rfm_tests_stage_dir \n')
-            pipeline_file.write('\n')
 
 def main():
     # Setup command line options
@@ -441,19 +334,6 @@ def main():
         '--disable-hook', action='append', metavar='NAME', dest='hooks',
         default=[], help='Disable a pipeline hook for this run'
     )
-    run_options.add_argument(
-        '--ci-generate-pipeline', action='store', metavar='FILE',
-        help="Store ci pipeline in yaml FILE",
-        envvar='RFM_CI_PIPELINE_FILE',
-        configvar='general/ci_pipeline_file'
-    )
-    run_options.add_argument(
-        '--ci-pipeline-tags', action='append', metavar='OPT', default=[],
-        help="Select the ci pipeline stages from tags FILE",
-        envvar='RFM_CI_PIPELINE_TAGS',
-        configvar='general/ci_pipeline_tags'
-    )
-
     env_options.add_argument(
         '-M', '--map-module', action='append', metavar='MAPPING',
         dest='module_mappings', default=[],
@@ -477,6 +357,11 @@ def main():
         dest='unload_modules', default=[],
         help='Unload module MOD before running any regression check',
         envvar='RFM_UNLOAD_MODULES ,', configvar='general/unload_modules'
+    )
+    env_options.add_argument(
+        '--module-path', action='append', metavar='PATH',
+        dest='module_paths', default=[],
+        help='(Un)use module path PATH before running any regression check',
     )
     env_options.add_argument(
         '--purge-env', action='store_true', dest='purge_env', default=False,
@@ -587,7 +472,8 @@ def main():
 
     if options.upgrade_config_file is not None:
         old_config, *new_config = options.upgrade_config_file.split(
-            ':', maxsplit=1)
+            ':', maxsplit=1
+        )
         new_config = new_config[0] if new_config else None
 
         try:
@@ -600,12 +486,12 @@ def main():
             f'Conversion successful! '
             f'The converted file can be found at {new_config!r}.'
         )
-
         sys.exit(0)
 
     # Now configure ReFrame according to the user configuration file
     try:
         try:
+            printer.debug('Loading user configuration')
             site_config = config.load_config(options.config_file)
         except warnings.ReframeDeprecationWarning as e:
             printer.warning(e)
@@ -643,15 +529,18 @@ def main():
         logging.configure_logging(site_config)
     except (OSError, errors.ConfigError) as e:
         printer.error(f'failed to load configuration: {e}')
+        printer.error(logfiles_message())
         sys.exit(1)
 
     logging.getlogger().colorize = site_config.get('general/0/colorize')
     printer.colorize = site_config.get('general/0/colorize')
     printer.inc_verbosity(site_config.get('general/0/verbose'))
     try:
+        printer.debug('Initializing runtime')
         runtime.init_runtime(site_config)
     except errors.ConfigError as e:
         printer.error(f'failed to initialize runtime: {e}')
+        printer.error(logfiles_message())
         sys.exit(1)
 
     rt = runtime.runtime()
@@ -674,6 +563,7 @@ def main():
         printer.error("stage and output refer to the same directory; "
                       "if this is on purpose, please use the "
                       "'--keep-stage-files' option.")
+        printer.error(logfiles_message())
         sys.exit(1)
 
     # Show configuration after everything is set up
@@ -708,7 +598,7 @@ def main():
     session_info = {
         'cmdline': ' '.join(sys.argv),
         'config_file': rt.site_config.filename,
-        'data_version': '1.0',
+        'data_version': '1.1',
         'hostname': socket.gethostname(),
         'prefix_output': rt.output_prefix,
         'prefix_stage': rt.stage_prefix,
@@ -733,61 +623,113 @@ def main():
     print_infoline('stage directory', repr(session_info['prefix_stage']))
     print_infoline('output directory', repr(session_info['prefix_output']))
     printer.info('')
-
-    if site_config.get('general/0/ci_pipeline_file'):
-        ci_pipeline_file = site_config.get('general/0/ci_pipeline_file')
-
-    ci_tags=site_config.get('general/0/ci_pipeline_tags')
-
-    # if one is defined but one is not defined
-    if ci_pipeline_file or ci_tags and not (ci_pipeline_file and ci_tags):
-        printer.error("options `--ci-pipeline-file' and `--ci-tags' "
-                        "must be used together")
-        sys.exit(1)
-
     try:
-        # Filter checks further
+        # Locate and load checks
+        try:
+            checks_found = loader.load_all()
+            printer.verbose(f'Loaded {len(checks_found)} test(s)')
+        except OSError as e:
+            raise errors.ReframeError from e
+
+        # Generate all possible test cases first; we will need them for
+        # resolving dependencies after filtering
+
+        # Determine the allowed programming environments
+        allowed_environs = {e.name
+                            for env_patt in options.prgenv
+                            for p in rt.system.partitions
+                            for e in p.environs if re.match(env_patt, e.name)}
+
+        testcases_all = generate_testcases(checks_found,
+                                           options.skip_system_check,
+                                           options.skip_prgenv_check,
+                                           allowed_environs)
+        testcases = testcases_all
+        printer.verbose(f'Generated {len(testcases)} test case(s)')
+
+        # Filter test cases by name
+        if options.exclude_names:
+            for name in options.exclude_names:
+                testcases = filter(filters.have_not_name(name), testcases)
+
+        if options.names:
+            testcases = filter(
+                filters.have_name('|'.join(options.names)), testcases
+            )
+
+        testcases = list(testcases)
+        printer.verbose(
+            f'Filtering test cases(s) by name: {len(testcases)} remaining'
+        )
+
+        # Filter test cases by tags
+        for tag in options.tags:
+            testcases = filter(filters.have_tag(tag), testcases)
+
+        testcases = list(testcases)
+        printer.verbose(
+            f'Filtering test cases(s) by tags: {len(testcases)} remaining'
+        )
+
+        # Filter test cases further
         if options.gpu_only and options.cpu_only:
             printer.error("options `--gpu-only' and `--cpu-only' "
                           "are mutually exclusive")
             sys.exit(1)
 
-        if ci_tags:
-            for tag in ci_tags:
-                testgraph = locate_and_load_tests(options, loader, ci_tag=tag)
-                dependency.validate_deps(testgraph)
-                generate_ci_pipeline_file(ci_pipeline_file, testgraph, site_config)
+        if options.gpu_only:
+            testcases = filter(filters.have_gpu_only(), testcases)
+        elif options.cpu_only:
+            testcases = filter(filters.have_cpu_only(), testcases)
 
+        # Prepare for running
+        printer.debug('Building and validating the full test DAG')
+        testgraph, skipped_cases = dependencies.build_deps(testcases_all)
+        if skipped_cases:
+            # Some cases were skipped, so adjust testcases
+            testcases = list(set(testcases) - set(skipped_cases))
+            printer.verbose(
+                f'Filtering test case(s) due to unresolved dependencies: '
+                f'{len(testcases)} remaining'
+            )
+
+        dependencies.validate_deps(testgraph)
+        printer.debug('Full test DAG:')
+        printer.debug(dependencies.format_deps(testgraph))
+        if len(testcases) != len(testcases_all):
+            testgraph = dependencies.prune_deps(testgraph, testcases)
+            printer.debug('Pruned test DAG')
+            printer.debug(dependencies.format_deps(testgraph))
+
+        testcases = dependencies.toposort(testgraph)
+        printer.verbose(f'Final number of test cases: {len(testcases)}')
+
+        # Disable hooks
+        for tc in testcases:
+            for h in options.hooks:
+                type(tc.check).disable_hook(h)
+
+        # Act on checks
+        if options.list or options.list_detailed:
+            list_checks(testcases, printer, options.list_detailed)
             sys.exit(0)
 
-        testgraph = locate_and_load_tests(options, loader, ci_tag=tag)
-        dependency.validate_deps(testgraph)
-        testcases = dependency.toposort(testgraph)
-
-        # # TODO: proper exit reframe in case we have ci-generate
-        # if site_config.get('general/0/ci_pipeline_file'):
-        #     ci_pipeline_file = site_config.get('general/0/ci_pipeline_file')
-        #     # TODO filter based on tags and generate set of stages based on the tags
-        #     generate_ci_pipeline_file(ci_pipeline_file, testgraph, site_config)
-        #     sys.exit(0)
-
-
-
-
-
-
-
-
+        if not options.run:
+            printer.error(f"No action specified. Please specify `-l'/`-L' for "
+                          f"listing or `-r' for running. "
+                          f"Try `{argparser.prog} -h' for more options.")
+            sys.exit(1)
 
         # Manipulate ReFrame's environment
         if site_config.get('general/0/purge_environment'):
             rt.modules_system.unload_all()
         else:
             for m in site_config.get('general/0/unload_modules'):
-                rt.modules_system.unload_module(m)
+                rt.modules_system.unload_module(**m)
 
         # Load the environment for the current system
         try:
+            printer.debug(f'Loading environment for current system')
             runtime.loadenv(rt.system.preload_environ)
         except errors.EnvironError as e:
             printer.error("failed to load current system's environment; "
@@ -795,135 +737,171 @@ def main():
             printer.debug(str(e))
             raise
 
+        def module_use(*paths):
+            try:
+                rt.modules_system.searchpath_add(*paths)
+            except errors.EnvironError as e:
+                printer.warning(f'could not add module paths correctly')
+                printer.debug(str(e))
+
+        def module_unuse(*paths):
+            try:
+                rt.modules_system.searchpath_remove(*paths)
+            except errors.EnvironError as e:
+                printer.warning(f'could not remove module paths correctly')
+                printer.debug(str(e))
+
+        printer.debug('(Un)using module paths from command line')
+        module_paths = {}
+        for d in options.module_paths:
+            if d.startswith('-'):
+                module_paths.setdefault('-', [])
+                module_paths['-'].append(d[1:])
+            elif d.startswith('+'):
+                module_paths.setdefault('+', [])
+                module_paths['+'].append(d[1:])
+            else:
+                module_paths.setdefault('x', [])
+                module_paths['x'].append(d)
+
+        for op, paths in module_paths.items():
+            if op == '+':
+                module_use(*paths)
+            elif op == '-':
+                module_unuse(*paths)
+            else:
+                # First empty the current module path in a portable way
+                searchpath = [p for p in rt.modules_system.searchpath if p]
+                if searchpath:
+                    rt.modules_system.searchpath_remove(*searchpath)
+
+                # Treat `A:B` syntax as well in this case
+                paths = itertools.chain(*(p.split(':') for p in paths))
+                module_use(*paths)
+
+        printer.debug('Loading user modules from command line')
         for m in site_config.get('general/0/user_modules'):
             try:
-                rt.modules_system.load_module(m, force=True)
+                rt.modules_system.load_module(**m, force=True)
             except errors.EnvironError as e:
-                printer.warning("could not load module '%s' correctly: "
-                                "Skipping..." % m)
+                printer.warning(
+                    f'could not load module {m["name"]!r} correctly; '
+                    f'skipping...'
+                )
                 printer.debug(str(e))
 
         options.flex_alloc_nodes = options.flex_alloc_nodes or 'idle'
 
-        # Act on checks
-        success = True
-        if options.list or options.list_detailed:
-            list_checks(list(checks_matched), printer, options.list_detailed)
-        elif options.run:
-            # Setup the execution policy
-            if options.exec_policy == 'serial':
-                exec_policy = SerialExecutionPolicy()
-            elif options.exec_policy == 'async':
-                exec_policy = AsynchronousExecutionPolicy()
-            else:
-                # This should not happen, since choices are handled by
-                # argparser
-                printer.error("unknown execution policy `%s': Exiting...")
-                sys.exit(1)
+        # Run the tests
 
-            exec_policy.skip_system_check = options.skip_system_check
-            exec_policy.force_local = options.force_local
-            exec_policy.strict_check = options.strict
-            exec_policy.skip_sanity_check = options.skip_sanity_check
-            exec_policy.skip_performance_check = options.skip_performance_check
-            exec_policy.keep_stage_files = site_config.get(
-                'general/0/keep_stage_files'
-            )
-            try:
-                errmsg = "invalid option for --flex-alloc-nodes: '{0}'"
-                sched_flex_alloc_nodes = int(options.flex_alloc_nodes)
-                if sched_flex_alloc_nodes <= 0:
-                    raise errors.ConfigError(
-                        errmsg.format(options.flex_alloc_nodes)
-                    )
-            except ValueError:
-                sched_flex_alloc_nodes = options.flex_alloc_nodes
-
-            exec_policy.sched_flex_alloc_nodes = sched_flex_alloc_nodes
-            parsed_job_options = []
-            for opt in options.job_options:
-                if opt.startswith('-') or opt.startswith('#'):
-                    parsed_job_options.append(opt)
-                elif len(opt) == 1:
-                    parsed_job_options.append(f'-{opt}')
-                else:
-                    parsed_job_options.append(f'--{opt}')
-
-            exec_policy.sched_options = parsed_job_options
-            try:
-                max_retries = int(options.max_retries)
-            except ValueError:
-                raise errors.ConfigError(
-                    f'--max-retries is not a valid integer: {max_retries}'
-                ) from None
-            runner = Runner(exec_policy, printer, max_retries)
-            try:
-                time_start = time.time()
-                session_info['time_start'] = time.strftime(
-                    '%FT%T%z', time.localtime(time_start),
-                )
-                runner.runall(testcases)
-            finally:
-                time_end = time.time()
-                session_info['time_end'] = time.strftime(
-                    '%FT%T%z', time.localtime(time_end)
-                )
-                session_info['time_elapsed'] = time_end - time_start
-
-                # Print a retry report if we did any retries
-                if runner.stats.failures(run=0):
-                    printer.info(runner.stats.retry_report())
-
-                # Print a failure report if we had failures in the last run
-                if runner.stats.failures():
-                    runner.stats.print_failure_report(printer)
-                    success = False
-                    if options.failure_stats:
-                        runner.stats.print_failure_stats(printer)
-
-                if options.performance_report:
-                    printer.info(runner.stats.performance_report())
-
-                # Generate the report for this session
-                report_file = os.path.normpath(
-                    osext.expandvars(rt.get_option('general/0/report_file'))
-                )
-                basedir = os.path.dirname(report_file)
-                if basedir:
-                    os.makedirs(basedir, exist_ok=True)
-
-                # Build final JSON report
-                run_stats = runner.stats.json()
-                session_info.update({
-                    'num_cases': run_stats[0]['num_cases'],
-                    'num_failures': run_stats[-1]['num_failures']
-                })
-                json_report = {
-                    'session_info': session_info,
-                    'runs': run_stats
-                }
-                report_file = generate_report_filename(report_file)
-                try:
-                    with open(report_file, 'w') as fp:
-                        jsonext.dump(json_report, fp, indent=2)
-                        fp.write('\n')
-                except OSError as e:
-                    printer.warning(
-                        f'failed to generate report in {report_file!r}: {e}'
-                    )
-
+        # Setup the execution policy
+        if options.exec_policy == 'serial':
+            exec_policy = SerialExecutionPolicy()
+        elif options.exec_policy == 'async':
+            exec_policy = AsynchronousExecutionPolicy()
         else:
-            printer.error("No action specified. Please specify `-l'/`-L' for "
-                          "listing or `-r' for running. "
-                          "Try `%s -h' for more options." %
-                          argparser.prog)
+            # This should not happen, since choices are handled by
+            # argparser
+            printer.error("unknown execution policy `%s': Exiting...")
             sys.exit(1)
+
+        exec_policy.skip_system_check = options.skip_system_check
+        exec_policy.force_local = options.force_local
+        exec_policy.strict_check = options.strict
+        exec_policy.skip_sanity_check = options.skip_sanity_check
+        exec_policy.skip_performance_check = options.skip_performance_check
+        exec_policy.keep_stage_files = site_config.get(
+            'general/0/keep_stage_files'
+        )
+        try:
+            errmsg = "invalid option for --flex-alloc-nodes: '{0}'"
+            sched_flex_alloc_nodes = int(options.flex_alloc_nodes)
+            if sched_flex_alloc_nodes <= 0:
+                raise errors.ConfigError(
+                    errmsg.format(options.flex_alloc_nodes)
+                )
+        except ValueError:
+            sched_flex_alloc_nodes = options.flex_alloc_nodes
+
+        exec_policy.sched_flex_alloc_nodes = sched_flex_alloc_nodes
+        parsed_job_options = []
+        for opt in options.job_options:
+            if opt.startswith('-') or opt.startswith('#'):
+                parsed_job_options.append(opt)
+            elif len(opt) == 1:
+                parsed_job_options.append(f'-{opt}')
+            else:
+                parsed_job_options.append(f'--{opt}')
+
+        exec_policy.sched_options = parsed_job_options
+        try:
+            max_retries = int(options.max_retries)
+        except ValueError:
+            raise errors.ConfigError(
+                f'--max-retries is not a valid integer: {max_retries}'
+            ) from None
+
+        runner = Runner(exec_policy, printer, max_retries)
+        try:
+            time_start = time.time()
+            session_info['time_start'] = time.strftime(
+                '%FT%T%z', time.localtime(time_start),
+            )
+            runner.runall(testcases)
+        finally:
+            time_end = time.time()
+            session_info['time_end'] = time.strftime(
+                '%FT%T%z', time.localtime(time_end)
+            )
+            session_info['time_elapsed'] = time_end - time_start
+
+            # Print a retry report if we did any retries
+            if runner.stats.failures(run=0):
+                printer.info(runner.stats.retry_report())
+
+            # Print a failure report if we had failures in the last run
+            success = True
+            if runner.stats.failures():
+                success = False
+                runner.stats.print_failure_report(printer)
+                if options.failure_stats:
+                    runner.stats.print_failure_stats(printer)
+
+            if options.performance_report:
+                printer.info(runner.stats.performance_report())
+
+            # Generate the report for this session
+            report_file = os.path.normpath(
+                osext.expandvars(rt.get_option('general/0/report_file'))
+            )
+            basedir = os.path.dirname(report_file)
+            if basedir:
+                os.makedirs(basedir, exist_ok=True)
+
+            # Build final JSON report
+            run_stats = runner.stats.json()
+            session_info.update({
+                'num_cases': run_stats[0]['num_cases'],
+                'num_failures': run_stats[-1]['num_failures']
+            })
+            json_report = {
+                'session_info': session_info,
+                'runs': run_stats
+            }
+            report_file = generate_report_filename(report_file)
+            try:
+                with open(report_file, 'w') as fp:
+                    jsonext.dump(json_report, fp, indent=2)
+                    fp.write('\n')
+            except OSError as e:
+                printer.warning(
+                    f'failed to generate report in {report_file!r}: {e}'
+                )
 
         if not success:
             sys.exit(1)
 
         sys.exit(0)
-
     except KeyboardInterrupt:
         sys.exit(1)
     except errors.ReframeError as e:
@@ -949,9 +927,4 @@ def main():
             printer.error(f'could not save log file: {e}')
             sys.exit(1)
         finally:
-            if not log_files:
-                msg = '<no log file was generated>'
-            else:
-                msg = f'{", ".join(repr(f) for f in log_files)}'
-
-            printer.info(f'Log file(s) saved in: {msg}')
+            printer.info(logfiles_message())

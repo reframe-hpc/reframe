@@ -1,0 +1,9 @@
+#%Module
+proc ModulesHelp { } {
+    Helper module for ReFrame unit tests
+}
+
+module-whatis { Helper module for ReFrame unit tests }
+
+module load testmod_base
+module load testmod_bar

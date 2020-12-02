@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import reframe as rfm
+import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 
 from reframe.core.runtime import runtime
@@ -41,3 +42,35 @@ class EnvironmentCheck(rfm.RunOnlyRegressionTest):
     @sn.sanity_function
     def env_module_patt(self):
         return r'^%s' % self.current_environ.name
+
+
+@rfm.parameterized_test(['cray-fftw'], ['cray-hdf5'], ['cray-hdf5-parallel'],
+                        ['cray-libsci'], ['cray-netcdf'],
+                        ['cray-netcdf-hdf5parallel'], ['cray-petsc'],
+                        ['cray-petsc-64'], ['cray-petsc-complex'],
+                        ['cray-petsc-complex-64'], ['cray-python'],
+                        ['cray-R'], ['cray-tpsl'], ['cray-tpsl-64'],
+                        ['cudatoolkit'], ['gcc'], ['papi'], ['pmi'])
+class CrayVariablesCheck(rfm.RunOnlyRegressionTest):
+    def __init__(self, module_name):
+        self.descr = 'Check for standard Cray variables'
+        self.valid_systems = ['daint:login', 'dom:login']
+        self.valid_prog_environs = ['builtin']
+        self.executable = 'module'
+        self.executable_opts = ['show', module_name]
+        envvar_prefix = module_name.upper().replace('-', '_')
+        self.sanity_patterns = sn.all([
+            sn.assert_found(f'{envvar_prefix}_PREFIX', self.stderr),
+            sn.assert_found(f'{envvar_prefix}_VERSION', self.stderr)
+        ])
+
+        # These modules should be fixed in later releases
+        cdt = osext.cray_cdt_version()
+        if (cdt and cdt <= '20.10' and
+            module_name in ['cray-petsc-complex',
+                            'cray-petsc-complex-64',
+                            'cudatoolkit', 'gcc']):
+            self.valid_systems = []
+
+        self.maintainers = ['EK', 'VH']
+        self.tags = {'production', 'craype'}

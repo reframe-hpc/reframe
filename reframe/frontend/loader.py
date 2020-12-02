@@ -8,12 +8,13 @@
 #
 
 import ast
-import collections
+import collections.abc
+import inspect
 import os
 
 import reframe.utility as util
 import reframe.utility.osext as osext
-from reframe.core.exceptions import NameConflictError, RegressionTestLoadError
+from reframe.core.exceptions import NameConflictError
 from reframe.core.logging import getlogger
 
 
@@ -64,9 +65,43 @@ class RegressionCheckLoader:
         with open(filename, 'r') as f:
             source_tree = ast.parse(f.read(), filename)
 
+        msg = f'Validating {filename!r}: '
         validator = RegressionCheckValidator()
         validator.visit(source_tree)
+        if validator.valid:
+            msg += 'OK'
+        else:
+            msg += 'not a test file'
+
+        getlogger().debug(msg)
         return validator.valid
+
+    def _validate_check(self, check):
+        import reframe.utility as util
+
+        name = type(check).__name__
+        checkfile = os.path.relpath(inspect.getfile(type(check)))
+        required_attrs = ['valid_systems', 'valid_prog_environs']
+        for attr in required_attrs:
+            if getattr(check, attr) is None:
+                getlogger().warning(
+                    f'{checkfile}: {attr!r} not defined for test {name!r}; '
+                    f'skipping...'
+                )
+                return False
+
+        is_copyable = util.attr_validator(lambda obj: util.is_copyable(obj))
+        valid, attr = is_copyable(check)
+        if not valid:
+            getlogger().warning(
+                f'{checkfile}: {attr!r} is not copyable; '
+                f'not copyable attributes are not '
+                f'allowed inside the __init__() method; '
+                f'consider setting them in a pipeline hook instead'
+            )
+            return False
+
+        return True
 
     @property
     def load_path(self):
@@ -90,21 +125,28 @@ class RegressionCheckLoader:
         # Warn in case of old syntax
         if hasattr(module, '_get_checks'):
             getlogger().warning(
-                '%s: _get_checks() is no more supported in test files: '
-                'please use @reframe.simple_test or '
-                '@reframe.parameterized_test decorators' % module.__file__
+                f'{module.__file__}: _get_checks() is no more supported '
+                f'in test files: please use @reframe.simple_test or '
+                f'@reframe.parameterized_test decorators'
             )
 
         if not hasattr(module, '_rfm_gettests'):
+            getlogger().debug('No tests registered')
             return []
 
         candidates = module._rfm_gettests()
         if not isinstance(candidates, collections.abc.Sequence):
+            getlogger().warning(
+                f'Tests not registered correctly in {module.__name__!r}'
+            )
             return []
 
         ret = []
         for c in candidates:
             if not isinstance(c, RegressionTest):
+                continue
+
+            if not self._validate_check(c):
                 continue
 
             testfile = module.__file__
@@ -114,14 +156,15 @@ class RegressionCheckLoader:
                 self._loaded[c.name] = testfile
                 ret.append(c)
             else:
-                msg = ("%s: test `%s' already defined in `%s'" %
-                       (testfile, c.name, conflicted))
+                msg = (f'{testfile}: test {c.name!r} '
+                       f'already defined in {conflicted!r}')
 
                 if self._ignore_conflicts:
-                    getlogger().warning(msg + '; ignoring...')
+                    getlogger().warning(f'{msg}; skipping...')
                 else:
                     raise NameConflictError(msg)
 
+        getlogger().debug(f'  > Loaded {len(ret)} test(s)')
         return ret
 
     def load_from_file(self, filename, **check_args):
@@ -153,8 +196,10 @@ class RegressionCheckLoader:
         If a prefix exists, it will be prepended to each path.'''
         checks = []
         for d in self._load_path:
+            getlogger().debug(f'Looking for tests in {d!r}')
             if not os.path.exists(d):
                 continue
+
             if os.path.isdir(d):
                 checks.extend(self.load_from_dir(d, self._recurse))
             else:

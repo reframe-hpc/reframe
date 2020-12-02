@@ -33,13 +33,9 @@ class CDOBaseTest(rfm.RunOnlyRegressionTest):
     def __init__(self):
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'CDO-NCO')
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'kesch:pn', 'arolla:pn', 'tsa:pn']
-        if self.current_system.name == 'kesch':
-            self.exclusive_access = True
-            self.valid_prog_environs = ['PrgEnv-gnu-nompi']
-            self.modules = ['cdo']
-        elif self.current_system.name in ['arolla', 'tsa']:
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu',
+                              'dom:mc', 'arolla:pn', 'tsa:pn']
+        if self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-gnu-nompi']
             self.modules = ['cdo', 'netcdf-fortran']
@@ -94,7 +90,7 @@ class CDO_NCOModuleCompatibilityTest(CDOBaseTest):
         self.sanity_patterns = sn.assert_not_found(
             r'(?i)error|conflict|unsupported|failure', self.stderr)
 
-        if self.current_system.name in ['arolla', 'kesch', 'tsa']:
+        if self.current_system.name in ['arolla', 'tsa']:
             nco_name = 'nco'
         else:
             nco_name = 'NCO'

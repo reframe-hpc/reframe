@@ -31,3 +31,13 @@ Type Checking Utilities
 .. automodule:: reframe.utility.typecheck
    :members:
    :show-inheritance:
+
+
+.. _test-case-deps-management:
+
+Test Case Dependencies Management
+---------------------------------
+
+.. automodule:: reframe.utility.udeps
+   :members:
+   :show-inheritance:

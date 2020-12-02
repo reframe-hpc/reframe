@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import os
 import reframe as rfm
 import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
@@ -18,28 +17,18 @@ class OpenACCFortranCheck(rfm.RegressionTest):
         else:
             self.num_tasks = 2
 
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
-                              'arolla:cn', 'tsa:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
         self.sourcesdir = 'src/openacc'
         if self.num_tasks == 1:
             self.sourcepath = 'vecAdd_openacc_nompi.f90'
-            if self.current_system.name == 'kesch':
-                self.valid_prog_environs = ['PrgEnv-cray-nompi',
-                                            'PrgEnv-pgi-nompi']
-            elif self.current_system.name == 'tsa':
+            if self.current_system.name in ['arolla', 'tsa']:
                 self.valid_prog_environs = ['PrgEnv-pgi-nompi']
         else:
             self.sourcepath = 'vecAdd_openacc_mpi.f90'
 
-        if self.current_system.name in ['daint', 'dom', 'tiger']:
+        if self.current_system.name in ['daint', 'dom']:
             self.modules = ['craype-accel-nvidia60']
-        elif self.current_system.name == 'kesch':
-            self.exclusive_access = True
-            self.variables = {
-                'CRAY_ACCEL_TARGET': 'nvidia35',
-                'MV2_USE_CUDA': '1'
-            }
         elif self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
             self.variables = {
@@ -63,10 +52,8 @@ class OpenACCFortranCheck(rfm.RegressionTest):
         if self.current_environ.name.startswith('PrgEnv-cray'):
             self.build_system.fflags = ['-hacc', '-hnoomp']
         elif self.current_environ.name.startswith('PrgEnv-pgi'):
-            if self.current_system.name in ['daint', 'dom', 'tiger']:
+            if self.current_system.name in ['daint', 'dom']:
                 self.build_system.fflags = ['-acc', '-ta=tesla:cc60']
-            elif self.current_system.name == 'kesch':
-                self.build_system.fflags = ['-acc', '-ta=tesla:cc35']
             elif self.current_system.name in ['arolla', 'tsa']:
                 self.build_system.fflags = ['-acc', '-ta=tesla:cc70']
 

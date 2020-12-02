@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import os
-import pathlib
 import pytest
 import re
 
@@ -14,10 +13,10 @@ import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 import unittests.fixtures as fixtures
 from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
-                                     ReframeSyntaxError, PerformanceError,
-                                     SanityError)
+                                     PerformanceError, SanityError)
 from reframe.frontend.loader import RegressionCheckLoader
 from unittests.resources.checks.hellocheck import HelloTest
+from unittests.resources.checks.pinnedcheck import PinnedTest
 
 
 def _run(test, partition, prgenv):
@@ -131,6 +130,24 @@ def container_local_exec_ctx(local_user_exec_ctx):
     return _container_exec_ctx
 
 
+def test_eq():
+    class T0(rfm.RegressionTest):
+        def __init__(self):
+            self.name = 'T0'
+
+    class T1(rfm.RegressionTest):
+        def __init__(self):
+            self.name = 'T0'
+
+    t0, t1 = T0(), T1()
+    assert t0 == t1
+    assert hash(t0) == hash(t1)
+
+    t1.name = 'T1'
+    assert t0 != t1
+    assert hash(t0) != hash(t1)
+
+
 def test_environ_setup(hellotest, local_exec_ctx):
     # Use test environment for the regression check
     hellotest.variables = {'_FOO_': '1', '_BAR_': '2'}
@@ -168,6 +185,12 @@ def test_hellocheck_local(hellotest, local_exec_ctx):
     ]
     for f in must_keep:
         assert os.path.exists(os.path.join(hellotest.outputdir, f))
+
+
+def test_hellocheck_build_remotely(hellotest, remote_exec_ctx):
+    hellotest.build_locally = False
+    _run(hellotest, *remote_exec_ctx)
+    assert not hellotest.build_job.scheduler.is_local
 
 
 def test_hellocheck_local_prepost_run(hellotest, local_exec_ctx):
@@ -217,6 +240,26 @@ def test_run_only_no_srcdir(local_exec_ctx):
     _run(test, *local_exec_ctx)
 
 
+def test_run_only_preserve_symlinks(local_exec_ctx):
+    @fixtures.custom_prefix('unittests/resources/checks')
+    class MyTest(rfm.RunOnlyRegressionTest):
+        def __init__(self):
+            self.executable = './hello.sh.link'
+            self.executable_opts = ['Hello, World!']
+            self.local = True
+            self.valid_prog_environs = ['*']
+            self.valid_systems = ['*']
+            self.sanity_patterns = sn.assert_found(
+                r'Hello, World\!', self.stdout
+            )
+
+        @rfm.run_after('run')
+        def check_symlinks(self):
+            assert os.path.islink(os.path.join(self.stagedir, 'hello.sh.link'))
+
+    _run(MyTest(), *local_exec_ctx)
+
+
 def test_compile_only_failure(local_exec_ctx):
     @fixtures.custom_prefix('unittests/resources/checks')
     class MyTest(rfm.CompileOnlyRegressionTest):
@@ -244,6 +287,15 @@ def test_compile_only_warning(local_exec_ctx):
             self.sanity_patterns = sn.assert_found(r'warning', self.stderr)
 
     _run(MyTest(), *local_exec_ctx)
+
+
+def test_pinned_test(local_exec_ctx):
+    class MyTest(PinnedTest):
+        pass
+
+    pinned = MyTest()
+    expected_prefix = os.path.join(os.getcwd(), 'unittests/resources/checks')
+    assert pinned._prefix == expected_prefix
 
 
 def test_supports_system(hellotest, testsys_system):
@@ -401,6 +453,21 @@ def test_sourcepath_upref(local_exec_ctx):
     test.sourcepath = '../hellosrc'
     with pytest.raises(PipelineError):
         test.compile()
+
+
+def test_sourcepath_non_existent(local_exec_ctx):
+    @fixtures.custom_prefix('unittests/resources/checks')
+    class MyTest(rfm.CompileOnlyRegressionTest):
+        def __init__(self):
+            self.valid_prog_environs = ['*']
+            self.valid_systems = ['*']
+
+    test = MyTest()
+    test.setup(*local_exec_ctx)
+    test.sourcepath = 'non_existent.c'
+    test.compile()
+    with pytest.raises(BuildError):
+        test.compile_wait()
 
 
 def test_extra_resources(testsys_system):
@@ -579,6 +646,10 @@ def test_inherited_hooks(local_exec_ctx):
     _run(test, *local_exec_ctx)
     assert test.var == 2
     assert test.foo == 1
+    assert test.pipeline_hooks() == {
+        'post_setup': [DerivedTest.z, BaseTest.x],
+        'pre_run': [C.y],
+    }
 
 
 def test_overriden_hooks(local_exec_ctx):
@@ -646,7 +717,7 @@ def test_disabled_hooks(local_exec_ctx):
 
 
 def test_require_deps(local_exec_ctx):
-    import reframe.frontend.dependency as dependency
+    import reframe.frontend.dependencies as dependencies
     import reframe.frontend.executors as executors
 
     @fixtures.custom_prefix('unittests/resources/checks')
@@ -675,8 +746,8 @@ def test_require_deps(local_exec_ctx):
             self.z = T0().x + 2
 
     cases = executors.generate_testcases([T0(), T1()])
-    deps = dependency.build_deps(cases)
-    for c in dependency.toposort(deps):
+    deps, _ = dependencies.build_deps(cases)
+    for c in dependencies.toposort(deps):
         _run(*c)
 
     for c in cases:
@@ -754,7 +825,6 @@ def test_name_compileonly_test():
 
 
 def test_registration_of_tests():
-    import sys
     import unittests.resources.checks_unlisted.good as mod
 
     checks = mod._rfm_gettests()

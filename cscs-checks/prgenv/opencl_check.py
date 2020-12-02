@@ -3,8 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import os
-
 import reframe as rfm
 import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
@@ -16,7 +14,7 @@ class OpenCLCheck(rfm.RegressionTest):
         self.maintainers = ['TM', 'SK']
         self.tags = {'production', 'craype'}
 
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu']
+        self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
         self.modules = ['craype-accel-nvidia60']
         self.build_system = 'Make'
