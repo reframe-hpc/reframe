@@ -23,6 +23,25 @@ def tsa_node_pairs():
                 yield (nodeid(u), nodeid(v))
 
 
+def count_hops(u, v):
+    switches = {
+        's0': {'tsa-pp011', 'tsa-pp012', 'tsa-pp013', 'tsa-pp014'},
+        's1': {'tsa-pp015', 'tsa-pp016', 'tsa-pp017'},
+        's2': {'tsa-pp018', 'tsa-pp019', 'tsa-pp020'}
+    }
+
+    for group in switches.values():
+        if u in group and v in group:
+            return 1
+        elif u in group:
+            return 2
+        elif v in group:
+            return 2
+
+    # This should not happen; u, v must be in a node group
+    assert 0
+
+
 @rfm.simple_test
 class OSUDownloadTest(rfm.RunOnlyRegressionTest):
     def __init__(self):
@@ -72,9 +91,6 @@ class OSUBaseRunTest(rfm.RunOnlyRegressionTest):
             'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
                                         self.stdout, 'latency', float)
         }
-        #MKr self.reference = {
-        #MKr     '*': {'latency': (1.25, -0.05, 0.05, 'us')}
-        #MKr }
         self.executable_opts = ['-x', '1000', '-i', '5000']
         self.exclusive_access = True
         self.depends_on('OSUBuildTest', udeps.fully)
@@ -191,13 +207,23 @@ class OSULatencyTest(OSUBaseRunTest):
             sn.assert_eq(cpu_pinned, 2),
             sn.assert_found(r'^8\s', self.stdout),
         ])
-        if cpu_no == 0:
+
+        num_hops = count_hops(*node_pairs)
+        if cpu_no == 0 and num_hops == 1:
             self.reference = {
-                '*': {'latency': (1.25, -0.05, 0.05, 'us')}
+                'tsa:pn': {'latency': (1.25, -0.05, 0.05, 'us')}
             }
-        elif cpu_no == 20:
+        elif cpu_no == 20 and num_hops == 1:
             self.reference = {
-                '*': {'latency': (1.45, -0.05, 0.05, 'us')}
+                'tsa:pn': {'latency': (1.45, -0.05, 0.05, 'us')}
+            }
+        elif cpu_no == 0 and num_hops == 2:
+            self.reference = {
+                'tsa:pn': {'latency': (1.95, -0.05, 0.05, 'us')}
+            }
+        elif cpu_no == 20 and num_hops == 2:
+            self.reference = {
+                'tsa:pn': {'latency': (2.25, -0.05, 0.05, 'us')}
             }
 
     @rfm.require_deps
@@ -232,7 +258,7 @@ class OSUBandwidthTest(OSUBaseRunTest):
                                           self.stdout, 'bandwidth', float)
         }
         self.reference = {
-            '*': {'bandwidth': (0, None, None, 'MB/s')}
+            'tsa:pn': {'bandwidth': (12000, -0.05, 0.05, 'MB/s')}
         }
 
     @rfm.require_deps
