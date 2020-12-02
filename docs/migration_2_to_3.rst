@@ -23,7 +23,7 @@ However, you can convert any old configuration file using the command line optio
 
 .. warning::
    .. versionchanged:: 3.4
-      The old configuration syntax in no longer supported.
+      The old configuration syntax in no longer supported and it will not be automatically converted by the `-C` option.
 
 
 Another important change is that default locations for looking up a configuration file has changed (see `Configuring ReFrame for Your Site <configure.html>`__ for more details).
@@ -35,7 +35,7 @@ You have to move it to any of the default settings locations or set the correspo
 
 
 Configuration conversion limitations
-================================
+====================================
 
 ReFrame does a pretty good job in converting correctly your old configuration files, but there are some limitations:
 
