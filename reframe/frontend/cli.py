@@ -737,34 +737,47 @@ def main():
             printer.debug(str(e))
             raise
 
+        def module_use(*paths):
+            try:
+                rt.modules_system.searchpath_add(*paths)
+            except errors.EnvironError as e:
+                printer.warning(f'could not add module paths correctly')
+                printer.debug(str(e))
+
+        def module_unuse(*paths):
+            try:
+                rt.modules_system.searchpath_remove(*paths)
+            except errors.EnvironError as e:
+                printer.warning(f'could not remove module paths correctly')
+                printer.debug(str(e))
+
         printer.debug('(Un)using module paths from command line')
+        module_paths = {}
         for d in options.module_paths:
             if d.startswith('-'):
-                try:
-                    rt.modules_system.searchpath_remove(d[1:])
-                except errors.EnvironError as e:
-                    printer.warning(
-                        f'could not remove module path {d} correctly; '
-                        f'skipping...'
-                    )
-                    printer.verbose(str(e))
+                module_paths.setdefault('-', [])
+                module_paths['-'].append(d[1:])
             elif d.startswith('+'):
-                try:
-                    rt.modules_system.searchpath_add(d[1:])
-                except errors.EnvironError as e:
-                    printer.warning(
-                        f'could not add module path {d} correctly; '
-                        f'skipping...'
-                    )
-                    printer.verbose(str(e))
+                module_paths.setdefault('+', [])
+                module_paths['+'].append(d[1:])
             else:
-                # Here we make sure that we don't try to remove an empty path
-                # from the searchpath
+                module_paths.setdefault('x', [])
+                module_paths['x'].append(d)
+
+        for op, paths in module_paths.items():
+            if op == '+':
+                module_use(*paths)
+            elif op == '-':
+                module_unuse(*paths)
+            else:
+                # First empty the current module path in a portable way
                 searchpath = [p for p in rt.modules_system.searchpath if p]
                 if searchpath:
                     rt.modules_system.searchpath_remove(*searchpath)
 
-                rt.modules_system.searchpath_add(d)
+                # Treat `A:B` syntax as well in this case
+                paths = itertools.chain(*(p.split(':') for p in paths))
+                module_use(*paths)
 
         printer.debug('Loading user modules from command line')
         for m in site_config.get('general/0/user_modules'):
