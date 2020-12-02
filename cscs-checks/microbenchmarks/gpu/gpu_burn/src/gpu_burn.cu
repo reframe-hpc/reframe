@@ -45,6 +45,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <thread>
+#include <condition_variable>
 #include <type_traits>
 #include <vector>
 #include <array>
@@ -220,17 +221,23 @@ void GemmTest<float>::compute()
 
 class BurnTracker
 {
+    /* Timing class that keeps track of the progress made by a single thread
+     * through the burn process.
+     *
+     * All the member functions are thread-safe. These could be accessed by the
+     * master/slave thread at any time to read/write data.
+     *
+     * When the read function, the counters are reset.
+     */
 public:
     std::mutex mtx;
     size_t iters, reps, err;
-    bool failure;
     std::chrono::system_clock::time_point start, end;
 
     BurnTracker()
     {
         std::lock_guard<std::mutex> lg(mtx);
         err = 0; iters = 0; reps = 0;
-        failure = false;
     };
 
     void set_iters(size_t it)
@@ -274,10 +281,17 @@ public:
 };
 
 
+// Global vars for inter-thread communication.
+std::condition_variable cv;
+std::mutex cv_m;
+volatile bool burn = false;
+volatile int startUpCounter = 0;
+int devCount;
+
+
 template<class T>
 void startBurn(int devId,
                Smi * smi_handle, T *A, T *B,
-               volatile bool & burn,
                BurnTracker * bt
                )
 {
@@ -287,8 +301,20 @@ void startBurn(int devId,
     // Log the number of iterations per compute call
     bt->set_iters(test.getIters());
 
+    // Warmup burn
+    test.compute();
+    {
+        // Flag that this thread is done with the warmup.
+        std::lock_guard<std::mutex> lg(cv_m);
+        ++startUpCounter;
+        cv.notify_all();
+    }
+
     // Hold off any computation until all threads are go.
-    while(!burn){};
+    {
+        std::unique_lock<std::mutex> lk(cv_m);
+        cv.wait(lk, []{return burn;});
+    }
     bt->start_timer();
 
     // The actual work
@@ -321,9 +347,8 @@ template<class T> void launch(int duration)
     Smi * smi_handle = new Smi();
 
     // Here burn is a switch that holds and breaks the work done by the slave threads.
-    bool burn = false;
+    burn = false;
 
-    int devCount;
     XGetDeviceCount(&devCount);
     std::vector<std::thread> threads;
 
@@ -340,14 +365,20 @@ template<class T> void launch(int duration)
         threads.push_back(std::thread(startBurn<T>,
                                       i, smi_handle,
                                       A, B,
-                                      std::ref(burn),
                                       bt
                           )
         );
     }
 
+    // Hold until all the threads are done with the init.
+    {
+        std::unique_lock<std::mutex> lk(cv_m);
+        cv.wait(lk, []{return startUpCounter == devCount;});
+    }
+
     // Burn-time.
     burn = true;
+    cv.notify_all();
     std::this_thread::sleep_for( std::chrono::seconds(duration) );
 
     // Burn-time done.
