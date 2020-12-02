@@ -1,4 +1,5 @@
 // MPI version of eatmemory.c from Julio Viera
+// 12/2020: add cscs_read_proc_meminfo from jg (cscs)
 #include <ctype.h>
 #include <mpi.h>
 #include <stdbool.h>

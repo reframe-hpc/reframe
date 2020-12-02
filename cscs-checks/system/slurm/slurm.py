@@ -194,6 +194,7 @@ class MemoryOverconsumptionCheck(SlurmCompiledBaseCheck):
 class MemoryMpiCheck(SlurmCompiledBaseCheck):
     def __init__(self):
         super().__init__()
+        self.maintainers = ['JG']
         self.valid_systems.append('eiger:mc_lowmem')
         self.time_limit = '5m'
         self.sourcepath = 'eatmemory_mpi.c'
@@ -229,8 +230,8 @@ class MemoryMpiCheck(SlurmCompiledBaseCheck):
             'daint:gpu': 12,
             'eiger:mc_lowmem': 128,
         }
-        self.num_tasks_per_node = \
-            tasks_per_node[self.current_partition.fullname]
+        partname = self.current_partition.fullname
+        self.num_tasks_per_node = tasks_per_node[partname]
         self.num_tasks = self.num_tasks_per_node
         self.job.launcher.options = ['-u']
 
@@ -238,7 +239,6 @@ class MemoryMpiCheck(SlurmCompiledBaseCheck):
     def get_meminfo(self):
         regex_mem = r'^Currently avail memory: (\d+)'
         abs_path = os.path.join(self.stagedir, str(self.stdout))
-        self.reference_meminfo = \
-            sn.extractsingle(regex_mem, abs_path, 1,
-                             conv=lambda x: int(int(x) / 1024**3))
+        self.reference_meminfo = sn.extractsingle(
+            regex_mem, abs_path, 1, conv=lambda x: int(int(x) / 1024 ** 3))
     # }}}
