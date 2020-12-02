@@ -55,8 +55,7 @@
 
 #include "Xdevice/runtime.hpp"
 #include "Xdevice/smi.hpp"
-#include <cuda.h>
-#include "cublas_v2.h"
+#include "Xdevice/blas.hpp"
 
 // Actually, there are no rounding errors due to results being accumulated in an arbitrary order.
 // Therefore EPSILON = 0.0f is OK
@@ -101,7 +100,7 @@ private:
 
   int * d_numberOfErrors;
 
-  cublasHandle_t d_cublas;
+  XblasHandle_t d_blas;
   static const int g_blockSize = 16;
 
 public:
@@ -112,8 +111,7 @@ public:
       smi_handle->setCpuAffinity(deviceId);
 
       // Create blas plan
-      cublasCreate(&d_cublas);
-      cublasSetPointerMode(d_cublas, CUBLAS_POINTER_MODE_HOST);
+      XblasCreate(&d_blas);
 
       totalErrors = 0;
   }
@@ -123,7 +121,7 @@ public:
       XFree(d_A);
       XFree(d_B);
       XFree(d_numberOfErrors);
-      cublasDestroy(d_cublas);
+      XblasDestroy(d_blas);
       XDeviceSynchronize();
   }
 
@@ -190,14 +188,14 @@ void GemmTest<double>::compute()
     static const double beta = 0.0;
     for (size_t i = 0; i < iters; ++i)
     {
-        cublasDgemm(d_cublas,
-                    CUBLAS_OP_N, CUBLAS_OP_N,
-                    SIZE, SIZE, SIZE,
-                    &alpha,
-                    (const double*)d_A, SIZE,
-                    (const double*)d_B, SIZE,
-                    &beta,
-                    d_C + i*SIZE*SIZE, SIZE);
+        XblasDgemm(d_blas,
+                   XBLAS_OP_N, XBLAS_OP_N,
+                   SIZE, SIZE, SIZE,
+                   &alpha,
+                   (const double*)d_A, SIZE,
+                   (const double*)d_B, SIZE,
+                   &beta,
+                   d_C + i*SIZE*SIZE, SIZE);
     }
 }
 
@@ -208,14 +206,14 @@ void GemmTest<float>::compute()
     static const float beta = 0.0;
     for (size_t i = 0; i < iters; ++i)
     {
-        cublasSgemm(d_cublas,
-                    CUBLAS_OP_N, CUBLAS_OP_N,
-                    SIZE, SIZE, SIZE,
-                    &alpha,
-                    (const float*)d_A, SIZE,
-                    (const float*)d_B, SIZE,
-                    &beta,
-                    d_C + i*SIZE*SIZE, SIZE);
+        XblasSgemm(d_blas,
+                   XBLAS_OP_N, XBLAS_OP_N,
+                   SIZE, SIZE, SIZE,
+                   &alpha,
+                   (const float*)d_A, SIZE,
+                   (const float*)d_B, SIZE,
+                   &beta,
+                   d_C + i*SIZE*SIZE, SIZE);
     }
 }
 
