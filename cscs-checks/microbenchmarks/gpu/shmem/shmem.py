@@ -23,10 +23,7 @@ class GPUShmemTest(rfm.RegressionTest):
         # Mark the Xdevice symlink as read-only
         self.readonly_files = ['Xdevice']
 
-        self.sanity_patterns = sn.assert_eq(
-            sn.count(sn.findall(r'Bandwidth', self.stdout)),
-            self.num_tasks_assigned * 2 * self.num_gpus_per_node)
-
+        self.sanity_patterns = self.assert_num_gpus()
         self.perf_patterns = {
             'bandwidth': sn.min(sn.extractall(
                 r'^\s*\[[^\]]*\]\s*GPU\s*\d+: Bandwidth\(double\) (?P<bw>\S+) GB/s',
@@ -62,6 +59,12 @@ class GPUShmemTest(rfm.RegressionTest):
     @sn.sanity_function
     def num_tasks_assigned(self):
         return self.job.num_tasks
+
+    @sn.sanity_function
+    def assert_num_gpus(self):
+        return sn.assert_eq(
+            sn.count(sn.findall(r'Bandwidth', self.stdout)),
+            self.num_tasks_assigned * 2 * self.num_gpus_per_node)
 
     @rfm.run_after('setup')
     def select_makefile(self):
