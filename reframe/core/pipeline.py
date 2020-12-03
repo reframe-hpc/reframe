@@ -30,7 +30,7 @@ import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
 import reframe.utility.udeps as udeps
-from reframe.core.backends import (getlauncher, getscheduler)
+from reframe.core.backends import getlauncher, getscheduler
 from reframe.core.buildsystems import BuildSystemField
 from reframe.core.containers import ContainerPlatformField
 from reframe.core.deferrable import _DeferredExpression
@@ -1093,8 +1093,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
               more details.
 
            .. versionchanged:: 3.4
-              Overriding this method directly unless you are in
-              special test. See `here
+              Overriding this method directly in no longer allowed. See `here
               <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
               more details.
 
@@ -1140,8 +1139,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
               more details.
 
            .. versionchanged:: 3.4
-              Overriding this method directly unless you are in
-              special test. See `here
+              Overriding this method directly in no longer allowed. See `here
               <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
               more details.
 
@@ -1243,8 +1241,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
               more details.
 
            .. versionchanged:: 3.4
-              Overriding this method directly unless you are in
-              special test. See `here
+              Overriding this method directly in no longer allowed. See `here
               <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
               more details.
 
@@ -1272,8 +1269,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
               more details.
 
            .. versionchanged:: 3.4
-              Overriding this method directly unless you are in
-              special test. See `here
+              Overriding this method directly in no longer allowed. See `here
               <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
               more details.
 
@@ -1384,8 +1380,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
 
            .. versionchanged:: 3.4
-              Overriding this method directly unless you are in
-              special test. See `here
+              Overriding this method directly in no longer allowed. See `here
               <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
               more details.
 
@@ -1420,12 +1415,9 @@ class RegressionTest(metaclass=RegressionTestMeta):
            more details.
 
            .. versionchanged:: 3.4
-              Overriding this method directly unless you are in
-              special test. See `here
+              Overriding this method directly in no longer allowed. See `here
               <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
               more details.
-
-
 
         '''
         self._job.wait()
@@ -1469,12 +1461,9 @@ class RegressionTest(metaclass=RegressionTestMeta):
               more details.
 
            .. versionchanged:: 3.4
-              Overriding this method directly unless you are in
-              special test. See `here
+              Overriding this method directly in no longer allowed. See `here
               <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
               more details.
-
-
 
         '''
         if rt.runtime().get_option('general/0/trap_job_errors'):
@@ -1510,12 +1499,9 @@ class RegressionTest(metaclass=RegressionTestMeta):
               more details.
 
            .. versionchanged:: 3.4
-              Overriding this method directly unless you are in
-              special test. See `here
+              Overriding this method directly in no longer allowed. See `here
               <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
               more details.
-
-
 
         '''
         if self.perf_patterns is None:
@@ -1636,12 +1622,9 @@ class RegressionTest(metaclass=RegressionTestMeta):
               more details.
 
            .. versionchanged:: 3.4
-              Overriding this method directly unless you are in
-              special test. See `here
+              Overriding this method directly in no longer allowed. See `here
               <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
               more details.
-
-
 
         '''
         aliased = os.path.samefile(self._stagedir, self._outputdir)
