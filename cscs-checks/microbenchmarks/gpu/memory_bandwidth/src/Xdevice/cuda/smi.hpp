@@ -37,7 +37,7 @@ void Smi::setCpuAffinity(int id)
   nvmlCheck( nvmlDeviceSetCpuAffinity(device) );
 }
 
-float Smi::getGpuTemp(int id)
+void Smi::getGpuTemp(int id, float * temp) const
 {
   // Check that the gpu id is sensible
   checkGpuIdIsSensible(id);
@@ -49,10 +49,10 @@ float Smi::getGpuTemp(int id)
   // Get the temperature
   unsigned int temperature;
   nvmlCheck( nvmlDeviceGetTemperature(device, NVML_TEMPERATURE_GPU, &temperature) );
-  return float(temperature);
+  *temp = (float)temperature;
 }
 
-void Smi::getDeviceMemorySize(int id, size_t * sMem)
+void Smi::getDeviceMemorySize(int id, size_t * sMem) const
 {
   nvmlDevice_t device;
   nvmlCheck( nvmlDeviceGetHandleByIndex(id, &device) );
@@ -61,7 +61,7 @@ void Smi::getDeviceMemorySize(int id, size_t * sMem)
   *sMem = memory.total;
 }
 
-void Smi::getDeviceAvailMemorySize(int id, size_t * sMem)
+void Smi::getDeviceAvailMemorySize(int id, size_t * sMem) const
 {
   nvmlDevice_t device;
   nvmlCheck( nvmlDeviceGetHandleByIndex(id, &device) );

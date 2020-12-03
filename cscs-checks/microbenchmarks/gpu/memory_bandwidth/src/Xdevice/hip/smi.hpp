@@ -38,7 +38,7 @@ void Smi::setCpuAffinity(int id)
   numa_run_on_node(numa_node);
 }
 
-float Smi::getGpuTemp(int id)
+void Smi::getGpuTemp(int id, float * temp) const
 {
   // Check that the GPU id is correct
   checkGpuIdIsSensible(id);
@@ -46,17 +46,17 @@ float Smi::getGpuTemp(int id)
   // Get the temperature reading
   int64_t temperature;
   rsmiCheck( rsmi_dev_temp_metric_get(id, RSMI_TEMP_TYPE_FIRST, RSMI_TEMP_CURRENT, &temperature) );
-  return float(temperature)/1000.f;
+  *temp = float(temperature)/1000.f;
 }
 
-void Smi::getDeviceMemorySize(int id, size_t * sMem)
+void Smi::getDeviceMemorySize(int id, size_t * sMem) const
 {
   uint64_t total;
   rsmiCheck( rsmi_dev_memory_total_get((uint32_t)id, RSMI_MEM_TYPE_FIRST, &total) );
   *sMem = (size_t)total;
 }
 
-void Smi::getDeviceAvailMemorySize(int id, size_t * sMem)
+void Smi::getDeviceAvailMemorySize(int id, size_t * sMem) const
 {
   uint64_t used;
   this->getDeviceMemorySize(id, sMem);
