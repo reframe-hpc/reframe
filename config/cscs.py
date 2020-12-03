@@ -668,9 +668,9 @@ site_configuration = {
                             ]
                         },
                         {
-                            'name': 'mem-per-node',
+                            'name': 'memory',
                             'options': [
-                                '--mem={mem_per_node}'
+                                '--mem={memory}'
                             ]
                         },
                     ],
@@ -719,9 +719,9 @@ site_configuration = {
                             ]
                         },
                         {
-                            'name': 'mem-per-node',
+                            'name': 'memory',
                             'options': [
-                                '--mem={mem_per_node}'
+                                '--mem={memory}'
                             ]
                         },
                     ],
@@ -878,7 +878,7 @@ site_configuration = {
         {
             'name': 'PrgEnv-cray',
             'target_systems': [
-                'alps', 'eiger', 'rigi', 'pilatus'
+                'eiger', 'pilatus'
             ],
             'modules': [
                 {'name': 'PrgEnv-cray', 'collection': True}
@@ -887,7 +887,7 @@ site_configuration = {
         {
             'name': 'PrgEnv-gnu',
             'target_systems': [
-                'alps', 'eiger', 'rigi', 'pilatus'
+                'eiger', 'pilatus'
             ],
             'modules': [
                 {'name': 'PrgEnv-gnu', 'collection': True}
@@ -896,7 +896,7 @@ site_configuration = {
         {
             'name': 'PrgEnv-aocc',
             'target_systems': [
-                'alps', 'eiger', 'rigi', 'pilatus'
+                'eiger', 'pilatus'
             ],
             'modules': [
                 {'name': 'PrgEnv-aocc', 'collection': True}
