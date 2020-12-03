@@ -17,21 +17,13 @@ class GpuBurnTest(rfm.RegressionTest):
         self.descr = 'GPU burn test'
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.exclusive_access = True
-        if self.current_system.name in ['arolla', 'tsa']:
-            self.executable_opts = ['-d', '40']
-        elif self.current_system.name in {'daint', 'dom'}:
-            self.executable_opts = ['-d', '20']
-        elif self.current_system.name in {'ault'}:
-            self.executable_opts = ['-d', '30']
-
+        self.executable_opts = ['-d', '40']
         self.build_system = 'Make'
         self.executable = './gpu_burn.x'
         self.readonly_files = ['Xdevice']
         self.num_tasks = 0
         self.num_tasks_per_node = 1
-
         self.sanity_patterns = self.assert_num_tasks()
-
         patt = (r'^\s*\[[^\]]*\]\s*GPU\s+\d+\(\S*\): (?P<perf>\S*) GF\/s  '
                 r'(?P<temp>\S*) Celsius')
         self.perf_patterns = {

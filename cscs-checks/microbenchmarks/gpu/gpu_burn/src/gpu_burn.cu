@@ -270,7 +270,7 @@ public:
 
         // Get the time difference and return the flops
         std::chrono::duration<double> diff = end-start;
-        double Gflops = (double)(iters*reps) * ((double)(OPS_PER_MUL)/diff.count()/1024.0/1024.0/1024.0);
+        double Gflops = (double)(iters*reps) * ((double)(OPS_PER_MUL)/diff.count()/1000.0/1000.0/1000.0);
 
         // Reset the counters
         err = 0; reps = 0;
@@ -303,6 +303,7 @@ void startBurn(int devId,
 
     // Warmup burn
     test.compute();
+    XDeviceSynchronize();
     {
         // Flag that this thread is done with the warmup.
         std::lock_guard<std::mutex> lg(cv_m);
