@@ -388,7 +388,9 @@ template<class T> void launch(int duration)
     for (int i = 0; i < devCount; i++)
     {
         double flops = trackThreads[i].read();
-        printf("[%s] GPU %2d(%s): %4.0f GF/s  %d Celsius\n", hostname, i, flops < 0.0 ? "FAULTY" : "OK", flops, (int)smi_handle->getGpuTemp(i));
+        float devTemp;
+        smi_handle->getGpuTemp(i, &devTemp);
+        printf("[%s] GPU %2d(%s): %4.0f GF/s  %d Celsius\n", hostname, i, flops < 0.0 ? "FAULTY" : "OK", flops, (int)devTemp);
     }
 
     // Join all threads
