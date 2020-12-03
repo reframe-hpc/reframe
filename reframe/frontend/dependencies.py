@@ -15,6 +15,31 @@ import reframe.utility as util
 from reframe.core.exceptions import DependencyError
 from reframe.core.logging import getlogger
 
+def _dfs(graph):
+    visited = util.OrderedSet()
+
+    def visit(node, path, level):
+        # We assume an acyclic graph
+        assert node not in path
+
+        path.add(node)
+
+        # Do a DFS visit of all the adjacent nodes
+        depth = 0
+        for adj in graph[node]:
+            if adj not in visited:
+                visit(adj, path, level + 1)
+            else:
+                depth = max(depth, visited[adj].level + 1)
+
+        path.pop()
+        node.level = max(level, depth)
+
+    for node in graph.keys():
+        if node not in visited:
+            visit(node, util.OrderedSet(), 0)
+
+    return visited
 
 def build_deps(cases, default_cases=None):
     '''Build dependency graph from test cases.
@@ -89,6 +114,8 @@ def build_deps(cases, default_cases=None):
     for u, adjacent in graph.items():
         for v in adjacent:
             v.in_degree += 1
+
+    _dfs(graph)
 
     return graph, skipped_cases
 

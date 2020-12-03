@@ -30,6 +30,7 @@ from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
 from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.printer import PrettyPrinter
+from reframe.frontend.ci import generate_ci_pipeline
 
 
 def format_check(check, check_deps, detailed=False):
@@ -334,6 +335,14 @@ def main():
         '--disable-hook', action='append', metavar='NAME', dest='hooks',
         default=[], help='Disable a pipeline hook for this run'
     )
+    run_options.add_argument(
+        '--ci-generate-pipeline', action='store', metavar='FILE',
+        help="Store ci pipeline in yaml FILE",
+        envvar='RFM_CI_PIPELINE_FILE',
+        configvar='general/ci_pipeline_file'
+    )
+
+    # Environment options
     env_options.add_argument(
         '-M', '--map-module', action='append', metavar='MAPPING',
         dest='module_mappings', default=[],
@@ -703,6 +712,15 @@ def main():
 
         testcases = dependencies.toposort(testgraph)
         printer.verbose(f'Final number of test cases: {len(testcases)}')
+
+        # testcases2 = dependencies.toposortdepth(testgraph)
+
+        # victor
+        if site_config.get('general/0/ci_pipeline_file'):
+            ci_pipeline_file = site_config.get('general/0/ci_pipeline_file')
+            generate_ci_pipeline(ci_pipeline_file, testcases)
+            # generate_ci_pipeline(ci_pipeline_file, testcases, site_config)
+            sys.exit(0)
 
         # Disable hooks
         for tc in testcases:
