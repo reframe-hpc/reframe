@@ -28,6 +28,10 @@ class KernelLatencyTest(rfm.RegressionTest):
         self.num_tasks_per_node = 1
         self.build_system = 'Make'
         self.executable = 'kernel_latency.x'
+
+        # Mark the Xdevice symlink as read-only
+        self.readonly_files = ['Xdevice']
+
         if kernel_version == 'sync':
             self.build_system.cppflags = ['-D SYNCKERNEL=1']
         else:

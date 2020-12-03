@@ -20,6 +20,10 @@ class GPUShmemTest(rfm.RegressionTest):
         self.num_gpus_per_node = 1
         self.build_system = 'Make'
         self.executable = 'shmem.x'
+
+        # Mark the Xdevice symlink as read-only
+        self.readonly_files = ['Xdevice']
+
         self.sanity_patterns = sn.assert_eq(
             sn.count(sn.findall(r'Bandwidth', self.stdout)),
             self.num_tasks_assigned * 2)
