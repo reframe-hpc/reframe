@@ -477,6 +477,9 @@ class LoggerAdapter(logging.LoggerAdapter):
             return
 
         for attr, val in self.check.__dict__.items():
+            if attr.startswith('_'):
+                continue
+
             self.extra[f'check_{attr}'] = _xfmt(val)
 
         self.extra['check_info'] = self.check.info()
