@@ -40,7 +40,7 @@ public:
    * Parameters:
    *   + n: address of the integer where to return the number of devices.
    */
-  void getNumberOfDevices(int * n);
+  void getNumberOfDevices(int * n) const;
 
   /*
    * Test wheter the requested GPU id is within the range of available IDs in the curent node.
@@ -50,7 +50,7 @@ public:
    * Parameters:
    *   + id: Device ID.
    */
-  void checkGpuIdIsSensible(int id);
+  void checkGpuIdIsSensible(int id) const;
 
   /*
    * Pin the host thread to a CPU with affinity to a given device.
@@ -66,7 +66,7 @@ public:
    * Parameters:
    *   + id: Device ID.
    */
-  float getGpuTemp(int id);
+  void getGpuTemp(int id, float * temp) const;
 
   /*
    * Get the total memory size present in a device.
@@ -76,7 +76,7 @@ public:
    *   + mSize: Size (in bytes) of the total memory.
    *
    */
-  void getDeviceMemorySize(int id, size_t * mSize);
+  void getDeviceMemorySize(int id, size_t * mSize) const;
 
   /*
    * Get the available memory size in a given device.
@@ -86,7 +86,7 @@ public:
    *   + mSize: Size (in bytes) of the available memory.
    *
    */
-  void getDeviceAvailMemorySize(int id, size_t * mSize);
+  void getDeviceAvailMemorySize(int id, size_t * mSize) const;
 };
 
 /*
@@ -100,12 +100,12 @@ int Smi::activeSmiInstances = 0;
  * Member functions with a common implementation across platforms.
  */
 
-void Smi::getNumberOfDevices(int * n)
+void Smi::getNumberOfDevices(int * n) const
 {
   *n = this->numberOfDevices;
 }
 
-void Smi::checkGpuIdIsSensible(int id)
+void Smi::checkGpuIdIsSensible(int id) const
 {
   if (id < 0 || id >= numberOfDevices)
   {
