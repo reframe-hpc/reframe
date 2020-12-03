@@ -7,9 +7,9 @@
 
 #include <iostream>
 #include <malloc.h>
+#include <unistd.h>
 
 #include "Xdevice/runtime.hpp"
-
 
 #define NTHREADS 256
 #define NITER    4096
@@ -79,9 +79,26 @@ int main()
 {
     long size = 1024 * 1024 * 64; // 64 MB global buffer
 
-    // warmup
-    test_bw<int>(size);
+    char hostname[256];
+    hostname[255]='\0';
+    gethostname(hostname, 255);
 
-    std::cout << "Bandwidth(int) " << test_bw<int>(size) / 1024 / 1024 / 1024 << " GB/s" << std::endl;
-    std::cout << "Bandwidth(double) " << test_bw<double>(size) / 1024 / 1024 / 1024 << " GB/s" << std::endl;
+    int gpu_count = 0;
+    XGetDeviceCount(&gpu_count);
+
+    if (gpu_count <= 0) {
+        std::cout << "[" << hostname << "] " << "Could not find any gpu\n";
+        return 1;
+    }
+    std::cout << "[" << hostname << "] " << "Found " << gpu_count << " gpu(s)\n";
+
+    for (int i = 0; i < gpu_count; i++)
+    {
+        // warmup
+        test_bw<int>(size);
+
+        // test
+        std::cout << "[" << hostname << "] GPU " << i << ": Bandwidth(int) " << test_bw<int>(size) / 1024 / 1024 / 1024 << " GB/s" << std::endl;
+        std::cout << "[" << hostname << "] GPU " << i << ": Bandwidth(double) " << test_bw<double>(size) / 1024 / 1024 / 1024 << " GB/s" << std::endl;
+    }
 }

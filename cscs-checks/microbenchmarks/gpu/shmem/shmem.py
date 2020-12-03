@@ -17,7 +17,6 @@ class GPUShmemTest(rfm.RegressionTest):
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.num_tasks = 0
         self.num_tasks_per_node = 1
-        self.num_gpus_per_node = 1
         self.build_system = 'Make'
         self.executable = 'shmem.x'
 
@@ -26,12 +25,12 @@ class GPUShmemTest(rfm.RegressionTest):
 
         self.sanity_patterns = sn.assert_eq(
             sn.count(sn.findall(r'Bandwidth', self.stdout)),
-            self.num_tasks_assigned * 2)
+            self.num_tasks_assigned * 2 * self.num_gpus_per_node)
 
         self.perf_patterns = {
-            'bandwidth': sn.extractsingle(
-                r'Bandwidth\(double\) (?P<bw>\S+) GB/s',
-                self.stdout, 'bw', float)
+            'bandwidth': sn.min(sn.extractall(
+                r'^\s*\[[^\]]*\]\s*GPU\s*\d+: Bandwidth\(double\) (?P<bw>\S+) GB/s',
+                self.stdout, 'bw', float))
         }
         self.reference = {
             # theoretical limit for P100:
@@ -100,3 +99,20 @@ class GPUShmemTest(rfm.RegressionTest):
         if amd_trgt:
             self.build_system.cxxflags += [f'--amdgpu-target={amd_trgt}']
             self.modules += ['rocm']
+
+    @rfm.run_before('run')
+    def set_gpus_per_node(self):
+        cs = self.current_system.name
+        cp = self.current_partition.fullname
+        if cs in {'dom', 'daint'}:
+            self.num_gpus_per_node = 1
+        elif cs in {'arola', 'tsa'}:
+            self.num_gpus_per_node = 8
+        elif cp in {'ault:amda100', 'ault:intelv100'}:
+            self.num_gpus_per_node = 4
+        elif cp in {'ault:amdv100'}:
+            self.num_gpus_per_node = 2
+        elif cp in {'ault:amdvega'}:
+            self.num_gpus_per_node = 3
+        else:
+            self.num_gpus_per_node = 1
