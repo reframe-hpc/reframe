@@ -939,9 +939,13 @@ class RegressionTest(metaclass=RegressionTestMeta):
         This attribute is evaluated lazily, so it can by used inside sanity
         expressions.
 
-        :type: :class:`str`.
+        :type: :class:`str` or :class:`None` if a run job has not yet been
+            created.
         '''
-        return self._job.stdout
+        if self.job is None:
+            return None
+
+        return self.job.stdout
 
     @property
     @sn.sanity_function
@@ -953,9 +957,13 @@ class RegressionTest(metaclass=RegressionTestMeta):
         This attribute is evaluated lazily, so it can by used inside sanity
         expressions.
 
-        :type: :class:`str`.
+        :type: :class:`str` or :class:`None` if a run job has not yet been
+            created.
         '''
-        return self._job.stderr
+        if self.job is None:
+            return None
+
+        return self.job.stderr
 
     @property
     def build_job(self):
@@ -964,12 +972,18 @@ class RegressionTest(metaclass=RegressionTestMeta):
     @property
     @sn.sanity_function
     def build_stdout(self):
-        return self._build_job.stdout
+        if self.build_job is None:
+            return None
+
+        return self.build_job.stdout
 
     @property
     @sn.sanity_function
     def build_stderr(self):
-        return self._build_job.stderr
+        if self.build_job is None:
+            return None
+
+        return self.build_job.stderr
 
     def info(self):
         '''Provide live information for this test.
@@ -1842,12 +1856,18 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
     @property
     @sn.sanity_function
     def stdout(self):
-        return self._build_job.stdout
+        if self.build_job is None:
+            return None
+
+        return self.build_job.stdout
 
     @property
     @sn.sanity_function
     def stderr(self):
-        return self._build_job.stderr
+        if self.build_job is None:
+            return None
+
+        return self.build_job.stderr
 
     def run(self):
         '''The run stage of the regression test pipeline.

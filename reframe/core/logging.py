@@ -170,22 +170,22 @@ def _xfmt(val):
     if val is None:
         return '<undefined>'
 
-    if isinstance(val, _DeferredExpression):
-        try:
+    try:
+        if isinstance(val, _DeferredExpression):
             return val.evaluate()
-        except BaseException:
-            return '<error>'
 
-    if isinstance(val, str):
+        if isinstance(val, str):
+            return val
+
+        if isinstance(val, collections.abc.Mapping):
+            return ','.join(f'{k}={v}' for k, v in val.items())
+
+        if isinstance(val, collections.abc.Iterable):
+            return ','.join(val)
+    except BaseException:
+        return '<error>'
+    else:
         return val
-
-    if isinstance(val, collections.abc.Mapping):
-        return ','.join(f'{k}={v}' for k, v in val.items())
-
-    if isinstance(val, collections.abc.Iterable):
-        return ','.join(val)
-
-    return val
 
 
 class CheckFieldFormatter(logging.Formatter):
@@ -197,27 +197,15 @@ class CheckFieldFormatter(logging.Formatter):
 
         # NOTE: This will work only when style='%'
         self.__extras = {
-            spec: None for spec in re.findall(r'\%\((check_\S+?)\)s', fmt)
+            spec: None for spec in re.findall(r'\%\((\S+?)\)s', fmt)
         }
 
-        # Set the default value for 'check_name'
-        if 'check_name' in self.__extras:
-            self.__extras['check_name'] = 'reframe'
-
     def format(self, record):
-        # Fill in the check-specific record attributes
-        if record.check:
-            for spec in self.__extras:
-                if hasattr(record, spec):
-                    # Attribute set elsewhere
-                    continue
-
-                attr = spec.split('_', maxsplit=1)[1]
-                val = getattr(record.check, attr, None)
-                record.__dict__[spec] = _xfmt(val)
-        else:
-            # Update record with the dynamic extras even if check is not set
-            record.__dict__.update(self.__extras)
+        # Avoid crashing when format spec is not in the record; simply format
+        # is as None
+        for spec in self.__extras:
+            if not hasattr(record, spec):
+                setattr(record, spec, _xfmt(None))
 
         return super().format(record)
 
@@ -448,6 +436,7 @@ class LoggerAdapter(logging.LoggerAdapter):
                 # Here we only set the format specifiers that do not
                 # correspond directly to check attributes
                 'check': check,
+                'check_name': 'reframe',
                 'check_jobid': _xfmt(None),
                 'check_job_completion_time': _xfmt(None),
                 'check_job_completion_time_unix': _xfmt(None),
@@ -486,6 +475,9 @@ class LoggerAdapter(logging.LoggerAdapter):
 
         if self.check is None:
             return
+
+        for attr, val in self.check.__dict__.items():
+            self.extra[f'check_{attr}'] = _xfmt(val)
 
         self.extra['check_info'] = self.check.info()
         if self.check.current_system:
