@@ -737,38 +737,9 @@ site_configuration = {
                     'launcher': 'local'
                 },
                 {
-                    'name': 'mc_lowmem',
-                    'descr': 'Multicore nodes (AMD EPYC 7742, 256GB/cn)',
+                    'name': 'mc',
+                    'descr': 'Multicore nodes (AMD EPYC 7742, 256|512GB/cn)',
                     'scheduler': 'slurm',
-                    'access': [
-                        # FIXME: update when the constraint will be ready
-                        '--exclude=nid00[1512-1703,1768-1927]'
-                    ],
-                    'environs': [
-                        'builtin',
-                        'PrgEnv-cray',
-                        'PrgEnv-gnu',
-                        'PrgEnv-aocc'
-                    ],
-                    'max_jobs': 100,
-                    'resources': [
-                        {
-                            'name': 'switches',
-                            'options': [
-                                '--switches={num_switches}'
-                            ]
-                        },
-                    ],
-                    'launcher': 'srun'
-                },
-                {
-                    'name': 'mc_himem',
-                    'descr': 'Multicore nodes (AMD EPYC 7742, 512GB/cn)',
-                    'scheduler': 'slurm',
-                    'access': [
-                        # FIXME: update when the constraint will be ready
-                        '--exclude=nid00[1000-1003,1006-1191,1256-1415]'
-                    ],
                     'environs': [
                         'builtin',
                         'PrgEnv-cray',
@@ -784,9 +755,9 @@ site_configuration = {
                             ]
                         },
                         {
-                            'name': 'mem-per-cpu',
+                            'name': 'mem-per-node',
                             'options': [
-                                '--mem-per-cpu={mem_per_cpu}'
+                                '--mem={mem_per_node}'
                             ]
                         },
                     ],
