@@ -10,12 +10,12 @@ import reframe.utility.sanity as sn
 import reframe.utility.udeps as udeps
 
 OSU_BENCH_VERSION = '5.6.3'
-NUM_NODES = 10
+NUM_NODES = 9
 
 
 def tsa_node_pairs():
     def nodeid(n):
-        return f'tsa-pp{n+11:03}'
+        return f'tsa-pp{n+12:03}'
 
     for u in range(NUM_NODES):
         for v in range(NUM_NODES):
@@ -25,7 +25,7 @@ def tsa_node_pairs():
 
 def count_hops(u, v):
     switches = {
-        's0': {'tsa-pp011', 'tsa-pp012', 'tsa-pp013', 'tsa-pp014'},
+        's0': {'tsa-pp012', 'tsa-pp013', 'tsa-pp014'},
         's1': {'tsa-pp015', 'tsa-pp016', 'tsa-pp017'},
         's2': {'tsa-pp018', 'tsa-pp019', 'tsa-pp020'}
     }
@@ -97,10 +97,10 @@ class OSUBaseRunTest(rfm.RunOnlyRegressionTest):
 
 
 @rfm.parameterized_test(
-    ['tsa-pp011', 'tsa-pp012', 'tsa-pp013', 'tsa-pp014'],
+    ['tsa-pp012', 'tsa-pp013', 'tsa-pp014'],
     ['tsa-pp015', 'tsa-pp016', 'tsa-pp017'],
     ['tsa-pp018', 'tsa-pp019', 'tsa-pp020'],
-    ['tsa-pp011', 'tsa-pp012', 'tsa-pp013', 'tsa-pp014', 'tsa-pp015',
+    ['tsa-pp012', 'tsa-pp013', 'tsa-pp014', 'tsa-pp015',
      'tsa-pp016', 'tsa-pp017', 'tsa-pp018', 'tsa-pp019', 'tsa-pp020']
 )
 class OSUAlltoallvTest(OSUBaseRunTest):
@@ -131,10 +131,10 @@ class OSUAlltoallvTest(OSUBaseRunTest):
 
 
 @rfm.parameterized_test(
-    ['tsa-pp011', 'tsa-pp012', 'tsa-pp013', 'tsa-pp014'],
+    ['tsa-pp012', 'tsa-pp013', 'tsa-pp014'],
     ['tsa-pp015', 'tsa-pp016', 'tsa-pp017'],
     ['tsa-pp018', 'tsa-pp019', 'tsa-pp020'],
-    ['tsa-pp011', 'tsa-pp012', 'tsa-pp013', 'tsa-pp014', 'tsa-pp015',
+    ['tsa-pp012', 'tsa-pp013', 'tsa-pp014', 'tsa-pp015',
      'tsa-pp016', 'tsa-pp017', 'tsa-pp018', 'tsa-pp019', 'tsa-pp020']
 )
 class OSUAllgathervTest(OSUBaseRunTest):
@@ -165,10 +165,10 @@ class OSUAllgathervTest(OSUBaseRunTest):
 
 
 @rfm.parameterized_test(
-    ['tsa-pp011', 'tsa-pp012', 'tsa-pp013', 'tsa-pp014'],
+    ['tsa-pp012', 'tsa-pp013', 'tsa-pp014'],
     ['tsa-pp015', 'tsa-pp016', 'tsa-pp017'],
     ['tsa-pp018', 'tsa-pp019', 'tsa-pp020'],
-    ['tsa-pp011', 'tsa-pp012', 'tsa-pp013', 'tsa-pp014', 'tsa-pp015',
+    ['tsa-pp012', 'tsa-pp013', 'tsa-pp014', 'tsa-pp015',
      'tsa-pp016', 'tsa-pp017', 'tsa-pp018', 'tsa-pp019', 'tsa-pp020']
 )
 class OSUIBcastTest(OSUBaseRunTest):
