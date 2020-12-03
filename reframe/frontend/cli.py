@@ -56,7 +56,8 @@ def format_check(check, check_deps, detailed=False):
         return f'- {check.name} (found in {location!r})'
 
     if check.num_tasks > 0:
-        node_alloc_scheme = f'standard ({check.num_tasks} task(s))'
+        node_alloc_scheme = (f'standard ({check.num_tasks} task(s) -- '
+                             f'may be set differently in hooks)')
     elif check.num_tasks == 0:
         node_alloc_scheme = 'flexible'
     else:
