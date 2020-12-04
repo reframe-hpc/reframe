@@ -8,7 +8,7 @@
 #
 
 from reframe.core.warnings import user_deprecation_warning
-from reframe.core.attributes import RegressionTestAttributes
+import reframe.core.directives as directives
 
 
 class RegressionTestMeta(type):
@@ -16,23 +16,17 @@ class RegressionTestMeta(type):
     def __prepare__(cls, name, bases, **kwargs):
         namespace = super().__prepare__(name, bases, **kwargs)
 
-        # Extend the RegressionTest class with the directives defined in the
-        # RegressionTestAttributes class.
-        rfm_attr = RegressionTestAttributes()
-        namespace['__rfm_attributes'] = rfm_attr
+        # Staging area to build the regression test parameter space
+        # using directives
+        param_stage = directives.ParameterStagingArea()
 
-        # Attribute to add a regression test parameter as:
-        # `rfm_parameter('P0', 0,1,2,3)`.
-        namespace['parameter'] = rfm_attr._rfm_parameter_stage.add
+        # Directive to add a regression test parameter directly in the
+        # class body as: `parameter('P0', 0,1,2,3)`.
+        namespace['parameter'] = param_stage.add_regression_test_parameter
 
-        # Method to build the parameter space
-        namespace['_rfm_build_parameter_space'] = (rfm_attr
+        # Export the method to build the final parameter space
+        namespace['_rfm_build_parameter_space'] = (param_stage
                                                    ).build_parameter_space
-
-        # Method to check that the test parameter space does not clash with the
-        # RegressionTest namespace
-        namespace['_rfm_namespace_clash_check'] = (rfm_attr
-                                                   ).namespace_clash_check
 
         return namespace
 
@@ -40,12 +34,12 @@ class RegressionTestMeta(type):
         super().__init__(name, bases, namespace, **kwargs)
 
         # Set up the regression test parameter space
-        cls._rfm_params = cls._rfm_build_parameter_space(bases)
+        cls._rfm_params = cls._rfm_build_parameter_space(bases, '_rfm_params')
 
         # Make illegal to have a parameter clashing with any of the
         # RegressionTest class variables
-        cls._rfm_namespace_clash_check(cls.__dict__, cls._rfm_params,
-                                       cls.__qualname__)
+        directives.namespace_clash_check(cls.__dict__, cls._rfm_params,
+                                         cls.__qualname__)
 
         # Set up the hooks for the pipeline stages based on the _rfm_attach
         # attribute; all dependencies will be resolved first in the post-setup
