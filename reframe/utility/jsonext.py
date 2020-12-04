@@ -17,13 +17,19 @@ class _ReframeJsonEncoder(json.JSONEncoder):
         if isinstance(obj, type) and issubclass(obj, BaseException):
             return obj.__name__
 
+        if isinstance(obj, set):
+            return list(obj)
+
         if isinstance(obj, BaseException):
             return str(obj)
 
         if inspect.istraceback(obj):
             return traceback.format_tb(obj)
 
-        return json.JSONEncoder.default(self, obj)
+        try:
+            return json.JSONEncoder.default(self, obj)
+        except TypeError:
+            return None
 
 
 def dump(obj, fp, **kwargs):

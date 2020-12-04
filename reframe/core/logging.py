@@ -165,27 +165,13 @@ def _format_time_rfc3339(timestamp, datefmt):
 
 
 def _xfmt(val):
-    from reframe.core.deferrable import _DeferredExpression
+    import reframe.utility.jsonext as jsonext
 
-    if val is None:
-        return '<undefined>'
-
-    try:
-        if isinstance(val, _DeferredExpression):
-            return val.evaluate()
-
-        if isinstance(val, str):
-            return val
-
-        if isinstance(val, collections.abc.Mapping):
-            return ','.join(f'{k}={v}' for k, v in val.items())
-
-        if isinstance(val, collections.abc.Iterable):
-            return ','.join(val)
-    except BaseException:
-        return '<error>'
-    else:
+    if isinstance(val, str):
         return val
+
+    ret = jsonext.dumps(val)
+    return str(val) if ret is None else ret
 
 
 class CheckFieldFormatter(logging.Formatter):
@@ -477,10 +463,8 @@ class LoggerAdapter(logging.LoggerAdapter):
             return
 
         for attr, val in self.check.__dict__.items():
-            if attr.startswith('_'):
-                continue
-
-            self.extra[f'check_{attr}'] = _xfmt(val)
+            if not attr.startswith('_'):
+                self.extra[f'check_{attr}'] = _xfmt(val)
 
         self.extra['check_info'] = self.check.info()
         if self.check.current_system:
