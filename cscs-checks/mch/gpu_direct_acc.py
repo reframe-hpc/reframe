@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import os
 import reframe as rfm
 import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
@@ -14,34 +13,21 @@ import reframe.utility.sanity as sn
 class GpuDirectAccCheck(rfm.RegressionTest):
     def __init__(self):
         self.descr = 'tests gpu-direct for Fortran OpenACC'
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
-                              'arolla:cn', 'tsa:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
-        if self.current_system.name in ['daint', 'dom', 'tiger']:
+        if self.current_system.name in ['daint', 'dom']:
             self.modules = ['craype-accel-nvidia60']
             self.variables = {
                 'MPICH_RDMA_ENABLED_CUDA': '1',
+                'CRAY_CUDA_MPS': '1',
             }
-
-            if self.current_system.name in ['tiger']:
-                craypath = f'{os.environ["CRAY_BINUTILS_BIN"]}:$PATH'
-                self.variables['PATH'] = craypath
-
             self.num_tasks = 2
             self.num_gpus_per_node = 1
             self.num_tasks_per_node = 1
-        elif self.current_system.name == 'kesch':
-            self.exclusive_access = True
-            self.modules = ['cudatoolkit/8.0.61']
-            self.variables = {
-                'CRAY_ACCEL_TARGET': 'nvidia35',
-                'MV2_USE_CUDA': '1',
-                'G2G': '1'
-            }
             self.num_tasks = 8
             self.num_gpus_per_node = 8
             self.num_tasks_per_node = 8
-        elif self.current_system.name in ['arolla', 'tsa']:
+        if self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
             self.variables = {
                 'G2G': '1'
@@ -69,8 +55,6 @@ class GpuDirectAccCheck(rfm.RegressionTest):
             self.build_system.fflags = ['-acc']
             if self.current_system.name in ['daint', 'dom']:
                 self.build_system.fflags += ['-ta=tesla:cc60', '-Mnorpath']
-            elif self.current_system.name == 'kesch':
-                self.build_system.fflags += ['-ta=tesla:cc35']
             elif self.current_system.name in ['arolla', 'tsa']:
                 self.build_system.fflags += ['-ta=tesla:cc70']
 

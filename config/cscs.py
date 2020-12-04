@@ -267,8 +267,9 @@ site_configuration = {
                         'builtin'
                     ],
                     'access': [
-                        '-Cgpu',
-                        '--reservation=jupyter_gpu'
+                        f'-Cgpu',
+                        f'--reservation=jupyter_gpu',
+                        f'--account={osext.osgroup()}'
                     ],
                     'descr': 'JupyterHub GPU nodes',
                     'max_jobs': 10,
@@ -281,8 +282,9 @@ site_configuration = {
                         'builtin'
                     ],
                     'access': [
-                        '-Cmc',
-                        '--reservation=jupyter_mc'
+                        f'-Cmc',
+                        f'--reservation=jupyter_mc',
+                        f'--account={osext.osgroup()}'
                     ],
                     'descr': 'JupyterHub multicore nodes',
                     'max_jobs': 10,
@@ -404,8 +406,9 @@ site_configuration = {
                         'builtin'
                     ],
                     'access': [
-                        '-Cgpu',
-                        '--reservation=jupyter_gpu'
+                        f'-Cgpu',
+                        f'--reservation=jupyter_gpu',
+                        f'--account={osext.osgroup()}'
                     ],
                     'descr': 'JupyterHub GPU nodes',
                     'max_jobs': 10,
@@ -418,8 +421,9 @@ site_configuration = {
                         'builtin'
                     ],
                     'access': [
-                        '-Cmc',
-                        '--reservation=jupyter_mc'
+                        f'-Cmc',
+                        f'--reservation=jupyter_mc',
+                        f'--account={osext.osgroup()}'
                     ],
                     'descr': 'JupyterHub multicore nodes',
                     'max_jobs': 10,
@@ -477,73 +481,6 @@ site_configuration = {
                         '--partition gpu'
                     ],
                     'descr': 'Hybrid compute nodes',
-                    'launcher': 'srun'
-                }
-            ]
-        },
-        {
-            'name': 'kesch',
-            'descr': 'Kesch MCH',
-            'hostnames': [
-                r'keschln-\d+'
-            ],
-            'modules_system': 'tmod',
-            'resourcesdir': '/apps/common/UES/reframe/resources',
-            'partitions': [
-                {
-                    'name': 'login',
-                    'scheduler': 'local',
-                    'environs': [
-                        'PrgEnv-cray',
-                        'PrgEnv-cray-nompi',
-                        'PrgEnv-pgi',
-                        'PrgEnv-pgi-nompi',
-                        'PrgEnv-gnu',
-                        'PrgEnv-gnu-nompi'
-                    ],
-                    'descr': 'Kesch login nodes',
-                    'launcher': 'local'
-                },
-                {
-                    'name': 'pn',
-                    'scheduler': 'slurm',
-                    'access': [
-                        '--partition=pn-regression'
-                    ],
-                    'environs': [
-                        'PrgEnv-cray',
-                        'PrgEnv-cray-nompi',
-                        'PrgEnv-pgi',
-                        'PrgEnv-pgi-nompi',
-                        'PrgEnv-gnu',
-                        'PrgEnv-gnu-nompi'
-                    ],
-                    'descr': 'Kesch post-processing nodes',
-                    'launcher': 'srun'
-                },
-                {
-                    'name': 'cn',
-                    'scheduler': 'slurm',
-                    'access': [
-                        '--partition=cn-regression'
-                    ],
-                    'environs': [
-                        'PrgEnv-cray',
-                        'PrgEnv-cray-nompi',
-                        'PrgEnv-pgi',
-                        'PrgEnv-pgi-nompi',
-                        'PrgEnv-gnu',
-                        'PrgEnv-gnu-nompi'
-                    ],
-                    'descr': 'Kesch compute nodes',
-                    'resources': [
-                        {
-                            'name': '_rfm_gpu',
-                            'options': [
-                                '--gres=gpu:{num_gpus_per_node}'
-                            ]
-                        }
-                    ],
                     'launcher': 'srun'
                 }
             ]
@@ -739,85 +676,6 @@ site_configuration = {
             'name': 'builtin-gcc',
             'target_systems': [
                 'ault'
-            ],
-            'cc': 'gcc',
-            'cxx': 'g++',
-            'ftn': 'gfortran'
-        },
-        {
-            'name': 'PrgEnv-pgi-nompi',
-            'target_systems': [
-                'kesch'
-            ],
-            'modules': [
-                'PE/17.06',
-                'PrgEnv-pgi/18.5'
-            ],
-            'cc': 'pgcc',
-            'cxx': 'pgc++',
-            'ftn': 'pgf90'
-        },
-        {
-            'name': 'PrgEnv-pgi',
-            'target_systems': [
-                'kesch'
-            ],
-            'modules': [
-                'PE/17.06',
-                'pgi/18.5-gcc-5.4.0-2.26',
-                'openmpi/4.0.1-pgi-18.5-gcc-5.4.0-2.26-cuda-8.0'
-            ],
-            'cc': 'mpicc',
-            'cxx': 'mpicxx',
-            'ftn': 'mpifort'
-        },
-        {
-            'name': 'PrgEnv-cray',
-            'target_systems': [
-                'kesch'
-            ],
-            'modules': [
-                'PE/17.06',
-                'PrgEnv-CrayCCE/17.06'
-            ]
-        },
-        {
-            'name': 'PrgEnv-cray-nompi',
-            'target_systems': [
-                'kesch'
-            ],
-            'modules': [
-                'PE/17.06',
-                'PrgEnv-cray'
-            ]
-        },
-        {
-            'name': 'PrgEnv-gnu',
-            'target_systems': [
-                'kesch'
-            ],
-            'modules': [
-                'PE/17.06',
-                'gmvapich2/17.02_cuda_8.0_gdr'
-            ],
-            'variables': [
-                [
-                    'LD_PRELOAD',
-                    '$(pkg-config --variable=libdir mvapich2-gdr)/libmpi.so'
-                ]
-            ],
-            'cc': 'mpicc',
-            'cxx': 'mpicxx',
-            'ftn': 'mpif90'
-        },
-        {
-            'name': 'PrgEnv-gnu-nompi',
-            'target_systems': [
-                'kesch'
-            ],
-            'modules': [
-                'PE/17.06',
-                'PrgEnv-gnu'
             ],
             'cc': 'gcc',
             'cxx': 'g++',

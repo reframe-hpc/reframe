@@ -14,14 +14,13 @@ class SlurmSimpleBaseCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc',
-                              'kesch:cn', 'kesch:pn',
                               'arolla:cn', 'arolla:pn',
                               'tsa:cn', 'tsa:pn']
         self.valid_prog_environs = ['PrgEnv-cray']
         self.tags = {'slurm', 'maintenance', 'ops',
                      'production', 'single-node'}
         self.num_tasks_per_node = 1
-        if self.current_system.name in ['arolla', 'kesch', 'tsa']:
+        if self.current_system.name in ['arolla', 'tsa']:
             self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-pgi']
             self.exclusive_access = True
 
@@ -33,14 +32,11 @@ class SlurmCompiledBaseCheck(rfm.RegressionTest):
 
     def __init__(self):
         self.valid_systems = ['daint:gpu', 'daint:mc',
-                              'dom:gpu', 'dom:mc',
-                              'kesch:cn', 'kesch:pn']
+                              'dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-cray']
         self.tags = {'slurm', 'maintenance', 'ops',
                      'production', 'single-node'}
         self.num_tasks_per_node = 1
-        if self.current_system.name in ['kesch']:
-            self.exclusive_access = True
 
         self.maintainers = ['RS', 'VH']
 
@@ -55,8 +51,6 @@ class HostnameCheck(SlurmSimpleBaseCheck):
             'arolla:pn': r'^arolla-pp\d{3}$',
             'tsa:cn': r'^tsa-cn\d{3}$',
             'tsa:pn': r'^tsa-pp\d{3}$',
-            'kesch:cn': r'^keschcn-\d{4}$',
-            'kesch:pn': r'^keschpn-\d{4}$',
             'daint:gpu': r'^nid\d{5}$',
             'daint:mc': r'^nid\d{5}$',
             'dom:gpu': r'^nid\d{5}$',
@@ -79,7 +73,6 @@ class EnvironmentVariableCheck(SlurmSimpleBaseCheck):
         self.num_tasks = 2
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc',
-                              'kesch:cn', 'kesch:pn',
                               'arolla:cn', 'arolla:pn',
                               'tsa:cn', 'tsa:pn']
         self.executable = '/bin/echo'
@@ -98,10 +91,9 @@ class RequiredConstraintCheck(SlurmSimpleBaseCheck):
         self.executable = 'srun'
         self.executable_opts = ['-A', osext.osgroup(), 'hostname']
         self.sanity_patterns = sn.assert_found(
-            r'error: You have to specify, at least, what sort of node you '
-            r'need: -C gpu for GPU enabled nodes, or -C mc for multicore '
-            r'nodes.|ERROR: you must specify -C with one of the following: '
-            r'mc,gpu,storage', self.stderr)
+            r'ERROR: you must specify -C with one of the following: mc,gpu',
+            self.stderr
+        )
 
 
 @rfm.simple_test
@@ -125,8 +117,7 @@ class DefaultRequestGPU(SlurmSimpleBaseCheck):
     def __init__(self):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'dom:gpu',
-                              'arolla:cn', 'kesch:cn',
-                              'tsa:cn']
+                              'arolla:cn', 'tsa:cn']
         self.executable = 'nvidia-smi'
         self.sanity_patterns = sn.assert_found(
             r'NVIDIA-SMI.*Driver Version.*', self.stdout)

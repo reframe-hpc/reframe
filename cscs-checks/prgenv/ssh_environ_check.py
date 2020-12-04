@@ -27,14 +27,6 @@ class SSHLoginEnvCheck(rfm.RunOnlyRegressionTest):
             'SCRATCH': r'/scratch/[\S+]',
             'XDG_RUNTIME_DIR': r'/run/user/[\d+]'
         }
-        if self.current_system.name in {'tiger'}:
-            reference['CRAY_CPU_TARGET'] = 'ivybridge'
-            reference['PE_PRODUCT_LIST'] = ('CRAY_RCA:CRAY_PMI:CRAY_LIBSCI:'
-                                            'CRAYPE:CRAYPE_IVYBRIDGE:CRAY:'
-                                            'CRAY_XPMEM:CRAY_DMAPP:CRAY_UGNI:'
-                                            'CRAY_UDREG:PERFTOOLS:CRAYPAT')
-            reference['SCRATCH'] = r'\S+/scratch/[\S+]'
-
         self.executable = 'ssh'
         echo_args = ' '.join('{0}=${0}'.format(i) for i in reference.keys())
         self.executable_opts = [self.current_system.name,

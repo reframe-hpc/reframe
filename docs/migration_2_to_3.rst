@@ -14,22 +14,17 @@ Updating Your Site Configuration
 --------------------------------
 
 As described in `Configuring ReFrame for Your Site <configure.html>`__, ReFrame's configuration file has changed substantially.
-However, you don't need to manually update your configuration; ReFrame will do that automatically for you.
-As soon as it detects an old-style configuration file, it will convert it to the new syntax save it in a temporary file:
-
-
-.. code-block:: none
-
-   $ ./bin/reframe -C unittests/resources/settings_old_syntax.py -l
-   ./bin/reframe: the syntax of the configuration file 'unittests/resources/settings_old_syntax.py' is deprecated
-   ./bin/reframe: configuration file has been converted to the new syntax here: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/tmph5n8u3kf.py'
-
-Alternatively, you can convert any old configuration file using the command line option :option:`--upgrade-config-file`:
+However, you can convert any old configuration file using the command line option :option:`--upgrade-config-file`:
 
 .. code-block:: none
 
    $ ./bin/reframe --upgrade-config-file unittests/resources/settings_old_syntax.py:new_config.py
    Conversion successful! The converted file can be found at 'new_config.py'.
+
+.. warning::
+   .. versionchanged:: 3.4
+      The old configuration syntax in no longer supported and it will not be automatically converted by the `-C` option.
+
 
 Another important change is that default locations for looking up a configuration file has changed (see `Configuring ReFrame for Your Site <configure.html>`__ for more details).
 That practically means that if you were relying on ReFrame loading your ``reframe/settings.py`` by default, this is no longer true.
@@ -39,8 +34,8 @@ You have to move it to any of the default settings locations or set the correspo
    The conversion tool will create a JSON configuration file if the extension of the target file is ``.json``.
 
 
-Automatic conversion limitations
-================================
+Configuration conversion limitations
+====================================
 
 ReFrame does a pretty good job in converting correctly your old configuration files, but there are some limitations:
 
@@ -171,6 +166,9 @@ Other deprecations
 The :attr:`prebuild_cmd` and :attr:`postbuild_cmd` test attributes are replaced by the :attr:`prebuild_cmds` and :attr:`postbuild_cmds` respectively.
 Similarly, the :attr:`pre_run` and :attr:`post_run` test attributes are replaced by the :attr:`prerun_cmds` and :attr:`postrun_cmds` respectively.
 
+.. warning::
+   .. versionchanged:: 3.4
+      The :attr:`prebuild_cmd`, :attr:`postbuild_cmd`, :attr:`pre_run` and :attr:`post_run` attributes have been removed.
 
 
 Suppressing deprecation warnings

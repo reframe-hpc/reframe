@@ -4,13 +4,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import json
-import os
 import pytest
 
 import reframe.core.config as config
 from reframe.core.exceptions import ConfigError
 from reframe.core.systems import System
-from reframe.core.warnings import ReframeDeprecationWarning
 
 
 def test_load_config_fallback(monkeypatch):
@@ -24,7 +22,7 @@ def test_load_config_python():
 
 
 def test_load_config_python_old_syntax():
-    with pytest.raises(ReframeDeprecationWarning):
+    with pytest.raises(ConfigError):
         site_config = config.load_config(
             'unittests/resources/settings_old_syntax.py'
         )

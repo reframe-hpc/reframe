@@ -19,7 +19,6 @@ class StreamTest(rfm.RegressionTest):
         self.descr = 'STREAM Benchmark'
         self.exclusive_access = True
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'kesch:cn', 'kesch:pn', 'tiger:gpu',
                               'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi',
@@ -35,12 +34,7 @@ class StreamTest(rfm.RegressionTest):
             'PrgEnv-pgi': ['-mp', '-O3']
         }
 
-        if self.current_system.name == 'kesch':
-            self.exclusive_access = True
-            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
-            cray_flags = self.prgenv_flags['PrgEnv-cray_classic']
-            self.prgenv_flags['PrgEnv-cray'] = cray_flags
-        elif self.current_system.name in ['arolla', 'tsa']:
+        if self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-gnu']
 
@@ -55,8 +49,6 @@ class StreamTest(rfm.RegressionTest):
             'daint:mc': 36,
             'dom:gpu': 12,
             'dom:mc': 36,
-            'kesch:cn': 24,
-            'kesch:pn': 24,
             'leone:normal': 16,
             'monch:compute': 20,
             'tsa:cn': 16,
@@ -84,16 +76,12 @@ class StreamTest(rfm.RegressionTest):
                 'daint:mc': {'triad': (89000, -0.05, None, 'MB/s')},
                 'dom:gpu': {'triad': (44000, -0.05, None, 'MB/s')},
                 'dom:mc': {'triad': (89000, -0.05, None, 'MB/s')},
-                'kesch:cn': {'triad': (85000, -0.05, None, 'MB/s')},
-                'kesch:pn': {'triad': (113000, -0.05, None, 'MB/s')},
             },
             'PrgEnv-gnu': {
                 'daint:gpu': {'triad': (43800, -0.05, None, 'MB/s')},
                 'daint:mc': {'triad': (88500, -0.05, None, 'MB/s')},
                 'dom:gpu': {'triad': (43800, -0.05, None, 'MB/s')},
                 'dom:mc': {'triad': (87500, -0.05, None, 'MB/s')},
-                'kesch:cn': {'triad': (47000, -0.05, None, 'MB/s')},
-                'kesch:pn': {'triad': (84400, -0.05, None, 'MB/s')},
             },
             'PrgEnv-intel': {
                 'daint:gpu': {'triad': (59500, -0.05, None, 'MB/s')},

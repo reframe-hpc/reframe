@@ -3,16 +3,14 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import contextlib
+import io
 import itertools
 import os
-import pathlib
 import pytest
 import re
 import sys
-from contextlib import redirect_stdout, redirect_stderr, suppress
-from io import StringIO
 
-import reframe.core.config as config
 import reframe.core.environments as env
 import reframe.core.logging as logging
 import reframe.core.runtime as rt
@@ -26,11 +24,11 @@ def run_command_inline(argv, funct, *args, **kwargs):
     sys.argv = argv
     exitcode = None
 
-    captured_stdout = StringIO()
-    captured_stderr = StringIO()
+    captured_stdout = io.StringIO()
+    captured_stderr = io.StringIO()
     print(*sys.argv)
-    with redirect_stdout(captured_stdout):
-        with redirect_stderr(captured_stderr):
+    with contextlib.redirect_stdout(captured_stdout):
+        with contextlib.redirect_stderr(captured_stderr):
             try:
                 with rt.temp_runtime(None):
                     exitcode = funct(*args, **kwargs)
@@ -588,6 +586,62 @@ def test_unload_module(run_reframe, user_exec_ctx):
     assert stdout != ''
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
+    assert returncode == 0
+
+
+def test_unuse_module_path(run_reframe, user_exec_ctx):
+    ms = rt.runtime().modules_system
+    if ms.name == 'nomod':
+        pytest.skip('no modules system found')
+
+    module_path = 'unittests/modules'
+    ms.searchpath_add(module_path)
+    returncode, stdout, stderr = run_reframe(
+        more_options=[f'--module-path=-{module_path}', '--module=testmod_foo'],
+        config_file=fixtures.USER_CONFIG_FILE, action='run',
+        system=rt.runtime().system.name
+    )
+    assert "could not load module 'testmod_foo' correctly" in stdout
+    assert 'Traceback' not in stderr
+    assert returncode == 0
+
+
+def test_use_module_path(run_reframe, user_exec_ctx):
+    ms = rt.runtime().modules_system
+    if ms.name == 'nomod':
+        pytest.skip('no modules system found')
+
+    module_path = 'unittests/modules'
+    returncode, stdout, stderr = run_reframe(
+        more_options=[f'--module-path=+{module_path}', '--module=testmod_foo'],
+        config_file=fixtures.USER_CONFIG_FILE, action='run',
+        system=rt.runtime().system.name
+    )
+
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert "could not load module 'testmod_foo' correctly" not in stdout
+    assert returncode == 0
+
+
+def test_overwrite_module_path(run_reframe, user_exec_ctx):
+    ms = rt.runtime().modules_system
+    if ms.name == 'nomod':
+        pytest.skip('no modules system found')
+
+    module_path = 'unittests/modules'
+    with contextlib.suppress(KeyError):
+        module_path += f':{os.environ["MODULEPATH"]}'
+
+    returncode, stdout, stderr = run_reframe(
+        more_options=[f'--module-path={module_path}', '--module=testmod_foo'],
+        config_file=fixtures.USER_CONFIG_FILE, action='run',
+        system=rt.runtime().system.name
+    )
+
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert "could not load module 'testmod_foo' correctly" not in stdout
     assert returncode == 0
 
 

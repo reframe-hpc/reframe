@@ -212,16 +212,19 @@ def loadenv(*environs):
     env_snapshot = snapshot()
     commands = []
     for env in environs:
-        for m in env.modules_detailed:
-            conflicted = modules_system.load_module(**m, force=True)
-            for c in conflicted:
-                commands += modules_system.emit_unload_commands(c)
+        for mod in env.modules_detailed:
+            load_seq = modules_system.load_module(**mod, force=True)
+            for m, conflicted in load_seq:
+                for c in conflicted:
+                    commands += modules_system.emit_unload_commands(c)
 
-            commands += modules_system.emit_load_commands(**m)
+                commands += modules_system.emit_load_commands(
+                    m, mod['collection']
+                )
 
         for k, v in env.variables.items():
             os.environ[k] = osext.expandvars(v)
-            commands.append('export %s=%s' % (k, v))
+            commands.append(f'export {k}={v}')
 
     return env_snapshot, commands
 
@@ -284,7 +287,7 @@ class temp_runtime:
             _runtime_context = None
         else:
             site_config = config.load_config(config_file)
-            site_config.select_subconfig(sysname)
+            site_config.select_subconfig(sysname, ignore_resolve_errors=True)
             for opt, value in options.items():
                 site_config.add_sticky_option(opt, value)
 

@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import os
-import pathlib
 import pytest
 import re
 
@@ -14,8 +13,7 @@ import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 import unittests.fixtures as fixtures
 from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
-                                     ReframeSyntaxError, PerformanceError,
-                                     SanityError)
+                                     PerformanceError, SanityError)
 from reframe.frontend.loader import RegressionCheckLoader
 from unittests.resources.checks.hellocheck import HelloTest
 from unittests.resources.checks.pinnedcheck import PinnedTest
@@ -457,6 +455,21 @@ def test_sourcepath_upref(local_exec_ctx):
         test.compile()
 
 
+def test_sourcepath_non_existent(local_exec_ctx):
+    @fixtures.custom_prefix('unittests/resources/checks')
+    class MyTest(rfm.CompileOnlyRegressionTest):
+        def __init__(self):
+            self.valid_prog_environs = ['*']
+            self.valid_systems = ['*']
+
+    test = MyTest()
+    test.setup(*local_exec_ctx)
+    test.sourcepath = 'non_existent.c'
+    test.compile()
+    with pytest.raises(BuildError):
+        test.compile_wait()
+
+
 def test_extra_resources(testsys_system):
     @fixtures.custom_prefix('unittests/resources/checks')
     class MyTest(HelloTest):
@@ -633,6 +646,10 @@ def test_inherited_hooks(local_exec_ctx):
     _run(test, *local_exec_ctx)
     assert test.var == 2
     assert test.foo == 1
+    assert test.pipeline_hooks() == {
+        'post_setup': [DerivedTest.z, BaseTest.x],
+        'pre_run': [C.y],
+    }
 
 
 def test_overriden_hooks(local_exec_ctx):
@@ -808,7 +825,6 @@ def test_name_compileonly_test():
 
 
 def test_registration_of_tests():
-    import sys
     import unittests.resources.checks_unlisted.good as mod
 
     checks = mod._rfm_gettests()
