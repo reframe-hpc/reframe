@@ -91,7 +91,6 @@ class ParameterStagingArea:
                 'Cannot double-define a parameter in the same class.'
             ) from None
 
-
     def _inherit_parameter_space(self, bases, param_space_key):
         '''
         Inherit the parameter space from the base clases. Note that the
@@ -100,8 +99,8 @@ class ParameterStagingArea:
         values of the associated parameter.
 
         bases: iterable containing the parent classes.
-        param_space_key: class attribute name under which the parameter space is
-            stored.
+        param_space_key: class attribute name under which the parameter space
+            is stored.
         '''
         # Temporary dict where we build the parameter space from the base
         # clases
@@ -111,19 +110,19 @@ class ParameterStagingArea:
         for b in bases:
             base_params = b.__dict__.get(param_space_key, ())
             for key in base_params:
-                 # With multiple inheritance, a single parameter
-                 # could be doubly defined and lead to repeated
-                 # values.
-                 if key in temp_parameter_space:
-                     if not (temp_parameter_space[key] == () or
-                             base_params[key] == ()):
-                         raise KeyError(f'Parameter space conflict '
-                                        f'(on {key}) due to '
-                                        f'multiple inheritance.'
-                                        ) from None
+                # With multiple inheritance, a single parameter
+                # could be doubly defined and lead to repeated
+                # values.
+                if key in temp_parameter_space:
+                    if not (temp_parameter_space[key] == () or
+                            base_params[key] == ()):
+                        raise KeyError(f'Parameter space conflict '
+                                       f'(on {key}) due to '
+                                       f'multiple inheritance.'
+                                       ) from None
 
-                 temp_parameter_space[key] = base_params.get(
-                     key, ()) + temp_parameter_space.get(key, ())
+                temp_parameter_space[key] = base_params.get(
+                    key, ()) + temp_parameter_space.get(key, ())
 
         return temp_parameter_space
 
@@ -149,8 +148,8 @@ class ParameterStagingArea:
         in the staging area.
 
         bases: iterable containing the parent classes.
-        param_space_key: class attribute name under which the parameter space is
-            stored.
+        param_space_key: class attribute name under which the parameter space
+            is stored.
         '''
         # Inherit from the bases
         param_space = self._inherit_parameter_space(bases, param_space_key)
