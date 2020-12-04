@@ -66,19 +66,12 @@ class GridToolsRunCheck(rfm.RunOnlyRegressionTest):
         self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.num_tasks = 1
         self.sanity_patterns = sn.assert_found(r'PASSED', self.stdout)
+        literal_eval = sn.sanity_function(ast.literal_eval)
         self.perf_patterns = {
-            'timer': sn.extractsingle(r'"series" : \[(?P<timer>\S+)\]',
-                                      self.stdout, 'timer', float)
+            'wall_time': sn.avg(literal_eval(
+                    sn.extractsingle(r'"series" : \[(?P<wall_times>.+)\]',
+                                     self.stdout, 'wall_times')))
         }
-        self.perf_patterns = {
-            'timer': extract_avg(self.stdout)
-        }
-
-
-@sn.sanity_function
-def extract_avg(data):
-    return sn.avg(ast.literal_eval(str(sn.extractsingle(
-                  r'"series" : \[(?P<timers>.+)\]', data, 'timers', str))))
 
 
 @rfm.parameterized_test(['horizontal_diffusion/cpu_kfirst_double'],
@@ -92,47 +85,40 @@ class GridToolsCPURunCheck(GridToolsRunCheck):
         self.num_gpus_per_node = 0
         self.variant_data = {
             'horizontal_diffusion/cpu_kfirst_double': {
-                'executable_opts': [
-                    '256', '256', '80', '3',
-                    '--gtest_filter=horizontal_diffusion/cpu_kfirst_double*'
-                ],
                 'reference': {
                     'daint:mc': {
-                        'timer': (11.0, None, 0.1, 's')
+                        'wall_time': (11.0, None, 0.05, 's')
                     },
                     'daint:gpu': {
-                        'timer': (1.0, None, 0.1, 's')
+                        'wall_time': (1.0, None, 0.05, 's')
                     },
                     'dom:mc': {
-                        'timer': (11.0, None, 0.1, 's')
+                        'wall_time': (11.0, None, 0.05, 's')
                     },
                     'dom:gpu': {
-                        'timer': (1.0, None, 0.1, 's')
+                        'wall_time': (1.0, None, 0.05, 's')
                     }
                 }
             },
             'horizontal_diffusion/cpu_ifirst_double': {
-                'executable_opts': [
-                    '256', '256', '80', '3',
-                    '--gtest_filter=horizontal_diffusion/cpu_ifirst_double*'
-                ],
                 'reference': {
                     'daint:mc': {
-                        'timer': (9.0, None, 0.1, 's')
+                        'wall_time': (9.0, None, 0.05, 's')
                     },
                     'daint:gpu': {
-                        'timer': (1.0, None, 0.1, 's')
+                        'wall_time': (1.0, None, 0.05, 's')
                     },
                     'dom:mc': {
-                        'timer': (9.0, None, 0.1, 's')
+                        'wall_time': (9.0, None, 0.05, 's')
                     },
                     'dom:gpu': {
-                        'timer': (1.0, None, 0.1, 's')
+                        'wall_time': (1.0, None, 0.05, 's')
                     }
                 }
             }
         }
-        self.executable_opts = self.variant_data[variant]['executable_opts']
+        self.executable_opts = ['256', '256', '80', '3',
+                                f'--gtest_filter={variant}*']
         self.reference = self.variant_data[variant]['reference']
         self.tags = {'scs', 'benchmark'}
         self.maintainers = ['CB']
@@ -156,35 +142,28 @@ class GridToolsGPURunCheck(GridToolsRunCheck):
         self.num_gpus_per_node = 1
         self.variant_data = {
             'horizontal_diffusion/gpu_double': {
-                'executable_opts': [
-                    '512', '512', '160', '3',
-                    '--gtest_filter=horizontal_diffusion/gpu_double*'
-                ],
                 'reference': {
                     'daint:gpu': {
-                        'timer': (0.004, None, 0.1, 's')
+                        'wall_time': (0.004, None, 0.05, 's')
                     },
                     'dom:gpu': {
-                        'timer': (0.004, None, 0.1, 's')
+                        'wall_time': (0.004, None, 0.05, 's')
                     }
                 }
             },
             'horizontal_diffusion/gpu_horizontal_double': {
-                'executable_opts': [
-                    '512', '512', '160', '3',
-                    '--gtest_filter=horizontal_diffusion/gpu_horizontal_double*'
-                ],
                 'reference': {
                     'daint:gpu': {
-                        'timer': (0.003, None, 0.1, 's')
+                        'wall_time': (0.003, None, 0.05, 's')
                     },
                     'dom:gpu': {
-                        'timer': (0.003, None, 0.1, 's')
+                        'wall_time': (0.003, None, 0.05, 's')
                     }
                 }
             }
         }
-        self.executable_opts = self.variant_data[variant]['executable_opts']
+        self.executable_opts = ['512', '512', '160', '3',
+                                f'--gtest_filter={variant}*']
         self.reference = self.variant_data[variant]['reference']
         self.tags = {'scs', 'benchmark'}
         self.maintainers = ['CB']
