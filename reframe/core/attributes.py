@@ -27,7 +27,8 @@ class InputParameter:
         '''
         # Default filter is no filter.
         if filt_params is None:
-            def filt_params(x): return x
+            def filt_params(x):
+                return x
 
         self.name = name
         self.values = values
@@ -52,8 +53,11 @@ class ParameterPack:
         If the parameter is already present in it, raise an error.
         '''
         if name not in self.parameter_map:
-            self.parameter_map[name] = InputParameter(name, *values,
-                inherit_params=inherit_params, filt_params=filt_params)
+            self.parameter_map[name] = InputParameter(
+                name, *values,
+                inherit_params=inherit_params,
+                filt_params=filt_params
+            )
         else:
             raise ValueError(
                 'Cannot double-define a parameter in the same class.')
