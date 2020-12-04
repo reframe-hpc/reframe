@@ -173,6 +173,9 @@ class BuildSystem(abc.ABC):
     def _ldflags(self, environ):
         return self._resolve_flags('ldflags', environ)
 
+    def __str__(self):
+        return type(self).__name__
+
 
 class Make(BuildSystem):
     '''A build system for compiling codes using ``make``.
