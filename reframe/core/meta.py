@@ -22,7 +22,7 @@ class RegressionTestMeta(type):
         namespace['__rfm_attributes'] = rfm_attr
 
         # Attribute to add a regression test parameter as:
-        # `rfm_parameter('P0', [0,1,2,3])`.
+        # `rfm_parameter('P0', 0,1,2,3)`.
         namespace['parameter'] = rfm_attr._rfm_parameter_stage.add
 
         # Method to build the parameter space

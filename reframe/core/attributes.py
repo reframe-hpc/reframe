@@ -88,39 +88,38 @@ class RegressionTestAttributes:
         temp_parameter_space = {}
 
         # Iterate over the base classes and inherit the parameter space
-        if not self._purge_all_parameters():
-            for b in bases:
-                if hasattr(b, '_rfm_params'):
-                    base_params = b._rfm_params
-                    for key in base_params:
-                        if ((key in self.get_parameter_stage() and
-                             not (self.get_parameter_stage().get(key)
-                                  ).inherit_params)):
+        for b in bases:
+            if hasattr(b, '_rfm_params'):
+                base_params = b._rfm_params
+                for key in base_params:
+                    if ((key in self.get_parameter_stage() and
+                         not (self.get_parameter_stage().get(key)
+                              ).inherit_params)):
 
-                            # Do not inherit a given parameter if the current
-                            # class wants to override it.
-                            pass
+                        # Do not inherit a given parameter if the current
+                        # class wants to override it.
+                        pass
 
-                        else:
+                    else:
 
-                            # With multiple inheritance, a single parameter
-                            # could be doubly defined and lead to repeated
-                            # values.
-                            if key in temp_parameter_space:
-                                if not (temp_parameter_space[key] == [] or
-                                        base_params[key] == []):
-                                    raise KeyError(f'Parameter space conflict '
-                                                   f'(on {key}) due to '
-                                                   f'multiple inheritance.'
-                                                   ) from None
+                        # With multiple inheritance, a single parameter
+                        # could be doubly defined and lead to repeated
+                        # values.
+                        if key in temp_parameter_space:
+                            if not (temp_parameter_space[key] == [] or
+                                    base_params[key] == []):
+                                raise KeyError(f'Parameter space conflict '
+                                               f'(on {key}) due to '
+                                               f'multiple inheritance.'
+                                               ) from None
 
-                            temp_parameter_space[key] = base_params.get(
-                                key, []) + temp_parameter_space.get(key, [])
+                        temp_parameter_space[key] = base_params.get(
+                            key, []) + temp_parameter_space.get(key, [])
 
-                else:
-                    # The base class does not have the attribute
-                    # cls._rfm_params
-                    pass
+            else:
+                # The base class does not have the attribute
+                # cls._rfm_params
+                pass
 
         return temp_parameter_space
 
