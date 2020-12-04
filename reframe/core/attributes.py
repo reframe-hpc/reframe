@@ -18,28 +18,19 @@ class InputParameter:
                  inherit_params=False, filt_params=None):
         '''
         name: parameter name
-        values: parameter values
+        values: parameter values. If no values are passed, the parameter is
+            considered as declared but not defined (i.e. an abstract param).
         inherit_params: If false, it overrides all previous values set for the
             parameter.
         filt_params: Function to filter/modify the inherited values for the
              parameter. It only has an effect if used with inherit_params=True.
         '''
-        # If no values are passed, the parameter is considered as declared
-        # but not defined (i.e. an abstract parameter).
-        if values == ():
-            values = []
-
-        # The values arg must be a list.
-        if not isinstance(values, list):
-            raise ValueError(
-                f'Parameter values must be defined in a list.') from None
-
         # Default filter is no filter.
         if filt_params is None:
             def filt_params(x): return x
 
         self.name = name
-        self.values = list(values)
+        self.values = values
         self.inherit_params = inherit_params
         self.filt_params = filt_params
 
@@ -55,14 +46,14 @@ class ParameterPack:
     def __init__(self):
         self.parameter_map = {}
 
-    def add(self, name, values=None, inherit_params=False, filt_params=None):
+    def add(self, name, *values, inherit_params=False, filt_params=None):
         '''
         Insert a new parameter in the dictionary.
         If the parameter is already present in it, raise an error.
         '''
         if name not in self.parameter_map:
-            self.parameter_map[name] = InputParameter(
-                name, values, inherit_params, filt_params)
+            self.parameter_map[name] = InputParameter(name, *values,
+                inherit_params=inherit_params, filt_params=filt_params)
         else:
             raise ValueError(
                 'Cannot double-define a parameter in the same class.')
@@ -106,15 +97,15 @@ class RegressionTestAttributes:
                         # could be doubly defined and lead to repeated
                         # values.
                         if key in temp_parameter_space:
-                            if not (temp_parameter_space[key] == [] or
-                                    base_params[key] == []):
+                            if not (temp_parameter_space[key] == () or
+                                    base_params[key] == ()):
                                 raise KeyError(f'Parameter space conflict '
                                                f'(on {key}) due to '
                                                f'multiple inheritance.'
                                                ) from None
 
                         temp_parameter_space[key] = base_params.get(
-                            key, []) + temp_parameter_space.get(key, [])
+                            key, ()) + temp_parameter_space.get(key, ())
 
             else:
                 # The base class does not have the attribute
@@ -134,7 +125,7 @@ class RegressionTestAttributes:
         # InputParameter.
         for name, p in self.get_parameter_stage().items():
             parameter_space[name] = p.filt_params(
-                parameter_space.get(name, [])) + p.values if (
+                parameter_space.get(name, ())) + p.values if (
                     p.inherit_params) else p.values
 
     def build_parameter_space(self, bases):

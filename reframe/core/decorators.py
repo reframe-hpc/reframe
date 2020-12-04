@@ -8,7 +8,7 @@
 #
 
 __all__ = [
-    'test', 'parameterized_test', 'simple_test', 'required_version',
+    'parameterized_test', 'simple_test', 'required_version',
     'require_deps', 'run_before', 'run_after'
 ]
 
