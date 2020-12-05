@@ -195,7 +195,7 @@ class MemoryMpiCheck(SlurmCompiledBaseCheck):
     def __init__(self):
         super().__init__()
         self.maintainers = ['JG']
-        self.valid_systems.append('eiger:mc_lowmem')
+        self.valid_systems.append('eiger:mc', 'pilatus:mc')
         self.time_limit = '5m'
         self.sourcepath = 'eatmemory_mpi.c'
         self.tags.add('mem')
@@ -228,17 +228,32 @@ class MemoryMpiCheck(SlurmCompiledBaseCheck):
             'daint:mc': 36,
             'dom:gpu': 12,
             'daint:gpu': 12,
-            'eiger:mc_lowmem': 128,
+            'eiger:mc': 128,
+            'pilatus:mc': 128,
         }
         partname = self.current_partition.fullname
         self.num_tasks_per_node = tasks_per_node[partname]
         self.num_tasks = self.num_tasks_per_node
         self.job.launcher.options = ['-u']
 
-    @rfm.run_after('run')
-    def get_meminfo(self):
-        regex_mem = r'^Currently avail memory: (\d+)'
-        abs_path = os.path.join(self.stagedir, str(self.stdout))
-        self.reference_meminfo = sn.extractsingle(
-            regex_mem, abs_path, 1, conv=lambda x: int(int(x) / 1024 ** 3))
+    @rfm.run_before('run')
+    def set_reference_memory(self):
+        reference_meminfo = {
+            'dom:gpu': 64,
+            'dom:mc': 64,
+            'daint:gpu': 64,
+            'daint:mc': 64,  # this will pass with 64 GB and above memory sizes
+            # this will pass with 256 GB and above memory sizes:
+            'eiger:mc': 250,
+            'pilatus:mc': 250,
+        }
+        partname = self.current_partition.fullname
+        self.reference_meminfo = reference_meminfo[partname]
+
+##     @rfm.run_after('run')
+##     def get_meminfo(self):
+##         regex_mem = r'^Currently avail memory: (\d+)'
+##         abs_path = os.path.join(self.stagedir, str(self.stdout))
+##         self.reference_meminfo = sn.extractsingle(
+##             regex_mem, abs_path, 1, conv=lambda x: int(int(x) / 1024 ** 3))
     # }}}

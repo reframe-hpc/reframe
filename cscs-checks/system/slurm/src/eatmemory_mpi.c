@@ -87,7 +87,8 @@ int cscs_read_proc_meminfo(int i) {
   }
   fclose(fp);
 
-  printf("Mem: total: %u GB, free: %u GB, avail: %u GB, using: %u GB\n",
+  printf("memory from %s: total: %u GB, free: %u GB, avail: %u GB, using: %u GB\n",
+         PROC_FILE,
          meminfo[MEMTOTAL].val / 1048576, meminfo[MEMFREE].val / 1048576,
          meminfo[MEMAVAIL].val / 1048576,
          (meminfo[MEMTOTAL].val - meminfo[MEMAVAIL].val) / 1048576);
@@ -101,8 +102,8 @@ int main(int argc, char *argv[]) {
   MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
 #ifdef MEMORY_PERCENTAGE
   if (rank == 0) {
-    printf("Currently total memory: %zd\n", getTotalSystemMemory());
-    printf("Currently avail memory: %zd\n", getFreeSystemMemory());
+    printf("memory from sysconf: total: %zd avail: %zd\n", \
+        getTotalSystemMemory(), getFreeSystemMemory() );
   }
 #endif
   int i;
@@ -123,7 +124,10 @@ int main(int argc, char *argv[]) {
       int len = strlen(arg);
       char unit = arg[len - 1];
       long size = -1;
-      int chunk = 268435456; // = 256M
+      int chunk =  33554432; //  32M
+      // int chunk =  67108864; //  64M
+      // int chunk = 134217728; // 128M
+      // int chunk = 268435456; // = 256M
       // int chunk=536870912; // = 512M
       // int chunk=1073741824; // = 1G
       if (!isdigit(unit)) {
