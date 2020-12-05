@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import abc
-import collections.abc
 import logging
 import logging.handlers
 import numbers
