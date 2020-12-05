@@ -5,7 +5,6 @@
 
 import abc
 import collections.abc
-import functools
 import logging
 import logging.handlers
 import numbers
@@ -146,8 +145,8 @@ class MultiFileHandler(logging.FileHandler):
         except OSError as e:
             raise LoggingError('logging failed') from e
 
-        self.baseFilename = os.path.join(
-            dirname, record.__rfm_check__.name + '.log')
+        self.baseFilename = os.path.join(dirname,
+                                         f'{record.__rfm_check__.name}.log')
         self.stream = self._streams.get(self.baseFilename, None)
         super().emit(record)
         self._streams[self.baseFilename] = self.stream
@@ -305,7 +304,6 @@ def _create_stream_handler(site_config, config_prefix):
 def _create_graylog_handler(site_config, config_prefix):
     try:
         import pygelf
-
     except ImportError:
         return None
 
