@@ -195,7 +195,8 @@ class MemoryMpiCheck(SlurmCompiledBaseCheck):
     def __init__(self):
         super().__init__()
         self.maintainers = ['JG']
-        self.valid_systems.append('eiger:mc', 'pilatus:mc')
+        self.valid_systems.append('eiger:mc')
+        self.valid_systems.append('pilatus:mc')
         self.time_limit = '5m'
         self.sourcepath = 'eatmemory_mpi.c'
         self.tags.add('mem')
@@ -203,8 +204,9 @@ class MemoryMpiCheck(SlurmCompiledBaseCheck):
         self.sanity_patterns = sn.assert_found(r'(oom-kill)|(Killed)',
                                                self.stderr)
         # {{{ perf
-        regex = (r'^Eating 256 MB\/mpi \*\d+mpi = -\d+ MB Mem: total: \d+ GB, '
-                 r'free: \d+ GB, avail: \d+ GB, using: (\d+) GB')
+        regex = (r'^Eating \d+ MB\/mpi \*\d+mpi = -\d+ MB memory from \/proc\/'
+                 r'meminfo: total: \d+ GB, free: \d+ GB, avail: \d+ GB, using:'
+                 r' (\d+) GB')
         self.perf_patterns = {
             'max_cn_memory': sn.getattr(self, 'reference_meminfo'),
             'max_allocated_memory': sn.max(sn.extractall(regex, self.stdout, 1,
@@ -249,11 +251,4 @@ class MemoryMpiCheck(SlurmCompiledBaseCheck):
         }
         partname = self.current_partition.fullname
         self.reference_meminfo = reference_meminfo[partname]
-
-##     @rfm.run_after('run')
-##     def get_meminfo(self):
-##         regex_mem = r'^Currently avail memory: (\d+)'
-##         abs_path = os.path.join(self.stagedir, str(self.stdout))
-##         self.reference_meminfo = sn.extractsingle(
-##             regex_mem, abs_path, 1, conv=lambda x: int(int(x) / 1024 ** 3))
     # }}}
