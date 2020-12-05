@@ -387,6 +387,16 @@ It does so by leveraging the selected system's environment modules system.
    This option can also be set using the :envvar:`RFM_UNLOAD_MODULES` environment variable or the :js:attr:`unload_modules` general configuration parameter.
 
 
+.. option:: --module-path=PATH
+
+   Manipulate the ``MODULEPATH`` environment variable before acting on any tests.
+   If ``PATH`` starts with the `-` character, it will be removed from the ``MODULEPATH``, whereas if it starts with the `+` character, it will be added to it.
+   In all other cases, ``PATH`` will completely override MODULEPATH.
+   This option may be specified multiple times, in which case all the paths specified will be added or removed in order.
+
+   .. versionadded:: 3.3
+
+
 .. option:: --purge-env
 
    Unload all environment modules before acting on any tests.

@@ -171,6 +171,9 @@ Other deprecations
 The :attr:`prebuild_cmd` and :attr:`postbuild_cmd` test attributes are replaced by the :attr:`prebuild_cmds` and :attr:`postbuild_cmds` respectively.
 Similarly, the :attr:`pre_run` and :attr:`post_run` test attributes are replaced by the :attr:`prerun_cmds` and :attr:`postrun_cmds` respectively.
 
+.. warning::
+   .. versionchanged:: 3.4
+      The :attr:`prebuild_cmd`, :attr:`postbuild_cmd`, :attr:`pre_run` and :attr:`post_run` attributes have been removed.
 
 
 Suppressing deprecation warnings
