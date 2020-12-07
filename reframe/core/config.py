@@ -20,7 +20,6 @@ import reframe.utility as util
 from reframe.core.environments import normalize_module_list
 from reframe.core.exceptions import ConfigError, ReframeFatalError
 from reframe.core.logging import getlogger
-from reframe.core.warnings import ReframeDeprecationWarning
 from reframe.utility import ScopedDict
 
 
@@ -229,9 +228,10 @@ class _SiteConfig:
 
         if hasattr(mod, 'settings'):
             # Looks like an old style config
-            raise ReframeDeprecationWarning(
-                f"the syntax of the configuration file '{filename}' "
-                f"is deprecated"
+            raise ConfigError(
+                f"the syntax of the configuration file {filename!r} "
+                f"is no longer supported; please convert it using the "
+                f"'--upgrade-config-file' option"
             )
 
         mod = util.import_module_from_file(filename)

@@ -20,37 +20,33 @@ class JSONSerializable:
         return ret
 
 
-class _ReframeJsonEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if hasattr(obj, '__rfm_json_encode__'):
-            return obj.__rfm_json_encode__()
+def encode(obj):
+    if hasattr(obj, '__rfm_json_encode__'):
+        return obj.__rfm_json_encode__()
 
-        # Treat some non-ReFrame objects specially
-        if isinstance(obj, type) and issubclass(obj, BaseException):
-            return obj.__name__
+    # Treat some non-ReFrame objects specially
+    if isinstance(obj, type) and issubclass(obj, BaseException):
+        return obj.__name__
 
-        if isinstance(obj, BaseException):
-            return str(obj)
+    if isinstance(obj, set):
+        return list(obj)
 
-        if isinstance(obj, set):
-            return list(obj)
+    if isinstance(obj, BaseException):
+        return str(obj)
 
-        if inspect.istraceback(obj):
-            return traceback.format_tb(obj)
+    if inspect.istraceback(obj):
+        return traceback.format_tb(obj)
 
-        try:
-            return json.JSONEncoder.default(self, obj)
-        except TypeError:
-            return None
+    return None
 
 
 def dump(obj, fp, **kwargs):
-    kwargs['cls'] = _ReframeJsonEncoder
+    kwargs.setdefault('default', encode)
     return json.dump(obj, fp, **kwargs)
 
 
 def dumps(obj, **kwargs):
-    kwargs['cls'] = _ReframeJsonEncoder
+    kwargs.setdefault('default', encode)
     return json.dumps(obj, **kwargs)
 
 

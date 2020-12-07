@@ -31,7 +31,7 @@ import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
 import reframe.utility.udeps as udeps
-from reframe.core.backends import (getlauncher, getscheduler)
+from reframe.core.backends import getlauncher, getscheduler
 from reframe.core.buildsystems import BuildSystemField
 from reframe.core.containers import ContainerPlatformField
 from reframe.core.deferrable import _DeferredExpression
@@ -940,9 +940,10 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
         This attribute is evaluated lazily, so it can by used inside sanity
         expressions.
 
-        :type: :class:`str`.
+        :type: :class:`str` or :class:`None` if a run job has not yet been
+            created.
         '''
-        return self._job.stdout
+        return self.job.stdout if self.job else None
 
     @property
     @sn.sanity_function
@@ -954,9 +955,10 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
         This attribute is evaluated lazily, so it can by used inside sanity
         expressions.
 
-        :type: :class:`str`.
+        :type: :class:`str` or :class:`None` if a run job has not yet been
+            created.
         '''
-        return self._job.stderr
+        return self.job.stderr if self.job else None
 
     @property
     def build_job(self):
@@ -965,12 +967,12 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     @property
     @sn.sanity_function
     def build_stdout(self):
-        return self._build_job.stdout
+        return self.build_job.stdout if self.build_job else None
 
     @property
     @sn.sanity_function
     def build_stderr(self):
-        return self._build_job.stderr
+        return self.build_job.stderr if self.build_job else None
 
     def info(self):
         '''Provide live information for this test.
@@ -1093,6 +1095,11 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
               <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
               more details.
 
+           .. versionchanged:: 3.4
+              Overriding this method directly in no longer allowed. See `here
+              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+              more details.
+
         '''
         self._current_partition = partition
         self._current_environ = environ
@@ -1131,6 +1138,11 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
            .. versionchanged:: 3.0
               You may not override this method directly unless you are in
               special test. See `here
+              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+              more details.
+
+           .. versionchanged:: 3.4
+              Overriding this method directly in no longer allowed. See `here
               <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
               more details.
 
@@ -1231,6 +1243,11 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
               <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
               more details.
 
+           .. versionchanged:: 3.4
+              Overriding this method directly in no longer allowed. See `here
+              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+              more details.
+
         '''
         self._build_job.wait()
 
@@ -1253,6 +1270,12 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
               special test. See `here
               <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
               more details.
+
+           .. versionchanged:: 3.4
+              Overriding this method directly in no longer allowed. See `here
+              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+              more details.
+
         '''
         if not self.current_system or not self._current_partition:
             raise PipelineError('no system or system partition is set')
@@ -1358,6 +1381,12 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
            <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
            more details.
 
+
+           .. versionchanged:: 3.4
+              Overriding this method directly in no longer allowed. See `here
+              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+              more details.
+
         '''
         if not self._job:
             return True
@@ -1387,6 +1416,11 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
            special test. See `here
            <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
            more details.
+
+           .. versionchanged:: 3.4
+              Overriding this method directly in no longer allowed. See `here
+              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+              more details.
 
         '''
         self._job.wait()
@@ -1429,6 +1463,11 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
               <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
               more details.
 
+           .. versionchanged:: 3.4
+              Overriding this method directly in no longer allowed. See `here
+              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+              more details.
+
         '''
         if rt.runtime().get_option('general/0/trap_job_errors'):
             sanity_patterns = [
@@ -1459,6 +1498,11 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
            .. versionchanged:: 3.0
               You may not override this method directly unless you are in
               special test. See `here
+              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+              more details.
+
+           .. versionchanged:: 3.4
+              Overriding this method directly in no longer allowed. See `here
               <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
               more details.
 
@@ -1577,6 +1621,11 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
            .. versionchanged:: 3.0
               You may not override this method directly unless you are in
               special test. See `here
+              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+              more details.
+
+           .. versionchanged:: 3.4
+              Overriding this method directly in no longer allowed. See `here
               <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
               more details.
 
@@ -1847,12 +1896,12 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
     @property
     @sn.sanity_function
     def stdout(self):
-        return self._build_job.stdout
+        return self.build_job.stdout if self.build_job else None
 
     @property
     @sn.sanity_function
     def stderr(self):
-        return self._build_job.stderr
+        return self.build_job.stderr if self.build_job else None
 
     def run(self):
         '''The run stage of the regression test pipeline.
