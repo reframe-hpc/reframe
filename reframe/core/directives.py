@@ -167,4 +167,3 @@ class ParameterStagingArea:
                                      f'from class {target_cls.__qualname__}')
 
         return param_space
-
