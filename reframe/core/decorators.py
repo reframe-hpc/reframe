@@ -90,23 +90,8 @@ def simple_test(cls):
     def _do_register(cls):
         _validate_test(cls)
 
-        # If cls is not a parametrised test, register as is and return
-        if not cls._rfm_params:
-            _register_test(cls)
-            return cls
-
-        # Create iterator to cycle through all possible combinations in the
-        # parameter space.
-        def _param_space_iterator(cls):
-            return itertools.product(*[cls._rfm_params.get(k)
-                                       for k in cls._rfm_params])
-
-        cls._rfm_param_space_iter = _param_space_iterator(cls)
-
-        # Register the test for each of the parameter space combinations. This
-        # does **not** feed the params to the test. That is done during the
-        # object creation.
-        for inst in _param_space_iterator(cls):
+        # Register the test as many times as its parameter space length
+        for i in range(cls.prepare_param_space()):
             _register_test(cls)
 
         return cls

@@ -24,7 +24,7 @@ class RegressionTestMeta(type):
         # class body as: `parameter('P0', 0,1,2,3)`.
         namespace['parameter'] = param_stage.add_regression_test_parameter
 
-        # Export the method to build the final parameter space
+        # Method to build the final parameter space
         namespace['_rfm_build_parameter_space'] = (param_stage
                                                    ).build_parameter_space
 

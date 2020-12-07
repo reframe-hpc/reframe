@@ -751,6 +751,36 @@ class RegressionTest(metaclass=RegressionTestMeta):
         pass
 
     @classmethod
+    def param_space_len(cls):
+        '''
+        Returns the total number of points in the parameter space.
+        If the RegressionTest has no parameters, the length is 1.
+        Otherwise, the length is the number of all-to-all combinations
+        for each of the values in cls._rfm_params.
+        '''
+        if not cls._rfm_params:
+            return 1
+
+        return functools.reduce(
+            lambda x, y: x*y,
+            (len(p) for p in cls._rfm_params.values())
+        )
+
+    @classmethod
+    def prepare_param_space(cls):
+        '''
+        Creates an iterator to traverse the full parameter space during the
+        class instantiation, and it also returns the lenght of the parameter
+        space. This is the number of instances of this class to be created.
+        '''
+        if cls._rfm_params:
+            cls._rfm_param_space_iter = itertools.product(
+                *(p for p in cls._rfm_params.values())
+            )
+
+        return cls.param_space_len()
+
+    @classmethod
     def _set_parameter_space(cls, obj):
         '''
         Adds to obj.__dict__ the keys corresponding to the test parameters.
@@ -783,7 +813,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
     @classmethod
     def is_abstract_test(cls):
         ''' Checks if the test is an abstract test '''
-        if list(filter(lambda x: x == [], cls._rfm_params.values())) == []:
+        if len(list(filter(lambda x: x == (), cls._rfm_params.values()))) == 0:
             return False
 
         return True
