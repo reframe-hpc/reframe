@@ -267,8 +267,9 @@ site_configuration = {
                         'builtin'
                     ],
                     'access': [
-                        '-Cgpu',
-                        '--reservation=jupyter_gpu'
+                        f'-Cgpu',
+                        f'--reservation=jupyter_gpu',
+                        f'--account={osext.osgroup()}'
                     ],
                     'descr': 'JupyterHub GPU nodes',
                     'max_jobs': 10,
@@ -281,8 +282,9 @@ site_configuration = {
                         'builtin'
                     ],
                     'access': [
-                        '-Cmc',
-                        '--reservation=jupyter_mc'
+                        f'-Cmc',
+                        f'--reservation=jupyter_mc',
+                        f'--account={osext.osgroup()}'
                     ],
                     'descr': 'JupyterHub multicore nodes',
                     'max_jobs': 10,
@@ -404,8 +406,9 @@ site_configuration = {
                         'builtin'
                     ],
                     'access': [
-                        '-Cgpu',
-                        '--reservation=jupyter_gpu'
+                        f'-Cgpu',
+                        f'--reservation=jupyter_gpu',
+                        f'--account={osext.osgroup()}'
                     ],
                     'descr': 'JupyterHub GPU nodes',
                     'max_jobs': 10,
@@ -418,8 +421,9 @@ site_configuration = {
                         'builtin'
                     ],
                     'access': [
-                        '-Cmc',
-                        '--reservation=jupyter_mc'
+                        f'-Cmc',
+                        f'--reservation=jupyter_mc',
+                        f'--account={osext.osgroup()}'
                     ],
                     'descr': 'JupyterHub multicore nodes',
                     'max_jobs': 10,
