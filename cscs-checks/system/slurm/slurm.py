@@ -190,12 +190,11 @@ class MemoryOverconsumptionCheck(SlurmCompiledBaseCheck):
 
 
 @rfm.simple_test
-class MemoryMpiCheck(SlurmCompiledBaseCheck):
+class MemoryOverconsumptionMpiCheck(SlurmCompiledBaseCheck):
     def __init__(self):
         super().__init__()
         self.maintainers = ['JG']
-        self.valid_systems.append('eiger:mc')
-        self.valid_systems.append('pilatus:mc')
+        self.valid_systems += ['eiger:mc', 'pilatus:mc']
         self.time_limit = '5m'
         self.sourcepath = 'eatmemory_mpi.c'
         self.tags.add('mem')
@@ -208,15 +207,17 @@ class MemoryMpiCheck(SlurmCompiledBaseCheck):
                  r' (\d+) GB')
         self.perf_patterns = {
             'max_cn_memory': sn.getattr(self, 'reference_meminfo'),
-            'max_allocated_memory': sn.max(sn.extractall(regex, self.stdout, 1,
-                                           int)),
+            'max_allocated_memory': sn.max(
+                sn.extractall(regex, self.stdout, 1, int)
+            ),
         }
         no_limit = (0, None, None, 'GB')
         self.reference = {
             '*': {
                 'max_cn_memory': no_limit,
-                'max_allocated_memory': (sn.getattr(self, 'reference_meminfo'),
-                                         -0.05, None, 'GB'),
+                'max_allocated_memory': (
+                    sn.getattr(self, 'reference_meminfo'), -0.05, None, 'GB'
+                ),
             }
         }
         # }}}
@@ -236,9 +237,11 @@ class MemoryMpiCheck(SlurmCompiledBaseCheck):
         self.num_tasks_per_node = tasks_per_node[partname]
         self.num_tasks = self.num_tasks_per_node
         self.job.launcher.options = ['-u']
+    # }}}
 
-    @rfm.run_before('run')
-    def set_reference_memory(self):
+    @property
+    @sn.sanity_function
+    def reference_meminfo(self):
         reference_meminfo = {
             'dom:gpu': 64,
             'dom:mc': 64,
@@ -248,6 +251,4 @@ class MemoryMpiCheck(SlurmCompiledBaseCheck):
             'eiger:mc': 250,
             'pilatus:mc': 250,
         }
-        partname = self.current_partition.fullname
-        self.reference_meminfo = reference_meminfo[partname]
-    # }}}
+        return reference_meminfo[self.current_partition.fullname]
