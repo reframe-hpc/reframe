@@ -15,15 +15,11 @@ import socket
 import tempfile
 
 import reframe
-import reframe.core.fields as fields
 import reframe.core.settings as settings
 import reframe.utility as util
-import reframe.utility.osext as osext
-import reframe.utility.typecheck as types
 from reframe.core.environments import normalize_module_list
 from reframe.core.exceptions import ConfigError, ReframeFatalError
 from reframe.core.logging import getlogger
-from reframe.core.warnings import ReframeDeprecationWarning
 from reframe.utility import ScopedDict
 
 
@@ -229,9 +225,10 @@ class _SiteConfig:
 
         if hasattr(mod, 'settings'):
             # Looks like an old style config
-            raise ReframeDeprecationWarning(
-                f"the syntax of the configuration file '{filename}' "
-                f"is deprecated"
+            raise ConfigError(
+                f"the syntax of the configuration file {filename!r} "
+                f"is no longer supported; please convert it using the "
+                f"'--upgrade-config-file' option"
             )
 
         mod = util.import_module_from_file(filename)
