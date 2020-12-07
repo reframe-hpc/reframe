@@ -69,8 +69,8 @@ class GridToolsRunCheck(rfm.RunOnlyRegressionTest):
         literal_eval = sn.sanity_function(ast.literal_eval)
         self.perf_patterns = {
             'wall_time': sn.avg(literal_eval(
-                    sn.extractsingle(r'"series" : \[(?P<wall_times>.+)\]',
-                                     self.stdout, 'wall_times')))
+                sn.extractsingle(r'"series" : \[(?P<wall_times>.+)\]',
+                                 self.stdout, 'wall_times')))
         }
 
 
@@ -90,13 +90,13 @@ class GridToolsCPURunCheck(GridToolsRunCheck):
                         'wall_time': (11.0, None, 0.05, 's')
                     },
                     'daint:gpu': {
-                        'wall_time': (1.0, None, 0.05, 's')
+                        'wall_time': (1.09, None, 0.05, 's')
                     },
                     'dom:mc': {
                         'wall_time': (11.0, None, 0.05, 's')
                     },
                     'dom:gpu': {
-                        'wall_time': (1.0, None, 0.05, 's')
+                        'wall_time': (1.09, None, 0.05, 's')
                     }
                 }
             },
