@@ -209,7 +209,7 @@ def test_check_success_force_local(run_reframe, tmp_path):
 
 
 def test_report_file_with_sessionid(run_reframe, tmp_path):
-    returncode, _, _ = run_reframe(
+    returncode, *_ = run_reframe(
         more_options=[
             f'--report-file={tmp_path / "rfm-report-{sessionid}.json"}'
         ]
