@@ -267,8 +267,9 @@ site_configuration = {
                         'builtin'
                     ],
                     'access': [
-                        '-Cgpu',
-                        '--reservation=jupyter_gpu'
+                        f'-Cgpu',
+                        f'--reservation=jupyter_gpu',
+                        f'--account={osext.osgroup()}'
                     ],
                     'descr': 'JupyterHub GPU nodes',
                     'max_jobs': 10,
@@ -281,8 +282,9 @@ site_configuration = {
                         'builtin'
                     ],
                     'access': [
-                        '-Cmc',
-                        '--reservation=jupyter_mc'
+                        f'-Cmc',
+                        f'--reservation=jupyter_mc',
+                        f'--account={osext.osgroup()}'
                     ],
                     'descr': 'JupyterHub multicore nodes',
                     'max_jobs': 10,
@@ -404,8 +406,9 @@ site_configuration = {
                         'builtin'
                     ],
                     'access': [
-                        '-Cgpu',
-                        '--reservation=jupyter_gpu'
+                        f'-Cgpu',
+                        f'--reservation=jupyter_gpu',
+                        f'--account={osext.osgroup()}'
                     ],
                     'descr': 'JupyterHub GPU nodes',
                     'max_jobs': 10,
@@ -418,8 +421,9 @@ site_configuration = {
                         'builtin'
                     ],
                     'access': [
-                        '-Cmc',
-                        '--reservation=jupyter_mc'
+                        f'-Cmc',
+                        f'--reservation=jupyter_mc',
+                        f'--account={osext.osgroup()}'
                     ],
                     'descr': 'JupyterHub multicore nodes',
                     'max_jobs': 10,
@@ -628,6 +632,108 @@ site_configuration = {
             ]
         },
         {
+            'name': 'pilatus',
+            'descr': 'Alps Cray EX Supercomputer (TDS)',
+            'hostnames': [
+                'pilatus'
+            ],
+            'modules_system': 'lmod',
+            'resourcesdir': '/apps/common/UES/reframe/resources',
+            'partitions': [
+                {
+                    'name': 'login',
+                    'scheduler': 'local',
+                    'environs': [
+                        'builtin',
+                        'PrgEnv-cray',
+                        'PrgEnv-gnu',
+                        'PrgEnv-aocc'
+                    ],
+                    'descr': 'Login nodes',
+                    'max_jobs': 4,
+                    'launcher': 'local'
+                },
+                {
+                    'name': 'mc',
+                    'descr': 'Multicore nodes (AMD EPYC 7742, 256|512GB/cn)',
+                    'scheduler': 'slurm',
+                    'environs': [
+                        'builtin',
+                        'PrgEnv-cray',
+                        'PrgEnv-gnu',
+                        'PrgEnv-aocc'
+                    ],
+                    'max_jobs': 100,
+                    'resources': [
+                        {
+                            'name': 'switches',
+                            'options': [
+                                '--switches={num_switches}'
+                            ]
+                        },
+                        {
+                            'name': 'memory',
+                            'options': [
+                                '--mem={mem_per_node}'
+                            ]
+                        },
+                    ],
+                    'launcher': 'srun'
+                },
+            ]
+        },
+        {
+            'name': 'eiger',
+            'descr': 'Alps Cray EX Supercomputer',
+            'hostnames': [
+                'eiger'
+            ],
+            'modules_system': 'lmod',
+            'resourcesdir': '/apps/common/UES/reframe/resources',
+            'partitions': [
+                {
+                    'name': 'login',
+                    'scheduler': 'local',
+                    'environs': [
+                        'builtin',
+                        'PrgEnv-cray',
+                        'PrgEnv-gnu',
+                        'PrgEnv-aocc'
+                    ],
+                    'descr': 'Login nodes',
+                    'max_jobs': 4,
+                    'launcher': 'local'
+                },
+                {
+                    'name': 'mc',
+                    'descr': 'Multicore nodes (AMD EPYC 7742, 256|512GB/cn)',
+                    'scheduler': 'slurm',
+                    'environs': [
+                        'builtin',
+                        'PrgEnv-cray',
+                        'PrgEnv-gnu',
+                        'PrgEnv-aocc'
+                    ],
+                    'max_jobs': 100,
+                    'resources': [
+                        {
+                            'name': 'switches',
+                            'options': [
+                                '--switches={num_switches}'
+                            ]
+                        },
+                        {
+                            'name': 'memory',
+                            'options': [
+                                '--mem={mem_per_node}'
+                            ]
+                        },
+                    ],
+                    'launcher': 'srun'
+                },
+            ]
+        },
+        {
             'name': 'generic',
             'descr': 'Generic fallback system',
             'partitions': [
@@ -772,6 +878,33 @@ site_configuration = {
             'cc': 'gcc',
             'cxx': 'g++',
             'ftn': 'gfortran'
+        },
+        {
+            'name': 'PrgEnv-cray',
+            'target_systems': [
+                'eiger', 'pilatus'
+            ],
+            'modules': [
+                {'name': 'PrgEnv-cray', 'collection': True}
+            ]
+        },
+        {
+            'name': 'PrgEnv-gnu',
+            'target_systems': [
+                'eiger', 'pilatus'
+            ],
+            'modules': [
+                {'name': 'PrgEnv-gnu', 'collection': True}
+            ]
+        },
+        {
+            'name': 'PrgEnv-aocc',
+            'target_systems': [
+                'eiger', 'pilatus'
+            ],
+            'modules': [
+                {'name': 'PrgEnv-aocc', 'collection': True}
+            ]
         },
         {
             'name': 'PrgEnv-cray',

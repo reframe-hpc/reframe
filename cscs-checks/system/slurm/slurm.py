@@ -91,10 +91,9 @@ class RequiredConstraintCheck(SlurmSimpleBaseCheck):
         self.executable = 'srun'
         self.executable_opts = ['-A', osext.osgroup(), 'hostname']
         self.sanity_patterns = sn.assert_found(
-            r'error: You have to specify, at least, what sort of node you '
-            r'need: -C gpu for GPU enabled nodes, or -C mc for multicore '
-            r'nodes.|ERROR: you must specify -C with one of the following: '
-            r'mc,gpu,storage', self.stderr)
+            r'ERROR: you must specify -C with one of the following: mc,gpu',
+            self.stderr
+        )
 
 
 @rfm.simple_test
