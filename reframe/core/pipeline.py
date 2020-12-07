@@ -939,9 +939,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
         This attribute is evaluated lazily, so it can by used inside sanity
         expressions.
 
-        :type: :class:`str`.
+        :type: :class:`str` or :class:`None` if a run job has not yet been
+            created.
         '''
-        return self._job.stdout
+        return self.job.stdout if self.job else None
 
     @property
     @sn.sanity_function
@@ -953,9 +954,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
         This attribute is evaluated lazily, so it can by used inside sanity
         expressions.
 
-        :type: :class:`str`.
+        :type: :class:`str` or :class:`None` if a run job has not yet been
+            created.
         '''
-        return self._job.stderr
+        return self.job.stderr if self.job else None
 
     @property
     def build_job(self):
@@ -964,12 +966,12 @@ class RegressionTest(metaclass=RegressionTestMeta):
     @property
     @sn.sanity_function
     def build_stdout(self):
-        return self._build_job.stdout
+        return self.build_job.stdout if self.build_job else None
 
     @property
     @sn.sanity_function
     def build_stderr(self):
-        return self._build_job.stderr
+        return self.build_job.stderr if self.build_job else None
 
     def info(self):
         '''Provide live information for this test.
@@ -1842,12 +1844,12 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
     @property
     @sn.sanity_function
     def stdout(self):
-        return self._build_job.stdout
+        return self.build_job.stdout if self.build_job else None
 
     @property
     @sn.sanity_function
     def stderr(self):
-        return self._build_job.stderr
+        return self.build_job.stderr if self.build_job else None
 
     def run(self):
         '''The run stage of the regression test pipeline.
