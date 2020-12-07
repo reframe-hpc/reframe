@@ -243,10 +243,10 @@ class MemoryOverconsumptionMpiCheck(SlurmCompiledBaseCheck):
     @sn.sanity_function
     def reference_meminfo(self):
         reference_meminfo = {
-            'dom:gpu': 64,
-            'dom:mc': 64,
-            'daint:gpu': 64,
-            'daint:mc': 64,  # this will pass with 64 GB and above memory sizes
+            'dom:gpu': 62,
+            'dom:mc': 62,
+            'daint:gpu': 62,
+            'daint:mc': 62,  # this will pass with 64 GB and above memory sizes
             # this will pass with 256 GB and above memory sizes:
             'eiger:mc': 250,
             'pilatus:mc': 250,
