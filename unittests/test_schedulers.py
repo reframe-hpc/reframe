@@ -312,7 +312,8 @@ def test_submit_job_array(make_job, slurm_only, exec_ctx):
     prepare_job(job, command='echo "Task id: ${SLURM_ARRAY_TASK_ID}"')
     job.submit()
     job.wait()
-    assert job.exitcode == 0
+    if job.scheduler.registered_name == 'slurm':
+        assert job.exitcode == 0
     with open(job.stdout) as fp:
         output = fp.read()
         assert all([re.search('Task id: 0', output),
@@ -454,7 +455,7 @@ def test_guess_num_tasks(minimal_job, scheduler):
 
 
 def test_submit_max_pending_time(make_job, exec_ctx, scheduler):
-    if scheduler.registered_name in ('local', 'pbs'):
+    if scheduler.registered_name in ('local'):
         pytest.skip(f"max_pending_time not supported by the "
                     f"'{scheduler.registered_name}' scheduler")
 
@@ -466,7 +467,7 @@ def test_submit_max_pending_time(make_job, exec_ctx, scheduler):
     def state(self):
         if scheduler.registered_name in ('slurm', 'squeue'):
             return 'PENDING'
-        elif scheduler.registered_name == 'torque':
+        elif scheduler.registered_name in ('pbs', 'torque'):
             return 'QUEUED'
         else:
             # This should not happen

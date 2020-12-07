@@ -173,6 +173,12 @@ class BuildSystem(abc.ABC):
     def _ldflags(self, environ):
         return self._resolve_flags('ldflags', environ)
 
+    def __str__(self):
+        return type(self).__name__
+
+    def __rfm_json_encode__(self):
+        return str(self)
+
 
 class Make(BuildSystem):
     '''A build system for compiling codes using ``make``.
@@ -426,8 +432,9 @@ class SingleSource(BuildSystem):
             cmd_parts += [nvcc, *cppflags, *cxxflags, self.srcfile,
                           '-o', executable, *ldflags]
         else:
-            BuildSystemError('could not guess language of file: %s' %
-                             self.srcfile)
+            raise BuildSystemError(
+                f'could not guess language of file: {self.srcfile}'
+            )
 
         return [' '.join(cmd_parts)]
 

@@ -76,7 +76,10 @@ class _DeferredExpression:
         return iter(self.evaluate())
 
     def __rfm_json_encode__(self):
-        return self.evaluate()
+        try:
+            return self.evaluate()
+        except BaseException:
+            return None
 
     # Overload Python operators to be able to defer any expression
     #

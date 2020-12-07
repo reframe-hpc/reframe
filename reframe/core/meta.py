@@ -4,11 +4,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 #
-# Met-class for creating regression tests.
+# Meta-class for creating regression tests.
 #
 
-from reframe.core.warnings import user_deprecation_warning
-import reframe.core.directives as directives
+from reframe.core.exceptions import ReframeSyntaxError
+import reframe.core.directives as ReframeDirectives
 
 
 class RegressionTestMeta(type):
@@ -18,7 +18,7 @@ class RegressionTestMeta(type):
 
         # Staging area to build the regression test parameter space
         # using directives
-        param_stage = directives.ParameterStagingArea()
+        param_stage = ReframeDirectives.ParameterStagingArea()
 
         # Directive to add a regression test parameter directly in the
         # class body as: `parameter('P0', 0,1,2,3)`.
@@ -38,7 +38,7 @@ class RegressionTestMeta(type):
 
         # Make illegal to have a parameter clashing with any of the
         # RegressionTest class variables
-        directives.namespace_clash_check(cls.__dict__, cls._rfm_params,
+        ReframeDirectives.namespace_clash_check(cls.__dict__, cls._rfm_params,
                                          cls.__qualname__)
 
         # Set up the hooks for the pipeline stages based on the _rfm_attach
@@ -84,5 +84,5 @@ class RegressionTestMeta(type):
                     msg = (f"'{cls.__qualname__}.{v.__name__}' attempts to "
                            f"override final method "
                            f"'{b.__qualname__}.{v.__name__}'; "
-                           f"consider using the pipeline hooks instead")
-                    user_deprecation_warning(msg)
+                           f"you should use the pipeline hooks instead")
+                    raise ReframeSyntaxError(msg)

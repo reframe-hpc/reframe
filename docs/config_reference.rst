@@ -695,12 +695,8 @@ All logging handlers share the following set of common attributes:
      If specific formatting is desired, the ``check_job_completion_time`` should be used instead.
    - ``%(check_name)s``: The name of the regression test on behalf of which ReFrame is currently executing.
      If ReFrame is not executing in the context of a regression test, ``reframe`` will be printed instead.
-   - ``%(check_num_tasks)s``: The number of tasks assigned to the regression test.
-   - ``%(check_outputdir)s``: The output directory associated with the currently executing test.
    - ``%(check_partition)s``: The system partition where this test is currently executing.
-   - ``%(check_stagedir)s``: The stage directory associated with the currently executing test.
    - ``%(check_system)s``: The system where this test is currently executing.
-   - ``%(check_tags)s``: The tags associated with this test.
    - ``%(check_perf_lower_thres)s``: The lower threshold of the performance difference from the reference value expressed as a fractional value.
      See the :attr:`reframe.core.pipeline.RegressionTest.reference` attribute of regression tests for more details.
    - ``%(check_perf_ref)s``: The reference performance value of a certain performance variable.
@@ -709,9 +705,18 @@ All logging handlers share the following set of common attributes:
      See the :attr:`reframe.core.pipeline.RegressionTest.reference` attribute of regression tests for more details.
    - ``%(check_perf_value)s``: The performance value obtained for a certain performance variable.
    - ``%(check_perf_var)s``: The name of the `performance variable <tutorial_basic.html#writing-a-performance-test>`__ being logged.
+   - ``%(check_ATTR)s``: This will log the value of the attribute ``ATTR`` of the currently executing regression test.
+     Dictionaries will be logged in JSON format and all other iterables, except strings, will be logged as comma-separated lists.
+     If ``ATTR`` is not an attribute of the test, ``%(check_ATTR)s`` will be logged as ``null``.
+     This allows users to log arbitrary attributes of their tests.
+     For the complete list of test attributes, please refer to :doc:`regression_test_api`.
    - ``%(osuser)s``: The name of the OS user running ReFrame.
    - ``%(osgroup)s``: The name of the OS group running ReFrame.
    - ``%(version)s``: The ReFrame version.
+
+
+.. versionadded:: 3.3
+   The ability to log arbitrary test attributes was added.
 
 
 .. js:attribute:: .logging[].handlers[].datefmt

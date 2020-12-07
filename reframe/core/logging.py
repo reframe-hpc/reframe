@@ -4,12 +4,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import abc
-import collections.abc
 import logging
 import logging.handlers
 import numbers
 import os
-import pprint
 import re
 import shutil
 import sys
@@ -17,6 +15,7 @@ import socket
 import time
 
 import reframe.utility.color as color
+import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 from reframe.core.exceptions import ConfigError, LoggingError
 
@@ -145,7 +144,8 @@ class MultiFileHandler(logging.FileHandler):
         except OSError as e:
             raise LoggingError('logging failed') from e
 
-        self.baseFilename = os.path.join(dirname, record.check_name + '.log')
+        self.baseFilename = os.path.join(dirname,
+                                         f'{record.__rfm_check__.name}.log')
         self.stream = self._streams.get(self.baseFilename, None)
         super().emit(record)
         self._streams[self.baseFilename] = self.stream
@@ -165,7 +165,50 @@ def _format_time_rfc3339(timestamp, datefmt):
     return re.sub(r'(%)?\:z', tz_rfc3339, time.strftime(datefmt, timestamp))
 
 
-class RFC3339Formatter(logging.Formatter):
+def _xfmt(val):
+    if isinstance(val, str):
+        return val
+
+    # NOTE: This is for compatibility with older formatting
+    if isinstance(val, (list, tuple, set)):
+        return ','.join(val)
+
+    return jsonext.dumps(val)
+
+
+class CheckFieldFormatter(logging.Formatter):
+    '''Log formatter that dynamically looks up format specifiers inside a
+    regression test.'''
+
+    # NOTE: This formatter will work only for the '%' style
+    def __init__(self, fmt=None, datefmt=None, style='%'):
+        super().__init__(fmt, datefmt, style)
+
+        self.__fmt = fmt
+        self.__specs = re.findall(r'\%\((\S+?)\)s', fmt)
+
+    def formatMessage(self, record):
+        for s in self.__specs:
+            if not hasattr(record, s):
+                setattr(record, s, None)
+
+        record_proxy = dict(record.__dict__)
+        for k, v in record_proxy.items():
+            if k.startswith('check_'):
+                record_proxy[k] = _xfmt(v)
+
+        # Now format `check_job_completion_time` according to `datefmt`
+        datefmt = self.datefmt or self.default_time_format
+        ct = record.check_job_completion_time_unix
+        if ct is not None:
+            record_proxy['check_job_completion_time'] = _format_time_rfc3339(
+                time.localtime(ct), datefmt
+            )
+
+        return self.__fmt % record_proxy
+
+
+class RFC3339Formatter(CheckFieldFormatter):
     def formatTime(self, record, datefmt=None):
         datefmt = datefmt or self.default_time_format
         if '%:z' not in datefmt:
@@ -173,16 +216,6 @@ class RFC3339Formatter(logging.Formatter):
         else:
             timestamp = self.converter(record.created)
             return _format_time_rfc3339(timestamp, datefmt)
-
-    def format(self, record):
-        datefmt = self.datefmt or self.default_time_format
-        if record.check_job_completion_time_unix is not None:
-            ct = self.converter(record.check_job_completion_time_unix)
-            record.check_job_completion_time = _format_time_rfc3339(
-                ct, datefmt
-            )
-
-        return super().format(record)
 
 
 def _create_logger(site_config, handlers_group):
@@ -292,9 +325,10 @@ def _create_graylog_handler(site_config, config_prefix):
         return None
 
     extras = site_config.get(f'{config_prefix}/extras')
-    return pygelf.GelfHttpHandler(host=host, port=port, debug=True,
+    return pygelf.GelfHttpHandler(host=host, port=port,
                                   static_fields=extras,
-                                  include_extra_fields=True)
+                                  include_extra_fields=True,
+                                  json_default=jsonext.encode)
 
 
 def _extract_handlers(site_config, handlers_group):
@@ -388,26 +422,25 @@ class LoggerAdapter(logging.LoggerAdapter):
         super().__init__(
             logger,
             {
+                # Here we only set the format specifiers that do not
+                # correspond directly to check attributes
+                '__rfm_check__': check,
                 'check_name': 'reframe',
-                'check_jobid': '-1',
+                'check_jobid': None,
                 'check_job_completion_time': None,
                 'check_job_completion_time_unix': None,
                 'check_info': 'reframe',
                 'check_system': None,
                 'check_partition': None,
                 'check_environ': None,
-                'check_outputdir': None,
-                'check_stagedir': None,
-                'check_num_tasks': None,
                 'check_perf_var': None,
                 'check_perf_value': None,
                 'check_perf_ref': None,
                 'check_perf_lower_thres': None,
                 'check_perf_upper_thres': None,
                 'check_perf_unit': None,
-                'osuser':  osext.osuser()  or '<unknown>',
-                'osgroup': osext.osgroup() or '<unknown>',
-                'check_tags': None,
+                'osuser':  osext.osuser(),
+                'osgroup': osext.osgroup(),
                 'version': osext.reframe_version(),
             }
         )
@@ -428,15 +461,20 @@ class LoggerAdapter(logging.LoggerAdapter):
 
     def _update_check_extras(self):
         '''Return a dictionary with all the check-specific information.'''
+
         if self.check is None:
             return
 
-        self.extra['check_name'] = self.check.name
+        for attr, val in self.check.__dict__.items():
+            if not attr.startswith('_'):
+                self.extra[f'check_{attr}'] = val
+
+        # Additional dynamic properties
+        for prop in ('prefix', 'stagedir', 'outputdir', 'stdout',
+                     'stderr', 'build_stdout', 'build_stderr'):
+            self.extra[f'check_{prop}'] = getattr(self.check, prop)
+
         self.extra['check_info'] = self.check.info()
-        self.extra['check_outputdir'] = self.check.outputdir
-        self.extra['check_stagedir'] = self.check.stagedir
-        self.extra['check_num_tasks'] = self.check.num_tasks
-        self.extra['check_tags'] = ','.join(self.check.tags)
         if self.check.current_system:
             self.extra['check_system'] = self.check.current_system.name
 
@@ -449,8 +487,14 @@ class LoggerAdapter(logging.LoggerAdapter):
         if self.check.job:
             self.extra['check_jobid'] = self.check.job.jobid
             if self.check.job.completion_time:
+                # Here we preformat the `check_job_completion_time`, because
+                # the Graylog handler does not use a formatter
                 ct = self.check.job.completion_time
+                ct_formatted = _format_time_rfc3339(
+                    time.localtime(ct), '%FT%T%:z'
+                )
                 self.extra['check_job_completion_time_unix'] = ct
+                self.extra['check_job_completion_time'] = ct_formatted
 
     def log_performance(self, level, tag, value, ref,
                         low_thres, upper_thres, unit=None, *, msg=None):
