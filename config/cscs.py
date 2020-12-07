@@ -670,7 +670,7 @@ site_configuration = {
                         {
                             'name': 'memory',
                             'options': [
-                                '--mem={memory}'
+                                '--mem={mem_per_node}'
                             ]
                         },
                     ],
@@ -721,7 +721,7 @@ site_configuration = {
                         {
                             'name': 'memory',
                             'options': [
-                                '--mem={memory}'
+                                '--mem={mem_per_node}'
                             ]
                         },
                     ],
