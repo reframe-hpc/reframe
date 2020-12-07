@@ -18,7 +18,6 @@ import functools
 import inspect
 import sys
 import traceback
-import itertools
 
 import reframe
 from reframe.core.exceptions import ReframeSyntaxError, user_frame
