@@ -3,15 +3,12 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import abc
-import functools
 import os
 import pytest
 import re
 import signal
 import socket
 import time
-from datetime import datetime, timedelta
 
 import reframe.core.runtime as rt
 import unittests.fixtures as fixtures
@@ -20,7 +17,6 @@ from reframe.core.environments import Environment
 from reframe.core.exceptions import (
     JobError, JobNotStartedError, JobSchedulerError
 )
-from reframe.core.launchers.local import LocalLauncher
 from reframe.core.schedulers import Job
 from reframe.core.schedulers.slurm import _SlurmNode, _create_nodes
 
