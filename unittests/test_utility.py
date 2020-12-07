@@ -6,12 +6,10 @@
 import os
 import pytest
 import random
-import shutil
 import sys
 import time
 
 import reframe
-import reframe.core.fields as fields
 import reframe.core.runtime as rt
 import reframe.utility as util
 import reframe.utility.jsonext as jsonext
@@ -1483,6 +1481,70 @@ def test_jsonext_dumps():
     assert '{"foo": ["bar"]}' == jsonext.dumps({'foo': sn.defer(['bar'])})
     assert '{"foo":["bar"]}' == jsonext.dumps({'foo': sn.defer(['bar'])},
                                               separators=(',', ':'))
+
+
+# Classes to test JSON deserialization
+
+class _D(jsonext.JSONSerializable):
+    def __init__(self):
+        self.a = 2
+        self.b = 'bar'
+
+    def __eq__(self, other):
+        if not isinstance(other, _D):
+            return NotImplemented
+
+        return self.a == other.a and self.b == other.b
+
+
+class _Z(_D):
+    pass
+
+
+class _C(jsonext.JSONSerializable):
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.z = None
+        self.w = {1, 2}
+
+    def __rfm_json_decode__(self, json):
+        # Sets are converted to lists when encoding, we need to manually
+        # change them back to sets
+        self.w = set(json['w'])
+
+    def __eq__(self, other):
+        if not isinstance(other, _C):
+            return NotImplemented
+
+        return (self.x == other.x and
+                self.y == other.y and
+                self.z == other.z and
+                self.w == other.w)
+
+
+def test_jsonext_load(tmp_path):
+    c = _C(1, 'foo')
+    c.x += 1
+    c.y = 'foobar'
+    c.z = _Z()
+    c.z.a += 1
+    c.z.b = 'barfoo'
+
+    json_dump = tmp_path / 'test.json'
+    with open(json_dump, 'w') as fp:
+        jsonext.dump(c, fp, indent=2)
+
+    with open(json_dump, 'r') as fp:
+        c_restored = jsonext.load(fp)
+
+    assert c == c_restored
+    assert c is not c_restored
+
+    # Do the same with dumps() and loads()
+    c_restored = jsonext.loads(jsonext.dumps(c))
+    assert c == c_restored
+    assert c is not c_restored
 
 
 def test_attr_validator():

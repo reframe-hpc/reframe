@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import inspect
 import traceback
 import reframe.core.runtime as rt
 import reframe.core.exceptions as errors
@@ -90,6 +91,8 @@ class TestStats:
                         d[0] for d in t.check.user_deps()
                     ],
                     'description': check.descr,
+                    'prefix': check.prefix,
+                    'filename': inspect.getfile(type(check)),
                     'environment': None,
                     'fail_phase': None,
                     'fail_reason': None,
@@ -102,7 +105,7 @@ class TestStats:
                     'outputdir': None,
                     'perfvars': None,
                     'result': None,
-                    'stagedir': None,
+                    'stagedir': check.stagedir,
                     'scheduler': None,
                     'system': check.current_system.name,
                     'tags': list(check.tags),
@@ -123,7 +126,7 @@ class TestStats:
                 entry['scheduler'] = partition.scheduler.registered_name
                 entry['environment'] = environ.name
                 if check.job:
-                    entry['jobid'] = check.job.jobid
+                    entry['jobid'] = str(check.job.jobid)
                     entry['job_stderr'] = check.stderr.evaluate()
                     entry['job_stdout'] = check.stdout.evaluate()
                     entry['nodelist'] = check.job.nodelist or []
@@ -135,7 +138,6 @@ class TestStats:
                 if t.failed:
                     num_failures += 1
                     entry['result'] = 'failure'
-                    entry['stagedir'] = check.stagedir
                     entry['fail_phase'] = t.failed_stage
                     if t.exc_info is not None:
                         entry['fail_reason'] = errors.what(*t.exc_info)

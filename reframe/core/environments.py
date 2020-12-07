@@ -8,6 +8,7 @@ import os
 
 import reframe.core.fields as fields
 import reframe.utility as util
+import reframe.utility.jsonext as jsonext
 import reframe.utility.typecheck as typ
 
 
@@ -26,7 +27,7 @@ def normalize_module_list(modules):
     return ret
 
 
-class Environment:
+class Environment(jsonext.JSONSerializable):
     '''This class abstracts away an environment to run regression tests.
 
     It is simply a collection of modules to be loaded and environment variables
