@@ -24,9 +24,12 @@ class RegressionTestMeta(type):
         # class body as: `parameter('P0', 0,1,2,3)`.
         namespace['parameter'] = param_stage.add_regression_test_parameter
 
+        @classmethod
+        def build_param_space(cls, *args, **kwargs):
+            return param_stage.build_parameter_space(cls, *args, **kwargs)
+
         # Method to build the final parameter space
-        namespace['_rfm_build_parameter_space'] = (param_stage
-                                                   ).build_parameter_space
+        namespace['_rfm_build_param_space'] = build_param_space
 
         return namespace
 
@@ -34,12 +37,7 @@ class RegressionTestMeta(type):
         super().__init__(name, bases, namespace, **kwargs)
 
         # Set up the regression test parameter space
-        cls._rfm_params = cls._rfm_build_parameter_space(bases, '_rfm_params')
-
-        # Make illegal to have a parameter clashing with any of the
-        # RegressionTest class variables
-        ReframeDirectives.namespace_clash_check(cls.__dict__, cls._rfm_params,
-                                         cls.__qualname__)
+        cls._rfm_params = cls._rfm_build_param_space(bases, '_rfm_params')
 
         # Set up the hooks for the pipeline stages based on the _rfm_attach
         # attribute; all dependencies will be resolved first in the post-setup

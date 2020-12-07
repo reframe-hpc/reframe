@@ -141,12 +141,14 @@ class ParameterStagingArea:
                 parameter_space.get(name, ())) + p.values if (
                     p.inherit_params) else p.values
 
-    def build_parameter_space(self, bases, param_space_key):
+    def build_parameter_space(self, target_cls, bases, param_space_key):
         '''
         Compiles the full test parameter space by joining the parameter spaces
         from the base clases, and extending that with the parameters present
         in the staging area.
 
+        target_cls: class to test if the parameter space overlaps with its own
+            namespace.
         bases: iterable containing the parent classes.
         param_space_key: class attribute name under which the parameter space
             is stored.
@@ -157,23 +159,12 @@ class ParameterStagingArea:
         # Extend with what was added in the current class
         self._extend_parameter_space(param_space)
 
+        trgt_namespace = set(dir(target_cls))
+        for key in param_space:
+            if key in trgt_namespace:
+                raise AttributeError(f'Attribute {key} clashes with other '
+                                     f'variables present in the namespace '
+                                     f'from class {target_cls.__qualname__}')
+
         return param_space
 
-
-def namespace_clash_check(dict_a, dict_b, name=None):
-    '''
-    Check that these two dictionaries do not have any overlapping keys.
-    '''
-    if len(dict_a) > len(dict_b):
-        long_dict = dict_a
-        short_dict = dict_b
-    else:
-        long_dict = dict_b
-        short_dict = dict_a
-
-    name = '__unknown__' if name is None else name
-    for key in short_dict:
-        if key in long_dict:
-            raise AttributeError(f'Attribute {key} clashes with other '
-                                 f'variables present in the namespace '
-                                 f'from class {name}')
