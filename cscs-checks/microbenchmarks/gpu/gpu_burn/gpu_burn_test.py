@@ -77,7 +77,7 @@ class GpuBurnTest(rfm.RegressionTest):
     def assert_num_tasks(self):
         return sn.assert_eq(sn.count(sn.findall(
             r'^\s*\[[^\]]*\]\s*GPU\s*\d+\s*\(OK\)', self.stdout)
-            ), self.num_tasks_assigned)
+        ), self.num_tasks_assigned)
 
     @rfm.run_before('compile')
     def set_gpu_arch(self):

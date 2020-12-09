@@ -26,7 +26,8 @@ class GPUShmemTest(rfm.RegressionTest):
         self.sanity_patterns = self.assert_num_gpus()
         self.perf_patterns = {
             'bandwidth': sn.min(sn.extractall(
-                r'^\s*\[[^\]]*\]\s*GPU\s*\d+: Bandwidth\(double\) (?P<bw>\S+) GB/s',
+                r'^\s*\[[^\]]*\]\s*GPU\s*\d+: '
+                r'Bandwidth\(double\) (?P<bw>\S+) GB/s',
                 self.stdout, 'bw', float))
         }
         self.reference = {

@@ -6,12 +6,11 @@
 import contextlib
 import functools
 import itertools
-import math
 import sys
 import time
 
 from reframe.core.exceptions import (TaskDependencyError, TaskExit)
-from reframe.core.logging import (getlogger, VERBOSE)
+from reframe.core.logging import getlogger
 from reframe.frontend.executors import (ExecutionPolicy, RegressionTask,
                                         TaskEventListener, ABORT_REASONS)
 
@@ -94,7 +93,9 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self.stats.add_task(task)
         try:
             # Do not run test if any of its dependencies has failed
-            if any(self._task_index[c].failed for c in case.deps):
+            # NOTE: Restored dependencies are not in the task_index
+            if any(self._task_index[c].failed
+                   for c in case.deps if c in self._task_index):
                 raise TaskDependencyError('dependencies failed')
 
             partname = task.testcase.partition.fullname
@@ -181,9 +182,11 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
                                          'total'])
         getlogger().verbose(f'==> {timings}')
 
-        # update reference count of dependencies
+        # Update reference count of dependencies
         for c in task.testcase.deps:
-            self._task_index[c].ref_count -= 1
+            # NOTE: Restored dependencies are not in the task_index
+            if c in self._task_index:
+                self._task_index[c].ref_count -= 1
 
         _cleanup_all(self._retired_tasks, not self.keep_stage_files)
 
@@ -237,10 +240,14 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             pass
 
     def deps_failed(self, task):
-        return any(self._task_index[c].failed for c in task.testcase.deps)
+        # NOTE: Restored dependencies are not in the task_index
+        return any(self._task_index[c].failed
+                   for c in task.testcase.deps if c in self._task_index)
 
     def deps_succeeded(self, task):
-        return all(self._task_index[c].succeeded for c in task.testcase.deps)
+        # NOTE: Restored dependencies are not in the task_index
+        return all(self._task_index[c].succeeded
+                   for c in task.testcase.deps if c in self._task_index)
 
     def on_task_setup(self, task):
         partname = task.check.current_partition.fullname
@@ -271,9 +278,11 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self.printer.status('OK', msg, just='right')
         getlogger().verbose(f'==> timings: {task.pipeline_timings_all()}')
 
-        # update reference count of dependencies
+        # Update reference count of dependencies
         for c in task.testcase.deps:
-            self._task_index[c].ref_count -= 1
+            # NOTE: Restored dependencies are not in the task_index
+            if c in self._task_index:
+                self._task_index[c].ref_count -= 1
 
         self._retired_tasks.append(task)
 

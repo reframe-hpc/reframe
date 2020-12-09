@@ -13,6 +13,7 @@ import time
 import reframe.core.fields as fields
 import reframe.core.runtime as runtime
 import reframe.core.shell as shell
+import reframe.utility.jsonext as jsonext
 import reframe.utility.typecheck as typ
 from reframe.core.exceptions import JobError, JobNotStartedError
 from reframe.core.launchers import JobLauncher
@@ -111,7 +112,7 @@ class JobScheduler(abc.ABC):
         getlogger().log(level, f'[S] {self.registered_name}: {message}')
 
 
-class Job:
+class Job(jsonext.JSONSerializable):
     '''A job descriptor.
 
     A job descriptor is created by the framework after the "setup" phase and
