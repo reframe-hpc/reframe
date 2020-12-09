@@ -30,9 +30,9 @@ import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
 import reframe.utility.udeps as udeps
-from reframe.core.backends import (getlauncher, getscheduler)
+from reframe.core.backends import getlauncher, getscheduler
 from reframe.core.buildsystems import BuildSystemField
-from reframe.core.containers import ContainerPlatform, ContainerPlatformField
+from reframe.core.containers import ContainerPlatformField
 from reframe.core.deferrable import _DeferredExpression
 from reframe.core.exceptions import (BuildError, DependencyError,
                                      PipelineError, SanityError,
@@ -275,14 +275,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: :default: ``[]``
     prebuild_cmds = fields.TypedField('prebuild_cmds', typ.List[str])
 
-    #: .. deprecated:: 3.0
-    #:
-    #: Use :attr:`prebuild_cmds` instead.
-    prebuild_cmd = fields.DeprecatedField(
-        fields.TypedField('prebuild_cmds', typ.List[str]),
-        "'prebuild_cmd' is deprecated; please use 'prebuild_cmds' instead"
-    )
-
     #: .. versionadded:: 3.0
     #:
     #: List of shell commands to be executed after a successful compilation.
@@ -294,14 +286,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: :type: :class:`List[str]`
     #: :default: ``[]``
     postbuild_cmds = fields.TypedField('postbuild_cmds', typ.List[str])
-
-    #: .. deprecated:: 3.0
-    #:
-    #: Use :attr:`postbuild_cmds` instead.
-    postbuild_cmd = fields.DeprecatedField(
-        fields.TypedField('postbuild_cmds', typ.List[str]),
-        "'postbuild_cmd' is deprecated; please use 'postbuild_cmds' instead"
-    )
 
     #: The name of the executable to be launched during the run phase.
     #:
@@ -352,14 +336,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: :default: ``[]``
     prerun_cmds = fields.TypedField('prerun_cmds', typ.List[str])
 
-    #: .. deprecated:: 3.0
-    #:
-    #: Use :attr:`prerun_cmds` instead.
-    pre_run = fields.DeprecatedField(
-        fields.TypedField('prerun_cmds', typ.List[str]),
-        "'pre_run' is deprecated; please use 'prerun_cmds' instead"
-    )
-
     #: .. versionadded:: 3.0
     #:
     #: List of shell commands to execute after launching this job.
@@ -370,14 +346,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: :type: :class:`List[str]`
     #: :default: ``[]``
     postrun_cmds = fields.TypedField('postrun_cmds', typ.List[str])
-
-    #: .. deprecated:: 3.0
-    #:
-    #: Use :attr:`postrun_cmds` instead.
-    post_run = fields.DeprecatedField(
-        fields.TypedField('postrun_cmds', typ.List[str]),
-        "'post_run' is deprecated; please use 'postrun_cmds' instead"
-    )
 
     #: List of files to be kept after the test finishes.
     #:
@@ -971,9 +939,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
         This attribute is evaluated lazily, so it can by used inside sanity
         expressions.
 
-        :type: :class:`str`.
+        :type: :class:`str` or :class:`None` if a run job has not yet been
+            created.
         '''
-        return self._job.stdout
+        return self.job.stdout if self.job else None
 
     @property
     @sn.sanity_function
@@ -985,9 +954,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
         This attribute is evaluated lazily, so it can by used inside sanity
         expressions.
 
-        :type: :class:`str`.
+        :type: :class:`str` or :class:`None` if a run job has not yet been
+            created.
         '''
-        return self._job.stderr
+        return self.job.stderr if self.job else None
 
     @property
     def build_job(self):
@@ -996,12 +966,12 @@ class RegressionTest(metaclass=RegressionTestMeta):
     @property
     @sn.sanity_function
     def build_stdout(self):
-        return self._build_job.stdout
+        return self.build_job.stdout if self.build_job else None
 
     @property
     @sn.sanity_function
     def build_stderr(self):
-        return self._build_job.stderr
+        return self.build_job.stderr if self.build_job else None
 
     def info(self):
         '''Provide live information for this test.
@@ -1124,6 +1094,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
               <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
               more details.
 
+           .. versionchanged:: 3.4
+              Overriding this method directly in no longer allowed. See `here
+              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+              more details.
+
         '''
         self._current_partition = partition
         self._current_environ = environ
@@ -1162,6 +1137,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
            .. versionchanged:: 3.0
               You may not override this method directly unless you are in
               special test. See `here
+              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+              more details.
+
+           .. versionchanged:: 3.4
+              Overriding this method directly in no longer allowed. See `here
               <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
               more details.
 
@@ -1262,6 +1242,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
               <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
               more details.
 
+           .. versionchanged:: 3.4
+              Overriding this method directly in no longer allowed. See `here
+              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+              more details.
+
         '''
         self._build_job.wait()
 
@@ -1284,6 +1269,12 @@ class RegressionTest(metaclass=RegressionTestMeta):
               special test. See `here
               <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
               more details.
+
+           .. versionchanged:: 3.4
+              Overriding this method directly in no longer allowed. See `here
+              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+              more details.
+
         '''
         if not self.current_system or not self._current_partition:
             raise PipelineError('no system or system partition is set')
@@ -1389,6 +1380,12 @@ class RegressionTest(metaclass=RegressionTestMeta):
            <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
            more details.
 
+
+           .. versionchanged:: 3.4
+              Overriding this method directly in no longer allowed. See `here
+              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+              more details.
+
         '''
         if not self._job:
             return True
@@ -1418,6 +1415,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
            special test. See `here
            <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
            more details.
+
+           .. versionchanged:: 3.4
+              Overriding this method directly in no longer allowed. See `here
+              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+              more details.
 
         '''
         self._job.wait()
@@ -1460,6 +1462,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
               <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
               more details.
 
+           .. versionchanged:: 3.4
+              Overriding this method directly in no longer allowed. See `here
+              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+              more details.
+
         '''
         if rt.runtime().get_option('general/0/trap_job_errors'):
             sanity_patterns = [
@@ -1490,6 +1497,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
            .. versionchanged:: 3.0
               You may not override this method directly unless you are in
               special test. See `here
+              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+              more details.
+
+           .. versionchanged:: 3.4
+              Overriding this method directly in no longer allowed. See `here
               <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
               more details.
 
@@ -1608,6 +1620,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
            .. versionchanged:: 3.0
               You may not override this method directly unless you are in
               special test. See `here
+              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+              more details.
+
+           .. versionchanged:: 3.4
+              Overriding this method directly in no longer allowed. See `here
               <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
               more details.
 
@@ -1874,12 +1891,12 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
     @property
     @sn.sanity_function
     def stdout(self):
-        return self._build_job.stdout
+        return self.build_job.stdout if self.build_job else None
 
     @property
     @sn.sanity_function
     def stderr(self):
-        return self._build_job.stderr
+        return self.build_job.stderr if self.build_job else None
 
     def run(self):
         '''The run stage of the regression test pipeline.

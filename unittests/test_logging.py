@@ -163,7 +163,7 @@ def test_logger_dynamic_attributes(logfile, logger_with_check):
     logger_with_check.logger.handlers[0].setFormatter(formatter)
     logger_with_check.info('xxx')
     assert _pattern_in_logfile(
-        r'hello extras\|custom,attr\|<undefined>\|a=1,b=2', logfile
+        r'hello extras\|custom,attr\|null\|{"a": 1, "b": 2}', logfile
     )
 
 
@@ -173,7 +173,7 @@ def test_logger_dynamic_attributes_deferrables(logfile, logger_with_check):
     )
     logger_with_check.logger.handlers[0].setFormatter(formatter)
     logger_with_check.info('xxx')
-    assert _pattern_in_logfile(r'hello\|<error>', logfile)
+    assert _pattern_in_logfile(r'"hello"\|null', logfile)
 
 
 def test_rfc3339_timezone_extension(logfile, logger_with_check,

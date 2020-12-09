@@ -4,10 +4,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 #
-# Met-class for creating regression tests.
+# Meta-class for creating regression tests.
 #
 
-from reframe.core.warnings import user_deprecation_warning
+from reframe.core.exceptions import ReframeSyntaxError
 
 
 class RegressionTestMeta(type):
@@ -57,5 +57,5 @@ class RegressionTestMeta(type):
                     msg = (f"'{cls.__qualname__}.{v.__name__}' attempts to "
                            f"override final method "
                            f"'{b.__qualname__}.{v.__name__}'; "
-                           f"consider using the pipeline hooks instead")
-                    user_deprecation_warning(msg)
+                           f"you should use the pipeline hooks instead")
+                    raise ReframeSyntaxError(msg)
