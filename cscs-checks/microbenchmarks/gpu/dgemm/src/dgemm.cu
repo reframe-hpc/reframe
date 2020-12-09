@@ -123,7 +123,7 @@ void dgemm(int device)
       totalErrors += h_err;
 
       // Print the performance results
-      printf("[%s][GPU %d] %4.2f TF/s\n", hostname, device, (float)perf);
+      printf("[%s] GPU %d: %4.2f TF/s\n", hostname, device, (float)perf);
     }
     XFree(A);
     XFree(B);
