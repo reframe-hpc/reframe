@@ -32,6 +32,22 @@ class Version:
         except ValueError:
             raise ValueError('invalid version string: %s' % version) from None
 
+    @property
+    def major(self):
+        return self._major
+
+    @property
+    def minor(self):
+        return self._minor
+
+    @property
+    def patch_level(self):
+        return self._patch_level
+
+    @property
+    def dev_number(self):
+        return self._dev_number
+
     def _value(self):
         return 10000*self._major + 100*self._minor + self._patch_level
 

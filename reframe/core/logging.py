@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import abc
-import collections.abc
 import logging
 import logging.handlers
 import numbers
@@ -16,6 +15,7 @@ import socket
 import time
 
 import reframe.utility.color as color
+import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 from reframe.core.exceptions import ConfigError, LoggingError
 
@@ -144,7 +144,8 @@ class MultiFileHandler(logging.FileHandler):
         except OSError as e:
             raise LoggingError('logging failed') from e
 
-        self.baseFilename = os.path.join(dirname, record.check.name + '.log')
+        self.baseFilename = os.path.join(dirname,
+                                         f'{record.__rfm_check__.name}.log')
         self.stream = self._streams.get(self.baseFilename, None)
         super().emit(record)
         self._streams[self.baseFilename] = self.stream
@@ -165,61 +166,46 @@ def _format_time_rfc3339(timestamp, datefmt):
 
 
 def _xfmt(val):
-    from reframe.core.deferrable import _DeferredExpression
-
-    if val is None:
-        return '<undefined>'
-
-    if isinstance(val, _DeferredExpression):
-        try:
-            return val.evaluate()
-        except BaseException:
-            return '<error>'
-
     if isinstance(val, str):
         return val
 
-    if isinstance(val, collections.abc.Mapping):
-        return ','.join(f'{k}={v}' for k, v in val.items())
-
-    if isinstance(val, collections.abc.Iterable):
+    # NOTE: This is for compatibility with older formatting
+    if isinstance(val, (list, tuple, set)):
         return ','.join(val)
 
-    return val
+    return jsonext.dumps(val)
 
 
 class CheckFieldFormatter(logging.Formatter):
     '''Log formatter that dynamically looks up format specifiers inside a
     regression test.'''
 
+    # NOTE: This formatter will work only for the '%' style
     def __init__(self, fmt=None, datefmt=None, style='%'):
         super().__init__(fmt, datefmt, style)
 
-        # NOTE: This will work only when style='%'
-        self.__extras = {
-            spec: None for spec in re.findall(r'\%\((check_\S+?)\)s', fmt)
-        }
+        self.__fmt = fmt
+        self.__specs = re.findall(r'\%\((\S+?)\)s', fmt)
 
-        # Set the default value for 'check_name'
-        if 'check_name' in self.__extras:
-            self.__extras['check_name'] = 'reframe'
+    def formatMessage(self, record):
+        for s in self.__specs:
+            if not hasattr(record, s):
+                setattr(record, s, None)
 
-    def format(self, record):
-        # Fill in the check-specific record attributes
-        if record.check:
-            for spec in self.__extras:
-                if hasattr(record, spec):
-                    # Attribute set elsewhere
-                    continue
+        record_proxy = dict(record.__dict__)
+        for k, v in record_proxy.items():
+            if k.startswith('check_'):
+                record_proxy[k] = _xfmt(v)
 
-                attr = spec.split('_', maxsplit=1)[1]
-                val = getattr(record.check, attr, None)
-                record.__dict__[spec] = _xfmt(val)
-        else:
-            # Update record with the dynamic extras even if check is not set
-            record.__dict__.update(self.__extras)
+        # Now format `check_job_completion_time` according to `datefmt`
+        datefmt = self.datefmt or self.default_time_format
+        ct = record.check_job_completion_time_unix
+        if ct is not None:
+            record_proxy['check_job_completion_time'] = _format_time_rfc3339(
+                time.localtime(ct), datefmt
+            )
 
-        return super().format(record)
+        return self.__fmt % record_proxy
 
 
 class RFC3339Formatter(CheckFieldFormatter):
@@ -230,16 +216,6 @@ class RFC3339Formatter(CheckFieldFormatter):
         else:
             timestamp = self.converter(record.created)
             return _format_time_rfc3339(timestamp, datefmt)
-
-    def format(self, record):
-        datefmt = self.datefmt or self.default_time_format
-        if record.check_job_completion_time_unix != _xfmt(None):
-            ct = self.converter(record.check_job_completion_time_unix)
-            record.check_job_completion_time = _format_time_rfc3339(
-                ct, datefmt
-            )
-
-        return super().format(record)
 
 
 def _create_logger(site_config, handlers_group):
@@ -349,9 +325,10 @@ def _create_graylog_handler(site_config, config_prefix):
         return None
 
     extras = site_config.get(f'{config_prefix}/extras')
-    return pygelf.GelfHttpHandler(host=host, port=port, debug=True,
+    return pygelf.GelfHttpHandler(host=host, port=port,
                                   static_fields=extras,
-                                  include_extra_fields=True)
+                                  include_extra_fields=True,
+                                  json_default=jsonext.encode)
 
 
 def _extract_handlers(site_config, handlers_group):
@@ -447,22 +424,23 @@ class LoggerAdapter(logging.LoggerAdapter):
             {
                 # Here we only set the format specifiers that do not
                 # correspond directly to check attributes
-                'check': check,
-                'check_jobid': _xfmt(None),
-                'check_job_completion_time': _xfmt(None),
-                'check_job_completion_time_unix': _xfmt(None),
+                '__rfm_check__': check,
+                'check_name': 'reframe',
+                'check_jobid': None,
+                'check_job_completion_time': None,
+                'check_job_completion_time_unix': None,
                 'check_info': 'reframe',
-                'check_system': _xfmt(None),
-                'check_partition': _xfmt(None),
-                'check_environ': _xfmt(None),
-                'check_perf_var': _xfmt(None),
-                'check_perf_value': _xfmt(None),
-                'check_perf_ref': _xfmt(None),
-                'check_perf_lower_thres': _xfmt(None),
-                'check_perf_upper_thres': _xfmt(None),
-                'check_perf_unit': _xfmt(None),
-                'osuser':  _xfmt(osext.osuser()),
-                'osgroup': _xfmt(osext.osgroup()),
+                'check_system': None,
+                'check_partition': None,
+                'check_environ': None,
+                'check_perf_var': None,
+                'check_perf_value': None,
+                'check_perf_ref': None,
+                'check_perf_lower_thres': None,
+                'check_perf_upper_thres': None,
+                'check_perf_unit': None,
+                'osuser':  osext.osuser(),
+                'osgroup': osext.osgroup(),
                 'version': osext.reframe_version(),
             }
         )
@@ -487,6 +465,15 @@ class LoggerAdapter(logging.LoggerAdapter):
         if self.check is None:
             return
 
+        for attr, val in self.check.__dict__.items():
+            if not attr.startswith('_'):
+                self.extra[f'check_{attr}'] = val
+
+        # Additional dynamic properties
+        for prop in ('prefix', 'stagedir', 'outputdir', 'stdout',
+                     'stderr', 'build_stdout', 'build_stderr'):
+            self.extra[f'check_{prop}'] = getattr(self.check, prop)
+
         self.extra['check_info'] = self.check.info()
         if self.check.current_system:
             self.extra['check_system'] = self.check.current_system.name
@@ -500,8 +487,14 @@ class LoggerAdapter(logging.LoggerAdapter):
         if self.check.job:
             self.extra['check_jobid'] = self.check.job.jobid
             if self.check.job.completion_time:
+                # Here we preformat the `check_job_completion_time`, because
+                # the Graylog handler does not use a formatter
                 ct = self.check.job.completion_time
+                ct_formatted = _format_time_rfc3339(
+                    time.localtime(ct), '%FT%T%:z'
+                )
                 self.extra['check_job_completion_time_unix'] = ct
+                self.extra['check_job_completion_time'] = ct_formatted
 
     def log_performance(self, level, tag, value, ref,
                         low_thres, upper_thres, unit=None, *, msg=None):

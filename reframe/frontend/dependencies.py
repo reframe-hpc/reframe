@@ -9,8 +9,8 @@
 
 import collections
 import itertools
+import sys
 
-import reframe as rfm
 import reframe.utility as util
 from reframe.core.exceptions import DependencyError
 from reframe.core.logging import getlogger
@@ -158,21 +158,24 @@ def validate_deps(graph):
         sources -= visited
 
 
-def prune_deps(graph, testcases):
+def prune_deps(graph, testcases, max_depth=None):
     '''Prune the graph so that it contains only the specified cases and their
-    dependencies.
+    dependencies up to max_depth.
 
     Graph is assumed to by a DAG.
     '''
 
+    max_depth = max_depth or sys.maxsize
     pruned_graph = {}
     for tc in testcases:
         unvisited = [tc]
-        while unvisited:
+        curr_depth = 0
+        while unvisited and curr_depth < max_depth:
             node = unvisited.pop()
             pruned_graph.setdefault(node, util.OrderedSet())
             for adj in graph[node]:
                 pruned_graph[node].add(adj)
+                curr_depth += 1
                 if adj not in pruned_graph:
                     unvisited.append(adj)
 

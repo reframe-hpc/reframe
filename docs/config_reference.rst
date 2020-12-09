@@ -706,8 +706,8 @@ All logging handlers share the following set of common attributes:
    - ``%(check_perf_value)s``: The performance value obtained for a certain performance variable.
    - ``%(check_perf_var)s``: The name of the `performance variable <tutorial_basic.html#writing-a-performance-test>`__ being logged.
    - ``%(check_ATTR)s``: This will log the value of the attribute ``ATTR`` of the currently executing regression test.
-     Mappings will be logged as ``k1=v1,k2=v2,..`` and all other iterables, except strings, will be logged as comma-separated lists.
-     If ``ATTR`` is not an attribute of the test, ``%(check_ATTR)s`` will be logged as ``<undefined>``.
+     Dictionaries will be logged in JSON format and all other iterables, except strings, will be logged as comma-separated lists.
+     If ``ATTR`` is not an attribute of the test, ``%(check_ATTR)s`` will be logged as ``null``.
      This allows users to log arbitrary attributes of their tests.
      For the complete list of test attributes, please refer to :doc:`regression_test_api`.
    - ``%(osuser)s``: The name of the OS user running ReFrame.

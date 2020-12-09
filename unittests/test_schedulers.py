@@ -3,15 +3,12 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import abc
-import functools
 import os
 import pytest
 import re
 import signal
 import socket
 import time
-from datetime import datetime, timedelta
 
 import reframe.core.runtime as rt
 import unittests.fixtures as fixtures
@@ -20,7 +17,6 @@ from reframe.core.environments import Environment
 from reframe.core.exceptions import (
     JobError, JobNotStartedError, JobSchedulerError
 )
-from reframe.core.launchers.local import LocalLauncher
 from reframe.core.schedulers import Job
 from reframe.core.schedulers.slurm import _SlurmNode, _create_nodes
 
@@ -287,13 +283,13 @@ def test_submit(make_job, exec_ctx):
 def test_submit_timelimit(minimal_job, local_only):
     minimal_job.time_limit = '2s'
     prepare_job(minimal_job, 'sleep 10')
-    t_job = datetime.now()
+    t_job = time.time()
     minimal_job.submit()
     assert minimal_job.jobid is not None
     minimal_job.wait()
-    t_job = datetime.now() - t_job
-    assert t_job.total_seconds() >= 2
-    assert t_job.total_seconds() < 3
+    t_job = time.time() - t_job
+    assert t_job >= 2
+    assert t_job < 3
     with open(minimal_job.stdout) as fp:
         assert re.search('postrun', fp.read()) is None
 
@@ -323,7 +319,7 @@ def test_submit_job_array(make_job, slurm_only, exec_ctx):
 def test_cancel(make_job, exec_ctx):
     minimal_job = make_job(sched_access=exec_ctx.access)
     prepare_job(minimal_job, 'sleep 30')
-    t_job = datetime.now()
+    t_job = time.time()
     minimal_job.submit()
     minimal_job.cancel()
 
@@ -335,9 +331,9 @@ def test_cancel(make_job, exec_ctx):
     time.sleep(0.01)
 
     minimal_job.wait()
-    t_job = datetime.now() - t_job
+    t_job = time.time() - t_job
     assert minimal_job.finished()
-    assert t_job.total_seconds() < 30
+    assert t_job < 30
 
     # Additional scheduler-specific checks
     sched_name = minimal_job.scheduler.registered_name

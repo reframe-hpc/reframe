@@ -10,12 +10,11 @@
 import ast
 import collections.abc
 import inspect
-import io
 import os
 
 import reframe.utility as util
 import reframe.utility.osext as osext
-from reframe.core.exceptions import NameConflictError, RegressionTestLoadError
+from reframe.core.exceptions import NameConflictError
 from reframe.core.logging import getlogger
 
 
