@@ -86,16 +86,14 @@ def simple_test(cls):
 
     .. versionadded:: 2.13
     '''
-    def _do_register(cls):
-        _validate_test(cls)
+    _validate_test(cls)
 
-        # Register the test as many times as its parameter space length
-        for i in range(cls.prepare_param_space()):
-            _register_test(cls)
+    # Register the test as many times as its parameter space length
+    for _ in range(cls.prepare_param_space()):
+        _register_test(cls)
 
-        return cls
+    return cls
 
-    return _do_register(cls)
 
 
 def parameterized_test(*inst):
