@@ -7,7 +7,7 @@ int main()
   gethostname(nid_name, HOSTNAME_SIZE);
 
   int number_of_devices;
-  XGetDeviceCount(number_of_devices);
+  XGetDeviceCount(&number_of_devices);
 
   // Initialise the Smi to manage the devices.
   Smi smiHandle;
