@@ -41,7 +41,7 @@ def fake_check():
                            'fakejob')
     test.job._completion_time = time.time()
     test.custom = 'hello extras'
-    test.custom_list = ['custom', 'attr']
+    test.custom_list = ['custom', 3.0, ['hello', 'world']]
     test.custom_dict = {'a': 1, 'b': 2}
     test.deferred = sn.defer('hello')
     test.deferred_error = error()
@@ -163,7 +163,8 @@ def test_logger_dynamic_attributes(logfile, logger_with_check):
     logger_with_check.logger.handlers[0].setFormatter(formatter)
     logger_with_check.info('xxx')
     assert _pattern_in_logfile(
-        r'hello extras\|custom,attr\|null\|{"a": 1, "b": 2}', logfile
+        r'hello extras\|custom,3.0,\["hello", "world"\]\|null\|'
+        r'{"a": 1, "b": 2}', logfile
     )
 
 

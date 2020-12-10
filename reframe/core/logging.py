@@ -166,14 +166,17 @@ def _format_time_rfc3339(timestamp, datefmt):
 
 
 def _xfmt(val):
-    if isinstance(val, str):
-        return val
+    def _dofmt(v):
+        if isinstance(v, str):
+            return v
+        else:
+            return jsonext.dumps(v)
 
     # NOTE: This is for compatibility with older formatting
     if isinstance(val, (list, tuple, set)):
-        return ','.join(val)
+        return ','.join(_dofmt(v) for v in val)
 
-    return jsonext.dumps(val)
+    return _dofmt(val)
 
 
 class CheckFieldFormatter(logging.Formatter):
