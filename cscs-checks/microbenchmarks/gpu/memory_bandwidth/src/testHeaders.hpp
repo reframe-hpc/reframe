@@ -5,6 +5,7 @@
 #include <unistd.h>
 
 #include "Xdevice/runtime.hpp"
+#include "Xdevice/smi.hpp"
 
 #include "bandwidth.hpp"
 

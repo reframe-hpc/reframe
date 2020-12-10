@@ -1,10 +1,7 @@
 #ifndef __INCLUDED_XDEV_RUNTIME__
 #define __INCLUDED_XDEV_RUNTIME__
 
-// Set default platform
-#if (!defined TARGET_CUDA && !defined TARGET_HIP)
-#  define TARGET_CUDA
-#endif
+#include "defaults.hpp"
 
 #ifdef TARGET_CUDA
 # include "cuda/include.hpp"
