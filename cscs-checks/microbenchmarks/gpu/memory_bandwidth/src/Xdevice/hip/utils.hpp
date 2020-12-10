@@ -109,11 +109,6 @@ void XMemcpyPeerAsync(void * dst, int peerDevId, void * src, int srcDevId, size_
   checkError( hipMemcpyPeerAsync(dst, peerDevId, src, srcDevId, size, stream) );
 }
 
-void XMemcpy(void * dst, void * src, size_t size, hipMemcpyKind dir)
-{
-  checkError( hipMemcpy(dst, src, size, dir) );
-}
-
 void XHostGetDevicePointer(void** device, void* host, unsigned int flags)
 {
   checkError( hipHostGetDevicePointer(device, host, flags) );
