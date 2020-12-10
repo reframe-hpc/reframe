@@ -160,12 +160,7 @@ public:
       XMemcpy(d_B, h_B, d_resultSize, XMemcpyHostToDevice);
   }
 
-  void compute()
-  {
-      // See function specialisations below.
-      std::cout << "compute function not implemented for this type." << std::endl;
-      exit(1);
-  }
+  void compute() = delete;
 
   void compare() {
       int numberOfErrors;
@@ -270,7 +265,7 @@ public:
 
         // Get the time difference and return the flops
         std::chrono::duration<double> diff = end-start;
-        double Gflops = (double)(iters*reps) * ((double)(OPS_PER_MUL)/diff.count()/1000.0/1000.0/1000.0);
+        double Gflops = 1e-9 * iters * reps * OPS_PER_MUL * diff.count();
 
         // Reset the counters
         err = 0; reps = 0;
@@ -345,7 +340,7 @@ template<class T> void launch(int duration)
     gethostname(hostname,255);
 
     // Initialise the SMI
-    Smi * smi_handle = new Smi();
+    Smi smi_handle;
 
     // Here burn is a switch that holds and breaks the work done by the slave threads.
     burn = false;
@@ -357,16 +352,16 @@ template<class T> void launch(int duration)
     printf("[%s] Found %d device(s).\n", hostname, devCount);
 
     // All the burn info is stored in instances of the BurnTracker class.
-    BurnTracker * trackThreads = new BurnTracker[devCount];
+    BurnTracker ** trackThreads = new BurnTracker*[devCount];
 
     // Create one thread per device - burn is still off here.
     for (int i = 0; i < devCount; i++)
     {
-        BurnTracker * bt = new (&trackThreads[i]) BurnTracker();
+        trackThreads[i] = new BurnTracker();
         threads.push_back(std::thread(startBurn<T>,
-                                      i, smi_handle,
+                                      i, &smi_handle,
                                       A, B,
-                                      bt
+                                      trackThreads[i]
                           )
         );
     }
@@ -388,9 +383,9 @@ template<class T> void launch(int duration)
     // Process output
     for (int i = 0; i < devCount; i++)
     {
-        double flops = trackThreads[i].read();
+        double flops = trackThreads[i]->read();
         float devTemp;
-        smi_handle->getGpuTemp(i, &devTemp);
+        smi_handle.getGpuTemp(i, &devTemp);
         printf("[%s] GPU %2d(%s): %4.0f GF/s  %d Celsius\n", hostname, i, flops < 0.0 ? "FAULTY" : "OK", flops, (int)devTemp);
     }
 
@@ -400,7 +395,10 @@ template<class T> void launch(int duration)
     // Cleanup
     free(A);
     free(B);
-    delete smi_handle;
+    for (int i = 0; i < devCount; i++)
+    {
+        delete trackThreads[i];
+    }
     delete [] trackThreads;
 }
 

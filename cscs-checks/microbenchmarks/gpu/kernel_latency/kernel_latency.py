@@ -29,7 +29,7 @@ class KernelLatencyTest(rfm.RegressionTest):
         self.build_system = 'Make'
         self.executable = 'kernel_latency.x'
 
-        # Mark the Xdevice symlink as read-only
+        # FIXME workaround due to issue #1639.
         self.readonly_files = ['Xdevice']
 
         if kernel_version == 'sync':
