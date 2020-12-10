@@ -19,7 +19,7 @@ class GPUdgemmTest(rfm.RegressionTest):
         self.build_system = 'Make'
         self.executable = 'dgemm.x'
 
-        # Mark the Xdevice symlink as read-only
+        # FIXME workaround due to issue #1639.
         self.readonly_files = ['Xdevice']
 
         self.sanity_patterns = self.assert_num_gpus()

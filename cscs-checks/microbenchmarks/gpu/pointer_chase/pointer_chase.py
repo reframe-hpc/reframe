@@ -38,6 +38,10 @@ class CompileGpuPointerChase(rfm.CompileOnlyRegressionTest):
         self.num_tasks_per_node = 1
         self.postbuild_cmds = ['ls .']
         self.sanity_patterns = sn.assert_found(r'pChase.x', self.stdout)
+
+        # FIXME workaround due to issue #1639.
+        self.readonly_files = ['Xdevice']
+
         self.maintainers = ['JO']
 
     @rfm.run_after('setup')
