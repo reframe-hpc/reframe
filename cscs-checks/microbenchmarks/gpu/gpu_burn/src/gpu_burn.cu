@@ -265,7 +265,7 @@ public:
 
         // Get the time difference and return the flops
         std::chrono::duration<double> diff = end-start;
-        double Gflops = 1e-9 * iters * reps * OPS_PER_MUL * diff.count();
+        double Gflops = 1e-9 * iters * reps * OPS_PER_MUL / diff.count();
 
         // Reset the counters
         err = 0; reps = 0;
