@@ -3,6 +3,8 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import os
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -133,3 +135,27 @@ class GpuBurnTest(rfm.RegressionTest):
             self.num_gpus_per_node = 3
         else:
             self.num_gpus_per_node = 1
+
+    @rfm.run_before('performance')
+    def report_smallest_node(self):
+        regex = r'\[(\S+)\] GPU\s+\d\(OK\): (\d+) GF/s'
+        rptf = os.path.join(self.stagedir, sn.evaluate(self.stdout))
+        self.nids = sn.extractall(regex, rptf, 1)
+        self.flops = sn.extractall(regex, rptf, 2, float)
+        index = -1
+        flops_min = sn.min(self.flops)
+        for ii in range(len(sn.evaluate(self.flops))):
+            if self.flops[ii] == flops_min:
+                index = ii
+                break
+
+        self.unit = f'GF/s ({self.nids[index]})'
+        self.perf_patterns['smallest_flops'] = flops_min
+        self.reference['dom:gpu:smallest_flops'] = (0, None, None, self.unit)
+        self.reference['daint:gpu'] = (0, None, None, self.unit)
+        self.reference['arolla:cn'] = (0, None, None, self.unit)
+        self.reference['tsa:cn'] = (0, None, None, self.unit)
+        self.reference['ault:amda100'] = (0, None, None, self.unit)
+        self.reference['ault:amdv100'] = (0, None, None, self.unit)
+        self.reference['ault:intelv100'] = (0, None, None, self.unit)
+        self.reference['ault:amdvega'] = (0, None, None, self.unit)
