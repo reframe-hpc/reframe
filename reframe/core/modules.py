@@ -955,6 +955,7 @@ class SpackImpl(ModulesSystemImpl):
                 'could not find a sane Spack installation') from e
 
         self._version = completed.stdout.strip()
+        self._name_format = '{name}/{version}-{hash}'
 
         # self._version = version
         # try:
@@ -979,17 +980,11 @@ class SpackImpl(ModulesSystemImpl):
 
     def _execute(self, cmd, *args):
         modulecmd = self.modulecmd(cmd, *args)
-        completed = osext.run_command(modulecmd)
-        if re.search(r'Error', completed.stderr) is not None:
-            raise SpawnedProcessError(modulecmd,
-                                      completed.stdout,
-                                      completed.stderr,
-                                      completed.returncode)
-
+        completed = osext.run_command(modulecmd, check=True)
         return completed.stdout
 
     def available_modules(self, substr):
-        output = self.execute('find', '--format', '{name}-{version}-{hash}',
+        output = self.execute('find', '--format', self._name_format,
                               substr)
         ret = []
         for line in output.split('\n'):
@@ -1002,24 +997,21 @@ class SpackImpl(ModulesSystemImpl):
         return ret
 
     def _module_full_name(self, name):
-        return self.execute('find', '--format', '{name}-{version}-{hash}',
+        return self.execute('find', '--format', self._name_format,
                             name)
 
     def loaded_modules(self):
-        try:
-            hashes = '/'.join(
-                [m for m in os.environ['SPACK_LOADED_HASHES'].split(':') if m])
-            if hashes:
-                output = self.execute('find', '--loaded', '--format',
-                                      '{name}-{version}-{hash}', f'/{hashes}')
-                return [Module(m) for m in output.split('\n') if m]
-            else:
-                return []
-        except KeyError:
+        hashes = '/'.join(
+            [m for m in os.environ['SPACK_LOADED_HASHES'].split(':') if m])
+        if hashes:
+            output = self.execute('find', '--loaded', '--format',
+                                  self._name_format, f'/{hashes}')
+            return [Module(m) for m in output.split('\n') if m]
+        else:
             return []
 
     def conflicted_modules(self, module):
-        pass
+        return []
 
     def is_module_loaded(self, module):
         module = self._module_full_name(module.name)
@@ -1027,16 +1019,16 @@ class SpackImpl(ModulesSystemImpl):
         return module in self.loaded_modules()
 
     def load_module(self, module):
-        pass
+        self.execute('load', '--sh', str(module))
 
     def unload_module(self, module):
-        pass
+        self.execute('unload', '--sh', str(module))
 
     def unload_all(self):
-        pass
+        self.execute('unload', '--sh', '--all', str(module))
 
     def searchpath(self):
-        pass
+        return []
 
     def searchpath_add(self, *dirs):
         pass
