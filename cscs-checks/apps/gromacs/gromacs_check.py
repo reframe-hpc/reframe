@@ -100,27 +100,37 @@ class GromacsGPUCheck(GromacsBaseCheck):
 class GromacsCPUCheck(GromacsBaseCheck):
     def __init__(self, scale, variant):
         super().__init__('md.log')
-        self.valid_systems = ['daint:mc']
+        self.valid_systems = ['daint:mc', 'eiger:mc']
         self.descr = 'GROMACS CPU check'
         self.executable_opts = ['mdrun', '-dlb yes', '-ntomp 1', '-npme -1',
                                 '-nb cpu', '-s herflat.tpr']
 
         if scale == 'small':
             self.valid_systems += ['dom:mc']
-            self.num_tasks = 216
-            self.num_tasks_per_node = 36
+            if (self.current_system.name in ['daint', 'dom']):
+                self.num_tasks = 216
+                self.num_tasks_per_node = 36
+            elif (self.current_system.name in ['eiger']):
+                self.num_tasks = 768
+                self.num_tasks_per_node = 128
         else:
-            self.num_tasks = 576
-            self.num_tasks_per_node = 36
+            if (self.current_system.name in ['daint', 'dom']):
+                self.num_tasks = 576
+                self.num_tasks_per_node = 36
+            elif (self.current_system.name in ['eiger']):
+                self.num_tasks = 2048
+                self.num_tasks_per_node = 128
 
         references = {
             'prod': {
                 'small': {
                     'dom:mc': {'perf': (40.0, -0.05, None, 'ns/day')},
-                    'daint:mc': {'perf': (38.8, -0.10, None, 'ns/day')}
+                    'daint:mc': {'perf': (38.8, -0.10, None, 'ns/day')},
+                    'eiger:mc': {'perf': (103.00, -0.10, None, 'ns/day')}
                 },
                 'large': {
-                    'daint:mc': {'perf': (68.0, -0.20, None, 'ns/day')}
+                    'daint:mc': {'perf': (68.0, -0.20, None, 'ns/day')},
+                    'eiger:mc': {'perf': (146.00, -0.20, None, 'ns/day')}
                 }
             },
         }
