@@ -671,6 +671,7 @@ def test_unuse_module_path(run_reframe, user_exec_ctx):
         config_file=fixtures.USER_CONFIG_FILE, action='run',
         system=rt.runtime().system.name
     )
+    ms.searchpath_remove(module_path)
     assert "could not load module 'testmod_foo' correctly" in stdout
     assert 'Traceback' not in stderr
     assert returncode == 0
@@ -687,7 +688,6 @@ def test_use_module_path(run_reframe, user_exec_ctx):
         config_file=fixtures.USER_CONFIG_FILE, action='run',
         system=rt.runtime().system.name
     )
-
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert "could not load module 'testmod_foo' correctly" not in stdout
@@ -708,7 +708,6 @@ def test_overwrite_module_path(run_reframe, user_exec_ctx):
         config_file=fixtures.USER_CONFIG_FILE, action='run',
         system=rt.runtime().system.name
     )
-
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert "could not load module 'testmod_foo' correctly" not in stdout
