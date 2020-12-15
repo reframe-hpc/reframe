@@ -957,18 +957,6 @@ class SpackImpl(ModulesSystemImpl):
         self._version = completed.stdout.strip()
         self._name_format = '{name}/{version}-{hash}'
 
-        # self._version = version
-        # try:
-        #     # Try the Python bindings now
-        #     completed = osext.run_command(self.modulecmd())
-        # except OSError as e:
-        #     raise ConfigError(
-        #         'could not get the Python bindings for TMod: ' % e) from e
-
-        # if re.search(r'Unknown shell type', completed.stderr):
-        #     raise ConfigError(
-        #         'Python is not supported by this TMod installation')
-
     def name(self):
         return 'spack'
 
@@ -997,18 +985,12 @@ class SpackImpl(ModulesSystemImpl):
         return ret
 
     def _module_full_name(self, name):
-        return self.execute('find', '--format', self._name_format,
-                            name)
+        return self.execute('find', '--format', self._name_format, name)
 
     def loaded_modules(self):
-        hashes = '/'.join(
-            [m for m in os.environ['SPACK_LOADED_HASHES'].split(':') if m])
-        if hashes:
-            output = self.execute('find', '--loaded', '--format',
-                                  self._name_format, f'/{hashes}')
-            return [Module(m) for m in output.split('\n') if m]
-        else:
-            return []
+        output = self.execute('find', '--loaded', '--format',
+                              self._name_format)
+        return [Module(m) for m in output.split('\n') if m]
 
     def conflicted_modules(self, module):
         return []
@@ -1019,13 +1001,13 @@ class SpackImpl(ModulesSystemImpl):
         return module in self.loaded_modules()
 
     def load_module(self, module):
-        self.execute('load', '--sh', str(module))
+        pass
 
     def unload_module(self, module):
-        self.execute('unload', '--sh', str(module))
+        pass
 
     def unload_all(self):
-        self.execute('unload', '--sh', '--all', str(module))
+        pass
 
     def searchpath(self):
         return []
