@@ -8,7 +8,7 @@
 #
 
 from reframe.core.exceptions import ReframeSyntaxError
-import reframe.core.directives as ReframeDirectives
+import reframe.core.parameters as parameters
 
 
 class RegressionTestMeta(type):
@@ -16,20 +16,13 @@ class RegressionTestMeta(type):
     def __prepare__(cls, name, bases, **kwargs):
         namespace = super().__prepare__(name, bases, **kwargs)
 
-        # Staging area to build the regression test parameter space
-        # using directives
-        param_stage = ReframeDirectives.ParameterStagingArea()
+        # Regression test parameter space defined at the class level
+        local_param_space = parameters.LocalParamSpace()
+        namespace['_rfm_local_param_space'] = local_param_space
 
         # Directive to add a regression test parameter directly in the
         # class body as: `parameter('P0', 0,1,2,3)`.
-        namespace['parameter'] = param_stage.add_regression_test_parameter
-
-        @classmethod
-        def build_param_space(cls, *args, **kwargs):
-            return param_stage.build_parameter_space(cls, *args, **kwargs)
-
-        # Method to build the final parameter space
-        namespace['_rfm_build_param_space'] = build_param_space
+        namespace['parameter'] = local_param_space.add_param
 
         return namespace
 
@@ -37,7 +30,7 @@ class RegressionTestMeta(type):
         super().__init__(name, bases, namespace, **kwargs)
 
         # Set up the regression test parameter space
-        cls._rfm_params = cls._rfm_build_param_space(bases, '_rfm_params')
+        cls._rfm_params = parameters.build_parameter_space(cls)
 
         # Set up the hooks for the pipeline stages based on the _rfm_attach
         # attribute; all dependencies will be resolved first in the post-setup
