@@ -492,6 +492,21 @@ class ModulesSystemImpl(abc.ABC):
     def emit_unload_instr(self, module):
         '''Emit the instruction that unloads module.'''
 
+    def process(self, source):
+        '''Process the Python source emitted by the Python bindings of the
+        different backends.
+
+        Backends should call this before executing any Python commands.
+
+        :arg source: The Python source code to be executed.
+        :returns: The modified Python source code to be executed. By default
+            ``source`` is returned unchanged.
+
+        .. versionadded:: 3.4
+
+        '''
+        return source
+
     def __repr__(self):
         return type(self).__name__ + '()'
 
@@ -562,7 +577,7 @@ class TModImpl(ModulesSystemImpl):
                                       completed.stderr,
                                       completed.returncode)
 
-        exec(completed.stdout)
+        exec(self.process(completed.stdout))
         return completed.stderr
 
     def available_modules(self, substr):
@@ -692,7 +707,7 @@ class TMod31Impl(TModImpl):
         with open(exec_match.group(1), 'r') as content_file:
             cmd = content_file.read()
 
-        exec(cmd)
+        exec(self.process(cmd))
         return completed.stderr
 
 
@@ -741,7 +756,7 @@ class TMod4Impl(TModImpl):
         modulecmd = self.modulecmd(cmd, *args)
         completed = osext.run_command(modulecmd, check=False)
         namespace = {}
-        exec(completed.stdout, {}, namespace)
+        exec(self.process(completed.stdout), {}, namespace)
 
         # _mlstatus is set by the TMod4 only if the command was unsuccessful,
         # but Lmod sets it always
@@ -855,6 +870,17 @@ class LModImpl(TMod4Impl):
 
     def name(self):
         return 'lmod'
+
+    def process(self, source):
+        major, minor, *_ = self.version().split('.')
+        major, minor = int(major), int(minor)
+        if (major, minor) < (8, 2):
+            # Older Lmod versions do not emit an `import os` and emit an
+            # invalid `false` statement in case of errors; we fix these here
+            return 'import os\n\n' + source.replace('false',
+                                                    '_mlstatus = False')
+
+        return source
 
     def modulecmd(self, *args):
         return ' '.join([self._lmod_cmd, 'python', *args])
