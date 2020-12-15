@@ -708,7 +708,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         # Abort the class instantiation if the test is an abstract test.
         if cls.is_abstract_test():
-            raise ValueError('Cannot instantiate an abstract test.') from None
+            raise ValueError('Cannot instantiate an abstract test.')
 
         # Set the test parameters in the object
         cls._set_parameter_space(obj)
@@ -806,7 +806,13 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
     @classmethod
     def is_abstract_test(cls):
-        ''' Checks if the test is an abstract test '''
+        '''Checks if the test is an abstract test.
+
+        If any of the parameters declared in the test parameter space
+        (cls._rfm_paramms) has no defined values, the parameter is considered
+        an abstract parameter. Therefore, a regression test with at least one
+        abstract parameter is considered an abstract test.
+        '''
         if len(list(filter(lambda x: x == (), cls._rfm_params.values()))) == 0:
             return False
 
