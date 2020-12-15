@@ -196,4 +196,4 @@ def build_parameter_space(cls):
                                     f'variables present in the namespace '
                                     f'from class {cls.__qualname__}')
 
-    return param_space
+    setattr(cls, '_rfm_params', param_space)
