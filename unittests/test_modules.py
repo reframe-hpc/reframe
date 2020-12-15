@@ -3,17 +3,13 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import abc
 import os
 import pytest
 
 import reframe.core.environments as env
 import reframe.core.modules as modules
-import reframe.utility as util
-import reframe.utility.osext as osext
 import unittests.fixtures as fixtures
-from reframe.core.exceptions import (ConfigError, EnvironError)
-from reframe.core.runtime import runtime
+from reframe.core.exceptions import ConfigError, EnvironError
 
 
 @pytest.fixture(params=['tmod', 'tmod4', 'lmod', 'nomod'])
@@ -128,6 +124,18 @@ def test_module_load_force_collection(modules_system, module_collection):
     assert unloaded == [('test_collection', [])]
     assert modules_system.is_module_loaded('testmod_base')
     assert modules_system.is_module_loaded('testmod_foo')
+
+
+def test_module_load_collection_searchpath(modules_system, tmpdir,
+                                           module_collection):
+    p1 = str(tmpdir.mkdir('path1'))
+    p2 = str(tmpdir.mkdir('path2'))
+    modules_system.searchpath_add(p1)
+    modules_system.searchpath_add(p2)
+    modules_system.searchpath_remove(p1)
+    modules_system.load_module(module_collection, collection=True)
+    assert p1 not in modules_system.searchpath
+    assert p2 in modules_system.searchpath
 
 
 def test_module_unload_all(modules_system):

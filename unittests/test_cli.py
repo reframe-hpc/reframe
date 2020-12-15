@@ -364,8 +364,22 @@ def test_performance_check_failure(run_reframe, tmp_path, perflogdir):
                           'default' / 'PerformanceFailureCheck.log')
 
 
-def test_performance_report(run_reframe):
+def test_perflogdir_from_env(run_reframe, tmp_path, monkeypatch):
+    monkeypatch.setenv('FOODIR', str(tmp_path / 'perflogs'))
     returncode, stdout, stderr = run_reframe(
+        checkpath=['unittests/resources/checks/frontend_checks.py'],
+        more_options=['-t', 'PerformanceFailureCheck'],
+        perflogdir='$FOODIR'
+    )
+    assert returncode == 1
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert os.path.exists(tmp_path / 'perflogs' / 'generic' /
+                          'default' / 'PerformanceFailureCheck.log')
+
+
+def test_performance_report(run_reframe):
+    returncode, stdout, _ = run_reframe(
         checkpath=['unittests/resources/checks/frontend_checks.py'],
         more_options=['-t', 'PerformanceFailureCheck', '--performance-report']
     )
