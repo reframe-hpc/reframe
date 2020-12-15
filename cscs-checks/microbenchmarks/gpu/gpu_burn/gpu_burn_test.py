@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import os
+import sys
 
 import reframe as rfm
 import reframe.utility.sanity as sn
@@ -142,20 +143,19 @@ class GpuBurnTest(rfm.RegressionTest):
         rptf = os.path.join(self.stagedir, sn.evaluate(self.stdout))
         self.nids = sn.extractall(regex, rptf, 1)
         self.flops = sn.extractall(regex, rptf, 2, float)
-        index = -1
-        flops_min = sn.min(self.flops)
-        for ii in range(len(sn.evaluate(self.flops))):
-            if self.flops[ii] == flops_min:
-                index = ii
-                break
+        flops_min, index = sys.float_info.max, None
+        for i, flops in enumerate(self.flops):
+            if flops < flops_min:
+                flops_min, index = flops, i
 
         self.unit = f'GF/s ({self.nids[index]})'
+        unit = (0, None, None, self.unit)
         self.perf_patterns['smallest_flops'] = flops_min
-        self.reference['dom:gpu:smallest_flops'] = (0, None, None, self.unit)
-        self.reference['daint:gpu'] = (0, None, None, self.unit)
-        self.reference['arolla:cn'] = (0, None, None, self.unit)
-        self.reference['tsa:cn'] = (0, None, None, self.unit)
-        self.reference['ault:amda100'] = (0, None, None, self.unit)
-        self.reference['ault:amdv100'] = (0, None, None, self.unit)
-        self.reference['ault:intelv100'] = (0, None, None, self.unit)
-        self.reference['ault:amdvega'] = (0, None, None, self.unit)
+        self.reference['dom:gpu:smallest_flops'] = unit
+        self.reference['daint:gpu:smallest_flops'] = unit
+        self.reference['arolla:cn:smallest_flops'] = unit
+        self.reference['tsa:cn:smallest_flops'] = unit
+        self.reference['ault:amda100:smallest_flops'] = unit
+        self.reference['ault:amdv100:smallest_flops'] = unit
+        self.reference['ault:intelv100:smallest_flops'] = unit
+        self.reference['ault:amdvega:smallest_flops'] = unit
