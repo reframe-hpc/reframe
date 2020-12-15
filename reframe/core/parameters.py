@@ -62,7 +62,7 @@ class LocalParamSpace:
     Example: In the pseudo-code below, the local parameter space of A is {P0},
     and the local parameter space of B is {P1}. However, the final parameter
     space of A is still {P0}, and the final parameter space of B is {P0, P1}.
-
+    .. code:: python
         class A(RegressionTest):
             -> define parameter P0 with value X.
 
@@ -87,7 +87,7 @@ class LocalParamSpace:
 
     def add_param(self, name, *values, **kwargs):
         '''
-        Insert a new regression test parameter in the staging area.
+        Insert a new regression test parameter in the local parameter space.
         If the parameter is already present in the dictionary, raise an error.
         See the _TestParameter class for further information on the
         function arguments.
@@ -96,7 +96,7 @@ class LocalParamSpace:
 
     @property
     def params(self):
-        return self._params.items()
+        return self._params
 
 
 def _merge_parameter_spaces(bases):
@@ -106,7 +106,8 @@ def _merge_parameter_spaces(bases):
     space. This method allows multiple inheritance, as long as a parameter is
     not doubly defined in two or more different parameter spaces.
 
-    :param bases: iterable containing the parent classes.
+    :param bases: iterable containing the classes from which to merge the
+        parameter space.
 
     :returns: merged parameter space.
     '''
@@ -124,7 +125,7 @@ def _merge_parameter_spaces(bases):
             if key in param_space:
                 if not (param_space[key] == () or
                         base_params[key] == ()):
-                    raise NameConflictError(f'Parameter space conflict '
+                    raise NameConflictError(f'parameter space conflict '
                                             f'(on {key}) due to '
                                             f'multiple inheritance.'
                                            ) from None
@@ -156,8 +157,8 @@ def _extend_parameter_space(local_param_space, param_space):
         raise ReframeSyntaxError(f'the local_param_space must be an '
                                  f'instance of the LocalParamSpace class')
 
-    # Loop over the staging area.
-    for name, p in local_param_space.params:
+    # Loop over the local parameter space.
+    for name, p in local_param_space.params.items():
         param_space[name] = p.filter_params(
             param_space.get(name, ())) + p.values
 
@@ -191,7 +192,7 @@ def build_parameter_space(cls):
     trgt_namespace = set(dir(cls))
     for key in param_space:
         if key in trgt_namespace:
-            raise NameConflictError(f'Attribute {key} clashes with other '
+            raise NameConflictError(f'parameter {key} clashes with other '
                                     f'variables present in the namespace '
                                     f'from class {cls.__qualname__}')
 

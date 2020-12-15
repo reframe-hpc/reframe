@@ -711,7 +711,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
             raise ValueError('Cannot instantiate an abstract test.')
 
         # Set the test parameters in the object
-        cls._set_parameter_space(obj)
+        cls._set_param_space(obj)
 
         # Create a test name from the class name and the constructor's
         # arguments
@@ -746,11 +746,16 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
     @classmethod
     def param_space_len(cls):
-        '''
-        Returns the total number of points in the parameter space.
-        If the RegressionTest has no parameters, the length is 1.
-        Otherwise, the length is the number of all-to-all combinations
-        for each of the values in cls._rfm_params.
+        '''Returns the length of the parameter space iterator.
+
+        Method to efficiently calculate the length of the parameter space
+        iterator without having to iterate through it. If the RegressionTest
+        has no parameters, the length is 1. Otherwise, the length is the
+        number of all-to-all combinations for each of the values in
+        cls._rfm_params. This length might be used by the reframe decorators to
+        register the test as many times as points in the parameter space.
+
+        :return: length of the parameter space iterator
         '''
         if not cls._rfm_params:
             return 1
@@ -762,10 +767,15 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
     @classmethod
     def prepare_param_space(cls):
-        '''
-        Creates an iterator to traverse the full parameter space during the
-        class instantiation, and it also returns the lenght of the parameter
-        space. This is the number of instances of this class to be created.
+        '''Creates the parameter space iterator and returns its lenght
+
+        Creates an iterator to traverse the full parameter space later on
+        during the class instantiation. This iterator covers all possible
+        combinations of the parameter space. This function might be used by the
+        reframe decorator to register the tests and obtain the number of times
+        this class is to be instantiated.
+
+        :return: length of the parameter space iterator
         '''
         if cls._rfm_params:
             cls._rfm_param_space_iter = itertools.product(
@@ -775,21 +785,28 @@ class RegressionTest(metaclass=RegressionTestMeta):
         return cls.param_space_len()
 
     @classmethod
-    def _set_parameter_space(cls, obj):
-        '''
-        Adds to obj.__dict__ the keys corresponding to the test parameters.
+    def _set_param_space(cls, obj):
+        '''Sets the test parameters as class attributes.
+
+        During the object creation, this method inserts the regression test
+        parameters as object attributes. The values assigned to these test
+        parameters is obtained from the iterator created by the
+        :meth `reframe.core.pipeline.prepare_param_space` function above. If
+        this class were instantiated a number of times greater than the length
+        of the iterator, the regression test parameters would still be added as
+        attributes, but equalling None instead.
         '''
         # Don't do anything if the test is not a parametrised test
         if not cls._rfm_params:
             return
 
-        # Test if the we have the parameter space iterator and set
-        # the values of the test parameters.
+        # Test if the  parameter space iterator exists and, if so, set the
+        # values of the test parameters.
         if hasattr(cls, '_rfm_param_space_iter'):
             try:
                 tmp = next(cls._rfm_param_space_iter)
                 for index, key in enumerate(cls._rfm_params):
-                    obj.__dict__[key] = tmp[index]
+                    setattr(obj, key, tmp[index])
 
                 return
 
@@ -798,11 +815,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
             except StopIteration:
                 del cls._rfm_param_space_iter
 
-        # If the param space is not present anymore, it's because we
-        # have already instantiated the full parameter space. However
-        # this will get called if the instance is copied.
+        # If the param space iterator is not present anymore, it's because we
+        # have already instantiated the full parameter space. However this
+        # method will get called if the instance is copied.
         for key in cls._rfm_params:
-            obj.__dict__[key] = None
+            setattr(obj, key, None)
 
     @classmethod
     def is_abstract_test(cls):
@@ -812,6 +829,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
         (cls._rfm_paramms) has no defined values, the parameter is considered
         an abstract parameter. Therefore, a regression test with at least one
         abstract parameter is considered an abstract test.
+
+        :return: bool indicating wheteher the test is abstract or not
         '''
         if len(list(filter(lambda x: x == (), cls._rfm_params.values()))) == 0:
             return False
