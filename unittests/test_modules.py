@@ -3,17 +3,13 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import abc
 import os
 import pytest
 
 import reframe.core.environments as env
 import reframe.core.modules as modules
-import reframe.utility as util
-import reframe.utility.osext as osext
 import unittests.fixtures as fixtures
-from reframe.core.exceptions import (ConfigError, EnvironError)
-from reframe.core.runtime import runtime
+from reframe.core.exceptions import ConfigError, EnvironError
 
 
 @pytest.fixture(params=['tmod', 'tmod4', 'lmod', 'nomod'])
