@@ -775,10 +775,10 @@ class TMod4Impl(TModImpl):
             # Here the module search path removal/addition is repeated since
             # 'restore' discards previous module path manipulations
             for op, mp in self._extra_module_paths:
-                 if op == '+':
-                     super().searchpath_add(mp)
-                 else:
-                     super().searchpath_remove(mp)
+                if op == '+':
+                    super().searchpath_add(mp)
+                else:
+                    super().searchpath_remove(mp)
 
             return []
         else:
@@ -802,15 +802,15 @@ class TMod4Impl(TModImpl):
 
     def emit_load_instr(self, module):
         if module.collection:
-            instructions = [f'module restore {module}']
+            cmds = [f'module restore {module}']
 
             # Here we append module searchpath removal/addition commands
             # since 'restore' discards previous module path manipulations
             for op, mp in self._extra_module_paths:
                 operation = 'use' if op == '+' else 'unuse'
-                instructions += [f'module {operation} {mp}']
+                cmds += [f'module {operation} {mp}']
 
-            return '\n'.join(instructions)
+            return '\n'.join(cmds)
 
         return super().emit_load_instr(module)
 
