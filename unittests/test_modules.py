@@ -130,6 +130,18 @@ def test_module_load_force_collection(modules_system, module_collection):
     assert modules_system.is_module_loaded('testmod_foo')
 
 
+def test_module_load_collection_searchpath(modules_system, tmpdir,
+                                           module_collection):
+    p1 = str(tmpdir.mkdir('path1'))
+    p2 = str(tmpdir.mkdir('path2'))
+    modules_system.searchpath_add(p1)
+    modules_system.searchpath_add(p2)
+    modules_system.searchpath_remove(p1)
+    modules_system.load_module(module_collection, collection=True)
+    assert p1 not in modules_system.searchpath
+    assert p2 in modules_system.searchpath
+
+
 def test_module_unload_all(modules_system):
     if modules_system.name == 'nomod':
         modules_system.unload_all()

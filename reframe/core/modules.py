@@ -729,8 +729,7 @@ class TMod4Impl(TModImpl):
                 (version, self.MIN_VERSION))
 
         self._version = version
-        self._module_paths_added = []
-        self._module_paths_removed = []
+        self._extra_module_paths = []
 
     def name(self):
         return 'tmod4'
@@ -760,8 +759,12 @@ class TMod4Impl(TModImpl):
 
             # Here the module search path removal/addition is repeated since
             # 'restore' discards previous module path manipulations
-            super().searchpath_remove(*self._module_paths_removed)
-            super().searchpath_add(*self._module_paths_added)
+            for op, mp in self._extra_module_paths:
+                 if op == '+':
+                     super().searchpath_add(mp)
+                 else:
+                     super().searchpath_remove(mp)
+
             return []
         else:
             return super().load_module(module)
@@ -788,11 +791,9 @@ class TMod4Impl(TModImpl):
 
             # Here we append module searchpath removal/addition commands
             # since 'restore' discards previous module path manipulations
-            for mp in self._module_paths_removed:
-                instructions += [f'module unuse {mp}']
-
-            for mp in self._module_paths_added:
-                instructions += [f'module use {mp}']
+            for op, mp in self._extra_module_paths:
+                operation = 'use' if op == '+' else 'unuse'
+                instructions += [f'module {operation} {mp}']
 
             return '\n'.join(instructions)
 
@@ -806,13 +807,13 @@ class TMod4Impl(TModImpl):
 
     def searchpath_add(self, *dirs):
         if dirs:
-            self._module_paths_added += dirs
+            self._extra_module_paths += [('+', mp) for mp in dirs]
 
         super().searchpath_add(*dirs)
 
     def searchpath_remove(self, *dirs):
         if dirs:
-            self._module_paths_removed += dirs
+            self._extra_module_paths += [('-', mp) for mp in dirs]
 
         super().searchpath_remove(*dirs)
 
@@ -850,8 +851,7 @@ class LModImpl(TMod4Impl):
             raise ConfigError('Python is not supported by '
                               'this Lmod installation')
 
-        self._module_paths_added = []
-        self._module_paths_removed = []
+        self._extra_module_paths = []
 
     def name(self):
         return 'lmod'
