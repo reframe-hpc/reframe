@@ -38,35 +38,35 @@ class GpuBurnTest(rfm.RegressionTest):
 
         self.reference = {
             'dom:gpu': {
-                'perf': (4115, -0.10, None, 'Gflop/s'),
+                # 'perf': (4115, -0.10, None, 'Gflop/s'),
                 'max_temp': (0, None, None, 'Celsius')
             },
             'daint:gpu': {
-                'perf': (4115, -0.10, None, 'Gflop/s'),
+                # 'perf': (4115, -0.10, None, 'Gflop/s'),
                 'max_temp': (0, None, None, 'Celsius')
             },
             'arolla:cn': {
-                'perf': (5861, -0.10, None, 'Gflop/s'),
+                # 'perf': (5861, -0.10, None, 'Gflop/s'),
                 'max_temp': (0, None, None, 'Celsius')
             },
             'tsa:cn': {
-                'perf': (5861, -0.10, None, 'Gflop/s'),
+                # 'perf': (5861, -0.10, None, 'Gflop/s'),
                 'max_temp': (0, None, None, 'Celsius')
             },
             'ault:amda100': {
-                'perf': (15000, -0.10, None, 'Gflop/s'),
+                # 'perf': (15000, -0.10, None, 'Gflop/s'),
                 'max_temp': (0, None, None, 'Celsius')
             },
             'ault:amdv100': {
-                'perf': (5500, -0.10, None, 'Gflop/s'),
+                # 'perf': (5500, -0.10, None, 'Gflop/s'),
                 'max_temp': (0, None, None, 'Celsius')
             },
             'ault:intelv100': {
-                'perf': (5500, -0.10, None, 'Gflop/s'),
+                # 'perf': (5500, -0.10, None, 'Gflop/s'),
                 'max_temp': (0, None, None, 'Celsius')
             },
             'ault:amdvega': {
-                'perf': (3450, -0.10, None, 'Gflop/s'),
+                # 'perf': (3450, -0.10, None, 'Gflop/s'),
                 'max_temp': (0, None, None, 'Celsius')
             },
         }
@@ -138,24 +138,19 @@ class GpuBurnTest(rfm.RegressionTest):
             self.num_gpus_per_node = 1
 
     @rfm.run_before('performance')
-    def report_smallest_node(self):
+    def report_nid_with_smallest_flops(self):
         regex = r'\[(\S+)\] GPU\s+\d\(OK\): (\d+) GF/s'
         rptf = os.path.join(self.stagedir, sn.evaluate(self.stdout))
         self.nids = sn.extractall(regex, rptf, 1)
         self.flops = sn.extractall(regex, rptf, 2, float)
-        flops_min, index = sys.float_info.max, None
-        for i, flops in enumerate(self.flops):
-            if flops < flops_min:
-                flops_min, index = flops, i
-
+        # find index of smallest flops:
+        index = self.flops.evaluate().index(min(self.flops))
         self.unit = f'GF/s ({self.nids[index]})'
-        unit = (0, None, None, self.unit)
-        self.perf_patterns['smallest_flops'] = flops_min
-        self.reference['dom:gpu:smallest_flops'] = unit
-        self.reference['daint:gpu:smallest_flops'] = unit
-        self.reference['arolla:cn:smallest_flops'] = unit
-        self.reference['tsa:cn:smallest_flops'] = unit
-        self.reference['ault:amda100:smallest_flops'] = unit
-        self.reference['ault:amdv100:smallest_flops'] = unit
-        self.reference['ault:intelv100:smallest_flops'] = unit
-        self.reference['ault:amdvega:smallest_flops'] = unit
+        self.reference['dom:gpu:perf'] = (4115, -0.10, None, self.unit)
+        self.reference['daint:gpu:perf'] = (4115, -0.10, None, self.unit)
+        self.reference['arolla:cn:perf'] = (5861, -0.10, None, self.unit)
+        self.reference['tsa:cn:perf'] = (5861, -0.10, None, self.unit)
+        self.reference['ault:amda100:perf'] = (15000, -0.10, None, self.unit)
+        self.reference['ault:amdv100:perf'] = (5500, -0.10, None, self.unit)
+        self.reference['ault:intelv100:perf'] = (5500, -0.10, None, self.unit)
+        self.reference['ault:amdvega:perf'] = (3450, -0.10, None, self.unit)
