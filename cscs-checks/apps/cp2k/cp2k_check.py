@@ -50,31 +50,61 @@ class Cp2kCpuCheck(Cp2kCheck):
     def __init__(self, scale, variant):
         super().__init__()
         self.descr = 'CP2K CPU check (version: %s, %s)' % (scale, variant)
-        self.valid_systems = ['daint:mc']
+        self.valid_systems = ['daint:mc', 'eiger:mc']
         if scale == 'small':
             self.valid_systems += ['dom:mc']
-            self.num_tasks = 216
-        else:
-            self.num_tasks = 576
+            if (self.current_system.name in ['daint', 'dom']):
+                self.num_tasks = 216
+                self.num_tasks_per_node = 36
+            elif (self.current_system.name in ['eiger']):
+                self.executable = '--cpu-bind=cores cp2k.psmp'
+                self.num_tasks = 96
+                self.num_tasks_per_node = 16
+                self.num_cpus_per_task = 8
+                self.variables = {
+                    'MPICH_OFI_STARTUP_CONNECT': '1',
+                    'OMP_NUM_THREADS': str(self.num_cpus_per_task),
+                    'OMP_PLACES': 'cores',
+                    'OMP_PROC_BIND': 'close'
+                } 
 
-        self.num_tasks_per_node = 36
+        else:
+            if (self.current_system.name in ['daint', 'dom']):
+                self.num_tasks = 576
+                self.num_tasks_per_node = 36
+            elif (self.current_system.name in ['eiger']):
+                self.executable = '--cpu-bind=cores cp2k.psmp'
+                self.num_tasks = 256
+                self.num_tasks_per_node = 16
+                self.num_cpus_per_task = 8
+                self.variables = {
+                    'MPICH_OFI_STARTUP_CONNECT': '1',
+                    'OMP_NUM_THREADS': str(self.num_cpus_per_task),
+                    'OMP_PLACES': 'cores',
+                    'OMP_PROC_BIND': 'close'
+                } 
+
         references = {
             'maint': {
                 'small': {
                     'dom:mc': {'time': (202.2, None, 0.05, 's')},
-                    'daint:mc': {'time': (180.9, None, 0.08, 's')}
+                    'daint:mc': {'time': (180.9, None, 0.08, 's')},
+                    'eiger:mc': {'time': (180.9, None, 0.08, 's')}
                 },
                 'large': {
-                    'daint:mc': {'time': (141.0, None, 0.05, 's')}
+                    'daint:mc': {'time': (141.0, None, 0.05, 's')},
+                    'eiger:mc': {'time': (141.0, None, 0.05, 's')}
                 }
             },
             'prod': {
                 'small': {
                     'dom:mc': {'time': (202.2, None, 0.05, 's')},
-                    'daint:mc': {'time': (180.9, None, 0.08, 's')}
+                    'daint:mc': {'time': (180.9, None, 0.08, 's')},
+                    'eiger:mc': {'time': (180.9, None, 0.08, 's')}
                 },
                 'large': {
-                    'daint:mc': {'time': (113.0, None, 0.05, 's')}
+                    'daint:mc': {'time': (113.0, None, 0.05, 's')},
+                    'eiger:mc': {'time': (113.0, None, 0.05, 's')}
                 }
             }
         }
