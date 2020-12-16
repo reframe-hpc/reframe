@@ -1414,7 +1414,8 @@ def modules_system(user_exec_ctx, monkeypatch):
 
     ms = rt.runtime().system.modules_system
     ms.searchpath_add(fixtures.TEST_MODULES)
-    return ms
+    yield ms
+    ms.searchpath_remove(fixtures.TEST_MODULES)
 
 
 def test_find_modules(modules_system):
