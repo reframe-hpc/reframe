@@ -16,7 +16,7 @@ class Cp2kCheck(rfm.RunOnlyRegressionTest):
             self.executable = '--cpu-bind=cores cp2k.psmp'
         else:
             self.executable = 'cp2k.psmp'
-        
+
         self.executable_opts = ['H2O-256.inp']
 
         energy = sn.extractsingle(r'\s+ENERGY\| Total FORCE_EVAL \( QS \) '
@@ -71,7 +71,7 @@ class Cp2kCpuCheck(Cp2kCheck):
                     'OMP_NUM_THREADS': '8',
                     'OMP_PLACES': 'cores',
                     'OMP_PROC_BIND': 'close'
-                } 
+                }
 
         else:
             if (self.current_system.name in ['daint', 'dom']):
@@ -88,7 +88,7 @@ class Cp2kCpuCheck(Cp2kCheck):
                     'OMP_NUM_THREADS': '8',
                     'OMP_PLACES': 'cores',
                     'OMP_PROC_BIND': 'close'
-                } 
+                }
 
         references = {
             'maint': {
