@@ -33,41 +33,35 @@ class GpuBurnTest(rfm.RegressionTest):
                 r'(?P<temp>\S*) Celsius')
         self.perf_patterns = {
             'perf': sn.min(sn.extractall(patt, self.stdout, 'perf', float)),
+            'temp': sn.max(sn.extractall(patt, self.stdout, 'temp', float)),
         }
 
         self.reference = {
             'dom:gpu': {
-                # 'perf': (4115, -0.10, None, 'Gflop/s'),
-                'max_temp': (0, None, None, 'Celsius')
+                'perf': (4115, -0.10, None, 'Gflop/s'),
             },
             'daint:gpu': {
-                # 'perf': (4115, -0.10, None, 'Gflop/s'),
-                'max_temp': (0, None, None, 'Celsius')
+                'perf': (4115, -0.10, None, 'Gflop/s'),
             },
             'arolla:cn': {
-                # 'perf': (5861, -0.10, None, 'Gflop/s'),
-                'max_temp': (0, None, None, 'Celsius')
+                'perf': (5861, -0.10, None, 'Gflop/s'),
             },
             'tsa:cn': {
-                # 'perf': (5861, -0.10, None, 'Gflop/s'),
-                'max_temp': (0, None, None, 'Celsius')
+                'perf': (5861, -0.10, None, 'Gflop/s'),
             },
             'ault:amda100': {
-                # 'perf': (15000, -0.10, None, 'Gflop/s'),
-                'max_temp': (0, None, None, 'Celsius')
+                'perf': (15000, -0.10, None, 'Gflop/s'),
             },
             'ault:amdv100': {
-                # 'perf': (5500, -0.10, None, 'Gflop/s'),
-                'max_temp': (0, None, None, 'Celsius')
+                'perf': (5500, -0.10, None, 'Gflop/s'),
             },
             'ault:intelv100': {
-                # 'perf': (5500, -0.10, None, 'Gflop/s'),
-                'max_temp': (0, None, None, 'Celsius')
+                'perf': (5500, -0.10, None, 'Gflop/s'),
             },
             'ault:amdvega': {
-                # 'perf': (3450, -0.10, None, 'Gflop/s'),
-                'max_temp': (0, None, None, 'Celsius')
+                'perf': (3450, -0.10, None, 'Gflop/s'),
             },
+            '*': {'temp': (0, None, None, 'degC')}
         }
 
         self.maintainers = ['AJ', 'TM']
@@ -142,14 +136,11 @@ class GpuBurnTest(rfm.RegressionTest):
         rptf = os.path.join(self.stagedir, sn.evaluate(self.stdout))
         self.nids = sn.extractall(regex, rptf, 1)
         self.flops = sn.extractall(regex, rptf, 2, float)
-        # find index of smallest flops:
+
+        # Find index of smallest flops and update reference dictionary to
+        # include our patched units
         index = self.flops.evaluate().index(min(self.flops))
-        self.unit = f'GF/s ({self.nids[index]})'
-        self.reference['dom:gpu:perf'] = (4115, -0.10, None, self.unit)
-        self.reference['daint:gpu:perf'] = (4115, -0.10, None, self.unit)
-        self.reference['arolla:cn:perf'] = (5861, -0.10, None, self.unit)
-        self.reference['tsa:cn:perf'] = (5861, -0.10, None, self.unit)
-        self.reference['ault:amda100:perf'] = (15000, -0.10, None, self.unit)
-        self.reference['ault:amdv100:perf'] = (5500, -0.10, None, self.unit)
-        self.reference['ault:intelv100:perf'] = (5500, -0.10, None, self.unit)
-        self.reference['ault:amdvega:perf'] = (3450, -0.10, None, self.unit)
+        unit = f'GF/s ({self.nids[index]})'
+        for key, ref in self.reference.items():
+            if not key.endswith(':temp'):
+                self.reference[key] = (*ref[:3], unit)
