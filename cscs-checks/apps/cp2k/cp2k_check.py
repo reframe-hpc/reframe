@@ -95,22 +95,22 @@ class Cp2kCpuCheck(Cp2kCheck):
                 'small': {
                     'dom:mc': {'time': (202.2, None, 0.05, 's')},
                     'daint:mc': {'time': (180.9, None, 0.08, 's')},
-                    'eiger:mc': {'time': (180.9, None, 0.08, 's')}
+                    'eiger:mc': {'time': (72.0, None, 0.08, 's')}
                 },
                 'large': {
                     'daint:mc': {'time': (141.0, None, 0.05, 's')},
-                    'eiger:mc': {'time': (141.0, None, 0.05, 's')}
+                    'eiger:mc': {'time': (47.0, None, 0.05, 's')}
                 }
             },
             'prod': {
                 'small': {
                     'dom:mc': {'time': (202.2, None, 0.05, 's')},
                     'daint:mc': {'time': (180.9, None, 0.08, 's')},
-                    'eiger:mc': {'time': (180.9, None, 0.08, 's')}
+                    'eiger:mc': {'time': (72.0, None, 0.08, 's')}
                 },
                 'large': {
                     'daint:mc': {'time': (113.0, None, 0.05, 's')},
-                    'eiger:mc': {'time': (113.0, None, 0.05, 's')}
+                    'eiger:mc': {'time': (47.0, None, 0.05, 's')}
                 }
             }
         }
