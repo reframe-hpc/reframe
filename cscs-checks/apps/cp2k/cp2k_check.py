@@ -12,7 +12,11 @@ class Cp2kCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
         self.valid_prog_environs = ['builtin']
         self.modules = ['CP2K']
-        self.executable = 'cp2k.psmp'
+        if (self.current_system.name in ['eiger']):
+            self.executable = '--cpu-bind=cores cp2k.psmp'
+        else:
+            self.executable = 'cp2k.psmp'
+        
         self.executable_opts = ['H2O-256.inp']
 
         energy = sn.extractsingle(r'\s+ENERGY\| Total FORCE_EVAL \( QS \) '
@@ -57,13 +61,14 @@ class Cp2kCpuCheck(Cp2kCheck):
                 self.num_tasks = 216
                 self.num_tasks_per_node = 36
             elif (self.current_system.name in ['eiger']):
-                self.executable = '--cpu-bind=cores cp2k.psmp'
                 self.num_tasks = 96
                 self.num_tasks_per_node = 16
-                self.num_cpus_per_task = 8
+                self.num_cpus_per_task = 16
+                self.num_tasks_per_core = 1
+                self.use_multithreading = False
                 self.variables = {
                     'MPICH_OFI_STARTUP_CONNECT': '1',
-                    'OMP_NUM_THREADS': str(self.num_cpus_per_task),
+                    'OMP_NUM_THREADS': '8',
                     'OMP_PLACES': 'cores',
                     'OMP_PROC_BIND': 'close'
                 } 
@@ -73,13 +78,14 @@ class Cp2kCpuCheck(Cp2kCheck):
                 self.num_tasks = 576
                 self.num_tasks_per_node = 36
             elif (self.current_system.name in ['eiger']):
-                self.executable = '--cpu-bind=cores cp2k.psmp'
                 self.num_tasks = 256
                 self.num_tasks_per_node = 16
-                self.num_cpus_per_task = 8
+                self.num_cpus_per_task = 16
+                self.num_tasks_per_core = 1
+                self.use_multithreading = False
                 self.variables = {
                     'MPICH_OFI_STARTUP_CONNECT': '1',
-                    'OMP_NUM_THREADS': str(self.num_cpus_per_task),
+                    'OMP_NUM_THREADS': '8',
                     'OMP_PLACES': 'cores',
                     'OMP_PROC_BIND': 'close'
                 } 
