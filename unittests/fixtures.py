@@ -80,7 +80,7 @@ def environment_by_name(name, partition):
 
 def has_sane_modules_system():
     return not isinstance(rt.runtime().modules_system.backend,
-                          modules.NoModImpl)
+                          (modules.NoModImpl, modules.SpackImpl))
 
 
 def custom_prefix(prefix):

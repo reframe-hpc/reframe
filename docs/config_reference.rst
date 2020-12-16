@@ -115,6 +115,7 @@ System Configuration
    - ``tmod32``: A synonym of ``tmod``.
    - ``tmod4``: The `new environment modules <http://modules.sourceforge.net/>`__ implementation (versions older than 4.1 are not supported).
    - ``lmod``: The `Lua implementation <https://lmod.readthedocs.io/en/latest/>`__ of the environment modules.
+   - ``Spack``: `Spack <https://spack.readthedocs.io/en/latest/>`'s built-in mechanism for managing modules.
    - ``nomod``: This is to denote that no modules system is used by this system.
 
 .. js:attribute:: .systems[].modules

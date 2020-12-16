@@ -16,7 +16,7 @@ from reframe.core.exceptions import (ConfigError, EnvironError)
 from reframe.core.runtime import runtime
 
 
-@pytest.fixture(params=['tmod', 'tmod4', 'lmod', 'nomod'])
+@pytest.fixture(params=['tmod', 'tmod4', 'lmod', 'spack', 'nomod'])
 def modules_system(request, monkeypatch):
     # Always pretend to be on a clean modules environment
     monkeypatch.setenv('MODULEPATH', '')
@@ -35,7 +35,7 @@ def modules_system(request, monkeypatch):
 
 
 def test_searchpath(modules_system):
-    if modules_system.name == 'nomod':
+    if modules_system.name in ['nomod', 'spack']:
         # Simply test that no exceptions are thrown
         modules_system.searchpath_remove(fixtures.TEST_MODULES)
     else:
@@ -74,7 +74,7 @@ def module_collection(modules_system, tmp_path, monkeypatch):
 
 
 def test_module_load(modules_system):
-    if modules_system.name == 'nomod':
+    if modules_system.name in ['nomod', 'spack']:
         modules_system.load_module('foo')
         modules_system.unload_module('foo')
     else:
@@ -104,7 +104,7 @@ def test_module_load_collection(modules_system, module_collection):
 
 
 def test_module_load_force(modules_system):
-    if modules_system.name == 'nomod':
+    if modules_system.name in ['nomod', 'spack']:
         modules_system.load_module('foo', force=True)
     else:
         modules_system.load_module('testmod_foo')
@@ -140,7 +140,7 @@ def test_module_unload_all(modules_system):
 
 
 def test_module_list(modules_system):
-    if modules_system.name == 'nomod':
+    if modules_system.name in ['nomod', 'spack']:
         assert 0 == len(modules_system.loaded_modules())
     else:
         modules_system.load_module('testmod_foo')
@@ -149,7 +149,7 @@ def test_module_list(modules_system):
 
 
 def test_module_conflict_list(modules_system):
-    if modules_system.name == 'nomod':
+    if modules_system.name in ['nomod', 'spack']:
         assert 0 == len(modules_system.conflicted_modules('foo'))
     else:
         conflict_list = modules_system.conflicted_modules('testmod_bar')
@@ -159,14 +159,14 @@ def test_module_conflict_list(modules_system):
 
 def test_module_available_all(modules_system):
     modules = sorted(modules_system.available_modules())
-    if modules_system.name == 'nomod':
+    if modules_system.name in ['nomod', 'spack']:
         assert modules == []
     else:
         assert (modules == ['testmod_bar', 'testmod_base',
                             'testmod_boo', 'testmod_ext', 'testmod_foo'])
 
 
-def test_module_available_substr(modules_system):
+def _test_module_available_substr(modules_system):
     modules = sorted(modules_system.available_modules('testmod_b'))
     if modules_system.name == 'nomod':
         assert modules == []
