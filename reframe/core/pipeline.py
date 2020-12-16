@@ -746,16 +746,15 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
     @classmethod
     def param_space_len(cls):
-        '''Returns the length of the parameter space iterator.
+        '''Returns the number of all possible parameter combinations.
 
-        Method to efficiently calculate the length of the parameter space
-        iterator without having to iterate through it. If the RegressionTest
-        has no parameters, the length is 1. Otherwise, the length is the
-        number of all-to-all combinations for each of the values in
-        cls._rfm_params. This length might be used by the reframe decorators to
-        register the test as many times as points in the parameter space.
+        Method to calculate the test's parameter space length (i.e. the number
+        of all possible parameter combinations). If the RegressionTest
+        has no parameters, the length is 1. This method might be used by the
+        reframe decorators to query the number of times a test should be
+        registered.
 
-        :return: length of the parameter space iterator
+        :return: length of the parameter space
         '''
         if not cls._rfm_params:
             return 1
@@ -767,13 +766,17 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
     @classmethod
     def prepare_param_space(cls):
-        '''Creates the parameter space iterator and returns its lenght
+        '''Creates the parameter space iterator
 
         Creates an iterator to traverse the full parameter space later on
         during the class instantiation. This iterator covers all possible
-        combinations of the parameter space. This function might be used by the
-        reframe decorator to register the tests and obtain the number of times
-        this class is to be instantiated.
+        parameter combinations. This function might be used by a reframe
+        decorator to prepare the test for instantiation.
+
+        .. note::
+           If this method is not called before the class is instantiated, all
+           the test parameters will be set to None by
+           :meth: `reframe.core.pipeline._set_param_space`.
 
         :return: length of the parameter space iterator
         '''
@@ -782,7 +785,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
                 *(p for p in cls._rfm_params.values())
             )
 
-        return cls.param_space_len()
+        return
 
     @classmethod
     def _set_param_space(cls, obj):
@@ -790,11 +793,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         During the object creation, this method inserts the regression test
         parameters as object attributes. The values assigned to these test
-        parameters is obtained from the iterator created by the
-        :meth `reframe.core.pipeline.prepare_param_space` function above. If
-        this class were instantiated a number of times greater than the length
-        of the iterator, the regression test parameters would still be added as
-        attributes, but equalling None instead.
+        parameters are obtained from the iterator created by the
+        :meth `reframe.core.pipeline.prepare_param_space` method. This iterator
+        is deleted once it gets exhausted. Instantiating this class without the
+        iterator being present is allowed. In that case, the test parameters
+        would simply be initialized as None.
         '''
         # Don't do anything if the test is not a parametrised test
         if not cls._rfm_params:
@@ -810,14 +813,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
                 return
 
-            # Delete the iterator if we have exhausted the parameter
-            # space
+            # Delete the iterator if exhausted
             except StopIteration:
                 del cls._rfm_param_space_iter
 
-        # If the param space iterator is not present anymore, it's because we
-        # have already instantiated the full parameter space. However this
-        # method will get called if the instance is copied.
+        # If the iterator is not pressent, assign the paramters a default value
         for key in cls._rfm_params:
             setattr(obj, key, None)
 

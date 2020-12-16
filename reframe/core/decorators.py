@@ -88,13 +88,14 @@ def simple_test(cls):
     '''
     _validate_test(cls)
 
-    # Prepare the test's parameter space iterator and register the test as many
-    # times as the lenght of this iterator.
-    for _ in range(cls.prepare_param_space()):
+    # Prepare the test's parameter space iterator
+    cls.prepare_param_space()
+
+    # Register the test
+    for _ in range(cls.param_space_len()):
         _register_test(cls)
 
     return cls
-
 
 
 def parameterized_test(*inst):
