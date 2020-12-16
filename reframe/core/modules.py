@@ -744,6 +744,7 @@ class TMod4Impl(TModImpl):
                 (version, self.MIN_VERSION))
 
         self._version = version
+        self._extra_module_paths = []
 
     def name(self):
         return 'tmod4'
@@ -770,6 +771,15 @@ class TMod4Impl(TModImpl):
     def load_module(self, module):
         if module.collection:
             self.execute('restore', str(module))
+
+            # Here the module search path removal/addition is repeated since
+            # 'restore' discards previous module path manipulations
+            for op, mp in self._extra_module_paths:
+                if op == '+':
+                    super().searchpath_add(mp)
+                else:
+                    super().searchpath_remove(mp)
+
             return []
         else:
             return super().load_module(module)
@@ -792,7 +802,15 @@ class TMod4Impl(TModImpl):
 
     def emit_load_instr(self, module):
         if module.collection:
-            return f'module restore {module}'
+            cmds = [f'module restore {module}']
+
+            # Here we append module searchpath removal/addition commands
+            # since 'restore' discards previous module path manipulations
+            for op, mp in self._extra_module_paths:
+                operation = 'use' if op == '+' else 'unuse'
+                cmds += [f'module {operation} {mp}']
+
+            return '\n'.join(cmds)
 
         return super().emit_load_instr(module)
 
@@ -801,6 +819,18 @@ class TMod4Impl(TModImpl):
             return ''
 
         return super().emit_unload_instr(module)
+
+    def searchpath_add(self, *dirs):
+        if dirs:
+            self._extra_module_paths += [('+', mp) for mp in dirs]
+
+        super().searchpath_add(*dirs)
+
+    def searchpath_remove(self, *dirs):
+        if dirs:
+            self._extra_module_paths += [('-', mp) for mp in dirs]
+
+        super().searchpath_remove(*dirs)
 
 
 class LModImpl(TMod4Impl):
@@ -835,6 +865,8 @@ class LModImpl(TMod4Impl):
         if re.search(r'Unknown shell type', completed.stderr):
             raise ConfigError('Python is not supported by '
                               'this Lmod installation')
+
+        self._extra_module_paths = []
 
     def name(self):
         return 'lmod'
@@ -890,20 +922,6 @@ class LModImpl(TMod4Impl):
                 ret.append(Module(conflict_arg))
 
         return ret
-
-    def load_module(self, module):
-        if module.collection:
-            self.execute('restore', str(module))
-            return []
-        else:
-            return super().load_module(module)
-
-    def unload_module(self, module):
-        if module.collection:
-            # Module collection are not unloaded
-            return
-
-        super().unload_module(module)
 
     def unload_all(self):
         # Currently, we don't take any provision for sticky modules in Lmod, so
