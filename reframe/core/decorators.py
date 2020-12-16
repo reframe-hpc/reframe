@@ -88,7 +88,7 @@ def simple_test(cls):
     '''
     _validate_test(cls)
 
-    # Prepare the test's parameter space iterator
+    # Prepare the test's parameter space
     cls.prepare_param_space()
 
     # Register the test

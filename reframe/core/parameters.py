@@ -9,6 +9,7 @@
 
 from reframe.core.exceptions import ReframeSyntaxError, NameConflictError
 
+
 class _TestParameter:
     '''Regression test paramter class.
 

@@ -777,23 +777,19 @@ class RegressionTest(metaclass=RegressionTestMeta):
            If this method is not called before the class is instantiated, all
            the test parameters will be set to None by
            :meth: `reframe.core.pipeline._set_param_space`.
-
-        :return: length of the parameter space iterator
         '''
         if cls._rfm_params:
             cls._rfm_param_space_iter = itertools.product(
                 *(p for p in cls._rfm_params.values())
             )
 
-        return
-
     @classmethod
     def _set_param_space(cls, obj):
         '''Sets the test parameters as class attributes.
 
-        During the object creation, this method inserts the regression test
-        parameters as object attributes. The values assigned to these test
-        parameters are obtained from the iterator created by the
+        Inserts the regression test parameters as object attributes during
+        object creation. The values assigned to these test parameters are
+        obtained from the iterator created by the
         :meth `reframe.core.pipeline.prepare_param_space` method. This iterator
         is deleted once it gets exhausted. Instantiating this class without the
         iterator being present is allowed. In that case, the test parameters
