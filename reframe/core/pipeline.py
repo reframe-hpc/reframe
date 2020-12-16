@@ -706,10 +706,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
     def __new__(cls, *args, **kwargs):
         obj = super().__new__(cls)
 
-        # Abort the class instantiation if the test is an abstract test.
-        if cls.is_abstract_test():
-            raise ValueError('Cannot instantiate an abstract test.')
-
         # Set the test parameters in the object
         cls._set_param_space(obj)
 
@@ -754,6 +750,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
         reframe decorators to query the number of times a test should be
         registered.
 
+        .. note::
+           If the test is an abstract test (i.e. has undefined parameters in
+           the parameter space), the returned parameter space length is 0.
+
         :return: length of the parameter space
         '''
         if not cls._rfm_params:
@@ -774,9 +774,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
         decorator to prepare the test for instantiation.
 
         .. note::
-           If this method is not called before the class is instantiated, all
-           the test parameters will be set to None by
-           :meth: `reframe.core.pipeline._set_param_space`.
+           If the test is an abstract test (i.e. has undefined parameters in
+           the parameter space), the resulting iterator will be empty.
         '''
         if cls._rfm_params:
             cls._rfm_param_space_iter = itertools.product(
@@ -791,9 +790,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
         object creation. The values assigned to these test parameters are
         obtained from the iterator created by the
         :meth `reframe.core.pipeline.prepare_param_space` method. This iterator
-        is deleted once it gets exhausted. Instantiating this class without the
-        iterator being present is allowed. In that case, the test parameters
-        would simply be initialized as None.
+        is exhausted or not present, the parameters would simply be initialized
+        to None.
         '''
         # Don't do anything if the test is not a parametrised test
         if not cls._rfm_params:
@@ -822,16 +820,16 @@ class RegressionTest(metaclass=RegressionTestMeta):
         '''Checks if the test is an abstract test.
 
         If any of the parameters declared in the test parameter space
-        (cls._rfm_paramms) has no defined values, the parameter is considered
+        (cls._rfm_params) has no defined values, the parameter is considered
         an abstract parameter. Therefore, a regression test with at least one
         abstract parameter is considered an abstract test.
 
         :return: bool indicating wheteher the test is abstract or not
         '''
-        if len(list(filter(lambda x: x == (), cls._rfm_params.values()))) == 0:
-            return False
+        if cls.param_space_len() == 0:
+            return True
 
-        return True
+        return False
 
     def _append_parameters_to_name(self):
         if self._rfm_params:

@@ -73,8 +73,8 @@ def _validate_test(cls):
                                  'subclass of RegressionTest')
 
     if (cls.is_abstract_test()):
-        raise ValueError(f'Decorated test ({cls.__qualname__}) is an'
-                         f' abstract test.')
+        raise ValueError(f'decorated test ({cls.__qualname__}) is an'
+                         f' abstract test')
 
 
 def simple_test(cls):
@@ -113,8 +113,6 @@ def parameterized_test(*inst):
    .. note::
       This decorator does not instantiate any test.  It only registers them.
       The actual instantiation happens during the loading phase of the test.
-
-    .. to be deprecated
     '''
     def _do_register(cls):
         _validate_test(cls)
