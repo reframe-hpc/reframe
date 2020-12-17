@@ -432,7 +432,8 @@ class SlurmJobScheduler(sched.JobScheduler):
         if t_pending >= job.max_pending_time:
             self.log(f'maximum pending time for job exceeded; cancelling it')
             self.cancel(job)
-            job._exception = JobError('maximum pending time exceeded', job.jobid)
+            job._exception = JobError('maximum pending time exceeded',
+                                      job.jobid)
 
     def _cancel_if_blocked(self, job, reasons=None):
         if (job.is_cancelling or not slurm_state_pending(job.state)):
