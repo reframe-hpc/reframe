@@ -944,7 +944,13 @@ class NoModImpl(ModulesSystemImpl):
 
 
 class SpackImpl(ModulesSystemImpl):
-    '''Base class for TMod Module system (Tcl).'''
+    '''Backend for Spack's modules system emulation.
+
+    This backend implements :func:`load_module`, :func:`unload_module` as well
+    as the searchpath methods as no-ops, since Spack does not offer any Python
+    bindings for its emulation.
+
+    '''
 
     def __init__(self):
         # Try to figure out if we are indeed using the TCL version

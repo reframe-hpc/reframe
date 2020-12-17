@@ -140,8 +140,13 @@ def test_module_unload_all(modules_system):
 
 
 def test_module_list(modules_system):
-    if modules_system.name in ['nomod', 'spack']:
+    if modules_system.name == 'nomod':
         assert 0 == len(modules_system.loaded_modules())
+    elif modules_system.name == 'spack':
+        # If Spack is installed, we can't be sure that the user has not loaded
+        # any module and we cannot unload them in here, since we don't have
+        # Python bindings. So we only check that we get a list back.
+        assert isinstance(modules_system.loaded_modules(), list)
     else:
         modules_system.load_module('testmod_foo')
         assert 'testmod_foo' in modules_system.loaded_modules()
@@ -159,8 +164,13 @@ def test_module_conflict_list(modules_system):
 
 def test_module_available_all(modules_system):
     modules = sorted(modules_system.available_modules())
-    if modules_system.name in ['nomod', 'spack']:
+    if modules_system.name == 'nomod':
         assert modules == []
+    elif modules_system.name == 'spack':
+        # If Spack is installed, we can't fool it with environment variables
+        # about its installed packages, like we can do with modules, so we
+        # simply check that we get a list back.
+        assert isinstance(modules, list)
     else:
         assert (modules == ['testmod_bar', 'testmod_base',
                             'testmod_boo', 'testmod_ext', 'testmod_foo'])
@@ -206,6 +216,13 @@ def _emit_load_commands_lmod(modules_system):
     assert [emit_cmds('m0')] == ['module load m1', 'module load m2']
 
 
+def _emit_load_commands_spack(modules_system):
+    emit_cmds = modules_system.emit_load_commands
+    assert [emit_cmds('foo')] == ['spack load foo']
+    assert [emit_cmds('foo/1.2')] == ['spack load foo/1.2']
+    assert [emit_cmds('m0')] == ['spack load m1', 'spack load m2']
+
+
 def _emit_load_commands_nomod(modules_system):
     emit_cmds = modules_system.emit_load_commands
     assert [emit_cmds('foo')] == []
@@ -242,6 +259,13 @@ def _emit_unload_commands_lmod(modules_system):
     assert [emit_cmds('foo')] == ['module unload foo']
     assert [emit_cmds('foo/1.2')] == ['module unload foo/1.2']
     assert [emit_cmds('m0')] == ['module unload m2', 'module unload m1']
+
+
+def _emit_unload_commands_spack(modules_system):
+    emit_cmds = modules_system.emit_unload_commands
+    assert [emit_cmds('foo')] == ['spack unload foo']
+    assert [emit_cmds('foo/1.2')] == ['spack unload foo/1.2']
+    assert [emit_cmds('m0')] == ['spack unload m2', 'spack unload m1']
 
 
 def _emit_unload_commands_nomod(modules_system):
