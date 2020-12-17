@@ -4,13 +4,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import json
-import os
 import pytest
 
 import reframe.core.config as config
 from reframe.core.exceptions import ConfigError
 from reframe.core.systems import System
-from reframe.core.warnings import ReframeDeprecationWarning
 
 
 def test_load_config_fallback(monkeypatch):
@@ -24,7 +22,7 @@ def test_load_config_python():
 
 
 def test_load_config_python_old_syntax():
-    with pytest.raises(ReframeDeprecationWarning):
+    with pytest.raises(ConfigError):
         site_config = config.load_config(
             'unittests/resources/settings_old_syntax.py'
         )
@@ -247,7 +245,7 @@ def test_select_subconfig():
     assert site_config.get('systems/0/partitions/0/scheduler') == 'local'
     assert site_config.get('systems/0/partitions/0/launcher') == 'local'
     assert (site_config.get('systems/0/partitions/0/environs') ==
-            ['PrgEnv-cray', 'PrgEnv-gnu', 'builtin-gcc'])
+            ['PrgEnv-cray', 'PrgEnv-gnu'])
     assert site_config.get('systems/0/partitions/0/descr') == 'Login nodes'
     assert site_config.get('systems/0/partitions/0/resources') == []
     assert site_config.get('systems/0/partitions/0/access') == []
@@ -255,7 +253,7 @@ def test_select_subconfig():
     assert site_config.get('systems/0/partitions/0/modules') == []
     assert site_config.get('systems/0/partitions/0/variables') == []
     assert site_config.get('systems/0/partitions/0/max_jobs') == 8
-    assert len(site_config['environments']) == 6
+    assert len(site_config['environments']) == 5
     assert site_config.get('environments/@PrgEnv-gnu/cc') == 'gcc'
     assert site_config.get('environments/0/cxx') == 'g++'
     assert site_config.get('environments/@PrgEnv-cray/cc') == 'cc'
@@ -269,7 +267,7 @@ def test_select_subconfig():
     assert site_config.get('systems/0/partitions/@gpu/scheduler') == 'slurm'
     assert site_config.get('systems/0/partitions/0/launcher') == 'srun'
     assert (site_config.get('systems/0/partitions/0/environs') ==
-            ['PrgEnv-gnu', 'builtin-gcc'])
+            ['PrgEnv-gnu', 'builtin'])
     assert site_config.get('systems/0/partitions/0/descr') == 'GPU partition'
     assert len(site_config.get('systems/0/partitions/0/resources')) == 2
     assert (site_config.get('systems/0/partitions/0/resources/@gpu/name') ==
@@ -280,7 +278,7 @@ def test_select_subconfig():
     assert (site_config.get('systems/0/partitions/0/variables') ==
             [['FOO_GPU', 'yes']])
     assert site_config.get('systems/0/partitions/0/max_jobs') == 10
-    assert len(site_config['environments']) == 6
+    assert len(site_config['environments']) == 5
     assert site_config.get('environments/@PrgEnv-gnu/cc') == 'cc'
     assert site_config.get('environments/0/cxx') == 'CC'
     assert site_config.get('general/0/check_search_path') == ['c:d']
@@ -315,6 +313,7 @@ def test_sticky_options():
     site_config.select_subconfig('testsys:login')
     site_config.add_sticky_option('environments/cc', 'clang')
     site_config.add_sticky_option('modes/options', ['foo'])
+    assert site_config.is_sticky_option('modes/options')
     assert site_config.get('environments/@PrgEnv-gnu/cc') == 'clang'
     assert site_config.get('environments/@PrgEnv-cray/cc') == 'clang'
     assert site_config.get('environments/@PrgEnv-cray/cxx') == 'CC'

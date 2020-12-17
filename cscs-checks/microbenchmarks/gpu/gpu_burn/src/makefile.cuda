@@ -1,0 +1,2 @@
+gpu_burn:
+	nvcc $@.cu -o $@.x ${CXXFLAGS} -lnvidia-ml -lcublas -lcuda -std=c++14

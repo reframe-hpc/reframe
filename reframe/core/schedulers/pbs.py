@@ -19,8 +19,7 @@ import reframe.core.runtime as rt
 import reframe.core.schedulers as sched
 import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
-from reframe.core.config import settings
-from reframe.core.exceptions import (JobError, JobSchedulerError)
+from reframe.core.exceptions import JobError, JobSchedulerError
 from reframe.utility import seconds_to_hms
 
 
@@ -263,7 +262,8 @@ class PbsJobScheduler(sched.JobScheduler):
                   job.max_pending_time):
                 if (time.time() - job.submit_time >= job.max_pending_time):
                     self.cancel(job)
-                    job._exception = JobError('maximum pending time exceeded')
+                    job._exception = JobError('maximum pending time exceeded',
+                                              job.jobid)
 
 
 @register_scheduler('torque')

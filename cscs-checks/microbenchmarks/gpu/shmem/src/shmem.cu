@@ -1,43 +1,27 @@
 
 // Shared memory bandwidth benchmark
 // contributed by Sebastian Keller
-// 
+//
 // Relevant nvprof metrics:
 // nvprof -m shared_load_throughput,shared_store_throughput
 
 #include <iostream>
-
 #include <malloc.h>
-#include <cuda.h>
-#include <cuda_runtime.h>
+#include <unistd.h>
 
+#include "Xdevice/runtime.hpp"
 
 #define NTHREADS 256
 #define NITER    4096
 // length of the thread block swap chain (must be even)
 #define SHARED_SEGMENTS 4
 
-static void HandleError( cudaError_t err,
-                         const char *file,
-                         int line ) {
-    if (err != cudaSuccess) {
-        printf( "%s in %s at line %d\n", cudaGetErrorString( err ),
-                file, line );
-        exit( EXIT_FAILURE );
-    }
-}
-#define HANDLE_ERROR( err ) (HandleError( err, __FILE__, __LINE__ ))
-
 template <class T>
 __device__ void swap(T* a, T* b)
 {
-    T tmp;
-    tmp = *a;
+    T tmp = *a;
     *a = *b;
-    // +1 isn't needed to prevent code elimination by the
-    // compiler, but is added in case it gets smarter in
-    // a future version
-    *b = tmp + T{1};
+    *b = tmp;
 }
 
 template <class T>
@@ -65,32 +49,28 @@ __global__ void test_shmem(T* glob_mem)
 template <class T>
 double test_bw(long size)
 {
-    T* buffer = (T*)malloc(size);
-    T* dev_buffer; 
-    HANDLE_ERROR( cudaMalloc((void**)&dev_buffer, size) );
+    T* dev_buffer;
+    XMalloc((void**)&dev_buffer, size);
     int nblocks = size / (NTHREADS * sizeof(T));
 
-    cudaEvent_t start, stop;
-    HANDLE_ERROR( cudaEventCreate(&start) );
-    HANDLE_ERROR( cudaEventCreate(&stop) );
-    HANDLE_ERROR( cudaEventRecord(start,0) );
+    // Create a stream to attach the timer to.
+    XStream_t stream;
+    XStreamCreate(&stream);
 
-    test_shmem<<<nblocks, NTHREADS>>>(dev_buffer);
+    // Instantiate the timer
+    XTimer t(stream);
 
-    HANDLE_ERROR( cudaEventRecord(stop,0) );
-    HANDLE_ERROR( cudaEventSynchronize(stop) );
-    float gpu_time;
-    HANDLE_ERROR( cudaEventElapsedTime( &gpu_time, start, stop ) );
+    t.start();
+    test_shmem<<<nblocks, NTHREADS, 0, stream>>>(dev_buffer);
+
     // convert to seconds
-    gpu_time /= 1000;
+    double gpu_time = t.stop()/double(1000);
 
     // 2 writes + 2 reads per swap
     double nbytes = NITER * size * (SHARED_SEGMENTS-1) * 4;
 
-    cudaEventDestroy(start);
-    cudaEventDestroy(stop);
-    free(buffer);
-    cudaFree(dev_buffer);
+    XStreamDestroy(stream);
+    XFree(dev_buffer);
 
     return nbytes / gpu_time;
 }
@@ -99,9 +79,26 @@ int main()
 {
     long size = 1024 * 1024 * 64; // 64 MB global buffer
 
-    // warmup
-    test_bw<int>(size);
+    char hostname[256];
+    hostname[255]='\0';
+    gethostname(hostname, 255);
 
-    std::cout << "Bandwidth(int) " << test_bw<int>(size) / 1024 / 1024 / 1024 << " GB/s" << std::endl;
-    std::cout << "Bandwidth(double) " << test_bw<double>(size) / 1024 / 1024 / 1024 << " GB/s" << std::endl;
+    int gpu_count = 0;
+    XGetDeviceCount(&gpu_count);
+
+    if (gpu_count <= 0) {
+        std::cout << "[" << hostname << "] " << "Could not find any gpu\n";
+        return 1;
+    }
+    std::cout << "[" << hostname << "] " << "Found " << gpu_count << " gpu(s)\n";
+
+    for (int i = 0; i < gpu_count; i++)
+    {
+        // warmup
+        test_bw<int>(size);
+
+        // test
+        std::cout << "[" << hostname << "] GPU " << i << ": Bandwidth(int) " << test_bw<int>(size) / 1024 / 1024 / 1024 << " GB/s" << std::endl;
+        std::cout << "[" << hostname << "] GPU " << i << ": Bandwidth(double) " << test_bw<double>(size) / 1024 / 1024 / 1024 << " GB/s" << std::endl;
+    }
 }

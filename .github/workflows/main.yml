@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        modules-version: [Lmod, Tmod32, Tmod4]
+        modules-version: [Lmod, Lmod77, Tmod32, Tmod4]
     steps:
     - uses: actions/checkout@v2
     - name: Build Image for ${{ matrix.modules-version }}
@@ -46,3 +46,16 @@ jobs:
     - name: Run Unittests
       run: |
         docker run reframe:${{ matrix.modules-version }}
+
+  unusedimports:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: Lint Code Base
+      uses: github/super-linter@v3
+      env:
+        VALIDATE_ALL_CODEBASE: false
+        VALIDATE_PYTHON_FLAKE8: true
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

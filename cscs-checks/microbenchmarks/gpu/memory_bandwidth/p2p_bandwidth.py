@@ -12,39 +12,26 @@ class P2pBandwidthCheck(rfm.RegressionTest):
     def __init__(self, peerAccess):
         self.valid_systems = ['tsa:cn', 'arola:cn',
                               'ault:amdv100', 'ault:intelv100',
-                              'ault:amda100']
+                              'ault:amda100', 'ault:amdvega']
         self.valid_prog_environs = ['PrgEnv-gnu']
         if self.current_system.name in ['arolla', 'tsa']:
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
 
-        self.build_system = 'SingleSource'
-        self.sourcepath = 'p2p_bandwidth.cu'
-        self.executable = 'p2p_bandwidth.x'
-        self.exclusive_access = True
-
         # Perform a single bandwidth test with a buffer size of 1024MB
         copy_size = 1073741824
 
-        self.build_system.cxxflags = ['-I.', '-m64',
-                                      '-std=c++11', '-lnvidia-ml',
-                                      f'-DCOPY={copy_size}']
+        self.build_system = 'Make'
+        self.executable = 'p2p_bandwidth.x'
+        self.build_system.cxxflags = [f'-DCOPY={copy_size}']
+        self.num_tasks = 0
+        self.num_tasks_per_node = 1
+        self.exclusive_access = True
+
         if (peerAccess == 'peerAccess'):
             self.build_system.cxxflags += ['-DP2P']
             p2p = True
         else:
             p2p = False
-
-        self.num_tasks = 0
-        self.num_tasks_per_node = 1
-        self.modules = ['cuda']
-
-        # Gpus per node on each partition.
-        self.partition_num_gpus_per_node = {
-            'tsa:cn':         8,
-            'ault:amda100':   4,
-            'ault:amdv100':   2,
-            'ault:intelv100':   4,
-        }
 
         self.sanity_patterns = self.do_sanity_check()
         self.perf_patterns = {
@@ -69,7 +56,10 @@ class P2pBandwidthCheck(rfm.RegressionTest):
                 },
                 'ault:intelv100': {
                     'bw':   (31.0, -0.1, None, 'GB/s'),
-                }
+                },
+                'ault:amdvega': {
+                    'bw':   (11.75, -0.1, None, 'GB/s'),
+                },
             }
         else:
             self.reference = {
@@ -87,27 +77,59 @@ class P2pBandwidthCheck(rfm.RegressionTest):
                 },
                 'ault:intelv100': {
                     'bw': (33.6, -0.1, None, 'GB/s'),
-                }
+                },
+                'ault:amdvega': {
+                    'bw':   (11.75, -0.1, None, 'GB/s'),
+                },
             }
 
         self.tags = {'diagnostic', 'benchmark', 'mch'}
         self.maintainers = ['JO']
 
-    @rfm.run_before('run')
-    def set_num_gpus_per_node(self):
-        self.num_gpus_per_node = self.partition_num_gpus_per_node.get(
-            self.current_partition.fullname, 1)
+    @rfm.run_after('setup')
+    def select_makefile(self):
+        cp = self.current_partition.fullname
+        if cp == 'ault:amdvega':
+            self.build_system.makefile = 'makefile_p2pBandwidth.hip'
+        else:
+            self.build_system.makefile = 'makefile_p2pBandwidth.cuda'
 
-    @rfm.run_before('compile')
-    def set_nvidia_sm_arch(self):
-        nvidia_sm = '60'
-        if self.current_system.name in ['arolla', 'tsa', 'ault']:
+    @rfm.run_after('setup')
+    def set_gpu_arch(self):
+        cp = self.current_partition.fullname
+
+        # Deal with the NVIDIA options first
+        nvidia_sm = None
+        if cp in {'tsa:cn', 'ault:intelv100', 'ault:amdv100'}:
             nvidia_sm = '70'
-
-        if self.current_partition.fullname == 'ault:amda100':
+        elif cp == 'ault:amda100':
             nvidia_sm = '80'
 
-        self.build_system.cxxflags += [f'-arch=sm_{nvidia_sm}']
+        if nvidia_sm:
+            self.build_system.cxxflags += [f'-arch=sm_{nvidia_sm}']
+            self.modules += ['cuda']
+
+        # Deal with the AMD options
+        amd_trgt = None
+        if cp == 'ault:amdvega':
+            amd_trgt = 'gfx906'
+
+        if amd_trgt:
+            self.build_system.cxxflags += [f'--amdgpu-target={amd_trgt}']
+            self.modules += ['rocm']
+
+    @rfm.run_before('run')
+    def set_num_gpus_per_node(self):
+        cp = self.current_partition.fullname
+        cs = self.current_system.name
+        if cs in {'arola', 'tsa'}:
+            self.num_gpus_per_node = 8
+        elif cp in {'ault:amda100', 'ault:intelv100'}:
+            self.num_gpus_per_node = 4
+        elif cp in {'ault:amdav100'}:
+            self.num_gpus_per_node = 2
+        elif cp in {'ault:amdvega'}:
+            self.num_gpus_per_node = 3
 
     @sn.sanity_function
     def do_sanity_check(self):

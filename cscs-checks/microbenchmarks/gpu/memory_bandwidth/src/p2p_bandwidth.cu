@@ -28,7 +28,7 @@ int main()
   gethostname(nid_name, HOSTNAME_SIZE);
 
   int number_of_devices;
-  XGetDeviceCount(number_of_devices);
+  XGetDeviceCount(&number_of_devices);
 
   // Make sure we've got devices aboard.
   if (number_of_devices == 0)

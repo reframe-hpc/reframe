@@ -494,6 +494,21 @@ class ModulesSystemImpl(abc.ABC):
     def emit_unload_instr(self, module):
         '''Emit the instruction that unloads module.'''
 
+    def process(self, source):
+        '''Process the Python source emitted by the Python bindings of the
+        different backends.
+
+        Backends should call this before executing any Python commands.
+
+        :arg source: The Python source code to be executed.
+        :returns: The modified Python source code to be executed. By default
+            ``source`` is returned unchanged.
+
+        .. versionadded:: 3.4
+
+        '''
+        return source
+
     def __repr__(self):
         return type(self).__name__ + '()'
 
@@ -564,7 +579,7 @@ class TModImpl(ModulesSystemImpl):
                                       completed.stderr,
                                       completed.returncode)
 
-        exec(completed.stdout)
+        exec(self.process(completed.stdout))
         return completed.stderr
 
     def available_modules(self, substr):
@@ -694,7 +709,7 @@ class TMod31Impl(TModImpl):
         with open(exec_match.group(1), 'r') as content_file:
             cmd = content_file.read()
 
-        exec(cmd)
+        exec(self.process(cmd))
         return completed.stderr
 
 
@@ -731,6 +746,7 @@ class TMod4Impl(TModImpl):
                 (version, self.MIN_VERSION))
 
         self._version = version
+        self._extra_module_paths = []
 
     def name(self):
         return 'tmod4'
@@ -742,7 +758,7 @@ class TMod4Impl(TModImpl):
         modulecmd = self.modulecmd(cmd, *args)
         completed = osext.run_command(modulecmd, check=False)
         namespace = {}
-        exec(completed.stdout, {}, namespace)
+        exec(self.process(completed.stdout), {}, namespace)
 
         # _mlstatus is set by the TMod4 only if the command was unsuccessful,
         # but Lmod sets it always
@@ -757,6 +773,15 @@ class TMod4Impl(TModImpl):
     def load_module(self, module):
         if module.collection:
             self.execute('restore', str(module))
+
+            # Here the module search path removal/addition is repeated since
+            # 'restore' discards previous module path manipulations
+            for op, mp in self._extra_module_paths:
+                if op == '+':
+                    super().searchpath_add(mp)
+                else:
+                    super().searchpath_remove(mp)
+
             return []
         else:
             return super().load_module(module)
@@ -779,7 +804,15 @@ class TMod4Impl(TModImpl):
 
     def emit_load_instr(self, module):
         if module.collection:
-            return f'module restore {module}'
+            cmds = [f'module restore {module}']
+
+            # Here we append module searchpath removal/addition commands
+            # since 'restore' discards previous module path manipulations
+            for op, mp in self._extra_module_paths:
+                operation = 'use' if op == '+' else 'unuse'
+                cmds += [f'module {operation} {mp}']
+
+            return '\n'.join(cmds)
 
         return super().emit_load_instr(module)
 
@@ -788,6 +821,18 @@ class TMod4Impl(TModImpl):
             return ''
 
         return super().emit_unload_instr(module)
+
+    def searchpath_add(self, *dirs):
+        if dirs:
+            self._extra_module_paths += [('+', mp) for mp in dirs]
+
+        super().searchpath_add(*dirs)
+
+    def searchpath_remove(self, *dirs):
+        if dirs:
+            self._extra_module_paths += [('-', mp) for mp in dirs]
+
+        super().searchpath_remove(*dirs)
 
 
 class LModImpl(TMod4Impl):
@@ -823,8 +868,21 @@ class LModImpl(TMod4Impl):
             raise ConfigError('Python is not supported by '
                               'this Lmod installation')
 
+        self._extra_module_paths = []
+
     def name(self):
         return 'lmod'
+
+    def process(self, source):
+        major, minor, *_ = self.version().split('.')
+        major, minor = int(major), int(minor)
+        if (major, minor) < (8, 2):
+            # Older Lmod versions do not emit an `import os` and emit an
+            # invalid `false` statement in case of errors; we fix these here
+            return 'import os\n\n' + source.replace('false',
+                                                    '_mlstatus = False')
+
+        return source
 
     def modulecmd(self, *args):
         return ' '.join([self._lmod_cmd, 'python', *args])
@@ -866,20 +924,6 @@ class LModImpl(TMod4Impl):
                 ret.append(Module(conflict_arg))
 
         return ret
-
-    def load_module(self, module):
-        if module.collection:
-            self.execute('restore', str(module))
-            return []
-        else:
-            return super().load_module(module)
-
-    def unload_module(self, module):
-        if module.collection:
-            # Module collection are not unloaded
-            return
-
-        super().unload_module(module)
 
     def unload_all(self):
         # Currently, we don't take any provision for sticky modules in Lmod, so

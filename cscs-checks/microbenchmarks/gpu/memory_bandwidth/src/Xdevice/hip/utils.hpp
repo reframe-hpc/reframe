@@ -38,7 +38,12 @@ void XMalloc(void ** data, size_t size)
   checkError( hipMalloc(data, size) );
 }
 
-void XMemcpyAsync(void * in, void * out, size_t size, hipMemcpyKind dir, hipStream_t stream)
+void XMemcpy(void * out, void * in, size_t size, hipMemcpyKind dir)
+{
+  checkError( hipMemcpy(out, in, size, dir) );
+}
+
+void XMemcpyAsync(void * out, void * in, size_t size, hipMemcpyKind dir, hipStream_t stream)
 {
   checkError( hipMemcpyAsync(out, in, size, dir, stream) );
 }
@@ -58,9 +63,9 @@ void XDeviceSynchronize()
   checkError( hipDeviceSynchronize() );
 }
 
-void XGetDeviceCount(int &devices)
+void XGetDeviceCount(int * devices)
 {
-  checkError( hipGetDeviceCount(&devices) );
+  checkError( hipGetDeviceCount(devices) );
 }
 
 void XSetDevice(int device)
