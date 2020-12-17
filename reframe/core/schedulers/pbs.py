@@ -19,7 +19,6 @@ import reframe.core.runtime as rt
 import reframe.core.schedulers as sched
 import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
-from reframe.core.config import settings
 from reframe.core.exceptions import JobError, JobSchedulerError
 from reframe.utility import seconds_to_hms
 

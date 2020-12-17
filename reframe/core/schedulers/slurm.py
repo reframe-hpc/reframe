@@ -11,7 +11,6 @@ import time
 from argparse import ArgumentParser
 from contextlib import suppress
 
-import reframe.core.environments as env
 import reframe.core.runtime as rt
 import reframe.core.schedulers as sched
 import reframe.utility.osext as osext
