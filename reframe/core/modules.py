@@ -984,9 +984,6 @@ class SpackImpl(ModulesSystemImpl):
 
         return ret
 
-    def _module_full_name(self, name):
-        return self.execute('find', '--format', self._name_format, name)
-
     def loaded_modules(self):
         output = self.execute('find', '--loaded', '--format',
                               self._name_format)
@@ -996,7 +993,7 @@ class SpackImpl(ModulesSystemImpl):
         return []
 
     def is_module_loaded(self, module):
-        module = self._module_full_name(module.name)
+        module = self.execute('find', '--format', self._name_format, name)
         module = Module(module)
         return module in self.loaded_modules()
 

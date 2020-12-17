@@ -10,7 +10,6 @@ import functools
 import inspect
 import os
 import sys
-import tempfile
 
 import reframe
 import reframe.core.config as config
