@@ -103,7 +103,7 @@ class LocalParamSpace:
 def _merge_parameter_spaces(bases):
     '''Merges the parameter space from multiple classes.
 
-    Joins the parameter space of multiple classess into a single parameter
+    Joins the parameter space of multiple classes into a single parameter
     space. This method allows multiple inheritance, as long as a parameter is
     not doubly defined in two or more different parameter spaces.
 
@@ -129,10 +129,10 @@ def _merge_parameter_spaces(bases):
                     raise NameConflictError(f'parameter space conflict '
                                             f'(on {key}) due to '
                                             f'multiple inheritance.'
-                                           ) from None
+                                            ) from None
 
-            param_space[key] = base_params.get(
-                key, ()) + param_space.get(key, ())
+            param_space[key] = (base_params.get(key, ()) +
+                                param_space.get(key, ()))
 
     return param_space
 
@@ -155,13 +155,13 @@ def _extend_parameter_space(local_param_space, param_space):
     '''
     # Ensure that the local parameter space is an instance of LocalParamSpace
     if not isinstance(local_param_space, LocalParamSpace):
-        raise ReframeSyntaxError(f'the local_param_space must be an '
+        raise ReframeSyntaxError(f'local_param_space must be an '
                                  f'instance of the LocalParamSpace class')
 
     # Loop over the local parameter space.
     for name, p in local_param_space.params.items():
-        param_space[name] = p.filter_params(
-            param_space.get(name, ())) + p.values
+        param_space[name] = (p.filter_params(param_space.get(name, ())) +
+                             p.values)
 
 
 def build_parameter_space(cls):

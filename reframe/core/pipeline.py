@@ -789,9 +789,9 @@ class RegressionTest(metaclass=RegressionTestMeta):
         Inserts the regression test parameters as object attributes during
         object creation. The values assigned to these test parameters are
         obtained from the iterator created by the
-        :meth `reframe.core.pipeline.prepare_param_space` method. This iterator
-        is exhausted or not present, the parameters would simply be initialized
-        to None.
+        :meth `reframe.core.pipeline.prepare_param_space` method. If this
+        iterator is exhausted or not present, the parameters would simply be
+        initialized to None.
         '''
         # Don't do anything if the test is not a parametrised test
         if not cls._rfm_params:
