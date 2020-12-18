@@ -4,6 +4,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 
+import reframe as rfm
+
+
 class NoParams(rfm.RunOnlyRegressionTest):
     pass
 
@@ -65,7 +68,7 @@ def test_is_abstract_test():
     class MyTest(Abstract):
         pass
 
-    assert MyTest.is_abstract_test()
+    assert MyTest.is_abstract()
 
 
 def test_param_len_is_zero():
