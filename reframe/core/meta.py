@@ -7,6 +7,7 @@
 # Meta-class for creating regression tests.
 #
 
+
 from reframe.core.exceptions import ReframeSyntaxError
 import reframe.core.parameters as parameters
 
@@ -29,8 +30,8 @@ class RegressionTestMeta(type):
     def __init__(cls, name, bases, namespace, **kwargs):
         super().__init__(name, bases, namespace, **kwargs)
 
-        # Set up the regression test parameter space
-        parameters.build_parameter_space(cls)
+        # Build the regression test parameter space
+        cls._rfm_param_space = parameters.ParamSpace(cls)
 
         # Set up the hooks for the pipeline stages based on the _rfm_attach
         # attribute; all dependencies will be resolved first in the post-setup
@@ -78,7 +79,21 @@ class RegressionTestMeta(type):
                            f"you should use the pipeline hooks instead")
                     raise ReframeSyntaxError(msg)
 
-    # Make the parameter space available as read-only
     @property
     def param_space(cls):
-        return cls._rfm_params
+        # Make the parameter space available as read-only
+        return cls._rfm_param_space
+
+    @property
+    def is_abstract(cls):
+        '''Checks if the test is an abstract test.
+
+        If the parameter space has undefined parameters, the test is considered
+        an abstract test. If that is the case, the length of the parameter
+        space is just 0.
+
+        :return: bool indicating wheteher the test is abstract or not
+
+        :meta private:
+        '''
+        return len(cls.param_space) == 0

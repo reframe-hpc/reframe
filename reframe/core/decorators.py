@@ -72,7 +72,7 @@ def _validate_test(cls):
         raise ReframeSyntaxError('the decorated class must be a '
                                  'subclass of RegressionTest')
 
-    if (cls.is_abstract()):
+    if (cls.is_abstract):
         raise ValueError(f'decorated test ({cls.__qualname__!r}) is an'
                          f' abstract test')
 
@@ -88,11 +88,8 @@ def simple_test(cls):
     '''
     _validate_test(cls)
 
-    # Prepare the test's parameter space
-    cls.prepare_param_space()
-
     # Register the test
-    for _ in range(cls.param_space_len()):
+    for _ in range(len(cls.param_space)):
         _register_test(cls)
 
     return cls

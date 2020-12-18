@@ -7,6 +7,9 @@
 # Functionality to build extensible parameterized tests.
 #
 
+import functools
+import itertools
+
 from reframe.core.exceptions import ReframeSyntaxError
 
 
@@ -85,7 +88,7 @@ class LocalParamSpace:
             self._params[name] = value
         else:
             raise ValueError(
-                f'parameter {name} already defined in this class'
+                f'parameter {name!r} already defined in this class'
             )
 
     def add_param(self, name, *values, **kwargs):
@@ -101,101 +104,141 @@ class LocalParamSpace:
     def params(self):
         return self._params
 
+    def items(self):
+        return self._params.items()
 
-def _merge_parameter_spaces(bases):
-    '''Merge the parameter space from multiple classes.
 
-    Joins the parameter space of multiple classes into a single parameter
-    space. This method allows multiple inheritance, as long as a parameter is
-    not doubly defined in two or more different parameter spaces.
+class ParamSpace:
+    ''' Regression test parameter space
 
-    :param bases: iterable containing the classes from which to merge the
-        parameter space.
+    Host class for the parameter space of a regresion test. The parameter
+    space is stored as a dictionary (self._params), where the keys are the
+    parameter names and the values are tuples with all the available values
+    for each parameter. The __init__ method in this class takes an optional
+    argument (target_class), which is the regression test class where the
+    parameter space is to be built. If this target class is provided, the
+    __init__ method performs three main steps. These are (in order of exec)
+    the inheritance of the parameter spaces from the direct parent classes,
+    the extension of the inherited parameter space with the local parameter
+    space (this must be an instance of
+    :class `reframe.core.parameters.LocalParamSpace`), and lastly, a check to
+    ensure that none of the parameter names clashes with any of the class
+    attributes existing in the target class. If no target class is provided,
+    the parameter space is initialized as empty. After the parameter space is
+    set, a parameter space iterator is created, which allows traversing the
+    full parameter space walking though all posible parameter combinations.
+    Since this class is iterable, this may be used by the RegressionTest
+    constructor to assing the values to the test parameters. Note that the
+    length of this iterator matches the value returned by the member function
+    __len__.
 
-    :returns: merged parameter space.
+    :param target_cls: the class where the full parameter space is to be built.
+
+    .. note::
+        The __init__ method is aware of the implementation details of the
+        regression test metaclass. This is required to retrieve the parameter
+        spaces from the base classes, and also the local parameter space from
+        the target class.
     '''
-    # Temporary dict where we build the parameter space from the base
-    # classes
-    param_space = {}
+    def __init__(self, target_cls=None):
+        self._params = {}
 
-    # Iterate over the base classes and inherit the parameter space
-    for b in bases:
-        base_params = getattr(b, '_rfm_params', ())
-        for key in base_params:
+        # If a target class is provided, build the param space for it
+        if target_cls:
+
+            # Inherit the parameter spaces from the direct parent classes
+            for base in filter(lambda x: hasattr(x, 'param_space'),
+                               target_cls.__bases__):
+                self.join(base._rfm_param_space)
+
+            # Extend the parameter space with the local parameter space
+            try:
+                for name, p in target_cls._rfm_local_param_space.items():
+                    self._params[name] = (
+                        p.filter_params(self._params.get(name, ())) + p.values
+                    )
+            except AttributeError:
+                pass
+
+            # Make sure there is none of the parameters clashes with the target
+            # class namespace
+            target_namespace = set(dir(target_cls))
+            for key in self._params:
+                if key in target_namespace:
+                    raise ReframeSyntaxError(
+                        f'parameter {key!r} clashes with other variables'
+                        f' present in the namespace from class '
+                        f'{target_cls.__qualname__!r}'
+                    )
+
+        # Initialize the parameter space iterator
+        self._iter = self.param_space_iterator()
+
+    def join(self, other):
+        '''Join two parameter spaces into one
+
+        Join two different parameter spaces into a single one. Both parameter
+        spaces must be an instance ot the ParamSpace class. This method will
+        raise an error if a parameter is defined in the two parameter spaces
+        to be merged.
+
+        :param other: instance of the ParamSpace class
+        '''
+        for key in other.params:
             # With multiple inheritance, a single parameter
             # could be doubly defined and lead to repeated
-            # values.
-            if (key in param_space and (
-                param_space[key] != () and base_params[key] != ()
+            # values
+            if (key in self._params and (
+                self._params[key] != () and other.params[key] != ()
                )):
 
                 raise ReframeSyntaxError(f'parameter space conflict: '
-                                         f' parameter {key!r} already defined '
+                                         f'parameter {key!r} already defined '
                                          f'in {b.__qualname__!r}')
 
-            param_space[key] = (
-                base_params.get(key, ()) + param_space.get(key, ())
+            self._params[key] = (
+                other.params.get(key, ()) + self._params.get(key, ())
             )
 
-    return param_space
+    def param_space_iterator(self):
+        '''Create a generator object to iterate over the parameter space
 
+        :return: generator object to iterate over the parameter space.
+        '''
+        yield from itertools.product(*(p for p in self._params.values()))
 
-def _extend_parameter_space(param_space, local_param_space):
-    '''Extend a given parameter space with a local parameter space.
+    @property
+    def params(self):
+        return self._params
 
-    Each parameter is dealt with independently, given that each parameter
-    has its own inheritance behaviour defined in the local parameter space
-    (see the
-    :class:`reframe.core.parameters_TestParameter` class).
+    def __len__(self):
+        '''Returns the number of all possible parameter combinations.
 
-    :param param_space: an existing parameter space. This **must** have been
-        generated with
-        :meth:`reframe.core.parameters._merge_parameter_spaces`.
-    :param local_param_space: a local parameter space from a regression test.
-        This must be an instance of the class
-        :class:`reframe.core.parameters.LocalParamSpace`.
-    '''
-    # The argument local_param_space must be an instance of LocalParamSpace
-    assert isinstance(local_param_space, LocalParamSpace)
+        Method to calculate the test's parameter space length (i.e. the number
+        of all possible parameter combinations). If the RegressionTest
+        has no parameters, the length is 1.
 
-    # Loop over the local parameter space.
-    for name, p in local_param_space.params.items():
-        param_space[name] = (
-            p.filter_params(param_space.get(name, ())) + p.values
+        .. note::
+           If the test is an abstract test (i.e. has undefined parameters in
+           the parameter space), the returned parameter space length is 0.
+
+        :return: length of the parameter space
+        '''
+        if not self._params:
+            return 1
+
+        return functools.reduce(
+            lambda x, y: x*y,
+            (len(p) for p in self._params.values())
         )
 
-    return param_space
+    def __next__(self):
+        # Make the class iterable
+        return next(self._iter)
 
+    def __getitem__(self, key):
+        return self._params.get(key, ())
 
-def build_parameter_space(cls):
-    ''' Builder of the full parameter space of a regression test.
-
-    Handles the full parameter space build, inheriting the parameter spaces
-    form the base classes, and extending these with the local parameter space
-    of the class (stored in cls._rfm_local_param_space). This method is called
-    during the class object initialization (i.e. the __init__ method of the
-    regression test metaclass). This method has three main steps, which are
-    (in order of execution) the inheritance of the parameter spaces from the
-    base classes, the extension of the inherited parameter space with the
-    local parameter space, and lastly, a check to ensure that none of the
-    parameter names clashes with any of the class attributes existing in the
-    regression test class.
-
-    :param cls: the class where the full parameter space is to be built.
-
-    :returns: dictionary containing the full parameter space. The keys are the
-        parameter names and the values are tuples containing all the values
-        for each of the parameters.
-    '''
-    param_space = _extend_parameter_space(
-        _merge_parameter_spaces(cls.__bases__), cls._rfm_local_param_space
-    )
-
-    trgt_namespace = set(dir(cls))
-    for key in param_space:
-        if key in trgt_namespace:
-            raise ReframeSyntaxError(f'parameter {key!r} clashes with other '
-                                     f'variables present in the namespace '
-                                     f'from class {cls.__qualname__!r}')
-
-    setattr(cls, '_rfm_params', param_space)
+    @property
+    def is_empty(self):
+        return self._params == {}

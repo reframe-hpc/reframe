@@ -29,7 +29,7 @@ def test_param_space_is_empty():
     class MyTest(NoParams):
         pass
 
-    assert MyTest.param_space == {}
+    assert MyTest.param_space.is_empty
 
 
 def test_params_are_present():
@@ -69,69 +69,34 @@ def test_is_abstract_test():
     class MyTest(Abstract):
         pass
 
-    assert MyTest.is_abstract()
+    assert MyTest.is_abstract
 
 
 def test_is_not_abstract_test():
     class MyTest(TwoParams):
         pass
 
-    assert not MyTest.is_abstract()
+    assert not MyTest.is_abstract
 
 
 def test_param_len_is_zero():
     class MyTest(Abstract):
         pass
 
-    assert MyTest.param_space_len() == 0;
+    assert len(MyTest.param_space) == 0;
 
 
 def test_extended_param_len():
     class MyTest(ExtendParams):
         pass
 
-    assert MyTest.param_space_len() == 8
-
-
-def test_param_iterator_is_empty():
-    class MyTest(Abstract):
-        @classmethod
-        def check_param_iterator(cls):
-            try:
-                tmp = next(cls._rfm_param_space_iter)
-                return False
-
-            except StopIteration:
-                return True
-
-            except:
-                return False
-
-    MyTest.prepare_param_space()
-    assert MyTest.check_param_iterator()
-
-
-def test_params_are_none():
-    class MyTest(Abstract):
-        pass
-
-    test = MyTest()
-    assert test.P0 is None
-    assert test.P1 is None
-
-    class MyTest(TwoParams):
-        pass
-
-    test = MyTest()
-    assert test.P0 is None
-    assert test.P1 is None
+    assert len(MyTest.param_space) == 8
 
 
 def test_param_values_are_not_set():
     class MyTest(Abstract):
         pass
 
-    MyTest.prepare_param_space()
     test = MyTest()
     assert test.P0 is None
     assert test.P1 is None
@@ -141,7 +106,6 @@ def test_param_values_are_set():
     class MyTest(TwoParams):
         pass
 
-    MyTest.prepare_param_space()
     test = MyTest()
     assert test.P0 == 'a'
     assert test.P1 == 'b'
@@ -161,8 +125,7 @@ def test_extended_params_are_set():
     class MyTest(ExtendParams):
         pass
 
-    MyTest.prepare_param_space()
-    for i in range(MyTest.param_space_len()):
+    for i in range(len(MyTest.param_space)):
         test = MyTest()
         assert test.P0 is not None
         assert test.P1 is not None

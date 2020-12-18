@@ -741,97 +741,34 @@ class RegressionTest(metaclass=RegressionTestMeta):
         pass
 
     @classmethod
-    def param_space_len(cls):
-        '''Returns the number of all possible parameter combinations.
-
-        Method to calculate the test's parameter space length (i.e. the number
-        of all possible parameter combinations). If the RegressionTest
-        has no parameters, the length is 1. This method may be used by the
-        reframe decorators to query the number of times a test should be
-        registered.
-
-        .. note::
-           If the test is an abstract test (i.e. has undefined parameters in
-           the parameter space), the returned parameter space length is 0.
-
-        :return: length of the parameter space
-        '''
-        if not cls._rfm_params:
-            return 1
-
-        return functools.reduce(
-            lambda x, y: x*y,
-            (len(p) for p in cls._rfm_params.values())
-        )
-
-    @classmethod
-    def walk_param_space(cls):
-        '''Create a generator object to iterate over the parameter space
-
-        :return: generator object to iterate over the parameter space.
-        '''
-        yield from itertools.product(*(p for p in cls._rfm_params.values()))
-
-    @classmethod
-    def prepare_param_space(cls):
-        '''Creates the parameter space iterator
-
-        Creates an iterator to traverse the full parameter space later on
-        during the class instantiation. This iterator covers all possible
-        parameter combinations. This function may be used by a reframe
-        decorator to prepare the test for instantiation.
-
-        .. note::
-           If the test is an abstract test (i.e. has undefined parameters in
-           the parameter space), the resulting iterator will be empty.
-        '''
-        cls._rfm_param_space_iter = cls.walk_param_space()
-
-    @classmethod
     def _construct_params(cls, obj):
-        '''Sets the test parameters as class attributes.
+        '''Attaches the test parameters as class attributes.
 
         Inserts the regression test parameters as object attributes during
         object creation. The values assigned to these test parameters are
-        obtained from the iterator created by the
-        :meth `reframe.core.pipeline.prepare_param_space` method. If this
-        iterator is exhausted or not present, the parameters would simply be
-        initialized to None.
+        obtained from the iterator in the test's parameter space (see
+        :class `reframe.core.parameters.ParamSpace`). When this iterator is
+        exhausted, the parameters will simply be initialized to None.
 
         :meta private:
         '''
         # Try to set the values of the test parameters from the param iterator.
         try:
-            param_values = next(cls._rfm_param_space_iter)
-            for index, key in enumerate(cls._rfm_params):
+            param_values = next(cls._rfm_param_space)
+            for index, key in enumerate(cls._rfm_param_space.params):
                 setattr(obj, key, param_values[index])
 
             return
 
         # Initialize the params as None if an exception was raised
-        except Exception:
-            for key in cls._rfm_params:
+        except StopIteration:
+            for key in cls._rfm_param_space.params:
                 setattr(obj, key, None)
 
-    @classmethod
-    def is_abstract(cls):
-        '''Checks if the test is an abstract test.
-
-        If any of the parameters declared in the test parameter space
-        (cls._rfm_params) has no defined values, the parameter is considered
-        an abstract parameter. Therefore, a regression test with at least one
-        abstract parameter is considered an abstract test.
-
-        :return: bool indicating wheteher the test is abstract or not
-
-        :meta private:
-        '''
-        return cls.param_space_len() == 0
-
     def _append_parameters_to_name(self):
-        if self._rfm_params:
+        if self._rfm_param_space.params:
             return '_' + '_'.join([str(self.__dict__[key])
-                                   for key in self._rfm_params])
+                                   for key in self._rfm_param_space.params])
         else:
             return ''
 
