@@ -809,7 +809,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
             return
 
         # Initialize the params as None if an exception was raised
-        except:
+        except Exception:
             for key in cls._rfm_params:
                 setattr(obj, key, None)
 

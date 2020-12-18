@@ -77,3 +77,8 @@ class RegressionTestMeta(type):
                            f"'{b.__qualname__}.{v.__name__}'; "
                            f"you should use the pipeline hooks instead")
                     raise ReframeSyntaxError(msg)
+
+    # Make the parameter space available as read-only
+    @property
+    def param_space(cls):
+        return cls._rfm_params

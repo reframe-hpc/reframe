@@ -125,14 +125,13 @@ def _merge_parameter_spaces(bases):
             # With multiple inheritance, a single parameter
             # could be doubly defined and lead to repeated
             # values.
-            if (key in param_space
-                and param_space[key] != ()
-                and base_params[key] != ()
-            ):
+            if (key in param_space and (
+                param_space[key] != () and base_params[key] != ()
+               )):
+
                 raise ReframeSyntaxError(f'parameter space conflict: '
                                          f' parameter {key!r} already defined '
-                                         f'in {b.__qualname__!r}'
-                                        )
+                                         f'in {b.__qualname__!r}')
 
             param_space[key] = (
                 base_params.get(key, ()) + param_space.get(key, ())

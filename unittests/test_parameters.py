@@ -10,6 +10,7 @@ import reframe as rfm
 class NoParams(rfm.RunOnlyRegressionTest):
     pass
 
+
 class TwoParams(NoParams):
     parameter('P0', 'a')
     parameter('P1', 'b')
@@ -28,40 +29,40 @@ def test_param_space_is_empty():
     class MyTest(NoParams):
         pass
 
-    assert MyTest._rfm_params == {}
+    assert MyTest.param_space == {}
 
 
 def test_params_are_present():
     class MyTest(TwoParams):
         pass
 
-    assert MyTest._rfm_params['P0'] == ('a',)
-    assert MyTest._rfm_params['P1'] == ('b',)
+    assert MyTest.param_space['P0'] == ('a',)
+    assert MyTest.param_space['P1'] == ('b',)
 
 
 def test_param_override():
     class MyTest(TwoParams):
         parameter('P1', '-')
 
-    assert MyTest._rfm_params['P0'] == ('a',)
-    assert MyTest._rfm_params['P1'] == ('-',)
+    assert MyTest.param_space['P0'] == ('a',)
+    assert MyTest.param_space['P1'] == ('-',)
 
 
 def test_param_inheritance():
     class MyTest(TwoParams):
         parameter('P1', 'c', inherit_params=True)
 
-    assert MyTest._rfm_params['P0'] == ('a',)
-    assert MyTest._rfm_params['P1'] == ('b', 'c',)
+    assert MyTest.param_space['P0'] == ('a',)
+    assert MyTest.param_space['P1'] == ('b', 'c',)
 
 
 def test_filter_params():
     class MyTest(ExtendParams):
         parameter('P1', inherit_params=True, filter_params=lambda x: x[2:])
 
-    assert MyTest._rfm_params['P0'] == ('a',)
-    assert MyTest._rfm_params['P1'] == ('d', 'e',)
-    assert MyTest._rfm_params['P2'] == ('f', 'g',)
+    assert MyTest.param_space['P0'] == ('a',)
+    assert MyTest.param_space['P1'] == ('d', 'e',)
+    assert MyTest.param_space['P2'] == ('f', 'g',)
 
 
 def test_is_abstract_test():
@@ -69,6 +70,13 @@ def test_is_abstract_test():
         pass
 
     assert MyTest.is_abstract()
+
+
+def test_is_not_abstract_test():
+    class MyTest(TwoParams):
+        pass
+
+    assert not MyTest.is_abstract()
 
 
 def test_param_len_is_zero():
@@ -108,15 +116,15 @@ def test_params_are_none():
         pass
 
     test = MyTest()
-    assert test.P0 == None
-    assert test.P1 == None
+    assert test.P0 is None
+    assert test.P1 is None
 
     class MyTest(TwoParams):
         pass
 
     test = MyTest()
-    assert test.P0 == None
-    assert test.P1 == None
+    assert test.P0 is None
+    assert test.P1 is None
 
 
 def test_param_values_are_not_set():
@@ -125,8 +133,8 @@ def test_param_values_are_not_set():
 
     MyTest.prepare_param_space()
     test = MyTest()
-    assert test.P0 == None
-    assert test.P1 == None
+    assert test.P0 is None
+    assert test.P1 is None
 
 
 def test_param_values_are_set():
@@ -156,11 +164,11 @@ def test_extended_params_are_set():
     MyTest.prepare_param_space()
     for i in range(MyTest.param_space_len()):
         test = MyTest()
-        assert test.P0 != None
-        assert test.P1 != None
-        assert test.P2 != None
+        assert test.P0 is not None
+        assert test.P1 is not None
+        assert test.P2 is not None
 
     test = MyTest()
-    assert test.P0 == None
-    assert test.P1 == None
-    assert test.P2 == None
+    assert test.P0 is None
+    assert test.P1 is None
+    assert test.P2 is None
