@@ -7,7 +7,7 @@
 # Functionality to build extensible parameterized tests.
 #
 
-from reframe.core.exceptions import ReframeSyntaxError, NameConflictError
+from reframe.core.exceptions import ReframeSyntaxError
 
 
 class _TestParameter:
@@ -63,7 +63,9 @@ class LocalParamSpace:
     Example: In the pseudo-code below, the local parameter space of A is {P0},
     and the local parameter space of B is {P1}. However, the final parameter
     space of A is still {P0}, and the final parameter space of B is {P0, P1}.
+
     .. code:: python
+
         class A(RegressionTest):
             -> define parameter P0 with value X.
 
@@ -83,12 +85,12 @@ class LocalParamSpace:
             self._params[name] = value
         else:
             raise ValueError(
-                'parameter {name} already defined in this class'
+                f'parameter {name} already defined in this class'
             )
 
     def add_param(self, name, *values, **kwargs):
-        '''
-        Insert a new regression test parameter in the local parameter space.
+        '''Insert a new regression test parameter in the local parameter space.
+
         If the parameter is already present in the dictionary, raise an error.
         See the _TestParameter class for further information on the
         function arguments.
@@ -101,7 +103,7 @@ class LocalParamSpace:
 
 
 def _merge_parameter_spaces(bases):
-    '''Merges the parameter space from multiple classes.
+    '''Merge the parameter space from multiple classes.
 
     Joins the parameter space of multiple classes into a single parameter
     space. This method allows multiple inheritance, as long as a parameter is
@@ -123,21 +125,23 @@ def _merge_parameter_spaces(bases):
             # With multiple inheritance, a single parameter
             # could be doubly defined and lead to repeated
             # values.
-            if key in param_space:
-                if not (param_space[key] == () or
-                        base_params[key] == ()):
-                    raise NameConflictError(f'parameter space conflict '
-                                            f'(on {key}) due to '
-                                            f'multiple inheritance.'
-                                            ) from None
+            if (key in param_space
+                and param_space[key] != ()
+                and base_params[key] != ()
+            ):
+                raise ReframeSyntaxError(f'parameter space conflict: '
+                                         f' parameter {key!r} already defined '
+                                         f'in {b.__qualname__!r}'
+                                        )
 
-            param_space[key] = (base_params.get(key, ()) +
-                                param_space.get(key, ()))
+            param_space[key] = (
+                base_params.get(key, ()) + param_space.get(key, ())
+            )
 
     return param_space
 
 
-def _extend_parameter_space(local_param_space, param_space):
+def _extend_parameter_space(param_space, local_param_space):
     '''Extend a given parameter space with a local parameter space.
 
     Each parameter is dealt with independently, given that each parameter
@@ -145,23 +149,23 @@ def _extend_parameter_space(local_param_space, param_space):
     (see the
     :class:`reframe.core.parameters_TestParameter` class).
 
-    :param local_param_space: a local parameter space from a regression test.
-        This must be an instance of the class
-        :class:`reframe.core.parameters.LocalParamSpace`.
     :param param_space: an existing parameter space. This **must** have been
         generated with
         :meth:`reframe.core.parameters._merge_parameter_spaces`.
-
+    :param local_param_space: a local parameter space from a regression test.
+        This must be an instance of the class
+        :class:`reframe.core.parameters.LocalParamSpace`.
     '''
-    # Ensure that the local parameter space is an instance of LocalParamSpace
-    if not isinstance(local_param_space, LocalParamSpace):
-        raise ReframeSyntaxError(f'local_param_space must be an '
-                                 f'instance of the LocalParamSpace class')
+    # The argument local_param_space must be an instance of LocalParamSpace
+    assert isinstance(local_param_space, LocalParamSpace)
 
     # Loop over the local parameter space.
     for name, p in local_param_space.params.items():
-        param_space[name] = (p.filter_params(param_space.get(name, ())) +
-                             p.values)
+        param_space[name] = (
+            p.filter_params(param_space.get(name, ())) + p.values
+        )
+
+    return param_space
 
 
 def build_parameter_space(cls):
@@ -184,17 +188,15 @@ def build_parameter_space(cls):
         parameter names and the values are tuples containing all the values
         for each of the parameters.
     '''
-    # Inherit the parameter space from the base classes
-    param_space = _merge_parameter_spaces(cls.__bases__)
-
-    # Extend the parameter space with the local parameter space
-    _extend_parameter_space(cls._rfm_local_param_space, param_space)
+    param_space = _extend_parameter_space(
+        _merge_parameter_spaces(cls.__bases__), cls._rfm_local_param_space
+    )
 
     trgt_namespace = set(dir(cls))
     for key in param_space:
         if key in trgt_namespace:
-            raise NameConflictError(f'parameter {key} clashes with other '
-                                    f'variables present in the namespace '
-                                    f'from class {cls.__qualname__}')
+            raise ReframeSyntaxError(f'parameter {key!r} clashes with other '
+                                     f'variables present in the namespace '
+                                     f'from class {cls.__qualname__!r}')
 
     setattr(cls, '_rfm_params', param_space)

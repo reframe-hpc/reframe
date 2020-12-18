@@ -72,8 +72,8 @@ def _validate_test(cls):
         raise ReframeSyntaxError('the decorated class must be a '
                                  'subclass of RegressionTest')
 
-    if (cls.is_abstract_test()):
-        raise ValueError(f'decorated test ({cls.__qualname__}) is an'
+    if (cls.is_abstract()):
+        raise ValueError(f'decorated test ({cls.__qualname__!r}) is an'
                          f' abstract test')
 
 

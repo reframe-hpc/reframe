@@ -707,7 +707,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         obj = super().__new__(cls)
 
         # Set the test parameters in the object
-        cls._set_param_space(obj)
+        cls._construct_params(obj)
 
         # Create a test name from the class name and the constructor's
         # arguments
@@ -746,7 +746,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         Method to calculate the test's parameter space length (i.e. the number
         of all possible parameter combinations). If the RegressionTest
-        has no parameters, the length is 1. This method might be used by the
+        has no parameters, the length is 1. This method may be used by the
         reframe decorators to query the number of times a test should be
         registered.
 
@@ -765,25 +765,30 @@ class RegressionTest(metaclass=RegressionTestMeta):
         )
 
     @classmethod
+    def walk_param_space(cls):
+        '''Create a generator object to iterate over the parameter space
+
+        :return: generator object to iterate over the parameter space.
+        '''
+        yield from itertools.product(*(p for p in cls._rfm_params.values()))
+
+    @classmethod
     def prepare_param_space(cls):
         '''Creates the parameter space iterator
 
         Creates an iterator to traverse the full parameter space later on
         during the class instantiation. This iterator covers all possible
-        parameter combinations. This function might be used by a reframe
+        parameter combinations. This function may be used by a reframe
         decorator to prepare the test for instantiation.
 
         .. note::
            If the test is an abstract test (i.e. has undefined parameters in
            the parameter space), the resulting iterator will be empty.
         '''
-        if cls._rfm_params:
-            cls._rfm_param_space_iter = itertools.product(
-                *(p for p in cls._rfm_params.values())
-            )
+        cls._rfm_param_space_iter = cls.walk_param_space()
 
     @classmethod
-    def _set_param_space(cls, obj):
+    def _construct_params(cls, obj):
         '''Sets the test parameters as class attributes.
 
         Inserts the regression test parameters as object attributes during
@@ -792,31 +797,24 @@ class RegressionTest(metaclass=RegressionTestMeta):
         :meth `reframe.core.pipeline.prepare_param_space` method. If this
         iterator is exhausted or not present, the parameters would simply be
         initialized to None.
+
+        :meta private:
         '''
-        # Don't do anything if the test is not a parametrised test
-        if not cls._rfm_params:
+        # Try to set the values of the test parameters from the param iterator.
+        try:
+            param_values = next(cls._rfm_param_space_iter)
+            for index, key in enumerate(cls._rfm_params):
+                setattr(obj, key, param_values[index])
+
             return
 
-        # Test if the  parameter space iterator exists and, if so, set the
-        # values of the test parameters.
-        if hasattr(cls, '_rfm_param_space_iter'):
-            try:
-                tmp = next(cls._rfm_param_space_iter)
-                for index, key in enumerate(cls._rfm_params):
-                    setattr(obj, key, tmp[index])
-
-                return
-
-            # Delete the iterator if exhausted
-            except StopIteration:
-                del cls._rfm_param_space_iter
-
-        # If the iterator is not pressent, assign the paramters a default value
-        for key in cls._rfm_params:
-            setattr(obj, key, None)
+        # Initialize the params as None if an exception was raised
+        except:
+            for key in cls._rfm_params:
+                setattr(obj, key, None)
 
     @classmethod
-    def is_abstract_test(cls):
+    def is_abstract(cls):
         '''Checks if the test is an abstract test.
 
         If any of the parameters declared in the test parameter space
@@ -825,11 +823,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
         abstract parameter is considered an abstract test.
 
         :return: bool indicating wheteher the test is abstract or not
-        '''
-        if cls.param_space_len() == 0:
-            return True
 
-        return False
+        :meta private:
+        '''
+        return cls.param_space_len() == 0
 
     def _append_parameters_to_name(self):
         if self._rfm_params:

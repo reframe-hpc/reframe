@@ -3,8 +3,22 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-from unittests.resources.checks.paramcheck import (NoParams, TwoParams,
-                                                   Abstract, ExtendParams)
+
+class NoParams(rfm.RunOnlyRegressionTest):
+    pass
+
+class TwoParams(NoParams):
+    parameter('P0', 'a')
+    parameter('P1', 'b')
+
+
+class Abstract(TwoParams):
+    parameter('P0')
+
+
+class ExtendParams(TwoParams):
+    parameter('P1', 'c', 'd', 'e', inherit_params=True)
+    parameter('P2', 'f', 'g')
 
 
 def test_param_space_is_empty():
@@ -147,4 +161,3 @@ def test_extended_params_are_set():
     assert test.P0 == None
     assert test.P1 == None
     assert test.P2 == None
-
