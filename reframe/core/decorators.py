@@ -27,13 +27,22 @@ from reframe.utility.versioning import VersionValidator
 
 
 def _register_test(cls, args=None):
+    '''Register the test
+
+    Register the test with _rfm_use_params=True. This additional argument flags
+    this case to consume the parameter space. Otherwise, the regression test
+    parameters would simply be initialized to None.
+
+    :meta private:
+    '''
     def _instantiate(cls, args):
         if isinstance(args, collections.abc.Sequence):
-            return cls(*args)
+            return cls(*args, _rfm_use_params=True)
         elif isinstance(args, collections.abc.Mapping):
+            args['_rfm_use_params'] = True
             return cls(**args)
         elif args is None:
-            return cls()
+            return cls(_rfm_use_params=True)
 
     def _instantiate_all():
         ret = []
@@ -72,7 +81,7 @@ def _validate_test(cls):
         raise ReframeSyntaxError('the decorated class must be a '
                                  'subclass of RegressionTest')
 
-    if (cls.is_abstract):
+    if (cls.is_abstract()):
         raise ValueError(f'decorated test ({cls.__qualname__!r}) is an'
                          f' abstract test')
 
@@ -88,8 +97,7 @@ def simple_test(cls):
     '''
     _validate_test(cls)
 
-    # Register the test
-    for _ in range(len(cls.param_space)):
+    for _ in cls.param_space:
         _register_test(cls)
 
     return cls
@@ -113,8 +121,10 @@ def parameterized_test(*inst):
     '''
     def _do_register(cls):
         _validate_test(cls)
-        for args in inst:
-            _register_test(cls, args)
+
+        for _ in cls.param_space:
+            for args in inst:
+                _register_test(cls, args)
 
         return cls
 

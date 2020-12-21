@@ -29,7 +29,7 @@ def test_param_space_is_empty():
     class MyTest(NoParams):
         pass
 
-    assert MyTest.param_space.is_empty
+    assert MyTest.param_space.is_empty()
 
 
 def test_params_are_present():
@@ -37,6 +37,13 @@ def test_params_are_present():
         pass
 
     assert MyTest.param_space['P0'] == ('a',)
+    assert MyTest.param_space['P1'] == ('b',)
+
+def test_abstract_param():
+    class MyTest(Abstract):
+        pass
+
+    assert MyTest.param_space['P0'] == ()
     assert MyTest.param_space['P1'] == ('b',)
 
 
@@ -69,14 +76,14 @@ def test_is_abstract_test():
     class MyTest(Abstract):
         pass
 
-    assert MyTest.is_abstract
+    assert MyTest.is_abstract()
 
 
 def test_is_not_abstract_test():
     class MyTest(TwoParams):
         pass
 
-    assert not MyTest.is_abstract
+    assert not MyTest.is_abstract()
 
 
 def test_param_len_is_zero():
@@ -94,7 +101,7 @@ def test_extended_param_len():
 
 
 def test_param_values_are_not_set():
-    class MyTest(Abstract):
+    class MyTest(TwoParams):
         pass
 
     test = MyTest()
@@ -102,13 +109,13 @@ def test_param_values_are_not_set():
     assert test.P1 is None
 
 
-def test_param_values_are_set():
-    class MyTest(TwoParams):
+def test_abstract_param_values_are_not_set():
+    class MyTest(Abstract):
         pass
 
     test = MyTest()
-    assert test.P0 == 'a'
-    assert test.P1 == 'b'
+    assert test.P0 is None
+    assert test.P1 is None
 
 
 def test_extended_params():
@@ -121,17 +128,17 @@ def test_extended_params():
     assert hasattr(test, 'P2')
 
 
-def test_extended_params_are_set():
-    class MyTest(ExtendParams):
-        pass
-
-    for i in range(len(MyTest.param_space)):
-        test = MyTest()
-        assert test.P0 is not None
-        assert test.P1 is not None
-        assert test.P2 is not None
-
-    test = MyTest()
-    assert test.P0 is None
-    assert test.P1 is None
-    assert test.P2 is None
+#def test_extended_params_are_set():
+#    class MyTest(ExtendParams):
+#        pass
+#
+#    for _ in MyTest.param_space:
+#        test = MyTest()
+#        assert test.P0 is not None
+#        assert test.P1 is not None
+#        assert test.P2 is not None
+#
+#    test = MyTest()
+#    assert test.P0 is None
+#    assert test.P1 is None
+#    assert test.P2 is None

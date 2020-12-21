@@ -125,12 +125,17 @@ class ParamSpace:
     ensure that none of the parameter names clashes with any of the class
     attributes existing in the target class. If no target class is provided,
     the parameter space is initialized as empty. After the parameter space is
-    set, a parameter space iterator is created, which allows traversing the
-    full parameter space walking though all posible parameter combinations.
-    Since this class is iterable, this may be used by the RegressionTest
-    constructor to assing the values to the test parameters. Note that the
-    length of this iterator matches the value returned by the member function
-    __len__.
+    set, a parameter space iterator is created under self.__unique_iter, which
+    acts as an internal control variable that tracks the usage of this
+    parameter space. This iterator walks through all possible parameter
+    combinations and cannot be restored after reaching exhaustion. This unique
+    iterator is made available as read-only through cls.unique_iterator and it
+    may be used by an external class to track the usage of the parameter space
+    (i.e. the
+    :class `reframe.core.pipeline.RegressionTest` can use this unique iterator
+    to ensure that each point of the parameter space has only been instantiated
+    once). The length of this iterator matches the value returned by the member
+    function __len__.
 
     :param target_cls: the class where the full parameter space is to be built.
 
@@ -145,6 +150,9 @@ class ParamSpace:
 
         # If a target class is provided, build the param space for it
         if target_cls:
+            assert hasattr(target_cls, '_rfm_local_param_space')
+            assert isinstance(target_cls._rfm_local_param_space,
+                              LocalParamSpace)
 
             # Inherit the parameter spaces from the direct parent classes
             for base in filter(lambda x: hasattr(x, 'param_space'),
@@ -152,15 +160,12 @@ class ParamSpace:
                 self.join(base._rfm_param_space)
 
             # Extend the parameter space with the local parameter space
-            try:
-                for name, p in target_cls._rfm_local_param_space.items():
-                    self._params[name] = (
-                        p.filter_params(self._params.get(name, ())) + p.values
-                    )
-            except AttributeError:
-                pass
+            for name, p in target_cls._rfm_local_param_space.items():
+                self._params[name] = (
+                    p.filter_params(self._params.get(name, ())) + p.values
+                )
 
-            # Make sure there is none of the parameters clashes with the target
+            # Make sure that none of the parameters clashes with the target
             # class namespace
             target_namespace = set(dir(target_cls))
             for key in self._params:
@@ -171,8 +176,8 @@ class ParamSpace:
                         f'{target_cls.__qualname__!r}'
                     )
 
-        # Initialize the parameter space iterator
-        self._iter = self.param_space_iterator()
+        # Internal parameter space usage tracker
+        self.__unique_iter = iter(self)
 
     def join(self, other):
         '''Join two parameter spaces into one
@@ -188,9 +193,9 @@ class ParamSpace:
             # With multiple inheritance, a single parameter
             # could be doubly defined and lead to repeated
             # values
-            if (key in self._params and (
-                self._params[key] != () and other.params[key] != ()
-               )):
+            if (key in self._params and
+                self._params[key] != () and
+                other.params[key] != ()):
 
                 raise ReframeSyntaxError(f'parameter space conflict: '
                                          f'parameter {key!r} already defined '
@@ -200,7 +205,7 @@ class ParamSpace:
                 other.params.get(key, ()) + self._params.get(key, ())
             )
 
-    def param_space_iterator(self):
+    def __iter__(self):
         '''Create a generator object to iterate over the parameter space
 
         :return: generator object to iterate over the parameter space.
@@ -210,6 +215,11 @@ class ParamSpace:
     @property
     def params(self):
         return self._params
+
+    @property
+    def unique_iter(self):
+        '''Expose the internal iterator as read-only'''
+        return self.__unique_iter
 
     def __len__(self):
         '''Returns the number of all possible parameter combinations.
@@ -232,13 +242,8 @@ class ParamSpace:
             (len(p) for p in self._params.values())
         )
 
-    def __next__(self):
-        # Make the class iterable
-        return next(self._iter)
-
     def __getitem__(self, key):
         return self._params.get(key, ())
 
-    @property
     def is_empty(self):
         return self._params == {}

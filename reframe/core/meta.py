@@ -79,12 +79,21 @@ class RegressionTestMeta(type):
                            f"you should use the pipeline hooks instead")
                     raise ReframeSyntaxError(msg)
 
+    def __call__(cls, *args, **kwargs):
+        obj = cls.__new__(cls, *args, **kwargs)
+
+        # Intercept constructor arguments
+        if '_rfm_use_params' in kwargs:
+            del kwargs['_rfm_use_params']
+
+        obj.__init__(*args, **kwargs)
+        return obj
+
     @property
     def param_space(cls):
         # Make the parameter space available as read-only
         return cls._rfm_param_space
 
-    @property
     def is_abstract(cls):
         '''Checks if the test is an abstract test.
 
