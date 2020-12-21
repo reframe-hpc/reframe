@@ -642,7 +642,7 @@ def test_unload_module(run_reframe, user_exec_ctx):
     # more exhaustively.
 
     ms = rt.runtime().modules_system
-    if ms.name == 'nomod':
+    if not fixtures.has_sane_modules_system():
         pytest.skip('no modules system found')
 
     with rt.module_use('unittests/modules'):
@@ -661,7 +661,7 @@ def test_unload_module(run_reframe, user_exec_ctx):
 
 def test_unuse_module_path(run_reframe, user_exec_ctx):
     ms = rt.runtime().modules_system
-    if ms.name == 'nomod':
+    if not fixtures.has_sane_modules_system():
         pytest.skip('no modules system found')
 
     module_path = 'unittests/modules'
@@ -679,7 +679,7 @@ def test_unuse_module_path(run_reframe, user_exec_ctx):
 
 def test_use_module_path(run_reframe, user_exec_ctx):
     ms = rt.runtime().modules_system
-    if ms.name == 'nomod':
+    if not fixtures.has_sane_modules_system():
         pytest.skip('no modules system found')
 
     module_path = 'unittests/modules'
@@ -696,7 +696,7 @@ def test_use_module_path(run_reframe, user_exec_ctx):
 
 def test_overwrite_module_path(run_reframe, user_exec_ctx):
     ms = rt.runtime().modules_system
-    if ms.name == 'nomod':
+    if not fixtures.has_sane_modules_system():
         pytest.skip('no modules system found')
 
     module_path = 'unittests/modules'

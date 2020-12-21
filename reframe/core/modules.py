@@ -109,6 +109,8 @@ class ModulesSystem:
             return ModulesSystem(TMod4Impl())
         elif modules_kind == 'lmod':
             return ModulesSystem(LModImpl())
+        elif modules_kind == 'spack':
+            return ModulesSystem(SpackImpl())
         else:
             raise ConfigError('unknown module system: %s' % modules_kind)
 
@@ -983,3 +985,88 @@ class NoModImpl(ModulesSystemImpl):
 
     def emit_unload_instr(self, module):
         return ''
+
+
+class SpackImpl(ModulesSystemImpl):
+    '''Backend for Spack's modules system emulation.
+
+    This backend implements :func:`load_module`, :func:`unload_module` as well
+    as the searchpath methods as no-ops, since Spack does not offer any Python
+    bindings for its emulation.
+
+    '''
+
+    def __init__(self):
+        # Try to figure out if we are indeed using the TCL version
+        try:
+            completed = osext.run_command('spack -V')
+        except OSError as e:
+            raise ConfigError(
+                'could not find a sane Spack installation') from e
+
+        self._version = completed.stdout.strip()
+        self._name_format = '{name}/{version}-{hash}'
+
+    def name(self):
+        return 'spack'
+
+    def version(self):
+        return self._version
+
+    def modulecmd(self, *args):
+        return ' '.join(['spack', *args])
+
+    def _execute(self, cmd, *args):
+        modulecmd = self.modulecmd(cmd, *args)
+        completed = osext.run_command(modulecmd, check=True)
+        return completed.stdout
+
+    def available_modules(self, substr):
+        output = self.execute('find', '--format', self._name_format,
+                              substr)
+        ret = []
+        for line in output.split('\n'):
+            if not line or line[-1] == ':':
+                # Ignore empty lines and path entries
+                continue
+
+            ret.append(Module(line))
+
+        return ret
+
+    def loaded_modules(self):
+        output = self.execute('find', '--loaded', '--format',
+                              self._name_format)
+        return [Module(m) for m in output.split('\n') if m]
+
+    def conflicted_modules(self, module):
+        return []
+
+    def is_module_loaded(self, module):
+        module = self.execute('find', '--format', self._name_format, name)
+        module = Module(module)
+        return module in self.loaded_modules()
+
+    def load_module(self, module):
+        pass
+
+    def unload_module(self, module):
+        pass
+
+    def unload_all(self):
+        pass
+
+    def searchpath(self):
+        return []
+
+    def searchpath_add(self, *dirs):
+        pass
+
+    def searchpath_remove(self, *dirs):
+        pass
+
+    def emit_load_instr(self, module):
+        return f'spack load {module}'
+
+    def emit_unload_instr(self, module):
+        return f'spack unload {module}'

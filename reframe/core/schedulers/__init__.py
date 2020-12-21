@@ -17,7 +17,7 @@ import reframe.utility.jsonext as jsonext
 import reframe.utility.typecheck as typ
 from reframe.core.exceptions import JobError, JobNotStartedError
 from reframe.core.launchers import JobLauncher
-from reframe.core.logging import (getlogger, DEBUG2)
+from reframe.core.logging import getlogger, DEBUG2
 
 
 class JobScheduler(abc.ABC):
