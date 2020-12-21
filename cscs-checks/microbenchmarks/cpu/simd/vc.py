@@ -45,7 +45,7 @@ class VcSimdTest(rfm.RegressionTest):
         self.sourcesdir = None
         self.sourcepath = 'main.cpp'
         self.executable = '%s.exe' % self.testname
-        self.modules = ['Vc/1.4.1-CrayGNU-19.10']
+        self.modules = ['Vc']
         self.build_system.cxxflags = [
             '-DVc_IMPL=AVX2', '-std=c++14', '-O3', '-DNDEBUG', '-dynamic',
             '-I$EBROOTVC/include']
@@ -72,6 +72,9 @@ class VcSimdTest(rfm.RegressionTest):
                 'speedup': (1.38, -0.2, 0.2, '')
             },
             'dom:mc': {
+                'speedup': (1.32, -0.2, 0.2, '')
+            },
+            'eiger:mc': {
                 'speedup': (1.32, -0.2, 0.2, '')
             },
             '*': {
