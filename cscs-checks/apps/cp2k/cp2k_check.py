@@ -11,11 +11,7 @@ class Cp2kCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
         self.valid_prog_environs = ['builtin']
         self.modules = ['CP2K']
-        if (self.current_system.name in ['eiger']):
-            self.executable = '--cpu-bind=cores cp2k.psmp'
-        else:
-            self.executable = 'cp2k.psmp'
-
+        self.executable = 'cp2k.psmp'
         self.executable_opts = ['H2O-256.inp']
 
         energy = sn.extractsingle(r'\s+ENERGY\| Total FORCE_EVAL \( QS \) '
@@ -94,22 +90,22 @@ class Cp2kCpuCheck(Cp2kCheck):
                 'small': {
                     'dom:mc': {'time': (202.2, None, 0.05, 's')},
                     'daint:mc': {'time': (180.9, None, 0.08, 's')},
-                    'eiger:mc': {'time': (72.0, None, 0.08, 's')}
+                    'eiger:mc': {'time': (70.0, None, 0.08, 's')}
                 },
                 'large': {
                     'daint:mc': {'time': (141.0, None, 0.05, 's')},
-                    'eiger:mc': {'time': (47.0, None, 0.05, 's')}
+                    'eiger:mc': {'time': (46.0, None, 0.05, 's')}
                 }
             },
             'prod': {
                 'small': {
                     'dom:mc': {'time': (202.2, None, 0.05, 's')},
                     'daint:mc': {'time': (180.9, None, 0.08, 's')},
-                    'eiger:mc': {'time': (72.0, None, 0.08, 's')}
+                    'eiger:mc': {'time': (70.0, None, 0.08, 's')}
                 },
                 'large': {
                     'daint:mc': {'time': (113.0, None, 0.05, 's')},
-                    'eiger:mc': {'time': (47.0, None, 0.05, 's')}
+                    'eiger:mc': {'time': (46.0, None, 0.05, 's')}
                 }
             }
         }
@@ -117,6 +113,13 @@ class Cp2kCpuCheck(Cp2kCheck):
         self.reference = references[variant][scale]
         self.tags |= {'maintenance' if variant == 'maint' else 'production'}
 
+    @rfm.run_before('run')
+    def set_task_distribution(self):
+        self.job.options = ['--distribution=block:block']
+ 
+    @rfm.run_before('run')
+    def set_cpu_binding(self):
+        self.job.launcher.options = ['--cpu-bind=cores']
 
 @rfm.parameterized_test(*([s, v]
                           for s in ['small', 'large']
