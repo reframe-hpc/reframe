@@ -56,10 +56,10 @@ class Cp2kCpuCheck(Cp2kCheck):
         self.valid_systems = ['daint:mc', 'eiger:mc']
         if scale == 'small':
             self.valid_systems += ['dom:mc']
-            if (self.current_system.name in ['daint', 'dom']):
+            if self.current_system.name in ['daint', 'dom']:
                 self.num_tasks = 216
                 self.num_tasks_per_node = 36
-            elif (self.current_system.name in ['eiger']):
+            elif self.current_system.name == 'eiger':
                 self.num_tasks = 96
                 self.num_tasks_per_node = 16
                 self.num_cpus_per_task = 16
@@ -73,10 +73,10 @@ class Cp2kCpuCheck(Cp2kCheck):
                 }
 
         else:
-            if (self.current_system.name in ['daint', 'dom']):
+            if self.current_system.name in ['daint', 'dom']:
                 self.num_tasks = 576
                 self.num_tasks_per_node = 36
-            elif (self.current_system.name in ['eiger']):
+            elif self.current_system.name in ['eiger']:
                 self.num_tasks = 256
                 self.num_tasks_per_node = 16
                 self.num_cpus_per_task = 16
