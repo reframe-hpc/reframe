@@ -4,6 +4,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 
+import pytest
+import inspect
+
 import reframe as rfm
 
 
@@ -38,6 +41,7 @@ def test_params_are_present():
 
     assert MyTest.param_space['P0'] == ('a',)
     assert MyTest.param_space['P1'] == ('b',)
+
 
 def test_abstract_param():
     class MyTest(Abstract):
@@ -100,6 +104,15 @@ def test_extended_param_len():
     assert len(MyTest.param_space) == 8
 
 
+def test_instantiate_abstract_test():
+    class MyTest(Abstract):
+        pass
+
+    test = MyTest()
+    assert test.P0 is None
+    assert test.P1 is None
+
+
 def test_param_values_are_not_set():
     class MyTest(TwoParams):
         pass
@@ -109,36 +122,42 @@ def test_param_values_are_not_set():
     assert test.P1 is None
 
 
-def test_abstract_param_values_are_not_set():
-    class MyTest(Abstract):
-        pass
+def test_consume_param_space():
+    class MyTest(ExtendParams):
+        def __init__(self):
+            pass
+
+    for _ in MyTest.param_space:
+        test = MyTest(_rfm_use_params=True)
+        assert test.P0 is not None
+        assert test.P1 is not None
+        assert test.P2 is not None
 
     test = MyTest()
     assert test.P0 is None
     assert test.P1 is None
+    assert test.P2 is None
+
+    with pytest.raises(StopIteration):
+        test = MyTest(_rfm_use_params=True)
 
 
-def test_extended_params():
+def test_register_abstract_test():
+    with pytest.raises(ValueError):
+        @rfm.simple_test
+        class MyTest(Abstract):
+            pass
+
+
+def test_simple_test_decorator():
+    @rfm.simple_test
     class MyTest(ExtendParams):
         pass
 
-    test = MyTest()
-    assert hasattr(test, 'P0')
-    assert hasattr(test, 'P1')
-    assert hasattr(test, 'P2')
-
-
-#def test_extended_params_are_set():
-#    class MyTest(ExtendParams):
-#        pass
-#
-#    for _ in MyTest.param_space:
-#        test = MyTest()
-#        assert test.P0 is not None
-#        assert test.P1 is not None
-#        assert test.P2 is not None
-#
-#    test = MyTest()
-#    assert test.P0 is None
-#    assert test.P1 is None
-#    assert test.P2 is None
+    mod = inspect.getmodule(MyTest)
+    tests = mod._rfm_gettests()
+    assert len(tests) == 8
+    for test in tests:
+        assert test.P0 is not None
+        assert test.P1 is not None
+        assert test.P2 is not None
