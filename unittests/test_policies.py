@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import io
 import json
 import jsonschema
 import os
@@ -12,16 +11,15 @@ import socket
 import sys
 import time
 
-import reframe
 import reframe.core.runtime as rt
 import reframe.frontend.dependencies as dependencies
 import reframe.frontend.executors as executors
 import reframe.frontend.executors.policies as policies
-import reframe.utility as util
+import reframe.frontend.runreport as runreport
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 from reframe.core.exceptions import (AbortTaskError,
-                                     JobNotStartedError,
+                                     ReframeError,
                                      ReframeForceExitError,
                                      TaskDependencyError)
 from reframe.frontend.loader import RegressionCheckLoader
@@ -40,6 +38,25 @@ from unittests.resources.checks.frontend_checks import (
     SleepCheckPollFailLate,
     SystemExitCheck,
 )
+
+
+# NOTE: We could move this to utility
+class timer:
+    '''Context manager for timing'''
+
+    def __init__(self):
+        self._time_start = None
+        self._time_end = None
+
+    def __enter__(self):
+        self._time_start = time.time()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self._time_end = time.time()
+
+    def timestamps(self):
+        return self._time_start, self._time_end
 
 
 @pytest.fixture
@@ -127,26 +144,12 @@ def _validate_runreport(report):
     jsonschema.validate(json.loads(report), schema)
 
 
-def test_runall(make_runner, make_cases, common_exec_ctx):
-    runner = make_runner()
-    time_start = time.time()
-    runner.runall(make_cases())
-    time_end = time.time()
-    assert 9 == runner.stats.num_cases()
-    assert_runall(runner)
-    assert 5 == len(runner.stats.failures())
-    assert 2 == num_failures_stage(runner, 'setup')
-    assert 1 == num_failures_stage(runner, 'sanity')
-    assert 1 == num_failures_stage(runner, 'performance')
-    assert 1 == num_failures_stage(runner, 'cleanup')
-
-    # Create a run report and validate it
-    run_stats = runner.stats.json()
-    report = {
+def _generate_runreport(run_stats, time_start, time_end):
+    return {
         'session_info': {
             'cmdline': ' '.join(sys.argv),
             'config_file': rt.runtime().site_config.filename,
-            'data_version': '1.0',
+            'data_version': runreport.DATA_VERSION,
             'hostname': socket.gethostname(),
             'num_cases': run_stats[0]['num_cases'],
             'num_failures': run_stats[-1]['num_failures'],
@@ -163,16 +166,55 @@ def test_runall(make_runner, make_cases, common_exec_ctx):
             'version': osext.reframe_version(),
             'workdir': os.getcwd()
         },
+        'restored_cases': [],
         'runs': run_stats
     }
 
-    # We dump the report first, in order to get any object conversions right
-    final_report = None
-    with io.StringIO() as fp:
-        jsonext.dump(report, fp, indent=2)
-        final_report = fp.getvalue()
 
-    _validate_runreport(final_report)
+def test_runall(make_runner, make_cases, common_exec_ctx, tmp_path):
+    runner = make_runner()
+    with timer() as tm:
+        runner.runall(make_cases())
+
+    assert 9 == runner.stats.num_cases()
+    assert_runall(runner)
+    assert 5 == len(runner.stats.failures())
+    assert 2 == num_failures_stage(runner, 'setup')
+    assert 1 == num_failures_stage(runner, 'sanity')
+    assert 1 == num_failures_stage(runner, 'performance')
+    assert 1 == num_failures_stage(runner, 'cleanup')
+
+    # Create a run report and validate it
+    report = _generate_runreport(runner.stats.json(), *tm.timestamps())
+
+    # We dump the report first, in order to get any object conversions right
+    report_file = tmp_path / 'report.json'
+    with open(report_file, 'w') as fp:
+        jsonext.dump(report, fp)
+
+    # Read and validate the report using the runreport module
+    runreport.load_report(report_file)
+
+    # Try to load a non-existent report
+    with pytest.raises(ReframeError, match='failed to load report file'):
+        runreport.load_report(tmp_path / 'does_not_exist.json')
+
+    # Generate an invalid JSON
+    with open(tmp_path / 'invalid.json', 'w') as fp:
+        jsonext.dump(report, fp)
+        fp.write('invalid')
+
+    with pytest.raises(ReframeError, match=r'is not a valid JSON file'):
+        runreport.load_report(tmp_path / 'invalid.json')
+
+    # Generate a report with an incorrect data version
+    report['session_info']['data_version'] = '10.0'
+    with open(tmp_path / 'invalid-version.json', 'w') as fp:
+        jsonext.dump(report, fp)
+
+    with pytest.raises(ReframeError,
+                       match=r'incompatible report data versions'):
+        runreport.load_report(tmp_path / 'invalid-version.json')
 
 
 def test_runall_skip_system_check(make_runner, make_cases, common_exec_ctx):
@@ -250,7 +292,7 @@ def test_force_local_execution(make_runner, make_cases, testsys_exec_ctx):
     runner = make_runner()
     runner.policy.force_local = True
     test = HelloTest()
-    test.valid_prog_environs = ['builtin-gcc']
+    test.valid_prog_environs = ['builtin']
 
     runner.runall(make_cases([test]))
     assert_runall(runner)
@@ -699,3 +741,49 @@ def test_compile_fail_reschedule_busy_loop(async_runner, make_cases,
     assert num_checks == stats.num_cases()
     assert_runall(runner)
     assert num_checks == len(stats.failures())
+
+
+@pytest.fixture
+def report_file(make_runner, dep_cases, common_exec_ctx, tmp_path):
+    runner = make_runner()
+    runner.policy.keep_stage_files = True
+    with timer() as tm:
+        runner.runall(dep_cases)
+
+    report = _generate_runreport(runner.stats.json(), *tm.timestamps())
+    filename = tmp_path / 'report.json'
+    with open(filename, 'w') as fp:
+        jsonext.dump(report, fp)
+
+    return filename
+
+
+def test_restore_session(report_file, make_runner,
+                         dep_cases, common_exec_ctx, tmp_path):
+    # Select a single test to run and create the pruned graph
+    selected = [tc for tc in dep_cases if tc.check.name == 'T1']
+    testgraph = dependencies.prune_deps(
+        dependencies.build_deps(dep_cases)[0], selected, max_depth=1
+    )
+
+    # Restore the required test cases
+    report = runreport.load_report(report_file)
+    testgraph, restored_cases = report.restore_dangling(testgraph)
+
+    assert {tc.check.name for tc in restored_cases} == {'T4', 'T5'}
+
+    # Run the selected test cases
+    runner = make_runner()
+    with timer() as tm:
+        runner.runall(selected, restored_cases)
+
+    new_report = _generate_runreport(runner.stats.json(), *tm.timestamps())
+    assert new_report['runs'][0]['num_cases'] == 1
+    assert new_report['runs'][0]['testcases'][0]['name'] == 'T1'
+
+    # Remove the test case dump file and retry
+    os.remove(tmp_path / 'stage' / 'generic' / 'default' /
+              'builtin' / 'T4' / '.rfm_testcase.json')
+
+    with pytest.raises(ReframeError, match=r'could not restore testcase'):
+        report.restore_dangling(testgraph)

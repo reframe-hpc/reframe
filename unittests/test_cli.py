@@ -12,6 +12,7 @@ import re
 import sys
 
 import reframe.core.environments as env
+import reframe.frontend.runreport as runreport
 import reframe.core.logging as logging
 import reframe.core.runtime as rt
 import unittests.fixtures as fixtures
@@ -54,7 +55,7 @@ def perflogdir(tmp_path):
 def run_reframe(tmp_path, perflogdir):
     def _run_reframe(system='generic:default',
                      checkpath=['unittests/resources/checks/hellocheck.py'],
-                     environs=['builtin-gcc'],
+                     environs=['builtin'],
                      local=True,
                      action='run',
                      more_options=None,
@@ -143,6 +144,61 @@ def test_check_success(run_reframe, tmp_path):
     assert os.path.exists(tmp_path / 'report.json')
 
 
+def test_check_restore_session_failed(run_reframe, tmp_path):
+    run_reframe(
+        checkpath=['unittests/resources/checks_unlisted/deps_complex.py'],
+    )
+    returncode, stdout, _ = run_reframe(
+        checkpath=[],
+        more_options=[
+            f'--restore-session={tmp_path}/report.json', '--failed'
+        ]
+    )
+    report = runreport.load_report(f'{tmp_path}/report.json')
+    assert set(report.slice('name', when=('fail_phase', 'sanity'))) == {'T2'}
+    assert set(report.slice('name',
+                            when=('fail_phase', 'startup'))) == {'T7', 'T9'}
+    assert set(report.slice('name', when=('fail_phase', 'setup'))) == {'T8'}
+    assert report['runs'][-1]['num_cases'] == 4
+
+    restored = {r['name'] for r in report['restored_cases']}
+    assert restored == {'T1', 'T6'}
+
+
+def test_check_restore_session_succeeded_test(run_reframe, tmp_path):
+    run_reframe(
+        checkpath=['unittests/resources/checks_unlisted/deps_complex.py'],
+        more_options=['--keep-stage-files']
+    )
+    returncode, stdout, _ = run_reframe(
+        checkpath=[],
+        more_options=[
+            f'--restore-session={tmp_path}/report.json', '-n', 'T1'
+        ]
+    )
+    report = runreport.load_report(f'{tmp_path}/report.json')
+    assert report['runs'][-1]['num_cases'] == 1
+    assert report['runs'][-1]['testcases'][0]['name'] == 'T1'
+
+    restored = {r['name'] for r in report['restored_cases']}
+    assert restored == {'T4', 'T5'}
+
+
+def test_check_restore_session_check_search_path(run_reframe, tmp_path):
+    run_reframe(
+        checkpath=['unittests/resources/checks_unlisted/deps_complex.py']
+    )
+    returncode, stdout, _ = run_reframe(
+        checkpath=[f'{tmp_path}/foo'],
+        more_options=[
+            f'--restore-session={tmp_path}/report.json', '-n', 'T1', '-R'
+        ],
+        action='list'
+    )
+    assert returncode == 0
+    assert 'Found 0 check(s)' in stdout
+
+
 def test_check_success_force_local(run_reframe, tmp_path):
     # We explicitly use a system here with a non-local scheduler and pass the
     # `--force-local` option
@@ -153,7 +209,7 @@ def test_check_success_force_local(run_reframe, tmp_path):
 
 
 def test_report_file_with_sessionid(run_reframe, tmp_path):
-    returncode, stdout, _ = run_reframe(
+    returncode, *_ = run_reframe(
         more_options=[
             f'--report-file={tmp_path / "rfm-report-{sessionid}.json"}'
         ]
@@ -242,7 +298,7 @@ def test_check_sanity_failure(run_reframe, tmp_path):
     assert returncode != 0
     assert os.path.exists(
         tmp_path / 'stage' / 'generic' / 'default' /
-        'builtin-gcc' / 'SanityFailureCheck'
+        'builtin' / 'SanityFailureCheck'
     )
 
 
@@ -255,7 +311,7 @@ def test_dont_restage(run_reframe, tmp_path):
     # Place a random file in the test's stage directory and rerun with
     # `--dont-restage` and `--max-retries`
     stagedir = (tmp_path / 'stage' / 'generic' / 'default' /
-                'builtin-gcc' / 'SanityFailureCheck')
+                'builtin' / 'SanityFailureCheck')
     (stagedir / 'foobar').touch()
     returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks/frontend_checks.py'],
@@ -302,14 +358,28 @@ def test_performance_check_failure(run_reframe, tmp_path, perflogdir):
     assert returncode != 0
     assert os.path.exists(
         tmp_path / 'stage' / 'generic' / 'default' /
-        'builtin-gcc' / 'PerformanceFailureCheck'
+        'builtin' / 'PerformanceFailureCheck'
     )
     assert os.path.exists(perflogdir / 'generic' /
                           'default' / 'PerformanceFailureCheck.log')
 
 
-def test_performance_report(run_reframe):
+def test_perflogdir_from_env(run_reframe, tmp_path, monkeypatch):
+    monkeypatch.setenv('FOODIR', str(tmp_path / 'perflogs'))
     returncode, stdout, stderr = run_reframe(
+        checkpath=['unittests/resources/checks/frontend_checks.py'],
+        more_options=['-t', 'PerformanceFailureCheck'],
+        perflogdir='$FOODIR'
+    )
+    assert returncode == 1
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert os.path.exists(tmp_path / 'perflogs' / 'generic' /
+                          'default' / 'PerformanceFailureCheck.log')
+
+
+def test_performance_report(run_reframe):
+    returncode, stdout, _ = run_reframe(
         checkpath=['unittests/resources/checks/frontend_checks.py'],
         more_options=['-t', 'PerformanceFailureCheck', '--performance-report']
     )
@@ -572,7 +642,7 @@ def test_unload_module(run_reframe, user_exec_ctx):
     # more exhaustively.
 
     ms = rt.runtime().modules_system
-    if ms.name == 'nomod':
+    if not fixtures.has_sane_modules_system():
         pytest.skip('no modules system found')
 
     with rt.module_use('unittests/modules'):
@@ -591,7 +661,7 @@ def test_unload_module(run_reframe, user_exec_ctx):
 
 def test_unuse_module_path(run_reframe, user_exec_ctx):
     ms = rt.runtime().modules_system
-    if ms.name == 'nomod':
+    if not fixtures.has_sane_modules_system():
         pytest.skip('no modules system found')
 
     module_path = 'unittests/modules'
@@ -601,6 +671,7 @@ def test_unuse_module_path(run_reframe, user_exec_ctx):
         config_file=fixtures.USER_CONFIG_FILE, action='run',
         system=rt.runtime().system.name
     )
+    ms.searchpath_remove(module_path)
     assert "could not load module 'testmod_foo' correctly" in stdout
     assert 'Traceback' not in stderr
     assert returncode == 0
@@ -608,7 +679,7 @@ def test_unuse_module_path(run_reframe, user_exec_ctx):
 
 def test_use_module_path(run_reframe, user_exec_ctx):
     ms = rt.runtime().modules_system
-    if ms.name == 'nomod':
+    if not fixtures.has_sane_modules_system():
         pytest.skip('no modules system found')
 
     module_path = 'unittests/modules'
@@ -617,7 +688,6 @@ def test_use_module_path(run_reframe, user_exec_ctx):
         config_file=fixtures.USER_CONFIG_FILE, action='run',
         system=rt.runtime().system.name
     )
-
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert "could not load module 'testmod_foo' correctly" not in stdout
@@ -626,7 +696,7 @@ def test_use_module_path(run_reframe, user_exec_ctx):
 
 def test_overwrite_module_path(run_reframe, user_exec_ctx):
     ms = rt.runtime().modules_system
-    if ms.name == 'nomod':
+    if not fixtures.has_sane_modules_system():
         pytest.skip('no modules system found')
 
     module_path = 'unittests/modules'
@@ -638,7 +708,6 @@ def test_overwrite_module_path(run_reframe, user_exec_ctx):
         config_file=fixtures.USER_CONFIG_FILE, action='run',
         system=rt.runtime().system.name
     )
-
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert "could not load module 'testmod_foo' correctly" not in stdout
