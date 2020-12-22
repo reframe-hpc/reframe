@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        modules-version: [Lmod, Tmod32, Tmod4]
+        modules-version: [Lmod, Lmod77, Tmod32, Tmod4]
     steps:
     - uses: actions/checkout@v2
     - name: Build Image for ${{ matrix.modules-version }}
