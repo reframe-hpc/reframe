@@ -27,13 +27,11 @@ from reframe.utility.versioning import VersionValidator
 
 
 def _register_test(cls, args=None):
-    '''Register the test
+    '''Register the test.
 
     Register the test with _rfm_use_params=True. This additional argument flags
     this case to consume the parameter space. Otherwise, the regression test
     parameters would simply be initialized to None.
-
-    :meta private:
     '''
     def _instantiate(cls, args):
         if isinstance(args, collections.abc.Sequence):

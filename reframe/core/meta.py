@@ -80,11 +80,22 @@ class RegressionTestMeta(type):
                     raise ReframeSyntaxError(msg)
 
     def __call__(cls, *args, **kwargs):
+        '''Intercept reframe-specific constructor arguments.
+
+        When registering a regression test using any supported decorator,
+        this decorator may pass additional arguments to the class constructor
+        to perform specific reframe-internal actions. This gives extra control
+        over the class instantiation process, allowing reframe to instantiate
+        the regression test class differently if this class was registered or
+        not (e.g. when deep-copying a regression test object). These interal
+        arguments must be intercepted before the object initialization, since
+        these would otherwise affect the __init__ method's signature, and these
+        internal mechanisms must be fully transparent to the user.
+        '''
         obj = cls.__new__(cls, *args, **kwargs)
 
         # Intercept constructor arguments
-        if '_rfm_use_params' in kwargs:
-            del kwargs['_rfm_use_params']
+        kwargs.pop('_rfm_use_params', None)
 
         obj.__init__(*args, **kwargs)
         return obj
@@ -95,7 +106,7 @@ class RegressionTestMeta(type):
         return cls._rfm_param_space
 
     def is_abstract(cls):
-        '''Checks if the test is an abstract test.
+        '''Check if the test is an abstract test.
 
         If the parameter space has undefined parameters, the test is considered
         an abstract test. If that is the case, the length of the parameter

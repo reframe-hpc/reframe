@@ -761,15 +761,14 @@ class RegressionTest(metaclass=RegressionTestMeta):
         '''
         # Set the values of the test parameters (if any)
         if use_params and cls._rfm_param_space.params:
+            # Consume the parameter space iterator
             param_values = next(cls._rfm_param_space.unique_iter)
             for index, key in enumerate(cls._rfm_param_space.params):
                 setattr(obj, key, param_values[index])
-
-            return
-
-        # Initialize the params as None if
-        for key in cls._rfm_param_space.params:
-            setattr(obj, key, None)
+        else:
+            # Otherwise init the params as None
+            for key in cls._rfm_param_space.params:
+                setattr(obj, key, None)
 
     def _append_parameters_to_name(self):
         if self._rfm_param_space.params:
