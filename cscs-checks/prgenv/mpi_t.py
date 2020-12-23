@@ -50,7 +50,8 @@ class MpiTCheck(rfm.RegressionTest):
         regex = r'^(?P<vars>MPIR\S+)$'
         ref_file = os.path.join(
             self.stagedir,
-            reference_files[sn.evaluate(mpich_version)]['control'])
+            reference_files[sn.evaluate(mpich_version)]['control']
+        )
         self.ref_control_vars = sorted(sn.extractall(regex, ref_file, 'vars'))
         # --- extract runtime data:
         regex = r'^\t(?P<vars>MPIR\S+)\t'
@@ -62,7 +63,8 @@ class MpiTCheck(rfm.RegressionTest):
         regex = r'^(?P<category>.*)$'
         ref = os.path.join(
             self.stagedir,
-            reference_files[sn.evaluate(mpich_version)]['categories'])
+            reference_files[sn.evaluate(mpich_version)]['categories']
+        )
         ref_cat_vars = sorted(sn.extractall(regex, ref, 'category'))
         self.ref_cat_vars = list(filter(None, ref_cat_vars))
         # --- extract runtime data:
