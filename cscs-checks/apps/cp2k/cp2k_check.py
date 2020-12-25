@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import os
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -50,31 +49,63 @@ class Cp2kCpuCheck(Cp2kCheck):
     def __init__(self, scale, variant):
         super().__init__()
         self.descr = 'CP2K CPU check (version: %s, %s)' % (scale, variant)
-        self.valid_systems = ['daint:mc']
+        self.valid_systems = ['daint:mc', 'eiger:mc']
         if scale == 'small':
             self.valid_systems += ['dom:mc']
-            self.num_tasks = 216
-        else:
-            self.num_tasks = 576
+            if self.current_system.name in ['daint', 'dom']:
+                self.num_tasks = 216
+                self.num_tasks_per_node = 36
+            elif self.current_system.name == 'eiger':
+                self.num_tasks = 96
+                self.num_tasks_per_node = 16
+                self.num_cpus_per_task = 16
+                self.num_tasks_per_core = 1
+                self.use_multithreading = False
+                self.variables = {
+                    'MPICH_OFI_STARTUP_CONNECT': '1',
+                    'OMP_NUM_THREADS': '8',
+                    'OMP_PLACES': 'cores',
+                    'OMP_PROC_BIND': 'close'
+                }
 
-        self.num_tasks_per_node = 36
+        else:
+            if self.current_system.name in ['daint', 'dom']:
+                self.num_tasks = 576
+                self.num_tasks_per_node = 36
+            elif self.current_system.name in ['eiger']:
+                self.num_tasks = 256
+                self.num_tasks_per_node = 16
+                self.num_cpus_per_task = 16
+                self.num_tasks_per_core = 1
+                self.use_multithreading = False
+                self.variables = {
+                    'MPICH_OFI_STARTUP_CONNECT': '1',
+                    'OMP_NUM_THREADS': '8',
+                    'OMP_PLACES': 'cores',
+                    'OMP_PROC_BIND': 'close'
+                }
+
         references = {
             'maint': {
                 'small': {
                     'dom:mc': {'time': (202.2, None, 0.05, 's')},
-                    'daint:mc': {'time': (180.9, None, 0.08, 's')}
+                    'daint:mc': {'time': (180.9, None, 0.08, 's')},
+                    'eiger:mc': {'time': (70.0, None, 0.08, 's')}
                 },
                 'large': {
-                    'daint:mc': {'time': (141.0, None, 0.05, 's')}
+                    'daint:mc': {'time': (141.0, None, 0.05, 's')},
+                    'eiger:mc': {'time': (46.0, None, 0.05, 's')}
                 }
             },
             'prod': {
                 'small': {
                     'dom:mc': {'time': (202.2, None, 0.05, 's')},
-                    'daint:mc': {'time': (180.9, None, 0.08, 's')}
+                    'daint:mc': {'time': (180.9, None, 0.08, 's')},
+                    'eiger:mc': {'time': (70.0, None, 0.08, 's')}
                 },
                 'large': {
-                    'daint:mc': {'time': (113.0, None, 0.05, 's')}
+                    'daint:mc': {'time': (113.0, None, 0.05, 's')},
+                    'eiger:mc': {'time': (46.0, None, 0.05, 's')}
                 }
             }
         }
@@ -82,6 +113,13 @@ class Cp2kCpuCheck(Cp2kCheck):
         self.reference = references[variant][scale]
         self.tags |= {'maintenance' if variant == 'maint' else 'production'}
 
+    @rfm.run_before('run')
+    def set_task_distribution(self):
+        self.job.options = ['--distribution=block:block']
+ 
+    @rfm.run_before('run')
+    def set_cpu_binding(self):
+        self.job.launcher.options = ['--cpu-bind=cores']
 
 @rfm.parameterized_test(*([s, v]
                           for s in ['small', 'large']

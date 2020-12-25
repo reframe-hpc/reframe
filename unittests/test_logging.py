@@ -174,6 +174,11 @@ def test_logger_dynamic_attributes_deferrables(logfile, logger_with_check):
     )
     logger_with_check.logger.handlers[0].setFormatter(formatter)
     logger_with_check.info('xxx')
+    assert _pattern_in_logfile(r'null\|null', logfile)
+
+    # Evaluate the deferrable and log again
+    logger_with_check.check.deferred.evaluate()
+    logger_with_check.info('xxx')
     assert _pattern_in_logfile(r'"hello"\|null', logfile)
 
 
