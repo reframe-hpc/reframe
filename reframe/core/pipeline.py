@@ -1116,8 +1116,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
         self.logger.debug(f'Symlinking files: {self.readonly_files}')
         try:
             osext.copytree_virtual(
-                path, self._stagedir, self.readonly_files, symlinks=True,
-                dirs_exist_ok=True
+                path, self._stagedir, self.readonly_files, dirs_exist_ok=True
             )
         except (OSError, ValueError, TypeError) as e:
             raise PipelineError('copying of files failed') from e

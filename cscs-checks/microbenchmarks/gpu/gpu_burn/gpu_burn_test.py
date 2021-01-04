@@ -22,10 +22,6 @@ class GpuBurnTest(rfm.RegressionTest):
         self.executable_opts = ['-d', '40']
         self.build_system = 'Make'
         self.executable = './gpu_burn.x'
-
-        # FIXME workaround due to issue #1639.
-        self.readonly_files = ['Xdevice']
-
         self.num_tasks = 0
         self.num_tasks_per_node = 1
         self.sanity_patterns = self.assert_num_tasks()
