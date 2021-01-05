@@ -270,6 +270,10 @@ class JobNotStartedError(JobError):
     '''Raised when trying an operation on a unstarted job.'''
 
 
+class JobQOSMaxSubmitJobPerUserLimitError(ReframeError):
+    '''Raised when a slurm gives QOSMaxSubmitJobPerUserLimit.'''
+
+
 class DependencyError(ReframeError):
     '''Raised when a dependency problem is encountered.'''
 

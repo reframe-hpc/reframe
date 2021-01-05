@@ -18,7 +18,8 @@ from reframe.core.backends import register_scheduler
 from reframe.core.exceptions import (SpawnedProcessError,
                                      JobBlockedError,
                                      JobError,
-                                     JobSchedulerError)
+                                     JobSchedulerError,
+                                     JobQOSMaxSubmitJobPerUserLimitError)
 from reframe.utility import seconds_to_hms
 
 
@@ -223,7 +224,13 @@ class SlurmJobScheduler(sched.JobScheduler):
 
     def submit(self, job):
         cmd = f'sbatch {job.script_filename}'
-        completed = _run_strict(cmd, timeout=self._submit_timeout)
+        try:
+            completed = _run_strict(cmd, timeout=self._submit_timeout)
+        except SpawnedProcessError as e:
+            if e.exitcode ==  1 and 'sbatch: error: QOSMaxSubmitJobPerUserLimit' in e.stderr:
+                raise JobQOSMaxSubmitJobPerUserLimitError(e)
+            else:
+                raise e
         jobid_match = re.search(r'Submitted batch job (?P<jobid>\d+)',
                                 completed.stdout)
         if not jobid_match:

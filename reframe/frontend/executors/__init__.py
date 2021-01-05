@@ -16,6 +16,7 @@ import reframe.core.runtime as runtime
 import reframe.frontend.dependencies as dependencies
 import reframe.utility.jsonext as jsonext
 from reframe.core.exceptions import (AbortTaskError, JobNotStartedError,
+                                     JobQOSMaxSubmitJobPerUserLimitError,
                                      ReframeForceExitError, TaskExit)
 from reframe.core.schedulers.local import LocalJobScheduler
 from reframe.frontend.printer import PrettyPrinter
@@ -252,6 +253,8 @@ class RegressionTask:
         except ABORT_REASONS:
             self.fail()
             raise
+        except JobQOSMaxSubmitJobPerUserLimitError as e:
+            raise e
         except BaseException as e:
             self.fail()
             raise TaskExit from e
@@ -261,14 +264,22 @@ class RegressionTask:
         self._notify_listeners('on_task_setup')
 
     def compile(self):
-        self._safe_call(self.check.compile)
+        try:
+            self._safe_call(self.check.compile)
+            self._notify_listeners('on_task_compile')
+        except JobQOSMaxSubmitJobPerUserLimitError as e:
+            raise e
 
     def compile_wait(self):
         self._safe_call(self.check.compile_wait)
+        self._notify_listeners('on_task_compiled')
 
     def run(self):
-        self._safe_call(self.check.run)
-        self._notify_listeners('on_task_run')
+        try:
+            self._safe_call(self.check.run)
+            self._notify_listeners('on_task_run')
+        except JobQOSMaxSubmitJobPerUserLimitError:
+            pass
 
     def run_complete(self):
         done = self._safe_call(self.check.run_complete)
@@ -332,6 +343,14 @@ class TaskEventListener(abc.ABC):
     @abc.abstractmethod
     def on_task_run(self, task):
         '''Called whenever the run() method of a RegressionTask is called.'''
+
+    @abc.abstractmethod
+    def on_task_compile(self, task):
+        '''Called whenever the compile() method of a RegressionTask is called.'''
+
+    @abc.abstractmethod
+    def on_task_compiled(self, task):
+        '''Called when the compilation of a RegressionTask has finished.'''
 
     @abc.abstractmethod
     def on_task_exit(self, task):

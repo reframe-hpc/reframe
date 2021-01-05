@@ -458,6 +458,11 @@ class _TaskEventMonitor(executors.TaskEventListener):
     def on_task_setup(self, task):
         pass
 
+    def on_task_compile(self, task):
+        pass
+
+    def on_task_compiled(self, task):
+        pass
 
 @pytest.fixture
 def make_async_exec_ctx(temp_runtime):

@@ -145,6 +145,12 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def on_task_run(self, task):
         pass
 
+    def on_task_compiled(self, task):
+        pass
+
+    def on_task_compile(self, task):
+        pass
+
     def on_task_exit(self, task):
         pass
 
@@ -208,6 +214,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         # All currently running tasks per partition
         self._running_tasks = {}
 
+        # All currently compiling tasks per partition
+        self._compiled_tasks = {}
+
         # Tasks that need to be finalized
         self._completed_tasks = []
 
@@ -227,6 +236,26 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._partitions = set()
 
         self.task_listeners.append(self)
+
+    def _remove_from_compiled(self, task):
+        getlogger().debug2(
+            f'Removing task from the compiled list: {task.testcase}'
+        )
+        try:
+            partname = task.check.current_partition.fullname
+            self._compiled_tasks[partname].remove(task)
+        except (ValueError, AttributeError, KeyError):
+            getlogger().debug2('Task was not compiled')
+
+    def _remove_from_ready(self, task):
+        getlogger().debug2(
+            f'Removing task from the ready list: {task.testcase}'
+        )
+        try:
+            partname = task.check.current_partition.fullname
+            self._ready_tasks[partname].remove(task)
+        except (ValueError, AttributeError, KeyError):
+            getlogger().debug2('Task was not ready')
 
     def _remove_from_running(self, task):
         getlogger().debug2(
@@ -253,7 +282,15 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         partname = task.check.current_partition.fullname
         self._ready_tasks[partname].append(task)
 
+    def on_task_compile(self, task):
+        self._remove_from_ready(task)
+
+    def on_task_compiled(self, task):
+        partname = task.check.current_partition.fullname
+        self._compiled_tasks[partname].append(task)
+
     def on_task_run(self, task):
+        self._remove_from_compiled(task)
         partname = task.check.current_partition.fullname
         self._running_tasks[partname].append(task)
 
@@ -318,6 +355,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         # Set partition-based counters, if not set already
         self._running_tasks.setdefault(partition.fullname, [])
         self._ready_tasks.setdefault(partition.fullname, [])
+        self._compiled_tasks.setdefault(partition.fullname, [])
         self._max_jobs.setdefault(partition.fullname, partition.max_jobs)
 
         task = RegressionTask(case, self.task_listeners)
@@ -351,13 +389,15 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             if len(self._running_tasks[partname]) < partition.max_jobs:
                 # Task was put in _ready_tasks during setup
                 self._ready_tasks[partname].pop()
-                self._reschedule(task)
+                self._reschedule_compile(task)
+                self._reschedule_run(task)
             else:
                 self.printer.status('HOLD', task.check.info(), just='right')
-        except TaskExit:
+        except TaskExit: ## WHY?
             if not task.failed:
                 with contextlib.suppress(TaskExit):
-                    self._reschedule(task)
+                    self._reschedule_compile(task)
+                    self._reschedule_run(task)
 
             return
         except ABORT_REASONS as e:
@@ -439,15 +479,30 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             for task in ready_list:
                 task.abort(cause)
 
+        for compiled_list in self._compiled_tasks.values():
+            for task in compiled_list:
+                task.abort(cause)
+
         for task in itertools.chain(self._waiting_tasks,
                                     self._retired_tasks,
                                     self._completed_tasks):
             task.abort(cause)
 
-    def _reschedule(self, task):
-        getlogger().debug2(f'Scheduling test case {task.testcase} for running')
-        task.compile()
+    def _reschedule_compile(self, task):
+        getlogger().debug2(f'Scheduling test case {task.testcase} for compiling')
+        try:
+            task.compile()
+        except JobQOSMaxSubmitJobPerUserLimitError:
+            getlogger().debug2(f'Could not submit job for compilation of '
+                               f'case {task.testcase}')
+            return False
+
         task.compile_wait()
+        getlogger().debug2(f'Compilation of test case {task.testcase} finished')
+        return True
+
+    def _reschedule_run(self, task):
+        getlogger().debug2(f'Scheduling test case {task.testcase} for running')
         task.run()
 
     def _reschedule_all(self):
@@ -455,14 +510,28 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             num_tasks = len(tasks)
             num_empty_slots = self._max_jobs[partname] - num_tasks
             num_rescheduled = 0
-            for _ in range(num_empty_slots):
-                try:
-                    task = self._ready_tasks[partname].pop()
-                except IndexError:
+            # Try first to reschedule new jobs, because the
+            # compilation step is usually local.
+            # Loop over a copy of the ready tasks because tasks that are
+            # compiled will be removed while looping.
+            for task in self._ready_tasks[partname][:]:
+                if num_rescheduled >= num_empty_slots:
                     break
 
-                self._reschedule(task)
-                num_rescheduled += 1
+                if self._reschedule_compile(task):
+                    num_rescheduled += 1
+
+            # Loop over a copy of the compiled tasks because tasks that are
+            # submitted will be removed while looping.
+            for task in self._compiled_tasks[partname][:]:
+                if num_rescheduled >= num_empty_slots:
+                    break
+
+                self._reschedule_run(task)
+                # If it is still in the compiled tasks, it was submitted
+                # successfully
+                if task not in self._compiled_tasks:
+                    num_rescheduled += 1
 
             if num_rescheduled:
                 getlogger().debug2(
@@ -473,7 +542,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self.printer.separator('short single line',
                                'waiting for spawned checks to finish')
         while (countall(self._running_tasks) or self._waiting_tasks or
-               self._completed_tasks or countall(self._ready_tasks)):
+               self._completed_tasks or countall(self._ready_tasks) or
+               countall(self._compiled_tasks)):
             getlogger().debug2(f'Running tasks: '
                                f'{countall(self._running_tasks)}')
             try:
