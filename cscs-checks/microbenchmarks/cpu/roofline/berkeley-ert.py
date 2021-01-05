@@ -58,17 +58,14 @@ import reframe.utility.udeps as udeps
 # }}}
 repeat = 2
 flops = [4]
-mpi_tasks_d = {
-    'broadwell': [18, 36],
-    'haswell': [6, 12]
-}
+mpi_tasks_d = {'broadwell': [18, 36], 'haswell': [6, 12]}
 
 
 # {{{ class Ert_BaseCheck
 class Ert_BaseCheck(rfm.RegressionTest):
     def __init__(self, mpi_task, flop):
-        # pe step
         self.descr = f'Empirical Roofline Toolkit (Base for running)'
+        # pe step
         # build step
         # run step
         # postprocess step
@@ -100,7 +97,7 @@ class Ert_BaseCheck(rfm.RegressionTest):
             # '-DERT_INTEL',
         ]
         self.prgenv_flags = {
-             'PrgEnv-gnu': ['-fopenmp', '-O3'],
+            'PrgEnv-gnu': ['-fopenmp', '-O3'],
         }
         self.build_system.cxxflags = \
             self.prgenv_flags[self.current_environ.name]
@@ -109,7 +106,6 @@ class Ert_BaseCheck(rfm.RegressionTest):
             'OMP_NUM_THREADS': str(self.num_cpus_per_task),
             'OMP_PROC_BIND': 'close',
             'OMP_PLACES': 'cores',
-            # 'MPICH_OFI_STARTUP_CONNECT': '1',
         }
 
     @rfm.run_before('run')
@@ -121,18 +117,19 @@ class Ert_BaseCheck(rfm.RegressionTest):
             'done',
             'cat try.00* | ./Scripts/preprocess.py > pre',
             './Scripts/maximum.py < pre > max',
-            './Scripts/summary.py < max > sum'
+            './Scripts/summary.py < max > sum',
         ]
 
     @rfm.run_before('sanity')
     def set_sanity(self):
-        self.sanity_patterns = sn.all([
-            # sn.assert_found(r'xxx', self.stdout),
-            sn.assert_found(r'^fp64', 'try.001'),
-            sn.assert_found(r'^fp64', 'max'),
-            sn.assert_found(r'GFLOPs|DRAM', 'sum'),
-            sn.assert_found('META_DATA', 'sum')
-        ])
+        self.sanity_patterns = sn.all(
+            [
+                sn.assert_found(r'^fp64', 'try.001'),
+                sn.assert_found(r'^fp64', 'max'),
+                sn.assert_found(r'GFLOPs|DRAM', 'sum'),
+                sn.assert_found('META_DATA', 'sum'),
+            ]
+        )
     # }}}
 # }}}
 
@@ -143,7 +140,6 @@ class Ert_Base_RunCheck(rfm.RunOnlyRegressionTest):
         self.descr = f'Empirical Roofline Toolkit (Base for plotting)'
         self.roofline_script1_fname = 'roofline.py'
         self.roofline_script1 = f'./Scripts/{self.roofline_script1_fname}'
-        # self.roofline_script1 = f'./Scripts/roofline.py'
         self.roofline_script2 = './ert_cscs.py'
         self.roofline_out_script1 = 'o.roofline'
         self.roofline_summary = 'sum'
@@ -155,16 +151,17 @@ class Ert_Base_RunCheck(rfm.RunOnlyRegressionTest):
         self.postrun_cmds = [
             self.roofline_script2,
             'gnuplot roofline.gnuplot',  # name hardcoded in the script
-            'file roofline.ps'  # formats originally avail: gnuplot, json, tex
+            'file roofline.ps',  # formats originally avail: gnuplot, json, tex
         ]
         # {{{ sanity_patterns
-        self.sanity_patterns = sn.all([
-            sn.assert_found(r'GFLOPs EMP', self.roofline_out_script1),
-            # sn.assert_found(r'L1 EMP', self.roofline_out_script1),
-            sn.assert_found(r'DRAM EMP', self.roofline_out_script1),
-            sn.assert_found('Empirical roofline graph:', self.stdout),
-            sn.assert_found(r'.ps: PostScript', self.stdout),
-        ])
+        self.sanity_patterns = sn.all(
+            [
+                sn.assert_found(r'GFLOPs EMP', self.roofline_out_script1),
+                sn.assert_found(r'DRAM EMP', self.roofline_out_script1),
+                sn.assert_found('Empirical roofline graph:', self.stdout),
+                sn.assert_found(r'.ps: PostScript', self.stdout),
+            ]
+        )
         # }}}
 
         # {{{ performance
@@ -192,12 +189,9 @@ class Ert_Base_RunCheck(rfm.RunOnlyRegressionTest):
                                   float)
         DRAMbw = sn.extractsingle(regex_DRAMbw, self.roofline_out_script1, 1,
                                   float)
-        # L1bw = sn.extractsingle(regex_L1bw, self.roofline_out_script1, 1,
-        #                           float)
         self.perf_patterns = {
             'gflops': gflops,
             'DRAMbw': DRAMbw,
-            # 'L1bw': L1bw,
         }
         # }}}
 # }}}
@@ -260,20 +254,15 @@ class HWL_Ert_Check(Ert_Base_RunCheck):
         for ii in mpi_tasks_d['haswell']:
             for jj in flops:
                 self.depends_on(f'HWL_Ert_BaseCheck_{ii}_{jj}', udeps.by_env)
-                # udeps.fully
 
         # {{{ performance
         # Reference roofline boundaries for Intel Haswell cpu:
         ref_GFLOPs = 330.0
         ref_DRAMbw = 53.0
-        # ref_L1bw = 434.0
-        # ref_L2bw = 855.0
-        # ref_L3bw = 547.0
         self.reference = {
             '*': {
                 'gflops': (ref_GFLOPs, None, None, 'GF/s'),
                 'DRAMbw': (ref_DRAMbw, None, None, 'GB/s'),
-                # 'L1bw': (ref_L1bw, -0.1, None, 'GB/s'),
             }
         }
         # }}}
@@ -292,14 +281,16 @@ class HWL_Ert_Check(Ert_Base_RunCheck):
                 ).stagedir
                 dir_basename = dir_fullpath.split("/")[-1]
                 self.prerun_cmds.append(
-                    f'ln -s {dir_fullpath}/{job_out} {dir_basename}.{job_out}')
+                    f'ln -s {dir_fullpath}/{job_out} {dir_basename}.{job_out}'
+                )
 
         self.prerun_cmds.append(
-            f'ln -s {dir_fullpath}/{self.roofline_script1}')
+            f'ln -s {dir_fullpath}/{self.roofline_script1}'
+        )
         self.prerun_cmds.append(
-            f'ln -s {dir_fullpath}/{self.roofline_script2}')
-        self.prerun_cmds.append(
-            f'ln -s {dir_fullpath}/Plot/')
+            f'ln -s {dir_fullpath}/{self.roofline_script2}'
+        )
+        self.prerun_cmds.append(f'ln -s {dir_fullpath}/Plot/')
     # }}}
 # }}}
 # }}}
@@ -361,20 +352,15 @@ class BWL_Ert_Check(Ert_Base_RunCheck):
         for ii in mpi_tasks_d['broadwell']:
             for jj in flops:
                 self.depends_on(f'BWL_Ert_BaseCheck_{ii}_{jj}', udeps.by_env)
-                # udeps.fully
 
         # {{{ performance
         # Reference roofline boundaries for Intel Broadwell cpu:
         ref_GFLOPs = 817.0
         ref_DRAMbw = 106.0
-        # ref_L1bw = 434.0
-        # ref_L2bw = 855.0
-        # ref_L3bw = 547.0
         self.reference = {
             '*': {
                 'gflops': (ref_GFLOPs, None, None, 'GF/s'),
                 'DRAMbw': (ref_DRAMbw, None, None, 'GB/s'),
-                # 'L1bw': (ref_L1bw, -0.1, None, 'GB/s'),
             }
         }
         # }}}
@@ -393,14 +379,16 @@ class BWL_Ert_Check(Ert_Base_RunCheck):
                 ).stagedir
                 dir_basename = dir_fullpath.split("/")[-1]
                 self.prerun_cmds.append(
-                    f'ln -s {dir_fullpath}/{job_out} {dir_basename}.{job_out}')
+                    f'ln -s {dir_fullpath}/{job_out} {dir_basename}.{job_out}'
+                )
 
         self.prerun_cmds.append(
-            f'ln -s {dir_fullpath}/{self.roofline_script1}')
+            f'ln -s {dir_fullpath}/{self.roofline_script1}'
+        )
         self.prerun_cmds.append(
-            f'ln -s {dir_fullpath}/{self.roofline_script2}')
-        self.prerun_cmds.append(
-            f'ln -s {dir_fullpath}/Plot/')
+            f'ln -s {dir_fullpath}/{self.roofline_script2}'
+        )
+        self.prerun_cmds.append(f'ln -s {dir_fullpath}/Plot/')
     # }}}
 # }}}
 # }}}
