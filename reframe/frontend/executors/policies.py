@@ -439,9 +439,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             for task in ready_list:
                 task.abort(cause)
 
-        for task in itertools.chain(self._waiting_tasks,
-                                    self._retired_tasks,
-                                    self._completed_tasks):
+        for task in self._waiting_tasks:
             task.abort(cause)
 
     def _reschedule(self, task):
