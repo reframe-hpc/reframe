@@ -5,20 +5,19 @@
 
 import reframe as rfm
 import reframe.utility.sanity as sn
-
+import reframe.utility.osext as osext
 
 @rfm.parameterized_test(*[[model, mpi_task]
-                          for model in ['inception_v3']
-                          for mpi_task in [2]
-                          # TODO: for model in ['inception_v3', 'resnet50']
-                          # TODO: for mpi_task in [1, 2, ...]
+                          for mpi_task in [16, 8, 2, 1]
+                          for model in ['inception_v3', 'resnet50']
                           ])
 class PytorchHorovodTest(rfm.RunOnlyRegressionTest):
     def __init__(self, model, mpi_task):
         self.descr = f'Distributed training with Pytorch and Horovod'
         self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.valid_prog_environs = ['builtin']
-        self.modules = ['Horovod/0.19.5-CrayGNU-20.08-pt-1.6.0']
+        cray_cdt_version = osext.cray_cdt_version()
+        self.modules = [f'Horovod/0.19.5-CrayGNU-{cray_cdt_version}-pt-1.6.0']
         self.num_tasks_per_node = 1
         self.num_cpus_per_task = 12
         self.num_tasks = mpi_task
@@ -33,26 +32,28 @@ class PytorchHorovodTest(rfm.RunOnlyRegressionTest):
         git_url = (f'https://raw.githubusercontent.com/horovod/horovod/{hash}/'
                    'examples/pytorch')
         git_src = 'pytorch_synthetic_benchmark.py'
-        # this if will be removed after horovod will be built with scipy
-        if model in ['inception_v3']:
-            self.prerun_cmds = [
+        self.prerun_cmds = [
+            f'wget {git_url}/{git_src}',
+            'echo starttime=`date +%s`']
+
+        if model == 'inception_v3':
+            self.prerun_cmds += [
                 'python3 -m venv --system-site-packages myvenv',
                 'source myvenv/bin/activate',
-                'pip install scipy']
+                'pip install scipy',
+                f'sed -i "s-output = model(data)-output, aux = model(data)-" {git_src}',
+                'sed -i "s-data = torch.randn(args.batch_size, 3, 224, 224)-'
+                f'data = torch.randn(args.batch_size, 3, 299, 299)-" {git_src}']
 
-        self.prerun_cmds += [
-            f'wget {git_url}/{git_src}',
-            'sed -i "s-output = model(data)-output, aux = model(data)-"'
-            f' {git_src}',
-            'sed -i "s-data = torch.randn(args.batch_size, 3, 224, 224)-'
-            f'data = torch.randn(args.batch_size, 3, 299, 299)-" {git_src}',
-            'echo starttime=`date +%s`']
         self.postrun_cmds = ['echo stoptime=`date +%s`']
         self.executable = 'python'
         self.executable_opts = [
-            git_src, f'--model {model}',
-            f'--batch-size {batch_size}', '--num-iters 5',
-            '--num-batches-per-iter 5', '--num-warmup-batches 5']
+            git_src,
+            f'--model {model}',
+            f'--batch-size {batch_size}',
+            '--num-iters 5',
+            '--num-batches-per-iter 5',
+            '--num-warmup-batches 5']
         self.tags = {'production'}
         self.maintainers = ['RS', 'HM']
         self.sanity_patterns = sn.all([
@@ -72,17 +73,17 @@ class PytorchHorovodTest(rfm.RunOnlyRegressionTest):
                 r'Total img/sec on \d+ GPU\(s\): (?P<throughput>\S+) \S+',
                 self.stdout, 'throughput', float),
         }
-        ref_per_gpu = 131.
+        ref_per_gpu = 131 if model == 'inception_v3' else 201
         ref_per_job = ref_per_gpu * mpi_task
         self.reference = {
             'dom:gpu': {
                 'elapsed': (0, None, None, 's'),
-                'throughput_per_gpu': (ref_per_gpu, -0.05, None, 'images/s'),
-                'throughput_per_job': (ref_per_job, -0.05, None, 'images/s'),
+                'throughput_per_gpu': (ref_per_gpu, -1, None, 'images/s'),
+                'throughput_per_job': (ref_per_job, -1, None, 'images/s'),
             },
             'daint:gpu': {
                 'elapsed': (0, None, None, 's'),
-                'throughput_per_gpu': (ref_per_gpu, -0.05, None, 'images/s'),
-                'throughput_per_job': (ref_per_job, -0.05, None, 'images/s'),
+                'throughput_per_gpu': (ref_per_gpu, -1, None, 'images/s'),
+                'throughput_per_job': (ref_per_job, -1, None, 'images/s'),
             },
         }
