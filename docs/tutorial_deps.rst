@@ -1,5 +1,5 @@
 ===============================================
-Tutorial 2: Using Dependencies in ReFrame Tests
+Tutorial 3: Using Dependencies in ReFrame Tests
 ===============================================
 
 .. versionadded:: 2.21

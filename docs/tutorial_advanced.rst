@@ -1,28 +1,103 @@
-==================================
- Tutorial 3: Miscellaneous topics
-==================================
+=================================================
+Tutorial 2: Customizing Further a Regression Test
+=================================================
 
-This page collects several smaller tutorials that show specific parts of ReFrame.
-They all use the configuration file presented in :doc:`tutorial_basics`, which you can find in ``tutorials/config/settings.py``.
-They also assumes that the reader is already familiar with the concepts presented in the basic tutorial.
+In this tutorial we will present common patterns that can come up when writing regression tests with ReFrame.
+All examples use the configuration file presented in :doc:`tutorial_basics`, which you can find in ``tutorials/config/settings.py``.
+We also assume that the reader is already familiar with the concepts presented in the basic tutorial.
+Finally, to avoid specifying the tutorial configuration file each time, make sure to export it here:
+
+.. code:: bash
+
+   export RFM_CONFIG_FILE=$(pwd)/tutorials/config/mysettings.py
 
 
-Testing a CUDA Code
--------------------
 
-In this example, we will create a regression test for a simple CUDA matrix-vector multiplication kernel.
+Parameterizing a Regression Test
+--------------------------------
 
-.. literalinclude:: ../tutorials/misc/gpu/cuda.py
+We have briefly looked into parameterized tests in :doc:`tutorial_basics` where we parameterized the "Hello, World!" test based on the program language.
+Test parameterization in ReFrame is quite powerful since it allows you to create a multitude of similar tests automatically.
+In this example, we will parameterize the last version of the STREAM test from the :doc:`tutorial_basics` by changing the array size, so as to check bandwidth of the different cache levels.
+Here is the adapted code with the relevant parts highlighted (for simplicity, we are interested only in the "Triad" benchmark):
+
+.. literalinclude:: ../tutorials/advanced/parameterized/stream.py
    :lines: 6-
-   :emphasize-lines: 9,11,13
+   :emphasize-lines: 5,7-10,18-19
 
-There are three new things to notice in this test.
-First, we restrict the list of valid systems only to the hybrid partition of Piz Daint, since we require GPU nodes.
-Second, we set the :attr:`sourcepath` to the CUDA source file as we would do with any other C, C++ or Fortran file.
-ReFrame will recognize the ``.cu`` extension of the source file and it will try to invoke ``nvcc`` for compiling the code.
-Finally, we define the :attr:`modules <reframe.core.pipeline.RegressionTest.modules>` attribute.
-This is essentially a list of environment modules that need to be loaded for running the test.
-In this case and in this particular system, we need to load the ``cudatoolkit`` module, which will make available the CUDA SDK.
+A parameterized test needs to be decorated with the :func:`@parameterized_test <reframe.core.decorators.parameterized_test>` decorator and has its constructor accepting a set of parameters.
+In this case, the test takes a single parameter, which is the size of the benchmark's working set in bytes.
+Let's explain now the strange syntax of the arguments to the decorator.
+The :func:`@parameterized_test <reframe.core.decorators.parameterized_test>` decorator accepts a variable set of arguments, where each argument is a set of parameters (as an iterable) to be used for instantiating the test.
+To better contemplate this, let's decorate this test in an equivalent, but much more verbose way:
+
+.. code:: python
+
+   @rfm.parameterized_test([524288], [1048576], [2097152], [4194304],
+                           [8388608], [16777216], [33554432], [67108864],
+                           [134217728], [268435456], [536870912])
+
+For each of the argument lists passed to the decorator, ReFrame will instantiate a regression test with those arguments.
+So in this example, ReFrame will generate automatically 11 tests with different ``num_bytes`` parameters.
+From this point on, you can adapt the test based on the parameter values, as we do in this case, where we compute the STREAM array sizes, as well as the number of iterations to be performed on each benchmark, and we also compile the code accordingly.
+
+Let's try listing the generated tests:
+
+.. code-block:: none
+
+   [ReFrame Setup]
+     version:           3.4-dev2 (rev: f52a96d8)
+     command:           './bin/reframe --system=catalina -c tutorials/advanced/parameterized/stream.py -l'
+     launched by:       user@tresa.local
+     working directory: '/Users/user/Repositories/reframe'
+     settings file:     '/Users/user/Repositories/reframe/tutorials/config/settings.py'
+     check search path: '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py'
+     stage directory:   '/Users/user/Repositories/reframe/stage'
+     output directory:  '/Users/user/Repositories/reframe/output'
+
+   [List of matched checks]
+   - StreamMultiSysTest_524288 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
+   - StreamMultiSysTest_8388608 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
+   - StreamMultiSysTest_2097152 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
+   - StreamMultiSysTest_33554432 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
+   - StreamMultiSysTest_268435456 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
+   - StreamMultiSysTest_134217728 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
+   - StreamMultiSysTest_67108864 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
+   - StreamMultiSysTest_16777216 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
+   - StreamMultiSysTest_536870912 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
+   - StreamMultiSysTest_4194304 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
+   - StreamMultiSysTest_1048576 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
+   Found 11 check(s)
+   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-kk15vaow.log'
+
+
+ReFrame generates 11 tests from the single parameterized test that we have written and names them by appending a string representation of the parameter value.
+
+Test parameterization in ReFrame is very powerful since you can parameterize your tests on anything and you can create complex parameterization spaces.
+A common pattern is to parameterize a test on the environment module that loads a software in order to test different versions of it.
+For this reason, ReFrame offers the :func:`reframe.utility.find_modules` function, which allows you to parameterize test on the available modules for a given programming environment and partition combination.
+The following will create a test for each ``GROMACS`` module found on the software stack associated with a system partition and programming environment (toolchain):
+
+.. code:: python
+
+   import reframe as rfm
+   import reframe.utility as util
+
+
+   @rfm.parameterized_test(*util.find_modules('GROMACS'))
+   class MyTest(rfm.RunOnlyRegressionTest):
+       def __init__(self, s, e, m):
+           self.descr = f'GROMACS test ({s}, {e}, {m})'
+           self.valid_systems = [s]
+           self.valid_prog_environs = [e]
+           self.modules = [m]
+           ...
+
+
+.. note::
+
+   ReFrame 3.4 extends further the test parameterization concept by introducing the more powerful :func:`parameter` class directive, which allows you to have hierarchies of parameterized tests and expand or reduce the parameterization dynamically.
+
 
 
 More On Building Tests
@@ -34,7 +109,7 @@ We are going to demonstrate this through a simple C++ program that computes a do
 Additionally, we can select the type of elements for the vectors at compilation time.
 Here is the C++ program:
 
-.. literalinclude:: ../tutorials/misc/makefiles/src/dotprod.cpp
+.. literalinclude:: ../tutorials/advanced/makefiles/src/dotprod.cpp
    :language: cpp
    :lines: 6-
 
@@ -51,7 +126,7 @@ The directory structure for this test is the following:
 
 Let's have a look at the test itself:
 
-.. literalinclude:: ../tutorials/misc/makefiles/maketest.py
+.. literalinclude:: ../tutorials/advanced/makefiles/maketest.py
    :lines: 6-22
    :emphasize-lines: 11,13-14
 
@@ -106,7 +181,6 @@ Finally, we may even use a custom Makefile by setting the :attr:`Make <reframe.c
 As a final note, as with the :class:`SingleSource` build system, it wouldn't have been necessary to specify one in this test, if we wouldn't have to set the CPPFLAGS.
 ReFrame could automatically figure out the correct build system if :attr:`sourcepath <reframe.core.pipeline.RegressionTest.sourcepath>` refers to a directory.
 ReFrame will inspect the directory and it will first try to determine whether this is a CMake or Autotools-based project.
-If not, as in this case, it would fall back to the :class:`Make` build system.
 
 More details on ReFrame's build systems can be found `here <regression_test_api.html#build-systems>`__.
 
@@ -169,7 +243,7 @@ There are cases when it is desirable to perform regression testing for an alread
 In the following test we use simply the ``echo`` Bash shell command to print a random integer between specific lower and upper bounds:
 Here is the full regression test:
 
-.. literalinclude:: ../tutorials/misc/runonly/echorand.py
+.. literalinclude:: ../tutorials/advanced/runonly/echorand.py
    :lines: 6-
    :emphasize-lines: 6
 
@@ -186,7 +260,7 @@ ReFrame provides the option to write compile-only tests which consist only of a 
 This kind of tests must derive from the :class:`CompileOnlyRegressionTest <reframe.core.pipeline.CompileOnlyRegressionTest>` class provided by the framework.
 The following test is a compile-only version of the :class:`MakefileTest` presented `previously <#more-on-building-tests>`__ which checks that no warnings are issued by the compiler:
 
-.. literalinclude:: ../tutorials/misc/makefiles/maketest.py
+.. literalinclude:: ../tutorials/advanced/makefiles/maketest.py
    :lines: 25-33
    :emphasize-lines: 2
 
@@ -200,14 +274,14 @@ Applying a Sanity Function Iteratively
 It is often the case that a common sanity pattern has to be applied many times.
 The following script prints 100 random integers between the limits given by the environment variables ``LOWER`` and ``UPPER``.
 
-.. literalinclude:: ../tutorials/misc/random/src/random_numbers.sh
+.. literalinclude:: ../tutorials/advanced/random/src/random_numbers.sh
   :language: bash
   :lines: 7-
 
 In the corresponding regression test we want to check that all the random numbers generated lie between the two limits, which means that a common sanity check has to be applied to all the printed random numbers.
 Here is the corresponding regression test:
 
-.. literalinclude:: ../tutorials/misc/random/randint.py
+.. literalinclude:: ../tutorials/advanced/random/randint.py
   :lines: 6-
   :emphasize-lines: 12-
 
@@ -223,7 +297,7 @@ As a direct replacement of the built-in :py:func:`all` function, ReFrame's :func
 So we must make sure that all 100 numbers are generated.
 This is achieved by the ``sn.assert_eq(sn.count(numbers), 100)`` statement, which uses the :func:`count() <reframe.utility.sanity.count>` sanity function for counting the generated numbers.
 Finally, we need to combine these two conditions to a single deferred expression that will be assigned to the test's :attr:`sanity_patterns`.
-As with the :keyword:`for` loop discussed above, we cannot defer the evaluation of the :keyword:`and` operator, so we use ReFrame's the :func:`and_() <reframe.utility.sanity.and_>` sanity function to accomplish this.
+We accomplish this by using again the :func:`all() <reframe.utility.sanity.all>` sanity function.
 
 For more information about how exactly sanity functions work and how their execution is deferred, please refer to :doc:`deferrables`.
 
@@ -243,9 +317,9 @@ The lower and upper limits for the random numbers are now set inside a helper sh
 Additionally, we want also to print ``FINISHED`` after our executable has finished.
 Here is the modified test file:
 
-.. literalinclude:: ../tutorials/misc/random/prepostrun.py
+.. literalinclude:: ../tutorials/advanced/random/prepostrun.py
    :lines: 6-
-   :emphasize-lines: 11-12,17,20-21
+   :emphasize-lines: 11-12,17,20
 
 The :attr:`prerun_cmds` and :attr:`postrun_cmds` are lists of commands to be emitted in the generated job script before and after the parallel launch of the executable.
 Obviously, the working directory for these commands is that of the job script itself, which is the stage directory of the test.
@@ -284,6 +358,134 @@ The parallel launch itself consists of three parts:
 #. the options to be passed to the executable as specified in the :attr:`executable_opts <reframe.core.pipeline.RegressionTest.executable_opts>` attribute.
 
 
+Adding job scheduler options per test
+=====================================
+
+Sometimes a test needs to pass additional job scheduler options to the automatically generated job script.
+This is fairly easy to achieve with ReFrame.
+In the following test we want to test whether the ``--mem`` option of Slurm works as expected.
+We compiled and run a program that consumes all the available memory of the node, but we want to restrict the available memory with the ``--mem`` option.
+Here is the test:
+
+.. literalinclude:: ../tutorials/advanced/jobopts/eatmemory.py
+   :lines: 6-23
+   :emphasize-lines: 16-18
+
+Each ReFrame test has an associated `run job descriptor <regression_test_api.html#reframe.core.pipeline.RegressionTest.job>`__ which represents the scheduler job that will be used to run this test.
+This object has an :attr:`options` attributes, which can be used to pass arbitrary options to the scheduler.
+The job descriptor is initialized by the framework during the `setup <pipeline.html#the-regression-test-pipeline>`__ pipeline phase.
+For this reason, we cannot directly set the job options inside the test constructor and we have to use a pipeline hook that runs before running (i.e., submitting the test).
+
+Let's run the test and inspect the generated job script:
+
+.. code-block:: none
+
+  ./bin/reframe -c tutorials/advanced/jobopts/eatmemory.py -r
+  cat output/daint/gpu/gnu/MemoryLimitTest/rfm_MemoryLimitTest_job.sh
+
+.. code:: bash
+
+   #!/bin/bash
+   #SBATCH --job-name="rfm_MemoryLimitTest_job"
+   #SBATCH --ntasks=1
+   #SBATCH --output=rfm_MemoryLimitTest_job.out
+   #SBATCH --error=rfm_MemoryLimitTest_job.err
+   #SBATCH --time=0:10:0
+   #SBATCH -A csstaff
+   #SBATCH --constraint=gpu
+   #SBATCH --mem=2000
+   module unload PrgEnv-cray
+   module load PrgEnv-gnu
+   srun ./MemoryLimitTest 4000M
+
+
+The job options specified inside a ReFrame test are always the last to be emitted in the job script preamble and do not affect the options that are passed implicitly through other test attributes or configuration options.
+
+There is a small problem with this test though.
+What if we change the job scheduler in that partition or what if we want to port the test to a different system that does not use Slurm and and another option is needed to achieve the same result.
+The obvious answer is to adapt the test, but is there a more portable way?
+The answer is yes and this can be achieved through so-called *extra resources*.
+ReFrame gives you the possibility to associate scheduler options to a "resource" managed by the partition scheduler.
+You can then use those resources transparently from within your test.
+
+To achieve this in our case, we first need to define a ``memory`` resource in the configuration:
+
+.. literalinclude:: ../tutorials/config/settings.py
+   :lines: 30-74
+   :emphasize-lines: 23-28,38-43
+
+Notice that we do not define the resource for all the partitions, but only for those that it makes sense.
+Each resource has a name and a set of scheduler options that will be passed to the scheduler when this resource will be requested by the test.
+The options specification can contain placeholders, whose value will also be set from the test.
+Let's see how we can rewrite the :class:`MemoryLimitTest` using the ``memory`` resource instead of passing the ``--mem`` scheduler option explicitly.
+
+.. literalinclude:: ../tutorials/advanced/jobopts/eatmemory.py
+   :lines: 26-38
+   :emphasize-lines: 11-13
+
+The extra resources that the test needs to obtain through its scheduler are specified in the :attr:`extra_resources <reframe.core.pipeline.RegressionTest.extra_resources>` attribute, which is a dictionary with the resource names as its keys and another dictionary assigning values to the resource placeholders as its values.
+As you can see, this syntax is completely scheduler-agnostic.
+If the requested resource is not defined for the current partition, it will be simply ignored.
+
+You can now run and verify that the generated job script contains the ``--mem`` option:
+
+.. code-block:: none
+
+  ./bin/reframe -c tutorials/advanced/jobopts/eatmemory.py -n MemoryLimitWithResourcesTest -r
+  cat output/daint/gpu/gnu/MemoryLimitWithResourcesTest/rfm_MemoryLimitWithResourcesTest_job.sh
+
+
+Modifying the parallel launcher command
+=======================================
+
+Another relatively common need is to modify the parallel launcher command.
+ReFrame gives the ability to do that and we will see some examples in this section.
+
+The most common case is to pass arguments to the launcher command that you cannot pass them as job options.
+The ``--cpu-bind`` of ``srun`` is such an example.
+Inside a ReFrame test, you can access the parallel launcher through the :attr:`launcher <reframe.core.schedulers.Job.launcher>` of the job descriptor.
+This object handles all the details of how the parallel launch command will be emitted.
+In the following test we run a CPU affinity test using `this <https://github.com/vkarak/affinity>`__ utility and we will pin the threads using the ``--cpu-bind`` option:
+
+.. literalinclude:: ../tutorials/advanced/affinity/affinity.py
+   :lines: 6-
+
+The approach is identical to the approach we took in the :class:`MemoryLimitTest` test `above <#adding-job-scheduler-options-per-test>`__, except that we now set the launcher options.
+
+.. note::
+
+   The sanity checking in a real affinity checking test would be much more complex than this.
+
+Another scenario that might often arise when testing parallel debuggers is the need to wrap the launcher command with the debugger command.
+For example, in order to debug a parallel program with `ARM DDT <https://www.arm.com/products/development-tools/server-and-hpc/forge/ddt>`__, you would need to invoke the program like this: ``ddt [OPTIONS] srun [OPTIONS]``.
+ReFrame allows you to wrap the launcher command without the test needing to know which is the actual parallel launcher command for the current partition.
+This can be achieved with the following pipeline hook:
+
+
+.. code:: python
+
+   from reframe.core.launchers import LauncherWrapper
+
+   class DebuggerTest(rfm.RunOnlyRegressionTest):
+       def __init__(self):
+           ...
+
+       @rfm.run_before('run')
+       def set_launcher(self):
+           self.job.launcher = LauncherWrapper(self.job.launcher, 'ddt',
+                                               ['--offline'])
+
+The :class:`LauncherWrapper <reframe.core.launchers.LauncherWrapper>` is a pseudo-launcher that wraps another one and allows you to prepend anything to it.
+In this case the resulting parallel launch command, if the current partition uses native Slurm, will be ``ddt --offline srun [OPTIONS]``.
+
+
+- Replacing the launcher
+
+
+Adding more parallel launch commands
+====================================
+
+
 Flexible Regression Tests
 -------------------------
 
@@ -299,7 +501,7 @@ Flexible tests are very useful for diagnostics tests, e.g., tests for checking t
 In this example, we demonstrate this feature through a simple test that runs ``hostname``.
 The test will verify that all the nodes print the expected host name:
 
-.. literalinclude:: ../tutorials/misc/flexnodes/flextest.py
+.. literalinclude:: ../tutorials/advanced/flexnodes/flextest.py
    :lines: 6-
    :emphasize-lines: 11-16
 
@@ -334,7 +536,7 @@ In this case, we define the `Singularity <https://sylabs.io>`__ platform, for wh
 
 The following test will use a Singularity container to run:
 
-.. literalinclude:: ../tutorials/misc/containers/container_test.py
+.. literalinclude:: ../tutorials/advanced/containers/container_test.py
    :lines: 6-
    :emphasize-lines: 11-16
 

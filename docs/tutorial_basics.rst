@@ -308,7 +308,7 @@ Note that you should *not* edit this configuration file in place.
 Here is how the new configuration file looks like with the needed additions highlighted:
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 10-24,64-85,118-
+   :lines: 10-24,76-97,130-
    :emphasize-lines: 3-15,31-42
 
 Here we define a system named ``catalina`` that has one partition named ``default``.
@@ -316,6 +316,9 @@ This partition makes no use of any workload manager, but instead launches any jo
 Two programming environments are relevant for that partition, namely ``gnu`` and ``clang``, which are defined in the section :js:attr:`environments` of the configuration file.
 The ``gnu`` programming environment provides GCC 9, whereas the ``clang`` one provides the Clang compiler from the system.
 Notice, how you can define the actual commands for invoking the C, C++ and Fortran compilers in each programming environment.
+As soon as a programming environment defines the different compilers, ReFrame will automatically pick the right compiler based on the source file extension.
+In addition to C, C++ and Fortran programs, ReFrame will recognize the ``.cu`` extension as well and will try to invoke the ``nvcc`` compiler for CUDA programs.
+
 Finally, the new system that we defined may be identified by the hostname ``tresa`` (see the :js:attr:`hostnames` configuration parameter).
 This will help ReFrame to automatically pick the right configuration when running on it.
 Notice, how the ``generic`` system matches any hostname, so that it acts as a fallback system.
@@ -324,6 +327,7 @@ Notice, how the ``generic`` system matches any hostname, so that it acts as a fa
 
    The different systems in the configuration file are tried in order and the first match is picked.
    This practically means that the more general the selection pattern for a system is, the lower in the list of systems it should be.
+
 
 The :doc:`configure` page describes the configuration file in more detail and the :doc:`config_reference` provides a complete reference guide of all the configuration options of ReFrame.
 
@@ -749,7 +753,7 @@ Let's extend our configuration file for Piz Daint.
 
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 10-46,53-
+   :lines: 10-46,65-
    :emphasize-lines: 16-48,70-101
 
 

@@ -48,7 +48,13 @@ site_configuration = {
                             'modules': ['singularity']
                         }
                     ],
-                    'max_jobs': 100
+                    'max_jobs': 100,
+                    'resources': [
+                        {
+                            'name': 'memory',
+                            'options': ['--mem={size}']
+                        }
+                    ]
                 },
                 {
                     'name': 'mc',
@@ -57,7 +63,13 @@ site_configuration = {
                     'launcher': 'srun',
                     'access': ['-C mc', '-A csstaff'],
                     'environs': ['gnu', 'intel', 'pgi', 'cray'],
-                    'max_jobs': 100
+                    'max_jobs': 100,
+                    'resources': [
+                        {
+                            'name': 'memory',
+                            'options': ['--mem={size}']
+                        }
+                    ]
                 }
             ]
         },
