@@ -9,7 +9,8 @@ import itertools
 import sys
 import time
 
-from reframe.core.exceptions import (TaskDependencyError, TaskExit)
+from reframe.core.exceptions import (MaxFailError, TaskDependencyError,
+                                     TaskExit)
 from reframe.core.logging import getlogger
 from reframe.frontend.executors import (ExecutionPolicy, RegressionTask,
                                         TaskEventListener, ABORT_REASONS)
@@ -92,6 +93,11 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._task_index[case] = task
         self.stats.add_task(task)
         try:
+            if (self.max_failures and
+                len(self.stats.failures()) >= self.max_failures):
+                raise MaxFailError('the maximum number of failures has been '
+                                   'reached')
+
             # Do not run test if any of its dependencies has failed
             # NOTE: Restored dependencies are not in the task_index
             if any(self._task_index[c].failed
@@ -440,7 +446,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 task.abort(cause)
 
         for task in itertools.chain(self._waiting_tasks,
-                                    self._retired_tasks,
                                     self._completed_tasks):
             task.abort(cause)
 
@@ -498,6 +503,12 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             except ABORT_REASONS as e:
                 self._failall(e)
                 raise
+
+            if len(self.stats.failures()) >= self.max_failures:
+                exc = MaxFailError('the maximum number of failures has been '
+                                   'reached')
+                self._failall(exc)
+                break
 
         self.printer.separator('short single line',
                                'all spawned checks have finished\n')

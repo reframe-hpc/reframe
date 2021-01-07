@@ -98,6 +98,12 @@ class TaskDependencyError(ReframeError):
     '''
 
 
+class MaxFailError(ReframeError):
+    '''Raised inside a regression task by the runtime when the maximum allowed
+    when the maximum number of failures has been exceeded.
+    '''
+
+
 class AbortTaskError(ReframeError):
     '''Raised by the runtime inside a regression task to denote that it has
     been aborted due to an external reason (e.g., keyboard interrupt, fatal

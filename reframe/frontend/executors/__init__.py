@@ -354,14 +354,19 @@ class Runner:
     '''Responsible for executing a set of regression tests based on an
     execution policy.'''
 
-    def __init__(self, policy, printer=None, max_retries=0):
+    def __init__(self, policy, printer=None, max_retries=0, max_failures=0):
         self._policy = policy
         self._printer = printer or PrettyPrinter()
         self._max_retries = max_retries
         self._stats = TestStats()
         self._policy.stats = self._stats
         self._policy.printer = self._printer
+        self._policy.max_failures = max_failures
         signal.signal(signal.SIGTERM, _handle_sigterm)
+
+    @property
+    def max_failures(self):
+        return self._max_failures
 
     @property
     def max_retries(self):
