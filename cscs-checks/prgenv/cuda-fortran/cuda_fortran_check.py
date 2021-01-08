@@ -13,9 +13,10 @@ class CUDAFortranCheck(rfm.RegressionTest):
     def __init__(self):
         self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.valid_prog_environs = ['PrgEnv-pgi']
-        self.sourcepath = 'vecAdd_cuda.f90'
+        self.sourcepath = 'vecAdd_cuda.cuf'
         self.modules = ['craype-accel-nvidia60']
         self.build_system = 'SingleSource'
+        self.build_system.fflags = ['-ta=tesla:cc60']
         self.num_gpus_per_node = 1
         result = sn.extractsingle(r'final result:\s+(?P<result>\d+\.?\d*)',
                                   self.stdout, 'result', float)
@@ -24,13 +25,12 @@ class CUDAFortranCheck(rfm.RegressionTest):
         self.tags = {'production', 'craype'}
 
     @rfm.run_before('compile')
-    def cdt2006_pgi_workaround(self):
-        cdt = osext.cray_cdt_version()
-        if not cdt:
-            return
+    def cdt2008_pgi_workaround(self):
+       cdt = osext.cray_cdt_version()
+       if not cdt:
+           return
 
-        if (self.current_environ.name == 'PrgEnv-pgi' and cdt == '20.08'):
-            self.build_system.fflags = [
-                'CUDA_HOME=$CUDATOOLKIT_HOME',
-                '-ta=tesla:cc60', '-Mcuda=cuda10.2'
-            ]
+       if (self.current_environ.name == 'PrgEnv-pgi' and cdt == '20.08'):
+           self.build_system.fflags += [
+               'CUDA_HOME=$CUDATOOLKIT_HOME', '-Mcuda=cuda10.2'
+           ]
