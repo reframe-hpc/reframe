@@ -26,11 +26,11 @@ class CUDAFortranCheck(rfm.RegressionTest):
 
     @rfm.run_before('compile')
     def cdt2008_pgi_workaround(self):
-       cdt = osext.cray_cdt_version()
-       if not cdt:
-           return
+        cdt = osext.cray_cdt_version()
+        if not cdt:
+            return
 
-       if (self.current_environ.name == 'PrgEnv-pgi' and cdt == '20.08'):
-           self.build_system.fflags += [
-               'CUDA_HOME=$CUDATOOLKIT_HOME', '-Mcuda=cuda10.2'
-           ]
+        if (self.current_environ.name == 'PrgEnv-pgi' and cdt == '20.08'):
+            self.build_system.fflags += [
+                'CUDA_HOME=$CUDATOOLKIT_HOME', '-Mcuda=cuda10.2'
+            ]
