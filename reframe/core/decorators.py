@@ -119,10 +119,13 @@ def parameterized_test(*inst):
     '''
     def _do_register(cls):
         _validate_test(cls)
+        if not cls.param_space.is_empty():
+            raise ValueError(
+                'the decorated test already is a parameterized test'
+            )
 
-        for _ in cls.param_space:
-            for args in inst:
-                _register_test(cls, args)
+        for args in inst:
+            _register_test(cls, args)
 
         return cls
 
