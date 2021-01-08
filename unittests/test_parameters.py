@@ -94,7 +94,7 @@ def test_param_len_is_zero():
     class MyTest(Abstract):
         pass
 
-    assert len(MyTest.param_space) == 0;
+    assert len(MyTest.param_space) == 0
 
 
 def test_extended_param_len():
@@ -161,3 +161,11 @@ def test_simple_test_decorator():
         assert test.P0 is not None
         assert test.P1 is not None
         assert test.P2 is not None
+
+
+def test_parameterized_test_is_incompatible():
+    with pytest.raises(ValueError):
+        @rfm.parameterized_test(['var'])
+        class MyTest(TwoParams):
+            def __init__(self, var):
+                pass
