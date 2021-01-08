@@ -124,8 +124,7 @@ def test_param_values_are_not_set():
 
 def test_consume_param_space():
     class MyTest(ExtendParams):
-        def __init__(self):
-            pass
+        pass
 
     for _ in MyTest.param_space:
         test = MyTest(_rfm_use_params=True)

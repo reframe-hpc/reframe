@@ -121,7 +121,7 @@ def parameterized_test(*inst):
         _validate_test(cls)
         if not cls.param_space.is_empty():
             raise ValueError(
-                'the decorated test already is a parameterized test'
+                f'{cls.__qualname__!r} is already a parameterized test'
             )
 
         for args in inst:
