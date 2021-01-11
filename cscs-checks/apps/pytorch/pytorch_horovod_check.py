@@ -78,17 +78,17 @@ class PytorchHorovodTest(rfm.RunOnlyRegressionTest):
                 r'Total img/sec on \d+ GPU\(s\): (?P<throughput>\S+) \S+',
                 self.stdout, 'throughput', float),
         }
-        ref_per_gpu = 130 if model == 'inception_v3' else 200
+        ref_per_gpu = 131 if model == 'inception_v3' else 201
         ref_per_job = ref_per_gpu * mpi_task
         self.reference = {
             'dom:gpu': {
                 'elapsed': (0, None, None, 's'),
-                'throughput_per_gpu': (ref_per_gpu, -1, None, 'images/s'),
-                'throughput_per_job': (ref_per_job, -1, None, 'images/s'),
+                'throughput_per_gpu': (ref_per_gpu, -0.05, None, 'images/s'),
+                'throughput_per_job': (ref_per_job, -0.05, None, 'images/s'),
             },
             'daint:gpu': {
                 'elapsed': (0, None, None, 's'),
-                'throughput_per_gpu': (ref_per_gpu, -1, None, 'images/s'),
-                'throughput_per_job': (ref_per_job, -1, None, 'images/s'),
+                'throughput_per_gpu': (ref_per_gpu, -0.05, None, 'images/s'),
+                'throughput_per_job': (ref_per_job, -0.05, None, 'images/s'),
             },
         }
