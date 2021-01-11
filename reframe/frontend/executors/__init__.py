@@ -480,7 +480,7 @@ class ExecutionPolicy(abc.ABC):
         self.stats = None
 
     def enter(self):
-        pass
+        self._failed_tests = 0
 
     def exit(self):
         pass

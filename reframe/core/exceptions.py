@@ -100,7 +100,7 @@ class TaskDependencyError(ReframeError):
 
 class MaxFailError(ReframeError):
     '''Raised inside a regression task by the runtime when the maximum allowed
-    when the maximum number of failures has been exceeded.
+    number of failures has been exceeded.
     '''
 
 

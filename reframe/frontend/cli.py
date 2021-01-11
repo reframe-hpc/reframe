@@ -317,8 +317,8 @@ def main():
              'may be retried (default: 0)'
     )
     run_options.add_argument(
-        '--max-fail', metavar='NUM', action='store', default=0,
-        help='Set the maximum number of failures before exiting'
+        '--maxfail', metavar='NUM', action='store', default=0,
+        help='Exit after first NUM failures'
     )
     run_options.add_argument(
         '--restore-session', action='store', nargs='?', const='',
@@ -923,13 +923,18 @@ def main():
             ) from None
 
         try:
-            max_fail = int(options.max_fail)
+            max_failures = int(options.maxfail)
+            if max_failures < 0:
+                raise errors.ConfigError(
+                    f'--maxfail should be a non-negative integer: '
+                    f'{options.max_fail!r}'
+                ) from None
         except ValueError:
             raise errors.ConfigError(
-                f'--max-fail is not a valid integer: {max_fail}'
+                f'--maxfail is not a valid integer: {options.max_fail!r}'
             ) from None
 
-        runner = Runner(exec_policy, printer, max_retries, max_fail)
+        runner = Runner(exec_policy, printer, max_retries, max_failures)
         try:
             time_start = time.time()
             session_info['time_start'] = time.strftime(
