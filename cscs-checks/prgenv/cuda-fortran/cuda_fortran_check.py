@@ -35,5 +35,5 @@ class CUDAFortranCheck(rfm.RegressionTest):
                 'CUDA_HOME=$CUDATOOLKIT_HOME', '-Mcuda=cuda10.2'
             ]
         else:
-            #FIXME: workaround when CUDA 11.0 is the default version
+            # FIXME: workaround when CUDA 11.0 is the default version
             self.modules += ['cudatoolkit/10.2.89_3.29-7.0.2.1_3.5__g67354b4']
