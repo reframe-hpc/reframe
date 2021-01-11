@@ -25,12 +25,15 @@ class CUDAFortranCheck(rfm.RegressionTest):
         self.tags = {'production', 'craype'}
 
     @rfm.run_before('compile')
-    def cdt2008_pgi_workaround(self):
+    def cdt_pgi_workaround(self):
         cdt = osext.cray_cdt_version()
         if not cdt:
             return
 
-        if (self.current_environ.name == 'PrgEnv-pgi' and cdt == '20.08'):
+        if cdt == '20.08':
             self.build_system.fflags += [
                 'CUDA_HOME=$CUDATOOLKIT_HOME', '-Mcuda=cuda10.2'
             ]
+        else:
+            #FIXME: workaround when CUDA 11.0 is the default version
+            self.modules += ['cudatoolkit/10.2.89_3.29-7.0.2.1_3.5__g67354b4']
