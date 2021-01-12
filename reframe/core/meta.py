@@ -10,6 +10,7 @@
 
 from reframe.core.exceptions import ReframeSyntaxError
 import reframe.core.parameters as parameters
+import reframe.core.variables as variables
 
 
 class RegressionTestMeta(type):
@@ -24,6 +25,13 @@ class RegressionTestMeta(type):
         # Directive to add a regression test parameter directly in the
         # class body as: `parameter('P0', 0,1,2,3)`.
         namespace['parameter'] = local_param_space.add_param
+
+        # Regression test var space defined at the class level
+        local_var_space = variables.LocalVarSpace()
+        namespace['_rfm_local_var_space'] = local_var_space
+
+        # Directive to add a regression test variable
+        namespace['var'] = local_var_space.add_attr
 
         return namespace
 
