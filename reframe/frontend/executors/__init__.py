@@ -354,7 +354,8 @@ class Runner:
     '''Responsible for executing a set of regression tests based on an
     execution policy.'''
 
-    def __init__(self, policy, printer=None, max_retries=0, max_failures=0):
+    def __init__(self, policy, printer=None, max_retries=0,
+                 max_failures=sys.maxsize):
         self._policy = policy
         self._printer = printer or PrettyPrinter()
         self._max_retries = max_retries
@@ -480,7 +481,7 @@ class ExecutionPolicy(abc.ABC):
         self.stats = None
 
     def enter(self):
-        self._failed_tests = 0
+        self._num_failed_tasks = 0
 
     def exit(self):
         pass

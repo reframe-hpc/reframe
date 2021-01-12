@@ -928,7 +928,7 @@ def main():
                 raise errors.ConfigError(
                     f'--maxfail should be a non-negative integer: '
                     f'{options.max_fail!r}'
-                ) from None
+                )
         except ValueError:
             raise errors.ConfigError(
                 f'--maxfail is not a valid integer: {options.max_fail!r}'

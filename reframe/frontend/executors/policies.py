@@ -93,8 +93,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._task_index[case] = task
         self.stats.add_task(task)
         try:
-            if (self.max_failures and
-                self._failed_tests >= self.max_failures):
+            if self._num_failed_tasks >= self.max_failures:
                 raise MaxFailError('the maximum number of failures has been '
                                    'reached')
 
@@ -155,7 +154,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         pass
 
     def on_task_failure(self, task):
-        self._failed_tests += 1
+        self._num_failed_tasks += 1
         timings = task.pipeline_timings(['compile_complete',
                                          'run_complete',
                                          'total'])
@@ -265,7 +264,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._running_tasks[partname].append(task)
 
     def on_task_failure(self, task):
-        self._failed_tests += 1
+        self._num_failed_tasks += 1
         msg = f'{task.check.info()} [{task.pipeline_timings_basic()}]'
         if task.failed_stage == 'cleanup':
             self.printer.status('ERROR', msg, just='right')
@@ -506,7 +505,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 self._failall(e)
                 raise
 
-            if self.max_failures and self._failed_tests >= self.max_failures:
+            if self._num_failed_tasks >= self.max_failures:
                 exc = MaxFailError('the maximum number of failures has been '
                                    'reached')
                 self._failall(exc)
