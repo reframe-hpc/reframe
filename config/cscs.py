@@ -294,11 +294,7 @@ site_configuration = {
                     'name': 'xfer',
                     'scheduler': 'slurm',
                     'environs': [
-                        'builtin',
-                        'PrgEnv-cray',
-                        'PrgEnv-gnu',
-                        'PrgEnv-intel',
-                        'PrgEnv-pgi'
+                        'builtin'
                     ],
                     'access': [
                         f'--partition=xfer',
