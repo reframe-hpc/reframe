@@ -47,6 +47,7 @@ class HostnameCheck(SlurmSimpleBaseCheck):
     def __init__(self):
         super().__init__()
         self.executable = '/bin/hostname'
+        self.valid_prog_environs = ['builtin']
         self.hostname_patt = {
             'arolla:cn': r'^arolla-cn\d{3}$',
             'arolla:pn': r'^arolla-pp\d{3}$',
