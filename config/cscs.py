@@ -268,7 +268,7 @@ site_configuration = {
                     ],
                     'access': [
                         f'-Cgpu',
-                        f'--reservation=jupyter_gpu',
+                        f'--reservation=interact_gpu',
                         f'--account={osext.osgroup()}'
                     ],
                     'descr': 'JupyterHub GPU nodes',
@@ -283,7 +283,7 @@ site_configuration = {
                     ],
                     'access': [
                         f'-Cmc',
-                        f'--reservation=jupyter_mc',
+                        f'--reservation=interact_mc',
                         f'--account={osext.osgroup()}'
                     ],
                     'descr': 'JupyterHub multicore nodes',
@@ -407,7 +407,7 @@ site_configuration = {
                     ],
                     'access': [
                         f'-Cgpu',
-                        f'--reservation=jupyter_gpu',
+                        f'--reservation=interact_gpu',
                         f'--account={osext.osgroup()}'
                     ],
                     'descr': 'JupyterHub GPU nodes',
@@ -422,7 +422,7 @@ site_configuration = {
                     ],
                     'access': [
                         f'-Cmc',
-                        f'--reservation=jupyter_mc',
+                        f'--reservation=interact_mc',
                         f'--account={osext.osgroup()}'
                     ],
                     'descr': 'JupyterHub multicore nodes',
