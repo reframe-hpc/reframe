@@ -317,7 +317,7 @@ def main():
              'may be retried (default: 0)'
     )
     run_options.add_argument(
-        '--maxfail', metavar='NUM', action='store', default=0,
+        '--maxfail', metavar='NUM', action='store', default=sys.maxsize,
         help='Exit after first NUM failures'
     )
     run_options.add_argument(
@@ -927,11 +927,11 @@ def main():
             if max_failures < 0:
                 raise errors.ConfigError(
                     f'--maxfail should be a non-negative integer: '
-                    f'{options.max_fail!r}'
+                    f'{options.maxfail!r}'
                 )
         except ValueError:
             raise errors.ConfigError(
-                f'--maxfail is not a valid integer: {options.max_fail!r}'
+                f'--maxfail is not a valid integer: {options.maxfail!r}'
             ) from None
 
         runner = Runner(exec_policy, printer, max_retries, max_failures)

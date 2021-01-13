@@ -724,3 +724,39 @@ def test_failure_stats(run_reframe):
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert returncode != 0
+
+
+def test_maxfail_option(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        more_options=['--maxfail', '1'],
+        system='testsys',
+        checkpath=['unittests/resources/checks/hellocheck.py']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert 'Ran 2 test case(s) from 2 check(s) (0 failure(s))' in stdout
+    assert returncode == 0
+
+
+def test_maxfail_invalid_option(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        more_options=['--maxfail', 'foo'],
+        system='testsys',
+        checkpath=['unittests/resources/checks/hellocheck.py']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert "--maxfail is not a valid integer: 'foo'" in stdout
+    assert returncode == 1
+
+
+def test_maxfail_negative(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        more_options=['--maxfail', '-2'],
+        system='testsys',
+        checkpath=['unittests/resources/checks/hellocheck.py']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert "--maxfail should be a non-negative integer: '-2'" in stdout
+    assert returncode == 1

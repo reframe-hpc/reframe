@@ -19,6 +19,7 @@ import reframe.frontend.runreport as runreport
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 from reframe.core.exceptions import (AbortTaskError,
+                                     MaxFailError,
                                      ReframeError,
                                      ReframeForceExitError,
                                      TaskDependencyError)
@@ -416,6 +417,62 @@ def test_dependencies_with_retries(make_runner, dep_cases, common_exec_ctx):
     runner = make_runner(max_retries=2)
     runner.runall(dep_cases)
     assert_dependency_run(runner)
+
+
+def test_dependencies_with_maxfail(make_runner, dep_cases, common_exec_ctx):
+    runner = make_runner(max_failures=1)
+    if isinstance(runner.policy, policies.AsynchronousExecutionPolicy):
+        pytest.skip('is is not possible to know how many failures we will '
+                    'have in the async policy.')
+    runner.runall(dep_cases)
+
+    assert_runall(runner)
+    stats = runner.stats
+    assert 10 == stats.num_cases(0)
+    assert 5  == len(stats.failures())
+    for tf in stats.failures():
+        check = tf.testcase.check
+        _, exc_value, _ = tf.exc_info
+        if check.name == 'T7' or check.name == 'T9':
+            assert isinstance(exc_value, MaxFailError)
+
+    # Check that cleanup is executed properly for successful tests as well
+    for t in stats.tasks():
+        check = t.testcase.check
+        if t.failed:
+            continue
+
+        if t.ref_count == 0:
+            assert os.path.exists(os.path.join(check.outputdir, 'out.txt'))
+
+
+def test_dependencies_with_maxfail_2(make_runner, dep_cases, common_exec_ctx):
+    runner = make_runner(max_failures=2)
+    if isinstance(runner.policy, policies.AsynchronousExecutionPolicy):
+        pytest.skip('is is not possible to know how many failures we will '
+                    'have in the async policy.')
+    runner.runall(dep_cases)
+
+    assert_runall(runner)
+    stats = runner.stats
+    assert 10 == stats.num_cases(0)
+    assert 4  == len(stats.failures())
+    for tf in stats.failures():
+        check = tf.testcase.check
+        _, exc_value, _ = tf.exc_info
+        if check.name == 'T7':
+            assert isinstance(exc_value, TaskDependencyError)
+        if check.name == 'T9':
+            assert isinstance(exc_value, MaxFailError)
+
+    # Check that cleanup is executed properly for successful tests as well
+    for t in stats.tasks():
+        check = t.testcase.check
+        if t.failed:
+            continue
+
+        if t.ref_count == 0:
+            assert os.path.exists(os.path.join(check.outputdir, 'out.txt'))
 
 
 class _TaskEventMonitor(executors.TaskEventListener):
