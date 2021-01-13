@@ -124,15 +124,10 @@ class Job(jsonext.JSONSerializable):
     '''
 
     num_tasks = fields.TypedField(int)
-    num_tasks_per_node = fields.TypedField(
-        int,  type(None))
-    num_tasks_per_core = fields.TypedField(
-        int,  type(None))
-    num_tasks_per_socket = fields.TypedField(
-        int,  type(None))
-
-    num_cpus_per_task = fields.TypedField(
-        int,  type(None))
+    num_tasks_per_node = fields.TypedField(int,  type(None))
+    num_tasks_per_core = fields.TypedField(int,  type(None))
+    num_tasks_per_socket = fields.TypedField(int,  type(None))
+    num_cpus_per_task = fields.TypedField(int,  type(None))
     use_smt = fields.TypedField(bool,  type(None))
     time_limit = fields.TimerField(type(None))
 

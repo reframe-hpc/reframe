@@ -458,8 +458,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:
     #: :type: integral or :class:`None`
     #: :default: :class:`None`
-    num_tasks_per_core = fields.TypedField(
-        int, type(None))
+    num_tasks_per_core = fields.TypedField(int, type(None))
 
     #: Number of tasks per socket required by this test.
     #:
@@ -467,8 +466,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:
     #: :type: integral or :class:`None`
     #: :default: :class:`None`
-    num_tasks_per_socket = fields.TypedField(
-        int, type(None))
+    num_tasks_per_socket = fields.TypedField(int, type(None))
 
     #: Specify whether this tests needs simultaneous multithreading enabled.
     #:
@@ -476,8 +474,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:
     #: :type: boolean or :class:`None`
     #: :default: :class:`None`
-    use_multithreading = fields.TypedField(
-        bool, type(None))
+    use_multithreading = fields.TypedField(bool, type(None))
 
     #: .. versionadded:: 3.0
     #:

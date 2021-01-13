@@ -32,8 +32,7 @@ class ContainerPlatform(abc.ABC):
     #:
     #: :type: :class:`list[tuple[str, str]]`
     #: :default: ``[]``
-    mount_points = fields.TypedField(
-        typ.List[typ.Tuple[str, str]])
+    mount_points = fields.TypedField(typ.List[typ.Tuple[str, str]])
 
     #: Additional options to be passed to the container runtime when executed.
     #:

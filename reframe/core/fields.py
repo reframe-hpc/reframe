@@ -180,6 +180,9 @@ class DeprecatedField(Field):
     OP_GET = 2
     OP_ALL = OP_SET | OP_GET
 
+    def __set_name__(self, owner, name):
+        self._target_field.__set_name__(owner, name)
+
     def __init__(self, target_field, message, op=OP_ALL):
         self._target_field = target_field
         self._message = message
