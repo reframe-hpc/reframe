@@ -29,7 +29,7 @@ class NamdBaseCheck(rfm.RunOnlyRegressionTest):
             self.num_tasks = 16
             self.num_tasks_per_node = 1
 
-        energy = sn.avg(sn.extractall(r'ENERGY:(\s+\S+){10}\s+(?P<energy>\S+)',
+        energy = sn.avg(sn.extractall(r'ENERGY:([ \t]+\S+){10}[ \t]+(?P<energy>\S+)',
                                       self.stdout, 'energy', float))
         energy_reference = -2451359.5
         energy_diff = sn.abs(energy - energy_reference)
@@ -49,7 +49,7 @@ class NamdBaseCheck(rfm.RunOnlyRegressionTest):
 
         self.maintainers = ['CB', 'LM']
         self.tags = {'scs', 'external-resources'}
-        self.strict_check = False
+        self.strict_check = True
         self.extra_resources = {
             'switches': {
                 'num_switches': 1
@@ -92,10 +92,11 @@ class NamdCPUCheck(NamdBaseCheck):
         self.executable_opts = ['+idlepoll', '+ppn 71', 'stmv.namd']
         self.num_cpus_per_task = 72
         if scale == 'small':
-            self.valid_systems += ['dom:mc']
+            self.valid_systems += ['dom:mc', 'eiger:mc']
             self.reference = {
                 'dom:mc': {'days_ns': (0.51, None, 0.05, 'days/ns')},
-                'daint:mc': {'days_ns': (0.51, None, 0.05, 'days/ns')}
+                'daint:mc': {'days_ns': (0.51, None, 0.05, 'days/ns')},
+                'eiger:mc': {'days_ns': (0.61, None, 0.05, 'days/ns')}
             }
         else:
             self.reference = {
