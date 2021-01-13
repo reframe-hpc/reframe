@@ -15,7 +15,8 @@ class SlurmSimpleBaseCheck(rfm.RunOnlyRegressionTest):
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc',
                               'arolla:cn', 'arolla:pn',
-                              'tsa:cn', 'tsa:pn']
+                              'tsa:cn', 'tsa:pn',
+                              'daint:xfer']
         self.valid_prog_environs = ['PrgEnv-cray']
         self.tags = {'slurm', 'maintenance', 'ops',
                      'production', 'single-node'}
@@ -46,6 +47,7 @@ class HostnameCheck(SlurmSimpleBaseCheck):
     def __init__(self):
         super().__init__()
         self.executable = '/bin/hostname'
+        self.valid_prog_environs = ['builtin']
         self.hostname_patt = {
             'arolla:cn': r'^arolla-cn\d{3}$',
             'arolla:pn': r'^arolla-pp\d{3}$',
@@ -53,6 +55,7 @@ class HostnameCheck(SlurmSimpleBaseCheck):
             'tsa:pn': r'^tsa-pp\d{3}$',
             'daint:gpu': r'^nid\d{5}$',
             'daint:mc': r'^nid\d{5}$',
+            'daint:xfer': r'^datamover\d{2}.cscs.ch$',
             'dom:gpu': r'^nid\d{5}$',
             'dom:mc': r'^nid\d{5}$',
         }
