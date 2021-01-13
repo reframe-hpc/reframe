@@ -10,14 +10,14 @@ import reframe.utility.osext as osext
 
 @rfm.parameterized_test(*[[model, mpi_task]
                           for mpi_task in [32, 8, 2, 1]
-                          for model in ['inception_v3', 'resnet50']
-                          ])
+                          for model in ['inception_v3', 'resnet50']])
 class PytorchHorovodTest(rfm.RunOnlyRegressionTest):
     def __init__(self, model, mpi_task):
-        self.descr = f'Distributed training with Pytorch and Horovod'
+        self.descr = 'Distributed training with Pytorch and Horovod'
         self.valid_systems = ['daint:gpu']
         if mpi_task < 20:
             self.valid_systems += ['dom:gpu']
+
         self.valid_prog_environs = ['builtin']
         cray_cdt_version = osext.cray_cdt_version()
         self.modules = [f'Horovod/0.19.5-CrayGNU-{cray_cdt_version}-pt-1.6.0']
@@ -32,12 +32,12 @@ class PytorchHorovodTest(rfm.RunOnlyRegressionTest):
             'OMP_NUM_THREADS': '$SLURM_CPUS_PER_TASK',
         }
         hash = 'master'
-        git_url = (f'https://raw.githubusercontent.com/horovod/horovod/{hash}/'
-                   'examples/pytorch')
+        git_url = f'https://raw.githubusercontent.com/horovod/horovod/{hash}/examples/pytorch'  # noqa: E501
         git_src = 'pytorch_synthetic_benchmark.py'
         self.prerun_cmds = [
             f'wget {git_url}/{git_src}',
-            'echo starttime=`date +%s`']
+            f'echo starttime=`date +%s`'
+        ]
 
         if model == 'inception_v3':
             self.prerun_cmds += [
@@ -48,7 +48,8 @@ class PytorchHorovodTest(rfm.RunOnlyRegressionTest):
                 f' {git_src}',
                 'sed -i "s-data = torch.randn(args.batch_size, 3, 224, 224)-'
                 f'data = torch.randn(args.batch_size, 3, 299, 299)-"'
-                f' {git_src}']
+                f' {git_src}'
+            ]
 
         self.postrun_cmds = ['echo stoptime=`date +%s`']
         self.executable = 'python'
@@ -58,7 +59,8 @@ class PytorchHorovodTest(rfm.RunOnlyRegressionTest):
             f'--batch-size {batch_size}',
             '--num-iters 5',
             '--num-batches-per-iter 5',
-            '--num-warmup-batches 5']
+            '--num-warmup-batches 5'
+        ]
         self.tags = {'production'}
         self.maintainers = ['RS', 'HM']
         self.sanity_patterns = sn.all([
@@ -73,10 +75,12 @@ class PytorchHorovodTest(rfm.RunOnlyRegressionTest):
             'elapsed': stop_sec - start_sec,
             'throughput_per_gpu': sn.extractsingle(
                 r'Img/sec per GPU: (?P<throughput_per_gpu>\S+) \S+',
-                self.stdout, 'throughput_per_gpu', float),
+                self.stdout, 'throughput_per_gpu', float
+            ),
             'throughput_per_job': sn.extractsingle(
                 r'Total img/sec on \d+ GPU\(s\): (?P<throughput>\S+) \S+',
-                self.stdout, 'throughput', float),
+                self.stdout, 'throughput', float
+            ),
         }
         ref_per_gpu = 131 if model == 'inception_v3' else 201
         ref_per_job = ref_per_gpu * mpi_task
@@ -90,5 +94,5 @@ class PytorchHorovodTest(rfm.RunOnlyRegressionTest):
                 'elapsed': (0, None, None, 's'),
                 'throughput_per_gpu': (ref_per_gpu, -0.05, None, 'images/s'),
                 'throughput_per_job': (ref_per_job, -0.05, None, 'images/s'),
-            },
+            }
         }
