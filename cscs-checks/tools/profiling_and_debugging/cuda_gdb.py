@@ -52,3 +52,8 @@ class CudaGdbCheck(rfm.RegressionTest):
 
         self.maintainers = ['MKr', 'JG']
         self.tags = {'production', 'craype'}
+
+    @rfm.run_before('compile')
+    def dom_set_cuda_cdt(self):
+        if self.current_system.name == 'dom':
+            self.modules += ['cdt-cuda']

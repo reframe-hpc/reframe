@@ -87,6 +87,11 @@ class CollectivesBaseTest(rfm.RegressionTest):
         else:
             self.tags = {'production', 'mch', 'craype'}
 
+    @rfm.run_before('compile')
+    def dom_set_cuda_cdt(self):
+        if self.current_system.name == 'dom':
+            self.modules += ['cdt-cuda']
+
     @rfm.run_before('run')
     def set_launcher_options(self):
         if self.current_system.name in ['arolla', 'tsa']:
