@@ -34,10 +34,7 @@ class PytorchHorovodTest(rfm.RunOnlyRegressionTest):
         hash = 'master'
         git_url = f'https://raw.githubusercontent.com/horovod/horovod/{hash}/examples/pytorch'  # noqa: E501
         git_src = 'pytorch_synthetic_benchmark.py'
-        self.prerun_cmds = [
-            f'wget {git_url}/{git_src}',
-            f'echo starttime=`date +%s`'
-        ]
+        self.prerun_cmds = [f'wget {git_url}/{git_src}']
 
         if model == 'inception_v3':
             self.prerun_cmds += [
@@ -51,7 +48,6 @@ class PytorchHorovodTest(rfm.RunOnlyRegressionTest):
                 f' {git_src}'
             ]
 
-        self.postrun_cmds = ['echo stoptime=`date +%s`']
         self.executable = 'python'
         self.executable_opts = [
             git_src,
@@ -67,12 +63,7 @@ class PytorchHorovodTest(rfm.RunOnlyRegressionTest):
             sn.assert_found(rf'Model: {model}', self.stdout),
             sn.assert_found(rf'Batch size: {batch_size}', self.stdout)
         ])
-        regex_start_sec = r'^starttime=(?P<sec>\d+.\d+)'
-        regex_stop_sec = r'^stoptime=(?P<sec>\d+.\d+)'
-        start_sec = sn.extractsingle(regex_start_sec, self.stdout, 'sec', int)
-        stop_sec = sn.extractsingle(regex_stop_sec, self.stdout, 'sec', int)
         self.perf_patterns = {
-            'elapsed': stop_sec - start_sec,
             'throughput_per_gpu': sn.extractsingle(
                 r'Img/sec per GPU: (?P<throughput_per_gpu>\S+) \S+',
                 self.stdout, 'throughput_per_gpu', float
@@ -86,12 +77,10 @@ class PytorchHorovodTest(rfm.RunOnlyRegressionTest):
         ref_per_job = ref_per_gpu * mpi_task
         self.reference = {
             'dom:gpu': {
-                'elapsed': (0, None, None, 's'),
                 'throughput_per_gpu': (ref_per_gpu, -0.05, None, 'images/s'),
                 'throughput_per_job': (ref_per_job, -0.05, None, 'images/s'),
             },
             'daint:gpu': {
-                'elapsed': (0, None, None, 's'),
                 'throughput_per_gpu': (ref_per_gpu, -0.05, None, 'images/s'),
                 'throughput_per_job': (ref_per_job, -0.05, None, 'images/s'),
             }
