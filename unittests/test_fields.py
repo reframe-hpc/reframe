@@ -14,7 +14,7 @@ from reframe.utility import ScopedDict
 
 def test_not_set_attribute():
     class FieldTester:
-        var = fields.Field('var')
+        var = fields.Field()
 
     c = FieldTester()
     with pytest.raises(AttributeError):
@@ -26,7 +26,7 @@ def test_not_set_attribute():
 
 def test_copy_on_write_field():
     class FieldTester:
-        cow = fields.CopyOnWriteField('cow')
+        cow = fields.CopyOnWriteField()
 
     tester = FieldTester()
     var = [1, [2, 4], 3]
@@ -64,8 +64,8 @@ def test_typed_field():
             super().__init__(10)
 
     class FieldTester:
-        field = fields.TypedField('field', ClassA)
-        field_any = fields.TypedField('field_any', ClassA, str, type(None))
+        field = fields.TypedField(ClassA)
+        field_any = fields.TypedField(ClassA, str, type(None))
 
         def __init__(self, value):
             self.field = value
@@ -90,9 +90,8 @@ def test_typed_field():
 
 def test_timer_field():
     class FieldTester:
-        field = fields.TimerField('field')
-        field_maybe_none = fields.TimerField(
-            'field_maybe_none', type(None))
+        field = fields.TimerField()
+        field_maybe_none = fields.TimerField(type(None))
 
     tester = FieldTester()
     tester.field = '1d65h22m87s'
@@ -161,14 +160,14 @@ def test_proxy_field():
 
 def test_deprecated_field():
     class FieldTester:
-        value = fields.DeprecatedField(fields.TypedField('value', int),
+        value = fields.DeprecatedField(fields.TypedField(int),
                                        'value field is deprecated')
-        _value = fields.TypedField('value', int)
-        ro = fields.DeprecatedField(fields.TypedField('ro', int),
+        _value = fields.TypedField(int)
+        ro = fields.DeprecatedField(fields.TypedField(int),
                                     'value field is deprecated',
                                     fields.DeprecatedField.OP_SET)
-        _ro = fields.TypedField('ro', int)
-        wo = fields.DeprecatedField(fields.TypedField('wo', int),
+        _ro = fields.TypedField(int)
+        wo = fields.DeprecatedField(fields.TypedField(int),
                                     'value field is deprecated',
                                     fields.DeprecatedField.OP_GET)
 
@@ -206,7 +205,7 @@ def test_deprecated_field():
 
 def test_absolute_path_field():
     class FieldTester:
-        value = fields.AbsolutePathField('value', type(None))
+        value = fields.AbsolutePathField(type(None))
 
         def __init__(self, value):
             self.value = value
@@ -226,9 +225,9 @@ def test_absolute_path_field():
 
 def test_scoped_dict_field():
     class FieldTester:
-        field = fields.ScopedDictField('field', int)
+        field = fields.ScopedDictField(int)
         field_maybe_none = fields.ScopedDictField(
-            'field_maybe_none', int, type(None))
+            int, type(None))
 
     tester = FieldTester()
 

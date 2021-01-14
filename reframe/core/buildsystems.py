@@ -25,7 +25,7 @@ class BuildSystem(abc.ABC):
     #:
     #: :type: :class:`str`
     #: :default: ``''``
-    cc  = fields.TypedField('cc', str)
+    cc  = fields.TypedField(str)
 
     #: The C++ compiler to be used.
     #: If empty and :attr:`flags_from_environ` is :class:`True`,
@@ -34,7 +34,7 @@ class BuildSystem(abc.ABC):
     #:
     #: :type: :class:`str`
     #: :default: ``''``
-    cxx = fields.TypedField('cxx', str)
+    cxx = fields.TypedField(str)
 
     #: The Fortran compiler to be used.
     #: If empty and :attr:`flags_from_environ` is :class:`True`,
@@ -43,7 +43,7 @@ class BuildSystem(abc.ABC):
     #:
     #: :type: :class:`str`
     #: :default: ``''``
-    ftn = fields.TypedField('ftn', str)
+    ftn = fields.TypedField(str)
 
     #: The CUDA compiler to be used.
     #: If empty and :attr:`flags_from_environ` is :class:`True`,
@@ -52,7 +52,7 @@ class BuildSystem(abc.ABC):
     #:
     #: :type: :class:`str`
     #: :default: ``''``
-    nvcc = fields.TypedField('nvcc', str)
+    nvcc = fields.TypedField(str)
 
     #: The C compiler flags to be used.
     #: If empty and :attr:`flags_from_environ` is :class:`True`,
@@ -61,7 +61,7 @@ class BuildSystem(abc.ABC):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    cflags = fields.TypedField('cflags', typ.List[str])
+    cflags = fields.TypedField(typ.List[str])
 
     #: The preprocessor flags to be used.
     #: If empty and :attr:`flags_from_environ` is :class:`True`,
@@ -70,7 +70,7 @@ class BuildSystem(abc.ABC):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    cppflags = fields.TypedField('cppflags', typ.List[str])
+    cppflags = fields.TypedField(typ.List[str])
 
     #: The C++ compiler flags to be used.
     #: If empty and :attr:`flags_from_environ` is :class:`True`,
@@ -79,7 +79,7 @@ class BuildSystem(abc.ABC):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    cxxflags = fields.TypedField('cxxflags', typ.List[str])
+    cxxflags = fields.TypedField(typ.List[str])
 
     #: The Fortran compiler flags to be used.
     #: If empty and :attr:`flags_from_environ` is :class:`True`,
@@ -88,7 +88,7 @@ class BuildSystem(abc.ABC):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    fflags  = fields.TypedField('fflags', typ.List[str])
+    fflags  = fields.TypedField(typ.List[str])
 
     #: The linker flags to be used.
     #: If empty and :attr:`flags_from_environ` is :class:`True`,
@@ -97,14 +97,14 @@ class BuildSystem(abc.ABC):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    ldflags = fields.TypedField('ldflags', typ.List[str])
+    ldflags = fields.TypedField(typ.List[str])
 
     #: Set compiler and compiler flags from the current programming environment
     #: if not specified otherwise.
     #:
     #: :type: :class:`bool`
     #: :default: :class:`True`
-    flags_from_environ = fields.TypedField('flags_from_environ', bool)
+    flags_from_environ = fields.TypedField(bool)
 
     def __init__(self):
         self.cc  = ''
@@ -205,14 +205,14 @@ class Make(BuildSystem):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    options = fields.TypedField('options', typ.List[str])
+    options = fields.TypedField(typ.List[str])
 
     #: Instruct build system to use this Makefile.
     #: This option is useful when having non-standard Makefile names.
     #:
     #: :type: :class:`str`
     #: :default: :class:`None`
-    makefile = fields.TypedField('makefile', str, type(None))
+    makefile = fields.TypedField(str, type(None))
 
     #: The top-level directory of the code.
     #:
@@ -221,7 +221,7 @@ class Make(BuildSystem):
     #:
     #: :type: :class:`str`
     #: :default: :class:`None`
-    srcdir = fields.TypedField('srcdir', str, type(None))
+    srcdir = fields.TypedField(str, type(None))
 
     #: Limit concurrency for ``make`` jobs.
     #: This attribute controls the ``-j`` option passed to ``make``.
@@ -235,7 +235,7 @@ class Make(BuildSystem):
     #: .. note::
     #:     .. versionchanged:: 2.19
     #:        The default value is now ``1``
-    max_concurrency = fields.TypedField('max_concurrency', int, type(None))
+    max_concurrency = fields.TypedField(int, type(None))
 
     def __init__(self):
         super().__init__()
@@ -332,7 +332,7 @@ class SingleSource(BuildSystem):
     #: :attr:`reframe.core.pipeline.RegressionTest.sourcepath` attribute.
     #:
     #: :type: :class:`str` or :class:`None`
-    srcfile = fields.TypedField('srcfile', str, type(None))
+    srcfile = fields.TypedField(str, type(None))
 
     #: The executable file to be generated.
     #:
@@ -340,7 +340,7 @@ class SingleSource(BuildSystem):
     #: :attr:`reframe.core.pipeline.RegressionTest.executable` attribute.
     #:
     #: :type: :class:`str` or :class:`None`
-    executable = fields.TypedField('executable', str, type(None))
+    executable = fields.TypedField(str, type(None))
 
     #: The include path to be used for this compilation.
     #:
@@ -350,7 +350,7 @@ class SingleSource(BuildSystem):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    include_path = fields.TypedField('include_path', typ.List[str])
+    include_path = fields.TypedField(typ.List[str])
 
     #: The programming language of the file that needs to be compiled.
     #: If not specified, the build system will try to figure it out
@@ -364,7 +364,7 @@ class SingleSource(BuildSystem):
     #:   - CUDA: `.cu`.
     #:
     #: :type: :class:`str` or :class:`None`
-    lang = fields.TypedField('lang', str, type(None))
+    lang = fields.TypedField(str, type(None))
 
     def __init__(self):
         super().__init__()
@@ -465,31 +465,31 @@ class ConfigureBasedBuildSystem(BuildSystem):
     #:
     #: :type: :class:`str`
     #: :default: :class:`None`
-    srcdir = fields.TypedField('srcdir', str, type(None))
+    srcdir = fields.TypedField(str, type(None))
 
     #: The CMake build directory, where all the generated files will be placed.
     #:
     #: :type: :class:`str`
     #: :default: :class:`None`
-    builddir = fields.TypedField('builddir', str, type(None))
+    builddir = fields.TypedField(str, type(None))
 
     #: Additional configuration options to be passed to the CMake invocation.
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    config_opts = fields.TypedField('config_opts', typ.List[str])
+    config_opts = fields.TypedField(typ.List[str])
 
     #: Options to be passed to the subsequent ``make`` invocation.
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    make_opts = fields.TypedField('make_opts', typ.List[str])
+    make_opts = fields.TypedField(typ.List[str])
 
     #: Same as for the :attr:`Make` build system.
     #:
     #: :type: integer
     #: :default: ``1``
-    max_concurrency = fields.TypedField('max_concurrency', int, type(None))
+    max_concurrency = fields.TypedField(int, type(None))
 
     def __init__(self):
         super().__init__()
