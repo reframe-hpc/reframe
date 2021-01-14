@@ -52,11 +52,59 @@ class LocalAttrSpace(metaclass=abc.ABCMeta):
         '''Insert a new attribute in the local attribute space.'''
         pass
 
-    @property
-    def attr(self):
-        return self._attr
-
     def items(self):
         return self._attr.items()
 
 
+class AttrSpace(metaclass=abc.ABCMeta):
+
+    @property
+    @abc.abstractmethod
+    def localAttrSpaceName(self):
+        pass
+
+    @property
+    @abc.abstractmethod
+    def localAttrSpaceCls(self):
+        pass
+
+    @property
+    @abc.abstractmethod
+    def attrSpaceName(self):
+        pass
+
+    def __init__(self, target_cls=None):
+        self._attr = {}
+        if target_cls:
+
+           # Assert the AttrSpace can be built for the target_cls
+           self.assert_target_cls(target_cls)
+
+           # Inherit AttrSpaces from the base clases
+           self.inherit(target_cls)
+
+           # Extend the AttrSpace with the LocalAttrSpace
+           self.extend(target_cls)
+
+           # Sanity checkings on the resulting AttrSpace
+           self.validate(target_cls)
+
+    def assert_target_cls(self, cls):
+        assert hasattr(cls, self.localAttrSpaceName)
+        assert isinstance(getattr(cls, self.localAttrSpaceName),
+                          self.localAttrSpaceCls)
+
+    @abc.abstractmethod
+    def inherit(self, cls):
+        pass
+
+    @abc.abstractmethod
+    def extend(self, cls):
+        pass
+
+    @abc.abstractmethod
+    def validate(self, cls):
+        pass
+
+    def items(self):
+        return self._attr.items()

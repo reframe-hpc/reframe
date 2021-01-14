@@ -38,8 +38,9 @@ class RegressionTestMeta(type):
     def __init__(cls, name, bases, namespace, **kwargs):
         super().__init__(name, bases, namespace, **kwargs)
 
-        # Build the regression test parameter space
+        # Build the parameter and variable spaces
         cls._rfm_param_space = parameters.ParamSpace(cls)
+        cls._rfm_var_space = variables.VarSpace(cls)
 
         # Set up the hooks for the pipeline stages based on the _rfm_attach
         # attribute; all dependencies will be resolved first in the post-setup
