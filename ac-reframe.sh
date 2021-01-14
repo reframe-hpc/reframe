@@ -1,6 +1,6 @@
 #/usr/bin/env bash
 
-_bin=/home/sarafael/repos/reframe/bin/reframe
+_bin=reframe
 
 _cli_options=$(${_bin} --help | grep -o -e ' --[a-z\-]*' -e ' -[a-zA-Z]' --)
 
