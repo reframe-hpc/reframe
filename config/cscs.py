@@ -289,6 +289,20 @@ site_configuration = {
                     'descr': 'JupyterHub multicore nodes',
                     'max_jobs': 10,
                     'launcher': 'srun'
+                },
+                {
+                    'name': 'xfer',
+                    'scheduler': 'slurm',
+                    'environs': [
+                        'builtin'
+                    ],
+                    'access': [
+                        f'--partition=xfer',
+                        f'--account={osext.osgroup()}'
+                    ],
+                    'descr': 'Nordend nodes for internal transfers',
+                    'max_jobs': 10,
+                    'launcher': 'srun'
                 }
             ]
         },
