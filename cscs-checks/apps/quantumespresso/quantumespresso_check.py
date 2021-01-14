@@ -56,7 +56,7 @@ class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
         energy_diff = sn.abs(energy-energy_reference)
         self.sanity_patterns = sn.all([
             self.sanity_patterns,
-            sn.assert_lt(energy_diff, 1e-8)
+            sn.assert_lt(energy_diff, 1e-7)
         ])
 
         references = {
