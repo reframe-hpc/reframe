@@ -15,19 +15,19 @@ _cli_options_completions()
 
   case ${prev} in
 	  -n|--name)
-		  # exclude the -n from the command line to get the test names
-          local COMP_WORDS_NO_FLAGS=()
+		  # exclude `-n` from the command line to get the test names
+          local ALL_BEFORE_CURRENT_WORD=()
           local index=0
 		  while [[ "$index" -lt "$((COMP_CWORD-1))" ]]
           do
-              COMP_WORDS_NO_FLAGS+=("${COMP_WORDS[$index]}")
+              ALL_BEFORE_CURRENT_WORD+=("${COMP_WORDS[$index]}")
               let index++
           done
 
-		  local subfunction=$(echo "${COMP_WORDS_NO_FLAGS[*]} -l")
-		  local names=$($(echo ${subfunction} | tr % ' ') | grep 'found in ' | awk '{print$2}')
+		  local list_command=$(echo "${ALL_BEFORE_CURRENT_WORD[*]} -l")
+		  local test_names=$($(echo ${list_command} | tr % ' ') | grep 'found in ' | awk '{print$2}')
 
-		  COMPREPLY=($(compgen -W "$(echo ${names})" -- "${cur}"))
+		  COMPREPLY=($(compgen -W "$(echo ${test_names})" -- "${cur}"))
 	  ;;
       -c|--checkpath|-C|--config-file)
           COMPREPLY=( $( compgen -f -- $cur ) )
