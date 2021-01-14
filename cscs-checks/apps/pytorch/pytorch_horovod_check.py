@@ -9,7 +9,7 @@ import reframe.utility.osext as osext
 
 
 @rfm.parameterized_test(*[[model, mpi_task]
-                          for mpi_task in [32, 8, 2, 1]
+                          for mpi_task in [32, 8, 1]
                           for model in ['inception_v3', 'resnet50']])
 class PytorchHorovodTest(rfm.RunOnlyRegressionTest):
     def __init__(self, model, mpi_task):
@@ -54,8 +54,7 @@ class PytorchHorovodTest(rfm.RunOnlyRegressionTest):
             f'--model {model}',
             f'--batch-size {batch_size}',
             '--num-iters 5',
-            '--num-batches-per-iter 5',
-            '--num-warmup-batches 5'
+            '--num-batches-per-iter 5'
         ]
         self.tags = {'production'}
         self.maintainers = ['RS', 'HM']
@@ -77,11 +76,11 @@ class PytorchHorovodTest(rfm.RunOnlyRegressionTest):
         ref_per_job = ref_per_gpu * mpi_task
         self.reference = {
             'dom:gpu': {
-                'throughput_per_gpu': (ref_per_gpu, -0.05, None, 'images/s'),
-                'throughput_per_job': (ref_per_job, -0.05, None, 'images/s'),
+                'throughput_per_gpu': (ref_per_gpu, -0.1, None, 'images/s'),
+                'throughput_per_job': (ref_per_job, -0.1, None, 'images/s'),
             },
             'daint:gpu': {
-                'throughput_per_gpu': (ref_per_gpu, -0.05, None, 'images/s'),
-                'throughput_per_job': (ref_per_job, -0.05, None, 'images/s'),
+                'throughput_per_gpu': (ref_per_gpu, -0.1, None, 'images/s'),
+                'throughput_per_job': (ref_per_job, -0.1, None, 'images/s'),
             }
         }
