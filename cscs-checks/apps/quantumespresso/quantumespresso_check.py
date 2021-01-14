@@ -98,7 +98,7 @@ class QuantumESPRESSOGpuCheck(QuantumESPRESSOCheck):
         if scale == 'small':
             self.valid_systems += ['dom:gpu']
             self.num_tasks = 6
-            energy_reference = -11427.09017176
+            energy_reference = -11427.09017168
         else:
             self.num_tasks = 16
             energy_reference = -11427.09017179
