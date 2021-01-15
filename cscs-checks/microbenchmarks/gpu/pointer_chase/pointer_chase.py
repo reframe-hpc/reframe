@@ -111,7 +111,7 @@ class GpuPointerChaseBase(rfm.RunOnlyRegressionTest):
         # Check that every node has the right number of GPUs
         # Store this nodes in case they're used later by the perf functions.
         self.my_nodes = set(sn.extractall(
-            r'^\s*\[([^\]]*)\]\s*Found %d device\(s\).' % self.num_gpus_per_node,
+            rf'^\s*\[([^\]]*)\]\s*Found {self.num_gpus_per_node} device\(s\).',
             self.stdout, 1))
 
         # Check that every node has made it to the end.
