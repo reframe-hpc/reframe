@@ -96,7 +96,7 @@ class NamdCPUCheck(NamdBaseCheck):
             self.reference = {
                 'dom:mc': {'days_ns': (0.51, None, 0.05, 'days/ns')},
                 'daint:mc': {'days_ns': (0.51, None, 0.05, 'days/ns')},
-                'eiger:mc': {'days_ns': (0.61, None, 0.05, 'days/ns')}
+                'eiger:mc': {'days_ns': (0.23, None, 0.05, 'days/ns')}
             }
         else:
             self.reference = {
