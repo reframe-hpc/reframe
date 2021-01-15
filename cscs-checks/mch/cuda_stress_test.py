@@ -40,3 +40,8 @@ class CudaStressTest(rfm.RegressionTest):
         }
         self.tags = {'production', 'mch', 'craype'}
         self.maintainers = ['MKr', 'AJ']
+
+    @rfm.run_before('compile')
+    def dom_set_cuda_cdt(self):
+        if self.current_system.name == 'dom':
+            self.modules += ['cdt-cuda']

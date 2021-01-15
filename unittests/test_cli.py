@@ -364,8 +364,22 @@ def test_performance_check_failure(run_reframe, tmp_path, perflogdir):
                           'default' / 'PerformanceFailureCheck.log')
 
 
-def test_performance_report(run_reframe):
+def test_perflogdir_from_env(run_reframe, tmp_path, monkeypatch):
+    monkeypatch.setenv('FOODIR', str(tmp_path / 'perflogs'))
     returncode, stdout, stderr = run_reframe(
+        checkpath=['unittests/resources/checks/frontend_checks.py'],
+        more_options=['-t', 'PerformanceFailureCheck'],
+        perflogdir='$FOODIR'
+    )
+    assert returncode == 1
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert os.path.exists(tmp_path / 'perflogs' / 'generic' /
+                          'default' / 'PerformanceFailureCheck.log')
+
+
+def test_performance_report(run_reframe):
+    returncode, stdout, _ = run_reframe(
         checkpath=['unittests/resources/checks/frontend_checks.py'],
         more_options=['-t', 'PerformanceFailureCheck', '--performance-report']
     )
@@ -628,7 +642,7 @@ def test_unload_module(run_reframe, user_exec_ctx):
     # more exhaustively.
 
     ms = rt.runtime().modules_system
-    if ms.name == 'nomod':
+    if not fixtures.has_sane_modules_system():
         pytest.skip('no modules system found')
 
     with rt.module_use('unittests/modules'):
@@ -647,7 +661,7 @@ def test_unload_module(run_reframe, user_exec_ctx):
 
 def test_unuse_module_path(run_reframe, user_exec_ctx):
     ms = rt.runtime().modules_system
-    if ms.name == 'nomod':
+    if not fixtures.has_sane_modules_system():
         pytest.skip('no modules system found')
 
     module_path = 'unittests/modules'
@@ -657,6 +671,7 @@ def test_unuse_module_path(run_reframe, user_exec_ctx):
         config_file=fixtures.USER_CONFIG_FILE, action='run',
         system=rt.runtime().system.name
     )
+    ms.searchpath_remove(module_path)
     assert "could not load module 'testmod_foo' correctly" in stdout
     assert 'Traceback' not in stderr
     assert returncode == 0
@@ -664,7 +679,7 @@ def test_unuse_module_path(run_reframe, user_exec_ctx):
 
 def test_use_module_path(run_reframe, user_exec_ctx):
     ms = rt.runtime().modules_system
-    if ms.name == 'nomod':
+    if not fixtures.has_sane_modules_system():
         pytest.skip('no modules system found')
 
     module_path = 'unittests/modules'
@@ -673,7 +688,6 @@ def test_use_module_path(run_reframe, user_exec_ctx):
         config_file=fixtures.USER_CONFIG_FILE, action='run',
         system=rt.runtime().system.name
     )
-
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert "could not load module 'testmod_foo' correctly" not in stdout
@@ -682,7 +696,7 @@ def test_use_module_path(run_reframe, user_exec_ctx):
 
 def test_overwrite_module_path(run_reframe, user_exec_ctx):
     ms = rt.runtime().modules_system
-    if ms.name == 'nomod':
+    if not fixtures.has_sane_modules_system():
         pytest.skip('no modules system found')
 
     module_path = 'unittests/modules'
@@ -694,7 +708,6 @@ def test_overwrite_module_path(run_reframe, user_exec_ctx):
         config_file=fixtures.USER_CONFIG_FILE, action='run',
         system=rt.runtime().system.name
     )
-
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert "could not load module 'testmod_foo' correctly" not in stdout

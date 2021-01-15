@@ -1414,7 +1414,8 @@ def modules_system(user_exec_ctx, monkeypatch):
 
     ms = rt.runtime().system.modules_system
     ms.searchpath_add(fixtures.TEST_MODULES)
-    return ms
+    yield ms
+    ms.searchpath_remove(fixtures.TEST_MODULES)
 
 
 def test_find_modules(modules_system):
@@ -1467,20 +1468,29 @@ def test_jsonext_dump(tmp_path):
         jsonext.dump({'foo': sn.defer(['bar'])}, fp)
 
     with open(json_dump, 'r') as fp:
+        assert '{"foo": null}' == fp.read()
+
+    with open(json_dump, 'w') as fp:
+        jsonext.dump({'foo': sn.defer(['bar']).evaluate()}, fp)
+
+    with open(json_dump, 'r') as fp:
         assert '{"foo": ["bar"]}' == fp.read()
 
     with open(json_dump, 'w') as fp:
         jsonext.dump({'foo': sn.defer(['bar'])}, fp, separators=(',', ':'))
 
     with open(json_dump, 'r') as fp:
-        assert '{"foo":["bar"]}' == fp.read()
+        assert '{"foo":null}' == fp.read()
 
 
 def test_jsonext_dumps():
     assert '"foo"' == jsonext.dumps('foo')
-    assert '{"foo": ["bar"]}' == jsonext.dumps({'foo': sn.defer(['bar'])})
-    assert '{"foo":["bar"]}' == jsonext.dumps({'foo': sn.defer(['bar'])},
-                                              separators=(',', ':'))
+    assert '{"foo": ["bar"]}' == jsonext.dumps(
+        {'foo': sn.defer(['bar']).evaluate()}
+    )
+    assert '{"foo":["bar"]}' == jsonext.dumps(
+        {'foo': sn.defer(['bar']).evaluate()}, separators=(',', ':')
+    )
 
 
 # Classes to test JSON deserialization
