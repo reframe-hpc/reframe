@@ -315,9 +315,9 @@ Options controlling ReFrame execution
 
 .. option:: --maxfail=NUM
 
-   The maximum number of failing tests before the execution is aborted.
-   After ``NUM`` failed tests the rest of the tests will be aborted.
-   The counter of the failed tests is reset to 0 in every retry.
+   The maximum number of failing test cases before the execution is aborted.
+   After ``NUM`` failed test cases the rest of the test cases will be aborted.
+   The counter of the failed test cases is reset to 0 in every retry.
 
 
 .. option:: --disable-hook=HOOK
