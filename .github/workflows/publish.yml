@@ -2,7 +2,7 @@ name: Deploy and Publish ReFrame to PyPI
 
 on:
   release:
-    types: [released]
+    types: [prereleased, released]
 
 jobs:
   publish:
