@@ -19,7 +19,7 @@ class IPCMagicCheck(rfm.RunOnlyRegressionTest):
         cray_cdt_version = osext.cray_cdt_version() or '19.10'
         self.modules = [
             'ipcmagic',
-            f'Horovod/0.19.1-CrayGNU-{cray_cdt_version}-tf-2.2.0'
+            f'Horovod/0.21.0-CrayGNU-{cray_cdt_version}-tf-2.4.0'
         ]
         self.num_tasks = 2
         self.num_tasks_per_node = 1

@@ -17,7 +17,7 @@ class TensorFlow2HorovodTest(rfm.RunOnlyRegressionTest):
         self.valid_prog_environs = ['builtin']
 
         cray_cdt_version = osext.cray_cdt_version()
-        self.modules = [f'Horovod/0.19.1-CrayGNU-{cray_cdt_version}-tf-2.2.0']
+        self.modules = [f'Horovod/0.21.0-CrayGNU-{cray_cdt_version}-tf-2.4.0']
         self.sourcesdir = None
         self.num_tasks_per_node = 1
         self.num_cpus_per_task = 12
