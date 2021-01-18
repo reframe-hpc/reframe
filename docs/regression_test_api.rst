@@ -36,6 +36,43 @@ Pipeline Hooks
 .. autodecorator:: reframe.core.decorators.require_deps
 
 
+.. _directives:
+
+Directives
+----------
+
+Directives are functions that you can call in the body of a ReFrame regression test class, in order to control the creation of the test.
+For example, you can parameterize a test using the :func:`parameter` directive as follows:
+
+.. code:: python
+
+   class MyTest(rfm.RegressionTest):
+       parameter('variant', ['A', 'B'])
+
+       def __init__(self):
+           if self.variant == 'A':
+               do_this()
+           else:
+               do_other()
+
+
+
+.. py:function:: reframe.core.pipeline.RegressionTest.parameter(name, *values, inherit_params=False, filter_params=None)
+
+   Stores the attributes of a regression test parameter as defined directly in the test definition.
+   These attributes are the parameter's name, values, and inheritance behaviour.
+   This class should be thought of as a temporary storage for these parameter attributes, before the full final parameter space is built.
+
+   :param name: parameter name
+   :param values: parameter values.
+       If no values are passed, the parameter is considered as declared but not defined (i.e. an abstract parameter).
+   :param inherit_params: If false, this parameter is marked to not inherit any values for the same parameter that might have been defined in a parent class.
+   :param filter_params: Function to filter/modify the inherited parameter values from the parent classes.
+       This only has an effect if used with ``inherit_params=True``.
+
+
+
+
 Environments and Systems
 ------------------------
 
