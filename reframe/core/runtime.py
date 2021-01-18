@@ -12,7 +12,6 @@ import functools
 from datetime import datetime
 
 import reframe.core.config as config
-import reframe.core.fields as fields
 import reframe.utility.osext as osext
 from reframe.core.environments import (Environment, snapshot)
 from reframe.core.exceptions import ReframeFatalError

@@ -6,7 +6,6 @@
 import pytest
 
 import reframe.core.containers as containers
-import unittests.fixtures as fixtures
 from reframe.core.exceptions import ContainerError
 
 

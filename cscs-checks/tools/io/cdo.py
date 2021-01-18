@@ -26,7 +26,6 @@ import os
 
 import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.pipeline import RunOnlyRegressionTest
 
 
 class CDOBaseTest(rfm.RunOnlyRegressionTest):

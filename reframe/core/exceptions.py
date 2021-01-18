@@ -9,8 +9,6 @@
 
 import inspect
 import os
-import traceback
-import warnings
 import sys
 
 import reframe.utility as utility

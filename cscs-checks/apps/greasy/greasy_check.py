@@ -3,9 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import itertools
 import os
-import fnmatch
 from datetime import datetime
 
 import reframe as rfm

@@ -9,8 +9,6 @@ import reframe.core.exceptions as errors
 import reframe.frontend.executors as executors
 import reframe.frontend.filters as filters
 import reframe.utility.sanity as sn
-from reframe.core.pipeline import RegressionTest
-from reframe.core.exceptions import ReframeError
 
 
 def count_checks(filter_fn, checks):

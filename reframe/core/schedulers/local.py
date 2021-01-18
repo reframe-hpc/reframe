@@ -8,7 +8,6 @@ import os
 import signal
 import socket
 import stat
-import subprocess
 import time
 
 import reframe.core.schedulers as sched
