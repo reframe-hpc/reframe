@@ -87,7 +87,7 @@ class AttrSpace(metaclass=abc.ABCMeta):
            self.extend(target_cls)
 
            # Sanity checkings on the resulting AttrSpace
-           self.validate(target_cls)
+           self.sanity(target_cls)
 
     def assert_target_cls(self, cls):
         assert hasattr(cls, self.localAttrSpaceName)
@@ -102,9 +102,16 @@ class AttrSpace(metaclass=abc.ABCMeta):
     def extend(self, cls):
         pass
 
-    @abc.abstractmethod
-    def validate(self, cls):
-        pass
+    def sanity(self, cls):
+
+        # Namespace clashing with cls disallowed
+        target_namespace = set(dir(cls))
+        for key in self._attr:
+            if key in target_namespace:
+                raise ValueError(
+                    f'{key!r} clashes with the namespace from '
+                    f'{cls.__qualname__!r}'
+                )
 
     def items(self):
         return self._attr.items()

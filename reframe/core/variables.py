@@ -8,21 +8,48 @@
 #
 
 import reframe.core.attributes as ReframeAttributes
-
+import reframe.core.fields as fields
 
 class _TestVar:
-    def __init__(self, name, *types, required=True):
+    def __init__(self, name, *types, field=fields.TypedField, **kwargs):
+        if 'value' in kwargs:
+            self.define(kwargs.get('value'))
+        else:
+            self.undefine()
+
         self.name = name
         self.types = types
-        self.required = required
+        self.field = field
 
-    def is_required(self):
-        return self.required
+    def is_undef(self):
+        return self.value == '_rfm_undef'
+
+    def undefine(self):
+        self.value = '_rfm_undef'
+
+    def define(self, value):
+        self.value = value
 
 
 class LocalVarSpace(ReframeAttributes.LocalAttrSpace):
+    def __init__(self):
+        super().__init__()
+        self.undefined = set()
+        self.definitions = {}
+
     def add_attr(self, name, *args, **kwargs):
         self[name] = _TestVar(name, *args, **kwargs)
+
+    def undefine_attr(self, name):
+        self.undefined.add(name)
+
+    def define_attr(self, name, value):
+        if name not in self.definitions:
+            self.definitions[name] = value
+        else:
+            raise ValueError(
+                f'default value for var {name!r} are already set'
+            )
 
     @property
     def vars(self):
@@ -36,7 +63,6 @@ class VarSpace(ReframeAttributes.AttrSpace):
     attrSpaceName = '_rfm_var_space'
 
     def __init__(self, target_cls=None):
-        self._requiredVars = set()
         super().__init__(target_cls)
 
 
@@ -47,43 +73,51 @@ class VarSpace(ReframeAttributes.AttrSpace):
             self.join(getattr(base, self.attrSpaceName))
 
     def join(self, other):
-        '''Join the variable spaces from the base clases
-
-        Incorporate the variable space form a base class into the current
-        variable space. This follows standard inheritance rules, so if more
-        than two base clases have the same variable defined, the one imported
-        last will prevail.
-
-        :param other: variable space from a base class.
-        '''
         for key, val in other.items():
 
-            # Override the required set
-            if key in other.required_vars:
-                self._requiredVars.add(key)
-            elif key in self._requiredVars:
-                self._requiredVars.remove(key)
+            # Multiple inheritance is NOT allowed
+            if key in self._attr:
+                raise ValueError(
+                    f'var {key!r} is already present in the var space'
+                )
 
             self._attr[key] = val
 
     def extend(self, cls):
-        for key, var in getattr(cls, self.localAttrSpaceName).items():
+        localVarSpace = getattr(cls, self.localAttrSpaceName)
 
-            # Override the required set
-            if var.is_required():
-                self._requiredVars.add(key)
-            elif key in self._requiredVars:
-                self._requiredVars.remove(key)
+        # Extend the var space
+        for key, var in localVarSpace.items():
 
-            self._attr[key] = var.types
+            # Disable redeclaring a variable
+            if key in self._attr:
+                raise ValueError(
+                    f'cannot redeclare a variable ({key!r})'
+                )
+
+            self._attr[key] = var
+
+        # Undefine the vars as indicated by the local var space
+        for key in localVarSpace.undefined:
+            self._check_var_is_declared(key)
+            self._attr[key].undefine()
+
+        # Define the vars as indicated by the local var space
+        for key, val in localVarSpace.definitions.items():
+            self._check_var_is_declared(key)
+            self._attr[key].define(val)
+
+    def _check_var_is_declared(self, key):
+        if key not in self._attr:
+            raise ValueError(
+                f'var {key!r} has not been declared'
+            )
 
     @property
     def vars(self):
         return self._attr
 
-    @property
-    def required_vars(self):
-        return self._requiredVars
+    def undefined_vars(self):
+        return list(filter(lambda x: self._attr[x].is_undef(), self._attr))
 
-    def validate(self, cls):
-        pass
+

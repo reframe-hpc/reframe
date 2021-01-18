@@ -702,6 +702,9 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
         # Set the test parameters in the object
         cls._init_params(obj, _rfm_use_params)
 
+        # Insert the user variables
+        cls._insert_vars(obj)
+
         # Create a test name from the class name and the constructor's
         # arguments
         name = cls.__qualname__
@@ -762,6 +765,16 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
             # Otherwise init the params as None
             for key in cls._rfm_param_space.params:
                 setattr(obj, key, None)
+
+    @classmethod
+    def _insert_vars(cls, obj):
+        '''Insert the vars in the regression test.'''
+
+        for name, var in cls._rfm_var_space.items():
+            setattr(cls, name, var.field(*var.types))
+            getattr(cls, name).__set_name__(obj, name)
+            if not var.is_undef():
+                setattr(obj, name, var.value)
 
     def _append_parameters_to_name(self):
         if self._rfm_param_space.params:
