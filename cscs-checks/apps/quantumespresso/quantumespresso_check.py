@@ -56,7 +56,7 @@ class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
         energy_diff = sn.abs(energy-energy_reference)
         self.sanity_patterns = sn.all([
             self.sanity_patterns,
-            # FIXME temporarily increase energy difference 
+            # FIXME temporarily increase energy difference
             # (different QE default on Dom and Daint)
             sn.assert_lt(energy_diff, 1e-6)
         ])
