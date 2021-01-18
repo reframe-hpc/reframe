@@ -49,7 +49,6 @@ class NamdBaseCheck(rfm.RunOnlyRegressionTest):
 
         self.maintainers = ['CB', 'LM']
         self.tags = {'scs', 'external-resources'}
-        self.strict_check = True
         self.extra_resources = {
             'switches': {
                 'num_switches': 1
