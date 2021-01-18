@@ -39,26 +39,6 @@ class Field:
         obj.__dict__[self._name] = value
 
 
-class ForwardField:
-    '''Simple field that forwards set/get to a target object.'''
-
-    def __set_name__(self, owner, name):
-        pass
-
-    def __init__(self, obj, attr):
-        self._target = obj
-        self._attr = attr
-
-    def __get__(self, obj, objtype):
-        if obj is None:
-            return self
-
-        return getattr(self._target, self._attr)
-
-    def __set__(self, obj, value):
-        self._target.__dict__[self._attr] = value
-
-
 class TypedField(Field):
     '''Stores a field of predefined type'''
 
@@ -78,13 +58,6 @@ class TypedField(Field):
     def __set__(self, obj, value):
         self._check_type(value)
         super().__set__(obj, value)
-
-
-class CopyOnWriteField(Field):
-    '''Holds a copy of the variable that is assigned to it the first time'''
-
-    def __set__(self, obj, value):
-        super().__set__(obj, copy.deepcopy(value))
 
 
 class ConstantField(Field):
@@ -133,24 +106,6 @@ class TimerField(TypedField):
         elif isinstance(value, float) or isinstance(value, int):
             if value < 0:
                 raise ValueError('timer field value cannot be negative')
-
-        # Call Field's __set__() method, type checking is already performed
-        Field.__set__(self, obj, value)
-
-
-class AbsolutePathField(TypedField):
-    '''A string field that stores an absolute path.
-
-    Any string assigned to such a field, will be converted to an absolute path.
-    '''
-
-    def __init__(self, *other_types):
-        super().__init__(str, *other_types)
-
-    def __set__(self, obj, value):
-        self._check_type(value)
-        if value is not None:
-            value = os.path.abspath(value)
 
         # Call Field's __set__() method, type checking is already performed
         Field.__set__(self, obj, value)
