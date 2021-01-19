@@ -381,15 +381,15 @@ class GpuPointerChaseL1(GpuPointerChaseFineDep, L1_filter):
 
         self.reference = {
             'dom:gpu': {
-                'L1_latency': (112, None, 0.1, 'clock cycles'),
-                'L1_miss_rate': (33.3, None, 0.1, '%'),
-                'L1_miss_latency': (268, None, 0.1, 'clock cycles'),
+                'L1_latency': (148, None, 0.1, 'clock cycles'),
+                'L1_miss_rate': (74.6, None, 0.1, '%'),
+                'L1_miss_latency': (407, None, 0.1, 'clock cycles'),
 
             },
             'daint:gpu': {
-                'L1_latency': (112, None, 0.1, 'clock cycles'),
-                'L1_miss_rate': (33.3, None, 0.1, '%'),
-                'L1_miss_latency': (268, None, 0.1, 'clock cycles'),
+                'L1_latency': (148, None, 0.1, 'clock cycles'),
+                'L1_miss_rate': (74.6, None, 0.1, '%'),
+                'L1_miss_latency': (407, None, 0.1, 'clock cycles'),
 
             },
             'tsa:cn': {
