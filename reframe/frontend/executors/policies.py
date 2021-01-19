@@ -440,7 +440,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 task.abort(cause)
 
         for task in itertools.chain(self._waiting_tasks,
-                                    self._retired_tasks,
                                     self._completed_tasks):
             task.abort(cause)
 
