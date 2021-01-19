@@ -17,13 +17,13 @@ class ContainerPlatform(abc.ABC):
     #:
     #: :type: :class:`str` or :class:`None`
     #: :default: :class:`None`
-    image = fields.TypedField('image', str, type(None))
+    image = fields.TypedField(str, type(None))
 
     #: The commands to be executed within the container.
     #:
     #: :type: :class:`list[str]`
     #: :default: ``[]``
-    commands = fields.TypedField('commands', typ.List[str])
+    commands = fields.TypedField(typ.List[str])
 
     #: List of mount point pairs for directories to mount inside the container.
     #:
@@ -32,14 +32,13 @@ class ContainerPlatform(abc.ABC):
     #:
     #: :type: :class:`list[tuple[str, str]]`
     #: :default: ``[]``
-    mount_points = fields.TypedField('mount_points',
-                                     typ.List[typ.Tuple[str, str]])
+    mount_points = fields.TypedField(typ.List[typ.Tuple[str, str]])
 
     #: Additional options to be passed to the container runtime when executed.
     #:
     #: :type: :class:`list[str]`
     #: :default: ``[]``
-    options = fields.TypedField('options', typ.List[str])
+    options = fields.TypedField(typ.List[str])
 
     #: The working directory of ReFrame inside the container.
     #:
@@ -49,7 +48,7 @@ class ContainerPlatform(abc.ABC):
     #:
     #: :type: :class:`str`
     #: :default: ``/rfm_workdir``
-    workdir = fields.TypedField('workdir', str, type(None))
+    workdir = fields.TypedField(str, type(None))
 
     def __init__(self):
         self.image = None
@@ -118,7 +117,7 @@ class Sarus(ContainerPlatform):
     #:
     #: :type: boolean
     #: :default: :class:`False`
-    with_mpi = fields.TypedField('with_mpi', bool)
+    with_mpi = fields.TypedField(bool)
 
     def __init__(self):
         super().__init__()
@@ -166,7 +165,7 @@ class Singularity(ContainerPlatform):
     #:
     #: :type: boolean
     #: :default: :class:`False`
-    with_cuda = fields.TypedField('with_cuda', bool)
+    with_cuda = fields.TypedField(bool)
 
     def __init__(self):
         super().__init__()
@@ -189,8 +188,8 @@ class Singularity(ContainerPlatform):
 
 
 class ContainerPlatformField(fields.TypedField):
-    def __init__(self, fieldname, *other_types):
-        super().__init__(fieldname, ContainerPlatform, *other_types)
+    def __init__(self, *other_types):
+        super().__init__(ContainerPlatform, *other_types)
 
     def __set__(self, obj, value):
         if isinstance(value, str):

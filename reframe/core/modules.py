@@ -91,8 +91,7 @@ class Module:
 class ModulesSystem:
     '''A modules system.'''
 
-    module_map = fields.TypedField('module_map',
-                                   types.Dict[str, types.List[str]])
+    module_map = fields.TypedField(types.Dict[str, types.List[str]])
 
     @classmethod
     def create(cls, modules_kind=None):

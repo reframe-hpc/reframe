@@ -163,7 +163,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #: The name of the test.
     #:
     #: :type: string that can contain any character except ``/``
-    name = fields.TypedField('name', typ.Str[r'[^\/]+'])
+    name = fields.TypedField(typ.Str[r'[^\/]+'])
 
     #: List of programming environments supported by this test.
     #:
@@ -180,8 +180,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:     .. versionchanged:: 2.17
     #:        Support for wildcards is dropped.
     #:
-    valid_prog_environs = fields.TypedField('valid_prog_environs',
-                                            typ.List[str], type(None))
+    valid_prog_environs = fields.TypedField(typ.List[str], type(None))
 
     #: List of systems supported by this test.
     #: The general syntax for systems is ``<sysname>[:<partname>]``.
@@ -190,14 +189,13 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    valid_systems = fields.TypedField('valid_systems',
-                                      typ.List[str], type(None))
+    valid_systems = fields.TypedField(typ.List[str], type(None))
 
     #: A detailed description of the test.
     #:
     #: :type: :class:`str`
     #: :default: ``self.name``
-    descr = fields.TypedField('descr', str)
+    descr = fields.TypedField(str)
 
     #: The path to the source file or source directory of the test.
     #:
@@ -215,7 +213,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`str`
     #: :default: ``''``
-    sourcepath = fields.TypedField('sourcepath', str)
+    sourcepath = fields.TypedField(str)
 
     #: The directory containing the test's resources.
     #:
@@ -245,7 +243,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:     .. versionchanged:: 3.0
     #:        Default value is now conditionally set to either ``'src'`` or
     #:        :class:`None`.
-    sourcesdir = fields.TypedField('sourcesdir', str, type(None))
+    sourcesdir = fields.TypedField(str, type(None))
 
     #: .. versionadded:: 2.14
     #:
@@ -262,7 +260,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`str` or :class:`reframe.core.buildsystems.BuildSystem`.
     #: :default: :class:`None`.
-    build_system = BuildSystemField('build_system', type(None))
+    build_system = BuildSystemField(type(None))
 
     #: .. versionadded:: 3.0
     #:
@@ -274,7 +272,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    prebuild_cmds = fields.TypedField('prebuild_cmds', typ.List[str])
+    prebuild_cmds = fields.TypedField(typ.List[str])
 
     #: .. versionadded:: 3.0
     #:
@@ -286,19 +284,19 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    postbuild_cmds = fields.TypedField('postbuild_cmds', typ.List[str])
+    postbuild_cmds = fields.TypedField(typ.List[str])
 
     #: The name of the executable to be launched during the run phase.
     #:
     #: :type: :class:`str`
     #: :default: ``os.path.join('.', self.name)``
-    executable = fields.TypedField('executable', str)
+    executable = fields.TypedField(str)
 
     #: List of options to be passed to the :attr:`executable`.
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    executable_opts = fields.TypedField('executable_opts', typ.List[str])
+    executable_opts = fields.TypedField(typ.List[str])
 
     #: .. versionadded:: 2.20
     #:
@@ -322,8 +320,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #: :type: :class:`str` or
     #:     :class:`reframe.core.containers.ContainerPlatform`.
     #: :default: :class:`None`.
-    container_platform = ContainerPlatformField('container_platform',
-                                                type(None))
+    container_platform = ContainerPlatformField(type(None))
 
     #: .. versionadded:: 3.0
     #:
@@ -335,7 +332,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    prerun_cmds = fields.TypedField('prerun_cmds', typ.List[str])
+    prerun_cmds = fields.TypedField(typ.List[str])
 
     #: .. versionadded:: 3.0
     #:
@@ -346,7 +343,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    postrun_cmds = fields.TypedField('postrun_cmds', typ.List[str])
+    postrun_cmds = fields.TypedField(typ.List[str])
 
     #: List of files to be kept after the test finishes.
     #:
@@ -366,7 +363,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #: .. versionchanged:: 3.3
     #:    This field accepts now also file glob patterns.
     #:
-    keep_files = fields.TypedField('keep_files', typ.List[str])
+    keep_files = fields.TypedField(typ.List[str])
 
     #: List of files or directories (relative to the :attr:`sourcesdir`) that
     #: will be symlinked in the stage directory and not copied.
@@ -376,7 +373,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    readonly_files = fields.TypedField('readonly_files', typ.List[str])
+    readonly_files = fields.TypedField(typ.List[str])
 
     #: Set of tags associated with this test.
     #:
@@ -384,7 +381,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`Set[str]`
     #: :default: an empty set
-    tags = fields.TypedField('tags', typ.Set[str])
+    tags = fields.TypedField(typ.Set[str])
 
     #: List of people responsible for this test.
     #:
@@ -392,7 +389,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    maintainers = fields.TypedField('maintainers', typ.List[str])
+    maintainers = fields.TypedField(typ.List[str])
 
     #: Mark this test as a strict performance test.
     #:
@@ -402,7 +399,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:
     #: :type: boolean
     #: :default: :class:`True`
-    strict_check = fields.TypedField('strict_check', bool)
+    strict_check = fields.TypedField(bool)
 
     #: Number of tasks required by this test.
     #:
@@ -428,7 +425,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:
     #: .. |--flex-alloc-nodes| replace:: :attr:`--flex-alloc-nodes`
     #: .. _--flex-alloc-nodes: manpage.html#cmdoption-flex-alloc-nodes
-    num_tasks = fields.TypedField('num_tasks', int)
+    num_tasks = fields.TypedField(int)
 
     #: Number of tasks per node required by this test.
     #:
@@ -436,8 +433,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:
     #: :type: integral or :class:`None`
     #: :default: :class:`None`
-    num_tasks_per_node = fields.TypedField('num_tasks_per_node',
-                                           int, type(None))
+    num_tasks_per_node = fields.TypedField(int, type(None))
 
     #: Number of GPUs per node required by this test.
     #: This attribute is translated internally to the ``_rfm_gpu`` resource.
@@ -446,7 +442,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:
     #: :type: integral
     #: :default: ``0``
-    num_gpus_per_node = fields.TypedField('num_gpus_per_node', int)
+    num_gpus_per_node = fields.TypedField(int)
 
     #: Number of CPUs per task required by this test.
     #:
@@ -454,7 +450,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:
     #: :type: integral or :class:`None`
     #: :default: :class:`None`
-    num_cpus_per_task = fields.TypedField('num_cpus_per_task', int, type(None))
+    num_cpus_per_task = fields.TypedField(int, type(None))
 
     #: Number of tasks per core required by this test.
     #:
@@ -462,8 +458,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:
     #: :type: integral or :class:`None`
     #: :default: :class:`None`
-    num_tasks_per_core = fields.TypedField('num_tasks_per_core',
-                                           int, type(None))
+    num_tasks_per_core = fields.TypedField(int, type(None))
 
     #: Number of tasks per socket required by this test.
     #:
@@ -471,8 +466,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:
     #: :type: integral or :class:`None`
     #: :default: :class:`None`
-    num_tasks_per_socket = fields.TypedField('num_tasks_per_socket',
-                                             int, type(None))
+    num_tasks_per_socket = fields.TypedField(int, type(None))
 
     #: Specify whether this tests needs simultaneous multithreading enabled.
     #:
@@ -480,8 +474,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:
     #: :type: boolean or :class:`None`
     #: :default: :class:`None`
-    use_multithreading = fields.TypedField('use_multithreading',
-                                           bool, type(None))
+    use_multithreading = fields.TypedField(bool, type(None))
 
     #: .. versionadded:: 3.0
     #:
@@ -491,19 +484,19 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`str` or :class:`datetime.timedelta`
     #: :default: :class:`None`
-    max_pending_time = fields.TimerField('max_pending_time', type(None))
+    max_pending_time = fields.TimerField(type(None))
 
     #: Specify whether this test needs exclusive access to nodes.
     #:
     #: :type: boolean
     #: :default: :class:`False`
-    exclusive_access = fields.TypedField('exclusive_access', bool)
+    exclusive_access = fields.TypedField(bool)
 
     #: Always execute this test locally.
     #:
     #: :type: boolean
     #: :default: :class:`False`
-    local = fields.TypedField('local', bool)
+    local = fields.TypedField(bool)
 
     #: The set of reference values for this test.
     #:
@@ -536,7 +529,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:        The measurement unit is required. The user should explicitly
     #:        specify :class:`None` if no unit is available.
     reference = fields.ScopedDictField(
-        'reference', typ.Tuple[object, object, object, object])
+        typ.Tuple[object, object, object, object])
     # FIXME: There is not way currently to express tuples of `float`s or
     # `None`s, so we just use the very generic `object`
 
@@ -562,8 +555,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:       ::
     #:
     #:           self.sanity_patterns = sn.assert_found(r'.*', self.stdout)
-    sanity_patterns = fields.TypedField('sanity_patterns',
-                                        _DeferredExpression, type(None))
+    sanity_patterns = fields.TypedField(_DeferredExpression, type(None))
 
     #: Patterns for verifying the performance of this test.
     #:
@@ -578,7 +570,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:     :class:`None` is also allowed.
     #: :default: :class:`None`
     perf_patterns = fields.TypedField(
-        'perf_patterns', typ.Dict[str, _DeferredExpression], type(None))
+        typ.Dict[str, _DeferredExpression], type(None))
 
     #: List of modules to be loaded before running this test.
     #:
@@ -586,7 +578,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    modules = fields.TypedField('modules', typ.List[str])
+    modules = fields.TypedField(typ.List[str])
 
     #: Environment variables to be set before running this test.
     #:
@@ -594,7 +586,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`Dict[str, str]`
     #: :default: ``{}``
-    variables = fields.TypedField('variables', typ.Dict[str, str])
+    variables = fields.TypedField(typ.Dict[str, str])
 
     #: Time limit for this test.
     #:
@@ -618,7 +610,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:       - The old syntax using a ``(h, m, s)`` tuple is dropped.
     #:       - Support of `timedelta` objects is dropped.
     #:       - Number values are now accepted.
-    time_limit = fields.TimerField('time_limit', type(None))
+    time_limit = fields.TimerField(type(None))
 
     #: .. versionadded:: 2.8
     #:
@@ -686,8 +678,8 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:    .. versionchanged:: 2.9
     #:       A new more powerful syntax was introduced
     #:       that allows also custom job script directive prefixes.
-    extra_resources = fields.TypedField('extra_resources',
-                                        typ.Dict[str, typ.Dict[str, object]])
+    extra_resources = fields.TypedField(
+        typ.Dict[str, typ.Dict[str, object]])
 
     #: .. versionadded:: 3.3
     #:
@@ -702,7 +694,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #: appropriate sanity check.
     #:
     #: :type: boolean : :default: :class:`True`
-    build_locally = fields.TypedField('build_locally', bool)
+    build_locally = fields.TypedField(bool)
 
     def __new__(cls, *args, **kwargs):
         obj = super().__new__(cls)

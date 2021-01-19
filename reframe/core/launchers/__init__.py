@@ -30,7 +30,7 @@ class JobLauncher(abc.ABC):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    options = fields.TypedField('options', typ.List[str])
+    options = fields.TypedField(typ.List[str])
 
     def __init__(self):
         self.options = []
