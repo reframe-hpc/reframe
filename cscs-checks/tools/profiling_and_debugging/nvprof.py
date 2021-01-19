@@ -47,3 +47,8 @@ class NvprofCheck(rfm.RegressionTest):
         ])
         self.maintainers = ['JG', 'SK']
         self.tags = {'production', 'craype', 'maintenance'}
+
+    @rfm.run_before('compile')
+    def dom_set_cuda_cdt(self):
+        if self.current_system.name == 'dom':
+            self.modules += ['cdt-cuda']

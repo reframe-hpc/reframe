@@ -3,6 +3,8 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import os
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -20,10 +22,6 @@ class GpuBurnTest(rfm.RegressionTest):
         self.executable_opts = ['-d', '40']
         self.build_system = 'Make'
         self.executable = './gpu_burn.x'
-
-        # FIXME workaround due to issue #1639.
-        self.readonly_files = ['Xdevice']
-
         self.num_tasks = 0
         self.num_tasks_per_node = 1
         self.sanity_patterns = self.assert_num_tasks()
@@ -31,41 +29,35 @@ class GpuBurnTest(rfm.RegressionTest):
                 r'(?P<temp>\S*) Celsius')
         self.perf_patterns = {
             'perf': sn.min(sn.extractall(patt, self.stdout, 'perf', float)),
+            'temp': sn.max(sn.extractall(patt, self.stdout, 'temp', float)),
         }
 
         self.reference = {
             'dom:gpu': {
                 'perf': (4115, -0.10, None, 'Gflop/s'),
-                'max_temp': (0, None, None, 'Celsius')
             },
             'daint:gpu': {
                 'perf': (4115, -0.10, None, 'Gflop/s'),
-                'max_temp': (0, None, None, 'Celsius')
             },
             'arolla:cn': {
                 'perf': (5861, -0.10, None, 'Gflop/s'),
-                'max_temp': (0, None, None, 'Celsius')
             },
             'tsa:cn': {
                 'perf': (5861, -0.10, None, 'Gflop/s'),
-                'max_temp': (0, None, None, 'Celsius')
             },
             'ault:amda100': {
                 'perf': (15000, -0.10, None, 'Gflop/s'),
-                'max_temp': (0, None, None, 'Celsius')
             },
             'ault:amdv100': {
                 'perf': (5500, -0.10, None, 'Gflop/s'),
-                'max_temp': (0, None, None, 'Celsius')
             },
             'ault:intelv100': {
                 'perf': (5500, -0.10, None, 'Gflop/s'),
-                'max_temp': (0, None, None, 'Celsius')
             },
             'ault:amdvega': {
                 'perf': (3450, -0.10, None, 'Gflop/s'),
-                'max_temp': (0, None, None, 'Celsius')
             },
+            '*': {'temp': (0, None, None, 'degC')}
         }
 
         self.maintainers = ['AJ', 'TM']
@@ -133,3 +125,18 @@ class GpuBurnTest(rfm.RegressionTest):
             self.num_gpus_per_node = 3
         else:
             self.num_gpus_per_node = 1
+
+    @rfm.run_before('performance')
+    def report_nid_with_smallest_flops(self):
+        regex = r'\[(\S+)\] GPU\s+\d\(OK\): (\d+) GF/s'
+        rptf = os.path.join(self.stagedir, sn.evaluate(self.stdout))
+        self.nids = sn.extractall(regex, rptf, 1)
+        self.flops = sn.extractall(regex, rptf, 2, float)
+
+        # Find index of smallest flops and update reference dictionary to
+        # include our patched units
+        index = self.flops.evaluate().index(min(self.flops))
+        unit = f'GF/s ({self.nids[index]})'
+        for key, ref in self.reference.items():
+            if not key.endswith(':temp'):
+                self.reference[key] = (*ref[:3], unit)

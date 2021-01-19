@@ -12,16 +12,15 @@ import reframe.utility.sanity as sn
 class MpiTCheck(rfm.RegressionTest):
     def __init__(self):
         self.descr = 'Checks MPI_T control/performance variables/categories'
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'daint:mc', 'dom:mc']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'daint:mc', 'dom:mc',
+                              'eiger:mc']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu', 'PrgEnv-pgi',
-                                    'PrgEnv-intel', 'PrgEnv-cray_classic']
+                                    'PrgEnv-intel', 'PrgEnv-aocc']
         self.build_system = 'SingleSource'
         self.sourcesdir = 'src/mpi_t'
         self.sourcepath = 'mpit_vars.c'
-        src_ref_files = ['mpit_categories.ref', 'mpit_perf_vars.ref',
-                         'mpit_control_vars.ref', self.sourcepath]
         self.num_tasks_per_node = 1
-        self.variables = {'MPITEST_VERBOSE': '1', 'MPICH_VERSION_DISPLAY': '1'}
+        self.variables = {'MPICH_VERSION_DISPLAY': '1', 'MPITEST_VERBOSE': '1'}
         self.rpt = 'rpt'
         self.executable_opts = [f'&> {self.rpt}']
         self.maintainers = ['JG']
@@ -29,28 +28,43 @@ class MpiTCheck(rfm.RegressionTest):
 
     @rfm.run_before('sanity')
     def set_sanity(self):
-        # 1/ MPI Control Variables:
+        # {{{ 0/ MPICH version:
+        # MPI VERSION    : CRAY MPICH version 7.7.15 (ANL base 3.2)
+        # MPI VERSION    : CRAY MPICH version 8.0.16.17 (ANL base 3.3)
+        regex = r'^MPI VERSION\s+: CRAY MPICH version \S+ \(ANL base (\S+)\)'
+        rpt_file = os.path.join(self.stagedir, self.rpt)
+        mpich_version = sn.extractsingle(regex, rpt_file, 1)
+        reference_files = {
+            '3.2': {
+                'control': 'mpit_control_vars_32.ref',
+                'categories': 'mpit_categories_32.ref',
+            },
+            '3.3': {
+                'control': 'mpit_control_vars_33.ref',
+                'categories': 'mpit_categories_33.ref',
+            }
+        }
+        # }}}
+        # {{{ 1/ MPI Control Variables: MPIR_...
         # --- extract reference data:
         regex = r'^(?P<vars>MPIR\S+)$'
-        ref = os.path.join(self.stagedir, 'mpit_control_vars.ref')
-        self.ref_control_vars = sorted(sn.extractall(regex, ref, 'vars'))
+        ref_file = os.path.join(
+            self.stagedir,
+            reference_files[sn.evaluate(mpich_version)]['control']
+        )
+        self.ref_control_vars = sorted(sn.extractall(regex, ref_file, 'vars'))
         # --- extract runtime data:
         regex = r'^\t(?P<vars>MPIR\S+)\t'
-        rpt = os.path.join(self.stagedir, self.rpt)
-        self.run_control_vars = sorted(sn.extractall(regex, rpt, 'vars'))
-        # 2/ MPI Performance Variables:
-        # --- extract reference data:
-        regex = r'(?P<vars>\w+)'
-        ref = os.path.join(self.stagedir, 'mpit_perf_vars.ref')
-        self.ref_perf_vars = sorted(sn.extractall(regex, ref, 'vars'))
-        # --- extract runtime data:
-        regex = r'^\t(?P<vars>(nem_|rma_)\S+)\t'
-        rpt = os.path.join(self.stagedir, self.rpt)
-        self.run_perf_vars = sorted(sn.extractall(regex, rpt, 'vars'))
-        # 3/ MPI Category:
+        self.run_control_vars = sorted(sn.extractall(regex, rpt_file, 'vars'))
+        # --- debug with: grep -P '\tMPIR+\S*\t' rpt |awk '{print $1}' |sort
+        # }}}
+        # {{{ 2/ MPI Category:
         # --- extract reference data:
         regex = r'^(?P<category>.*)$'
-        ref = os.path.join(self.stagedir, 'mpit_categories.ref')
+        ref = os.path.join(
+            self.stagedir,
+            reference_files[sn.evaluate(mpich_version)]['categories']
+        )
         ref_cat_vars = sorted(sn.extractall(regex, ref, 'category'))
         self.ref_cat_vars = list(filter(None, ref_cat_vars))
         # --- extract runtime data:
@@ -58,9 +72,12 @@ class MpiTCheck(rfm.RegressionTest):
                  r' performance variables, \d+ subcategories)')
         rpt = os.path.join(self.stagedir, self.rpt)
         self.run_cat_vars = sorted(sn.extractall(regex, rpt, 'category'))
-        # 4/ Extracted lists can be compared (when sorted):
+        # }}}
+        # {{{ 3/ Extracted lists can be compared (when sorted):
         self.sanity_patterns = sn.all([
-            sn.assert_eq(self.ref_control_vars, self.run_control_vars),
-            sn.assert_eq(self.ref_perf_vars, self.run_perf_vars),
-            sn.assert_eq(self.ref_cat_vars, self.run_cat_vars),
+            sn.assert_eq(self.ref_control_vars, self.run_control_vars,
+                         msg='sanity1 "mpit_control_vars.ref" failed'),
+            sn.assert_eq(self.ref_cat_vars, self.run_cat_vars,
+                         msg='sanity2 "mpit_categories.ref" failed'),
         ])
+        # }}}

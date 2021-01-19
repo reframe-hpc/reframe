@@ -156,8 +156,8 @@
                     },
                     "modules_system": {
                         "type": "string",
-                        "enum": ["tmod", "tmod31", "tmod32",
-                                 "tmod4", "lmod", "nomod"]
+                        "enum": ["tmod", "tmod31", "tmod32", "tmod4",
+                                 "lmod", "nomod", "spack"]
                     },
                     "modules": {"$ref": "#/defs/modules_list"},
                     "variables": {"$ref": "#/defs/envvar_list"},

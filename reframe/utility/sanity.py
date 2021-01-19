@@ -367,10 +367,9 @@ def assert_found(patt, filename, msg=None, encoding='utf-8'):
         The `re.MULTILINE
         <https://docs.python.org/3/library/re.html#re.MULTILINE>`_ flag
         is set for the pattern search.
-
-    :arg filename: The name of the file to examine.
-        Any :class:`OSError` raised while processing the file will be
-        propagated as a :class:`reframe.core.exceptions.SanityError`.
+    :arg filename: The name of the file to examine or a file descriptor as in
+        :py:func:`open`. Any :class:`OSError` raised while processing the file
+        will be propagated as a :class:`reframe.core.exceptions.SanityError`.
     :arg encoding: The name of the encoding used to decode the file.
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
@@ -612,7 +611,8 @@ def extractall(patt, filename, tag=0, conv=None, encoding='utf-8'):
         The `re.MULTILINE
         <https://docs.python.org/3/library/re.html#re.MULTILINE>`_ flag
         is set for the pattern search.
-    :arg filename: The name of the file to examine.
+    :arg filename: The name of the file to examine or a file descriptor as in
+        :py:func:`open`.
     :arg encoding: The name of the encoding used to decode the file.
     :arg tag: The regex capturing group to be extracted.
         Group ``0`` refers always to the whole match.
