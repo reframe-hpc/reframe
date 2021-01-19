@@ -7,6 +7,7 @@ import builtins
 import collections.abc
 import glob as pyglob
 import itertools
+import os
 import re
 import sys
 
@@ -776,3 +777,35 @@ def iglob(pathname, recursive=False):
     '''Replacement for the :func:`glob.iglob() <python:glob.iglob>`
     function.'''
     return pyglob.iglob(pathname, recursive=recursive)
+
+
+@deferrable
+def path_exists(path):
+    '''Replacement for the :func:`os.path.exists() <python:os.path.exists>`
+       function.
+    '''
+    return os.path.exists(path)
+
+
+@deferrable
+def path_isdir(path):
+    '''Replacement for the :func:`os.path.isdir() <python:os.path.isdir>`
+       function.
+    '''
+    return os.path.isdir(path)
+
+
+@deferrable
+def path_isfile(path):
+    '''Replacement for the :func:`os.path.isfile() <python:os.path.isfile>`
+       function.
+    '''
+    return os.path.isfile(path)
+
+
+@deferrable
+def path_islink(path):
+    '''Replacement for the :func:`os.path.islink() <python:os.path.islink>`
+       function.
+    '''
+    return os.path.islink(path)
