@@ -87,7 +87,10 @@ class GPUShmemTest(rfm.RegressionTest):
         if nvidia_sm:
             self.build_system.cxxflags += [f'-arch=sm_{nvidia_sm}']
             if cp in {'dom:gpu', 'daint:gpu'}:
-                self.modules += ['craype-accel-nvidia60']
+                self.modules += ['cudatoolkit']
+                if cp == 'dom:gpu':
+                    self.modules += ['cdt-cuda']
+
             else:
                 self.modules += ['cuda']
 
