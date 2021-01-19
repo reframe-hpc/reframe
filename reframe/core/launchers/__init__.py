@@ -42,6 +42,7 @@ class JobLauncher(abc.ABC):
         Launcher backends provide concrete implementations of this method.
 
         :param job: A job descriptor.
+        :returns: the basic launcher command as a list of tokens.
         '''
 
     def run_command(self, job):
@@ -49,7 +50,8 @@ class JobLauncher(abc.ABC):
 
         This includes any user options.
 
-        :param job: A job descriptor.
+        :param job: a job descriptor.
+        :returns: the launcher command as a string.
         '''
         return ' '.join(self.command(job) + self.options)
 

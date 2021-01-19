@@ -511,8 +511,6 @@ You then instantiate the launcher and assign to the :attr:`launcher` attribute o
 An alternative to this approach would be to define your own custom parallel launcher and register it with the framework.
 You could then use it as the scheduler of a system partition in the configuration, but this approach is less test-specific.
 
-
-
 Adding more parallel launch commands
 ====================================
 
@@ -520,7 +518,41 @@ ReFrame uses a parallel launcher by default for anything defined explicitly or i
 But what if we want to generate multiple parallel launch commands?
 One straightforward solution is to hardcode the parallel launch command inside the :attr:`prerun_cmds <reframe.core.pipeline.RegressionTest.prerun_cmds>` or :attr:`postrun_cmds <reframe.core.pipeline.RegressionTest.postrun_cmds>`, but this is not so portable.
 The best way is to ask ReFrame to emit the parallel launch command for you.
-In the following example,
+The following is a simple test for demonstration purposes that runs the ``hostname`` command several times using a parallel launcher.
+It resembles a scaling test, except that all happens inside a single ReFrame test, instead of launching multiple instances of a parameterized test.
+
+.. literalinclude:: ../tutorials/advanced/multilaunch/multilaunch.py
+   :lines: 6-
+   :emphasize-lines: 17-23
+
+The additional parallel launch commands are inserted in either the :attr:`prerun_cmds` or :attr:`postrun_cmds` lists.
+To retrieve the actual parallel launch command for the current partition that the test is running on, you can use the :func:`run_command <reframe.core.launchers.Launcher.run_command>` method of the launcher object.
+Let's see how the generated job script looks like:
+
+.. code-block:: none
+
+   ./bin/reframe -c tutorials/advanced/multilaunch/multilaunch.py -r
+   cat output/daint/gpu/cray/MultiLaunchTest/rfm_MultiLaunchTest_job.sh
+
+.. code:: bash
+
+    #!/bin/bash
+    #SBATCH --job-name="rfm_MultiLaunchTest_job"
+    #SBATCH --ntasks=4
+    #SBATCH --ntasks-per-node=1
+    #SBATCH --output=rfm_MultiLaunchTest_job.out
+    #SBATCH --error=rfm_MultiLaunchTest_job.err
+    #SBATCH --time=0:10:0
+    #SBATCH -A csstaff
+    #SBATCH --constraint=gpu
+    module load PrgEnv-cray
+    srun -n 1 hostname
+    srun -n 2 hostname
+    srun -n 3 hostname
+    srun hostname
+
+
+The first three ``srun`` commands are emitted through the :attr:`prerun_cmds` whereas the last one comes from the test's :attr:`executable` attribute.
 
 
 Flexible Regression Tests
