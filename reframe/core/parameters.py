@@ -16,13 +16,11 @@ from reframe.core.exceptions import ReframeSyntaxError
 class _TestParameter:
     '''Regression test paramter class.
 
-    This wraps a test a parameter that the users create through the
-    :func:`parameter` directive.
-
-    .. seealso::
-
-       :ref:`directives`
-
+    Stores the attributes of a regression test parameter as defined directly
+    in the test definition. These attributes are the parameter's name,
+    values, and inheritance behaviour. This class should be thought of as a
+    temporary storage for these parameter attributes, before the full final
+    parameter space is built.
     '''
 
     def __init__(self, name, *values,
@@ -84,11 +82,17 @@ class LocalParamSpace:
             )
 
     def add_param(self, name, *values, **kwargs):
-        '''Insert a new regression test parameter in the local parameter space.
+        '''Insert or modify a regression test parameter.
 
-        If the parameter is already present in the dictionary, raise an error.
-        See the _TestParameter class for further information on the
-        function arguments.
+        This method must be called directly in the class body. For each
+        regression test class definition, this function may only be called
+        once per parameter. Calling this method during or after the class
+        instantiation has an undefined behavior.
+
+        .. seealso::
+
+           :ref:`directives`
+
         '''
         self[name] = _TestParameter(name, *values, **kwargs)
 
