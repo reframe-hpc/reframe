@@ -39,6 +39,7 @@ class CompileGpuPointerChase(rfm.CompileOnlyRegressionTest):
         self.postbuild_cmds = ['ls .']
         self.sanity_patterns = sn.assert_found(r'pChase.x', self.stdout)
         self.maintainers = ['JO']
+        self.tags = {'benchmark'}
 
     @rfm.run_after('setup')
     def select_makefile(self):
@@ -89,6 +90,7 @@ class GpuPointerChaseBase(rfm.RunOnlyRegressionTest):
         self.exclusive_access = True
         self.sanity_patterns = self.do_sanity_check()
         self.maintainers = ['JO']
+        self.tag = {'benchmark'}
 
     @rfm.run_before('run')
     def set_num_gpus_per_node(self):
