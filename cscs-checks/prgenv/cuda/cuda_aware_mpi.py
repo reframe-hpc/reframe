@@ -67,6 +67,11 @@ class CudaAwareMPICheck(rfm.CompileOnlyRegressionTest):
             'MPILD="%s"' % self.current_environ.cxx
         ]
 
+    @rfm.run_before('compile')
+    def dom_set_cuda_cdt(self):
+        if self.current_system.name == 'dom':
+            self.modules += ['cdt-cuda']
+
 
 class CudaAwareMPIRuns(rfm.RunOnlyRegressionTest):
     def __init__(self):
