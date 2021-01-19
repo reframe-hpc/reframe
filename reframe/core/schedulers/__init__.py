@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -123,24 +123,19 @@ class Job(jsonext.JSONSerializable):
 
     '''
 
-    num_tasks = fields.TypedField('num_tasks', int)
-    num_tasks_per_node = fields.TypedField('num_tasks_per_node',
-                                           int,  type(None))
-    num_tasks_per_core = fields.TypedField('num_tasks_per_core',
-                                           int,  type(None))
-    num_tasks_per_socket = fields.TypedField('num_tasks_per_socket',
-                                             int,  type(None))
-
-    num_cpus_per_task = fields.TypedField('num_cpus_per_task',
-                                          int,  type(None))
-    use_smt = fields.TypedField('use_smt', bool,  type(None))
-    time_limit = fields.TimerField('time_limit', type(None))
+    num_tasks = fields.TypedField(int)
+    num_tasks_per_node = fields.TypedField(int, type(None))
+    num_tasks_per_core = fields.TypedField(int, type(None))
+    num_tasks_per_socket = fields.TypedField(int, type(None))
+    num_cpus_per_task = fields.TypedField(int, type(None))
+    use_smt = fields.TypedField(bool, type(None))
+    time_limit = fields.TimerField(type(None))
 
     #: Options to be passed to the backend job scheduler.
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    options = fields.TypedField('options', typ.List[str])
+    options = fields.TypedField(typ.List[str])
 
     #: The (parallel) program launcher that will be used to launch the
     #: (parallel) executable of this job.
@@ -162,7 +157,7 @@ class Job(jsonext.JSONSerializable):
     #:        self.job.launcher = getlauncher('local')()
     #:
     #: :type: :class:`reframe.core.launchers.JobLauncher`
-    launcher = fields.TypedField('launcher', JobLauncher)
+    launcher = fields.TypedField(JobLauncher)
 
     # The sched_* arguments are exposed also to the frontend
     def __init__(self,

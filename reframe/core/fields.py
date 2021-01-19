@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -7,9 +7,7 @@
 # Useful descriptors for advanced operations on fields
 #
 
-import copy
 import datetime
-import os
 import re
 
 import reframe.utility.typecheck as types
@@ -20,8 +18,8 @@ from reframe.utility import ScopedDict
 class Field:
     '''Base class for attribute validators.'''
 
-    def __init__(self, fieldname):
-        self._name = fieldname
+    def __set_name__(self, owner, name):
+        self._name = name
 
     def __get__(self, obj, objtype):
         if obj is None:
@@ -39,28 +37,10 @@ class Field:
         obj.__dict__[self._name] = value
 
 
-class ForwardField:
-    '''Simple field that forwards set/get to a target object.'''
-
-    def __init__(self, obj, attr):
-        self._target = obj
-        self._attr = attr
-
-    def __get__(self, obj, objtype):
-        if obj is None:
-            return self
-
-        return getattr(self._target, self._attr)
-
-    def __set__(self, obj, value):
-        self._target.__dict__[self._attr] = value
-
-
 class TypedField(Field):
     '''Stores a field of predefined type'''
 
-    def __init__(self, fieldname, main_type, *other_types):
-        super().__init__(fieldname)
+    def __init__(self, main_type, *other_types):
         self._types = (main_type,) + other_types
         if not all(isinstance(t, type) for t in self._types):
             raise TypeError('{0} is not a sequence of types'.
@@ -78,13 +58,6 @@ class TypedField(Field):
         super().__set__(obj, value)
 
 
-class CopyOnWriteField(Field):
-    '''Holds a copy of the variable that is assigned to it the first time'''
-
-    def __set__(self, obj, value):
-        super().__set__(obj, copy.deepcopy(value))
-
-
 class ConstantField(Field):
     '''Holds a constant.
 
@@ -95,8 +68,10 @@ class ConstantField(Field):
 
     '''
 
+    def __set_name__(self, owner, name):
+        pass
+
     def __init__(self, value):
-        super().__init__('__readonly')
         self._value = value
 
     def __get__(self, obj, objtype):
@@ -109,8 +84,8 @@ class ConstantField(Field):
 class TimerField(TypedField):
     '''Stores a timer in the form of a :class:`datetime.timedelta` object'''
 
-    def __init__(self, fieldname, *other_types):
-        super().__init__(fieldname, str, int, float, *other_types)
+    def __init__(self, *other_types):
+        super().__init__(str, int, float, *other_types)
 
     def __set__(self, obj, value):
         self._check_type(value)
@@ -134,32 +109,13 @@ class TimerField(TypedField):
         Field.__set__(self, obj, value)
 
 
-class AbsolutePathField(TypedField):
-    '''A string field that stores an absolute path.
-
-    Any string assigned to such a field, will be converted to an absolute path.
-    '''
-
-    def __init__(self, fieldname, *other_types):
-        super().__init__(fieldname, str, *other_types)
-
-    def __set__(self, obj, value):
-        self._check_type(value)
-        if value is not None:
-            value = os.path.abspath(value)
-
-        # Call Field's __set__() method, type checking is already performed
-        Field.__set__(self, obj, value)
-
-
 class ScopedDictField(TypedField):
     '''Stores a ScopedDict with a specific type.
 
     It also handles implicit conversions from ordinary dicts.'''
 
-    def __init__(self, fieldname, valuetype, *other_types):
-        super().__init__(fieldname,
-                         types.Dict[str, types.Dict[str, valuetype]],
+    def __init__(self, valuetype, *other_types):
+        super().__init__(types.Dict[str, types.Dict[str, valuetype]],
                          ScopedDict, *other_types)
 
     def __set__(self, obj, value):
@@ -176,6 +132,9 @@ class DeprecatedField(Field):
     OP_SET = 1
     OP_GET = 2
     OP_ALL = OP_SET | OP_GET
+
+    def __set_name__(self, owner, name):
+        self._target_field.__set_name__(owner, name)
 
     def __init__(self, target_field, message, op=OP_ALL):
         self._target_field = target_field
