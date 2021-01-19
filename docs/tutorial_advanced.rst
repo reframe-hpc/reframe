@@ -464,6 +464,7 @@ This can be achieved with the following pipeline hook:
 
 .. code:: python
 
+   import reframe as rfm
    from reframe.core.launchers import LauncherWrapper
 
    class DebuggerTest(rfm.RunOnlyRegressionTest):
@@ -479,11 +480,47 @@ The :class:`LauncherWrapper <reframe.core.launchers.LauncherWrapper>` is a pseud
 In this case the resulting parallel launch command, if the current partition uses native Slurm, will be ``ddt --offline srun [OPTIONS]``.
 
 
-- Replacing the launcher
+Replacing the parallel launcher
+===============================
+
+Sometimes you might need to replace completely the partition's launcher command, because the software you are testing might use its own parallel launcher.
+Examples are `ipyparallel <https://ipyparallel.readthedocs.io/en/latest/>`__, the `GREASY <https://github.com/BSC-Support-Team/GREASY>`__ high-throughput scheduler, as well as some visualization software.
+The trick here is to replace the parallel launcher with the local one, which practically does not emit any launch command, and by now you should almost be able to do it all by yourself:
+
+.. code:: python
+
+   import reframe as rfm
+   from reframe.core.backends import getlauncher
+
+
+   class CustomLauncherTest(rfm.RunOnlyRegressionTest):
+       def __init__(self):
+           ...
+           self.executable = 'custom_scheduler'
+           self.executable_opts = [...]
+
+       @rfm.run_before('run')
+       def replace_launcher(self):
+           self.job.launcher = getlauncher('local')()
+
+
+The :func:`getlauncher <reframe.core.backends.getlauncher>` function takes the `registered <config_reference.html#systems-.partitions-.launcher>`__ name of a launcher and returns the class that implements it.
+You then instantiate the launcher and assign to the :attr:`launcher` attribute of the job descriptor.
+
+
+An alternative to this approach would be to define your own custom parallel launcher and register it with the framework.
+You could then use it as the scheduler of a system partition in the configuration, but this approach is less test-specific.
+
 
 
 Adding more parallel launch commands
 ====================================
+
+ReFrame uses a parallel launcher by default for anything defined explicitly or implicitly in the :attr:`executable <reframe.core.pipeline.RegressionTest.executable>` test attribute.
+But what if we want to generate multiple parallel launch commands?
+One straightforward solution is to hardcode the parallel launch command inside the :attr:`prerun_cmds <reframe.core.pipeline.RegressionTest.prerun_cmds>` or :attr:`postrun_cmds <reframe.core.pipeline.RegressionTest.postrun_cmds>`, but this is not so portable.
+The best way is to ask ReFrame to emit the parallel launch command for you.
+In the following example,
 
 
 Flexible Regression Tests
