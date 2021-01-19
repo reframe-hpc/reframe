@@ -18,10 +18,6 @@ class GPUdgemmTest(rfm.RegressionTest):
         self.num_tasks_per_node = 1
         self.build_system = 'Make'
         self.executable = 'dgemm.x'
-
-        # FIXME workaround due to issue #1639.
-        self.readonly_files = ['Xdevice']
-
         self.sanity_patterns = self.assert_num_gpus()
         self.perf_patterns = {
             'perf': sn.min(sn.extractall(
