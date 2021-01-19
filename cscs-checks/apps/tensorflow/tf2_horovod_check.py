@@ -63,12 +63,15 @@ class TensorFlow2HorovodTest(rfm.RunOnlyRegressionTest):
             'NCCL_IB_CUDA_SUPPORT': '1',
             'OMP_NUM_THREADS': '$SLURM_CPUS_PER_TASK',
         }
+        script = 'tensorflow2_synthetic_benchmark.py'
         self.prerun_cmds = ['wget https://raw.githubusercontent.com/horovod/'
                             'horovod/842d1075e8440f15e84364f494645c28bf20c3ae/'
-                            'examples/tensorflow2_synthetic_benchmark.py']
+                            'examples/tensorflow2_synthetic_benchmark.py',
+                            'sed -i "s/weights=None/weights=None, '
+                            f'input_shape=(224, 224, 3)/g" {script}']
         self.executable = 'python'
         self.executable_opts = [
-            'tensorflow2_synthetic_benchmark.py',
+            f'{script}',
             f'--model {model}',
             f'--batch-size {batch_size}',
             '--num-iters 5',
