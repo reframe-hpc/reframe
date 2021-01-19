@@ -48,15 +48,4 @@ fi
 git tag -a v$version -m "ReFrame $version"
 git push origin --tags
 
-# We need this for running the setup.py of ReFrame
-export PYTHONPATH=$(pwd)/external:$PYTHONPATH
-
-# We create a virtual environment here just for the deployment
-python3 -m venv venv.deployment
-source venv.deployment/bin/activate
-python3 -m pip install --upgrade pip setuptools wheel twine
-python3 setup.py sdist bdist_wheel
-python3 -m twine upload dist/*
-deactivate
-cd $oldpwd
-echo "Deployment was successful!"
+echo "Pushing of tags was successful!"

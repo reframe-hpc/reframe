@@ -48,6 +48,11 @@ class CudaSamples(rfm.RegressionTest):
             self.current_system.name in ['daint', 'dom']):
             self.variables['CUDA_HOME'] = '$CUDATOOLKIT_HOME'
 
+    @rfm.run_before('compile')
+    def dom_set_cuda_cdt(self):
+        if self.current_system.name == 'dom':
+            self.modules += ['cdt-cuda']
+
 
 @rfm.simple_test
 class CudaDeviceQueryCheck(CudaSamples):
