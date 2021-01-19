@@ -332,7 +332,7 @@ int main(int argc, char ** argv)
 
   // Make sure we've got devices aboard.
   int num_devices;
-  XGetDeviceCount(num_devices);
+  XGetDeviceCount(&num_devices);
   if (num_devices == 0)
   {
     std::cout << "No devices found on host " << nid_name << std::endl;
