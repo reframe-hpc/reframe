@@ -17,13 +17,13 @@ class TensorFlow2HorovodTest(rfm.RunOnlyRegressionTest):
         self.valid_prog_environs = ['builtin']
 
         cray_cdt_version = osext.cray_cdt_version()
-        # FIXME
+        # FIXME: The following will not be needed after the Daint upgrade
         if self.current_system.name == 'dom':
             self.modules = [
                 f'Horovod/0.21.0-CrayGNU-{cray_cdt_version}-tf-2.4.0'
             ]
         else:
-            self.modules = [f'Horovod/0.19.1-CrayGNU-20.08-tf-2.2.0']
+            self.modules = ['Horovod/0.19.1-CrayGNU-20.08-tf-2.2.0']
 
         self.sourcesdir = None
         self.num_tasks_per_node = 1

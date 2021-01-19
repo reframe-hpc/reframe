@@ -15,12 +15,19 @@ class IPCMagicCheck(rfm.RunOnlyRegressionTest):
         self.descr = 'Distributed training with TensorFlow using ipyparallel'
         self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
-        # FIXME: The following will not be needed after the Daint upgrade
         cray_cdt_version = osext.cray_cdt_version()
-        self.modules = [
-            'ipcmagic',
-            f'Horovod/0.21.0-CrayGNU-{cray_cdt_version}-tf-2.4.0'
-        ]
+        # FIXME: The following will not be needed after the Daint upgrade
+        if self.current_system.name == 'dom':
+            self.modules = [
+                'ipcmagic',
+                f'Horovod/0.21.0-CrayGNU-{cray_cdt_version}-tf-2.4.0'
+            ]
+        else:
+            self.modules = [
+                'ipcmagic',
+                'Horovod/0.19.1-CrayGNU-20.08-tf-2.2.0'
+            ]
+
         self.num_tasks = 2
         self.num_tasks_per_node = 1
         self.executable = 'ipython'
