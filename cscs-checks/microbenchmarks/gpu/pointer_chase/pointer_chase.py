@@ -90,7 +90,7 @@ class GpuPointerChaseBase(rfm.RunOnlyRegressionTest):
         self.exclusive_access = True
         self.sanity_patterns = self.do_sanity_check()
         self.maintainers = ['JO']
-        self.tag = {'benchmark'}
+        self.tags = {'benchmark'}
 
     @rfm.run_before('run')
     def set_num_gpus_per_node(self):
