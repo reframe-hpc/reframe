@@ -48,9 +48,9 @@ class CompileGpuPointerChase(rfm.CompileOnlyRegressionTest):
     def select_makefile(self):
         cp = self.current_partition.fullname
         if cp == 'ault:amdvega':
-            self.prebuild_cmds = ['cp makefile.hip Makefile']
+            self.build_system.makefile = 'makefile.hip'
         else:
-            self.prebuild_cmds = ['cp makefile.cuda Makefile']
+            self.build_system.makefile = 'makefile.cuda'
 
     @rfm.run_after('setup')
     def set_gpu_arch(self):
@@ -63,12 +63,15 @@ class CompileGpuPointerChase(rfm.CompileOnlyRegressionTest):
         elif cp == 'ault:amda100':
             nvidia_sm = '80'
         elif cp in {'dom:gpu', 'daint:gpu'}:
-            nvidia_sm == '60'
+            nvidia_sm = '60'
 
         if nvidia_sm:
             self.build_system.cxxflags += [f'-arch=sm_{nvidia_sm}']
             if cp in {'dom:gpu', 'daint:gpu'}:
                 self.modules += ['cudatoolkit']
+                if cp == 'dom:gpu':
+                    self.modules += ['cdt-cuda']
+
             else:
                 self.modules += ['cuda']
 
