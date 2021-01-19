@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import datetime
-import os
 import pytest
 
 import reframe.core.fields as fields

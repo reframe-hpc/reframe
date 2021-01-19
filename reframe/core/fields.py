@@ -7,9 +7,7 @@
 # Useful descriptors for advanced operations on fields
 #
 
-import copy
 import datetime
-import os
 import re
 
 import reframe.utility.typecheck as types
