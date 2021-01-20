@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import ipcmagic
 import ipyparallel as ipp
 
 
