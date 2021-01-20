@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -148,14 +148,14 @@ class ProgEnvironment(Environment):
        Users may not create :class:`ProgEnvironment` objects directly.
     '''
 
-    _cc = fields.TypedField('_cc', str)
-    _cxx = fields.TypedField('_cxx', str)
-    _ftn = fields.TypedField('_ftn', str)
-    _cppflags = fields.TypedField('_cppflags', typ.List[str])
-    _cflags = fields.TypedField('_cflags', typ.List[str])
-    _cxxflags = fields.TypedField('_cxxflags', typ.List[str])
-    _fflags = fields.TypedField('_fflags', typ.List[str])
-    _ldflags = fields.TypedField('_ldflags', typ.List[str])
+    _cc = fields.TypedField(str)
+    _cxx = fields.TypedField(str)
+    _ftn = fields.TypedField(str)
+    _cppflags = fields.TypedField(typ.List[str])
+    _cflags = fields.TypedField(typ.List[str])
+    _cxxflags = fields.TypedField(typ.List[str])
+    _fflags = fields.TypedField(typ.List[str])
+    _ldflags = fields.TypedField(typ.List[str])
 
     def __init__(self,
                  name,
