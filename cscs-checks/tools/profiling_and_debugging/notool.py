@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -107,3 +107,14 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
     def set_reference(self):
         if self.current_system.name in {'dom', 'daint'}:
             self.reference['*:elapsed_time'] = self.reference_lang
+
+    @rfm.run_before('compile')
+    def dom_set_cuda_cdt(self):
+        if self.current_partition.fullname == 'dom:gpu':
+            self.modules += ['cdt-cuda']
+
+    @rfm.run_before('compile')
+    def gfortran_10_fix(self):
+        if (self.current_partition.fullname == 'dom:mc' and
+            self.lang == 'F90' and self.current_environ.name == 'PrgEnv-gnu'):
+            self.build_system.fflags += ['-fallow-argument-mismatch']
