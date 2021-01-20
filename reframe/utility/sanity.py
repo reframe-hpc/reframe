@@ -112,13 +112,13 @@ def min(*args):
 
 
 @deferrable
-def print(*objects, sep=' ', end='\n', file=None, flush=False):
+def print(obj, *, sep=' ', end='\n', file=None, flush=False):
     '''Replacement for the built-in :func:`print() <python:print>` function.
 
-    The only difference is that this function returns the ``objects``, so that
-    you can use it transparently inside a complex sanity expression. For
-    example, you could write the following to print the matches returned from
-    the :func:`extractall()` function:
+    The only difference is that this function takes a *single* object argument
+    and it returns that, so that you can use it transparently inside a complex
+    sanity expression. For example, you could write the following to print the
+    matches returned from the :func:`extractall()` function:
 
     .. code:: python
 
@@ -132,13 +132,19 @@ def print(*objects, sep=' ', end='\n', file=None, flush=False):
     default. This would capture :attr:`sys.stdout` at the time this function
     is defined and would prevent it from seeing changes to :attr:`sys.stdout`,
     such as redirects, in the future.
+
+    .. versionchanged:: 3.4
+       This function accepts now a single object argument in contrast to the
+       built-in :func:`print() <python:print>` function, which accepts
+       multiple.
+
     '''
 
     if file is None:
         file = sys.stdout
 
-    builtins.print(*objects, sep=sep, end=end, file=file, flush=flush)
-    return objects
+    builtins.print(obj, sep=sep, end=end, file=file, flush=flush)
+    return obj
 
 
 @deferrable
