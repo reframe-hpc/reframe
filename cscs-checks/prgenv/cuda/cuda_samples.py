@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -47,6 +47,11 @@ class CudaSamples(rfm.RegressionTest):
             osext.cray_cdt_version() == '20.08' and
             self.current_system.name in ['daint', 'dom']):
             self.variables['CUDA_HOME'] = '$CUDATOOLKIT_HOME'
+
+    @rfm.run_before('compile')
+    def dom_set_cuda_cdt(self):
+        if self.current_system.name == 'dom':
+            self.modules += ['cdt-cuda']
 
 
 @rfm.simple_test

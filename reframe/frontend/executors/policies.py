@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -440,7 +440,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 task.abort(cause)
 
         for task in itertools.chain(self._waiting_tasks,
-                                    self._retired_tasks,
                                     self._completed_tasks):
             task.abort(cause)
 
