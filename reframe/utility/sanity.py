@@ -135,7 +135,8 @@ def print(obj, *, sep=' ', end='\n', file=None, flush=False):
 
     .. versionchanged:: 3.4
        This function accepts now a single object argument in contrast to the
-       built-in :func:`print() <python:print>` function, which accepts multiple.
+       built-in :func:`print() <python:print>` function, which accepts
+       multiple.
 
     '''
 
