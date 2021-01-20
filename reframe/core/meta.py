@@ -32,7 +32,7 @@ class RegressionTestMeta(type):
 
         # Directives to add/modify a regression test variable
         namespace['var'] = local_var_space.add_attr
-        namespace['require'] = local_var_space.undefine_attr
+        namespace['require_var'] = local_var_space.undefine_attr
         namespace['set_var'] = local_var_space.define_attr
 
         return namespace
