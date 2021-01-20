@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -7,6 +7,7 @@ import builtins
 import collections.abc
 import glob as pyglob
 import itertools
+import os
 import re
 import sys
 
@@ -776,3 +777,39 @@ def iglob(pathname, recursive=False):
     '''Replacement for the :func:`glob.iglob() <python:glob.iglob>`
     function.'''
     return pyglob.iglob(pathname, recursive=recursive)
+
+
+@deferrable
+def path_exists(path):
+    '''Replacement for the :func:`os.path.exists` function.
+
+    .. versionadded:: 3.4
+    '''
+    return os.path.exists(path)
+
+
+@deferrable
+def path_isdir(path):
+    '''Replacement for the :func:`os.path.isdir` function.
+
+    .. versionadded:: 3.4
+    '''
+    return os.path.isdir(path)
+
+
+@deferrable
+def path_isfile(path):
+    '''Replacement for the :func:`os.path.isfile` function.
+
+    .. versionadded:: 3.4
+    '''
+    return os.path.isfile(path)
+
+
+@deferrable
+def path_islink(path):
+    '''Replacement for the :func:`os.path.islink` function.
+
+    .. versionadded:: 3.4
+    '''
+    return os.path.islink(path)

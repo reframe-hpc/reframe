@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -448,7 +448,7 @@ class SingleSource(BuildSystem):
 
         if ext in ['.f', '.for', '.ftn', '.F', '.FOR', '.fpp',
                    '.FPP', '.FTN', '.f90', '.f95', '.f03', '.f08',
-                   '.F90', '.F95', '.F03', '.F08']:
+                   '.F90', '.F95', '.F03', '.F08', '.cuf', '.CUF']:
             return 'Fortran'
 
         if ext in ['.cu']:

@@ -21,16 +21,6 @@ class _TestParameter:
     values, and inheritance behaviour. This class should be thought of as a
     temporary storage for these parameter attributes, before the full final
     parameter space is built.
-
-    :param name: parameter name
-    :param values: parameter values. If no values are passed, the parameter is
-        considered as declared but not defined (i.e. an abstract parameter).
-    :param inherit_params: If false, this parameter is marked to not inherit
-        any values for the same parameter that might have been defined in a
-        parent class.
-    :param filter_params: Function to filter/modify the inherited parameter
-        values from the parent classes. This only has an effect if used with
-        inherit_params=True.
     '''
 
     def __init__(self, name, *values,
@@ -92,11 +82,17 @@ class LocalParamSpace:
             )
 
     def add_param(self, name, *values, **kwargs):
-        '''Insert a new regression test parameter in the local parameter space.
+        '''Insert or modify a regression test parameter.
 
-        If the parameter is already present in the dictionary, raise an error.
-        See the _TestParameter class for further information on the
-        function arguments.
+        This method must be called directly in the class body. For each
+        regression test class definition, this function may only be called
+        once per parameter. Calling this method during or after the class
+        instantiation has an undefined behavior.
+
+        .. seealso::
+
+           :ref:`directives`
+
         '''
         self[name] = _TestParameter(name, *values, **kwargs)
 
@@ -145,6 +141,7 @@ class ParamSpace:
         spaces from the base classes, and also the local parameter space from
         the target class.
     '''
+
     def __init__(self, target_cls=None):
         self._params = {}
 

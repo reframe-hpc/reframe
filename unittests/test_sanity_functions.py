@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -817,3 +817,42 @@ def test_avg():
     # Check with empty container
     with pytest.raises(SanityError):
         sn.evaluate(sn.avg([]))
+
+
+def test_path_exists(tmp_path):
+    valid_dir = tmp_path / 'foo'
+    valid_dir.touch()
+    invalid_dir = tmp_path / 'bar'
+
+    assert sn.evaluate(sn.path_exists(valid_dir))
+    assert not sn.evaluate(sn.path_exists(invalid_dir))
+
+
+def test_path_isdir(tmp_path):
+    test_dir = tmp_path / 'bar'
+    test_dir.mkdir()
+    test_file = tmp_path / 'foo'
+    test_file.touch()
+
+    assert sn.evaluate(sn.path_isdir(test_dir))
+    assert not sn.evaluate(sn.path_isdir(test_file))
+
+
+def test_path_isfile(tmp_path):
+    test_file = tmp_path / 'foo'
+    test_file.touch()
+    test_dir = tmp_path / 'bar'
+    test_dir.mkdir()
+
+    assert sn.evaluate(sn.path_isfile(test_file))
+    assert not sn.evaluate(sn.path_isfile(test_dir))
+
+
+def test_path_islink(tmp_path):
+    test_file = tmp_path / 'foo'
+    test_file.touch()
+    test_link = tmp_path / 'bar'
+    test_link.symlink_to(test_file)
+
+    assert sn.evaluate(sn.path_islink(test_link))
+    assert not sn.evaluate(sn.path_islink(test_file))

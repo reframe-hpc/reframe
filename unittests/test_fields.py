@@ -1,10 +1,9 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
 import datetime
-import os
 import pytest
 
 import reframe.core.fields as fields
@@ -22,25 +21,6 @@ def test_not_set_attribute():
 
     with pytest.raises(AttributeError):
         getattr(c, 'var')
-
-
-def test_copy_on_write_field():
-    class FieldTester:
-        cow = fields.CopyOnWriteField()
-
-    tester = FieldTester()
-    var = [1, [2, 4], 3]
-
-    # Set copy-on-write field
-    tester.cow = var
-
-    # Verify that the lists are different
-    assert var is not tester.cow
-
-    # Make sure we have a deep copy
-    var[1].append(5)
-    assert tester.cow == [1, [2, 4], 3]
-    assert isinstance(FieldTester.cow, fields.CopyOnWriteField)
 
 
 def test_constant_field():
@@ -135,29 +115,6 @@ def test_timer_field():
         tester.field = -10
 
 
-def test_proxy_field():
-    class Target:
-        def __init__(self):
-            self.a = 1
-            self.b = 2
-
-    t = Target()
-
-    class Proxy:
-        a = fields.ForwardField(t, 'a')
-        b = fields.ForwardField(t, 'b')
-
-    proxy = Proxy()
-    assert isinstance(Proxy.a, fields.ForwardField)
-    assert 1 == proxy.a
-    assert 2 == proxy.b
-
-    proxy.a = 3
-    proxy.b = 4
-    assert 3 == t.a
-    assert 4 == t.b
-
-
 def test_deprecated_field():
     class FieldTester:
         value = fields.DeprecatedField(fields.TypedField(int),
@@ -201,26 +158,6 @@ def test_deprecated_field():
 
     with pytest.warns(ReframeDeprecationWarning):
         a = tester.wo
-
-
-def test_absolute_path_field():
-    class FieldTester:
-        value = fields.AbsolutePathField(type(None))
-
-        def __init__(self, value):
-            self.value = value
-
-    tester = FieldTester('foo')
-    assert os.path.abspath('foo') == tester.value
-
-    # Test set with an absolute path already
-    tester.value = os.path.abspath('foo')
-    assert os.path.abspath('foo') == tester.value
-
-    # This should not raise
-    tester.value = None
-    with pytest.raises(TypeError):
-        tester.value = 1
 
 
 def test_scoped_dict_field():
