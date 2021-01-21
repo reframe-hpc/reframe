@@ -441,7 +441,7 @@ Modifying the parallel launcher command
 Another relatively common need is to modify the parallel launcher command.
 ReFrame gives the ability to do that and we will see some examples in this section.
 
-The most common case is to pass arguments to the launcher command that you cannot pass them as job options.
+The most common case is to pass arguments to the launcher command that you cannot normally pass as job options.
 The ``--cpu-bind`` of ``srun`` is such an example.
 Inside a ReFrame test, you can access the parallel launcher through the :attr:`launcher <reframe.core.schedulers.Job.launcher>` of the job descriptor.
 This object handles all the details of how the parallel launch command will be emitted.
@@ -585,6 +585,10 @@ Consequently, we need to defer the attribute retrieval, thus we use the :func:`s
 .. |--flex-alloc-nodes| replace:: :attr:`--flex-alloc-nodes`
 .. _--flex-alloc-nodes: manpage.html#cmdoption-flex-alloc-nodes
 
+
+.. tip::
+
+   If you want to run multiple flexible tests at once, it's better to run them using the serial execution policy, because the first test might take all the available nodes and will cause the rest to fail immediately, since there will be no available nodes for them.
 
 
 Testing containerized applications

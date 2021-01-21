@@ -328,7 +328,6 @@ Notice, how the ``generic`` system matches any hostname, so that it acts as a fa
    The different systems in the configuration file are tried in order and the first match is picked.
    This practically means that the more general the selection pattern for a system is, the lower in the list of systems it should be.
 
-
 The :doc:`configure` page describes the configuration file in more detail and the :doc:`config_reference` provides a complete reference guide of all the configuration options of ReFrame.
 
 Let's now rerun our "Hello, World!" tests:

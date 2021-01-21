@@ -62,7 +62,7 @@ As suggested by the warning message, passing :option:`-v` will give you the stac
 
 .. code:: bash
 
-   ./bin/reframe -c tutorials/basics/hello -R  -lv
+   ./bin/reframe -c tutorials/basics/hello -R -lv
 
 .. code-block:: none
 
@@ -165,7 +165,7 @@ Let's try loading the ``tutorials/basics/hello/hello2.py`` file:
 
 .. code:: bash
 
-   ./bin/reframe -C tutorials/config/settings.py -c tutorials/basics/hello/hello2.py -r
+   ./bin/reframe -C tutorials/config/settings.py -c tutorials/basics/hello/hello2.py -lvv
 
 
 .. code-block:: none
