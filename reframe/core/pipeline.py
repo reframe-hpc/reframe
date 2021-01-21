@@ -9,7 +9,7 @@
 
 __all__ = [
     'CompileOnlyRegressionTest', 'RegressionTest', 'RunOnlyRegressionTest',
-    'DEPEND_BY_ENV', 'DEPEND_EXACT', 'DEPEND_FULLY', 'final'
+    'DEPEND_BY_ENV', 'DEPEND_EXACT', 'DEPEND_FULLY', 'final', 'RegressionMixin'
 ]
 
 
@@ -124,6 +124,18 @@ def final(fn):
         return fn(*args, **kwargs)
 
     return _wrapped
+
+
+class RegressionMixin(metaclass=RegressionTestMeta):
+    '''Base mixin class for regression tests.
+
+    Multiple inheritance from more than one
+    :class:`RegressionTest` class is not allowed in ReFrame. Hence, mixin
+    classes provide the flexibility to bundle reusable test add-ons, leveraging
+    the metaclass magic implemented in
+    :class:`RegressionTestMeta`. Using this metaclass allows mixin classes to
+    use powerful ReFrame features, such as hooks, parameters or variables.
+    '''
 
 
 class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):

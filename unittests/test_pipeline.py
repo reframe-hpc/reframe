@@ -609,7 +609,7 @@ def test_inherited_hooks(local_exec_ctx):
         def x(self):
             self.var += 1
 
-    class C(rfm.RegressionTest):
+    class C(rfm.RegressionMixin):
         @rfm.run_before('run')
         def y(self):
             self.foo = 1

@@ -131,7 +131,8 @@ class VarSpace(ReframeAttributes.AttrSpace):
         '''Join an existing VarSpace into the current one.'''
         for key, var in other_var_space.items():
 
-            # Make doubly declared vars illegal.
+            # Make doubly declared vars illegal. Note that this will be
+            # triggered when inheriting from multiple RegressionTest classes.
             if key in self._attr:
                 raise ValueError(
                     f'cannot redeclare a variable ({key})'
