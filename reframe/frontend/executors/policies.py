@@ -135,7 +135,9 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         except TaskExit:
             return
         except ABORT_REASONS as e:
-            task.abort(e)
+            if not task.failed:
+                task.abort(e)
+
             raise
         except BaseException:
             task.fail(sys.exc_info())
@@ -264,23 +266,24 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def on_task_failure(self, task):
         self._num_failed_tasks += 1
-        msg = f'{task.check.info()} [{task.pipeline_timings_basic()}]'
-        if task.failed_stage == 'cleanup':
-            self.printer.status('ERROR', msg, just='right')
-        else:
-            self._remove_from_running(task)
-            self.printer.status('FAIL', msg, just='right')
+        if not task.aborted:
+            msg = f'{task.check.info()} [{task.pipeline_timings_basic()}]'
+            if task.failed_stage == 'cleanup':
+                self.printer.status('ERROR', msg, just='right')
+            else:
+                self._remove_from_running(task)
+                self.printer.status('FAIL', msg, just='right')
 
-        stagedir = task.check.stagedir
-        if not stagedir:
-            stagedir = '<not available>'
+            stagedir = task.check.stagedir
+            if not stagedir:
+                stagedir = '<not available>'
 
-        getlogger().info(f'==> test failed during {task.failed_stage!r}: '
-                         f'test staged in {stagedir!r}')
-        getlogger().verbose(f'==> timings: {task.pipeline_timings_all()}')
-        if self._num_failed_tasks >= self.max_failures:
-            raise MaxFailError('the maximum number of failures has been '
-                               'reached')
+            getlogger().info(f'==> test failed during {task.failed_stage!r}: '
+                            f'test staged in {stagedir!r}')
+            getlogger().verbose(f'==> timings: {task.pipeline_timings_all()}')
+            if self._num_failed_tasks >= self.max_failures:
+                raise MaxFailError('the maximum number of failures has been '
+                                'reached')
 
     def on_task_success(self, task):
         msg = f'{task.check.info()} [{task.pipeline_timings_basic()}]'
@@ -375,6 +378,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 # task as well
                 task.abort(e)
 
+            self._failall(e, aborted=True)
             raise
 
     def _poll_tasks(self):
@@ -436,20 +440,23 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
         task.finalize()
 
-    def _failall(self, cause):
+    def _failall(self, cause, aborted=False):
         '''Mark all tests as failures'''
         getlogger().debug2(f'Aborting all tasks due to {type(cause).__name__}')
         for task in list(itertools.chain(*self._running_tasks.values())):
-            task.abort(cause)
+            if not task.failed:
+                task.abort(cause, aborted)
 
         self._running_tasks = {}
         for ready_list in self._ready_tasks.values():
             for task in ready_list:
-                task.abort(cause)
+                if not task.failed:
+                    task.abort(cause, aborted)
 
         for task in itertools.chain(self._waiting_tasks,
                                     self._completed_tasks):
-            task.abort(cause)
+            if not task.failed:
+                task.abort(cause, aborted)
 
     def _reschedule(self, task):
         getlogger().debug2(f'Scheduling test case {task.testcase} for running')
@@ -503,6 +510,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 with contextlib.suppress(TaskExit):
                     self._reschedule_all()
             except ABORT_REASONS as e:
+                self._failall(e, aborted=True)
                 raise
 
         self.printer.separator('short single line',

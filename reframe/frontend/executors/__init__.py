@@ -137,6 +137,8 @@ class RegressionTask:
         # Timestamps for the start and finish phases of the pipeline
         self._timestamps = {}
 
+        self.aborted = False
+
     def duration(self, phase):
         # Treat pseudo-phases first
         if phase == 'compile_complete':
@@ -303,12 +305,13 @@ class RegressionTask:
     def cleanup(self, *args, **kwargs):
         self._safe_call(self.check.cleanup, *args, **kwargs)
 
-    def fail(self, exc_info=None):
+    def fail(self, exc_info=None, aborted=False):
         self._failed_stage = self._current_stage
         self._exc_info = exc_info or sys.exc_info()
+        self.aborted = aborted
         self._notify_listeners('on_task_failure')
 
-    def abort(self, cause=None):
+    def abort(self, cause=None, aborted=False):
         logging.getlogger().debug2('Aborting test case: {self.testcase!r}')
         exc = AbortTaskError()
         exc.__cause__ = cause
@@ -318,11 +321,11 @@ class RegressionTask:
             if not self.zombie and self.check.job:
                 self.check.job.cancel()
         except JobNotStartedError:
-            self.fail((type(exc), exc, None))
+            self.fail((type(exc), exc, None), aborted=aborted)
         except BaseException:
-            self.fail()
+            self.fail(aborted=aborted)
         else:
-            self.fail((type(exc), exc, None))
+            self.fail((type(exc), exc, None), aborted=aborted)
 
 
 class TaskEventListener(abc.ABC):

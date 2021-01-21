@@ -33,7 +33,8 @@ class TestStats:
             raise errors.StatisticsError('no such run: %s' % run) from None
 
     def failures(self, run=-1):
-        return [t for t in self.tasks(run) if t.failed]
+        return [t for t in self.tasks(run) if (t.failed and
+                                               not t.aborted)]
 
     def num_cases(self, run=-1):
         return len(self.tasks(run))
@@ -185,6 +186,10 @@ class TestStats:
         last_run = run_report['runid']
         for r in run_report['testcases']:
             if r['result'] == 'success':
+                continue
+
+            if (r['fail_reason'] == 'aborted due to MaxFailError' or
+                r['fail_reason'] == 'aborted due to KeyboardInterrupt'):
                 continue
 
             retry_info = (
