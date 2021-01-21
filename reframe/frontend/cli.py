@@ -38,7 +38,6 @@ from reframe.frontend.executors.policies import (SerialExecutionPolicy,
 from reframe.frontend.executors import Runner, generate_testcases
 
 
-
 ABORT_REASONS = (AssertionError, MaxFailError, KeyboardInterrupt,
                  ReframeForceExitError)
 

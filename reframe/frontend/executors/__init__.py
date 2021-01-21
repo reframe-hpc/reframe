@@ -415,8 +415,9 @@ class Runner:
 
             self._printer.status(
                 mssg,
-                f'Ran {self._printer._progress_count}/{len(testcases)} test case(s) from '
-                f'{num_checks} check(s) ({num_failures} failure(s))',
+                f'Ran {self._printer._progress_count}/{len(testcases)}'
+                f' test case(s) from {num_checks} check(s) '
+                f'({num_failures} failure(s))',
                 just='center'
             )
             if abort_reason:
