@@ -93,10 +93,6 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._task_index[case] = task
         self.stats.add_task(task)
         try:
-            if self._num_failed_tasks >= self.max_failures:
-                raise MaxFailError('the maximum number of failures has been '
-                                   'reached')
-
             # Do not run test if any of its dependencies has failed
             # NOTE: Restored dependencies are not in the task_index
             if any(self._task_index[c].failed
@@ -173,6 +169,9 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         getlogger().info(f'==> test failed during {task.failed_stage!r}: '
                          f'test staged in {task.check.stagedir!r}')
         getlogger().verbose(f'==> {timings}')
+        if self._num_failed_tasks >= self.max_failures:
+            raise MaxFailError('the maximum number of failures has been '
+                               'reached')
 
     def on_task_success(self, task):
         timings = task.pipeline_timings(['compile_complete',
@@ -279,6 +278,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         getlogger().info(f'==> test failed during {task.failed_stage!r}: '
                          f'test staged in {stagedir!r}')
         getlogger().verbose(f'==> timings: {task.pipeline_timings_all()}')
+        if self._num_failed_tasks >= self.max_failures:
+            raise MaxFailError('the maximum number of failures has been '
+                               'reached')
 
     def on_task_success(self, task):
         msg = f'{task.check.info()} [{task.pipeline_timings_basic()}]'
@@ -373,7 +375,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 # task as well
                 task.abort(e)
 
-            self._failall(e)
             raise
 
     def _poll_tasks(self):
@@ -502,14 +503,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 with contextlib.suppress(TaskExit):
                     self._reschedule_all()
             except ABORT_REASONS as e:
-                self._failall(e)
                 raise
-
-            if self._num_failed_tasks >= self.max_failures:
-                exc = MaxFailError('the maximum number of failures has been '
-                                   'reached')
-                self._failall(exc)
-                break
 
         self.printer.separator('short single line',
                                'all spawned checks have finished\n')

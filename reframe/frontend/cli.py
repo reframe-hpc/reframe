@@ -28,12 +28,19 @@ import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 
 
+from reframe.core.exceptions import (AbortTaskError, JobNotStartedError,
+                                     MaxFailError, ReframeForceExitError,
+                                     TaskExit)
 from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
 from reframe.frontend.executors import Runner, generate_testcases
 
+
+
+ABORT_REASONS = (AssertionError, MaxFailError, KeyboardInterrupt,
+                 ReframeForceExitError)
 
 def format_check(check, check_deps, detailed=False):
     def fmt_list(x):

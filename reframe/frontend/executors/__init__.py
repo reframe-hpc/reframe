@@ -16,13 +16,14 @@ import reframe.core.runtime as runtime
 import reframe.frontend.dependencies as dependencies
 import reframe.utility.jsonext as jsonext
 from reframe.core.exceptions import (AbortTaskError, JobNotStartedError,
-                                     ReframeForceExitError, TaskExit)
+                                     MaxFailError, ReframeForceExitError,
+                                     TaskExit)
 from reframe.core.schedulers.local import LocalJobScheduler
 from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.statistics import TestStats
 
-
-ABORT_REASONS = (KeyboardInterrupt, ReframeForceExitError, AssertionError)
+ABORT_REASONS = (AssertionError, MaxFailError, KeyboardInterrupt,
+                 ReframeForceExitError)
 
 
 class TestCase:
@@ -382,6 +383,7 @@ class Runner:
         return self._stats
 
     def runall(self, testcases, restored_cases=None):
+        abort_reason = None
         num_checks = len({tc.check.name for tc in testcases})
         self._printer.separator('short double line',
                                 'Running %d check(s)' % num_checks)
@@ -392,15 +394,34 @@ class Runner:
             if self._max_retries:
                 restored_cases = restored_cases or []
                 self._retry_failed(testcases + restored_cases)
-
+        except AssertionError:
+            abort_reason = "assertion error"
+            raise
+        except MaxFailError:
+            abort_reason = "maximum number of failures reached"
+        except KeyboardInterrupt:
+            abort_reason = "keyboard interrupt"
+            raise
+        except ReframeForceExitError:
+            abort_reason = "reframe error"
+            raise
         finally:
             # Print the summary line
             num_failures = len(self._stats.failures())
+            if abort_reason or num_failures:
+                mssg = 'FAILED'
+            else:
+                mssg = 'PASSED'
+
             self._printer.status(
-                'FAILED' if num_failures else 'PASSED',
-                'Ran %d test case(s) from %d check(s) (%d failure(s))' %
-                (len(testcases), num_checks, num_failures), just='center'
+                mssg,
+                f'Ran {self._printer._progress_count}/{len(testcases)} test case(s) from '
+                f'{num_checks} check(s) ({num_failures} failure(s))',
+                just='center'
             )
+            if abort_reason:
+                logging.getlogger().info(f'Aborted due to {abort_reason}')
+
             self._printer.timestamp('Finished on', 'short double line')
 
     def _retry_failed(self, cases):
