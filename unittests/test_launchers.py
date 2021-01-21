@@ -85,7 +85,7 @@ def job(make_job, launcher):
     job.num_cpus_per_task = 2
     job.use_smt = True
     job.time_limit = '10m'
-    job.options += ['--gres=gpu:4', '#DW jobdw anything']
+    job.options = ['--gres=gpu:4', '#DW jobdw anything']
     job.launcher.options = ['--foo']
     return job
 
@@ -130,8 +130,8 @@ def test_run_command(job):
                            '--cpus-per-task=2 '
                            '--exclusive '
                            '--hint=multithread '
-                           '--fake '
                            '--gres=gpu:4 '
+                           '--fake '
                            '--foo')
     elif launcher_name == 'ssh':
         assert command == 'ssh -o BatchMode=yes -l user -p 22222 --foo host'
