@@ -696,12 +696,18 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #: :type: boolean : :default: :class:`True`
     build_locally = fields.TypedField(bool)
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args, _rfm_use_params=False, **kwargs):
         obj = super().__new__(cls)
+
+        # Set the test parameters in the object
+        cls._init_params(obj, _rfm_use_params)
 
         # Create a test name from the class name and the constructor's
         # arguments
         name = cls.__qualname__
+        name += obj._append_parameters_to_name()
+
+        # or alternatively, if the parameterized test was defined the old way.
         if args or kwargs:
             arg_names = map(lambda x: util.toalphanum(str(x)),
                             itertools.chain(args, kwargs.values()))
@@ -726,6 +732,43 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
 
     def __init__(self):
         pass
+
+    @classmethod
+    def _init_params(cls, obj, use_params=False):
+        '''Attach the test parameters as class attributes.
+
+        Create and initialize the regression test parameters as object
+        attributes. The values assigned to these parameters exclusively depend
+        on the use_params argument. If this is set to True, the current object
+        uses the parameter space iterator (see
+        :class  `reframe.core.pipeline.RegressionTest` and consumes a set of
+        parameter values (i.e. a point in the parameter space). Contrarily, if
+        use_params is False, the regression test parameters are initialized as
+        None.
+
+        :param use_param: bool that dictates whether an instance of the
+        :class `reframe.core.pipeline.RegressionTest` is to use the
+        parameter values defined in the parameter space.
+
+        :meta private:
+        '''
+        # Set the values of the test parameters (if any)
+        if use_params and cls._rfm_param_space.params:
+            # Consume the parameter space iterator
+            param_values = next(cls._rfm_param_space.unique_iter)
+            for index, key in enumerate(cls._rfm_param_space.params):
+                setattr(obj, key, param_values[index])
+        else:
+            # Otherwise init the params as None
+            for key in cls._rfm_param_space.params:
+                setattr(obj, key, None)
+
+    def _append_parameters_to_name(self):
+        if self._rfm_param_space.params:
+            return '_' + '_'.join([str(self.__dict__[key])
+                                   for key in self._rfm_param_space.params])
+        else:
+            return ''
 
     @classmethod
     def __init_subclass__(cls, *, special=False, pin_prefix=False, **kwargs):
