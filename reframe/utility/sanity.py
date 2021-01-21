@@ -392,6 +392,31 @@ def assert_found(patt, filename, msg=None, encoding='utf-8'):
 
 
 @deferrable
+def assert_found_s(patt, string, msg=None):
+    '''Assert that regex pattern ``patt`` is found in the string ``string``.
+
+    :arg patt: The regex pattern to search.
+        Any standard Python `regular expression
+        <https://docs.python.org/3/library/re.html#regular-expression-syntax>`_
+        is accepted.
+        The `re.MULTILINE
+        <https://docs.python.org/3/library/re.html#re.MULTILINE>`_ flag
+        is set for the pattern search.
+    :arg string: The string to examine.
+    :returns: ``True`` on success.
+    :raises reframe.core.exceptions.SanityError: if assertion fails.
+    '''
+    num_matches = count(finditer_s(patt, string))
+    try:
+        evaluate(assert_true(num_matches))
+    except SanityError:
+        error_msg = msg or "pattern `{0}' not found in given string"
+        raise SanityError(_format(error_msg, patt, string))
+    else:
+        return True
+
+
+@deferrable
 def assert_not_found(patt, filename, msg=None, encoding='utf-8'):
     '''Assert that regex pattern ``patt`` is not found in the file
     ``filename``.
@@ -408,6 +433,24 @@ def assert_not_found(patt, filename, msg=None, encoding='utf-8'):
     else:
         error_msg = msg or "pattern `{0}' found in `{1}'"
         raise SanityError(_format(error_msg, patt, filename))
+
+
+@deferrable
+def assert_not_found_s(patt, string, msg=None):
+    '''Assert that regex pattern ``patt`` is not found in ``string``.
+
+    This is the inverse of :func:`assert_found_s()`.
+
+    :returns: ``True`` on success.
+    :raises reframe.core.exceptions.SanityError: if assertion fails.
+    '''
+    try:
+        evaluate(assert_found_s(patt, string, msg))
+    except SanityError:
+        return True
+    else:
+        error_msg = msg or "pattern `{0}' found in the given string"
+        raise SanityError(_format(error_msg, patt))
 
 
 @deferrable
@@ -456,16 +499,18 @@ def assert_reference(val, ref, lower_thres=None, upper_thres=None, msg=None):
         try:
             evaluate(assert_bounded(lower_thres, lower_thres_limit, 0))
         except SanityError:
-            raise SanityError('invalid low threshold value: %s' %
-                              lower_thres) from None
+            raise SanityError(
+                f'invalid low threshold value: {lower_thres}'
+            ) from None
 
     if upper_thres is not None:
         upper_thres_limit = None if ref >= 0 else 1
         try:
             evaluate(assert_bounded(upper_thres, 0, upper_thres_limit))
         except SanityError:
-            raise SanityError('invalid high threshold value: %s' %
-                              upper_thres) from None
+            raise SanityError(
+                f'invalid high threshold value: {upper_thres}'
+            ) from None
 
     def calc_bound(thres):
         if thres is None:
@@ -503,7 +548,20 @@ def finditer(patt, filename, encoding='utf-8'):
             yield from re.finditer(patt, fp.read(), re.MULTILINE)
     except OSError as e:
         # Re-raise it as sanity error
-        raise SanityError('%s: %s' % (filename, e.strerror))
+        raise SanityError(f'{filename}: {e.strerror}')
+
+
+@deferrable
+def finditer_s(patt, string):
+    '''Get an iterator over the matches of the regex ``patt`` in ``string``.
+
+    This function is equivalent to :func:`findall_s()` except that it returns
+    a generator object instead of a list, which you can use to iterate over
+    the raw matches.
+
+    .. versionadded:: 3.4
+    '''
+    yield from re.finditer(patt, string, re.MULTILINE)
 
 
 @deferrable
@@ -525,6 +583,26 @@ def findall(patt, filename, encoding='utf-8'):
         raised while processing ``filename``.
     '''
     return list(evaluate(x) for x in finditer(patt, filename, encoding))
+
+
+@deferrable
+def findall_s(patt, string):
+    '''Get all matches of regex ``patt`` in ``string``.
+
+    :arg patt: The regex pattern to search.
+        Any standard Python `regular expression
+        <https://docs.python.org/3/library/re.html#regular-expression-syntax>`_
+        is accepted.
+        The `re.MULTILINE
+        <https://docs.python.org/3/library/re.html#re.MULTILINE>`_ flag
+        is set for the pattern search.
+    :arg string: The string to examine.
+    :returns: A list of raw `regex match objects
+        <https://docs.python.org/3/library/re.html#match-objects>`_.
+
+    .. versionadded:: 3.4
+    '''
+    return list(evaluate(x) for x in finditer_s(patt, string))
 
 
 def _callable_name(fn):
@@ -606,6 +684,72 @@ def extractiter(patt, filename, tag=0, conv=None, encoding='utf-8'):
         yield from _extractiter_singletag(patt, filename, tag, conv, encoding)
 
 
+def _extractiter_singletag_s(patt, string, tag, conv):
+    if isinstance(conv, collections.abc.Iterable):
+        raise SanityError(f'multiple conversion functions given for the '
+                          f'single capturing group {tag!r}')
+
+    for m in finditer_s(patt, string):
+        try:
+            val = m.group(tag)
+        except (IndexError, KeyError):
+            raise SanityError(f'no such group in pattern {patt!r}: {tag}')
+
+        try:
+            yield conv(val) if callable(conv) else val
+        except ValueError:
+            fn_name = _callable_name(conv)
+            raise SanityError(
+                f'could not convert value {val!r} using {fn_name}()'
+            )
+
+
+def _extractiter_multitag_s(patt, string, tags, conv):
+    for m in finditer_s(patt, string):
+        val = []
+        for t in tags:
+            try:
+                val.append(m.group(t))
+            except (IndexError, KeyError):
+                raise SanityError(f'no such group in pattern {patt!r}: {t}')
+
+        converted_vals = []
+        if not isinstance(conv, collections.abc.Iterable):
+            conv = [conv] * builtins.len(val)
+        elif builtins.len(conv) > builtins.len(val):
+            conv = conv[:builtins.len(val)]
+
+        # Use the last function in case we have less conversion functions than
+        # tags
+        for v, c in itertools.zip_longest(val, conv, fillvalue=conv[-1]):
+            try:
+                converted_vals.append(c(v) if callable(c) else v)
+            except ValueError:
+                fn_name = _callable_name(conv)
+                raise SanityError(
+                    f'could not convert value {v!r} using {fn_name}()'
+                )
+
+        yield tuple(converted_vals)
+
+
+@deferrable
+def extractiter_s(patt, string, tag=0, conv=None):
+    '''Get an iterator over the values extracted from the capturing group
+    ``tag`` of a matching regex ``patt`` in ``string``.
+
+    This function is equivalent to :func:`extractall_s` except that it returns
+    a generator object, instead of a list, which you can use to iterate over
+    the extracted values.
+
+    .. versionadded:: 3.4
+    '''
+    if isinstance(tag, collections.abc.Iterable) and not isinstance(tag, str):
+        yield from _extractiter_multitag_s(patt, string, tag, conv)
+    else:
+        yield from _extractiter_singletag_s(patt, string, tag, conv)
+
+
 @deferrable
 def extractall(patt, filename, tag=0, conv=None, encoding='utf-8'):
     '''Extract all values from the capturing group ``tag`` of a matching regex
@@ -649,6 +793,42 @@ def extractall(patt, filename, tag=0, conv=None, encoding='utf-8'):
 
 
 @deferrable
+def extractall_s(patt, string, tag=0, conv=None):
+    '''Extract all values from the capturing group ``tag`` of a matching regex
+    ``patt`` in ``string``.
+
+    :arg patt: The regex pattern to search.
+        Any standard Python `regular expression
+        <https://docs.python.org/3/library/re.html#regular-expression-syntax>`_
+        is accepted.
+        The `re.MULTILINE
+        <https://docs.python.org/3/library/re.html#re.MULTILINE>`_ flag
+        is set for the pattern search.
+    :arg string: The string to examine.
+    :arg tag: The regex capturing group to be extracted.
+        Group ``0`` refers always to the whole match.
+        Since the `re.MULTILINE` is set for the pattern search, group ``0``
+        returns the whole line that was matched.
+    :arg conv: A callable or iterable of callables taking a single argument
+        and returning a new value.
+        If not an iterable, it will be used to convert the extracted values for
+        all the capturing groups specified in ``tag``.
+        Otherwise, each conversion function will be used to convert the value
+        extracted from the corresponding capturing group in ``tag``.
+        If more conversion functions are supplied than the corresponding
+        capturing groups in ``tag``, the last conversion function will be used
+        for the additional capturing groups.
+    :returns: A list of tuples of converted values extracted from the
+         capturing groups specified in ``tag``, if ``tag`` is an iterable.
+         Otherwise, a list of the converted values extracted from the single
+         capturing group specified in ``tag``.
+
+    .. versionadded:: 3.4
+    '''
+    return list(evaluate(x) for x in extractiter_s(patt, string, tag, conv))
+
+
+@deferrable
 def extractsingle(patt, filename, tag=0, conv=None, item=0, encoding='utf-8'):
     '''Extract a single value from the capturing group ``tag`` of a matching
     regex ``patt`` in the file ``filename``.
@@ -665,6 +845,8 @@ def extractsingle(patt, filename, tag=0, conv=None, item=0, encoding='utf-8'):
     :arg item: the specific element to extract.
     :returns: The extracted value.
     :raises reframe.core.exceptions.SanityError: In case of errors.
+
+    .. versionadded:: 3.4
     '''
     try:
         # Explicitly evaluate the expression here, so as to force any exception
@@ -673,8 +855,39 @@ def extractsingle(patt, filename, tag=0, conv=None, item=0, encoding='utf-8'):
         return evaluate(extractall(patt, filename, tag, conv, encoding)[item])
     except IndexError:
         raise SanityError(
-            "not enough matches of pattern `%s' in file `%s' "
-            "so as to extract item `%s'" % (patt, filename, item)
+            f'not enough matches of pattern {patt!r} in file {filename!r} '
+            f'so as to extract item {item!r}'
+        )
+
+
+@deferrable
+def extractsingle_s(patt, string, tag=0, conv=None, item=0):
+    '''Extract a single value from the capturing group ``tag`` of a matching
+    regex ``patt`` in ``string``.
+
+    This function is equivalent to ``extractall_s(patt, string, tag,
+    conv)[item]``, except that it raises a ``SanityError`` if ``item`` is out
+    of bounds.
+
+    :arg patt: as in :func:`extractall_s`.
+    :arg string: as in :func:`extractall_s`.
+    :arg tag: as in :func:`extractall_s`.
+    :arg conv: as in :func:`extractall_s`.
+    :arg item: the specific element to extract.
+    :returns: The extracted value.
+    :raises reframe.core.exceptions.SanityError: In case of errors.
+
+    .. versionadded:: 3.4
+    '''
+    try:
+        # Explicitly evaluate the expression here, so as to force any exception
+        # to be thrown in this context and not during the evaluation of an
+        # expression containing this one.
+        return evaluate(extractall_s(patt, string, tag, conv)[item])
+    except IndexError:
+        raise SanityError(
+            f'not enough matches of pattern {patt!r} in the given string '
+            f'so as to extract item {item!r}'
         )
 
 
@@ -742,9 +955,9 @@ def getitem(container, item):
     try:
         return container[item]
     except KeyError:
-        raise SanityError('key not found: %s' % item)
+        raise SanityError(f'key not found: {item}')
     except IndexError:
-        raise SanityError('index out of bounds: %s' % item)
+        raise SanityError(f'index out of bounds: {item}')
 
 
 @deferrable
