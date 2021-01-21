@@ -91,7 +91,7 @@ class PbsJobScheduler(sched.JobScheduler):
         # Options starting with `-` are emitted in separate lines
         rem_opts = []
         verb_opts = []
-        for opt in (*job.sched_access, *job.options):
+        for opt in (*job.sched_access, *job.options, *job.sched_options):
             if opt.startswith('-'):
                 rem_opts.append(opt)
             elif opt.startswith('#'):
