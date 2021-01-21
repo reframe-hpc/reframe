@@ -180,7 +180,7 @@ class Job(jsonext.JSONSerializable):
         self.num_cpus_per_task = None
         self.use_smt = None
         self.time_limit = None
-        self.sched_options = list(sched_options) if sched_options else []
+        self.cli_options = list(sched_options) if sched_options else []
         self.options = []
 
         self._name = name

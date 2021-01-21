@@ -149,11 +149,11 @@ class SlurmJobScheduler(sched.JobScheduler):
         ]
 
         # Determine if job refers to a Slurm job array, by looking into the
-        # job.options and job.sched_options
+        # job.options and job.cli_options
         jobarr_parser = ArgumentParser()
         jobarr_parser.add_argument('-a', '--array')
         parsed_args, _ = jobarr_parser.parse_known_args(
-            job.options + job.sched_options
+            job.options + job.cli_options
         )
         if parsed_args.array:
             job._is_array = True
@@ -200,7 +200,7 @@ class SlurmJobScheduler(sched.JobScheduler):
         # NOTE: Here last of the passed --constraint job options is taken
         # into account in order to respect the behavior of slurm.
         parsed_options, _ = constraint_parser.parse_known_args(
-            job.options + job.sched_options
+            job.options + job.cli_options
         )
         if parsed_options.constraint:
             constraints.append(parsed_options.constraint.strip())
@@ -212,7 +212,7 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         preamble.append(self._format_option(hint, '--hint={0}'))
         prefix_patt = re.compile(r'(#\w+)')
-        for opt in job.options + job.sched_options:
+        for opt in job.options + job.cli_options:
             if opt.strip().startswith(('-C', '--constraint')):
                 # Constraints are already processed
                 continue
@@ -271,7 +271,7 @@ class SlurmJobScheduler(sched.JobScheduler):
         # Collect options that restrict node selection, but we need to first
         # create a mutable list out of the immutable SequenceView that
         # sched_access is
-        options = list(job.sched_access + job.options + job.sched_options)
+        options = list(job.sched_access + job.options + job.cli_options)
         option_parser = ArgumentParser()
         option_parser.add_argument('--reservation')
         option_parser.add_argument('-p', '--partition')
