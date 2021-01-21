@@ -6,6 +6,7 @@
 import os
 import pytest
 import re
+import sys
 
 import reframe as rfm
 import reframe.core.runtime as rt
@@ -14,9 +15,6 @@ import reframe.utility.sanity as sn
 import unittests.fixtures as fixtures
 from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
                                      PerformanceError, SanityError)
-from reframe.frontend.loader import RegressionCheckLoader
-from unittests.resources.checks.hellocheck import HelloTest
-from unittests.resources.checks.pinnedcheck import PinnedTest
 
 
 def _run(test, partition, prgenv):
@@ -30,9 +28,25 @@ def _run(test, partition, prgenv):
     test.cleanup(remove_files=True)
 
 
-def load_test(testfile):
-    loader = RegressionCheckLoader(['unittests/resources/checks'])
-    return loader.load_from_file(testfile)
+@pytest.fixture
+def hellotest():
+    from unittests.resources.checks.hellocheck import HelloTest
+    yield HelloTest
+    del sys.modules['unittests.resources.checks.hellocheck']
+
+
+@pytest.fixture
+def hellomaketest():
+    from unittests.resources.checks.hellocheck_make import HelloMakeTest
+    yield HelloMakeTest
+    del sys.modules['unittests.resources.checks.hellocheck_make']
+
+
+@pytest.fixture
+def pinnedtest():
+    from unittests.resources.checks.pinnedcheck import PinnedTest
+    yield PinnedTest
+    del sys.modules['unittests.resources.checks.pinnedcheck']
 
 
 @pytest.fixture
@@ -63,10 +77,6 @@ def user_system(temp_runtime):
     else:
         yield generic_system
 
-
-@pytest.fixture
-def hellotest():
-    yield load_test('unittests/resources/checks/hellocheck.py')[0]
 
 
 @pytest.fixture
@@ -149,48 +159,52 @@ def test_eq():
 
 
 def test_environ_setup(hellotest, local_exec_ctx):
+    inst = hellotest()
+
     # Use test environment for the regression check
-    hellotest.variables = {'_FOO_': '1', '_BAR_': '2'}
-    hellotest.setup(*local_exec_ctx)
-    for k in hellotest.variables.keys():
+    inst.variables = {'_FOO_': '1', '_BAR_': '2'}
+    inst.setup(*local_exec_ctx)
+    for k in inst.variables.keys():
         assert k not in os.environ
 
 
 def test_hellocheck(hellotest, remote_exec_ctx):
-    _run(hellotest, *remote_exec_ctx)
+    _run(hellotest(), *remote_exec_ctx)
 
 
-def test_hellocheck_make(remote_exec_ctx):
-    test = load_test('unittests/resources/checks/hellocheck_make.py')[0]
-    _run(test, *remote_exec_ctx)
+def test_hellocheck_make(hellomaketest, remote_exec_ctx):
+    _run(hellomaketest(), *remote_exec_ctx)
 
 
 def test_hellocheck_local(hellotest, local_exec_ctx):
+    inst = hellotest()
+
     # Test also the prebuild/postbuild functionality
-    hellotest.prebuild_cmds = ['touch prebuild', 'mkdir -p  prebuild_dir/foo']
-    hellotest.postbuild_cmds = ['touch postbuild', 'mkdir postbuild_dir']
-    hellotest.keep_files = ['prebuild', 'postbuild', '*dir']
+    inst.prebuild_cmds = ['touch prebuild', 'mkdir -p  prebuild_dir/foo']
+    inst.postbuild_cmds = ['touch postbuild', 'mkdir postbuild_dir']
+    inst.keep_files = ['prebuild', 'postbuild', '*dir']
 
     # Force local execution of the test; just for testing .local
-    hellotest.local = True
-    _run(hellotest, *local_exec_ctx)
+    inst.local = True
+    _run(inst, *local_exec_ctx)
     must_keep = [
-        hellotest.stdout.evaluate(),
-        hellotest.stderr.evaluate(),
-        hellotest.build_stdout.evaluate(),
-        hellotest.build_stderr.evaluate(),
-        hellotest.job.script_filename,
+        inst.stdout.evaluate(),
+        inst.stderr.evaluate(),
+        inst.build_stdout.evaluate(),
+        inst.build_stderr.evaluate(),
+        inst.job.script_filename,
         'prebuild', 'postbuild', 'prebuild_dir',
         'prebuild_dir/foo', 'postbuild_dir'
     ]
     for f in must_keep:
-        assert os.path.exists(os.path.join(hellotest.outputdir, f))
+        assert os.path.exists(os.path.join(inst.outputdir, f))
 
 
 def test_hellocheck_build_remotely(hellotest, remote_exec_ctx):
-    hellotest.build_locally = False
-    _run(hellotest, *remote_exec_ctx)
-    assert not hellotest.build_job.scheduler.is_local
+    inst = hellotest()
+    inst.build_locally = False
+    _run(inst, *remote_exec_ctx)
+    assert not inst.build_job.scheduler.is_local
 
 
 def test_hellocheck_local_prepost_run(hellotest, local_exec_ctx):
@@ -198,16 +212,18 @@ def test_hellocheck_local_prepost_run(hellotest, local_exec_ctx):
     def stagedir(test):
         return test.stagedir
 
+    inst = hellotest()
+
     # Test also the prebuild/postbuild functionality
-    hellotest.prerun_cmds = ['echo prerun: `pwd`']
-    hellotest.postrun_cmds = ['echo postrun: `pwd`']
-    pre_run_path = sn.extractsingle(r'^prerun: (\S+)', hellotest.stdout, 1)
-    post_run_path = sn.extractsingle(r'^postrun: (\S+)', hellotest.stdout, 1)
-    hellotest.sanity_patterns = sn.all([
-        sn.assert_eq(stagedir(hellotest), pre_run_path),
-        sn.assert_eq(stagedir(hellotest), post_run_path),
+    inst.prerun_cmds = ['echo prerun: `pwd`']
+    inst.postrun_cmds = ['echo postrun: `pwd`']
+    pre_run_path = sn.extractsingle(r'^prerun: (\S+)', inst.stdout, 1)
+    post_run_path = sn.extractsingle(r'^postrun: (\S+)', inst.stdout, 1)
+    inst.sanity_patterns = sn.all([
+        sn.assert_eq(stagedir(inst), pre_run_path),
+        sn.assert_eq(stagedir(inst), post_run_path),
     ])
-    _run(hellotest, *local_exec_ctx)
+    _run(inst, *local_exec_ctx)
 
 
 def test_run_only_sanity(local_exec_ctx):
@@ -269,8 +285,8 @@ def test_compile_only_warning(local_exec_ctx):
     _run(MyTest(), *local_exec_ctx)
 
 
-def test_pinned_test(local_exec_ctx):
-    class MyTest(PinnedTest):
+def test_pinned_test(pinnedtest, local_exec_ctx):
+    class MyTest(pinnedtest):
         pass
 
     pinned = MyTest()
@@ -279,59 +295,61 @@ def test_pinned_test(local_exec_ctx):
 
 
 def test_supports_system(hellotest, testsys_system):
-    hellotest.valid_systems = ['*']
-    assert hellotest.supports_system('gpu')
-    assert hellotest.supports_system('login')
-    assert hellotest.supports_system('testsys:gpu')
-    assert hellotest.supports_system('testsys:login')
+    inst = hellotest()
+    inst.valid_systems = ['*']
+    assert inst.supports_system('gpu')
+    assert inst.supports_system('login')
+    assert inst.supports_system('testsys:gpu')
+    assert inst.supports_system('testsys:login')
 
-    hellotest.valid_systems = ['*:*']
-    assert hellotest.supports_system('gpu')
-    assert hellotest.supports_system('login')
-    assert hellotest.supports_system('testsys:gpu')
-    assert hellotest.supports_system('testsys:login')
+    inst.valid_systems = ['*:*']
+    assert inst.supports_system('gpu')
+    assert inst.supports_system('login')
+    assert inst.supports_system('testsys:gpu')
+    assert inst.supports_system('testsys:login')
 
-    hellotest.valid_systems = ['testsys']
-    assert hellotest.supports_system('gpu')
-    assert hellotest.supports_system('login')
-    assert hellotest.supports_system('testsys:gpu')
-    assert hellotest.supports_system('testsys:login')
+    inst.valid_systems = ['testsys']
+    assert inst.supports_system('gpu')
+    assert inst.supports_system('login')
+    assert inst.supports_system('testsys:gpu')
+    assert inst.supports_system('testsys:login')
 
-    hellotest.valid_systems = ['testsys:gpu']
-    assert hellotest.supports_system('gpu')
-    assert not hellotest.supports_system('login')
-    assert hellotest.supports_system('testsys:gpu')
-    assert not hellotest.supports_system('testsys:login')
+    inst.valid_systems = ['testsys:gpu']
+    assert inst.supports_system('gpu')
+    assert not inst.supports_system('login')
+    assert inst.supports_system('testsys:gpu')
+    assert not inst.supports_system('testsys:login')
 
-    hellotest.valid_systems = ['testsys:login']
-    assert not hellotest.supports_system('gpu')
-    assert hellotest.supports_system('login')
-    assert not hellotest.supports_system('testsys:gpu')
-    assert hellotest.supports_system('testsys:login')
+    inst.valid_systems = ['testsys:login']
+    assert not inst.supports_system('gpu')
+    assert inst.supports_system('login')
+    assert not inst.supports_system('testsys:gpu')
+    assert inst.supports_system('testsys:login')
 
-    hellotest.valid_systems = ['foo']
-    assert not hellotest.supports_system('gpu')
-    assert not hellotest.supports_system('login')
-    assert not hellotest.supports_system('testsys:gpu')
-    assert not hellotest.supports_system('testsys:login')
+    inst.valid_systems = ['foo']
+    assert not inst.supports_system('gpu')
+    assert not inst.supports_system('login')
+    assert not inst.supports_system('testsys:gpu')
+    assert not inst.supports_system('testsys:login')
 
-    hellotest.valid_systems = ['*:gpu']
-    assert hellotest.supports_system('testsys:gpu')
-    assert hellotest.supports_system('foo:gpu')
-    assert not hellotest.supports_system('testsys:cpu')
-    assert not hellotest.supports_system('testsys:login')
+    inst.valid_systems = ['*:gpu']
+    assert inst.supports_system('testsys:gpu')
+    assert inst.supports_system('foo:gpu')
+    assert not inst.supports_system('testsys:cpu')
+    assert not inst.supports_system('testsys:login')
 
-    hellotest.valid_systems = ['testsys:*']
-    assert hellotest.supports_system('testsys:login')
-    assert hellotest.supports_system('gpu')
-    assert not hellotest.supports_system('foo:gpu')
+    inst.valid_systems = ['testsys:*']
+    assert inst.supports_system('testsys:login')
+    assert inst.supports_system('gpu')
+    assert not inst.supports_system('foo:gpu')
 
 
 def test_supports_environ(hellotest, generic_system):
-    hellotest.valid_prog_environs = ['*']
-    assert hellotest.supports_environ('foo1')
-    assert hellotest.supports_environ('foo-env')
-    assert hellotest.supports_environ('*')
+    inst = hellotest()
+    inst.valid_prog_environs = ['*']
+    assert inst.supports_environ('foo1')
+    assert inst.supports_environ('foo-env')
+    assert inst.supports_environ('*')
 
 
 def test_sourcesdir_none(local_exec_ctx):
@@ -450,9 +468,9 @@ def test_sourcepath_non_existent(local_exec_ctx):
         test.compile_wait()
 
 
-def test_extra_resources(testsys_system):
+def test_extra_resources(hellotest, testsys_system):
     @fixtures.custom_prefix('unittests/resources/checks')
-    class MyTest(HelloTest):
+    class MyTest(hellotest):
         def __init__(self):
             super().__init__()
             self.name = type(self).__name__
@@ -479,9 +497,9 @@ def test_extra_resources(testsys_system):
     assert expected_job_options == set(test.job.options)
 
 
-def test_setup_hooks(local_exec_ctx):
+def test_setup_hooks(hellotest, local_exec_ctx):
     @fixtures.custom_prefix('unittests/resources/checks')
-    class MyTest(HelloTest):
+    class MyTest(hellotest):
         def __init__(self):
             super().__init__()
             self.name = type(self).__name__
@@ -503,9 +521,9 @@ def test_setup_hooks(local_exec_ctx):
     assert test.count == 2
 
 
-def test_compile_hooks(local_exec_ctx):
+def test_compile_hooks(hellotest, local_exec_ctx):
     @fixtures.custom_prefix('unittests/resources/checks')
-    class MyTest(HelloTest):
+    class MyTest(hellotest):
         def __init__(self):
             super().__init__()
             self.name = type(self).__name__
@@ -528,9 +546,9 @@ def test_compile_hooks(local_exec_ctx):
     assert test.count == 1
 
 
-def test_run_hooks(local_exec_ctx):
+def test_run_hooks(hellotest, local_exec_ctx):
     @fixtures.custom_prefix('unittests/resources/checks')
-    class MyTest(HelloTest):
+    class MyTest(hellotest):
         def __init__(self):
             super().__init__()
             self.name = type(self).__name__
@@ -550,9 +568,9 @@ def test_run_hooks(local_exec_ctx):
     _run(MyTest(), *local_exec_ctx)
 
 
-def test_multiple_hooks(local_exec_ctx):
+def test_multiple_hooks(hellotest, local_exec_ctx):
     @fixtures.custom_prefix('unittests/resources/checks')
-    class MyTest(HelloTest):
+    class MyTest(hellotest):
         def __init__(self):
             super().__init__()
             self.name = type(self).__name__
@@ -576,9 +594,9 @@ def test_multiple_hooks(local_exec_ctx):
     assert test.var == 3
 
 
-def test_stacked_hooks(local_exec_ctx):
+def test_stacked_hooks(hellotest, local_exec_ctx):
     @fixtures.custom_prefix('unittests/resources/checks')
-    class MyTest(HelloTest):
+    class MyTest(hellotest):
         def __init__(self):
             super().__init__()
             self.name = type(self).__name__
@@ -596,9 +614,9 @@ def test_stacked_hooks(local_exec_ctx):
     assert test.var == 3
 
 
-def test_inherited_hooks(local_exec_ctx):
+def test_inherited_hooks(hellotest, local_exec_ctx):
     @fixtures.custom_prefix('unittests/resources/checks')
-    class BaseTest(HelloTest):
+    class BaseTest(hellotest):
         def __init__(self):
             super().__init__()
             self.name = type(self).__name__
@@ -632,9 +650,9 @@ def test_inherited_hooks(local_exec_ctx):
     }
 
 
-def test_overriden_hooks(local_exec_ctx):
+def test_overriden_hooks(hellotest, local_exec_ctx):
     @fixtures.custom_prefix('unittests/resources/checks')
-    class BaseTest(HelloTest):
+    class BaseTest(hellotest):
         def __init__(self):
             super().__init__()
             self.name = type(self).__name__
@@ -666,9 +684,9 @@ def test_overriden_hooks(local_exec_ctx):
     assert test.foo == 10
 
 
-def test_disabled_hooks(local_exec_ctx):
+def test_disabled_hooks(hellotest, local_exec_ctx):
     @fixtures.custom_prefix('unittests/resources/checks')
-    class BaseTest(HelloTest):
+    class BaseTest(hellotest):
         def __init__(self):
             super().__init__()
             self.name = type(self).__name__
@@ -696,12 +714,12 @@ def test_disabled_hooks(local_exec_ctx):
     assert test.foo == 0
 
 
-def test_require_deps(local_exec_ctx):
+def test_require_deps(hellotest, local_exec_ctx):
     import reframe.frontend.dependencies as dependencies
     import reframe.frontend.executors as executors
 
     @fixtures.custom_prefix('unittests/resources/checks')
-    class T0(HelloTest):
+    class T0(hellotest):
         def __init__(self):
             super().__init__()
             self.name = type(self).__name__
@@ -709,7 +727,7 @@ def test_require_deps(local_exec_ctx):
             self.x = 1
 
     @fixtures.custom_prefix('unittests/resources/checks')
-    class T1(HelloTest):
+    class T1(hellotest):
         def __init__(self):
             super().__init__()
             self.name = type(self).__name__
