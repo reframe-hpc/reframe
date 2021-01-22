@@ -145,6 +145,10 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     This class provides the implementation of the pipeline phases that the
     regression test goes through during its lifetime.
 
+    .. warning::
+        .. versionchanged:: 3.5
+            Multiple inheritance with a shared common ancestor is not allowed.
+
     .. note::
         .. versionchanged:: 2.19
            Base constructor takes no arguments.

@@ -51,10 +51,8 @@ class LocalParamSpace(attributes.LocalAttrSpace):
     def add_attr(self, name, *values, **kwargs):
         '''Insert or modify a regression test parameter.
 
-        This method must be called directly in the class body. For each
-        regression test class definition, this function may only be called
-        once per parameter. Calling this method during or after the class
-        instantiation has an undefined behavior.
+        This method may only be called in the main class body. Otherwise, its
+        behavior is undefined.
 
         .. seealso::
 
@@ -145,7 +143,7 @@ class ParamSpace(attributes.AttrSpace):
         attributes. The values assigned to these parameters exclusively depend
         on the use_params argument. If this is set to True, the current object
         uses the parameter space iterator (see
-        :class  `reframe.core.pipeline.RegressionTest` and consumes a set of
+        :class:`reframe.core.pipeline.RegressionTest` and consumes a set of
         parameter values (i.e. a point in the parameter space). Contrarily, if
         use_params is False, the regression test parameters are initialized as
         None.
@@ -153,7 +151,7 @@ class ParamSpace(attributes.AttrSpace):
         :param obj: The test object.
         :param cls: The test class.
         :param use_param: bool that dictates whether an instance of the
-            :class `reframe.core.pipeline.RegressionTest` is to use the
+            :class:`reframe.core.pipeline.RegressionTest` is to use the
             parameter values defined in the parameter space.
 
         '''

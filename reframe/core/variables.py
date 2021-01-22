@@ -18,9 +18,12 @@ class _TestVar:
     Buffer to store a regression test variable into either a VarSpace or a
     LocalVarSpace.
     '''
-    def __init__(self, name, *types, field=fields.TypedField, **kwargs):
-        if 'value' in kwargs:
-            self.define(kwargs.get('value'))
+    def __init__(self, name, *types, field=None, value=None):
+        if field is None:
+            field = fields.TypedField
+
+        if value is not None:
+            self.define(value)
         else:
             self.undefine()
 
@@ -60,20 +63,8 @@ class LocalVarSpace(attributes.LocalAttrSpace):
     def add_attr(self, name, *types, **kwargs):
         '''Declare a new regression test variable.
 
-        If the ``value`` argument is not provided, the variable is considered
-        *declared* but not *defined*. Note that a variable must be defined
-        before is referenced in the regression test.
-        This method may only be called in the main class body, otherwise its
+        This method may only be called in the main class body. Otherwise, its
         behavior is undefined.
-
-        :param name: the variable name.
-        :param types: the supported types for the variable.
-        :param value: the default value assigned to the variable.
-        :params field: the field validator to be used for this variable.
-            If no field argument is provided, it defaults to a TypedField
-            (see :class `reframe.core.fields`). Note that the field validator
-            provided by this argument must derive from
-            :class `reframe.core.fields.Field`.
 
         .. seealso::
 
@@ -85,16 +76,8 @@ class LocalVarSpace(attributes.LocalAttrSpace):
     def undefine_attr(self, name):
         '''Undefine a variable previously declared in a parent class.
 
-        This method is particularly useful when writing a test library,
-        since it permits to remove any default values that may have been
-        defined for a variable in any of the parent classes. Effectively, this
-        will force the user of the library to provide the required value for a
-        variable. However, a variable flagged as *required* which is not
-        referenced in the regression test is implemented as a no-op.
-        This method may only be called in the main class body, otherwise its
+        This method may only be called in the main class body. Otherwise, its
         behavior is undefined.
-
-        :param name: the name of the required variable.
 
         .. seealso::
 
@@ -104,13 +87,10 @@ class LocalVarSpace(attributes.LocalAttrSpace):
         self.undefined.add(name)
 
     def define_attr(self, name, value):
-        '''Assign a value to a regression test variable.
+        '''Assign a value to a previously declared regression test variable.
 
-        This method may only be called in the main class body, otherwise its
+        This method may only be called in the main class body. Otherwise, its
         behavior is undefined.
-
-        :param name: the variable name.
-        :param value: the value assigned to the variable.
 
         .. seealso::
 
