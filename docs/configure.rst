@@ -192,6 +192,9 @@ For example, if we have set it to ``warning``, no debug or informational message
 Finally, there is a special set of handlers for handling performance log messages.
 These are stored in the ``handlers_perflog`` property.
 The performance handler in this example will create a file per test and per system/partition combination and will append the performance data to it every time the test is run.
+The path to the file is created as follows: ``<basedir>/<prefix>/<testname>log``.
+``<basedir>`` is controlled by the ``--perflogdir`` option, the environment variable :envvar:`RFM_PERFLOG_DIR` or the ``basedir`` configuration parameter in the ``handlers_perflog``, which is ``.`` by default; ``<prefix>`` is what is defined in the ``handlers_perflog``.
+Note that that the performance log file is created only if ``perf_patterns`` is defined on the test.
 Notice in the ``format`` property how the message to be logged is structured such that it can be easily parsed from post processing tools.
 Apart from file logging, ReFrame offers more advanced performance logging capabilities through Syslog and Graylog.
 
