@@ -78,7 +78,6 @@ def user_system(temp_runtime):
         yield generic_system
 
 
-
 @pytest.fixture
 def local_exec_ctx(generic_system):
     partition = fixtures.partition_by_name('default')
@@ -622,9 +621,10 @@ def test_multiple_inheritance(hellotest):
 
 def test_extend_after_instantiation(hellotest):
     inst = hellotest()
-    with pytest.raises(ValueError):
+    with pytest.raises(NameError):
         class MyTest(hellotest):
             pass
+
 
 def test_inherited_hooks(hellotest, local_exec_ctx):
     @fixtures.custom_prefix('unittests/resources/checks')

@@ -90,6 +90,7 @@ def test_set_undef(novars):
 def test_require_var(onevar):
     class MyTest(onevar):
         require_var('foo')
+
         def __init__(self):
             print(self.foo)
 
@@ -100,6 +101,7 @@ def test_require_var(onevar):
 def test_required_var_not_present(onevar):
     class MyTest(onevar):
         require_var('foo')
+
         def __init__(self):
             pass
 
@@ -113,4 +115,3 @@ def test_require_undef(novars):
     with pytest.raises(ValueError):
         class MyTest(novars):
             require_var('foo')
-
