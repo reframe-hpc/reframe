@@ -59,8 +59,8 @@ class TestStats:
                     environ_name = t.check.current_environ.name
 
                 # Overwrite entry from previous run if available
-                messages[f'{t.check.name}:{partition_name}:{environ_name}'] = (
-                    "  * Test {t.check.info()} was retried {run} time(s) and "
+                messages[f"{t.check.name}:{partition_name}:{environ_name}"] = (
+                    f"  * Test {t.check.info()} was retried {run} time(s) and "
                     f" {'failed' if t.failed else 'passed'}."
                 )
 
