@@ -125,6 +125,9 @@ class SlurmJobScheduler(sched.JobScheduler):
         self._use_nodes_opt = rt.runtime().get_option(
             f'schedulers/@{self.registered_name}/use_nodes_option'
         )
+        self._block_submission = rt.runtime().get_option(
+            f'schedulers/@{self.registered_name}/block_submission'
+        )
 
     def make_job(self, *args, **kwargs):
         return _SlurmJob(*args, **kwargs)
@@ -227,7 +230,20 @@ class SlurmJobScheduler(sched.JobScheduler):
 
     def submit(self, job):
         cmd = f'sbatch {job.script_filename}'
-        completed = _run_strict(cmd, timeout=self._submit_timeout)
+        intervals = itertools.cycle([1, 2, 3])
+        while True:
+            try:
+                completed = _run_strict(cmd, timeout=self._submit_timeout)
+                break
+            except SpawnedProcessError as e:
+                if (not self._block_submission or
+                    e.exitcode != 1 or
+                    'sbatch: error: QOSMaxSubmitJobPerUserLimit' not in e.stderr
+                ):
+                    raise e
+
+            time.sleep(next(intervals))
+
         jobid_match = re.search(r'Submitted batch job (?P<jobid>\d+)',
                                 completed.stdout)
         if not jobid_match:
