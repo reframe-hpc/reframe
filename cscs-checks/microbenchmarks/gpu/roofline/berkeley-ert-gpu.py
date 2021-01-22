@@ -12,8 +12,8 @@ import reframe.utility.udeps as udeps
 # do not run this check with --system (because of deps)
 ert_precisions = ["ERT_FP64"]
 repeat = 1
-# flops_list = [1, 2]
-flops_list = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
+ert_flops = [1, 2]
+# ert_flops = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
 gpu_specs = {
     "P100": {
         "capability": "sm_60",
@@ -21,6 +21,9 @@ gpu_specs = {
         "maximum_number_of_threads_per_multiprocessor": 2048,
         "maximum_number_of_threads_per_block": 1024,
         "warp_size": 32,
+# 4360.14 FP64 GFLOPs EMP GFLOP/sec
+# 1721.88 L1 EMP          GB/sec
+#  523.62 DRAM EMP        GB/sec
     },
     "V100": {
         "capability": "sm_70",
@@ -138,18 +141,13 @@ class PlotErt_Base(rfm.RunOnlyRegressionTest):
             "&> ",
             self.roofline_out_script1,
         ]
-        self.postrun_cmds = [
-            self.roofline_script2,
-            "gnuplot roofline.gnuplot",  # name hardcoded in the script
-            "file roofline.ps",  # formats originally avail: gnuplot, json, tex
-        ]
+
         # {{{ sanity_patterns
         self.sanity_patterns = sn.all(
             [
                 sn.assert_found(r"GFLOPs EMP", self.roofline_out_script1),
                 sn.assert_found(r"DRAM EMP", self.roofline_out_script1),
                 sn.assert_found("Empirical roofline graph:", self.stdout),
-                sn.assert_found(r".ps: PostScript", self.stdout),
             ]
         )
         # }}}
@@ -184,6 +182,23 @@ class PlotErt_Base(rfm.RunOnlyRegressionTest):
             "DRAMbw": DRAMbw,
         }
         # }}}
+
+    # {{{ hooks
+    @rfm.run_before('run')
+    def check_gnuplot(self):
+        if 'gnuplot' in self.modules_system.available_modules('gnuplot'):
+            self.postrun_cmds = [
+                self.roofline_script2,
+                "gnuplot roofline.gnuplot",  # name hardcoded in the script
+                "file roofline.ps",  # available formats: gnuplot, json, tex
+            ]
+        else:
+            self.postrun_cmds = [
+                self.roofline_script2,
+                "# gnuplot roofline.gnuplot",
+                "# file roofline.ps",
+            ]
+    # }}}
 # }}}
 
 
@@ -192,7 +207,7 @@ class PlotErt_Base(rfm.RunOnlyRegressionTest):
     *[
         [ert_precision, ert_flop, ert_gpu_threads]
         for ert_precision in ert_precisions
-        for ert_flop in flops_list
+        for ert_flop in ert_flops
         # for ert_gpu_threads in [32]
         for ert_gpu_threads in [2 ** x for x in range(
             int(log(gpu_specs["P100"]["warp_size"], 2)),
@@ -265,7 +280,7 @@ class P100_PlotErt(PlotErt_Base):
         ]
         self.dep_name = "P100_RunErt"
         for ii in ert_precisions:
-            for jj in flops_list:
+            for jj in ert_flops:
                 for kk in ert_gpu_threads:
                     self.depends_on(f"{self.dep_name}_{ii}_{jj}_{kk}",
                                     udeps.by_env)
@@ -290,7 +305,7 @@ class P100_PlotErt(PlotErt_Base):
         """
         job_out = "sum"
         for ii in ["ERT_FP64"]:
-            for jj in flops_list:
+            for jj in ert_flops:
                 for kk in [32]:
                     dir_fullpath = self.getdep(
                         f"{self.dep_name}_{ii}_{jj}_{kk}", part="gpu"
@@ -301,15 +316,132 @@ class P100_PlotErt(PlotErt_Base):
                         f"{dir_basename}.{job_out}"
                     )
 
-# Gathering the final roofline results...
-#     cat Results.corigpu-cuda-fp64.01/Run.001/*/*/*/sum |./Scripts/roofline.py
-#     echo 'load "Results.corigpu-cuda-fp64.01/Run.001/roofline.gnu"' | gnuplot
-# +-------------------------------------------------
-# | Empirical roofline graph:
-# 'Results.corigpu-cuda-fp64.01/Run.001/roofline.ps'
-# | Empirical roofline database:
-# 'Results.corigpu-cuda-fp64.01/Run.001/roofline.json'
-# +-------------------------------------------------
+        self.prerun_cmds.append(
+            f"ln -s {dir_fullpath}/{self.roofline_script1}")
+        self.prerun_cmds.append(
+            f"ln -s {dir_fullpath}/{self.roofline_script2}")
+        self.prerun_cmds.append(f"ln -s {dir_fullpath}/Plot/")
+    # }}}
+# }}}
+
+
+# {{{ V100_RunErt
+@rfm.parameterized_test(
+    *[
+        [ert_precision, ert_flop, ert_gpu_threads]
+        for ert_precision in ert_precisions
+        for ert_flop in ert_flops
+        for ert_gpu_threads in [32]
+##         for ert_gpu_threads in [2 ** x for x in range(
+##             int(log(gpu_specs["V100"]["warp_size"], 2)),
+##             int(log(gpu_specs["V100"]["maximum_number_of_threads_per_block"],
+##                     2) + 1),
+##             )
+##        ]
+    ]
+)
+class V100_RunErt(RunErt_Base):
+    def __init__(self, ert_precision, ert_flop, ert_gpu_threads):
+        # {{{ pe
+        gpu = "V100"
+        self.descr = f"Collect ERT data from NVIDIA Pascal {gpu}"
+        self.valid_systems = ["tsa:cn"]
+        self.valid_prog_environs = ["PrgEnv-gnu"]
+        # self.variables = {'CUDA_VISIBLE_DEVICES=0'
+        self.extra_resources = {"_rfm_gpu": {"num_gpus_per_node": "1"}}
+        # }}}
+
+        # {{{ build
+        self.cap = gpu_specs[gpu]["capability"]
+        self.ert_trials_min = 1
+        self.ert_precision = ert_precision
+        self.ert_flop = ert_flop
+        # }}}
+
+        # {{{ run
+        self.num_tasks = 1
+        self.num_tasks_per_node = 1
+        self.num_cpus_per_task = 1
+        self.num_tasks_per_core = 1
+        self.use_multithreading = False
+        self.exclusive = True
+        self.time_limit = "5m"
+        # set blocks and threads per block:
+        self.ert_gpu_threads = ert_gpu_threads
+        maximum_number_of_threads = (
+            gpu_specs[gpu]["multiprocessors"]
+            * gpu_specs[gpu]["maximum_number_of_threads_per_multiprocessor"]
+        )
+        self.ert_gpu_blocks = int(maximum_number_of_threads / ert_gpu_threads)
+# The other steps are in the base class
+# }}}
+# }}}
+
+
+# {{{ V100_PlotErt
+@rfm.simple_test
+class V100_PlotErt(PlotErt_Base):
+    """
+    The Empirical Roofline Tool, ERT, automatically generates roofline data.
+    https://bitbucket.org/berkeleylab/cs-roofline-toolkit/
+    This class depends on the HWL_Ert_BaseCheck class.
+    """
+
+    def __init__(self):
+        super().__init__()
+        gpu = "V100"
+        self.descr = f"Final step of the Roofline test (NVIDIA Pascal {gpu})"
+        self.valid_systems = ["tsa:login"]
+        self.valid_prog_environs = ["PrgEnv-gnu"]
+        self.maintainers = ["JG"]
+        self.tags = {"gpu"}
+        self.sourcesdir = None
+        self.modules = ['gnuplot']
+        ert_gpu_threads = [32]
+##         ert_gpu_threads = [2 ** x for x in range(
+##             int(log(gpu_specs[gpu]["warp_size"], 2)),
+##             int(log(gpu_specs[gpu]["maximum_number_of_threads_per_block"],
+##                     2) + 1),
+##             )
+##         ]
+        self.dep_name = f"{gpu}_RunErt"
+        for ii in ert_precisions:
+            for jj in ert_flops:
+                for kk in ert_gpu_threads:
+                    self.depends_on(f"{self.dep_name}_{ii}_{jj}_{kk}",
+                                    udeps.by_env)
+
+        # {{{ performance
+        # Reference roofline boundaries for NVIDIA P100
+        ref_GFLOPs = 330.0
+        ref_DRAMbw = 53.0
+        self.reference = {
+            "*": {
+                "gflops": (ref_GFLOPs, None, None, "GF/s"),
+                "DRAMbw": (ref_DRAMbw, None, None, "GB/s"),
+            }
+        }
+        # }}}
+
+    # {{{ hooks
+    @rfm.require_deps
+    def prepare_logs(self, P100_RunErt):
+        """
+        get all the summary files from the compute jobs for postprocessing
+        """
+        job_out = "sum"
+        for ii in ["ERT_FP64"]:
+            for jj in ert_flops:
+                for kk in [32]:
+                    dir_fullpath = self.getdep(
+                        f"{self.dep_name}_{ii}_{jj}_{kk}", part="cn"
+                    ).stagedir
+                    dir_basename = dir_fullpath.split("/")[-1]
+                    self.prerun_cmds.append(
+                        f"ln -s {dir_fullpath}/{job_out} "
+                        f"{dir_basename}.{job_out}"
+                    )
+
         self.prerun_cmds.append(
             f"ln -s {dir_fullpath}/{self.roofline_script1}")
         self.prerun_cmds.append(
