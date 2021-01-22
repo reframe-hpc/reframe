@@ -152,7 +152,7 @@ class AttrSpace(metaclass=abc.ABCMeta):
         target_namespace = set(dir(cls))
         for key in self._attr:
             if key in target_namespace:
-                raise ValueError(
+                raise NameError(
                     f'{key!r} clashes with other attribute present in the'
                     f' namespace of {cls.__qualname__!r}'
                 )
