@@ -16,16 +16,16 @@ Finally, to avoid specifying the tutorial configuration file each time, make sur
 Parameterizing a Regression Test
 --------------------------------
 
-We have briefly looked into parameterized tests in :doc:`tutorial_basics` where we parameterized the "Hello, World!" test based on the program language.
+We have briefly looked into parameterized tests in :doc:`tutorial_basics` where we parameterized the "Hello, World!" test based on the programming language.
 Test parameterization in ReFrame is quite powerful since it allows you to create a multitude of similar tests automatically.
-In this example, we will parameterize the last version of the STREAM test from the :doc:`tutorial_basics` by changing the array size, so as to check bandwidth of the different cache levels.
+In this example, we will parameterize the last version of the STREAM test from the :doc:`tutorial_basics` by changing the array size, so as to check the bandwidth of the different cache levels.
 Here is the adapted code with the relevant parts highlighted (for simplicity, we are interested only in the "Triad" benchmark):
 
 .. literalinclude:: ../tutorials/advanced/parameterized/stream.py
    :lines: 6-
    :emphasize-lines: 5,7-10,18-19
 
-A parameterized test needs to be decorated with the :func:`@parameterized_test <reframe.core.decorators.parameterized_test>` decorator and has its constructor accepting a set of parameters.
+A parameterized test needs to be decorated with the :func:`@parameterized_test <reframe.core.decorators.parameterized_test>` decorator and must define its constructor such as to accept a set of parameters.
 In this case, the test takes a single parameter, which is the size of the benchmark's working set in bytes.
 Let's explain now the strange syntax of the arguments to the decorator.
 The :func:`@parameterized_test <reframe.core.decorators.parameterized_test>` decorator accepts a variable set of arguments, where each argument is a set of parameters (as an iterable) to be used for instantiating the test.
@@ -96,7 +96,7 @@ The following will create a test for each ``GROMACS`` module found on the softwa
 
 .. note::
 
-   ReFrame 3.4 extends further the test parameterization concept by introducing the more powerful :func:`parameter` class directive, which allows you to have hierarchies of parameterized tests and expand or reduce the parameterization dynamically.
+   ReFrame 3.4 extends further the test parameterization concept by introducing the more powerful :func:`parameter` class directive, which allows you to have hierarchies of parameterized tests and expand or reduce the parameterization space dynamically.
 
 
 
@@ -364,7 +364,7 @@ Adding job scheduler options per test
 Sometimes a test needs to pass additional job scheduler options to the automatically generated job script.
 This is fairly easy to achieve with ReFrame.
 In the following test we want to test whether the ``--mem`` option of Slurm works as expected.
-We compiled and run a program that consumes all the available memory of the node, but we want to restrict the available memory with the ``--mem`` option.
+We compiled and ran a program that consumes all the available memory of the node, but we want to restrict the available memory with the ``--mem`` option.
 Here is the test:
 
 .. literalinclude:: ../tutorials/advanced/jobopts/eatmemory.py
@@ -506,7 +506,6 @@ The trick here is to replace the parallel launcher with the local one, which pra
 
 The :func:`getlauncher <reframe.core.backends.getlauncher>` function takes the `registered <config_reference.html#systems-.partitions-.launcher>`__ name of a launcher and returns the class that implements it.
 You then instantiate the launcher and assign to the :attr:`launcher` attribute of the job descriptor.
-
 
 An alternative to this approach would be to define your own custom parallel launcher and register it with the framework.
 You could then use it as the scheduler of a system partition in the configuration, but this approach is less test-specific.

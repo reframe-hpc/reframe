@@ -17,5 +17,5 @@ class HostnameCheck(rfm.RunOnlyRegressionTest):
         self.num_tasks_per_node = 1
         self.sanity_patterns = sn.assert_eq(
             sn.getattr(self, 'num_tasks'),
-            sn.count(sn.findall(r'nid\d+', self.stdout))
+            sn.count(sn.findall(r'^nid\d+$', self.stdout))
         )

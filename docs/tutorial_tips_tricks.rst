@@ -10,7 +10,7 @@ This tutorial focuses on some less known aspects of ReFrame's command line inter
 Debugging
 ---------
 
-ReFrame tests are Python classes inside Python source files, so the usual debugging techniques for Python apply, but the ReFrame frontend will filter some errors and stack traces by default in order to keep output clean.
+ReFrame tests are Python classes inside Python source files, so the usual debugging techniques for Python apply, but the ReFrame frontend will filter some errors and stack traces by default in order to keep the output clean.
 ReFrame test files are imported, so any error that appears during import time will cause the test loading process to fail and print a stack trace pointing to the offending line.
 In the following, we have inserted a small typo in the ``hello2.py`` tutorial example:
 
@@ -240,7 +240,7 @@ Let's try loading the ``tutorials/basics/hello/hello2.py`` file:
    Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-3956_dlu.log'
 
 You can see all the different phase ReFrame's frontend goes through when loading a test.
-First "strange" thing to notice in this log is that ReFrame picked the generic system configuration.
+The first "strange" thing to notice in this log is that ReFrame picked the generic system configuration.
 This happened because it couldn't find a system entry with a matching hostname pattern.
 However, it did not impact the test loading, because these tests are valid for any system, but it will affect the tests when running (see :doc:`tutorial_basics`) since the generic system does not define any C++ compiler.
 
@@ -322,7 +322,7 @@ Environment Modules Mappings
 
 ReFrame allows you to replace environment modules used in tests with other modules on the fly.
 This is quite useful if you want to test a new version of a module or another combination of modules.
-Assume you have a test loads a ``gromacs`` module:
+Assume you have a test that loads a ``gromacs`` module:
 
 .. code-block:: python
 
@@ -341,7 +341,7 @@ You can ask ReFrame to temporarily replace the ``gromacs`` module with another o
    ./bin/reframe -n GromacsTest -M 'gromacs:gromacs/2020.5' -r
 
 
-Every time ReFrame will try to load the ``gromacs`` module, it will replace it with ``gromacs/2020.5``.
+Every time ReFrame tries to load the ``gromacs`` module, it will replace it with ``gromacs/2020.5``.
 You can specify multiple mappings at once or provide a file with mappings using the :option:`--module-mappings` option.
 You can also replace a single module with multiple modules.
 
@@ -353,11 +353,11 @@ In case of module mappings, it will also respect the module order of the replace
 Retrying and Rerunning Tests
 ----------------------------
 
-If you are running ReFrame regularly as part of a continuous testing procedure you might not want to generate it alerts for transient failures.
+If you are running ReFrame regularly as part of a continuous testing procedure you might not want it to generate alerts for transient failures.
 If a ReFrame test fails, you might want to retry a couple of times before marking it as a failure.
 You can achieve this with the :option:`--max-retries`.
 ReFrame will then retry the failing test cases a maximum number of times before reporting them as actual failures.
-The failed test cases will not retried immediately after they have failed, but rather at the end of the run session.
+The failed test cases will not be retried immediately after they have failed, but rather at the end of the run session.
 This is done to give more chances of success in case the failures have been transient.
 
 Another interesting feature introduced in ReFrame 3.4 is the ability to restore a previous test session.
