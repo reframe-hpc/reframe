@@ -7,7 +7,7 @@
 # Functionality to build extensible attribute spaces into ReFrame tests.
 #
 
-import reframe.core.attributes as ReframeAttributes
+import reframe.core.attributes as attributes
 import reframe.core.fields as fields
 
 class _TestVar:
@@ -42,7 +42,7 @@ class _TestVar:
         self.value = value
 
 
-class LocalVarSpace(ReframeAttributes.LocalAttrSpace):
+class LocalVarSpace(attributes.LocalAttrSpace):
     '''Local variable space of a regression test.
 
     Stores the input from the var directives executed in the class body of
@@ -60,6 +60,8 @@ class LocalVarSpace(ReframeAttributes.LocalAttrSpace):
         If the ``value`` argument is not provided, the variable is considered
         *declared* but not *defined*. Note that a variable must be defined
         before is referenced in the regression test.
+        This method may only be called in the main class body, otherwise its
+        behavior is undefined.
 
         :param name: the variable name.
         :param types: the supported types for the variable.
@@ -68,7 +70,7 @@ class LocalVarSpace(ReframeAttributes.LocalAttrSpace):
             If no field argument is provided, it defaults to a TypedField
             (see :class `reframe.core.fields`). Note that the field validator
             provided by this argument must derive from
-            :class `reframe.core.fields.Field`.
+            :class:`reframe.core.fields.Field`.
         '''
         self[name] = _TestVar(name, *types, **kwargs)
 
@@ -79,8 +81,10 @@ class LocalVarSpace(ReframeAttributes.LocalAttrSpace):
         since it permits to remove any default values that may have been
         defined for a variable in any of the parent classes. Effectively, this
         will force the user of the library to provide the required value for a
-        variable. However, a variable flagged as ``required`` which is not
+        variable. However, a variable flagged as *required* which is not
         referenced in the regression test is implemented as a no-op.
+        This method may only be called in the main class body, otherwise its
+        behavior is undefined.
 
         :param name: the name of the required variable.
         '''
@@ -88,6 +92,9 @@ class LocalVarSpace(ReframeAttributes.LocalAttrSpace):
 
     def define_attr(self, name, value):
         '''Assign a value to a regression test variable.
+
+        This method may only be called in the main class body, otherwise its
+        behavior is undefined.
 
         :param name: the variable name.
         :param value: the value assigned to the variable.
@@ -99,26 +106,23 @@ class LocalVarSpace(ReframeAttributes.LocalAttrSpace):
         return self._attr
 
 
-class VarSpace(ReframeAttributes.AttrSpace):
+class VarSpace(attributes.AttrSpace):
     '''Variable space of a regression test.
 
     Store the variables of a regression test. This variable space is stored
-    in the regression test class under the class attribute `_rfm_var_space`.
+    in the regression test class under the class attribute ``_rfm_var_space``.
     A target class can be provided to the
     :func:`__init__` method, which is the regression test where the
     VarSpace is to be built. During this call to
     :func:`__init__`, the VarSpace inherits all the VarSpace from the base
     classes of the target class. After this, the VarSpace is extended with
     the information from the local variable space, which is stored under the
-    target class' attribute '_rfm_local_var_space'. If no target class is
+    target class' attribute ``_rfm_local_var_space``. If no target class is
     provided, the VarSpace is simply initialized as empty.
     '''
     localAttrSpaceName = '_rfm_local_var_space'
     localAttrSpaceCls = LocalVarSpace
     attrSpaceName = '_rfm_var_space'
-
-    def __init__(self, target_cls=None):
-        super().__init__(target_cls)
 
     def inherit(self, cls):
         '''Inherit the VarSpace from the bases.'''
@@ -133,15 +137,15 @@ class VarSpace(ReframeAttributes.AttrSpace):
 
             # Make doubly declared vars illegal. Note that this will be
             # triggered when inheriting from multiple RegressionTest classes.
-            if key in self._attr:
+            if key in self.vars:
                 raise ValueError(
                     f'cannot redeclare a variable ({key})'
                 )
 
-            self._attr[key] = var
+            self.vars[key] = var
 
     def extend(self, cls):
-        '''Extend the VarSpace with the content in the LocalVarSpace
+        '''Extend the VarSpace with the content in the LocalVarSpace.
 
         Merge the VarSpace inherited from the base classes with the
         LocalVarSpace. Note that the LocalVarSpace can also contain
@@ -156,32 +160,47 @@ class VarSpace(ReframeAttributes.AttrSpace):
         for key, var in localVarSpace.items():
 
             # Disable redeclaring a variable
-            if key in self._attr:
+            if key in self.vars:
                 raise ValueError(
                     f'cannot redeclare a variable ({key})'
                 )
 
-            self._attr[key] = var
+            self.vars[key] = var
 
         # Undefine the vars as indicated by the local var space
         for key in localVarSpace.undefined:
             self._check_var_is_declared(key)
-            self._attr[key].undefine()
+            self.vars[key].undefine()
 
         # Define the vars as indicated by the local var space
         for key, val in localVarSpace.definitions.items():
             self._check_var_is_declared(key)
-            self._attr[key].define(val)
+            self.vars[key].define(val)
 
     def _check_var_is_declared(self, key):
-        if key not in self._attr:
+        if key not in self.vars:
             raise ValueError(
                 f'var {key!r} has not been declared'
             )
+
+    def insert(self, obj, cls):
+        '''Insert the vars in the regression test.
+
+        :param obj: The test object.
+        :param cls: The test class.
+        '''
+
+        for name, var in self.items():
+            setattr(cls, name, var.field(*var.types))
+            getattr(cls, name).__set_name__(obj, name)
+
+            # If the var is defined, set its value
+            if not var.is_undef():
+                setattr(obj, name, var.value)
 
     @property
     def vars(self):
         return self._attr
 
     def undefined_vars(self):
-        return list(filter(lambda x: self._attr[x].is_undef(), self._attr))
+        return list(filter(lambda x: self.vars[x].is_undef(), self.vars))

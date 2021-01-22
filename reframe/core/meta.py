@@ -42,7 +42,7 @@ class RegressionTestMeta(type):
 
         # Build the parameter and variable spaces
         cls._rfm_param_space = parameters.ParamSpace(cls)
-        cls._rfm_var_space = variables.VarSpace(cls)
+        variables.VarSpace(cls)
 
         # Set up the hooks for the pipeline stages based on the _rfm_attach
         # attribute; all dependencies will be resolved first in the post-setup
