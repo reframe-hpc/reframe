@@ -3,7 +3,7 @@
 
 _bin=reframe
 
-_cli_options=$(${_bin} --help | grep -o -e ' --[a-z\-]*' -e ' -[a-zA-Z]' --)
+_cli_options=$(${_bin} --help | grep -o -E -e ' [-]+[a-zA-Z\-]+')
 
 _complete_test_name()
 {
