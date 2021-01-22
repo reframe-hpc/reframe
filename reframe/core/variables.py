@@ -51,6 +51,7 @@ class LocalVarSpace(attributes.LocalAttrSpace):
     the regression test. This local variable space is later used during the
     instantiation of the VarSpace class to extend the final variable space.
     '''
+
     def __init__(self):
         super().__init__()
         self.undefined = set()
@@ -72,7 +73,12 @@ class LocalVarSpace(attributes.LocalAttrSpace):
             If no field argument is provided, it defaults to a TypedField
             (see :class `reframe.core.fields`). Note that the field validator
             provided by this argument must derive from
-            :class:`reframe.core.fields.Field`.
+            :class `reframe.core.fields.Field`.
+
+        .. seealso::
+
+            :ref:`directives`
+
         '''
         self[name] = _TestVar(name, *types, **kwargs)
 
@@ -89,6 +95,11 @@ class LocalVarSpace(attributes.LocalAttrSpace):
         behavior is undefined.
 
         :param name: the name of the required variable.
+
+        .. seealso::
+
+            :ref:`directives`
+
         '''
         self.undefined.add(name)
 
@@ -100,6 +111,11 @@ class LocalVarSpace(attributes.LocalAttrSpace):
 
         :param name: the variable name.
         :param value: the value assigned to the variable.
+
+        .. seealso::
+
+            :ref:`directives`
+
         '''
         self.definitions[name] = value
 
@@ -122,20 +138,14 @@ class VarSpace(attributes.AttrSpace):
     target class' attribute ``_rfm_local_var_space``. If no target class is
     provided, the VarSpace is simply initialized as empty.
     '''
+
     localAttrSpaceName = '_rfm_local_var_space'
     localAttrSpaceCls = LocalVarSpace
     attrSpaceName = '_rfm_var_space'
 
-    def inherit(self, cls):
-        '''Inherit the VarSpace from the bases.'''
-        for base in filter(lambda x: hasattr(x, self.attrSpaceName),
-                           cls.__bases__):
-            assert isinstance(getattr(base, self.attrSpaceName), VarSpace)
-            self.join(getattr(base, self.attrSpaceName))
-
-    def join(self, other_var_space):
+    def join(self, other):
         '''Join an existing VarSpace into the current one.'''
-        for key, var in other_var_space.items():
+        for key, var in other.items():
 
             # Make doubly declared vars illegal. Note that this will be
             # triggered when inheriting from multiple RegressionTest classes.

@@ -175,7 +175,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #: The name of the test.
     #:
     #: :type: string that can contain any character except ``/``
-    name = fields.TypedField(typ.Str[r'[^\/]+'])
+    var('name', typ.Str[r'[^\/]+'])
 
     #: List of programming environments supported by this test.
     #:
@@ -711,11 +711,9 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     def __new__(cls, *args, _rfm_use_params=False, **kwargs):
         obj = super().__new__(cls)
 
-        # Set the test parameters in the object
-        cls._init_params(obj, _rfm_use_params)
-
-        # Insert the user variables
+        # Insert the var & param spaces
         cls._rfm_var_space.insert(obj, cls)
+        cls._rfm_param_space.insert(obj, cls, _rfm_use_params)
 
         # Create a test name from the class name and the constructor's
         # arguments
@@ -747,36 +745,6 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
 
     def __init__(self):
         pass
-
-    @classmethod
-    def _init_params(cls, obj, use_params=False):
-        '''Attach the test parameters as class attributes.
-
-        Create and initialize the regression test parameters as object
-        attributes. The values assigned to these parameters exclusively depend
-        on the use_params argument. If this is set to True, the current object
-        uses the parameter space iterator (see
-        :class  `reframe.core.pipeline.RegressionTest` and consumes a set of
-        parameter values (i.e. a point in the parameter space). Contrarily, if
-        use_params is False, the regression test parameters are initialized as
-        None.
-
-        :param use_param: bool that dictates whether an instance of the
-        :class `reframe.core.pipeline.RegressionTest` is to use the
-        parameter values defined in the parameter space.
-
-        :meta private:
-        '''
-        # Set the values of the test parameters (if any)
-        if use_params and cls._rfm_param_space.params:
-            # Consume the parameter space iterator
-            param_values = next(cls._rfm_param_space.unique_iter)
-            for index, key in enumerate(cls._rfm_param_space.params):
-                setattr(obj, key, param_values[index])
-        else:
-            # Otherwise init the params as None
-            for key in cls._rfm_param_space.params:
-                setattr(obj, key, None)
 
     def _append_parameters_to_name(self):
         if self._rfm_param_space.params:

@@ -19,7 +19,7 @@ class LocalAttrSpace(metaclass=abc.ABCMeta):
     through directives. This local attribute space is populated during the
     test class body execution through the add_attr method, which must be
     exposed as a directive in the
-    :class:`reframe.core.pipeline.RegressionTest`.
+    :class `reframe.core.pipeline.RegressionTest`.
 
     Example: In the pseudo-code below, the local attribute space of A is {P0},
     and the local attribute space of B is {P1}. However, the final attribute
@@ -70,14 +70,19 @@ class AttrSpace(metaclass=abc.ABCMeta):
     To allow for this inheritance and extension of the attribute space, this
     class must define the names under which the local and final attribute
     spaces are inserted in the target classes.
+
+    If a target class is provided, the constructor will attach the AttrSpace
+    instance into the target class with the class attribute name as defined
+    in ``attrSpaceName``.
     '''
+
     @property
     @abc.abstractmethod
     def localAttrSpaceName(self):
         '''Name of the local attribute space in the target class.
 
         Name under which the local attribute space is stored in the
-        :class`reframe.core.pipeline.RegressionTest` class.
+        :class `reframe.core.pipeline.RegressionTest` class.
         '''
 
     @property
@@ -91,7 +96,7 @@ class AttrSpace(metaclass=abc.ABCMeta):
         '''Name of the attribute space in the target class.
 
         Name under which the attribute space is stored in the
-        :class`reframe.core.pipeline.RegressionTest` class.
+        :class `reframe.core.pipeline.RegressionTest` class.
         '''
 
     def __init__(self, target_cls=None):
@@ -121,9 +126,17 @@ class AttrSpace(metaclass=abc.ABCMeta):
         assert isinstance(getattr(cls, self.localAttrSpaceName),
                           self.localAttrSpaceCls)
 
-    @abc.abstractmethod
     def inherit(self, cls):
-        '''Inherit the attribute spaces from the parent classes of cls.'''
+        '''Inherit the AttrSpace from the bases.'''
+
+        for base in filter(lambda x: hasattr(x, self.attrSpaceName),
+                           cls.__bases__):
+            assert isinstance(getattr(base, self.attrSpaceName), type(self))
+            self.join(getattr(base, self.attrSpaceName))
+
+    @abc.abstractmethod
+    def join(self, other):
+        '''Join other AttrSpace with the current one.'''
 
     @abc.abstractmethod
     def extend(self, cls):
@@ -135,12 +148,13 @@ class AttrSpace(metaclass=abc.ABCMeta):
         By default, we make illegal to have the any attribute in the AttrSpace
         that clashes with a member of the target class.
         '''
+
         target_namespace = set(dir(cls))
         for key in self._attr:
             if key in target_namespace:
                 raise ValueError(
-                    f'{key!r} clashes with the namespace from '
-                    f'{cls.__qualname__!r}'
+                    f'{key!r} clashes with other attribute present in the'
+                    f' namespace of {cls.__qualname__!r}'
                 )
 
     @abc.abstractmethod

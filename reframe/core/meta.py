@@ -24,7 +24,7 @@ class RegressionTestMeta(type):
 
         # Directive to add a regression test parameter directly in the
         # class body as: `parameter('P0', 0,1,2,3)`.
-        namespace['parameter'] = local_param_space.add_param
+        namespace['parameter'] = local_param_space.add_attr
 
         # Regression test var space defined at the class level
         local_var_space = variables.LocalVarSpace()
@@ -41,8 +41,8 @@ class RegressionTestMeta(type):
         super().__init__(name, bases, namespace, **kwargs)
 
         # Build the parameter and variable spaces
-        cls._rfm_param_space = parameters.ParamSpace(cls)
         variables.VarSpace(cls)
+        parameters.ParamSpace(cls)
 
         # Set up the hooks for the pipeline stages based on the _rfm_attach
         # attribute; all dependencies will be resolved first in the post-setup
