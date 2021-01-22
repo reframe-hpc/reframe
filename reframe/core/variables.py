@@ -7,8 +7,10 @@
 # Functionality to build extensible attribute spaces into ReFrame tests.
 #
 
+
 import reframe.core.attributes as attributes
 import reframe.core.fields as fields
+
 
 class _TestVar:
     '''Regression test variable.

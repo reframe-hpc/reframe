@@ -98,21 +98,21 @@ class AttrSpace(metaclass=abc.ABCMeta):
         self._attr = {}
         if target_cls:
 
-           # Assert the AttrSpace can be built for the target_cls
-           self.assert_target_cls(target_cls)
+            # Assert the AttrSpace can be built for the target_cls
+            self.assert_target_cls(target_cls)
 
-           # Inherit AttrSpaces from the base clases
-           self.inherit(target_cls)
+            # Inherit AttrSpaces from the base clases
+            self.inherit(target_cls)
 
-           # Extend the AttrSpace with the LocalAttrSpace
-           self.extend(target_cls)
+            # Extend the AttrSpace with the LocalAttrSpace
+            self.extend(target_cls)
 
-           # Sanity checkings on the resulting AttrSpace
-           self.sanity(target_cls)
+            # Sanity checkings on the resulting AttrSpace
+            self.sanity(target_cls)
 
-           # Attach the AttrSpace to the target class
-           if target_cls:
-               setattr(target_cls, self.attrSpaceName, self)
+            # Attach the AttrSpace to the target class
+            if target_cls:
+                setattr(target_cls, self.attrSpaceName, self)
 
     def assert_target_cls(self, cls):
         '''Assert the target class has a valid local attribute space.'''
@@ -145,7 +145,7 @@ class AttrSpace(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def insert(self, obj, objtype=None):
-       '''Insert the attributes from the AttrSpace as members of the test.'''
+        '''Insert the attributes from the AttrSpace as members of the test.'''
 
     def items(self):
         return self._attr.items()

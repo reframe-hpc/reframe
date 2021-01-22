@@ -333,8 +333,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:     :class:`reframe.core.containers.ContainerPlatform`.
     #: :default: :class:`None`.
     var('container_platform', type(None),
-        field=ContainerPlatformField, value=None
-    )
+        field=ContainerPlatformField, value=None)
 
     #: .. versionadded:: 3.0
     #:
@@ -543,8 +542,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:        The measurement unit is required. The user should explicitly
     #:        specify :class:`None` if no unit is available.
     var('reference', typ.Tuple[object, object, object, object],
-        field=fields.ScopedDictField, value={}
-    )
+        field=fields.ScopedDictField, value={})
     # FIXME: There is not way currently to express tuples of `float`s or
     # `None`s, so we just use the very generic `object`
 
@@ -584,7 +582,8 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:     </sanity_functions_reference>`) as values.
     #:     :class:`None` is also allowed.
     #: :default: :class:`None`
-    var('perf_patterns', typ.Dict[str, _DeferredExpression], type(None), value=None)
+    var('perf_patterns', typ.Dict[str, _DeferredExpression],
+        type(None), value=None)
 
     #: List of modules to be loaded before running this test.
     #:
