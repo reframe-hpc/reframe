@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -84,6 +84,9 @@ class GpuBurnTest(rfm.RegressionTest):
         if cs in {'dom', 'daint'}:
             gpu_arch = '60'
             self.modules = ['craype-accel-nvidia60']
+            if cs == 'dom':
+                self.modules += ['cdt-cuda']
+
         elif cs in {'arola', 'tsa'}:
             gpu_arch = '70'
             self.modules = ['cuda/10.1.243']
