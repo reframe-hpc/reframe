@@ -236,9 +236,11 @@ class SlurmJobScheduler(sched.JobScheduler):
                 completed = _run_strict(cmd, timeout=self._submit_timeout)
                 break
             except SpawnedProcessError as e:
-                if (not self._block_submission or
+                sbatch_error = 'sbatch: error: QOSMaxSubmitJobPerUserLimit'
+                if (
+                    not self._block_submission or
                     e.exitcode != 1 or
-                    'sbatch: error: QOSMaxSubmitJobPerUserLimit' not in e.stderr
+                    sbatch_error not in e.stderr
                 ):
                     raise e
 
