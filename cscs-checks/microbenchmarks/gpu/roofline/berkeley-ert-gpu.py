@@ -12,7 +12,8 @@ import reframe.utility.udeps as udeps
 # do not run this check with --system (because of deps)
 ert_precisions = ["ERT_FP64"]
 repeat = 1
-ert_flops = [1, 2]
+ert_flops = [1]
+# ert_flops = [1, 2]
 # ert_flops = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
 gpu_specs = {
     "P100": {
@@ -92,6 +93,7 @@ class RunErt_Base(rfm.RegressionTest):
         self.build_system.cxx = "nvcc"
         self.build_system.cxxflags = \
             self.prgenv_flags[self.current_environ.name]
+        self.prebuild_cmds = ['module list', 'which gcc', 'which nvcc']
 
     @rfm.run_before("run")
     def set_run_cmds(self):
@@ -345,7 +347,7 @@ class V100_RunErt(RunErt_Base):
         # {{{ pe
         gpu = "V100"
         self.descr = f"Collect ERT data from NVIDIA Pascal {gpu}"
-        self.valid_systems = ["tsa:cn"]
+        self.valid_systems = ["tsa:cn", "ault:intelv100"]
         self.valid_prog_environs = ["PrgEnv-gnu"]
         # self.variables = {'CUDA_VISIBLE_DEVICES=0'
         self.extra_resources = {"_rfm_gpu": {"num_gpus_per_node": "1"}}
@@ -362,8 +364,8 @@ class V100_RunErt(RunErt_Base):
         self.num_tasks = 1
         self.num_tasks_per_node = 1
         self.num_cpus_per_task = 1
-        self.num_tasks_per_core = 1
-        self.use_multithreading = False
+        # self.num_tasks_per_core = 1
+        # self.use_multithreading = False
         self.exclusive = True
         self.time_limit = "5m"
         # set blocks and threads per block:
@@ -391,7 +393,7 @@ class V100_PlotErt(PlotErt_Base):
         super().__init__()
         gpu = "V100"
         self.descr = f"Final step of the Roofline test (NVIDIA Pascal {gpu})"
-        self.valid_systems = ["tsa:login"]
+        self.valid_systems = ["tsa:login", "ault:login"]
         self.valid_prog_environs = ["PrgEnv-gnu"]
         self.maintainers = ["JG"]
         self.tags = {"gpu"}
