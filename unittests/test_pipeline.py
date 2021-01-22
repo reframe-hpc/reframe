@@ -614,6 +614,18 @@ def test_stacked_hooks(hellotest, local_exec_ctx):
     assert test.var == 3
 
 
+def test_multiple_inheritance(hellotest):
+    with pytest.raises(ValueError):
+        class MyTest(rfm.RunOnlyRegressionTest, hellotest):
+            pass
+
+
+def test_extend_after_instantiation(hellotest):
+    inst = hellotest()
+    with pytest.raises(ValueError):
+        class MyTest(hellotest):
+            pass
+
 def test_inherited_hooks(hellotest, local_exec_ctx):
     @fixtures.custom_prefix('unittests/resources/checks')
     class BaseTest(hellotest):
