@@ -234,8 +234,8 @@ class P100_RunErt(RunErt_Base):
         # set blocks and threads per block:
         self.ert_gpu_threads = ert_gpu_threads
         maximum_number_of_threads = (
-            gpu_specs[gpu]["multiprocessors"]
-            * gpu_specs[gpu]["maximum_number_of_threads_per_multiprocessor"]
+            gpu_specs[gpu]["multiprocessors"] *
+            gpu_specs[gpu]["maximum_number_of_threads_per_multiprocessor"]
         )
         self.ert_gpu_blocks = int(maximum_number_of_threads / ert_gpu_threads)
         # The other steps are in the base class
@@ -358,8 +358,8 @@ class V100_RunErt(RunErt_Base):
         # set blocks and threads per block:
         self.ert_gpu_threads = ert_gpu_threads
         maximum_number_of_threads = (
-            gpu_specs[gpu]["multiprocessors"]
-            * gpu_specs[gpu]["maximum_number_of_threads_per_multiprocessor"]
+            gpu_specs[gpu]["multiprocessors"] *
+            gpu_specs[gpu]["maximum_number_of_threads_per_multiprocessor"]
         )
         self.ert_gpu_blocks = int(maximum_number_of_threads / ert_gpu_threads)
         # The other steps are in the base class
