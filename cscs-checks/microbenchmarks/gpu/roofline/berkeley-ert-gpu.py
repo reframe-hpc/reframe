@@ -198,7 +198,7 @@ class PlotErt_Base(rfm.RunOnlyRegressionTest):
         [ert_precision, ert_flop, ert_gpu_threads]
         for ert_precision in ert_precisions
         for ert_flop in ert_flops
-        for ert_gpu_threads in [32]
+        for ert_gpu_threads in [int(2 ** (log(32, 2))]  # = 32
         # uncomment for full search:
         # for ert_gpu_threads in [2 ** x for x in range(
         #     int(log(gpu_specs["P100"]["warp_size"], 2)),
@@ -233,9 +233,8 @@ class P100_RunErt(RunErt_Base):
         self.time_limit = "10m"
         # set blocks and threads per block:
         self.ert_gpu_threads = ert_gpu_threads
-        maximum_number_of_threads = (
-            gpu_specs[gpu]["multiprocessors"]
-            * gpu_specs[gpu]["maximum_number_of_threads_per_multiprocessor"]
+        maximum_number_of_threads = (gpu_specs[gpu]["multiprocessors"] *
+            gpu_specs[gpu]["maximum_number_of_threads_per_multiprocessor"]
         )
         self.ert_gpu_blocks = int(maximum_number_of_threads / ert_gpu_threads)
         # The other steps are in the base class
@@ -357,9 +356,8 @@ class V100_RunErt(RunErt_Base):
         self.time_limit = "5m"
         # set blocks and threads per block:
         self.ert_gpu_threads = ert_gpu_threads
-        maximum_number_of_threads = (
-            gpu_specs[gpu]["multiprocessors"]
-            * gpu_specs[gpu]["maximum_number_of_threads_per_multiprocessor"]
+        maximum_number_of_threads = (gpu_specs[gpu]["multiprocessors"] *
+            gpu_specs[gpu]["maximum_number_of_threads_per_multiprocessor"]
         )
         self.ert_gpu_blocks = int(maximum_number_of_threads / ert_gpu_threads)
         # The other steps are in the base class
