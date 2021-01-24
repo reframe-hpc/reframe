@@ -239,7 +239,7 @@ Let's try loading the ``tutorials/basics/hello/hello2.py`` file:
    Found 2 check(s)
    Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-3956_dlu.log'
 
-You can see all the different phase ReFrame's frontend goes through when loading a test.
+You can see all the different phases ReFrame's frontend goes through when loading a test.
 The first "strange" thing to notice in this log is that ReFrame picked the generic system configuration.
 This happened because it couldn't find a system entry with a matching hostname pattern.
 However, it did not impact the test loading, because these tests are valid for any system, but it will affect the tests when running (see :doc:`tutorial_basics`) since the generic system does not define any C++ compiler.
