@@ -29,6 +29,17 @@ site_configuration = {
                     'access': ['-ptotal'],
                     'environs': ['gnu', 'foss'],
                     'max_jobs': 100,
+                    'resources': [
+                        {
+                            'name': 'memory',
+                            'options': ['--mem={size}']
+                        }
+                    ],
+                    'container_platforms': [
+                        {
+                            'type': 'Singularity',
+                        }
+                    ]
                 }
             ]
         },
