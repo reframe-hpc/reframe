@@ -33,7 +33,7 @@ site_configuration = {
                     'descr': 'Login nodes',
                     'scheduler': 'local',
                     'launcher': 'local',
-                    'environs': ['gnu', 'intel', 'pgi', 'cray'],
+                    'environs': ['builtin', 'gnu', 'intel', 'pgi', 'cray'],
                 },
                 {
                     'name': 'gpu',
@@ -138,6 +138,13 @@ site_configuration = {
             'cxx': '',
             'ftn': ''
         },
+        {
+            'name': 'builtin',
+            'cc': 'cc',
+            'cxx': 'CC',
+            'ftn': 'ftn',
+            'target_systems': ['daint']
+        }
     ],
     'logging': [
         {

@@ -33,12 +33,22 @@ The "Hello, World!" test
 As simple as it may sound, a series of "naive" "Hello, World!" tests can reveal lots of regressions in the programming environment of HPC clusters, but the bare minimum of those also serves perfectly the purpose of starting this tutorial.
 Here is its C version:
 
+.. code-block:: console
+
+   cat tutorials/basics/hello/src/hello.c
+
+
 .. literalinclude:: ../tutorials/basics/hello/src/hello.c
    :language: c
    :lines: 6-
 
 
 And here is the ReFrame version of it:
+
+.. code-block:: console
+
+   cat tutorials/basics/hello/hello1.py
+
 
 .. literalinclude:: ../tutorials/basics/hello/hello1.py
    :lines: 6-
@@ -211,6 +221,11 @@ We want to extend our test and run a C++ "Hello, World!" as well.
 We could simply copy paste the ``hello1.py`` and change the source file extension to refer to the C++ source code.
 But this duplication is something that we generally want to avoid.
 ReFrame allows you to avoid this in several ways but the most compact is to define the new test as follows:
+
+
+.. code-block:: console
+
+   cat tutorials/basics/hello/hello2.py
 
 
 .. literalinclude:: ../tutorials/basics/hello/hello2.py
@@ -391,12 +406,22 @@ A Multithreaded "Hello, World!"
 We extend our C++ "Hello, World!" example to print the greetings from multiple threads:
 
 
+.. code-block:: console
+
+   cat tutorials/basics/hellomp/src/hello_threads.cpp
+
+
 .. literalinclude:: ../tutorials/basics/hellomp/src/hello_threads.cpp
    :language: cpp
    :lines: 6-
 
 This program takes as argument the number of threads it will create and it uses ``std::thread``, which is C++11 addition, meaning that we will need to pass ``-std=c++11`` to our compilers.
 Here is the corresponding ReFrame test, where the new concepts introduced are highlighted:
+
+.. code-block:: console
+
+   cat tutorials/basics/hellomp/hellomp1.py
+
 
 .. literalinclude:: ../tutorials/basics/hellomp/hellomp1.py
    :lines: 6-
@@ -488,6 +513,11 @@ The syntax feels also quite natural since it is fully integrated in Python.
 
 In the following we extend the sanity checking of the multithreaded "Hello, World!", such that not only the output pattern we are looking for is more restrictive, but also we check that all the threads produce a greetings line.
 
+.. code-block:: console
+
+   cat tutorials/basics/hellomp/hellomp2.py
+
+
 .. literalinclude:: ../tutorials/basics/hellomp/hellomp2.py
    :lines: 6-
    :emphasize-lines: 14-16
@@ -569,6 +599,11 @@ Let's run this version of the test now and see if it fails:
 As expected, only some of lines are printed correctly which makes the test fail.
 To fix this test, we need to compile with ``-DSYNC_MESSAGES``, which will synchronize the printing of messages.
 
+.. code-block:: console
+
+   cat tutorials/basics/hellomp/hellomp3.py
+
+
 .. literalinclude:: ../tutorials/basics/hellomp/hellomp3.py
    :lines: 6-
    :emphasize-lines: 13
@@ -580,6 +615,11 @@ Writing A Performance Test
 An important aspect of regression testing is checking for performance regressions.
 In this example, we will write a test that downloads the `STREAM <http://www.cs.virginia.edu/stream/ref.html>`__ benchmark, compiles it, runs it and records its performance.
 In the test below, we highlight the lines that introduce new concepts.
+
+.. code-block:: console
+
+   cat tutorials/basics/stream/stream1.py
+
 
 .. literalinclude:: ../tutorials/basics/stream/stream1.py
    :lines: 6-
@@ -667,6 +707,11 @@ In the following example, we set the reference values for all the STREAM sub-ben
 .. note::
 
    Optimizing STREAM benchmark performance is outside the scope of this tutorial.
+
+
+.. code-block:: console
+
+   cat tutorials/basics/stream/stream2.py
 
 
 .. literalinclude:: ../tutorials/basics/stream/stream2.py
@@ -763,7 +808,7 @@ Let's extend our configuration file for Piz Daint.
 
 .. literalinclude:: ../tutorials/config/settings.py
    :lines: 10-45,58-66,73-
-   :emphasize-lines: 16-48,70-101
+   :emphasize-lines: 16-48,70-101,114-120
 
 
 First of all, we need to define a new system and set the list of hostnames that will help ReFrame identify it.
@@ -790,6 +835,8 @@ This is what we do exactly with the :js:attr:`access` partition configuration op
 Piz Daint's programming environment offers four compilers: Cray, GNU, Intel and PGI.
 We want to test all of them, so we include them in the :js:attr:`environs` lists.
 Notice that we do not include Clang in the list, since there is no such compiler on this particular system.
+On the other hand, we include a different version of the ``builtin`` environment, which corresponds to the default login environment without loading any modules.
+It is generally useful to define such an environment so as to use it for tests that are running simple utilities and don't need to compile anything.
 
 Before looking into the definition of the new environments for the four compilers, it is worth mentioning the :js:attr:`max_jobs` parameter.
 This parameter specifies the maximum number of ReFrame test jobs that can be simultaneously in flight.
