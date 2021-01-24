@@ -410,6 +410,11 @@ In this example, we instruct ReFrame to compile a single source file using the `
 Finally, we set the arguments to be passed to the generated executable in :attr:`executable_opts <reframe.core.pipeline.RegressionTest.executable_opts>`.
 
 
+.. code-block:: console
+
+   ./bin/reframe -c tutorials/basics/hellomp/hellomp1.py -r
+
+
 .. code-block:: none
 
    [ReFrame Setup]
@@ -673,6 +678,11 @@ The performance reference tuple consists of the reference value, the lower and u
 If any of the thresholds is not relevant, :class:`None` may be used instead.
 
 If any obtained performance value is beyond its respective thresholds, the test will fail with a summary as shown below:
+
+.. code-block:: console
+
+   ./bin/reframe -c tutorials/basics/stream/stream2.py -r --performance-report
+
 
 .. code-block:: none
 

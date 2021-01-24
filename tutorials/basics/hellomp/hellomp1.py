@@ -14,6 +14,6 @@ class HelloThreadedTest(rfm.RegressionTest):
         self.valid_prog_environs = ['*']
         self.sourcepath = 'hello_threads.cpp'
         self.build_system = 'SingleSource'
-        self.build_system.cxxflags = ['-std=c++11', '-Wall']
+        self.build_system.cxxflags = ['-std=c++11', '-Wall', '-pthread']
         self.executable_opts = ['16']
         self.sanity_patterns = sn.assert_found(r'Hello, World\!', self.stdout)
