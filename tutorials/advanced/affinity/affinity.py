@@ -10,7 +10,7 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class AffinityTest(rfm.RegressionTest):
     def __init__(self):
-        self.valid_systems = ['daint']
+        self.valid_systems = ['daint:gpu', 'daint:mc']
         self.valid_prog_environs = ['*']
         self.sourcesdir = 'https://github.com/vkarak/affinity.git'
         self.build_system = 'Make'

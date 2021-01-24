@@ -762,7 +762,7 @@ Let's extend our configuration file for Piz Daint.
 
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 10-46,65-
+   :lines: 10-45,58-66,73-
    :emphasize-lines: 16-48,70-101
 
 
@@ -812,7 +812,8 @@ We will only do so with the final versions of the tests from the previous sectio
 
 .. code-block:: console
 
-   ./bin/reframe -C tutorials/config/settings.py -c tutorials/basics/ -R -n 'HelloMultiLangTest|HelloThreadedExtended2Test|StreamWithRefTest' --performance-report -r
+   export RFM_CONFIG_FILE=$(pwd)/tutorials/config/mysettings.py
+   ./bin/reframe -c tutorials/basics/ -R -n 'HelloMultiLangTest|HelloThreadedExtended2Test|StreamWithRefTest' --performance-report -r
 
 
 ..  code-block:: none
@@ -1007,6 +1008,10 @@ Unless a test is rather generic, you will need to make some adaptations for the 
 In this case, we will adapt the STREAM benchmark so as to run it with multiple compiler and adjust its execution parameters based on the target architecture of each partition.
 Let's see and comment the changes:
 
+.. code-block:: console
+
+   cat tutorials/basics/stream/stream3.py
+
 .. literalinclude:: ../tutorials/basics/stream/stream3.py
    :lines: 6-
    :emphasize-lines: 9,37-
@@ -1038,7 +1043,7 @@ Let's run our adapted test now:
 
 .. code-block:: console
 
-   ./bin/reframe -C tutorials/config/settings.py -c tutorials/basics/stream/stream3.py -r --performance-report
+   ./bin/reframe -c tutorials/basics/stream/stream3.py -r --performance-report
 
 
 .. code-block:: none

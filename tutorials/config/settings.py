@@ -42,17 +42,17 @@ site_configuration = {
                     'launcher': 'srun',
                     'access': ['-C gpu', '-A csstaff'],
                     'environs': ['gnu', 'intel', 'pgi', 'cray'],
-                    'container_platforms': [
-                        {
-                            'type': 'Singularity',
-                            'modules': ['singularity']
-                        }
-                    ],
                     'max_jobs': 100,
                     'resources': [
                         {
                             'name': 'memory',
                             'options': ['--mem={size}']
+                        }
+                    ],
+                    'container_platforms': [
+                        {
+                            'type': 'Singularity',
+                            'modules': ['singularity']
                         }
                     ]
                 },

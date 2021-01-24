@@ -13,14 +13,14 @@ class MemoryLimitTest(rfm.RegressionTest):
         self.valid_systems = ['daint:gpu', 'daint:mc']
         self.valid_prog_environs = ['gnu']
         self.sourcepath = 'eatmemory.c'
-        self.executable_opts = ['4000M']
+        self.executable_opts = ['2000M']
         self.sanity_patterns = sn.assert_found(
             r'(exceeded memory limit)|(Out Of Memory)', self.stderr
         )
 
     @rfm.run_before('run')
     def set_memory_limit(self):
-        self.job.options = ['--mem=2000']
+        self.job.options = ['--mem=1000']
 
 
 @rfm.simple_test
@@ -29,10 +29,10 @@ class MemoryLimitWithResourcesTest(rfm.RegressionTest):
         self.valid_systems = ['daint:gpu', 'daint:mc']
         self.valid_prog_environs = ['gnu']
         self.sourcepath = 'eatmemory.c'
-        self.executable_opts = ['4000M']
+        self.executable_opts = ['2000M']
         self.sanity_patterns = sn.assert_found(
             r'(exceeded memory limit)|(Out Of Memory)', self.stderr
         )
         self.extra_resources = {
-            'memory': {'size': '2000'}
+            'memory': {'size': '1000'}
         }
