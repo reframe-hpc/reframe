@@ -73,7 +73,7 @@ As done previously, we define the dependencies with the the following line:
 
 Here we tell ReFrame that this test depends on a test named :class:`OSUBuildTest` "by environment."
 This means that the test cases of this test will only depend on the test cases of the :class:`OSUBuildTest` that use the same environment;
-partitions will be independent.
+partitions may be different.
 
 The next step for the :class:`OSULatencyTest` is to set its executable to point to the binary produced by the :class:`OSUBuildTest`.
 This is achieved with the following specially decorated function:
