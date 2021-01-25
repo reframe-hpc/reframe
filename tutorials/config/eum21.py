@@ -19,7 +19,7 @@ site_configuration = {
                     'name': 'login',
                     'scheduler': 'local',
                     'launcher': 'local',
-                    'environs': ['gnu'],
+                    'environs': ['builtin', 'gnu'],
                 },
                 {
                     'name': 'cn',
@@ -27,8 +27,8 @@ site_configuration = {
                     'scheduler': 'slurm',
                     'launcher': 'srun',
                     'access': ['-ptotal'],
-                    'environs': ['gnu', 'foss'],
-                    'max_jobs': 100,
+                    'environs': ['builtin', 'gnu', 'foss'],
+                    'max_jobs': 10,
                     'resources': [
                         {
                             'name': 'memory',
@@ -40,7 +40,7 @@ site_configuration = {
                             'type': 'Singularity',
                         }
                     ]
-                }
+                },
             ]
         },
         {
@@ -71,6 +71,13 @@ site_configuration = {
             'cxx': 'mpicxx',
             'ftn': 'mpif90',
             'modules': ['foss/2020a']
+        },
+        {
+            'name': 'builtin',
+            'cc': 'gcc',
+            'cxx': 'g++',
+            'ftn': 'gfortran',
+            'target_systems': ['reframe-eum']
         },
         {
             'name': 'builtin',
