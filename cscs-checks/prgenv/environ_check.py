@@ -62,12 +62,15 @@ class CrayVariablesCheck(rfm.RunOnlyRegressionTest):
             sn.assert_found(f'{envvar_prefix}_VERSION', self.stderr)
         ])
 
-        # FIXME: These modules should be fixed in later releases
+        # FIXME: These modules should be fixed in later releases,
+        # while gcc was fixed in 20.11
+
         cdt = osext.cray_cdt_version()
-        if (cdt and cdt <= '20.11' and
-            module_name in ['cray-petsc-complex',
+        if ((cdt and cdt <= '20.11' and
+             module_name in ['cray-petsc-complex',
                             'cray-petsc-complex-64',
-                            'cudatoolkit']):
+                            'cudatoolkit']) or
+            (cdt and cdt < 20.11 and module_name == 'gcc')):
             self.valid_systems = []
 
         self.maintainers = ['EK', 'VH']
