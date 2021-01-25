@@ -7,7 +7,6 @@ import os
 
 import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.fields import ScopedDict
 
 
 @rfm.parameterized_test(["C++"], ["F90"])
