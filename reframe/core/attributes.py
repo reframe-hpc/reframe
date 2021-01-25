@@ -99,7 +99,7 @@ class AttrSpace(metaclass=abc.ABCMeta):
         :class `reframe.core.pipeline.RegressionTest` class.
         '''
 
-    def __init__(self, target_cls=None):
+    def __init__(self, target_cls=None, target_namespace=None):
         self._attr = {}
         if target_cls:
 
@@ -113,7 +113,7 @@ class AttrSpace(metaclass=abc.ABCMeta):
             self.extend(target_cls)
 
             # Sanity checkings on the resulting AttrSpace
-            self.sanity(target_cls)
+            self.sanity(target_cls, target_namespace)
 
             # Attach the AttrSpace to the target class
             if target_cls:
@@ -142,14 +142,15 @@ class AttrSpace(metaclass=abc.ABCMeta):
     def extend(self, cls):
         '''Extend the attribute space with the local attribute space.'''
 
-    def sanity(self, cls):
+    def sanity(self, cls, target_namespace=None):
         '''Sanity checks post-creation of the attribute space.
 
         By default, we make illegal to have the any attribute in the AttrSpace
         that clashes with a member of the target class.
         '''
+        if target_namespace is None:
+            target_namespace = set(dir(cls))
 
-        target_namespace = set(dir(cls))
         for key in self._attr:
             if key in target_namespace:
                 raise NameError(

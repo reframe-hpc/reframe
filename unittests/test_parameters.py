@@ -169,3 +169,12 @@ def test_parameterized_test_is_incompatible():
         class MyTest(TwoParams):
             def __init__(self, var):
                 pass
+
+
+def test_namespace_clash():
+    class Spam(rfm.RegressionTest):
+        var('foo', int, 1)
+
+    with pytest.raises(NameError):
+        class Ham(Spam):
+            parameter('foo', 1)

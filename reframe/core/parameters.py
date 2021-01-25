@@ -96,8 +96,8 @@ class ParamSpace(attributes.AttrSpace):
     localAttrSpaceCls = LocalParamSpace
     attrSpaceName = '_rfm_param_space'
 
-    def __init__(self, target_cls=None):
-        super().__init__(target_cls)
+    def __init__(self, target_cls=None, target_namespace=None):
+        super().__init__(target_cls, target_namespace)
 
         # Internal parameter space usage tracker
         self.__unique_iter = iter(self)

@@ -18,12 +18,12 @@ class _TestVar:
     Buffer to store a regression test variable into either a VarSpace or a
     LocalVarSpace.
     '''
-    def __init__(self, name, *types, field=None, value=None):
+    def __init__(self, name, *types, field=None, **kwargs):
         if field is None:
             field = fields.TypedField
 
-        if value is not None:
-            self.define(value)
+        if 'value' in kwargs:
+            self.define(kwargs.get('value'))
         else:
             self.undefine()
 
@@ -131,7 +131,8 @@ class VarSpace(attributes.AttrSpace):
             # triggered when inheriting from multiple RegressionTest classes.
             if key in self.vars:
                 raise ValueError(
-                    f'cannot redeclare a variable ({key})'
+                    f'attribute {key!r} is declared in more than one of the '
+                    f'parent classes'
                 )
 
             self.vars[key] = var
