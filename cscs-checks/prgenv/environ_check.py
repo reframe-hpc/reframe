@@ -67,7 +67,7 @@ class CrayVariablesCheck(rfm.RunOnlyRegressionTest):
         if (cdt and cdt <= '20.11' and
             module_name in ['cray-petsc-complex',
                             'cray-petsc-complex-64',
-                            'cudatoolkit', 'gcc']):
+                            'cudatoolkit']):
             self.valid_systems = []
 
         self.maintainers = ['EK', 'VH']
