@@ -68,8 +68,8 @@ class CrayVariablesCheck(rfm.RunOnlyRegressionTest):
         cdt = osext.cray_cdt_version()
         if ((cdt and cdt <= '20.11' and
              module_name in ['cray-petsc-complex',
-                            'cray-petsc-complex-64',
-                            'cudatoolkit']) or
+                             'cray-petsc-complex-64',
+                             'cudatoolkit']) or
             (cdt and cdt < 20.11 and module_name == 'gcc')):
             self.valid_systems = []
 
