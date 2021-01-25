@@ -131,7 +131,7 @@ In our example, we define environments for all the basic compilers as well as a 
 In certain contexts, it is useful to see a ReFrame environment as a wrapper of a programming toolchain (MPI + compiler combination):
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 90-141
+   :lines: 90-148
 
 Each environment is associated with a name.
 This name will be used to reference this environment in different contexts, as for example in the ``environs`` property of the system partitions.
@@ -153,7 +153,7 @@ Additionally, it allows for logging performance data from performance tests into
 Let's see how logging is defined in our example configuration, which also represents a typical one for logging:
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 142-177
+   :lines: 149-184
 
 Logging is configured under the ``logging`` section of the configuration, which is a list of logger objects.
 Unless you want to configure logging differently for different systems, a single logger object is enough.

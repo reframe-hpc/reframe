@@ -11,7 +11,7 @@ import reframe.utility.sanity as sn
 class MultiLaunchTest(rfm.RunOnlyRegressionTest):
     def __init__(self):
         self.valid_systems = ['daint:gpu', 'daint:mc']
-        self.valid_prog_environs = ['cray']
+        self.valid_prog_environs = ['builtin']
         self.executable = 'hostname'
         self.num_tasks = 4
         self.num_tasks_per_node = 1

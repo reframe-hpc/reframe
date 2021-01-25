@@ -104,7 +104,7 @@ class OSUBuildTest(rfm.CompileOnlyRegressionTest):
     @rfm.require_deps
     def set_sourcedir(self, OSUDownloadTest):
         self.sourcesdir = os.path.join(
-            OSUDownloadTest(environ='gnu').stagedir,
+            OSUDownloadTest(environ='builtin').stagedir,
             'osu-micro-benchmarks-5.6.2'
         )
 
@@ -114,9 +114,10 @@ class OSUDownloadTest(rfm.RunOnlyRegressionTest):
     def __init__(self):
         self.descr = 'OSU benchmarks download sources'
         self.valid_systems = ['daint:login']
-        self.valid_prog_environs = ['gnu']
+        self.valid_prog_environs = ['builtin']
         self.executable = 'wget'
-        self.executable_opts = ['http://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-5.6.2.tar.gz']
+        self.executable_opts = [
+            'http://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-5.6.2.tar.gz']
         self.postrun_cmds = [
             'tar xzf osu-micro-benchmarks-5.6.2.tar.gz'
         ]

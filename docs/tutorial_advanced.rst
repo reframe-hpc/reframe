@@ -445,10 +445,10 @@ Let's run the test and inspect the generated job script:
    #SBATCH --time=0:10:0
    #SBATCH -A csstaff
    #SBATCH --constraint=gpu
-   #SBATCH --mem=2000
+   #SBATCH --mem=1000
    module unload PrgEnv-cray
    module load PrgEnv-gnu
-   srun ./MemoryLimitTest 4000M
+   srun ./MemoryLimitTest 2000M
 
 
 The job options specified inside a ReFrame test are always the last to be emitted in the job script preamble and do not affect the options that are passed implicitly through other test attributes or configuration options.
@@ -598,7 +598,7 @@ Let's see how the generated job script looks like:
 .. code-block:: none
 
    ./bin/reframe -c tutorials/advanced/multilaunch/multilaunch.py -r
-   cat output/daint/gpu/cray/MultiLaunchTest/rfm_MultiLaunchTest_job.sh
+   cat output/daint/gpu/builtin/MultiLaunchTest/rfm_MultiLaunchTest_job.sh
 
 .. code:: bash
 
@@ -611,7 +611,6 @@ Let's see how the generated job script looks like:
     #SBATCH --time=0:10:0
     #SBATCH -A csstaff
     #SBATCH --constraint=gpu
-    module load PrgEnv-cray
     srun -n 1 hostname
     srun -n 2 hostname
     srun -n 3 hostname
