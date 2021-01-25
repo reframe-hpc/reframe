@@ -102,7 +102,7 @@ class OSUBuildTest(rfm.CompileOnlyRegressionTest):
     @rfm.require_deps
     def set_sourcedir(self, OSUDownloadTest):
         self.sourcesdir = os.path.join(
-            OSUDownloadTest(environ='builtin').stagedir,
+            OSUDownloadTest(part='login', environ='builtin').stagedir,
             'osu-micro-benchmarks-5.6.2'
         )
 
