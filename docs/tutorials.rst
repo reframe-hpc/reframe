@@ -6,5 +6,6 @@ ReFrame Tutorials
 .. toctree::
 
    tutorial_basics
+   tutorial_advanced
    tutorial_deps
-   tutorial_misc_topics
+   tutorial_tips_tricks
