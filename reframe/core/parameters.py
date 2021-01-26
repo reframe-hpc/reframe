@@ -120,9 +120,9 @@ class ParamSpace(attributes.AttrSpace):
                 self.params[key] != () and
                 other.params[key] != ()):
 
-                raise ReframeSyntaxError(f'parameter space conflict: '
-                                         f'parameter {key!r} already defined '
-                                         f'in {b.__qualname__!r}')
+                raise ValueError(f'parameter space conflict: '
+                                 f'parameter {key!r} is defined in more than '
+                                 f'one base class')
 
             self.params[key] = (
                 other.params.get(key, ()) + self.params.get(key, ())

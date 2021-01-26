@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 #
-# Functionality to build extensible attribute spaces into ReFrame tests.
+# Functionality to build extensible variable spaces into ReFrame tests.
 #
 
 
@@ -15,8 +15,7 @@ import reframe.core.fields as fields
 class _TestVar:
     '''Regression test variable.
 
-    Buffer to store a regression test variable into either a VarSpace or a
-    LocalVarSpace.
+    Buffer to store a regression test variable declared through directives.
     '''
     def __init__(self, name, *types, field=None, **kwargs):
         if field is None:

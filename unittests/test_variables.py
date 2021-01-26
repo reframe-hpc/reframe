@@ -38,7 +38,7 @@ def test_instantiate_and_inherit(novars):
     inst = novars()
     with pytest.raises(NameError):
         class MyTest(novars):
-            pass
+            '''Error from name clashing'''
 
 
 def test_redeclare_var_clash(novars):
@@ -53,7 +53,26 @@ def test_inheritance_clash(novars):
 
     with pytest.raises(ValueError):
         class MyTest(novars, MyMixin):
-            pass
+            '''Trigger error from inheritance clash.'''
+
+
+def test_var_space_clash():
+    class Spam(rfm.RegressionMixin):
+        var('v0', int, value=1)
+
+    class Ham(rfm.RegressionMixin):
+        var('v0', int, value=2)
+
+    with pytest.raises(ValueError):
+        class Eggs(Spam, Ham):
+            '''Trigger error from var name clashing.'''
+
+
+def test_double_declare():
+    with pytest.raises(ValueError):
+        class MyTest(rfm.RegressionTest):
+            var('v0', int, value=1)
+            var('v0', float, value=0.5)
 
 
 def test_namespace_clash(novars):
@@ -115,3 +134,12 @@ def test_require_undef(novars):
     with pytest.raises(ValueError):
         class MyTest(novars):
             require_var('foo')
+
+
+def test_invalid_field():
+    class Foo:
+        '''An invalid descriptor'''
+
+    with pytest.raises(ValueError):
+        class MyTest(rfm.RegressionTest):
+            var('a', int, value=4, field=Foo)

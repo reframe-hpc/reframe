@@ -171,6 +171,18 @@ def test_parameterized_test_is_incompatible():
                 pass
 
 
+def test_param_space_clash():
+    class Spam(rfm.RegressionMixin):
+        parameter('P0', 1)
+
+    class Ham(rfm.RegressionMixin):
+        parameter('P0', 2)
+
+    with pytest.raises(ValueError):
+        class Eggs(Spam, Ham):
+            '''Trigger error from param name clashing.'''
+
+
 def test_namespace_clash():
     class Spam(rfm.RegressionTest):
         var('foo', int, 1)
@@ -178,3 +190,10 @@ def test_namespace_clash():
     with pytest.raises(NameError):
         class Ham(Spam):
             parameter('foo', 1)
+
+
+def test_double_declare():
+    with pytest.raises(ValueError):
+        class MyTest(rfm.RegressionTest):
+            parameter('P0', 1, 2, 3)
+            parameter('P0')
