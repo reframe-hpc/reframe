@@ -115,7 +115,8 @@ class OSUDownloadTest(rfm.RunOnlyRegressionTest):
         self.valid_prog_environs = ['builtin']
         self.executable = 'wget'
         self.executable_opts = [
-            'http://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-5.6.2.tar.gz']
+            'http://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-5.6.2.tar.gz'  # noqa: E501
+        ]
         self.postrun_cmds = [
             'tar xzf osu-micro-benchmarks-5.6.2.tar.gz'
         ]
