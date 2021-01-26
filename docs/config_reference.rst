@@ -1220,6 +1220,14 @@ General Configuration
    If specified from the command line, the command line option must be specified multiple times to increase the verbosity level more than once.
 
 
+.. js:attribute:: .general[].executable_jobscript
+
+   :required: No
+   :default: ``false``
+
+   Make the generated jobscript executable.
+
+
 Module Objects
 --------------
 
