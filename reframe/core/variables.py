@@ -107,9 +107,12 @@ class LocalVarSpace(attributes.LocalAttrSpace):
         Calling more than one of the directives above on the same variable
         does not make sense.
         '''
-        if any(name in x for x in [self.vars, self.undefined, self.definitions]):
-            raise ValueError(f'cannot specify more than one action on variable'
-                             f' {name!r} in the same class'
+        if any(name in x for x in [self.vars,
+                                   self.undefined,
+                                   self.definitions]):
+            raise ValueError(
+                f'cannot specify more than one action on variable'
+                f' {name!r} in the same class'
             )
 
     @property
