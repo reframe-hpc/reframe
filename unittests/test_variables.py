@@ -75,6 +75,13 @@ def test_double_declare():
             var('v0', float, value=0.5)
 
 
+def test_double_action_on_var():
+    with pytest.raises(ValueError):
+        class MyTest(rfm.RegressionTest):
+            set_var('v0', 2)
+            var('v0', int, value=2)
+
+
 def test_namespace_clash(novars):
     with pytest.raises(NameError):
         class MyTest(novars):

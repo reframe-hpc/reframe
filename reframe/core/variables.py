@@ -70,6 +70,7 @@ class LocalVarSpace(attributes.LocalAttrSpace):
             :ref:`directives`
 
         '''
+        self._is_logged(name)
         self[name] = _TestVar(name, *types, **kwargs)
 
     def undefine_attr(self, name):
@@ -83,6 +84,7 @@ class LocalVarSpace(attributes.LocalAttrSpace):
             :ref:`directives`
 
         '''
+        self._is_logged(name)
         self.undefined.add(name)
 
     def define_attr(self, name, value):
@@ -96,7 +98,19 @@ class LocalVarSpace(attributes.LocalAttrSpace):
             :ref:`directives`
 
         '''
+        self._is_logged(name)
         self.definitions[name] = value
+
+    def _is_logged(self, name):
+        ''' Check if an action has been registered for this variable.
+
+        Calling more than one of the directives above on the same variable
+        does not make sense.
+        '''
+        if any(name in x for x in [self.vars, self.undefined, self.definitions]):
+            raise ValueError(f'cannot specify more than one action on variable'
+                             f' {name!r} in the same class'
+            )
 
     @property
     def vars(self):
@@ -144,7 +158,9 @@ class VarSpace(attributes.AttrSpace):
         define and undefine actions on existing vars. Thus, since it
         does not make sense to define and undefine a var in the same
         class, the order on which the define and undefine functions
-        are called is not preserved.
+        are called is not preserved. In fact, applying more than one
+        of these actions on the same var for the same local var space
+        is disallowed.
         '''
         localVarSpace = getattr(cls, self.localAttrSpaceName)
 
