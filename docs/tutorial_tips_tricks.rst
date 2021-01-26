@@ -367,6 +367,12 @@ This option is useful when you combine it with the various test filtering option
 For example, you might want to rerun only the failed tests or just a specific test in a dependency chain.
 Let's see an artificial example that uses the following test dependency graph.
 
+.. figure:: _static/img/deps-complex.svg
+   :align: center
+
+   :sub:`Complex test dependency graph. Nodes in red are set to fail.`
+
+
 
 Tests :class:`T2` and :class:`T8` are set to fail.
 Let's run the whole test DAG:
