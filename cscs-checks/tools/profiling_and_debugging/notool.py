@@ -14,7 +14,7 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
     def __init__(self, lang):
         super().__init__()
         self.descr = f'Jacobi (without tool) {lang} check'
-        self.name = f'{type(self).__name__}_{lang.replace('+', 'p')}'
+        self.name = f'{type(self).__name__}_{lang.replace("+", "p")}'
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                               'eiger:mc']
         self.valid_prog_environs = [
@@ -59,7 +59,7 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
             rf'More debug and performance tools ReFrame checks are'
             rf' available at {url}'
         )
-        self.postrun_cmds += [f'echo '{readme_str}'']
+        self.postrun_cmds += [f'echo "{readme_str}"']
         if self.current_system.name in {'dom', 'daint', 'eiger'}:
             # get general info about the environment:
             self.prerun_cmds += ['module list']
