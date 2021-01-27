@@ -742,12 +742,12 @@ def main():
 
             def _case_failed(t):
                 rec = report.case(*t)
-                if (rec and
-                    (rec['result'] == 'failure' or
-                     rec['result'] == 'aborted')):
-                    return True
-                else:
+
+                if not req:
                     return False
+
+                return (rec['result'] == 'failure' or
+                        rec['result'] == 'aborted')
 
             testcases = list(filter(_case_failed, testcases))
             printer.verbose(

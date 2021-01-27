@@ -119,12 +119,6 @@ def make_cases(make_loader):
 
 
 def assert_runall(runner):
-    # Make sure that all cases finished or failed
-    for t in runner.stats.tasks():
-        assert t.succeeded or t.failed
-
-
-def assert_runall_or_aborted(runner):
     # Make sure that all cases finished, failed or
     # were aborted
     for t in runner.stats.tasks():
@@ -610,8 +604,9 @@ def test_concurrency_none(async_runner, make_cases, make_async_exec_ctx):
 
 def assert_interrupted_run(runner):
     assert 4 == runner.stats.num_cases()
-    assert_runall_or_aborted(runner)
-    assert 4 == len(runner.stats.failed() + runner.stats.aborted())
+    assert_runall(runner)
+    assert 1 == len(runner.stats.failed())
+    assert 3 == len(runner.stats.aborted())
     assert_all_dead(runner)
 
     # Verify that failure reasons for the different tasks are correct

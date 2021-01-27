@@ -137,7 +137,7 @@ class RegressionTask:
         # Timestamps for the start and finish phases of the pipeline
         self._timestamps = {}
 
-        self.aborted = False
+        self._aborted = False
 
     def duration(self, phase):
         # Treat pseudo-phases first
@@ -207,7 +207,7 @@ class RegressionTask:
 
     @property
     def failed(self):
-        return self._failed_stage is not None and not self.aborted
+        return self._failed_stage is not None and not self._aborted
 
     @property
     def failed_stage(self):
@@ -220,6 +220,10 @@ class RegressionTask:
     @property
     def completed(self):
         return self.failed or self.succeeded
+
+    @property
+    def aborted(self):
+        return self._aborted
 
     def _notify_listeners(self, callback_name):
         for l in self._listeners:
@@ -311,13 +315,13 @@ class RegressionTask:
         self._notify_listeners('on_task_failure')
 
     def abort(self, cause=None):
-        if self.failed or self.aborted:
+        if self.failed or self._aborted:
             return
 
         logging.getlogger().debug2('Aborting test case: {self.testcase!r}')
         exc = AbortTaskError()
         exc.__cause__ = cause
-        self.aborted = True
+        self._aborted = True
         try:
             # FIXME: we should perhaps extend the RegressionTest interface
             # for supporting job cancelling
