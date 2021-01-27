@@ -135,8 +135,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         except TaskExit:
             return
         except ABORT_REASONS as e:
-            if not task.failed:
-                task.abort(e)
+            task.abort(e)
 
             raise
         except BaseException:
@@ -373,12 +372,11 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
             return
         except ABORT_REASONS as e:
-            if not task.failed:
-                # Abort was caused due to failure elsewhere, abort current
-                # task as well
-                task.abort(e)
+            # If abort was caused due to failure elsewhere, abort current
+            # task as well
+            task.abort(e)
 
-            self._failall(e, aborted=True)
+            self._failall(e)
             raise
 
     def _poll_tasks(self):
@@ -440,23 +438,20 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
         task.finalize()
 
-    def _failall(self, cause, aborted=False):
+    def _failall(self, cause):
         '''Mark all tests as failures'''
         getlogger().debug2(f'Aborting all tasks due to {type(cause).__name__}')
         for task in list(itertools.chain(*self._running_tasks.values())):
-            if not task.failed:
-                task.abort(cause, aborted)
+            task.abort(cause)
 
         self._running_tasks = {}
         for ready_list in self._ready_tasks.values():
             for task in ready_list:
-                if not task.failed:
-                    task.abort(cause, aborted)
+                task.abort(cause)
 
         for task in itertools.chain(self._waiting_tasks,
                                     self._completed_tasks):
-            if not task.failed:
-                task.abort(cause, aborted)
+            task.abort(cause)
 
     def _reschedule(self, task):
         getlogger().debug2(f'Scheduling test case {task.testcase} for running')
@@ -510,7 +505,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 with contextlib.suppress(TaskExit):
                     self._reschedule_all()
             except ABORT_REASONS as e:
-                self._failall(e, aborted=True)
+                self._failall(e)
                 raise
 
         self.printer.separator('short single line',

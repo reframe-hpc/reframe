@@ -742,7 +742,9 @@ def main():
 
             def _case_failed(t):
                 rec = report.case(*t)
-                if rec and rec['result'] == 'failure':
+                if (rec and
+                    (rec['result'] == 'failure' or
+                     rec['result'] == 'aborted')):
                     return True
                 else:
                     return False
@@ -949,12 +951,12 @@ def main():
             session_info['time_elapsed'] = time_end - time_start
 
             # Print a retry report if we did any retries
-            if runner.stats.failures(run=0):
+            if runner.stats.failed(run=0):
                 printer.info(runner.stats.retry_report())
 
             # Print a failure report if we had failures in the last run
             success = True
-            if runner.stats.failures():
+            if runner.stats.failed():
                 success = False
                 runner.stats.print_failure_report(printer)
                 if options.failure_stats:

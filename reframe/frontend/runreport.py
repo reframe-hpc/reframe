@@ -14,7 +14,7 @@ import reframe.utility.jsonext as jsonext
 from reframe.utility.versioning import Version
 
 
-DATA_VERSION = '1.2'
+DATA_VERSION = '1.3'
 _SCHEMA = os.path.join(rfm.INSTALL_PREFIX, 'reframe/schemas/runreport.json')
 
 

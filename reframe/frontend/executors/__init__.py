@@ -207,7 +207,7 @@ class RegressionTask:
 
     @property
     def failed(self):
-        return self._failed_stage is not None
+        return self._failed_stage is not None and not self.aborted
 
     @property
     def failed_stage(self):
@@ -305,27 +305,30 @@ class RegressionTask:
     def cleanup(self, *args, **kwargs):
         self._safe_call(self.check.cleanup, *args, **kwargs)
 
-    def fail(self, exc_info=None, aborted=False):
+    def fail(self, exc_info=None):
         self._failed_stage = self._current_stage
         self._exc_info = exc_info or sys.exc_info()
-        self.aborted = aborted
         self._notify_listeners('on_task_failure')
 
-    def abort(self, cause=None, aborted=False):
+    def abort(self, cause=None):
+        if self.failed or self.aborted:
+            return
+
         logging.getlogger().debug2('Aborting test case: {self.testcase!r}')
         exc = AbortTaskError()
         exc.__cause__ = cause
+        self.aborted = True
         try:
             # FIXME: we should perhaps extend the RegressionTest interface
             # for supporting job cancelling
             if not self.zombie and self.check.job:
                 self.check.job.cancel()
         except JobNotStartedError:
-            self.fail((type(exc), exc, None), aborted=aborted)
+            self.fail((type(exc), exc, None))
         except BaseException:
-            self.fail(aborted=aborted)
+            self.fail()
         else:
-            self.fail((type(exc), exc, None), aborted=aborted)
+            self.fail((type(exc), exc, None))
 
 
 class TaskEventListener(abc.ABC):
@@ -397,11 +400,8 @@ class Runner:
             if self._max_retries:
                 restored_cases = restored_cases or []
                 self._retry_failed(testcases + restored_cases)
-        except AssertionError:
-            abort_reason = "assertion error"
-            raise
-        except MaxFailError:
-            abort_reason = "maximum number of failures reached"
+        except MaxFailError as e:
+            abort_reason = e
         except KeyboardInterrupt:
             abort_reason = "keyboard interrupt"
             raise
@@ -410,27 +410,28 @@ class Runner:
             raise
         finally:
             # Print the summary line
-            num_failures = len(self._stats.failures())
+            num_failures = len(self._stats.failed())
+            num_completed = len(self._stats.completed())
             if abort_reason or num_failures:
-                mssg = 'FAILED'
+                status = 'FAILED'
             else:
-                mssg = 'PASSED'
+                status = 'PASSED'
 
             self._printer.status(
-                mssg,
-                f'Ran {self._printer._progress_count}/{len(testcases)}'
+                status,
+                f'Ran {num_completed}/{len(testcases)}'
                 f' test case(s) from {num_checks} check(s) '
                 f'({num_failures} failure(s))',
                 just='center'
             )
             if abort_reason:
-                logging.getlogger().info(f'Aborted due to {abort_reason}')
+                logging.getlogger().error(f'Aborted due to {abort_reason}')
 
             self._printer.timestamp('Finished on', 'short double line')
 
     def _retry_failed(self, cases):
         rt = runtime.runtime()
-        failures = self._stats.failures()
+        failures = self._stats.failed()
         while (failures and rt.current_run < self._max_retries):
             num_failed_checks = len({tc.check.name for tc in failures})
             rt.next_run()
@@ -446,7 +447,7 @@ class Runner:
             cases_graph, _ = dependencies.build_deps(failed_cases, cases)
             failed_cases = dependencies.toposort(cases_graph, is_subgraph=True)
             self._runall(failed_cases)
-            failures = self._stats.failures()
+            failures = self._stats.failed()
 
     def _runall(self, testcases):
         def print_separator(check, prefix):

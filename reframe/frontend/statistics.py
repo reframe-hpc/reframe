@@ -32,9 +32,14 @@ class TestStats:
         except IndexError:
             raise errors.StatisticsError('no such run: %s' % run) from None
 
-    def failures(self, run=-1):
-        return [t for t in self.tasks(run) if (t.failed and
-                                               not t.aborted)]
+    def failed(self, run=-1):
+        return [t for t in self.tasks(run) if t.failed]
+
+    def aborted(self, run=-1):
+        return [t for t in self.tasks(run) if t.aborted]
+
+    def completed(self, run=-1):
+        return [t for t in self.tasks(run) if t.completed]
 
     def num_cases(self, run=-1):
         return len(self.tasks(run))
@@ -78,6 +83,7 @@ class TestStats:
         for runid, run in enumerate(self._alltasks):
             testcases = []
             num_failures = 0
+            num_aborted = 0
             for t in run:
                 check = t.check
                 partition = check.current_partition
@@ -139,6 +145,11 @@ class TestStats:
                 if t.failed:
                     num_failures += 1
                     entry['result'] = 'failure'
+                elif t.aborted:
+                    entry['result'] = 'aborted'
+                    num_aborted += 1
+
+                if t.failed or t.aborted:
                     entry['fail_phase'] = t.failed_stage
                     if t.exc_info is not None:
                         entry['fail_reason'] = errors.what(*t.exc_info)
@@ -172,6 +183,7 @@ class TestStats:
             self._run_data.append({
                 'num_cases': len(run),
                 'num_failures': num_failures,
+                'num_aborted': num_aborted,
                 'runid': runid,
                 'testcases': testcases
             })
@@ -185,11 +197,7 @@ class TestStats:
         run_report = self.json()[-1]
         last_run = run_report['runid']
         for r in run_report['testcases']:
-            if r['result'] == 'success':
-                continue
-
-            if (r['fail_reason'] == 'aborted due to MaxFailError' or
-                r['fail_reason'] == 'aborted due to KeyboardInterrupt'):
+            if r['result'] == 'success' or r['result'] == 'aborted':
                 continue
 
             retry_info = (
