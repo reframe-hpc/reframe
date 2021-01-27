@@ -264,25 +264,27 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._running_tasks[partname].append(task)
 
     def on_task_failure(self, task):
+        if task.aborted:
+            return
+
         self._num_failed_tasks += 1
-        if not task.aborted:
-            msg = f'{task.check.info()} [{task.pipeline_timings_basic()}]'
-            if task.failed_stage == 'cleanup':
-                self.printer.status('ERROR', msg, just='right')
-            else:
-                self._remove_from_running(task)
-                self.printer.status('FAIL', msg, just='right')
+        msg = f'{task.check.info()} [{task.pipeline_timings_basic()}]'
+        if task.failed_stage == 'cleanup':
+            self.printer.status('ERROR', msg, just='right')
+        else:
+            self._remove_from_running(task)
+            self.printer.status('FAIL', msg, just='right')
 
-            stagedir = task.check.stagedir
-            if not stagedir:
-                stagedir = '<not available>'
+        stagedir = task.check.stagedir
+        if not stagedir:
+            stagedir = '<not available>'
 
-            getlogger().info(f'==> test failed during {task.failed_stage!r}: '
-                            f'test staged in {stagedir!r}')
-            getlogger().verbose(f'==> timings: {task.pipeline_timings_all()}')
-            if self._num_failed_tasks >= self.max_failures:
-                raise MaxFailError('the maximum number of failures has been '
-                                'reached')
+        getlogger().info(f'==> test failed during {task.failed_stage!r}: '
+                         f'test staged in {stagedir!r}')
+        getlogger().verbose(f'==> timings: {task.pipeline_timings_all()}')
+        if self._num_failed_tasks >= self.max_failures:
+            raise MaxFailError('the maximum number of failures has been '
+                               'reached')
 
     def on_task_success(self, task):
         msg = f'{task.check.info()} [{task.pipeline_timings_basic()}]'
