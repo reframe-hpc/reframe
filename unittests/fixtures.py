@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -10,9 +10,7 @@ import functools
 import inspect
 import os
 import sys
-import tempfile
 
-import reframe
 import reframe.core.config as config
 import reframe.core.modules as modules
 import reframe.core.runtime as rt
@@ -80,7 +78,7 @@ def environment_by_name(name, partition):
 
 def has_sane_modules_system():
     return not isinstance(rt.runtime().modules_system.backend,
-                          modules.NoModImpl)
+                          (modules.NoModImpl, modules.SpackImpl))
 
 
 def custom_prefix(prefix):

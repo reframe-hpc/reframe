@@ -115,7 +115,11 @@ System Configuration
    - ``tmod32``: A synonym of ``tmod``.
    - ``tmod4``: The `new environment modules <http://modules.sourceforge.net/>`__ implementation (versions older than 4.1 are not supported).
    - ``lmod``: The `Lua implementation <https://lmod.readthedocs.io/en/latest/>`__ of the environment modules.
+   - ``spack``: `Spack <https://spack.readthedocs.io/en/latest/>`'s built-in mechanism for managing modules.
    - ``nomod``: This is to denote that no modules system is used by this system.
+
+   .. versionadded:: 3.4
+      The ``spack`` backend is added.
 
 .. js:attribute:: .systems[].modules
 
@@ -706,8 +710,8 @@ All logging handlers share the following set of common attributes:
    - ``%(check_perf_value)s``: The performance value obtained for a certain performance variable.
    - ``%(check_perf_var)s``: The name of the `performance variable <tutorial_basic.html#writing-a-performance-test>`__ being logged.
    - ``%(check_ATTR)s``: This will log the value of the attribute ``ATTR`` of the currently executing regression test.
-     Mappings will be logged as ``k1=v1,k2=v2,..`` and all other iterables, except strings, will be logged as comma-separated lists.
-     If ``ATTR`` is not an attribute of the test, ``%(check_ATTR)s`` will be logged as ``<undefined>``.
+     Dictionaries will be logged in JSON format and all other iterables, except strings, will be logged as comma-separated lists.
+     If ``ATTR`` is not an attribute of the test, ``%(check_ATTR)s`` will be logged as ``null``.
      This allows users to log arbitrary attributes of their tests.
      For the complete list of test attributes, please refer to :doc:`regression_test_api`.
    - ``%(osuser)s``: The name of the OS user running ReFrame.

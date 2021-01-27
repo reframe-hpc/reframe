@@ -33,12 +33,22 @@ The "Hello, World!" test
 As simple as it may sound, a series of "naive" "Hello, World!" tests can reveal lots of regressions in the programming environment of HPC clusters, but the bare minimum of those also serves perfectly the purpose of starting this tutorial.
 Here is its C version:
 
+.. code-block:: console
+
+   cat tutorials/basics/hello/src/hello.c
+
+
 .. literalinclude:: ../tutorials/basics/hello/src/hello.c
    :language: c
    :lines: 6-
 
 
 And here is the ReFrame version of it:
+
+.. code-block:: console
+
+   cat tutorials/basics/hello/hello1.py
+
 
 .. literalinclude:: ../tutorials/basics/hello/hello1.py
    :lines: 6-
@@ -213,6 +223,11 @@ But this duplication is something that we generally want to avoid.
 ReFrame allows you to avoid this in several ways but the most compact is to define the new test as follows:
 
 
+.. code-block:: console
+
+   cat tutorials/basics/hello/hello2.py
+
+
 .. literalinclude:: ../tutorials/basics/hello/hello2.py
    :lines: 6-
 
@@ -308,7 +323,7 @@ Note that you should *not* edit this configuration file in place.
 Here is how the new configuration file looks like with the needed additions highlighted:
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 10-24,64-85,118-
+   :lines: 10-24,76-97,130-
    :emphasize-lines: 3-15,31-42
 
 Here we define a system named ``catalina`` that has one partition named ``default``.
@@ -316,6 +331,9 @@ This partition makes no use of any workload manager, but instead launches any jo
 Two programming environments are relevant for that partition, namely ``gnu`` and ``clang``, which are defined in the section :js:attr:`environments` of the configuration file.
 The ``gnu`` programming environment provides GCC 9, whereas the ``clang`` one provides the Clang compiler from the system.
 Notice, how you can define the actual commands for invoking the C, C++ and Fortran compilers in each programming environment.
+As soon as a programming environment defines the different compilers, ReFrame will automatically pick the right compiler based on the source file extension.
+In addition to C, C++ and Fortran programs, ReFrame will recognize the ``.cu`` extension as well and will try to invoke the ``nvcc`` compiler for CUDA programs.
+
 Finally, the new system that we defined may be identified by the hostname ``tresa`` (see the :js:attr:`hostnames` configuration parameter).
 This will help ReFrame to automatically pick the right configuration when running on it.
 Notice, how the ``generic`` system matches any hostname, so that it acts as a fallback system.
@@ -388,12 +406,22 @@ A Multithreaded "Hello, World!"
 We extend our C++ "Hello, World!" example to print the greetings from multiple threads:
 
 
+.. code-block:: console
+
+   cat tutorials/basics/hellomp/src/hello_threads.cpp
+
+
 .. literalinclude:: ../tutorials/basics/hellomp/src/hello_threads.cpp
    :language: cpp
    :lines: 6-
 
 This program takes as argument the number of threads it will create and it uses ``std::thread``, which is C++11 addition, meaning that we will need to pass ``-std=c++11`` to our compilers.
 Here is the corresponding ReFrame test, where the new concepts introduced are highlighted:
+
+.. code-block:: console
+
+   cat tutorials/basics/hellomp/hellomp1.py
+
 
 .. literalinclude:: ../tutorials/basics/hellomp/hellomp1.py
    :lines: 6-
@@ -405,6 +433,11 @@ Compilation flags are a property of the build system.
 If not explicitly specified, ReFrame will try to pick the correct build system (e.g., CMake, Autotools etc.) by inspecting the test resources, but in cases as the one presented here where we need to set the compilation flags, we need to specify a build system explicitly.
 In this example, we instruct ReFrame to compile a single source file using the ``-std=c++11 -Wall`` compilation flags.
 Finally, we set the arguments to be passed to the generated executable in :attr:`executable_opts <reframe.core.pipeline.RegressionTest.executable_opts>`.
+
+
+.. code-block:: console
+
+   ./bin/reframe -c tutorials/basics/hellomp/hellomp1.py -r
 
 
 .. code-block:: none
@@ -479,6 +512,11 @@ In fact, you can practically do almost any operation in the output and process i
 The syntax feels also quite natural since it is fully integrated in Python.
 
 In the following we extend the sanity checking of the multithreaded "Hello, World!", such that not only the output pattern we are looking for is more restrictive, but also we check that all the threads produce a greetings line.
+
+.. code-block:: console
+
+   cat tutorials/basics/hellomp/hellomp2.py
+
 
 .. literalinclude:: ../tutorials/basics/hellomp/hellomp2.py
    :lines: 6-
@@ -561,6 +599,11 @@ Let's run this version of the test now and see if it fails:
 As expected, only some of lines are printed correctly which makes the test fail.
 To fix this test, we need to compile with ``-DSYNC_MESSAGES``, which will synchronize the printing of messages.
 
+.. code-block:: console
+
+   cat tutorials/basics/hellomp/hellomp3.py
+
+
 .. literalinclude:: ../tutorials/basics/hellomp/hellomp3.py
    :lines: 6-
    :emphasize-lines: 13
@@ -572,6 +615,11 @@ Writing A Performance Test
 An important aspect of regression testing is checking for performance regressions.
 In this example, we will write a test that downloads the `STREAM <http://www.cs.virginia.edu/stream/ref.html>`__ benchmark, compiles it, runs it and records its performance.
 In the test below, we highlight the lines that introduce new concepts.
+
+.. code-block:: console
+
+   cat tutorials/basics/stream/stream1.py
+
 
 .. literalinclude:: ../tutorials/basics/stream/stream1.py
    :lines: 6-
@@ -661,6 +709,11 @@ In the following example, we set the reference values for all the STREAM sub-ben
    Optimizing STREAM benchmark performance is outside the scope of this tutorial.
 
 
+.. code-block:: console
+
+   cat tutorials/basics/stream/stream2.py
+
+
 .. literalinclude:: ../tutorials/basics/stream/stream2.py
    :lines: 6-
    :emphasize-lines: 33-
@@ -670,6 +723,11 @@ The performance reference tuple consists of the reference value, the lower and u
 If any of the thresholds is not relevant, :class:`None` may be used instead.
 
 If any obtained performance value is beyond its respective thresholds, the test will fail with a summary as shown below:
+
+.. code-block:: console
+
+   ./bin/reframe -c tutorials/basics/stream/stream2.py -r --performance-report
+
 
 .. code-block:: none
 
@@ -749,8 +807,8 @@ Let's extend our configuration file for Piz Daint.
 
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 10-46,53-
-   :emphasize-lines: 16-48,70-101
+   :lines: 10-45,58-66,73-
+   :emphasize-lines: 16-48,70-101,114-120
 
 
 First of all, we need to define a new system and set the list of hostnames that will help ReFrame identify it.
@@ -777,6 +835,8 @@ This is what we do exactly with the :js:attr:`access` partition configuration op
 Piz Daint's programming environment offers four compilers: Cray, GNU, Intel and PGI.
 We want to test all of them, so we include them in the :js:attr:`environs` lists.
 Notice that we do not include Clang in the list, since there is no such compiler on this particular system.
+On the other hand, we include a different version of the ``builtin`` environment, which corresponds to the default login environment without loading any modules.
+It is generally useful to define such an environment so as to use it for tests that are running simple utilities and don't need to compile anything.
 
 Before looking into the definition of the new environments for the four compilers, it is worth mentioning the :js:attr:`max_jobs` parameter.
 This parameter specifies the maximum number of ReFrame test jobs that can be simultaneously in flight.
@@ -799,25 +859,27 @@ We will only do so with the final versions of the tests from the previous sectio
 
 .. code-block:: console
 
-   ./bin/reframe -C tutorials/config/settings.py -c tutorials/basics/ -R -n 'HelloMultiLangTest|HelloThreadedExtended2Test|StreamWithRefTest' --performance-report -r
+   export RFM_CONFIG_FILE=$(pwd)/tutorials/config/mysettings.py
+   ./bin/reframe -c tutorials/basics/ -R -n 'HelloMultiLangTest|HelloThreadedExtended2Test|StreamWithRefTest' --performance-report -r
 
 
-..  code-block:: none
+.. code-block:: none
 
    [ReFrame Setup]
-     version:           3.3-dev0 (rev: cb974c13)
-     command:           './bin/reframe -C tutorials/config/settings.py -c tutorials/basics/ -R -n HelloMultiLangTest|HelloThreadedExtended2Test|StreamWithRefTest --performance-report -r'
+     version:           3.4-dev2 (rev: f102d4bb)
+     command:           './bin/reframe -c tutorials/basics/ -R -n HelloMultiLangTest|HelloThreadedExtended2Test|StreamWithRefTest --performance-report -r'
      launched by:       user@dom101
      working directory: '/users/user/Devel/reframe'
-     settings file:     'tutorials/config/settings.py'
+     settings file:     '/users/user/Devel/reframe/tutorials/config/settings.py'
      check search path: (R) '/users/user/Devel/reframe/tutorials/basics'
      stage directory:   '/users/user/Devel/reframe/stage'
      output directory:  '/users/user/Devel/reframe/output'
 
    [==========] Running 4 check(s)
-   [==========] Started on Mon Oct 12 20:12:34 2020
+   [==========] Started on Mon Jan 25 00:34:32 2021
 
    [----------] started processing HelloMultiLangTest_c (HelloMultiLangTest_c)
+   [ RUN      ] HelloMultiLangTest_c on daint:login using builtin
    [ RUN      ] HelloMultiLangTest_c on daint:login using gnu
    [ RUN      ] HelloMultiLangTest_c on daint:login using intel
    [ RUN      ] HelloMultiLangTest_c on daint:login using pgi
@@ -833,6 +895,7 @@ We will only do so with the final versions of the tests from the previous sectio
    [----------] finished processing HelloMultiLangTest_c (HelloMultiLangTest_c)
 
    [----------] started processing HelloMultiLangTest_cpp (HelloMultiLangTest_cpp)
+   [ RUN      ] HelloMultiLangTest_cpp on daint:login using builtin
    [ RUN      ] HelloMultiLangTest_cpp on daint:login using gnu
    [ RUN      ] HelloMultiLangTest_cpp on daint:login using intel
    [ RUN      ] HelloMultiLangTest_cpp on daint:login using pgi
@@ -848,6 +911,7 @@ We will only do so with the final versions of the tests from the previous sectio
    [----------] finished processing HelloMultiLangTest_cpp (HelloMultiLangTest_cpp)
 
    [----------] started processing HelloThreadedExtended2Test (HelloThreadedExtended2Test)
+   [ RUN      ] HelloThreadedExtended2Test on daint:login using builtin
    [ RUN      ] HelloThreadedExtended2Test on daint:login using gnu
    [ RUN      ] HelloThreadedExtended2Test on daint:login using intel
    [ RUN      ] HelloThreadedExtended2Test on daint:login using pgi
@@ -869,49 +933,52 @@ We will only do so with the final versions of the tests from the previous sectio
    [----------] finished processing StreamWithRefTest (StreamWithRefTest)
 
    [----------] waiting for spawned checks to finish
-   [       OK ] ( 1/39) HelloThreadedExtended2Test on daint:gpu using intel [compile: 2.271s run: 26.769s total: 29.055s]
-   [       OK ] ( 2/39) HelloMultiLangTest_c on daint:gpu using cray [compile: 0.154s run: 75.494s total: 75.661s]
-   [       OK ] ( 3/39) HelloThreadedExtended2Test on daint:mc using cray [compile: 0.778s run: 11.878s total: 12.671s]
-   [       OK ] ( 4/39) HelloThreadedExtended2Test on daint:mc using gnu [compile: 2.012s run: 19.736s total: 21.763s]
-   [       OK ] ( 5/39) HelloMultiLangTest_c on daint:mc using cray [compile: 0.139s run: 68.148s total: 68.302s]
-   [       OK ] ( 6/39) StreamWithRefTest on daint:login using gnu [compile: 4.640s run: 6.752s total: 11.859s]
-   [       OK ] ( 7/39) HelloThreadedExtended2Test on daint:login using intel [compile: 2.248s run: 36.810s total: 39.072s]
-   [       OK ] ( 8/39) HelloMultiLangTest_c on daint:login using cray [compile: 0.140s run: 82.924s total: 83.080s]
-   [       OK ] ( 9/39) HelloThreadedExtended2Test on daint:gpu using pgi [compile: 2.556s run: 23.535s total: 26.108s]
-   [       OK ] (10/39) HelloThreadedExtended2Test on daint:gpu using gnu [compile: 2.065s run: 29.922s total: 32.002s]
-   [       OK ] (11/39) HelloMultiLangTest_cpp on daint:gpu using intel [compile: 1.976s run: 55.048s total: 57.039s]
-   [       OK ] (12/39) HelloMultiLangTest_c on daint:gpu using intel [compile: 1.802s run: 78.871s total: 80.685s]
-   [       OK ] (13/39) HelloThreadedExtended2Test on daint:mc using intel [compile: 2.286s run: 16.886s total: 19.186s]
-   [       OK ] (14/39) HelloMultiLangTest_cpp on daint:mc using cray [compile: 0.462s run: 42.545s total: 43.022s]
-   [       OK ] (15/39) HelloMultiLangTest_cpp on daint:mc using intel [compile: 1.976s run: 46.582s total: 48.572s]
-   [       OK ] (16/39) HelloMultiLangTest_c on daint:mc using intel [compile: 1.736s run: 71.563s total: 73.316s]
-   [       OK ] (17/39) HelloThreadedExtended2Test on daint:login using pgi [compile: 2.611s run: 33.608s total: 36.235s]
-   [       OK ] (18/39) HelloThreadedExtended2Test on daint:login using gnu [compile: 2.020s run: 39.888s total: 42.523s]
-   [       OK ] (19/39) HelloMultiLangTest_cpp on daint:login using intel [compile: 2.013s run: 63.789s total: 65.815s]
-   [       OK ] (20/39) HelloMultiLangTest_c on daint:login using intel [compile: 1.809s run: 86.147s total: 87.970s]
-   [       OK ] (21/39) HelloMultiLangTest_cpp on daint:gpu using pgi [compile: 1.938s run: 52.444s total: 54.397s]
-   [       OK ] (22/39) HelloMultiLangTest_cpp on daint:gpu using gnu [compile: 1.788s run: 57.910s total: 59.714s]
-   [       OK ] (23/39) HelloMultiLangTest_c on daint:gpu using pgi [compile: 1.512s run: 76.705s total: 78.234s]
-   [       OK ] (24/39) HelloMultiLangTest_c on daint:gpu using gnu [compile: 1.543s run: 81.567s total: 83.138s]
-   [       OK ] (25/39) HelloMultiLangTest_cpp on daint:mc using gnu [compile: 1.778s run: 49.430s total: 51.224s]
-   [       OK ] (26/39) HelloMultiLangTest_c on daint:mc using pgi [compile: 1.564s run: 69.324s total: 70.910s]
-   [       OK ] (27/39) HelloMultiLangTest_c on daint:mc using gnu [compile: 1.531s run: 74.238s total: 75.795s]
-   [       OK ] (28/39) HelloMultiLangTest_cpp on daint:login using pgi [compile: 2.147s run: 60.996s total: 63.157s]
-   [       OK ] (29/39) HelloMultiLangTest_cpp on daint:login using gnu [compile: 1.813s run: 66.590s total: 68.418s]
-   [       OK ] (30/39) HelloMultiLangTest_c on daint:login using pgi [compile: 1.523s run: 84.018s total: 85.554s]
-   [       OK ] (31/39) HelloMultiLangTest_c on daint:login using gnu [compile: 1.514s run: 88.777s total: 90.327s]
-   [       OK ] (32/39) HelloMultiLangTest_cpp on daint:gpu using cray [compile: 0.451s run: 52.389s total: 52.865s]
-   [       OK ] (33/39) HelloMultiLangTest_cpp on daint:mc using pgi [compile: 2.002s run: 44.985s total: 47.000s]
-   [       OK ] (34/39) HelloMultiLangTest_cpp on daint:login using cray [compile: 0.474s run: 60.884s total: 61.375s]
-   [       OK ] (35/39) HelloThreadedExtended2Test on daint:gpu using cray [compile: 0.871s run: 23.620s total: 24.510s]
-   [       OK ] (36/39) HelloThreadedExtended2Test on daint:mc using pgi [compile: 2.535s run: 15.193s total: 17.744s]
-   [       OK ] (37/39) HelloThreadedExtended2Test on daint:login using cray [compile: 0.773s run: 33.721s total: 34.508s]
-   [       OK ] (38/39) StreamWithRefTest on daint:gpu using gnu [compile: 2.112s run: 6.108s total: 8.242s]
-   [       OK ] (39/39) StreamWithRefTest on daint:mc using gnu [compile: 2.062s run: 6.873s total: 8.948s]
+   [       OK ] ( 1/42) HelloThreadedExtended2Test on daint:login using cray [compile: 0.959s run: 56.203s total: 57.189s]
+   [       OK ] ( 2/42) HelloThreadedExtended2Test on daint:login using intel [compile: 2.096s run: 61.438s total: 64.062s]
+   [       OK ] ( 3/42) HelloMultiLangTest_cpp on daint:login using cray [compile: 0.479s run: 98.909s total: 99.406s]
+   [       OK ] ( 4/42) HelloMultiLangTest_c on daint:login using pgi [compile: 1.342s run: 137.250s total: 138.609s]
+   [       OK ] ( 5/42) HelloThreadedExtended2Test on daint:gpu using cray [compile: 0.792s run: 33.748s total: 34.558s]
+   [       OK ] ( 6/42) HelloThreadedExtended2Test on daint:gpu using intel [compile: 2.257s run: 48.545s total: 50.825s]
+   [       OK ] ( 7/42) HelloMultiLangTest_cpp on daint:gpu using cray [compile: 0.469s run: 85.383s total: 85.873s]
+   [       OK ] ( 8/42) HelloMultiLangTest_c on daint:gpu using cray [compile: 0.132s run: 124.678s total: 124.827s]
+   [       OK ] ( 9/42) HelloThreadedExtended2Test on daint:mc using cray [compile: 0.775s run: 15.569s total: 16.362s]
+   [       OK ] (10/42) HelloThreadedExtended2Test on daint:mc using intel [compile: 2.814s run: 24.600s total: 27.438s]
+   [       OK ] (11/42) HelloMultiLangTest_cpp on daint:mc using cray [compile: 0.474s run: 70.035s total: 70.528s]
+   [       OK ] (12/42) HelloMultiLangTest_c on daint:mc using cray [compile: 0.138s run: 110.807s total: 110.963s]
+   [       OK ] (13/42) HelloThreadedExtended2Test on daint:login using builtin [compile: 0.790s run: 67.313s total: 68.124s]
+   [       OK ] (14/42) HelloMultiLangTest_cpp on daint:login using pgi [compile: 1.799s run: 100.490s total: 102.683s]
+   [       OK ] (15/42) HelloMultiLangTest_cpp on daint:login using builtin [compile: 0.497s run: 108.380s total: 108.895s]
+   [       OK ] (16/42) HelloMultiLangTest_c on daint:login using gnu [compile: 1.337s run: 142.017s total: 143.373s]
+   [       OK ] (17/42) HelloMultiLangTest_cpp on daint:gpu using pgi [compile: 1.851s run: 88.935s total: 90.805s]
+   [       OK ] (18/42) HelloMultiLangTest_cpp on daint:gpu using gnu [compile: 1.640s run: 97.855s total: 99.513s]
+   [       OK ] (19/42) HelloMultiLangTest_c on daint:gpu using intel [compile: 1.578s run: 131.689s total: 133.287s]
+   [       OK ] (20/42) HelloMultiLangTest_cpp on daint:mc using pgi [compile: 1.917s run: 73.276s total: 75.213s]
+   [       OK ] (21/42) HelloMultiLangTest_cpp on daint:mc using gnu [compile: 1.727s run: 82.213s total: 83.960s]
+   [       OK ] (22/42) HelloMultiLangTest_c on daint:mc using intel [compile: 1.573s run: 117.806s total: 119.402s]
+   [       OK ] (23/42) HelloMultiLangTest_cpp on daint:login using gnu [compile: 1.644s run: 106.956s total: 108.618s]
+   [       OK ] (24/42) HelloMultiLangTest_c on daint:login using cray [compile: 0.146s run: 137.301s total: 137.466s]
+   [       OK ] (25/42) HelloMultiLangTest_c on daint:login using intel [compile: 1.613s run: 140.058s total: 141.689s]
+   [       OK ] (26/42) HelloMultiLangTest_c on daint:login using builtin [compile: 0.122s run: 143.692s total: 143.833s]
+   [       OK ] (27/42) HelloMultiLangTest_c on daint:gpu using pgi [compile: 1.361s run: 127.958s total: 129.341s]
+   [       OK ] (28/42) HelloMultiLangTest_c on daint:gpu using gnu [compile: 1.337s run: 136.031s total: 137.386s]
+   [       OK ] (29/42) HelloMultiLangTest_c on daint:mc using pgi [compile: 1.410s run: 113.998s total: 115.428s]
+   [       OK ] (30/42) HelloMultiLangTest_c on daint:mc using gnu [compile: 1.344s run: 122.086s total: 123.453s]
+   [       OK ] (31/42) HelloThreadedExtended2Test on daint:login using pgi [compile: 2.733s run: 60.105s total: 62.951s]
+   [       OK ] (32/42) HelloMultiLangTest_cpp on daint:login using intel [compile: 2.780s run: 104.916s total: 107.716s]
+   [       OK ] (33/42) HelloThreadedExtended2Test on daint:gpu using pgi [compile: 2.373s run: 39.144s total: 41.545s]
+   [       OK ] (34/42) HelloMultiLangTest_cpp on daint:gpu using intel [compile: 1.835s run: 95.042s total: 96.896s]
+   [       OK ] (35/42) HelloThreadedExtended2Test on daint:mc using pgi [compile: 2.686s run: 20.751s total: 23.457s]
+   [       OK ] (36/42) HelloMultiLangTest_cpp on daint:mc using intel [compile: 1.862s run: 79.275s total: 81.170s]
+   [       OK ] (37/42) HelloThreadedExtended2Test on daint:login using gnu [compile: 2.106s run: 67.284s total: 69.409s]
+   [       OK ] (38/42) HelloThreadedExtended2Test on daint:gpu using gnu [compile: 2.471s run: 56.360s total: 58.871s]
+   [       OK ] (39/42) HelloThreadedExtended2Test on daint:mc using gnu [compile: 2.007s run: 32.300s total: 34.330s]
+   [       OK ] (40/42) StreamWithRefTest on daint:login using gnu [compile: 1.941s run: 14.373s total: 16.337s]
+   [       OK ] (41/42) StreamWithRefTest on daint:gpu using gnu [compile: 1.954s run: 11.815s total: 13.791s]
+   [       OK ] (42/42) StreamWithRefTest on daint:mc using gnu [compile: 2.513s run: 10.672s total: 13.213s]
    [----------] all spawned checks have finished
 
-   [  PASSED  ] Ran 39 test case(s) from 4 check(s) (0 failure(s))
-   [==========] Finished on Mon Oct 12 20:14:10 2020
+   [  PASSED  ] Ran 42 test case(s) from 4 check(s) (0 failure(s))
+   [==========] Finished on Mon Jan 25 00:37:02 2021
    ==============================================================================
    PERFORMANCE REPORT
    ------------------------------------------------------------------------------
@@ -919,31 +986,31 @@ We will only do so with the final versions of the tests from the previous sectio
    - daint:login
       - gnu
          * num_tasks: 1
-         * Copy: 73243.6 MB/s
-         * Scale: 45575.6 MB/s
-         * Add: 49194.6 MB/s
-         * Triad: 49308.0 MB/s
+         * Copy: 72923.3 MB/s
+         * Scale: 45663.4 MB/s
+         * Add: 49417.7 MB/s
+         * Triad: 49426.4 MB/s
    - daint:gpu
       - gnu
          * num_tasks: 1
-         * Copy: 51542.8 MB/s
-         * Scale: 35071.5 MB/s
-         * Add: 38618.2 MB/s
-         * Triad: 39003.5 MB/s
+         * Copy: 50638.7 MB/s
+         * Scale: 35186.0 MB/s
+         * Add: 38564.4 MB/s
+         * Triad: 38771.1 MB/s
    - daint:mc
       - gnu
          * num_tasks: 1
-         * Copy: 19129.6 MB/s
-         * Scale: 10490.3 MB/s
-         * Add: 11116.9 MB/s
-         * Triad: 11065.5 MB/s
+         * Copy: 19072.5 MB/s
+         * Scale: 10395.6 MB/s
+         * Add: 11041.0 MB/s
+         * Triad: 11079.2 MB/s
    ------------------------------------------------------------------------------
-   Log file(s) saved in: '/tmp/rfm-6yaunqqp.log'
+   Log file(s) saved in: '/tmp/rfm-r4yjva71.log'
 
 
 There it is!
 Without any change in our tests, we could simply run them in a HPC cluster with all of its intricacies.
-Notice how our original four tests expanded to almost 40 test cases on that particular HPC cluster!
+Notice how our original four tests expanded to more than 40 test cases on that particular HPC cluster!
 One reason we could run immediately our tests on a new system was that we have not been restricting neither the valid system they can run nor the valid programming environments they can run with (except for the STREAM test).
 Otherwise we would have to add ``daint`` and its corresponding programming environments in :attr:`valid_systems` and :attr:`valid_prog_environs` lists respectively.
 
@@ -976,6 +1043,7 @@ Let's check the job script generated for the ``StreamWithRefTest``:
 
 Whereas the exact same test running on our laptop was as simple as the following:
 
+
 .. code-block:: bash
 
    #!/bin/bash
@@ -993,6 +1061,10 @@ Adapting a test to new systems and programming environments
 Unless a test is rather generic, you will need to make some adaptations for the system that you port it to.
 In this case, we will adapt the STREAM benchmark so as to run it with multiple compiler and adjust its execution parameters based on the target architecture of each partition.
 Let's see and comment the changes:
+
+.. code-block:: console
+
+   cat tutorials/basics/stream/stream3.py
 
 .. literalinclude:: ../tutorials/basics/stream/stream3.py
    :lines: 6-
@@ -1025,7 +1097,7 @@ Let's run our adapted test now:
 
 .. code-block:: console
 
-   ./bin/reframe -C tutorials/config/settings.py -c tutorials/basics/stream/stream3.py -r --performance-report
+   ./bin/reframe -c tutorials/basics/stream/stream3.py -r --performance-report
 
 
 .. code-block:: none

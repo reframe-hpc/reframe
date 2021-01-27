@@ -1,12 +1,10 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
 import reframe as rfm
 import reframe.utility.sanity as sn
-
-from reframe.core.launchers import LauncherWrapper
 
 
 @rfm.required_version('>=2.14')
@@ -52,3 +50,8 @@ class CudaGdbCheck(rfm.RegressionTest):
 
         self.maintainers = ['MKr', 'JG']
         self.tags = {'production', 'craype'}
+
+    @rfm.run_before('compile')
+    def dom_set_cuda_cdt(self):
+        if self.current_system.name == 'dom':
+            self.modules += ['cdt-cuda']

@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -15,7 +15,8 @@ class SlurmSimpleBaseCheck(rfm.RunOnlyRegressionTest):
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc',
                               'arolla:cn', 'arolla:pn',
-                              'tsa:cn', 'tsa:pn']
+                              'tsa:cn', 'tsa:pn',
+                              'daint:xfer']
         self.valid_prog_environs = ['PrgEnv-cray']
         self.tags = {'slurm', 'maintenance', 'ops',
                      'production', 'single-node'}
@@ -46,6 +47,7 @@ class HostnameCheck(SlurmSimpleBaseCheck):
     def __init__(self):
         super().__init__()
         self.executable = '/bin/hostname'
+        self.valid_prog_environs = ['builtin']
         self.hostname_patt = {
             'arolla:cn': r'^arolla-cn\d{3}$',
             'arolla:pn': r'^arolla-pp\d{3}$',
@@ -53,6 +55,7 @@ class HostnameCheck(SlurmSimpleBaseCheck):
             'tsa:pn': r'^tsa-pp\d{3}$',
             'daint:gpu': r'^nid\d{5}$',
             'daint:mc': r'^nid\d{5}$',
+            'daint:xfer': r'^datamover\d{2}.cscs.ch$',
             'dom:gpu': r'^nid\d{5}$',
             'dom:mc': r'^nid\d{5}$',
         }
@@ -91,10 +94,9 @@ class RequiredConstraintCheck(SlurmSimpleBaseCheck):
         self.executable = 'srun'
         self.executable_opts = ['-A', osext.osgroup(), 'hostname']
         self.sanity_patterns = sn.assert_found(
-            r'error: You have to specify, at least, what sort of node you '
-            r'need: -C gpu for GPU enabled nodes, or -C mc for multicore '
-            r'nodes.|ERROR: you must specify -C with one of the following: '
-            r'mc,gpu,storage', self.stderr)
+            r'ERROR: you must specify -C with one of the following: mc,gpu',
+            self.stderr
+        )
 
 
 @rfm.simple_test
@@ -110,7 +112,7 @@ class RequestLargeMemoryNodeCheck(SlurmSimpleBaseCheck):
 
     @rfm.run_before('run')
     def set_memory_limit(self):
-        self.job.options += ['--mem=120000']
+        self.job.options = ['--mem=120000']
 
 
 @rfm.simple_test
@@ -169,7 +171,7 @@ class ConstraintRequestCabinetGrouping(SlurmSimpleBaseCheck):
     def set_slurm_constraint(self):
         cabinet = self.cabinets.get(self.current_partition.fullname)
         if cabinet:
-            self.job.options += [f'--constraint={cabinet}']
+            self.job.options = [f'--constraint={cabinet}']
 
 
 @rfm.simple_test
@@ -186,4 +188,69 @@ class MemoryOverconsumptionCheck(SlurmCompiledBaseCheck):
 
     @rfm.run_before('run')
     def set_memory_limit(self):
-        self.job.options += ['--mem=2000']
+        self.job.options = ['--mem=2000']
+
+
+@rfm.simple_test
+class MemoryOverconsumptionMpiCheck(SlurmCompiledBaseCheck):
+    def __init__(self):
+        super().__init__()
+        self.maintainers = ['JG']
+        self.valid_systems += ['eiger:mc', 'pilatus:mc']
+        self.time_limit = '5m'
+        self.sourcepath = 'eatmemory_mpi.c'
+        self.tags.add('mem')
+        self.executable_opts = ['100%']
+        self.sanity_patterns = sn.assert_found(r'(oom-kill)|(Killed)',
+                                               self.stderr)
+        # {{{ perf
+        regex = (r'^Eating \d+ MB\/mpi \*\d+mpi = -\d+ MB memory from \/proc\/'
+                 r'meminfo: total: \d+ GB, free: \d+ GB, avail: \d+ GB, using:'
+                 r' (\d+) GB')
+        self.perf_patterns = {
+            'max_cn_memory': sn.getattr(self, 'reference_meminfo'),
+            'max_allocated_memory': sn.max(
+                sn.extractall(regex, self.stdout, 1, int)
+            ),
+        }
+        no_limit = (0, None, None, 'GB')
+        self.reference = {
+            '*': {
+                'max_cn_memory': no_limit,
+                'max_allocated_memory': (
+                    sn.getattr(self, 'reference_meminfo'), -0.05, None, 'GB'
+                ),
+            }
+        }
+        # }}}
+
+    # {{{ hooks
+    @rfm.run_before('run')
+    def set_tasks(self):
+        tasks_per_node = {
+            'dom:mc': 36,
+            'daint:mc': 36,
+            'dom:gpu': 12,
+            'daint:gpu': 12,
+            'eiger:mc': 128,
+            'pilatus:mc': 128,
+        }
+        partname = self.current_partition.fullname
+        self.num_tasks_per_node = tasks_per_node[partname]
+        self.num_tasks = self.num_tasks_per_node
+        self.job.launcher.options = ['-u']
+    # }}}
+
+    @property
+    @sn.sanity_function
+    def reference_meminfo(self):
+        reference_meminfo = {
+            'dom:gpu': 62,
+            'dom:mc': 62,
+            'daint:gpu': 62,
+            'daint:mc': 62,  # this will pass with 64 GB and above memory sizes
+            # this will pass with 256 GB and above memory sizes:
+            'eiger:mc': 250,
+            'pilatus:mc': 250,
+        }
+        return reference_meminfo[self.current_partition.fullname]

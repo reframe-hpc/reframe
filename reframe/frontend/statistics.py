@@ -1,8 +1,9 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import inspect
 import traceback
 import reframe.core.runtime as rt
 import reframe.core.exceptions as errors
@@ -29,7 +30,7 @@ class TestStats:
         try:
             return self._alltasks[run]
         except IndexError:
-            raise errors.StatisticsError('no such run: %s' % run) from None
+            raise errors.StatisticsError(f'no such run: {run}') from None
 
     def failures(self, run=-1):
         return [t for t in self.tasks(run) if t.failed]
@@ -57,11 +58,10 @@ class TestStats:
                 if t.check.current_environ:
                     environ_name = t.check.current_environ.name
 
-                key = '%s:%s:%s' % (t.check.name, partition_name, environ_name)
                 # Overwrite entry from previous run if available
-                messages[key] = (
-                    '  * Test %s was retried %s time(s) and %s.' %
-                    (t.check.info(), run, 'failed' if t.failed else 'passed')
+                messages[f"{t.check.name}:{partition_name}:{environ_name}"] = (
+                    f"  * Test {t.check.info()} was retried {run} time(s) and "
+                    f"{'failed' if t.failed else 'passed'}."
                 )
 
         for key in sorted(messages.keys()):
@@ -90,6 +90,8 @@ class TestStats:
                         d[0] for d in t.check.user_deps()
                     ],
                     'description': check.descr,
+                    'prefix': check.prefix,
+                    'filename': inspect.getfile(type(check)),
                     'environment': None,
                     'fail_phase': None,
                     'fail_reason': None,
@@ -102,7 +104,7 @@ class TestStats:
                     'outputdir': None,
                     'perfvars': None,
                     'result': None,
-                    'stagedir': None,
+                    'stagedir': check.stagedir,
                     'scheduler': None,
                     'system': check.current_system.name,
                     'tags': list(check.tags),
@@ -123,7 +125,7 @@ class TestStats:
                 entry['scheduler'] = partition.scheduler.registered_name
                 entry['environment'] = environ.name
                 if check.job:
-                    entry['jobid'] = check.job.jobid
+                    entry['jobid'] = str(check.job.jobid)
                     entry['job_stderr'] = check.stderr.evaluate()
                     entry['job_stdout'] = check.stdout.evaluate()
                     entry['nodelist'] = check.job.nodelist or []
@@ -135,7 +137,6 @@ class TestStats:
                 if t.failed:
                     num_failures += 1
                     entry['result'] = 'failure'
-                    entry['stagedir'] = check.stagedir
                     entry['fail_phase'] = t.failed_stage
                     if t.exc_info is not None:
                         entry['fail_reason'] = errors.what(*t.exc_info)
@@ -206,7 +207,7 @@ class TestStats:
             printer.info(f"  * Maintainers: {r['maintainers']}")
             printer.info(f"  * Failing phase: {r['fail_phase']}")
             printer.info(f"  * Rerun with '-n {r['name']}"
-                         f" -p {r['environment']} --system {r['system']}'")
+                         f" -p {r['environment']} --system {r['system']} -r'")
             printer.info(f"  * Reason: {r['fail_reason']}")
 
             tb = ''.join(traceback.format_exception(*r['fail_info'].values()))
@@ -246,8 +247,8 @@ class TestStats:
             num_failures += len(l)
 
         stats_body = ['']
-        stats_body.append('Total number of test cases: %s' % num_tests)
-        stats_body.append('Total number of failures: %s' % num_failures)
+        stats_body.append(f'Total number of test cases: {num_tests}')
+        stats_body.append(f'Total number of failures: {num_failures}')
         stats_body.append('')
         stats_body.append(stats_header)
         stats_body.append(stats_hline)
@@ -274,16 +275,16 @@ class TestStats:
             if t.check.perfvalues.keys():
                 if t.check.name != previous_name:
                     report_body.append(line_width * '-')
-                    report_body.append('%s' % t.check.name)
+                    report_body.append(t.check.name)
                     previous_name = t.check.name
 
                 if t.check.current_partition.fullname != previous_part:
                     report_body.append(
-                        '- %s' % t.check.current_partition.fullname)
+                        f'- {t.check.current_partition.fullname}')
                     previous_part = t.check.current_partition.fullname
 
-                report_body.append('   - %s' % t.check.current_environ)
-                report_body.append('      * num_tasks: %s' % t.check.num_tasks)
+                report_body.append(f'   - {t.check.current_environ}')
+                report_body.append(f'      * num_tasks: {t.check.num_tasks}')
 
             for key, ref in t.check.perfvalues.items():
                 var = key.split(':')[-1]
@@ -293,7 +294,7 @@ class TestStats:
                 except IndexError:
                     unit = '(no unit specified)'
 
-                report_body.append('      * %s: %s %s' % (var, val, unit))
+                report_body.append(f'      * {var}: {val} {unit}')
 
         if report_body:
             return '\n'.join([report_start, report_title, *report_body,

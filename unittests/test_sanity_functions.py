@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -148,41 +148,37 @@ def test_min():
 def test_print_stdout():
     stdout = io.StringIO()
     with contextlib.redirect_stdout(stdout):
-        x, y = sn.evaluate(sn.print(1, sn.defer(2)))
+        x = sn.evaluate(sn.print(sn.defer(2)))
 
-    assert stdout.getvalue() == '1 2\n'
-    assert x == 1
-    assert y == 2
+    assert stdout.getvalue() == '2\n'
+    assert x == 2
 
 
 def test_print_stderr():
     stderr = io.StringIO()
     with contextlib.redirect_stderr(stderr):
-        x, y = sn.evaluate(sn.print(1, sn.defer(2), file=sys.stderr))
+        x = sn.evaluate(sn.print(sn.defer(2), file=sys.stderr))
 
-    assert stderr.getvalue() == '1 2\n'
-    assert x == 1
-    assert y == 2
+    assert stderr.getvalue() == '2\n'
+    assert x == 2
 
 
 def test_print_separator():
     stdout = io.StringIO()
     with contextlib.redirect_stdout(stdout):
-        x, y = sn.evaluate(sn.print(1, sn.defer(2), sep='|'))
+        x = sn.evaluate(sn.print(sn.defer(2), sep='|'))
 
-    assert stdout.getvalue() == '1|2\n'
-    assert x == 1
-    assert y == 2
+    assert stdout.getvalue() == '2\n'
+    assert x == 2
 
 
 def test_print_end():
     stdout = io.StringIO()
     with contextlib.redirect_stdout(stdout):
-        x, y = sn.evaluate(sn.print(1, sn.defer(2), end=''))
+        x = sn.evaluate(sn.print(sn.defer(2), end=''))
 
-    assert stdout.getvalue() == '1 2'
-    assert x == 1
-    assert y == 2
+    assert stdout.getvalue() == '2'
+    assert x == 2
 
 
 def test_reversed():
@@ -817,3 +813,42 @@ def test_avg():
     # Check with empty container
     with pytest.raises(SanityError):
         sn.evaluate(sn.avg([]))
+
+
+def test_path_exists(tmp_path):
+    valid_dir = tmp_path / 'foo'
+    valid_dir.touch()
+    invalid_dir = tmp_path / 'bar'
+
+    assert sn.evaluate(sn.path_exists(valid_dir))
+    assert not sn.evaluate(sn.path_exists(invalid_dir))
+
+
+def test_path_isdir(tmp_path):
+    test_dir = tmp_path / 'bar'
+    test_dir.mkdir()
+    test_file = tmp_path / 'foo'
+    test_file.touch()
+
+    assert sn.evaluate(sn.path_isdir(test_dir))
+    assert not sn.evaluate(sn.path_isdir(test_file))
+
+
+def test_path_isfile(tmp_path):
+    test_file = tmp_path / 'foo'
+    test_file.touch()
+    test_dir = tmp_path / 'bar'
+    test_dir.mkdir()
+
+    assert sn.evaluate(sn.path_isfile(test_file))
+    assert not sn.evaluate(sn.path_isfile(test_dir))
+
+
+def test_path_islink(tmp_path):
+    test_file = tmp_path / 'foo'
+    test_file.touch()
+    test_link = tmp_path / 'bar'
+    test_link.symlink_to(test_file)
+
+    assert sn.evaluate(sn.path_islink(test_link))
+    assert not sn.evaluate(sn.path_islink(test_file))

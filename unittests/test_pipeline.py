@@ -1,10 +1,9 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
 import os
-import pathlib
 import pytest
 import re
 
@@ -14,8 +13,7 @@ import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 import unittests.fixtures as fixtures
 from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
-                                     ReframeSyntaxError, PerformanceError,
-                                     SanityError)
+                                     PerformanceError, SanityError)
 from reframe.frontend.loader import RegressionCheckLoader
 from unittests.resources.checks.hellocheck import HelloTest
 from unittests.resources.checks.pinnedcheck import PinnedTest
@@ -74,7 +72,7 @@ def hellotest():
 @pytest.fixture
 def local_exec_ctx(generic_system):
     partition = fixtures.partition_by_name('default')
-    environ = fixtures.environment_by_name('builtin-gcc', partition)
+    environ = fixtures.environment_by_name('builtin', partition)
     yield partition, environ
 
 
@@ -240,26 +238,6 @@ def test_run_only_no_srcdir(local_exec_ctx):
     test = MyTest()
     assert test.sourcesdir is None
     _run(test, *local_exec_ctx)
-
-
-def test_run_only_preserve_symlinks(local_exec_ctx):
-    @fixtures.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.RunOnlyRegressionTest):
-        def __init__(self):
-            self.executable = './hello.sh.link'
-            self.executable_opts = ['Hello, World!']
-            self.local = True
-            self.valid_prog_environs = ['*']
-            self.valid_systems = ['*']
-            self.sanity_patterns = sn.assert_found(
-                r'Hello, World\!', self.stdout
-            )
-
-        @rfm.run_after('run')
-        def check_symlinks(self):
-            assert os.path.islink(os.path.join(self.stagedir, 'hello.sh.link'))
-
-    _run(MyTest(), *local_exec_ctx)
 
 
 def test_compile_only_failure(local_exec_ctx):
@@ -492,7 +470,7 @@ def test_extra_resources(testsys_system):
 
     test = MyTest()
     partition = fixtures.partition_by_name('gpu')
-    environ = partition.environment('builtin-gcc')
+    environ = partition.environment('builtin')
     _run(test, partition, environ)
     expected_job_options = {'--gres=gpu:2',
                             '#DW jobdw capacity=100GB',
@@ -827,7 +805,6 @@ def test_name_compileonly_test():
 
 
 def test_registration_of_tests():
-    import sys
     import unittests.resources.checks_unlisted.good as mod
 
     checks = mod._rfm_gettests()
@@ -887,7 +864,7 @@ def _run_sanity(test, *exec_ctx, skip_perf=False):
 @pytest.fixture
 def dummy_gpu_exec_ctx(testsys_system):
     partition = fixtures.partition_by_name('gpu')
-    environ = fixtures.environment_by_name('builtin-gcc', partition)
+    environ = fixtures.environment_by_name('builtin', partition)
     yield partition, environ
 
 

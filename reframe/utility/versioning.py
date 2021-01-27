@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -31,6 +31,22 @@ class Version:
             self._dev_number = int(dev_part[0]) if dev_part else None
         except ValueError:
             raise ValueError('invalid version string: %s' % version) from None
+
+    @property
+    def major(self):
+        return self._major
+
+    @property
+    def minor(self):
+        return self._minor
+
+    @property
+    def patch_level(self):
+        return self._patch_level
+
+    @property
+    def dev_number(self):
+        return self._dev_number
 
     def _value(self):
         return 10000*self._major + 100*self._minor + self._patch_level
