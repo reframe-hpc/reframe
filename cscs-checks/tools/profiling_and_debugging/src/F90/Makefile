@@ -1,12 +1,16 @@
 RM := rm -f
 EXECUTABLE := jacobi
-
 all: jacobi
-
 OBJS :=  _variableDef.o _jacobi.o _main.o
 
+ifeq ($(PE_ENV),GNU)
+ifeq ($(word 1, $(subst ., ,$(GNU_VERSION))),10)
+MISMATCH = -fallow-argument-mismatch
+endif
+endif
+
 $(OBJS):
-	$(PREP) $(FC) $(FCFLAGS) -c -o $(@) $(@:.o=.F90)
+	$(PREP) $(FC) $(MISMATCH) $(FCFLAGS) -c -o $(@) $(@:.o=.F90)
 
 $(EXECUTABLE): $(OBJS)
 	$(PREP) $(FC) $(FCFLAGS) $(LDFLAGS) -o $(@) $(OBJS)

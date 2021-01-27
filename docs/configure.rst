@@ -68,7 +68,7 @@ Each system is a different object inside the ``systems`` section.
 In our example we define three systems, a Mac laptop, Piz Daint and a generic fallback system:
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 11-77
+   :lines: 11-89
 
 Each system is associated with a set of properties, which in this case are the following:
 
@@ -89,7 +89,7 @@ The ``login`` partition refers to the login nodes of the system, whereas the ``g
 Let's pick the ``gpu`` partition and look into it in more detail:
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 38-52
+   :lines: 38-58
 
 The basic properties of a partition are the following:
 
@@ -111,6 +111,8 @@ The basic properties of a partition are the following:
   For a complete list of the supported container platforms, see `here <config_reference.html#.systems[].partitions[].container_platforms[].type>`__.
 * ``max_jobs``: The maximum number of concurrent regression tests that may be active (i.e., not completed) on this partition.
   This option is relevant only when ReFrame executes with the `asynchronous execution policy <pipeline.html#execution-policies>`__.
+* ``resources``: This is a set of optional additional scheduler resources that the tests can access transparently.
+  For more information, please have a look `here <config_reference.html#custom-job-scheduler-resources>`__.
 
 
 --------------------------
@@ -129,7 +131,7 @@ In our example, we define environments for all the basic compilers as well as a 
 In certain contexts, it is useful to see a ReFrame environment as a wrapper of a programming toolchain (MPI + compiler combination):
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 78-129
+   :lines: 90-148
 
 Each environment is associated with a name.
 This name will be used to reference this environment in different contexts, as for example in the ``environs`` property of the system partitions.
@@ -151,7 +153,7 @@ Additionally, it allows for logging performance data from performance tests into
 Let's see how logging is defined in our example configuration, which also represents a typical one for logging:
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 130-165
+   :lines: 149-184
 
 Logging is configured under the ``logging`` section of the configuration, which is a list of logger objects.
 Unless you want to configure logging differently for different systems, a single logger object is enough.
