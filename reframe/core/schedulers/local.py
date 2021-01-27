@@ -59,10 +59,6 @@ class LocalJobScheduler(sched.JobScheduler):
         return _LocalJob(*args, **kwargs)
 
     def submit(self, job):
-        # `chmod +x' first, because we will execute the script locally
-        os.chmod(job.script_filename,
-                 os.stat(job.script_filename).st_mode | stat.S_IEXEC)
-
         # Run from the absolute path
         f_stdout = open(job.stdout, 'w+')
         f_stderr = open(job.stderr, 'w+')

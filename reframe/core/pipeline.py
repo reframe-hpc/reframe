@@ -20,7 +20,6 @@ import itertools
 import numbers
 import os
 import shutil
-import stat
 
 import reframe.core.environments as env
 import reframe.core.fields as fields
@@ -1390,16 +1389,6 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
                 )
             except OSError as e:
                 raise PipelineError('failed to prepare run job') from e
-
-            try:
-                self.logger.debug('chmod the run script')
-                os.chmod(
-                    self._job.script_filename,
-                    os.stat(self._job.script_filename).st_mode |
-                            stat.S_IEXEC,
-                )
-            except OSError as e:
-                raise PipelineError('failed to chmod run script') from e
 
             self._job.submit()
 

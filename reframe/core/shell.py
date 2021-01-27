@@ -3,6 +3,8 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import os
+import stat
 #
 # Shell script generators
 #
@@ -115,6 +117,7 @@ class generate_script:
     def __init__(self, filename, *args, **kwargs):
         self._shgen = ShellScriptGenerator(*args, **kwargs)
         self._file = open(filename, 'wt')
+        os.chmod(filename, os.stat(filename).st_mode | stat.S_IEXEC)
 
     def __enter__(self):
         return self._shgen
