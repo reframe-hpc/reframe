@@ -7,7 +7,6 @@ import errno
 import os
 import signal
 import socket
-import stat
 import time
 
 import reframe.core.schedulers as sched
