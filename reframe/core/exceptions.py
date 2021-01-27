@@ -135,7 +135,7 @@ class PipelineError(ReframeError):
     '''
 
 
-class ReframeForceExitError(ReframeError):
+class ForceExitError(ReframeError):
     '''Raised when ReFrame execution must be forcefully ended,
     e.g., after a SIGTERM was received.
     '''
@@ -284,8 +284,6 @@ def user_frame(exc_type, exc_value, tb):
 
     :returns: A frame object or :class:`None` if no user frame was found.
 
-    :meta private:
-
     '''
     if not inspect.istraceback(tb):
         return None
@@ -299,21 +297,16 @@ def user_frame(exc_type, exc_value, tb):
 
 
 def is_exit_request(exc_type, exc_value, tb):
-    '''Check if the error is a request to exit.
-
-    :meta private:
-    '''
+    '''Check if the error is a request to exit.'''
 
     return isinstance(exc_value, (KeyboardInterrupt,
-                                  ReframeForceExitError,
+                                  ForceExitError,
                                   FailureLimitError))
 
 
 def is_severe(exc_type, exc_value, tb):
-    '''Check if exception is a severe one.
+    '''Check if exception is a severe one.'''
 
-    :meta private:
-    '''
     soft_errors = (ReframeError,
                    ConnectionError,
                    FileExistsError,

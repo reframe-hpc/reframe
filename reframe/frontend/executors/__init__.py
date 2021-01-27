@@ -18,14 +18,14 @@ import reframe.utility.jsonext as jsonext
 from reframe.core.exceptions import (AbortTaskError,
                                      JobNotStartedError,
                                      FailureLimitError,
-                                     ReframeForceExitError,
+                                     ForceExitError,
                                      TaskExit)
 from reframe.core.schedulers.local import LocalJobScheduler
 from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.statistics import TestStats
 
-ABORT_REASONS = (AssertionError, FailureLimitError, KeyboardInterrupt,
-                 ReframeForceExitError)
+ABORT_REASONS = (AssertionError, FailureLimitError,
+                 KeyboardInterrupt, ForceExitError)
 
 
 class TestCase:
@@ -360,7 +360,7 @@ class TaskEventListener(abc.ABC):
 
 
 def _handle_sigterm(signum, frame):
-    raise ReframeForceExitError('received TERM signal')
+    raise ForceExitError('received TERM signal')
 
 
 class Runner:

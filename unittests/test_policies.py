@@ -22,7 +22,7 @@ import reframe.utility.osext as osext
 from reframe.core.exceptions import (AbortTaskError,
                                      FailureLimitError,
                                      ReframeError,
-                                     ReframeForceExitError,
+                                     ForceExitError,
                                      TaskDependencyError)
 from reframe.frontend.loader import RegressionCheckLoader
 
@@ -377,7 +377,7 @@ def test_pass_in_retries(make_runner, make_cases, tmp_path, common_exec_ctx):
 
 def test_sigterm_handling(make_runner, make_cases, common_exec_ctx):
     runner = make_runner()
-    with pytest.raises(ReframeForceExitError,
+    with pytest.raises(ForceExitError,
                        match='received TERM signal'):
         runner.runall(make_cases([SelfKillCheck()]))
 
