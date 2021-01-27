@@ -19,7 +19,6 @@ import reframe.frontend.runreport as runreport
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 from reframe.core.exceptions import (AbortTaskError,
-                                     MaxFailError,
                                      ReframeError,
                                      ReframeForceExitError,
                                      TaskDependencyError)
@@ -277,6 +276,7 @@ def test_runall_skip_performance_check(make_runner, make_cases,
 def test_runall_maxfail(make_runner, make_cases, common_exec_ctx):
     runner = make_runner(max_failures=2)
     runner.runall(make_cases())
+    assert_runall(runner)
     stats = runner.stats
     assert 2 == len(stats.failed())
 
