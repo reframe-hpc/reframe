@@ -948,18 +948,6 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
 
 
-.. envvar:: RFM_EXECUTABLE_JOBSCRIPT
-
-   Make the generated jobscript executable.
-
-   .. table::
-      :align: left
-
-      ================================== ==================
-      Associated configuration parameter :js:attr:`executable_jobscript` general configuration parameter
-      ================================== ==================
-
-
 .. envvar:: RFM_VERBOSE
 
    Increase verbosity level of output.
