@@ -742,8 +742,7 @@ def main():
 
             def _case_failed(t):
                 rec = report.case(*t)
-
-                if not req:
+                if not rec:
                     return False
 
                 return (rec['result'] == 'failure' or
