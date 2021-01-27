@@ -19,6 +19,7 @@ import reframe.frontend.runreport as runreport
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 from reframe.core.exceptions import (AbortTaskError,
+                                     FailureLimitError,
                                      ReframeError,
                                      ReframeForceExitError,
                                      TaskDependencyError)

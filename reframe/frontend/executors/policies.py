@@ -9,7 +9,8 @@ import itertools
 import sys
 import time
 
-from reframe.core.exceptions import (MaxFailError, TaskDependencyError,
+from reframe.core.exceptions import (FailureLimitError,
+                                     TaskDependencyError,
                                      TaskExit)
 from reframe.core.logging import getlogger
 from reframe.frontend.executors import (ExecutionPolicy, RegressionTask,
@@ -171,8 +172,9 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
                          f'test staged in {task.check.stagedir!r}')
         getlogger().verbose(f'==> {timings}')
         if self._num_failed_tasks >= self.max_failures:
-            raise MaxFailError('the maximum number of failures has been '
-                               'reached')
+            raise FailureLimitError(
+                f'maximum number of failures ({self.max_failures}) reached'
+            )
 
     def on_task_success(self, task):
         timings = task.pipeline_timings(['compile_complete',
@@ -283,8 +285,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                          f'test staged in {stagedir!r}')
         getlogger().verbose(f'==> timings: {task.pipeline_timings_all()}')
         if self._num_failed_tasks >= self.max_failures:
-            raise MaxFailError('the maximum number of failures has been '
-                               'reached')
+            raise FailureLimitError(
+                f'maximum number of failures ({self.max_failures}) reached'
+            )
 
     def on_task_success(self, task):
         msg = f'{task.check.info()} [{task.pipeline_timings_basic()}]'

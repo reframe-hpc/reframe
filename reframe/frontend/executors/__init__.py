@@ -15,14 +15,16 @@ import reframe.core.logging as logging
 import reframe.core.runtime as runtime
 import reframe.frontend.dependencies as dependencies
 import reframe.utility.jsonext as jsonext
-from reframe.core.exceptions import (AbortTaskError, JobNotStartedError,
-                                     MaxFailError, ReframeForceExitError,
+from reframe.core.exceptions import (AbortTaskError,
+                                     JobNotStartedError,
+                                     FailureLimitError,
+                                     ReframeForceExitError,
                                      TaskExit)
 from reframe.core.schedulers.local import LocalJobScheduler
 from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.statistics import TestStats
 
-ABORT_REASONS = (AssertionError, MaxFailError, KeyboardInterrupt,
+ABORT_REASONS = (AssertionError, FailureLimitError, KeyboardInterrupt,
                  ReframeForceExitError)
 
 
@@ -404,19 +406,11 @@ class Runner:
             if self._max_retries:
                 restored_cases = restored_cases or []
                 self._retry_failed(testcases + restored_cases)
-        except MaxFailError as e:
-            abort_reason = e
-        except KeyboardInterrupt:
-            abort_reason = "keyboard interrupt"
-            raise
-        except ReframeForceExitError:
-            abort_reason = "reframe error"
-            raise
         finally:
             # Print the summary line
             num_failures = len(self._stats.failed())
             num_completed = len(self._stats.completed())
-            if abort_reason or num_failures:
+            if num_failures:
                 status = 'FAILED'
             else:
                 status = 'PASSED'
@@ -428,9 +422,6 @@ class Runner:
                 f'({num_failures} failure(s))',
                 just='center'
             )
-            if abort_reason:
-                logging.getlogger().error(f'Aborted due to {abort_reason}')
-
             self._printer.timestamp('Finished on', 'short double line')
 
     def _retry_failed(self, cases):

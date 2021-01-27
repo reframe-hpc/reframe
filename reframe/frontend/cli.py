@@ -1001,16 +1001,14 @@ def main():
             sys.exit(1)
 
         sys.exit(0)
-    except KeyboardInterrupt:
-        sys.exit(1)
-    except errors.ReframeError as e:
-        printer.error(str(e))
-        sys.exit(1)
-    except (Exception, errors.ReframeFatalError):
+    except (Exception, KeyboardInterrupt, errors.ReframeFatalError):
         exc_info = sys.exc_info()
         tb = ''.join(traceback.format_exception(*exc_info))
-        printer.error(errors.what(*exc_info))
-        if errors.is_severe(*exc_info):
+        printer.error(f'run session stopped: {errors.what(*exc_info)}')
+        if errors.is_exit_request(*exc_info):
+            # Print stack traces for exit requests only when TOO verbose
+            printer.debug2(tb)
+        elif errors.is_severe(*exc_info):
             printer.error(tb)
         else:
             printer.verbose(tb)

@@ -96,10 +96,8 @@ class TaskDependencyError(ReframeError):
     '''
 
 
-class MaxFailError(ReframeError):
-    '''Raised inside a regression task by the runtime when the maximum allowed
-    number of failures has been exceeded.
-    '''
+class FailureLimitError(ReframeError):
+    '''Raised when the limit of test failures has been reached.'''
 
 
 class AbortTaskError(ReframeError):
@@ -300,8 +298,22 @@ def user_frame(exc_type, exc_value, tb):
     return None
 
 
+def is_exit_request(exc_type, exc_value, tb):
+    '''Check if the error is a request to exit.
+
+    :meta private:
+    '''
+
+    return isinstance(exc_value, (KeyboardInterrupt,
+                                  ReframeForceExitError,
+                                  FailureLimitError))
+
+
 def is_severe(exc_type, exc_value, tb):
-    '''Check if exception is a severe one.'''
+    '''Check if exception is a severe one.
+
+    :meta private:
+    '''
     soft_errors = (ReframeError,
                    ConnectionError,
                    FileExistsError,
