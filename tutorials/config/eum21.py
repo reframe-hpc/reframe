@@ -4,45 +4,31 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 #
-# Tutorial settings
+# Generic fallback configuration
 #
 
 site_configuration = {
     'systems': [
         {
-            'name': 'catalina',
-            'descr': 'My Mac',
-            'hostnames': ['tresa'],
-            'partitions': [
-                {
-                    'name': 'default',
-                    'scheduler': 'local',
-                    'launcher': 'local',
-                    'environs': ['gnu', 'clang'],
-                }
-            ]
-        },
-        {
-            'name': 'daint',
-            'descr': 'Piz Daint Supercomputer',
-            'hostnames': ['daint'],
-            'modules_system': 'tmod32',
+            'name': 'reframe-eum',
+            'descr': 'HPC cluster for ReFrame tutorial at EUM',
+            'hostnames': ['^reframe$'],
+            'modules_system': 'lmod',
             'partitions': [
                 {
                     'name': 'login',
-                    'descr': 'Login nodes',
                     'scheduler': 'local',
                     'launcher': 'local',
-                    'environs': ['builtin', 'gnu', 'intel', 'pgi', 'cray'],
+                    'environs': ['builtin', 'gnu'],
                 },
                 {
-                    'name': 'gpu',
-                    'descr': 'Hybrid nodes',
+                    'name': 'cn',
+                    'descr': 'Compute nodes',
                     'scheduler': 'slurm',
                     'launcher': 'srun',
-                    'access': ['-C gpu', '-A csstaff'],
-                    'environs': ['gnu', 'intel', 'pgi', 'cray'],
-                    'max_jobs': 100,
+                    'access': ['-ptotal'],
+                    'environs': ['builtin', 'gnu', 'foss'],
+                    'max_jobs': 10,
                     'resources': [
                         {
                             'name': 'memory',
@@ -52,25 +38,9 @@ site_configuration = {
                     'container_platforms': [
                         {
                             'type': 'Singularity',
-                            'modules': ['singularity']
                         }
                     ]
                 },
-                {
-                    'name': 'mc',
-                    'descr': 'Multicore nodes',
-                    'scheduler': 'slurm',
-                    'launcher': 'srun',
-                    'access': ['-C mc', '-A csstaff'],
-                    'environs': ['gnu', 'intel', 'pgi', 'cray'],
-                    'max_jobs': 100,
-                    'resources': [
-                        {
-                            'name': 'memory',
-                            'options': ['--mem={size}']
-                        }
-                    ]
-                }
             ]
         },
         {
@@ -90,47 +60,24 @@ site_configuration = {
     'environments': [
         {
             'name': 'gnu',
-            'cc': 'gcc-9',
-            'cxx': 'g++-9',
-            'ftn': 'gfortran-9'
+            'cc': 'gcc',
+            'cxx': 'g++',
+            'ftn': 'gfortran',
+            'modules': ['GCC/9.3.0']
         },
         {
-            'name': 'gnu',
-            'modules': ['PrgEnv-gnu'],
-            'cc': 'cc',
-            'cxx': 'CC',
-            'ftn': 'ftn',
-            'target_systems': ['daint']
+            'name': 'foss',
+            'cc': 'mpicc',
+            'cxx': 'mpicxx',
+            'ftn': 'mpif90',
+            'modules': ['foss/2020a']
         },
         {
-            'name': 'cray',
-            'modules': ['PrgEnv-cray'],
-            'cc': 'cc',
-            'cxx': 'CC',
-            'ftn': 'ftn',
-            'target_systems': ['daint']
-        },
-        {
-            'name': 'intel',
-            'modules': ['PrgEnv-intel'],
-            'cc': 'cc',
-            'cxx': 'CC',
-            'ftn': 'ftn',
-            'target_systems': ['daint']
-        },
-        {
-            'name': 'pgi',
-            'modules': ['PrgEnv-pgi'],
-            'cc': 'cc',
-            'cxx': 'CC',
-            'ftn': 'ftn',
-            'target_systems': ['daint']
-        },
-        {
-            'name': 'clang',
-            'cc': 'clang',
-            'cxx': 'clang++',
-            'ftn': ''
+            'name': 'builtin',
+            'cc': 'gcc',
+            'cxx': 'g++',
+            'ftn': 'gfortran',
+            'target_systems': ['reframe-eum']
         },
         {
             'name': 'builtin',
@@ -138,17 +85,9 @@ site_configuration = {
             'cxx': '',
             'ftn': ''
         },
-        {
-            'name': 'builtin',
-            'cc': 'cc',
-            'cxx': 'CC',
-            'ftn': 'ftn',
-            'target_systems': ['daint']
-        }
     ],
     'logging': [
         {
-            'level': 'debug',
             'handlers': [
                 {
                     'type': 'stream',

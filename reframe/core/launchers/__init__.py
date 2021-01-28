@@ -37,10 +37,22 @@ class JobLauncher(abc.ABC):
 
     @abc.abstractmethod
     def command(self, job):
-        # The launcher command to be emitted for ``job``
-        pass
+        '''The launcher command to be emitted for a specific job.
+
+        Launcher backends provide concrete implementations of this method.
+
+        :param job: A job descriptor.
+        :returns: the basic launcher command as a list of tokens.
+        '''
 
     def run_command(self, job):
+        '''The full launcher command to be emitted for a specific job.
+
+        This includes any user options.
+
+        :param job: a job descriptor.
+        :returns: the launcher command as a string.
+        '''
         return ' '.join(self.command(job) + self.options)
 
 
