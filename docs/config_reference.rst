@@ -1006,7 +1006,7 @@ Common scheduler options
    In such cases, you may set this parameter to ``true`` to avoid this.
 
 
-.. js:attribute:: .schedulers[].resubmit_on_qos_errors
+.. js:attribute:: .schedulers[].resubmit_on_errors
 
    :required: No
    :default: ``[]``
@@ -1014,10 +1014,11 @@ Common scheduler options
    This option is relevant to the Slurm backends only.
 
    When a job is submitted certain errors can be ignored and the framework will try to submit again the job after some seconds.
-   ReFrame is checking with a regular expression if any of the given expressions is contained in the ``stderr`` of the submission command.
-   Keep in mind that the submission is blocking and ReFrame will not continue until the submission is successful or has a different error.
+   An example of this could be QOS errors like ``QOSMaxSubmitJobPerUserLimit``, in which case you would have to set the option to ``["QOSMaxSubmitJobPerUserLimit"]``. You can ignore multiple errors at the same time if you include all the error strings in the list.
+   Job submission is a synchronous operation in ReFrame.
+   If this option is set, it will block the whole execution until the error conditions specified in this list are raised.
 
-   .. versionadded:: 3.4
+   .. versionadded:: 3.5
 
 
 Execution Mode Configuration

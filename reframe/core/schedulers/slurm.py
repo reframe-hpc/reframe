@@ -125,8 +125,8 @@ class SlurmJobScheduler(sched.JobScheduler):
         self._use_nodes_opt = rt.runtime().get_option(
             f'schedulers/@{self.registered_name}/use_nodes_option'
         )
-        self._resubmit_on_qos_errors = rt.runtime().get_option(
-            f'schedulers/@{self.registered_name}/resubmit_on_qos_errors'
+        self._resubmit_on_errors = rt.runtime().get_option(
+            f'schedulers/@{self.registered_name}/resubmit_on_errors'
         )
 
     def make_job(self, *args, **kwargs):
@@ -236,11 +236,9 @@ class SlurmJobScheduler(sched.JobScheduler):
                 completed = _run_strict(cmd, timeout=self._submit_timeout)
                 break
             except SpawnedProcessError as e:
-                sbatch_error = '|'.join(self._resubmit_on_qos_errors)
-                if (
-                    not self._resubmit_on_qos_errors or
-                    not re.search(sbatch_error, e.stderr)
-                ):
+                sbatch_error = '|'.join(self._resubmit_on_errors)
+                if (not self._resubmit_on_errors or
+                    not re.search(sbatch_error, e.stderr)):
                     raise e
 
             time.sleep(next(intervals))

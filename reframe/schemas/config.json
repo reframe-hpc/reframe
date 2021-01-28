@@ -293,7 +293,7 @@
                         "enum": ["local", "pbs", "slurm", "squeue", "torque"]
                     },
                     "ignore_reqnodenotavail": {"type": "boolean"},
-                    "resubmit_on_qos_errors": {
+                    "resubmit_on_errors": {
                         "type": "array",
                         "items": {"type": "string"}
                     },
@@ -449,7 +449,7 @@
         "modes/options": [],
         "modes/target_systems": ["*"],
         "schedulers/ignore_reqnodenotavail": false,
-        "resubmit_on_qos_errors": [],
+        "schedulers/resubmit_on_errors": [],
         "schedulers/job_submit_timeout": 60,
         "schedulers/target_systems": ["*"],
         "schedulers/use_nodes_option": false,
