@@ -313,6 +313,13 @@ Options controlling ReFrame execution
    The test stage and output directories will receive a ``_retry<N>`` suffix every time the test is retried.
 
 
+.. option:: --maxfail=NUM
+
+   The maximum number of failing test cases before the execution is aborted.
+   After ``NUM`` failed test cases the rest of the test cases will be aborted.
+   The counter of the failed test cases is reset to 0 in every retry.
+
+
 .. option:: --disable-hook=HOOK
 
    Disable the pipeline hook named ``HOOK`` from all the tests that will run.

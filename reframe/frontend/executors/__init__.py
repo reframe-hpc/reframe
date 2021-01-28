@@ -15,14 +15,17 @@ import reframe.core.logging as logging
 import reframe.core.runtime as runtime
 import reframe.frontend.dependencies as dependencies
 import reframe.utility.jsonext as jsonext
-from reframe.core.exceptions import (AbortTaskError, JobNotStartedError,
-                                     ReframeForceExitError, TaskExit)
+from reframe.core.exceptions import (AbortTaskError,
+                                     JobNotStartedError,
+                                     FailureLimitError,
+                                     ForceExitError,
+                                     TaskExit)
 from reframe.core.schedulers.local import LocalJobScheduler
 from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.statistics import TestStats
 
-
-ABORT_REASONS = (KeyboardInterrupt, ReframeForceExitError, AssertionError)
+ABORT_REASONS = (AssertionError, FailureLimitError,
+                 KeyboardInterrupt, ForceExitError)
 
 
 class TestCase:
@@ -136,6 +139,8 @@ class RegressionTask:
         # Timestamps for the start and finish phases of the pipeline
         self._timestamps = {}
 
+        self._aborted = False
+
     def duration(self, phase):
         # Treat pseudo-phases first
         if phase == 'compile_complete':
@@ -204,7 +209,7 @@ class RegressionTask:
 
     @property
     def failed(self):
-        return self._failed_stage is not None
+        return self._failed_stage is not None and not self._aborted
 
     @property
     def failed_stage(self):
@@ -217,6 +222,10 @@ class RegressionTask:
     @property
     def completed(self):
         return self.failed or self.succeeded
+
+    @property
+    def aborted(self):
+        return self._aborted
 
     def _notify_listeners(self, callback_name):
         for l in self._listeners:
@@ -308,9 +317,13 @@ class RegressionTask:
         self._notify_listeners('on_task_failure')
 
     def abort(self, cause=None):
+        if self.failed or self._aborted:
+            return
+
         logging.getlogger().debug2('Aborting test case: {self.testcase!r}')
         exc = AbortTaskError()
         exc.__cause__ = cause
+        self._aborted = True
         try:
             # FIXME: we should perhaps extend the RegressionTest interface
             # for supporting job cancelling
@@ -347,21 +360,27 @@ class TaskEventListener(abc.ABC):
 
 
 def _handle_sigterm(signum, frame):
-    raise ReframeForceExitError('received TERM signal')
+    raise ForceExitError('received TERM signal')
 
 
 class Runner:
     '''Responsible for executing a set of regression tests based on an
     execution policy.'''
 
-    def __init__(self, policy, printer=None, max_retries=0):
+    def __init__(self, policy, printer=None, max_retries=0,
+                 max_failures=sys.maxsize):
         self._policy = policy
         self._printer = printer or PrettyPrinter()
         self._max_retries = max_retries
         self._stats = TestStats()
         self._policy.stats = self._stats
         self._policy.printer = self._printer
+        self._policy.max_failures = max_failures
         signal.signal(signal.SIGTERM, _handle_sigterm)
+
+    @property
+    def max_failures(self):
+        return self._max_failures
 
     @property
     def max_retries(self):
@@ -376,6 +395,7 @@ class Runner:
         return self._stats
 
     def runall(self, testcases, restored_cases=None):
+        abort_reason = None
         num_checks = len({tc.check.name for tc in testcases})
         self._printer.separator('short double line',
                                 'Running %d check(s)' % num_checks)
@@ -386,20 +406,27 @@ class Runner:
             if self._max_retries:
                 restored_cases = restored_cases or []
                 self._retry_failed(testcases + restored_cases)
-
         finally:
             # Print the summary line
-            num_failures = len(self._stats.failures())
+            num_failures = len(self._stats.failed())
+            num_completed = len(self._stats.completed())
+            if num_failures:
+                status = 'FAILED'
+            else:
+                status = 'PASSED'
+
             self._printer.status(
-                'FAILED' if num_failures else 'PASSED',
-                'Ran %d test case(s) from %d check(s) (%d failure(s))' %
-                (len(testcases), num_checks, num_failures), just='center'
+                status,
+                f'Ran {num_completed}/{len(testcases)}'
+                f' test case(s) from {num_checks} check(s) '
+                f'({num_failures} failure(s))',
+                just='center'
             )
             self._printer.timestamp('Finished on', 'short double line')
 
     def _retry_failed(self, cases):
         rt = runtime.runtime()
-        failures = self._stats.failures()
+        failures = self._stats.failed()
         while (failures and rt.current_run < self._max_retries):
             num_failed_checks = len({tc.check.name for tc in failures})
             rt.next_run()
@@ -415,7 +442,7 @@ class Runner:
             cases_graph, _ = dependencies.build_deps(failed_cases, cases)
             failed_cases = dependencies.toposort(cases_graph, is_subgraph=True)
             self._runall(failed_cases)
-            failures = self._stats.failures()
+            failures = self._stats.failed()
 
     def _runall(self, testcases):
         def print_separator(check, prefix):
@@ -475,7 +502,7 @@ class ExecutionPolicy(abc.ABC):
         self.stats = None
 
     def enter(self):
-        pass
+        self._num_failed_tasks = 0
 
     def exit(self):
         pass

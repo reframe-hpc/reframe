@@ -317,6 +317,10 @@ def main():
              'may be retried (default: 0)'
     )
     run_options.add_argument(
+        '--maxfail', metavar='NUM', action='store', default=sys.maxsize,
+        help='Exit after first NUM failures'
+    )
+    run_options.add_argument(
         '--restore-session', action='store', nargs='?', const='',
         metavar='REPORT',
         help='Restore a testing session from REPORT file'
@@ -738,10 +742,11 @@ def main():
 
             def _case_failed(t):
                 rec = report.case(*t)
-                if rec and rec['result'] == 'failure':
-                    return True
-                else:
+                if not rec:
                     return False
+
+                return (rec['result'] == 'failure' or
+                        rec['result'] == 'aborted')
 
             testcases = list(filter(_case_failed, testcases))
             printer.verbose(
@@ -918,7 +923,19 @@ def main():
                 f'--max-retries is not a valid integer: {max_retries}'
             ) from None
 
-        runner = Runner(exec_policy, printer, max_retries)
+        try:
+            max_failures = int(options.maxfail)
+            if max_failures < 0:
+                raise errors.ConfigError(
+                    f'--maxfail should be a non-negative integer: '
+                    f'{options.maxfail!r}'
+                )
+        except ValueError:
+            raise errors.ConfigError(
+                f'--maxfail is not a valid integer: {options.maxfail!r}'
+            ) from None
+
+        runner = Runner(exec_policy, printer, max_retries, max_failures)
         try:
             time_start = time.time()
             session_info['time_start'] = time.strftime(
@@ -933,12 +950,12 @@ def main():
             session_info['time_elapsed'] = time_end - time_start
 
             # Print a retry report if we did any retries
-            if runner.stats.failures(run=0):
+            if runner.stats.failed(run=0):
                 printer.info(runner.stats.retry_report())
 
             # Print a failure report if we had failures in the last run
             success = True
-            if runner.stats.failures():
+            if runner.stats.failed():
                 success = False
                 runner.stats.print_failure_report(printer)
                 if options.failure_stats:
@@ -984,16 +1001,14 @@ def main():
             sys.exit(1)
 
         sys.exit(0)
-    except KeyboardInterrupt:
-        sys.exit(1)
-    except errors.ReframeError as e:
-        printer.error(str(e))
-        sys.exit(1)
-    except (Exception, errors.ReframeFatalError):
+    except (Exception, KeyboardInterrupt, errors.ReframeFatalError):
         exc_info = sys.exc_info()
         tb = ''.join(traceback.format_exception(*exc_info))
-        printer.error(errors.what(*exc_info))
-        if errors.is_severe(*exc_info):
+        printer.error(f'run session stopped: {errors.what(*exc_info)}')
+        if errors.is_exit_request(*exc_info):
+            # Print stack traces for exit requests only when TOO verbose
+            printer.debug2(tb)
+        elif errors.is_severe(*exc_info):
             printer.error(tb)
         else:
             printer.verbose(tb)
