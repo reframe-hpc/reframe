@@ -96,3 +96,6 @@ ENV/
 
 # TextMATE files
 ._*
+
+# Vim temp files
+*.swp
