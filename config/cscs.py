@@ -619,7 +619,6 @@ site_configuration = {
                     'name': 'cn',
                     'scheduler': 'slurm',
                     'access': [
-                        # '--partition=debug'
                         '--partition=cn-regression'
                     ],
                     'environs': [
@@ -991,16 +990,16 @@ site_configuration = {
                     'datefmt': '%FT%T%:z',
                     'append': True
                 },
-##                 {
-##                     'type': 'graylog',
-##                     'address': 'graylog-server:12345',
-##                     'level': 'info',
-##                     'format': '%(message)s',
-##                     'extras': {
-##                         'facility': 'reframe',
-##                         'data-version': '1.0',
-##                     }
-##                 }
+                {
+                    'type': 'graylog',
+                    'address': 'graylog-server:12345',
+                    'level': 'info',
+                    'format': '%(message)s',
+                    'extras': {
+                        'facility': 'reframe',
+                        'data-version': '1.0',
+                    }
+                }
             ]
         }
     ],
@@ -1042,8 +1041,7 @@ site_configuration = {
             'check_search_path': [
                 'checks/'
             ],
-            'check_search_recursive': True,
-            # 'executable_jobscript': True,
+            'check_search_recursive': True
         }
     ]
 }
