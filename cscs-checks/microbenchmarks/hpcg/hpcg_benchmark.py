@@ -17,12 +17,13 @@ class HPCGHookMixin(rfm.RegressionTest):
         ntasks_per_node = self.num_tasks_per_node or 1
         self.job.num_tasks_per_node = ntasks_per_node
         n = int(self.job.guess_num_tasks()/ntasks_per_node)
+
         def first_factor(x):
             if x <= 1:
                 return 1
 
             for i in range(2, x+1):
-                if x%i == 0:
+                if x % i == 0:
                     return i
 
         def is_prime(x):
