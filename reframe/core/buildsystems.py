@@ -655,6 +655,35 @@ class Autotools(ConfigureBasedBuildSystem):
         return prepare_cmd + [' '.join(configure_cmd), ' '.join(make_cmd)]
 
 
+class EasyBuild(BuildSystem):
+    easyconfigs = fields.TypedField(typ.List[str])
+    options = fields.TypedField(typ.List[str])
+
+    def __init__(self):
+        super().__init__()
+        self.easyconfigs = []
+        self.options = []
+        self._installpath = None
+
+    def emit_build_commands(self, environ):
+        _easyconfigs = ' '.join(self.easyconfigs)
+        _options = ' '.join(self.options)
+        return [f"eb {_easyconfigs} --installpath {self._installpath} "
+                f"--tmpdir {self._installpath} "
+                f"--sourcepath {self._installpath} "
+                f"--buildpath {self._installpath}/build {_options}"]
+
+    def _get_built_modules(self):
+        modules = []
+        modules_dir = os.path.join(self._installpath, 'modules', 'all')
+        if os.path.isdir(modules_dir):
+            for mod in os.listdir(modules_dir):
+                for ver in os.listdir(os.path.join(modules_dir, mod)):
+                    modules.append(f'{mod}/{ver}')
+
+        return modules
+
+
 class BuildSystemField(fields.TypedField):
     def __init__(self, fieldname, *other_types):
         super().__init__(fieldname, BuildSystem, *other_types)

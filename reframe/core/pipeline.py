@@ -1239,6 +1239,9 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
             self.build_system.srcfile = self.sourcepath
             self.build_system.executable = self.executable
 
+        if type(self.build_system).__name__ == 'EasyBuild':
+            self.build_system._installpath = os.path.join(self._stagedir, 'easybuild')
+
         # Prepare build job
         build_commands = [
             *self.prebuild_cmds,
@@ -1345,6 +1348,12 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
         exec_cmd = [self.job.launcher.run_command(self.job),
                     self.executable, *self.executable_opts]
         commands = [*self.prerun_cmds, ' '.join(exec_cmd), *self.postrun_cmds]
+        if type(self.build_system).__name__ == 'EasyBuild':
+            rt.runtime().modules_system.searchpath_add(
+                os.path.join(self.build_system._installpath, 'modules', 'all')
+            )
+            self.modules.extend(self.build_system._get_built_modules())
+
         user_environ = env.Environment(type(self).__name__,
                                        self.modules, self.variables.items())
         environs = [
