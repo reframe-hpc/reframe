@@ -313,6 +313,13 @@ Options controlling ReFrame execution
    The test stage and output directories will receive a ``_retry<N>`` suffix every time the test is retried.
 
 
+.. option:: --maxfail=NUM
+
+   The maximum number of failing test cases before the execution is aborted.
+   After ``NUM`` failed test cases the rest of the test cases will be aborted.
+   The counter of the failed test cases is reset to 0 in every retry.
+
+
 .. option:: --disable-hook=HOOK
 
    Disable the pipeline hook named ``HOOK`` from all the tests that will run.
@@ -419,7 +426,7 @@ It does so by leveraging the selected system's environment modules system.
 .. option:: --module-path=PATH
 
    Manipulate the ``MODULEPATH`` environment variable before acting on any tests.
-   If ``PATH`` starts with the `-` character, it will be removed from the ``MODULEPATH``, whereas if it starts with the `+` character, it will be added to it.
+   If ``PATH`` starts with the ``-`` character, it will be removed from the ``MODULEPATH``, whereas if it starts with the ``+`` character, it will be added to it.
    In all other cases, ``PATH`` will completely override MODULEPATH.
    This option may be specified multiple times, in which case all the paths specified will be added or removed in order.
 
