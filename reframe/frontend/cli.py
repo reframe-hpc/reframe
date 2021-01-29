@@ -903,7 +903,7 @@ def main():
         exec_policy.sched_flex_alloc_nodes = sched_flex_alloc_nodes
         parsed_job_options = []
         for opt in options.job_options:
-            opt_split = re.split(r'=|\s+', opt, maxsplit=1)
+            opt_split = opt.split('=', maxsplit=1)
             optstr = opt_split[0]
             valstr = opt_split[1] if len(opt_split) > 1 else ''
             if opt.startswith('-') or opt.startswith('#'):
