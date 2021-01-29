@@ -358,7 +358,7 @@ Options controlling job submission
    The syntax of ``OPTION`` is ``-J key=value``.
    If ``OPTION`` starts with ``-`` it will be passed verbatim to the backend job scheduler.
    If ``OPTION`` starts with ``#`` it will be emitted verbatim in the job script.
-   Otherwise, ReFrame will pass ``--key=value`` or ``-k value`` (if ``key`` is a single character) to the backend scheduler.
+   Otherwise, ReFrame will pass ``--key value`` or ``-k value`` (if ``key`` is a single character) to the backend scheduler.
    Any job options specified with this command-line option will be emitted after any job options specified in the :js:attr:`access` system partition configuration parameter.
 
    Especially for the Slurm backends, constraint options, such as ``-J constraint=value``, ``-J C=value``, ``-J --constraint=value`` or ``-J -C=value``, are going to be combined with any constraint options specified in the :js:attr:`access` system partition configuration parameter.
