@@ -52,7 +52,13 @@ class GridToolsGPUBuildCheck(GridToolsBuildCheck):
     def __init__(self):
         super().__init__()
         self.descr = 'GridTools GPU build test'
-        self.modules.append('cudatoolkit')
+        if self.current_system.name == 'dom':
+            self.modules.append(
+                'cudatoolkit/10.2.89_3.29-7.0.2.1_3.5__g67354b4')
+            self.modules.append('cdt-cuda/20.10')
+            self.modules.append('gcc/8.3.0')
+        else:
+            self.modules.append('cudatoolkit')
         self.build_system.config_opts += [
             '-DGT_CUDA_ARCH=sm_60',
             '-DGT_TESTS_REQUIRE_GPU="ON"'
