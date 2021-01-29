@@ -8,9 +8,45 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
+class HPCGHookMixin(rfm.RegressionTest):
+    @rfm.run_before('run')
+    def guide_node_guess(self):
+        '''Guide the node guess based on the test's needs.'''
+
+        # Prelim guess
+        ntasks_per_node = self.num_tasks_per_node or 1
+        self.job.num_tasks_per_node = ntasks_per_node
+        n = int(self.job.guess_num_tasks()/ntasks_per_node)
+        def first_factor(x):
+            if x <= 1:
+                return 1
+
+            for i in range(2, x+1):
+                if x%i == 0:
+                    return i
+
+        def is_prime(x):
+            return first_factor(x) == x
+
+        # Correct the prelim node numbers
+        # n = 11 would be the first number not meeting HPCG's condition
+        while n > 10:
+            x = int(n/first_factor(n))
+
+            # If x==1, n is prime
+            # if x > 8 and prime, it would also not meet HPCG's aspect ratio
+            if x == 1 or is_prime(x) and x > 8:
+                n -= 1
+            else:
+                break
+
+        self.num_tasks = int(n*ntasks_per_node)
+        self.num_tasks_per_node = ntasks_per_node
+
+
 @rfm.required_version('>=2.16-dev0')
 @rfm.simple_test
-class HPCGCheckRef(rfm.RegressionTest):
+class HPCGCheckRef(HPCGHookMixin):
     def __init__(self):
         self.descr = 'HPCG reference benchmark'
         self.valid_systems = ['daint:mc', 'daint:gpu', 'dom:gpu', 'dom:mc']
@@ -85,7 +121,7 @@ class HPCGCheckRef(rfm.RegressionTest):
 
 @rfm.required_version('>=2.16-dev0')
 @rfm.simple_test
-class HPCGCheckMKL(rfm.RegressionTest):
+class HPCGCheckMKL(HPCGHookMixin):
     def __init__(self):
         self.descr = 'HPCG benchmark Intel MKL implementation'
         self.valid_systems = ['daint:mc', 'dom:mc', 'daint:gpu', 'dom:gpu']
@@ -96,7 +132,6 @@ class HPCGCheckMKL(rfm.RegressionTest):
                               'mv Make.CrayXC setup', './configure CrayXC']
 
         self.num_tasks = 0
-        self.num_tasks_per_core = 2
         self.problem_size = 104
 
         self.variables = {
@@ -104,7 +139,6 @@ class HPCGCheckMKL(rfm.RegressionTest):
             'MPICH_MAX_THREAD_SAFETY': 'multiple',
             'MPICH_USE_DMAPP_COLL': '1',
             'PMI_NO_FORK': '1',
-            'KMP_HW_SUBSET': '9c,2t',
             'KMP_AFFINITY': 'granularity=fine,compact'
         }
 
@@ -181,7 +215,7 @@ class HPCGCheckMKL(rfm.RegressionTest):
 
 
 @rfm.simple_test
-class HPCG_GPUCheck(rfm.RunOnlyRegressionTest):
+class HPCG_GPUCheck(rfm.RunOnlyRegressionTest, HPCGHookMixin):
     def __init__(self):
         self.maintainers = ['SK', 'VH']
         self.descr = 'HPCG benchmark on GPUs'
