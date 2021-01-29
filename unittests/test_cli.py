@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -245,7 +245,7 @@ def test_check_submit_success(run_reframe, remote_exec_ctx):
     assert 'PASSED' in stdout
 
     # Assert that we have run only one test case
-    assert 'Ran 2 test case(s)' in stdout
+    assert 'Ran 2/2 test case(s)' in stdout
     assert 0 == returncode
 
 
@@ -479,7 +479,7 @@ def test_execution_modes(run_reframe):
     assert 'Traceback' not in stderr
     assert 'FAILED' not in stdout
     assert 'PASSED' in stdout
-    assert 'Ran 2 test case' in stdout
+    assert 'Ran 2/2 test case' in stdout
 
 
 def test_no_ignore_check_conflicts(run_reframe):
@@ -724,3 +724,39 @@ def test_failure_stats(run_reframe):
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert returncode != 0
+
+
+def test_maxfail_option(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        more_options=['--maxfail', '1'],
+        system='testsys',
+        checkpath=['unittests/resources/checks/hellocheck.py']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert 'Ran 2/2 test case(s) from 2 check(s) (0 failure(s))' in stdout
+    assert returncode == 0
+
+
+def test_maxfail_invalid_option(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        more_options=['--maxfail', 'foo'],
+        system='testsys',
+        checkpath=['unittests/resources/checks/hellocheck.py']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert "--maxfail is not a valid integer: 'foo'" in stdout
+    assert returncode == 1
+
+
+def test_maxfail_negative(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        more_options=['--maxfail', '-2'],
+        system='testsys',
+        checkpath=['unittests/resources/checks/hellocheck.py']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert "--maxfail should be a non-negative integer: '-2'" in stdout
+    assert returncode == 1

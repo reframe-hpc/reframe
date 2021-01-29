@@ -1,8 +1,10 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import os
+import stat
 #
 # Shell script generators
 #
@@ -112,9 +114,13 @@ class ShellScriptGenerator:
 
 
 class generate_script:
-    def __init__(self, filename, *args, **kwargs):
+    def __init__(self, filename, mode=None, *args, **kwargs):
         self._shgen = ShellScriptGenerator(*args, **kwargs)
         self._file = open(filename, 'wt')
+        if mode is None:
+            self._mode = os.stat(filename).st_mode | stat.S_IXUSR
+        else:
+            self._mode = mode
 
     def __enter__(self):
         return self._shgen
@@ -122,3 +128,4 @@ class generate_script:
     def __exit__(self, exc_type, exc_value, traceback):
         self._file.write(self._shgen.finalize())
         self._file.close()
+        os.chmod(self._file.name, self._mode)
