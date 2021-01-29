@@ -99,3 +99,18 @@ class FileSystemDuDirCheck(FileSystemCommandCheck):
         }        
         self.executable = 'time du -mhs --block-size=1M'
         self.executable_opts = [variant]
+
+
+@rfm.parameterized_test(['/scratch/snx1*/bignamic'],#TODO: can we parametrize the user?
+                        ['/scratch/snx3000/bignamic'])#TODO: what is the correct way to do this?
+class FileSystemTouchFileCheck(FileSystemCommandCheck):
+    def __init__(self, variant):
+        super().__init__()
+        self.descr = 'touch of file'
+        self.executable = 'time touch'
+        self.test_file = variant + '/reframe_touch_test_file'
+        self.executable_opts = [self.test_file]
+
+    @rfm.run_after('run')
+    def delete_test_file(self):
+        rm self.test_file
