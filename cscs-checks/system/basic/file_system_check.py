@@ -113,4 +113,5 @@ class FileSystemTouchFileCheck(FileSystemCommandCheck):
 
     @rfm.run_after('run')
     def delete_test_file(self):
-        rm self.test_file
+        if os.path.exists(self.test_file):
+            os.remove(self.test_file)    
