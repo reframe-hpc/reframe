@@ -1013,12 +1013,16 @@ Common scheduler options
 
    This option is relevant to the Slurm backends only.
 
-   When a job is submitted certain errors can be ignored and the framework will try to submit again the job after some seconds.
-   An example of this could be QOS errors like ``QOSMaxSubmitJobPerUserLimit``, in which case you would have to set the option to ``["QOSMaxSubmitJobPerUserLimit"]``. You can ignore multiple errors at the same time if you include all the error strings in the list.
-   Job submission is a synchronous operation in ReFrame.
-   If this option is set, it will block the whole execution until the error conditions specified in this list are raised.
+   If any of the listed errors occur, ReFrame will try to resubmit the job after some seconds.
+   As an example, you could have ReFrame trying to resubmit a job in case that the maximum submission limit per user is reached by setting this field to ``["QOSMaxSubmitJobPerUserLimit"]``.
+   You can ignore multiple errors at the same time if you add more error strings in the list.
 
    .. versionadded:: 3.5
+
+   .. warning::
+      Job submission is a synchronous operation in ReFrame.
+      If this option is set, ReFrame's execution will block until the error conditions specified in this list are resolved.
+      No other test would be able to proceed.
 
 
 Execution Mode Configuration
