@@ -7,21 +7,21 @@
  */
 
 
-__global__ void clockLatency(int * clk)
+__global__ void clock_latency(int * clk)
 {
   // This returns the clock latency when reading the 64-bit clock counter.
   clk[0] = XClockLatency<int>();
 }
 
 
-void printClockLatency(char * nid, int dev)
+void print_clock_latency(char * nid, int dev)
 {
   /* Prints the latency of reading the clock cycles */
   int * clk_d;
   int clk;
   XSetDevice(dev);
   XMalloc((void**)&clk_d, sizeof(int));
-  clockLatency<<<1,1>>>(clk_d);
+  clock_latency<<<1,1>>>(clk_d);
   XDeviceSynchronize();
   XMemcpy(&clk, clk_d, sizeof(int), XMemcpyDeviceToHost);
   XFree(clk_d);
@@ -87,15 +87,15 @@ __global__ void initialize_random_list(Node * buffer, uint32_t *indices)
 
 }
 
-__global__ void simple_traverse(Node * __restrict__ buffer, uint32_t headIndex)
+__global__ void simple_traverse(Node * __restrict__ buffer, uint32_t head_index)
 {
   /* Simple list traverse - no timing is done here
    * - buffer: where the list is
-   * - headIndex: index in the buffer where the head of the list is
+   * - head_index: index in the buffer where the head of the list is
    */
 
   uint32_t count = 0;
-  Node * head = &(buffer[headIndex]);
+  Node * head = &(buffer[head_index]);
   Node * ptr = head;
   while(ptr->next != nullptr || count < NODES-1)
   {
@@ -127,7 +127,7 @@ __global__ void simple_traverse(Node * __restrict__ buffer, uint32_t headIndex)
  * list traversal as a whole.
  */
 template < unsigned int repeat >
-__device__ __forceinline__ void nextNode( __VOLATILE__ Node ** ptr, uint32_t * timer, Node ** ptrs)
+__device__ __forceinline__ void next_node( __VOLATILE__ Node ** ptr, uint32_t * timer, Node ** ptrs)
 {
   /*
    * Recursive function to traverse the list.
@@ -148,15 +148,15 @@ __device__ __forceinline__ void nextNode( __VOLATILE__ Node ** ptr, uint32_t * t
 # endif
 
   // Keep traversing the list.
-  nextNode<repeat-1>(ptr, timer+1, ptrs+1);
+  next_node<repeat-1>(ptr, timer+1, ptrs+1);
 }
 
 // Specialize the function to break the recursion.
 template<>
-__device__ __forceinline__ void  nextNode<0>( __VOLATILE__ Node ** ptr, uint32_t * timer, Node ** ptrs){}
+__device__ __forceinline__ void  next_node<0>( __VOLATILE__ Node ** ptr, uint32_t * timer, Node ** ptrs){}
 
 
-__global__ void timed_list_traversal(Node * __restrict__ buffer, uint32_t headIndex, uint32_t * timer)
+__global__ void timed_list_traversal(Node * __restrict__ buffer, uint32_t head_index, uint32_t * timer)
 {
   /* Timed List traversal - we make a singly-linked list circular just to have a data dep. and
    * cover from compiler optimisations.
@@ -167,7 +167,7 @@ __global__ void timed_list_traversal(Node * __restrict__ buffer, uint32_t headIn
   __shared__ Node * ptrs[NODES-1];
 
   // Create a pointer to iterate through the list
-  __VOLATILE__ Node * ptr = &(buffer[headIndex]);
+  __VOLATILE__ Node * ptr = &(buffer[head_index]);
 
 #ifndef TIME_EACH_STEP
   // start timer
@@ -176,7 +176,7 @@ __global__ void timed_list_traversal(Node * __restrict__ buffer, uint32_t headIn
 #endif
 
   // Traverse the list
-  nextNode<NODES-1>(&ptr, s_timer, ptrs);
+  next_node<NODES-1>(&ptr, s_timer, ptrs);
 
 #ifndef TIME_EACH_STEP
   // end cycle count
@@ -195,7 +195,7 @@ __global__ void timed_list_traversal(Node * __restrict__ buffer, uint32_t headIn
   // Join the tail with the head (just for the data dependency).
   if (ptr->next == nullptr)
   {
-    ptr->next = &(buffer[headIndex]);
+    ptr->next = &(buffer[head_index]);
   }
 
 }
@@ -220,13 +220,13 @@ struct List
    */
 
   Node * buffer = nullptr;
-  uint32_t headIndex = 0;
+  uint32_t head_index = 0;
   uint32_t * timer = nullptr;
   uint32_t * d_timer = nullptr;
-  size_t buffSize;
+  size_t buff_size;
   size_t stride;
 
-  List(size_t bSize, size_t st) : buffSize(bSize), stride(st)
+  List(size_t bsize, size_t st) : buff_size(bsize), stride(st)
   {
     // Allocate the buffers to store the timings measured in the kernel
     timer = new uint32_t[NODES];
@@ -238,12 +238,12 @@ struct List
     XFree(d_timer);
   }
 
-  void info(size_t n, size_t buffSize)
+  void info(size_t n, size_t buff_size)
   {
     printf("Creating Linked list:\n");
     printf(" - Node size: %lu\n", sizeof(Node));
     printf(" - Number of nodes: %lu:\n", n);
-    printf(" - Total buffer size: %10.2f MB:\n", float(sizeof(Node)*buffSize)/1024.0/1024);
+    printf(" - Total buffer size: %10.2f MB:\n", float(sizeof(Node)*buff_size)/1024.0/1024);
     XDeviceSynchronize();
   }
 
@@ -274,39 +274,39 @@ struct List
       rng.seed(ss);
       std::uniform_real_distribution<double> unif(0, 1);
 
-      uint32_t * nodeIndices = (uint32_t*)malloc(sizeof(uint32_t)*NODES);
+      uint32_t * node_indices = (uint32_t*)malloc(sizeof(uint32_t)*NODES);
       // Create set to keep track of the assigned indices.
       std::set<uint32_t> s = {};
       for (int i = 0; i < NODES; i++)
       {
         // Get a random index.
-        uint32_t currentIndex = (uint32_t)(unif(rng)*buffSize);
+        uint32_t current_index = (uint32_t)(unif(rng)*buff_size);
 
         // If already present in the set, find another alternative index.
-        while (s.find(currentIndex) != s.end())
+        while (s.find(current_index) != s.end())
         {
-          if (currentIndex < NODES-1)
+          if (current_index < NODES-1)
           {
-            currentIndex++;
+            current_index++;
           }
           else
           {
-            currentIndex = 0;
+            current_index = 0;
           }
         }
 
-        nodeIndices[i] = currentIndex;
-        s.insert(currentIndex);
+        node_indices[i] = current_index;
+        s.insert(current_index);
       }
 
       // Copy the node indices to the device and init the random list
-      uint32_t * d_nodeIndices;
-      XMalloc((void**)&d_nodeIndices, sizeof(uint32_t)*NODES);
-      XMemcpy(d_nodeIndices, nodeIndices, sizeof(uint32_t)*NODES, XMemcpyHostToDevice);
-      initialize_random_list<<<1,1>>>(buffer, d_nodeIndices);
-      headIndex = nodeIndices[0];
-      free(nodeIndices);
-      XFree(d_nodeIndices);
+      uint32_t * d_node_indices;
+      XMalloc((void**)&d_node_indices, sizeof(uint32_t)*NODES);
+      XMemcpy(d_node_indices, node_indices, sizeof(uint32_t)*NODES, XMemcpyHostToDevice);
+      initialize_random_list<<<1,1>>>(buffer, d_node_indices);
+      head_index = node_indices[0];
+      free(node_indices);
+      XFree(d_node_indices);
     }
 
     XDeviceSynchronize();
@@ -317,7 +317,7 @@ struct List
     /*
      * Simple list traversal - NOT timed.
      */
-    simple_traverse<<<1,1>>>(buffer, headIndex);
+    simple_traverse<<<1,1>>>(buffer, head_index);
     XDeviceSynchronize();
   }
 
@@ -327,7 +327,7 @@ struct List
      * Timed list traversal
      */
 
-    timed_list_traversal<<<1,1>>>(buffer, headIndex, d_timer);
+    timed_list_traversal<<<1,1>>>(buffer, head_index, d_timer);
     XDeviceSynchronize();
 
     // Copy the timing data back to the host
@@ -343,12 +343,12 @@ struct DeviceList : public List
    * List allocated in device memory
    */
 
-  DeviceList(size_t n, size_t buffSize, size_t stride) : List(buffSize, stride)
+  DeviceList(size_t n, size_t buff_size, size_t stride) : List(buff_size, stride)
   {
 #   ifdef DEBUG
-    List::info(n, buffSize);
+    List::info(n, buff_size);
 #   endif
-    XMalloc((void**)&buffer, sizeof(Node)*buffSize);
+    XMalloc((void**)&buffer, sizeof(Node)*buff_size);
   }
 
   ~DeviceList()
@@ -365,12 +365,12 @@ struct HostList : public List
    */
 
   Node * h_buffer;
-  HostList(size_t n, size_t buffSize, size_t stride) : List(buffSize,stride)
+  HostList(size_t n, size_t buff_size, size_t stride) : List(buff_size,stride)
   {
 #   ifdef DEBUG
-    List::info(n, buffSize);
+    List::info(n, buff_size);
 #   endif
-    XHostMalloc((void**)&h_buffer, sizeof(Node)*buffSize, XHostAllocMapped);
+    XHostMalloc((void**)&h_buffer, sizeof(Node)*buff_size, XHostAllocMapped);
     XHostGetDevicePointer((void**)&buffer, (void*)h_buffer, 0);
   }
 

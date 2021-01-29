@@ -288,7 +288,7 @@ class GpuPointerChaseAverageP2PLatency(GpuPointerChaseDep):
     def __init__(self):
         super().__init__()
         self.valid_systems = Pchase.multi_device
-        self.executable_opts = ['--multiGPU']
+        self.executable_opts = ['--multi-gpu']
         self.perf_patterns = {
             'average_latency': self.average_P2P_latency(),
         }
@@ -493,7 +493,7 @@ class GpuPointerChaseL1P2P(GpuPointerChaseFineDep, L1_filter):
     def __init__(self):
         super().__init__()
         self.valid_systems = Pchase.multi_device
-        self.executable_opts = ['--multiGPU']
+        self.executable_opts = ['--multi-gpu']
         self.perf_patterns = {
             'L1_latency': self.max_L1_latency(),
             'L1_miss_rate': self.L1_miss_rate(),
