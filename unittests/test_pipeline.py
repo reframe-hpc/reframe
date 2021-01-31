@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -238,26 +238,6 @@ def test_run_only_no_srcdir(local_exec_ctx):
     test = MyTest()
     assert test.sourcesdir is None
     _run(test, *local_exec_ctx)
-
-
-def test_run_only_preserve_symlinks(local_exec_ctx):
-    @fixtures.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.RunOnlyRegressionTest):
-        def __init__(self):
-            self.executable = './hello.sh.link'
-            self.executable_opts = ['Hello, World!']
-            self.local = True
-            self.valid_prog_environs = ['*']
-            self.valid_systems = ['*']
-            self.sanity_patterns = sn.assert_found(
-                r'Hello, World\!', self.stdout
-            )
-
-        @rfm.run_after('run')
-        def check_symlinks(self):
-            assert os.path.islink(os.path.join(self.stagedir, 'hello.sh.link'))
-
-    _run(MyTest(), *local_exec_ctx)
 
 
 def test_compile_only_failure(local_exec_ctx):

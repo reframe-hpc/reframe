@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -1409,6 +1409,7 @@ def user_exec_ctx(request, temp_runtime):
 @pytest.fixture
 def modules_system(user_exec_ctx, monkeypatch):
     # Pretend to be on a clean modules environment
+    monkeypatch.setenv('MODULEPATH', '')
     monkeypatch.setenv('LOADEDMODULES', '')
     monkeypatch.setenv('_LMFILES_', '')
 
@@ -1468,20 +1469,29 @@ def test_jsonext_dump(tmp_path):
         jsonext.dump({'foo': sn.defer(['bar'])}, fp)
 
     with open(json_dump, 'r') as fp:
+        assert '{"foo": null}' == fp.read()
+
+    with open(json_dump, 'w') as fp:
+        jsonext.dump({'foo': sn.defer(['bar']).evaluate()}, fp)
+
+    with open(json_dump, 'r') as fp:
         assert '{"foo": ["bar"]}' == fp.read()
 
     with open(json_dump, 'w') as fp:
         jsonext.dump({'foo': sn.defer(['bar'])}, fp, separators=(',', ':'))
 
     with open(json_dump, 'r') as fp:
-        assert '{"foo":["bar"]}' == fp.read()
+        assert '{"foo":null}' == fp.read()
 
 
 def test_jsonext_dumps():
     assert '"foo"' == jsonext.dumps('foo')
-    assert '{"foo": ["bar"]}' == jsonext.dumps({'foo': sn.defer(['bar'])})
-    assert '{"foo":["bar"]}' == jsonext.dumps({'foo': sn.defer(['bar'])},
-                                              separators=(',', ':'))
+    assert '{"foo": ["bar"]}' == jsonext.dumps(
+        {'foo': sn.defer(['bar']).evaluate()}
+    )
+    assert '{"foo":["bar"]}' == jsonext.dumps(
+        {'foo': sn.defer(['bar']).evaluate()}, separators=(',', ':')
+    )
 
 
 # Classes to test JSON deserialization

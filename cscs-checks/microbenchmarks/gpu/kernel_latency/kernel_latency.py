@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -28,10 +28,6 @@ class KernelLatencyTest(rfm.RegressionTest):
         self.num_tasks_per_node = 1
         self.build_system = 'Make'
         self.executable = 'kernel_latency.x'
-
-        # FIXME workaround due to issue #1639.
-        self.readonly_files = ['Xdevice']
-
         if kernel_version == 'sync':
             self.build_system.cppflags = ['-D SYNCKERNEL=1']
         else:
@@ -121,7 +117,10 @@ class KernelLatencyTest(rfm.RegressionTest):
         if nvidia_sm:
             self.build_system.cxxflags += [f'-arch=sm_{nvidia_sm}']
             if cp in {'dom:gpu', 'daint:gpu'}:
-                self.modules += ['cudatoolkit']
+                self.modules = ['craype-accel-nvidia60']
+                if cp == 'dom:gpu':
+                    self.modules += ['cdt-cuda']
+
             else:
                 self.modules += ['cuda']
 

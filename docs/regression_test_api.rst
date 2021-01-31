@@ -36,6 +36,59 @@ Pipeline Hooks
 .. autodecorator:: reframe.core.decorators.require_deps
 
 
+.. _directives:
+
+Directives
+----------
+
+Directives are functions that can be called directly in the body of a ReFrame regression test class. 
+These functions exert control over the test creation, and they allow adding and/or modifying certain attributes of the regression test.
+For example, a test can be parameterized using the :func:`parameter` directive as follows:
+
+.. code:: python
+
+    class MyTest(rfm.RegressionTest):
+        parameter('variant', ['A', 'B'])
+ 
+        def __init__(self):
+            if self.variant == 'A':
+                do_this()
+            else:
+                do_other()
+
+One of the most powerful features about using directives is that they store their input information at the class level. 
+This means if one were to extend or specialize an existing regression test, the test attribute additions and modifications made through directives in the parent class will be automatically inherited by the child test.
+For instance, continuing with the example above, one could override the :func:`__init__` method in the :class:`MyTest` regression test as follows:
+
+.. code:: python
+
+    class MyModifiedTest(MyTest):
+
+        def __init__(self):
+            if self.variant == 'A':
+                override_this()
+            else:
+                override_other()
+
+
+.. py:function:: reframe.core.pipeline.RegressionTest.parameter(name, values=None, inherit_params=False, filter_params=None)
+
+   Inserts or modifies a regression test parameter.
+   If a parameter with a matching name is already present in the parameter space of a parent class, the existing parameter values will be combined with those provided by this method following the inheritance behaviour set by the arguments ``inherit_params`` and ``filter_params``.
+   Instead, if no parameter with a matching name exists in any of the parent parameter spaces, a new regression test parameter is created.
+
+   :param name: The parameter name.
+   :param values: A list containing the parameter values.
+       If no values are passed when creating a new parameter, the parameter is considered as *declared* but not *defined* (i.e. an abstract parameter).
+       Instead, for an existing parameter, this depends on the parameter's inheritance behaviour and on whether any values where provided in any of the parent parameter spaces.
+   :param inherit_params: If :obj:`False`, no parameter values that may have been defined in any of the parent parameter spaces will be inherited.
+   :param filter_params: Function to filter/modify the inherited parameter values that may have been provided in any of the parent parameter spaces.
+       This function must accept a single argument, which will be passed as an iterable containing the inherited parameter values.
+       This only has an effect if used with ``inherit_params=True``.
+
+
+
+
 Environments and Systems
 ------------------------
 
