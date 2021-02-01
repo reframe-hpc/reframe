@@ -40,8 +40,10 @@ class NsimdTest(rfm.RegressionTest):
         self.testname = testname
         # c++ test code generated with:
         #   python3 egg/hatch.py --benches --simd avx2 -m mul
+        # and benches.hpp copied from:
+        #   https://github.com/agenium-scale/nsimd/blob/master/benches/
         self.sourcesdir = 'benches'
-        self.sourcepath = self.testname
+        self.sourcepath = testname
         self.executable = f'{testname}.exe'
         self.modules = ['nsimd', 'googlebenchmark', 'sleef', 'MIPP']
         self.build_system.cxxflags = [
