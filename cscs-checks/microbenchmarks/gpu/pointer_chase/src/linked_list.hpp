@@ -271,7 +271,7 @@ struct List
       std::random_device rd;
       std::mt19937_64 gen(rd());
       uint32_t * node_indices = (uint32_t*)malloc(sizeof(uint32_t)*num_nodes);
-      std::iota(node_ndices, node_indices + num_nodes, 0);
+      std::iota(node_indices, node_indices + num_nodes, 0);
       std::shuffle(node_indices, node_indices + num_nodes, gen);
 
       // Copy the node indices to the device and init the random list
