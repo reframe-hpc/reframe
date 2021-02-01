@@ -236,12 +236,17 @@ class SlurmJobScheduler(sched.JobScheduler):
                 completed = _run_strict(cmd, timeout=self._submit_timeout)
                 break
             except SpawnedProcessError as e:
-                sbatch_error = '|'.join(self._resubmit_on_errors)
+                sbatch_error = rf'({"|".join(self._resubmit_on_errors)})'
                 if (not self._resubmit_on_errors or
                     not re.search(sbatch_error, e.stderr)):
-                    raise e
+                    raise
 
-            time.sleep(next(intervals))
+                t = next(intervals)
+                self.log(
+                    f'encountered a job submission error: {sbatch_error.group(1)}'
+                    f'will resubmit after {t}s'
+                )
+                time.sleep(t)
 
         jobid_match = re.search(r'Submitted batch job (?P<jobid>\d+)',
                                 completed.stdout)
