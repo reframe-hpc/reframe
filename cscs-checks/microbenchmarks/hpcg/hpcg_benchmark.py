@@ -8,7 +8,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-class HPCGHookMixin(rfm.RegressionTest):
+class HPCGHookMixin:
     @rfm.run_before('run')
     def guide_node_guess(self):
         '''Guide the node guess based on the test's needs.'''
@@ -36,7 +36,7 @@ class HPCGHookMixin(rfm.RegressionTest):
 
             # If x==1, n is prime
             # if x > 8 and prime, it would also not meet HPCG's aspect ratio
-            if x == 1 or is_prime(x) and x > 8:
+            if x == 1 or (is_prime(x) and x > 8):
                 n -= 1
             else:
                 break
@@ -45,9 +45,8 @@ class HPCGHookMixin(rfm.RegressionTest):
         self.num_tasks_per_node = ntasks_per_node
 
 
-@rfm.required_version('>=2.16-dev0')
 @rfm.simple_test
-class HPCGCheckRef(HPCGHookMixin):
+class HPCGCheckRef(rfm.RegressionTest, HPCGHookMixin):
     def __init__(self):
         self.descr = 'HPCG reference benchmark'
         self.valid_systems = ['daint:mc', 'daint:gpu', 'dom:gpu', 'dom:mc']
@@ -120,9 +119,8 @@ class HPCGCheckRef(HPCGHookMixin):
         ])
 
 
-@rfm.required_version('>=2.16-dev0')
 @rfm.simple_test
-class HPCGCheckMKL(HPCGHookMixin):
+class HPCGCheckMKL(rfm.RegressionTest, HPCGHookMixin):
     def __init__(self):
         self.descr = 'HPCG benchmark Intel MKL implementation'
         self.valid_systems = ['daint:mc', 'dom:mc', 'daint:gpu', 'dom:gpu']
