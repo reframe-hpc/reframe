@@ -236,9 +236,10 @@ class SlurmJobScheduler(sched.JobScheduler):
                 completed = _run_strict(cmd, timeout=self._submit_timeout)
                 break
             except SpawnedProcessError as e:
-                sbatch_error = rf'({"|".join(self._resubmit_on_errors)})'
-                if (not self._resubmit_on_errors or
-                    not re.search(sbatch_error, e.stderr)):
+                error_match = re.search(
+                    rf'({"|".join(self._resubmit_on_errors)})', e.stderr
+                )
+                if not self._resubmit_on_errors or not error_match:
                     raise
 
                 t = next(intervals)
