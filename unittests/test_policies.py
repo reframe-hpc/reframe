@@ -1,8 +1,9 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import contextlib
 import json
 import jsonschema
 import os
@@ -19,8 +20,9 @@ import reframe.frontend.runreport as runreport
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 from reframe.core.exceptions import (AbortTaskError,
+                                     FailureLimitError,
                                      ReframeError,
-                                     ReframeForceExitError,
+                                     ForceExitError,
                                      TaskDependencyError)
 from reframe.frontend.loader import RegressionCheckLoader
 
@@ -118,9 +120,10 @@ def make_cases(make_loader):
 
 
 def assert_runall(runner):
-    # Make sure that all cases finished or failed
+    # Make sure that all cases finished, failed or
+    # were aborted
     for t in runner.stats.tasks():
-        assert t.succeeded or t.failed
+        assert t.succeeded or t.failed or t.aborted
 
 
 def assert_all_dead(runner):
@@ -133,7 +136,7 @@ def assert_all_dead(runner):
 
 def num_failures_stage(runner, stage):
     stats = runner.stats
-    return len([t for t in stats.failures() if t.failed_stage == stage])
+    return len([t for t in stats.failed() if t.failed_stage == stage])
 
 
 def _validate_runreport(report):
@@ -178,7 +181,7 @@ def test_runall(make_runner, make_cases, common_exec_ctx, tmp_path):
 
     assert 9 == runner.stats.num_cases()
     assert_runall(runner)
-    assert 5 == len(runner.stats.failures())
+    assert 5 == len(runner.stats.failed())
     assert 2 == num_failures_stage(runner, 'setup')
     assert 1 == num_failures_stage(runner, 'sanity')
     assert 1 == num_failures_stage(runner, 'performance')
@@ -223,7 +226,7 @@ def test_runall_skip_system_check(make_runner, make_cases, common_exec_ctx):
     stats = runner.stats
     assert 10 == stats.num_cases()
     assert_runall(runner)
-    assert 5 == len(stats.failures())
+    assert 5 == len(stats.failed())
     assert 2 == num_failures_stage(runner, 'setup')
     assert 1 == num_failures_stage(runner, 'sanity')
     assert 1 == num_failures_stage(runner, 'performance')
@@ -236,7 +239,7 @@ def test_runall_skip_prgenv_check(make_runner, make_cases, common_exec_ctx):
     stats = runner.stats
     assert 10 == stats.num_cases()
     assert_runall(runner)
-    assert 5 == len(stats.failures())
+    assert 5 == len(stats.failed())
     assert 2 == num_failures_stage(runner, 'setup')
     assert 1 == num_failures_stage(runner, 'sanity')
     assert 1 == num_failures_stage(runner, 'performance')
@@ -250,7 +253,7 @@ def test_runall_skip_sanity_check(make_runner, make_cases, common_exec_ctx):
     stats = runner.stats
     assert 9 == stats.num_cases()
     assert_runall(runner)
-    assert 4 == len(stats.failures())
+    assert 4 == len(stats.failed())
     assert 2 == num_failures_stage(runner, 'setup')
     assert 0 == num_failures_stage(runner, 'sanity')
     assert 1 == num_failures_stage(runner, 'performance')
@@ -265,11 +268,21 @@ def test_runall_skip_performance_check(make_runner, make_cases,
     stats = runner.stats
     assert 9 == stats.num_cases()
     assert_runall(runner)
-    assert 4 == len(stats.failures())
+    assert 4 == len(stats.failed())
     assert 2 == num_failures_stage(runner, 'setup')
     assert 1 == num_failures_stage(runner, 'sanity')
     assert 0 == num_failures_stage(runner, 'performance')
     assert 1 == num_failures_stage(runner, 'cleanup')
+
+
+def test_runall_maxfail(make_runner, make_cases, common_exec_ctx):
+    runner = make_runner(max_failures=2)
+    with contextlib.suppress(FailureLimitError):
+        runner.runall(make_cases())
+
+    assert_runall(runner)
+    stats = runner.stats
+    assert 2 == len(stats.failed())
 
 
 def test_strict_performance_check(make_runner, make_cases, common_exec_ctx):
@@ -279,7 +292,7 @@ def test_strict_performance_check(make_runner, make_cases, common_exec_ctx):
     stats = runner.stats
     assert 9 == stats.num_cases()
     assert_runall(runner)
-    assert 6 == len(stats.failures())
+    assert 6 == len(stats.failed())
     assert 2 == num_failures_stage(runner, 'setup')
     assert 1 == num_failures_stage(runner, 'sanity')
     assert 2 == num_failures_stage(runner, 'performance')
@@ -300,7 +313,7 @@ def test_force_local_execution(make_runner, make_cases, testsys_exec_ctx):
     for t in stats.tasks():
         assert t.check.local
 
-    assert not stats.failures()
+    assert not stats.failed()
 
 
 def test_kbd_interrupt_within_test(make_runner, make_cases, common_exec_ctx):
@@ -310,7 +323,7 @@ def test_kbd_interrupt_within_test(make_runner, make_cases, common_exec_ctx):
         runner.runall(make_cases([KeyboardInterruptCheck()]))
 
     stats = runner.stats
-    assert 1 == len(stats.failures())
+    assert 1 == len(stats.failed())
     assert_all_dead(runner)
 
 
@@ -319,7 +332,7 @@ def test_system_exit_within_test(make_runner, make_cases, common_exec_ctx):
     runner = make_runner()
     runner.runall(make_cases([SystemExitCheck()]))
     stats = runner.stats
-    assert 1 == len(stats.failures())
+    assert 1 == len(stats.failed())
 
 
 def test_retries_bad_check(make_runner, make_cases, common_exec_ctx):
@@ -330,7 +343,7 @@ def test_retries_bad_check(make_runner, make_cases, common_exec_ctx):
     assert 2 == runner.stats.num_cases()
     assert_runall(runner)
     assert runner.max_retries == rt.runtime().current_run
-    assert 2 == len(runner.stats.failures())
+    assert 2 == len(runner.stats.failed())
 
     # Ensure that the report does not raise any exception
     runner.stats.retry_report()
@@ -344,7 +357,7 @@ def test_retries_good_check(make_runner, make_cases, common_exec_ctx):
     assert 1 == runner.stats.num_cases()
     assert_runall(runner)
     assert 0 == rt.runtime().current_run
-    assert 0 == len(runner.stats.failures())
+    assert 0 == len(runner.stats.failed())
 
 
 def test_pass_in_retries(make_runner, make_cases, tmp_path, common_exec_ctx):
@@ -357,20 +370,20 @@ def test_pass_in_retries(make_runner, make_cases, tmp_path, common_exec_ctx):
     # Ensure that the test passed after retries in run `pass_run_no`
     assert 1 == runner.stats.num_cases()
     assert_runall(runner)
-    assert 1 == len(runner.stats.failures(run=0))
+    assert 1 == len(runner.stats.failed(run=0))
     assert pass_run_no == rt.runtime().current_run
-    assert 0 == len(runner.stats.failures())
+    assert 0 == len(runner.stats.failed())
 
 
 def test_sigterm_handling(make_runner, make_cases, common_exec_ctx):
     runner = make_runner()
-    with pytest.raises(ReframeForceExitError,
+    with pytest.raises(ForceExitError,
                        match='received TERM signal'):
         runner.runall(make_cases([SelfKillCheck()]))
 
     assert_all_dead(runner)
     assert runner.stats.num_cases() == 1
-    assert len(runner.stats.failures()) == 1
+    assert len(runner.stats.failed()) == 1
 
 
 @pytest.fixture
@@ -389,8 +402,8 @@ def assert_dependency_run(runner):
     assert_runall(runner)
     stats = runner.stats
     assert 10 == stats.num_cases(0)
-    assert 4  == len(stats.failures())
-    for tf in stats.failures():
+    assert 4  == len(stats.failed())
+    for tf in stats.failed():
         check = tf.testcase.check
         _, exc_value, _ = tf.exc_info
         if check.name == 'T7' or check.name == 'T9':
@@ -508,7 +521,7 @@ def test_concurrency_unlimited(async_runner, make_cases, make_async_exec_ctx):
     # Ensure that all tests were run and without failures.
     assert num_checks == runner.stats.num_cases()
     assert_runall(runner)
-    assert 0 == len(runner.stats.failures())
+    assert 0 == len(runner.stats.failed())
 
     # Ensure that maximum concurrency was reached as fast as possible
     assert num_checks == max(monitor.num_tasks)
@@ -536,7 +549,7 @@ def test_concurrency_limited(async_runner, make_cases, make_async_exec_ctx):
     # Ensure that all tests were run and without failures.
     assert num_checks == runner.stats.num_cases()
     assert_runall(runner)
-    assert 0 == len(runner.stats.failures())
+    assert 0 == len(runner.stats.failed())
 
     # Ensure that maximum concurrency was reached as fast as possible
     assert max_jobs == max(monitor.num_tasks)
@@ -578,7 +591,7 @@ def test_concurrency_none(async_runner, make_cases, make_async_exec_ctx):
     # Ensure that all tests were run and without failures.
     assert num_checks == runner.stats.num_cases()
     assert_runall(runner)
-    assert 0 == len(runner.stats.failures())
+    assert 0 == len(runner.stats.failed())
 
     # Ensure that a single task was running all the time
     assert 1 == max(monitor.num_tasks)
@@ -596,7 +609,8 @@ def test_concurrency_none(async_runner, make_cases, make_async_exec_ctx):
 def assert_interrupted_run(runner):
     assert 4 == runner.stats.num_cases()
     assert_runall(runner)
-    assert 4 == len(runner.stats.failures())
+    assert 1 == len(runner.stats.failed())
+    assert 3 == len(runner.stats.aborted())
     assert_all_dead(runner)
 
     # Verify that failure reasons for the different tasks are correct
@@ -684,7 +698,7 @@ def test_run_complete_fails_main_loop(async_runner, make_cases,
     assert_runall(runner)
     stats = runner.stats
     assert stats.num_cases() == num_checks
-    assert len(stats.failures()) == 2
+    assert len(stats.failed()) == 2
 
     # Verify that the succeeded test is the SleepCheck
     for t in stats.tasks():
@@ -704,7 +718,7 @@ def test_run_complete_fails_busy_loop(async_runner, make_cases,
     assert_runall(runner)
     stats = runner.stats
     assert stats.num_cases() == num_checks
-    assert len(stats.failures()) == 2
+    assert len(stats.failed()) == 2
 
     # Verify that the succeeded test is the SleepCheck
     for t in stats.tasks():
@@ -724,7 +738,7 @@ def test_compile_fail_reschedule_main_loop(async_runner, make_cases,
     stats = runner.stats
     assert num_checks == stats.num_cases()
     assert_runall(runner)
-    assert num_checks == len(stats.failures())
+    assert num_checks == len(stats.failed())
 
 
 def test_compile_fail_reschedule_busy_loop(async_runner, make_cases,
@@ -740,7 +754,7 @@ def test_compile_fail_reschedule_busy_loop(async_runner, make_cases,
     stats = runner.stats
     assert num_checks == stats.num_cases()
     assert_runall(runner)
-    assert num_checks == len(stats.failures())
+    assert num_checks == len(stats.failed())
 
 
 @pytest.fixture

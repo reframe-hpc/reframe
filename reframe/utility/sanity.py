@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -7,6 +7,7 @@ import builtins
 import collections.abc
 import glob as pyglob
 import itertools
+import os
 import re
 import sys
 
@@ -111,13 +112,13 @@ def min(*args):
 
 
 @deferrable
-def print(*objects, sep=' ', end='\n', file=None, flush=False):
+def print(obj, *, sep=' ', end='\n', file=None, flush=False):
     '''Replacement for the built-in :func:`print() <python:print>` function.
 
-    The only difference is that this function returns the ``objects``, so that
-    you can use it transparently inside a complex sanity expression. For
-    example, you could write the following to print the matches returned from
-    the :func:`extractall()` function:
+    The only difference is that this function takes a *single* object argument
+    and it returns that, so that you can use it transparently inside a complex
+    sanity expression. For example, you could write the following to print the
+    matches returned from the :func:`extractall()` function:
 
     .. code:: python
 
@@ -131,13 +132,19 @@ def print(*objects, sep=' ', end='\n', file=None, flush=False):
     default. This would capture :attr:`sys.stdout` at the time this function
     is defined and would prevent it from seeing changes to :attr:`sys.stdout`,
     such as redirects, in the future.
+
+    .. versionchanged:: 3.4
+       This function accepts now a single object argument in contrast to the
+       built-in :func:`print() <python:print>` function, which accepts
+       multiple.
+
     '''
 
     if file is None:
         file = sys.stdout
 
-    builtins.print(*objects, sep=sep, end=end, file=file, flush=flush)
-    return objects
+    builtins.print(obj, sep=sep, end=end, file=file, flush=flush)
+    return obj
 
 
 @deferrable
@@ -367,10 +374,9 @@ def assert_found(patt, filename, msg=None, encoding='utf-8'):
         The `re.MULTILINE
         <https://docs.python.org/3/library/re.html#re.MULTILINE>`_ flag
         is set for the pattern search.
-
-    :arg filename: The name of the file to examine.
-        Any :class:`OSError` raised while processing the file will be
-        propagated as a :class:`reframe.core.exceptions.SanityError`.
+    :arg filename: The name of the file to examine or a file descriptor as in
+        :py:func:`open`. Any :class:`OSError` raised while processing the file
+        will be propagated as a :class:`reframe.core.exceptions.SanityError`.
     :arg encoding: The name of the encoding used to decode the file.
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
@@ -612,7 +618,8 @@ def extractall(patt, filename, tag=0, conv=None, encoding='utf-8'):
         The `re.MULTILINE
         <https://docs.python.org/3/library/re.html#re.MULTILINE>`_ flag
         is set for the pattern search.
-    :arg filename: The name of the file to examine.
+    :arg filename: The name of the file to examine or a file descriptor as in
+        :py:func:`open`.
     :arg encoding: The name of the encoding used to decode the file.
     :arg tag: The regex capturing group to be extracted.
         Group ``0`` refers always to the whole match.
@@ -776,3 +783,39 @@ def iglob(pathname, recursive=False):
     '''Replacement for the :func:`glob.iglob() <python:glob.iglob>`
     function.'''
     return pyglob.iglob(pathname, recursive=recursive)
+
+
+@deferrable
+def path_exists(path):
+    '''Replacement for the :func:`os.path.exists` function.
+
+    .. versionadded:: 3.4
+    '''
+    return os.path.exists(path)
+
+
+@deferrable
+def path_isdir(path):
+    '''Replacement for the :func:`os.path.isdir` function.
+
+    .. versionadded:: 3.4
+    '''
+    return os.path.isdir(path)
+
+
+@deferrable
+def path_isfile(path):
+    '''Replacement for the :func:`os.path.isfile` function.
+
+    .. versionadded:: 3.4
+    '''
+    return os.path.isfile(path)
+
+
+@deferrable
+def path_islink(path):
+    '''Replacement for the :func:`os.path.islink` function.
+
+    .. versionadded:: 3.4
+    '''
+    return os.path.islink(path)

@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -173,6 +173,11 @@ def test_logger_dynamic_attributes_deferrables(logfile, logger_with_check):
         '%(check_deferred)s|%(check_deferred_error)s'
     )
     logger_with_check.logger.handlers[0].setFormatter(formatter)
+    logger_with_check.info('xxx')
+    assert _pattern_in_logfile(r'null\|null', logfile)
+
+    # Evaluate the deferrable and log again
+    logger_with_check.check.deferred.evaluate()
     logger_with_check.info('xxx')
     assert _pattern_in_logfile(r'"hello"\|null', logfile)
 

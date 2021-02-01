@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -149,10 +149,12 @@ class SlurmJobScheduler(sched.JobScheduler):
         ]
 
         # Determine if job refers to a Slurm job array, by looking into the
-        # job.options
+        # job.options and job.cli_options
         jobarr_parser = ArgumentParser()
         jobarr_parser.add_argument('-a', '--array')
-        parsed_args, _ = jobarr_parser.parse_known_args(job.options)
+        parsed_args, _ = jobarr_parser.parse_known_args(
+            job.options + job.cli_options
+        )
         if parsed_args.array:
             job._is_array = True
             self.log('Slurm job is a job array')
@@ -197,7 +199,9 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         # NOTE: Here last of the passed --constraint job options is taken
         # into account in order to respect the behavior of slurm.
-        parsed_options, _ = constraint_parser.parse_known_args(job.options)
+        parsed_options, _ = constraint_parser.parse_known_args(
+            job.options + job.cli_options
+        )
         if parsed_options.constraint:
             constraints.append(parsed_options.constraint.strip())
 
@@ -208,7 +212,7 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         preamble.append(self._format_option(hint, '--hint={0}'))
         prefix_patt = re.compile(r'(#\w+)')
-        for opt in job.options:
+        for opt in job.options + job.cli_options:
             if opt.strip().startswith(('-C', '--constraint')):
                 # Constraints are already processed
                 continue
@@ -267,7 +271,7 @@ class SlurmJobScheduler(sched.JobScheduler):
         # Collect options that restrict node selection, but we need to first
         # create a mutable list out of the immutable SequenceView that
         # sched_access is
-        options = list(job.sched_access + job.options)
+        options = list(job.sched_access + job.options + job.cli_options)
         option_parser = ArgumentParser()
         option_parser.add_argument('--reservation')
         option_parser.add_argument('-p', '--partition')

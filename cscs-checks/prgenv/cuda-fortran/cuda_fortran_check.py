@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -13,9 +13,10 @@ class CUDAFortranCheck(rfm.RegressionTest):
     def __init__(self):
         self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.valid_prog_environs = ['PrgEnv-pgi']
-        self.sourcepath = 'vecAdd_cuda.f90'
+        self.sourcepath = 'vecAdd_cuda.cuf'
         self.modules = ['craype-accel-nvidia60']
         self.build_system = 'SingleSource'
+        self.build_system.fflags = ['-ta=tesla:cc60']
         self.num_gpus_per_node = 1
         result = sn.extractsingle(r'final result:\s+(?P<result>\d+\.?\d*)',
                                   self.stdout, 'result', float)
@@ -24,13 +25,15 @@ class CUDAFortranCheck(rfm.RegressionTest):
         self.tags = {'production', 'craype'}
 
     @rfm.run_before('compile')
-    def cdt2006_pgi_workaround(self):
+    def cdt_pgi_workaround(self):
         cdt = osext.cray_cdt_version()
         if not cdt:
             return
 
-        if (self.current_environ.name == 'PrgEnv-pgi' and cdt == '20.08'):
-            self.build_system.fflags = [
-                'CUDA_HOME=$CUDATOOLKIT_HOME',
-                '-ta=tesla:cc60', '-Mcuda=cuda10.2'
+        if cdt == '20.08':
+            self.build_system.fflags += [
+                'CUDA_HOME=$CUDATOOLKIT_HOME', '-Mcuda=cuda10.2'
             ]
+        else:
+            # FIXME: PGI 20.x does not support CUDA 11, see case #275674
+            self.modules += ['cudatoolkit/10.2.89_3.29-7.0.2.1_3.5__g67354b4']

@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -9,7 +9,9 @@ import itertools
 import sys
 import time
 
-from reframe.core.exceptions import (TaskDependencyError, TaskExit)
+from reframe.core.exceptions import (FailureLimitError,
+                                     TaskDependencyError,
+                                     TaskExit)
 from reframe.core.logging import getlogger
 from reframe.frontend.executors import (ExecutionPolicy, RegressionTask,
                                         TaskEventListener, ABORT_REASONS)
@@ -135,6 +137,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
             return
         except ABORT_REASONS as e:
             task.abort(e)
+
             raise
         except BaseException:
             task.fail(sys.exc_info())
@@ -149,6 +152,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         pass
 
     def on_task_failure(self, task):
+        self._num_failed_tasks += 1
         timings = task.pipeline_timings(['compile_complete',
                                          'run_complete',
                                          'total'])
@@ -167,6 +171,10 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         getlogger().info(f'==> test failed during {task.failed_stage!r}: '
                          f'test staged in {task.check.stagedir!r}')
         getlogger().verbose(f'==> {timings}')
+        if self._num_failed_tasks >= self.max_failures:
+            raise FailureLimitError(
+                f'maximum number of failures ({self.max_failures}) reached'
+            )
 
     def on_task_success(self, task):
         timings = task.pipeline_timings(['compile_complete',
@@ -258,6 +266,10 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._running_tasks[partname].append(task)
 
     def on_task_failure(self, task):
+        if task.aborted:
+            return
+
+        self._num_failed_tasks += 1
         msg = f'{task.check.info()} [{task.pipeline_timings_basic()}]'
         if task.failed_stage == 'cleanup':
             self.printer.status('ERROR', msg, just='right')
@@ -272,6 +284,10 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         getlogger().info(f'==> test failed during {task.failed_stage!r}: '
                          f'test staged in {stagedir!r}')
         getlogger().verbose(f'==> timings: {task.pipeline_timings_all()}')
+        if self._num_failed_tasks >= self.max_failures:
+            raise FailureLimitError(
+                f'maximum number of failures ({self.max_failures}) reached'
+            )
 
     def on_task_success(self, task):
         msg = f'{task.check.info()} [{task.pipeline_timings_basic()}]'
@@ -361,10 +377,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
             return
         except ABORT_REASONS as e:
-            if not task.failed:
-                # Abort was caused due to failure elsewhere, abort current
-                # task as well
-                task.abort(e)
+            # If abort was caused due to failure elsewhere, abort current
+            # task as well
+            task.abort(e)
 
             self._failall(e)
             raise
@@ -440,7 +455,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 task.abort(cause)
 
         for task in itertools.chain(self._waiting_tasks,
-                                    self._retired_tasks,
                                     self._completed_tasks):
             task.abort(cause)
 

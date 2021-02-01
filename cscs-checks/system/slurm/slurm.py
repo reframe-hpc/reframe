@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -15,7 +15,8 @@ class SlurmSimpleBaseCheck(rfm.RunOnlyRegressionTest):
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc',
                               'arolla:cn', 'arolla:pn',
-                              'tsa:cn', 'tsa:pn']
+                              'tsa:cn', 'tsa:pn',
+                              'daint:xfer']
         self.valid_prog_environs = ['PrgEnv-cray']
         self.tags = {'slurm', 'maintenance', 'ops',
                      'production', 'single-node'}
@@ -46,6 +47,7 @@ class HostnameCheck(SlurmSimpleBaseCheck):
     def __init__(self):
         super().__init__()
         self.executable = '/bin/hostname'
+        self.valid_prog_environs = ['builtin']
         self.hostname_patt = {
             'arolla:cn': r'^arolla-cn\d{3}$',
             'arolla:pn': r'^arolla-pp\d{3}$',
@@ -53,6 +55,7 @@ class HostnameCheck(SlurmSimpleBaseCheck):
             'tsa:pn': r'^tsa-pp\d{3}$',
             'daint:gpu': r'^nid\d{5}$',
             'daint:mc': r'^nid\d{5}$',
+            'daint:xfer': r'^datamover\d{2}.cscs.ch$',
             'dom:gpu': r'^nid\d{5}$',
             'dom:mc': r'^nid\d{5}$',
         }
@@ -109,7 +112,7 @@ class RequestLargeMemoryNodeCheck(SlurmSimpleBaseCheck):
 
     @rfm.run_before('run')
     def set_memory_limit(self):
-        self.job.options += ['--mem=120000']
+        self.job.options = ['--mem=120000']
 
 
 @rfm.simple_test
@@ -168,7 +171,7 @@ class ConstraintRequestCabinetGrouping(SlurmSimpleBaseCheck):
     def set_slurm_constraint(self):
         cabinet = self.cabinets.get(self.current_partition.fullname)
         if cabinet:
-            self.job.options += [f'--constraint={cabinet}']
+            self.job.options = [f'--constraint={cabinet}']
 
 
 @rfm.simple_test
@@ -185,7 +188,7 @@ class MemoryOverconsumptionCheck(SlurmCompiledBaseCheck):
 
     @rfm.run_before('run')
     def set_memory_limit(self):
-        self.job.options += ['--mem=2000']
+        self.job.options = ['--mem=2000']
 
 
 @rfm.simple_test

@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -42,22 +42,35 @@ class _DeferredExpression:
         self._args = args
         self._kwargs = kwargs
 
+        # We cache the value of the last evaluation inside a tuple.
+        # We don't cache the value directly, because it can be any.
+
+        # NOTE: The cache for the moment is only used by
+        # `__rfm_json_encode__`. Enabling caching in the evaluation is a
+        # reasonable optimization, but might break compatibility, so it needs
+        # to be thought thoroughly and communicated properly in the
+        # documentation.
+        self._cached = ()
+
     def evaluate(self):
         fn_args = []
         for arg in self._args:
             fn_args.append(
-                arg.evaluate() if isinstance(arg, type(self)) else arg)
+                arg.evaluate() if isinstance(arg, type(self)) else arg
+            )
 
         fn_kwargs = {}
         for k, v in self._kwargs.items():
             fn_kwargs[k] = (
-                v.evaluate() if isinstance(v, type(self)) else v)
+                v.evaluate() if isinstance(v, type(self)) else v
+            )
 
         ret = self._fn(*fn_args, **fn_kwargs)
         if isinstance(ret, type(self)):
-            return ret.evaluate()
-        else:
-            return ret
+            ret = ret.evaluate()
+
+        self._cached = (ret,)
+        return ret
 
     def __bool__(self):
         '''The truthy value of a deferred expression.
@@ -76,10 +89,10 @@ class _DeferredExpression:
         return iter(self.evaluate())
 
     def __rfm_json_encode__(self):
-        try:
-            return self.evaluate()
-        except BaseException:
+        if self._cached == ():
             return None
+        else:
+            return self._cached[0]
 
     # Overload Python operators to be able to defer any expression
     #
@@ -258,7 +271,7 @@ class _DeferredExpression:
     # Augmented operators
     #
     # NOTE: These are usually part of mutable objects, however
-    # _DeferredExpression remains immutable, since it evnentually delegates
+    # _DeferredExpression remains immutable, since it eventually delegates
     # their evaluation to the objects it wraps
     @deferrable
     def __iadd__(a, b):

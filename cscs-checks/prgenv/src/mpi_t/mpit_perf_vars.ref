@@ -1,8 +1,0 @@
-nem_fbox_fall_back_to_queue_count
-rma_basic_comm_ops_counter
-rma_basic_get_ops_counter
-rma_basic_put_ops_counter
-rma_basic_acc_ops_counter
-rma_basic_gacc_ops_counter
-rma_basic_cas_ops_counter
-rma_basic_fetch_ops_counter
