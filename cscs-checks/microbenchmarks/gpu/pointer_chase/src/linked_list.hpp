@@ -45,7 +45,7 @@ struct Node
  *  Kernels and device functions
  */
 
-__global__ void initialize_list(Node * buffer, int stride = 1)
+__global__ void initialize_list(Node * buffer, int num_nodes, int stride = 1)
 {
   /* List serial initializer.
    * - buffer: where the list is to be placed.
@@ -63,10 +63,11 @@ __global__ void initialize_list(Node * buffer, int stride = 1)
     prev->next = temp;
     prev = temp;
   }
+  prev->next = buffer;
 
 }
 
-__global__ void initialize_random_list(Node * buffer, uint32_t *indices)
+__global__ void initialize_random_list(Node * buffer, int num_nodes, uint32_t *indices)
 {
   /* List random initializer
    * - buffer: where the list is to be placed.
@@ -84,6 +85,7 @@ __global__ void initialize_random_list(Node * buffer, uint32_t *indices)
     prev->next = temp;
     prev = temp;
   }
+  prev->next = buffer + indices[0];
 
 }
 
@@ -94,19 +96,17 @@ __global__ void simple_traverse(Node * __restrict__ buffer, uint32_t head_index)
    * - head_index: index in the buffer where the head of the list is
    */
 
-  uint32_t count = 0;
   Node * head = &(buffer[head_index]);
   Node * ptr = head;
-  while(ptr->next != nullptr || count < num_nodes-1)
+  while(ptr->next != head)
   {
     ptr = ptr->next;
-    count++;
   }
 
   // Silly dep. to tell the compiler not to throw away this kernel.
-  if (ptr->next == head)
+  if (ptr->next->next == head)
   {
-    printf("You had a circular list :(\n");
+    printf("The impossible just happened\n");
   }
 
 }
@@ -126,8 +126,7 @@ __global__ void simple_traverse(Node * __restrict__ buffer, uint32_t head_index)
  * Depending on the compiler flags used, the timing can either measure each node jump, or the entire
  * list traversal as a whole.
  */
-template < unsigned int repeat >
-__device__ __forceinline__ void next_node( __VOLATILE__ Node ** ptr, uint32_t * timer, Node ** ptrs)
+__device__ __forceinline__ void next_node( __VOLATILE__ Node ** ptr, uint32_t * timer, Node ** ptrs, int & jump)
 {
   /*
    * Recursive function to traverse the list.
@@ -135,6 +134,7 @@ __device__ __forceinline__ void next_node( __VOLATILE__ Node ** ptr, uint32_t * 
    * - timer: Array to store the timings of each individual node jump.
    *   Only used if this option is activated (-DTIME_EACH_STEP)
    * - ptrs: Just used to have a data dependency to block ILP.
+   * - jump: Int to keep track of the number of jumps
    */
 
 # ifdef TIME_EACH_STEP
@@ -143,17 +143,12 @@ __device__ __forceinline__ void next_node( __VOLATILE__ Node ** ptr, uint32_t * 
 # endif
   (*ptr) = (*ptr)->next;
 # ifdef TIME_EACH_STEP
-  (*ptrs) = (Node*)(*ptr);  // Data dep. to prevent ILP.
-  *timer = clocks.end();    // Time the jump
+  *(ptrs+jump) = (*ptr);  // Data dep. to prevent ILP.
+  *(timer+jump) = clocks.end();    // Time the jump
 # endif
 
-  // Keep traversing the list.
-  next_node<repeat-1>(ptr, timer+1, ptrs+1);
+  jump++;
 }
-
-// Specialize the function to break the recursion.
-template<>
-__device__ __forceinline__ void  next_node<0>( __VOLATILE__ Node ** ptr, uint32_t * timer, Node ** ptrs){}
 
 
 __global__ void timed_list_traversal(Node * __restrict__ buffer, uint32_t head_index, uint32_t * timer)
@@ -163,11 +158,14 @@ __global__ void timed_list_traversal(Node * __restrict__ buffer, uint32_t head_i
    */
 
   // These are used to prevent ILP when timing each jump.
-  __shared__ uint32_t s_timer[num_nodes-1];
-  __shared__ Node * ptrs[num_nodes-1];
+  __shared__ uint32_t s_timer[JUMPS];
+  __shared__ Node * ptrs[JUMPS];
 
   // Create a pointer to iterate through the list
   __VOLATILE__ Node * ptr = &(buffer[head_index]);
+
+  // Node jump counter
+  int jump = 0;
 
 #ifndef TIME_EACH_STEP
   // start timer
@@ -176,23 +174,23 @@ __global__ void timed_list_traversal(Node * __restrict__ buffer, uint32_t head_i
 #endif
 
   // Traverse the list
-  next_node<num_nodes-1>(&ptr, s_timer, ptrs);
+  REPEAT_JUMPS(next_node(&ptr, s_timer, ptrs, jump);)
 
 #ifndef TIME_EACH_STEP
   // end cycle count
   timer[0] = clocks.end();
 #else
-  for (uint32_t i = 0; i < num_nodes-1; i++)
+  for (uint32_t i = 0; i < JUMPS; i++)
   {
     timer[i] = s_timer[i];
   }
-  if (ptr == ptrs[0])
+  if (ptrs[1] == ptrs[0])
   {
     printf("This is some data dependency that will never be executed.");
   }
 #endif
 
-  // Join the tail with the head (just for the data dependency).
+  // Just for the data dependency - the list is already circular.
   if (ptr->next == nullptr)
   {
     ptr->next = &(buffer[head_index]);
@@ -219,18 +217,18 @@ struct List
    *  - timed_traverse: traverses the list and measures the number of cycles per node jump.
    */
 
+  uint32_t num_nodes;
   Node * buffer = nullptr;
   uint32_t head_index = 0;
   uint32_t * timer = nullptr;
   uint32_t * d_timer = nullptr;
-  size_t buff_size;
   size_t stride;
 
-  List(size_t bsize, size_t st) : buff_size(bsize), stride(st)
+  List(int n, size_t st) : num_nodes(n), stride(st)
   {
     // Allocate the buffers to store the timings measured in the kernel
-    timer = new uint32_t[num_nodes];
-    XMalloc((void**)&d_timer, sizeof(uint32_t)*(num_nodes));
+    timer = new uint32_t[JUMPS];
+    XMalloc((void**)&d_timer, sizeof(uint32_t)*(JUMPS));
   };
 
   virtual ~List()
@@ -238,12 +236,12 @@ struct List
     XFree(d_timer);
   }
 
-  void info(size_t n, size_t buff_size)
+  void info()
   {
     printf("Creating Linked list:\n");
     printf(" - Node size: %lu\n", sizeof(Node));
-    printf(" - Number of nodes: %lu:\n", n);
-    printf(" - Total buffer size: %10.2f MB:\n", float(sizeof(Node)*buff_size)/1024.0/1024);
+    printf(" - Number of nodes: %lu:\n", num_nodes);
+    printf(" - Total buffer size: %10.2f MB:\n", float(sizeof(Node)*num_nodes*stride)/1024.0/1024);
     XDeviceSynchronize();
   }
 
@@ -262,7 +260,7 @@ struct List
 
     if (mode == 0)
     {
-      initialize_list<<<1,1>>>(buffer, stride);
+      initialize_list<<<1,1>>>(buffer, num_nodes, stride);
       XDeviceSynchronize();
     }
     else
@@ -278,7 +276,7 @@ struct List
       uint32_t * d_node_indices;
       XMalloc((void**)&d_node_indices, sizeof(uint32_t)*num_nodes);
       XMemcpy(d_node_indices, node_indices, sizeof(uint32_t)*num_nodes, XMemcpyHostToDevice);
-      initialize_random_list<<<1,1>>>(buffer, d_node_indices);
+      initialize_random_list<<<1,1>>>(buffer, num_nodes, d_node_indices);
       head_index = node_indices[0];
       free(node_indices);
       XFree(d_node_indices);
@@ -306,7 +304,7 @@ struct List
     XDeviceSynchronize();
 
     // Copy the timing data back to the host
-    XMemcpy(timer, d_timer, sizeof(uint32_t)*(num_nodes-1), XMemcpyDeviceToHost);
+    XMemcpy(timer, d_timer, sizeof(uint32_t)*JUMPS, XMemcpyDeviceToHost);
   }
 
 };
@@ -318,12 +316,12 @@ struct DeviceList : public List
    * List allocated in device memory
    */
 
-  DeviceList(size_t n, size_t buff_size, size_t stride) : List(buff_size, stride)
+  DeviceList(size_t num_nodes, size_t stride) : List(num_nodes, stride)
   {
 #   ifdef DEBUG
-    List::info(n, buff_size);
+    List::info();
 #   endif
-    XMalloc((void**)&buffer, sizeof(Node)*buff_size);
+    XMalloc((void**)&buffer, sizeof(Node)*num_nodes*stride);
   }
 
   ~DeviceList()
@@ -340,12 +338,12 @@ struct HostList : public List
    */
 
   Node * h_buffer;
-  HostList(size_t n, size_t buff_size, size_t stride) : List(buff_size,stride)
+  HostList(size_t num_nodes, size_t stride) : List(num_nodes, stride)
   {
 #   ifdef DEBUG
-    List::info(n, buff_size);
+    List::info();
 #   endif
-    XHostMalloc((void**)&h_buffer, sizeof(Node)*buff_size, XHostAllocMapped);
+    XHostMalloc((void**)&h_buffer, sizeof(Node)*num_nodes*stride, XHostAllocMapped);
     XHostGetDevicePointer((void**)&buffer, (void*)h_buffer, 0);
   }
 
