@@ -5,6 +5,7 @@
 
 import builtins
 import collections.abc
+import contextlib
 import glob as pyglob
 import itertools
 import os
@@ -26,6 +27,20 @@ def _format(s, *args, **kwargs):
         return s.format(*args, **kwargs)
     except (IndexError, KeyError):
         return s
+
+
+@contextlib.contextmanager
+def open_file(filename, encoding='utf-8'):
+    fp = None
+    try:
+        fp = open(filename, 'rt', encoding=encoding)
+        yield fp
+    except OSError as e:
+        # Re-raise it as sanity error
+        raise SanityError(f'{filename}: {e.strerror}')
+    finally:
+        if fp:
+            fp.close()
 
 
 # Create an alias decorator
@@ -381,14 +396,11 @@ def assert_found(patt, filename, msg=None, encoding='utf-8'):
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
     '''
-    num_matches = count(finditer(patt, filename, encoding))
-    try:
-        evaluate(assert_true(num_matches))
-    except SanityError:
-        error_msg = msg or "pattern `{0}' not found in `{1}'"
-        raise SanityError(_format(error_msg, patt, filename))
-    else:
-        return True
+    with open_file(filename, encoding) as fp:
+        return assert_found_s(
+            patt, fp.read(),
+            msg or f'pattern {patt!r} not found in {filename!r}'
+        )
 
 
 @deferrable
@@ -405,6 +417,8 @@ def assert_found_s(patt, string, msg=None):
     :arg string: The string to examine.
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
+
+    .. versionadded:: 3.5
     '''
     num_matches = count(finditer_s(patt, string))
     try:
@@ -426,13 +440,10 @@ def assert_not_found(patt, filename, msg=None, encoding='utf-8'):
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
     '''
-    try:
-        evaluate(assert_found(patt, filename, msg, encoding))
-    except SanityError:
-        return True
-    else:
-        error_msg = msg or "pattern `{0}' found in `{1}'"
-        raise SanityError(_format(error_msg, patt, filename))
+    with open_file(filename, encoding) as fp:
+        return assert_not_found_s(
+            patt, fp.read(), msg or f'pattern {patt!r} found in {filename!r}'
+        )
 
 
 @deferrable
@@ -443,6 +454,8 @@ def assert_not_found_s(patt, string, msg=None):
 
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
+
+    .. versionadded:: 3.5
     '''
     try:
         evaluate(assert_found_s(patt, string, msg))
@@ -543,12 +556,8 @@ def finditer(patt, filename, encoding='utf-8'):
     a generator object instead of a list, which you can use to iterate over
     the raw matches.
     '''
-    try:
-        with open(filename, 'rt', encoding=encoding) as fp:
-            yield from re.finditer(patt, fp.read(), re.MULTILINE)
-    except OSError as e:
-        # Re-raise it as sanity error
-        raise SanityError(f'{filename}: {e.strerror}')
+    with open_file(filename, encoding=encoding) as fp:
+        yield from re.finditer(patt, fp.read(), re.MULTILINE)
 
 
 @deferrable
@@ -559,7 +568,7 @@ def finditer_s(patt, string):
     a generator object instead of a list, which you can use to iterate over
     the raw matches.
 
-    .. versionadded:: 3.4
+    .. versionadded:: 3.5
     '''
     yield from re.finditer(patt, string, re.MULTILINE)
 
@@ -600,7 +609,7 @@ def findall_s(patt, string):
     :returns: A list of raw `regex match objects
         <https://docs.python.org/3/library/re.html#match-objects>`_.
 
-    .. versionadded:: 3.4
+    .. versionadded:: 3.5
     '''
     return list(evaluate(x) for x in finditer_s(patt, string))
 
@@ -620,12 +629,12 @@ def _callable_name(fn):
     return fn_name
 
 
-def _extractiter_singletag(patt, filename, tag, conv, encoding):
+def _extractiter_singletag(patt, string, tag, conv):
     if isinstance(conv, collections.abc.Iterable):
         raise SanityError(f'multiple conversion functions given for the '
                           f'single capturing group {tag!r}')
 
-    for m in finditer(patt, filename, encoding):
+    for m in finditer_s(patt, string):
         try:
             val = m.group(tag)
         except (IndexError, KeyError):
@@ -640,8 +649,8 @@ def _extractiter_singletag(patt, filename, tag, conv, encoding):
             )
 
 
-def _extractiter_multitag(patt, filename, tags, conv, encoding):
-    for m in finditer(patt, filename, encoding):
+def _extractiter_multitag(patt, string, tags, conv):
+    for m in finditer_s(patt, string):
         val = []
         for t in tags:
             try:
@@ -678,59 +687,8 @@ def extractiter(patt, filename, tag=0, conv=None, encoding='utf-8'):
     a generator object, instead of a list, which you can use to iterate over
     the extracted values.
     '''
-    if isinstance(tag, collections.abc.Iterable) and not isinstance(tag, str):
-        yield from _extractiter_multitag(patt, filename, tag, conv, encoding)
-    else:
-        yield from _extractiter_singletag(patt, filename, tag, conv, encoding)
-
-
-def _extractiter_singletag_s(patt, string, tag, conv):
-    if isinstance(conv, collections.abc.Iterable):
-        raise SanityError(f'multiple conversion functions given for the '
-                          f'single capturing group {tag!r}')
-
-    for m in finditer_s(patt, string):
-        try:
-            val = m.group(tag)
-        except (IndexError, KeyError):
-            raise SanityError(f'no such group in pattern {patt!r}: {tag}')
-
-        try:
-            yield conv(val) if callable(conv) else val
-        except ValueError:
-            fn_name = _callable_name(conv)
-            raise SanityError(
-                f'could not convert value {val!r} using {fn_name}()'
-            )
-
-
-def _extractiter_multitag_s(patt, string, tags, conv):
-    for m in finditer_s(patt, string):
-        val = []
-        for t in tags:
-            try:
-                val.append(m.group(t))
-            except (IndexError, KeyError):
-                raise SanityError(f'no such group in pattern {patt!r}: {t}')
-
-        converted_vals = []
-        if not isinstance(conv, collections.abc.Iterable):
-            conv = [conv] * builtins.len(val)
-        elif builtins.len(conv) > builtins.len(val):
-            conv = conv[:builtins.len(val)]
-
-        # Use the last function in case we have less conversion functions than
-        # tags
-        for v, c in itertools.zip_longest(val, conv, fillvalue=conv[-1]):
-            try:
-                converted_vals.append(c(v) if callable(c) else v)
-            except ValueError:
-                fn_name = _callable_name(conv)
-                raise SanityError(
-                    f'could not convert value {v!r} using {fn_name}()'
-                )
-
-        yield tuple(converted_vals)
+    with open_file(filename, encoding) as fp:
+        yield from extractiter_s(patt, fp.read(), tag, conv)
 
 
 @deferrable
@@ -742,12 +700,12 @@ def extractiter_s(patt, string, tag=0, conv=None):
     a generator object, instead of a list, which you can use to iterate over
     the extracted values.
 
-    .. versionadded:: 3.4
+    .. versionadded:: 3.5
     '''
     if isinstance(tag, collections.abc.Iterable) and not isinstance(tag, str):
-        yield from _extractiter_multitag_s(patt, string, tag, conv)
+        yield from _extractiter_multitag(patt, string, tag, conv)
     else:
-        yield from _extractiter_singletag_s(patt, string, tag, conv)
+        yield from _extractiter_singletag(patt, string, tag, conv)
 
 
 @deferrable
@@ -823,7 +781,7 @@ def extractall_s(patt, string, tag=0, conv=None):
          Otherwise, a list of the converted values extracted from the single
          capturing group specified in ``tag``.
 
-    .. versionadded:: 3.4
+    .. versionadded:: 3.5
     '''
     return list(evaluate(x) for x in extractiter_s(patt, string, tag, conv))
 
@@ -846,7 +804,6 @@ def extractsingle(patt, filename, tag=0, conv=None, item=0, encoding='utf-8'):
     :returns: The extracted value.
     :raises reframe.core.exceptions.SanityError: In case of errors.
 
-    .. versionadded:: 3.4
     '''
     try:
         # Explicitly evaluate the expression here, so as to force any exception
@@ -877,7 +834,7 @@ def extractsingle_s(patt, string, tag=0, conv=None, item=0):
     :returns: The extracted value.
     :raises reframe.core.exceptions.SanityError: In case of errors.
 
-    .. versionadded:: 3.4
+    .. versionadded:: 3.5
     '''
     try:
         # Explicitly evaluate the expression here, so as to force any exception
