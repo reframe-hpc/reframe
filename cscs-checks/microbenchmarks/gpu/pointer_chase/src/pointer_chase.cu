@@ -19,16 +19,11 @@
  The stride and the full buffer size can be set with "--stride" and "--buffer",
  both in number of nodes.
 
- The macro NODES sets the total number of nodes in the list. Note that the
- list traversal is 'unrolled' inlining a recursive template, and this will
- not work if you use a large number of nodes.
-
  The nodes can be padded with an arbitrary size controlled by the NODE_PADDING
  macro (in Bytes).
 
- The LIST_TYPE macro dictates where the list is allocated. If DeviceList is used
- (default option) the linked list is allocated in device memory. In contrast, if
- HostList is used, the list is allocated as host's pinned memory.
+ If the ALLOC_ON_HOST macro is defined, the list will be allocated in host
+ pinned memory. Otherwise, the list is allocated in device memory.
 
  The links of the list can be made volatile defining the macro VOLATILE.
 
@@ -37,12 +32,8 @@
  TIME_EACH_STEP.
 */
 
-#define NODES 64
+constexpr int num_nodes = 64;
 #define NODE_PADDING 0
-
-#ifndef LIST_TYPE
-# define LIST_TYPE DeviceList
-#endif
 
 #ifndef HOSTNAME_SIZE
 # define HOSTNAME_SIZE 80
@@ -54,9 +45,15 @@
 
 // List structure
 #include "linked_list.hpp"
+#ifdef ALLOC_ON_HOST
+using list_type = HostList;
+#else
+using list_type = DeviceList;
+#endif
 
 
-template < class LIST >
+
+template < class List >
 uint32_t * general_pointer_chase(int local_device, int remote_device, int init_mode, size_t buff_size, size_t stride)
 {
   /*
@@ -72,7 +69,7 @@ uint32_t * general_pointer_chase(int local_device, int remote_device, int init_m
    */
 
   XSetDevice(remote_device);
-  LIST l(NODES, buff_size, stride);
+  List l(num_nodes, buff_size, stride);
   l.initialize(init_mode);
 
   // Check if we have remote memory access.
@@ -110,7 +107,7 @@ uint32_t * general_pointer_chase(int local_device, int remote_device, int init_m
 }
 
 
-template < class LIST >
+template < class List >
 void local_pointer_chase(int num_devices, int init_mode, size_t buff_size, size_t stride, char * nid)
 {
   /*
@@ -118,14 +115,14 @@ void local_pointer_chase(int num_devices, int init_mode, size_t buff_size, size_
    */
   for (int gpu_id = 0; gpu_id < num_devices; gpu_id++)
   {
-    uint32_t* timer = general_pointer_chase< LIST >(gpu_id, gpu_id, init_mode, buff_size, stride);
+    uint32_t* timer = general_pointer_chase< List >(gpu_id, gpu_id, init_mode, buff_size, stride);
 
     // Print the timings of the pointer chase
 #   ifndef TIME_EACH_STEP
-    printf("[%s] On device %d, the chase took on average %d cycles per node jump.\n", nid, gpu_id, timer[0]/(NODES-1));
+    printf("[%s] On device %d, the chase took on average %d cycles per node jump.\n", nid, gpu_id, timer[0]/(num_nodes-1));
 #   else
     printf("[%s] Latency for each node jump (device %d):\n", nid, gpu_id);
-    for (uint32_t i = 0; i < NODES-1; i++)
+    for (uint32_t i = 0; i < num_nodes-1; i++)
     {
       printf("[%s][device %d] %d\n", nid, gpu_id, timer[i]);
     }
@@ -179,7 +176,7 @@ void print_device_table(int num_devices, std::queue<uint32_t> q, const char * wh
 }
 
 
-template < class LIST >
+template < class List >
 void remote_pointer_chase(int num_devices, int init_mode, size_t buff_size, size_t stride, char * nid, int summarize)
 {
   /*
@@ -190,14 +187,14 @@ void remote_pointer_chase(int num_devices, int init_mode, size_t buff_size, size
 
 # ifndef TIME_EACH_STEP
   std::queue<uint32_t> q_average;
-  auto fetch = [](uint32_t* t){return t[0]/(NODES-1);};
+  auto fetch = [](uint32_t* t){return t[0]/(num_nodes-1);};
 # else
   std::queue<uint32_t> q_max;
   std::queue<uint32_t> q_min;
   auto fetch_max = [](uint32_t* t)
   {
     uint32_t max = 0;
-    for (int i = 0; i < NODES-1; i++)
+    for (int i = 0; i < num_nodes-1; i++)
     {
       if (t[i] > max)
         max = t[i];
@@ -207,7 +204,7 @@ void remote_pointer_chase(int num_devices, int init_mode, size_t buff_size, size
   auto fetch_min = [](uint32_t* t)
   {
     uint32_t min = ~0;
-    for (int i = 0; i < NODES-1; i++)
+    for (int i = 0; i < num_nodes-1; i++)
     {
       if (t[i] < min)
         min = t[i];
@@ -221,7 +218,7 @@ void remote_pointer_chase(int num_devices, int init_mode, size_t buff_size, size
   {
     for (int i = LIMITS; i < num_devices; i++)
     {
-      uint32_t * timer_ptr = general_pointer_chase< LIST >(i, j, init_mode, buff_size, stride);
+      uint32_t * timer_ptr = general_pointer_chase< List >(i, j, init_mode, buff_size, stride);
 
       // Store the desired values for each element of the matrix in queues
 #     ifndef TIME_EACH_STEP
@@ -234,7 +231,7 @@ void remote_pointer_chase(int num_devices, int init_mode, size_t buff_size, size
       }
       else
       {
-        for (int n = 0; n < NODES-1; n++)
+        for (int n = 0; n < num_nodes-1; n++)
         {
           printf("[%s][device %d][device %d] %d\n", nid, j, i, timer_ptr[n]);
         }
@@ -266,8 +263,8 @@ int main(int argc, char ** argv)
 {
   // Set program defaults before parsing the command line args.
   int list_init_random = 0;
-  size_t stride = 1;
-  size_t buff_size = NODES*stride;
+  size_t sparsity = 1;
+  size_t buff_size = num_nodes*sparsity;
   int multi_gpu = 0;
   int print_summary_only = 0;
   int clock = 0;
@@ -278,32 +275,28 @@ int main(int argc, char ** argv)
     std::string str = argv[i];
     if (str == "--help" || str == "-h")
     {
-      std::cout << "--rand      : Initializes the linked list with nodes in random order." << std::endl;
-      std::cout << "--stride #  : Sets the stride between the nodes in the list (in number of nodes)." << std::endl;
-      std::cout << "              If --rand is used, this parameter just changes the buffer size." << std::endl;
-      std::cout << "--buffer #  : Sets the size of the buffer where the linked list is allocated on. " << std::endl;
-      std::cout << "              The number indicates the size of the buffer in list nodes." << std::endl;
-      std::cout << "--multi-gpu : Runs the pointer chase algo using all device-pair combinations." << std::endl;
-      std::cout << "              This measures the device-to-device memory latency." << std::endl;
-      std::cout << "--summary   : When timing each node jump individually and used alongside --multi-gpu, " << std::endl;
-      std::cout << "              this collapses the output into two tables with the min and max latencies." << std::endl;
-      std::cout << "--clock     : Skip all the above and just print the clock latency for all devices." << std::endl;
-      std::cout << "--help (-h) : I guess you figured what this does already ;)" << std::endl;
+      std::cout << "--rand       : Places the linked list nodes into the buffer in random order (i.e." << std::endl;
+      std::cout << "               consecutive list nodes are not consecutive in memory). If this option" << std::endl;
+      std::cout << "               is not used, the nodes are placed in sequential order." << std::endl;
+      std::cout << "--sparsity # : Controls the sparsity of the list nodes in the buffer. This sets the" << std::endl;
+      std::cout << "               buffer size where the list is placed as sparsity*num_nodes. If the" << std::endl;
+      std::cout << "               list is initialized in sequential order, this effectively sets the stride." << std::endl;
+      std::cout << "--multi-gpu  : Runs the pointer chase algo using all device-pair combinations." << std::endl;
+      std::cout << "               This measures the device-to-device memory latency." << std::endl;
+      std::cout << "--summary    : When timing each node jump individually and used alongside --multi-gpu, " << std::endl;
+      std::cout << "               this collapses the output into two tables with the min and max latencies." << std::endl;
+      std::cout << "--clock      : Skip all the above and just print the clock latency for all devices." << std::endl;
+      std::cout << "--help (-h)  : I guess you figured what this does already ;)" << std::endl;
       return 0;
     }
     else if (str == "--rand")
     {
       list_init_random = 1;
     }
-    else if (str == "--stride")
+    else if (str == "--sparsity")
     {
-      stride = std::stoi((std::string)argv[++i]);
-      if (buff_size < NODES*stride)
-          buff_size = NODES*stride;
-    }
-    else if (str == "--buffer")
-    {
-      buff_size = std::stoi((std::string)argv[++i]);
+      sparsity = std::stoi((std::string)argv[++i]);
+      buff_size = num_nodes*sparsity;
     }
     else if (str == "--multi-gpu")
     {
@@ -317,13 +310,6 @@ int main(int argc, char ** argv)
     {
       clock = 1;
     }
-  }
-
-  // Sanity of the command line args.
-  if (buff_size < NODES*stride)
-  {
-    std::cerr << "Buffer is not large enough to fit the list." << std::endl;
-    return 1;
   }
 
   // Get the node name
@@ -354,11 +340,11 @@ int main(int argc, char ** argv)
   {
     if (!multi_gpu)
     {
-      local_pointer_chase<LIST_TYPE>(num_devices, list_init_random, buff_size, stride, nid_name);
+      local_pointer_chase<list_type>(num_devices, list_init_random, buff_size, sparsity, nid_name);
     }
     else
     {
-      remote_pointer_chase<LIST_TYPE>(num_devices, list_init_random, buff_size, stride, nid_name, print_summary_only);
+      remote_pointer_chase<list_type>(num_devices, list_init_random, buff_size, sparsity, nid_name, print_summary_only);
     }
   }
 

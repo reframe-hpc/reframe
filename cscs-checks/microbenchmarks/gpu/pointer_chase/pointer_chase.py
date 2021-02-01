@@ -184,7 +184,7 @@ class GpuPointerChaseSingle(GpuPointerChaseDep):
     def __init__(self, stride):
         super().__init__()
         self.valid_systems = Pchase.valid_systems
-        self.executable_opts = ['--stride', f'{stride}']
+        self.executable_opts = ['--sparsity', f'{stride}']
         self.perf_patterns = {
             'average_latency': sn.max(sn.extractall(
                 r'^\s*\[[^\]]*\]\s* On device \d+, '
