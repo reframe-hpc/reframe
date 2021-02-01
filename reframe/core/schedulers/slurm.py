@@ -244,7 +244,7 @@ class SlurmJobScheduler(sched.JobScheduler):
 
                 t = next(intervals)
                 self.log(
-                    f'encountered a job submission error: {sbatch_error.group(1)}'
+                    f'encountered a job submission error: {error_match.group(1)}'
                     f'will resubmit after {t}s'
                 )
                 time.sleep(t)
