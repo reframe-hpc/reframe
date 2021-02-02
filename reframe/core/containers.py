@@ -8,7 +8,7 @@ import abc
 import reframe.core.fields as fields
 import reframe.utility.typecheck as typ
 from reframe.core.exceptions import ContainerError
-from tempfile import TemporaryDirectory
+import tempfile
 
 class ContainerPlatform(abc.ABC):
     '''The abstract base class of any container platform.'''
@@ -136,7 +136,7 @@ class Sarus(ContainerPlatform):
             return []
         # Using 
         if self.with_metahub:
-            tmpdir = TemporaryDirectory()
+            tmpdir = tempfile.TemporaryDirectory()
             return [
                 'docker pull -q mh.qnib.org/'+self.image,
                 'docker save -o '+tmpdir+'/image.tar mh.qnib.org/'+self.image,
