@@ -30,17 +30,13 @@ def _format(s, *args, **kwargs):
 
 
 @contextlib.contextmanager
-def open_file(filename, encoding='utf-8'):
-    fp = None
+def _open(filename, *args, **kwargs):
     try:
-        fp = open(filename, 'rt', encoding=encoding)
-        yield fp
+        with open(filename, *args, **kwargs) as fp:
+            yield fp
     except OSError as e:
         # Re-raise it as sanity error
         raise SanityError(f'{filename}: {e.strerror}')
-    finally:
-        if fp:
-            fp.close()
 
 
 # Create an alias decorator
@@ -396,7 +392,7 @@ def assert_found(patt, filename, msg=None, encoding='utf-8'):
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
     '''
-    with open_file(filename, encoding) as fp:
+    with _open(filename, 'rt', encoding=encoding) as fp:
         return assert_found_s(
             patt, fp.read(),
             msg or f'pattern {patt!r} not found in {filename!r}'
@@ -407,13 +403,7 @@ def assert_found(patt, filename, msg=None, encoding='utf-8'):
 def assert_found_s(patt, string, msg=None):
     '''Assert that regex pattern ``patt`` is found in the string ``string``.
 
-    :arg patt: The regex pattern to search.
-        Any standard Python `regular expression
-        <https://docs.python.org/3/library/re.html#regular-expression-syntax>`_
-        is accepted.
-        The `re.MULTILINE
-        <https://docs.python.org/3/library/re.html#re.MULTILINE>`_ flag
-        is set for the pattern search.
+    :arg patt: as in :func:`assert_found`.
     :arg string: The string to examine.
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
@@ -440,7 +430,7 @@ def assert_not_found(patt, filename, msg=None, encoding='utf-8'):
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
     '''
-    with open_file(filename, encoding) as fp:
+    with _open(filename, 'rt', encoding=encoding) as fp:
         return assert_not_found_s(
             patt, fp.read(), msg or f'pattern {patt!r} found in {filename!r}'
         )
@@ -556,7 +546,7 @@ def finditer(patt, filename, encoding='utf-8'):
     a generator object instead of a list, which you can use to iterate over
     the raw matches.
     '''
-    with open_file(filename, encoding=encoding) as fp:
+    with _open(filename, 'rt', encoding=encoding) as fp:
         yield from re.finditer(patt, fp.read(), re.MULTILINE)
 
 
@@ -598,16 +588,9 @@ def findall(patt, filename, encoding='utf-8'):
 def findall_s(patt, string):
     '''Get all matches of regex ``patt`` in ``string``.
 
-    :arg patt: The regex pattern to search.
-        Any standard Python `regular expression
-        <https://docs.python.org/3/library/re.html#regular-expression-syntax>`_
-        is accepted.
-        The `re.MULTILINE
-        <https://docs.python.org/3/library/re.html#re.MULTILINE>`_ flag
-        is set for the pattern search.
+    :arg patt: as in :func:`findall`
     :arg string: The string to examine.
-    :returns: A list of raw `regex match objects
-        <https://docs.python.org/3/library/re.html#match-objects>`_.
+    :returns: same as :func:`finall`.
 
     .. versionadded:: 3.5
     '''
@@ -687,7 +670,7 @@ def extractiter(patt, filename, tag=0, conv=None, encoding='utf-8'):
     a generator object, instead of a list, which you can use to iterate over
     the extracted values.
     '''
-    with open_file(filename, encoding) as fp:
+    with _open(filename, 'rt', encoding=encoding) as fp:
         yield from extractiter_s(patt, fp.read(), tag, conv)
 
 
@@ -755,31 +738,11 @@ def extractall_s(patt, string, tag=0, conv=None):
     '''Extract all values from the capturing group ``tag`` of a matching regex
     ``patt`` in ``string``.
 
-    :arg patt: The regex pattern to search.
-        Any standard Python `regular expression
-        <https://docs.python.org/3/library/re.html#regular-expression-syntax>`_
-        is accepted.
-        The `re.MULTILINE
-        <https://docs.python.org/3/library/re.html#re.MULTILINE>`_ flag
-        is set for the pattern search.
-    :arg string: The string to examine.
-    :arg tag: The regex capturing group to be extracted.
-        Group ``0`` refers always to the whole match.
-        Since the `re.MULTILINE` is set for the pattern search, group ``0``
-        returns the whole line that was matched.
-    :arg conv: A callable or iterable of callables taking a single argument
-        and returning a new value.
-        If not an iterable, it will be used to convert the extracted values for
-        all the capturing groups specified in ``tag``.
-        Otherwise, each conversion function will be used to convert the value
-        extracted from the corresponding capturing group in ``tag``.
-        If more conversion functions are supplied than the corresponding
-        capturing groups in ``tag``, the last conversion function will be used
-        for the additional capturing groups.
-    :returns: A list of tuples of converted values extracted from the
-         capturing groups specified in ``tag``, if ``tag`` is an iterable.
-         Otherwise, a list of the converted values extracted from the single
-         capturing group specified in ``tag``.
+    :arg patt: as in :func:`extractall`.
+'   :arg string: The string to examine.
+    :arg tag: as in :func:`extractall`.
+    :arg conv: as in :func:`extractall`.
+    :returns: same as :func:`extractall`.
 
     .. versionadded:: 3.5
     '''
