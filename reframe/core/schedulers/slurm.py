@@ -125,6 +125,9 @@ class SlurmJobScheduler(sched.JobScheduler):
         self._use_nodes_opt = rt.runtime().get_option(
             f'schedulers/@{self.registered_name}/use_nodes_option'
         )
+        self._resubmit_on_errors = rt.runtime().get_option(
+            f'schedulers/@{self.registered_name}/resubmit_on_errors'
+        )
 
     def make_job(self, *args, **kwargs):
         return _SlurmJob(*args, **kwargs)
@@ -227,7 +230,25 @@ class SlurmJobScheduler(sched.JobScheduler):
 
     def submit(self, job):
         cmd = f'sbatch {job.script_filename}'
-        completed = _run_strict(cmd, timeout=self._submit_timeout)
+        intervals = itertools.cycle([1, 2, 3])
+        while True:
+            try:
+                completed = _run_strict(cmd, timeout=self._submit_timeout)
+                break
+            except SpawnedProcessError as e:
+                error_match = re.search(
+                    rf'({"|".join(self._resubmit_on_errors)})', e.stderr
+                )
+                if not self._resubmit_on_errors or not error_match:
+                    raise
+
+                t = next(intervals)
+                self.log(
+                    f'encountered a job submission error: '
+                    f'{error_match.group(1)}: will resubmit after {t}s'
+                )
+                time.sleep(t)
+
         jobid_match = re.search(r'Submitted batch job (?P<jobid>\d+)',
                                 completed.stdout)
         if not jobid_match:
