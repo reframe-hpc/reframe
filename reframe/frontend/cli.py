@@ -21,6 +21,7 @@ import reframe.core.logging as logging
 import reframe.core.runtime as runtime
 import reframe.core.warnings as warnings
 import reframe.frontend.argparse as argparse
+import reframe.frontend.ci as ci
 import reframe.frontend.dependencies as dependencies
 import reframe.frontend.filters as filters
 import reframe.frontend.runreport as runreport
@@ -28,7 +29,6 @@ import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 
 
-from reframe.frontend.ci import generate_ci_pipeline
 from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
@@ -336,10 +336,8 @@ def main():
         default=[], help='Disable a pipeline hook for this run'
     )
     run_options.add_argument(
-        '--ci-generate-pipeline', action='store', metavar='FILE',
+        '--ci-generate', action='store', metavar='FILE',
         help="Store ci pipeline in yaml FILE",
-        envvar='RFM_CI_PIPELINE_FILE',
-        configvar='general/ci_pipeline_file'
     )
 
     # Environment options
@@ -795,13 +793,10 @@ def main():
         )
         printer.verbose(f'Final number of test cases: {len(testcases)}')
 
-        # testcases2 = dependencies.toposortdepth(testgraph)
+        if options.ci_generate:
+            with open(options.ci_generate, 'wt') as fp:
+                ci.emit_pipeline(fp, testcases)
 
-        # victor
-        if site_config.get('general/0/ci_pipeline_file'):
-            ci_pipeline_file = site_config.get('general/0/ci_pipeline_file')
-            generate_ci_pipeline(ci_pipeline_file, testcases)
-            # generate_ci_pipeline(ci_pipeline_file, testcases, site_config)
             sys.exit(0)
 
         # Disable hooks

@@ -15,31 +15,6 @@ import reframe.utility as util
 from reframe.core.exceptions import DependencyError
 from reframe.core.logging import getlogger
 
-def _dfs(graph):
-    visited = util.OrderedSet()
-
-    def visit(node, path, level):
-        # We assume an acyclic graph
-        assert node not in path
-
-        path.add(node)
-
-        # Do a DFS visit of all the adjacent nodes
-        depth = 0
-        for adj in graph[node]:
-            if adj not in visited:
-                visit(adj, path, level + 1)
-            else:
-                depth = max(depth, visited[adj].level + 1)
-
-        path.pop()
-        node.level = max(level, depth)
-
-    for node in graph.keys():
-        if node not in visited:
-            visit(node, util.OrderedSet(), 0)
-
-    return visited
 
 def build_deps(cases, default_cases=None):
     '''Build dependency graph from test cases.
@@ -129,8 +104,6 @@ def build_deps(cases, default_cases=None):
         for v in adjacent:
             v.in_degree += 1
 
-    _dfs(graph)
-
     return graph, skipped_cases
 
 
@@ -189,7 +162,8 @@ def validate_deps(graph):
                 if n in path:
                     cycle_str = '->'.join(path + [n])
                     raise DependencyError(
-                        'found cyclic dependency between tests: ' + cycle_str)
+                        'found cyclic dependency between tests: ' + cycle_str
+                    )
 
                 if n not in visited:
                     unvisited.append((n, node))
@@ -231,6 +205,7 @@ def toposort(graph, is_subgraph=False):
     '''
     test_deps = _reduce_deps(graph)
     visited = util.OrderedSet()
+    levels = {}
 
     def retrieve(d, key, default):
         try:
@@ -248,9 +223,15 @@ def toposort(graph, is_subgraph=False):
         path.add(node)
 
         # Do a DFS visit of all the adjacent nodes
-        for adj in retrieve(test_deps, node, []):
-            if adj not in visited:
-                visit(adj, path)
+        adjacent = retrieve(test_deps, node, [])
+        for u in adjacent:
+            if u not in visited:
+                visit(u, path)
+
+        if adjacent:
+            levels[node] = max(levels[u] for u in adjacent) + 1
+        else:
+            levels[node] = 0
 
         path.pop()
         visited.add(node)
@@ -262,6 +243,7 @@ def toposort(graph, is_subgraph=False):
     # Index test cases by test name
     cases_by_name = {}
     for c in graph.keys():
+        c.level = levels[c.check.name]
         try:
             cases_by_name[c.check.name].append(c)
         except KeyError:

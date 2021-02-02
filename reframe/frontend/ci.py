@@ -11,57 +11,51 @@ import reframe.core.exceptions as errors
 import reframe.core.runtime as runtime
 
 
-def _generate_gitlab_pipeline(testcases):
-    rt = runtime.runtime()
+def _emit_gitlab_pipeline(testcases):
+    config = runtime.runtime().site_config
 
-    rfm_exec = f'{reframe.INSTALL_PREFIX}/bin/reframe '
-    rfm_prefix = '--prefix rfm_testcases_stage_dir'
-    load_path='-c '.join(rt.site_config.get('general/0/check_search_path'))
-    recurse='-R' if rt.site_config.get('general/0/check_search_recursive') else ''
-    report_file = 'rfm_report.json'
+    # Collect the necessary ReFrame invariants
+    program = f'{reframe.INSTALL_PREFIX}/bin/reframe'
+    prefix = 'rfm-stage/${CI_COMMIT_SHORT_SHA}'
+    checkpath = config.get('general/0/check_search_path')
+    recurse = config.get('general/0/check_search_recursive')
+    report = 'rfm_report.json'
 
-    # getting the max level
-    max_level = 0
-    for test in testcases:
-        max_level = max(max_level, test.level)
+    def rfm_command(testcase):
+        if config.filename != '<builtin>':
+            config_opt = f'-C {config.filename}'
+        else:
+            config_opt = ''
 
-    pipeline_info = {}
+        return ' '.join([
+            program,
+            f'--prefix={prefix}', config_opt,
+            f'{"-c ".join(checkpath)}', '-R' if recurse else '',
+            f'--report-file={report}',
+            f'--restore-session={report}' if testcase.level else '',
+            '-n', testcase.check.name, '-r'
+        ])
+
+    max_level = 0   # We need the maximum level to generate the stages section
+    json = {'stages': []}
     for tc in testcases:
-        # when restoring tests in stages we need to be able to load them
-        restore_opt = f'--restore-session={report_file}' if tc.level != max_level else ''
-        test_file = inspect.getfile(type(tc.check))
-        pipeline_info[f'{tc.check.name}'] = {
-            'stage' : f'rfm-stage-{max_level - tc.level}',
-            'script' : [
-                f'{rfm_exec} {rfm_prefix} -C {rt.site_config.filename} -c {load_path} {recurse} -n {tc.check.name} -r --report-file {report_file} {restore_opt}'
-            ],
-            'artifacts' : {
-                'paths' : 'rfm_testcases_stage_dir'
+        json[f'{tc.check.name}'] = {
+            'stage': f'rfm-stage-{tc.level}',
+            'script': [rfm_command(tc)],
+            'artifacts': {
+                'paths': prefix
             },
-            'needs' : [t.check.name for t in tc.deps]
+            'needs': [t.check.name for t in tc.deps]
         }
         max_level = max(max_level, tc.level)
 
-    stages = {
-        'stages': [f'rfm-stage-{m}' for m in range(max_level+1)]
-    }
-
-    return stages, pipeline_info
+    json['stages'] = [f'rfm-stage-{m}' for m in range(max_level+1)]
+    return json
 
 
-def generate_ci_file(filename, stages, pipeline_info):
-    with open(filename, 'w') as pipeline_file:
-        for entry in yaml.safe_dump(stages, indent=2).split('\n'):
-            pipeline_file.write(f'{entry}\n')
-
-        for entry in yaml.safe_dump(pipeline_info, indent=2).split('\n'):
-            pipeline_file.write(f'{entry}\n')
-
-
-def generate_ci_pipeline(filename, testcases, backend='gitlab'):
+def emit_pipeline(fp, testcases, backend='gitlab'):
     if backend != 'gitlab':
         raise errors.ReframeError(f'unknown CI backend {backend!r}')
 
-    stages, pipeline_info = _generate_gitlab_pipeline(testcases)
-
-    generate_ci_file(filename, stages, pipeline_info)
+    yaml.dump(_emit_gitlab_pipeline(testcases), stream=fp,
+              indent=2, sort_keys=False)

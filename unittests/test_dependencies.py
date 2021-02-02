@@ -793,6 +793,18 @@ def test_toposort(make_test, exec_ctx):
     cases = dependencies.toposort(deps)
     assert_topological_order(cases, deps)
 
+    # Assert the level assignment
+    cases_by_level = {}
+    for c in cases:
+        cases_by_level.setdefault(c.level, set())
+        cases_by_level[c.level].add(c.check.name)
+
+    assert cases_by_level[0] == {'t0', 't5'}
+    assert cases_by_level[1] == {'t1', 't6', 't7'}
+    assert cases_by_level[2] == {'t2', 't8'}
+    assert cases_by_level[3] == {'t3'}
+    assert cases_by_level[4] == {'t4'}
+
 
 def test_toposort_subgraph(make_test, exec_ctx):
     #
@@ -825,3 +837,12 @@ def test_toposort_subgraph(make_test, exec_ctx):
     )
     cases = dependencies.toposort(partial_deps, is_subgraph=True)
     assert_topological_order(cases, partial_deps)
+
+    # Assert the level assignment
+    cases_by_level = {}
+    for c in cases:
+        cases_by_level.setdefault(c.level, set())
+        cases_by_level[c.level].add(c.check.name)
+
+    assert cases_by_level[1] == {'t3'}
+    assert cases_by_level[2] == {'t4'}
