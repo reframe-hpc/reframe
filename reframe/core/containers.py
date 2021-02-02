@@ -8,7 +8,7 @@ import abc
 import reframe.core.fields as fields
 import reframe.utility.typecheck as typ
 from reframe.core.exceptions import ContainerError
-
+from tempfile import TemporaryDirectory
 
 class ContainerPlatform(abc.ABC):
     '''The abstract base class of any container platform.'''
@@ -116,17 +116,17 @@ class Sarus(ContainerPlatform):
     #: :default: :class:`False`
     with_mpi = fields.TypedField(bool)
 
-    #: Skip pull of images
+    #: Using metahub to fetch instance specific images
     #:
     #: :type: boolean
     #: :default: :class:`False`
-    skip_pull = fields.TypedField(bool)
+    with_metahub = fields.TypedField(bool)
 
     def __init__(self):
         super().__init__()
         self.with_mpi = False
         self._command = 'sarus'
-        self.skip_pull = False
+        self.with_metahub = False
 
     def emit_prepare_commands(self):
         # The format that Sarus uses to call the images is
@@ -134,11 +134,17 @@ class Sarus(ContainerPlatform):
         # locally from a tar file, the <reposerver> is 'load'.
         if self.image.startswith('load/'):
             return []
-        # For testing purposes a way to skip the pull of an image.
-        if self.skip_pull:
-            return []
-
-        return [self._command + ' pull %s' % self.image]
+        # Using 
+        if self.with_metahub:
+            tmpdir = TemporaryDirectory()
+            return [
+                'docker pull -q mh.qnib.org/'+self.image,
+                'docker save -o '+tmpdir+'/image.tar mh.qnib.org/'+self.image,
+                self._command + ' load ${TMP_DIR}/gromacs.tar mh.qnib.org/'+self.image,
+                'rm -rf '+tmpdir
+            ]
+        else:
+            return [self._command + ' pull %s' % self.image]
 
     def launch_command(self):
         super().launch_command()
