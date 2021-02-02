@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -112,7 +112,7 @@ class RequestLargeMemoryNodeCheck(SlurmSimpleBaseCheck):
 
     @rfm.run_before('run')
     def set_memory_limit(self):
-        self.job.options += ['--mem=120000']
+        self.job.options = ['--mem=120000']
 
 
 @rfm.simple_test
@@ -171,7 +171,7 @@ class ConstraintRequestCabinetGrouping(SlurmSimpleBaseCheck):
     def set_slurm_constraint(self):
         cabinet = self.cabinets.get(self.current_partition.fullname)
         if cabinet:
-            self.job.options += [f'--constraint={cabinet}']
+            self.job.options = [f'--constraint={cabinet}']
 
 
 @rfm.simple_test
@@ -188,7 +188,7 @@ class MemoryOverconsumptionCheck(SlurmCompiledBaseCheck):
 
     @rfm.run_before('run')
     def set_memory_limit(self):
-        self.job.options += ['--mem=2000']
+        self.job.options = ['--mem=2000']
 
 
 @rfm.simple_test

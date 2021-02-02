@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -6,8 +6,6 @@
 import reframe as rfm
 import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
-
-from reframe.core.runtime import runtime
 
 
 @rfm.simple_test
@@ -64,12 +62,15 @@ class CrayVariablesCheck(rfm.RunOnlyRegressionTest):
             sn.assert_found(f'{envvar_prefix}_VERSION', self.stderr)
         ])
 
-        # These modules should be fixed in later releases
+        # FIXME: These modules should be fixed in later releases,
+        # while gcc was fixed in 20.11
+
         cdt = osext.cray_cdt_version()
-        if (cdt and cdt <= '20.10' and
-            module_name in ['cray-petsc-complex',
-                            'cray-petsc-complex-64',
-                            'cudatoolkit', 'gcc']):
+        if ((cdt and cdt <= '20.11' and
+             module_name in ['cray-petsc-complex',
+                             'cray-petsc-complex-64',
+                             'cudatoolkit']) or
+            (cdt and cdt < '20.11' and module_name == 'gcc')):
             self.valid_systems = []
 
         self.maintainers = ['EK', 'VH']

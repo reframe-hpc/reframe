@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -91,7 +91,7 @@ class PbsJobScheduler(sched.JobScheduler):
         # Options starting with `-` are emitted in separate lines
         rem_opts = []
         verb_opts = []
-        for opt in (*job.sched_access, *job.options):
+        for opt in (*job.sched_access, *job.options, *job.cli_options):
             if opt.startswith('-'):
                 rem_opts.append(opt)
             elif opt.startswith('#'):

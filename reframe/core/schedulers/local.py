@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -7,8 +7,6 @@ import errno
 import os
 import signal
 import socket
-import stat
-import subprocess
 import time
 
 import reframe.core.schedulers as sched
@@ -60,10 +58,6 @@ class LocalJobScheduler(sched.JobScheduler):
         return _LocalJob(*args, **kwargs)
 
     def submit(self, job):
-        # `chmod +x' first, because we will execute the script locally
-        os.chmod(job.script_filename,
-                 os.stat(job.script_filename).st_mode | stat.S_IEXEC)
-
         # Run from the absolute path
         f_stdout = open(job.stdout, 'w+')
         f_stderr = open(job.stderr, 'w+')

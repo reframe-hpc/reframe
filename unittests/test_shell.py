@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -18,7 +18,6 @@ from reframe.core.exceptions import SpawnedProcessError
 def script_file(tmp_path):
     script_file = tmp_path / 'script.sh'
     script_file.touch()
-    os.chmod(script_file, os.stat(script_file).st_mode | stat.S_IEXEC)
     return script_file
 
 
@@ -47,6 +46,15 @@ unset v1
 '''
     with open(script_file) as fp:
         assert expected_output == fp.read()
+
+    assert os.stat(script_file).st_mode & stat.S_IXUSR == stat.S_IXUSR
+
+
+def test_generate_custom_filemode(script_file):
+    with shell.generate_script(script_file, stat.S_IREAD) as gen:
+        gen.write('x=1')
+
+    assert stat.S_IMODE(os.stat(script_file).st_mode) == stat.S_IREAD
 
 
 def test_generate_login(script_file):
@@ -111,7 +119,7 @@ def test_trap_signal(script_file):
 
     f_stdout = tempfile.NamedTemporaryFile(mode='w+', delete=False)
     proc = osext.run_command_async(str(script_file), stdout=f_stdout,
-                                    start_new_session=True)
+                                   start_new_session=True)
 
     # Yield for some time to allow the script to start
     time.sleep(1)

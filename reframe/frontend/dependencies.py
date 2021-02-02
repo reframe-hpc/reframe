@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -61,7 +61,6 @@ def build_deps(cases, default_cases=None):
     # c stands for check or case depending on the context
     # p stands for partition
     # e stands for environment
-    # t stands for target
 
     # We use an ordered dict here, because we need to keep the order of
     # partitions and environments
@@ -79,8 +78,23 @@ def build_deps(cases, default_cases=None):
                     if when((psrc, esrc), (pdst, edst)):
                         c.deps.append(d)
         except DependencyError as e:
-            getlogger().warning(f'{e}; skipping test case...')
-            skipped_cases.append(c)
+            getlogger().warning(f'{e}; skipping dependent test cases:')
+
+            # FIXME: we need to unit test this properly
+            skip_nodes = {c}
+            while skip_nodes:
+                v = skip_nodes.pop()
+                skipped_cases.append(v)
+                getlogger().warning(f'  - {v}')
+                pruned_nodes = []
+                for u, adj in graph.items():
+                    if v in adj:
+                        skip_nodes.add(u)
+                        pruned_nodes.append(u)
+
+                for u in pruned_nodes:
+                    del graph[u]
+
             continue
 
         graph[c] = util.OrderedSet(c.deps)
