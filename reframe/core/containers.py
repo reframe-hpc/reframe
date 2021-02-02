@@ -121,18 +121,24 @@ class Sarus(ContainerPlatform):
     #: :type: boolean
     #: :default: :class:`False`
     with_metahub = fields.TypedField(bool)
+    #: Skipping pull alltogether to speed up runs
+    #:
+    #: :type: boolean
+    #: :default: :class:`False`
+    skip_pull = fields.TypedField(bool)
 
     def __init__(self):
         super().__init__()
         self.with_mpi = False
         self._command = 'sarus'
         self.with_metahub = False
+        self.skip_pull = False
 
     def emit_prepare_commands(self):
         # The format that Sarus uses to call the images is
         # <reposerver>/<user>/<image>:<tag>. If an image was loaded
         # locally from a tar file, the <reposerver> is 'load'.
-        if self.image.startswith('load/'):
+        if self.image.startswith('load/') or self.skip_pull:
             return []
         # Using 
         if self.with_metahub:
