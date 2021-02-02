@@ -88,9 +88,6 @@ class ContainerPlatform(abc.ABC):
         if self.image is None:
             raise ContainerError('no image specified')
 
-        if not self.commands:
-            raise ContainerError('no commands specified')
-
 
 class Docker(ContainerPlatform):
     '''Container platform backend for running containers with `Docker
@@ -119,16 +116,26 @@ class Sarus(ContainerPlatform):
     #: :default: :class:`False`
     with_mpi = fields.TypedField(bool)
 
+    #: Skip pull of images
+    #:
+    #: :type: boolean
+    #: :default: :class:`False`
+    skip_pull = fields.TypedField(bool)
+
     def __init__(self):
         super().__init__()
         self.with_mpi = False
         self._command = 'sarus'
+        self.skip_pull = False
 
     def emit_prepare_commands(self):
         # The format that Sarus uses to call the images is
         # <reposerver>/<user>/<image>:<tag>. If an image was loaded
         # locally from a tar file, the <reposerver> is 'load'.
         if self.image.startswith('load/'):
+            return []
+        # For testing purposes a way to skip the pull of an image.
+        if self.skip_pull:
             return []
 
         return [self._command + ' pull %s' % self.image]
@@ -137,14 +144,17 @@ class Sarus(ContainerPlatform):
         super().launch_command()
         run_opts = ['--mount=type=bind,source="%s",destination="%s"' %
                     mp for mp in self.mount_points]
+        run_opts.append('--workdir='+self.workdir)
         if self.with_mpi:
             run_opts.append('--mpi')
 
         run_opts += self.options
-        run_cmd = self._command + ' run %s %s bash -c ' % (' '.join(run_opts),
+        run_cmd = self._command + ' run %s %s' % (' '.join(run_opts),
                                                            self.image)
-        return run_cmd + "'" + '; '.join(
-            ['cd ' + self.workdir] + self.commands) + "'"
+        if self.commands:
+            return run_cmd + "'" + ' ; '.join(self.commands) + "'"
+        else:
+            return run_cmd
 
 
 class Shifter(Sarus):
