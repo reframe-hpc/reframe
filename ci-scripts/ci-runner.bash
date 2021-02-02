@@ -126,7 +126,7 @@ if [ "X${MODULEUSE}" != "X" ]; then
 fi
 
 parallel_opts="--workers=auto --forked"
-if [[ $(hostname) =~ tsa ]]; then
+if [[ $(hostname) =~ tsa|uan ]]; then
     parallel_opts=""
 fi
 

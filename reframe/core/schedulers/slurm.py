@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -11,7 +11,6 @@ import time
 from argparse import ArgumentParser
 from contextlib import suppress
 
-import reframe.core.environments as env
 import reframe.core.runtime as rt
 import reframe.core.schedulers as sched
 import reframe.utility.osext as osext
@@ -126,6 +125,9 @@ class SlurmJobScheduler(sched.JobScheduler):
         self._use_nodes_opt = rt.runtime().get_option(
             f'schedulers/@{self.registered_name}/use_nodes_option'
         )
+        self._resubmit_on_errors = rt.runtime().get_option(
+            f'schedulers/@{self.registered_name}/resubmit_on_errors'
+        )
 
     def make_job(self, *args, **kwargs):
         return _SlurmJob(*args, **kwargs)
@@ -150,10 +152,12 @@ class SlurmJobScheduler(sched.JobScheduler):
         ]
 
         # Determine if job refers to a Slurm job array, by looking into the
-        # job.options
+        # job.options and job.cli_options
         jobarr_parser = ArgumentParser()
         jobarr_parser.add_argument('-a', '--array')
-        parsed_args, _ = jobarr_parser.parse_known_args(job.options)
+        parsed_args, _ = jobarr_parser.parse_known_args(
+            job.options + job.cli_options
+        )
         if parsed_args.array:
             job._is_array = True
             self.log('Slurm job is a job array')
@@ -198,7 +202,9 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         # NOTE: Here last of the passed --constraint job options is taken
         # into account in order to respect the behavior of slurm.
-        parsed_options, _ = constraint_parser.parse_known_args(job.options)
+        parsed_options, _ = constraint_parser.parse_known_args(
+            job.options + job.cli_options
+        )
         if parsed_options.constraint:
             constraints.append(parsed_options.constraint.strip())
 
@@ -209,7 +215,7 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         preamble.append(self._format_option(hint, '--hint={0}'))
         prefix_patt = re.compile(r'(#\w+)')
-        for opt in job.options:
+        for opt in job.options + job.cli_options:
             if opt.strip().startswith(('-C', '--constraint')):
                 # Constraints are already processed
                 continue
@@ -224,7 +230,25 @@ class SlurmJobScheduler(sched.JobScheduler):
 
     def submit(self, job):
         cmd = f'sbatch {job.script_filename}'
-        completed = _run_strict(cmd, timeout=self._submit_timeout)
+        intervals = itertools.cycle([1, 2, 3])
+        while True:
+            try:
+                completed = _run_strict(cmd, timeout=self._submit_timeout)
+                break
+            except SpawnedProcessError as e:
+                error_match = re.search(
+                    rf'({"|".join(self._resubmit_on_errors)})', e.stderr
+                )
+                if not self._resubmit_on_errors or not error_match:
+                    raise
+
+                t = next(intervals)
+                self.log(
+                    f'encountered a job submission error: '
+                    f'{error_match.group(1)}: will resubmit after {t}s'
+                )
+                time.sleep(t)
+
         jobid_match = re.search(r'Submitted batch job (?P<jobid>\d+)',
                                 completed.stdout)
         if not jobid_match:
@@ -268,7 +292,7 @@ class SlurmJobScheduler(sched.JobScheduler):
         # Collect options that restrict node selection, but we need to first
         # create a mutable list out of the immutable SequenceView that
         # sched_access is
-        options = list(job.sched_access + job.options)
+        options = list(job.sched_access + job.options + job.cli_options)
         option_parser = ArgumentParser()
         option_parser.add_argument('--reservation')
         option_parser.add_argument('-p', '--partition')
@@ -432,7 +456,8 @@ class SlurmJobScheduler(sched.JobScheduler):
         if t_pending >= job.max_pending_time:
             self.log(f'maximum pending time for job exceeded; cancelling it')
             self.cancel(job)
-            job._exception = JobError('maximum pending time exceeded')
+            job._exception = JobError('maximum pending time exceeded',
+                                      job.jobid)
 
     def _cancel_if_blocked(self, job, reasons=None):
         if (job.is_cancelling or not slurm_state_pending(job.state)):
@@ -490,7 +515,7 @@ class SlurmJobScheduler(sched.JobScheduler):
             if reason_details is not None:
                 reason_msg += ', ' + reason_details
 
-            job._exception = JobBlockedError(reason_msg)
+            job._exception = JobBlockedError(reason_msg, job.jobid)
 
     def wait(self, job):
         # Quickly return in case we have finished already

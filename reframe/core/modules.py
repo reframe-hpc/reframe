@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -91,8 +91,7 @@ class Module:
 class ModulesSystem:
     '''A modules system.'''
 
-    module_map = fields.TypedField('module_map',
-                                   types.Dict[str, types.List[str]])
+    module_map = fields.TypedField(types.Dict[str, types.List[str]])
 
     @classmethod
     def create(cls, modules_kind=None):
@@ -109,6 +108,8 @@ class ModulesSystem:
             return ModulesSystem(TMod4Impl())
         elif modules_kind == 'lmod':
             return ModulesSystem(LModImpl())
+        elif modules_kind == 'spack':
+            return ModulesSystem(SpackImpl())
         else:
             raise ConfigError('unknown module system: %s' % modules_kind)
 
@@ -492,6 +493,21 @@ class ModulesSystemImpl(abc.ABC):
     def emit_unload_instr(self, module):
         '''Emit the instruction that unloads module.'''
 
+    def process(self, source):
+        '''Process the Python source emitted by the Python bindings of the
+        different backends.
+
+        Backends should call this before executing any Python commands.
+
+        :arg source: The Python source code to be executed.
+        :returns: The modified Python source code to be executed. By default
+            ``source`` is returned unchanged.
+
+        .. versionadded:: 3.4
+
+        '''
+        return source
+
     def __repr__(self):
         return type(self).__name__ + '()'
 
@@ -562,7 +578,7 @@ class TModImpl(ModulesSystemImpl):
                                       completed.stderr,
                                       completed.returncode)
 
-        exec(completed.stdout)
+        exec(self.process(completed.stdout))
         return completed.stderr
 
     def available_modules(self, substr):
@@ -692,7 +708,7 @@ class TMod31Impl(TModImpl):
         with open(exec_match.group(1), 'r') as content_file:
             cmd = content_file.read()
 
-        exec(cmd)
+        exec(self.process(cmd))
         return completed.stderr
 
 
@@ -729,6 +745,7 @@ class TMod4Impl(TModImpl):
                 (version, self.MIN_VERSION))
 
         self._version = version
+        self._extra_module_paths = []
 
     def name(self):
         return 'tmod4'
@@ -740,7 +757,7 @@ class TMod4Impl(TModImpl):
         modulecmd = self.modulecmd(cmd, *args)
         completed = osext.run_command(modulecmd, check=False)
         namespace = {}
-        exec(completed.stdout, {}, namespace)
+        exec(self.process(completed.stdout), {}, namespace)
 
         # _mlstatus is set by the TMod4 only if the command was unsuccessful,
         # but Lmod sets it always
@@ -755,6 +772,15 @@ class TMod4Impl(TModImpl):
     def load_module(self, module):
         if module.collection:
             self.execute('restore', str(module))
+
+            # Here the module search path removal/addition is repeated since
+            # 'restore' discards previous module path manipulations
+            for op, mp in self._extra_module_paths:
+                if op == '+':
+                    super().searchpath_add(mp)
+                else:
+                    super().searchpath_remove(mp)
+
             return []
         else:
             return super().load_module(module)
@@ -777,7 +803,15 @@ class TMod4Impl(TModImpl):
 
     def emit_load_instr(self, module):
         if module.collection:
-            return f'module restore {module}'
+            cmds = [f'module restore {module}']
+
+            # Here we append module searchpath removal/addition commands
+            # since 'restore' discards previous module path manipulations
+            for op, mp in self._extra_module_paths:
+                operation = 'use' if op == '+' else 'unuse'
+                cmds += [f'module {operation} {mp}']
+
+            return '\n'.join(cmds)
 
         return super().emit_load_instr(module)
 
@@ -786,6 +820,18 @@ class TMod4Impl(TModImpl):
             return ''
 
         return super().emit_unload_instr(module)
+
+    def searchpath_add(self, *dirs):
+        if dirs:
+            self._extra_module_paths += [('+', mp) for mp in dirs]
+
+        super().searchpath_add(*dirs)
+
+    def searchpath_remove(self, *dirs):
+        if dirs:
+            self._extra_module_paths += [('-', mp) for mp in dirs]
+
+        super().searchpath_remove(*dirs)
 
 
 class LModImpl(TMod4Impl):
@@ -821,8 +867,21 @@ class LModImpl(TMod4Impl):
             raise ConfigError('Python is not supported by '
                               'this Lmod installation')
 
+        self._extra_module_paths = []
+
     def name(self):
         return 'lmod'
+
+    def process(self, source):
+        major, minor, *_ = self.version().split('.')
+        major, minor = int(major), int(minor)
+        if (major, minor) < (8, 2):
+            # Older Lmod versions do not emit an `import os` and emit an
+            # invalid `false` statement in case of errors; we fix these here
+            return 'import os\n\n' + source.replace('false',
+                                                    '_mlstatus = False')
+
+        return source
 
     def modulecmd(self, *args):
         return ' '.join([self._lmod_cmd, 'python', *args])
@@ -864,20 +923,6 @@ class LModImpl(TMod4Impl):
                 ret.append(Module(conflict_arg))
 
         return ret
-
-    def load_module(self, module):
-        if module.collection:
-            self.execute('restore', str(module))
-            return []
-        else:
-            return super().load_module(module)
-
-    def unload_module(self, module):
-        if module.collection:
-            # Module collection are not unloaded
-            return
-
-        super().unload_module(module)
 
     def unload_all(self):
         # Currently, we don't take any provision for sticky modules in Lmod, so
@@ -939,3 +984,88 @@ class NoModImpl(ModulesSystemImpl):
 
     def emit_unload_instr(self, module):
         return ''
+
+
+class SpackImpl(ModulesSystemImpl):
+    '''Backend for Spack's modules system emulation.
+
+    This backend implements :func:`load_module`, :func:`unload_module` as well
+    as the searchpath methods as no-ops, since Spack does not offer any Python
+    bindings for its emulation.
+
+    '''
+
+    def __init__(self):
+        # Try to figure out if we are indeed using the TCL version
+        try:
+            completed = osext.run_command('spack -V')
+        except OSError as e:
+            raise ConfigError(
+                'could not find a sane Spack installation') from e
+
+        self._version = completed.stdout.strip()
+        self._name_format = '{name}/{version}-{hash}'
+
+    def name(self):
+        return 'spack'
+
+    def version(self):
+        return self._version
+
+    def modulecmd(self, *args):
+        return ' '.join(['spack', *args])
+
+    def _execute(self, cmd, *args):
+        modulecmd = self.modulecmd(cmd, *args)
+        completed = osext.run_command(modulecmd, check=True)
+        return completed.stdout
+
+    def available_modules(self, substr):
+        output = self.execute('find', '--format', self._name_format,
+                              substr)
+        ret = []
+        for line in output.split('\n'):
+            if not line or line[-1] == ':':
+                # Ignore empty lines and path entries
+                continue
+
+            ret.append(Module(line))
+
+        return ret
+
+    def loaded_modules(self):
+        output = self.execute('find', '--loaded', '--format',
+                              self._name_format)
+        return [Module(m) for m in output.split('\n') if m]
+
+    def conflicted_modules(self, module):
+        return []
+
+    def is_module_loaded(self, module):
+        module = self.execute('find', '--format', self._name_format, name)
+        module = Module(module)
+        return module in self.loaded_modules()
+
+    def load_module(self, module):
+        pass
+
+    def unload_module(self, module):
+        pass
+
+    def unload_all(self):
+        pass
+
+    def searchpath(self):
+        return []
+
+    def searchpath_add(self, *dirs):
+        pass
+
+    def searchpath_remove(self, *dirs):
+        pass
+
+    def emit_load_instr(self, module):
+        return f'spack load {module}'
+
+    def emit_unload_instr(self, module):
+        return f'spack unload {module}'

@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -9,8 +9,8 @@
 
 import collections
 import itertools
+import sys
 
-import reframe as rfm
 import reframe.utility as util
 from reframe.core.exceptions import DependencyError
 from reframe.core.logging import getlogger
@@ -86,7 +86,6 @@ def build_deps(cases, default_cases=None):
     # c stands for check or case depending on the context
     # p stands for partition
     # e stands for environment
-    # t stands for target
 
     # We use an ordered dict here, because we need to keep the order of
     # partitions and environments
@@ -104,8 +103,23 @@ def build_deps(cases, default_cases=None):
                     if when((psrc, esrc), (pdst, edst)):
                         c.deps.append(d)
         except DependencyError as e:
-            getlogger().warning(f'{e}; skipping test case...')
-            skipped_cases.append(c)
+            getlogger().warning(f'{e}; skipping dependent test cases:')
+
+            # FIXME: we need to unit test this properly
+            skip_nodes = {c}
+            while skip_nodes:
+                v = skip_nodes.pop()
+                skipped_cases.append(v)
+                getlogger().warning(f'  - {v}')
+                pruned_nodes = []
+                for u, adj in graph.items():
+                    if v in adj:
+                        skip_nodes.add(u)
+                        pruned_nodes.append(u)
+
+                for u in pruned_nodes:
+                    del graph[u]
+
             continue
 
         graph[c] = util.OrderedSet(c.deps)
@@ -185,21 +199,24 @@ def validate_deps(graph):
         sources -= visited
 
 
-def prune_deps(graph, testcases):
+def prune_deps(graph, testcases, max_depth=None):
     '''Prune the graph so that it contains only the specified cases and their
-    dependencies.
+    dependencies up to max_depth.
 
     Graph is assumed to by a DAG.
     '''
 
+    max_depth = max_depth or sys.maxsize
     pruned_graph = {}
     for tc in testcases:
         unvisited = [tc]
-        while unvisited:
+        curr_depth = 0
+        while unvisited and curr_depth < max_depth:
             node = unvisited.pop()
             pruned_graph.setdefault(node, util.OrderedSet())
             for adj in graph[node]:
                 pruned_graph[node].add(adj)
+                curr_depth += 1
                 if adj not in pruned_graph:
                     unvisited.append(adj)
 

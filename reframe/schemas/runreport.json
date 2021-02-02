@@ -2,6 +2,105 @@
     "$schema": "http://json-schema.org/draft-07/schema#",
     "$id": "https://raw.githubusercontent.com/eth-cscs/reframe/master/reframe/schemas/runreport.json",
     "title": "Validation schema for ReFrame's run report",
+    "defs": {
+        "testcase_type": {
+            "type": "object",
+            "properties": {
+                "build_stderr": {"type": ["string", "null"]},
+                "build_stdout": {"type": ["string", "null"]},
+                "dependencies_actual": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "dependencies_conceptual": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                },
+                "description": {"type": "string"},
+                "environment": {"type": ["string", "null"]},
+                "fail_info": {
+                    "type": ["object", "null"],
+                    "properties": {
+                        "exc_type": {"type": "string"},
+                        "exc_value": {"type": "string"},
+                        "traceback": {
+                            "type": ["array", "null"],
+                            "items": {"type": "string"}
+                        }
+                    },
+                    "required": ["exc_type", "exc_value", "traceback"]
+                },
+                "fail_phase": {"type": ["string", "null"]},
+                "fail_reason": {"type": ["string", "null"]},
+                "fail_severe": {"type": "boolean"},
+                "filename": {"type": "string"},
+                "jobid": {"type": ["string", "null"]},
+                "job_stderr": {"type": ["string", "null"]},
+                "job_stdout": {"type": ["string", "null"]},
+                "maintainers": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                },
+                "name": {"type": "string"},
+                "nodelist": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                },
+                "outputdir": {"type": ["string", "null"]},
+                "perfvars": {
+                    "type": ["array", "null"],
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {"type": "string"},
+                            "reference": {
+                                "type": ["number", "null"]
+                            },
+                            "thres_lower": {
+                                "type": ["number", "null"]
+                            },
+                            "thres_upper": {
+                                "type": ["number", "null"]
+                            },
+                            "unit": {"type": ["string", "null"]},
+                            "value": {"type": "number"}
+                        },
+                        "required": [
+                            "name", "reference",
+                            "thres_lower", "thres_upper",
+                            "unit", "value"
+                        ]
+                    }
+                },
+                "prefix": {"type": "string"},
+                "result": {
+                    "type": "string",
+                    "enum": ["success", "failure", "aborted"]
+                },
+                "scheduler": {"type": ["string", "null"]},
+                "stagedir": {"type": ["string", "null"]},
+                "system": {"type": "string"},
+                "tags": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                },
+                "time_compile": {"type": ["number", "null"]},
+                "time_performance": {"type": ["number", "null"]},
+                "time_run": {"type": ["number", "null"]},
+                "time_sanity": {"type": ["number", "null"]},
+                "time_setup": {"type": ["number", "null"]},
+                "time_total": {"type": ["number", "null"]}
+            },
+            "required": [
+                "environment", "name", "result", "system", "filename"
+            ]
+        }
+    },
     "type": "object",
     "properties": {
         "session_info": {
@@ -13,6 +112,7 @@
                 "hostname": {"type": "string"},
                 "num_cases": {"type": "number"},
                 "num_failures": {"type": "number"},
+                "num_aborted": {"type": "number"},
                 "prefix_output": {"type": "string"},
                 "prefix_stage": {"type": "string"},
                 "time_elapsed": {"type": "number"},
@@ -24,6 +124,10 @@
             },
             "required": ["data_version"]
         },
+        "restored_cases": {
+            "type": "array",
+            "items": {"$ref": "#/defs/testcase_type"}
+        },
         "runs": {
             "type": "array",
             "items": {
@@ -31,111 +135,18 @@
                 "properties": {
                     "num_cases": {"type": "number"},
                     "num_failures": {"type": "number"},
+                    "num_aborted": {"type": "number"},
                     "runid": {"type": "number"},
                     "testcases": {
                         "type": "array",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "build_stderr": {"type": ["string", "null"]},
-                                "build_stdout": {"type": ["string", "null"]},
-                                "dependencies_actual": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string"
-                                        }
-                                    }
-                                },
-                                "dependencies_conceptual": {
-                                    "type": "array",
-                                    "items": {"type": "string"}
-                                },
-                                "description": {"type": "string"},
-                                "environment": {"type": ["string", "null"]},
-                                "fail_info": {
-                                    "type": ["object", "null"],
-                                    "properties": {
-                                        "exc_type": {"type": "string"},
-                                        "exc_value": {"type": "string"},
-                                        "traceback": {
-                                            "type": "array",
-                                            "items": {"type": "string"}
-                                        }
-                                    },
-                                    "required": ["exc_type", "exc_value", "traceback"]
-                                },
-                                "fail_phase": {"type": ["string", "null"]},
-                                "fail_reason": {"type": ["string", "null"]},
-                                "fail_severe": {"type": "boolean"},
-                                "jobid": {"type": ["number", "null"]},
-                                "job_stderr": {"type": ["string", "null"]},
-                                "job_stdout": {"type": ["string", "null"]},
-                                "name": {"type": "string"},
-                                "maintainers": {
-                                    "type": "array",
-                                    "items": {"type": "string"}
-                                },
-                                "nodelist": {
-                                    "type": "array",
-                                    "items": {"type": "string"}
-                                },
-                                "outputdir": {"type": ["string", "null"]},
-                                "perfvars": {
-                                    "type": ["array", "null"],
-                                    "items": {
-                                        "type": "object",
-                                        "properties": {
-                                            "name": {"type": "string"},
-                                            "reference": {
-                                                "type": ["number", "null"]
-                                            },
-                                            "thres_lower": {
-                                                "type": ["number", "null"]
-                                            },
-                                            "thres_upper": {
-                                                "type": ["number", "null"]
-                                            },
-                                            "unit": {"type": ["string", "null"]},
-                                            "value": {"type": "number"}
-                                        },
-                                        "required": [
-                                            "name", "reference",
-                                            "thres_lower", "thres_upper",
-                                            "unit", "value"
-                                        ]
-                                    }
-                                },
-                                "result": {
-                                    "type": "string",
-                                    "enum": ["success", "failure"]
-                                },
-                                "scheduler": {"type": ["string", "null"]},
-                                "stagedir": {"type": ["string", "null"]},
-                                "system": {"type": "string"},
-                                "tags": {
-                                    "type": "array",
-                                    "items": {"type": "string"}
-                                },
-                                "time_compile": {"type": ["number", "null"]},
-                                "time_performance": {"type": ["number", "null"]},
-                                "time_run": {"type": ["number", "null"]},
-                                "time_sanity": {"type": ["number", "null"]},
-                                "time_setup": {"type": ["number", "null"]},
-                                "time_total": {"type": ["number", "null"]}
-                            },
-                            "required": [
-                                "environment", "name", "result", "system"
-                            ]
-                        },
-                        "required": [
-                            "num_cases", "num_failures", "runid", "testcases"
-                        ]
+                        "items": {"$ref": "#/defs/testcase_type"}
                     }
-                }
+                },
+                "required": [
+                    "num_cases", "num_failures", "num_aborted", "runid", "testcases"
+                ]
             }
         }
     },
-    "required": ["runs"]
+    "required": ["restored_cases", "runs", "session_info"]
 }

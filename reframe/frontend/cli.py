@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -23,14 +23,17 @@ import reframe.core.warnings as warnings
 import reframe.frontend.argparse as argparse
 import reframe.frontend.dependencies as dependencies
 import reframe.frontend.filters as filters
+import reframe.frontend.runreport as runreport
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
-from reframe.frontend.executors import Runner, generate_testcases
+
+
+from reframe.frontend.ci import generate_ci_pipeline
+from reframe.frontend.printer import PrettyPrinter
+from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
-from reframe.frontend.loader import RegressionCheckLoader
-from reframe.frontend.printer import PrettyPrinter
-from reframe.frontend.ci import generate_ci_pipeline
+from reframe.frontend.executors import Runner, generate_testcases
 
 
 def format_check(check, check_deps, detailed=False):
@@ -57,7 +60,8 @@ def format_check(check, check_deps, detailed=False):
         return f'- {check.name} (found in {location!r})'
 
     if check.num_tasks > 0:
-        node_alloc_scheme = f'standard ({check.num_tasks} task(s))'
+        node_alloc_scheme = (f'standard ({check.num_tasks} task(s) -- '
+                             f'may be set differently in hooks)')
     elif check.num_tasks == 0:
         node_alloc_scheme = 'flexible'
     else:
@@ -117,23 +121,6 @@ def list_checks(testcases, printer, detailed=False):
         '\n'.join(format_check(c, deps[c.name], detailed) for c in checks)
     )
     printer.info(f'Found {len(checks)} check(s)')
-
-
-def generate_report_filename(filepatt):
-    if '{sessionid}' not in filepatt:
-        return filepatt
-
-    search_patt = os.path.basename(filepatt).replace('{sessionid}', r'(\d+)')
-    new_id = -1
-    basedir = os.path.dirname(filepatt) or '.'
-    for filename in os.listdir(basedir):
-        match = re.match(search_patt, filename)
-        if match:
-            found_id = int(match.group(1))
-            new_id = max(found_id, new_id)
-
-    new_id += 1
-    return filepatt.format(sessionid=new_id)
 
 
 def logfiles_message():
@@ -261,6 +248,10 @@ def main():
               'programming environment matching PATTERN')
     )
     select_options.add_argument(
+        '--failed', action='store_true',
+        help="Select failed test cases (only when '--restore-session' is used)"
+    )
+    select_options.add_argument(
         '--gpu-only', action='store_true',
         help='Select only GPU checks'
     )
@@ -325,6 +316,15 @@ def main():
         '--max-retries', metavar='NUM', action='store', default=0,
         help='Set the maximum number of times a failed regression test '
              'may be retried (default: 0)'
+    )
+    run_options.add_argument(
+        '--maxfail', metavar='NUM', action='store', default=sys.maxsize,
+        help='Exit after first NUM failures'
+    )
+    run_options.add_argument(
+        '--restore-session', action='store', nargs='?', const='',
+        metavar='REPORT',
+        help='Restore a testing session from REPORT file'
     )
     run_options.add_argument(
         '--flex-alloc-nodes', action='store',
@@ -594,10 +594,53 @@ def main():
     printer.debug(format_env(options.env_vars))
 
     # Setup the check loader
+    if options.restore_session is not None:
+        # We need to load the failed checks only from a report
+        if options.restore_session:
+            filename = options.restore_session
+        else:
+            filename = runreport.next_report_filename(
+                osext.expandvars(site_config.get('general/0/report_file')),
+                new=False
+            )
+
+        report = runreport.load_report(filename)
+        check_search_path = list(report.slice('filename', unique=True))
+        check_search_recursive = False
+
+        # If `-c` or `-R` are passed explicitly outside the configuration
+        # file, override the values set from the report file
+        if site_config.is_sticky_option('general/check_search_path'):
+            printer.warning(
+                'Ignoring check search path set in the report file: '
+                'search path set explicitly in the command-line or '
+                'the environment'
+            )
+            check_search_path = site_config.get(
+                'general/0/check_search_path'
+            )
+
+        if site_config.is_sticky_option('general/check_search_recursive'):
+            printer.warning(
+                'Ignoring check search recursive option from the report file: '
+                'option set explicitly in the command-line or the environment'
+            )
+            check_search_recursive = site_config.get(
+                'general/0/check_search_recursive'
+            )
+
+    else:
+        check_search_recursive = site_config.get(
+            'general/0/check_search_recursive'
+        )
+        check_search_path = site_config.get('general/0/check_search_path')
+
     loader = RegressionCheckLoader(
-        load_path=site_config.get('general/0/check_search_path'),
-        recurse=site_config.get('general/0/check_search_recursive'),
-        ignore_conflicts=site_config.get('general/0/ignore_check_conflicts')
+        load_path=check_search_path,
+        recurse=check_search_recursive,
+        ignore_conflicts=site_config.get(
+            'general/0/ignore_check_conflicts'
+        )
     )
 
     def print_infoline(param, value):
@@ -607,7 +650,7 @@ def main():
     session_info = {
         'cmdline': ' '.join(sys.argv),
         'config_file': rt.site_config.filename,
-        'data_version': '1.1',
+        'data_version': runreport.DATA_VERSION,
         'hostname': socket.gethostname(),
         'prefix_output': rt.output_prefix,
         'prefix_stage': rt.stage_prefix,
@@ -691,6 +734,35 @@ def main():
         elif options.cpu_only:
             testcases = filter(filters.have_cpu_only(), testcases)
 
+        testcases = list(testcases)
+        printer.verbose(
+            f'Filtering test cases(s) by other attributes: '
+            f'{len(testcases)} remaining'
+        )
+
+        # Filter in failed cases
+        if options.failed:
+            if options.restore_session is None:
+                printer.error(
+                    "the option '--failed' can only be used "
+                    "in combination with the '--restore-session' option"
+                )
+                sys.exit(1)
+
+            def _case_failed(t):
+                rec = report.case(*t)
+                if not rec:
+                    return False
+
+                return (rec['result'] == 'failure' or
+                        rec['result'] == 'aborted')
+
+            testcases = list(filter(_case_failed, testcases))
+            printer.verbose(
+                f'Filtering successful test case(s): '
+                f'{len(testcases)} remaining'
+            )
+
         # Prepare for running
         printer.debug('Building and validating the full test DAG')
         testgraph, skipped_cases = dependencies.build_deps(testcases_all)
@@ -705,12 +777,22 @@ def main():
         dependencies.validate_deps(testgraph)
         printer.debug('Full test DAG:')
         printer.debug(dependencies.format_deps(testgraph))
+
+        restored_cases = []
         if len(testcases) != len(testcases_all):
-            testgraph = dependencies.prune_deps(testgraph, testcases)
+            testgraph = dependencies.prune_deps(
+                testgraph, testcases,
+                max_depth=1 if options.restore_session is not None else None
+            )
             printer.debug('Pruned test DAG')
             printer.debug(dependencies.format_deps(testgraph))
+            if options.restore_session is not None:
+                testgraph, restored_cases = report.restore_dangling(testgraph)
 
-        testcases = dependencies.toposort(testgraph)
+        testcases = dependencies.toposort(
+            testgraph,
+            is_subgraph=options.restore_session is not None
+        )
         printer.verbose(f'Final number of test cases: {len(testcases)}')
 
         # testcases2 = dependencies.toposortdepth(testgraph)
@@ -844,12 +926,15 @@ def main():
         exec_policy.sched_flex_alloc_nodes = sched_flex_alloc_nodes
         parsed_job_options = []
         for opt in options.job_options:
+            opt_split = opt.split('=', maxsplit=1)
+            optstr = opt_split[0]
+            valstr = opt_split[1] if len(opt_split) > 1 else ''
             if opt.startswith('-') or opt.startswith('#'):
                 parsed_job_options.append(opt)
-            elif len(opt) == 1:
-                parsed_job_options.append(f'-{opt}')
+            elif len(optstr) == 1:
+                parsed_job_options.append(f'-{optstr} {valstr}')
             else:
-                parsed_job_options.append(f'--{opt}')
+                parsed_job_options.append(f'--{optstr} {valstr}')
 
         exec_policy.sched_options = parsed_job_options
         try:
@@ -859,13 +944,25 @@ def main():
                 f'--max-retries is not a valid integer: {max_retries}'
             ) from None
 
-        runner = Runner(exec_policy, printer, max_retries)
+        try:
+            max_failures = int(options.maxfail)
+            if max_failures < 0:
+                raise errors.ConfigError(
+                    f'--maxfail should be a non-negative integer: '
+                    f'{options.maxfail!r}'
+                )
+        except ValueError:
+            raise errors.ConfigError(
+                f'--maxfail is not a valid integer: {options.maxfail!r}'
+            ) from None
+
+        runner = Runner(exec_policy, printer, max_retries, max_failures)
         try:
             time_start = time.time()
             session_info['time_start'] = time.strftime(
                 '%FT%T%z', time.localtime(time_start),
             )
-            runner.runall(testcases)
+            runner.runall(testcases, restored_cases)
         finally:
             time_end = time.time()
             session_info['time_end'] = time.strftime(
@@ -874,12 +971,12 @@ def main():
             session_info['time_elapsed'] = time_end - time_start
 
             # Print a retry report if we did any retries
-            if runner.stats.failures(run=0):
+            if runner.stats.failed(run=0):
                 printer.info(runner.stats.retry_report())
 
             # Print a failure report if we had failures in the last run
             success = True
-            if runner.stats.failures():
+            if runner.stats.failed():
                 success = False
                 runner.stats.print_failure_report(printer)
                 if options.failure_stats:
@@ -904,9 +1001,14 @@ def main():
             })
             json_report = {
                 'session_info': session_info,
-                'runs': run_stats
+                'runs': run_stats,
+                'restored_cases': []
             }
-            report_file = generate_report_filename(report_file)
+            if options.restore_session is not None:
+                for c in restored_cases:
+                    json_report['restored_cases'].append(report.case(*c))
+
+            report_file = runreport.next_report_filename(report_file)
             try:
                 with open(report_file, 'w') as fp:
                     jsonext.dump(json_report, fp, indent=2)
@@ -920,16 +1022,14 @@ def main():
             sys.exit(1)
 
         sys.exit(0)
-    except KeyboardInterrupt:
-        sys.exit(1)
-    except errors.ReframeError as e:
-        printer.error(str(e))
-        sys.exit(1)
-    except (Exception, errors.ReframeFatalError):
+    except (Exception, KeyboardInterrupt, errors.ReframeFatalError):
         exc_info = sys.exc_info()
         tb = ''.join(traceback.format_exception(*exc_info))
-        printer.error(errors.what(*exc_info))
-        if errors.is_severe(*exc_info):
+        printer.error(f'run session stopped: {errors.what(*exc_info)}')
+        if errors.is_exit_request(*exc_info):
+            # Print stack traces for exit requests only when TOO verbose
+            printer.debug2(tb)
+        elif errors.is_severe(*exc_info):
             printer.error(tb)
         else:
             printer.verbose(tb)

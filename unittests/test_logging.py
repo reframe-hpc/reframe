@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -41,7 +41,7 @@ def fake_check():
                            'fakejob')
     test.job._completion_time = time.time()
     test.custom = 'hello extras'
-    test.custom_list = ['custom', 'attr']
+    test.custom_list = ['custom', 3.0, ['hello', 'world']]
     test.custom_dict = {'a': 1, 'b': 2}
     test.deferred = sn.defer('hello')
     test.deferred_error = error()
@@ -163,7 +163,8 @@ def test_logger_dynamic_attributes(logfile, logger_with_check):
     logger_with_check.logger.handlers[0].setFormatter(formatter)
     logger_with_check.info('xxx')
     assert _pattern_in_logfile(
-        r'hello extras\|custom,attr\|<undefined>\|a=1,b=2', logfile
+        r'hello extras\|custom,3.0,\["hello", "world"\]\|null\|'
+        r'{"a": 1, "b": 2}', logfile
     )
 
 
@@ -173,7 +174,12 @@ def test_logger_dynamic_attributes_deferrables(logfile, logger_with_check):
     )
     logger_with_check.logger.handlers[0].setFormatter(formatter)
     logger_with_check.info('xxx')
-    assert _pattern_in_logfile(r'hello\|<error>', logfile)
+    assert _pattern_in_logfile(r'null\|null', logfile)
+
+    # Evaluate the deferrable and log again
+    logger_with_check.check.deferred.evaluate()
+    logger_with_check.info('xxx')
+    assert _pattern_in_logfile(r'"hello"\|null', logfile)
 
 
 def test_rfc3339_timezone_extension(logfile, logger_with_check,

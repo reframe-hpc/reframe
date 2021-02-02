@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -106,6 +106,9 @@ class _SiteConfig:
 
     def remove_sticky_option(self, option):
         self._sticky_options.pop(option, None)
+
+    def is_sticky_option(self, option):
+        return option in self._sticky_options
 
     @_normalize_syntax({'.*/.*modules$': normalize_module_list})
     def get(self, option, default=None):

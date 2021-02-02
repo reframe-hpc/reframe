@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -6,12 +6,13 @@
 import contextlib
 import functools
 import itertools
-import math
 import sys
 import time
 
-from reframe.core.exceptions import (TaskDependencyError, TaskExit)
-from reframe.core.logging import (getlogger, VERBOSE)
+from reframe.core.exceptions import (FailureLimitError,
+                                     TaskDependencyError,
+                                     TaskExit)
+from reframe.core.logging import getlogger
 from reframe.frontend.executors import (ExecutionPolicy, RegressionTask,
                                         TaskEventListener, ABORT_REASONS)
 
@@ -94,7 +95,9 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self.stats.add_task(task)
         try:
             # Do not run test if any of its dependencies has failed
-            if any(self._task_index[c].failed for c in case.deps):
+            # NOTE: Restored dependencies are not in the task_index
+            if any(self._task_index[c].failed
+                   for c in case.deps if c in self._task_index):
                 raise TaskDependencyError('dependencies failed')
 
             partname = task.testcase.partition.fullname
@@ -134,6 +137,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
             return
         except ABORT_REASONS as e:
             task.abort(e)
+
             raise
         except BaseException:
             task.fail(sys.exc_info())
@@ -148,6 +152,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         pass
 
     def on_task_failure(self, task):
+        self._num_failed_tasks += 1
         timings = task.pipeline_timings(['compile_complete',
                                          'run_complete',
                                          'total'])
@@ -166,6 +171,10 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         getlogger().info(f'==> test failed during {task.failed_stage!r}: '
                          f'test staged in {task.check.stagedir!r}')
         getlogger().verbose(f'==> {timings}')
+        if self._num_failed_tasks >= self.max_failures:
+            raise FailureLimitError(
+                f'maximum number of failures ({self.max_failures}) reached'
+            )
 
     def on_task_success(self, task):
         timings = task.pipeline_timings(['compile_complete',
@@ -181,9 +190,11 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
                                          'total'])
         getlogger().verbose(f'==> {timings}')
 
-        # update reference count of dependencies
+        # Update reference count of dependencies
         for c in task.testcase.deps:
-            self._task_index[c].ref_count -= 1
+            # NOTE: Restored dependencies are not in the task_index
+            if c in self._task_index:
+                self._task_index[c].ref_count -= 1
 
         _cleanup_all(self._retired_tasks, not self.keep_stage_files)
 
@@ -237,10 +248,14 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             pass
 
     def deps_failed(self, task):
-        return any(self._task_index[c].failed for c in task.testcase.deps)
+        # NOTE: Restored dependencies are not in the task_index
+        return any(self._task_index[c].failed
+                   for c in task.testcase.deps if c in self._task_index)
 
     def deps_succeeded(self, task):
-        return all(self._task_index[c].succeeded for c in task.testcase.deps)
+        # NOTE: Restored dependencies are not in the task_index
+        return all(self._task_index[c].succeeded
+                   for c in task.testcase.deps if c in self._task_index)
 
     def on_task_setup(self, task):
         partname = task.check.current_partition.fullname
@@ -251,6 +266,10 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._running_tasks[partname].append(task)
 
     def on_task_failure(self, task):
+        if task.aborted:
+            return
+
+        self._num_failed_tasks += 1
         msg = f'{task.check.info()} [{task.pipeline_timings_basic()}]'
         if task.failed_stage == 'cleanup':
             self.printer.status('ERROR', msg, just='right')
@@ -265,15 +284,21 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         getlogger().info(f'==> test failed during {task.failed_stage!r}: '
                          f'test staged in {stagedir!r}')
         getlogger().verbose(f'==> timings: {task.pipeline_timings_all()}')
+        if self._num_failed_tasks >= self.max_failures:
+            raise FailureLimitError(
+                f'maximum number of failures ({self.max_failures}) reached'
+            )
 
     def on_task_success(self, task):
         msg = f'{task.check.info()} [{task.pipeline_timings_basic()}]'
         self.printer.status('OK', msg, just='right')
         getlogger().verbose(f'==> timings: {task.pipeline_timings_all()}')
 
-        # update reference count of dependencies
+        # Update reference count of dependencies
         for c in task.testcase.deps:
-            self._task_index[c].ref_count -= 1
+            # NOTE: Restored dependencies are not in the task_index
+            if c in self._task_index:
+                self._task_index[c].ref_count -= 1
 
         self._retired_tasks.append(task)
 
@@ -352,10 +377,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
             return
         except ABORT_REASONS as e:
-            if not task.failed:
-                # Abort was caused due to failure elsewhere, abort current
-                # task as well
-                task.abort(e)
+            # If abort was caused due to failure elsewhere, abort current
+            # task as well
+            task.abort(e)
 
             self._failall(e)
             raise
@@ -431,7 +455,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 task.abort(cause)
 
         for task in itertools.chain(self._waiting_tasks,
-                                    self._retired_tasks,
                                     self._completed_tasks):
             task.abort(cause)
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -78,12 +78,12 @@ CMD $python -m pip install --no-cache-dir -q --upgrade pip --target=external/
 if [ -n "$PYGELF" ]; then
     tmp_requirements=$(mktemp)
     sed -e 's/^#+pygelf%//g' requirements.txt > $tmp_requirements
-    CMD_M +pygelf $python -m pip install --use-feature=2020-resolver --no-cache-dir -q -r $tmp_requirements --target=external/ --upgrade && rm $tmp_requirements
+    CMD_M +pygelf $python -m pip install --no-cache-dir -q -r $tmp_requirements --target=external/ --upgrade && rm $tmp_requirements
 else
-    CMD $python -m pip install --use-feature=2020-resolver --no-cache-dir -q -r requirements.txt --target=external/ --upgrade
+    CMD $python -m pip install --no-cache-dir -q -r requirements.txt --target=external/ --upgrade
 fi
 
 if [ -n "$MAKEDOCS" ]; then
-    CMD_M +docs $python -m pip install --use-feature=2020-resolver --no-cache-dir -q -r docs/requirements.txt --target=external/ --upgrade
+    CMD_M +docs $python -m pip install --no-cache-dir -q -r docs/requirements.txt --target=external/ --upgrade
     make -C docs PYTHON=$python
 fi

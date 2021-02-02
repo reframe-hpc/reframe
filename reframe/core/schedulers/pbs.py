@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -19,8 +19,7 @@ import reframe.core.runtime as rt
 import reframe.core.schedulers as sched
 import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
-from reframe.core.config import settings
-from reframe.core.exceptions import (JobError, JobSchedulerError)
+from reframe.core.exceptions import JobError, JobSchedulerError
 from reframe.utility import seconds_to_hms
 
 
@@ -92,7 +91,7 @@ class PbsJobScheduler(sched.JobScheduler):
         # Options starting with `-` are emitted in separate lines
         rem_opts = []
         verb_opts = []
-        for opt in (*job.sched_access, *job.options):
+        for opt in (*job.sched_access, *job.options, *job.cli_options):
             if opt.startswith('-'):
                 rem_opts.append(opt)
             elif opt.startswith('#'):
@@ -263,7 +262,8 @@ class PbsJobScheduler(sched.JobScheduler):
                   job.max_pending_time):
                 if (time.time() - job.submit_time >= job.max_pending_time):
                     self.cancel(job)
-                    job._exception = JobError('maximum pending time exceeded')
+                    job._exception = JobError('maximum pending time exceeded',
+                                              job.jobid)
 
 
 @register_scheduler('torque')

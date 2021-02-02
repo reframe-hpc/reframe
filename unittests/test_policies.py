@@ -1,9 +1,9 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import io
+import contextlib
 import json
 import jsonschema
 import os
@@ -12,17 +12,17 @@ import socket
 import sys
 import time
 
-import reframe
 import reframe.core.runtime as rt
 import reframe.frontend.dependencies as dependencies
 import reframe.frontend.executors as executors
 import reframe.frontend.executors.policies as policies
-import reframe.utility as util
+import reframe.frontend.runreport as runreport
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 from reframe.core.exceptions import (AbortTaskError,
-                                     JobNotStartedError,
-                                     ReframeForceExitError,
+                                     FailureLimitError,
+                                     ReframeError,
+                                     ForceExitError,
                                      TaskDependencyError)
 from reframe.frontend.loader import RegressionCheckLoader
 
@@ -40,6 +40,25 @@ from unittests.resources.checks.frontend_checks import (
     SleepCheckPollFailLate,
     SystemExitCheck,
 )
+
+
+# NOTE: We could move this to utility
+class timer:
+    '''Context manager for timing'''
+
+    def __init__(self):
+        self._time_start = None
+        self._time_end = None
+
+    def __enter__(self):
+        self._time_start = time.time()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self._time_end = time.time()
+
+    def timestamps(self):
+        return self._time_start, self._time_end
 
 
 @pytest.fixture
@@ -101,9 +120,10 @@ def make_cases(make_loader):
 
 
 def assert_runall(runner):
-    # Make sure that all cases finished or failed
+    # Make sure that all cases finished, failed or
+    # were aborted
     for t in runner.stats.tasks():
-        assert t.succeeded or t.failed
+        assert t.succeeded or t.failed or t.aborted
 
 
 def assert_all_dead(runner):
@@ -116,7 +136,7 @@ def assert_all_dead(runner):
 
 def num_failures_stage(runner, stage):
     stats = runner.stats
-    return len([t for t in stats.failures() if t.failed_stage == stage])
+    return len([t for t in stats.failed() if t.failed_stage == stage])
 
 
 def _validate_runreport(report):
@@ -127,26 +147,12 @@ def _validate_runreport(report):
     jsonschema.validate(json.loads(report), schema)
 
 
-def test_runall(make_runner, make_cases, common_exec_ctx):
-    runner = make_runner()
-    time_start = time.time()
-    runner.runall(make_cases())
-    time_end = time.time()
-    assert 9 == runner.stats.num_cases()
-    assert_runall(runner)
-    assert 5 == len(runner.stats.failures())
-    assert 2 == num_failures_stage(runner, 'setup')
-    assert 1 == num_failures_stage(runner, 'sanity')
-    assert 1 == num_failures_stage(runner, 'performance')
-    assert 1 == num_failures_stage(runner, 'cleanup')
-
-    # Create a run report and validate it
-    run_stats = runner.stats.json()
-    report = {
+def _generate_runreport(run_stats, time_start, time_end):
+    return {
         'session_info': {
             'cmdline': ' '.join(sys.argv),
             'config_file': rt.runtime().site_config.filename,
-            'data_version': '1.0',
+            'data_version': runreport.DATA_VERSION,
             'hostname': socket.gethostname(),
             'num_cases': run_stats[0]['num_cases'],
             'num_failures': run_stats[-1]['num_failures'],
@@ -163,16 +169,55 @@ def test_runall(make_runner, make_cases, common_exec_ctx):
             'version': osext.reframe_version(),
             'workdir': os.getcwd()
         },
+        'restored_cases': [],
         'runs': run_stats
     }
 
-    # We dump the report first, in order to get any object conversions right
-    final_report = None
-    with io.StringIO() as fp:
-        jsonext.dump(report, fp, indent=2)
-        final_report = fp.getvalue()
 
-    _validate_runreport(final_report)
+def test_runall(make_runner, make_cases, common_exec_ctx, tmp_path):
+    runner = make_runner()
+    with timer() as tm:
+        runner.runall(make_cases())
+
+    assert 9 == runner.stats.num_cases()
+    assert_runall(runner)
+    assert 5 == len(runner.stats.failed())
+    assert 2 == num_failures_stage(runner, 'setup')
+    assert 1 == num_failures_stage(runner, 'sanity')
+    assert 1 == num_failures_stage(runner, 'performance')
+    assert 1 == num_failures_stage(runner, 'cleanup')
+
+    # Create a run report and validate it
+    report = _generate_runreport(runner.stats.json(), *tm.timestamps())
+
+    # We dump the report first, in order to get any object conversions right
+    report_file = tmp_path / 'report.json'
+    with open(report_file, 'w') as fp:
+        jsonext.dump(report, fp)
+
+    # Read and validate the report using the runreport module
+    runreport.load_report(report_file)
+
+    # Try to load a non-existent report
+    with pytest.raises(ReframeError, match='failed to load report file'):
+        runreport.load_report(tmp_path / 'does_not_exist.json')
+
+    # Generate an invalid JSON
+    with open(tmp_path / 'invalid.json', 'w') as fp:
+        jsonext.dump(report, fp)
+        fp.write('invalid')
+
+    with pytest.raises(ReframeError, match=r'is not a valid JSON file'):
+        runreport.load_report(tmp_path / 'invalid.json')
+
+    # Generate a report with an incorrect data version
+    report['session_info']['data_version'] = '10.0'
+    with open(tmp_path / 'invalid-version.json', 'w') as fp:
+        jsonext.dump(report, fp)
+
+    with pytest.raises(ReframeError,
+                       match=r'incompatible report data versions'):
+        runreport.load_report(tmp_path / 'invalid-version.json')
 
 
 def test_runall_skip_system_check(make_runner, make_cases, common_exec_ctx):
@@ -181,7 +226,7 @@ def test_runall_skip_system_check(make_runner, make_cases, common_exec_ctx):
     stats = runner.stats
     assert 10 == stats.num_cases()
     assert_runall(runner)
-    assert 5 == len(stats.failures())
+    assert 5 == len(stats.failed())
     assert 2 == num_failures_stage(runner, 'setup')
     assert 1 == num_failures_stage(runner, 'sanity')
     assert 1 == num_failures_stage(runner, 'performance')
@@ -194,7 +239,7 @@ def test_runall_skip_prgenv_check(make_runner, make_cases, common_exec_ctx):
     stats = runner.stats
     assert 10 == stats.num_cases()
     assert_runall(runner)
-    assert 5 == len(stats.failures())
+    assert 5 == len(stats.failed())
     assert 2 == num_failures_stage(runner, 'setup')
     assert 1 == num_failures_stage(runner, 'sanity')
     assert 1 == num_failures_stage(runner, 'performance')
@@ -208,7 +253,7 @@ def test_runall_skip_sanity_check(make_runner, make_cases, common_exec_ctx):
     stats = runner.stats
     assert 9 == stats.num_cases()
     assert_runall(runner)
-    assert 4 == len(stats.failures())
+    assert 4 == len(stats.failed())
     assert 2 == num_failures_stage(runner, 'setup')
     assert 0 == num_failures_stage(runner, 'sanity')
     assert 1 == num_failures_stage(runner, 'performance')
@@ -223,11 +268,21 @@ def test_runall_skip_performance_check(make_runner, make_cases,
     stats = runner.stats
     assert 9 == stats.num_cases()
     assert_runall(runner)
-    assert 4 == len(stats.failures())
+    assert 4 == len(stats.failed())
     assert 2 == num_failures_stage(runner, 'setup')
     assert 1 == num_failures_stage(runner, 'sanity')
     assert 0 == num_failures_stage(runner, 'performance')
     assert 1 == num_failures_stage(runner, 'cleanup')
+
+
+def test_runall_maxfail(make_runner, make_cases, common_exec_ctx):
+    runner = make_runner(max_failures=2)
+    with contextlib.suppress(FailureLimitError):
+        runner.runall(make_cases())
+
+    assert_runall(runner)
+    stats = runner.stats
+    assert 2 == len(stats.failed())
 
 
 def test_strict_performance_check(make_runner, make_cases, common_exec_ctx):
@@ -237,7 +292,7 @@ def test_strict_performance_check(make_runner, make_cases, common_exec_ctx):
     stats = runner.stats
     assert 9 == stats.num_cases()
     assert_runall(runner)
-    assert 6 == len(stats.failures())
+    assert 6 == len(stats.failed())
     assert 2 == num_failures_stage(runner, 'setup')
     assert 1 == num_failures_stage(runner, 'sanity')
     assert 2 == num_failures_stage(runner, 'performance')
@@ -250,7 +305,7 @@ def test_force_local_execution(make_runner, make_cases, testsys_exec_ctx):
     runner = make_runner()
     runner.policy.force_local = True
     test = HelloTest()
-    test.valid_prog_environs = ['builtin-gcc']
+    test.valid_prog_environs = ['builtin']
 
     runner.runall(make_cases([test]))
     assert_runall(runner)
@@ -258,7 +313,7 @@ def test_force_local_execution(make_runner, make_cases, testsys_exec_ctx):
     for t in stats.tasks():
         assert t.check.local
 
-    assert not stats.failures()
+    assert not stats.failed()
 
 
 def test_kbd_interrupt_within_test(make_runner, make_cases, common_exec_ctx):
@@ -268,7 +323,7 @@ def test_kbd_interrupt_within_test(make_runner, make_cases, common_exec_ctx):
         runner.runall(make_cases([KeyboardInterruptCheck()]))
 
     stats = runner.stats
-    assert 1 == len(stats.failures())
+    assert 1 == len(stats.failed())
     assert_all_dead(runner)
 
 
@@ -277,7 +332,7 @@ def test_system_exit_within_test(make_runner, make_cases, common_exec_ctx):
     runner = make_runner()
     runner.runall(make_cases([SystemExitCheck()]))
     stats = runner.stats
-    assert 1 == len(stats.failures())
+    assert 1 == len(stats.failed())
 
 
 def test_retries_bad_check(make_runner, make_cases, common_exec_ctx):
@@ -288,7 +343,7 @@ def test_retries_bad_check(make_runner, make_cases, common_exec_ctx):
     assert 2 == runner.stats.num_cases()
     assert_runall(runner)
     assert runner.max_retries == rt.runtime().current_run
-    assert 2 == len(runner.stats.failures())
+    assert 2 == len(runner.stats.failed())
 
     # Ensure that the report does not raise any exception
     runner.stats.retry_report()
@@ -302,7 +357,7 @@ def test_retries_good_check(make_runner, make_cases, common_exec_ctx):
     assert 1 == runner.stats.num_cases()
     assert_runall(runner)
     assert 0 == rt.runtime().current_run
-    assert 0 == len(runner.stats.failures())
+    assert 0 == len(runner.stats.failed())
 
 
 def test_pass_in_retries(make_runner, make_cases, tmp_path, common_exec_ctx):
@@ -315,20 +370,20 @@ def test_pass_in_retries(make_runner, make_cases, tmp_path, common_exec_ctx):
     # Ensure that the test passed after retries in run `pass_run_no`
     assert 1 == runner.stats.num_cases()
     assert_runall(runner)
-    assert 1 == len(runner.stats.failures(run=0))
+    assert 1 == len(runner.stats.failed(run=0))
     assert pass_run_no == rt.runtime().current_run
-    assert 0 == len(runner.stats.failures())
+    assert 0 == len(runner.stats.failed())
 
 
 def test_sigterm_handling(make_runner, make_cases, common_exec_ctx):
     runner = make_runner()
-    with pytest.raises(ReframeForceExitError,
+    with pytest.raises(ForceExitError,
                        match='received TERM signal'):
         runner.runall(make_cases([SelfKillCheck()]))
 
     assert_all_dead(runner)
     assert runner.stats.num_cases() == 1
-    assert len(runner.stats.failures()) == 1
+    assert len(runner.stats.failed()) == 1
 
 
 @pytest.fixture
@@ -347,8 +402,8 @@ def assert_dependency_run(runner):
     assert_runall(runner)
     stats = runner.stats
     assert 10 == stats.num_cases(0)
-    assert 4  == len(stats.failures())
-    for tf in stats.failures():
+    assert 4  == len(stats.failed())
+    for tf in stats.failed():
         check = tf.testcase.check
         _, exc_value, _ = tf.exc_info
         if check.name == 'T7' or check.name == 'T9':
@@ -466,7 +521,7 @@ def test_concurrency_unlimited(async_runner, make_cases, make_async_exec_ctx):
     # Ensure that all tests were run and without failures.
     assert num_checks == runner.stats.num_cases()
     assert_runall(runner)
-    assert 0 == len(runner.stats.failures())
+    assert 0 == len(runner.stats.failed())
 
     # Ensure that maximum concurrency was reached as fast as possible
     assert num_checks == max(monitor.num_tasks)
@@ -494,7 +549,7 @@ def test_concurrency_limited(async_runner, make_cases, make_async_exec_ctx):
     # Ensure that all tests were run and without failures.
     assert num_checks == runner.stats.num_cases()
     assert_runall(runner)
-    assert 0 == len(runner.stats.failures())
+    assert 0 == len(runner.stats.failed())
 
     # Ensure that maximum concurrency was reached as fast as possible
     assert max_jobs == max(monitor.num_tasks)
@@ -536,7 +591,7 @@ def test_concurrency_none(async_runner, make_cases, make_async_exec_ctx):
     # Ensure that all tests were run and without failures.
     assert num_checks == runner.stats.num_cases()
     assert_runall(runner)
-    assert 0 == len(runner.stats.failures())
+    assert 0 == len(runner.stats.failed())
 
     # Ensure that a single task was running all the time
     assert 1 == max(monitor.num_tasks)
@@ -554,7 +609,8 @@ def test_concurrency_none(async_runner, make_cases, make_async_exec_ctx):
 def assert_interrupted_run(runner):
     assert 4 == runner.stats.num_cases()
     assert_runall(runner)
-    assert 4 == len(runner.stats.failures())
+    assert 1 == len(runner.stats.failed())
+    assert 3 == len(runner.stats.aborted())
     assert_all_dead(runner)
 
     # Verify that failure reasons for the different tasks are correct
@@ -642,7 +698,7 @@ def test_run_complete_fails_main_loop(async_runner, make_cases,
     assert_runall(runner)
     stats = runner.stats
     assert stats.num_cases() == num_checks
-    assert len(stats.failures()) == 2
+    assert len(stats.failed()) == 2
 
     # Verify that the succeeded test is the SleepCheck
     for t in stats.tasks():
@@ -662,7 +718,7 @@ def test_run_complete_fails_busy_loop(async_runner, make_cases,
     assert_runall(runner)
     stats = runner.stats
     assert stats.num_cases() == num_checks
-    assert len(stats.failures()) == 2
+    assert len(stats.failed()) == 2
 
     # Verify that the succeeded test is the SleepCheck
     for t in stats.tasks():
@@ -682,7 +738,7 @@ def test_compile_fail_reschedule_main_loop(async_runner, make_cases,
     stats = runner.stats
     assert num_checks == stats.num_cases()
     assert_runall(runner)
-    assert num_checks == len(stats.failures())
+    assert num_checks == len(stats.failed())
 
 
 def test_compile_fail_reschedule_busy_loop(async_runner, make_cases,
@@ -698,4 +754,50 @@ def test_compile_fail_reschedule_busy_loop(async_runner, make_cases,
     stats = runner.stats
     assert num_checks == stats.num_cases()
     assert_runall(runner)
-    assert num_checks == len(stats.failures())
+    assert num_checks == len(stats.failed())
+
+
+@pytest.fixture
+def report_file(make_runner, dep_cases, common_exec_ctx, tmp_path):
+    runner = make_runner()
+    runner.policy.keep_stage_files = True
+    with timer() as tm:
+        runner.runall(dep_cases)
+
+    report = _generate_runreport(runner.stats.json(), *tm.timestamps())
+    filename = tmp_path / 'report.json'
+    with open(filename, 'w') as fp:
+        jsonext.dump(report, fp)
+
+    return filename
+
+
+def test_restore_session(report_file, make_runner,
+                         dep_cases, common_exec_ctx, tmp_path):
+    # Select a single test to run and create the pruned graph
+    selected = [tc for tc in dep_cases if tc.check.name == 'T1']
+    testgraph = dependencies.prune_deps(
+        dependencies.build_deps(dep_cases)[0], selected, max_depth=1
+    )
+
+    # Restore the required test cases
+    report = runreport.load_report(report_file)
+    testgraph, restored_cases = report.restore_dangling(testgraph)
+
+    assert {tc.check.name for tc in restored_cases} == {'T4', 'T5'}
+
+    # Run the selected test cases
+    runner = make_runner()
+    with timer() as tm:
+        runner.runall(selected, restored_cases)
+
+    new_report = _generate_runreport(runner.stats.json(), *tm.timestamps())
+    assert new_report['runs'][0]['num_cases'] == 1
+    assert new_report['runs'][0]['testcases'][0]['name'] == 'T1'
+
+    # Remove the test case dump file and retry
+    os.remove(tmp_path / 'stage' / 'generic' / 'default' /
+              'builtin' / 'T4' / '.rfm_testcase.json')
+
+    with pytest.raises(ReframeError, match=r'could not restore testcase'):
+        report.restore_dangling(testgraph)

@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -6,12 +6,10 @@
 import os
 import pytest
 import random
-import shutil
 import sys
 import time
 
 import reframe
-import reframe.core.fields as fields
 import reframe.core.runtime as rt
 import reframe.utility as util
 import reframe.utility.jsonext as jsonext
@@ -1411,12 +1409,14 @@ def user_exec_ctx(request, temp_runtime):
 @pytest.fixture
 def modules_system(user_exec_ctx, monkeypatch):
     # Pretend to be on a clean modules environment
+    monkeypatch.setenv('MODULEPATH', '')
     monkeypatch.setenv('LOADEDMODULES', '')
     monkeypatch.setenv('_LMFILES_', '')
 
     ms = rt.runtime().system.modules_system
     ms.searchpath_add(fixtures.TEST_MODULES)
-    return ms
+    yield ms
+    ms.searchpath_remove(fixtures.TEST_MODULES)
 
 
 def test_find_modules(modules_system):
@@ -1469,20 +1469,93 @@ def test_jsonext_dump(tmp_path):
         jsonext.dump({'foo': sn.defer(['bar'])}, fp)
 
     with open(json_dump, 'r') as fp:
+        assert '{"foo": null}' == fp.read()
+
+    with open(json_dump, 'w') as fp:
+        jsonext.dump({'foo': sn.defer(['bar']).evaluate()}, fp)
+
+    with open(json_dump, 'r') as fp:
         assert '{"foo": ["bar"]}' == fp.read()
 
     with open(json_dump, 'w') as fp:
         jsonext.dump({'foo': sn.defer(['bar'])}, fp, separators=(',', ':'))
 
     with open(json_dump, 'r') as fp:
-        assert '{"foo":["bar"]}' == fp.read()
+        assert '{"foo":null}' == fp.read()
 
 
 def test_jsonext_dumps():
     assert '"foo"' == jsonext.dumps('foo')
-    assert '{"foo": ["bar"]}' == jsonext.dumps({'foo': sn.defer(['bar'])})
-    assert '{"foo":["bar"]}' == jsonext.dumps({'foo': sn.defer(['bar'])},
-                                              separators=(',', ':'))
+    assert '{"foo": ["bar"]}' == jsonext.dumps(
+        {'foo': sn.defer(['bar']).evaluate()}
+    )
+    assert '{"foo":["bar"]}' == jsonext.dumps(
+        {'foo': sn.defer(['bar']).evaluate()}, separators=(',', ':')
+    )
+
+
+# Classes to test JSON deserialization
+
+class _D(jsonext.JSONSerializable):
+    def __init__(self):
+        self.a = 2
+        self.b = 'bar'
+
+    def __eq__(self, other):
+        if not isinstance(other, _D):
+            return NotImplemented
+
+        return self.a == other.a and self.b == other.b
+
+
+class _Z(_D):
+    pass
+
+
+class _C(jsonext.JSONSerializable):
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.z = None
+        self.w = {1, 2}
+
+    def __rfm_json_decode__(self, json):
+        # Sets are converted to lists when encoding, we need to manually
+        # change them back to sets
+        self.w = set(json['w'])
+
+    def __eq__(self, other):
+        if not isinstance(other, _C):
+            return NotImplemented
+
+        return (self.x == other.x and
+                self.y == other.y and
+                self.z == other.z and
+                self.w == other.w)
+
+
+def test_jsonext_load(tmp_path):
+    c = _C(1, 'foo')
+    c.x += 1
+    c.y = 'foobar'
+    c.z = _Z()
+    c.z.a += 1
+    c.z.b = 'barfoo'
+
+    json_dump = tmp_path / 'test.json'
+    with open(json_dump, 'w') as fp:
+        jsonext.dump(c, fp, indent=2)
+
+    with open(json_dump, 'r') as fp:
+        c_restored = jsonext.load(fp)
+
+    assert c == c_restored
+    assert c is not c_restored
+
+    # Do the same with dumps() and loads()
+    c_restored = jsonext.loads(jsonext.dumps(c))
+    assert c == c_restored
+    assert c is not c_restored
 
 
 def test_attr_validator():

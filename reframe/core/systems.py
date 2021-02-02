@@ -1,19 +1,19 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
 import json
-import re
 
 import reframe.utility as utility
+import reframe.utility.jsonext as jsonext
 from reframe.core.backends import (getlauncher, getscheduler)
 from reframe.core.logging import getlogger
 from reframe.core.modules import ModulesSystem
 from reframe.core.environments import (Environment, ProgEnvironment)
 
 
-class SystemPartition:
+class SystemPartition(jsonext.JSONSerializable):
     '''A representation of a system partition inside ReFrame.
 
     .. warning::
@@ -237,7 +237,7 @@ class SystemPartition:
         return json.dumps(self.json(), indent=2)
 
 
-class System:
+class System(jsonext.JSONSerializable):
     '''A representation of a system inside ReFrame.
 
     .. warning::

@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -23,14 +23,25 @@ class NamdBaseCheck(rfm.RunOnlyRegressionTest):
         self.num_tasks_per_core = 2
 
         if scale == 'small':
-            self.num_tasks = 6
-            self.num_tasks_per_node = 1
+            # On Eiger a no-smp NAMD version is the default
+            if self.current_system.name == 'eiger':
+                self.num_tasks = 768
+                self.num_tasks_per_node = 128
+            else:
+                self.num_tasks = 6
+                self.num_tasks_per_node = 1
         else:
-            self.num_tasks = 16
-            self.num_tasks_per_node = 1
+            if self.current_system.name == 'eiger':
+                self.num_tasks = 2048
+                self.num_tasks_per_node = 128
+            else:
+                self.num_tasks = 16
+                self.num_tasks_per_node = 1
 
-        energy = sn.avg(sn.extractall(r'ENERGY:(\s+\S+){10}\s+(?P<energy>\S+)',
-                                      self.stdout, 'energy', float))
+        energy = sn.avg(sn.extractall(
+            r'ENERGY:([ \t]+\S+){10}[ \t]+(?P<energy>\S+)',
+            self.stdout, 'energy', float)
+        )
         energy_reference = -2451359.5
         energy_diff = sn.abs(energy - energy_reference)
         self.sanity_patterns = sn.all([
@@ -49,7 +60,6 @@ class NamdBaseCheck(rfm.RunOnlyRegressionTest):
 
         self.maintainers = ['CB', 'LM']
         self.tags = {'scs', 'external-resources'}
-        self.strict_check = False
         self.extra_resources = {
             'switches': {
                 'num_switches': 1
@@ -88,18 +98,25 @@ class NamdGPUCheck(NamdBaseCheck):
 class NamdCPUCheck(NamdBaseCheck):
     def __init__(self, scale, variant):
         super().__init__('cpu', scale, variant)
-        self.valid_systems = ['daint:mc']
-        self.executable_opts = ['+idlepoll', '+ppn 71', 'stmv.namd']
-        self.num_cpus_per_task = 72
+        self.valid_systems = ['daint:mc', 'eiger:mc']
+        # On Eiger a no-smp NAMD version is the default
+        if self.current_system.name == 'eiger':
+            self.executable_opts = ['+idlepoll', 'stmv.namd']
+            self.num_tasks_per_core = 2
+        else:
+            self.executable_opts = ['+idlepoll', '+ppn 71', 'stmv.namd']
+            self.num_cpus_per_task = 72
         if scale == 'small':
             self.valid_systems += ['dom:mc']
             self.reference = {
                 'dom:mc': {'days_ns': (0.51, None, 0.05, 'days/ns')},
-                'daint:mc': {'days_ns': (0.51, None, 0.05, 'days/ns')}
+                'daint:mc': {'days_ns': (0.51, None, 0.05, 'days/ns')},
+                'eiger:mc': {'days_ns': (0.12, None, 0.05, 'days/ns')}
             }
         else:
             self.reference = {
-                'daint:mc': {'days_ns': (0.28, None, 0.05, 'days/ns')}
+                'daint:mc': {'days_ns': (0.28, None, 0.05, 'days/ns')},
+                'eiger:mc': {'days_ns': (0.05, None, 0.05, 'days/ns')}
             }
 
         self.tags |= {'maintenance' if variant == 'maint' else 'production'}

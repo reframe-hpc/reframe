@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -16,9 +16,15 @@ class TensorFlow2HorovodTest(rfm.RunOnlyRegressionTest):
         self.valid_systems = ['daint:gpu']
         self.valid_prog_environs = ['builtin']
 
+        cray_cdt_version = osext.cray_cdt_version()
         # FIXME: The following will not be needed after the Daint upgrade
-        cray_cdt_version = osext.cray_cdt_version() or '19.10'
-        self.modules = [f'Horovod/0.19.1-CrayGNU-{cray_cdt_version}-tf-2.2.0']
+        if self.current_system.name == 'dom':
+            self.modules = [
+                f'Horovod/0.21.0-CrayGNU-{cray_cdt_version}-tf-2.4.0'
+            ]
+        else:
+            self.modules = ['Horovod/0.19.1-CrayGNU-20.08-tf-2.2.0']
+
         self.sourcesdir = None
         self.num_tasks_per_node = 1
         self.num_cpus_per_task = 12
@@ -64,12 +70,15 @@ class TensorFlow2HorovodTest(rfm.RunOnlyRegressionTest):
             'NCCL_IB_CUDA_SUPPORT': '1',
             'OMP_NUM_THREADS': '$SLURM_CPUS_PER_TASK',
         }
+        script = 'tensorflow2_synthetic_benchmark.py'
         self.prerun_cmds = ['wget https://raw.githubusercontent.com/horovod/'
                             'horovod/842d1075e8440f15e84364f494645c28bf20c3ae/'
-                            'examples/tensorflow2_synthetic_benchmark.py']
+                            'examples/tensorflow2_synthetic_benchmark.py',
+                            'sed -i "s/weights=None/weights=None, '
+                            f'input_shape=(224, 224, 3)/g" {script}']
         self.executable = 'python'
         self.executable_opts = [
-            'tensorflow2_synthetic_benchmark.py',
+            f'{script}',
             f'--model {model}',
             f'--batch-size {batch_size}',
             '--num-iters 5',
