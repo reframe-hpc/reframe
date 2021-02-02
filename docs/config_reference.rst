@@ -1006,6 +1006,25 @@ Common scheduler options
    In such cases, you may set this parameter to ``true`` to avoid this.
 
 
+.. js:attribute:: .schedulers[].resubmit_on_errors
+
+   :required: No
+   :default: ``[]``
+
+   This option is relevant to the Slurm backends only.
+
+   If any of the listed errors occur, ReFrame will try to resubmit the job after some seconds.
+   As an example, you could have ReFrame trying to resubmit a job in case that the maximum submission limit per user is reached by setting this field to ``["QOSMaxSubmitJobPerUserLimit"]``.
+   You can ignore multiple errors at the same time if you add more error strings in the list.
+
+   .. versionadded:: 3.5
+
+   .. warning::
+      Job submission is a synchronous operation in ReFrame.
+      If this option is set, ReFrame's execution will block until the error conditions specified in this list are resolved.
+      No other test would be able to proceed.
+
+
 Execution Mode Configuration
 ----------------------------
 
