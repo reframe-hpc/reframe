@@ -519,8 +519,6 @@ def contents(tempfile):
 def fixture(funcs):
     @pytest.fixture(params=funcs)
     def _fixture(request, tempfile, contents):
-        import functools
-
         if request.param.__name__.endswith('_s'):
             return request.param, contents
         else:
