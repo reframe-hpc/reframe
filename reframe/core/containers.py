@@ -136,7 +136,7 @@ class Sarus(ContainerPlatform):
             return []
         # Using 
         if self.with_metahub:
-            tmpdir = tempfile.TemporaryDirectory()
+            tmpdir = tempfile.mkdtemp()
             return [
                 'docker pull -q mh.qnib.org/'+self.image,
                 'docker save -o '+tmpdir+'/image.tar mh.qnib.org/'+self.image,
