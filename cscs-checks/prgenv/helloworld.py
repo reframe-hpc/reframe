@@ -110,6 +110,8 @@ class HelloWorldTestSerial(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
         super().__init__('serial', lang, linkage)
         self.valid_systems += ['arolla:pn', 'tsa:pn']
+        if linkage == 'dynamic':
+            self.valid_systems.append('eiger:mc')
         self.sourcesdir = 'src/serial'
         self.valid_prog_environs += ['PrgEnv-gnu-nompi', 'PrgEnv-pgi-nompi',
                                      'PrgEnv-gnu-nompi-nocuda',
@@ -143,6 +145,8 @@ class HelloWorldTestOpenMP(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
         super().__init__('openmp', lang, linkage)
         self.valid_systems += ['arolla:pn', 'tsa:pn']
+        if linkage == 'dynamic':
+            self.valid_systems.append('eiger:mc')
         self.sourcesdir = 'src/openmp'
         self.sourcepath += '_openmp.' + lang
         self.descr += ' OpenMP ' + str.capitalize(linkage)
@@ -178,6 +182,8 @@ class HelloWorldTestOpenMP(HelloWorldBaseTest):
 class HelloWorldTestMPI(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
         super().__init__('mpi', lang, linkage)
+        if linkage == 'dynamic':
+            self.valid_systems.append('eiger:mc')
         self.sourcesdir = 'src/mpi'
         self.sourcepath += '_mpi.' + lang
         self.descr += ' MPI ' + linkage.capitalize()
