@@ -17,7 +17,7 @@ class DeferredIterationTest(rfm.RunOnlyRegressionTest):
         numbers = sn.extractall(
             r'Random: (?P<number>\S+)', self.stdout, 'number', float
         )
-        self.sanity_patterns = sn.and_(
+        self.sanity_patterns = sn.all([
             sn.assert_eq(sn.count(numbers), 100),
             sn.all(sn.map(lambda x: sn.assert_bounded(x, 90, 100), numbers))
-        )
+        ])
