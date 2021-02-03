@@ -12,11 +12,9 @@ import reframe.utility.osext as osext
 
 
 class AffinityTestBase(rfm.RegressionTest):
-    parameter('variant')
-
     def __init__(self):
         self.valid_systems = ['daint:gpu', 'daint:mc',
-                              'dom:gpu', 'dom:mc']
+                              'dom:gpu', 'dom:mc', 'eiger:mc']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.build_system = 'Make'
         self.build_system.options = ['-C affinity', 'MPI=1']
@@ -26,11 +24,25 @@ class AffinityTestBase(rfm.RegressionTest):
         self.sourcesdir = os.path.join('src/affinity_ref')
         self.prebuild_cmds = ['git clone https://github.com/vkarak/affinity']
         self.executable = './affinity/affinity'
-        self.sanity_patterns = self.get_num_cpus()
+        self.sanity_patterns = self.assert_consumed_cpu_set()
         self.maintainers = ['RS', 'SK']
         self.tags = {'production', 'scs', 'maintenance', 'craype'}
 
-    @rfm.run_before('run')
+        # Dict with the partition's topology - output of "lscpu -e"
+        self.topology = {
+            'dom:gpu':   'topo_dom_gpu.txt',
+            'dom:mc':    'topo_dom_mc.txt',
+            'daint:gpu': 'topo_dom_gpu.txt',
+            'daint:mc':  'topo_dom_mc.txt',
+            'eiger:mc':  'topo_eiger_mc.txt',
+        }
+
+    @rfm.run_before('compile')
+    def set_topo_file(self):
+        cp = self.current_partition.fullname
+        self.topo_file = self.topology[cp]
+
+    @rfm.run_after('compile')
     def read_proc_topo(self):
         '''Import the processor's topology from the reference file.
 
@@ -46,12 +58,16 @@ class AffinityTestBase(rfm.RegressionTest):
                 numa node.
             - sockets: dictionary containing the cpu sets for each socket.
                 The keys of the dictionary are simply the socket IDs.
+
+        This hook requires the reference file (self.topo_file), so the earlies
+        it can run is after the compilation stage, once the required files have
+        been copied over to the stage directory.
         '''
 
         with osext.change_dir(self.stagedir):
             lscpu = sn.extractall(
                 r'^\s*(\d+)\s*(\d+)\s*(\d+)\s*(\d+)',
-                self.ref_file, 0,
+                self.topo_file, 0,
                 lambda x: [int(xi) for xi in x.split()]
             ).evaluate()
 
@@ -61,9 +77,8 @@ class AffinityTestBase(rfm.RegressionTest):
 
         # Build the numa sets
         self.num_numa_nodes = len(set(map(lambda x: x[1], lscpu)))
-        self.num_sockets = len(set(map(lambda x: x[2], lscpu)))
         self.num_cpus_per_core = int(
-            len(set(map(lambda x: x[3], lscpu)))/self.num_cpus
+            self.num_cpus/len(set(map(lambda x: x[3], lscpu)))
         )
         self.numa_nodes = {}
         for i in range(self.num_numa_nodes):
@@ -71,6 +86,8 @@ class AffinityTestBase(rfm.RegressionTest):
                 map(lambda y: y[0], filter(lambda x: x[1]==i, lscpu))
             )
 
+        # Build the socket sets
+        self.num_sockets = len(set(map(lambda x: x[2], lscpu)))
         self.sockets = {}
         for i in range(self.num_sockets):
             self.sockets[i] = set(
@@ -81,7 +98,11 @@ class AffinityTestBase(rfm.RegressionTest):
         self.__lscpu = lscpu
 
     def get_sibiling_cpus(self, cpuid, by=None):
-        '''Return a cpu set of matching sibilings'''
+        '''Return a cpu set where cpuid belongs to.
+
+        The cpu set can be extracted by matching core, numa domain or socket.
+        This is controlled by the `by` argument.
+        '''
         _map = {
             'core': 3,
             'socket': 2,
@@ -111,114 +132,182 @@ class AffinityTestBase(rfm.RegressionTest):
         )
 
     @sn.sanity_function
-    def get_num_cpus(self):
-        print(self.get_sibiling_cpus(44, by='core'))
-        print(self.get_sibiling_cpus(44, by='socket'))
-        return sn.assert_eq(len(self.cpu_set), 72)
+    def assert_consumed_cpu_set(self):
+        '''Check that all the resources have been consumed.'''
+        return sn.assert_eq(self.cpu_set, set())
 
+    @rfm.run_after('run')
+    def parse_output(self):
 
-    @rfm.run_before('sanity')
-    def set_sanity(self):
-
+        re_aff_cpus = r'CPU affinity: \[\s+(?P<cpus>[\d+\s+]+)\]'
+        re_aff_thrds = r'^Tag:[^\n\r]*Thread:\s+(?P<thread>\d+)'
+        re_aff_ranks = r'^Tag:[^\n\r]*Rank:\s+(?P<rank>\d+)[\s+\S+]'
         def parse_cpus(x):
             return sorted([int(xi) for xi in x.split()])
 
-        re_aff_cores = r'CPU affinity: \[\s+(?P<cpus>[\d+\s+]+)\]'
-        self.aff_cores = sn.extractall(
-            re_aff_cores, self.stdout, 'cpus', parse_cpus)
-        ref_key = 'ref_' + self.current_partition.fullname
-        self.ref_cores = sn.extractall(
-            re_aff_cores, self.cases[self.variant][ref_key],
-            'cpus', parse_cpus)
-        re_aff_thrds = r'^Tag:[^\n\r]*Thread:\s+(?P<thread>\d+)'
-        self.aff_thrds = sn.extractall(re_aff_thrds, self.stdout, 'thread',
-                                       int)
-        self.ref_thrds = sn.extractall(
-            re_aff_thrds, self.cases[self.variant][ref_key],
-            'thread', int)
-        re_aff_ranks = r'^Tag:[^\n\r]*Rank:\s+(?P<rank>\d+)[\s+\S+]'
-        self.aff_ranks = sn.extractall(re_aff_ranks, self.stdout, 'rank', int)
-        self.ref_ranks = sn.extractall(
-            re_aff_ranks, self.cases[self.variant][ref_key],
-            'rank', int)
+        with osext.change_dir(self.stagedir):
+            self.aff_cpus = sn.extractall(
+                re_aff_cpus, self.stdout, 'cpus', parse_cpus
+            ).evaluate()
 
-##        # Ranks and threads can be extracted into lists in order to compare
-##        # them since the affinity programm prints them in ascending order.
-##        self.sanity_patterns = sn.all([
-##            sn.assert_eq(self.aff_thrds, self.ref_thrds),
-##            sn.assert_eq(self.aff_ranks, self.ref_ranks),
-##            sn.assert_eq(sn.sorted(self.aff_cores), sn.sorted(self.ref_cores))
-##        ])
+            self.aff_thrds = sn.extractall(
+                re_aff_thrds, self.stdout, 'thread', int
+            )
+
+            self.aff_ranks = sn.extractall(
+                re_aff_ranks, self.stdout, 'rank', int
+            )
 
     @rfm.run_before('run')
     def set_multithreading(self):
-        self.use_multithreading = self.cases[self.variant]['multithreading']
+        cp = self.current_partition.fullname
+        mthread = self.system.get(cp, {}).get('multithreading', None)
+        if mthread:
+            self.use_multithreading = mthread
+
+    @rfm.run_before('run')
+    def set_launcher(self):
+        cp = self.current_partition.fullname
+        cpu_bind = self.system.get(cp, {}).get('cpu-bind', None)
+        if cpu_bind:
+            self.job.launcher.options += [f'--cpu-bind={cpu_bind}']
+
+        hint = self.system.get(cp, {}).get('hint', None)
+        if hint:
+            self.job.launcher.options += [f'--hint={hint}']
+
+
+
+
+class AffinityOpenMPBase(AffinityTestBase):
+    '''Extend affinity base with OMP hooks.
+
+    The tests derived from this class book the full node and place the
+    threads acordingly based exclusively on the OMP_BIND env var. The
+    number of total OMP_THREADS will vary depending on what are we
+    binding the OMP threads to (e.g. if we bind to sockets, we'll have as
+    many threads as sockets).
+    '''
+
+    # FIXME: PR #1699 should make these vars instead of parameters.
+    parameter('omp_bind')
+    parameter('omp_proc_bind', ['spread'])
+
+    @rfm.run_before('run')
+    def set_cpus_per_task(self):
+        self.num_cpus_per_task = self.num_cpus
+
+    @rfm.run_before('run')
+    def set_omp_vars(self):
+        self.num_tasks = 1
+        self.variables = {
+            'OMP_NUM_THREADS': str(self.num_omp_threads),
+            'OMP_PLACES': self.omp_bind,
+            'OMP_PROC_BIND': self.omp_proc_bind,
+        }
+
+    @rfm.run_before('sanity')
+    def consume_cpu_set(self):
+        raise ValueError('this function must be overridden')
 
 
 @rfm.simple_test
-class AffinityOpenMPTest(AffinityTestBase):
-    parameter('variant', ['omp_bind_threads'])
+class OneOMPThreadPerCPU(AffinityOpenMPBase):
+    parameter('omp_bind', ['threads'])
 
     def __init__(self):
         super().__init__()
-        self.descr = 'Checking the cpu affinity for OMP threads'
-
-        self.ref_file = 'topo_dom_mc.txt'
-
-        self.cases = {
-            'omp_bind_threads': {
-                'ref_daint:gpu': 'gpu_omp_bind_threads.txt',
-                'ref_dom:gpu': 'gpu_omp_bind_threads.txt',
-                'ref_daint:mc': 'mc_omp_bind_threads.txt',
-                'ref_dom:mc': 'mc_omp_bind_threads.txt',
-                'num_cpus_per_task:gpu': 24,
-                'num_cpus_per_task:mc': 72,
-                'ntasks_per_core': 2,
-                'multithreading': None,
-                'OMP_PLACES': 'threads',
-            },
-            'omp_bind_threads_nomultithread': {
-                'ref_daint:gpu': 'gpu_omp_bind_threads_nomultithread.txt',
-                'ref_dom:gpu': 'gpu_omp_bind_threads_nomultithread.txt',
-                'ref_daint:mc': 'mc_omp_bind_threads_nomultithread.txt',
-                'ref_dom:mc': 'mc_omp_bind_threads_nomultithread.txt',
-                'num_cpus_per_task:gpu': 12,
-                'num_cpus_per_task:mc': 36,
-                'ntasks_per_core': None,
-                # When `--hint=nomultithread` is not explicitly expecified only
-                # half of the physical cores are used.
-                'multithreading': False,
-                'OMP_PLACES': 'threads',
-            },
-            'omp_bind_cores': {
-                'ref_daint:gpu': 'gpu_omp_bind_cores.txt',
-                'ref_dom:gpu': 'gpu_omp_bind_cores.txt',
-                'ref_daint:mc': 'mc_omp_bind_cores.txt',
-                'ref_dom:mc': 'mc_omp_bind_cores.txt',
-                'num_cpus_per_task:gpu': 12,
-                'num_cpus_per_task:mc': 36,
-                'ntasks_per_core': 1,
-                'multithreading': None,
-                'OMP_PLACES': 'cores',
-            },
+        self.descr = 'Pin one OMP thread per CPU.'
+        self.system = {
+            # System-dependent settings here
         }
 
-    @rfm.run_before('run')
-    def set_tasks_per_core(self):
-        partname = self.current_partition.name
-        self.num_cpus_per_task = (
-            self.cases[self.variant]['num_cpus_per_task:%s' % partname])
-        if self.cases[self.variant]['ntasks_per_core']:
-            self.num_tasks_per_core = (
-                self.cases[self.variant]['ntasks_per_core'])
+    @property
+    def num_omp_threads(self):
 
-        self.num_tasks = 1
-        self.variables = {
-            'OMP_NUM_THREADS': str(self.num_cpus_per_task),
-            'OMP_PLACES': self.cases[self.variant]['OMP_PLACES']
-            # OMP_PROC_BIND is set to TRUE if OMP_PLACES is defined.
-            # Both OMP_PROC_BIND values CLOSE and SPREAD give the same
-            # result as OMP_PROC_BIND=TRUE when all cores are requested.
+        # One OMP thread per cpu
+        return self.num_cpus
+
+    @rfm.run_before('sanity')
+    def consume_cpu_set(self):
+        '''Threads are bound to cpus.'''
+        for cpus_per_thread in self.aff_cpus:
+            if ((len(cpus_per_thread) > 1) or
+                not all(x in self.cpu_set for x in cpus_per_thread)):
+
+                # This will force the sanity function to fail.
+                self.cpu_set.update([-1])
+
+            self.cpu_set -= set(cpus_per_thread)
+
+
+@rfm.simple_test
+class OneOMPThreadPerCore(AffinityOpenMPBase):
+    parameter('omp_bind', ['cores'])
+
+    def __init__(self):
+        super().__init__()
+        self.descr = 'Pin one OMP thread per core.'
+        self.system = {
+            # System-dependent settings here
         }
 
+    @property
+    def num_omp_threads(self):
 
+        # One OMP thread per core
+        return int(self.num_cpus/self.num_cpus_per_core)
+
+    @rfm.run_before('sanity')
+    def consume_cpu_set(self):
+        '''Threads are bound to cpus.'''
+        for cpus_per_thread in self.aff_cpus:
+
+            # Get CPU sibilings by core
+            cpu_sibilings = self.get_sibiling_cpus(cpus_per_thread[0], by='core')
+
+            # If there is more than 1 CPU, it must belong to the same core
+            if ((len(cpus_per_thread) > 1) and
+                not all(x in self.cpu_set for x in cpus_per_thread) or
+                not all(x in cpu_sibilings for x in cpus_per_thread)):
+
+                # This will force the sanity function to fail.
+                self.cpu_set.update([-1])
+
+            self.cpu_set -= cpu_sibilings
+
+
+@rfm.simple_test
+class OneOMPThreadPerSocket(AffinityOpenMPBase):
+    parameter('omp_bind', ['socket'])
+
+    def __init__(self):
+        super().__init__()
+        self.descr = 'Pin one OMP thread per socket.'
+        self.system = {
+            # System-dependent settings here
+        }
+
+    @property
+    def num_omp_threads(self):
+
+        # One OMP thread per core
+        return self.num_sockets
+
+    @rfm.run_before('sanity')
+    def consume_cpu_set(self):
+        '''Threads are bound to sockets.'''
+        for cpus_per_thread in self.aff_cpus:
+
+            # Get CPU sibilings by core
+            cpu_sibilings = self.get_sibiling_cpus(cpus_per_thread[0], by='socket')
+
+            # If there is more than 1 CPU, it must belong to the same socket
+            if ((len(cpus_per_thread) > 1) and
+                not all(x in self.cpu_set for x in cpus_per_thread) or
+                not all(x in cpu_sibilings for x in cpus_per_thread)):
+
+                # This will force the sanity function to fail.
+                self.cpu_set.update([-1])
+
+            self.cpu_set -= cpu_sibilings
