@@ -46,17 +46,20 @@ def expected_cmd_mount_points(container_variant):
         return ('sarus run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
                 '--mount=type=bind,source="/path/two",destination="/two" '
-                "image:tag bash -c 'cd /stagedir; cmd1; cmd2'")
+                '--workdir=/stagedir '
+                "image:tag 'cmd1; cmd2'")
     elif container_variant == 'Sarus+mpi':
         return ('sarus run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
                 '--mount=type=bind,source="/path/two",destination="/two" '
-                "--mpi image:tag bash -c 'cd /stagedir; cmd1; cmd2'")
+                '--workdir=/stagedir '
+                "--mpi image:tag 'cmd1; cmd2'")
     elif container_variant == 'Sarus+localimage':
         return ('sarus run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
                 '--mount=type=bind,source="/path/two",destination="/two" '
-                "load/library/image:tag bash -c 'cd /stagedir; cmd1; cmd2'")
+                '--workdir=/stagedir '
+                "load/library/image:tag 'cmd1; cmd2'")
     elif container_variant == 'Singularity':
         return ('singularity exec -B"/path/one:/one" -B"/path/two:/two" '
                 "image:tag bash -c 'cd /stagedir; cmd1; cmd2'")
@@ -67,17 +70,20 @@ def expected_cmd_mount_points(container_variant):
         return ('shifter run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
                 '--mount=type=bind,source="/path/two",destination="/two" '
-                "image:tag bash -c 'cd /stagedir; cmd1; cmd2'")
+                '--workdir=/stagedir '
+                "image:tag bash -c 'cmd1; cmd2'")
     elif container_variant == 'Shifter+localimage':
         return ('shifter run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
                 '--mount=type=bind,source="/path/two",destination="/two" '
-                "load/library/image:tag bash -c 'cd /stagedir; cmd1; cmd2'")
+                '--workdir=/stagedir '
+                "load/library/image:tag 'cmd1; cmd2'")
     elif container_variant == 'Shifter+mpi':
         return ('shifter run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
                 '--mount=type=bind,source="/path/two",destination="/two" '
-                "--mpi image:tag bash -c 'cd /stagedir; cmd1; cmd2'")
+                '--workdir=/stagedir '
+                "--mpi image:tag bash -c 'cmd1; cmd2'")
 
 
 @pytest.fixture
@@ -98,30 +104,36 @@ def expected_cmd_run_opts(container_variant):
     elif container_variant == 'Shifter':
         return ('shifter run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
-                "--foo --bar image:tag bash -c 'cd /stagedir; cmd'")
+                '--workdir=/stagedir '
+                "--foo --bar image:tag 'cmd'")
     elif container_variant == 'Shifter+mpi':
         return ('shifter run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
-                "--mpi --foo --bar image:tag bash -c 'cd /stagedir; cmd'")
+                '--workdir=/stagedir '
+                "--mpi --foo --bar image:tag 'cmd'")
     elif container_variant == 'Shifter+localimage':
         return (
             'shifter run '
             '--mount=type=bind,source="/path/one",destination="/one" '
-            "--foo --bar load/library/image:tag bash -c 'cd /stagedir; cmd'"
+            '--workdir=/stagedir '
+            "--foo --bar load/library/image:tag 'cmd'"
         )
     elif container_variant == 'Sarus':
         return ('sarus run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
-                "--foo --bar image:tag bash -c 'cd /stagedir; cmd'")
+                '--workdir=/stagedir '
+                "--foo --bar image:tag 'cmd'")
     elif container_variant == 'Sarus+mpi':
         return ('sarus run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
-                "--mpi --foo --bar image:tag bash -c 'cd /stagedir; cmd'")
+                '--workdir=/stagedir '
+                "--mpi --foo --bar image:tag 'cmd'")
     elif container_variant == 'Sarus+localimage':
         return (
             'sarus run '
             '--mount=type=bind,source="/path/one",destination="/one" '
-            "--foo --bar load/library/image:tag bash -c 'cd /stagedir; cmd'"
+            '--workdir=/stagedir '
+            "--foo --bar load/library/image:tag 'cmd'"
         )
     elif container_variant == 'Singularity':
         return ('singularity exec -B"/path/one:/one" '
