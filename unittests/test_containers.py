@@ -71,7 +71,7 @@ def expected_cmd_mount_points(container_variant):
                 '--mount=type=bind,source="/path/one",destination="/one" '
                 '--mount=type=bind,source="/path/two",destination="/two" '
                 '--workdir=/stagedir '
-                "image:tag bash -c 'cmd1; cmd2'")
+                "image:tag 'cmd1; cmd2'")
     elif container_variant == 'Shifter+localimage':
         return ('shifter run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
@@ -83,7 +83,7 @@ def expected_cmd_mount_points(container_variant):
                 '--mount=type=bind,source="/path/one",destination="/one" '
                 '--mount=type=bind,source="/path/two",destination="/two" '
                 '--workdir=/stagedir '
-                "--mpi image:tag bash -c 'cmd1; cmd2'")
+                "--mpi image:tag 'cmd1; cmd2'")
 
 
 @pytest.fixture
