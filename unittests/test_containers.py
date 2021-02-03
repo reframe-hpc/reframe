@@ -157,13 +157,6 @@ def test_missing_image(container_platform):
     with pytest.raises(ContainerError):
         container_platform.validate()
 
-
-def test_missing_commands(container_platform):
-    container_platform.image = 'image:tag'
-    with pytest.raises(ContainerError):
-        container_platform.validate()
-
-
 def test_prepare_command(container_platform, expected_cmd_prepare):
     assert container_platform.emit_prepare_commands() == expected_cmd_prepare
 
