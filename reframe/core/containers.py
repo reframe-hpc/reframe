@@ -164,7 +164,7 @@ class Sarus(ContainerPlatform):
         run_cmd = self._command + ' run %s %s' % (' '.join(run_opts),
                                                            self.image)
         if self.commands:
-            return run_cmd + "'" + ' ; '.join(self.commands) + "'"
+            return run_cmd + " '" + ' ; '.join(self.commands) + "'"
         else:
             return run_cmd
 
