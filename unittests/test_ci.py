@@ -5,7 +5,6 @@
 
 
 import io
-import pytest
 import requests
 
 import reframe.frontend.ci as ci
