@@ -238,9 +238,11 @@ def contains(seq, key):
 def assert_true(x, msg=None):
     '''Assert that ``x`` is evaluated to ``True``.
 
-    :arg msg: The error message to use if the assertion fails.
+    :arg msg: The error message to use if the assertion fails. You may use
+        ``{0}`` ... ``{N}`` as placeholders for the function arguments.
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
+
     '''
     if builtins.bool(x) is not True:
         error_msg = msg or '{0} is not True'
@@ -253,7 +255,8 @@ def assert_true(x, msg=None):
 def assert_false(x, msg=None):
     '''Assert that ``x`` is evaluated to ``False``.
 
-    :arg msg: The error message to use if the assertion fails.
+    :arg msg: The error message to use if the assertion fails. You may use
+        ``{0}`` ... ``{N}`` as placeholders for the function arguments.
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
     '''
@@ -268,7 +271,8 @@ def assert_false(x, msg=None):
 def assert_eq(a, b, msg=None):
     '''Assert that ``a == b``.
 
-    :arg msg: The error message to use if the assertion fails.
+    :arg msg: The error message to use if the assertion fails. You may use
+        ``{0}`` ... ``{N}`` as placeholders for the function arguments.
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
     '''
@@ -283,7 +287,8 @@ def assert_eq(a, b, msg=None):
 def assert_ne(a, b, msg=None):
     '''Assert that ``a != b``.
 
-    :arg msg: The error message to use if the assertion fails.
+    :arg msg: The error message to use if the assertion fails. You may use
+        ``{0}`` ... ``{N}`` as placeholders for the function arguments.
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
     '''
@@ -298,7 +303,8 @@ def assert_ne(a, b, msg=None):
 def assert_in(item, container, msg=None):
     '''Assert that ``item`` is in ``container``.
 
-    :arg msg: The error message to use if the assertion fails.
+    :arg msg: The error message to use if the assertion fails. You may use
+        ``{0}`` ... ``{N}`` as placeholders for the function arguments.
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
     '''
@@ -313,7 +319,8 @@ def assert_in(item, container, msg=None):
 def assert_not_in(item, container, msg=None):
     '''Assert that ``item`` is not in ``container``.
 
-    :arg msg: The error message to use if the assertion fails.
+    :arg msg: The error message to use if the assertion fails. You may use
+        ``{0}`` ... ``{N}`` as placeholders for the function arguments.
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
     '''
@@ -328,7 +335,8 @@ def assert_not_in(item, container, msg=None):
 def assert_gt(a, b, msg=None):
     '''Assert that ``a > b``.
 
-    :arg msg: The error message to use if the assertion fails.
+    :arg msg: The error message to use if the assertion fails. You may use
+        ``{0}`` ... ``{N}`` as placeholders for the function arguments.
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
     '''
@@ -343,7 +351,8 @@ def assert_gt(a, b, msg=None):
 def assert_ge(a, b, msg=None):
     '''Assert that ``a >= b``.
 
-    :arg msg: The error message to use if the assertion fails.
+    :arg msg: The error message to use if the assertion fails. You may use
+        ``{0}`` ... ``{N}`` as placeholders for the function arguments.
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
     '''
@@ -358,7 +367,8 @@ def assert_ge(a, b, msg=None):
 def assert_lt(a, b, msg=None):
     '''Assert that ``a < b``.
 
-    :arg msg: The error message to use if the assertion fails.
+    :arg msg: The error message to use if the assertion fails. You may use
+        ``{0}`` ... ``{N}`` as placeholders for the function arguments.
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
     '''
@@ -373,7 +383,8 @@ def assert_lt(a, b, msg=None):
 def assert_le(a, b, msg=None):
     '''Assert that ``a <= b``.
 
-    :arg msg: The error message to use if the assertion fails.
+    :arg msg: The error message to use if the assertion fails. You may use
+        ``{0}`` ... ``{N}`` as placeholders for the function arguments.
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
     '''
@@ -398,7 +409,8 @@ def assert_found(patt, filename, msg=None, encoding='utf-8'):
     :arg filename: The name of the file to examine or a file descriptor as in
         :py:func:`open`. Any :class:`OSError` raised while processing the file
         will be propagated as a :class:`reframe.core.exceptions.SanityError`.
-    :arg msg: The error message to use if the assertion fails.
+    :arg msg: The error message to use if the assertion fails. You may use
+        ``{0}`` ... ``{N}`` as placeholders for the function arguments.
     :arg encoding: The name of the encoding used to decode the file.
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
@@ -416,7 +428,8 @@ def assert_found_s(patt, string, msg=None):
 
     :arg patt: as in :func:`assert_found`.
     :arg string: The string to examine.
-    :arg msg: as in :func:`assert_found`.
+    :arg msg: as in :func:`assert_found`. You may use
+        ``{0}`` ... ``{N}`` as placeholders for the function arguments.
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
 
@@ -475,7 +488,8 @@ def assert_bounded(val, lower=None, upper=None, msg=None):
     :arg val: The value to check.
     :arg lower: The lower bound. If ``None``, it defaults to ``-inf``.
     :arg upper: The upper bound. If ``None``, it defaults to ``inf``.
-    :arg msg: The error message to use if the assertion fails.
+    :arg msg: The error message to use if the assertion fails. You may use
+        ``{0}`` ... ``{N}`` as placeholders for the function arguments.
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
     '''
@@ -506,7 +520,8 @@ def assert_reference(val, ref, lower_thres=None, upper_thres=None, msg=None):
         of the reference value. Must be in [0, inf] for ref >= 0.0 and
         in [0, 1] for ref < 0.0.
         If ``None``, no upper thresholds is applied.
-    :arg msg: The error message to use if the assertion fails.
+    :arg msg: The error message to use if the assertion fails. You may use
+        ``{0}`` ... ``{N}`` as placeholders for the function arguments.
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails or if the
         lower and upper thresholds do not have appropriate values.
