@@ -17,6 +17,7 @@ class ScaLAPACKTest(rfm.RegressionTest):
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:mc', 'dom:gpu']
         if self.linkage == 'dynamic':
             self.valid_systems.append('eiger:mc')
+
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel']
         self.num_tasks = 16
