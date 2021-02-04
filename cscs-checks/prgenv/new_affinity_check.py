@@ -12,6 +12,11 @@ import reframe.utility.osext as osext
 
 
 class AffinityTestBase(rfm.RegressionTest):
+
+    # FIXME: PR #1699 should introduce
+    # var('cpu_bind', str)
+    # var('hint', str)
+
     def __init__(self):
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc', 'eiger:mc']
@@ -171,11 +176,15 @@ class AffinityTestBase(rfm.RegressionTest):
         cpu_bind = self.system.get(cp, {}).get('cpu-bind', None)
         if cpu_bind:
             self.job.launcher.options += [f'--cpu-bind={cpu_bind}']
+        elif hasattr(self, 'cpu_bind'):
+            self.job.launcher.options += [f'--cpu-bind={self.cpu_bind}']
 
         hint = self.system.get(cp, {}).get('hint', None)
         if hint:
             self.job.launcher.options += [f'--hint={hint}']
 
+        elif hasattr(self, 'hint'):
+            self.job.launcher.options += [f'--hint={self.hint}']
 
 class AffinityOpenMPBase(AffinityTestBase):
     '''Extend affinity base with OMP hooks.
@@ -191,13 +200,20 @@ class AffinityOpenMPBase(AffinityTestBase):
     parameter('omp_bind')
     parameter('omp_proc_bind', ['spread'])
 
+    def __init__(self):
+        super().__init__()
+        self.num_tasks = 1
+
+    @property
+    def _num_cpus_per_task(self):
+        return self.num_cpus
+
     @rfm.run_before('run')
-    def set_cpus_per_task(self):
-        self.num_cpus_per_task = self.num_cpus
+    def set_num_cpus_per_task(self):
+        self.num_cpus_per_task = self._num_cpus_per_task
 
     @rfm.run_before('run')
     def set_omp_vars(self):
-        self.num_tasks = 1
         self.variables = {
             'OMP_NUM_THREADS': str(self.num_omp_threads),
             'OMP_PLACES': self.omp_bind,
@@ -210,7 +226,8 @@ class AffinityOpenMPBase(AffinityTestBase):
 
 
 @rfm.simple_test
-class OneOMPThreadPerCPU(AffinityOpenMPBase):
+class PinToCPUs_OMP_FullNode(AffinityOpenMPBase):
+    '''Full node booked with one OMP thread per cpu.'''
     parameter('omp_bind', ['threads'])
 
     def __init__(self):
@@ -240,7 +257,8 @@ class OneOMPThreadPerCPU(AffinityOpenMPBase):
 
 
 @rfm.simple_test
-class OneOMPThreadPerCore(AffinityOpenMPBase):
+class PinToCores_OMP_FullNode(AffinityOpenMPBase):
+    '''Full node booked with one OMP thread per core.'''
     parameter('omp_bind', ['cores'])
 
     def __init__(self):
@@ -275,7 +293,8 @@ class OneOMPThreadPerCore(AffinityOpenMPBase):
 
 
 @rfm.simple_test
-class OneOMPThreadPerSocket(AffinityOpenMPBase):
+class PinToSockets_OMP_FullNode(AffinityOpenMPBase):
+    '''Full node booked with one OMP thread per socket.'''
     parameter('omp_bind', ['socket'])
 
     def __init__(self):
@@ -307,3 +326,87 @@ class OneOMPThreadPerSocket(AffinityOpenMPBase):
                 self.cpu_set.update([-1])
 
             self.cpu_set -= cpu_sibilings
+
+
+@rfm.simple_test
+class PinToCores_OMP_nomultithread(PinToCores_OMP_FullNode):
+    '''Only one cpu per core booked.'''
+    parameter('omp_bind', ['cores'])
+
+    # FIXME: PR #1699
+    # set_var('hint', 'nomultithread')
+
+    def __init__(self):
+        super().__init__()
+        self.descr = 'Pin one OMP thread per core.'
+
+        # System independent settings
+        self.hint = 'nomultithread'
+
+        self.system = {
+            # System-dependent settings here
+        }
+
+    @property
+    def _num_cpus_per_task(self):
+        return self.num_omp_threads
+
+
+@rfm.simple_test
+class OneTaskPerSocket_OMP_nomultithread(AffinityOpenMPBase):
+    '''Only one cpu per socket booked.'''
+    parameter('omp_bind', ['sockets'])
+    parameter('omp_proc_bind', ['close'])
+
+    # FIXME: PR #1699
+    # set_var('hint', 'nomultithread')
+
+    def __init__(self):
+        super().__init__()
+        self.descr = 'Pin one OMP thread per core.'
+
+        # System independent settings
+        self.num_tasks = 2
+        self.hint = 'nomultithread'
+
+        self.system = {
+            # System-dependent settings here
+        }
+
+    @property
+    def num_omp_threads(self):
+        return int(self.num_cpus/self.num_cpus_per_core/self.num_sockets)
+
+    @property
+    def _num_cpus_per_task(self):
+        return self.num_omp_threads
+
+    @rfm.run_before('sanity')
+    def consume_cpu_set(self):
+
+        threads_in_socket = [0]*self.num_sockets
+        def get_socket_id(cpuid):
+            for i in range(self.num_sockets):
+                if cpuid in self.sockets[i]:
+                    return i
+
+        for cpus_bound_to_thread in self.aff_cpus:
+
+            # Count the number of OMP threads that live on each socket
+            threads_in_socket[get_socket_id(cpus_bound_to_thread[0])] += 1
+
+            # Get CPU sibilings by socket
+            cpu_sibilings = self.get_sibiling_cpus(cpus_bound_to_thread[0], by='socket')
+
+            # If there is more than 1 CPU, it must belong to the same socket
+            if ((not int(len(cpu_sibilings)/self.num_cpus_per_core) == len(cpus_bound_to_thread)) or
+                not all(x in cpu_sibilings for x in cpus_bound_to_thread)):
+
+                # This will force the sanity function to fail.
+                self.cpu_set.update([-1])
+
+        for i, socket in enumerate(self.sockets.values()):
+            if threads_in_socket[i] == self.num_omp_threads:
+                self.cpu_set -= socket
+
+
