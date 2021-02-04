@@ -80,7 +80,7 @@
                 "prefix": {"type": "string"},
                 "result": {
                     "type": "string",
-                    "enum": ["success", "failure"]
+                    "enum": ["success", "failure", "aborted"]
                 },
                 "scheduler": {"type": ["string", "null"]},
                 "stagedir": {"type": ["string", "null"]},
@@ -112,6 +112,7 @@
                 "hostname": {"type": "string"},
                 "num_cases": {"type": "number"},
                 "num_failures": {"type": "number"},
+                "num_aborted": {"type": "number"},
                 "prefix_output": {"type": "string"},
                 "prefix_stage": {"type": "string"},
                 "time_elapsed": {"type": "number"},
@@ -134,6 +135,7 @@
                 "properties": {
                     "num_cases": {"type": "number"},
                     "num_failures": {"type": "number"},
+                    "num_aborted": {"type": "number"},
                     "runid": {"type": "number"},
                     "testcases": {
                         "type": "array",
@@ -141,7 +143,7 @@
                     }
                 },
                 "required": [
-                    "num_cases", "num_failures", "runid", "testcases"
+                    "num_cases", "num_failures", "num_aborted", "runid", "testcases"
                 ]
             }
         }

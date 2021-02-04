@@ -148,41 +148,37 @@ def test_min():
 def test_print_stdout():
     stdout = io.StringIO()
     with contextlib.redirect_stdout(stdout):
-        x, y = sn.evaluate(sn.print(1, sn.defer(2)))
+        x = sn.evaluate(sn.print(sn.defer(2)))
 
-    assert stdout.getvalue() == '1 2\n'
-    assert x == 1
-    assert y == 2
+    assert stdout.getvalue() == '2\n'
+    assert x == 2
 
 
 def test_print_stderr():
     stderr = io.StringIO()
     with contextlib.redirect_stderr(stderr):
-        x, y = sn.evaluate(sn.print(1, sn.defer(2), file=sys.stderr))
+        x = sn.evaluate(sn.print(sn.defer(2), file=sys.stderr))
 
-    assert stderr.getvalue() == '1 2\n'
-    assert x == 1
-    assert y == 2
+    assert stderr.getvalue() == '2\n'
+    assert x == 2
 
 
 def test_print_separator():
     stdout = io.StringIO()
     with contextlib.redirect_stdout(stdout):
-        x, y = sn.evaluate(sn.print(1, sn.defer(2), sep='|'))
+        x = sn.evaluate(sn.print(sn.defer(2), sep='|'))
 
-    assert stdout.getvalue() == '1|2\n'
-    assert x == 1
-    assert y == 2
+    assert stdout.getvalue() == '2\n'
+    assert x == 2
 
 
 def test_print_end():
     stdout = io.StringIO()
     with contextlib.redirect_stdout(stdout):
-        x, y = sn.evaluate(sn.print(1, sn.defer(2), end=''))
+        x = sn.evaluate(sn.print(sn.defer(2), end=''))
 
-    assert stdout.getvalue() == '1 2'
-    assert x == 1
-    assert y == 2
+    assert stdout.getvalue() == '2'
+    assert x == 2
 
 
 def test_reversed():

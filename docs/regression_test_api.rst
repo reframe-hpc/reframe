@@ -48,7 +48,7 @@ For example, a test can be parameterized using the :func:`parameter` directive a
 .. code:: python
 
     class MyTest(rfm.RegressionTest):
-        parameter('variant', 'A', 'B')
+        parameter('variant', ['A', 'B'])
  
         def __init__(self):
             if self.variant == 'A':
@@ -71,14 +71,14 @@ For instance, continuing with the example above, one could override the :func:`_
                 override_other()
 
 
-.. py:function:: reframe.core.pipeline.RegressionTest.parameter(name, *values, inherit_params=False, filter_params=None)
+.. py:function:: reframe.core.pipeline.RegressionTest.parameter(name, values=None, inherit_params=False, filter_params=None)
 
    Inserts or modifies a regression test parameter.
    If a parameter with a matching name is already present in the parameter space of a parent class, the existing parameter values will be combined with those provided by this method following the inheritance behaviour set by the arguments ``inherit_params`` and ``filter_params``.
    Instead, if no parameter with a matching name exists in any of the parent parameter spaces, a new regression test parameter is created.
 
-   :param name: the parameter name.
-   :param values: the parameter values.
+   :param name: The parameter name.
+   :param values: A list containing the parameter values.
        If no values are passed when creating a new parameter, the parameter is considered as *declared* but not *defined* (i.e. an abstract parameter).
        Instead, for an existing parameter, this depends on the parameter's inheritance behaviour and on whether any values where provided in any of the parent parameter spaces.
    :param inherit_params: If :obj:`False`, no parameter values that may have been defined in any of the parent parameter spaces will be inherited.

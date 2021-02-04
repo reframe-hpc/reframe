@@ -16,8 +16,8 @@ class NoParams(rfm.RunOnlyRegressionTest):
 
 
 class TwoParams(NoParams):
-    parameter('P0', 'a')
-    parameter('P1', 'b')
+    parameter('P0', ['a'])
+    parameter('P1', ['b'])
 
 
 class Abstract(TwoParams):
@@ -25,8 +25,8 @@ class Abstract(TwoParams):
 
 
 class ExtendParams(TwoParams):
-    parameter('P1', 'c', 'd', 'e', inherit_params=True)
-    parameter('P2', 'f', 'g')
+    parameter('P1', ['c', 'd', 'e'], inherit_params=True)
+    parameter('P2', ['f', 'g'])
 
 
 def test_param_space_is_empty():
@@ -54,7 +54,7 @@ def test_abstract_param():
 
 def test_param_override():
     class MyTest(TwoParams):
-        parameter('P1', '-')
+        parameter('P1', ['-'])
 
     assert MyTest.param_space['P0'] == ('a',)
     assert MyTest.param_space['P1'] == ('-',)
@@ -62,7 +62,7 @@ def test_param_override():
 
 def test_param_inheritance():
     class MyTest(TwoParams):
-        parameter('P1', 'c', inherit_params=True)
+        parameter('P1', ['c'], inherit_params=True)
 
     assert MyTest.param_space['P0'] == ('a',)
     assert MyTest.param_space['P1'] == ('b', 'c',)
@@ -173,10 +173,10 @@ def test_parameterized_test_is_incompatible():
 
 def test_param_space_clash():
     class Spam(rfm.RegressionMixin):
-        parameter('P0', 1)
+        parameter('P0', [1])
 
     class Ham(rfm.RegressionMixin):
-        parameter('P0', 2)
+        parameter('P0', [2])
 
     with pytest.raises(ValueError):
         class Eggs(Spam, Ham):
@@ -189,11 +189,11 @@ def test_namespace_clash():
 
     with pytest.raises(NameError):
         class Ham(Spam):
-            parameter('foo', 1)
+            parameter('foo', [1])
 
 
 def test_double_declare():
     with pytest.raises(ValueError):
         class MyTest(rfm.RegressionTest):
-            parameter('P0', 1, 2, 3)
+            parameter('P0', [1, 2, 3])
             parameter('P0')

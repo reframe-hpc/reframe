@@ -23,8 +23,11 @@ class _TestParameter:
     parameter space is built.
     '''
 
-    def __init__(self, name, *values,
+    def __init__(self, name, values=None,
                  inherit_params=False, filter_params=None):
+        if values is None:
+            values = []
+
         # By default, filter out all the parameter values defined in the
         # base classes.
         if not inherit_params:
@@ -38,7 +41,7 @@ class _TestParameter:
                 return x
 
         self.name = name
-        self.values = values
+        self.values = tuple(values)
         self.filter_params = filter_params
 
 
@@ -48,7 +51,7 @@ class LocalParamSpace(attributes.LocalAttrSpace):
     Stores all the regression test parameters defined in the test class body.
     '''
 
-    def add_attr(self, name, *values, **kwargs):
+    def add_attr(self, name, values=None, **kwargs):
         '''Insert or modify a regression test parameter.
 
         This method may only be called in the main class body. Otherwise, its
@@ -59,7 +62,7 @@ class LocalParamSpace(attributes.LocalAttrSpace):
            :ref:`directives`
 
         '''
-        self[name] = _TestParameter(name, *values, **kwargs)
+        self[name] = _TestParameter(name, values, **kwargs)
 
     @property
     def params(self):
