@@ -24,5 +24,5 @@ class BoostPythonBindingsTest(rfm.RegressionTest):
             'PYTHON_INCLUDE': '$(python3-config --includes)',
             'PYTHON_BOOST_LIB': f'boost_python$({version_cmd})'
         }
-        self.maintainers = ['JB', 'AJ']
+        self.maintainers = ['TM', 'AJ']
         self.tags = {'scs', 'production'}
