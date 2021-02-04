@@ -20,7 +20,7 @@ class FileSystemCommandCheck(rfm.RunOnlyRegressionTest):
         self.sanity_patterns = sn.assert_found(r'0', self.stdout)
         self.perf_patterns = {
             'real_time': sn.extractsingle(r'\nreal.+m(?P<real_time>\S+)s',
-                                     self.stderr, 'real_time', float)
+                                          self.stderr, 'real_time', float)
         }
         self.postrun_cmds = ['echo $?']
         self.tags = {'ops', 'diagnostic'}
@@ -62,11 +62,11 @@ class FileSystemLsDirCheck(FileSystemCommandCheck):
         self.executable = 'time ls'
         self.executable_opts = [variant]
 
-                       
-@rfm.parameterized_test(['/project/csstaff/bignamic'],#TODO: can we parametrize the user?
+
+@rfm.parameterized_test(['/project/csstaff/bignamic'],
                         ['/users/bignamic'],
                         ['/scratch/snx1*/bignamic'],
-                        ['/scratch/snx3*/bignamic'])#TODO: what is the correct way to do this?
+                        ['/scratch/snx3*/bignamic'])
 class FileSystemDuDirCheck(FileSystemCommandCheck):
     def __init__(self, variant):
         super().__init__()
@@ -76,17 +76,16 @@ class FileSystemDuDirCheck(FileSystemCommandCheck):
         self.perf_patterns = {
             'real_time': sn.extractsingle(r'\nreal.+m(?P<real_time>\S+)s',
                                           self.stderr, 'real_time', float),
-#            'size' : sn.extractsingle(r'(?P<size>\S+)\s+%s'%variant,
-#                                      self.stdout, 'size', float)
-            'size' : sn.extractsingle(r'(?P<size>\S+).+/bignamic',# TODO: this should be solved with parametrized user 
-                                      self.stdout, 'size', float)
+            # TODO: this should be solved with parametrized user
+            'size': sn.extractsingle(r'(?P<size>\S+).+/bignamic',
+                                     self.stdout, 'size', float)
         }
-        
-        # TODO: system is not always relevant 
+
+        # TODO: system is not always relevant
         self.reference = {
             '/project/csstaff/bignamic': {
                 'size': (1000, None, 0.1, 'MB'),
-                'real_time': (5.0, None, 0.1, 's')                
+                'real_time': (5.0, None, 0.1, 's')
             },
             '/users/bignamic': {
                 'size': (900, None, 0.1, 'MB'),
@@ -96,13 +95,15 @@ class FileSystemDuDirCheck(FileSystemCommandCheck):
                 'size': (900, None, 0.1, 'MB'),
                 'real_time': (5.0, None, 0.1, 's')
             }
-        }        
+        }
         self.executable = 'time du -mhs --block-size=1M'
         self.executable_opts = [variant]
 
 
-@rfm.parameterized_test(['/scratch/snx1*/bignamic'],#TODO: can we parametrize the user?
-                        ['/scratch/snx3000/bignamic'])#TODO: what is the correct way to do this?
+# TODO: can we parametrize the user?
+# TODO: avoid wildcard in folder name
+@rfm.parameterized_test(['/scratch/snx1*/bignamic'],
+                        ['/scratch/snx3000/bignamic'])
 class FileSystemTouchFileCheck(FileSystemCommandCheck):
     def __init__(self, variant):
         super().__init__()
@@ -114,4 +115,31 @@ class FileSystemTouchFileCheck(FileSystemCommandCheck):
     @rfm.run_after('run')
     def delete_test_file(self):
         if os.path.exists(self.test_file):
-            os.remove(self.test_file)    
+            os.remove(self.test_file)
+
+
+@rfm.parameterized_test(['/apps/daint/system/etc/BatchDisabled'],
+                        ['/etc/opt/slurm/cgroup.conf'],
+                        ['/etc/opt/slurm/plugstack.conf'],
+                        ['/etc/opt/slurm/slurm.conf'],
+                        ['/etc/opt/slurm/topology.conf'],
+                        ['/etc/opt/slurm/node_prolog.sh'],
+                        ['/etc/opt/slurm/node_epilog.sh'],
+                        ['/etc/opt/slurm/gres.conf'])
+class FileSystemCatCheck(FileSystemCommandCheck):
+    # TODO: find correct test name
+    def __init__(self, variant):
+        super().__init__()
+        self.descr = 'cat of file'
+        self.reference = {
+            'daint:login': {
+                # TODO: real times have large variances,
+                # do we need a specific refererence for each test?
+                'real_time': (0.05, None, 0.1, 's')
+            },
+            'dom:login': {
+                'real_time': (0.05, None, 0.1, 's')
+            }
+        }
+        self.executable = 'time cat > /dev/null'
+        self.executable_opts = [variant]
