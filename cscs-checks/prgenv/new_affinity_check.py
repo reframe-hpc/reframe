@@ -177,8 +177,6 @@ class AffinityTestBase(rfm.RegressionTest):
             self.job.launcher.options += [f'--hint={hint}']
 
 
-
-
 class AffinityOpenMPBase(AffinityTestBase):
     '''Extend affinity base with OMP hooks.
 
@@ -231,14 +229,14 @@ class OneOMPThreadPerCPU(AffinityOpenMPBase):
     @rfm.run_before('sanity')
     def consume_cpu_set(self):
         '''Threads are bound to cpus.'''
-        for cpus_per_thread in self.aff_cpus:
-            if ((len(cpus_per_thread) > 1) or
-                not all(x in self.cpu_set for x in cpus_per_thread)):
+        for cpus_bound_to_thread in self.aff_cpus:
+            if ((len(cpus_bound_to_thread) > 1) or
+                not all(x in self.cpu_set for x in cpus_bound_to_thread)):
 
                 # This will force the sanity function to fail.
                 self.cpu_set.update([-1])
 
-            self.cpu_set -= set(cpus_per_thread)
+            self.cpu_set -= set(cpus_bound_to_thread)
 
 
 @rfm.simple_test
@@ -260,16 +258,15 @@ class OneOMPThreadPerCore(AffinityOpenMPBase):
 
     @rfm.run_before('sanity')
     def consume_cpu_set(self):
-        '''Threads are bound to cpus.'''
-        for cpus_per_thread in self.aff_cpus:
+        '''Threads are bound to cores.'''
+        for cpus_bound_to_thread in self.aff_cpus:
 
             # Get CPU sibilings by core
-            cpu_sibilings = self.get_sibiling_cpus(cpus_per_thread[0], by='core')
+            cpu_sibilings = self.get_sibiling_cpus(cpus_bound_to_thread[0], by='core')
 
             # If there is more than 1 CPU, it must belong to the same core
-            if ((len(cpus_per_thread) > 1) and
-                not all(x in self.cpu_set for x in cpus_per_thread) or
-                not all(x in cpu_sibilings for x in cpus_per_thread)):
+            if (not all(x in self.cpu_set for x in cpus_bound_to_thread) or
+                not all(x in cpu_sibilings for x in cpus_bound_to_thread)):
 
                 # This will force the sanity function to fail.
                 self.cpu_set.update([-1])
@@ -297,15 +294,14 @@ class OneOMPThreadPerSocket(AffinityOpenMPBase):
     @rfm.run_before('sanity')
     def consume_cpu_set(self):
         '''Threads are bound to sockets.'''
-        for cpus_per_thread in self.aff_cpus:
+        for cpus_bound_to_thread in self.aff_cpus:
 
             # Get CPU sibilings by core
-            cpu_sibilings = self.get_sibiling_cpus(cpus_per_thread[0], by='socket')
+            cpu_sibilings = self.get_sibiling_cpus(cpus_bound_to_thread[0], by='socket')
 
             # If there is more than 1 CPU, it must belong to the same socket
-            if ((len(cpus_per_thread) > 1) and
-                not all(x in self.cpu_set for x in cpus_per_thread) or
-                not all(x in cpu_sibilings for x in cpus_per_thread)):
+            if (not all(x in self.cpu_set for x in cpus_bound_to_thread) or
+                not all(x in cpu_sibilings for x in cpus_bound_to_thread)):
 
                 # This will force the sanity function to fail.
                 self.cpu_set.update([-1])
