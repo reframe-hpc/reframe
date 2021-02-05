@@ -120,7 +120,7 @@ def list_checks(testcases, printer, detailed=False):
     printer.info(
         '\n'.join(format_check(c, deps[c.name], detailed) for c in checks)
     )
-    printer.info(f'Found {len(checks)} check(s)')
+    printer.info(f'Found {len(checks)} check(s)\n')
 
 
 def logfiles_message():
@@ -273,6 +273,11 @@ def main():
         '-r', '--run', action='store_true',
         help='Run the selected checks'
     )
+    action_options.add_argument(
+        '--ci-generate', action='store', metavar='FILE',
+        help=('Generate into FILE a Gitlab CI pipeline '
+              'for the selected tests and exit'),
+    )
 
     # Run options
     run_options.add_argument(
@@ -334,10 +339,6 @@ def main():
     run_options.add_argument(
         '--disable-hook', action='append', metavar='NAME', dest='hooks',
         default=[], help='Disable a pipeline hook for this run'
-    )
-    run_options.add_argument(
-        '--ci-generate', action='store', metavar='FILE',
-        help="Store ci pipeline in yaml FILE",
     )
 
     # Environment options
@@ -793,12 +794,6 @@ def main():
         )
         printer.verbose(f'Final number of test cases: {len(testcases)}')
 
-        if options.ci_generate:
-            with open(options.ci_generate, 'wt') as fp:
-                ci.emit_pipeline(fp, testcases)
-
-            sys.exit(0)
-
         # Disable hooks
         for tc in testcases:
             for h in options.hooks:
@@ -809,9 +804,23 @@ def main():
             list_checks(testcases, printer, options.list_detailed)
             sys.exit(0)
 
+        if options.ci_generate:
+            list_checks(testcases, printer)
+            printer.info('[Generate CI]')
+            with open(options.ci_generate, 'wt') as fp:
+                ci.emit_pipeline(fp, testcases)
+
+            printer.info(
+                f'  Gitlab pipeline generated successfully '
+                f'in {options.ci_generate!r}.\n'
+            )
+            sys.exit(0)
+
         if not options.run:
-            printer.error(f"No action specified. Please specify `-l'/`-L' for "
-                          f"listing or `-r' for running. "
+            printer.error("No action option specified. Available options:\n"
+                          "  - `-l'/`-L' for listing\n"
+                          "  - `-r' for running\n"
+                          "  - `--ci-generate' for generating a CI pipeline\n"
                           f"Try `{argparser.prog} -h' for more options.")
             sys.exit(1)
 
