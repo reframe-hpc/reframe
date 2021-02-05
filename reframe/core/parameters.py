@@ -10,7 +10,7 @@
 import functools
 import itertools
 
-import reframe.core.attributes as attributes
+import reframe.core.namespaces as namespaces
 
 
 class _TestParameter:
@@ -45,13 +45,13 @@ class _TestParameter:
         self.filter_params = filter_params
 
 
-class LocalParamSpace(attributes.LocalAttrSpace):
+class LocalParamSpace(namespaces.LocalNamespace):
     '''Local parameter space of a regression test.
 
     Stores all the regression test parameters defined in the test class body.
     '''
 
-    def add_attr(self, name, values=None, **kwargs):
+    def add(self, name, values=None, **kwargs):
         '''Insert or modify a regression test parameter.
 
         This method may only be called in the main class body. Otherwise, its
@@ -66,10 +66,15 @@ class LocalParamSpace(attributes.LocalAttrSpace):
 
     @property
     def params(self):
-        return self._attr
+        return self._namespace
+
+    def _raise_namespace_clash(self, name):
+        raise ValueError(
+            f'{name!r} is already present in the local parameter space'
+        )
 
 
-class ParamSpace(attributes.AttrSpace):
+class ParamSpace(namespaces.Namespace):
     ''' Regression test parameter space
 
     Host class for the parameter space of a regresion test. The parameter
@@ -87,6 +92,8 @@ class ParamSpace(attributes.AttrSpace):
     the value returned by the member function __len__.
 
     :param target_cls: the class where the full parameter space is to be built.
+    :param target_namespace: a reference namespace to ensure that no name
+        clashes occur (see :class:`reframe.core.namespaces.Namespace`).
 
     .. note::
         The __init__ method is aware of the implementation details of the
@@ -95,9 +102,9 @@ class ParamSpace(attributes.AttrSpace):
         the target class.
     '''
 
-    localAttrSpaceName = '_rfm_local_param_space'
-    localAttrSpaceCls = LocalParamSpace
-    attrSpaceName = '_rfm_param_space'
+    local_namespace_name = '_rfm_local_param_space'
+    local_namespace_class = LocalParamSpace
+    namespace_name = '_rfm_param_space'
 
     def __init__(self, target_cls=None, target_namespace=None):
         super().__init__(target_cls, target_namespace)
@@ -185,7 +192,7 @@ class ParamSpace(attributes.AttrSpace):
 
     @property
     def params(self):
-        return self._attr
+        return self._namespace
 
     @property
     def unique_iter(self):

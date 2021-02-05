@@ -24,16 +24,16 @@ class RegressionTestMeta(type):
 
         # Directive to add a regression test parameter directly in the
         # class body as: `parameter('P0', 0,1,2,3)`.
-        namespace['parameter'] = local_param_space.add_attr
+        namespace['parameter'] = local_param_space.add
 
         # Regression test var space defined at the class level
         local_var_space = variables.LocalVarSpace()
         namespace['_rfm_local_var_space'] = local_var_space
 
         # Directives to add/modify a regression test variable
-        namespace['var'] = local_var_space.add_attr
-        namespace['require_var'] = local_var_space.undefine_attr
-        namespace['set_var'] = local_var_space.define_attr
+        namespace['var'] = local_var_space.add
+        namespace['require_var'] = local_var_space.undefine
+        namespace['set_var'] = local_var_space.define
 
         return namespace
 

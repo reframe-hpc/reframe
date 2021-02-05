@@ -8,7 +8,7 @@
 #
 
 
-import reframe.core.attributes as attributes
+import reframe.core.namespaces as namespaces
 import reframe.core.fields as fields
 
 
@@ -46,7 +46,7 @@ class _TestVar:
         self.value = value
 
 
-class LocalVarSpace(attributes.LocalAttrSpace):
+class LocalVarSpace(namespaces.LocalNamespace):
     '''Local variable space of a regression test.
 
     Stores the input from the var directives executed in the class body of
@@ -59,7 +59,7 @@ class LocalVarSpace(attributes.LocalAttrSpace):
         self.undefined = set()
         self.definitions = {}
 
-    def add_attr(self, name, *types, **kwargs):
+    def add(self, name, *types, **kwargs):
         '''Declare a new regression test variable.
 
         This method may only be called in the main class body. Otherwise, its
@@ -73,7 +73,7 @@ class LocalVarSpace(attributes.LocalAttrSpace):
         self._is_logged(name)
         self[name] = _TestVar(name, *types, **kwargs)
 
-    def undefine_attr(self, name):
+    def undefine(self, name):
         '''Undefine a variable previously declared in a parent class.
 
         This method may only be called in the main class body. Otherwise, its
@@ -87,7 +87,7 @@ class LocalVarSpace(attributes.LocalAttrSpace):
         self._is_logged(name)
         self.undefined.add(name)
 
-    def define_attr(self, name, value):
+    def define(self, name, value):
         '''Assign a value to a previously declared regression test variable.
 
         This method may only be called in the main class body. Otherwise, its
@@ -117,10 +117,15 @@ class LocalVarSpace(attributes.LocalAttrSpace):
 
     @property
     def vars(self):
-        return self._attr
+        return self._namespace
+
+    def _raise_namespace_clash(self, name):
+        raise ValueError(
+            f'{name!r} is already present in the local variable space'
+        )
 
 
-class VarSpace(attributes.AttrSpace):
+class VarSpace(namespaces.Namespace):
     '''Variable space of a regression test.
 
     Store the variables of a regression test. This variable space is stored
@@ -135,9 +140,9 @@ class VarSpace(attributes.AttrSpace):
     provided, the VarSpace is simply initialized as empty.
     '''
 
-    localAttrSpaceName = '_rfm_local_var_space'
-    localAttrSpaceCls = LocalVarSpace
-    attrSpaceName = '_rfm_var_space'
+    local_namespace_name = '_rfm_local_var_space'
+    local_namespace_class = LocalVarSpace
+    namespace_name = '_rfm_var_space'
 
     def join(self, other):
         '''Join an existing VarSpace into the current one.'''
@@ -147,7 +152,7 @@ class VarSpace(attributes.AttrSpace):
             # triggered when inheriting from multiple RegressionTest classes.
             if key in self.vars:
                 raise ValueError(
-                    f'attribute {key!r} is declared in more than one of the '
+                    f'variable {key!r} is declared in more than one of the '
                     f'parent classes'
                 )
 
@@ -165,10 +170,10 @@ class VarSpace(attributes.AttrSpace):
         of these actions on the same var for the same local var space
         is disallowed.
         '''
-        localVarSpace = getattr(cls, self.localAttrSpaceName)
+        local_varspace = getattr(cls, self.local_namespace_name)
 
         # Extend the VarSpace
-        for key, var in localVarSpace.items():
+        for key, var in local_varspace.items():
 
             # Disable redeclaring a variable
             if key in self.vars:
@@ -179,12 +184,12 @@ class VarSpace(attributes.AttrSpace):
             self.vars[key] = var
 
         # Undefine the vars as indicated by the local var space
-        for key in localVarSpace.undefined:
+        for key in local_varspace.undefined:
             self._check_var_is_declared(key)
             self.vars[key].undefine()
 
         # Define the vars as indicated by the local var space
-        for key, val in localVarSpace.definitions.items():
+        for key, val in local_varspace.definitions.items():
             self._check_var_is_declared(key)
             self.vars[key].define(val)
 
@@ -211,7 +216,7 @@ class VarSpace(attributes.AttrSpace):
 
     @property
     def vars(self):
-        return self._attr
+        return self._namespace
 
     def undefined_vars(self):
         return list(filter(lambda x: self.vars[x].is_undef(), self.vars))
