@@ -36,7 +36,7 @@ def test_custom_var(onevar):
 
 def test_instantiate_and_inherit(novars):
     inst = novars()
-    with pytest.raises(NameError):
+    with pytest.raises(ValueError):
         class MyTest(novars):
             '''Error from name clashing'''
 
@@ -83,7 +83,7 @@ def test_double_action_on_var():
 
 
 def test_namespace_clash(novars):
-    with pytest.raises(NameError):
+    with pytest.raises(ValueError):
         class MyTest(novars):
             var('current_environ', str)
 

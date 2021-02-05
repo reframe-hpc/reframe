@@ -51,7 +51,7 @@ class LocalParamSpace(namespaces.LocalNamespace):
     Stores all the regression test parameters defined in the test class body.
     '''
 
-    def add(self, name, values=None, **kwargs):
+    def insert(self, name, values=None, **kwargs):
         '''Insert or modify a regression test parameter.
 
         This method may only be called in the main class body. Otherwise, its
@@ -61,6 +61,7 @@ class LocalParamSpace(namespaces.LocalNamespace):
 
            :ref:`directives`
 
+        .. versionadded:: 3.4
         '''
         self[name] = _TestParameter(name, values, **kwargs)
 
@@ -112,7 +113,7 @@ class ParamSpace(namespaces.Namespace):
         # Internal parameter space usage tracker
         self.__unique_iter = iter(self)
 
-    def join(self, other):
+    def join(self, other, cls):
         '''Join other parameter space into the current one.
 
         Join two different parameter spaces into a single one. Both parameter
@@ -120,7 +121,8 @@ class ParamSpace(namespaces.Namespace):
         raise an error if a parameter is defined in the two parameter spaces
         to be merged.
 
-        :param other: instance of the ParamSpace class
+        :param other: instance of the ParamSpace class.
+        :param cls: the target class.
         '''
         for key in other.params:
             # With multiple inheritance, a single parameter
@@ -130,9 +132,11 @@ class ParamSpace(namespaces.Namespace):
                 self.params[key] != () and
                 other.params[key] != ()):
 
-                raise ValueError(f'parameter space conflict: '
-                                 f'parameter {key!r} is defined in more than '
-                                 f'one base class')
+                raise ValueError(
+                    f'parameter space conflict: '
+                    f'parameter {key!r} is defined in more than '
+                    f'one base class of class {cls.__qualname__!r}'
+                )
 
             self.params[key] = (
                 other.params.get(key, ()) + self.params.get(key, ())
@@ -146,7 +150,7 @@ class ParamSpace(namespaces.Namespace):
                 p.filter_params(self.params.get(name, ())) + p.values
             )
 
-    def insert(self, obj, cls=None, use_params=False):
+    def inject(self, obj, cls=None, use_params=False):
         '''Insert the params in the regression test.
 
         Create and initialize the regression test parameters as object
@@ -175,8 +179,10 @@ class ParamSpace(namespaces.Namespace):
 
             except StopIteration as no_params:
                 raise RuntimeError(
-                    f'exhausted parameter space'
-                ) from no_params
+                    f'exhausted parameter space: all possible parameter value'
+                    f' combinations have been used for '
+                    f'{obj.__class__.__qualname__}'
+                ) from None
 
         else:
             # Otherwise init the params as None

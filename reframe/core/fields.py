@@ -40,8 +40,8 @@ class Field:
 class TypedField(Field):
     '''Stores a field of predefined type'''
 
-    def __init__(self, *types):
-        self._types = types
+    def __init__(self, main_type, *other_types):
+        self._types = (main_type,) + other_types
         if not all(isinstance(t, type) for t in self._types):
             raise TypeError('{0} is not a sequence of types'.
                             format(self._types))
@@ -56,9 +56,6 @@ class TypedField(Field):
     def __set__(self, obj, value):
         self._check_type(value)
         super().__set__(obj, value)
-
-    def supports_type(self, value):
-        return value in self._types
 
 
 class ConstantField(Field):

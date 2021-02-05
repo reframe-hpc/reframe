@@ -22,33 +22,32 @@ class RegressionTestMeta(type):
         local_param_space = parameters.LocalParamSpace()
         namespace['_rfm_local_param_space'] = local_param_space
 
-        # Directive to add a regression test parameter directly in the
+        # Directive to insert a regression test parameter directly in the
         # class body as: `parameter('P0', 0,1,2,3)`.
-        namespace['parameter'] = local_param_space.add
+        namespace['parameter'] = local_param_space.insert
 
         # Regression test var space defined at the class level
         local_var_space = variables.LocalVarSpace()
         namespace['_rfm_local_var_space'] = local_var_space
 
         # Directives to add/modify a regression test variable
-        namespace['var'] = local_var_space.add
+        namespace['var'] = local_var_space.declare
         namespace['require_var'] = local_var_space.undefine
         namespace['set_var'] = local_var_space.define
-
         return namespace
 
     def __init__(cls, name, bases, namespace, **kwargs):
         super().__init__(name, bases, namespace, **kwargs)
 
-        # Create a target namespace to test for attribute name clashes
-        target_namespace = set(dir(cls))
+        # Create a set with the attribute names already in use.
+        used_attribute_names = set(dir(cls))
 
         # Build the var space and extend the target namespace
-        variables.VarSpace(cls, target_namespace)
-        target_namespace.update(cls._rfm_var_space.vars)
+        variables.VarSpace(cls, used_attribute_names)
+        used_attribute_names.update(cls._rfm_var_space.vars)
 
         # Build the parameter space
-        parameters.ParamSpace(cls, target_namespace)
+        parameters.ParamSpace(cls, used_attribute_names)
 
         # Set up the hooks for the pipeline stages based on the _rfm_attach
         # attribute; all dependencies will be resolved first in the post-setup

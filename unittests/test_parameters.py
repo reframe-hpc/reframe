@@ -187,7 +187,7 @@ def test_namespace_clash():
     class Spam(rfm.RegressionTest):
         var('foo', int, 1)
 
-    with pytest.raises(NameError):
+    with pytest.raises(ValueError):
         class Ham(Spam):
             parameter('foo', [1])
 

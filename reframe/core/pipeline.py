@@ -135,6 +135,8 @@ class RegressionMixin(metaclass=RegressionTestMeta):
     the metaclass magic implemented in
     :class:`RegressionTestMeta`. Using this metaclass allows mixin classes to
     use powerful ReFrame features, such as hooks, parameters or variables.
+
+    .. versionadded:: 3.5
     '''
 
 
@@ -147,7 +149,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
 
     .. warning::
         .. versionchanged:: 3.5
-            Multiple inheritance with a shared common ancestor is not allowed.
+           Multiple inheritance with a shared common ancestor is not allowed.
 
     .. note::
         .. versionchanged:: 2.19
@@ -187,7 +189,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #: by this test.
     #:
     #: :type: :class:`List[str]`
-    #: :default: ``[]``
+    #: :default: ``None``
     #:
     #: .. note::
     #:     .. versionchanged:: 2.12
@@ -195,6 +197,9 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:
     #:     .. versionchanged:: 2.17
     #:        Support for wildcards is dropped.
+    #:
+    #:     .. versionchanged:: 3.3
+    #:        Default value changed from ``[]`` to ``None``.
     #:
     var('valid_prog_environs', typ.List[str], type(None), value=None)
 
@@ -204,7 +209,11 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #: ``*`` is an alias of ``*:*``
     #:
     #: :type: :class:`List[str]`
-    #: :default: ``[]``
+    #: :default: ``None``
+    #:
+    #:     .. versionchanged:: 3.3
+    #:        Default value changed from ``[]`` to ``None``.
+    #:
     var('valid_systems', typ.List[str], type(None), value=None)
 
     #: A detailed description of the test.
@@ -716,8 +725,8 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
         obj = super().__new__(cls)
 
         # Insert the var & param spaces
-        cls._rfm_var_space.insert(obj, cls)
-        cls._rfm_param_space.insert(obj, cls, _rfm_use_params)
+        cls._rfm_var_space.inject(obj, cls)
+        cls._rfm_param_space.inject(obj, cls, _rfm_use_params)
 
         # Create a test name from the class name and the constructor's
         # arguments

@@ -19,21 +19,21 @@ class LocalNamespace(metaclass=abc.ABCMeta):
     through directives. This local namespace is populated during the
     test class body execution through the add method, which must be
     exposed as a directive in the
-    :class `reframe.core.pipeline.RegressionTest`.
+    :class:`reframe.core.pipeline.RegressionTest`.
 
     Example: In the pseudo-code below, the local namespace of A is {P0},
     and the local namespace of B is {P1}. However, the final namespace
     of A is still {P0}, and the final namespace of B is {P0, P1}.
-    The :func:`new` directive is simply an alias to the
+    The :func:`var` directive is simply an alias to the
     :func:`add` method.
 
     .. code:: python
 
         class A(RegressionTest):
-            new('P0')
+            var('P0')
 
         class B(A):
-            new('P1')
+            var('P1')
     '''
 
     def __init__(self):
@@ -48,17 +48,9 @@ class LocalNamespace(metaclass=abc.ABCMeta):
         else:
             self._raise_namespace_clash(name)
 
-    def _raise_namespace_clash(self, name):
-        raise ValueError(
-            f'{name!r} is already present in the local namespace'
-        )
-
     @abc.abstractmethod
-    def add(self, name, *args, **kwargs):
-        '''Insert a new item in the local namespace.'''
-
-    def items(self):
-        return self._namespace.items()
+    def _raise_namespace_clash(self, name):
+        '''Raise an error if there is a namespace clash.'''
 
 
 class Namespace(metaclass=abc.ABCMeta):
@@ -76,6 +68,17 @@ class Namespace(metaclass=abc.ABCMeta):
     If a target class is provided, the constructor will attach the Namespace
     instance into the target class with the class attribute name as defined
     in ``namespace_name``.
+
+    Eventually, the items from a Namespace are injected as attributes of
+    the target class instance by the :func:`inject` method, which must be
+    called by the target class during its instantiation process. Also, a target
+    class may use more that one Namespace, which raises the need for name
+    checking across namespaces. Thus, the :func:`__init__` method accepts the
+    additional argument ``illegal_names``, which is a set of class attribute
+    names already in use by the target class or other namespaces from this
+    target class. Then, after the Namespace is built, if ``illegal_names`` is
+    provided, a sanity check is performed, ensuring that no name clashing
+    will occur during the target class instantiation process.
     '''
 
     @property
@@ -84,7 +87,7 @@ class Namespace(metaclass=abc.ABCMeta):
         '''Name of the local namespace in the target class.
 
         Name under which the local namespace is stored in the
-        :class `reframe.core.pipeline.RegressionTest` class.
+        :class:`reframe.core.pipeline.RegressionTest` class.
         '''
 
     @property
@@ -98,13 +101,12 @@ class Namespace(metaclass=abc.ABCMeta):
         '''Name of the namespace in the target class.
 
         Name under which the namespace is stored in the
-        :class `reframe.core.pipeline.RegressionTest` class.
+        :class:`reframe.core.pipeline.RegressionTest` class.
         '''
 
-    def __init__(self, target_cls=None, target_namespace=None):
+    def __init__(self, target_cls=None, illegal_names=None):
         self._namespace = {}
         if target_cls:
-
             # Assert the Namespace can be built for the target_cls
             self.assert_target_cls(target_cls)
 
@@ -115,7 +117,7 @@ class Namespace(metaclass=abc.ABCMeta):
             self.extend(target_cls)
 
             # Sanity checkings on the resulting Namespace
-            self.sanity(target_cls, target_namespace)
+            self.sanity(target_cls, illegal_names)
 
             # Attach the Namespace to the target class
             if target_cls:
@@ -134,35 +136,37 @@ class Namespace(metaclass=abc.ABCMeta):
         for base in filter(lambda x: hasattr(x, self.namespace_name),
                            cls.__bases__):
             assert isinstance(getattr(base, self.namespace_name), type(self))
-            self.join(getattr(base, self.namespace_name))
+            self.join(getattr(base, self.namespace_name), cls)
 
     @abc.abstractmethod
-    def join(self, other):
+    def join(self, other, cls):
         '''Join other Namespace with the current one.'''
 
     @abc.abstractmethod
     def extend(self, cls):
         '''Extend the namespace with the local namespace.'''
 
-    def sanity(self, cls, target_namespace=None):
+    def sanity(self, cls, illegal_names=None):
         '''Sanity checks post-creation of the namespace.
 
-        By default, we make illegal to have the any item in the namespace
+        By default, we make illegal to have any item in the namespace
         that clashes with a member of the target class.
         '''
-        if target_namespace is None:
-            target_namespace = set(dir(cls))
+        if illegal_names is None:
+            illegal_names = set(dir(cls))
 
         for key in self._namespace:
-            if key in target_namespace:
-                raise NameError(
-                    f'{key!r} clashes with other class attribute from'
+            if key in illegal_names:
+                raise ValueError(
+                    f'{key!r} already defined in class'
                     f' {cls.__qualname__!r}'
                 )
 
     @abc.abstractmethod
-    def insert(self, obj, objtype=None):
-        '''Insert the items from the namespace as attributes of the test object.'''
+    def inject(self, obj, objtype=None):
+        '''Insert the items from the namespace as attributes of the object
+           ``obj``.
+        '''
 
     def items(self):
         return self._namespace.items()

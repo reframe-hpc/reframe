@@ -621,7 +621,7 @@ def test_multiple_inheritance(hellotest):
 
 def test_extend_after_instantiation(hellotest):
     inst = hellotest()
-    with pytest.raises(NameError):
+    with pytest.raises(ValueError):
         class MyTest(hellotest):
             pass
 
