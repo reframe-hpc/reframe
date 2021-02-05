@@ -1803,11 +1803,17 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
         :arg target: The name of the target dependency to be retrieved.
         :arg environ: The name of the programming environment that will be
             used to retrieve the test case of the target test. If ``None``,
-            :attr:`RegressionTest.current_environ` will be used.
+            :attr:`RegressionTest.current_environ.name` will be used.
+        :arg part: The name of the partition that will be
+            used to retrieve the test case of the target test. If ``None``,
+            :attr:`RegressionTest.current_partition.name` will be used.
 
         .. versionadded:: 2.21
 
         '''
+        user_deprecation_warning('calling getdep() is deprecated; '
+                                 'please use getdeps() instead')
+
         if self.current_environ is None:
             raise DependencyError(
                 'cannot resolve dependencies before the setup phase'
@@ -1830,6 +1836,48 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
 
         raise DependencyError(f'could not resolve dependency to ({target!r}, '
                               f'{part!r}, {environ!r})')
+
+    def getdeps(self, target_class=None, environ=None, part=None,
+                params=None):
+        '''Retrieve a list the test case from the dependencies. When the value
+        of the arguments is not None, they will be filtered based on that.
+
+        :arg target_class: The class type of the target dependencies to be
+            retrieved.
+        :arg environ: The name of the programming environment that will be
+            used to retrieve the test case of the target test.
+        :arg part: The name of the partition that will be used to retrieve the
+            test case of the target test.
+        :arg params: The parameters that will be used to retrieve
+            the test case of the target test.
+
+        .. versionadded:: 3.5
+
+        '''
+        if self.current_environ is None:
+            raise DependencyError(
+                'cannot resolve dependencies before the setup phase'
+            )
+
+        if self._case is None or self._case() is None:
+            raise DependencyError('no test case is associated with this test')
+
+        deps = self._case().deps
+        if target_class:
+            deps = [d for d in deps if type(d.check) == target_class]
+
+        if environ:
+            deps = [d for d in deps if d.environ.name == environ]
+
+        if part:
+            deps = [d for d in deps if d.partition.name == part]
+
+        if params:
+            deps = [d for d in deps if all(hasattr(d.check, k) and
+                                           getattr(d.check, k) == v
+                                           for k, v in params.items())]
+
+        return [d.check for d in deps]
 
     def __str__(self):
         return "%s(name='%s', prefix='%s')" % (type(self).__name__,
