@@ -11,14 +11,17 @@
 import reframe.core.namespaces as namespaces
 import reframe.core.fields as fields
 
+
 class _UndefVar:
     '''Custom type to flag a variable as undefined.'''
+
 
 class _TestVar:
     '''Regression test variable.
 
     Buffer to store a regression test variable declared through directives.
     '''
+
     def __init__(self, name, *args, **kwargs):
         self.field = kwargs.pop('field', fields.TypedField)
         self.default_value = kwargs.pop('value', _UndefVar)
