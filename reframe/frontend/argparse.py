@@ -258,6 +258,7 @@ class ArgumentParser(_ArgumentHolder):
         `add_argument()` call. If no default value was specified either, the
         attribute will be set to `None`.'''
 
+        # Enable auto-completion
         argcomplete.autocomplete(self._holder)
 
         # We always pass an empty namespace to our internal argparser and we do
