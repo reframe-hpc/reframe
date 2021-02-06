@@ -90,24 +90,28 @@ def build_deps(cases, default_cases=None):
     while skip_nodes:
         v = skip_nodes.pop()
         skipped_cases.append(v)
-        pruned_nodes = []
         for u, adj in graph.items():
             if v in adj:
                 skip_nodes.add(u)
-                pruned_nodes.append(u)
 
-        for u in pruned_nodes:
-            del graph[u]
+    # Prune graph
+    for c in skipped_cases:
+        # Cases originally discovered (unresolved_cases) are not in the graph,
+        # but we loop over them here; therefore we use pop()
+        graph.pop(c, None)
 
     # Calculate in-degree of each node
     for u, adjacent in graph.items():
         for v in adjacent:
             v.in_degree += 1
 
-    getlogger().warning('skipping all dependent test cases')
+    msg = 'skipping all dependent test cases\n'
     for c in skipped_cases:
-        getlogger().warning(f'  - {v}')
+        msg += f'  - {c}\n'
 
+    if skipped_cases:
+        getlogger().warning(msg)
+ 
     return graph, skipped_cases
 
 
