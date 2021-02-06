@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -9,8 +9,6 @@
 
 import inspect
 import os
-import traceback
-import warnings
 import sys
 
 import reframe.utility as utility
@@ -98,6 +96,10 @@ class TaskDependencyError(ReframeError):
     '''
 
 
+class FailureLimitError(ReframeError):
+    '''Raised when the limit of test failures has been reached.'''
+
+
 class AbortTaskError(ReframeError):
     '''Raised by the runtime inside a regression task to denote that it has
     been aborted due to an external reason (e.g., keyboard interrupt, fatal
@@ -133,7 +135,7 @@ class PipelineError(ReframeError):
     '''
 
 
-class ReframeForceExitError(ReframeError):
+class ForceExitError(ReframeError):
     '''Raised when ReFrame execution must be forcefully ended,
     e.g., after a SIGTERM was received.
     '''
@@ -282,8 +284,6 @@ def user_frame(exc_type, exc_value, tb):
 
     :returns: A frame object or :class:`None` if no user frame was found.
 
-    :meta private:
-
     '''
     if not inspect.istraceback(tb):
         return None
@@ -296,8 +296,17 @@ def user_frame(exc_type, exc_value, tb):
     return None
 
 
+def is_exit_request(exc_type, exc_value, tb):
+    '''Check if the error is a request to exit.'''
+
+    return isinstance(exc_value, (KeyboardInterrupt,
+                                  ForceExitError,
+                                  FailureLimitError))
+
+
 def is_severe(exc_type, exc_value, tb):
     '''Check if exception is a severe one.'''
+
     soft_errors = (ReframeError,
                    ConnectionError,
                    FileExistsError,

@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -24,9 +24,6 @@ site_configuration = {
                 {
                     'name': 'gpu',
                     'scheduler': 'slurm',
-                    'modules': [
-                        'daint-gpu'
-                    ],
                     'access': [
                         '--constraint=gpu',
                         '--partition=cscsci',
@@ -61,9 +58,6 @@ site_configuration = {
                 {
                     'name': 'slurm',
                     'scheduler': 'slurm',
-                    'modules': [
-                        'daint-gpu'
-                    ],
                     'access': [
                         '--constraint=gpu',
                         f'--account={osext.osgroup()}'
@@ -86,9 +80,6 @@ site_configuration = {
                 {
                     'name': 'pbs',
                     'scheduler': 'pbs',
-                    'modules': [
-                        'daint-gpu'
-                    ],
                     'access': [
                         'proc=gpu',
                         f'-A {osext.osgroup()}'
@@ -103,9 +94,6 @@ site_configuration = {
                 {
                     'name': 'torque',
                     'scheduler': 'torque',
-                    'modules': [
-                        'daint-gpu'
-                    ],
                     'access': [
                         '-l proc=gpu',
                         f'-A {osext.osgroup()}'

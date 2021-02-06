@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -20,6 +20,7 @@ class OSUBenchmarkTestBase(rfm.RunOnlyRegressionTest):
         self.num_tasks = 2
         self.num_tasks_per_node = 1
         self.sanity_patterns = sn.assert_found(r'^8', self.stdout)
+        self.depends_on('OSUBuildTest', udeps.by_env)
 
 
 @rfm.simple_test
@@ -30,7 +31,6 @@ class OSULatencyTest(OSUBenchmarkTestBase):
         self.perf_patterns = {
             'latency': sn.extractsingle(r'^8\s+(\S+)', self.stdout, 1, float)
         }
-        self.depends_on('OSUBuildTest', udeps.by_env)
         self.reference = {
             '*': {'latency': (0, None, None, 'us')}
         }
@@ -38,7 +38,7 @@ class OSULatencyTest(OSUBenchmarkTestBase):
     @rfm.require_deps
     def set_executable(self, OSUBuildTest):
         self.executable = os.path.join(
-            OSUBuildTest(part='login').stagedir,
+            OSUBuildTest().stagedir,
             'mpi', 'pt2pt', 'osu_latency'
         )
         self.executable_opts = ['-x', '100', '-i', '1000']
@@ -53,7 +53,6 @@ class OSUBandwidthTest(OSUBenchmarkTestBase):
             'bandwidth': sn.extractsingle(r'^4194304\s+(\S+)',
                                           self.stdout, 1, float)
         }
-        self.depends_on('OSUBuildTest', udeps.by_env)
         self.reference = {
             '*': {'bandwidth': (0, None, None, 'MB/s')}
         }
@@ -61,7 +60,7 @@ class OSUBandwidthTest(OSUBenchmarkTestBase):
     @rfm.require_deps
     def set_executable(self, OSUBuildTest):
         self.executable = os.path.join(
-            OSUBuildTest(part='login').stagedir,
+            OSUBuildTest().stagedir,
             'mpi', 'pt2pt', 'osu_bw'
         )
         self.executable_opts = ['-x', '100', '-i', '1000']
@@ -75,7 +74,6 @@ class OSUAllreduceTest(OSUBenchmarkTestBase):
         self.perf_patterns = {
             'latency': sn.extractsingle(r'^8\s+(\S+)', self.stdout, 1, float)
         }
-        self.depends_on('OSUBuildTest', udeps.by_env)
         self.reference = {
             '*': {'latency': (0, None, None, 'us')}
         }
@@ -84,7 +82,7 @@ class OSUAllreduceTest(OSUBenchmarkTestBase):
     @rfm.require_deps
     def set_executable(self, OSUBuildTest):
         self.executable = os.path.join(
-            OSUBuildTest(part='login').stagedir,
+            OSUBuildTest().stagedir,
             'mpi', 'collective', 'osu_allreduce'
         )
         self.executable_opts = ['-m', '8', '-x', '1000', '-i', '20000']
@@ -94,7 +92,7 @@ class OSUAllreduceTest(OSUBenchmarkTestBase):
 class OSUBuildTest(rfm.CompileOnlyRegressionTest):
     def __init__(self):
         self.descr = 'OSU benchmarks build test'
-        self.valid_systems = ['daint:login']
+        self.valid_systems = ['daint:gpu']
         self.valid_prog_environs = ['gnu', 'pgi', 'intel']
         self.depends_on('OSUDownloadTest', udeps.fully)
         self.build_system = 'Autotools'
@@ -104,7 +102,7 @@ class OSUBuildTest(rfm.CompileOnlyRegressionTest):
     @rfm.require_deps
     def set_sourcedir(self, OSUDownloadTest):
         self.sourcesdir = os.path.join(
-            OSUDownloadTest(environ='gnu').stagedir,
+            OSUDownloadTest(part='login', environ='builtin').stagedir,
             'osu-micro-benchmarks-5.6.2'
         )
 
@@ -114,9 +112,11 @@ class OSUDownloadTest(rfm.RunOnlyRegressionTest):
     def __init__(self):
         self.descr = 'OSU benchmarks download sources'
         self.valid_systems = ['daint:login']
-        self.valid_prog_environs = ['gnu']
+        self.valid_prog_environs = ['builtin']
         self.executable = 'wget'
-        self.executable_opts = ['http://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-5.6.2.tar.gz']
+        self.executable_opts = [
+            'http://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-5.6.2.tar.gz'  # noqa: E501
+        ]
         self.postrun_cmds = [
             'tar xzf osu-micro-benchmarks-5.6.2.tar.gz'
         ]

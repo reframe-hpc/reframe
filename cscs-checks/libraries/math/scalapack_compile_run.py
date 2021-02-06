@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -15,6 +15,9 @@ class ScaLAPACKTest(rfm.RegressionTest):
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'scalapack')
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:mc', 'dom:gpu']
+        if self.linkage == 'dynamic':
+            self.valid_systems.append('eiger:mc')
+
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel']
         self.num_tasks = 16
