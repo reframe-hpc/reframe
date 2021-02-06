@@ -111,7 +111,7 @@ def build_deps(cases, default_cases=None):
 
     if skipped_cases:
         getlogger().warning(msg)
- 
+
     return graph, skipped_cases
 
 
