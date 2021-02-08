@@ -443,12 +443,11 @@ def main():
         help='Use a login shell for job scripts'
     )
 
+    # Parse command line
+    options = argparser.parse_args()
     if len(sys.argv) == 1:
         argparser.print_help()
         sys.exit(1)
-
-    # Parse command line
-    options = argparser.parse_args()
 
     # First configure logging with our generic configuration so as to be able
     # to print pretty messages; logging will be reconfigured by user's
