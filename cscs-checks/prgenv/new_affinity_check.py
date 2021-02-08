@@ -114,6 +114,9 @@ class AffinityTestBase(rfm.RegressionTest):
             'numa': 1,
         }
 
+        if (cpuid < 0) or (cpuid >= self.num_cpus) :
+            raise ValueError(f'a cpuid with value {cpuid} is invalid')
+
         if by is None:
             raise ValueError('must specify the sibiling level')
         else:
@@ -427,3 +430,87 @@ class OneTaskPerSocket_OMP(OneTaskPerSocket_OMP_nomultithread):
     @property
     def num_omp_threads(self):
         return int(self.num_cpus/self.num_sockets)
+
+
+@rfm.simple_test
+class ConsecutiveSocketFilling(AffinityTestBase):
+
+    def __init__(self):
+        super().__init__()
+        self.use_multithreading = False
+        self.system = {
+            # System-dependent settings here
+        }
+
+    @rfm.run_before('run')
+    def set_tasks(self):
+        self.num_tasks = int(self.num_cpus/self.num_cpus_per_core)
+        self.num_cpus_per_task = 1
+        self.job.launcher.options += [f'--cpu-bind=rank']
+
+    @rfm.run_before('sanity')
+    def consume_cpu_set(self):
+
+        task_count = 0
+        for s in range(self.num_sockets):
+            cpus_present = set()
+            for task in range(int(self.num_tasks/self.num_sockets)):
+                cpus_in_task = self.aff_cpus[task_count]
+                if ((len(cpus_in_task) > 1) or (
+                    any(cpu in cpus_present for cpu in cpus_in_task))):
+                    self.cpu_set.add(-1)
+                    return
+
+                else:
+                    cpus_present.update(self.get_sibiling_cpus(cpus_in_task[0], by='core'))
+
+                task_count += 1
+
+            # Ensure all CPUs belong to the same socket
+            cpuset_by_socket = self.get_sibiling_cpus(next(iter(cpus_present)), by='socket')
+            if not all(cpu in cpuset_by_socket for cpu in cpus_present):
+                self.cpu_set.add(-1)
+
+            else:
+                self.cpu_set -= cpus_present
+
+
+@rfm.simple_test
+class AlternateSocketFilling(AffinityTestBase):
+
+    def __init__(self):
+        super().__init__()
+        self.use_multithreading = False
+        self.system = {
+            # System-dependent settings here
+        }
+
+    @rfm.run_before('run')
+    def set_tasks(self):
+        self.num_tasks = int(self.num_cpus/self.num_cpus_per_core)
+        self.num_cpus_per_task = 1
+        self.num_tasks_per_socket = int(self.num_tasks/self.num_sockets)
+
+    @rfm.run_before('sanity')
+    def consume_cpu_set(self):
+
+        sockets = [set() for s in range(self.num_sockets)]
+        task_count = 0
+        for task in range(self.num_tasks_per_socket):
+            for s in range(self.num_sockets):
+                cpus_in_task = self.aff_cpus[task_count]
+                if ((len(cpus_in_task) > 1) or (
+                    any(cpu in sockets[s] for cpu in cpus_in_task))):
+                    self.cpu_set.add(-1)
+                    return
+
+                else:
+                    sockets[s].update(self.get_sibiling_cpus(cpus_in_task[0], by='core'))
+
+                task_count += 1
+
+            if not all(len(s)==(task+1)*2 for s in sockets):
+                self.cpu_set.add(-1)
+
+        for s in sockets:
+            self.cpu_set -= s
