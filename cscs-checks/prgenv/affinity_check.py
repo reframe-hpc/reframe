@@ -23,7 +23,8 @@ class AffinityTestBase(rfm.RegressionTest):
 
     def __init__(self):
         self.valid_systems = ['daint:gpu', 'daint:mc',
-                              'dom:gpu', 'dom:mc', 'eiger:mc']
+                              'dom:gpu', 'dom:mc', 'eiger:mc',
+                              'ault:a64fx', 'ault:amdv100']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.build_system = 'Make'
         self.build_system.options = ['-C affinity', 'MPI=1']
@@ -39,11 +40,13 @@ class AffinityTestBase(rfm.RegressionTest):
 
         # Dict with the partition's topology - output of "lscpu -e"
         self.topology = {
-            'dom:gpu':   'topo_dom_gpu.txt',
-            'dom:mc':    'topo_dom_mc.txt',
-            'daint:gpu': 'topo_dom_gpu.txt',
-            'daint:mc':  'topo_dom_mc.txt',
-            'eiger:mc':  'topo_eiger_mc.txt',
+            'dom:gpu':    'topo_dom_gpu.txt',
+            'dom:mc':     'topo_dom_mc.txt',
+            'daint:gpu':  'topo_dom_gpu.txt',
+            'daint:mc':   'topo_dom_mc.txt',
+            'eiger:mc':   'topo_eiger_mc.txt',
+            'ault:a64fx': 'topo_ault_a64fx.txt',
+            'ault:amdv100': 'topo_ault_amdv100.txt',
         }
 
     @rfm.run_before('compile')
@@ -237,7 +240,7 @@ class AffinityOpenMPBase(AffinityTestBase):
 
 
 @rfm.simple_test
-class OneTheadPerCPUOpenMP(AffinityOpenMPBase):
+class OneThreadPerCPUOpenMP(AffinityOpenMPBase):
     '''Pin each OMP thread to a different CPU.'''
     parameter('omp_bind', ['threads'])
 
