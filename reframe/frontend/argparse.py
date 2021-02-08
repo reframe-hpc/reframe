@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import argcomplete
 import argparse
 import os
 
@@ -256,6 +257,9 @@ class ArgumentParser(_ArgumentHolder):
         it will be assigned the default value as specified in its corresponding
         `add_argument()` call. If no default value was specified either, the
         attribute will be set to `None`.'''
+
+        # Enable auto-completion
+        argcomplete.autocomplete(self._holder)
 
         # We always pass an empty namespace to our internal argparser and we do
         # the namespace resolution ourselves. We do this, because we want the
