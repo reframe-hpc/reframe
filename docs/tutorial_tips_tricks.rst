@@ -486,7 +486,7 @@ If we tried to run :class:`T6` without restoring the session, we would have to r
 Integrating into a CI pipeline
 ------------------------------
 
-.. versionadded:: 3.5
+.. versionadded:: 3.4.1
 
 Instead of running your tests, you can ask ReFrame to generate a `child pipeline <https://docs.gitlab.com/ee/ci/parent_child_pipelines.html>`__ specification for the Gitlab CI.
 This will spawn a CI job for each ReFrame test respecting test dependencies.
@@ -522,7 +522,7 @@ The following is an example of ``.gitlab-ci.yml`` file that does exactly that:
 It defines two stages.
 The first one, called ``generate``, will call ReFrame to generate the pipeline specification for the desired tests.
 All the usual `test selection options <manpage.html#test-filtering>`__ can be used to select specific tests.
-ReFrame will process them as usual, but instead of running them, it will generate the correct steps for running them in Gitlab.
+ReFrame will process them as usual, but instead of running the selected tests, it will generate the correct steps for running each test individually as a Gitlab job.
 We then pass the generated CI pipeline file to second phase as an artifact and we are done!
 
 The following figure shows one part of the automatically generated pipeline for the test graph depicted `above <#fig-deps-complex>`__.

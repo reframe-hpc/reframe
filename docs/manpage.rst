@@ -153,7 +153,7 @@ An action must always be specified.
    You can set up your Gitlab CI to use the generated file to run every test as a separate Gitlab job respecting test dependencies.
    For more information, have a look in :ref:`generate-ci-pipeline`.
 
-   .. versionadded:: 3.5
+   .. versionadded:: 3.4.1
 
 .. option:: -l, --list
 
