@@ -90,6 +90,16 @@ All you need is a Python 3.6+ installation with ``pip``:
       For previous ReFrame versions you should install its requirements using ``pip install -r requirements.txt`` in a Python virtual environment.
 
 
+Enabling auto-completion
+------------------------
+
+.. versionadded:: 3.4.1
+
+You can enable auto-completion for ReFrame by sourcing in your shell the corresponding script in ``<install_prefix>/etc/reframe_completion.<shell>``.
+Auto-completion is supported for Bash, Tcsh and Fish shells.
+
+
+
 Running the Unit Tests
 ----------------------
 
