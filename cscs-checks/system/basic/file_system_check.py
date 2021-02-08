@@ -141,5 +141,34 @@ class FileSystemCatCheck(FileSystemCommandCheck):
                 'real_time': (0.05, None, 0.1, 's')
             }
         }
-        self.executable = 'time cat > /dev/null'
-        self.executable_opts = [variant]
+        self.executable = 'time cat'
+        self.executable_opts = [variant, ' > /dev/null']
+
+
+# TODO: this test is almost identical to the cat one
+# TODO: /project/csstaff/jenscscs is temporary to speedup the test
+@rfm.parameterized_test(
+    ['/project/csstaff/jenscscs'],
+    ['/users/jenscscs'],
+    ['/apps/daint/UES/jenscscs/regression/production/reports'])
+class FileSystemFindCheck(FileSystemCommandCheck):
+    # TODO: find correct test name
+    def __init__(self, variant):
+        super().__init__()
+        # TODO: fix description
+        self.descr = 'find of specific folders'
+        # TODO: enable this to hide test to non jenscscs users
+#        if getpass.getuser() != jenscscs:
+#            self.valid_systems = []
+        self.reference = {
+            'daint:login': {
+                # TODO: real times have large variances,
+                # do we need a specific refererence for each test?
+                'real_time': (0.05, None, 0.1, 's')
+            },
+            'dom:login': {
+                'real_time': (0.05, None, 0.1, 's')
+            }
+        }
+        self.executable = 'time find'
+        self.executable_opts = [variant, ' -maxdepth 1 > /dev/null']
