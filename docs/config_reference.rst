@@ -1017,7 +1017,7 @@ Common scheduler options
    As an example, you could have ReFrame trying to resubmit a job in case that the maximum submission limit per user is reached by setting this field to ``["QOSMaxSubmitJobPerUserLimit"]``.
    You can ignore multiple errors at the same time if you add more error strings in the list.
 
-   .. versionadded:: 3.5
+   .. versionadded:: 3.4.1
 
    .. warning::
       Job submission is a synchronous operation in ReFrame.

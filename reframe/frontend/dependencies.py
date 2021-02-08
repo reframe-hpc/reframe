@@ -65,7 +65,7 @@ def build_deps(cases, default_cases=None):
     # We use an ordered dict here, because we need to keep the order of
     # partitions and environments
     graph = collections.OrderedDict()
-    skipped_cases = []
+    unresolved_cases = []
     for c in cases:
         psrc = c.partition.name
         esrc = c.environ.name
@@ -78,31 +78,39 @@ def build_deps(cases, default_cases=None):
                     if when((psrc, esrc), (pdst, edst)):
                         c.deps.append(d)
         except DependencyError as e:
-            getlogger().warning(f'{e}; skipping dependent test cases:')
-
-            # FIXME: we need to unit test this properly
-            skip_nodes = {c}
-            while skip_nodes:
-                v = skip_nodes.pop()
-                skipped_cases.append(v)
-                getlogger().warning(f'  - {v}')
-                pruned_nodes = []
-                for u, adj in graph.items():
-                    if v in adj:
-                        skip_nodes.add(u)
-                        pruned_nodes.append(u)
-
-                for u in pruned_nodes:
-                    del graph[u]
-
+            getlogger().warning(e)
+            unresolved_cases.append(c)
             continue
 
         graph[c] = util.OrderedSet(c.deps)
+
+    # Skip also all cases that depend on the unresolved ones
+    skipped_cases = []
+    skip_nodes = set(unresolved_cases)
+    while skip_nodes:
+        v = skip_nodes.pop()
+        skipped_cases.append(v)
+        for u, adj in graph.items():
+            if v in adj:
+                skip_nodes.add(u)
+
+    # Prune graph
+    for c in skipped_cases:
+        # Cases originally discovered (unresolved_cases) are not in the graph,
+        # but we loop over them here; therefore we use pop()
+        graph.pop(c, None)
 
     # Calculate in-degree of each node
     for u, adjacent in graph.items():
         for v in adjacent:
             v.in_degree += 1
+
+    msg = 'skipping all dependent test cases\n'
+    for c in skipped_cases:
+        msg += f'  - {c}\n'
+
+    if skipped_cases:
+        getlogger().warning(msg)
 
     return graph, skipped_cases
 
