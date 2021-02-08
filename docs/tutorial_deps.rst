@@ -104,12 +104,12 @@ Here is the output when running the OSU tests with the asynchronous execution po
    [ReFrame Setup]
      version:           3.4-dev2 (rev: 56c6c237)
      command:           './bin/reframe --system=daint -C tutorials/config/settings.py -c tutorials/deps/osu_benchmarks.py -r'
-     launched by:       karakasv@dom101
-     working directory: '/users/karakasv/Devel/reframe'
+     launched by:       user@daint101
+     working directory: '/users/user/Devel/reframe'
      settings file:     'tutorials/config/settings.py'
-     check search path: '/users/karakasv/Devel/reframe/tutorials/deps/osu_benchmarks.py'
-     stage directory:   '/users/karakasv/Devel/reframe/stage'
-     output directory:  '/users/karakasv/Devel/reframe/output'
+     check search path: '/users/user/Devel/reframe/tutorials/deps/osu_benchmarks.py'
+     stage directory:   '/users/user/Devel/reframe/stage'
+     output directory:  '/users/user/Devel/reframe/output'
 
    [==========] Running 8 check(s)
    [==========] Started on Mon Jan 25 19:34:09 2021
@@ -234,7 +234,7 @@ For example, if we select only the :class:`OSULatencyTest` for running, ReFrame 
    [ReFrame Setup]
      version:           3.3-dev2 (rev: 8ded20cd)
      command:           './bin/reframe -C tutorials/config/settings.py -c tutorials/deps/osu_benchmarks.py -n OSULatencyTest -l'
-     launched by:       user@dom101
+     launched by:       user@daint101
      working directory: '/users/user/Devel/reframe'
      settings file:     'tutorials/config/settings.py'
      check search path: '/users/user/Devel/reframe/tutorials/deps/osu_benchmarks.py'
@@ -256,48 +256,50 @@ As a result, its immediate dependency :class:`OSUBuildTest` will be skipped, whi
 
 .. code-block:: console
 
-   ./bin/reframe --system=daint:gpu -c tutorials/deps/osu_benchmarks.py -n OSULatencyTest -l
+   ./bin/reframe -c tutorials/deps/osu_benchmarks.py -n OSULatencyTest -l
 
 .. code-block:: none
 
    [ReFrame Setup]
-     version:           3.4-dev2 (rev: c1a364f3)
-     command:           './bin/reframe --system=daint:gpu -C tutorials/config/settings.py -c tutorials/deps/osu_benchmarks.py -n OSULatencyTest -l'
-     launched by:       karakasv@dom101
-     working directory: '/users/karakasv/Devel/reframe'
+     version:           3.5-dev0 (rev: 93948510)
+     command:           './bin/reframe -C tutorials/config/settings.py --system=daint:gpu -c tutorials/deps/osu_benchmarks.py -l'
+     launched by:       user@daint101
+     working directory: '/users/user/Devel/reframe'
      settings file:     'tutorials/config/settings.py'
-     check search path: '/users/karakasv/Devel/reframe/tutorials/deps/osu_benchmarks.py'
-     stage directory:   '/users/karakasv/Devel/reframe/stage'
-     output directory:  '/users/karakasv/Devel/reframe/output'
+     check search path: '/users/user/Devel/reframe/tutorials/deps/osu_benchmarks.py'
+     stage directory:   '/users/user/Devel/reframe/stage'
+     output directory:  '/users/user/Devel/reframe/output'
 
-   ./bin/reframe: could not resolve dependency: ('OSUBuildTest', 'daint:gpu', 'gnu') -> 'OSUDownloadTest'; skipping dependent test cases:
-   ./bin/reframe:   - ('OSUBuildTest', 'daint:gpu', 'gnu')
-   ./bin/reframe:   - ('OSUBandwidthTest', 'daint:gpu', 'gnu')
-   ./bin/reframe:   - ('OSUAllreduceTest_16', 'daint:gpu', 'gnu')
-   ./bin/reframe:   - ('OSULatencyTest', 'daint:gpu', 'gnu')
-   ./bin/reframe:   - ('OSUAllreduceTest_4', 'daint:gpu', 'gnu')
-   ./bin/reframe:   - ('OSUAllreduceTest_8', 'daint:gpu', 'gnu')
-   ./bin/reframe:   - ('OSUAllreduceTest_2', 'daint:gpu', 'gnu')
-   ./bin/reframe: could not resolve dependency: ('OSUBuildTest', 'daint:gpu', 'intel') -> 'OSUDownloadTest'; skipping dependent test cases:
-   ./bin/reframe:   - ('OSUBuildTest', 'daint:gpu', 'intel')
-   ./bin/reframe:   - ('OSULatencyTest', 'daint:gpu', 'intel')
-   ./bin/reframe:   - ('OSUAllreduceTest_4', 'daint:gpu', 'intel')
-   ./bin/reframe:   - ('OSUAllreduceTest_16', 'daint:gpu', 'intel')
-   ./bin/reframe:   - ('OSUBandwidthTest', 'daint:gpu', 'intel')
-   ./bin/reframe:   - ('OSUAllreduceTest_2', 'daint:gpu', 'intel')
-   ./bin/reframe:   - ('OSUAllreduceTest_8', 'daint:gpu', 'intel')
-   ./bin/reframe: could not resolve dependency: ('OSUBuildTest', 'daint:gpu', 'pgi') -> 'OSUDownloadTest'; skipping dependent test cases:
-   ./bin/reframe:   - ('OSUBuildTest', 'daint:gpu', 'pgi')
-   ./bin/reframe:   - ('OSUAllreduceTest_8', 'daint:gpu', 'pgi')
-   ./bin/reframe:   - ('OSUAllreduceTest_2', 'daint:gpu', 'pgi')
-   ./bin/reframe:   - ('OSUBandwidthTest', 'daint:gpu', 'pgi')
-   ./bin/reframe:   - ('OSUAllreduceTest_16', 'daint:gpu', 'pgi')
-   ./bin/reframe:   - ('OSUAllreduceTest_4', 'daint:gpu', 'pgi')
-   ./bin/reframe:   - ('OSULatencyTest', 'daint:gpu', 'pgi')
+   ./bin/reframe: could not resolve dependency: ('OSUBuildTest', 'daint:gpu', 'gnu') -> 'OSUDownloadTest'
+   ./bin/reframe: could not resolve dependency: ('OSUBuildTest', 'daint:gpu', 'intel') -> 'OSUDownloadTest'
+   ./bin/reframe: could not resolve dependency: ('OSUBuildTest', 'daint:gpu', 'pgi') -> 'OSUDownloadTest'
+   ./bin/reframe: skipping all dependent test cases
+     - ('OSUBuildTest', 'daint:gpu', 'intel')
+     - ('OSUBuildTest', 'daint:gpu', 'pgi')
+     - ('OSUAllreduceTest_4', 'daint:gpu', 'intel')
+     - ('OSUAllreduceTest_2', 'daint:gpu', 'intel')
+     - ('OSULatencyTest', 'daint:gpu', 'pgi')
+     - ('OSUBandwidthTest', 'daint:gpu', 'pgi')
+     - ('OSUAllreduceTest_8', 'daint:gpu', 'intel')
+     - ('OSUAllreduceTest_16', 'daint:gpu', 'pgi')
+     - ('OSUBuildTest', 'daint:gpu', 'gnu')
+     - ('OSUBandwidthTest', 'daint:gpu', 'intel')
+     - ('OSULatencyTest', 'daint:gpu', 'intel')
+     - ('OSUAllreduceTest_16', 'daint:gpu', 'intel')
+     - ('OSUAllreduceTest_8', 'daint:gpu', 'pgi')
+     - ('OSULatencyTest', 'daint:gpu', 'gnu')
+     - ('OSUBandwidthTest', 'daint:gpu', 'gnu')
+     - ('OSUAllreduceTest_2', 'daint:gpu', 'pgi')
+     - ('OSUAllreduceTest_4', 'daint:gpu', 'pgi')
+     - ('OSUAllreduceTest_8', 'daint:gpu', 'gnu')
+     - ('OSUAllreduceTest_4', 'daint:gpu', 'gnu')
+     - ('OSUAllreduceTest_2', 'daint:gpu', 'gnu')
+     - ('OSUAllreduceTest_16', 'daint:gpu', 'gnu')
+
    [List of matched checks]
 
    Found 0 check(s)
-   Log file(s) saved in: '/tmp/rfm-eiay984f.log'
+   Log file(s) saved in: '/tmp/rfm-hjit66h2.log'
 
 
 Listing Dependencies
@@ -381,7 +383,7 @@ The following listing shows how the actual test cases dependencies are formed wh
          <none>
 
        Location:
-         /users/karakasv/Devel/reframe/tutorials/deps/osu_benchmarks.py
+         /users/user/Devel/reframe/tutorials/deps/osu_benchmarks.py
 
        Maintainers:
          <none>
