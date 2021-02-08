@@ -367,7 +367,7 @@ class OneTaskPerSocket_OMP_nomultithread(AffinityOpenMPBase):
 
         # System independent settings
         self.num_tasks = 2
-        self.hint = 'nomultithread'
+        self.use_multithreading = False
 
         self.system = {
             # System-dependent settings here
@@ -399,14 +399,31 @@ class OneTaskPerSocket_OMP_nomultithread(AffinityOpenMPBase):
             cpu_sibilings = self.get_sibiling_cpus(cpus_bound_to_thread[0], by='socket')
 
             # If there is more than 1 CPU, it must belong to the same socket
-            if ((not int(len(cpu_sibilings)/self.num_cpus_per_core) == len(cpus_bound_to_thread)) or
+            if ((not self.num_omp_threads == len(cpus_bound_to_thread)) or
                 not all(x in cpu_sibilings for x in cpus_bound_to_thread)):
 
                 # This will force the sanity function to fail.
                 self.cpu_set.update([-1])
 
+        # Remove the sockets the cpu set.
         for i, socket in enumerate(self.sockets.values()):
             if threads_in_socket[i] == self.num_omp_threads:
                 self.cpu_set -= socket
 
 
+@rfm.simple_test
+class OneTaskPerSocket_OMP(OneTaskPerSocket_OMP_nomultithread):
+    def __init__(self):
+        super().__init__()
+        self.descr = 'Pin one OMP thread per core.'
+
+        # System independent settings
+        self.num_tasks = 2
+        self.use_multithreading = True
+        self.system = {
+            # System-dependent settings here
+        }
+
+    @property
+    def num_omp_threads(self):
+        return int(self.num_cpus/self.num_sockets)
