@@ -104,12 +104,12 @@ Here is the output when running the OSU tests with the asynchronous execution po
    [ReFrame Setup]
      version:           3.4-dev2 (rev: 56c6c237)
      command:           './bin/reframe --system=daint -C tutorials/config/settings.py -c tutorials/deps/osu_benchmarks.py -r'
-     launched by:       karakasv@daint101
-     working directory: '/users/karakasv/Devel/reframe'
+     launched by:       user@daint101
+     working directory: '/users/user/Devel/reframe'
      settings file:     'tutorials/config/settings.py'
-     check search path: '/users/karakasv/Devel/reframe/tutorials/deps/osu_benchmarks.py'
-     stage directory:   '/users/karakasv/Devel/reframe/stage'
-     output directory:  '/users/karakasv/Devel/reframe/output'
+     check search path: '/users/user/Devel/reframe/tutorials/deps/osu_benchmarks.py'
+     stage directory:   '/users/user/Devel/reframe/stage'
+     output directory:  '/users/user/Devel/reframe/output'
 
    [==========] Running 8 check(s)
    [==========] Started on Mon Jan 25 19:34:09 2021
