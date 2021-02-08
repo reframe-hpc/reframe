@@ -25,6 +25,9 @@ class HelloWorldBaseTest(rfm.RegressionTest):
         self.build_system = 'SingleSource'
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                               'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn']
+        if linkage == 'dynamic':
+            self.valid_systems.append('eiger:mc')
+
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-cray_classic',
                                     'PrgEnv-intel', 'PrgEnv-gnu', 'PrgEnv-pgi',
                                     'PrgEnv-gnu-nocuda', 'PrgEnv-pgi-nocuda']
@@ -109,9 +112,6 @@ class HelloWorldBaseTest(rfm.RegressionTest):
 class HelloWorldTestSerial(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
         super().__init__('serial', lang, linkage)
-        if linkage == 'dynamic':
-            self.valid_systems.append('eiger:mc')
-
         self.sourcesdir = 'src/serial'
         self.valid_prog_environs += ['PrgEnv-gnu-nompi', 'PrgEnv-pgi-nompi',
                                      'PrgEnv-gnu-nompi-nocuda',
@@ -144,9 +144,6 @@ class HelloWorldTestSerial(HelloWorldBaseTest):
 class HelloWorldTestOpenMP(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
         super().__init__('openmp', lang, linkage)
-        if linkage == 'dynamic':
-            self.valid_systems.append('eiger:mc')
-
         self.sourcesdir = 'src/openmp'
         self.sourcepath += '_openmp.' + lang
         self.descr += ' OpenMP ' + str.capitalize(linkage)
@@ -182,9 +179,6 @@ class HelloWorldTestOpenMP(HelloWorldBaseTest):
 class HelloWorldTestMPI(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
         super().__init__('mpi', lang, linkage)
-        if linkage == 'dynamic':
-            self.valid_systems.append('eiger:mc')
-
         self.sourcesdir = 'src/mpi'
         self.sourcepath += '_mpi.' + lang
         self.descr += ' MPI ' + linkage.capitalize()
@@ -211,9 +205,6 @@ class HelloWorldTestMPI(HelloWorldBaseTest):
 class HelloWorldTestMPIOpenMP(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
         super().__init__('mpi_openmp', lang, linkage)
-        if linkage == 'dynamic':
-            self.valid_systems.append('eiger:mc')
-
         self.sourcesdir = 'src/mpi_openmp'
         self.sourcepath += '_mpi_openmp.' + lang
         self.descr += ' MPI + OpenMP ' + linkage.capitalize()
