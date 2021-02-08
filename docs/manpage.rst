@@ -147,6 +147,14 @@ There are currently two actions that can be performed on tests: (a) list the tes
 An action must always be specified.
 
 
+.. option:: --ci-generate=FILE
+
+   Do not run the tests, but generate a Gitlab `child pipeline <https://docs.gitlab.com/ee/ci/parent_child_pipelines.html>`__ specification in ``FILE``.
+   You can set up your Gitlab CI to use the generated file to run every test as a separate Gitlab job respecting test dependencies.
+   For more information, have a look in :ref:`generate-ci-pipeline`.
+
+   .. versionadded:: 3.4.1
+
 .. option:: -l, --list
 
    List selected tests.

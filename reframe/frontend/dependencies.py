@@ -170,7 +170,8 @@ def validate_deps(graph):
                 if n in path:
                     cycle_str = '->'.join(path + [n])
                     raise DependencyError(
-                        'found cyclic dependency between tests: ' + cycle_str)
+                        'found cyclic dependency between tests: ' + cycle_str
+                    )
 
                 if n not in visited:
                     unvisited.append((n, node))
@@ -212,6 +213,7 @@ def toposort(graph, is_subgraph=False):
     '''
     test_deps = _reduce_deps(graph)
     visited = util.OrderedSet()
+    levels = {}
 
     def retrieve(d, key, default):
         try:
@@ -229,9 +231,15 @@ def toposort(graph, is_subgraph=False):
         path.add(node)
 
         # Do a DFS visit of all the adjacent nodes
-        for adj in retrieve(test_deps, node, []):
-            if adj not in visited:
-                visit(adj, path)
+        adjacent = retrieve(test_deps, node, [])
+        for u in adjacent:
+            if u not in visited:
+                visit(u, path)
+
+        if adjacent:
+            levels[node] = max(levels[u] for u in adjacent) + 1
+        else:
+            levels[node] = 0
 
         path.pop()
         visited.add(node)
@@ -243,6 +251,7 @@ def toposort(graph, is_subgraph=False):
     # Index test cases by test name
     cases_by_name = {}
     for c in graph.keys():
+        c.level = levels[c.check.name]
         try:
             cases_by_name[c.check.name].append(c)
         except KeyError:
