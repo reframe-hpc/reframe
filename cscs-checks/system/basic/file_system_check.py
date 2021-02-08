@@ -164,10 +164,10 @@ class FileSystemFindCheck(FileSystemCommandCheck):
             'daint:login': {
                 # TODO: real times have large variances,
                 # do we need a specific refererence for each test?
-                'real_time': (0.05, None, 0.1, 's')
+                'real_time': (0.01, None, 0.1, 's')
             },
             'dom:login': {
-                'real_time': (0.05, None, 0.1, 's')
+                'real_time': (0.01, None, 0.1, 's')
             }
         }
         self.executable = 'time find'
