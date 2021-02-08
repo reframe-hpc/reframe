@@ -109,7 +109,6 @@ class HelloWorldBaseTest(rfm.RegressionTest):
 class HelloWorldTestSerial(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
         super().__init__('serial', lang, linkage)
-        self.valid_systems += ['arolla:pn', 'tsa:pn']
         if linkage == 'dynamic':
             self.valid_systems.append('eiger:mc')
         self.sourcesdir = 'src/serial'
@@ -144,7 +143,6 @@ class HelloWorldTestSerial(HelloWorldBaseTest):
 class HelloWorldTestOpenMP(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
         super().__init__('openmp', lang, linkage)
-        self.valid_systems += ['arolla:pn', 'tsa:pn']
         if linkage == 'dynamic':
             self.valid_systems.append('eiger:mc')
         self.sourcesdir = 'src/openmp'
@@ -210,6 +208,8 @@ class HelloWorldTestMPI(HelloWorldBaseTest):
 class HelloWorldTestMPIOpenMP(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
         super().__init__('mpi_openmp', lang, linkage)
+        if linkage == 'dynamic':
+            self.valid_systems.append('eiger:mc')
         self.sourcesdir = 'src/mpi_openmp'
         self.sourcepath += '_mpi_openmp.' + lang
         self.descr += ' MPI + OpenMP ' + linkage.capitalize()
