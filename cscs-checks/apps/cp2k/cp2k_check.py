@@ -14,9 +14,11 @@ class Cp2kCheck(rfm.RunOnlyRegressionTest):
         self.executable = 'cp2k.psmp'
         self.executable_opts = ['H2O-256.inp']
 
-        energy = sn.extractsingle(r'\s+ENERGY\| Total FORCE_EVAL \( QS \) '
-                                  r'energy [\[\(]a\.u\.[\]\)]:\s+(?P<energy>\S+)',
-                                  self.stdout, 'energy', float, item=-1)
+        energy = sn.extractsingle(
+            r'\s+ENERGY\| Total FORCE_EVAL \( QS \) '
+            r'energy [\[\(]a\.u\.[\]\)]:\s+(?P<energy>\S+)',
+            self.stdout, 'energy', float, item=-1
+        )
         energy_reference = -4404.2323
         energy_diff = sn.abs(energy-energy_reference)
         self.sanity_patterns = sn.all([
