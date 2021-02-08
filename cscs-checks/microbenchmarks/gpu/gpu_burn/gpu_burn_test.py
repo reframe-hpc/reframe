@@ -25,8 +25,8 @@ class GpuBurnTest(rfm.RegressionTest):
         self.num_tasks = 0
         self.num_tasks_per_node = 1
         self.sanity_patterns = self.assert_num_tasks()
-        patt = (r'^\s*\[[^\]]*\]\s*GPU\s+\d+\(\S*\):\s+(?P<perf>\S*)\s+GF\/s\s+'
-                r'(?P<temp>\S*)\s+Celsius')
+        patt = (r'^\s*\[[^\]]*\]\s*GPU\s+\d+\(\S*\):\s+(?P<perf>\S*)\s+GF\/s'
+                r'\s+(?P<temp>\S*)\s+Celsius')
         self.perf_patterns = {
             'perf': sn.min(sn.extractall(patt, self.stdout, 'perf', float)),
             'temp': sn.max(sn.extractall(patt, self.stdout, 'temp', float)),
