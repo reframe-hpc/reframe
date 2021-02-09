@@ -217,8 +217,11 @@ def loadenv(*environs):
                 for c in conflicted:
                     commands += modules_system.emit_unload_commands(c)
 
+                if 'path' not in mod.keys():
+                    mod['path'] = None
+
                 commands += modules_system.emit_load_commands(
-                    m, mod['collection']
+                    m, mod['collection'], mod['path'],
                 )
 
         for k, v in env.variables.items():

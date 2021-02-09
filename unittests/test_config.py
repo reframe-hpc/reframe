@@ -224,7 +224,8 @@ def test_select_subconfig():
     assert (site_config.get('systems/0/resourcesdir') ==
             '.rfm_testing/resources')
     assert site_config.get('systems/0/modules') == [{'name': 'foo/1.0',
-                                                     'collection': False}]
+                                                     'collection': False,
+                                                     'path': None}]
     assert site_config.get('systems/0/variables') == [['FOO_CMD', 'foobar']]
     assert site_config.get('systems/0/modules_system') == 'nomod'
     assert site_config.get('systems/0/outputdir') == ''
@@ -259,7 +260,7 @@ def test_select_subconfig():
     assert site_config.get('environments/@PrgEnv-cray/cc') == 'cc'
     assert site_config.get('environments/1/cxx') == 'CC'
     assert (site_config.get('environments/@PrgEnv-cray/modules') ==
-            [{'name': 'PrgEnv-cray', 'collection': False}])
+            [{'name': 'PrgEnv-cray', 'collection': False, 'path': None}])
     assert len(site_config.get('general')) == 1
     assert site_config.get('general/0/check_search_path') == ['a:b']
 
@@ -273,7 +274,7 @@ def test_select_subconfig():
     assert (site_config.get('systems/0/partitions/0/resources/@gpu/name') ==
             'gpu')
     assert site_config.get('systems/0/partitions/0/modules') == [
-        {'name': 'foogpu', 'collection': False}
+            {'name': 'foogpu', 'collection': False, 'path': None}
     ]
     assert (site_config.get('systems/0/partitions/0/variables') ==
             [['FOO_GPU', 'yes']])

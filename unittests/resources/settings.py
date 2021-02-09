@@ -46,7 +46,7 @@ site_configuration = {
                     'launcher': 'srun',
 
                     # Use the extensive syntax here
-                    'modules': [{'name': 'foogpu', 'collection': False}],
+                    'modules': [{'name': 'foogpu', 'collection': False, 'path': None}],
                     'variables': [['FOO_GPU', 'yes']],
                     'resources': [
                         {
@@ -90,7 +90,7 @@ site_configuration = {
     'environments': [
         {
             'name': 'PrgEnv-gnu',
-            'modules': [{'name': 'PrgEnv-gnu', 'collection': False}],
+            'modules': [{'name': 'PrgEnv-gnu', 'collection': False, 'path': None}],
         },
         {
             'name': 'PrgEnv-gnu',

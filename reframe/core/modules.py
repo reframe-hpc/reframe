@@ -28,7 +28,7 @@ class Module:
     implementation should deal only with that.
     '''
 
-    def __init__(self, name, collection=False):
+    def __init__(self, name, collection=False, path=None):
         if not isinstance(name, str):
             raise TypeError('module name not a string')
 
@@ -40,6 +40,8 @@ class Module:
             self._name, self._version = name.split('/', maxsplit=1)
         except ValueError:
             self._name, self._version = name, None
+
+        self._path = path
 
         # This module represents a "module collection" in TMod4
         self._collection = collection
@@ -56,6 +58,10 @@ class Module:
     def collection(self):
         return self._collection
 
+    @property
+    def path(self):
+        return self._path
+ 
     @property
     def fullname(self):
         if self.version is not None:
@@ -216,7 +222,7 @@ class ModulesSystem:
         '''
         return self._backend.execute(cmd, *args)
 
-    def load_module(self, name, force=False, collection=False):
+    def load_module(self, name, force=False, collection=False, path=None):
         '''Load the module ``name``.
 
         :arg force: If set, forces the loading, unloading first any
@@ -236,12 +242,18 @@ class ModulesSystem:
         '''
         ret = []
         for m in self.resolve_module(name):
-            ret.append((m, self._load_module(m, force, collection)))
+            if path:
+                self.searchpath_add(path)
+
+            ret.append((m, self._load_module(m, force, collection, path)))
+
+        if path:
+            self.searchpath_remove(path)
 
         return ret
 
-    def _load_module(self, name, force=False, collection=False):
-        module = Module(name, collection)
+    def _load_module(self, name, force=False, collection=False, path=None):
+        module = Module(name, collection, path)
         loaded_modules = self._backend.loaded_modules()
         if module in loaded_modules:
             # Do not try to load the module if it is already present
@@ -354,7 +366,7 @@ class ModulesSystem:
         '''Remove ``dirs`` from the module system search path.'''
         return self._backend.searchpath_remove(*dirs)
 
-    def emit_load_commands(self, name, collection=False):
+    def emit_load_commands(self, name, collection=False, path=None):
         '''Return the appropriate shell commands for loading a module.
 
         Module mappings are not taken into account by this function.
@@ -371,9 +383,9 @@ class ModulesSystem:
 
         # We don't consider module mappings here, because we cannot treat
         # correctly possible conflicts
-        return [self._backend.emit_load_instr(Module(name, collection))]
+        return [self._backend.emit_load_instr(Module(name, collection, path))]
 
-    def emit_unload_commands(self, name, collection=False):
+    def emit_unload_commands(self, name, collection=False, path=None):
         '''Return the appropriate shell commands for unloading a module.
 
         Module mappings are not taken into account by this function.
@@ -389,7 +401,7 @@ class ModulesSystem:
         '''
 
         # See comment in emit_load_commands()
-        return [self._backend.emit_unload_instr(Module(name, collection))]
+        return [self._backend.emit_unload_instr(Module(name, collection, path))]
 
     def __str__(self):
         return str(self._backend)
@@ -631,6 +643,11 @@ class TModImpl(ModulesSystemImpl):
         self.execute('unuse', *dirs)
 
     def emit_load_instr(self, module):
+        if module.path:
+            return (f'module use {module.path}\n'
+                    f'module load {module}\n'
+                    f'module unuse {module.path}')
+
         return f'module load {module}'
 
     def emit_unload_instr(self, module):

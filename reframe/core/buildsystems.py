@@ -673,13 +673,15 @@ class EasyBuild(BuildSystem):
                 f"--sourcepath {self._installpath} "
                 f"--buildpath {self._installpath}/build {_options}"]
 
-    def _get_built_modules(self):
+    def eb_modules(self):
         modules = []
         modules_dir = os.path.join(self._installpath, 'modules', 'all')
         if os.path.isdir(modules_dir):
             for mod in os.listdir(modules_dir):
                 for ver in os.listdir(os.path.join(modules_dir, mod)):
-                    modules.append(f'{mod}/{ver}')
+                    modules.append({'name': f'{mod}/{ver}',
+                                    'collection': False,
+                                    'path': modules_dir})
 
         return modules
 

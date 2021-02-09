@@ -32,7 +32,7 @@ import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
 import reframe.utility.udeps as udeps
 from reframe.core.backends import getlauncher, getscheduler
-from reframe.core.buildsystems import BuildSystemField
+from reframe.core.buildsystems import BuildSystemField, EasyBuild
 from reframe.core.containers import ContainerPlatformField
 from reframe.core.deferrable import _DeferredExpression
 from reframe.core.exceptions import (BuildError, DependencyError,
@@ -578,7 +578,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    modules = fields.TypedField(typ.List[str])
+    modules = fields.TypedField(typ.List[str], typ.List[typ.Dict[str, object]])
 
     #: Environment variables to be set before running this test.
     #:
@@ -1239,7 +1239,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
             self.build_system.srcfile = self.sourcepath
             self.build_system.executable = self.executable
 
-        if type(self.build_system).__name__ == 'EasyBuild':
+        if isinstance(self.build_system, EasyBuild):
             self.build_system._installpath = os.path.join(self._stagedir, 'easybuild')
 
         # Prepare build job
@@ -1348,12 +1348,6 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
         exec_cmd = [self.job.launcher.run_command(self.job),
                     self.executable, *self.executable_opts]
         commands = [*self.prerun_cmds, ' '.join(exec_cmd), *self.postrun_cmds]
-        if type(self.build_system).__name__ == 'EasyBuild':
-            rt.runtime().modules_system.searchpath_add(
-                os.path.join(self.build_system._installpath, 'modules', 'all')
-            )
-            self.modules.extend(self.build_system._get_built_modules())
-
         user_environ = env.Environment(type(self).__name__,
                                        self.modules, self.variables.items())
         environs = [
