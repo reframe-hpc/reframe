@@ -91,7 +91,9 @@ class AffinityTestBase(rfm.RegressionTest):
         self.numa_nodes = {}
         for i in range(self.num_numa_nodes):
             self.numa_nodes[i] = set(
-                map(lambda y: int(y['cpu']), filter(lambda x: int(x['node']) == i, lscpu))
+                map(lambda y: int(y['cpu']),
+                    filter(lambda x: int(x['node']) == i, lscpu)
+                    )
             )
 
         # Build the socket sets
@@ -99,7 +101,9 @@ class AffinityTestBase(rfm.RegressionTest):
         self.sockets = {}
         for i in range(self.num_sockets):
             self.sockets[i] = set(
-                map(lambda y: int(y['cpu']), filter(lambda x: int(x['socket']) == i, lscpu))
+                map(lambda y: int(y['cpu']),
+                    filter(lambda x: int(x['socket']) == i, lscpu)
+                    )
             )
 
         # Store the lscpu output
@@ -123,7 +127,7 @@ class AffinityTestBase(rfm.RegressionTest):
         if by is None:
             raise TaskExit('must specify the sibiling level')
         else:
-            if not by in self._lscpu[0]:
+            if by not in self._lscpu[0]:
                 raise TaskExit('invalid sibiling level')
 
         sibiling_id = list(
