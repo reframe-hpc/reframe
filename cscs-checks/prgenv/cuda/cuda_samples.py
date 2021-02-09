@@ -17,9 +17,9 @@ class CudaSamplesTest(rfm.RegressionTest):
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn',
                               'ault:amdv100', 'ault:intelv100']
         if self.current_system.name in ['arolla', 'tsa']:
-            self.valid_prog_environs =  ['PrgEnv-pgi',
-                                         'PrgEnv-gnu-nompi',
-                                         'PrgEnv-pgi-nompi']
+            self.valid_prog_environs = ['PrgEnv-pgi',
+                                        'PrgEnv-gnu-nompi',
+                                        'PrgEnv-pgi-nompi']
             self.modules = ['cuda/10.1.243']
         elif self.current_system.name in ['ault']:
             self.valid_prog_environs = ['PrgEnv-gnu']
