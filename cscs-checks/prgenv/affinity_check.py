@@ -5,6 +5,7 @@
 
 
 import os
+import json
 
 import reframe as rfm
 import reframe.utility.sanity as sn
@@ -39,11 +40,11 @@ class AffinityTestBase(rfm.RegressionTest):
 
         # Dict with the partition's topology - output of "lscpu -e"
         self.topology = {
-            'dom:gpu':   'topo_dom_gpu.txt',
-            'dom:mc':    'topo_dom_mc.txt',
-            'daint:gpu': 'topo_dom_gpu.txt',
-            'daint:mc':  'topo_dom_mc.txt',
-            'eiger:mc':  'topo_eiger_mc.txt',
+            'dom:gpu':   'topo_dom_gpu.json',
+            'dom:mc':    'topo_dom_mc.json',
+            'daint:gpu': 'topo_dom_gpu.json',
+            'daint:mc':  'topo_dom_mc.json',
+            'eiger:mc':  'topo_eiger_mc.json',
         }
 
     @rfm.run_before('compile')
@@ -74,33 +75,30 @@ class AffinityTestBase(rfm.RegressionTest):
         '''
         cp = self.current_partition.fullname
         with osext.change_dir(self.stagedir):
-            lscpu = sn.extractall(
-                r'^\s*(\d+)\s*(\d+)\s*(\d+)\s*(\d+)',
-                self.topology[cp], 0,
-                lambda x: [int(xi) for xi in x.split()]
-            ).evaluate()
+            with open(self.topology[cp], 'r') as topo:
+                lscpu = json.load(topo)['cpus']
 
         # Build the cpu set
-        self.cpu_set = set(map(lambda x: x[0], lscpu))
+        self.cpu_set = set(map(lambda x: int(x['cpu']), lscpu))
         self.num_cpus = len(self.cpu_set)
 
         # Build the numa sets
-        self.num_numa_nodes = len(set(map(lambda x: x[1], lscpu)))
+        self.num_numa_nodes = len(set(map(lambda x: int(x['node']), lscpu)))
         self.num_cpus_per_core = int(
-            self.num_cpus/len(set(map(lambda x: x[3], lscpu)))
+            self.num_cpus/len(set(map(lambda x: int(x['core']), lscpu)))
         )
         self.numa_nodes = {}
         for i in range(self.num_numa_nodes):
             self.numa_nodes[i] = set(
-                map(lambda y: y[0], filter(lambda x: x[1] == i, lscpu))
+                map(lambda y: int(y['cpu']), filter(lambda x: int(x['node']) == i, lscpu))
             )
 
         # Build the socket sets
-        self.num_sockets = len(set(map(lambda x: x[2], lscpu)))
+        self.num_sockets = len(set(map(lambda x: int(x['socket']), lscpu)))
         self.sockets = {}
         for i in range(self.num_sockets):
             self.sockets[i] = set(
-                map(lambda y: y[0], filter(lambda x: x[2] == i, lscpu))
+                map(lambda y: int(y['cpu']), filter(lambda x: int(x['socket']) == i, lscpu))
             )
 
         # Store the lscpu output
@@ -124,20 +122,18 @@ class AffinityTestBase(rfm.RegressionTest):
         if by is None:
             raise TaskExit('must specify the sibiling level')
         else:
-            try:
-                sibiling_level = _map[by]
-            except KeyError:
+            if not by in self._lscpu[0]:
                 raise TaskExit('invalid sibiling level')
 
         sibiling_id = list(
-            filter(lambda x: x[0] == cpuid, self._lscpu)
-        )[0][sibiling_level]
+            filter(lambda x: int(x['cpu']) == cpuid, self._lscpu)
+        )[0][by]
 
         return set(
             map(
-                lambda y: y[0],
+                lambda y: int(y['cpu']),
                 filter(
-                    lambda x: x[sibiling_level] == sibiling_id,
+                    lambda x: x[by] == sibiling_id,
                     self._lscpu
                 )
             )
