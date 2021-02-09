@@ -8,12 +8,16 @@ import reframe.utility.sanity as sn
 import reframe.utility.osext as osext
 
 
-class CudaSamples(rfm.RegressionTest):
-    def __init__(self):
+@rfm.parameterized_test(['deviceQuery'], ['concurrentKernels'],
+                        ['simpleCUBLAS'], ['bandwidthTest'],
+                        ['conjugateGradientCudaGraphs'])
+class CudaSamplesTest(rfm.RegressionTest):
+    def __init__(self, test_name):
+        self.descr = f'CUDA {test_name} test'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn',
                               'ault:amdv100', 'ault:intelv100']
         if self.current_system.name in ['arolla', 'tsa']:
-            self.valid_prog_environs += ['PrgEnv-pgi',
+            self.valid_prog_environs =  ['PrgEnv-pgi',
                                          'PrgEnv-gnu-nompi',
                                          'PrgEnv-pgi-nompi']
             self.modules = ['cuda/10.1.243']
@@ -33,11 +37,24 @@ class CudaSamples(rfm.RegressionTest):
             self.nvidia_sm = '60'
             self.modules = ['cudatoolkit']
 
+        output_patterns = {
+            'deviceQuery': r'Result = PASS',
+            'concurrentKernels': r'Test passed',
+            'simpleCUBLAS': r'test passed',
+            'bandwidthTest': r'Result = PASS',
+            'conjugateGradientCudaGraphs':
+                r'Test Summary:  Error amount = 0.00000'
+        }
+
         self.sourcesdir = 'https://github.com/NVIDIA/cuda-samples.git'
         self.build_system = 'Make'
         self.build_system.options = [f'SMS="{self.nvidia_sm}"',
                                      f'CUDA_PATH=$CUDA_HOME']
-        self.prebuild_cmds = ['git checkout v11.0']
+        self.prebuild_cmds = [f'git checkout v11.0', f'cd Samples/{test_name}']
+        self.executable = f'Samples/{test_name}/{test_name}'
+        self.sanity_patterns = sn.assert_found(
+            output_patterns[test_name], self.stdout
+        )
         self.maintainers = ['JO']
         self.tags = {'production', 'external_resosurces'}
 
@@ -52,59 +69,3 @@ class CudaSamples(rfm.RegressionTest):
     def dom_set_cuda_cdt(self):
         if self.current_system.name == 'dom':
             self.modules += ['cdt-cuda']
-
-
-@rfm.simple_test
-class CudaDeviceQueryCheck(CudaSamples):
-    def __init__(self):
-        super().__init__()
-        self.descr = 'CUDA deviceQuery test.'
-        self.num_tasks = 1
-        self.prebuild_cmds += ['cd Samples/deviceQuery']
-        self.executable = 'Samples/{0}/{0}'.format('deviceQuery')
-        self.sanity_patterns = sn.assert_found(
-            r'Result = PASS',
-            self.stdout)
-
-
-@rfm.simple_test
-class CudaConcurrentKernelsCheck(CudaSamples):
-    def __init__(self):
-        super().__init__()
-        self.descr = 'CUDA concurrentKernels test'
-        self.executable = 'Samples/{0}/{0}'.format('concurrentKernels')
-        self.prebuild_cmds += ['cd Samples/concurrentKernels']
-        self.sanity_patterns = sn.assert_found(r'Test passed', self.stdout)
-
-
-@rfm.simple_test
-class CudaMatrixMultCublasCheck(CudaSamples):
-    def __init__(self):
-        super().__init__()
-        self.descr = 'CUDA simpleCUBLAS test'
-        self.executable = 'Samples/{0}/{0}'.format('simpleCUBLAS')
-        self.prebuild_cmds += ['cd Samples/simpleCUBLAS']
-        self.sanity_patterns = sn.assert_found(r'test passed', self.stdout)
-
-
-@rfm.simple_test
-class CudaBandwidthCheck(CudaSamples):
-    def __init__(self):
-        super().__init__()
-        self.descr = 'CUDA bandwidthTest test'
-        self.executable = 'Samples/{0}/{0}'.format('bandwidthTest')
-        self.prebuild_cmds += ['cd Samples/bandwidthTest']
-        self.sanity_patterns = sn.assert_found(r'Result = PASS', self.stdout)
-
-
-@rfm.simple_test
-class CudaGraphsCGCheck(CudaSamples):
-    def __init__(self):
-        super().__init__()
-        self.descr = 'CUDA conjugateGradientCudaGraphs test'
-        self.executable = 'Samples/{0}/{0}'.format(
-            'conjugateGradientCudaGraphs'
-        )
-        self.prebuild_cmds += ['cd Samples/conjugateGradientCudaGraphs']
-        self.sanity_patterns = sn.assert_found(
-            r'Test Summary:  Error amount = 0.00000', self.stdout)
