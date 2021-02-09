@@ -1009,6 +1009,14 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     def build_stderr(self):
         return self.build_job.stderr if self.build_job else None
 
+    @property
+    def param_space(self):
+        '''The parameter space of the instance of the class.
+
+        :type: :class:`reframe.core.parameters.ParamSpace`.
+        '''
+        return self._rfm_param_space
+
     def info(self):
         '''Provide live information for this test.
 
@@ -1873,7 +1881,8 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
             deps = [d for d in deps if d.partition.name == part]
 
         if params:
-            deps = [d for d in deps if all(hasattr(d.check, k) and
+            deps = [d for d in deps if all(k in d.check.param_space and
+                                           hasattr(d.check, k) and
                                            getattr(d.check, k) == v
                                            for k, v in params.items())]
 

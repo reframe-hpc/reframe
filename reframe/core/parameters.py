@@ -245,5 +245,8 @@ class ParamSpace:
     def __getitem__(self, key):
         return self._params.get(key, ())
 
+    def __contains__(self, key):
+        return key in self._params
+
     def is_empty(self):
         return self._params == {}
