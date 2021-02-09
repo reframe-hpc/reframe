@@ -24,7 +24,8 @@ class AffinityTestBase(rfm.RegressionTest):
 
     def __init__(self):
         self.valid_systems = ['daint:gpu', 'daint:mc',
-                              'dom:gpu', 'dom:mc', 'eiger:mc']
+                              'dom:gpu', 'dom:mc', 'eiger:mc',
+                              'ault:a64fx', 'ault:amdv100']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.build_system = 'Make'
         self.build_system.options = ['-C affinity', 'MPI=1']
@@ -233,7 +234,7 @@ class AffinityOpenMPBase(AffinityTestBase):
 
 
 @rfm.simple_test
-class OneTheadPerCPUOpenMP(AffinityOpenMPBase):
+class OneThreadPerCPUOpenMP(AffinityOpenMPBase):
     '''Pin each OMP thread to a different CPU.'''
     parameter('omp_bind', ['threads'])
 
