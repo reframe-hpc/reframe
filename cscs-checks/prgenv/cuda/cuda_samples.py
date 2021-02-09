@@ -10,10 +10,9 @@ import reframe.utility.osext as osext
 
 @rfm.simple_test
 class CudaSamplesTest(rfm.RegressionTest):
-    parameter('test_name',
-              ['deviceQuery', 'concurrentKernels', 'simpleCUBLAS',
-               'bandwidthTest', 'conjugateGradientCudaGraphs']
-    )
+    parameter('test_name', ['deviceQuery', 'concurrentKernels', 'simpleCUBLAS',
+                            'bandwidthTest', 'conjugateGradientCudaGraphs'])
+
     def __init__(self):
         self.descr = f'CUDA {self.test_name} test'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn',
