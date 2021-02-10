@@ -25,6 +25,13 @@ CMD_M()
     shift && echo -e "${BLUE}==> [$msg]${NC}" ${YELLOW}$*${NC} && $*
 }
 
+PYTHON_REQ()
+{
+    pyver=$1
+    echo -e "${YELLOW}Unsupported Python Version $pyver: ReFrame requires Python >= 3.6${NC}"
+    exit 1
+}
+
 usage()
 {
     echo "Usage: $0 [-h] [+docs] [+pygelf]"
@@ -57,7 +64,13 @@ while [ -n "$1" ]; do
     esac
 done
 
-pyver=$($python -V | sed -n 's/Python \([0-9]\+\)\.\([0-9]\+\)\..*/\1.\2/p')
+pyver=$($python -V 2>&1 | sed -n 's/Python \([0-9]\+\)\.\([0-9]\+\)\..*/\1.\2/p')
+pymajver=$(echo $pyver | cut -f 1 -d '.')
+pyminver=$(echo $pyver | cut -f 2 -d '.')
+
+if [ $pymajver -lt 3 ] || [ $pyminver -lt 6 ]; then
+    PYTHON_REQ $pyver
+fi
 
 # Check if ensurepip is installed
 $python -m ensurepip --version &> /dev/null
