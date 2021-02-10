@@ -4,8 +4,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import pytest
-import semver
-
 import reframe.core.warnings as warnings
 import reframe.utility.versioning as versioning
 

@@ -19,7 +19,6 @@ import inspect
 import sys
 import traceback
 
-import reframe
 import reframe.utility.osext as osext
 from reframe.core.exceptions import ReframeSyntaxError, user_frame
 from reframe.core.logging import getlogger

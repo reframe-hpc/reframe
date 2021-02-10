@@ -4,11 +4,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import abc
-import semver
-import sys
 import re
+import semver
 
-import reframe
 from reframe.core.warnings import user_deprecation_warning
 
 
@@ -18,8 +16,6 @@ def parse(version_str):
 
     :returns: a :class:`semver.VersionInfo` object.
     '''
-
-    import re
 
     compat = False
     old_style_stable = re.search(r'^(\d+)\.(\d+)$', version_str)
