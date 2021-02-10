@@ -32,6 +32,9 @@ class _TestVar:
                 f'{fields.Field.__qualname__}'
             )
 
+        if not isinstance(name, str):
+            raise ValueError("the argument 'name' must be a string")
+
         self.name = name
         self.args = args
         self.kwargs = kwargs
@@ -46,6 +49,14 @@ class _TestVar:
         self.default_value = value
 
     def __set_name__(self, owner, name):
+        '''Overwrite the dummy name.
+
+        If the variable was created directly by assignment in the test class,
+        this function assigns the variable the name used in the test class body
+        and inserts the variable in the test's local variable space. To avoid
+        any namespace collisions, this function also disowns the test class
+        (owner argument) from this variable.
+        '''
         self.name = name
         owner._rfm_local_var_space[name] = self
         delattr(owner, name)
