@@ -5,7 +5,9 @@
 
 
 import io
+import jsonschema
 import requests
+import yaml
 
 import reframe.frontend.ci as ci
 import reframe.frontend.dependencies as dependencies
@@ -24,9 +26,11 @@ def test_ci_gitlab_pipeline():
     )
     with io.StringIO() as fp:
         ci.emit_pipeline(fp, cases)
-        yaml = fp.getvalue()
+        pipeline = fp.getvalue()
 
-    response = requests.post('https://gitlab.com/api/v4/ci/lint',
-                             data={'content': {yaml}})
+    # Fetch the latest Gitlab CI JSON schema
+    response = requests.get('https://json.schemastore.org/gitlab-ci')
     assert response.ok
-    assert response.json()['status'] == 'valid'
+
+    schema = response.json()
+    jsonschema.validate(yaml.safe_load(pipeline), schema)
