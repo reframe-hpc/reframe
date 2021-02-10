@@ -45,6 +45,11 @@ class _TestVar:
     def define(self, value):
         self.default_value = value
 
+    def __set_name__(self, owner, name):
+        self.name = name
+        owner._rfm_local_var_space[name] = self
+        delattr(owner, name)
+
 
 class LocalVarSpace(namespaces.LocalNamespace):
     '''Local variable space of a regression test.

@@ -30,6 +30,9 @@ class RegressionTestMeta(type):
         local_var_space = variables.LocalVarSpace()
         namespace['_rfm_local_var_space'] = local_var_space
 
+        # The test var class
+        namespace['_TestVar'] = variables._TestVar
+
         # Directives to add/modify a regression test variable
         namespace['var'] = local_var_space.declare
         namespace['require_var'] = local_var_space.undefine
