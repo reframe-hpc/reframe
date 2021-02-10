@@ -20,6 +20,7 @@ import sys
 import traceback
 
 import reframe
+import reframe.utility.osext as osext
 from reframe.core.exceptions import ReframeSyntaxError, user_frame
 from reframe.core.logging import getlogger
 from reframe.core.pipeline import RegressionTest
@@ -168,7 +169,7 @@ def required_version(*versions):
         if not hasattr(mod, '__rfm_skip_tests'):
             mod.__rfm_skip_tests = set()
 
-        if not any(c.validate(reframe.VERSION) for c in conditions):
+        if not any(c.validate(osext.reframe_version()) for c in conditions):
             getlogger().info('skipping incompatible test defined'
                              ' in class: %s' % cls.__name__)
             mod.__rfm_skip_tests.add(cls)

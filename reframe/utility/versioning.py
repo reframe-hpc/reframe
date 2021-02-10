@@ -4,86 +4,49 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import abc
-import functools
+import semver
 import sys
 import re
 
+import reframe
+from reframe.core.warnings import user_deprecation_warning
 
-@functools.total_ordering
-class Version:
-    def __init__(self, version):
-        if version is None:
-            raise ValueError('version string may not be None')
 
-        base_part, *dev_part = version.split('-dev')
+def parse(version_str):
+    '''Compatibility function to normalize version strings from prior
+    ReFrame versions
 
-        try:
-            major, minor, *patch_part = base_part.split('.')
-        except ValueError:
-            raise ValueError('invalid version string: %s' % version) from None
+    :returns: a :class:`semver.VersionInfo` object.
+    '''
 
-        patch_level = patch_part[0] if patch_part else 0
+    import re
 
-        try:
-            self._major = int(major)
-            self._minor = int(minor)
-            self._patch_level = int(patch_level)
-            self._dev_number = int(dev_part[0]) if dev_part else None
-        except ValueError:
-            raise ValueError('invalid version string: %s' % version) from None
+    compat = False
+    old_style_stable = re.search(r'^(\d+)\.(\d+)$', version_str)
+    old_style_dev = re.search(r'(\d+)\.(\d+)((\d+))?-dev(\d+)$', version_str)
+    if old_style_stable:
+        compat = True
+        major = old_style_stable.group(1)
+        minor = old_style_stable.group(2)
+        ret = semver.VersionInfo(major, minor, 0)
+    elif old_style_dev:
+        compat = True
+        major = old_style_dev.group(1)
+        minor = old_style_dev.group(2)
+        patchlevel = old_style_dev.group(4) or 0
+        prerelease = old_style_dev.group(5)
+        ret = semver.VersionInfo(major, minor, patchlevel, f'dev.{prerelease}')
+    else:
+        ret = semver.VersionInfo.parse(version_str)
 
-    @property
-    def major(self):
-        return self._major
+    if compat:
+        user_deprecation_warning(
+            f"the version string {version_str!r} is deprecated; "
+            f"please use the conformant '{ret}'",
+            from_version='3.5.0'
+        )
 
-    @property
-    def minor(self):
-        return self._minor
-
-    @property
-    def patch_level(self):
-        return self._patch_level
-
-    @property
-    def dev_number(self):
-        return self._dev_number
-
-    def _value(self):
-        return 10000*self._major + 100*self._minor + self._patch_level
-
-    def __eq__(self, other):
-        if not isinstance(other, type(self)):
-            return NotImplemented
-
-        return (self._value() == other._value() and
-                self._dev_number == other._dev_number)
-
-    def __gt__(self, other):
-        if not isinstance(other, type(self)):
-            return NotImplemented
-
-        if self._value() > other._value():
-            return self._value() > other._value()
-
-        if self._value() < other._value():
-            return self._value() > other._value()
-
-        self_dev_number = (self._dev_number if self._dev_number is not None
-                           else sys.maxsize)
-        other_dev_number = (other._dev_number if other._dev_number is not None
-                            else sys.maxsize)
-
-        return self_dev_number > other_dev_number
-
-    def __repr__(self):
-        return "Version('%s')" % self
-
-    def __str__(self):
-        base = '%s.%s.%s' % (self._major, self._minor, self._patch_level)
-        if self._dev_number is None:
-            return base
-
-        return base + '-dev%s' % self._dev_number
+    return ret
 
 
 class _ValidatorImpl(abc.ABC):
@@ -109,14 +72,14 @@ class _IntervalValidator(_ValidatorImpl):
                              condition) from None
 
         if min_version_str and max_version_str:
-            self._min_version = Version(min_version_str)
-            self._max_version = Version(max_version_str)
+            self._min_version = parse(min_version_str)
+            self._max_version = parse(max_version_str)
         else:
             raise ValueError("missing bound on version interval %s" %
                              condition)
 
     def validate(self, version):
-        version = Version(version)
+        version = parse(version)
         return ((version >= self._min_version) and
                 (version <= self._max_version))
 
@@ -142,7 +105,7 @@ class _RelationalValidator(_ValidatorImpl):
         if not cond_match:
             raise ValueError("invalid condition: '%s'" % condition)
 
-        self._ref_version = Version(cond_match.group(2))
+        self._ref_version = parse(cond_match.group(2))
         op = cond_match.group(1)
         if not op:
             op = '=='
@@ -154,7 +117,7 @@ class _RelationalValidator(_ValidatorImpl):
 
     def validate(self, version):
         do_validate = self._op_actions[self._operator]
-        return do_validate(Version(version), self._ref_version)
+        return do_validate(parse(version), self._ref_version)
 
 
 class VersionValidator:

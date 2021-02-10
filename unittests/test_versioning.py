@@ -4,83 +4,60 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import pytest
+import semver
 
-from reframe.utility.versioning import Version, VersionValidator
-
-
-def test_version_format():
-    Version('1.2')
-    Version('1.2.3')
-    Version('1.2-dev0')
-    Version('1.2-dev5')
-    v = Version('1.2.3-dev2')
-    assert v.major == 1
-    assert v.minor == 2
-    assert v.patch_level == 3
-    assert v.dev_number == 2
-
-    with pytest.raises(ValueError):
-        Version(None)
-
-    with pytest.raises(ValueError):
-        Version('')
-
-    with pytest.raises(ValueError):
-        Version('1')
-
-    with pytest.raises(ValueError):
-        Version('1.2a')
-
-    with pytest.raises(ValueError):
-        Version('a.b.c')
-
-    with pytest.raises(ValueError):
-        Version('1.2.3-dev')
-
-
-def test_comparing_versions():
-    assert Version('1.2') < Version('1.2.1')
-    assert Version('1.2.1') < Version('1.2.2')
-    assert Version('1.2.2') < Version('1.3-dev0')
-    assert Version('1.3-dev0') < Version('1.3-dev1')
-    assert Version('1.3-dev1') < Version('1.3')
-    assert Version('1.3') == Version('1.3.0')
-    assert Version('1.3-dev1') == Version('1.3.0-dev1')
-    assert Version('1.12.3') > Version('1.2.3')
-    assert Version('1.2.23') > Version('1.2.3')
+import reframe.core.warnings as warnings
+import reframe.utility.versioning as versioning
 
 
 def test_version_validation():
-    conditions = [VersionValidator('<=1.0.0'),
-                  VersionValidator('2.0.0..2.5'),
-                  VersionValidator('3.0')]
+    conditions = [versioning.VersionValidator('<=1.0.0'),
+                  versioning.VersionValidator('2.0.0..2.5.0'),
+                  versioning.VersionValidator('3.0.0')]
 
-    assert all([any(c.validate('0.1') for c in conditions),
+    assert all([any(c.validate('0.1.0') for c in conditions),
                 any(c.validate('2.0.0') for c in conditions),
-                any(c.validate('2.2') for c in conditions),
-                any(c.validate('2.5') for c in conditions),
-                any(c.validate('3.0') for c in conditions),
-                not any(c.validate('3.1') for c in conditions)])
+                any(c.validate('2.2.0') for c in conditions),
+                any(c.validate('2.5.0') for c in conditions),
+                any(c.validate('3.0.0') for c in conditions),
+                not any(c.validate('3.1.0') for c in conditions)])
     with pytest.raises(ValueError):
-        VersionValidator('2.0.0..')
+        versioning.VersionValidator('2.0.0..')
 
     with pytest.raises(ValueError):
-        VersionValidator('..2.0.0')
+        versioning.VersionValidator('..2.0.0')
 
     with pytest.raises(ValueError):
-        VersionValidator('1.0.0..2.0.0..3.0.0')
+        versioning.VersionValidator('1.0.0..2.0.0..3.0.0')
 
     with pytest.raises(ValueError):
-        VersionValidator('=>2.0.0')
+        versioning.VersionValidator('=>2.0.0')
 
     with pytest.raises(ValueError):
-        VersionValidator('2.0.0>')
+        versioning.VersionValidator('2.0.0>')
 
     with pytest.raises(ValueError):
-        VersionValidator('2.0.0>1.0.0')
+        versioning.VersionValidator('2.0.0>1.0.0')
 
     with pytest.raises(ValueError):
-        VersionValidator('=>')
+        versioning.VersionValidator('=>')
 
     with pytest.raises(ValueError):
-        VersionValidator('>1')
+        versioning.VersionValidator('>1')
+
+
+def test_parse(monkeypatch):
+    monkeypatch.setattr(warnings, '_RAISE_DEPRECATION_ALWAYS', True)
+    with pytest.warns(warnings.ReframeDeprecationWarning,
+                      match="please use the conformant '3.5.0'"):
+        deprecated = versioning.parse('3.5')
+
+    assert deprecated == versioning.parse('3.5.0')
+    with pytest.warns(warnings.ReframeDeprecationWarning,
+                      match="please use the conformant '3.5.0-dev.0'"):
+        deprecated = versioning.parse('3.5-dev0')
+
+    assert deprecated == versioning.parse('3.5.0-dev.0')
+    assert str(versioning.parse('3.5.0')) == '3.5.0'
+    assert str(versioning.parse('3.5.0-dev.1')) == '3.5.0-dev.1'
+    assert str(versioning.parse('3.5.0-dev.1+HASH')) == '3.5.0-dev.1+HASH'
