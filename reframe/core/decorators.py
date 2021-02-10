@@ -139,8 +139,6 @@ def required_version(*versions):
     If the test is not compatible with the current ReFrame version it will be
     skipped.
 
-    .. versionadded:: 2.13
-
     :arg versions: A list of ReFrame version specifications that this test is
       allowed to run. A version specification string can have one of the
       following formats:
@@ -148,15 +146,25 @@ def required_version(*versions):
       1. ``VERSION``: Specifies a single version.
       2. ``{OP}VERSION``, where ``{OP}`` can be any of ``>``, ``>=``, ``<``,
          ``<=``, ``==`` and ``!=``. For example, the version specification
-         string ``'>=2.15'`` will allow the following test to be loaded only
-         by ReFrame 2.15 and higher. The ``==VERSION`` specification is the
+         string ``'>=3.5.0'`` will allow the following test to be loaded only
+         by ReFrame 3.5.0 and higher. The ``==VERSION`` specification is the
          equivalent of ``VERSION``.
       3. ``V1..V2``: Specifies a range of versions.
 
       You can specify multiple versions with this decorator, such as
-      ``@required_version('2.13', '>=2.16')``, in which case the test will be
+      ``@required_version('3.5.1', '>=3.5.6')``, in which case the test will be
       selected if *any* of the versions is satisfied, even if the versions
       specifications are conflicting.
+
+    .. versionadded:: 2.13
+
+    .. versionchanged:: 3.5.0
+
+       Passing ReFrame version numbers that do not comply with the `semantic
+       versioning <https://semver.org/>`__ specification is deprecated.
+       Examples of non-compliant version numbers are ``3.5`` and ``3.5-dev0``.
+       These should be written as ``3.5.0`` and ``3.5.0-dev.0``.
+
     '''
     if not versions:
         raise ValueError('no versions specified')
