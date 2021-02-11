@@ -658,24 +658,34 @@ class Autotools(ConfigureBasedBuildSystem):
 class EasyBuild(BuildSystem):
     easyconfigs = fields.TypedField(typ.List[str])
     options = fields.TypedField(typ.List[str])
+    installpath = fields.TypedField(str, type(None))
+    buildpath = fields.TypedField(str, type(None))
+    sourcepath = fields.TypedField(str, type(None))
+    use_system_config = fields.TypedField(bool)
 
     def __init__(self):
         super().__init__()
         self.easyconfigs = []
         self.options = []
-        self._installpath = None
+        self.installpath = None
+        self.buildpath = None
+        self.sourcepath = None
+        self.use_system_config = False
 
     def emit_build_commands(self, environ):
-        _easyconfigs = ' '.join(self.easyconfigs)
-        _options = ' '.join(self.options)
-        return [f"eb {_easyconfigs} --installpath {self._installpath} "
-                f"--tmpdir {self._installpath} "
-                f"--sourcepath {self._installpath} "
-                f"--buildpath {self._installpath}/build {_options}"]
+        easyconfigs = ' '.join(self.easyconfigs)
+        options = ' '.join(self.options)
+        if self.use_system_config:
+            return [f"eb {easyconfigs} {options}"]
+
+        return [f"eb {easyconfigs} --installpath {self.installpath} "
+                # f"--tmpdir {self._installpath} "
+                f"--sourcepath {self.sourcepath} "
+                f"--buildpath {self.buildpath} {options}"]
 
     def eb_modules(self):
         modules = []
-        modules_dir = os.path.join(self._installpath, 'modules', 'all')
+        modules_dir = os.path.join(self.installpath, 'modules', 'all')
         if os.path.isdir(modules_dir):
             for mod in os.listdir(modules_dir):
                 for ver in os.listdir(os.path.join(modules_dir, mod)):
