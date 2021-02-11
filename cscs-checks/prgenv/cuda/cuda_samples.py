@@ -8,13 +8,12 @@ import reframe.utility.sanity as sn
 import reframe.utility.osext as osext
 
 
-@rfm.simple_test
+@rfm.parameterized_test(['deviceQuery'], ['concurrentKernels'],
+                        ['simpleCUBLAS'], ['bandwidthTest'],
+                        ['conjugateGradientCudaGraphs'])
 class CudaSamplesTest(rfm.RegressionTest):
-    parameter('test_name', ['deviceQuery', 'concurrentKernels', 'simpleCUBLAS',
-                            'bandwidthTest', 'conjugateGradientCudaGraphs'])
-
-    def __init__(self):
-        self.descr = f'CUDA {self.test_name} test'
+    def __init__(self, sample):
+        self.descr = f'CUDA {sample} test'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn',
                               'ault:amdv100', 'ault:intelv100']
         if self.current_system.name in ['arolla', 'tsa']:
@@ -51,14 +50,13 @@ class CudaSamplesTest(rfm.RegressionTest):
         self.build_system = 'Make'
         self.build_system.options = [f'SMS="{self.nvidia_sm}"',
                                      f'CUDA_PATH=$CUDA_HOME']
-        self.prebuild_cmds = [f'git checkout v11.0',
-                              f'cd Samples/{self.test_name}']
-        self.executable = f'Samples/{self.test_name}/{self.test_name}'
+        self.prebuild_cmds = [f'git checkout v11.0', f'cd Samples/{sample}']
+        self.executable = f'Samples/{sample}/{sample}'
         self.sanity_patterns = sn.assert_found(
-            output_patterns[self.test_name], self.stdout
+            output_patterns[sample], self.stdout
         )
         self.maintainers = ['JO']
-        self.tags = {'production', 'external_resosurces'}
+        self.tags = {'production', 'external_resources'}
 
     @rfm.run_before('compile')
     def cdt2008_pgi_workaround(self):
