@@ -14,16 +14,15 @@ class FFTWTest(rfm.RegressionTest):
         self.sourcepath = 'fftw_benchmark.c'
         self.build_system = 'SingleSource'
         self.valid_systems = ['daint:gpu', 'dom:gpu']
+
+        # Cray FFTW library is not officially supported for the PGI
+        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
         self.modules = ['cray-fftw']
         self.num_tasks_per_node = 12
         self.num_gpus_per_node = 0
         self.sanity_patterns = sn.assert_eq(
             sn.count(sn.findall(r'execution time', self.stdout)), 1)
         self.build_system.cflags = ['-O2']
-        if self.current_system.name in {'daint', 'dom'}:
-            # Cray FFTW library is not officially supported for the PGI
-            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
-
         self.perf_patterns = {
             'fftw_exec_time': sn.extractsingle(
                 r'execution time:\s+(?P<exec_time>\S+)', self.stdout,
