@@ -615,18 +615,6 @@ def test_multiple_inheritance(HelloTest):
             pass
 
 
-def test_extend_after_instantiation(HelloTest):
-    '''Instantiation will inject the vars as class attributes.
-
-    Therefore, inheriting from this class after the instantiation will create
-    a namespace clash with the vars.
-    '''
-    hellotest = HelloTest()
-    with pytest.raises(ValueError):
-        class MyTest(HelloTest):
-            pass
-
-
 def test_inherited_hooks(HelloTest, local_exec_ctx):
     @fixtures.custom_prefix('unittests/resources/checks')
     class BaseTest(HelloTest):

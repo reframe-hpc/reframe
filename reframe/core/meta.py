@@ -15,15 +15,19 @@ import reframe.core.variables as variables
 
 
 class MetaNamespace(namespaces.LocalNamespace):
+    '''Regression test's namespace to control the cls attribute assignment.'''
     def __setitem__(self, key, value):
         if isinstance(value, variables.VarDirective):
+            # Insert the attribute in the variable namespace
             self['_rfm_local_var_space'][key] = value
 
-        #elif isinstance(value, parameters._TestParam):
-        #    self['_rfm_local_param_space'][key] = value
+        elif isinstance(value, parameters.TestParam):
+            # Insert the attribute in the parameter namespace
+            self['_rfm_local_param_space'][key] = value
 
         else:
             super().__setitem__(key, value)
+
 
 class RegressionTestMeta(type):
     @classmethod
@@ -31,12 +35,12 @@ class RegressionTestMeta(type):
         namespace = super().__prepare__(name, bases, **kwargs)
 
         # Regression test parameter space defined at the class level
-        local_param_space = parameters.LocalParamSpace()
+        local_param_space = namespaces.LocalNamespace()
         namespace['_rfm_local_param_space'] = local_param_space
 
         # Directive to insert a regression test parameter directly in the
-        # class body as: `parameter('P0', 0,1,2,3)`.
-        namespace['parameter'] = local_param_space.insert
+        # class body as: `P0 = parameter([0,1,2,3])`.
+        namespace['parameter'] = parameters.TestParam
 
         # Regression test var space defined at the class level
         local_var_space = namespaces.LocalNamespace()
@@ -45,7 +49,6 @@ class RegressionTestMeta(type):
         # Directives to add/modify a regression test variable
         namespace['variable'] = variables.TestVar
         namespace['required_variable'] = variables.UndefineVar()
-        #namespace['set_var'] = variables.DefineVar
         return MetaNamespace(namespace)
 
     def __new__(metacls, name, bases, namespace, **kwargs):
@@ -55,10 +58,10 @@ class RegressionTestMeta(type):
         super().__init__(name, bases, namespace, **kwargs)
 
         # Create a set with the attribute names already in use.
-        used_attribute_names = set(dir(cls))
+        used_attribute_names = set(dir(cls)) - set(cls.__dict__)
 
         # Build the var space and extend the target namespace
-        variables.VarSpace(cls, set())
+        variables.VarSpace(cls, used_attribute_names)
         used_attribute_names.update(cls._rfm_var_space.vars)
 
         # Build the parameter space

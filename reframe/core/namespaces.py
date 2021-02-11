@@ -103,11 +103,6 @@ class Namespace(metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
-    def local_namespace_class(self):
-        '''Type of the expected local namespace.'''
-
-    @property
-    @abc.abstractmethod
     def namespace_name(self):
         '''Name of the namespace in the target class.
 
@@ -138,7 +133,7 @@ class Namespace(metaclass=abc.ABCMeta):
 
         assert hasattr(cls, self.local_namespace_name)
         assert isinstance(getattr(cls, self.local_namespace_name),
-                          self.local_namespace_class)
+                          LocalNamespace)
 
     def inherit(self, cls):
         '''Inherit the Namespaces from the bases.'''

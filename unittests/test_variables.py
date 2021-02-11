@@ -36,13 +36,6 @@ def test_custom_variable(OneVarTest):
     assert inst.foo == 10
 
 
-##def test_instantiate_and_inherit(NoVarsTest):
-##    inst = NoVarsTest()
-##    with pytest.raises(ValueError):
-##        class MyTest(NoVarsTest):
-##            '''Error from name clashing'''
-
-
 def test_redeclare_builtin_var_clash(NoVarsTest):
     with pytest.raises(ValueError):
         class MyTest(NoVarsTest):
@@ -90,10 +83,10 @@ def test_double_action_on_variable():
             v0 = variable(int, value=2)
 
 
-#def test_namespace_clash(NoVarsTest):
-#    with pytest.raises(ValueError):
-#        class MyTest(NoVarsTest):
-#            current_environ = variable(str)
+def test_namespace_clash(NoVarsTest):
+    with pytest.raises(ValueError):
+        class MyTest(NoVarsTest):
+            current_environ = variable(str)
 
 
 def test_set_var(OneVarTest):
@@ -113,12 +106,6 @@ def test_var_type(OneVarTest):
 
     with pytest.raises(TypeError):
         inst = MyTest()
-
-
-##def test_set_undef(NoVarsTest):
-##    with pytest.raises(ValueError):
-##        class MyTest(NoVarsTest):
-##            foo = 4
 
 
 def test_require_var(OneVarTest):

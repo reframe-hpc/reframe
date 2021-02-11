@@ -92,10 +92,6 @@ class VarSpace(namespaces.Namespace):
         return '_rfm_local_var_space'
 
     @property
-    def local_namespace_class(self):
-        return namespaces.LocalNamespace
-
-    @property
     def namespace_name(self):
         return '_rfm_var_space'
 

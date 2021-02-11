@@ -13,7 +13,7 @@ import itertools
 import reframe.core.namespaces as namespaces
 
 
-class _TestParameter:
+class TestParam:
     '''Regression test paramter class.
 
     Stores the attributes of a regression test parameter as defined directly
@@ -23,7 +23,7 @@ class _TestParameter:
     parameter space is built.
     '''
 
-    def __init__(self, name, values=None,
+    def __init__(self, values=None,
                  inherit_params=False, filter_params=None):
         if values is None:
             values = []
@@ -40,39 +40,11 @@ class _TestParameter:
             def filter_params(x):
                 return x
 
-        self.name = name
         self.values = tuple(values)
         self.filter_params = filter_params
 
-
-class LocalParamSpace(namespaces.LocalNamespace):
-    '''Local parameter space of a regression test.
-
-    Stores all the regression test parameters defined in the test class body.
-    '''
-
-    def insert(self, name, values=None, **kwargs):
-        '''Insert or modify a regression test parameter.
-
-        This method may only be called in the main class body. Otherwise, its
-        behavior is undefined.
-
-        .. seealso::
-
-           :ref:`directives`
-
-        .. versionadded:: 3.4
-        '''
-        self[name] = _TestParameter(name, values, **kwargs)
-
-    @property
-    def params(self):
-        return self._namespace
-
-    def _raise_namespace_clash(self, name):
-        raise ValueError(
-            f'{name!r} is already present in the local parameter space'
-        )
+    def __set_name__(self, owner, name):
+        self.name = name
 
 
 class ParamSpace(namespaces.Namespace):
@@ -106,10 +78,6 @@ class ParamSpace(namespaces.Namespace):
     @property
     def local_namespace_name(self):
         return '_rfm_local_param_space'
-
-    @property
-    def local_namespace_class(self):
-        return LocalParamSpace
 
     @property
     def namespace_name(self):

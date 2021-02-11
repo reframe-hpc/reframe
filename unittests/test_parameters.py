@@ -16,17 +16,17 @@ class NoParams(rfm.RunOnlyRegressionTest):
 
 
 class TwoParams(NoParams):
-    parameter('P0', ['a'])
-    parameter('P1', ['b'])
+    P0 = parameter(['a'])
+    P1 = parameter(['b'])
 
 
 class Abstract(TwoParams):
-    parameter('P0')
+    P0 = parameter()
 
 
 class ExtendParams(TwoParams):
-    parameter('P1', ['c', 'd', 'e'], inherit_params=True)
-    parameter('P2', ['f', 'g'])
+    P1 = parameter(['c', 'd', 'e'], inherit_params=True)
+    P2 = parameter(['f', 'g'])
 
 
 def test_param_space_is_empty():
@@ -54,7 +54,7 @@ def test_abstract_param():
 
 def test_param_override():
     class MyTest(TwoParams):
-        parameter('P1', ['-'])
+        P1 = parameter(['-'])
 
     assert MyTest.param_space['P0'] == ('a',)
     assert MyTest.param_space['P1'] == ('-',)
@@ -62,7 +62,7 @@ def test_param_override():
 
 def test_param_inheritance():
     class MyTest(TwoParams):
-        parameter('P1', ['c'], inherit_params=True)
+        P1 = parameter(['c'], inherit_params=True)
 
     assert MyTest.param_space['P0'] == ('a',)
     assert MyTest.param_space['P1'] == ('b', 'c',)
@@ -70,7 +70,7 @@ def test_param_inheritance():
 
 def test_filter_params():
     class MyTest(ExtendParams):
-        parameter('P1', inherit_params=True, filter_params=lambda x: x[2:])
+        P1 = parameter(inherit_params=True, filter_params=lambda x: x[2:])
 
     assert MyTest.param_space['P0'] == ('a',)
     assert MyTest.param_space['P1'] == ('d', 'e',)
@@ -173,10 +173,10 @@ def test_parameterized_test_is_incompatible():
 
 def test_param_space_clash():
     class Spam(rfm.RegressionMixin):
-        parameter('P0', [1])
+        P0 = parameter([1])
 
     class Ham(rfm.RegressionMixin):
-        parameter('P0', [2])
+        P0 = parameter([2])
 
     with pytest.raises(ValueError):
         class Eggs(Spam, Ham):
@@ -185,15 +185,15 @@ def test_param_space_clash():
 
 def test_namespace_clash():
     class Spam(rfm.RegressionTest):
-        var('foo', int, 1)
+        foo = variable(int, 1)
 
     with pytest.raises(ValueError):
         class Ham(Spam):
-            parameter('foo', [1])
+            foo = parameter([1])
 
 
 def test_double_declare():
     with pytest.raises(ValueError):
         class MyTest(rfm.RegressionTest):
-            parameter('P0', [1, 2, 3])
-            parameter('P0')
+            P0 = parameter([1, 2, 3])
+            P0 = parameter()
