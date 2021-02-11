@@ -14,6 +14,17 @@ import reframe.core.parameters as parameters
 import reframe.core.variables as variables
 
 
+class MetaNamespace(namespaces.LocalNamespace):
+    def __setitem__(self, key, value):
+        if isinstance(value, variables.VarDirective):
+            self['_rfm_local_var_space'][key] = value
+
+        #elif isinstance(value, parameters._TestParam):
+        #    self['_rfm_local_param_space'][key] = value
+
+        else:
+            super().__setitem__(key, value)
+
 class RegressionTestMeta(type):
     @classmethod
     def __prepare__(metacls, name, bases, **kwargs):
@@ -28,17 +39,14 @@ class RegressionTestMeta(type):
         namespace['parameter'] = local_param_space.insert
 
         # Regression test var space defined at the class level
-        local_var_space = variables.LocalVarSpace()
+        local_var_space = namespaces.LocalNamespace()
         namespace['_rfm_local_var_space'] = local_var_space
 
-        # var declaration by assignment
-        namespace['_var'] = variables._TestVar
-
         # Directives to add/modify a regression test variable
-        namespace['var'] = local_var_space.declare
-        namespace['require_var'] = local_var_space.undefine
-        namespace['set_var'] = local_var_space.define
-        return namespaces.LocalNamespace(namespace)
+        namespace['variable'] = variables.TestVar
+        namespace['required_variable'] = variables.UndefineVar()
+        #namespace['set_var'] = variables.DefineVar
+        return MetaNamespace(namespace)
 
     def __new__(metacls, name, bases, namespace, **kwargs):
         return super().__new__(metacls, name, bases, dict(namespace), **kwargs)
@@ -50,7 +58,7 @@ class RegressionTestMeta(type):
         used_attribute_names = set(dir(cls))
 
         # Build the var space and extend the target namespace
-        variables.VarSpace(cls, used_attribute_names)
+        variables.VarSpace(cls, set())
         used_attribute_names.update(cls._rfm_var_space.vars)
 
         # Build the parameter space

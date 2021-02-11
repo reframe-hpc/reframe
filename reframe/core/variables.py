@@ -7,6 +7,7 @@
 # Functionality to build extensible variable spaces into ReFrame tests.
 #
 
+from types import MappingProxyType
 
 import reframe.core.namespaces as namespaces
 import reframe.core.fields as fields
@@ -19,13 +20,15 @@ class _UndefinedType:
 
 _Undefined = _UndefinedType()
 
+class VarDirective:
+    '''Base class for the variable directives.'''
 
-class _TestVar:
+class TestVar(VarDirective):
     '''Regression test variable.
 
     Buffer to store a regression test variable declared through directives.
     '''
-    def __init__(self, name, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         self.field_type = kwargs.pop('field', fields.TypedField)
         self.default_value = kwargs.pop('value', _Undefined)
 
@@ -35,10 +38,6 @@ class _TestVar:
                 f'{fields.Field.__qualname__}'
             )
 
-        if not isinstance(name, str):
-            raise ValueError("the argument 'name' must be a string")
-
-        self.name = name
         self.args = args
         self.kwargs = kwargs
 
@@ -61,90 +60,16 @@ class _TestVar:
         (owner argument) from this variable.
         '''
         self.name = name
-        owner._rfm_local_var_space[name] = self
-        delattr(owner, name)
 
 
-class LocalVarSpace(namespaces.LocalNamespace):
-    '''Local variable space of a regression test.
+class DefineVar(VarDirective):
+    def __init__(self, default_value):
+        self.default_value = default_value
 
-    Stores the input from the var directives executed in the class body of
-    the regression test. This local variable space is later used during the
-    instantiation of the VarSpace class to extend the final variable space.
-    '''
 
+class UndefineVar(VarDirective):
     def __init__(self):
-        super().__init__()
-        self.undefined = set()
-        self.definitions = {}
-
-    def declare(self, name, *args, **kwargs):
-        '''Declare a new regression test variable.
-
-        This method may only be called in the main class body. Otherwise, its
-        behavior is undefined.
-
-        .. seealso::
-
-            :ref:`directives`
-
-        .. versionadded:: 3.5
-        '''
-        self._is_present(name)
-        self[name] = _TestVar(name, *args, **kwargs)
-
-    def undefine(self, name):
-        '''Undefine a variable previously declared in a parent class.
-
-        This method may only be called in the main class body. Otherwise, its
-        behavior is undefined.
-
-        .. seealso::
-
-            :ref:`directives`
-
-        .. versionadded:: 3.5
-        '''
-        self._is_present(name)
-        self.undefined.add(name)
-
-    def define(self, name, value):
-        '''Assign a value to a previously declared regression test variable.
-
-        This method may only be called in the main class body. Otherwise, its
-        behavior is undefined.
-
-        .. seealso::
-
-            :ref:`directives`
-
-        .. versionadded:: 3.5
-        '''
-        self._is_present(name)
-        self.definitions[name] = value
-
-    def _is_present(self, name):
-        ''' Check if an action has been registered for this variable.
-
-        Calling more than one of the directives above on the same variable
-        does not make sense.
-        '''
-        if any(name in x for x in [self.vars,
-                                   self.undefined,
-                                   self.definitions]):
-            raise ValueError(
-                f'cannot specify more than one action on variable'
-                f' {name!r} in the same class'
-            )
-
-    @property
-    def vars(self):
-        return self._namespace
-
-    def _raise_namespace_clash(self, name):
-        raise ValueError(
-            f'{name!r} is already present in the local variable space'
-        )
+        self.default_value = _Undefined
 
 
 class VarSpace(namespaces.Namespace):
@@ -168,7 +93,7 @@ class VarSpace(namespaces.Namespace):
 
     @property
     def local_namespace_class(self):
-        return LocalVarSpace
+        return namespaces.LocalNamespace
 
     @property
     def namespace_name(self):
@@ -206,31 +131,42 @@ class VarSpace(namespaces.Namespace):
         '''
         local_varspace = getattr(cls, self.local_namespace_name)
 
-        # Extend the VarSpace
         for key, var in local_varspace.items():
-            # Disable redeclaring a variable
-            if key in self.vars:
+            if isinstance(var, TestVar):
+                # Disable redeclaring a variable
+                if key in self.vars:
+                    raise ValueError(
+                        f'cannot redeclare a variable ({key})'
+                    )
+
+                # Add a new var
+                self.vars[key] = var
+
+            elif isinstance(var, VarDirective):
+                # Modify the value of a previously declarated var
+                self._check_var_is_declared(key)
+                self.vars[key].define(var.default_value)
+
+        # If any previously declared variable was defined in the class body
+        # retrieve the value from the class namespace and update it into the
+        # variable space.
+        for key, value in cls.__dict__.items():
+            if key in local_varspace:
                 raise ValueError(
-                    f'cannot redeclare a variable ({key})'
+                    f'cannot specify more than one action on variable'
+                    f' {key!r} in the same class'
                 )
 
-            self.vars[key] = var
-
-        # Undefine the vars as indicated by the local var space
-        for key in local_varspace.undefined:
-            self._check_var_is_declared(key)
-            self.vars[key].undefine()
-
-        # Define the vars as indicated by the local var space
-        for key, val in local_varspace.definitions.items():
-            self._check_var_is_declared(key)
-            self.vars[key].define(val)
+            elif key in self.vars:
+                self._check_var_is_declared(key)
+                self.vars[key].define(value)
 
     def _check_var_is_declared(self, key):
         if key not in self.vars:
             raise ValueError(
                 f'variable {key!r} has not been declared'
             )
+
 
     def inject(self, obj, cls):
         '''Insert the vars in the regression test.
