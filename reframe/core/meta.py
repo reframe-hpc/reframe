@@ -9,13 +9,14 @@
 
 
 from reframe.core.exceptions import ReframeSyntaxError
+import reframe.core.namespaces as namespaces
 import reframe.core.parameters as parameters
 import reframe.core.variables as variables
 
 
 class RegressionTestMeta(type):
     @classmethod
-    def __prepare__(cls, name, bases, **kwargs):
+    def __prepare__(metacls, name, bases, **kwargs):
         namespace = super().__prepare__(name, bases, **kwargs)
 
         # Regression test parameter space defined at the class level
@@ -37,7 +38,10 @@ class RegressionTestMeta(type):
         namespace['var'] = local_var_space.declare
         namespace['require_var'] = local_var_space.undefine
         namespace['set_var'] = local_var_space.define
-        return namespace
+        return namespaces.LocalNamespace(namespace)
+
+    def __new__(metacls, name, bases, namespace, **kwargs):
+        return super().__new__(metacls, name, bases, dict(namespace), **kwargs)
 
     def __init__(cls, name, bases, namespace, **kwargs):
         super().__init__(name, bases, namespace, **kwargs)

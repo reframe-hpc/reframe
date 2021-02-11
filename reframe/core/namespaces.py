@@ -4,21 +4,18 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 #
-# Abstract base classes to build extensible namespaces through class
-# directives.
+# Base classes to manage the namespace of a regression test.
 #
 
 
 import abc
 
 
-class LocalNamespace(metaclass=abc.ABCMeta):
+class LocalNamespace:
     '''Local namespace of a regression test.
 
-    Temporary storage for test attributes defined in the test class body
-    through directives. This local namespace is populated during the
-    test class body execution through directives available in the class
-    :class:`reframe.core.pipeline.RegressionTest`.
+    Temporary storage for test attributes defined in the test class body.
+    This local namespace is populated during the test class body execution.
 
     Example: In the pseudo-code below, the local namespace of A is {P0},
     and the local namespace of B is {P1}. However, the final namespace
@@ -33,21 +30,38 @@ class LocalNamespace(metaclass=abc.ABCMeta):
             var('P1')
     '''
 
-    def __init__(self):
-        self._namespace = {}
+    def __init__(self, namespace=None):
+        self._namespace = namespace if namespace else {}
 
     def __getattr__(self, name):
         return getattr(self._namespace, name)
 
-    def __setitem__(self, name, value):
-        if name not in self._namespace:
-            self._namespace[name] = value
-        else:
-            self._raise_namespace_clash(name)
+    def __getitem__(self, key):
+        return self._namespace[key]
 
-    @abc.abstractmethod
+    def __setitem__(self, key, value):
+        if key not in self._namespace:
+            self._namespace[key] = value
+        else:
+            self._raise_namespace_clash(key)
+
+    def __contains__(self, key):
+        return key in self._namespace
+
+    def __iter__(self):
+        return iter(self._namespace)
+
+    def __len__(self):
+        return len(self._namespace)
+
+    def __repr__(self):
+        return '{}({!r})'.format(type(self).__name__, self._namespace)
+
     def _raise_namespace_clash(self, name):
         '''Raise an error if there is a namespace clash.'''
+        raise ValueError(
+            f'{name!r} is already present in the current namespace'
+        )
 
 
 class Namespace(metaclass=abc.ABCMeta):
