@@ -7,7 +7,6 @@
 # Functionality to build extensible variable spaces into ReFrame tests.
 #
 
-from types import MappingProxyType
 
 import reframe.core.namespaces as namespaces
 import reframe.core.fields as fields
