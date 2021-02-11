@@ -103,9 +103,17 @@ class ParamSpace(namespaces.Namespace):
         the target class.
     '''
 
-    local_namespace_name = '_rfm_local_param_space'
-    local_namespace_class = LocalParamSpace
-    namespace_name = '_rfm_param_space'
+    @property
+    def local_namespace_name(self):
+        return '_rfm_local_param_space'
+
+    @property
+    def local_namespace_class(self):
+        return LocalParamSpace
+
+    @property
+    def namespace_name(self):
+        return '_rfm_param_space'
 
     def __init__(self, target_cls=None, target_namespace=None):
         super().__init__(target_cls, target_namespace)

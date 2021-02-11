@@ -17,15 +17,12 @@ class LocalNamespace(metaclass=abc.ABCMeta):
 
     Temporary storage for test attributes defined in the test class body
     through directives. This local namespace is populated during the
-    test class body execution through the add method, which must be
-    exposed as a directive in the
+    test class body execution through directives available in the class
     :class:`reframe.core.pipeline.RegressionTest`.
 
     Example: In the pseudo-code below, the local namespace of A is {P0},
     and the local namespace of B is {P1}. However, the final namespace
     of A is still {P0}, and the final namespace of B is {P0, P1}.
-    The :func:`var` directive is simply an alias to the
-    :func:`add` method.
 
     .. code:: python
 
@@ -120,8 +117,7 @@ class Namespace(metaclass=abc.ABCMeta):
             self.sanity(target_cls, illegal_names)
 
             # Attach the Namespace to the target class
-            if target_cls:
-                setattr(target_cls, self.namespace_name, self)
+            setattr(target_cls, self.namespace_name, self)
 
     def assert_target_cls(self, cls):
         '''Assert the target class has a valid local namespace.'''
@@ -158,8 +154,8 @@ class Namespace(metaclass=abc.ABCMeta):
         for key in self._namespace:
             if key in illegal_names:
                 raise ValueError(
-                    f'{key!r} already defined in class'
-                    f' {cls.__qualname__!r}'
+                    f'{key!r} already defined in class '
+                    f'{cls.__qualname__!r}'
                 )
 
     @abc.abstractmethod

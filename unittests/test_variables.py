@@ -12,47 +12,55 @@ from reframe.core.fields import Field
 
 
 @pytest.fixture
-def novars():
-    class NoVars(rfm.RegressionTest):
+def NoVarsTest():
+    class NoVarsTest(rfm.RegressionTest):
         pass
-    yield NoVars
+
+    yield NoVarsTest
 
 
 @pytest.fixture
-def onevar(novars):
-    class OneVar(novars):
+def OneVarTest(NoVarsTest):
+    class OneVarTest(NoVarsTest):
         var('foo', int, value=10)
-    yield OneVar
+
+    yield OneVarTest
 
 
-def test_custom_var(onevar):
-    assert not hasattr(onevar, 'foo')
-    inst = onevar()
-    assert hasattr(onevar, 'foo')
-    assert isinstance(onevar.foo, Field)
+def test_custom_var(OneVarTest):
+    assert not hasattr(OneVarTest, 'foo')
+    inst = OneVarTest()
+    assert hasattr(OneVarTest, 'foo')
+    assert isinstance(OneVarTest.foo, Field)
     assert hasattr(inst, 'foo')
     assert inst.foo == 10
 
 
-def test_instantiate_and_inherit(novars):
-    inst = novars()
+def test_instantiate_and_inherit(NoVarsTest):
+    inst = NoVarsTest()
     with pytest.raises(ValueError):
-        class MyTest(novars):
+        class MyTest(NoVarsTest):
             '''Error from name clashing'''
 
 
-def test_redeclare_var_clash(novars):
+def test_redeclare_builtin_var_clash(NoVarsTest):
     with pytest.raises(ValueError):
-        class MyTest(novars):
+        class MyTest(NoVarsTest):
             var('name', str)
 
 
-def test_inheritance_clash(novars):
+def test_redeclare_var_clash(OneVarTest):
+    with pytest.raises(ValueError):
+        class MyTest(OneVarTest):
+            var('foo', str)
+
+
+def test_inheritance_clash(NoVarsTest):
     class MyMixin(rfm.RegressionMixin):
         var('name', str)
 
     with pytest.raises(ValueError):
-        class MyTest(novars, MyMixin):
+        class MyTest(NoVarsTest, MyMixin):
             '''Trigger error from inheritance clash.'''
 
 
@@ -82,39 +90,39 @@ def test_double_action_on_var():
             var('v0', int, value=2)
 
 
-def test_namespace_clash(novars):
+def test_namespace_clash(NoVarsTest):
     with pytest.raises(ValueError):
-        class MyTest(novars):
+        class MyTest(NoVarsTest):
             var('current_environ', str)
 
 
-def test_set_var(onevar):
-    class MyTest(onevar):
+def test_set_var(OneVarTest):
+    class MyTest(OneVarTest):
         set_var('foo', 4)
 
     inst = MyTest()
-    assert not hasattr(onevar, 'foo')
+    assert not hasattr(OneVarTest, 'foo')
     assert hasattr(MyTest, 'foo')
     assert hasattr(inst, 'foo')
     assert inst.foo == 4
 
 
-def test_var_type(onevar):
-    class MyTest(onevar):
+def test_var_type(OneVarTest):
+    class MyTest(OneVarTest):
         set_var('foo', 'bananas')
 
     with pytest.raises(TypeError):
         inst = MyTest()
 
 
-def test_set_undef(novars):
+def test_set_undef(NoVarsTest):
     with pytest.raises(ValueError):
-        class MyTest(novars):
+        class MyTest(NoVarsTest):
             set_var('foo', 4)
 
 
-def test_require_var(onevar):
-    class MyTest(onevar):
+def test_require_var(OneVarTest):
+    class MyTest(OneVarTest):
         require_var('foo')
 
         def __init__(self):
@@ -124,22 +132,19 @@ def test_require_var(onevar):
         inst = MyTest()
 
 
-def test_required_var_not_present(onevar):
-    class MyTest(onevar):
+def test_required_var_not_present(OneVarTest):
+    class MyTest(OneVarTest):
         require_var('foo')
 
         def __init__(self):
             pass
 
-    try:
-        inst = MyTest()
-    except Exception:
-        pytest.fail('class instantiation failed')
+    mytest = MyTest()
 
 
-def test_require_undef(novars):
+def test_require_undeclared_var(NoVarsTest):
     with pytest.raises(ValueError):
-        class MyTest(novars):
+        class MyTest(NoVarsTest):
             require_var('foo')
 
 

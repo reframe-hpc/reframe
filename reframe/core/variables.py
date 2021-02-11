@@ -12,8 +12,12 @@ import reframe.core.namespaces as namespaces
 import reframe.core.fields as fields
 
 
-class _UndefVar:
+class _UndefinedType:
     '''Custom type to flag a variable as undefined.'''
+    __slots__ = ()
+
+
+_Undefined = _UndefinedType()
 
 
 class _TestVar:
@@ -21,14 +25,13 @@ class _TestVar:
 
     Buffer to store a regression test variable declared through directives.
     '''
-
     def __init__(self, name, *args, **kwargs):
-        self.field = kwargs.pop('field', fields.TypedField)
-        self.default_value = kwargs.pop('value', _UndefVar)
+        self.field_type = kwargs.pop('field', fields.TypedField)
+        self.default_value = kwargs.pop('value', _Undefined)
 
-        if not issubclass(self.field, fields.TypedField):
+        if not issubclass(self.field_type, fields.Field):
             raise ValueError(
-                f'field {self.field!r} is not derived from '
+                f'field {self.field_type!r} is not derived from '
                 f'{fields.Field.__qualname__}'
             )
 
@@ -40,10 +43,10 @@ class _TestVar:
         self.kwargs = kwargs
 
     def is_defined(self):
-        return self.default_value is not _UndefVar
+        return self.default_value is not _Undefined
 
     def undefine(self):
-        self.default_value = _UndefVar
+        self.default_value = _Undefined
 
     def define(self, value):
         self.default_value = value
@@ -159,9 +162,17 @@ class VarSpace(namespaces.Namespace):
     provided, the VarSpace is simply initialized as empty.
     '''
 
-    local_namespace_name = '_rfm_local_var_space'
-    local_namespace_class = LocalVarSpace
-    namespace_name = '_rfm_var_space'
+    @property
+    def local_namespace_name(self):
+        return '_rfm_local_var_space'
+
+    @property
+    def local_namespace_class(self):
+        return LocalVarSpace
+
+    @property
+    def namespace_name(self):
+        return '_rfm_var_space'
 
     def join(self, other, cls):
         '''Join an existing VarSpace into the current one.
@@ -229,7 +240,7 @@ class VarSpace(namespaces.Namespace):
         '''
 
         for name, var in self.items():
-            setattr(cls, name, var.field(*var.args, **var.kwargs))
+            setattr(cls, name, var.field_type(*var.args, **var.kwargs))
             getattr(cls, name).__set_name__(obj, name)
 
             # If the var is defined, set its value
