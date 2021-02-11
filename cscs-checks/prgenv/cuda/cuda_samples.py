@@ -56,7 +56,7 @@ class CudaSamplesTest(rfm.RegressionTest):
             output_patterns[sample], self.stdout
         )
         self.maintainers = ['JO']
-        self.tags = {'production', 'external_resources'}
+        self.tags = {'production'}
 
     @rfm.run_before('compile')
     def cdt2008_pgi_workaround(self):
