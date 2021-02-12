@@ -19,14 +19,17 @@ class _UndefinedType:
 
 _Undefined = _UndefinedType()
 
+
 class VarDirective:
     '''Base class for the variable directives.'''
+
 
 class TestVar(VarDirective):
     '''Regression test variable.
 
     Buffer to store a regression test variable declared through directives.
     '''
+
     def __init__(self, *args, **kwargs):
         self.field_type = kwargs.pop('field', fields.TypedField)
         self.default_value = kwargs.pop('value', _Undefined)
@@ -99,8 +102,6 @@ class VarSpace(namespaces.Namespace):
         self._injected_vars = set()
 
         super().__init__(target_cls, illegal_names)
-
-
 
     def join(self, other, cls):
         '''Join an existing VarSpace into the current one.
