@@ -25,9 +25,13 @@ class VarDirective:
 
 
 class TestVar(VarDirective):
-    '''Regression test variable.
+    '''Regression test variable class.
 
-    Buffer to store a regression test variable declared through directives.
+    Stores the attributes of a variable when defined directly in the class
+    body. Instances of this class are injected into the regression test
+    during class instantiation.
+
+    :meta private:
     '''
 
     def __init__(self, *args, **kwargs):
@@ -53,14 +57,6 @@ class TestVar(VarDirective):
         self.default_value = value
 
     def __set_name__(self, owner, name):
-        '''Overwrite the dummy name.
-
-        If the variable was created directly by assignment in the test class,
-        this function assigns the variable the name used in the test class body
-        and inserts the variable in the test's local variable space. To avoid
-        any namespace collisions, this function also disowns the test class
-        (owner argument) from this variable.
-        '''
         self.name = name
 
 

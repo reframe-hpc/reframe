@@ -36,33 +36,40 @@ Pipeline Hooks
 .. autodecorator:: reframe.core.decorators.require_deps
 
 
-.. _directives:
 
-Directives
-----------
+Builtins
+--------
 
-Directives are functions that can be called directly in the body of a ReFrame regression test class. 
-These functions exert control over the test creation, and they allow adding and/or modifying certain attributes of the regression test.
-For example, a test can be parameterized using the :func:`parameter` directive as follows:
+ReFrame provides built-in functions that facilitate the creation of extensible tests (i.e. a test library).
+These *builtins* are intended to be used directly in the class body of the test, allowing the ReFrame internals to *pre-process* their input before the actual test creation takes place.
+This provides the ReFrame internals with further control over the user's input, making the process of writing regression tests less error-prone thanks to a better error checking.
+In essence, these builtins exert control over the test creation, and they allow adding and/or modifying certain attributes of the regression test.
 
-.. code:: python
+.. py:function:: reframe.core.pipeline.RegressionTest.parameter(values=None, inherit_params=False, filter_params=None)
 
-    class MyTest(rfm.RegressionTest):
+  Inserts or modifies a regression test parameter.
+  If a parameter with a matching name is already present in the parameter space of a parent class, the existing parameter values will be combined with those provided by this method following the inheritance behaviour set by the arguments ``inherit_params`` and ``filter_params``.
+  Instead, if no parameter with a matching name exists in any of the parent parameter spaces, a new regression test parameter is created.
+  A regression test can be parametrized as follows:
+
+  .. code:: python
+
+    class Foo(rfm.RegressionTest):
         variant = parameter(['A', 'B'])
- 
+
         def __init__(self):
             if self.variant == 'A':
                 do_this()
             else:
                 do_other()
 
-One of the most powerful features about using directives is that they store their input information at the class level. 
-This means if one were to extend or specialize an existing regression test, the test attribute additions and modifications made through directives in the parent class will be automatically inherited by the child test.
-For instance, continuing with the example above, one could override the :func:`__init__` method in the :class:`MyTest` regression test as follows:
+  One of the most powerful features about these built-in functions is that they store their input information at the class level. 
+  This means if one were to extend or specialize an existing regression test, the test attribute additions and modifications made through built-in functions in the parent class will be automatically inherited by the child test.
+  For instance, continuing with the example above, one could override the :func:`__init__` method in the :class:`MyTest` regression test as follows:
 
-.. code:: python
+  .. code:: python
 
-    class MyModifiedTest(MyTest):
+    class Bar(Foo):
 
         def __init__(self):
             if self.variant == 'A':
@@ -70,37 +77,56 @@ For instance, continuing with the example above, one could override the :func:`_
             else:
                 override_other()
 
-
-.. py:class:: reframe.core.pipeline.RegressionTest.parameter(values=None, inherit_params=False, filter_params=None)
-
-   Inserts or modifies a regression test parameter.
-   If a parameter with a matching name is already present in the parameter space of a parent class, the existing parameter values will be combined with those provided by this method following the inheritance behaviour set by the arguments ``inherit_params`` and ``filter_params``.
-   Instead, if no parameter with a matching name exists in any of the parent parameter spaces, a new regression test parameter is created.
-
-   :param values: A list containing the parameter values.
-       If no values are passed when creating a new parameter, the parameter is considered as *declared* but not *defined* (i.e. an abstract parameter).
-       Instead, for an existing parameter, this depends on the parameter's inheritance behaviour and on whether any values where provided in any of the parent parameter spaces.
-   :param inherit_params: If :obj:`False`, no parameter values that may have been defined in any of the parent parameter spaces will be inherited.
-   :param filter_params: Function to filter/modify the inherited parameter values that may have been provided in any of the parent parameter spaces.
-       This function must accept a single argument, which will be passed as an iterable containing the inherited parameter values.
-       This only has an effect if used with ``inherit_params=True``.
+  :param values: A list containing the parameter values.
+     If no values are passed when creating a new parameter, the parameter is considered as *declared* but not *defined* (i.e. an abstract parameter).
+     Instead, for an existing parameter, this depends on the parameter's inheritance behaviour and on whether any values where provided in any of the parent parameter spaces.
+  :param inherit_params: If :obj:`False`, no parameter values that may have been defined in any of the parent parameter spaces will be inherited.
+  :param filter_params: Function to filter/modify the inherited parameter values that may have been provided in any of the parent parameter spaces.
+     This function must accept a single argument, which will be passed as an iterable containing the inherited parameter values.
+     This only has an effect if used with ``inherit_params=True``.
 
 
-.. py:class:: reframe.core.pipeline.RegressionTest.variable(*types, value=None, field=None)
+.. py:function:: reframe.core.pipeline.RegressionTest.variable(*types, value=None, field=None)
 
-   Inserts a new regression test variable.
-   The argument ``value`` sets the default value for the variable.
-   A variable may not be declared more than once. However, it is possible to alter a variable's value after it was declared by simply assigning it a new value directly in the class body.
-   A variable may be set as required by simply assigning a variable as `required`.
-   Note that a variable must be defined before is referenced in the regression test. Otherwise, an :py:exc:`AttributeError` will be raised.
+  Inserts a new regression test variable.
 
-   :param types: the supported types for the variable.
-   :param value: the default value assigned to the variable.
-   :param field: the field validator to be used for this variable.
-        If no field argument is provided, it defaults to
-        :class:`reframe.core.fields.TypedField`.
-        Note that the field validator provided by this argument must derive from
-        :class:`reframe.core.fields.Field`.
+  .. code:: python
+
+    class Foo(rfm.RegressionTest):
+        my_var = variable(int, value = 8)
+
+        def __init__(self):
+            print(self.my_var) # prints 8.
+
+  The argument ``value`` sets the default value for the variable.
+  A variable may not be declared more than once. However, it is possible to alter a variable's value after it was declared by simply assigning it a new value directly in the class body.
+
+  .. code:: python
+
+    class Bar(Foo):
+        my_var = 4
+
+        def __init__(self):
+            print(self.my_var) # prints 4.
+
+  A variable may be set as required by simply assigning a variable as `required`.
+  Note that a variable must be defined before is referenced in the regression test. Otherwise, an :py:exc:`AttributeError` will be raised.
+
+  .. code:: python
+
+    class Baz(Bar):
+        my_var = required
+
+        def __init__(self):
+            print(self.my_var) # throws an AttributeError.
+
+  :param types: the supported types for the variable.
+  :param value: the default value assigned to the variable.
+  :param field: the field validator to be used for this variable.
+      If no field argument is provided, it defaults to
+      :class:`reframe.core.fields.TypedField`.
+      Note that the field validator provided by this argument must derive from
+      :class:`reframe.core.fields.Field`.
 
 
 Environments and Systems

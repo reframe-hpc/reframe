@@ -21,6 +21,8 @@ class TestParam:
     values, and inheritance behaviour. This class should be thought of as a
     temporary storage for these parameter attributes, before the full final
     parameter space is built.
+
+    :meta private:
     '''
 
     def __init__(self, values=None,
