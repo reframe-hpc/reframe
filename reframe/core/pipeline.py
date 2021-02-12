@@ -346,7 +346,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:     :class:`reframe.core.containers.ContainerPlatform`.
     #: :default: :class:`None`.
     container_platform = variable(type(None),
-                              field=ContainerPlatformField, value=None)
+                                  field=ContainerPlatformField, value=None)
 
     #: .. versionadded:: 3.0
     #:
@@ -556,7 +556,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:        The measurement unit is required. The user should explicitly
     #:        specify :class:`None` if no unit is available.
     reference = variable(typ.Tuple[object, object, object, object],
-                     field=fields.ScopedDictField, value={})
+                         field=fields.ScopedDictField, value={})
     # FIXME: There is not way currently to express tuples of `float`s or
     # `None`s, so we just use the very generic `object`
 
@@ -597,7 +597,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:     :class:`None` is also allowed.
     #: :default: :class:`None`
     perf_patterns = variable(typ.Dict[str, _DeferredExpression],
-                         type(None), value=None)
+                             type(None), value=None)
 
     #: List of modules to be loaded before running this test.
     #:
@@ -759,6 +759,22 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
 
     def __init__(self):
         pass
+
+    def __getattribute__(self, name):
+        try:
+            return super().__getattribute__(name)
+
+        except AttributeError as err:
+            # Intercept the AttributeError if the name corresponds to a
+            # required variable.
+            if (name in self._rfm_var_space.vars and
+                not self._rfm_var_space.vars[name].is_defined()):
+                raise AttributeError(
+                    f'required variable {name!r} has not been defined'
+                ) from None
+
+            else:
+                super().__getattr__(name)
 
     def _append_parameters_to_name(self):
         if self._rfm_param_space.params:
