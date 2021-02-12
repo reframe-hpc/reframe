@@ -87,10 +87,10 @@ For instance, continuing with the example above, one could override the :func:`_
        This only has an effect if used with ``inherit_params=True``.
 
 
-.. py:function:: reframe.core.pipeline.RegressionTest.var(name, *types, value=None, field=None)
+.. py:function:: reframe.core.pipeline.RegressionTest.variable(name, *types, value=None, field=None)
 
    Inserts a new regression test variable.
-   If the ``value`` argument is not provided, the variable is considered *declared* but not *defined*.
+   If argument ``value`` sets the default value for the variable.
    Thus, a variable may not be declared more than once. However, it is possible to alter a variable's value after it was declared by using the :func:`set_var` and :func:`require_var` directives.
    Note that a variable must be defined before is referenced in the regression test. Otherwise, an :py:exc:`AttributeError` will be raised.
 
@@ -102,25 +102,6 @@ For instance, continuing with the example above, one could override the :func:`_
         :class:`reframe.core.fields.TypedField`.
         Note that the field validator provided by this argument must derive from
         :class:`reframe.core.fields.Field`.
-
-
-.. py:function:: reframe.core.pipeline.RegressionTest.set_var(name, value)
-
-   Assign a value to a regression test variable. The variable must have been defined in a parent class using the :func:`var` directive.
-
-   :param name: the variable name.
-   :param value: the value assigned to the variable.
-
-
-.. py:function:: reframe.core.pipeline.RegressionTest.require_var(name)
-
-   Undefine a regression test variable. The variable must have been defined in a parent class using the :func:`var` directive.
-   This method is particularly useful when writing a test library, since it permits to remove any default values that may have been defined for a variable in any of the parent classes. 
-   Effectively, this will force the user of the library to provide the required value for a variable.
-   However, a variable flagged as *required* which is not referenced in the regression test is implemented as a no-op.
-
-   :param name: the name of the required variable.
-
 
 
 Environments and Systems

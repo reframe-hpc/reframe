@@ -96,8 +96,8 @@ def test_double_declare():
 def test_double_action_on_variable():
     with pytest.raises(ValueError):
         class MyTest(rfm.RegressionTest):
-            v0 = 2
             v0 = variable(int, value=2)
+            v0 = 2
 
 
 def test_set_var(OneVarTest):
