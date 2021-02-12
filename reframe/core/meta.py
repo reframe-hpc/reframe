@@ -48,7 +48,7 @@ class RegressionTestMeta(type):
 
         # Directives to add/modify a regression test variable
         namespace['variable'] = variables.TestVar
-        namespace['required_variable'] = variables.UndefineVar()
+        namespace['required'] = variables.UndefineVar()
         return MetaNamespace(namespace)
 
     def __new__(metacls, name, bases, namespace, **kwargs):

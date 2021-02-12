@@ -91,7 +91,7 @@ For instance, continuing with the example above, one could override the :func:`_
    Inserts a new regression test variable.
    The argument ``value`` sets the default value for the variable.
    A variable may not be declared more than once. However, it is possible to alter a variable's value after it was declared by simply assigning it a new value directly in the class body.
-   A variable may be set as required by simply assigning a variable as `required_variable`.
+   A variable may be set as required by simply assigning a variable as `required`.
    Note that a variable must be defined before is referenced in the regression test. Otherwise, an :py:exc:`AttributeError` will be raised.
 
    :param types: the supported types for the variable.

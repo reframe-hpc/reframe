@@ -70,6 +70,7 @@ def test_instantiate_and_inherit(OneVarTest):
     raise a namespace clash with the vars.
     '''
     inst = OneVarTest()
+
     class MyTest(OneVarTest):
         pass
 
@@ -121,7 +122,7 @@ def test_var_type(OneVarTest):
 
 def test_require_var(OneVarTest):
     class MyTest(OneVarTest):
-        foo = required_variable
+        foo = required
 
         def __init__(self):
             print(self.foo)
@@ -132,7 +133,7 @@ def test_require_var(OneVarTest):
 
 def test_required_var_not_present(OneVarTest):
     class MyTest(OneVarTest):
-        foo = required_variable
+        foo = required
 
         def __init__(self):
             pass
@@ -143,7 +144,7 @@ def test_required_var_not_present(OneVarTest):
 def test_require_undeclared_variable(NoVarsTest):
     with pytest.raises(ValueError):
         class MyTest(NoVarsTest):
-            foo = required_variable
+            foo = required
 
 
 def test_invalid_field():
