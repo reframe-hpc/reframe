@@ -42,6 +42,12 @@ def test_redeclare_builtin_var_clash(NoVarsTest):
             name = variable(str)
 
 
+def test_name_clash_builtin_property(NoVarsTest):
+    with pytest.raises(ValueError):
+        class MyTest(NoVarsTest):
+            current_environ = variable(str)
+
+
 def test_redeclare_var_clash(OneVarTest):
     with pytest.raises(ValueError):
         class MyTest(OneVarTest):
@@ -55,6 +61,17 @@ def test_inheritance_clash(NoVarsTest):
     with pytest.raises(ValueError):
         class MyTest(NoVarsTest, MyMixin):
             '''Trigger error from inheritance clash.'''
+
+
+def test_instantiate_and_inherit(OneVarTest):
+    '''Instantiation will inject the vars as class attributes.
+
+    Ensure that inheriting from this class after the instantiation does not
+    raise a namespace clash with the vars.
+    '''
+    inst = OneVarTest()
+    class MyTest(OneVarTest):
+        pass
 
 
 def test_var_space_clash():
@@ -81,12 +98,6 @@ def test_double_action_on_variable():
         class MyTest(rfm.RegressionTest):
             v0 = 2
             v0 = variable(int, value=2)
-
-
-def test_namespace_clash(NoVarsTest):
-    with pytest.raises(ValueError):
-        class MyTest(NoVarsTest):
-            current_environ = variable(str)
 
 
 def test_set_var(OneVarTest):

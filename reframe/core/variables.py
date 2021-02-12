@@ -94,6 +94,14 @@ class VarSpace(namespaces.Namespace):
     def namespace_name(self):
         return '_rfm_var_space'
 
+    def __init__(self, target_cls=None, illegal_names=None):
+        # Set to register the variables already injected in the class
+        self._injected_vars = set()
+
+        super().__init__(target_cls, illegal_names)
+
+
+
     def join(self, other, cls):
         '''Join an existing VarSpace into the current one.
 
@@ -111,6 +119,9 @@ class VarSpace(namespaces.Namespace):
                 )
 
             self.vars[key] = var
+
+        # Carry over the set of injected variables
+        self._injected_vars.update(other._injected_vars)
 
     def extend(self, cls):
         '''Extend the VarSpace with the content in the LocalVarSpace.
@@ -162,6 +173,22 @@ class VarSpace(namespaces.Namespace):
                 f'variable {key!r} has not been declared'
             )
 
+    def sanity(self, cls, illegal_names=None):
+        '''Sanity checks post-creation of the var namespace.
+
+        By default, we make illegal to have any item in the namespace
+        that clashes with a member of the target class unless this member
+        was injected by this namespace.
+        '''
+        if illegal_names is None:
+            illegal_names = set(dir(cls))
+
+        for key in self._namespace:
+            if (key in illegal_names) and (key not in self._injected_vars):
+                raise ValueError(
+                    f'{key!r} already defined in class '
+                    f'{cls.__qualname__!r}'
+                )
 
     def inject(self, obj, cls):
         '''Insert the vars in the regression test.
@@ -177,6 +204,9 @@ class VarSpace(namespaces.Namespace):
             # If the var is defined, set its value
             if var.is_defined():
                 setattr(obj, name, var.default_value)
+
+            # Track the variables that have been injected.
+            self._injected_vars.add(name)
 
     @property
     def vars(self):
