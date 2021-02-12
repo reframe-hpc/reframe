@@ -674,7 +674,7 @@ First, we need to enable the container platform support in ReFrame's configurati
    :lines: 38-58
    :emphasize-lines: 15-20
 
-For each partition, users can define a list of container platforms supported using the :js:attr:`container_platforms` configuration parameter.
+For each partition, users can define a list of container platforms supported using the :js:attr:`container_platforms` `configuration parameter <config_reference.html#.systems[].partitions[].container_platforms>`__.
 In this case, we define the `Singularity <https://sylabs.io>`__ platform, for which we set the :js:attr:`modules` parameter in order to instruct ReFrame to load the ``singularity`` module, whenever it needs to run with this container platform.
 
 The following test will use a Singularity container to run:
