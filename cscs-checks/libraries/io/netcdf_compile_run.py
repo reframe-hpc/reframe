@@ -22,8 +22,12 @@ class NetCDFTest(rfm.RegressionTest):
         self.lang = lang
         self.linkage = linkage
         self.descr = f'{lang_names[lang]} NetCDF {linkage.capitalize()}'
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'arolla:cn', 'tsa:cn']
+        if linkage == 'dynamic':
+          self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+                                'arolla:cn', 'tsa:cn', 'eiger:mc']
+        else:
+          self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+                                'arolla:cn', 'tsa:cn']
         if self.current_system.name in ['daint', 'dom']:
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                         'PrgEnv-intel', 'PrgEnv-pgi']
@@ -31,6 +35,9 @@ class NetCDFTest(rfm.RegressionTest):
         elif self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-gnu-nompi', 'PrgEnv-pgi-nompi']
+        elif self.current_system.name in ['eiger']:
+            self.valid_prog_environs = ['builtin']
+            self.modules = ['cray-hdf5', 'cray-netcdf']
 
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'netcdf')
