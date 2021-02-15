@@ -433,7 +433,7 @@ def assert_found_s(patt, string, msg=None):
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
 
-    .. versionadded:: 3.5
+    .. versionadded:: 3.4.1
     '''
     num_matches = count(finditer_s(patt, string))
     try:
@@ -470,7 +470,7 @@ def assert_not_found_s(patt, string, msg=None):
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
 
-    .. versionadded:: 3.5
+    .. versionadded:: 3.4.1
     '''
     try:
         evaluate(assert_found_s(patt, string, msg))
@@ -587,7 +587,7 @@ def finditer_s(patt, string):
     a generator object instead of a list, which you can use to iterate over
     the raw matches.
 
-    .. versionadded:: 3.5
+    .. versionadded:: 3.4.1
     '''
     yield from re.finditer(patt, string, re.MULTILINE)
 
@@ -621,7 +621,7 @@ def findall_s(patt, string):
     :arg string: The string to examine.
     :returns: same as :func:`finall`.
 
-    .. versionadded:: 3.5
+    .. versionadded:: 3.4.1
     '''
     return list(evaluate(x) for x in finditer_s(patt, string))
 
@@ -712,7 +712,7 @@ def extractiter_s(patt, string, tag=0, conv=None):
     a generator object, instead of a list, which you can use to iterate over
     the extracted values.
 
-    .. versionadded:: 3.5
+    .. versionadded:: 3.4.1
     '''
     if isinstance(tag, collections.abc.Iterable) and not isinstance(tag, str):
         yield from _extractiter_multitag(patt, string, tag, conv)
@@ -773,7 +773,7 @@ def extractall_s(patt, string, tag=0, conv=None):
     :arg conv: as in :func:`extractall`.
     :returns: same as :func:`extractall`.
 
-    .. versionadded:: 3.5
+    .. versionadded:: 3.4.1
     '''
     return list(evaluate(x) for x in extractiter_s(patt, string, tag, conv))
 
@@ -826,7 +826,7 @@ def extractsingle_s(patt, string, tag=0, conv=None, item=0):
     :returns: The extracted value.
     :raises reframe.core.exceptions.SanityError: In case of errors.
 
-    .. versionadded:: 3.5
+    .. versionadded:: 3.4.1
     '''
     try:
         # Explicitly evaluate the expression here, so as to force any exception

@@ -44,6 +44,9 @@ class TestCase:
         # Incoming dependencies
         self.in_degree = 0
 
+        # Level in the dependency chain
+        self.level = 0
+
     def __iter__(self):
         # Allow unpacking a test case with a single liner:
         #       c, p, e = case
