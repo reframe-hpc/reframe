@@ -393,9 +393,15 @@ class System(jsonext.JSONSerializable):
                     ),
                     max_jobs=site_config.get(f'{partid}/max_jobs'),
                     arch=site_config.get(f'{partid}/arch'),
-                    sockets_per_node=site_config.get(f'{partid}/sockets_per_node'),
-                    cores_per_socket=site_config.get(f'{partid}/cores_per_socket'),
-                    threads_per_core=site_config.get(f'{partid}/threads_per_core')
+                    sockets_per_node=site_config.get(
+                        f'{partid}/sockets_per_node'
+                    ),
+                    cores_per_socket=site_config.get(
+                        f'{partid}/cores_per_socket'
+                    ),
+                    threads_per_core=site_config.get(
+                        f'{partid}/threads_per_core'
+                    )
                 )
             )
 
