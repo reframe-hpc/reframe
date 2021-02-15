@@ -128,6 +128,16 @@ class ParamSpace(namespaces.Namespace):
                 p.filter_params(self.params.get(name, ())) + p.values
             )
 
+        # If any previously declared parameter was defined in the class body
+        # by directly assigning it a value, raise an error. Parameters must be
+        # changed using the `x = parameter([...])` syntax.
+        for key, values in cls.__dict__.items():
+            if key in self.params:
+                raise ValueError(
+                    f'parameter {key!r} must be modified through the built-in '
+                    f'parameter type'
+                )
+
     def inject(self, obj, cls=None, use_params=False):
         '''Insert the params in the regression test.
 

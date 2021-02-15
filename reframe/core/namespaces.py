@@ -31,7 +31,7 @@ class LocalNamespace:
     '''
 
     def __init__(self, namespace=None):
-        self._namespace = namespace if namespace else {}
+        self._namespace = namespace or {}
 
     def __getattr__(self, name):
         return getattr(self._namespace, name)
@@ -55,7 +55,7 @@ class LocalNamespace:
         return len(self._namespace)
 
     def __repr__(self):
-        return '{}({!r})'.format(type(self).__name__, self._namespace)
+        return f'{type(self).__name__}({self._namespace!r})'
 
     def _raise_namespace_clash(self, name):
         '''Raise an error if there is a namespace clash.'''
@@ -64,7 +64,7 @@ class LocalNamespace:
         )
 
 
-class Namespace(metaclass=abc.ABCMeta):
+class Namespace:
     '''Namespace of a regression test.
 
     The final namespace may be built by inheriting namespaces from

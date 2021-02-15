@@ -197,3 +197,9 @@ def test_double_declare():
         class MyTest(rfm.RegressionTest):
             P0 = parameter([1, 2, 3])
             P0 = parameter()
+
+
+def test_overwrite_param():
+    with pytest.raises(ValueError):
+        class MyTest(TwoParams):
+            P0 = [1,2,3]
