@@ -308,13 +308,8 @@ def is_severe(exc_type, exc_value, tb):
     '''Check if exception is a severe one.'''
 
     soft_errors = (ReframeError,
-                   ConnectionError,
-                   FileExistsError,
-                   FileNotFoundError,
-                   IsADirectoryError,
+                   OSError,
                    KeyboardInterrupt,
-                   NotADirectoryError,
-                   PermissionError,
                    TimeoutError)
     if isinstance(exc_value, soft_errors):
         return False
