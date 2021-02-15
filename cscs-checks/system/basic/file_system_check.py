@@ -23,7 +23,7 @@ class FileSystemCommandCheck(rfm.RunOnlyRegressionTest):
                                           self.stderr, 'real_time', float)
         }
         self.postrun_cmds = ['echo $?']
-        self.tags = {'ops', 'diagnostic'}
+        self.tags = {'ops', 'diagnostic', 'health'}
         self.maintainers = ['CB']
 
 
