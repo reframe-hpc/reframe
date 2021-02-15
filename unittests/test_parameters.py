@@ -202,4 +202,4 @@ def test_double_declare():
 def test_overwrite_param():
     with pytest.raises(ValueError):
         class MyTest(TwoParams):
-            P0 = [1,2,3]
+            P0 = [1, 2, 3]
