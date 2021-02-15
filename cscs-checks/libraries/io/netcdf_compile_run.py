@@ -22,12 +22,13 @@ class NetCDFTest(rfm.RegressionTest):
         self.lang = lang
         self.linkage = linkage
         self.descr = f'{lang_names[lang]} NetCDF {linkage.capitalize()}'
-        if linkage == 'dynamic':
-            self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                                  'arolla:cn', 'tsa:cn', 'eiger:mc']
-        else:
-            self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                                  'arolla:cn', 'tsa:cn']
+        self.valid_systems = ['daint:gpu', 'daint:mc',
+                              'dom:gpu', 'dom:mc',
+                              'arolla:cn', 'tsa:cn',
+                              'eiger:mc']
+        if linkage == 'static':
+            self.valid_systems.remove('eiger:mc')
+
         if self.current_system.name in ['daint', 'dom']:
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                         'PrgEnv-intel', 'PrgEnv-pgi']
