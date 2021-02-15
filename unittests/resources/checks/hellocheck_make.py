@@ -16,8 +16,8 @@ class HelloMakeTest(rfm.RegressionTest):
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
         self.build_system = 'Make'
-        self.build_system.cflags = ['-O3']
-        self.build_system.cxxflags = ['-O3']
+        self.build_system.cflags = ['-O2']
+        self.build_system.cxxflags = ['-O2']
         self.executable = './hello_c'
         self.keep_files = ['hello_c']
         self.tags = {'foo', 'bar'}
