@@ -224,6 +224,7 @@
                                 "cores_per_socket": {"type": "number"},
                                 "threads_per_core": {"type": "number"},
                                 "arch": {"type": "string"},
+                                "extra_attributes": {"type": "object"},
                                 "resources": {
                                     "type": "array",
                                     "items": {
@@ -479,6 +480,7 @@
         "systems/partitions/arch": "",
         "systems/partitions/sockets_per_node": -1,
         "systems/partitions/cores_per_socket": -1,
-        "systems/partitions/threads_per_core": -1
+        "systems/partitions/threads_per_core": -1,
+        "systems/partitions/extra_attributes": {}
     }
 }

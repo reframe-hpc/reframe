@@ -23,7 +23,7 @@ class SystemPartition(jsonext.JSONSerializable):
     def __init__(self, parent, name, sched_type, launcher_type,
                  descr, access, container_environs, resources,
                  local_env, environs, max_jobs, arch, sockets_per_node,
-                 cores_per_socket, threads_per_core):
+                 cores_per_socket, threads_per_core, extra_attributes):
         getlogger().debug(f'Initializing system partition {name!r}')
         self._parent_system = parent
         self._name = name
@@ -41,6 +41,7 @@ class SystemPartition(jsonext.JSONSerializable):
         self._sockets_per_node = sockets_per_node
         self._cores_per_socket = cores_per_socket
         self._threads_per_core = threads_per_core
+        self._extra_attributes = extra_attributes
 
     @property
     def access(self):
@@ -261,6 +262,17 @@ class SystemPartition(jsonext.JSONSerializable):
             return (self._sockets_per_node * self._cores_per_socket *
                     self._threads_per_core)
 
+    @property
+    def extra_attributes(self):
+        '''User defined attributes of the system. By default
+        it is an empyy dictionary.
+
+        .. versionadded:: 3.5
+
+        :type: object
+        '''
+        return self._extra_attributes
+
     def __eq__(self, other):
         if not isinstance(other, type(self)):
             return NotImplemented
@@ -401,6 +413,9 @@ class System(jsonext.JSONSerializable):
                     ),
                     threads_per_core=site_config.get(
                         f'{partid}/threads_per_core'
+                    ),
+                    extra_attributes=site_config.get(
+                        f'{partid}/extra_attributes'
                     )
                 )
             )
