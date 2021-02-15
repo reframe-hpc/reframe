@@ -22,7 +22,8 @@ class SystemPartition(jsonext.JSONSerializable):
 
     def __init__(self, parent, name, sched_type, launcher_type,
                  descr, access, container_environs, resources,
-                 local_env, environs, max_jobs):
+                 local_env, environs, max_jobs, arch, sockets_per_node,
+                 cores_per_socket, threads_per_core):
         getlogger().debug(f'Initializing system partition {name!r}')
         self._parent_system = parent
         self._name = name
@@ -36,6 +37,10 @@ class SystemPartition(jsonext.JSONSerializable):
         self._environs = environs
         self._max_jobs = max_jobs
         self._resources = {r['name']: r['options'] for r in resources}
+        self._arch = arch
+        self._sockets_per_node = sockets_per_node
+        self._cores_per_socket = cores_per_socket
+        self._threads_per_core = threads_per_core
 
     @property
     def access(self):
@@ -187,6 +192,75 @@ class SystemPartition(jsonext.JSONSerializable):
 
         return None
 
+    @property
+    def arch(self):
+        '''The system architecture of this partition.
+
+        .. versionadded:: 3.5
+
+        :type: :class:`str`
+        '''
+        return self._arch
+
+    @property
+    def sockets_per_node(self):
+        '''The number of socket per node on this partition.
+
+        .. versionadded:: 3.5
+
+        :type: integral
+        '''
+        return self._sockets_per_node
+
+    @property
+    def cores_per_socket(self):
+        '''The number of cores per socket on this partition.
+
+        .. versionadded:: 3.5
+
+        :type: integral
+        '''
+        return self._cores_per_socket
+
+    @property
+    def cores_per_node(self):
+        '''The number of cores per node on this partition.
+
+        .. versionadded:: 3.5
+
+        :type: integral
+        '''
+        if (self._cores_per_socket < 0 or self._sockets_per_node < 0):
+            return -1
+        else:
+            return (self._sockets_per_node * self._cores_per_socket)
+
+    @property
+    def threads_per_core(self):
+        '''The number of threads per core on this partition.
+
+        .. versionadded:: 3.5
+
+        :type: integral
+        '''
+        return self._threads_per_core
+
+    @property
+    def threads_per_node(self):
+        '''The number of threads per node on this partition.
+
+        .. versionadded:: 3.5
+
+        :type: integral
+        '''
+        if (self._cores_per_socket < 0 or
+            self._sockets_per_node < 0 or
+            self._threads_per_core < 0):
+            return -1
+        else:
+            return (self._sockets_per_node * self._cores_per_socket *
+                    self._threads_per_core)
+
     def __eq__(self, other):
         if not isinstance(other, type(self)):
             return NotImplemented
@@ -317,7 +391,11 @@ class System(jsonext.JSONSerializable):
                         modules=site_config.get(f'{partid}/modules'),
                         variables=site_config.get(f'{partid}/variables')
                     ),
-                    max_jobs=site_config.get(f'{partid}/max_jobs')
+                    max_jobs=site_config.get(f'{partid}/max_jobs'),
+                    arch=site_config.get(f'{partid}/arch'),
+                    sockets_per_node=site_config.get(f'{partid}/sockets_per_node'),
+                    cores_per_socket=site_config.get(f'{partid}/cores_per_socket'),
+                    threads_per_core=site_config.get(f'{partid}/threads_per_core')
                 )
             )
 
