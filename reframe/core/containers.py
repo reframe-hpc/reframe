@@ -19,11 +19,31 @@ class ContainerPlatform(abc.ABC):
     #: :default: :class:`None`
     image = fields.TypedField(str, type(None))
 
-    #: The commands to be executed within the container.
+    #: The command to be executed within the container.
     #:
-    #: :type: :class:`list[str]`
-    #: :default: ``[]``
-    commands = fields.TypedField(typ.List[str])
+    #: If no command is given, then the default command of the corresponding
+    #: container image is going to be executed.
+    #:
+    #: ..versionchanged:: 3.4.2
+    #:   Changed the attribute name from `commands` to `command` and its type
+    #:   to a string.
+    #:
+    #: :type: :class:`str` or :class:`None`
+    #: :default: :class:`None`
+    command = fields.TypedField(str, type(None))
+
+    #: The pull command to be used to pull the container image.
+    #:
+    #: If an empty string is given as the pull command, then the default
+    #: pull command of the corresponding container platform is going to be
+    #: used to pull the image. If set to :class:`None`, then no pull action
+    #: is going to be performed by the container platform.
+    #:
+    #: ..versionadded:: 3.4.2
+    #:
+    #: :type: :class:`str` or :class:`None`
+    #: :default: ``''``
+    pull_command = fields.TypedField(str, type(None))
 
     #: List of mount point pairs for directories to mount inside the container.
     #:
@@ -44,7 +64,8 @@ class ContainerPlatform(abc.ABC):
     #:
     #: This is the directory where the test's stage directory is mounted inside
     #: the container. This directory is always mounted regardless if
-    #: :attr:`mount_points` is set or not.
+    #: :attr:`mount_points` is set or not. If set to :class:`None` then the
+    #: the default working directory of the given container image is used.
     #:
     #: :type: :class:`str`
     #: :default: ``/rfm_workdir``
@@ -52,9 +73,10 @@ class ContainerPlatform(abc.ABC):
 
     def __init__(self):
         self.image = None
-        self.commands = []
+        self.command = None
         self.mount_points  = []
         self.options = []
+        self.pull_command = ''
         self.workdir = '/rfm_workdir'
 
     @abc.abstractmethod
@@ -88,25 +110,28 @@ class ContainerPlatform(abc.ABC):
         if self.image is None:
             raise ContainerError('no image specified')
 
-        if not self.commands:
-            raise ContainerError('no commands specified')
-
 
 class Docker(ContainerPlatform):
     '''Container platform backend for running containers with `Docker
     <https://www.docker.com/>`__.'''
 
     def emit_prepare_commands(self):
+        if self.pull_command == '':
+            return [f'docker pull {self.image}']
+        elif self.pull_command:
+            return [self.pull_command]
+
         return []
 
     def launch_command(self):
         super().launch_command()
-        run_opts = ['-v "%s":"%s"' % mp for mp in self.mount_points]
+        run_opts = [f'-v "{mp[0]}":"{mp[1]}"' for mp in self.mount_points]
+        run_opts += ['-v "${PWD}":"/rfm_workdir"']
         run_opts += self.options
-        run_cmd = 'docker run --rm %s %s bash -c ' % (' '.join(run_opts),
-                                                      self.image)
-        return run_cmd + "'" + '; '.join(
-            ['cd ' + self.workdir] + self.commands) + "'"
+        workdir_opt = f'--workdir="{self.workdir}" ' if self.workdir else ''
+
+        return (f'docker run --rm {workdir_opt}{" ".join(run_opts)} '
+                f'{self.image} {self.command or ""}').rstrip()
 
 
 class Sarus(ContainerPlatform):
@@ -122,39 +147,67 @@ class Sarus(ContainerPlatform):
     def __init__(self):
         super().__init__()
         self.with_mpi = False
-        self._command = 'sarus'
 
     def emit_prepare_commands(self):
-        # The format that Sarus uses to call the images is
-        # <reposerver>/<user>/<image>:<tag>. If an image was loaded
-        # locally from a tar file, the <reposerver> is 'load'.
-        if self.image.startswith('load/'):
-            return []
+        if self.pull_command == '':
+            return [f'sarus pull {self.image}']
+        elif self.pull_command:
+            return [self.pull_command]
 
-        return [self._command + ' pull %s' % self.image]
+        return []
 
     def launch_command(self):
         super().launch_command()
-        run_opts = ['--mount=type=bind,source="%s",destination="%s"' %
-                    mp for mp in self.mount_points]
+        run_opts = [f'--mount=type=bind,source="{mp[0]}",destination="{mp[1]}"'
+                    for mp in self.mount_points]
+        run_opts += ['--mount=type=bind,source="${PWD}",'
+                     'destination="/rfm_workdir"']
         if self.with_mpi:
             run_opts.append('--mpi')
 
         run_opts += self.options
-        run_cmd = self._command + ' run %s %s bash -c ' % (' '.join(run_opts),
-                                                           self.image)
-        return run_cmd + "'" + '; '.join(
-            ['cd ' + self.workdir] + self.commands) + "'"
+
+        workdir_opt = f'--workdir="{self.workdir}" ' if self.workdir else ''
+        return (f'sarus run {workdir_opt}{" ".join(run_opts)} {self.image} '
+                f'{self.command or ""}').rstrip()
 
 
-class Shifter(Sarus):
+class Shifter(ContainerPlatform):
     '''Container platform backend for running containers with `Shifter
     <https://www.nersc.gov/research-and-development/user-defined-images/>`__.
     '''
 
+    #: Enable MPI support when launching the container.
+    #:
+    #: :type: boolean
+    #: :default: :class:`False`
+    with_mpi = fields.TypedField(bool)
+
     def __init__(self):
         super().__init__()
-        self._command = 'shifter'
+        self.with_mpi = False
+
+    def emit_prepare_commands(self):
+        if self.pull_command == '':
+            return [f'shifter pull {self.image}']
+        elif self.pull_command:
+            return [self.pull_command]
+
+        return []
+
+    def launch_command(self):
+        super().launch_command()
+        run_opts = [f'--mount=type=bind,source="{mp[0]}",destination="{mp[1]}"'
+                    for mp in self.mount_points]
+        run_opts += ['--mount=type=bind,source="${PWD}",'
+                     'destination="/rfm_workdir"']
+        if self.with_mpi:
+            run_opts.append('--mpi')
+
+        run_opts += self.options
+
+        return (f"shifter run {' '.join(run_opts)} {self.image} bash -c '"
+                f"cd {self.workdir};{self.command or ''}'")
 
 
 class Singularity(ContainerPlatform):
@@ -176,15 +229,19 @@ class Singularity(ContainerPlatform):
 
     def launch_command(self):
         super().launch_command()
-        run_opts = ['-B"%s:%s"' % mp for mp in self.mount_points]
+        run_opts = [f'-B"{mp[0]}:{mp[1]}"' for mp in self.mount_points]
+        run_opts += ['-B"${PWD}:/rfm_workdir"']
         if self.with_cuda:
             run_opts.append('--nv')
 
         run_opts += self.options
-        run_cmd = 'singularity exec %s %s bash -c ' % (' '.join(run_opts),
-                                                       self.image)
-        return run_cmd + "'" + '; '.join(
-            ['cd ' + self.workdir] + self.commands) + "'"
+        workdir_cmd = f'--workdir="{self.workdir}" ' if self.workdir else ''
+        if self.command:
+            return (f'singularity exec {workdir_cmd}{" ".join(run_opts)} '
+                    f'{self.image} {self.command}')
+
+        return (f'singularity run {workdir_cmd}{" ".join(run_opts)} '
+                f'{self.image}')
 
 
 class ContainerPlatformField(fields.TypedField):
@@ -197,6 +254,6 @@ class ContainerPlatformField(fields.TypedField):
                 value = globals()[value]()
             except KeyError:
                 raise ValueError(
-                    'unknown container platform: %s' % value) from None
+                    f'unknown container platform: {value}') from None
 
         super().__set__(obj, value)
