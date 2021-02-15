@@ -61,7 +61,7 @@ class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
                 }
         else:
             energy_reference = -11427.09017152
-            if self.current_system.name in ['daint', 'dom']:
+            if self.current_system.name in ['daint']:
                 self.num_tasks = 576
                 self.num_tasks_per_node = 36
             elif self.current_system.name in ['eiger']:
