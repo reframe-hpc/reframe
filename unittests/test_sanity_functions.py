@@ -510,22 +510,48 @@ def tempfile(tmp_path):
     return str(tmp_file)
 
 
-def test_assert_found(tempfile):
-    assert sn.assert_found(r'Step: \d+', tempfile)
-    assert sn.assert_found(r'Step: \d+', sn.defer(tempfile))
+@pytest.fixture
+def contents(tempfile):
+    with open(tempfile, 'r') as fp:
+        return fp.read()
+
+
+def make_fixture(funcs):
+    @pytest.fixture(params=funcs)
+    def _fixture(request, tempfile, contents):
+        if request.param.__name__.endswith('_s'):
+            return request.param, contents
+        else:
+            return request.param, tempfile
+
+    return _fixture
+
+
+_assert_found = make_fixture([sn.assert_found, sn.assert_found_s])
+_assert_not_found = make_fixture([sn.assert_not_found, sn.assert_not_found_s])
+_findall = make_fixture([sn.findall, sn.findall_s])
+_extractall = make_fixture([sn.extractall, sn.extractall_s])
+_extractsingle = make_fixture([sn.extractsingle, sn.extractsingle_s])
+
+
+def test_assert_found(_assert_found):
+    assert_found, where = _assert_found
+    assert assert_found(r'Step: \d+', where)
+    assert assert_found(r'Step: \d+', sn.defer(where))
     with pytest.raises(SanityError):
-        sn.evaluate(sn.assert_found(r'foo: \d+', tempfile))
+        sn.evaluate(assert_found(r'foo: \d+', where))
 
 
 def test_assert_found_encoding(utf16_file):
     assert sn.assert_found('Odyssey', utf16_file, encoding='utf-16')
 
 
-def test_assert_not_found(tempfile):
-    assert sn.assert_not_found(r'foo: \d+', tempfile)
-    assert sn.assert_not_found(r'foo: \d+', sn.defer(tempfile))
+def test_assert_not_found(_assert_not_found):
+    assert_not_found, where = _assert_not_found
+    assert assert_not_found(r'foo: \d+', where)
+    assert assert_not_found(r'foo: \d+', sn.defer(where))
     with pytest.raises(SanityError):
-        sn.evaluate(sn.assert_not_found(r'Step: \d+', tempfile))
+        sn.evaluate(assert_not_found(r'Step: \d+', where))
 
 
 def test_assert_not_found_encoding(utf16_file):
@@ -624,14 +650,15 @@ def test_chain():
     assert all((a == b for a, b in zip(chain1, chain2)))
 
 
-def test_findall(tempfile):
-    res = sn.evaluate(sn.findall(r'Step: \d+', tempfile))
+def test_findall(_findall):
+    findall, where = _findall
+    res = sn.evaluate(findall(r'Step: \d+', where))
     assert 3 == len(res)
 
-    res = sn.evaluate(sn.findall('Step:.*', tempfile))
+    res = sn.evaluate(findall('Step:.*', where))
     assert 3 == len(res)
 
-    res = sn.evaluate(sn.findall('Step: [12]', tempfile))
+    res = sn.evaluate(findall('Step: [12]', where))
     assert 2 == len(res)
 
     # Check the matches
@@ -639,7 +666,7 @@ def test_findall(tempfile):
         assert expected == match.group(0)
 
     # Check groups
-    res = sn.evaluate(sn.findall(r'Step: (?P<no>\d+)', tempfile))
+    res = sn.evaluate(findall(r'Step: (?P<no>\d+)', where))
     for step, match in enumerate(res, start=1):
         assert step == int(match.group(1))
         assert step == int(match.group('no'))
@@ -652,24 +679,25 @@ def test_findall_encoding(utf16_file):
     assert 1 == len(res)
 
 
-def test_findall_error():
+def test_findall_invalid_file():
     with pytest.raises(SanityError):
         sn.evaluate(sn.findall(r'Step: \d+', 'foo.txt'))
 
 
-def test_extractall(tempfile):
+def test_extractall(_extractall):
+    extractall, where = _extractall
     # Check numeric groups
-    res = sn.evaluate(sn.extractall(r'Step: (?P<no>\d+)', tempfile, 1))
+    res = sn.evaluate(extractall(r'Step: (?P<no>\d+)', where, 1))
     for expected, v in enumerate(res, start=1):
         assert str(expected) == v
 
     # Check named groups
-    res = sn.evaluate(sn.extractall(r'Step: (?P<no>\d+)', tempfile, 'no'))
+    res = sn.evaluate(extractall(r'Step: (?P<no>\d+)', where, 'no'))
     for expected, v in enumerate(res, start=1):
         assert str(expected) == v
 
     # Check convert function
-    res = sn.evaluate(sn.extractall(r'Step: (?P<no>\d+)', tempfile, 'no', int))
+    res = sn.evaluate(extractall(r'Step: (?P<no>\d+)', where, 'no', int))
     for expected, v in enumerate(res, start=1):
         assert expected == v
 
@@ -679,30 +707,32 @@ def test_extractall_encoding(utf16_file):
     assert 1 == len(res)
 
 
-def test_extractall_error(tempfile):
+def test_extractall_invalid_file(tempfile):
     with pytest.raises(SanityError):
         sn.evaluate(sn.extractall(r'Step: (\d+)', 'foo.txt', 1))
 
+
+def test_extractall_error(_extractall):
+    extractall, where = _extractall
     with pytest.raises(SanityError):
-        sn.evaluate(sn.extractall(r'Step: (?P<no>\d+)', tempfile, conv=int))
+        sn.evaluate(extractall(r'Step: (?P<no>\d+)', where, conv=int))
 
     with pytest.raises(SanityError):
-        sn.evaluate(sn.extractall(r'Step: (\d+)', tempfile, 2))
+        sn.evaluate(extractall(r'Step: (\d+)', where, 2))
 
     with pytest.raises(SanityError):
-        sn.evaluate(sn.extractall(r'Step: (?P<no>\d+)', tempfile, 'foo'))
+        sn.evaluate(extractall(r'Step: (?P<no>\d+)', where, 'foo'))
 
 
-def test_extractall_custom_conv(tempfile):
-    res = sn.evaluate(sn.extractall(r'Step: (\d+)', tempfile, 1,
-                                    lambda x: int(x)))
+def test_extractall_custom_conv(_extractall):
+    extractall, where = _extractall
+    res = sn.evaluate(extractall(r'Step: (\d+)', where, 1, lambda x: int(x)))
     for expected, v in enumerate(res, start=1):
         assert expected == v
 
     # Check error in custom function
     with pytest.raises(SanityError):
-        sn.evaluate(sn.extractall(r'Step: (\d+)', tempfile,
-                                  conv=lambda x: int(x)))
+        sn.evaluate(extractall(r'Step: (\d+)', where, conv=lambda x: int(x)))
 
     # Check error with a callable object
     class C:
@@ -710,16 +740,17 @@ def test_extractall_custom_conv(tempfile):
             return int(x)
 
     with pytest.raises(SanityError):
-        sn.evaluate(sn.extractall(r'Step: (\d+)', tempfile, conv=C()))
+        sn.evaluate(extractall(r'Step: (\d+)', where, conv=C()))
 
 
-def test_extractsingle(tempfile):
+def test_extractsingle(_extractsingle):
+    extractsingle, where = _extractsingle
     for i in range(1, 4):
-        assert i == sn.extractsingle(r'Step: (\d+)', tempfile, 1, int, i-1)
+        assert i == extractsingle(r'Step: (\d+)', where, 1, int, i-1)
 
     # Test out of bounds access
     with pytest.raises(SanityError):
-        sn.evaluate(sn.extractsingle(r'Step: (\d+)', tempfile, 1, int, 100))
+        sn.evaluate(extractsingle(r'Step: (\d+)', where, 1, int, 100))
 
 
 def test_extractsingle_encoding(utf16_file):
@@ -729,58 +760,54 @@ def test_extractsingle_encoding(utf16_file):
     assert -1 != res.find('Odyssey')
 
 
-def test_extractall_multiple_tags(tempfile):
+def test_extractall_multiple_tags(_extractall):
+    extractall, where = _extractall
     # Check multiple numeric groups
-    res = sn.evaluate(sn.extractall(
-        r'Number: (\d+) (\d+)', tempfile, (1, 2)))
+    res = sn.evaluate(extractall(r'Number: (\d+) (\d+)', where, (1, 2)))
     for expected, v in enumerate(res, start=1):
         assert str(expected) == v[0]
         assert str(2*expected) == v[1]
 
     # Check multiple named groups
-    res = sn.evaluate(sn.extractall(
-        r'Number: (?P<no1>\d+) (?P<no2>\d+)', tempfile,
-        ('no1', 'no2')))
+    res = sn.evaluate(extractall(r'Number: (?P<no1>\d+) (?P<no2>\d+)', where,
+                                 ('no1', 'no2')))
     for expected, v in enumerate(res, start=1):
         assert str(expected) == v[0]
         assert str(2*expected) == v[1]
 
     # Check single convert function
-    res = sn.evaluate(sn.extractall(r'Number: (?P<no1>\d+) (?P<no2>\d+)',
-                                    tempfile, ('no1', 'no2'), int))
+    res = sn.evaluate(extractall(r'Number: (?P<no1>\d+) (?P<no2>\d+)', where,
+                                 ('no1', 'no2'), int))
     for expected, v in enumerate(res, start=1):
         assert expected == v[0]
         assert 2 * expected == v[1]
 
     # Check multiple convert functions
-    res = sn.evaluate(sn.extractall(r'Number: (?P<no1>\d+) (?P<no2>\d+)',
-                                    tempfile, ('no1', 'no2'),
-                                    (int, float)))
+    res = sn.evaluate(extractall(r'Number: (?P<no1>\d+) (?P<no2>\d+)',
+                                 where, ('no1', 'no2'), (int, float)))
     for expected, v in enumerate(res, start=1):
         assert expected == v[0]
         assert 2 * expected == v[1]
         assert isinstance(v[1], float)
 
     # Check more conversion functions than tags
-    res = sn.evaluate(sn.extractall(r'Number: (?P<no1>\d+) (?P<no2>\d+)',
-                                    tempfile, ('no1', 'no2'),
-                                    [int, float, float, float]))
+    res = sn.evaluate(extractall(r'Number: (?P<no1>\d+) (?P<no2>\d+)', where,
+                                 ('no1', 'no2'), [int, float, float, float]))
     for expected, v in enumerate(res, start=1):
         assert expected == v[0]
         assert 2 * expected == v[1]
 
     # Check fewer convert functions than tags
-    res = sn.evaluate(sn.extractall(r'Number: (?P<no1>\d+) (?P<no2>\d+)',
-                                    tempfile, ('no1', 'no2'),
-                                    [int]))
+    res = sn.evaluate(extractall(r'Number: (?P<no1>\d+) (?P<no2>\d+)',
+                                 where, ('no1', 'no2'), [int]))
     for expected, v in enumerate(res, start=1):
         assert expected == v[0]
         assert 2 * expected == v[1]
 
     # Check multiple conversion functions and a single tag
     with pytest.raises(SanityError):
-        res = sn.evaluate(sn.extractall(
-            r'Number: (?P<no>\d+) \d+', tempfile, 'no', [int, float])
+        res = sn.evaluate(extractall(
+            r'Number: (?P<no>\d+) \d+', where, 'no', [int, float])
         )
 
 
