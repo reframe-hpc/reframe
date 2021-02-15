@@ -195,7 +195,7 @@ class SystemPartition(jsonext.JSONSerializable):
 
     @property
     def arch(self):
-        '''The system architecture of this partition.
+        '''The microarchitecture of this partition.
 
         .. versionadded:: 3.5
 
@@ -265,7 +265,7 @@ class SystemPartition(jsonext.JSONSerializable):
     @property
     def extra_attributes(self):
         '''User defined attributes of the system. By default
-        it is an empyy dictionary.
+        it is an empty dictionary.
 
         .. versionadded:: 3.5
 

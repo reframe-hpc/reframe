@@ -316,6 +316,47 @@ System Partition Configuration
    A list of job scheduler `resource specification <config_reference.html#custom-job-scheduler-resources>`__ objects.
 
 
+.. js:attribute:: .systems[].partitions[].arch
+
+   :required: No
+   :default: ``""``
+
+   The microarchitecture of this partition.
+
+
+.. js:attribute:: .systems[].partitions[].sockets_per_node
+
+   :required: No
+   :default: ``-1``
+
+   The number of socket per node on this partition.
+
+
+.. js:attribute:: .systems[].partitions[].cores_per_socket
+
+   :required: No
+   :default: ``-1``
+
+   The number of cores per socket on this partition.
+
+
+.. js:attribute:: .systems[].partitions[].threads_per_core
+
+   :required: No
+   :default: ``-1``
+
+   The number of threads per core on this partition.
+
+
+.. js:attribute:: .systems[].partitions[].extra_attributes
+
+   :required: No
+   :default: ``{}``
+
+   User defined attributes of the system that are accessible from the ReFrame tests.
+   By default it is an empty dictionary.
+
+
 
 .. _container-platform-configuration:
 
