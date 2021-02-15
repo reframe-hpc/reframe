@@ -8,28 +8,28 @@
 #
 
 
+import copy
+
 from reframe.core.exceptions import ReframeSyntaxError
 import reframe.core.namespaces as namespaces
 import reframe.core.parameters as parameters
 import reframe.core.variables as variables
 
 
-class MetaNamespace(namespaces.LocalNamespace):
-    '''Regression test's namespace to control the cls attribute assignment.'''
-    def __setitem__(self, key, value):
-        if isinstance(value, variables.VarDirective):
-            # Insert the attribute in the variable namespace
-            self['_rfm_local_var_space'][key] = value
-
-        elif isinstance(value, parameters.TestParam):
-            # Insert the attribute in the parameter namespace
-            self['_rfm_local_param_space'][key] = value
-
-        else:
-            super().__setitem__(key, value)
-
-
 class RegressionTestMeta(type):
+
+    class MetaNamespace(namespaces.LocalNamespace):
+        '''Custom namespace to control the cls attribute assignment.'''
+        def __setitem__(self, key, value):
+            if isinstance(value, variables.VarDirective):
+                # Insert the attribute in the variable namespace
+                self['_rfm_local_var_space'][key] = value
+            elif isinstance(value, parameters.TestParam):
+                # Insert the attribute in the parameter namespace
+                self['_rfm_local_param_space'][key] = value
+            else:
+                super().__setitem__(key, value)
+
     @classmethod
     def __prepare__(metacls, name, bases, **kwargs):
         namespace = super().__prepare__(name, bases, **kwargs)
@@ -49,7 +49,7 @@ class RegressionTestMeta(type):
         # Directives to add/modify a regression test variable
         namespace['variable'] = variables.TestVar
         namespace['required'] = variables.UndefineVar()
-        return MetaNamespace(namespace)
+        return metacls.MetaNamespace(namespace)
 
     def __new__(metacls, name, bases, namespace, **kwargs):
         return super().__new__(metacls, name, bases, dict(namespace), **kwargs)
@@ -58,7 +58,12 @@ class RegressionTestMeta(type):
         super().__init__(name, bases, namespace, **kwargs)
 
         # Create a set with the attribute names already in use.
-        used_attribute_names = set(dir(cls)) - set(cls.__dict__)
+        cls._rfm_dir = set()
+        for base in bases:
+            if hasattr(base, '_rfm_dir'):
+                cls._rfm_dir.update(base._rfm_dir)
+
+        used_attribute_names = copy.deepcopy(cls._rfm_dir)
 
         # Build the var space and extend the target namespace
         variables.VarSpace(cls, used_attribute_names)
@@ -66,6 +71,9 @@ class RegressionTestMeta(type):
 
         # Build the parameter space
         parameters.ParamSpace(cls, used_attribute_names)
+
+        # Update used names set with the local __dict__
+        cls._rfm_dir.update(cls.__dict__)
 
         # Set up the hooks for the pipeline stages based on the _rfm_attach
         # attribute; all dependencies will be resolved first in the post-setup
@@ -133,6 +141,18 @@ class RegressionTestMeta(type):
 
         obj.__init__(*args, **kwargs)
         return obj
+
+    def __getattribute__(cls, name):
+        try:
+            return super().__getattribute__(name)
+        except AttributeError:
+            try:
+                return cls._rfm_local_var_space[name]
+            except KeyError:
+                try:
+                    return cls._rfm_local_param_space[name]
+                except KeyError:
+                    return super().__getattr__(name)
 
     @property
     def param_space(cls):

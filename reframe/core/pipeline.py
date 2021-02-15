@@ -763,16 +763,14 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     def __getattribute__(self, name):
         try:
             return super().__getattribute__(name)
-
-        except AttributeError as err:
+        except AttributeError:
             # Intercept the AttributeError if the name corresponds to a
             # required variable.
             if (name in self._rfm_var_space.vars and
                 not self._rfm_var_space.vars[name].is_defined()):
                 raise AttributeError(
-                    f'required variable {name!r} has not been defined'
+                    f'required variable {name!r} has not been set'
                 ) from None
-
             else:
                 super().__getattr__(name)
 

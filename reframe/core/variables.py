@@ -64,11 +64,6 @@ class TestVar(VarDirective):
         self.name = name
 
 
-class DefineVar(VarDirective):
-    def __init__(self, default_value):
-        self.default_value = default_value
-
-
 class UndefineVar(VarDirective):
     def __init__(self):
         self.default_value = _Undefined
@@ -100,7 +95,6 @@ class VarSpace(namespaces.Namespace):
     def __init__(self, target_cls=None, illegal_names=None):
         # Set to register the variables already injected in the class
         self._injected_vars = set()
-
         super().__init__(target_cls, illegal_names)
 
     def join(self, other, cls):
@@ -137,36 +131,41 @@ class VarSpace(namespaces.Namespace):
         is disallowed.
         '''
         local_varspace = getattr(cls, self.local_namespace_name)
-
         for key, var in local_varspace.items():
             if isinstance(var, TestVar):
                 # Disable redeclaring a variable
                 if key in self.vars:
                     raise ValueError(
-                        f'cannot redeclare a variable ({key})'
+                        f'cannot redeclare the variable {key!r}'
                     )
 
                 # Add a new var
                 self.vars[key] = var
-
             elif isinstance(var, VarDirective):
-                # Modify the value of a previously declarated var
+                # Modify the value of a previously declared var.
+                # If var is an instance of UndefineVar, we set its default
+                # value to _Undefined. Alternatively, the value is just updated
+                # with the user's input.
                 self._check_var_is_declared(key)
                 self.vars[key].define(var.default_value)
 
         # If any previously declared variable was defined in the class body
-        # retrieve the value from the class namespace and update it into the
-        # variable space.
+        # by directly assigning it a value, retrieve this value from the class
+        # namespace and update it into the variable space.
+        _assigned_vars = set()
         for key, value in cls.__dict__.items():
             if key in local_varspace:
                 raise ValueError(
-                    f'cannot specify more than one action on variable'
-                    f' {key!r} in the same class'
+                    f'cannot specify more than one action on variable '
+                    f'{key!r} in the same class'
                 )
-
             elif key in self.vars:
-                self._check_var_is_declared(key)
                 self.vars[key].define(value)
+                _assigned_vars.add(key)
+
+        # Delete the vars from the class __dict__.
+        for key in _assigned_vars:
+            delattr(cls, key)
 
     def _check_var_is_declared(self, key):
         if key not in self.vars:
@@ -185,7 +184,7 @@ class VarSpace(namespaces.Namespace):
             illegal_names = set(dir(cls))
 
         for key in self._namespace:
-            if (key in illegal_names) and (key not in self._injected_vars):
+            if key in illegal_names and key not in self._injected_vars:
                 raise ValueError(
                     f'{key!r} already defined in class '
                     f'{cls.__qualname__!r}'
