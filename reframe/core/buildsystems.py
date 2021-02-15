@@ -658,34 +658,36 @@ class Autotools(ConfigureBasedBuildSystem):
 class EasyBuild(BuildSystem):
     easyconfigs = fields.TypedField(typ.List[str])
     options = fields.TypedField(typ.List[str])
-    installpath = fields.TypedField(str, type(None))
-    buildpath = fields.TypedField(str, type(None))
-    sourcepath = fields.TypedField(str, type(None))
-    use_system_config = fields.TypedField(bool)
+    emit_package = fields.TypedField(bool)
+    package_opts = fields.TypedField(typ.Dict[str, str])
 
     def __init__(self):
         super().__init__()
         self.easyconfigs = []
         self.options = []
-        self.installpath = None
-        self.buildpath = None
-        self.sourcepath = None
-        self.use_system_config = False
+        self.emit_package = False
 
     def emit_build_commands(self, environ):
         easyconfigs = ' '.join(self.easyconfigs)
-        options = ' '.join(self.options)
-        if self.use_system_config:
-            return [f"eb {easyconfigs} {options}"]
 
-        return [f"eb {easyconfigs} --installpath {self.installpath} "
-                # f"--tmpdir {self._installpath} "
-                f"--sourcepath {self.sourcepath} "
-                f"--buildpath {self.buildpath} {options}"]
+        if self.emit_package:
+            self.options.append('--package')
+            for key, val in self.package_opts.items():
+                self.options.append(f"--package-{key}={val}")
+
+        options = ' '.join(self.options)
+
+        cmd = [f"EASYBUILD_BUILDPATH={self._eb_sandbox}/build \\",
+               f"EASYBUILD_INSTALLPATH={self._eb_sandbox} \\",
+               f"EASYBUILD_PREFIX={self._eb_sandbox} \\",
+               f"EASYBUILD_SOURCEPATH={self._eb_sandbox} \\",
+               f"eb {easyconfigs} {options}"]
+
+        return cmd
 
     def eb_modules(self):
         modules = []
-        modules_dir = os.path.join(self.installpath, 'modules', 'all')
+        modules_dir = os.path.join(self._eb_sandbox, 'modules', 'all')
         if os.path.isdir(modules_dir):
             for mod in os.listdir(modules_dir):
                 for ver in os.listdir(os.path.join(modules_dir, mod)):

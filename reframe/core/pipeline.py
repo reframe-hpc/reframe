@@ -1240,17 +1240,12 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
             self.build_system.executable = self.executable
 
         if isinstance(self.build_system, EasyBuild):
-            if not self.build_system.installpath:
-                self.build_system.installpath = os.path.join(self._stagedir,
-                                                             'rfm_easybuild')
-            if not self.build_system.buildpath:
-                self.build_system.buildpath = os.path.join(self._stagedir,
-                                                           'rfm_easybuild',
-                                                           'build')
-
-            if not self.build_system.sourcepath:
-                self.build_system.sourcepath = os.path.join(self._stagedir,
-                                                            'rfm_easybuild')
+            self.build_system._eb_sandbox = os.path.join(self._stagedir,
+                                                         'rfm_easybuild')
+            if self.build_system.emit_package:
+                self.keep_files.append(
+                    f'{self.build_system._eb_sandbox}/packages'
+                )
 
         # Prepare build job
         build_commands = [
