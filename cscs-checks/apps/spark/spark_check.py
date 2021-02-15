@@ -46,7 +46,8 @@ class SparkCheck(rfm.RunOnlyRegressionTest):
             'spark-submit --conf spark.default.parallelism=%s '
             '--conf spark.executor.cores=%s --conf spark.executor.memory=15g '
             '--master $SPARKURL --class org.apache.spark.examples.SparkPi '
-            '$EBROOTSPARK/examples/jars/spark-examples_2.11-2.3.1.jar 10000;'
+            '$EBROOTSPARK/examples/jars/'
+            'spark-examples_2.11-${EBVERSIONSPARK}.jar 10000;'
             % (num_workers, exec_cores))
         # The job launcher has to be changed since the `spark-submit`
         # script is not used with srun.
