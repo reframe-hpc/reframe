@@ -25,7 +25,7 @@ class AffinityTestBase(rfm.RegressionTest):
     def __init__(self):
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc', 'eiger:mc',
-                              'ault:a64fx', 'ault:amdv100']
+                              'ault:amdv100']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.build_system = 'Make'
         self.build_system.options = ['-C affinity', 'MPI=1']
@@ -41,11 +41,12 @@ class AffinityTestBase(rfm.RegressionTest):
 
         # Dict with the partition's topology - output of "lscpu -e"
         self.topology = {
-            'dom:gpu':   'topo_dom_gpu.json',
-            'dom:mc':    'topo_dom_mc.json',
-            'daint:gpu': 'topo_dom_gpu.json',
-            'daint:mc':  'topo_dom_mc.json',
-            'eiger:mc':  'topo_eiger_mc.json',
+            'dom:gpu':    'topo_dom_gpu.json',
+            'dom:mc':     'topo_dom_mc.json',
+            'daint:gpu':  'topo_dom_gpu.json',
+            'daint:mc':   'topo_dom_mc.json',
+            'eiger:mc':   'topo_eiger_mc.json',
+            'ault:amdv100': 'topo_ault_amdv100.json',
         }
 
     @rfm.run_before('compile')
@@ -238,8 +239,8 @@ class AffinityOpenMPBase(AffinityTestBase):
 
 
 @rfm.simple_test
-class OneThreadPerCPUOpenMP(AffinityOpenMPBase):
-    '''Pin each OMP thread to a different CPU.'''
+class OneThreadPerLogicalCoreOpenMP(AffinityOpenMPBase):
+    '''Pin each OMP thread to a different logical core.'''
     parameter('omp_bind', ['threads'])
 
     def __init__(self):
@@ -251,7 +252,7 @@ class OneThreadPerCPUOpenMP(AffinityOpenMPBase):
 
     @property
     def num_omp_threads(self):
-        # One OMP thread per cpu
+        # One OMP thread per logical core
         return self.num_cpus
 
     @rfm.run_before('sanity')
@@ -269,8 +270,8 @@ class OneThreadPerCPUOpenMP(AffinityOpenMPBase):
 
 
 @rfm.simple_test
-class OneThreadPerCoreOpenMP(AffinityOpenMPBase):
-    '''Pin each OMP thread to a different core.'''
+class OneThreadPerPhysicalCoreOpenMP(AffinityOpenMPBase):
+    '''Pin each OMP thread to a different physical core.'''
     parameter('omp_bind', ['cores'])
 
     def __init__(self):
@@ -303,12 +304,12 @@ class OneThreadPerCoreOpenMP(AffinityOpenMPBase):
 
 
 @rfm.simple_test
-class OneThreadPerCoreOpenMPnomultithread(OneThreadPerCoreOpenMP):
-    '''Only one cpu per core booked.'''
+class OneThreadPerPhysicalCoreOpenMPnomt(OneThreadPerPhysicalCoreOpenMP):
+    '''Only one cpu per core booked without multithread.'''
 
     def __init__(self):
         super().__init__()
-        self.descr = 'Pin one OMP thread per core.'
+        self.descr = 'Pin one OMP thread per core without multithreading.'
         self.use_multithreading = False
 
         # System-dependent settings here
@@ -328,7 +329,7 @@ class OneThreadPerCoreOpenMPnomultithread(OneThreadPerCoreOpenMP):
 @rfm.simple_test
 class OneThreadPerSocketOpenMP(AffinityOpenMPBase):
     '''Pin each OMP thread to a different socket.'''
-    parameter('omp_bind', ['socket'])
+    parameter('omp_bind', ['sockets'])
 
     def __init__(self):
         super().__init__()
@@ -361,8 +362,8 @@ class OneThreadPerSocketOpenMP(AffinityOpenMPBase):
 
 
 @rfm.simple_test
-class OneTaskPerSocketOpenMPnomultithread(AffinityOpenMPBase):
-    '''One task per socket, and as many OMP threads as cores per socket.'''
+class OneTaskPerSocketOpenMPnomt(AffinityOpenMPBase):
+    '''One task per socket, and 1 OMP thread per physical core.'''
     parameter('omp_bind', ['sockets'])
     parameter('omp_proc_bind', ['close'])
 

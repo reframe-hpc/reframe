@@ -785,9 +785,7 @@ site_configuration = {
                 'ault'
             ],
             'modules': [
-                'gcc/9.3.0',
-                'cuda/11.0',
-                'openmpi/3.1.6'
+                'openmpi'
             ],
             'cc': 'mpicc',
             'cxx': 'mpicxx',
