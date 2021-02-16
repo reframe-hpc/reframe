@@ -61,7 +61,7 @@ done
 # We need to exit with a zero code if the Python version is the correct
 # one, so we invert the comparison
 
-if $python -c 'import sys;sys.exit(sys.version_info[:2] > (3, 6))'; then
+if $python -c 'import sys;sys.exit(sys.version_info[:2] >= (3, 6))'; then
     echo -e "ReFrame requires Python >= 3.6"
     exit 1
 fi
