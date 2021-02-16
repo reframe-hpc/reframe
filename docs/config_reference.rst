@@ -115,7 +115,7 @@ System Configuration
    - ``tmod32``: A synonym of ``tmod``.
    - ``tmod4``: The `new environment modules <http://modules.sourceforge.net/>`__ implementation (versions older than 4.1 are not supported).
    - ``lmod``: The `Lua implementation <https://lmod.readthedocs.io/en/latest/>`__ of the environment modules.
-   - ``spack``: `Spack <https://spack.readthedocs.io/en/latest/>`'s built-in mechanism for managing modules.
+   - ``spack``: `Spack <https://spack.readthedocs.io/en/latest/>`__'s built-in mechanism for managing modules.
    - ``nomod``: This is to denote that no modules system is used by this system.
 
    .. versionadded:: 3.4
@@ -1017,7 +1017,7 @@ Common scheduler options
    As an example, you could have ReFrame trying to resubmit a job in case that the maximum submission limit per user is reached by setting this field to ``["QOSMaxSubmitJobPerUserLimit"]``.
    You can ignore multiple errors at the same time if you add more error strings in the list.
 
-   .. versionadded:: 3.5
+   .. versionadded:: 3.4.1
 
    .. warning::
       Job submission is a synchronous operation in ReFrame.

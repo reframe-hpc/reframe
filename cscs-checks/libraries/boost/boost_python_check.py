@@ -4,18 +4,17 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import reframe as rfm
-import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 
 
-@rfm.parameterized_test(['1.70.0'])
+@rfm.simple_test
 class BoostPythonBindingsTest(rfm.RegressionTest):
-    def __init__(self, boostver):
-        self.descr = f'Test for Boost {boostver} with Python bindings'
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
+    def __init__(self):
+        self.descr = f'Test for Boost with Python bindings'
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+                              'eiger:mc']
         self.valid_prog_environs = ['builtin']
-        cdt_version = osext.cray_cdt_version()
-        self.modules = [f'Boost/{boostver}-CrayGNU-{cdt_version}-python3']
+        self.modules = [f'Boost']
         self.executable = f'python3 hello.py'
         self.sanity_patterns = sn.assert_found('hello, world', self.stdout)
         version_cmd = ('python3 -c \'import sys; '
@@ -25,5 +24,5 @@ class BoostPythonBindingsTest(rfm.RegressionTest):
             'PYTHON_INCLUDE': '$(python3-config --includes)',
             'PYTHON_BOOST_LIB': f'boost_python$({version_cmd})'
         }
-        self.maintainers = ['JB', 'AJ']
+        self.maintainers = ['TM', 'AJ']
         self.tags = {'scs', 'production'}
