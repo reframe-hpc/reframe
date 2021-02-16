@@ -25,7 +25,7 @@ setuptools.setup(
     ),
     package_data={'reframe': ['schemas/*']},
     include_package_data=True,
-    install_requires=['jsonschema'],
+    install_requires=['argcomplete', 'jsonschema', 'PyYAML'],
     python_requires='>=3.6',
     scripts=['bin/reframe'],
     classifiers=(

@@ -34,7 +34,7 @@ The only new thing that comes in with the :class:`OSUBuildTest` test is the foll
 
 Here we tell ReFrame that this test depends on a test named :class:`OSUDownloadTest`.
 This test may or may not be defined in the same test file; all ReFrame needs is the test name.
-The :func:`depends_on() <reframe.core.pipeline.RegressionTest.depends_on>` function will create dependencies between the individual test cases of the :class:`OSUBuildTest` and the :class:`OSUDownloadTest`, such that all the test case of :class:`OSUBuildTest` will depend on the outcome of the :class:`OSUDownloadTest`.
+The :func:`depends_on() <reframe.core.pipeline.RegressionTest.depends_on>` function will create dependencies between the individual test cases of the :class:`OSUBuildTest` and the :class:`OSUDownloadTest`, such that all the test cases of :class:`OSUBuildTest` will depend on the outcome of the :class:`OSUDownloadTest`.
 This behaviour can be changed, but it is covered in detail in :doc:`dependencies`.
 You can create arbitrary test dependency graphs, but they need to be acyclic.
 If ReFrame detects cyclic dependencies, it will refuse to execute the set of tests and will issue an error pointing out the cycle.
