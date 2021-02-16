@@ -57,6 +57,7 @@ while [ -n "$1" ]; do
     esac
 done
 
+pyver=$($python -V | sed -n 's/Python \([0-9]\+\)\.\([0-9]\+\)\..*/\1.\2/p')
 
 # We need to exit with a zero code if the Python version is the correct
 # one, so we invert the comparison
