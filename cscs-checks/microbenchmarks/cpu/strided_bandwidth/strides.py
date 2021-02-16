@@ -11,7 +11,8 @@ class StridedBase(rfm.RegressionTest):
     def __init__(self):
         self.sourcepath = 'strides.cpp'
         self.build_system = 'SingleSource'
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'daint:mc', 'dom:mc', 'eiger:mc']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'daint:mc', 'dom:mc',
+                              'eiger:mc']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.num_tasks = 1
         self.num_tasks_per_node = 1
