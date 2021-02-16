@@ -367,6 +367,8 @@ This option is useful when you combine it with the various test filtering option
 For example, you might want to rerun only the failed tests or just a specific test in a dependency chain.
 Let's see an artificial example that uses the following test dependency graph.
 
+.. _fig-deps-complex:
+
 .. figure:: _static/img/deps-complex.svg
    :align: center
 
@@ -477,3 +479,60 @@ If we tried to run :class:`T6` without restoring the session, we would have to r
 
    [  PASSED  ] Ran 5 test case(s) from 5 check(s) (0 failure(s))
    [==========] Finished on Thu Jan 21 14:32:09 2021
+
+
+.. _generate-ci-pipeline:
+
+Integrating into a CI pipeline
+------------------------------
+
+.. versionadded:: 3.4.1
+
+Instead of running your tests, you can ask ReFrame to generate a `child pipeline <https://docs.gitlab.com/ee/ci/parent_child_pipelines.html>`__ specification for the Gitlab CI.
+This will spawn a CI job for each ReFrame test respecting test dependencies.
+You could run your tests in a single job of your Gitlab pipeline, but you would not take advantage of the parallelism across different CI jobs.
+Having a separate CI job per test makes it also easier to spot the failing tests.
+
+As soon as you have set up a `runner <https://docs.gitlab.com/ee/ci/quick_start/>`__ for your repository, it is fairly straightforward to use ReFrame to automatically generate the necessary CI steps.
+The following is an example of ``.gitlab-ci.yml`` file that does exactly that:
+
+.. code-block:: yaml
+
+   stages:
+     - generate
+     - test
+
+   generate-pipeline:
+     stage: generate
+     script:
+       - reframe --ci-generate=${CI_PROJECT_DIR}/pipeline.yml -c ${CI_PROJECT_DIR}/path/to/tests
+     artifacts:
+       paths:
+         - ${CI_PROJECT_DIR}/pipeline.yml
+
+   test-jobs:
+     stage: test
+     trigger:
+       include:
+         - artifact: pipeline.yml
+           job: generate-pipeline
+       strategy: depend
+
+
+It defines two stages.
+The first one, called ``generate``, will call ReFrame to generate the pipeline specification for the desired tests.
+All the usual `test selection options <manpage.html#test-filtering>`__ can be used to select specific tests.
+ReFrame will process them as usual, but instead of running the selected tests, it will generate the correct steps for running each test individually as a Gitlab job.
+We then pass the generated CI pipeline file to second phase as an artifact and we are done!
+
+The following figure shows one part of the automatically generated pipeline for the test graph depicted `above <#fig-deps-complex>`__.
+
+.. figure:: _static/img/gitlab-ci.png
+   :align: center
+
+   :sub:`Snapshot of a Gitlab pipeline generated automatically by ReFrame.`
+
+
+.. note::
+
+   The ReFrame executable must be available in the Gitlab runner that will run the CI jobs.
