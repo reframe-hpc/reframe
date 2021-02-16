@@ -105,8 +105,12 @@ Enabling auto-completion
 
 .. versionadded:: 3.4.1
 
-You can enable auto-completion for ReFrame by sourcing in your shell the corresponding script in ``<install_prefix>/etc/reframe_completion.<shell>``.
+You can enable auto-completion for ReFrame by sourcing in your shell the corresponding script in ``<install_prefix>/share/completions/reframe.<shell>``.
 Auto-completion is supported for Bash, Tcsh and Fish shells.
+
+.. note::
+  .. versionchanged:: 3.4.2
+     The shell completion scripts have been moved under ``share/completions/``.
 
 
 
