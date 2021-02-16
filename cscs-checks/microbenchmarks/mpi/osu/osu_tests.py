@@ -162,10 +162,9 @@ class P2PCPUBandwidthTest(P2PBaseTest):
     def __init__(self):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'arolla:cn', 'tsa:cn']
+                              'arolla:cn', 'tsa:cn', 'eiger:mc']
         self.executable = './p2p_osu_bw'
         self.executable_opts = ['-x', '100', '-i', '1000']
-
         self.reference = {
             'daint:gpu': {
                 'bw': (9607.0, -0.10, None, 'MB/s')
@@ -178,6 +177,9 @@ class P2PCPUBandwidthTest(P2PBaseTest):
             },
             'dom:mc': {
                 'bw': (9528.0, -0.20, None, 'MB/s')
+            },
+            'eiger:mc': {
+                'bw': (12240.0, -0.10, None, 'MB/s')
             },
             # keeping as reference:
             # 'monch:compute': {
@@ -196,7 +198,7 @@ class P2PCPULatencyTest(P2PBaseTest):
     def __init__(self):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'arolla:cn', 'tsa:cn']
+                'arolla:cn', 'tsa:cn', 'eiger:mc']
         self.executable_opts = ['-x', '100', '-i', '1000']
 
         self.executable = './p2p_osu_latency'
@@ -212,6 +214,9 @@ class P2PCPULatencyTest(P2PBaseTest):
             },
             'dom:mc': {
                 'latency': (1.24, None, 0.15, 'us')
+            },
+            'eiger:mc': {
+                'latency': (2.33, None, 0.15, 'us')
             },
             # keeping as reference:
             # 'monch:compute': {
