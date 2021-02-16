@@ -1,6 +1,8 @@
 import pytest
+import semver
 import warnings
 
+import reframe
 import reframe.core.runtime as rt
 import reframe.core.warnings as warn
 import reframe.utility.color as color
@@ -17,6 +19,11 @@ def with_colors(request):
 def test_deprecation_warning():
     with pytest.warns(warn.ReframeDeprecationWarning):
         warn.user_deprecation_warning('deprecated')
+
+
+def test_deprecation_warning_from_version():
+    next_version = semver.VersionInfo.parse(reframe.VERSION).bump_minor()
+    warn.user_deprecation_warning('deprecated', str(next_version))
 
 
 def test_deprecation_warning_formatting(with_colors):
