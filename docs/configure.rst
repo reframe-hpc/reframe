@@ -78,6 +78,7 @@ Each system is associated with a set of properties, which in this case are the f
 * ``hostnames``: This is a list of hostname patterns following the `Python Regular Expression Syntax <https://docs.python.org/3/library/re.html#regular-expression-syntax>`__, which will be used by ReFrame when it tries to automatically select a configuration entry for the current system.
 * ``modules_system``: In our example, this is only defined for Piz Daint and refers to the environment modules system that should be used for loading environment modules on this system.
   In this case, the classic Tcl implementation of the `environment modules <https://sourceforge.net/projects/modules/files/Modules/modules-3.2.10/>`__.
+  For a complete list of the supported modules systems, see `here <config_reference.html#.systems[].modules_system>`__.
 * ``partitions``: The list of partitions that are defined for this system.
   Each partition is defined as a separate object.
   We devote the rest of this section in system partitions, since they are an essential part of ReFrame's configuration.
@@ -157,7 +158,7 @@ Let's see how logging is defined in our example configuration, which also repres
 
 Logging is configured under the ``logging`` section of the configuration, which is a list of logger objects.
 Unless you want to configure logging differently for different systems, a single logger object is enough.
-Each logger object is associated with a logging level stored in the ``level`` property and has a set of logging handlers that are actually responsible for handling the actual logging records.
+Each logger object is associated with a `logging level <config_reference.html#.logging[].level>`__ stored in the ``level`` property and has a set of logging handlers that are actually responsible for handling the actual logging records.
 ReFrame's output is performed through the logging mechanism, meaning that if you don't specify any logging handler, you will not get any output from ReFrame!
 The ``handlers`` property of the logger object holds the actual handlers.
 Notice that you can use multiple handlers at the same time, which enables you to feed ReFrame's output to different sinks and at different verbosity levels.
@@ -166,6 +167,7 @@ These are the following:
 
 * ``type``: This is the type of the handler, which determines its functionality.
   Depending on the handler type, handler-specific properties may be allowed or required.
+  For a complete list of available log handler types, see `here <config_reference.html#.logging[].handlers[].type>`__.
 * ``level``: The cut-off level for messages reaching this handler.
   Any message with a lower level number will be filtered out.
 * ``format``: A format string for formatting the emitted log record.
