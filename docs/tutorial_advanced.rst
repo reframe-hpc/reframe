@@ -686,33 +686,41 @@ The following test will use a Singularity container to run:
 
 .. literalinclude:: ../tutorials/advanced/containers/container_test.py
    :lines: 6-
-   :emphasize-lines: 11-16
+   :emphasize-lines: 11-15
 
 A container-based test can be written as :class:`RunOnlyRegressionTest <reframe.core.pipeline.RunOnlyRegressionTest>` that sets the :attr:`container_platform <reframe.core.pipeline.RegressionTest.container_platform>` attribute.
 This attribute accepts a string that corresponds to the name of the container platform that will be used to run the container for this test.
 In this case, the test will be using `Singularity <https://sylabs.io>`__ as a container platform.
 If such a platform is not `configured <config_reference.html#container-platform-configuration>`__ for the current system, the test will fail.
 
-As soon as the container platform to be used is defined, you need to specify the container image to use and the commands to run inside the container by setting the :attr:`image <reframe.core.containers.ContainerPlatform.image>` and the :attr:`commands <reframe.core.containers.ContainerPlatform.commands>` container platform attributes.
-These two attributes are mandatory for container-based checks.
+As soon as the container platform to be used is defined, you need to specify the container image to use by setting the :attr:`image <reframe.core.containers.ContainerPlatform.image>`.
+The default command that the container runs can be overwritten by setting the :attr:`command <reframe.core.containers.ContainerPlatform.command` of the container platform.
+
+The :attr:`image <reframe.core.containers.ContainerPlatform.image>` is the only mandatory attribute for container-based checks.
 It is important to note that the :attr:`executable <reframe.core.pipeline.RegressionTest.executable>` and :attr:`executable_opts <reframe.core.pipeline.RegressionTest.executable_opts>` attributes of the actual test are ignored in case of container-based tests.
 
 ReFrame will run the container as follows:
 
 .. code-block:: console
 
-    singularity exec -B"/path/to/test/stagedir:/workdir" docker://ubuntu:18.04 bash -c 'cd rfm_workdir; pwd; ls; cat /etc/os-release'
+    singularity exec -B"/path/to/test/stagedir:/rfm_stagedir" --workdir="/rfm_stagedir" docker://ubuntu:18.04 bash -c 'pwd; ls; cat /etc/os-release'
 
-By default ReFrame will mount the stage directory of the test under ``/rfm_workdir`` inside the container and it will always prepend a ``cd`` command to that directory.
-The user commands are then run from that directory one after the other.
+By default ReFrame will mount the stage directory of the test under ``/rfm_stagedir`` inside the container.
 Once the commands are executed, the container is stopped and ReFrame goes on with the sanity and performance checks.
-Users may also change the default mount point of the stage directory by using :attr:`workdir <reframe.core.pipeline.RegressionTest.container_platform.workdir>` attribute:
+Users may also change the default working directory of the container using the :attr:`workdir <reframe.core.pipeline.RegressionTest.container_platform.workdir>` attribute:
 Besides the stage directory, additional mount points can be specified through the :attr:`mount_points <reframe.core.pipeline.RegressionTest.container_platform.mount_points>` attribute:
 
 .. code-block:: python
 
     self.container_platform.mount_points = [('/path/to/host/dir1', '/path/to/container/mount_point1'),
                                             ('/path/to/host/dir2', '/path/to/container/mount_point2')]
+
+.. tip::
+
+   The container filesystem is ephemeral, therefore, ReFrame mounts the stage directory under ``/rfm_stagedir`` inside the container where the user can copy directories/files as needed.
+   The aforementioned directories/files will then be available inside the stage directory after the container execution finishes.
+   This is very useful if the above directories/files are going to be used for the sanity/performance checks.
+   If this is the case, the user should overwrite the default command executed by the container, using the :attr:`command <reframe.core.containers.ContainerPlatform.command>` to include the appropriate copy commands.
 
 For a complete list of the available attributes of a specific container platform, please have a look at the :ref:`container-platforms` section of the :doc:`regression_test_api` guide.
 On how to configure ReFrame for running containerized tests, please have a look at the :ref:`container-platform-configuration` section of the :doc:`config_reference`.

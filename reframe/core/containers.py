@@ -13,6 +13,10 @@ from reframe.core.exceptions import ContainerError
 class ContainerPlatform(abc.ABC):
     '''The abstract base class of any container platform.'''
 
+    #: The default mount location of the test case stage directory inside the
+    #: container
+    RFM_STAGEDIR = '/rfm_stagedir'
+
     #: The container image to be used for running the test.
     #:
     #: :type: :class:`str` or :class:`None`
@@ -48,7 +52,9 @@ class ContainerPlatform(abc.ABC):
     #: List of mount point pairs for directories to mount inside the container.
     #:
     #: Each mount point is specified as a tuple of
-    #: ``(/path/in/host, /path/in/container)``.
+    #: ``(/path/in/host, /path/in/container)``. The stage directory of the
+    #: ReFrame test is always mounted under ``/rfm_stagedir`` inside the
+    #: container, independelty of this field.
     #:
     #: :type: :class:`list[tuple[str, str]]`
     #: :default: ``[]``
@@ -60,15 +66,13 @@ class ContainerPlatform(abc.ABC):
     #: :default: ``[]``
     options = fields.TypedField(typ.List[str])
 
-    #: The working directory of ReFrame inside the container.
+    #: The working directory inside the container.
     #:
-    #: This is the directory where the test's stage directory is mounted inside
-    #: the container. This directory is always mounted regardless if
-    #: :attr:`mount_points` is set or not. If set to :class:`None` then the
-    #: the default working directory of the given container image is used.
+    #: If set to :class:`None` then the default working directory of the given
+    #: container image is used.
     #:
     #: :type: :class:`str`
-    #: :default: ``/rfm_workdir``
+    #: :default: :class:None
     workdir = fields.TypedField(str, type(None))
 
     def __init__(self):
@@ -77,7 +81,7 @@ class ContainerPlatform(abc.ABC):
         self.mount_points  = []
         self.options = []
         self.pull_command = ''
-        self.workdir = '/rfm_workdir'
+        self.workdir = None
 
     @abc.abstractmethod
     def emit_prepare_commands(self):
@@ -126,7 +130,6 @@ class Docker(ContainerPlatform):
     def launch_command(self):
         super().launch_command()
         run_opts = [f'-v "{mp[0]}":"{mp[1]}"' for mp in self.mount_points]
-        run_opts += ['-v "${PWD}":"/rfm_workdir"']
         run_opts += self.options
         workdir_opt = f'--workdir="{self.workdir}" ' if self.workdir else ''
 
@@ -160,8 +163,6 @@ class Sarus(ContainerPlatform):
         super().launch_command()
         run_opts = [f'--mount=type=bind,source="{mp[0]}",destination="{mp[1]}"'
                     for mp in self.mount_points]
-        run_opts += ['--mount=type=bind,source="${PWD}",'
-                     'destination="/rfm_workdir"']
         if self.with_mpi:
             run_opts.append('--mpi')
 
@@ -199,15 +200,13 @@ class Shifter(ContainerPlatform):
         super().launch_command()
         run_opts = [f'--mount=type=bind,source="{mp[0]}",destination="{mp[1]}"'
                     for mp in self.mount_points]
-        run_opts += ['--mount=type=bind,source="${PWD}",'
-                     'destination="/rfm_workdir"']
         if self.with_mpi:
             run_opts.append('--mpi')
 
         run_opts += self.options
-
+        workdir_opt = f'cd {self.workdir};' if self.workdir else ''
         return (f"shifter run {' '.join(run_opts)} {self.image} bash -c '"
-                f"cd {self.workdir};{self.command or ''}'")
+                f"{workdir_opt}{self.command or ''}'")
 
 
 class Singularity(ContainerPlatform):
@@ -230,7 +229,6 @@ class Singularity(ContainerPlatform):
     def launch_command(self):
         super().launch_command()
         run_opts = [f'-B"{mp[0]}:{mp[1]}"' for mp in self.mount_points]
-        run_opts += ['-B"${PWD}:/rfm_workdir"']
         if self.with_cuda:
             run_opts.append('--nv')
 

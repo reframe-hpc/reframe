@@ -51,56 +51,49 @@ def container_platform(container_variant):
 def expected_cmd_mount_points(container_variant):
     if container_variant in {'Docker', 'Docker+nopull'}:
         return ('docker run --rm --workdir="/stagedir" -v "/path/one":"/one" '
-                '-v "/path/two":"/two" -v "${PWD}":"/rfm_workdir" '
-                'image:tag cmd')
+                '-v "/path/two":"/two" image:tag cmd')
     elif container_variant == 'Docker+nocommand':
         return ('docker run --rm --workdir="/stagedir" -v "/path/one":"/one" '
-                '-v "/path/two":"/two" -v "${PWD}":"/rfm_workdir" image:tag')
+                '-v "/path/two":"/two" image:tag')
     elif container_variant in {'Sarus', 'Sarus+nopull'}:
         return ('sarus run --workdir="/stagedir" '
                 '--mount=type=bind,source="/path/one",destination="/one" '
                 '--mount=type=bind,source="/path/two",destination="/two" '
-                '--mount=type=bind,source="${PWD}",destination="/rfm_workdir" '
                 'image:tag cmd')
     elif container_variant == 'Sarus+custompull':
         return ('sarus run --workdir="/stagedir" '
                 '--mount=type=bind,source="/path/one",destination="/one" '
                 '--mount=type=bind,source="/path/two",destination="/two" '
-                '--mount=type=bind,source="${PWD}",destination="/rfm_workdir" '
                 'load/library/image:tag cmd')
     elif container_variant == 'Sarus+nocommand':
         return ('sarus run --workdir="/stagedir" '
                 '--mount=type=bind,source="/path/one",destination="/one" '
                 '--mount=type=bind,source="/path/two",destination="/two" '
-                '--mount=type=bind,source="${PWD}",destination="/rfm_workdir" '
                 'image:tag')
     elif container_variant == 'Sarus+mpi':
         return ('sarus run --workdir="/stagedir" '
                 '--mount=type=bind,source="/path/one",destination="/one" '
                 '--mount=type=bind,source="/path/two",destination="/two" '
-                '--mount=type=bind,source="${PWD}",destination="/rfm_workdir" '
                 '--mpi image:tag cmd')
     elif container_variant == 'Singularity':
         return ('singularity exec --workdir="/stagedir" -B"/path/one:/one" '
-                '-B"/path/two:/two" -B"${PWD}:/rfm_workdir" image:tag cmd')
+                '-B"/path/two:/two" image:tag cmd')
     elif container_variant == 'Singularity+cuda':
         return ('singularity exec --workdir="/stagedir" -B"/path/one:/one" '
-                '-B"/path/two:/two" -B"${PWD}:/rfm_workdir" '
+                '-B"/path/two:/two" '
                 '--nv image:tag cmd')
     elif container_variant == 'Singularity+nocommand':
         return ('singularity run --workdir="/stagedir" -B"/path/one:/one" '
-                '-B"/path/two:/two" -B"${PWD}:/rfm_workdir" image:tag')
+                '-B"/path/two:/two" image:tag')
     elif container_variant == 'Shifter':
         return ('shifter run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
                 '--mount=type=bind,source="/path/two",destination="/two" '
-                '--mount=type=bind,source="${PWD}",destination="/rfm_workdir" '
                 "image:tag bash -c 'cd /stagedir;cmd'")
     elif container_variant == 'Shifter+mpi':
         return ('shifter run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
                 '--mount=type=bind,source="/path/two",destination="/two" '
-                '--mount=type=bind,source="${PWD}",destination="/rfm_workdir" '
                 "--mpi image:tag bash -c 'cd /stagedir;cmd'")
 
 
@@ -126,49 +119,43 @@ def expected_cmd_prepare(container_variant):
 def expected_cmd_run_opts(container_variant):
     if container_variant in {'Docker', 'Docker+nopull'}:
         return ('docker run --rm --workdir="/stagedir" -v "/path/one":"/one" '
-                '-v "${PWD}":"/rfm_workdir" --foo --bar image:tag cmd')
+                '--foo --bar image:tag cmd')
     if container_variant == 'Docker+nocommand':
         return ('docker run --rm --workdir="/stagedir" -v "/path/one":"/one" '
-                '-v "${PWD}":"/rfm_workdir" --foo --bar image:tag')
+                '--foo --bar image:tag')
     elif container_variant == 'Shifter':
         return ('shifter run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
-                '--mount=type=bind,source="${PWD}",destination="/rfm_workdir" '
                 "--foo --bar image:tag bash -c 'cd /stagedir;cmd'")
     elif container_variant == 'Shifter+mpi':
         return ('shifter run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
-                '--mount=type=bind,source="${PWD}",destination="/rfm_workdir" '
                 "--mpi --foo --bar image:tag bash -c 'cd /stagedir;cmd'")
     elif container_variant in {'Sarus', 'Sarus+nopull'}:
         return ('sarus run --workdir="/stagedir" '
                 '--mount=type=bind,source="/path/one",destination="/one" '
-                '--mount=type=bind,source="${PWD}",destination="/rfm_workdir" '
                 '--foo --bar image:tag cmd')
     elif container_variant == 'Sarus+nocommand':
         return ('sarus run --workdir="/stagedir" '
                 '--mount=type=bind,source="/path/one",destination="/one" '
-                '--mount=type=bind,source="${PWD}",destination="/rfm_workdir" '
                 '--foo --bar image:tag')
     elif container_variant == 'Sarus+mpi':
         return ('sarus run --workdir="/stagedir" '
                 '--mount=type=bind,source="/path/one",destination="/one" '
-                '--mount=type=bind,source="${PWD}",destination="/rfm_workdir" '
                 '--mpi --foo --bar image:tag cmd')
     elif container_variant == 'Sarus+custompull':
         return ('sarus run --workdir="/stagedir" '
                 '--mount=type=bind,source="/path/one",destination="/one" '
-                '--mount=type=bind,source="${PWD}",destination="/rfm_workdir" '
                 '--foo --bar load/library/image:tag cmd')
     elif container_variant == 'Singularity':
         return ('singularity exec --workdir="/stagedir" -B"/path/one:/one" '
-                '-B"${PWD}:/rfm_workdir" --foo --bar image:tag cmd')
+                '--foo --bar image:tag cmd')
     elif container_variant == 'Singularity+cuda':
         return ('singularity exec --workdir="/stagedir" -B"/path/one:/one" '
-                '-B"${PWD}:/rfm_workdir" --nv --foo --bar image:tag cmd')
+                '--nv --foo --bar image:tag cmd')
     elif container_variant == 'Singularity+nocommand':
         return ('singularity run --workdir="/stagedir" -B"/path/one:/one" '
-                '-B"${PWD}:/rfm_workdir" --foo --bar image:tag')
+                '--foo --bar image:tag')
 
 
 def test_mount_points(container_platform, expected_cmd_mount_points):

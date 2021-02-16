@@ -1325,7 +1325,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
 
             self.container_platform.validate()
             self.container_platform.mount_points += [
-                (self._stagedir, self.container_platform.workdir)
+                (self._stagedir, self.container_platform.RFM_STAGEDIR)
             ]
 
             # We replace executable and executable_opts in case of containers
