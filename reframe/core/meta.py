@@ -8,8 +8,6 @@
 #
 
 
-import copy
-
 from reframe.core.exceptions import ReframeSyntaxError
 import reframe.core.namespaces as namespaces
 import reframe.core.parameters as parameters
@@ -63,7 +61,7 @@ class RegressionTestMeta(type):
             if hasattr(base, '_rfm_dir'):
                 cls._rfm_dir.update(base._rfm_dir)
 
-        used_attribute_names = copy.deepcopy(cls._rfm_dir)
+        used_attribute_names = set(cls._rfm_dir)
 
         # Build the var space and extend the target namespace
         variables.VarSpace(cls, used_attribute_names)
@@ -143,6 +141,15 @@ class RegressionTestMeta(type):
         return obj
 
     def __getattribute__(cls, name):
+        ''' Attribute lookup method for the MetaNamespace.
+
+        This metaclass implements a custom namespace, where built-in `variable`
+        and `parameter` types are stored in their own sub-namespaces (see
+        :class:`reframe.core.meta.RegressionTestMeta.MetaNamespace`).
+        This method will perform an attribute lookup on these sub-namespaces if
+        a call to the default `__getattribute__` method fails to retrieve the
+        requested class attribute.
+        '''
         try:
             return super().__getattribute__(name)
         except AttributeError:

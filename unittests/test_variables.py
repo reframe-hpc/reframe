@@ -13,6 +13,10 @@ from reframe.core.fields import Field
 
 @pytest.fixture
 def NoVarsTest():
+    '''Variables are injected as descriptors in the classes.
+
+    Thus, fixtures are needed to provide a fresh class to each test.
+    '''
     class NoVarsTest(rfm.RegressionTest):
         pass
 
