@@ -198,7 +198,7 @@ class P2PCPULatencyTest(P2PBaseTest):
     def __init__(self):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                'arolla:cn', 'tsa:cn', 'eiger:mc']
+                              'arolla:cn', 'tsa:cn', 'eiger:mc']
         self.executable_opts = ['-x', '100', '-i', '1000']
 
         self.executable = './p2p_osu_latency'
