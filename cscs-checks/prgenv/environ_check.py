@@ -59,17 +59,9 @@ class EnvironmentCheck(rfm.RunOnlyRegressionTest):
         return rf'^{self.current_environ.name}'
 
 
-@rfm.parameterized_test(['cray-fftw'], ['cray-hdf5'], ['cray-hdf5-parallel'],
-                        ['cray-libsci'], ['cray-netcdf'],
-                        ['cray-netcdf-hdf5parallel'], ['cray-petsc'],
-                        ['cray-petsc-64'], ['cray-petsc-complex'],
-                        ['cray-petsc-complex-64'], ['cray-python'],
-                        ['cray-R'], ['cray-tpsl'], ['cray-tpsl-64'],
-                        ['cudatoolkit'], ['gcc'], ['papi'], ['pmi'])
-class CrayVariablesCheck(rfm.RunOnlyRegressionTest):
+class CrayVariablesCheckMixin:
     def __init__(self, module_name):
         self.descr = 'Check for standard Cray variables'
-        self.valid_systems = ['daint:login', 'dom:login']
         self.valid_prog_environs = ['builtin']
         self.executable = 'module'
         self.executable_opts = ['show', module_name]
@@ -78,6 +70,19 @@ class CrayVariablesCheck(rfm.RunOnlyRegressionTest):
             sn.assert_found(f'{envvar_prefix}_PREFIX', self.stderr),
             sn.assert_found(f'{envvar_prefix}_VERSION', self.stderr)
         ])
+        self.tags = {'production', 'craype'}
+
+
+@rfm.parameterized_test(['cray-fftw'], ['cray-hdf5'], ['cray-hdf5-parallel'],
+                        ['cray-libsci'], ['cray-mpich'], ['cray-netcdf'],
+                        ['cray-netcdf-hdf5parallel'], ['cray-petsc'],
+                        ['cray-petsc-complex-64'], ['cray-python'],
+                        ['cray-R'], ['cray-tpsl'], ['cray-tpsl-64'],
+                        ['cudatoolkit'], ['gcc'], ['papi'], ['pmi'])
+class CrayVariablesCheck(rfm.RunOnlyRegressionTest, CrayVariablesCheckMixin):
+    def __init__(self, module_name):
+        CrayVariablesCheckMixin.__init__(self, module_name)
+        self.valid_systems = ['daint:login', 'dom:login']
 
         # FIXME: These modules should be fixed in later releases,
         # while gcc was fixed in 20.11
@@ -91,30 +96,21 @@ class CrayVariablesCheck(rfm.RunOnlyRegressionTest):
             self.valid_systems = []
 
         self.maintainers = ['EK', 'VH']
-        self.tags = {'production', 'craype'}
 
 
 @rfm.parameterized_test(['cray-fftw'], ['cray-hdf5'], ['cray-hdf5-parallel'],
-                        ['cray-libsci'], ['cray-openshmemx'],
+                        ['cray-libsci'], ['cray-mpich'], ['cray-openshmemx'],
                         ['cray-parallel-netcdf'], ['cray-pmi'],
                         ['cray-python'], ['cray-R'], ['gcc'], ['papi'])
-class CrayVariablesCheckEiger(rfm.RunOnlyRegressionTest):
+class CrayVariablesCheckEiger(rfm.RunOnlyRegressionTest,
+                              CrayVariablesCheckMixin):
     def __init__(self, module_name):
-        self.descr = 'Check for standard Cray variables on Eiger'
+        CrayVariablesCheckMixin.__init__(self, module_name)
         self.valid_systems = ['eiger:login']
-        self.valid_prog_environs = ['builtin']
-        self.executable = 'module'
-        self.executable_opts = ['show', module_name]
-        envvar_prefix = module_name.upper().replace('-', '_')
-        self.sanity_patterns = sn.all([
-            sn.assert_found(f'{envvar_prefix}_PREFIX', self.stderr),
-            sn.assert_found(f'{envvar_prefix}_VERSION', self.stderr)
-        ])
 
         # FIXME: These modules should be fixed in later releases
 
-        if module_name in {'cray-fftw', 'cray-python'}:
+        if module_name in {'cray-fftw', 'cray-python', 'cray-mpich'}:
             self.valid_systems = []
 
         self.maintainers = ['TM']
-        self.tags = {'production', 'craype'}
