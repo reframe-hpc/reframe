@@ -54,6 +54,8 @@ class AffinityTestBase(rfm.RegressionTest):
         cp = self.current_partition.fullname
         self.topo_file = self.topology[cp]
 
+    # FIXME: The function below should be made general so other tests can
+    #    also use it.
     @rfm.run_after('compile')
     def read_proc_topo(self):
         '''Import the processor's topology from the reference file.
