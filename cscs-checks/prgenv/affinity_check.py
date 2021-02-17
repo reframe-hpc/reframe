@@ -419,7 +419,7 @@ class OneTaskPerSocketOpenMPnomt(AffinityOpenMPBase):
 
 
 @rfm.simple_test
-class OneTaskPerSocketOpenMP(OneTaskPerSocketOpenMPnomultithread):
+class OneTaskPerSocketOpenMP(OneTaskPerSocketOpenMPnomt):
     '''One task per socket, and as many OMP threads as CPUs per socket.
 
     We can reuse the test above. Just need to change the multithreading flag
