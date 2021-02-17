@@ -72,7 +72,6 @@ In essence, these builtins exert control over the test creation, and they allow 
   .. code:: python
 
     class Bar(Foo):
-
         def __init__(self):
             if self.variant == 'A':
                 override_this()
@@ -112,10 +111,10 @@ In essence, these builtins exert control over the test creation, and they allow 
      This only has an effect if used with ``inherit_params=True``.
 
 
-.. py:function:: reframe.core.pipeline.RegressionTest.variable(*types, value=None, field=None)
+.. py:function:: reframe.core.pipeline.RegressionTest.variable(*types, value=None)
 
   Inserts a new regression test variable.
-  Declaring a test variable through the :func:`variable` built-in allows for a more robust test implementation than if the variables were just defined as regular test attributes by direct assignment in the body of the test (e.g. ``self.a = 10``).
+  Declaring a test variable through the :func:`variable` built-in allows for a more robust test implementation than if the variables were just defined as regular test attributes (e.g. ``self.a = 10``).
   Using variables declared through the :func:`variable` built-in guarantees that these regression test variables will not be redeclared by any child class, while also ensuring that any values that may be assigned to such variables comply with its original declaration. 
   In essence, by using test variables, the user removes any potential test errors that might be caused by accidentally overriding a class attribute. See the example below.
 
@@ -161,10 +160,12 @@ In essence, these builtins exert control over the test creation, and they allow 
           self.executable = f'echo {self.what}'
           self.sanity_patterns = sn.assert_found(fr'{self.what}')
 
-    # Test as written by the user:
+
+    # Test as written by the user
     @rfm.simple_test
     class HelloTest(EchoBaseTest):
       what = 'Hello'
+
 
     # A parametrized test with type-checking
     @rfm.simple_test
@@ -181,8 +182,10 @@ In essence, these builtins exert control over the test creation, and they allow 
   Conversely, a variable with a default value already assigned to it can be made required by assigning it the ``required`` keyword.
 
   .. code:: python
+
     class MyRequiredTest(HelloTest):
-      what = required 
+      what = required
+
 
   Running the above test will cause the :func:`__init__` method from :class:`EchoBaseTest` to throw an error indicating that the variable ``what`` has not been set.
 
