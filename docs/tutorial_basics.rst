@@ -327,7 +327,7 @@ Here is how the new configuration file looks like with the needed additions high
    :emphasize-lines: 3-15,31-42
 
 Here we define a system named ``catalina`` that has one partition named ``default``.
-This partition makes no use of any workload manager, but instead launches any jobs locally as OS processes.
+This partition makes no use of any `workload manager <config_reference.html#.systems[].partitions[].scheduler>`__, but instead launches any jobs locally as OS processes.
 Two programming environments are relevant for that partition, namely ``gnu`` and ``clang``, which are defined in the section :js:attr:`environments` of the configuration file.
 The ``gnu`` programming environment provides GCC 9, whereas the ``clang`` one provides the Clang compiler from the system.
 Notice, how you can define the actual commands for invoking the C, C++ and Fortran compilers in each programming environment.
@@ -812,7 +812,7 @@ Let's extend our configuration file for Piz Daint.
 
 
 First of all, we need to define a new system and set the list of hostnames that will help ReFrame identify it.
-We also set the :js:attr:`modules_system` configuration parameter to instruct ReFrame that this system makes use of the `environment modules <http://modules.sourceforge.net/>`__ for managing the user environment.
+We also set the :js:attr:`modules_system <.systems[].modules_system>` `configuration parameter <config_reference.html#.systems[].modules_system>`__ to instruct ReFrame that this system makes use of the `environment modules <http://modules.sourceforge.net/>`__ for managing the user environment.
 Then we define the system partitions that we want to test.
 In this case, we define three partitions:
 

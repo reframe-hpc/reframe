@@ -14,15 +14,17 @@ class Cp2kCheck(rfm.RunOnlyRegressionTest):
         self.executable = 'cp2k.psmp'
         self.executable_opts = ['H2O-256.inp']
 
-        energy = sn.extractsingle(r'\s+ENERGY\| Total FORCE_EVAL \( QS \) '
-                                  r'energy \(a\.u\.\):\s+(?P<energy>\S+)',
-                                  self.stdout, 'energy', float, item=-1)
+        energy = sn.extractsingle(
+            r'\s+ENERGY\| Total FORCE_EVAL \( QS \) '
+            r'energy [\[\(]a\.u\.[\]\)]:\s+(?P<energy>\S+)',
+            self.stdout, 'energy', float, item=-1
+        )
         energy_reference = -4404.2323
         energy_diff = sn.abs(energy-energy_reference)
         self.sanity_patterns = sn.all([
             sn.assert_found(r'PROGRAM STOPPED IN', self.stdout),
             sn.assert_eq(sn.count(sn.extractall(
-                r'(?P<step_count>STEP NUM)',
+                r'(?i)(?P<step_count>STEP NUMBER)',
                 self.stdout, 'step_count')), 10),
             sn.assert_lt(energy_diff, 1e-4)
         ])
