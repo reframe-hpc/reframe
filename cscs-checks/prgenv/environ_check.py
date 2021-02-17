@@ -15,17 +15,18 @@ class DefaultPrgEnvCheck(rfm.RunOnlyRegressionTest):
         self.valid_prog_environs = ['builtin']
         self.valid_systems = ['daint:login', 'dom:login', 'eiger:login']
         self.executable = 'module'
-        self.executable_opts = ['list', '-t']
         self.maintainers = ['TM', 'CB']
         self.tags = {'production', 'craype'}
         self.sanity_patterns = sn.assert_found(r'^PrgEnv-cray', self.stderr)
 
-    @rfm.run_before('setup')
-    def setup_eiger(self):
         if self.current_system.name == 'eiger':
             self.executable_opts = ['list']
-            self.sanity_patterns = sn.assert_found(r'1\) cpe-cray',
-                                                   self.stderr)
+            prgenv_patt = r'1\) cpe-cray'
+        else:
+            self.executable_opts = ['list', '-t']
+            prgenv_patt = r'^PrgEnv-cray'
+
+        self.sanity_patterns = sn.assert_found(prgenv_patt, self.stderr)
 
 
 @rfm.simple_test
@@ -36,27 +37,25 @@ class EnvironmentCheck(rfm.RunOnlyRegressionTest):
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu', 'PrgEnv-pgi',
                                     'PrgEnv-intel', 'PrgEnv-aocc']
         self.executable = 'module'
-        self.executable_opts = ['list', '-t']
-        self.sanity_patterns = sn.assert_found(self.env_module_patt,
-                                               self.stderr)
+        if self.current_system.name == 'eiger':
+            self.executable_opts = ['list']
+        else:
+            self.executable_opts = ['list', '-t']
+
         self.maintainers = ['TM', 'CB']
         self.tags = {'production', 'craype'}
 
-    @rfm.run_before('setup')
-    def setup_eiger(self):
-        if self.current_system.name == 'eiger':
-            self.executable_opts = ['list']
-
-    @property
-    @sn.sanity_function
-    def env_module_patt(self):
+    @rfm.run_before('sanity')
+    def set_sanity(self):
         # NOTE: On eiger, the first module of each programming environment,
         # follows the 'cpe-<name>' pattern where <name> corresponds to the
         # 'PrgEnv-<name>' used.
         if self.current_system.name == 'eiger':
-            return rf'1\) cpe-{self.current_environ.name[7:]}'
+            module_patt = rf'1\) cpe-{self.current_environ.name[7:]}'
+        else:
+            module_patt = rf'^{self.current_environ.name}'
 
-        return rf'^{self.current_environ.name}'
+        self.sanity_patterns = sn.assert_found(module_patt, self.stderr)
 
 
 class CrayVariablesCheckMixin:
