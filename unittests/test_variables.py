@@ -161,3 +161,26 @@ def test_invalid_field():
     with pytest.raises(ValueError):
         class MyTest(rfm.RegressionTest):
             a = variable(int, value=4, field=Foo)
+
+
+def test_var_deepcopy():
+    '''Test that there is no cross-class pollution.
+
+    Each instance must have its own copies of each variable.
+    '''
+    class MyType:
+        def __init__(self, val):
+            self.val = val
+
+    class Base(rfm.RegressionTest):
+        my_var = variable(MyType, value=MyType(3))
+
+    class Foo(Base):
+        def __init__(self):
+            self.my_var.val = -2
+
+    class Bar(Base):
+        pass
+
+    assert Foo().my_var.val == -2
+    assert Bar().my_var.val == 3

@@ -108,8 +108,8 @@ class ParamSpace(namespaces.Namespace):
             # could be doubly defined and lead to repeated
             # values
             if (key in self.params and
-                self.params[key] != () and
-                other.params[key] != ()):
+                    self.params[key] != () and
+                    other.params[key] != ()):
 
                 raise ValueError(
                     f'parameter space conflict: '
@@ -186,7 +186,9 @@ class ParamSpace(namespaces.Namespace):
 
         :return: generator object to iterate over the parameter space.
         '''
-        yield from itertools.product(*(copy.deepcopy(p) for p in self.params.values()))
+        yield from itertools.product(
+            *(copy.deepcopy(p) for p in self.params.values())
+        )
 
     @property
     def params(self):

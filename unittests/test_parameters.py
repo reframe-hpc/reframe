@@ -203,3 +203,28 @@ def test_overwrite_param():
     with pytest.raises(ValueError):
         class MyTest(TwoParams):
             P0 = [1, 2, 3]
+
+
+def test_param_deepcopy():
+    '''Test that there is no cross-class pollution.
+
+    Each instance must deal with its own copies of the parameters.
+    '''
+    class MyParam:
+        def __init__(self, val):
+            self.val = val
+
+    class Base(rfm.RegressionTest):
+        p0 = parameter([MyParam(1), MyParam(2)])
+
+    class Foo(Base):
+        def __init__(self):
+            self.p0.val = -20
+
+    class Bar(Base):
+        pass
+
+    assert Foo(_rfm_use_params=True).p0.val == -20
+    assert Foo(_rfm_use_params=True).p0.val == -20
+    assert Bar(_rfm_use_params=True).p0.val == 1
+    assert Bar(_rfm_use_params=True).p0.val == 2
