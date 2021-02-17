@@ -327,15 +327,15 @@ System Partition Configuration
 .. js:attribute:: .systems[].partitions[].sockets_per_node
 
    :required: No
-   :default: ``-1``
+   :default: ``None``
 
-   The number of socket per node on this partition.
+   The number of sockets per node on this partition.
 
 
 .. js:attribute:: .systems[].partitions[].cores_per_socket
 
    :required: No
-   :default: ``-1``
+   :default: ``None``
 
    The number of cores per socket on this partition.
 
@@ -343,7 +343,7 @@ System Partition Configuration
 .. js:attribute:: .systems[].partitions[].threads_per_core
 
    :required: No
-   :default: ``-1``
+   :default: ``None``
 
    The number of threads per core on this partition.
 
