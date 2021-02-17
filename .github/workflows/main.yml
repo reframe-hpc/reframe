@@ -81,3 +81,22 @@ jobs:
       - name: Test Installation
         run: |
           reframe -V
+
+  docvalidation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Make
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y make
+      - uses: actions/checkout@v2
+      - name: Setup up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install Doc Requirements
+        run: |
+          python -m pip install -r docs/requirements.txt
+      - name: Build documentation
+        run: |
+          make -C docs
