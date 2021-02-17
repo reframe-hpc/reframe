@@ -85,10 +85,6 @@ jobs:
   docvalidation:
     runs-on: ubuntu-latest
     steps:
-      - name: Install Make
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y make
       - uses: actions/checkout@v2
       - name: Setup up Python 3.8
         uses: actions/setup-python@v2
