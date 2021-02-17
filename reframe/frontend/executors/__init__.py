@@ -306,7 +306,9 @@ class RegressionTask:
             with open(jsonfile, 'w') as fp:
                 jsonext.dump(self.check, fp, indent=2)
         except OSError as e:
-            self._printer.warning(f'could not dump test case {self.case}: {e}')
+            logging.getlogger().warning(
+                f'could not dump test case {self.case}: {e}'
+            )
 
         self._current_stage = 'finalize'
         self._notify_listeners('on_task_success')

@@ -13,6 +13,7 @@ import getpass
 import grp
 import os
 import re
+import semver
 import shlex
 import shutil
 import signal
@@ -481,15 +482,16 @@ def git_repo_hash(commit='HEAD', short=True, wd=None):
 def reframe_version():
     '''Return ReFrame version.
 
-    If ReFrame's installation contains the repository metadata, the
-    repository's hash will be appended to the actual version.
+    If ReFrame's installation contains the repository metadata and the current
+    version is a pre-release version, the repository's hash will be appended
+    to the actual version.
+
     '''
-    version = reframe.VERSION
     repo_hash = git_repo_hash()
-    if repo_hash:
-        return '%s (rev: %s)' % (version, repo_hash)
+    if repo_hash and semver.VersionInfo.parse(reframe.VERSION).prerelease:
+        return f'{reframe.VERSION}+{repo_hash}'
     else:
-        return version
+        return reframe.VERSION
 
 
 def expandvars(s):
