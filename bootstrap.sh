@@ -59,6 +59,14 @@ done
 
 pyver=$($python -V | sed -n 's/Python \([0-9]\+\)\.\([0-9]\+\)\..*/\1.\2/p')
 
+# We need to exit with a zero code if the Python version is the correct
+# one, so we invert the comparison
+
+if $python -c 'import sys; sys.exit(sys.version_info[:2] >= (3, 6))'; then
+    echo -e "ReFrame requires Python >= 3.6 (found $($python -V 2>&1))"
+    exit 1
+fi
+
 # Check if ensurepip is installed
 $python -m ensurepip --version &> /dev/null
 
@@ -68,7 +76,7 @@ if [ $? -eq 0 ]; then
 fi
 
 # ensurepip installs pip in `external/usr/` whereas the --target option installs
-# everything under `external/`. That's why include both in the PYTHONPATH
+# everything under `external/`. That's why we include both in the PYTHONPATH
 
 export PATH=$(pwd)/external/usr/bin:$PATH
 export PYTHONPATH=$(pwd)/external:$(pwd)/external/usr/lib/python$pyver/site-packages:$PYTHONPATH
