@@ -7,6 +7,7 @@
 # Functionality to build extensible variable spaces into ReFrame tests.
 #
 
+import copy
 
 import reframe.core.namespaces as namespaces
 import reframe.core.fields as fields
@@ -36,7 +37,7 @@ class TestVar(VarDirective):
 
     def __init__(self, *args, **kwargs):
         self.field_type = kwargs.pop('field', fields.TypedField)
-        self.default_value = kwargs.pop('value', _Undefined)
+        self._default_value = kwargs.pop('value', _Undefined)
 
         if not issubclass(self.field_type, fields.Field):
             raise ValueError(
@@ -48,16 +49,22 @@ class TestVar(VarDirective):
         self.kwargs = kwargs
 
     def is_defined(self):
-        return self.default_value is not _Undefined
+        return self._default_value is not _Undefined
 
     def undefine(self):
-        self.default_value = _Undefined
+        self._default_value = _Undefined
 
     def define(self, value):
-        self.default_value = value
+        self._default_value = value
 
     def __set_name__(self, owner, name):
         self.name = name
+
+    @property
+    def default_value(self):
+        # Variables must be returned by-value to prevent an instance from
+        # modifying the class variable space.
+        return copy.deepcopy(self._default_value)
 
 
 class UndefineVar(VarDirective):

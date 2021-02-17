@@ -7,6 +7,7 @@
 # Functionality to build extensible parameterized tests.
 #
 
+import copy
 import functools
 import itertools
 
@@ -180,9 +181,12 @@ class ParamSpace(namespaces.Namespace):
     def __iter__(self):
         '''Create a generator object to iterate over the parameter space
 
+        The parameters must be deep-copied to prevent an instance from
+        modifying the class parameter space.
+
         :return: generator object to iterate over the parameter space.
         '''
-        yield from itertools.product(*(p for p in self.params.values()))
+        yield from itertools.product(*(copy.deepcopy(p) for p in self.params.values()))
 
     @property
     def params(self):
