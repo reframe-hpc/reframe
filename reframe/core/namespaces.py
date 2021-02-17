@@ -64,7 +64,7 @@ class LocalNamespace:
         )
 
 
-class Namespace:
+class Namespace(metaclass=abc.ABCMeta):
     '''Namespace of a regression test.
 
     The final namespace may be built by inheriting namespaces from
