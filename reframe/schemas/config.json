@@ -220,9 +220,9 @@
                                 "modules": {"$ref": "#/defs/modules_list"},
                                 "variables": {"$ref": "#/defs/envvar_list"},
                                 "max_jobs": {"type": "number"},
-                                "sockets_per_node": {"type": "number"},
-                                "cores_per_socket": {"type": "number"},
-                                "threads_per_core": {"type": "number"},
+                                "sockets_per_node": {"type": ["number", "null"]},
+                                "cores_per_socket": {"type": ["number", "null"]},
+                                "threads_per_core": {"type": ["number", "null"]},
                                 "arch": {"type": "string"},
                                 "extra_attributes": {"type": "object"},
                                 "resources": {
@@ -478,9 +478,9 @@
         "systems/partitions/variables": [],
         "systems/partitions/max_jobs": 8,
         "systems/partitions/arch": "",
-        "systems/partitions/sockets_per_node": -1,
-        "systems/partitions/cores_per_socket": -1,
-        "systems/partitions/threads_per_core": -1,
+        "systems/partitions/sockets_per_node": null,
+        "systems/partitions/cores_per_socket": null,
+        "systems/partitions/threads_per_core": null,
         "systems/partitions/extra_attributes": {}
     }
 }

@@ -205,7 +205,7 @@ class SystemPartition(jsonext.JSONSerializable):
 
     @property
     def sockets_per_node(self):
-        '''The number of socket per node on this partition.
+        '''The number of sockets per node on this partition.
 
         .. versionadded:: 3.5
 
@@ -231,10 +231,11 @@ class SystemPartition(jsonext.JSONSerializable):
 
         :type: integral
         '''
-        if (self._cores_per_socket < 0 or self._sockets_per_node < 0):
-            return -1
-        else:
-            return (self._sockets_per_node * self._cores_per_socket)
+        ret = None
+        if all([self._cores_per_socket, self._sockets_per_node]):
+            ret = (self._sockets_per_node * self._cores_per_socket)
+
+        return ret
 
     @property
     def threads_per_core(self):
@@ -254,13 +255,13 @@ class SystemPartition(jsonext.JSONSerializable):
 
         :type: integral
         '''
-        if (self._cores_per_socket < 0 or
-            self._sockets_per_node < 0 or
-            self._threads_per_core < 0):
-            return -1
-        else:
-            return (self._sockets_per_node * self._cores_per_socket *
-                    self._threads_per_core)
+        ret = None
+        if all([self._cores_per_socket, self._sockets_per_node,
+                self._threads_per_core]):
+            ret = (self._sockets_per_node * self._cores_per_socket *
+                   self._threads_per_core)
+
+        return ret
 
     @property
     def extra_attributes(self):
