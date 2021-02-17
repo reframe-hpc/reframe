@@ -36,18 +36,15 @@ class ContainerPlatform(abc.ABC):
     #: :default: :class:`None`
     command = fields.TypedField(str, type(None))
 
-    #: The pull command to be used to pull the container image.
+    #: Pull the container image before running.
     #:
-    #: If an empty string is given as the pull command, then the default
-    #: pull command of the corresponding container platform is going to be
-    #: used to pull the image. If set to :class:`None`, then no pull action
-    #: is going to be performed by the container platform.
+    #: This does not have any effect for the `Singularity` container platform.
     #:
     #: ..versionadded:: 3.4.2
     #:
-    #: :type: :class:`str` or :class:`None`
-    #: :default: ``''``
-    pull_command = fields.TypedField(str, type(None))
+    #: :type: :class:`bool`
+    #: :default: ``True``
+    pull_image = fields.TypedField(bool)
 
     #: List of mount point pairs for directories to mount inside the container.
     #:
@@ -66,22 +63,12 @@ class ContainerPlatform(abc.ABC):
     #: :default: ``[]``
     options = fields.TypedField(typ.List[str])
 
-    #: The working directory inside the container.
-    #:
-    #: If set to :class:`None` then the default working directory of the given
-    #: container image is used.
-    #:
-    #: :type: :class:`str`
-    #: :default: :class:None
-    workdir = fields.TypedField(str, type(None))
-
     def __init__(self):
         self.image = None
         self.command = None
         self.mount_points  = []
         self.options = []
-        self.pull_command = ''
-        self.workdir = None
+        self.pull_image = True
 
     @abc.abstractmethod
     def emit_prepare_commands(self):
@@ -120,20 +107,14 @@ class Docker(ContainerPlatform):
     <https://www.docker.com/>`__.'''
 
     def emit_prepare_commands(self):
-        if self.pull_command == '':
-            return [f'docker pull {self.image}']
-        elif self.pull_command:
-            return [self.pull_command]
-
-        return []
+        return [f'docker pull {self.image}'] if self.pull_image else []
 
     def launch_command(self):
         super().launch_command()
         run_opts = [f'-v "{mp[0]}":"{mp[1]}"' for mp in self.mount_points]
         run_opts += self.options
-        workdir_opt = f'--workdir="{self.workdir}" ' if self.workdir else ''
 
-        return (f'docker run --rm {workdir_opt}{" ".join(run_opts)} '
+        return (f'docker run --rm {" ".join(run_opts)} '
                 f'{self.image} {self.command or ""}').rstrip()
 
 
@@ -152,12 +133,7 @@ class Sarus(ContainerPlatform):
         self.with_mpi = False
 
     def emit_prepare_commands(self):
-        if self.pull_command == '':
-            return [f'sarus pull {self.image}']
-        elif self.pull_command:
-            return [self.pull_command]
-
-        return []
+        return [f'sarus pull {self.image}'] if self.pull_image else []
 
     def launch_command(self):
         super().launch_command()
@@ -168,8 +144,7 @@ class Sarus(ContainerPlatform):
 
         run_opts += self.options
 
-        workdir_opt = f'--workdir="{self.workdir}" ' if self.workdir else ''
-        return (f'sarus run {workdir_opt}{" ".join(run_opts)} {self.image} '
+        return (f'sarus run {" ".join(run_opts)} {self.image} '
                 f'{self.command or ""}').rstrip()
 
 
@@ -189,12 +164,7 @@ class Shifter(ContainerPlatform):
         self.with_mpi = False
 
     def emit_prepare_commands(self):
-        if self.pull_command == '':
-            return [f'shifter pull {self.image}']
-        elif self.pull_command:
-            return [self.pull_command]
-
-        return []
+        return [f'shifter pull {self.image}'] if self.pull_image else []
 
     def launch_command(self):
         super().launch_command()
@@ -204,9 +174,8 @@ class Shifter(ContainerPlatform):
             run_opts.append('--mpi')
 
         run_opts += self.options
-        workdir_opt = f'cd {self.workdir};' if self.workdir else ''
-        return (f"shifter run {' '.join(run_opts)} {self.image} bash -c '"
-                f"{workdir_opt}{self.command or ''}'")
+        return (f"shifter run {' '.join(run_opts)} {self.image} "
+                f"{self.command or ''}")
 
 
 class Singularity(ContainerPlatform):
@@ -233,13 +202,11 @@ class Singularity(ContainerPlatform):
             run_opts.append('--nv')
 
         run_opts += self.options
-        workdir_cmd = f'--workdir="{self.workdir}" ' if self.workdir else ''
         if self.command:
-            return (f'singularity exec {workdir_cmd}{" ".join(run_opts)} '
+            return (f'singularity exec {" ".join(run_opts)} '
                     f'{self.image} {self.command}')
 
-        return (f'singularity run {workdir_cmd}{" ".join(run_opts)} '
-                f'{self.image}')
+        return f'singularity run {" ".join(run_opts)} {self.image}'
 
 
 class ContainerPlatformField(fields.TypedField):

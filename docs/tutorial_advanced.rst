@@ -703,11 +703,10 @@ ReFrame will run the container as follows:
 
 .. code-block:: console
 
-    singularity exec -B"/path/to/test/stagedir:/rfm_stagedir" --workdir="/rfm_stagedir" docker://ubuntu:18.04 bash -c 'pwd; ls; cat /etc/os-release'
+    singularity exec -B"/path/to/test/stagedir:/rfm_stagedir" --pwd="/rfm_stagedir" docker://ubuntu:18.04 bash -c 'pwd; ls; cat /etc/os-release'
 
 By default ReFrame will mount the stage directory of the test under ``/rfm_stagedir`` inside the container.
 Once the commands are executed, the container is stopped and ReFrame goes on with the sanity and performance checks.
-Users may also change the default working directory of the container using the :attr:`workdir <reframe.core.pipeline.RegressionTest.container_platform.workdir>` attribute:
 Besides the stage directory, additional mount points can be specified through the :attr:`mount_points <reframe.core.pipeline.RegressionTest.container_platform.mount_points>` attribute:
 
 .. code-block:: python
