@@ -147,29 +147,44 @@ In essence, these builtins exert control over the test creation, and they allow 
 
   These examples above assumed that a default value can be provided to the variables in the bases tests, but that might not always be the case.
   For example, when writing a test library, one might want to leave some variables undefined and force the user to set these when using the test.
-  To this end, a variable may be set as ``required``, which forces the derived test to set the variable before it is referenced.
-  Note that, if a value is not provided when declaring a new variable, the variable is set as required by default.
-  One possible example that illustrates the use of the ``required`` keyword is a test library  with a test that runs a parallel code.
-  This test is system-agnostic, so the library developer cannot possibly know the number of tasks the user will require.
+  As shown in the example below, imposing such requirement is as simple as not passing any ``value`` to the :func:`variable` built-in, which marks the given variable as ``required``.
 
   .. code:: python
 
     # Test as written in the library
-    class MyBaseTest(rfm.RegressionTest):
-      # Require the user to provide a value for num_tasks.
-      num_tasks = required
+    class EchoBaseTest(rfm.RunOnlyRegressionTest):
+      what = variable(str)
 
       def __init__(self):
-        self.executable = './my_parallel_code.x'
+          self.valid_systems = ['*']
+          self.valid_prog_environs = ['PrgEnv-gnu']
+          self.executable = f'echo {self.what}'
+          self.sanity_patterns = sn.assert_found(fr'{self.what}')
+
+    # Test as written by the user:
+    @rfm.simple_test
+    class HelloTest(EchoBaseTest):
+      what = 'Hello'
+
+    # A parametrized test with type-checking
+    @rfm.simple_test
+    class FoodTest(EchoBaseTest):
+      param = parameter(['Bacon', 'Eggs'])
+
+      def __init__(self):
+        self.what = self.param
+        super().__init__()
 
 
-    # Test as written by the user
-    class MyTest(MyBaseTest):
-      # Set the number of tasks
-      num_tasks = 256
+  Similarly to a variable with a value already assigned to it, the value of a required variable may be set either directly in the class body, on the :func:`__init__` method, or in any other hook before it is referenced.
+  Otherwise an error will be raised indicating that a required variable has not been set.
+  Conversely, a variable with a default value already assigned to it can be made required by assigning it the ``required`` keyword.
 
-  Here ``num_tasks`` was already declared in the :class:`rfm.RegressionTest` class, so we just need to set it as ``required``.
-  The value of a required variable may be set either directly in the class body, on the :func:`__init__` method, or in any other hook before it is referenced. Otherwise an error will be raised indicating that a required variable has not been set.
+  .. code:: python
+    class MyRequiredTest(HelloTest):
+      what = required 
+
+  Running the above test will cause the :func:`__init__` method from :class:`EchoBaseTest` to throw an error indicating that the variable ``what`` has not been set.
 
   :param types: the supported types for the variable.
   :param value: the default value assigned to the variable. If no value is provided, the variable is set as ``required``.
