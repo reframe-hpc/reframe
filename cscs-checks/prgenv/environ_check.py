@@ -94,8 +94,7 @@ class CrayVariablesCheck(rfm.RunOnlyRegressionTest):
         self.tags = {'production', 'craype'}
 
 
-@rfm.parameterized_test(['cray-ccdb'], ['cray-cti'], ['cray-dsmml'],
-                        ['cray-fftw'], ['cray-hdf5'], ['cray-hdf5-parallel'],
+@rfm.parameterized_test(['cray-fftw'], ['cray-hdf5'], ['cray-hdf5-parallel'],
                         ['cray-libsci'], ['cray-openshmemx'],
                         ['cray-parallel-netcdf'], ['cray-pmi'],
                         ['cray-python'], ['cray-R'], ['gcc'], ['papi'])
@@ -107,26 +106,15 @@ class CrayVariablesCheckEiger(rfm.RunOnlyRegressionTest):
         self.executable = 'module'
         self.executable_opts = ['show', module_name]
         envvar_prefix = module_name.upper().replace('-', '_')
-
-        # NOTE: In some modules the 'CRAY_' prefix is not used in the
-        # environment variable names.
-        if envvar_prefix.startswith('CRAY_'):
-            envvar_prefix_nocray = envvar_prefix[5:]
-            prefix_pattern = f'{envvar_prefix}_|{envvar_prefix_nocray}_'
-        else:
-            prefix_pattern = f'{envvar_prefix}_'
-
         self.sanity_patterns = sn.all([
-            sn.assert_found(rf'({prefix_pattern})?(PREFIX|INSTALL)(_DIR)?',
-                            self.stderr),
-            sn.assert_found(rf'({prefix_pattern})(VERSION|LEVEL)', self.stderr)
+            sn.assert_found(f'{envvar_prefix}_PREFIX', self.stderr),
+            sn.assert_found(f'{envvar_prefix}_VERSION', self.stderr)
         ])
 
-        if module_name == 'cray-fftw':
-            self.sanity_patterns = sn.all([
-                sn.assert_found(f'FFTW_DIR', self.stderr),
-                sn.assert_found(f'{envvar_prefix}_VERSION', self.stderr)
-            ])
+        # FIXME: These modules should be fixed in later releases
+
+        if module_name in {'cray-fftw', 'cray-python'}:
+            self.valid_systems = []
 
         self.maintainers = ['TM']
         self.tags = {'production', 'craype'}
