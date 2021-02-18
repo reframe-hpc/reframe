@@ -136,7 +136,7 @@ class RegressionMixin(metaclass=RegressionTestMeta):
     :class:`RegressionTestMeta`. Using this metaclass allows mixin classes to
     use powerful ReFrame features, such as hooks, parameters or variables.
 
-    .. versionadded:: 3.5
+    .. versionadded:: 3.4.2
     '''
 
 
@@ -148,7 +148,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     regression test goes through during its lifetime.
 
     .. warning::
-        .. versionchanged:: 3.5
+        .. versionchanged:: 3.4.2
            Multiple inheritance with a shared common ancestor is not allowed.
 
     .. note::

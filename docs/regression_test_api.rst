@@ -40,7 +40,7 @@ Pipeline Hooks
 Builtins
 --------
 
-.. versionadded:: 3.5
+.. versionadded:: 3.4.2
 
 ReFrame provides built-in functions that facilitate the creation of extensible tests (i.e. a test library).
 These *builtins* are intended to be used directly in the class body of the test, allowing the ReFrame internals to *pre-process* their input before the actual test creation takes place.
