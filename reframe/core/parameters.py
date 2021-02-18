@@ -108,8 +108,8 @@ class ParamSpace(namespaces.Namespace):
             # could be doubly defined and lead to repeated
             # values
             if (key in self.params and
-                    self.params[key] != () and
-                    other.params[key] != ()):
+                self.params[key] != () and
+                other.params[key] != ()):
 
                 raise ValueError(
                     f'parameter space conflict: '

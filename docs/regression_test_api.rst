@@ -40,12 +40,13 @@ Pipeline Hooks
 Builtins
 --------
 
+.. versionadded:: 3.5
+
 ReFrame provides built-in functions that facilitate the creation of extensible tests (i.e. a test library).
 These *builtins* are intended to be used directly in the class body of the test, allowing the ReFrame internals to *pre-process* their input before the actual test creation takes place.
 This provides the ReFrame internals with further control over the user's input, making the process of writing regression tests less error-prone thanks to a better error checking.
 In essence, these builtins exert control over the test creation, and they allow adding and/or modifying certain attributes of the regression test.
 
-.. versionadded:: 3.5
 
 .. py:function:: reframe.core.pipeline.RegressionTest.parameter(values=None, inherit_params=False, filter_params=None)
 
@@ -129,9 +130,10 @@ In essence, these builtins exert control over the test creation, and they allow 
             print(self.my_var) # prints 8.
             # self.my_var = 'override' # Error: my_var must be an int!
             self.not_a_var = 'override' # However, this would work. Dangerous!
+            self.my_var = 10 # tests may also assign values the standard way
 
   The argument ``value`` in the :func:`variable` built-in sets the default value for the variable.
-  As mentioned above, a variable may not be declared more than once, but its value can be updated by simply assigning it a new value directly in the class body.
+  As mentioned above, a variable may not be declared more than once, but its default value can be updated by simply assigning it a new value directly in the class body.
 
   .. code:: python
 
@@ -146,7 +148,7 @@ In essence, these builtins exert control over the test creation, and they allow 
 
   These examples above assumed that a default value can be provided to the variables in the bases tests, but that might not always be the case.
   For example, when writing a test library, one might want to leave some variables undefined and force the user to set these when using the test.
-  As shown in the example below, imposing such requirement is as simple as not passing any ``value`` to the :func:`variable` built-in, which marks the given variable as ``required``.
+  As shown in the example below, imposing such requirement is as simple as not passing any ``value`` to the :func:`variable` built-in, which marks the given variable as *required*.
 
   .. code:: python
 

@@ -168,19 +168,15 @@ def test_var_deepcopy():
 
     Each instance must have its own copies of each variable.
     '''
-    class MyType:
-        def __init__(self, val):
-            self.val = val
-
     class Base(rfm.RegressionTest):
-        my_var = variable(MyType, value=MyType(3))
+        my_var = variable(list, value=[1,2])
 
     class Foo(Base):
         def __init__(self):
-            self.my_var.val = -2
+            self.my_var += [3]
 
     class Bar(Base):
         pass
 
-    assert Foo().my_var.val == -2
-    assert Bar().my_var.val == 3
+    assert Foo().my_var == [1, 2, 3]
+    assert Bar().my_var == [1, 2]
