@@ -529,7 +529,8 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:        The measurement unit is required. The user should explicitly
     #:        specify :class:`None` if no unit is available.
     reference = fields.ScopedDictField(
-        typ.Tuple[object, object, object, object])
+        typ.Tuple[object, object, object, object]
+    )
     # FIXME: There is not way currently to express tuples of `float`s or
     # `None`s, so we just use the very generic `object`
 
@@ -570,7 +571,8 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:     :class:`None` is also allowed.
     #: :default: :class:`None`
     perf_patterns = fields.TypedField(
-        typ.Dict[str, _DeferredExpression], type(None))
+        typ.Dict[str, _DeferredExpression], type(None)
+    )
 
     #: List of modules to be loaded before running this test.
     #:
@@ -679,7 +681,8 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:       A new more powerful syntax was introduced
     #:       that allows also custom job script directive prefixes.
     extra_resources = fields.TypedField(
-        typ.Dict[str, typ.Dict[str, object]])
+        typ.Dict[str, typ.Dict[str, object]]
+    )
 
     #: .. versionadded:: 3.3
     #:
