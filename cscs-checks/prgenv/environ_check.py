@@ -101,19 +101,19 @@ class CrayVariablesCheck(CrayVariablesCheckBase):
 
 @rfm.simple_test
 class CrayVariablesCheckEiger(CrayVariablesCheckBase):
-   cray_module = parameter([
+    cray_module = parameter([
         'cray-fftw', 'cray-hdf5', 'cray-hdf5-parallel', 'cray-libsci',
         'cray-mpich', 'cray-openshmemx', 'cray-parallel-netcdf', 'cray-pmi',
         'cray-python', 'cray-R', 'gcc', 'papi'
-   ])
+    ])
 
-   def __init__(self):
-        super().__init__()
-        self.valid_systems = ['eiger:login']
+    def __init__(self):
+         super().__init__()
+         self.valid_systems = ['eiger:login']
 
-        # FIXME: These modules should be fixed in later releases
+         # FIXME: These modules should be fixed in later releases
 
-        if self.cray_module in {'cray-fftw', 'cray-python', 'cray-mpich'}:
-            self.valid_systems = []
+         if self.cray_module in {'cray-fftw', 'cray-python', 'cray-mpich'}:
+             self.valid_systems = []
 
-        self.maintainers = ['TM']
+         self.maintainers = ['TM']
