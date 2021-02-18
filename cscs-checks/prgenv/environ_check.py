@@ -58,13 +58,13 @@ class EnvironmentCheck(rfm.RunOnlyRegressionTest):
         self.sanity_patterns = sn.assert_found(module_patt, self.stderr)
 
 
-class CrayVariablesCheckMixin:
-    def __init__(self, module_name):
+class CrayVariablesCheckBase(rfm.RunOnlyRegressionTest):
+    def __init__(self):
         self.descr = 'Check for standard Cray variables'
         self.valid_prog_environs = ['builtin']
         self.executable = 'module'
-        self.executable_opts = ['show', module_name]
-        envvar_prefix = module_name.upper().replace('-', '_')
+        self.executable_opts = ['show', self.cray_module]
+        envvar_prefix = self.cray_module.upper().replace('-', '_')
         self.sanity_patterns = sn.all([
             sn.assert_found(f'{envvar_prefix}_PREFIX', self.stderr),
             sn.assert_found(f'{envvar_prefix}_VERSION', self.stderr)
@@ -72,15 +72,17 @@ class CrayVariablesCheckMixin:
         self.tags = {'production', 'craype'}
 
 
-@rfm.parameterized_test(['cray-fftw'], ['cray-hdf5'], ['cray-hdf5-parallel'],
-                        ['cray-libsci'], ['cray-mpich'], ['cray-netcdf'],
-                        ['cray-netcdf-hdf5parallel'], ['cray-petsc'],
-                        ['cray-petsc-complex-64'], ['cray-python'],
-                        ['cray-R'], ['cray-tpsl'], ['cray-tpsl-64'],
-                        ['cudatoolkit'], ['gcc'], ['papi'], ['pmi'])
-class CrayVariablesCheck(rfm.RunOnlyRegressionTest, CrayVariablesCheckMixin):
-    def __init__(self, module_name):
-        CrayVariablesCheckMixin.__init__(self, module_name)
+@rfm.simple_test
+class CrayVariablesCheck(CrayVariablesCheckBase):
+    cray_module = parameter([
+        'cray-fftw', 'cray-hdf5', 'cray-hdf5-parallel', 'cray-libsci',
+        'cray-mpich', 'cray-netcdf', 'cray-netcdf-hdf5parallel', 'cray-petsc',
+        'cray-petsc-complex-64', 'cray-python', 'cray-R', 'cray-tpsl',
+        'cray-tpsl-64', 'cudatoolkit', 'gcc', 'papi', 'pmi'
+    ])
+
+    def __init__(self):
+        super().__init__()
         self.valid_systems = ['daint:login', 'dom:login']
 
         # FIXME: These modules should be fixed in later releases,
@@ -88,28 +90,30 @@ class CrayVariablesCheck(rfm.RunOnlyRegressionTest, CrayVariablesCheckMixin):
 
         cdt = osext.cray_cdt_version()
         if ((cdt and cdt <= '20.11' and
-             module_name in ['cray-petsc-complex',
-                             'cray-petsc-complex-64',
-                             'cudatoolkit']) or
+             self.cray_module in ['cray-petsc-complex',
+                                  'cray-petsc-complex-64',
+                                  'cudatoolkit']) or
             (cdt and cdt < '20.11' and module_name == 'gcc')):
             self.valid_systems = []
 
         self.maintainers = ['EK', 'VH']
 
 
-@rfm.parameterized_test(['cray-fftw'], ['cray-hdf5'], ['cray-hdf5-parallel'],
-                        ['cray-libsci'], ['cray-mpich'], ['cray-openshmemx'],
-                        ['cray-parallel-netcdf'], ['cray-pmi'],
-                        ['cray-python'], ['cray-R'], ['gcc'], ['papi'])
-class CrayVariablesCheckEiger(rfm.RunOnlyRegressionTest,
-                              CrayVariablesCheckMixin):
-    def __init__(self, module_name):
-        CrayVariablesCheckMixin.__init__(self, module_name)
+@rfm.simple_test
+class CrayVariablesCheckEiger(CrayVariablesCheckBase):
+   cray_module = parameter([
+        'cray-fftw', 'cray-hdf5', 'cray-hdf5-parallel', 'cray-libsci',
+        'cray-mpich', 'cray-openshmemx', 'cray-parallel-netcdf', 'cray-pmi',
+        'cray-python', 'cray-R', 'gcc', 'papi'
+   ])
+
+   def __init__(self):
+        super().__init__()
         self.valid_systems = ['eiger:login']
 
         # FIXME: These modules should be fixed in later releases
 
-        if module_name in {'cray-fftw', 'cray-python', 'cray-mpich'}:
+        if self.cray_module in {'cray-fftw', 'cray-python', 'cray-mpich'}:
             self.valid_systems = []
 
         self.maintainers = ['TM']
