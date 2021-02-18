@@ -108,12 +108,12 @@ class CrayVariablesCheckEiger(CrayVariablesCheckBase):
     ])
 
     def __init__(self):
-         super().__init__()
-         self.valid_systems = ['eiger:login']
+        super().__init__()
+        self.valid_systems = ['eiger:login']
 
-         # FIXME: These modules should be fixed in later releases
+        # FIXME: These modules should be fixed in later releases
 
-         if self.cray_module in {'cray-fftw', 'cray-python', 'cray-mpich'}:
-             self.valid_systems = []
+        if self.cray_module in {'cray-fftw', 'cray-python', 'cray-mpich'}:
+            self.valid_systems = []
 
-         self.maintainers = ['TM']
+        self.maintainers = ['TM']
