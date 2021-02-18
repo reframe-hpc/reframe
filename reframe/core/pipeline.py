@@ -776,7 +776,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
 
     def _append_parameters_to_name(self):
         if self._rfm_param_space.params:
-            return '_' + '_'.join([str(self.__dict__[key])
+            return '_' + '_'.join([util.toalphanum(str(self.__dict__[key]))
                                    for key in self._rfm_param_space.params])
         else:
             return ''
