@@ -27,10 +27,12 @@ The stages of this pipeline take care of all the system interaction details, suc
 Writing system regression tests in a high-level modern programming language, like Python, poses a great advantage in organizing and maintaining the tests.
 Users can create their own test hierarchies, create test factories for generating multiple tests at the same time and also customize them in a simple and expressive way.
 
+Please visit the project's documentation [page](https://reframe-hpc.readthedocs.io/) for all the details!
 
-## Getting ReFrame
 
-ReFrame is almost ready to run just after you clone it from Github.
+## Installation
+
+ReFrame is fairly easy to install.
 All you need is Python 3.6 or above and to run its bootstrap script:
 
 ```bash
@@ -40,37 +42,19 @@ cd reframe
 ./bin/reframe -V
 ```
 
-### Other installation ways
-
-You can also install ReFrame through the following channels:
-
-- Through [PyPI](https://pypi.org/project/ReFrame-HPC/):
-
-  ```
-  pip install reframe-hpc
-  ```
-
-- Through [Spack](https://spack.io/):
-
-  ```
-  spack install reframe
-  ```
-
-- Through [EasyBuild](https://easybuild.readthedocs.io/):
-
-  ```
-  eb easybuild/easyconfigs/r/ReFrame/ReFrame-VERSION.eb -r
-  ```
-
-Finally, you may access all previous versions of ReFrame [here](https://github.com/eth-cscs/reframe/releases).
+If you want a specific release, please refer to the documentation [page](https://reframe-hpc.readthedocs.io/en/stable/started.html).
 
 
-## Documentation
+### Running the unit tests
 
-You may find the official documentation of the latest release and the current master in the following links:
+You can optionally run the framework's unit tests with the following command:
 
-- [Latest release](https://reframe-hpc.readthedocs.io/en/stable)
-- [Current master](https://reframe-hpc.readthedocs.io/en/latest)
+```bash
+./test_reframe.py -v
+```
+
+NOTE: Unit tests require a functional C compiler, available through the `cc` command, that is also able to recognize the ``-O2`` option.
+The [GNU Make](https://www.gnu.org/software/make/) build tool is also needed.
 
 
 ### Building the documentation locally
@@ -102,21 +86,18 @@ However, they can serve as a very good starting point for implementing your syst
 
 You can get in contact with the ReFrame community in the following ways:
 
-### Mailing list
-
-For keeping up with the latest news about ReFrame, posting questions and, generally getting in touch with other users and the developers, you may follow the mailing list: [reframe@sympa.cscs.ch](mailto:reframe@sympa.cscs.ch).
-
-Only subscribers may send messages to the list.
-To subscribe, please send an empty message to [reframe-subscribe@sympa.cscs.ch](mailto:reframe-subscribe@sympa.cscs.ch).
-
-For unsubscribing, you may send an empty message to [reframe-unsubscribe@sympa.cscs.ch](mailto:reframe-unsubscribe@sympa.cscs.ch).
-
 ### Slack
 
-You may also reach the community through Slack [here](https://reframe-slack.herokuapp.com).
+Please join the community's [Slack channel](https://reframe-slack.herokuapp.com) for keeping up with the latest news about ReFrame, posting questions and, generally getting in touch with other users and the developers.
+
+### Mailing list
+
+You may also [subscribe](mailto:reframe-subscribe@sympa.cscs.ch) to the [mailing list](mailto:reframe@sympa.cscs.ch).
+Only subscribers can send messages to the list.
+For unsubscribing, you may send an empty message [here](mailto:reframe-unsubscribe@sympa.cscs.ch).
 
 
 ## Contributing back
 
-ReFrame is an open-source project and we welcome third-party contributions.
+ReFrame is an open-source project and we welcome and encourage contributions!
 Check out our Contribution Guide [here](https://github.com/eth-cscs/reframe/wiki/contributing-to-reframe).

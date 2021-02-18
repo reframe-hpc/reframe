@@ -1,7 +1,9 @@
 import contextlib
 import inspect
+import semver
 import warnings
 
+import reframe
 from reframe.core.exceptions import ReframeFatalError
 
 
@@ -44,12 +46,21 @@ def _format_warning(message, category, filename, lineno, line=None):
 warnings.formatwarning = _format_warning
 
 
-def user_deprecation_warning(message):
+_RAISE_DEPRECATION_ALWAYS = False
+
+
+def user_deprecation_warning(message, from_version='0.0.0'):
     '''Raise a deprecation warning at the user stack frame that eventually
     calls this function.
 
     As "user stack frame" is considered a stack frame that is outside the
     :py:mod:`reframe` base module.
+
+    :arg message: the message of the warning
+    :arg from_version: raise the warning only for ReFrame versions greater than
+        this one. This is useful if you want to "schedule" a deprecation
+        warning for the future
+
     '''
 
     # Unroll the stack and issue the warning from the first stack frame that is
@@ -62,4 +73,8 @@ def user_deprecation_warning(message):
 
         stack_level += 1
 
-    warnings.warn(message, ReframeDeprecationWarning, stacklevel=stack_level)
+    min_version = semver.VersionInfo.parse(from_version)
+    version = semver.VersionInfo.parse(reframe.VERSION)
+    if _RAISE_DEPRECATION_ALWAYS or version >= min_version:
+        warnings.warn(message, ReframeDeprecationWarning,
+                      stacklevel=stack_level)
