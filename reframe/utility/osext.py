@@ -570,8 +570,8 @@ def unique_abs_paths(paths, prune_children=True):
 
 
 def cray_cdt_version():
-    '''Return the Cray Development Toolkit (CDT) version or :class:`None` if the
-    version cannot be retrieved.'''
+    '''Return the Cray Development Toolkit (CDT) version or :class:`None` if
+    the version cannot be retrieved.'''
 
     rcfile = os.getenv('MODULERCFILE', '/opt/cray/pe/cdt/default/modulerc')
     try:
