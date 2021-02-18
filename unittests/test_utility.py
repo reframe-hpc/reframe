@@ -10,6 +10,7 @@ import sys
 import time
 
 import reframe
+import reframe.core.fields as fields
 import reframe.core.runtime as rt
 import reframe.utility as util
 import reframe.utility.jsonext as jsonext
@@ -654,6 +655,41 @@ def test_repr_default():
         }})@{hex(id(c1.a))}
     }})@{hex(id(c1))}
 ]'''
+
+
+def test_attrs():
+    class C:
+        z = fields.TypedField(int)
+
+        def __init__(self, x, y):
+            self._x = x
+            self.y = y
+            self.z = 3
+
+        def foo():
+            pass
+
+        @property
+        def x(self):
+            return self._x
+
+    class D(C):
+        pass
+
+    c = C(1, 2)
+    c_attrs = util.attrs(c)
+    assert c_attrs['x'] == 1
+    assert c_attrs['y'] == 2
+    assert c_attrs['z'] == 3
+    assert 'foo' not in c_attrs
+
+    # Test inherited attributes
+    d = D(4, 5)
+    d_attrs = util.attrs(d)
+    assert d_attrs['x'] == 4
+    assert d_attrs['y'] == 5
+    assert d_attrs['z'] == 3
+    assert 'foo' not in d_attrs
 
 
 def test_change_dir_working(tmpdir):

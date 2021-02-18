@@ -49,8 +49,8 @@ Publications
    :maxdepth: 2
 
    started
-   configure
    tutorials
+   configure
    topics
    usecases
    migration_2_to_3
