@@ -169,7 +169,7 @@ def test_var_deepcopy():
     Each instance must have its own copies of each variable.
     '''
     class Base(rfm.RegressionTest):
-        my_var = variable(list, value=[1,2])
+        my_var = variable(list, value=[1, 2])
 
     class Foo(Base):
         def __init__(self):
