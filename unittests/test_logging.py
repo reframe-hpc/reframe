@@ -40,6 +40,8 @@ def fake_check():
                            getlauncher('local')(),
                            'fakejob')
     test.job._completion_time = time.time()
+    test.job._jobid = 12345
+    test.job._nodelist = ['localhost']
     test.custom = 'hello extras'
     test.custom_list = ['custom', 3.0, ['hello', 'world']]
     test.custom_dict = {'a': 1, 'b': 2}
@@ -204,6 +206,14 @@ def test_rfc3339_timezone_wrong_directive(logfile, logger_without_check):
     logger_without_check.logger.handlers[0].setFormatter(formatter)
     logger_without_check.info('foo')
     assert _pattern_in_logfile(':z', logfile)
+
+
+def test_logger_job_attributes(logfile, logger_with_check):
+    formatter = rlog.RFC3339Formatter(
+        '%(check_job_jobid)s %(check_job_nodelist)s')
+    logger_with_check.logger.handlers[0].setFormatter(formatter)
+    logger_with_check.info('xxx')
+    assert _pattern_in_logfile(r'12345 localhost', logfile)
 
 
 @pytest.fixture

@@ -91,6 +91,12 @@ class ContainerPlatform(abc.ABC):
         if not self.commands:
             raise ContainerError('no commands specified')
 
+    def __str__(self):
+        return type(self).__name__
+
+    def __rfm_json_encode__(self):
+        return str(self)
+
 
 class Docker(ContainerPlatform):
     '''Container platform backend for running containers with `Docker

@@ -43,11 +43,12 @@ class SparkCheck(rfm.RunOnlyRegressionTest):
             'SPARK_LOCAL_DIRS': '"/tmp"',
         }
         self.executable = (
-            'spark-submit --conf spark.default.parallelism=%s '
-            '--conf spark.executor.cores=%s --conf spark.executor.memory=15g '
-            '--master $SPARKURL --class org.apache.spark.examples.SparkPi '
-            '$EBROOTSPARK/examples/jars/spark-examples_2.11-2.3.1.jar 10000;'
-            % (num_workers, exec_cores))
+            f'spark-submit --conf spark.default.parallelism={num_workers} '
+            f'--conf spark.executor.cores={exec_cores} '
+            f'--conf spark.executor.memory=15g --master $SPARKURL '
+            f'--class org.apache.spark.examples.SparkPi '
+            f'$EBROOTSPARK/examples/jars/spark-examples*.jar 10000;'
+        )
         # The job launcher has to be changed since the `spark-submit`
         # script is not used with srun.
         self.job.launcher = getlauncher('local')()
