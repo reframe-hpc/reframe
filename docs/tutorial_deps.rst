@@ -103,7 +103,7 @@ Here is the output when running the OSU tests with the asynchronous execution po
 
    [ReFrame Setup]
      version:           3.4-dev2 (rev: 56c6c237)
-     command:           './bin/reframe --system=daint -C tutorials/config/settings.py -c tutorials/deps/osu_benchmarks.py -r'
+     command:           './bin/reframe -C tutorials/config/settings.py -c tutorials/deps/osu_benchmarks.py -r'
      launched by:       user@daint101
      working directory: '/users/user/Devel/reframe'
      settings file:     'tutorials/config/settings.py'
@@ -256,7 +256,7 @@ As a result, its immediate dependency :class:`OSUBuildTest` will be skipped, whi
 
 .. code-block:: console
 
-   ./bin/reframe -c tutorials/deps/osu_benchmarks.py -n OSULatencyTest -l
+   ./bin/reframe -c tutorials/deps/osu_benchmarks.py --system=daint:gpu -n OSULatencyTest -l
 
 .. code-block:: none
 
