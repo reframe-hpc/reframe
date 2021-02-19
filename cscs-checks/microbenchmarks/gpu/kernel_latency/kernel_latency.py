@@ -24,7 +24,7 @@ class KernelLatencyTest(rfm.RegressionTest):
         elif cs in {'ault'}:
             self.valid_prog_environs = ['PrgEnv-gnu']
         else:
-            self.valid_prog_environs = ['PrgEnv-gnu']
+            self.valid_prog_environs = []
 
         self.num_tasks = 0
         self.num_tasks_per_node = 1
