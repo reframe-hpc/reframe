@@ -13,7 +13,7 @@ class VASPCheck(rfm.RunOnlyRegressionTest):
         self.modules = ['VASP']
 
         force = sn.extractsingle(r'1 F=\s+(?P<result>\S+)',
-                                        self.stdout, 'result', float)
+                                 self.stdout, 'result', float)
         self.sanity_patterns = sn.assert_reference(
             force, -.85026214E+03, -1e-5, 1e-5)
         self.keep_files = ['OUTCAR']
@@ -48,7 +48,7 @@ class VASPCpuCheck(VASPCheck):
             self.use_multithreading = True
         elif self.current_system.name == 'eiger':
             self.num_tasks = 64
-            self.num_tasks_per_node = 4 
+            self.num_tasks_per_node = 4
             self.num_cpus_per_task = 8
             self.num_tasks_per_core = 1
             self.use_multithreading = False
