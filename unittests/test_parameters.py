@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -6,6 +6,7 @@
 
 import pytest
 import inspect
+
 
 import reframe as rfm
 
@@ -15,17 +16,17 @@ class NoParams(rfm.RunOnlyRegressionTest):
 
 
 class TwoParams(NoParams):
-    parameter('P0', ['a'])
-    parameter('P1', ['b'])
+    P0 = parameter(['a'])
+    P1 = parameter(['b'])
 
 
 class Abstract(TwoParams):
-    parameter('P0')
+    P0 = parameter()
 
 
 class ExtendParams(TwoParams):
-    parameter('P1', ['c', 'd', 'e'], inherit_params=True)
-    parameter('P2', ['f', 'g'])
+    P1 = parameter(['c', 'd', 'e'], inherit_params=True)
+    P2 = parameter(['f', 'g'])
 
 
 def test_param_space_is_empty():
@@ -53,7 +54,7 @@ def test_abstract_param():
 
 def test_param_override():
     class MyTest(TwoParams):
-        parameter('P1', ['-'])
+        P1 = parameter(['-'])
 
     assert MyTest.param_space['P0'] == ('a',)
     assert MyTest.param_space['P1'] == ('-',)
@@ -61,7 +62,7 @@ def test_param_override():
 
 def test_param_inheritance():
     class MyTest(TwoParams):
-        parameter('P1', ['c'], inherit_params=True)
+        P1 = parameter(['c'], inherit_params=True)
 
     assert MyTest.param_space['P0'] == ('a',)
     assert MyTest.param_space['P1'] == ('b', 'c',)
@@ -69,7 +70,7 @@ def test_param_inheritance():
 
 def test_filter_params():
     class MyTest(ExtendParams):
-        parameter('P1', inherit_params=True, filter_params=lambda x: x[2:])
+        P1 = parameter(inherit_params=True, filter_params=lambda x: x[2:])
 
     assert MyTest.param_space['P0'] == ('a',)
     assert MyTest.param_space['P1'] == ('d', 'e',)
@@ -137,7 +138,7 @@ def test_consume_param_space():
     assert test.P1 is None
     assert test.P2 is None
 
-    with pytest.raises(StopIteration):
+    with pytest.raises(RuntimeError):
         test = MyTest(_rfm_use_params=True)
 
 
@@ -168,3 +169,62 @@ def test_parameterized_test_is_incompatible():
         class MyTest(TwoParams):
             def __init__(self, var):
                 pass
+
+
+def test_param_space_clash():
+    class Spam(rfm.RegressionMixin):
+        P0 = parameter([1])
+
+    class Ham(rfm.RegressionMixin):
+        P0 = parameter([2])
+
+    with pytest.raises(ValueError):
+        class Eggs(Spam, Ham):
+            '''Trigger error from param name clashing.'''
+
+
+def test_namespace_clash():
+    class Spam(rfm.RegressionTest):
+        foo = variable(int, 1)
+
+    with pytest.raises(ValueError):
+        class Ham(Spam):
+            foo = parameter([1])
+
+
+def test_double_declare():
+    with pytest.raises(ValueError):
+        class MyTest(rfm.RegressionTest):
+            P0 = parameter([1, 2, 3])
+            P0 = parameter()
+
+
+def test_overwrite_param():
+    with pytest.raises(ValueError):
+        class MyTest(TwoParams):
+            P0 = [1, 2, 3]
+
+
+def test_param_deepcopy():
+    '''Test that there is no cross-class pollution.
+
+    Each instance must deal with its own copies of the parameters.
+    '''
+    class MyParam:
+        def __init__(self, val):
+            self.val = val
+
+    class Base(rfm.RegressionTest):
+        p0 = parameter([MyParam(1), MyParam(2)])
+
+    class Foo(Base):
+        def __init__(self):
+            self.p0.val = -20
+
+    class Bar(Base):
+        pass
+
+    assert Foo(_rfm_use_params=True).p0.val == -20
+    assert Foo(_rfm_use_params=True).p0.val == -20
+    assert Bar(_rfm_use_params=True).p0.val == 1
+    assert Bar(_rfm_use_params=True).p0.val == 2
