@@ -126,23 +126,30 @@ class RunErt_Base(rfm.RegressionTest):
         self.prgenv_flags = {
             'PrgEnv-gnu': ['-fopenmp', '-O3'],
         }
-        self.build_system.cxxflags = \
-            self.prgenv_flags[self.current_environ.name]
+        envname = self.current_environ.name
+        self.build_system.cxxflags = self.prgenv_flags[envname]
+        self.prebuild_cmds = ['module list', 'which gcc']
+
+    @rfm.run_before('run')
+    def set_run_cmds(self):
         self.variables = {
             'OMP_NUM_THREADS': str(self.num_cpus_per_task),
             'OMP_PROC_BIND': 'close',
             'OMP_PLACES': 'cores',
         }
-        self.prebuild_cmds = ['module list', 'which gcc']
-
-    @rfm.run_before('run')
-    def set_run_cmds(self):
-        self.prerun_cmds += [f'for ii in `seq {ert_repeat}`;do']
-        self.executable_opts = ['&> try.00$ii']
+        cmd = self.job.launcher.run_command(self.job)
+        self.executable_opts = ['&> try.00']
         self.job.launcher.options = ['--cpu-bind=cores']  # verbose
         self.postrun_cmds += [
-            'done',
-            'cat try.00* | ./Scripts/preprocess.py > pre',
+            f'{cmd} {self.job.launcher.options[0]} {self.executable} '
+            f'&> try.0{i}'
+            for i in range(1, ert_repeat)
+        ]
+
+    @rfm.run_before('run')
+    def set_postrun_cmds(self):
+        self.postrun_cmds += [
+            'cat try.* | ./Scripts/preprocess.py > pre',
             './Scripts/maximum.py < pre > max',
             './Scripts/summary.py < max > sum',
         ]
@@ -151,7 +158,7 @@ class RunErt_Base(rfm.RegressionTest):
     def set_sanity(self):
         self.sanity_patterns = sn.all(
             [
-                sn.assert_found(r'^fp64', 'try.001'),
+                sn.assert_found(r'^fp64', 'try.00'),
                 sn.assert_found(r'^fp64', 'max'),
                 sn.assert_found(r'GFLOPs|DRAM', 'sum'),
                 sn.assert_found('META_DATA', 'sum'),
