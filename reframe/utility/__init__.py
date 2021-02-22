@@ -287,9 +287,12 @@ def attrs(obj):
 
     # Look for descriptors
     for cls in type(obj).mro():
-        for attr, value in cls.__dict__.items():
-            if inspect.isdatadescriptor(value):
-                ret[attr] = getattr(obj, attr)
+        for attr in cls.__dict__:
+            if inspect.isdatadescriptor(cls.__dict__[attr]):
+                try:
+                    ret[attr] = getattr(obj, attr)
+                except AttributeError:
+                    pass
 
     return ret
 
