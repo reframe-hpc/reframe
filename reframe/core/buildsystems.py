@@ -5,6 +5,7 @@
 
 import abc
 import os
+import re
 
 import reframe.core.fields as fields
 import reframe.utility.typecheck as typ
@@ -666,6 +667,7 @@ class EasyBuild(BuildSystem):
         self.easyconfigs = []
         self.options = []
         self.emit_package = False
+        self.eb_modules = []
 
     def emit_build_commands(self, environ):
         easyconfigs = ' '.join(self.easyconfigs)
@@ -685,17 +687,16 @@ class EasyBuild(BuildSystem):
 
         return cmd
 
-    def eb_modules(self):
-        modules = []
+    def collect_built_modules(self, build_stdout):
+        self.eb_modules = []
         modules_dir = os.path.join(self._eb_sandbox, 'modules', 'all')
-        if os.path.isdir(modules_dir):
-            for mod in os.listdir(modules_dir):
-                for ver in os.listdir(os.path.join(modules_dir, mod)):
-                    modules.append({'name': f'{mod}/{ver}',
+        with open(build_stdout) as fp:
+            out = fp.read()
+
+        for m in re.findall(r'building and installing (\S+)...', out):
+            self.eb_modules.append({'name': m,
                                     'collection': False,
                                     'path': modules_dir})
-
-        return modules
 
 
 class BuildSystemField(fields.TypedField):

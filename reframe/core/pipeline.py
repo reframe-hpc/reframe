@@ -1297,6 +1297,10 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
         if self._build_job.exitcode:
             raise BuildError(self._build_job.stdout, self._build_job.stderr)
 
+        if isinstance(self.build_system, EasyBuild):
+            self.build_system.collect_built_modules(
+                os.path.join(self._stagedir, self._build_job.stdout))
+
     @_run_hooks('pre_run')
     @final
     def run(self):
