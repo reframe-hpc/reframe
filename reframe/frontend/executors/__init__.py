@@ -415,7 +415,7 @@ class Runner:
             # Print the summary line
             num_failures = len(self._stats.failed())
             num_completed = len(self._stats.completed())
-            if num_failures:
+            if num_failures > 0 or num_completed < len(testcases):
                 status = 'FAILED'
             else:
                 status = 'PASSED'
