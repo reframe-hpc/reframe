@@ -1117,10 +1117,8 @@ def container_test(tmp_path):
                 self.valid_systems = ['*']
                 self.container_platform = platform
                 self.container_platform.image = image
-                self.container_platform.commands = [
-                    'pwd', 'ls', 'cat /etc/os-release'
-                ]
-                self.container_platform.workdir = '/workdir'
+                self.container_platform.command = ("bash -c 'pwd; ls; "
+                                                   "cat /etc/os-release'")
                 self.prerun_cmds = ['touch foo']
                 self.sanity_patterns = sn.all([
                     sn.assert_found(

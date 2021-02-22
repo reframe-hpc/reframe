@@ -703,9 +703,9 @@ ReFrame will run the container as follows:
 
 .. code-block:: console
 
-    singularity exec -B"/path/to/test/stagedir:/rfm_stagedir" --pwd="/rfm_stagedir" docker://ubuntu:18.04 bash -c 'pwd; ls; cat /etc/os-release'
+    singularity exec -B"/path/to/test/stagedir:/rfm_workdir" --pwd="/rfm_workdir" docker://ubuntu:18.04 bash -c 'pwd; ls; cat /etc/os-release'
 
-By default ReFrame will mount the stage directory of the test under ``/rfm_stagedir`` inside the container.
+By default ReFrame will mount the stage directory of the test under ``/rfm_workdir`` inside the container.
 Once the commands are executed, the container is stopped and ReFrame goes on with the sanity and performance checks.
 Besides the stage directory, additional mount points can be specified through the :attr:`mount_points <reframe.core.pipeline.RegressionTest.container_platform.mount_points>` attribute:
 
@@ -716,7 +716,7 @@ Besides the stage directory, additional mount points can be specified through th
 
 .. tip::
 
-   The container filesystem is ephemeral, therefore, ReFrame mounts the stage directory under ``/rfm_stagedir`` inside the container where the user can copy directories/files as needed.
+   The container filesystem is ephemeral, therefore, ReFrame mounts the stage directory under ``/rfm_workdir`` inside the container where the user can copy directories/files as needed.
    The aforementioned directories/files will then be available inside the stage directory after the container execution finishes.
    This is very useful if the above directories/files are going to be used for the sanity/performance checks.
    If this is the case, the user should overwrite the default command executed by the container, using the :attr:`command <reframe.core.containers.ContainerPlatform.command>` to include the appropriate copy commands.

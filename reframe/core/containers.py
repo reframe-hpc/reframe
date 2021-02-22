@@ -4,10 +4,12 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import abc
+import warnings
 
 import reframe.core.fields as fields
 import reframe.utility.typecheck as typ
 from reframe.core.exceptions import ContainerError
+from reframe.core.warnings import ReframeDeprecationWarning
 
 
 class ContainerPlatform(abc.ABC):
@@ -15,7 +17,7 @@ class ContainerPlatform(abc.ABC):
 
     #: The default mount location of the test case stage directory inside the
     #: container
-    RFM_STAGEDIR = '/rfm_stagedir'
+    RFM_STAGEDIR = '/rfm_workdir'
 
     #: The container image to be used for running the test.
     #:
@@ -36,6 +38,19 @@ class ContainerPlatform(abc.ABC):
     #: :default: :class:`None`
     command = fields.TypedField(str, type(None))
 
+    #: The commands to be executed within the container.
+    #:
+    #: ..versionchanged:: 3.4.2
+    #:   The `commands` field is now deprecated.
+    #:
+    #: :type: :class:`list[str]`
+    #: :default: ``[]``
+    commands = fields.DeprecatedField(
+        fields.TypedField(typ.List[str]),
+        'The `commands` field is deprecated, please use the `command` field '
+        'to set the command to be executed by the container.', 1
+    )
+
     #: Pull the container image before running.
     #:
     #: This does not have any effect for the `Singularity` container platform.
@@ -50,7 +65,7 @@ class ContainerPlatform(abc.ABC):
     #:
     #: Each mount point is specified as a tuple of
     #: ``(/path/in/host, /path/in/container)``. The stage directory of the
-    #: ReFrame test is always mounted under ``/rfm_stagedir`` inside the
+    #: ReFrame test is always mounted under ``/rfm_workdir`` inside the
     #: container, independelty of this field.
     #:
     #: :type: :class:`list[tuple[str, str]]`
@@ -63,9 +78,30 @@ class ContainerPlatform(abc.ABC):
     #: :default: ``[]``
     options = fields.TypedField(typ.List[str])
 
+    #: The working directory of ReFrame inside the container.
+    #:
+    #: This is the directory where the test's stage directory is mounted inside
+    #: the container. This directory is always mounted regardless if
+    #: :attr:`mount_points` is set or not.
+    #:
+    #: ..versionchanged:: 3.4.2
+    #:   The `commands` field is now deprecated.
+    #:
+    #: :type: :class:`str`
+    #: :default: ``/rfm_workdir``
+    workdir = fields.DeprecatedField(
+        fields.TypedField(str, type(None)),
+        'The `workdir` field is deprecated, please use the `options` field to '
+        'set the container working directory', 1
+    )
+
     def __init__(self):
         self.image = None
         self.command = None
+        with warnings.catch_warnings(record=True):
+            self.commands = []
+            self.workdir = self.RFM_STAGEDIR
+
         self.mount_points  = []
         self.options = []
         self.pull_image = True
@@ -114,8 +150,19 @@ class Docker(ContainerPlatform):
         run_opts = [f'-v "{mp[0]}":"{mp[1]}"' for mp in self.mount_points]
         run_opts += self.options
 
-        return (f'docker run --rm {" ".join(run_opts)} '
-                f'{self.image} {self.command or ""}').rstrip()
+        run_cmd = 'docker run --rm %s %s bash -c ' % (' '.join(run_opts),
+                                                      self.image)
+
+        if self.command:
+            return (f'docker run --rm {" ".join(run_opts)} '
+                    f'{self.image} {self.command}')
+
+        if self.commands:
+            return (f"docker run --rm {' '.join(run_opts)} {self.image} "
+                    "bash -c 'cd {self.workdir}; {'; '.join(self.commands)}'")
+
+        return (f'docker run --rm {" ".join(run_opts)} {self.image}')
+
 
 
 class Sarus(ContainerPlatform):
@@ -144,8 +191,15 @@ class Sarus(ContainerPlatform):
 
         run_opts += self.options
 
-        return (f'sarus run {" ".join(run_opts)} {self.image} '
-                f'{self.command or ""}').rstrip()
+        if self.command:
+            return (f'sarus run {" ".join(run_opts)} {self.image} '
+                    f'{self.command}')
+
+        if self.commands:
+            return (f"sarus run {' '.join(run_opts)} {self.image} "
+                    "bash -c 'cd {self.workdir}; {'; '.join(self.commands)}'")
+
+        return f'sarus run {" ".join(run_opts)} {self.image}'
 
 
 class Shifter(ContainerPlatform):
@@ -174,8 +228,16 @@ class Shifter(ContainerPlatform):
             run_opts.append('--mpi')
 
         run_opts += self.options
-        return (f"shifter run {' '.join(run_opts)} {self.image} "
-                f"{self.command or ''}")
+
+        if self.command:
+            return (f'shifter run {" ".join(run_opts)} {self.image} '
+                    f'{self.command}')
+
+        if self.commands:
+            return (f"shifter run {' '.join(run_opts)} {self.image} "
+                    "bash -c 'cd {self.workdir}; {'; '.join(self.commands)}'")
+
+        return f'shifter run {" ".join(run_opts)} {self.image}'
 
 
 class Singularity(ContainerPlatform):
@@ -205,6 +267,10 @@ class Singularity(ContainerPlatform):
         if self.command:
             return (f'singularity exec {" ".join(run_opts)} '
                     f'{self.image} {self.command}')
+
+        if self.commands:
+            return (f"singularity exec {' '.join(run_opts)} {self.image} "
+                    "bash -c 'cd {self.workdir}; {'; '.join(self.commands)}'")
 
         return f'singularity run {" ".join(run_opts)} {self.image}'
 
