@@ -9,7 +9,6 @@ import warnings
 import reframe.core.fields as fields
 import reframe.utility.typecheck as typ
 from reframe.core.exceptions import ContainerError
-from reframe.core.warnings import ReframeDeprecationWarning
 
 
 class ContainerPlatform(abc.ABC):
@@ -162,7 +161,6 @@ class Docker(ContainerPlatform):
                     "bash -c 'cd {self.workdir}; {'; '.join(self.commands)}'")
 
         return (f'docker run --rm {" ".join(run_opts)} {self.image}')
-
 
 
 class Sarus(ContainerPlatform):
