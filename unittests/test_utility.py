@@ -658,9 +658,14 @@ def test_repr_default():
 
 
 def test_attrs():
-    class C:
+    class B:
         z = fields.TypedField(int)
 
+        def __init__(self, x, y):
+            self.x = x
+            self.y = y
+
+    class C(B):
         def __init__(self, x, y):
             self._x = x
             self.y = y
@@ -675,6 +680,13 @@ def test_attrs():
 
     class D(C):
         pass
+
+    # Test undefined descriptors are not returned
+    b = B(-1, 0)
+    b_attrs = util.attrs(b)
+    assert b_attrs['x'] == -1
+    assert b_attrs['y'] == 0
+    assert 'z' not in b_attrs
 
     c = C(1, 2)
     c_attrs = util.attrs(c)
