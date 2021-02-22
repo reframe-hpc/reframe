@@ -21,8 +21,11 @@ class DGEMMTest(rfm.RegressionTest):
                               'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn']
         if self.current_system.name in ['daint', 'dom']:
             self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel']
-        if self.current_system.name in ['arolla', 'tsa']:
+        elif self.current_system.name in ['arolla', 'tsa']:
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
+        else:
+            self.valid_prog_environs = []
+
 
         self.num_tasks = 0
         self.use_multithreading = False
