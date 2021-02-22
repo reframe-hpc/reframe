@@ -83,6 +83,7 @@ class CrayVariablesCheckDaint(CrayVariablesCheck):
         'cray-petsc-complex-64', 'cray-python', 'cray-R', 'cray-tpsl',
         'cray-tpsl-64', 'cudatoolkit', 'gcc', 'papi', 'pmi'
     ])
+
     def __init__(self):
         super().__init__()
         self.valid_systems = ['daint:login', 'dom:login']
