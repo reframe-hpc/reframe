@@ -652,17 +652,21 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:
     #: ::
     #:
-    #:     'resources': {
-    #:         'gpu': [
-    #:             '--gres=gpu:{num_gpus_per_node}'
-    #:         ],
-    #:         'datawarp': [
-    #:             '#DW jobdw capacity={capacity}',
-    #:             '#DW stage_in source={stagein_src}'
-    #:         ]
-    #:     }
+    #:     'resources': [
+    #:         {
+    #:             'name': 'gpu',
+    #:             'options': ['--gres=gpu:{num_gpus_per_node}']
+    #:         },
+    #:         {
+    #:             'name': 'datawarp',
+    #:             'options': [
+    #:                 '#DW jobdw capacity={capacity}',
+    #:                 '#DW stage_in source={stagein_src}'
+    #:             ]
+    #:         }
+    #:     ]
     #:
-    #: A regression test then may instantiate the above resources by setting
+    #: A regression test may then instantiate the above resources by setting
     #: the :attr:`extra_resources` attribute as follows:
     #:
     #: ::
