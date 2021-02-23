@@ -138,9 +138,22 @@ class RegressionMixin(metaclass=RegressionTestMeta):
 
     .. versionadded:: 3.4.2
     '''
+    def __getattribute__(self, name):
+        try:
+            return super().__getattribute__(name)
+        except AttributeError:
+            # Intercept the AttributeError if the name corresponds to a
+            # required variable.
+            if (name in self._rfm_var_space.vars and
+                not self._rfm_var_space.vars[name].is_defined()):
+                raise AttributeError(
+                    f'required variable {name!r} has not been set'
+                ) from None
+            else:
+                super().__getattr__(name)
 
 
-class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
+class RegressionTest(jsonext.JSONSerializable, RegressionMixin):
     '''Base class for regression tests.
 
     All regression tests must eventually inherit from this class.
@@ -763,20 +776,6 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
 
     def __init__(self):
         pass
-
-    def __getattribute__(self, name):
-        try:
-            return super().__getattribute__(name)
-        except AttributeError:
-            # Intercept the AttributeError if the name corresponds to a
-            # required variable.
-            if (name in self._rfm_var_space.vars and
-                not self._rfm_var_space.vars[name].is_defined()):
-                raise AttributeError(
-                    f'required variable {name!r} has not been set'
-                ) from None
-            else:
-                super().__getattr__(name)
 
     def _append_parameters_to_name(self):
         if self._rfm_param_space.params:
