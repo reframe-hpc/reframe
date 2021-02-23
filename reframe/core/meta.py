@@ -28,6 +28,38 @@ class RegressionTestMeta(type):
             else:
                 super().__setitem__(key, value)
 
+        def __getitem__(self, key):
+            '''Expose and control access to the local namespaces.
+
+            Variables may only be retrieved if their value has been previously
+            set. Accessing a parameter in the class body is disallowed (the
+            actual test parameter is set during the class instantiation).
+            '''
+            try:
+                return super().__getitem__(key)
+            except Exception as err:
+                try:
+                    # Handle variable access
+                    var = self['_rfm_local_var_space'][key]
+                    if var.is_defined():
+                        return var.default_value
+                    else:
+                        raise ValueError(
+                            f'variable {key!r} does not have an assigned value'
+                        )
+
+                except KeyError:
+                    # Handle parameter access
+                    if key in self['_rfm_local_param_space']:
+                        raise ValueError(
+                            'accessing a test parameter from the class '
+                            'body is disallowed'
+                        )
+                    else:
+                        # If 'key' is neither a variable nor a parameter,
+                        # raise the exception from the base __getitem__.
+                        raise err
+
     @classmethod
     def __prepare__(metacls, name, bases, **kwargs):
         namespace = super().__prepare__(name, bases, **kwargs)
