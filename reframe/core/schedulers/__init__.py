@@ -330,7 +330,7 @@ class Job(jsonext.JSONSerializable):
     def submit_time(self):
         return self._submit_time
 
-    def prepare(self, commands, environs=None, preload_cmds=None, **gen_opts):
+    def prepare(self, commands, environs=None, preload_cmds=[], **gen_opts):
         environs = environs or []
         if self.num_tasks <= 0:
             getlogger().debug(f'[F] Flexible node allocation requested')

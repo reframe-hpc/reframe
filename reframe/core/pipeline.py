@@ -348,7 +348,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     container_platform = variable(type(None),
                                   field=ContainerPlatformField, value=None)
 
-    #: .. versionadded:: 3.5.0
+    #: .. versionadded:: 3.5
     #:
     #: List of shell commands to execute before loading the environment for
     #: this job.
@@ -359,7 +359,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    preload_cmds = fields.TypedField(typ.List[str])
+    preload_cmds = variable(typ.List[str], value=[])
 
     #: .. versionadded:: 3.0
     #:
