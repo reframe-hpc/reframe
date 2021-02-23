@@ -5,7 +5,10 @@
 
 import datetime
 import pytest
+import semver
+import warnings
 
+import reframe
 import reframe.core.fields as fields
 from reframe.core.warnings import ReframeDeprecationWarning
 from reframe.utility import ScopedDict
@@ -142,22 +145,34 @@ def test_deprecated_field():
     with pytest.warns(ReframeDeprecationWarning):
         tester.ro = 1
 
-    try:
+    with warnings.catch_warnings(record=True) as w:
         tester.wo = 20
-    except ReframeDeprecationWarning:
-        pytest.fail('deprecation warning not expected here')
+        assert len(w) == 0
 
     # Test get operation
-    try:
+    with warnings.catch_warnings(record=True) as w:
         a = tester.ro
-    except ReframeDeprecationWarning:
-        pytest.fail('deprecation warning not expected here')
+        assert len(w) == 0
 
     with pytest.warns(ReframeDeprecationWarning):
         a = tester.value
 
     with pytest.warns(ReframeDeprecationWarning):
         a = tester.wo
+
+
+def test_deprecated_field_future_version():
+    next_version = semver.VersionInfo.parse(reframe.VERSION).bump_minor()
+
+    class FieldTester:
+        x = fields.DeprecatedField(fields.TypedField(int), 'deprecated',
+                                   from_version=str(next_version))
+
+    # This should not raise a warning
+    tester = FieldTester()
+    with warnings.catch_warnings(record=True) as w:
+        tester.x  = 1
+        assert len(w) == 0
 
 
 def test_scoped_dict_field():

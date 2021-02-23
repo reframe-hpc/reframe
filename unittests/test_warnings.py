@@ -23,7 +23,9 @@ def test_deprecation_warning():
 
 def test_deprecation_warning_from_version():
     next_version = semver.VersionInfo.parse(reframe.VERSION).bump_minor()
-    warn.user_deprecation_warning('deprecated', str(next_version))
+    with warnings.catch_warnings(record=True) as w:
+        warn.user_deprecation_warning('deprecated', str(next_version))
+        assert len(w) == 0
 
 
 def test_deprecation_warning_formatting(with_colors):
