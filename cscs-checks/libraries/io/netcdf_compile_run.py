@@ -22,10 +22,8 @@ class NetCDFTest(rfm.RegressionTest):
         self.lang = lang
         self.linkage = linkage
         self.descr = f'{lang_names[lang]} NetCDF {linkage.capitalize()}'
-        self.valid_systems = ['daint:gpu', 'daint:mc',
-                              'dom:gpu', 'dom:mc',
-                              'arolla:cn', 'tsa:cn',
-                              'eiger:mc']
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+                              'arolla:cn', 'tsa:cn', 'eiger:mc']
         if linkage == 'static':
             self.valid_systems.remove('eiger:mc')
 
@@ -39,6 +37,8 @@ class NetCDFTest(rfm.RegressionTest):
         elif self.current_system.name in ['eiger']:
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
             self.modules = ['cray-hdf5', 'cray-netcdf']
+        else:
+            self.valid_prog_environs = []
 
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'netcdf')

@@ -16,7 +16,7 @@ class SlurmSimpleBaseCheck(rfm.RunOnlyRegressionTest):
                               'dom:gpu', 'dom:mc',
                               'arolla:cn', 'arolla:pn',
                               'tsa:cn', 'tsa:pn',
-                              'daint:xfer']
+                              'daint:xfer', 'eiger:mc']
         self.valid_prog_environs = ['PrgEnv-cray']
         self.tags = {'slurm', 'maintenance', 'ops',
                      'production', 'single-node'}
@@ -58,6 +58,7 @@ class HostnameCheck(SlurmSimpleBaseCheck):
             'daint:xfer': r'^datamover\d{2}.cscs.ch$',
             'dom:gpu': r'^nid\d{5}$',
             'dom:mc': r'^nid\d{5}$',
+            'eiger:mc': r'^nid\d{6}$',
         }
 
     @rfm.run_before('sanity')
@@ -77,7 +78,8 @@ class EnvironmentVariableCheck(SlurmSimpleBaseCheck):
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc',
                               'arolla:cn', 'arolla:pn',
-                              'tsa:cn', 'tsa:pn']
+                              'tsa:cn', 'tsa:pn',
+                              'eiger:mc']
         self.executable = '/bin/echo'
         self.executable_opts = ['$MY_VAR']
         self.variables = {'MY_VAR': 'TEST123456!'}
@@ -179,6 +181,7 @@ class MemoryOverconsumptionCheck(SlurmCompiledBaseCheck):
     def __init__(self):
         super().__init__()
         self.time_limit = '1m'
+        self.valid_systems += ['eiger:mc']
         self.sourcepath = 'eatmemory.c'
         self.tags.add('mem')
         self.executable_opts = ['4000M']
