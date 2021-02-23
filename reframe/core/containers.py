@@ -29,7 +29,7 @@ class ContainerPlatform(abc.ABC):
     #: If no command is given, then the default command of the corresponding
     #: container image is going to be executed.
     #:
-    #: ..versionchanged:: 3.4.2
+    #: ..versionchanged:: 3.5
     #:   Changed the attribute name from `commands` to `command` and its type
     #:   to a string.
     #:
@@ -39,7 +39,7 @@ class ContainerPlatform(abc.ABC):
 
     #: The commands to be executed within the container.
     #:
-    #: ..versionchanged:: 3.4.2
+    #: ..versionchanged:: 3.5
     #:   The `commands` field is now deprecated.
     #:
     #: :type: :class:`list[str]`
@@ -54,7 +54,7 @@ class ContainerPlatform(abc.ABC):
     #:
     #: This does not have any effect for the `Singularity` container platform.
     #:
-    #: ..versionadded:: 3.4.2
+    #: ..versionadded:: 3.5
     #:
     #: :type: :class:`bool`
     #: :default: ``True``
@@ -83,7 +83,7 @@ class ContainerPlatform(abc.ABC):
     #: the container. This directory is always mounted regardless if
     #: :attr:`mount_points` is set or not.
     #:
-    #: ..versionchanged:: 3.4.2
+    #: ..versionchanged:: 3.5
     #:   The `commands` field is now deprecated.
     #:
     #: :type: :class:`str`
@@ -158,7 +158,7 @@ class Docker(ContainerPlatform):
 
         if self.commands:
             return (f"docker run --rm {' '.join(run_opts)} {self.image} "
-                    "bash -c 'cd {self.workdir}; {'; '.join(self.commands)}'")
+                    f"bash -c 'cd {self.workdir}; {'; '.join(self.commands)}'")
 
         return (f'docker run --rm {" ".join(run_opts)} {self.image}')
 
@@ -178,7 +178,13 @@ class Sarus(ContainerPlatform):
         self.with_mpi = False
 
     def emit_prepare_commands(self):
-        return [f'sarus pull {self.image}'] if self.pull_image else []
+        # The format that Sarus uses to call the images is
+        # <reposerver>/<user>/<image>:<tag>. If an image was loaded
+        # locally from a tar file, the <reposerver> is 'load'.
+        if not self.pull_image or self.image.startswith('load/'):
+            return []
+        else:
+            return [f'sarus pull {self.image}']
 
     def launch_command(self):
         super().launch_command()
@@ -195,7 +201,7 @@ class Sarus(ContainerPlatform):
 
         if self.commands:
             return (f"sarus run {' '.join(run_opts)} {self.image} "
-                    "bash -c 'cd {self.workdir}; {'; '.join(self.commands)}'")
+                    f"bash -c 'cd {self.workdir}; {'; '.join(self.commands)}'")
 
         return f'sarus run {" ".join(run_opts)} {self.image}'
 
@@ -216,7 +222,13 @@ class Shifter(ContainerPlatform):
         self.with_mpi = False
 
     def emit_prepare_commands(self):
-        return [f'shifter pull {self.image}'] if self.pull_image else []
+        # The format that Shifter uses to call the images is
+        # <reposerver>/<user>/<image>:<tag>. If an image was loaded
+        # locally from a tar file, the <reposerver> is 'load'.
+        if not self.pull_image or self.image.startswith('load/'):
+            return []
+        else:
+            return [f'shifter pull {self.image}']
 
     def launch_command(self):
         super().launch_command()
@@ -233,7 +245,7 @@ class Shifter(ContainerPlatform):
 
         if self.commands:
             return (f"shifter run {' '.join(run_opts)} {self.image} "
-                    "bash -c 'cd {self.workdir}; {'; '.join(self.commands)}'")
+                    f"bash -c 'cd {self.workdir}; {'; '.join(self.commands)}'")
 
         return f'shifter run {" ".join(run_opts)} {self.image}'
 
@@ -268,7 +280,7 @@ class Singularity(ContainerPlatform):
 
         if self.commands:
             return (f"singularity exec {' '.join(run_opts)} {self.image} "
-                    "bash -c 'cd {self.workdir}; {'; '.join(self.commands)}'")
+                    f"bash -c 'cd {self.workdir}; {'; '.join(self.commands)}'")
 
         return f'singularity run {" ".join(run_opts)} {self.image}'
 

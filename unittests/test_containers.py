@@ -6,13 +6,15 @@
 import pytest
 
 import reframe.core.containers as containers
+import reframe.core.warnings as warn
 from reframe.core.exceptions import ContainerError
 
 
 @pytest.fixture(params=[
     'Docker', 'Docker+nocommand', 'Docker+nopull', 'Sarus', 'Sarus+nocommand',
-    'Sarus+nopull', 'Sarus+mpi', 'Shifter', 'Shifter+mpi', 'Singularity',
-    'Singularity+cuda', 'Singularity+nocommand'])
+    'Sarus+nopull', 'Sarus+mpi', 'Sarus+load', 'Shifter', 'Shifter+nocommand',
+    'Shifter+mpi', 'Shifter+nopull', 'Shifter+load', 'Singularity',
+    'Singularity+nocommand', 'Singularity+cuda'])
 def container_variant(request):
     return request.param
 
@@ -30,7 +32,7 @@ def container_platform(container_variant):
     if '+cuda' in container_variant:
         ret.with_cuda = True
 
-    if container_variant == 'Sarus+custompull':
+    if '+load' in container_variant:
         ret.image = 'load/library/image:tag'
     else:
         ret.image = 'image:tag'
@@ -54,11 +56,6 @@ def expected_cmd_mount_points(container_variant):
                 '--mount=type=bind,source="/path/one",destination="/one" '
                 '--mount=type=bind,source="/path/two",destination="/two" '
                 'image:tag cmd')
-    elif container_variant == 'Sarus+custompull':
-        return ('sarus run '
-                '--mount=type=bind,source="/path/one",destination="/one" '
-                '--mount=type=bind,source="/path/two",destination="/two" '
-                'load/library/image:tag cmd')
     elif container_variant == 'Sarus+nocommand':
         return ('sarus run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
@@ -69,6 +66,31 @@ def expected_cmd_mount_points(container_variant):
                 '--mount=type=bind,source="/path/one",destination="/one" '
                 '--mount=type=bind,source="/path/two",destination="/two" '
                 '--mpi image:tag cmd')
+    elif container_variant == 'Sarus+load':
+        return ('sarus run '
+                '--mount=type=bind,source="/path/one",destination="/one" '
+                '--mount=type=bind,source="/path/two",destination="/two" '
+                'load/library/image:tag cmd')
+    elif container_variant in {'Shifter', 'Shifter+nopull'}:
+        return ('shifter run '
+                '--mount=type=bind,source="/path/one",destination="/one" '
+                '--mount=type=bind,source="/path/two",destination="/two" '
+                'image:tag cmd')
+    elif container_variant == 'Shifter+nocommand':
+        return ('shifter run '
+                '--mount=type=bind,source="/path/one",destination="/one" '
+                '--mount=type=bind,source="/path/two",destination="/two" '
+                'image:tag')
+    elif container_variant == 'Shifter+mpi':
+        return ('shifter run '
+                '--mount=type=bind,source="/path/one",destination="/one" '
+                '--mount=type=bind,source="/path/two",destination="/two" '
+                '--mpi image:tag cmd')
+    elif container_variant == 'Shifter+load':
+        return ('shifter run '
+                '--mount=type=bind,source="/path/one",destination="/one" '
+                '--mount=type=bind,source="/path/two",destination="/two" '
+                'load/library/image:tag cmd')
     elif container_variant in {'Singularity', 'Singularity+nopull'}:
         return ('singularity exec -B"/path/one:/one" '
                 '-B"/path/two:/two" image:tag cmd')
@@ -78,23 +100,13 @@ def expected_cmd_mount_points(container_variant):
     elif container_variant == 'Singularity+nocommand':
         return ('singularity run -B"/path/one:/one" '
                 '-B"/path/two:/two" image:tag')
-    elif container_variant == 'Shifter':
-        return ('shifter run '
-                '--mount=type=bind,source="/path/one",destination="/one" '
-                '--mount=type=bind,source="/path/two",destination="/two" '
-                'image:tag cmd')
-    elif container_variant == 'Shifter+mpi':
-        return ('shifter run '
-                '--mount=type=bind,source="/path/one",destination="/one" '
-                '--mount=type=bind,source="/path/two",destination="/two" '
-                '--mpi image:tag cmd')
 
 
 @pytest.fixture
 def expected_cmd_prepare(container_variant):
     if container_variant in {'Docker', 'Docker+nocommand'}:
         return ['docker pull image:tag']
-    elif container_variant in {'Shifter', 'Shifter+mpi'}:
+    elif container_variant in {'Shifter', 'Shifter+nocommand', 'Shifter+mpi'}:
         return ['shifter pull image:tag']
     elif container_variant in {'Sarus', 'Sarus+nocommand', 'Sarus+mpi'}:
         return ['sarus pull image:tag']
@@ -110,18 +122,34 @@ def expected_cmd_run_opts(container_variant):
     if container_variant == 'Docker+nocommand':
         return ('docker run --rm -v "/path/one":"/one" '
                 '--foo --bar image:tag')
-    elif container_variant == 'Shifter':
+    elif container_variant in {'Shifter', 'Shifter+nopull'}:
         return ('shifter run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
                 '--foo --bar image:tag cmd')
+    elif container_variant == 'Shifter+nocommand':
+        return ('shifter run '
+                '--mount=type=bind,source="/path/one",destination="/one" '
+                '--foo --bar image:tag')
     elif container_variant == 'Shifter+mpi':
         return ('shifter run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
                 '--mpi --foo --bar image:tag cmd')
+    elif container_variant == 'Shifter+load':
+        return ('shifter run '
+                '--mount=type=bind,source="/path/one",destination="/one" '
+                '--foo --bar load/library/image:tag cmd')
     elif container_variant in {'Sarus', 'Sarus+nopull'}:
         return ('sarus run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
                 '--foo --bar image:tag cmd')
+    elif container_variant == 'Sarus':
+        return ('sarus run '
+                '--mount=type=bind,source="/path/one",destination="/one" '
+                '--foo --bar image:tag cmd')
+    elif container_variant == 'Sarus+load':
+        return ('sarus run '
+                '--mount=type=bind,source="/path/one",destination="/one" '
+                '--foo --bar load/library/image:tag cmd')
     elif container_variant == 'Sarus+nocommand':
         return ('sarus run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
@@ -161,3 +189,64 @@ def test_run_opts(container_platform, expected_cmd_run_opts):
     container_platform.mount_points = [('/path/one', '/one')]
     container_platform.options = ['--foo', '--bar']
     assert container_platform.launch_command() == expected_cmd_run_opts
+
+
+@pytest.fixture(params=[
+    'Docker', 'Singularity', 'Sarus', 'Shifter'])
+def container_variant_deprecated(request):
+    return request.param
+
+
+@pytest.fixture
+def platform_deprecated(container_variant_deprecated):
+    ret = containers.__dict__[container_variant_deprecated]()
+    ret.image = 'image:tag'
+    ret.options = ['--foo']
+    return ret
+
+
+@pytest.fixture
+def expected_run_commands(container_variant_deprecated):
+    if container_variant_deprecated == 'Docker':
+        return ("docker run --rm --foo image:tag bash -c 'cd /rfm_workdir; "
+                "cmd1; cmd2'")
+    elif container_variant_deprecated == 'Sarus':
+        return ("sarus run --foo image:tag bash -c 'cd /rfm_workdir; cmd1; "
+                "cmd2'")
+    elif container_variant_deprecated == 'Shifter':
+        return ("shifter run --foo image:tag bash -c 'cd /rfm_workdir; cmd1; "
+                "cmd2'")
+    elif container_variant_deprecated == 'Singularity':
+        return ("singularity exec --foo image:tag bash -c 'cd /rfm_workdir; "
+                "cmd1; cmd2'")
+
+
+@pytest.fixture
+def expected_run_workdir(container_variant_deprecated):
+    if container_variant_deprecated == 'Docker':
+        return ("docker run --rm --foo image:tag bash -c 'cd foodir; cmd1; "
+                "cmd2'")
+    elif container_variant_deprecated == 'Sarus':
+        return "sarus run --foo image:tag bash -c 'cd foodir; cmd1; cmd2'"
+    elif container_variant_deprecated == 'Shifter':
+        return "shifter run --foo image:tag bash -c 'cd foodir; cmd1; cmd2'"
+    elif container_variant_deprecated == 'Singularity':
+        return ("singularity exec --foo image:tag bash -c 'cd foodir; cmd1; "
+                "cmd2'")
+
+
+def test_run_commands(platform_deprecated, expected_run_commands):
+    with pytest.warns(warn.ReframeDeprecationWarning):
+        platform_deprecated.commands = ['cmd1', 'cmd2']
+
+    assert platform_deprecated.launch_command() == expected_run_commands
+
+
+def test_run_workdir(platform_deprecated, expected_run_workdir):
+    with pytest.warns(warn.ReframeDeprecationWarning):
+        platform_deprecated.commands = ['cmd1', 'cmd2']
+
+    with pytest.warns(warn.ReframeDeprecationWarning):
+        platform_deprecated.workdir = 'foodir'
+
+    assert platform_deprecated.launch_command() == expected_run_workdir

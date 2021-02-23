@@ -686,7 +686,7 @@ The following test will use a Singularity container to run:
 
 .. literalinclude:: ../tutorials/advanced/containers/container_test.py
    :lines: 6-
-   :emphasize-lines: 11-15
+   :emphasize-lines: 11-16
 
 A container-based test can be written as :class:`RunOnlyRegressionTest <reframe.core.pipeline.RunOnlyRegressionTest>` that sets the :attr:`container_platform <reframe.core.pipeline.RegressionTest.container_platform>` attribute.
 This attribute accepts a string that corresponds to the name of the container platform that will be used to run the container for this test.
@@ -694,7 +694,7 @@ In this case, the test will be using `Singularity <https://sylabs.io>`__ as a co
 If such a platform is not `configured <config_reference.html#container-platform-configuration>`__ for the current system, the test will fail.
 
 As soon as the container platform to be used is defined, you need to specify the container image to use by setting the :attr:`image <reframe.core.containers.ContainerPlatform.image>`.
-The default command that the container runs can be overwritten by setting the :attr:`command <reframe.core.containers.ContainerPlatform.command` of the container platform.
+The default command that the container runs can be overwritten by setting the :attr:`command <reframe.core.containers.ContainerPlatform.command>` of the container platform.
 
 The :attr:`image <reframe.core.containers.ContainerPlatform.image>` is the only mandatory attribute for container-based checks.
 It is important to note that the :attr:`executable <reframe.core.pipeline.RegressionTest.executable>` and :attr:`executable_opts <reframe.core.pipeline.RegressionTest.executable_opts>` attributes of the actual test are ignored in case of container-based tests.
@@ -703,7 +703,7 @@ ReFrame will run the container as follows:
 
 .. code-block:: console
 
-    singularity exec -B"/path/to/test/stagedir:/rfm_workdir" --pwd="/rfm_workdir" docker://ubuntu:18.04 bash -c 'pwd; ls; cat /etc/os-release'
+    singularity exec -B"/path/to/test/stagedir:/rfm_workdir" --pwd="/rfm_workdir" docker://ubuntu:18.04 bash -c 'pwd; cat /etc/os-release > release.txt'
 
 By default ReFrame will mount the stage directory of the test under ``/rfm_workdir`` inside the container.
 Once the commands are executed, the container is stopped and ReFrame goes on with the sanity and performance checks.
@@ -714,12 +714,19 @@ Besides the stage directory, additional mount points can be specified through th
     self.container_platform.mount_points = [('/path/to/host/dir1', '/path/to/container/mount_point1'),
                                             ('/path/to/host/dir2', '/path/to/container/mount_point2')]
 
-.. tip::
 
-   The container filesystem is ephemeral, therefore, ReFrame mounts the stage directory under ``/rfm_workdir`` inside the container where the user can copy directories/files as needed.
-   The aforementioned directories/files will then be available inside the stage directory after the container execution finishes.
-   This is very useful if the above directories/files are going to be used for the sanity/performance checks.
-   If this is the case, the user should overwrite the default command executed by the container, using the :attr:`command <reframe.core.containers.ContainerPlatform.command>` to include the appropriate copy commands.
+The container filesystem is ephemeral, therefore, ReFrame mounts the stage directory under ``/rfm_workdir`` inside the container where the user can copy directories/files as needed.
+The aforementioned directories/files will then be available inside the stage directory after the container execution finishes.
+This is very useful if the above directories/files are going to be used for the sanity/performance checks.
+If this is the case, the user should overwrite the default command executed by the container, using the :attr:`command <reframe.core.containers.ContainerPlatform.command>` to include the appropriate copy commands.
+In this test, we have changed the directory that the container is going to run the commands using the `--pwd=/rfm_workdir` through the :attr:`options <reframe.core.containers.ContainerPlatform.options>`.
+Since this is the directory that ReFrame mounts the stage directory inside the container, the files created there are available after the container execution finishes.
+Therefore, the ``release.txt`` where the output of the ``cat /etc/os-release`` is redirected, can be used in the subsequent sanity function:
+
+.. code-block:: python
+
+    sn.assert_found(r'18.04.\d+ LTS \(Bionic Beaver\)', 'release.txt')
+
 
 For a complete list of the available attributes of a specific container platform, please have a look at the :ref:`container-platforms` section of the :doc:`regression_test_api` guide.
 On how to configure ReFrame for running containerized tests, please have a look at the :ref:`container-platform-configuration` section of the :doc:`config_reference`.
