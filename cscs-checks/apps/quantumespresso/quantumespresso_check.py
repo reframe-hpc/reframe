@@ -10,6 +10,7 @@ import reframe.utility.sanity as sn
 class QuantumESPRESSOCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
         self.valid_prog_environs = ['builtin']
+        self.modules = ['QuantumESPRESSO']
         self.executable = 'pw.x'
         self.executable_opts = ['-in', 'ausurf.in']
 
@@ -40,7 +41,6 @@ class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
         super().__init__()
         self.descr = f'QuantumESPRESSO CPU check (version: {scale}, {variant})'
         self.valid_systems = ['daint:mc', 'eiger:mc']
-        self.modules = ['QuantumESPRESSO']
         if scale == 'small':
             self.valid_systems += ['dom:mc']
             energy_reference = -11427.09017218
@@ -131,7 +131,6 @@ class QuantumESPRESSOGpuCheck(QuantumESPRESSOCheck):
         super().__init__()
         self.descr = f'QuantumESPRESSO GPU check (version: {scale}, {variant})'
         self.valid_systems = ['daint:gpu']
-        self.modules = ['QuantumESPRESSO']
         self.num_gpus_per_node = 1
         if scale == 'small':
             self.valid_systems += ['dom:gpu']
