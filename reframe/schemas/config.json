@@ -139,6 +139,58 @@
                     "required": ["address"]
                 }
             ]
+        },
+        "processor_info": {
+            "type": "object",
+            "properties": {
+                "arch": {"type": "string"},
+                "num_cpus": {"type": "number"},
+                "num_cpus_per_core": {"type": "number"},
+                "num_cpus_per_socket": {"type": "number"},
+                "num_sockets": {"type": "number"},
+                "topology": {
+                    "type": "object",
+                    "properties": {
+                        "numa_nodes": {
+                            "type": "array",
+                            "items": {"type": "string"}
+                        },
+                        "sockets": {
+                            "type": "array",
+                            "items": {"type": "string"}
+                        },
+                        "cores": {
+                            "type": "array",
+                            "items": {"type": "string"}
+                        },
+                        "caches": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "type": {"type": "string"},
+                                    "size": {"type": "number"},
+                                    "linesize": {"type": "number"},
+                                    "associativity": {"type": "number"},
+                                    "num_cpus": {"type": "number"},
+                                    "cpusets": {
+                                        "type": "array",
+                                        "items": {"type": "string"}
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "device_info": {
+            "type": "object",
+            "properties": {
+                "type": {"type": "string"},
+                "arch": {"type": "string"},
+                "vendor": {"type": "string"}
+            }
         }
     },
     "type": "object",
@@ -220,11 +272,12 @@
                                 "modules": {"$ref": "#/defs/modules_list"},
                                 "variables": {"$ref": "#/defs/envvar_list"},
                                 "max_jobs": {"type": "number"},
-                                "sockets_per_node": {"type": ["number", "null"]},
-                                "cores_per_socket": {"type": ["number", "null"]},
-                                "threads_per_core": {"type": ["number", "null"]},
-                                "arch": {"type": "string"},
-                                "extra_attributes": {"type": "object"},
+                                "processor": {"$ref": "#/defs/processor_info"},
+                                "devices": {
+                                    "type": "array",
+                                    "items": {"$ref": "#/defs/device_info"}
+                                },
+                                "extras": {"type": "object"},
                                 "resources": {
                                     "type": "array",
                                     "items": {
@@ -477,10 +530,8 @@
         "systems/partitions/modules": [],
         "systems/partitions/variables": [],
         "systems/partitions/max_jobs": 8,
-        "systems/partitions/arch": "",
-        "systems/partitions/sockets_per_node": null,
-        "systems/partitions/cores_per_socket": null,
-        "systems/partitions/threads_per_core": null,
-        "systems/partitions/extra_attributes": {}
+        "systems/partitions/processor": {},
+        "systems/partitions/devices": [],
+        "systems/partitions/extras": {}
     }
 }

@@ -13,6 +13,163 @@ from reframe.core.modules import ModulesSystem
 from reframe.core.environments import (Environment, ProgEnvironment)
 
 
+class Processor(jsonext.JSONSerializable):
+    '''A representation of a processor inside ReFrame.
+
+    .. warning::
+       Users may not create :class:`Processor` objects directly.
+    '''
+
+    def __init__(self, processor_info):
+        self._arch = None
+        self._num_cpus = None
+        self._num_cpus_per_core = None
+        self._num_cpus_per_socket = None
+        self._num_sockets = None
+        self._topology = None
+        self._info = processor_info
+
+        if processor_info == {}:
+            return
+
+        for var in ['arch', 'num_cpus', 'num_cpus_per_core',
+                    'num_cpus_per_socket', 'num_sockets', 'topology']:
+            if var in processor_info:
+                setattr(self, f'_{var}', processor_info[var])
+
+    @property
+    def info(self):
+        '''All the available information from the configuration.
+
+        :type: :class:`dict`
+        '''
+        return self._info
+
+    @property
+    def arch(self):
+        '''The microarchitecture of the processors.
+
+        :type: :class:`str`
+        '''
+        return self._arch
+
+    @property
+    def num_cpus(self):
+        '''Number of logical CPUs.
+
+        :type: integral
+        '''
+        return self._num_cpus
+
+    @property
+    def num_cpus_per_core(self):
+        '''Number of logical CPUs per core.
+
+        :type: integral
+        '''
+        return self._num_cpus_per_core
+
+    @property
+    def num_cpus_per_socket(self):
+        '''Number of logical CPUs per socket.
+
+        :type: integral
+        '''
+        return self._num_cpus_per_socket
+
+    @property
+    def num_sockets(self):
+        '''Number of sockets.
+
+        :type: integral
+        '''
+        return self._num_sockets
+
+    @property
+    def topology(self):
+        '''Topology of the architecture.
+
+        :type: :class:`Dict[str, obj]`
+        '''
+        return self._topology
+
+    @property
+    def num_cores(self):
+        '''Number of cores. Derived by ``num_cpus // num_cpus_per_core``.
+
+        :type: integral
+        '''
+        if self._num_cpus and self._num_cpus_per_core:
+            return self._num_cpus // self._num_cpus_per_core
+        else:
+            return None
+
+    @property
+    def num_cores_per_socket(self):
+        '''Number of cores per socket. Derived by
+        ``num_cores // num_sockets``.
+
+        :type: integral
+        '''
+        if self.num_cores and self._num_sockets:
+            return self.num_cores // self._num_sockets
+        else:
+            return None
+
+
+class Device(jsonext.JSONSerializable):
+    '''A representation of a device inside ReFrame.
+
+    .. warning::
+       Users may not create :class:`Device` objects directly.
+    '''
+
+    def __init__(self, device_info):
+        self._type = None
+        self._arch = None
+        self._vendor = None
+        self._info = device_info
+
+        if device_info == {}:
+            return
+
+        for var in ['arch', 'type', 'vendor']:
+            if var in device_info:
+                setattr(self, f'_{var}', device_info[var])
+
+    @property
+    def info(self):
+        '''All the available information from the configuration.
+
+        :type: :class:`dict`
+        '''
+        return self._info
+
+    @property
+    def arch(self):
+        '''The architecture of the device.
+
+        :type: :class:`str`
+        '''
+        return self._arch
+
+    @property
+    def type(self):
+        '''The type of the device.
+
+        :type: :class:`str`
+        '''
+        return self._type
+
+    @property
+    def vendor(self):
+        '''The vendor of the device.
+
+        :type: :class:`str`
+        '''
+        return self._vendor
+
+
 class SystemPartition(jsonext.JSONSerializable):
     '''A representation of a system partition inside ReFrame.
 
@@ -22,8 +179,7 @@ class SystemPartition(jsonext.JSONSerializable):
 
     def __init__(self, parent, name, sched_type, launcher_type,
                  descr, access, container_environs, resources,
-                 local_env, environs, max_jobs, arch, sockets_per_node,
-                 cores_per_socket, threads_per_core, extra_attributes):
+                 local_env, environs, max_jobs, processor, devices, extras):
         getlogger().debug(f'Initializing system partition {name!r}')
         self._parent_system = parent
         self._name = name
@@ -37,11 +193,9 @@ class SystemPartition(jsonext.JSONSerializable):
         self._environs = environs
         self._max_jobs = max_jobs
         self._resources = {r['name']: r['options'] for r in resources}
-        self._arch = arch
-        self._sockets_per_node = sockets_per_node
-        self._cores_per_socket = cores_per_socket
-        self._threads_per_core = threads_per_core
-        self._extra_attributes = extra_attributes
+        self._processor = Processor(processor)
+        self._devices = [Device(d) for d in devices]
+        self._extras = extras
 
     @property
     def access(self):
@@ -194,77 +348,27 @@ class SystemPartition(jsonext.JSONSerializable):
         return None
 
     @property
-    def arch(self):
-        '''The microarchitecture of this partition.
+    def processor(self):
+        '''The processor object of the current partition.
 
         .. versionadded:: 3.5
 
-        :type: :class:`str`
+        :type: :class:`reframe.core.systems.Processor`
         '''
-        return self._arch
+        return self._processor
 
     @property
-    def sockets_per_node(self):
-        '''The number of sockets per node on this partition.
+    def devices(self):
+        '''A list of the device objects of the current partition.
 
         .. versionadded:: 3.5
 
-        :type: integral
+        :type: :class:`List[reframe.core.systems.Device]`
         '''
-        return self._sockets_per_node
+        return self._devices
 
     @property
-    def cores_per_socket(self):
-        '''The number of cores per socket on this partition.
-
-        .. versionadded:: 3.5
-
-        :type: integral
-        '''
-        return self._cores_per_socket
-
-    @property
-    def cores_per_node(self):
-        '''The number of cores per node on this partition.
-
-        .. versionadded:: 3.5
-
-        :type: integral
-        '''
-        ret = None
-        if all([self._cores_per_socket, self._sockets_per_node]):
-            ret = (self._sockets_per_node * self._cores_per_socket)
-
-        return ret
-
-    @property
-    def threads_per_core(self):
-        '''The number of threads per core on this partition.
-
-        .. versionadded:: 3.5
-
-        :type: integral
-        '''
-        return self._threads_per_core
-
-    @property
-    def threads_per_node(self):
-        '''The number of threads per node on this partition.
-
-        .. versionadded:: 3.5
-
-        :type: integral
-        '''
-        ret = None
-        if all([self._cores_per_socket, self._sockets_per_node,
-                self._threads_per_core]):
-            ret = (self._sockets_per_node * self._cores_per_socket *
-                   self._threads_per_core)
-
-        return ret
-
-    @property
-    def extra_attributes(self):
+    def extras(self):
         '''User defined attributes of the system. By default
         it is an empty dictionary.
 
@@ -272,7 +376,7 @@ class SystemPartition(jsonext.JSONSerializable):
 
         :type: object
         '''
-        return self._extra_attributes
+        return self._extras
 
     def __eq__(self, other):
         if not isinstance(other, type(self)):
@@ -405,19 +509,9 @@ class System(jsonext.JSONSerializable):
                         variables=site_config.get(f'{partid}/variables')
                     ),
                     max_jobs=site_config.get(f'{partid}/max_jobs'),
-                    arch=site_config.get(f'{partid}/arch'),
-                    sockets_per_node=site_config.get(
-                        f'{partid}/sockets_per_node'
-                    ),
-                    cores_per_socket=site_config.get(
-                        f'{partid}/cores_per_socket'
-                    ),
-                    threads_per_core=site_config.get(
-                        f'{partid}/threads_per_core'
-                    ),
-                    extra_attributes=site_config.get(
-                        f'{partid}/extra_attributes'
-                    )
+                    processor=site_config.get(f'{partid}/processor'),
+                    devices=site_config.get(f'{partid}/devices'),
+                    extras=site_config.get(f'{partid}/extras')
                 )
             )
 
