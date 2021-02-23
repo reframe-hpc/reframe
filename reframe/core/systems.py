@@ -116,6 +116,9 @@ class Processor(jsonext.JSONSerializable):
         else:
             return None
 
+    def __str__(self):
+        return json.dumps(self._info, indent=2)
+
 
 class Device(jsonext.JSONSerializable):
     '''A representation of a device inside ReFrame.
@@ -168,6 +171,9 @@ class Device(jsonext.JSONSerializable):
         :type: :class:`str`
         '''
         return self._vendor
+
+    def __str__(self):
+        return json.dumps(self._info, indent=2)
 
 
 class SystemPartition(jsonext.JSONSerializable):
