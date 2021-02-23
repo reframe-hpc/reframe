@@ -275,7 +275,9 @@ def repr(obj, htchar=' ', lfchar='\n', indent=4, basic_offset=0):
 def attrs(obj):
     '''Inspect object and return its attributes and their values.
 
-    This function returns also any descriptors found at the owner class.
+    This function returns also any descriptors found at the owner class,
+    with the exception of descriptors without an assigned value, which are
+    expected to raise an ``AttributeError``.
 
     :arg obj: The object to inspect.
     :returns: an iterator over ``(attr_name, value)`` tuples
@@ -292,6 +294,7 @@ def attrs(obj):
                 try:
                     ret[attr] = getattr(obj, attr)
                 except AttributeError:
+                    # Pass if the descriptor does not have an assigned value
                     pass
 
     return ret
