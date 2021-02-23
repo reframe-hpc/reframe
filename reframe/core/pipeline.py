@@ -816,14 +816,6 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
 
         self.descr = self.name
         self.executable = os.path.join('.', self.name)
-        self.executable_opts = []
-        self.preload_cmds = []
-        self.prerun_cmds = []
-        self.postrun_cmds = []
-        self.keep_files = []
-        self.readonly_files = []
-        self.tags = set()
-        self.maintainers = []
         self._perfvalues = {}
 
         # Static directories of the regression check
