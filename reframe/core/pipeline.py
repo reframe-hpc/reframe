@@ -322,6 +322,19 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #: :default: :class:`None`.
     container_platform = ContainerPlatformField(type(None))
 
+    #: .. versionadded:: 3.5.0
+    #:
+    #: List of shell commands to execute before loading the environment for
+    #: this job.
+    #:
+    #: These commands do not execute in the context of ReFrame.
+    #: Instead, they are emitted in the generated job script just before the
+    #: actual job launch command.
+    #:
+    #: :type: :class:`List[str]`
+    #: :default: ``[]``
+    preload_cmds = fields.TypedField(typ.List[str])
+
     #: .. versionadded:: 3.0
     #:
     #: List of shell commands to execute before launching this job.
@@ -794,6 +807,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
         self.postbuild_cmds = []
         self.executable = os.path.join('.', self.name)
         self.executable_opts = []
+        self.preload_cmds = []
         self.prerun_cmds = []
         self.postrun_cmds = []
         self.keep_files = []
@@ -1253,7 +1267,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
         with osext.change_dir(self._stagedir):
             try:
                 self._build_job.prepare(
-                    build_commands, environs,
+                    build_commands, environs, self.preload_cmds,
                     login=rt.runtime().get_option('general/0/use_login_shell'),
                     trap_errors=True
                 )
@@ -1381,7 +1395,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
             try:
                 self.logger.debug('Generating the run script')
                 self._job.prepare(
-                    commands, environs,
+                    commands, environs, self.preload_cmds,
                     login=rt.runtime().get_option('general/0/use_login_shell'),
                     trap_errors=rt.runtime().get_option(
                         'general/0/trap_job_errors'
