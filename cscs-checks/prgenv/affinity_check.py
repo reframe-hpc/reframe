@@ -18,9 +18,28 @@ class AffinityTestBase(rfm.RegressionTest):
 
     It reads a reference file for each valid system, which allows this base
     class to figure out the processor's topology. The content of this reference
-    file is simply the output of the `lscpu -e` command. For more info on this,
-    see the `read_proc_topo` hook.
+    file is simply the output of the `lscpu -e -J` command. For more info on
+    this, see the `read_proc_topo` hook.
     '''
+
+    # Variables to control the hint and binding options on the launcher.
+    multithread = variable(bool, type(None), value=None)
+    cpu_bind = variable(str, type(None), value=None)
+    hint = variable(str, type(None), value=None)
+
+    # Variable to specify system specific launcher options. This will override
+    # any of the above global options.
+    #
+    # Example:
+    #
+    # system = {
+    #     'daint:mc': {
+    #         multithreading = False,
+    #         cpu_bind = 'none',
+    #         hint = 'nomultithread',
+    #     }
+    # }
+    system = variable(dict, value={})
 
     def __init__(self):
         self.valid_systems = ['daint:gpu', 'daint:mc',
@@ -29,6 +48,7 @@ class AffinityTestBase(rfm.RegressionTest):
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.build_system = 'Make'
         self.build_system.options = ['-C affinity', 'MPI=1']
+
         # The github URL can not be specifid as `self.sourcedir` as that
         # would prevent the src folder from being copied to stage which is
         # necessary since these tests need files from it.
@@ -54,8 +74,7 @@ class AffinityTestBase(rfm.RegressionTest):
         cp = self.current_partition.fullname
         self.topo_file = self.topology[cp]
 
-    # FIXME: The function below should be made general so other tests can
-    #    also use it.
+    # FIXME: Update the hook below once the PR #1773 is merged.
     @rfm.run_after('compile')
     def read_proc_topo(self):
         '''Import the processor's topology from the reference file.
@@ -77,47 +96,49 @@ class AffinityTestBase(rfm.RegressionTest):
         after the compilation stage, once the required files have been copied
         over to the stage directory.
         '''
+
         cp = self.current_partition.fullname
         with osext.change_dir(self.stagedir):
             with open(self.topology[cp], 'r') as topo:
                 lscpu = json.load(topo)['cpus']
 
         # Build the cpu set
-        self.cpu_set = set(map(lambda x: int(x['cpu']), lscpu))
+        self.cpu_set = {int(x['cpu']) for x in lscpu}
         self.num_cpus = len(self.cpu_set)
 
         # Build the numa sets
-        self.num_numa_nodes = len(set(map(lambda x: int(x['node']), lscpu)))
+        self.num_numa_nodes = len({int(x['node']) for x in lscpu})
         self.num_cpus_per_core = int(
-            self.num_cpus/len(set(map(lambda x: int(x['core']), lscpu)))
+            self.num_cpus/len({int(x['core']) for x in lscpu})
         )
-        self.numa_nodes = {}
+        self.numa_nodes = []
         for i in range(self.num_numa_nodes):
-            self.numa_nodes[i] = set(
-                map(lambda y: int(y['cpu']),
-                    filter(lambda x: int(x['node']) == i, lscpu)
-                    )
-            )
+            self.numa_nodes.append({
+                int(y['cpu']) for y in [
+                    x for x in lscpu if int(x['node']) == i
+                ]
+            })
 
         # Build the socket sets
-        self.num_sockets = len(set(map(lambda x: int(x['socket']), lscpu)))
-        self.sockets = {}
+        self.num_sockets = len({int(x['socket']) for x in lscpu})
+        self.sockets = []
         for i in range(self.num_sockets):
-            self.sockets[i] = set(
-                map(lambda y: int(y['cpu']),
-                    filter(lambda x: int(x['socket']) == i, lscpu)
-                    )
-            )
+            self.sockets.append({
+                int(y['cpu']) for y in [
+                    x for x in lscpu if int(x['socket']) == i
+                ]
+            })
 
         # Store the lscpu output
         self._lscpu = lscpu
 
-    def get_sibiling_cpus(self, cpuid, by=None):
+    def get_sibling_cpus(self, cpuid, by=None):
         '''Return a cpu set where cpuid belongs to.
 
         The cpu set can be extracted by matching core, numa domain or socket.
         This is controlled by the `by` argument.
         '''
+
         _map = {
             'core': 3,
             'socket': 2,
@@ -125,27 +146,20 @@ class AffinityTestBase(rfm.RegressionTest):
         }
 
         if (cpuid < 0) or (cpuid >= self.num_cpus):
-            raise TaskExit(f'a cpuid with value {cpuid} is invalid')
+            raise ReframeError(f'a cpuid with value {cpuid} is invalid')
 
         if by is None:
-            raise TaskExit('must specify the sibiling level')
+            raise ReframeError('must specify the sibling level')
         else:
             if by not in self._lscpu[0]:
-                raise TaskExit('invalid sibiling level')
+                raise ReframeError('invalid sibling level')
 
-        sibiling_id = list(
-            filter(lambda x: int(x['cpu']) == cpuid, self._lscpu)
-        )[0][by]
-
-        return set(
-            map(
-                lambda y: int(y['cpu']),
-                filter(
-                    lambda x: x[by] == sibiling_id,
-                    self._lscpu
-                )
-            )
-        )
+        sibling_id = [x for x in self._lscpu if int(x['cpu']) == cpuid][0][by]
+        return {
+            int(y['cpu']) for y in [
+                x for x in self._lscpu if x[by] == sibling_id
+            ]
+        }
 
     @sn.sanity_function
     def assert_consumed_cpu_set(self):
@@ -159,10 +173,8 @@ class AffinityTestBase(rfm.RegressionTest):
     @rfm.run_after('run')
     def parse_output(self):
         '''Extract the data from the affinity tool.'''
-        re_aff_cpus = r'CPU affinity: \[\s+(?P<cpus>[\d+\s+]+)\]'
-        re_aff_thrds = r'^Tag:[^\n\r]*Thread:\s+(?P<thread>\d+)'
-        re_aff_ranks = r'^Tag:[^\n\r]*Rank:\s+(?P<rank>\d+)[\s+\S+]'
 
+        re_aff_cpus = r'CPU affinity: \[\s+(?P<cpus>[\d+\s+]+)\]'
         def parse_cpus(x):
             return sorted([int(xi) for xi in x.split()])
 
@@ -171,31 +183,30 @@ class AffinityTestBase(rfm.RegressionTest):
                 re_aff_cpus, self.stdout, 'cpus', parse_cpus
             ).evaluate()
 
-            self.aff_thrds = sn.extractall(
-                re_aff_thrds, self.stdout, 'thread', int
-            )
-
-            self.aff_ranks = sn.extractall(
-                re_aff_ranks, self.stdout, 'rank', int
-            )
-
     @rfm.run_before('run')
     def set_multithreading(self):
         '''Hook to control multithreading settings for each system.'''
+
         cp = self.current_partition.fullname
-        mthread = self.system.get(cp, {}).get('multithreading', None)
+        mthread = (
+            self.system.get(cp, {}).get('multithreading', None) or
+            self.multithread
+        )
         if mthread:
             self.use_multithreading = mthread
 
     @rfm.run_before('run')
     def set_launcher(self):
         '''Hook to control hints and cpu-bind for each system.'''
+
         cp = self.current_partition.fullname
-        cpu_bind = self.system.get(cp, {}).get('cpu-bind', None)
+        cpu_bind = (
+            self.system.get(cp, {}).get('cpu-bind', None) or self.cpu_bind
+        )
         if cpu_bind:
             self.job.launcher.options += [f'--cpu-bind={cpu_bind}']
 
-        hint = self.system.get(cp, {}).get('hint', None)
+        hint = self.system.get(cp, {}).get('hint', None) or self.hint
         if hint:
             self.job.launcher.options += [f'--hint={hint}']
 
@@ -210,9 +221,8 @@ class AffinityOpenMPBase(AffinityTestBase):
     many threads as sockets).
     '''
 
-    # FIXME: PR #1699 should make these vars instead of parameters.
-    parameter('omp_bind')
-    parameter('omp_proc_bind', ['spread'])
+    omp_bind = variable(str)
+    omp_proc_bind = variable(str, value='spread')
 
     def __init__(self):
         super().__init__()
@@ -243,14 +253,12 @@ class AffinityOpenMPBase(AffinityTestBase):
 @rfm.simple_test
 class OneThreadPerLogicalCoreOpenMP(AffinityOpenMPBase):
     '''Pin each OMP thread to a different logical core.'''
-    parameter('omp_bind', ['threads'])
+
+    omp_bind = 'threads'
 
     def __init__(self):
         super().__init__()
         self.descr = 'Pin one OMP thread per CPU.'
-
-        # System-dependent settings here
-        self.system = {}
 
     @property
     def num_omp_threads(self):
@@ -274,14 +282,12 @@ class OneThreadPerLogicalCoreOpenMP(AffinityOpenMPBase):
 @rfm.simple_test
 class OneThreadPerPhysicalCoreOpenMP(AffinityOpenMPBase):
     '''Pin each OMP thread to a different physical core.'''
-    parameter('omp_bind', ['cores'])
+
+    omp_bind = 'cores'
 
     def __init__(self):
         super().__init__()
         self.descr = 'Pin one OMP thread per core.'
-
-        # System-dependent settings here
-        self.system = {}
 
     @property
     def num_omp_threads(self):
@@ -293,16 +299,16 @@ class OneThreadPerPhysicalCoreOpenMP(AffinityOpenMPBase):
         '''Threads are bound to cores.'''
         for affinity_set in self.aff_cpus:
 
-            # Get CPU sibilings by core
-            cpu_sibilings = self.get_sibiling_cpus(affinity_set[0], by='core')
+            # Get CPU siblings by core
+            cpu_siblings = self.get_sibling_cpus(affinity_set[0], by='core')
 
             # All CPUs in the set must belong to the same core
             if (not all(x in self.cpu_set for x in affinity_set) or
-                not all(x in cpu_sibilings for x in affinity_set)):
+                not all(x in cpu_siblings for x in affinity_set)):
                 raise SanityError('incorrect affinity set')
 
             # Decrement the cpu set with all the CPUs that belong to this core
-            self.cpu_set -= cpu_sibilings
+            self.cpu_set -= cpu_siblings
 
 
 @rfm.simple_test
@@ -313,9 +319,6 @@ class OneThreadPerPhysicalCoreOpenMPnomt(OneThreadPerPhysicalCoreOpenMP):
         super().__init__()
         self.descr = 'Pin one OMP thread per core without multithreading.'
         self.use_multithreading = False
-
-        # System-dependent settings here
-        self.system = {}
 
     @property
     def ncpus_per_task(self):
@@ -331,14 +334,12 @@ class OneThreadPerPhysicalCoreOpenMPnomt(OneThreadPerPhysicalCoreOpenMP):
 @rfm.simple_test
 class OneThreadPerSocketOpenMP(AffinityOpenMPBase):
     '''Pin each OMP thread to a different socket.'''
-    parameter('omp_bind', ['sockets'])
+
+    omp_bind = 'sockets'
 
     def __init__(self):
         super().__init__()
         self.descr = 'Pin one OMP thread per socket.'
-
-        # System-dependent settings here
-        self.system = {}
 
     @property
     def num_omp_threads(self):
@@ -350,32 +351,30 @@ class OneThreadPerSocketOpenMP(AffinityOpenMPBase):
         '''Threads are bound to sockets.'''
         for affinity_set in self.aff_cpus:
 
-            # Get CPU sibilings by socket
-            cpu_sibilings = self.get_sibiling_cpus(
+            # Get CPU siblings by socket
+            cpu_siblings = self.get_sibling_cpus(
                 affinity_set[0], by='socket')
 
             # Alll CPUs in the affinity set must belong to the same socket
             if (not all(x in self.cpu_set for x in affinity_set) or
-                not all(x in cpu_sibilings for x in affinity_set)):
+                not all(x in cpu_siblings for x in affinity_set)):
                 raise SanityError('incorrect affinity set')
 
             # Decrement all the CPUs in this socket from the cpu set.
-            self.cpu_set -= cpu_sibilings
+            self.cpu_set -= cpu_siblings
 
 
 @rfm.simple_test
 class OneTaskPerSocketOpenMPnomt(AffinityOpenMPBase):
     '''One task per socket, and 1 OMP thread per physical core.'''
-    parameter('omp_bind', ['sockets'])
-    parameter('omp_proc_bind', ['close'])
+
+    omp_bind = 'sockets'
+    omp_proc_bind = 'close'
 
     def __init__(self):
         super().__init__()
         self.descr = 'One task per socket - wo. multithreading.'
         self.use_multithreading = False
-
-        # System-dependent settings here
-        self.system = {}
 
     @property
     def num_omp_threads(self):
@@ -403,19 +402,19 @@ class OneTaskPerSocketOpenMPnomt(AffinityOpenMPBase):
             # Count the number of OMP threads that live on each socket
             threads_in_socket[get_socket_id(affinity_set[0])] += 1
 
-            # Get CPU sibilings by socket
-            cpu_sibilings = self.get_sibiling_cpus(
+            # Get CPU siblings by socket
+            cpu_siblings = self.get_sibling_cpus(
                 affinity_set[0], by='socket'
             )
 
             # The size of the affinity set matches the number of OMP threads
             # and all CPUs from the set belong to the same socket.
             if ((self.num_omp_threads != len(affinity_set)) or
-                not all(x in cpu_sibilings for x in affinity_set)):
+                not all(x in cpu_siblings for x in affinity_set)):
                 raise SanityError('incorrect affinity set')
 
         # Remove the sockets the cpu set.
-        for i, socket in enumerate(self.sockets.values()):
+        for i, socket in enumerate(self.sockets):
             if threads_in_socket[i] == self.num_omp_threads:
                 self.cpu_set -= socket
 
@@ -433,9 +432,6 @@ class OneTaskPerSocketOpenMP(OneTaskPerSocketOpenMPnomt):
         self.descr = 'One task per socket - w. multithreading.'
         self.use_multithreading = True
 
-        # System-dependent settings here
-        self.system = {}
-
     @property
     def num_omp_threads(self):
         return int(self.num_cpus/self.num_sockets)
@@ -452,9 +448,6 @@ class ConsecutiveSocketFilling(AffinityTestBase):
     def __init__(self):
         super().__init__()
         self.use_multithreading = False
-
-        # System-dependent settings
-        self.system = {}
 
     @rfm.run_before('run')
     def set_tasks(self):
@@ -482,13 +475,13 @@ class ConsecutiveSocketFilling(AffinityTestBase):
 
                 else:
                     cpus_present.update(
-                        self.get_sibiling_cpus(affinity_set[0], by='core')
+                        self.get_sibling_cpus(affinity_set[0], by='core')
                     )
 
                 task_count += 1
 
             # Ensure all CPUs belong to the same socket
-            cpuset_by_socket = self.get_sibiling_cpus(
+            cpuset_by_socket = self.get_sibling_cpus(
                 next(iter(cpus_present)), by='socket'
             )
             if not all(cpu in cpuset_by_socket for cpu in cpus_present):
@@ -512,9 +505,6 @@ class AlternateSocketFilling(AffinityTestBase):
     def __init__(self):
         super().__init__()
         self.use_multithreading = False
-        self.system = {
-            # System-dependent settings here
-        }
 
     @rfm.run_before('run')
     def set_tasks(self):
@@ -543,7 +533,7 @@ class AlternateSocketFilling(AffinityTestBase):
 
                 else:
                     sockets[s].update(
-                        self.get_sibiling_cpus(affinity_set[0], by='core')
+                        self.get_sibling_cpus(affinity_set[0], by='core')
                     )
 
                 task_count += 1
