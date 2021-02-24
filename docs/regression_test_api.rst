@@ -59,6 +59,7 @@ In essence, these builtins exert control over the test creation, and they allow 
 
     class Foo(rfm.RegressionTest):
         variant = parameter(['A', 'B'])
+        # print(variant) # Error: a parameter may only be accessed from the class instance.
 
         def __init__(self):
             if self.variant == 'A':
@@ -67,8 +68,9 @@ In essence, these builtins exert control over the test creation, and they allow 
                 do_other()
 
   One of the most powerful features about these built-in functions is that they store their input information at the class level. 
-  This means if one were to extend or specialize an existing regression test, the test attribute additions and modifications made through built-in functions in the parent class will be automatically inherited by the child test.
-  For instance, continuing with the example above, one could override the :func:`__init__` method in the :class:`MyTest` regression test as follows:
+  However, a parameter may only be accessed from the class instance and accessing it directly from the class body is disallowed.
+  With this approach, extending or specializing an existing parametrized regression test becomes straightforward, since the test attribute additions and modifications made through built-in functions in the parent class are automatically inherited by the child test.
+  For instance, continuing with the example above, one could override the :func:`__init__` method in the :class:`Foo` regression test as follows:
 
   .. code:: python
 
@@ -124,7 +126,7 @@ In essence, these builtins exert control over the test creation, and they allow 
 
     class Foo(rfm.RegressionTest):
         my_var = variable(int, value=8)
-        not_a_var = 4
+        not_a_var = my_var - 4
 
         def __init__(self):
             print(self.my_var) # prints 8.
@@ -133,13 +135,15 @@ In essence, these builtins exert control over the test creation, and they allow 
             self.my_var = 10 # tests may also assign values the standard way
 
   The argument ``value`` in the :func:`variable` built-in sets the default value for the variable.
-  As mentioned above, a variable may not be declared more than once, but its default value can be updated by simply assigning it a new value directly in the class body.
+  Note that a variable may be accesed directly from the class body as long as its value was previously assigned in the same class body.
+  As mentioned above, a variable may not be declared more than once, but its default value can be updated by simply assigning it a new value directly in the class body. However, a variable may only be acted upon once in the same class body.
 
   .. code:: python
 
     class Bar(Foo):
         my_var = 4
         # my_var = 'override' # Error again!
+        # my_var = 8 # Error: Double action on `my_var` is not allowed.
 
         def __init__(self):
             print(self.my_var) # prints 4.
