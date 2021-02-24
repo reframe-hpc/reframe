@@ -153,7 +153,7 @@ class RegressionMixin(metaclass=RegressionTestMeta):
                 super().__getattr__(name)
 
 
-class RegressionTest(jsonext.JSONSerializable, RegressionMixin):
+class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     '''Base class for regression tests.
 
     All regression tests must eventually inherit from this class.
