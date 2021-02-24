@@ -39,7 +39,7 @@ class DGEMMTest(rfm.RegressionTest):
             'daint:mc': (860.0, -0.15, None, 'Gflop/s'),
             'dom:gpu': (300.0, -0.15, None, 'Gflop/s'),
             'dom:mc': (860.0, -0.15, None, 'Gflop/s'),
-#FIXME: SD-51352: eiger: dgemm does not perform
+            #FIXME: SD-51352: eiger: dgemm does not perform
             'eiger:mc': (650.0, -0.15, None, 'Gflop/s'),
         }
         self.maintainers = ['AJ', 'VH']
