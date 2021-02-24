@@ -178,8 +178,13 @@ def test_var_deepcopy():
     class Bar(Base):
         pass
 
+    class Baz(Base):
+        my_var = []
+
+    assert Base().my_var == [1, 2]
     assert Foo().my_var == [1, 2, 3]
     assert Bar().my_var == [1, 2]
+    assert Baz().my_var == []
 
 
 def test_variable_access():
