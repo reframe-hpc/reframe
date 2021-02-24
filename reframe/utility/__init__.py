@@ -729,19 +729,17 @@ class ScopedDict(UserDict):
 
     def scope(self, scope):
         ret = {}
-        while scope is not None:
-            if scope in self.data:
-                for k, v in self.data[scope].items():
+        curr_scope = scope
+        while curr_scope is not None:
+            if curr_scope in self.data:
+                for k, v in self.data[curr_scope].items():
                     if k not in ret:
                         ret[k] = v
 
-            if scope == self._global_scope:
-                scope = None
+            if curr_scope == self._global_scope:
+                curr_scope = None
             else:
-                scope = self._parent_scope(scope)
-
-        if not ret:
-            raise KeyError(str(scope))
+                curr_scope = self._parent_scope(curr_scope)
 
         return ret
 

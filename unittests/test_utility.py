@@ -960,9 +960,7 @@ def test_scoped_dict_key_resolution():
 
     # This is resolved in scope 'a'
     assert scoped_dict.scope('a:z') == {'k1': 1, 'k2': 2, 'k3': 9, 'k4': 10}
-
-    with pytest.raises(KeyError):
-        scoped_dict.scope(None)
+    assert scoped_dict.scope(None) == {}
 
 
 def test_scoped_dict_setitem():
