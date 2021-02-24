@@ -178,5 +178,22 @@ def test_var_deepcopy():
     class Bar(Base):
         pass
 
+    class Baz(Base):
+        my_var = []
+
+    assert Base().my_var == [1, 2]
     assert Foo().my_var == [1, 2, 3]
     assert Bar().my_var == [1, 2]
+    assert Baz().my_var == []
+
+
+def test_variable_access():
+    class Foo(rfm.RegressionMixin):
+        my_var = variable(str, value='bananas')
+        x = f'accessing {my_var!r} works because it has a default value.'
+
+    assert 'bananas' in getattr(Foo, 'x')
+    with pytest.raises(ValueError):
+        class Foo(rfm.RegressionMixin):
+            my_var = variable(int)
+            x = f'accessing {my_var!r} fails because its value is not set.'
