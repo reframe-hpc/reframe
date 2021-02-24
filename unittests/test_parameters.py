@@ -228,3 +228,10 @@ def test_param_deepcopy():
     assert Foo(_rfm_use_params=True).p0.val == -20
     assert Bar(_rfm_use_params=True).p0.val == 1
     assert Bar(_rfm_use_params=True).p0.val == 2
+
+
+def test_param_access():
+    with pytest.raises(ValueError):
+        class Foo(rfm.RegressionTest):
+            p = parameter([1, 2, 3])
+            x = f'accessing {p!r} in the class body is disallowed.'
