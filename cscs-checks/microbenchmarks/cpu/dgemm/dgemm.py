@@ -26,6 +26,8 @@ class DGEMMTest(rfm.RegressionTest):
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
         elif self.current_system.name in ['eiger']:
             self.valid_prog_environs = ['PrgEnv-gnu']
+        else:
+            self.valid_prog_environs = []
 
         self.num_tasks = 0
         self.use_multithreading = False
