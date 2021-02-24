@@ -10,17 +10,15 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class ParaViewCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+                              'eiger:mc']
         self.valid_prog_environs = ['builtin']
         self.num_tasks = 12
         self.num_tasks_per_node = 12
         self.modules = ['ParaView']
-
-        self.time_limit = '1m'
         self.executable = 'pvbatch'
         self.executable_opts = ['coloredSphere.py']
-
-        self.maintainers = ['JF']
+        self.maintainers = ['JF', 'TM']
         self.tags = {'scs', 'production'}
 
     @rfm.run_before('sanity')
