@@ -32,7 +32,7 @@ import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
 import reframe.utility.udeps as udeps
 from reframe.core.backends import getlauncher, getscheduler
-from reframe.core.buildsystems import BuildSystemField, EasyBuild
+from reframe.core.buildsystems import BuildSystemField
 from reframe.core.containers import ContainerPlatformField
 from reframe.core.deferrable import _DeferredExpression
 from reframe.core.exceptions import (BuildError, DependencyError,
@@ -1231,21 +1231,17 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
                 else:
                     self.build_system = 'Make'
 
-            self.build_system.srcdir = self.sourcepath
+            if self.sourcepath:
+                self.build_system.srcdir = self.sourcepath
+            else:
+                self.build_system.srcdir = self._stagedir
+
         else:
             if not self.build_system:
                 self.build_system = 'SingleSource'
 
             self.build_system.srcfile = self.sourcepath
             self.build_system.executable = self.executable
-
-        if isinstance(self.build_system, EasyBuild):
-            self.build_system._eb_sandbox = os.path.join(self._stagedir,
-                                                         'rfm_easybuild')
-            if self.build_system.emit_package:
-                self.keep_files.append(
-                    f'{self.build_system._eb_sandbox}/packages'
-                )
 
         # Prepare build job
         build_commands = [
@@ -1296,10 +1292,6 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
         # We raise a BuildError when we an exit code and it is non zero
         if self._build_job.exitcode:
             raise BuildError(self._build_job.stdout, self._build_job.stderr)
-
-        if isinstance(self.build_system, EasyBuild):
-            self.build_system.collect_built_modules(
-                os.path.join(self._stagedir, self._build_job.stdout))
 
     @_run_hooks('pre_run')
     @final

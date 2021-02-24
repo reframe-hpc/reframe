@@ -667,7 +667,7 @@ class EasyBuild(BuildSystem):
         self.easyconfigs = []
         self.options = []
         self.emit_package = False
-        self.eb_modules = []
+        self._eb_modules = []
 
     def emit_build_commands(self, environ):
         easyconfigs = ' '.join(self.easyconfigs)
@@ -675,28 +675,35 @@ class EasyBuild(BuildSystem):
         if self.emit_package:
             self.options.append('--package')
             for key, val in self.package_opts.items():
-                self.options.append(f"--package-{key}={val}")
+                self.options.append(f'--package-{key}={val}')
 
         options = ' '.join(self.options)
 
-        cmd = [f"EASYBUILD_BUILDPATH={self._eb_sandbox}/build \\",
-               f"EASYBUILD_INSTALLPATH={self._eb_sandbox} \\",
-               f"EASYBUILD_PREFIX={self._eb_sandbox} \\",
-               f"EASYBUILD_SOURCEPATH={self._eb_sandbox} \\",
-               f"eb {easyconfigs} {options}"]
+        self._eb_sandbox = os.path.join(self.srcdir, 'rfm_easybuild')
 
-        return cmd
+        return [f'EASYBUILD_BUILDPATH={self._eb_sandbox}/build \\',
+                f'EASYBUILD_INSTALLPATH={self._eb_sandbox} \\',
+                f'EASYBUILD_PREFIX={self._eb_sandbox} \\',
+                f'EASYBUILD_SOURCEPATH={self._eb_sandbox} \\',
+                f'eb {easyconfigs} {options}']
 
-    def collect_built_modules(self, build_stdout):
-        self.eb_modules = []
+    def _collect_eb_modules(self, build_stdout):
         modules_dir = os.path.join(self._eb_sandbox, 'modules', 'all')
         with open(build_stdout) as fp:
             out = fp.read()
 
+        self._eb_modules = []
         for m in re.findall(r'building and installing (\S+)...', out):
-            self.eb_modules.append({'name': m,
-                                    'collection': False,
-                                    'path': modules_dir})
+            self._eb_modules.append({'name': m,
+                                     'collection': False,
+                                     'path': modules_dir})
+
+    def eb_modules(self, build_stdout):
+        if self._eb_modules:
+            return self._eb_modules
+        else:
+            self._collect_eb_modules(build_stdout)
+            return self._eb_modules
 
 
 class BuildSystemField(fields.TypedField):
