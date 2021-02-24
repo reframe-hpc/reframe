@@ -727,6 +727,24 @@ class ScopedDict(UserDict):
             for k, v in scope_dict.items():
                 self.data[scope][k] = v
 
+    def scope(self, scope):
+        ret = {}
+        while scope is not None:
+            if scope in self.data:
+                for k, v in self.data[scope].items():
+                    if k not in ret:
+                        ret[k] = v
+
+            if scope == self._global_scope:
+                scope = None
+            else:
+                scope = self._parent_scope(scope)
+
+        if not ret:
+            raise KeyError(str(scope))
+
+        return ret
+
     def __str__(self):
         # just return the internal dictionary
         return str(self.data)
