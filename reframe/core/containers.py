@@ -136,6 +136,12 @@ class ContainerPlatform(abc.ABC):
         if self.image is None:
             raise ContainerError('no image specified')
 
+    def __str__(self):
+        return type(self).__name__
+
+    def __rfm_json_encode__(self):
+        return str(self)
+
 
 class Docker(ContainerPlatform):
     '''Container platform backend for running containers with `Docker
