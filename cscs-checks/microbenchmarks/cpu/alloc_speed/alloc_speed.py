@@ -14,13 +14,14 @@ class AllocSpeedTest(rfm.RegressionTest):
         self.sourcepath = 'alloc_speed.cpp'
         self.build_system = 'SingleSource'
         self.build_system.cxxflags = ['-O3', '-std=c++11']
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+                              'eiger:mc']
         self.valid_prog_environs = ['PrgEnv-gnu']
         if hugepages == 'no':
             self.valid_systems += ['arolla:cn', 'arolla:pn',
                                    'tsa:cn', 'tsa:pn']
         else:
-            if self.current_system.name in {'dom', 'daint'}:
+            if self.current_system.name in {'dom', 'daint', 'eiger'}:
                 self.modules = ['craype-hugepages%s' % hugepages]
 
         self.sanity_patterns = sn.assert_found('4096 MB', self.stdout)
@@ -31,30 +32,36 @@ class AllocSpeedTest(rfm.RegressionTest):
         self.sys_reference = {
             'no': {
                 'dom:gpu': {
-                    'time': (1.22, None, 0.05, 's')
+                    'time': (1.22, -0.05, 0.05, 's')
                 },
                 'dom:mc': {
-                    'time': (1.41, None, 0.05, 's')
+                    'time': (1.41, -0.05, 0.05, 's')
                 },
                 'daint:gpu': {
-                    'time': (1.22, None, 0.05, 's')
+                    'time': (1.22, -0.05, 0.05, 's')
                 },
                 'daint:mc': {
-                    'time': (1.41, None, 0.05, 's')
+                    'time': (1.41, -0.05, 0.05, 's')
+                },
+                'eiger:mc': {
+                    'time': (0.12, -0.05, 0.05, 's')
                 },
             },
             '2M': {
                 'dom:gpu': {
-                    'time': (0.11, None, 0.10, 's')
+                    'time': (0.11, -0.10, 0.10, 's')
                 },
                 'dom:mc': {
-                    'time': (0.20, None, 0.10, 's')
+                    'time': (0.20, -0.10, 0.10, 's')
                 },
                 'daint:gpu': {
-                    'time': (0.11, None, 0.10, 's')
+                    'time': (0.11, -0.10, 0.10, 's')
                 },
                 'daint:mc': {
-                    'time': (0.20, None, 0.10, 's')
+                    'time': (0.20, -0.10, 0.10, 's')
+                },
+                'eiger:mc': {
+                    'time': (0.06, -0.10, 0.10, 's')
                 },
                 '*': {
                     'time': (0, None, None, 's')
