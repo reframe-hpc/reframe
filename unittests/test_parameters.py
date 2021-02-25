@@ -183,6 +183,17 @@ def test_param_space_clash():
             '''Trigger error from param name clashing.'''
 
 
+def test_multiple_inheritance():
+    class Spam(rfm.RegressionMixin):
+        P0 = parameter()
+
+    class Ham(rfm.RegressionMixin):
+        P0 = parameter([2])
+
+    class Eggs(Spam, Ham):
+        '''Multiple inheritance is allowed if only one class defines P0.'''
+
+
 def test_namespace_clash():
     class Spam(rfm.RegressionTest):
         foo = variable(int, 1)
@@ -235,3 +246,11 @@ def test_param_access():
         class Foo(rfm.RegressionTest):
             p = parameter([1, 2, 3])
             x = f'accessing {p!r} in the class body is disallowed.'
+
+
+def test_param_space_read_only():
+    class Foo(rfm.RegressionMixin):
+        pass
+
+    with pytest.raises(ValueError):
+        Foo.param_space['a'] = (1,2,3)

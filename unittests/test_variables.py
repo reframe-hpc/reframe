@@ -197,3 +197,11 @@ def test_variable_access():
         class Foo(rfm.RegressionMixin):
             my_var = variable(int)
             x = f'accessing {my_var!r} fails because its value is not set.'
+
+
+def test_var_space_is_read_only():
+    class Foo(rfm.RegressionMixin):
+        pass
+
+    with pytest.raises(ValueError):
+        Foo._rfm_var_space['v'] = 0

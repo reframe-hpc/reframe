@@ -172,7 +172,7 @@ class RegressionTestMeta(type):
         obj.__init__(*args, **kwargs)
         return obj
 
-    def __getattribute__(cls, name):
+    def __getattr__(cls, name):
         ''' Attribute lookup method for the MetaNamespace.
 
         This metaclass implements a custom namespace, where built-in `variable`
@@ -183,15 +183,14 @@ class RegressionTestMeta(type):
         requested class attribute.
         '''
         try:
-            return super().__getattribute__(name)
-        except AttributeError:
+            return cls._rfm_local_var_space[name]
+        except KeyError:
             try:
-                return cls._rfm_local_var_space[name]
+                return cls._rfm_local_param_space[name]
             except KeyError:
-                try:
-                    return cls._rfm_local_param_space[name]
-                except KeyError:
-                    return super().__getattr__(name)
+                raise AttributeError(
+                    f'class {cls.__qualname__!r} has no attribute {name!r}'
+                )
 
     @property
     def param_space(cls):
