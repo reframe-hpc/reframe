@@ -45,7 +45,9 @@ class AffinityTestBase(rfm.RegressionTest):
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc', 'eiger:mc',
                               'ault:amdv100']
-        self.valid_prog_environs = ['PrgEnv-gnu']
+        self.valid_prog_environs = [
+            'PrgEnv-gnu', 'PrgEnv-cray', 'PrgEnv-intel', 'PrgEnv-pgi'
+        ]
         self.build_system = 'Make'
         self.build_system.options = ['-C affinity', 'MPI=1']
 
@@ -317,7 +319,7 @@ class OneThreadPerPhysicalCoreOpenMPnomt(OneThreadPerPhysicalCoreOpenMP):
 
     def __init__(self):
         super().__init__()
-        self.descr = 'Pin one OMP thread per core without multithreading.'
+        self.descr = 'Pin one OMP thread per core wo. multithreading.'
         self.use_multithreading = False
 
     @property
