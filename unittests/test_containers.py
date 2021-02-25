@@ -191,61 +191,66 @@ def test_run_opts(container_platform, expected_cmd_run_opts):
     assert container_platform.launch_command() == expected_cmd_run_opts
 
 
+# Everything from this point is testing deprecated behavior
+
 @pytest.fixture(params=['Docker', 'Singularity', 'Sarus', 'Shifter'])
-def container_variant_deprecated(request):
+def container_variant_noopt(request):
     return request.param
 
 
 @pytest.fixture
-def platform_deprecated(container_variant_deprecated):
-    ret = containers.__dict__[container_variant_deprecated]()
+def container_platform_noopt(container_variant_noopt):
+    ret = containers.__dict__[container_variant_noopt]()
     ret.image = 'image:tag'
     ret.options = ['--foo']
     return ret
 
 
 @pytest.fixture
-def expected_run_commands(container_variant_deprecated):
-    if container_variant_deprecated == 'Docker':
+def expected_run_with_commands(container_variant_noopt):
+    if container_variant_noopt == 'Docker':
         return ("docker run --rm --foo image:tag bash -c 'cd /rfm_workdir; "
                 "cmd1; cmd2'")
-    elif container_variant_deprecated == 'Sarus':
+    elif container_variant_noopt == 'Sarus':
         return ("sarus run --foo image:tag bash -c 'cd /rfm_workdir; cmd1; "
                 "cmd2'")
-    elif container_variant_deprecated == 'Shifter':
+    elif container_variant_noopt == 'Shifter':
         return ("shifter run --foo image:tag bash -c 'cd /rfm_workdir; cmd1; "
                 "cmd2'")
-    elif container_variant_deprecated == 'Singularity':
+    elif container_variant_noopt == 'Singularity':
         return ("singularity exec --foo image:tag bash -c 'cd /rfm_workdir; "
                 "cmd1; cmd2'")
 
 
 @pytest.fixture
-def expected_run_workdir(container_variant_deprecated):
-    if container_variant_deprecated == 'Docker':
+def expected_run_with_workdir(container_variant_noopt):
+    if container_variant_noopt == 'Docker':
         return ("docker run --rm --foo image:tag bash -c 'cd foodir; cmd1; "
                 "cmd2'")
-    elif container_variant_deprecated == 'Sarus':
+    elif container_variant_noopt == 'Sarus':
         return "sarus run --foo image:tag bash -c 'cd foodir; cmd1; cmd2'"
-    elif container_variant_deprecated == 'Shifter':
+    elif container_variant_noopt == 'Shifter':
         return "shifter run --foo image:tag bash -c 'cd foodir; cmd1; cmd2'"
-    elif container_variant_deprecated == 'Singularity':
+    elif container_variant_noopt == 'Singularity':
         return ("singularity exec --foo image:tag bash -c 'cd foodir; cmd1; "
                 "cmd2'")
 
 
-def test_run_commands(platform_deprecated, expected_run_commands):
+def test_run_with_commands(container_platform_noopt,
+                           expected_run_with_commands):
     with pytest.warns(warn.ReframeDeprecationWarning):
-        platform_deprecated.commands = ['cmd1', 'cmd2']
+        container_platform_noopt.commands = ['cmd1', 'cmd2']
 
-    assert platform_deprecated.launch_command() == expected_run_commands
+    found_commands = container_platform_noopt.launch_command()
+    assert found_commands == expected_run_with_commands
 
 
-def test_run_workdir(platform_deprecated, expected_run_workdir):
+def test_run_with_workdir(container_platform_noopt, expected_run_with_workdir):
     with pytest.warns(warn.ReframeDeprecationWarning):
-        platform_deprecated.commands = ['cmd1', 'cmd2']
+        container_platform_noopt.commands = ['cmd1', 'cmd2']
 
     with pytest.warns(warn.ReframeDeprecationWarning):
-        platform_deprecated.workdir = 'foodir'
+        container_platform_noopt.workdir = 'foodir'
 
-    assert platform_deprecated.launch_command() == expected_run_workdir
+    found_commands = container_platform_noopt.launch_command()
+    assert found_commands == expected_run_with_workdir
