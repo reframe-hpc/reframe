@@ -661,17 +661,19 @@ class EasyBuild(BuildSystem):
     options = fields.TypedField(typ.List[str])
     emit_package = fields.TypedField(bool)
     package_opts = fields.TypedField(typ.Dict[str, str])
+    srcdir = fields.TypedField(str, type(None))
 
     def __init__(self):
         super().__init__()
         self.easyconfigs = []
         self.options = []
         self.emit_package = False
+        self.package_opts = {}
         self._eb_modules = []
+        self.srcdir = None
 
     def emit_build_commands(self, environ):
         easyconfigs = ' '.join(self.easyconfigs)
-
         if self.emit_package:
             self.options.append('--package')
             for key, val in self.package_opts.items():
@@ -689,6 +691,7 @@ class EasyBuild(BuildSystem):
 
     def _collect_eb_modules(self, build_stdout):
         modules_dir = os.path.join(self._eb_sandbox, 'modules', 'all')
+        build_stdout = os.path.join(self._eb_sandbox, '..', build_stdout)
         with open(build_stdout) as fp:
             out = fp.read()
 
