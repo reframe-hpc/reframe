@@ -646,25 +646,36 @@ def test_validate_deps_empty(exec_ctx):
 
 
 def test_skip_unresolved_deps(make_test, temp_runtime):
+    #
+    #       t0    t4
+    #      ^  ^   ^
+    #     /    \ /
+    #    t1    t2
+    #           ^
+    #           |
+    #          t3
+    #
+
     rt = temp_runtime(fixtures.TEST_CONFIG_FILE, system='sys0:p0')
     next(rt)
 
     t0 = make_test('t0')
+    t0.valid_systems = ['sys0:p1']
     t1 = make_test('t1')
     t2 = make_test('t2')
     t3 = make_test('t3')
-    t3.valid_systems = ['sys0:p1']
+    t4 = make_test('t4')
     t1.depends_on('t0')
     t2.depends_on('t0')
-    t2.depends_on('t3')
+    t2.depends_on('t4')
+    t3.depends_on('t2')
     deps, skipped_cases = dependencies.build_deps(
-        executors.generate_testcases([t0, t1, t2, t3])
+        executors.generate_testcases([t0, t1, t2, t3, t4])
     )
-
-    assert len(skipped_cases) == 2
+    assert len(skipped_cases) == 6
 
     skipped_tests = {c.check.name for c in skipped_cases}
-    assert skipped_tests == {'t2'}
+    assert skipped_tests == {'t1', 't2', 't3'}
 
 
 def assert_topological_order(cases, graph):
@@ -793,6 +804,18 @@ def test_toposort(make_test, exec_ctx):
     cases = dependencies.toposort(deps)
     assert_topological_order(cases, deps)
 
+    # Assert the level assignment
+    cases_by_level = {}
+    for c in cases:
+        cases_by_level.setdefault(c.level, set())
+        cases_by_level[c.level].add(c.check.name)
+
+    assert cases_by_level[0] == {'t0', 't5'}
+    assert cases_by_level[1] == {'t1', 't6', 't7'}
+    assert cases_by_level[2] == {'t2', 't8'}
+    assert cases_by_level[3] == {'t3'}
+    assert cases_by_level[4] == {'t4'}
+
 
 def test_toposort_subgraph(make_test, exec_ctx):
     #
@@ -825,3 +848,12 @@ def test_toposort_subgraph(make_test, exec_ctx):
     )
     cases = dependencies.toposort(partial_deps, is_subgraph=True)
     assert_topological_order(cases, partial_deps)
+
+    # Assert the level assignment
+    cases_by_level = {}
+    for c in cases:
+        cases_by_level.setdefault(c.level, set())
+        cases_by_level[c.level].add(c.check.name)
+
+    assert cases_by_level[1] == {'t3'}
+    assert cases_by_level[2] == {'t4'}

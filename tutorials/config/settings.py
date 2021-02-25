@@ -33,7 +33,7 @@ site_configuration = {
                     'descr': 'Login nodes',
                     'scheduler': 'local',
                     'launcher': 'local',
-                    'environs': ['gnu', 'intel', 'pgi', 'cray'],
+                    'environs': ['builtin', 'gnu', 'intel', 'pgi', 'cray'],
                 },
                 {
                     'name': 'gpu',
@@ -42,13 +42,19 @@ site_configuration = {
                     'launcher': 'srun',
                     'access': ['-C gpu', '-A csstaff'],
                     'environs': ['gnu', 'intel', 'pgi', 'cray'],
+                    'max_jobs': 100,
+                    'resources': [
+                        {
+                            'name': 'memory',
+                            'options': ['--mem={size}']
+                        }
+                    ],
                     'container_platforms': [
                         {
                             'type': 'Singularity',
                             'modules': ['singularity']
                         }
-                    ],
-                    'max_jobs': 100
+                    ]
                 },
                 {
                     'name': 'mc',
@@ -57,7 +63,13 @@ site_configuration = {
                     'launcher': 'srun',
                     'access': ['-C mc', '-A csstaff'],
                     'environs': ['gnu', 'intel', 'pgi', 'cray'],
-                    'max_jobs': 100
+                    'max_jobs': 100,
+                    'resources': [
+                        {
+                            'name': 'memory',
+                            'options': ['--mem={size}']
+                        }
+                    ]
                 }
             ]
         },
@@ -126,6 +138,13 @@ site_configuration = {
             'cxx': '',
             'ftn': ''
         },
+        {
+            'name': 'builtin',
+            'cc': 'cc',
+            'cxx': 'CC',
+            'ftn': 'ftn',
+            'target_systems': ['daint']
+        }
     ],
     'logging': [
         {

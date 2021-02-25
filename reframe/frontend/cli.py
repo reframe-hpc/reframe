@@ -21,6 +21,7 @@ import reframe.core.logging as logging
 import reframe.core.runtime as runtime
 import reframe.core.warnings as warnings
 import reframe.frontend.argparse as argparse
+import reframe.frontend.ci as ci
 import reframe.frontend.dependencies as dependencies
 import reframe.frontend.filters as filters
 import reframe.frontend.runreport as runreport
@@ -119,7 +120,7 @@ def list_checks(testcases, printer, detailed=False):
     printer.info(
         '\n'.join(format_check(c, deps[c.name], detailed) for c in checks)
     )
-    printer.info(f'Found {len(checks)} check(s)')
+    printer.info(f'Found {len(checks)} check(s)\n')
 
 
 def logfiles_message():
@@ -272,6 +273,11 @@ def main():
         '-r', '--run', action='store_true',
         help='Run the selected checks'
     )
+    action_options.add_argument(
+        '--ci-generate', action='store', metavar='FILE',
+        help=('Generate into FILE a Gitlab CI pipeline '
+              'for the selected tests and exit'),
+    )
 
     # Run options
     run_options.add_argument(
@@ -317,6 +323,10 @@ def main():
              'may be retried (default: 0)'
     )
     run_options.add_argument(
+        '--maxfail', metavar='NUM', action='store', default=sys.maxsize,
+        help='Exit after first NUM failures'
+    )
+    run_options.add_argument(
         '--restore-session', action='store', nargs='?', const='',
         metavar='REPORT',
         help='Restore a testing session from REPORT file'
@@ -330,6 +340,8 @@ def main():
         '--disable-hook', action='append', metavar='NAME', dest='hooks',
         default=[], help='Disable a pipeline hook for this run'
     )
+
+    # Environment options
     env_options.add_argument(
         '-M', '--map-module', action='append', metavar='MAPPING',
         dest='module_mappings', default=[],
@@ -439,12 +451,11 @@ def main():
         help='Use a login shell for job scripts'
     )
 
+    # Parse command line
+    options = argparser.parse_args()
     if len(sys.argv) == 1:
         argparser.print_help()
         sys.exit(1)
-
-    # Parse command line
-    options = argparser.parse_args()
 
     # First configure logging with our generic configuration so as to be able
     # to print pretty messages; logging will be reconfigured by user's
@@ -738,10 +749,11 @@ def main():
 
             def _case_failed(t):
                 rec = report.case(*t)
-                if rec and rec['result'] == 'failure':
-                    return True
-                else:
+                if not rec:
                     return False
+
+                return (rec['result'] == 'failure' or
+                        rec['result'] == 'aborted')
 
             testcases = list(filter(_case_failed, testcases))
             printer.verbose(
@@ -791,9 +803,23 @@ def main():
             list_checks(testcases, printer, options.list_detailed)
             sys.exit(0)
 
+        if options.ci_generate:
+            list_checks(testcases, printer)
+            printer.info('[Generate CI]')
+            with open(options.ci_generate, 'wt') as fp:
+                ci.emit_pipeline(fp, testcases)
+
+            printer.info(
+                f'  Gitlab pipeline generated successfully '
+                f'in {options.ci_generate!r}.\n'
+            )
+            sys.exit(0)
+
         if not options.run:
-            printer.error(f"No action specified. Please specify `-l'/`-L' for "
-                          f"listing or `-r' for running. "
+            printer.error("No action option specified. Available options:\n"
+                          "  - `-l'/`-L' for listing\n"
+                          "  - `-r' for running\n"
+                          "  - `--ci-generate' for generating a CI pipeline\n"
                           f"Try `{argparser.prog} -h' for more options.")
             sys.exit(1)
 
@@ -903,12 +929,15 @@ def main():
         exec_policy.sched_flex_alloc_nodes = sched_flex_alloc_nodes
         parsed_job_options = []
         for opt in options.job_options:
+            opt_split = opt.split('=', maxsplit=1)
+            optstr = opt_split[0]
+            valstr = opt_split[1] if len(opt_split) > 1 else ''
             if opt.startswith('-') or opt.startswith('#'):
                 parsed_job_options.append(opt)
-            elif len(opt) == 1:
-                parsed_job_options.append(f'-{opt}')
+            elif len(optstr) == 1:
+                parsed_job_options.append(f'-{optstr} {valstr}')
             else:
-                parsed_job_options.append(f'--{opt}')
+                parsed_job_options.append(f'--{optstr} {valstr}')
 
         exec_policy.sched_options = parsed_job_options
         try:
@@ -918,7 +947,19 @@ def main():
                 f'--max-retries is not a valid integer: {max_retries}'
             ) from None
 
-        runner = Runner(exec_policy, printer, max_retries)
+        try:
+            max_failures = int(options.maxfail)
+            if max_failures < 0:
+                raise errors.ConfigError(
+                    f'--maxfail should be a non-negative integer: '
+                    f'{options.maxfail!r}'
+                )
+        except ValueError:
+            raise errors.ConfigError(
+                f'--maxfail is not a valid integer: {options.maxfail!r}'
+            ) from None
+
+        runner = Runner(exec_policy, printer, max_retries, max_failures)
         try:
             time_start = time.time()
             session_info['time_start'] = time.strftime(
@@ -933,12 +974,12 @@ def main():
             session_info['time_elapsed'] = time_end - time_start
 
             # Print a retry report if we did any retries
-            if runner.stats.failures(run=0):
+            if runner.stats.failed(run=0):
                 printer.info(runner.stats.retry_report())
 
             # Print a failure report if we had failures in the last run
             success = True
-            if runner.stats.failures():
+            if runner.stats.failed():
                 success = False
                 runner.stats.print_failure_report(printer)
                 if options.failure_stats:
@@ -984,16 +1025,14 @@ def main():
             sys.exit(1)
 
         sys.exit(0)
-    except KeyboardInterrupt:
-        sys.exit(1)
-    except errors.ReframeError as e:
-        printer.error(str(e))
-        sys.exit(1)
-    except (Exception, errors.ReframeFatalError):
+    except (Exception, KeyboardInterrupt, errors.ReframeFatalError):
         exc_info = sys.exc_info()
         tb = ''.join(traceback.format_exception(*exc_info))
-        printer.error(errors.what(*exc_info))
-        if errors.is_severe(*exc_info):
+        printer.error(f'run session stopped: {errors.what(*exc_info)}')
+        if errors.is_exit_request(*exc_info):
+            # Print stack traces for exit requests only when TOO verbose
+            printer.debug2(tb)
+        elif errors.is_severe(*exc_info):
             printer.error(tb)
         else:
             printer.verbose(tb)

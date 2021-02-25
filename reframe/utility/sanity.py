@@ -5,6 +5,7 @@
 
 import builtins
 import collections.abc
+import contextlib
 import glob as pyglob
 import itertools
 import os
@@ -26,6 +27,16 @@ def _format(s, *args, **kwargs):
         return s.format(*args, **kwargs)
     except (IndexError, KeyError):
         return s
+
+
+@contextlib.contextmanager
+def _open(filename, *args, **kwargs):
+    try:
+        with open(filename, *args, **kwargs) as fp:
+            yield fp
+    except OSError as e:
+        # Re-raise it as sanity error
+        raise SanityError(f'{filename}: {e.strerror}')
 
 
 # Create an alias decorator
@@ -227,8 +238,11 @@ def contains(seq, key):
 def assert_true(x, msg=None):
     '''Assert that ``x`` is evaluated to ``True``.
 
+    :arg msg: The error message to use if the assertion fails. You may use
+        ``{0}`` ... ``{N}`` as placeholders for the function arguments.
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
+
     '''
     if builtins.bool(x) is not True:
         error_msg = msg or '{0} is not True'
@@ -241,6 +255,8 @@ def assert_true(x, msg=None):
 def assert_false(x, msg=None):
     '''Assert that ``x`` is evaluated to ``False``.
 
+    :arg msg: The error message to use if the assertion fails. You may use
+        ``{0}`` ... ``{N}`` as placeholders for the function arguments.
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
     '''
@@ -255,6 +271,8 @@ def assert_false(x, msg=None):
 def assert_eq(a, b, msg=None):
     '''Assert that ``a == b``.
 
+    :arg msg: The error message to use if the assertion fails. You may use
+        ``{0}`` ... ``{N}`` as placeholders for the function arguments.
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
     '''
@@ -269,6 +287,8 @@ def assert_eq(a, b, msg=None):
 def assert_ne(a, b, msg=None):
     '''Assert that ``a != b``.
 
+    :arg msg: The error message to use if the assertion fails. You may use
+        ``{0}`` ... ``{N}`` as placeholders for the function arguments.
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
     '''
@@ -283,6 +303,8 @@ def assert_ne(a, b, msg=None):
 def assert_in(item, container, msg=None):
     '''Assert that ``item`` is in ``container``.
 
+    :arg msg: The error message to use if the assertion fails. You may use
+        ``{0}`` ... ``{N}`` as placeholders for the function arguments.
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
     '''
@@ -297,6 +319,8 @@ def assert_in(item, container, msg=None):
 def assert_not_in(item, container, msg=None):
     '''Assert that ``item`` is not in ``container``.
 
+    :arg msg: The error message to use if the assertion fails. You may use
+        ``{0}`` ... ``{N}`` as placeholders for the function arguments.
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
     '''
@@ -311,6 +335,8 @@ def assert_not_in(item, container, msg=None):
 def assert_gt(a, b, msg=None):
     '''Assert that ``a > b``.
 
+    :arg msg: The error message to use if the assertion fails. You may use
+        ``{0}`` ... ``{N}`` as placeholders for the function arguments.
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
     '''
@@ -325,6 +351,8 @@ def assert_gt(a, b, msg=None):
 def assert_ge(a, b, msg=None):
     '''Assert that ``a >= b``.
 
+    :arg msg: The error message to use if the assertion fails. You may use
+        ``{0}`` ... ``{N}`` as placeholders for the function arguments.
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
     '''
@@ -339,6 +367,8 @@ def assert_ge(a, b, msg=None):
 def assert_lt(a, b, msg=None):
     '''Assert that ``a < b``.
 
+    :arg msg: The error message to use if the assertion fails. You may use
+        ``{0}`` ... ``{N}`` as placeholders for the function arguments.
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
     '''
@@ -353,6 +383,8 @@ def assert_lt(a, b, msg=None):
 def assert_le(a, b, msg=None):
     '''Assert that ``a <= b``.
 
+    :arg msg: The error message to use if the assertion fails. You may use
+        ``{0}`` ... ``{N}`` as placeholders for the function arguments.
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
     '''
@@ -377,16 +409,38 @@ def assert_found(patt, filename, msg=None, encoding='utf-8'):
     :arg filename: The name of the file to examine or a file descriptor as in
         :py:func:`open`. Any :class:`OSError` raised while processing the file
         will be propagated as a :class:`reframe.core.exceptions.SanityError`.
+    :arg msg: The error message to use if the assertion fails. You may use
+        ``{0}`` ... ``{N}`` as placeholders for the function arguments.
     :arg encoding: The name of the encoding used to decode the file.
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
     '''
-    num_matches = count(finditer(patt, filename, encoding))
+    with _open(filename, 'rt', encoding=encoding) as fp:
+        return assert_found_s(
+            patt, fp.read(),
+            msg or f'pattern {patt!r} not found in {filename!r}'
+        )
+
+
+@deferrable
+def assert_found_s(patt, string, msg=None):
+    '''Assert that regex pattern ``patt`` is found in the string ``string``.
+
+    :arg patt: as in :func:`assert_found`.
+    :arg string: The string to examine.
+    :arg msg: as in :func:`assert_found`. You may use
+        ``{0}`` ... ``{N}`` as placeholders for the function arguments.
+    :returns: ``True`` on success.
+    :raises reframe.core.exceptions.SanityError: if assertion fails.
+
+    .. versionadded:: 3.4.1
+    '''
+    num_matches = count(finditer_s(patt, string))
     try:
         evaluate(assert_true(num_matches))
     except SanityError:
-        error_msg = msg or "pattern `{0}' not found in `{1}'"
-        raise SanityError(_format(error_msg, patt, filename))
+        error_msg = msg or "pattern `{0}' not found in given string"
+        raise SanityError(_format(error_msg, patt, string))
     else:
         return True
 
@@ -401,13 +455,30 @@ def assert_not_found(patt, filename, msg=None, encoding='utf-8'):
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
     '''
+    with _open(filename, 'rt', encoding=encoding) as fp:
+        return assert_not_found_s(
+            patt, fp.read(), msg or f'pattern {patt!r} found in {filename!r}'
+        )
+
+
+@deferrable
+def assert_not_found_s(patt, string, msg=None):
+    '''Assert that regex pattern ``patt`` is not found in ``string``.
+
+    This is the inverse of :func:`assert_found_s()`.
+
+    :returns: ``True`` on success.
+    :raises reframe.core.exceptions.SanityError: if assertion fails.
+
+    .. versionadded:: 3.4.1
+    '''
     try:
-        evaluate(assert_found(patt, filename, msg, encoding))
+        evaluate(assert_found_s(patt, string, msg))
     except SanityError:
         return True
     else:
-        error_msg = msg or "pattern `{0}' found in `{1}'"
-        raise SanityError(_format(error_msg, patt, filename))
+        error_msg = msg or "pattern `{0}' found in the given string"
+        raise SanityError(_format(error_msg, patt))
 
 
 @deferrable
@@ -417,6 +488,8 @@ def assert_bounded(val, lower=None, upper=None, msg=None):
     :arg val: The value to check.
     :arg lower: The lower bound. If ``None``, it defaults to ``-inf``.
     :arg upper: The upper bound. If ``None``, it defaults to ``inf``.
+    :arg msg: The error message to use if the assertion fails. You may use
+        ``{0}`` ... ``{N}`` as placeholders for the function arguments.
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
     '''
@@ -447,6 +520,8 @@ def assert_reference(val, ref, lower_thres=None, upper_thres=None, msg=None):
         of the reference value. Must be in [0, inf] for ref >= 0.0 and
         in [0, 1] for ref < 0.0.
         If ``None``, no upper thresholds is applied.
+    :arg msg: The error message to use if the assertion fails. You may use
+        ``{0}`` ... ``{N}`` as placeholders for the function arguments.
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails or if the
         lower and upper thresholds do not have appropriate values.
@@ -456,16 +531,18 @@ def assert_reference(val, ref, lower_thres=None, upper_thres=None, msg=None):
         try:
             evaluate(assert_bounded(lower_thres, lower_thres_limit, 0))
         except SanityError:
-            raise SanityError('invalid low threshold value: %s' %
-                              lower_thres) from None
+            raise SanityError(
+                f'invalid low threshold value: {lower_thres}'
+            ) from None
 
     if upper_thres is not None:
         upper_thres_limit = None if ref >= 0 else 1
         try:
             evaluate(assert_bounded(upper_thres, 0, upper_thres_limit))
         except SanityError:
-            raise SanityError('invalid high threshold value: %s' %
-                              upper_thres) from None
+            raise SanityError(
+                f'invalid high threshold value: {upper_thres}'
+            ) from None
 
     def calc_bound(thres):
         if thres is None:
@@ -498,12 +575,21 @@ def finditer(patt, filename, encoding='utf-8'):
     a generator object instead of a list, which you can use to iterate over
     the raw matches.
     '''
-    try:
-        with open(filename, 'rt', encoding=encoding) as fp:
-            yield from re.finditer(patt, fp.read(), re.MULTILINE)
-    except OSError as e:
-        # Re-raise it as sanity error
-        raise SanityError('%s: %s' % (filename, e.strerror))
+    with _open(filename, 'rt', encoding=encoding) as fp:
+        yield from re.finditer(patt, fp.read(), re.MULTILINE)
+
+
+@deferrable
+def finditer_s(patt, string):
+    '''Get an iterator over the matches of the regex ``patt`` in ``string``.
+
+    This function is equivalent to :func:`findall_s()` except that it returns
+    a generator object instead of a list, which you can use to iterate over
+    the raw matches.
+
+    .. versionadded:: 3.4.1
+    '''
+    yield from re.finditer(patt, string, re.MULTILINE)
 
 
 @deferrable
@@ -527,6 +613,19 @@ def findall(patt, filename, encoding='utf-8'):
     return list(evaluate(x) for x in finditer(patt, filename, encoding))
 
 
+@deferrable
+def findall_s(patt, string):
+    '''Get all matches of regex ``patt`` in ``string``.
+
+    :arg patt: as in :func:`findall`
+    :arg string: The string to examine.
+    :returns: same as :func:`finall`.
+
+    .. versionadded:: 3.4.1
+    '''
+    return list(evaluate(x) for x in finditer_s(patt, string))
+
+
 def _callable_name(fn):
     fn_name = '<unknown>'
     try:
@@ -542,12 +641,12 @@ def _callable_name(fn):
     return fn_name
 
 
-def _extractiter_singletag(patt, filename, tag, conv, encoding):
+def _extractiter_singletag(patt, string, tag, conv):
     if isinstance(conv, collections.abc.Iterable):
         raise SanityError(f'multiple conversion functions given for the '
                           f'single capturing group {tag!r}')
 
-    for m in finditer(patt, filename, encoding):
+    for m in finditer_s(patt, string):
         try:
             val = m.group(tag)
         except (IndexError, KeyError):
@@ -562,8 +661,8 @@ def _extractiter_singletag(patt, filename, tag, conv, encoding):
             )
 
 
-def _extractiter_multitag(patt, filename, tags, conv, encoding):
-    for m in finditer(patt, filename, encoding):
+def _extractiter_multitag(patt, string, tags, conv):
+    for m in finditer_s(patt, string):
         val = []
         for t in tags:
             try:
@@ -600,10 +699,25 @@ def extractiter(patt, filename, tag=0, conv=None, encoding='utf-8'):
     a generator object, instead of a list, which you can use to iterate over
     the extracted values.
     '''
+    with _open(filename, 'rt', encoding=encoding) as fp:
+        yield from extractiter_s(patt, fp.read(), tag, conv)
+
+
+@deferrable
+def extractiter_s(patt, string, tag=0, conv=None):
+    '''Get an iterator over the values extracted from the capturing group
+    ``tag`` of a matching regex ``patt`` in ``string``.
+
+    This function is equivalent to :func:`extractall_s` except that it returns
+    a generator object, instead of a list, which you can use to iterate over
+    the extracted values.
+
+    .. versionadded:: 3.4.1
+    '''
     if isinstance(tag, collections.abc.Iterable) and not isinstance(tag, str):
-        yield from _extractiter_multitag(patt, filename, tag, conv, encoding)
+        yield from _extractiter_multitag(patt, string, tag, conv)
     else:
-        yield from _extractiter_singletag(patt, filename, tag, conv, encoding)
+        yield from _extractiter_singletag(patt, string, tag, conv)
 
 
 @deferrable
@@ -649,6 +763,22 @@ def extractall(patt, filename, tag=0, conv=None, encoding='utf-8'):
 
 
 @deferrable
+def extractall_s(patt, string, tag=0, conv=None):
+    '''Extract all values from the capturing group ``tag`` of a matching regex
+    ``patt`` in ``string``.
+
+    :arg patt: as in :func:`extractall`.
+'   :arg string: The string to examine.
+    :arg tag: as in :func:`extractall`.
+    :arg conv: as in :func:`extractall`.
+    :returns: same as :func:`extractall`.
+
+    .. versionadded:: 3.4.1
+    '''
+    return list(evaluate(x) for x in extractiter_s(patt, string, tag, conv))
+
+
+@deferrable
 def extractsingle(patt, filename, tag=0, conv=None, item=0, encoding='utf-8'):
     '''Extract a single value from the capturing group ``tag`` of a matching
     regex ``patt`` in the file ``filename``.
@@ -665,6 +795,7 @@ def extractsingle(patt, filename, tag=0, conv=None, item=0, encoding='utf-8'):
     :arg item: the specific element to extract.
     :returns: The extracted value.
     :raises reframe.core.exceptions.SanityError: In case of errors.
+
     '''
     try:
         # Explicitly evaluate the expression here, so as to force any exception
@@ -673,8 +804,39 @@ def extractsingle(patt, filename, tag=0, conv=None, item=0, encoding='utf-8'):
         return evaluate(extractall(patt, filename, tag, conv, encoding)[item])
     except IndexError:
         raise SanityError(
-            "not enough matches of pattern `%s' in file `%s' "
-            "so as to extract item `%s'" % (patt, filename, item)
+            f'not enough matches of pattern {patt!r} in file {filename!r} '
+            f'so as to extract item {item!r}'
+        )
+
+
+@deferrable
+def extractsingle_s(patt, string, tag=0, conv=None, item=0):
+    '''Extract a single value from the capturing group ``tag`` of a matching
+    regex ``patt`` in ``string``.
+
+    This function is equivalent to ``extractall_s(patt, string, tag,
+    conv)[item]``, except that it raises a ``SanityError`` if ``item`` is out
+    of bounds.
+
+    :arg patt: as in :func:`extractall_s`.
+    :arg string: as in :func:`extractall_s`.
+    :arg tag: as in :func:`extractall_s`.
+    :arg conv: as in :func:`extractall_s`.
+    :arg item: the specific element to extract.
+    :returns: The extracted value.
+    :raises reframe.core.exceptions.SanityError: In case of errors.
+
+    .. versionadded:: 3.4.1
+    '''
+    try:
+        # Explicitly evaluate the expression here, so as to force any exception
+        # to be thrown in this context and not during the evaluation of an
+        # expression containing this one.
+        return evaluate(extractall_s(patt, string, tag, conv)[item])
+    except IndexError:
+        raise SanityError(
+            f'not enough matches of pattern {patt!r} in the given string '
+            f'so as to extract item {item!r}'
         )
 
 
@@ -742,9 +904,9 @@ def getitem(container, item):
     try:
         return container[item]
     except KeyError:
-        raise SanityError('key not found: %s' % item)
+        raise SanityError(f'key not found: {item}')
     except IndexError:
-        raise SanityError('index out of bounds: %s' % item)
+        raise SanityError(f'index out of bounds: {item}')
 
 
 @deferrable

@@ -73,7 +73,7 @@ class GromacsGPUCheck(GromacsBaseCheck):
         references = {
             'maint': {
                 'large': {
-                    'daint:gpu': {'perf': (73.4, -0.10, None, 'ns/day')}
+                    'daint:gpu': {'perf': (63.0, -0.10, None, 'ns/day')}
                 }
             },
             'prod': {

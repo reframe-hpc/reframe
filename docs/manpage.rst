@@ -147,6 +147,14 @@ There are currently two actions that can be performed on tests: (a) list the tes
 An action must always be specified.
 
 
+.. option:: --ci-generate=FILE
+
+   Do not run the tests, but generate a Gitlab `child pipeline <https://docs.gitlab.com/ee/ci/parent_child_pipelines.html>`__ specification in ``FILE``.
+   You can set up your Gitlab CI to use the generated file to run every test as a separate Gitlab job respecting test dependencies.
+   For more information, have a look in :ref:`generate-ci-pipeline`.
+
+   .. versionadded:: 3.4.1
+
 .. option:: -l, --list
 
    List selected tests.
@@ -313,6 +321,13 @@ Options controlling ReFrame execution
    The test stage and output directories will receive a ``_retry<N>`` suffix every time the test is retried.
 
 
+.. option:: --maxfail=NUM
+
+   The maximum number of failing test cases before the execution is aborted.
+   After ``NUM`` failed test cases the rest of the test cases will be aborted.
+   The counter of the failed test cases is reset to 0 in every retry.
+
+
 .. option:: --disable-hook=HOOK
 
    Disable the pipeline hook named ``HOOK`` from all the tests that will run.
@@ -351,7 +366,7 @@ Options controlling job submission
    The syntax of ``OPTION`` is ``-J key=value``.
    If ``OPTION`` starts with ``-`` it will be passed verbatim to the backend job scheduler.
    If ``OPTION`` starts with ``#`` it will be emitted verbatim in the job script.
-   Otherwise, ReFrame will pass ``--key=value`` or ``-k value`` (if ``key`` is a single character) to the backend scheduler.
+   Otherwise, ReFrame will pass ``--key value`` or ``-k value`` (if ``key`` is a single character) to the backend scheduler.
    Any job options specified with this command-line option will be emitted after any job options specified in the :js:attr:`access` system partition configuration parameter.
 
    Especially for the Slurm backends, constraint options, such as ``-J constraint=value``, ``-J C=value``, ``-J --constraint=value`` or ``-J -C=value``, are going to be combined with any constraint options specified in the :js:attr:`access` system partition configuration parameter.
@@ -419,7 +434,7 @@ It does so by leveraging the selected system's environment modules system.
 .. option:: --module-path=PATH
 
    Manipulate the ``MODULEPATH`` environment variable before acting on any tests.
-   If ``PATH`` starts with the `-` character, it will be removed from the ``MODULEPATH``, whereas if it starts with the `+` character, it will be added to it.
+   If ``PATH`` starts with the ``-`` character, it will be removed from the ``MODULEPATH``, whereas if it starts with the ``+`` character, it will be added to it.
    In all other cases, ``PATH`` will completely override MODULEPATH.
    This option may be specified multiple times, in which case all the paths specified will be added or removed in order.
 
