@@ -106,7 +106,7 @@ class ContainerPlatform(abc.ABC):
         # NOTE: Here we set the target fields directly to avoid the deprecation
         # warnings
         self._commands = []
-        self._workdir = self.RFM_STAGEDIR
+        self._workdir = _STAGEDIR_MOUNT
 
         self.mount_points  = []
         self.options = []
