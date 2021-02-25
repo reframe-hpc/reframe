@@ -141,12 +141,6 @@ class AffinityTestBase(rfm.RegressionTest):
         This is controlled by the `by` argument.
         '''
 
-        _map = {
-            'core': 3,
-            'socket': 2,
-            'numa': 1,
-        }
-
         if (cpuid < 0) or (cpuid >= self.num_cpus):
             raise ReframeError(f'a cpuid with value {cpuid} is invalid')
 
@@ -440,12 +434,14 @@ class OneTaskPerSocketOpenMP(OneTaskPerSocketOpenMPnomt):
 
 
 @rfm.simple_test
-class ConsecutiveSocketFilling(AffinityTestBase):
-    '''Fill the sockets with the tasks in consecutive order.
+class ConsecutiveNumaFilling(AffinityTestBase):
+    '''Fill the NUMA nodes with the tasks in consecutive order.
 
     This test uses as many tasks as physical cores available in a node.
     Multithreading is disabled.
     '''
+
+    cpu_bind = 'rank'
 
     def __init__(self):
         super().__init__()
@@ -455,16 +451,15 @@ class ConsecutiveSocketFilling(AffinityTestBase):
     def set_tasks(self):
         self.num_tasks = int(self.num_cpus/self.num_cpus_per_core)
         self.num_cpus_per_task = 1
-        self.job.launcher.options += [f'--cpu-bind=rank']
 
     @rfm.run_before('sanity')
     def consume_cpu_set(self):
         '''Check that all physical cores have been used in the right order.'''
         task_count = 0
-        for socket_number in range(self.num_sockets):
-            # Keep track of the CPUs present in this socket
+        for numa_number in range(self.num_numa_nodes):
+            # Keep track of the CPUs present in this NUMA node
             cpus_present = set()
-            for task_number in range(int(self.num_tasks/self.num_sockets)):
+            for task_number in range(int(self.num_tasks/self.num_numa_nodes)):
                 # Get the list of CPUs with affinity
                 affinity_set = self.aff_cpus[task_count]
 
@@ -482,23 +477,24 @@ class ConsecutiveSocketFilling(AffinityTestBase):
 
                 task_count += 1
 
-            # Ensure all CPUs belong to the same socket
-            cpuset_by_socket = self.get_sibling_cpus(
-                next(iter(cpus_present)), by='socket'
+            # Ensure all CPUs belong to the same NUMA node
+            cpuset_by_numa = self.get_sibling_cpus(
+                next(iter(cpus_present)), by='node'
             )
-            if not all(cpu in cpuset_by_socket for cpu in cpus_present):
+            if (not all(cpu in cpuset_by_numa for cpu in cpus_present) and
+                len(cpuset_by_numa)==len(cpus_present)):
                 raise SanityError(
-                    f'socket {socket_number} not filled in order'
+                    f'numa node {numa_number} not filled in order'
                 )
 
             else:
-                # Decrement the current socket from the available CPU set
+                # Decrement the current NUMA node from the available CPU set
                 self.cpu_set -= cpus_present
 
 
 @rfm.simple_test
-class AlternateSocketFilling(AffinityTestBase):
-    '''Sockets are filled in a round-robin fashion.
+class AlternateNumaFilling(AffinityTestBase):
+    '''Numa nodes are filled in a round-robin fashion.
 
     This test uses as many tasks as physical cores available in a node.
     Multithreading is disabled.
@@ -512,38 +508,39 @@ class AlternateSocketFilling(AffinityTestBase):
     def set_tasks(self):
         self.num_tasks = int(self.num_cpus/self.num_cpus_per_core)
         self.num_cpus_per_task = 1
-        self.num_tasks_per_socket = int(self.num_tasks/self.num_sockets)
+        self.num_tasks_per_numa = int(self.num_tasks/self.num_numa_nodes)
 
     @rfm.run_before('sanity')
     def consume_cpu_set(self):
-        '''Check that consecutive tasks are round-robin pinned to sockets.'''
+        '''Check that consecutive tasks are round-robin pinned to numa nodes.'''
 
-        # Get a set per socket to keep track of the CPUs
-        sockets = [set() for s in range(self.num_sockets)]
+        # Get a set per numa node to keep track of the CPUs
+        numa_nodes = [set() for s in range(self.num_numa_nodes)]
         task_count = 0
-        for task in range(self.num_tasks_per_socket):
-            for s in range(self.num_sockets):
+        for task in range(self.num_tasks_per_numa):
+            for s in range(self.num_numa_nodes):
                 # Get the list of CPUs with affinity
                 affinity_set = self.aff_cpus[task_count]
 
                 # Only 1 CPU per affinity set is allowed
-                if (len(affinity_set) > 1) or (any(cpu in sockets[s]
-                                                   for cpu in affinity_set)):
+                if ((len(affinity_set) > 1) or
+                    (any(cpu in numa_nodes[s] for cpu in affinity_set)) or
+                    (any(cpu not in self.numa_nodes[s] for cpu in affinity_set))):
                     raise SanityError(
                         f'incorrect affinity set for task {task_count}'
                     )
 
                 else:
-                    sockets[s].update(
+                    numa_nodes[s].update(
                         self.get_sibling_cpus(affinity_set[0], by='core')
                     )
 
                 task_count += 1
 
-            # Check that all sockets have the same CPU count
-            if not all(len(s) == (task+1)*2 for s in sockets):
+            # Check that all numa nodes have the same CPU count
+            if not all(len(s) == (task+1)*2 for s in numa_nodes):
                 self.cpu_set.add(-1)
 
-        # Decrement the sockets from the CPU set
-        for s in sockets:
+        # Decrement the NUMA nodes from the CPU set
+        for s in numa_nodes:
             self.cpu_set -= s
