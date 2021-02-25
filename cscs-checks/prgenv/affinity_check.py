@@ -34,9 +34,9 @@ class AffinityTestBase(rfm.RegressionTest):
     #
     # system = {
     #     'daint:mc': {
-    #         multithreading = False,
-    #         cpu_bind = 'none',
-    #         hint = 'nomultithread',
+    #         'multithreading': False,
+    #         'cpu_bind':       'none',
+    #         'hint':           'nomultithread',
     #     }
     # }
     system = variable(dict, value={})
@@ -249,7 +249,7 @@ class AffinityOpenMPBase(AffinityTestBase):
 
     @rfm.run_before('sanity')
     def consume_cpu_set(self):
-        raise ValueError('this function must be overridden')
+        raise NotImplementedError('this function must be overridden')
 
 
 @rfm.simple_test
