@@ -676,9 +676,9 @@ First, we need to enable the container platform support in ReFrame's configurati
 
 For each partition, users can define a list of container platforms supported using the :js:attr:`container_platforms` `configuration parameter <config_reference.html#.systems[].partitions[].container_platforms>`__.
 In this case, we define the `Sarus <https://github.com/eth-cscs/sarus>`__ platform for which we set the :js:attr:`modules` parameter in order to instruct ReFrame to load the ``sarus`` module, whenever it needs to run with this container platform.
-Furthermore, we define the `Singularity <https://sylabs.io>`__ platform, for which the ``singularity`` module needs to be loaded.
+Similarly, we add an entry for the `Singularity <https://sylabs.io>`__ platform.
 
-The following parameterized test, will create two test cases, one for each of the supported contaiter platforms:
+The following parameterized test, will create two tests, one for each of the supported container platforms:
 
 .. code-block:: console
 
@@ -694,7 +694,7 @@ This attribute accepts a string that corresponds to the name of the container pl
 If such a platform is not `configured <config_reference.html#container-platform-configuration>`__ for the current system, the test will fail.
 
 As soon as the container platform to be used is defined, you need to specify the container image to use by setting the :attr:`image <reframe.core.containers.ContainerPlatform.image>`.
-In the ``Singularity`` test case, we add the ``docker://`` prefix to the image name, in order to instruct ``Singularity`` to pull the image from `DockerHub <https://hub.docker.com/>`__.
+In the ``Singularity`` test variant, we add the ``docker://`` prefix to the image name, in order to instruct ``Singularity`` to pull the image from `DockerHub <https://hub.docker.com/>`__.
 The default command that the container runs can be overwritten by setting the :attr:`command <reframe.core.containers.ContainerPlatform.command>` attribute of the container platform.
 
 The :attr:`image <reframe.core.containers.ContainerPlatform.image>` is the only mandatory attribute for container-based checks.
