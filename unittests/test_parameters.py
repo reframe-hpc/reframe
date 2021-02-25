@@ -253,4 +253,4 @@ def test_param_space_read_only():
         pass
 
     with pytest.raises(ValueError):
-        Foo.param_space['a'] = (1,2,3)
+        Foo.param_space['a'] = (1, 2, 3)
