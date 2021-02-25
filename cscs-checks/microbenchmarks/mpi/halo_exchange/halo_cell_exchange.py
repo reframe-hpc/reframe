@@ -80,12 +80,12 @@ class HaloCellExchangeTest(rfm.RegressionTest):
             },
             'daint:mc': {
                 'time_2_10': (1e-05, None, 0.50, 's'),
-                'time_2_10000': (2.6e-05, None, 0.50, 's'),
+                'time_2_10000': (9.1e-05, None, 0.50, 's'),
                 'time_2_1000000': (4.934530e-04, None, 0.50, 's'),
                 'time_4_10': (3e-05, None, 0.50, 's'),
-                'time_4_10000': (2.6e-05, None, 0.50, 's'),
+                'time_4_10000': (6.3e-05, None, 0.50, 's'),
                 'time_4_1000000': (6.791397e-04, None, 0.50, 's'),
-                'time_6_10': (1e-05, None, 0.50, 's'),
+                'time_6_10': (3.5e-05, None, 0.50, 's'),
                 'time_6_10000': (3.5e-05, None, 0.50, 's'),
                 'time_6_1000000': (9.179296e-04, None, 0.50, 's')
             },
@@ -102,12 +102,12 @@ class HaloCellExchangeTest(rfm.RegressionTest):
             },
             'daint:gpu': {
                 'time_2_10': (1e-05, None, 0.50, 's'),
-                'time_2_10000': (2.6e-05, None, 0.50, 's'),
+                'time_2_10000': (9.1e-05, None, 0.50, 's'),
                 'time_2_1000000': (4.934530e-04, None, 0.50, 's'),
                 'time_4_10': (3e-05, None, 0.50, 's'),
-                'time_4_10000': (2.6e-05, None, 0.50, 's'),
+                'time_4_10000': (6.3e-05, None, 0.50, 's'),
                 'time_4_1000000': (6.791397e-04, None, 0.50, 's'),
-                'time_6_10': (1e-05, None, 0.50, 's'),
+                'time_6_10': (3.5e-05, None, 0.50, 's'),
                 'time_6_10000': (3.5e-05, None, 0.50, 's'),
                 'time_6_1000000': (9.179296e-04, None, 0.50, 's')
             },
