@@ -86,7 +86,7 @@ class HaloCellExchangeTest(rfm.RegressionTest):
                 'time_4_10000': (1.3e-04, None, 0.50, 's'),
                 'time_4_1000000': (6.791397e-04, None, 0.50, 's'),
                 'time_6_10': (3.5e-05, None, 0.50, 's'),
-                'time_6_10000': (3.5e-05, None, 0.50, 's'),
+                'time_6_10000': (1.2e-04, None, 0.50, 's'),
                 'time_6_1000000': (9.179296e-04, None, 0.50, 's')
             },
             'dom:gpu': {
@@ -108,7 +108,7 @@ class HaloCellExchangeTest(rfm.RegressionTest):
                 'time_4_10000': (1.3e-04, None, 0.50, 's'),
                 'time_4_1000000': (6.791397e-04, None, 0.50, 's'),
                 'time_6_10': (3.5e-05, None, 0.50, 's'),
-                'time_6_10000': (3.5e-05, None, 0.50, 's'),
+                'time_6_10000': (1.2e-04, None, 0.50, 's'),
                 'time_6_1000000': (9.179296e-04, None, 0.50, 's')
             },
             'eiger:mc': {
