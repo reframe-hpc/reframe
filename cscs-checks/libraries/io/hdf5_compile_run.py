@@ -22,6 +22,9 @@ class HDF5Test(rfm.RegressionTest):
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi']
+        if linkage == 'dynamic':
+            self.valid_systems += ['eiger:mc']
+
         self.modules = ['cray-hdf5']
         self.keep_files = ['h5dump_out.txt']
 
