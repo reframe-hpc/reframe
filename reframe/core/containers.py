@@ -10,12 +10,14 @@ import reframe.utility.typecheck as typ
 from reframe.core.exceptions import ContainerError
 
 
+_STAGEDIR_MOUNT = '/rfm_workdir'
+
+
 class ContainerPlatform(abc.ABC):
     '''The abstract base class of any container platform.'''
 
     #: The default mount location of the test case stage directory inside the
     #: container
-    RFM_STAGEDIR = '/rfm_workdir'
 
     #: The container image to be used for running the test.
     #:
@@ -28,9 +30,9 @@ class ContainerPlatform(abc.ABC):
     #: If no command is given, then the default command of the corresponding
     #: container image is going to be executed.
     #:
-    #: ..versionadded:: 3.5.0
-    #:   Changed the attribute name from `commands` to `command` and its type
-    #:   to a string.
+    #: .. versionadded:: 3.5.0
+    #:    Changed the attribute name from `commands` to `command` and its type
+    #:    to a string.
     #:
     #: :type: :class:`str` or :class:`None`
     #: :default: :class:`None`
@@ -39,8 +41,8 @@ class ContainerPlatform(abc.ABC):
     _commands = fields.TypedField(typ.List[str])
     #: The commands to be executed within the container.
     #:
-    #: ..deprecated:: 3.5.0
-    #:   Please use the `command` field instead.
+    #: .. deprecated:: 3.5.0
+    #:    Please use the `command` field instead.
     #:
     #: :type: :class:`list[str]`
     #: :default: ``[]``
@@ -55,7 +57,7 @@ class ContainerPlatform(abc.ABC):
     #:
     #: This does not have any effect for the `Singularity` container platform.
     #:
-    #: ..versionadded:: 3.5
+    #: .. versionadded:: 3.5
     #:
     #: :type: :class:`bool`
     #: :default: ``True``
@@ -85,8 +87,8 @@ class ContainerPlatform(abc.ABC):
     #: the container. This directory is always mounted regardless if
     #: :attr:`mount_points` is set or not.
     #:
-    #: ..deprecated:: 3.5
-    #: Please use the `options` field to set the working directory.
+    #: .. deprecated:: 3.5
+    #:    Please use the `options` field to set the working directory.
     #:
     #: :type: :class:`str`
     #: :default: ``/rfm_workdir``
@@ -101,7 +103,8 @@ class ContainerPlatform(abc.ABC):
         self.image = None
         self.command = None
 
-        # NOTE: Here we set the target fields directly to avoid the warnings
+        # NOTE: Here we set the target fields directly to avoid the deprecation
+        # warnings
         self._commands = []
         self._workdir = self.RFM_STAGEDIR
 

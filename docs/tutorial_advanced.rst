@@ -716,10 +716,10 @@ Besides the stage directory, additional mount points can be specified through th
 
 
 The container filesystem is ephemeral, therefore, ReFrame mounts the stage directory under ``/rfm_workdir`` inside the container where the user can copy artifacts as needed.
-The aforementioned artifacts will then be available inside the stage directory after the container execution finishes.
-This is very useful if the above artifacts are going to be used for the sanity/performance checks.
-If the copy is not performed by the default container commands, the user should overwrite the default command executed by the container, using the :attr:`command <reframe.core.containers.ContainerPlatform.command>` to include the appropriate copy commands.
-In the current test, the output of the ``cat /etc/os-release`` is made available outside the container since we have used the command:
+These artifacts will therefore be available inside the stage directory after the container execution finishes.
+This is very useful if the artifacts are needed for the sanity or performance checks.
+If the copy is not performed by the default container command, the user can override this command by settings the :attr:`command <reframe.core.containers.ContainerPlatform.command>` attribute such as to include the appropriate copy commands.
+In the current test, the output of the ``cat /etc/os-release`` is available both in the standard output as well as in the ``release.txt`` file, since we have used the command:
 
 .. code-block:: bash
 
@@ -727,11 +727,15 @@ In the current test, the output of the ``cat /etc/os-release`` is made available
 
 
 and ``/rfm_workdir`` corresponds to the stage directory on the host system.
-Therefore, the ``release.txt`` file can now be used in the subsequent sanity function:
+Therefore, the ``release.txt`` file can now be used in the subsequent sanity checks:
 
 .. code-block:: python
 
-    sn.assert_found(r'18.04.\d+ LTS \(Bionic Beaver\)', 'release.txt')
+   os_release_pattern = r'18.04.\d+ LTS \(Bionic Beaver\)'
+   self.sanity_patterns = sn.all([
+       sn.assert_found(os_release_pattern, 'release.txt'),
+       sn.assert_found(os_release_pattern, self.stdout)
+   ])
 
 
 For a complete list of the available attributes of a specific container platform, please have a look at the :ref:`container-platforms` section of the :doc:`regression_test_api` guide.

@@ -33,7 +33,7 @@ import reframe.utility.typecheck as typ
 import reframe.utility.udeps as udeps
 from reframe.core.backends import getlauncher, getscheduler
 from reframe.core.buildsystems import BuildSystemField
-from reframe.core.containers import ContainerPlatformField
+from reframe.core.containers import _STAGEDIR_MOUNT, ContainerPlatformField
 from reframe.core.deferrable import _DeferredExpression
 from reframe.core.exceptions import (BuildError, DependencyError,
                                      PipelineError, SanityError,
@@ -1290,7 +1290,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
             self.container_platform.validate()
             self.container_platform.mount_points += [
-                (self._stagedir, self.container_platform.RFM_STAGEDIR)
+                (self._stagedir, _STAGEDIR_MOUNT)
             ]
 
             # We replace executable and executable_opts in case of containers

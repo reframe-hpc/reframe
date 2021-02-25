@@ -18,6 +18,8 @@ class ContainerTest(rfm.RunOnlyRegressionTest):
         self.container_platform.command = (
             "bash -c 'cat /etc/os-release | tee /rfm_workdir/release.txt'"
         )
-        self.sanity_patterns = sn.assert_found(
-            r'18.04.\d+ LTS \(Bionic Beaver\)', 'release.txt'
-        )
+        os_release_pattern = r'18.04.\d+ LTS \(Bionic Beaver\)'
+        self.sanity_patterns = sn.all([
+            sn.assert_found(os_release_pattern, 'release.txt'),
+            sn.assert_found(os_release_pattern, self.stdout)
+        ])
