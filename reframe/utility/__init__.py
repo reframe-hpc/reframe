@@ -672,6 +672,7 @@ class ScopedDict(UserDict):
     ``d['*:k1']`` are all equivalent.
     If you try to retrieve a whole scope, e.g., ``d['a:b']``,
     :class:`KeyError` will be raised.
+    For retrieving scopes, you should use the :func:`scope` function.
 
     Key deletion follows the same resolution mechanism as key retrieval,
     except that you are allowed to delete whole scopes. For example, ``del
@@ -727,9 +728,16 @@ class ScopedDict(UserDict):
             for k, v in scope_dict.items():
                 self.data[scope][k] = v
 
-    def scope(self, scope):
+    def scope(self, name):
+        '''Retrieve a whole scope.
+
+        :arg scope: The name of the scope to retrieve.
+        :returns: A dictionary with the keys that are within the requested
+            scope.
+        '''
+
         ret = {}
-        curr_scope = scope
+        curr_scope = name
         while curr_scope is not None:
             if curr_scope in self.data:
                 for k, v in self.data[curr_scope].items():
