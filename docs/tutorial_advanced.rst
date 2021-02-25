@@ -671,13 +671,14 @@ ReFrame can be used also to test applications that run inside a container.
 First, we need to enable the container platform support in ReFrame's configuration and, specifically, at the partition configuration level:
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 38-58
-   :emphasize-lines: 15-20
+   :lines: 38-62
+   :emphasize-lines: 15-24
 
 For each partition, users can define a list of container platforms supported using the :js:attr:`container_platforms` `configuration parameter <config_reference.html#.systems[].partitions[].container_platforms>`__.
-In this case, we define the `Singularity <https://sylabs.io>`__ platform, for which we set the :js:attr:`modules` parameter in order to instruct ReFrame to load the ``singularity`` module, whenever it needs to run with this container platform.
+In this case, we define the `Sarus <https://github.com/eth-cscs/sarus>`__ platform for which we set the :js:attr:`modules` parameter in order to instruct ReFrame to load the ``sarus`` module, whenever it needs to run with this container platform.
+Furthermore, we define the `Singularity <https://sylabs.io>`__ platform, for which the ``singularity`` module needs to be loaded.
 
-The following test will use a Singularity container to run:
+The following parameterized test, will create two test cases, one for each of the supported contaiter platforms:
 
 .. code-block:: console
 
@@ -686,25 +687,38 @@ The following test will use a Singularity container to run:
 
 .. literalinclude:: ../tutorials/advanced/containers/container_test.py
    :lines: 6-
-   :emphasize-lines: 11-15
+   :emphasize-lines: 11-16
 
 A container-based test can be written as :class:`RunOnlyRegressionTest <reframe.core.pipeline.RunOnlyRegressionTest>` that sets the :attr:`container_platform <reframe.core.pipeline.RegressionTest.container_platform>` attribute.
 This attribute accepts a string that corresponds to the name of the container platform that will be used to run the container for this test.
-In this case, the test will be using `Singularity <https://sylabs.io>`__ as a container platform.
 If such a platform is not `configured <config_reference.html#container-platform-configuration>`__ for the current system, the test will fail.
 
 As soon as the container platform to be used is defined, you need to specify the container image to use by setting the :attr:`image <reframe.core.containers.ContainerPlatform.image>`.
+In the ``Singularity`` test case, we add the ``docker://`` prefix to the image name, in order to instruct ``Singularity`` to pull the image from `DockerHub <https://hub.docker.com/>`__.
 The default command that the container runs can be overwritten by setting the :attr:`command <reframe.core.containers.ContainerPlatform.command>` attribute of the container platform.
 
 The :attr:`image <reframe.core.containers.ContainerPlatform.image>` is the only mandatory attribute for container-based checks.
 It is important to note that the :attr:`executable <reframe.core.pipeline.RegressionTest.executable>` and :attr:`executable_opts <reframe.core.pipeline.RegressionTest.executable_opts>` attributes of the actual test are ignored in case of container-based tests.
 
-ReFrame will run the container as follows:
+ReFrame will run the container according to the given platform as follows:
 
-.. code-block:: console
+.. code-block:: bash
 
+    # Sarus
+    sarus run --mount=type=bind,source="/path/to/test/stagedir",destination="/rfm_workdir" ubuntu:18.04 bash -c 'cat /etc/os-release | tee /rfm_workdir/release.txt'
+
+    # Singularity
     singularity exec -B"/path/to/test/stagedir:/rfm_workdir" docker://ubuntu:18.04 bash -c 'cat /etc/os-release | tee /rfm_workdir/release.txt'
 
+
+In the ``Sarus`` case, ReFrame will prepend the following command in order to pull the container image before running the container:
+
+.. code-block:: bash
+
+   sarus pull ubuntu:18.04
+
+
+This is the default behavior of ReFrame, which can be changed if pulling the image is not desired by setting the :attr:`pull_image <reframe.core.containers.ContainerPlatform.pull_image>` attribute to :class:`False`.
 By default ReFrame will mount the stage directory of the test under ``/rfm_workdir`` inside the container.
 Once the commands are executed, the container is stopped and ReFrame goes on with the sanity and performance checks.
 Besides the stage directory, additional mount points can be specified through the :attr:`mount_points <reframe.core.pipeline.RegressionTest.container_platform.mount_points>` attribute:
