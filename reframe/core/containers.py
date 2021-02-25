@@ -48,7 +48,7 @@ class ContainerPlatform(abc.ABC):
         _commands,
         'The `commands` field is deprecated, please use the `command` field '
         'to set the command to be executed by the container.',
-         fields.DeprecatedField.OP_SET, from_version='3.5.0'
+        fields.DeprecatedField.OP_SET, from_version='3.5.0'
     )
 
     #: Pull the container image before running.
@@ -94,7 +94,7 @@ class ContainerPlatform(abc.ABC):
         _workdir,
         'The `workdir` field is deprecated, please use the `options` field to '
         'set the container working directory',
-         fields.DeprecatedField.OP_SET, from_version='3.5.0'
+        fields.DeprecatedField.OP_SET, from_version='3.5.0'
     )
 
     def __init__(self):
