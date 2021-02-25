@@ -484,7 +484,14 @@ class LoggerAdapter(logging.LoggerAdapter):
             self.extra['check_system'] = self.check.current_system.name
 
         if self.check.current_partition:
+            cp = self.check.current_partition.fullname
             self.extra['check_partition'] = self.check.current_partition.name
+
+            # When logging performance references, we need only those of the
+            # current system
+            self.extra['check_reference'] = jsonext.dumps(
+                self.check.reference.scope(cp)
+            )
 
         if self.check.current_environ:
             self.extra['check_environ'] = self.check.current_environ.name
