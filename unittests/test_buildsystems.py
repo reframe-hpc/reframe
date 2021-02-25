@@ -240,3 +240,35 @@ def test_singlesource_unknown_language():
     build_system.srcfile = 'foo.bar'
     with pytest.raises(BuildSystemError, match='could not guess language'):
         build_system.emit_build_commands(ProgEnvironment('testenv'))
+
+
+def test_easybuild(environ):
+    build_system = bs.EasyBuild()
+    build_system.srcdir = 'easybuild'
+    build_system.easyconfigs = ['ec1.eb', 'ec2.eb']
+    build_system.options = ['-o1', '-o2']
+    assert (['EASYBUILD_BUILDPATH=easybuild/rfm_easybuild/build \\',
+             'EASYBUILD_INSTALLPATH=easybuild/rfm_easybuild \\',
+             'EASYBUILD_PREFIX=easybuild/rfm_easybuild \\',
+             'EASYBUILD_SOURCEPATH=easybuild/rfm_easybuild \\',
+             'eb ec1.eb ec2.eb -o1 -o2'
+             ] == build_system.emit_build_commands(environ))
+
+
+def test_easybuild_with_packaging(environ):
+    build_system = bs.EasyBuild()
+    build_system.srcdir = 'easybuild'
+    build_system.easyconfigs = ['ec1.eb', 'ec2.eb']
+    build_system.options = ['-o1', '-o2']
+    build_system.emit_package = True
+    build_system.package_opts = {
+        'type': 'rpm',
+        'tool-options': "'-o1 -o2'"
+    }
+    assert (['EASYBUILD_BUILDPATH=easybuild/rfm_easybuild/build \\',
+             'EASYBUILD_INSTALLPATH=easybuild/rfm_easybuild \\',
+             'EASYBUILD_PREFIX=easybuild/rfm_easybuild \\',
+             'EASYBUILD_SOURCEPATH=easybuild/rfm_easybuild \\',
+             'eb ec1.eb ec2.eb -o1 -o2 --package --package-type=rpm '
+             "--package-tool-options='-o1 -o2'"
+             ] == build_system.emit_build_commands(environ))
