@@ -11,10 +11,12 @@ from reframe.core.exceptions import ContainerError
 
 
 @pytest.fixture(params=[
-    'Docker', 'Docker+nocommand', 'Docker+nopull', 'Sarus', 'Sarus+nocommand',
-    'Sarus+nopull', 'Sarus+mpi', 'Sarus+load', 'Shifter', 'Shifter+nocommand',
-    'Shifter+mpi', 'Shifter+nopull', 'Shifter+load', 'Singularity',
-    'Singularity+nocommand', 'Singularity+cuda'])
+    'Docker', 'Docker+nocommand', 'Docker+nopull',
+    'Sarus', 'Sarus+nocommand', 'Sarus+nopull', 'Sarus+mpi', 'Sarus+load',
+    'Shifter', 'Shifter+nocommand', 'Shifter+mpi', 'Shifter+nopull',
+    'Shifter+load',
+    'Singularity', 'Singularity+nocommand', 'Singularity+cuda'
+])
 def container_variant(request):
     return request.param
 
@@ -159,14 +161,12 @@ def expected_cmd_run_opts(container_variant):
                 '--mount=type=bind,source="/path/one",destination="/one" '
                 '--mpi --foo --bar image:tag cmd')
     elif container_variant in {'Singularity'}:
-        return ('singularity exec -B"/path/one:/one" '
-                '--foo --bar image:tag cmd')
+        return 'singularity exec -B"/path/one:/one" --foo --bar image:tag cmd'
     elif container_variant == 'Singularity+cuda':
         return ('singularity exec -B"/path/one:/one" '
                 '--nv --foo --bar image:tag cmd')
     elif container_variant == 'Singularity+nocommand':
-        return ('singularity run -B"/path/one:/one" '
-                '--foo --bar image:tag')
+        return 'singularity run -B"/path/one:/one" --foo --bar image:tag'
 
 
 def test_mount_points(container_platform, expected_cmd_mount_points):
@@ -191,8 +191,7 @@ def test_run_opts(container_platform, expected_cmd_run_opts):
     assert container_platform.launch_command() == expected_cmd_run_opts
 
 
-@pytest.fixture(params=[
-    'Docker', 'Singularity', 'Sarus', 'Shifter'])
+@pytest.fixture(params=['Docker', 'Singularity', 'Sarus', 'Shifter'])
 def container_variant_deprecated(request):
     return request.param
 

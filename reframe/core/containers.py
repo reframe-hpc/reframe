@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import abc
-import warnings
 
 import reframe.core.fields as fields
 import reframe.utility.typecheck as typ
@@ -29,7 +28,7 @@ class ContainerPlatform(abc.ABC):
     #: If no command is given, then the default command of the corresponding
     #: container image is going to be executed.
     #:
-    #: ..versionchanged:: 3.5
+    #: ..versionadded:: 3.5.0
     #:   Changed the attribute name from `commands` to `command` and its type
     #:   to a string.
     #:
@@ -37,17 +36,19 @@ class ContainerPlatform(abc.ABC):
     #: :default: :class:`None`
     command = fields.TypedField(str, type(None))
 
+    _commands = fields.TypedField(typ.List[str])
     #: The commands to be executed within the container.
     #:
-    #: ..versionchanged:: 3.5
-    #:   The `commands` field is now deprecated.
+    #: ..deprecated:: 3.5.0
+    #:   Please use the `command` field instead.
     #:
     #: :type: :class:`list[str]`
     #: :default: ``[]``
     commands = fields.DeprecatedField(
-        fields.TypedField(typ.List[str]),
+        _commands,
         'The `commands` field is deprecated, please use the `command` field '
-        'to set the command to be executed by the container.', 1
+        'to set the command to be executed by the container.',
+         fields.DeprecatedField.OP_SET,
     )
 
     #: Pull the container image before running.
@@ -77,29 +78,32 @@ class ContainerPlatform(abc.ABC):
     #: :default: ``[]``
     options = fields.TypedField(typ.List[str])
 
+    _workdir = fields.TypedField(str, type(None))
     #: The working directory of ReFrame inside the container.
     #:
     #: This is the directory where the test's stage directory is mounted inside
     #: the container. This directory is always mounted regardless if
     #: :attr:`mount_points` is set or not.
     #:
-    #: ..versionchanged:: 3.5
-    #:   The `commands` field is now deprecated.
+    #: ..deprecated:: 3.5
+    #: Please use the `options` field to set the working directory.
     #:
     #: :type: :class:`str`
     #: :default: ``/rfm_workdir``
     workdir = fields.DeprecatedField(
-        fields.TypedField(str, type(None)),
+        _workdir,
         'The `workdir` field is deprecated, please use the `options` field to '
-        'set the container working directory', 1
+        'set the container working directory',
+         fields.DeprecatedField.OP_SET,
     )
 
     def __init__(self):
         self.image = None
         self.command = None
-        with warnings.catch_warnings(record=True):
-            self.commands = []
-            self.workdir = self.RFM_STAGEDIR
+
+        # NOTE: Here we set the target fields directly to avoid the warnings
+        self._commands = []
+        self._workdir = self.RFM_STAGEDIR
 
         self.mount_points  = []
         self.options = []
@@ -155,9 +159,6 @@ class Docker(ContainerPlatform):
         run_opts = [f'-v "{mp[0]}":"{mp[1]}"' for mp in self.mount_points]
         run_opts += self.options
 
-        run_cmd = 'docker run --rm %s %s bash -c ' % (' '.join(run_opts),
-                                                      self.image)
-
         if self.command:
             return (f'docker run --rm {" ".join(run_opts)} '
                     f'{self.image} {self.command}')
@@ -166,7 +167,7 @@ class Docker(ContainerPlatform):
             return (f"docker run --rm {' '.join(run_opts)} {self.image} "
                     f"bash -c 'cd {self.workdir}; {'; '.join(self.commands)}'")
 
-        return (f'docker run --rm {" ".join(run_opts)} {self.image}')
+        return f'docker run --rm {" ".join(run_opts)} {self.image}'
 
 
 class Sarus(ContainerPlatform):
@@ -182,6 +183,7 @@ class Sarus(ContainerPlatform):
     def __init__(self):
         super().__init__()
         self.with_mpi = False
+        self._command = 'sarus'
 
     def emit_prepare_commands(self):
         # The format that Sarus uses to call the images is
@@ -190,7 +192,7 @@ class Sarus(ContainerPlatform):
         if not self.pull_image or self.image.startswith('load/'):
             return []
         else:
-            return [f'sarus pull {self.image}']
+            return [f'{self._command} pull {self.image}']
 
     def launch_command(self):
         super().launch_command()
@@ -202,58 +204,24 @@ class Sarus(ContainerPlatform):
         run_opts += self.options
 
         if self.command:
-            return (f'sarus run {" ".join(run_opts)} {self.image} '
+            return (f'{self._command} run {" ".join(run_opts)} {self.image} '
                     f'{self.command}')
 
         if self.commands:
-            return (f"sarus run {' '.join(run_opts)} {self.image} "
+            return (f"{self._command} run {' '.join(run_opts)} {self.image} "
                     f"bash -c 'cd {self.workdir}; {'; '.join(self.commands)}'")
 
-        return f'sarus run {" ".join(run_opts)} {self.image}'
+        return f'{self._command} run {" ".join(run_opts)} {self.image}'
 
 
-class Shifter(ContainerPlatform):
+class Shifter(Sarus):
     '''Container platform backend for running containers with `Shifter
     <https://www.nersc.gov/research-and-development/user-defined-images/>`__.
     '''
 
-    #: Enable MPI support when launching the container.
-    #:
-    #: :type: boolean
-    #: :default: :class:`False`
-    with_mpi = fields.TypedField(bool)
-
     def __init__(self):
         super().__init__()
-        self.with_mpi = False
-
-    def emit_prepare_commands(self):
-        # The format that Shifter uses to call the images is
-        # <reposerver>/<user>/<image>:<tag>. If an image was loaded
-        # locally from a tar file, the <reposerver> is 'load'.
-        if not self.pull_image or self.image.startswith('load/'):
-            return []
-        else:
-            return [f'shifter pull {self.image}']
-
-    def launch_command(self):
-        super().launch_command()
-        run_opts = [f'--mount=type=bind,source="{mp[0]}",destination="{mp[1]}"'
-                    for mp in self.mount_points]
-        if self.with_mpi:
-            run_opts.append('--mpi')
-
-        run_opts += self.options
-
-        if self.command:
-            return (f'shifter run {" ".join(run_opts)} {self.image} '
-                    f'{self.command}')
-
-        if self.commands:
-            return (f"shifter run {' '.join(run_opts)} {self.image} "
-                    f"bash -c 'cd {self.workdir}; {'; '.join(self.commands)}'")
-
-        return f'shifter run {" ".join(run_opts)} {self.image}'
+        self._command = 'shifter'
 
 
 class Singularity(ContainerPlatform):

@@ -16,10 +16,8 @@ class ContainerTest(rfm.RunOnlyRegressionTest):
         self.container_platform = 'Singularity'
         self.container_platform.image = 'docker://ubuntu:18.04'
         self.container_platform.command = (
-            "bash -c 'pwd; cat /etc/os-release > release.txt'"
+            "bash -c 'cat /etc/os-release | tee release.txt'"
         )
-        self.container_platform.options = ['--pwd=/rfm_workdir']
-        self.sanity_patterns = sn.all([
-            sn.assert_found(r'^/rfm_workdir', self.stdout),
-            sn.assert_found(r'18.04.\d+ LTS \(Bionic Beaver\)', 'release.txt')
-        ])
+        self.sanity_patterns = sn.assert_found(
+            r'18.04.\d+ LTS \(Bionic Beaver\)', 'release.txt'
+        )
