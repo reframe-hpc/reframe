@@ -79,7 +79,7 @@ class HaloCellExchangeTest(rfm.RegressionTest):
                 'time_6_1000000': (9.179296e-04, None, 0.50, 's')
             },
             'daint:mc': {
-                'time_2_10': (1e-05, None, 0.50, 's'),
+                'time_2_10': (1.5e-05, None, 0.50, 's'),
                 'time_2_10000': (9.1e-05, None, 0.50, 's'),
                 'time_2_1000000': (4.934530e-04, None, 0.50, 's'),
                 'time_4_10': (3e-05, None, 0.50, 's'),
@@ -101,7 +101,7 @@ class HaloCellExchangeTest(rfm.RegressionTest):
                 'time_6_1000000': (9.179296e-04, None, 0.50, 's')
             },
             'daint:gpu': {
-                'time_2_10': (1e-05, None, 0.50, 's'),
+                'time_2_10': (1.5e-05, None, 0.50, 's'),
                 'time_2_10000': (9.1e-05, None, 0.50, 's'),
                 'time_2_1000000': (4.934530e-04, None, 0.50, 's'),
                 'time_4_10': (3e-05, None, 0.50, 's'),
