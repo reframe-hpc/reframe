@@ -9,6 +9,7 @@ import collections.abc
 import functools
 import importlib
 import importlib.util
+import inspect
 import itertools
 import os
 import re
@@ -269,6 +270,34 @@ def repr(obj, htchar=' ', lfchar='\n', indent=4, basic_offset=0):
 
     r = ppretty(obj.__dict__, htchar, lfchar, indent, basic_offset, repr)
     return f'{type(obj).__name__}({r})@{hex(id(obj))}'
+
+
+def attrs(obj):
+    '''Inspect object and return its attributes and their values.
+
+    This function returns also any descriptors found at the owner class,
+    with the exception of descriptors without an assigned value, which are
+    expected to raise an ``AttributeError``.
+
+    :arg obj: The object to inspect.
+    :returns: an iterator over ``(attr_name, value)`` tuples
+
+    :meta private:
+    '''
+
+    ret = dict(obj.__dict__)
+
+    # Look for descriptors
+    for cls in type(obj).mro():
+        for attr in cls.__dict__:
+            if inspect.isdatadescriptor(cls.__dict__[attr]):
+                try:
+                    ret[attr] = getattr(obj, attr)
+                except AttributeError:
+                    # Pass if the descriptor does not have an assigned value
+                    pass
+
+    return ret
 
 
 def _is_builtin_type(cls):
