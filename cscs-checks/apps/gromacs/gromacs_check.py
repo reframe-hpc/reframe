@@ -49,7 +49,7 @@ class GromacsBaseCheck(rfm.RunOnlyRegressionTest):
         self.tags = {'scs', 'external-resources'}
 
 
-@rfm.required_version('>=2.19')
+@rfm.required_version('>=2.19.0')
 @rfm.parameterized_test(*([s, v]
                           for s in ['small', 'large']
                           for v in ['prod', 'maint']))
@@ -92,7 +92,7 @@ class GromacsGPUCheck(GromacsBaseCheck):
         self.tags |= {'maintenance' if variant == 'maint' else 'production'}
 
 
-@rfm.required_version('>=2.19')
+@rfm.required_version('>=2.19.0')
 @rfm.parameterized_test(*([s, v]
                           for s in ['small', 'large']
                           for v in ['prod']))

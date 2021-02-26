@@ -44,7 +44,7 @@ class StridedBase(rfm.RegressionTest):
         return self.job.num_tasks
 
 
-@rfm.required_version('>=2.16-dev0')
+@rfm.required_version('>=2.16-dev0.0')
 @rfm.simple_test
 class StridedBandwidthTest(StridedBase):
     def __init__(self):
@@ -73,10 +73,10 @@ class StridedBandwidthTest(StridedBase):
         self.num_cpus = self.system_num_cpus[self.current_partition.fullname]
 
         # 8-byte stride, using the full cacheline
-        self.executable_opts = ['100000000', '1', '%s' % self.num_cpus]
+        self.executable_opts = ['100000000', '1', f'{self.num_cpus}']
 
 
-@rfm.required_version('>=2.16-dev0')
+@rfm.required_version('>=2.16-dev0.0')
 @rfm.simple_test
 class StridedBandwidthTest64(StridedBase):
     def __init__(self):
@@ -108,7 +108,7 @@ class StridedBandwidthTest64(StridedBase):
         self.executable_opts = ['100000000', '8', '%s' % self.num_cpus]
 
 
-@rfm.required_version('>=2.16-dev0')
+@rfm.required_version('>=2.16-dev0.0')
 @rfm.simple_test
 class StridedBandwidthTest128(StridedBase):
     def __init__(self):

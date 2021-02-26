@@ -171,6 +171,7 @@ class AffinityTestBase(rfm.RegressionTest):
         '''Extract the data from the affinity tool.'''
 
         re_aff_cpus = r'CPU affinity: \[\s+(?P<cpus>[\d+\s+]+)\]'
+
         def parse_cpus(x):
             return sorted([int(xi) for xi in x.split()])
 
@@ -482,7 +483,7 @@ class ConsecutiveNumaFilling(AffinityTestBase):
                 next(iter(cpus_present)), by='node'
             )
             if (not all(cpu in cpuset_by_numa for cpu in cpus_present) and
-                len(cpuset_by_numa)==len(cpus_present)):
+                len(cpuset_by_numa) == len(cpus_present)):
                 raise SanityError(
                     f'numa node {numa_number} not filled in order'
                 )
@@ -512,7 +513,8 @@ class AlternateNumaFilling(AffinityTestBase):
 
     @rfm.run_before('sanity')
     def consume_cpu_set(self):
-        '''Check that consecutive tasks are round-robin pinned to numa nodes.'''
+        '''Check that consecutive tasks are round-robin pinned to numa nodes.
+        '''
 
         # Get a set per numa node to keep track of the CPUs
         numa_nodes = [set() for s in range(self.num_numa_nodes)]
@@ -525,7 +527,8 @@ class AlternateNumaFilling(AffinityTestBase):
                 # Only 1 CPU per affinity set is allowed
                 if ((len(affinity_set) > 1) or
                     (any(cpu in numa_nodes[s] for cpu in affinity_set)) or
-                    (any(cpu not in self.numa_nodes[s] for cpu in affinity_set))):
+                    (any(cpu not in self.numa_nodes[s]
+                         for cpu in affinity_set))):
                     raise SanityError(
                         f'incorrect affinity set for task {task_count}'
                     )

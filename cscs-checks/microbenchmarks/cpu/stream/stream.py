@@ -7,7 +7,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.required_version('>=2.14')
+@rfm.required_version('>=2.14.0')
 @rfm.simple_test
 class StreamTest(rfm.RegressionTest):
     '''This test checks the stream test:

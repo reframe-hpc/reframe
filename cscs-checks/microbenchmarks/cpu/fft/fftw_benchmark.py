@@ -7,7 +7,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.required_version('>=2.16-dev0')
+@rfm.required_version('>=2.16-dev0.0')
 @rfm.parameterized_test(['nompi'], ['mpi'])
 class FFTWTest(rfm.RegressionTest):
     def __init__(self, exec_mode):

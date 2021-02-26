@@ -16,7 +16,7 @@ def to_seconds(str):
             datetime.strptime('00:00:00', '%H:%M:%S')).total_seconds()
 
 
-@rfm.required_version('>=2.19')
+@rfm.required_version('>=2.19.0')
 @rfm.parameterized_test(
     ['serial',     'gpu', 24, 12, 1, 1],
     ['serial',     'mc',  72, 36, 1, 1],
@@ -39,7 +39,7 @@ class GREASYCheck(rfm.RegressionTest):
         # sleep enough time to distinguish if the files are running in parallel
         # or not
         self.sleep_time = 60
-        self.build_system.cflags = ['-DSLEEP_TIME=%d' % self.sleep_time]
+        self.build_system.cflags = [f'-DSLEEP_TIME={self.sleep_time:d}']
         self.variant = variant
         if variant == 'openmp':
             self.build_system.cflags += ['-fopenmp']

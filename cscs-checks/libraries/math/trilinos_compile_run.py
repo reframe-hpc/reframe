@@ -8,7 +8,7 @@ import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 
 
-@rfm.required_version('>=2.14')
+@rfm.required_version('>=2.14.0')
 @rfm.parameterized_test(['static'], ['dynamic'])
 class TrilinosTest(rfm.RegressionTest):
     def __init__(self, linkage):
@@ -21,7 +21,7 @@ class TrilinosTest(rfm.RegressionTest):
         self.linkage = linkage
 
         self.build_system = 'SingleSource'
-        self.build_system.ldflags = ['-%s' % linkage, '-lparmetis']
+        self.build_system.ldflags = [f'-{linkage}', f'-lparmetis']
         self.build_system.cppflags = ['-DHAVE_MPI', '-DEPETRA_MPI']
         self.prgenv_flags = {
             'PrgEnv-cray': ['-fopenmp', '-O2', '-ffast-math', '-std=c++11',

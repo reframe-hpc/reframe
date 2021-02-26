@@ -11,7 +11,7 @@ import reframe.utility.sanity as sn
 
 class NamdBaseCheck(rfm.RunOnlyRegressionTest):
     def __init__(self, arch, scale, variant):
-        self.descr = 'NAMD check (%s, %s)' % (arch, variant)
+        self.descr = f'NAMD check ({arch}, {variant})'
         self.valid_prog_environs = ['builtin']
         self.modules = ['NAMD']
 
@@ -67,7 +67,7 @@ class NamdBaseCheck(rfm.RunOnlyRegressionTest):
         }
 
 
-@rfm.required_version('>=2.16')
+@rfm.required_version('>=2.16.0')
 @rfm.parameterized_test(*([s, v]
                           for s in ['small', 'large']
                           for v in ['maint', 'prod']))
@@ -91,7 +91,7 @@ class NamdGPUCheck(NamdBaseCheck):
             }
 
 
-@rfm.required_version('>=2.16')
+@rfm.required_version('>=2.16.0')
 @rfm.parameterized_test(*([s, v]
                           for s in ['small', 'large']
                           for v in ['maint', 'prod']))

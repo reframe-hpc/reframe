@@ -7,12 +7,12 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.required_version('>=2.14')
+@rfm.required_version('>=2.14.0')
 @rfm.parameterized_test(['dynamic'], ['static'])
 class PetscPoisson2DCheck(rfm.RegressionTest):
     def __init__(self, linkage):
-        self.descr = ('Compile/run PETSc 2D Poisson example with cray-petsc '
-                      '(%s linking)') % linkage
+        self.descr = (f'Compile/run PETSc 2D Poisson example with cray-petsc '
+                      f'({linkage} linking)')
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel']
