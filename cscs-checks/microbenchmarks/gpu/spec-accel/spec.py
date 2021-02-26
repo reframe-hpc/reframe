@@ -88,7 +88,7 @@ class SpecAccelCheckBase(rfm.RegressionTest):
         self.job.launcher = getlauncher('local')()
 
 
-@rfm.required_version('>=2.16-dev0.0')
+@rfm.required_version('>=2.16.0-dev.0')
 @rfm.simple_test
 class SpecAccelCheckOpenCL(SpecAccelCheckBase):
     def __init__(self):
@@ -125,7 +125,7 @@ class SpecAccelCheckOpenCL(SpecAccelCheckBase):
         super().__init__(valid_prog_environs)
 
 
-@rfm.required_version('>=2.16-dev0.0')
+@rfm.required_version('>=2.16.0-dev.0')
 @rfm.simple_test
 class SpecAccelCheckOpenACC(SpecAccelCheckBase):
     def __init__(self):

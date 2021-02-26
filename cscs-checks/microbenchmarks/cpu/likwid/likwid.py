@@ -54,7 +54,7 @@ class MemBandwidthTest(rfm.RunOnlyRegressionTest):
         }
 
 
-@rfm.required_version('>=2.16-dev0.0')
+@rfm.required_version('>=2.16.0-dev.0')
 @rfm.parameterized_test(*[[l, k] for l in ['L1', 'L2', 'L3']
                           for k in ['load_avx', 'store_avx']],
                         ['memory', 'load_avx'],
@@ -119,7 +119,7 @@ class CPUBandwidth(MemBandwidthTest):
         self.executable_opts = [f'-t {self.kernel_name}'] + workgroups
 
 
-@rfm.required_version('>=2.16-dev0.0')
+@rfm.required_version('>=2.16.0-dev.0')
 @rfm.simple_test
 class CPUBandwidthCrossSocket(MemBandwidthTest):
     def __init__(self):
