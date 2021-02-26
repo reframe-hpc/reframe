@@ -69,7 +69,7 @@ class SpecAccelCheckBase(rfm.RegressionTest):
         envname = self.current_environ.name
         self.prerun_cmds = [
             f'source ./shrc',
-            f'mv {self.configs[envname] config'
+            f'mv {self.configs[envname]} config'
         ]
         self.executable_opts = [
             f'--config={self.configs[envname]}', '--platform NVIDIA',
