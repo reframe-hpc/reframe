@@ -113,7 +113,7 @@ class ContainerPlatform(abc.ABC):
         self.pull_image = True
 
     @abc.abstractmethod
-    def emit_prepare_commands(self):
+    def emit_prepare_commands(self, stagedir):
         '''Returns commands for preparing this container for running.
 
         Such a command could be for pulling the container image from a
@@ -125,10 +125,12 @@ class ContainerPlatform(abc.ABC):
             platform backends.
 
         :meta private:
+
+        :arg stagedir: The stage directory of the test.
         '''
 
     @abc.abstractmethod
-    def launch_command(self):
+    def launch_command(self, stagedir):
         '''Returns the command for running :attr:`commands` with this container
         platform.
 
@@ -137,6 +139,8 @@ class ContainerPlatform(abc.ABC):
             platforms.
 
         :meta private:
+
+        :arg stagedir: The stage directory of the test.
         '''
 
     def validate(self):
@@ -154,12 +158,13 @@ class Docker(ContainerPlatform):
     '''Container platform backend for running containers with `Docker
     <https://www.docker.com/>`__.'''
 
-    def emit_prepare_commands(self):
+    def emit_prepare_commands(self, stagedir):
         return [f'docker pull {self.image}'] if self.pull_image else []
 
-    def launch_command(self):
-        super().launch_command()
-        run_opts = [f'-v "{mp[0]}":"{mp[1]}"' for mp in self.mount_points]
+    def launch_command(self, stagedir):
+        super().launch_command(stagedir)
+        mount_points = self.mount_points + [(stagedir, _STAGEDIR_MOUNT)]
+        run_opts = [f'-v "{mp[0]}":"{mp[1]}"' for mp in mount_points]
         run_opts += self.options
 
         if self.command:
@@ -188,7 +193,7 @@ class Sarus(ContainerPlatform):
         self.with_mpi = False
         self._command = 'sarus'
 
-    def emit_prepare_commands(self):
+    def emit_prepare_commands(self, stagedir):
         # The format that Sarus uses to call the images is
         # <reposerver>/<user>/<image>:<tag>. If an image was loaded
         # locally from a tar file, the <reposerver> is 'load'.
@@ -197,10 +202,11 @@ class Sarus(ContainerPlatform):
         else:
             return [f'{self._command} pull {self.image}']
 
-    def launch_command(self):
-        super().launch_command()
+    def launch_command(self, stagedir):
+        super().launch_command(stagedir)
+        mount_points = self.mount_points + [(stagedir, _STAGEDIR_MOUNT)]
         run_opts = [f'--mount=type=bind,source="{mp[0]}",destination="{mp[1]}"'
-                    for mp in self.mount_points]
+                    for mp in mount_points]
         if self.with_mpi:
             run_opts.append('--mpi')
 
@@ -241,12 +247,13 @@ class Singularity(ContainerPlatform):
         super().__init__()
         self.with_cuda = False
 
-    def emit_prepare_commands(self):
+    def emit_prepare_commands(self, stagedir):
         return []
 
-    def launch_command(self):
-        super().launch_command()
-        run_opts = [f'-B"{mp[0]}:{mp[1]}"' for mp in self.mount_points]
+    def launch_command(self, stagedir):
+        super().launch_command(stagedir)
+        mount_points = self.mount_points + [(stagedir, _STAGEDIR_MOUNT)]
+        run_opts = [f'-B"{mp[0]}:{mp[1]}"' for mp in mount_points]
         if self.with_cuda:
             run_opts.append('--nv')
 

@@ -33,7 +33,7 @@ import reframe.utility.typecheck as typ
 import reframe.utility.udeps as udeps
 from reframe.core.backends import getlauncher, getscheduler
 from reframe.core.buildsystems import BuildSystemField
-from reframe.core.containers import _STAGEDIR_MOUNT, ContainerPlatformField
+from reframe.core.containers import ContainerPlatformField
 from reframe.core.deferrable import _DeferredExpression
 from reframe.core.exceptions import (BuildError, DependencyError,
                                      PipelineError, SanityError,
@@ -138,6 +138,7 @@ class RegressionMixin(metaclass=RegressionTestMeta):
 
     .. versionadded:: 3.4.2
     '''
+
     def __getattribute__(self, name):
         try:
             return super().__getattribute__(name)
@@ -1289,9 +1290,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                     'on the current partition: %s' % e) from None
 
             self.container_platform.validate()
-            self.container_platform.mount_points += [
-                (self._stagedir, _STAGEDIR_MOUNT)
-            ]
 
             # We replace executable and executable_opts in case of containers
             self.executable = self.container_platform.launch_command()
