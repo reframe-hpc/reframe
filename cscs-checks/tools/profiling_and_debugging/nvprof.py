@@ -39,7 +39,7 @@ class NvprofCheck(rfm.RegressionTest):
         # cuda/10.1
         self.postrun_cmds = ['cat /etc/modprobe.d/nvidia.conf']
         self.sanity_patterns = sn.all([
-            sn.assert_found(f'Profiling application: {self.target_executable}'
+            sn.assert_found(f'Profiling application: {self.target_executable}',
                             self.stderr),
             sn.assert_found('[CUDA memcpy HtoD]', self.stderr),
             sn.assert_found('[CUDA memcpy DtoH]', self.stderr),
