@@ -138,6 +138,7 @@ class RegressionMixin(metaclass=RegressionTestMeta):
 
     .. versionadded:: 3.4.2
     '''
+
     def __getattribute__(self, name):
         try:
             return super().__getattribute__(name)
@@ -771,7 +772,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                         os.path.dirname(inspect.getfile(cls))
                     )
 
-        obj._rfm_init(name, prefix)
+        obj.__rfm_init__(name, prefix)
         return obj
 
     def __init__(self):
@@ -796,7 +797,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 os.path.dirname(inspect.getfile(cls))
             )
 
-    def _rfm_init(self, name=None, prefix=None):
+    def __rfm_init__(self, name=None, prefix=None):
         if name is not None:
             self.name = name
 
