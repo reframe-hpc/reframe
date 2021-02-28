@@ -18,6 +18,7 @@ class RegressionTestMeta(type):
 
     class MetaNamespace(namespaces.LocalNamespace):
         '''Custom namespace to control the cls attribute assignment.'''
+
         def __setitem__(self, key, value):
             if isinstance(value, variables.VarDirective):
                 # Insert the attribute in the variable namespace
@@ -159,7 +160,7 @@ class RegressionTestMeta(type):
         to perform specific reframe-internal actions. This gives extra control
         over the class instantiation process, allowing reframe to instantiate
         the regression test class differently if this class was registered or
-        not (e.g. when deep-copying a regression test object). These interal
+        not (e.g. when deep-copying a regression test object). These internal
         arguments must be intercepted before the object initialization, since
         these would otherwise affect the __init__ method's signature, and these
         internal mechanisms must be fully transparent to the user.

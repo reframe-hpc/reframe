@@ -15,6 +15,7 @@ __all__ = [
 
 import functools
 import glob
+import hashlib
 import inspect
 import itertools
 import numbers
@@ -195,7 +196,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: The name of the test.
     #:
     #: :type: string that can contain any character except ``/``
-    name = variable(typ.Str[r'[^\/]+'])
+    name = variable(str)
 
     #: List of programming environments supported by this test.
     #:
@@ -740,50 +741,35 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: :type: boolean : :default: :class:`True`
     build_locally = variable(bool, value=True)
 
+    _param_hash = variable(str, type(None), value=None)
+
     def __new__(cls, *args, _rfm_use_params=False, **kwargs):
         obj = super().__new__(cls)
+        obj.name = cls.__qualname__
 
         # Insert the var & param spaces
         cls._rfm_var_space.inject(obj, cls)
         cls._rfm_param_space.inject(obj, cls, _rfm_use_params)
 
-        # Create a test name from the class name and the constructor's
-        # arguments
-        name = cls.__qualname__
-        name += obj._append_parameters_to_name()
-
-        # or alternatively, if the parameterized test was defined the old way.
-        if args or kwargs:
-            arg_names = map(lambda x: util.toalphanum(str(x)),
-                            itertools.chain(args, kwargs.values()))
-            name += '_' + '_'.join(arg_names)
-
         # Determine the prefix
         try:
-            prefix = cls._rfm_custom_prefix
+            obj._prefix = cls._rfm_custom_prefix
         except AttributeError:
             if osext.is_interactive():
-                prefix = os.getcwd()
+                obj._prefix = os.getcwd()
             else:
                 try:
-                    prefix = cls._rfm_pinned_prefix
+                    obj._prefix = cls._rfm_pinned_prefix
                 except AttributeError:
-                    prefix = os.path.abspath(
+                    obj._prefix = os.path.abspath(
                         os.path.dirname(inspect.getfile(cls))
                     )
 
-        obj.__rfm_init__(name, prefix)
+        obj.__rfm_init__()
         return obj
 
     def __init__(self):
         pass
-
-    def _append_parameters_to_name(self):
-        if self._rfm_param_space.params:
-            return '_' + '_'.join([util.toalphanum(str(self.__dict__[key]))
-                                   for key in self._rfm_param_space.params])
-        else:
-            return ''
 
     @classmethod
     def __init_subclass__(cls, *, special=False, pin_prefix=False, **kwargs):
@@ -797,17 +783,13 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 os.path.dirname(inspect.getfile(cls))
             )
 
-    def __rfm_init__(self, name=None, prefix=None):
-        if name is not None:
-            self.name = name
-
+    def __rfm_init__(self):
         self.descr = self.name
         self.executable = os.path.join('.', self.name)
         self._perfvalues = {}
 
         # Static directories of the regression check
-        self._prefix = os.path.abspath(prefix)
-        if not os.path.isdir(os.path.join(self._prefix, self.sourcesdir)):
+        if not os.path.isdir(os.path.join(self.prefix, self.sourcesdir)):
             self.sourcesdir = None
 
         # Runtime information of the test
@@ -847,7 +829,46 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             # Just an empty environment
             self._cdt_environ = env.Environment('__rfm_cdt_environ')
 
-    # Export read-only views to interesting fields
+    @property
+    def unique_id(self):
+        ret = type(self).__qualname__
+        if self._param_hash:
+            ret += '_' + self._param_hash[:8]
+
+        return ret
+
+    def _set_param_hash(self, params):
+        obj = {}
+        for name, value, _ in params:
+            obj[name] = value
+
+        h = hashlib.sha256()
+        h.update(bytes(jsonext.dumps(obj), encoding='utf-8'))
+        self._param_hash = h.hexdigest()
+
+    def params_inserted(self, params):
+        '''Callback that is called when all parameters have been injected in
+        this test.
+
+        This is used to generate the human-readable name of the test as well
+        as the parameter hash
+
+        :arg params: A list of tuples ``(name, value, fmtval)``.
+
+        :meta private:
+        '''
+
+        # Calculate the parameter hash
+        self._set_param_hash(params)
+
+        # Generate the test name
+        self.name = type(self).__qualname__
+        for name, value, fmtval in params:
+            if fmtval:
+                value = fmtval(value)
+
+            self.name += f'%{name}={value}'
+
     @property
     def current_environ(self):
         '''The programming environment that the regression test is currently
@@ -1040,16 +1061,16 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             runtime = rt.runtime()
             self._stagedir = runtime.make_stagedir(
                 self.current_system.name, self._current_partition.name,
-                self._current_environ.name, self.name
+                self._current_environ.name, self.unique_id
             )
             self._outputdir = runtime.make_outputdir(
                 self.current_system.name, self._current_partition.name,
-                self._current_environ.name, self.name
+                self._current_environ.name, self.unique_id
             )
         except OSError as e:
             raise PipelineError('failed to set up paths') from e
 
-    def _setup_job(self, name, force_local=False, **job_opts):
+    def _setup_job(self, name, build_job=False, force_local=False, **job_opts):
         '''Setup the job related to this check.'''
 
         if force_local:
@@ -1064,9 +1085,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             f'(scheduler: {scheduler.registered_name!r}, '
             f'launcher: {launcher.registered_name!r})'
         )
+        filename = '_rfm_build.sh' if build_job else '_rfm_run.sh'
         return Job.create(scheduler,
                           launcher,
                           name=name,
+                          script_filename=filename,
                           workdir=self._stagedir,
                           max_pending_time=self.max_pending_time,
                           sched_access=self._current_partition.access,
@@ -1105,11 +1128,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self._current_partition = partition
         self._current_environ = environ
         self._setup_paths()
-        self._job = self._setup_job(f'rfm_{self.name}_job',
-                                    self.local,
+        self._job = self._setup_job(f'rfm_runjob_{self.name}',
+                                    force_local=self.local,
                                     **job_opts)
-        self._build_job = self._setup_job(f'rfm_{self.name}_build',
-                                          self.local or self.build_locally,
+        self._build_job = self._setup_job(f'rfm_buildjob_{self.name}',
+                                          build_job=True,
+                                          force_local=self.local or self.build_locally,
                                           **job_opts)
 
     def _copy_to_stagedir(self, path):
@@ -1168,7 +1192,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             if osext.is_url(self.sourcesdir):
                 self._clone_to_stagedir(self.sourcesdir)
             else:
-                self._copy_to_stagedir(os.path.join(self._prefix,
+                self._copy_to_stagedir(os.path.join(self.prefix,
                                                     self.sourcesdir))
 
         # Verify the sourcepath and determine the sourcepath in the stagedir
@@ -1805,10 +1829,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         if not isinstance(other, RegressionTest):
             return NotImplemented
 
-        return self.name == other.name
+        return self.unique_id == other.unique_id
 
     def __hash__(self):
-        return hash(self.name)
+        return hash(self.unique_id)
 
     def __rfm_json_decode__(self, json):
         # 'tags' are decoded as list, so we convert them to a set
@@ -1832,8 +1856,8 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
         self._current_partition = partition
         self._current_environ = environ
         self._setup_paths()
-        self._job = self._setup_job(f'rfm_{self.name}_job',
-                                    self.local,
+        self._job = self._setup_job(f'rfm_runjob_{self.name}',
+                                    force_local=self.local,
                                     **job_opts)
 
     def compile(self):
@@ -1859,7 +1883,7 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
             if osext.is_url(self.sourcesdir):
                 self._clone_to_stagedir(self.sourcesdir)
             else:
-                self._copy_to_stagedir(os.path.join(self._prefix,
+                self._copy_to_stagedir(os.path.join(self.prefix,
                                                     self.sourcesdir))
 
         super().run.__wrapped__(self)
@@ -1889,8 +1913,9 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
         self._current_partition = partition
         self._current_environ = environ
         self._setup_paths()
-        self._build_job = self._setup_job(f'rfm_{self.name}_build',
-                                          self.local or self.build_locally,
+        self._build_job = self._setup_job(f'rfm_buildjob_{self.name}',
+                                          build_job=True,
+                                          force_local=self.local or self.build_locally,
                                           **job_opts)
 
     @property

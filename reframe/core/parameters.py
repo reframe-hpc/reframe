@@ -27,24 +27,30 @@ class TestParam:
     '''
 
     def __init__(self, values=None,
-                 inherit_params=False, filter_params=None):
+                 inherit_params=False, filter_params=None, fmtval=None):
         if values is None:
             values = []
 
-        # By default, filter out all the parameter values defined in the
-        # base classes.
         if not inherit_params:
+            # By default, filter out all the parameter values defined in the
+            # base classes.
             def filter_params(x):
                 return ()
-
-        # If inherit_params==True, inherit all the parameter values from the
-        # base classes as default behaviour.
         elif filter_params is None:
+            # If inherit_params==True, inherit all the parameter values from the
+            # base classes as default behaviour.
             def filter_params(x):
                 return x
 
+        if not callable(filter_params):
+            raise TypeError('filter_params must be a callable')
+
+        if fmtval and not callable(fmtval):
+            raise TypeError('fmtval must be a callable')
+
         self.values = tuple(values)
         self.filter_params = filter_params
+        self.format_value = fmtval
 
     def __set_name__(self, owner, name):
         self.name = name
@@ -90,7 +96,16 @@ class ParamSpace(namespaces.Namespace):
         super().__init__(target_cls, target_namespace)
 
         # Internal parameter space usage tracker
-        self.__unique_iter = iter(self)
+        self.set_iter_fn(itertools.product)
+        # self.__unique_iter = iter(self)
+
+        # Alternative value formatting functions
+        self.__format_fn = {}
+
+    def allow_inheritance(self, cls, base):
+        # Do not allow inheritance of the parameterization space in case of
+        # the old @parameterized_test decorator.
+        return not hasattr(cls, '_rfm_compat_parameterized')
 
     def join(self, other, cls):
         '''Join other parameter space into the current one.
@@ -103,6 +118,7 @@ class ParamSpace(namespaces.Namespace):
         :param other: instance of the ParamSpace class.
         :param cls: the target class.
         '''
+
         for key in other.params:
             # With multiple inheritance, a single parameter
             # could be doubly defined and lead to repeated
@@ -128,6 +144,8 @@ class ParamSpace(namespaces.Namespace):
             self.params[name] = (
                 p.filter_params(self.params.get(name, ())) + p.values
             )
+            if p.format_value:
+                self.__format_fn[name] = p.format_value
 
         # If any previously declared parameter was defined in the class body
         # by directly assigning it a value, raise an error. Parameters must be
@@ -158,21 +176,27 @@ class ParamSpace(namespaces.Namespace):
             parameter values defined in the parameter space.
 
         '''
+
         # Set the values of the test parameters (if any)
         if use_params and self.params:
             try:
                 # Consume the parameter space iterator
+                injected = []
                 param_values = next(self.unique_iter)
                 for index, key in enumerate(self.params):
                     setattr(obj, key, param_values[index])
+                    format_fn = self.__format_fn.get(key)
+                    injected.append(
+                        (key, param_values[index], format_fn)
+                    )
 
+                obj.params_inserted(injected)
             except StopIteration as no_params:
                 raise RuntimeError(
                     f'exhausted parameter space: all possible parameter value'
                     f' combinations have been used for '
                     f'{obj.__class__.__qualname__}'
                 ) from None
-
         else:
             # Otherwise init the params as None
             for key in self.params:
@@ -186,9 +210,16 @@ class ParamSpace(namespaces.Namespace):
 
         :return: generator object to iterate over the parameter space.
         '''
-        yield from itertools.product(
+        # yield from itertools.product(
+        #     *(copy.deepcopy(p) for p in self.params.values())
+        # )
+        yield from self.__iterator(
             *(copy.deepcopy(p) for p in self.params.values())
         )
+
+    def set_iter_fn(self, fn):
+        self.__iterator = fn
+        self.__unique_iter = iter(self)
 
     @property
     def params(self):

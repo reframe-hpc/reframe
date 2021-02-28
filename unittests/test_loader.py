@@ -50,7 +50,7 @@ def test_load_all(loader_with_path):
 
 def test_load_new_syntax(loader):
     checks = loader.load_from_file(
-        'unittests/resources/checks_unlisted/good.py'
+        'unittests/resources/checks_unlisted/good.py', force=True
     )
     assert 13 == len(checks)
 

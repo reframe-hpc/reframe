@@ -22,6 +22,7 @@ import traceback
 import reframe.utility.osext as osext
 from reframe.core.exceptions import ReframeSyntaxError, user_frame
 from reframe.core.logging import getlogger
+from reframe.core.parameters import TestParam
 from reframe.core.pipeline import RegressionTest
 from reframe.utility.versioning import VersionValidator
 
@@ -56,9 +57,11 @@ def _register_test(cls, args=None):
                 ret.append(_instantiate(cls, args))
             except Exception:
                 frame = user_frame(*sys.exc_info())
-                msg = "skipping test due to errors: %s: " % cls.__name__
-                msg += "use `-v' for more information\n"
-                msg += "  FILE: %s:%s" % (frame.filename, frame.lineno)
+                msg  = f"skipping test due to errors: {cls.__qualname__}: "
+                msg += f"use `-v' for more information\n"
+                if frame:
+                    msg += f'  FILE: {frame.filename}:{frame.lineno}'
+
                 getlogger().warning(msg)
                 getlogger().verbose(traceback.format_exc())
 
@@ -117,6 +120,28 @@ def parameterized_test(*inst):
       This decorator does not instantiate any test.  It only registers them.
       The actual instantiation happens during the loading phase of the test.
     '''
+    def _extend_param_space(cls):
+        if not inst:
+            return
+
+        argnames = inspect.getfullargspec(cls.__init__).args[1:]
+        params = {}
+        for args in inst:
+            if isinstance(args, collections.abc.Sequence):
+                for i, v in enumerate(args):
+                    params.setdefault(argnames[i], ())
+                    params[argnames[i]] += (v,)
+            elif isinstance(args, collections.abc.Mapping):
+                for k, v in args.items():
+                    params.setdefault(k, ())
+                    params[k] += (v,)
+
+        # argvalues = zip(*inst)
+        # for name, values in zip(argnames, argvalues):
+        #     cls.param_space.params[name] = values
+
+        cls.param_space.params.update(params)
+
     def _do_register(cls):
         _validate_test(cls)
         if not cls.param_space.is_empty():
@@ -124,6 +149,15 @@ def parameterized_test(*inst):
                 f'{cls.__qualname__!r} is already a parameterized test'
             )
 
+        # NOTE: We need to mark that the test is using the old parameterized
+        # test syntax, so that any derived test does not extend its
+        # parameterization space with these parameters. This is to keep
+        # compatibility with the original behavior of this decorator, when it
+        # was not implemented using the new parameter machinery.
+        cls._rfm_compat_parameterized = True
+
+        _extend_param_space(cls)
+        cls.param_space.set_iter_fn(zip)
         for args in inst:
             _register_test(cls, args)
 

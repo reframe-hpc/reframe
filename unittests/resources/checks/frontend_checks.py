@@ -161,7 +161,11 @@ class SleepCheck(BaseFrontendCheck):
 
     def __init__(self, sleep_time):
         super().__init__()
-        self.name = '%s_%s' % (self.name, SleepCheck._next_id)
+
+        # Simulate a parameterized test, so as to get a proper unique test id
+        self.params_inserted([('id', self._next_id, None),
+                              ('sleep_time', sleep_time, None)])
+        print(self.name, self.unique_id)
         self.sourcesdir = None
         self.sleep_time = sleep_time
         self.executable = 'python3'

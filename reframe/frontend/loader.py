@@ -167,33 +167,37 @@ class RegressionCheckLoader:
         getlogger().debug(f'  > Loaded {len(ret)} test(s)')
         return ret
 
-    def load_from_file(self, filename, **check_args):
+    def load_from_file(self, filename, force=False):
         if not self._validate_source(filename):
             return []
 
-        return self.load_from_module(util.import_module_from_file(filename))
+        return self.load_from_module(
+            util.import_module_from_file(filename, force)
+        )
 
-    def load_from_dir(self, dirname, recurse=False):
+    def load_from_dir(self, dirname, recurse=False, force=False):
         checks = []
         for entry in os.scandir(dirname):
             if recurse and entry.is_dir():
-                checks.extend(
-                    self.load_from_dir(entry.path, recurse)
-                )
+                checks += self.load_from_dir(entry.path, recurse, force)
 
             if (entry.name.startswith('.') or
                 not entry.name.endswith('.py') or
                 not entry.is_file()):
                 continue
 
-            checks.extend(self.load_from_file(entry.path))
+            checks += self.load_from_file(entry.path, force)
 
         return checks
 
-    def load_all(self):
+    def load_all(self, force=False):
         '''Load all checks in self._load_path.
 
-        If a prefix exists, it will be prepended to each path.'''
+        If a prefix exists, it will be prepended to each path.
+
+        :arg force: Force reloading of test files.
+        :returns: The list of loaded tests.
+        '''
         checks = []
         for d in self._load_path:
             getlogger().debug(f'Looking for tests in {d!r}')
@@ -201,8 +205,8 @@ class RegressionCheckLoader:
                 continue
 
             if os.path.isdir(d):
-                checks.extend(self.load_from_dir(d, self._recurse))
+                checks += self.load_from_dir(d, self._recurse, force)
             else:
-                checks.extend(self.load_from_file(d))
+                checks += self.load_from_file(d, force)
 
         return checks

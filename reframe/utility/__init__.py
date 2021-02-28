@@ -67,10 +67,11 @@ def _do_import_module_from_file(filename, module_name=None):
     return module
 
 
-def import_module_from_file(filename):
+def import_module_from_file(filename, force=False):
     '''Import module from file.
 
     :arg filename: The path to the filename of a Python module.
+    :arg force: Force reload of module in case it is already loaded
     :returns: The loaded Python module.
     '''
 
@@ -93,6 +94,9 @@ def import_module_from_file(filename):
     match = site_packages.search(filename)
     if match:
         module_name = _get_module_name(match['rel_filename'])
+
+    if force:
+        sys.modules.pop(module_name, None)
 
     return importlib.import_module(module_name)
 

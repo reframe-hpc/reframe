@@ -135,11 +135,21 @@ class Namespace(metaclass=abc.ABCMeta):
         assert isinstance(getattr(cls, self.local_namespace_name),
                           LocalNamespace)
 
+    def allow_inheritance(self, cls, base):
+        '''Return true if cls is allowed to inherit the namespace of base.
+
+        Subclasses may override that to customize the behavior.
+        '''
+        return True
+
     def inherit(self, cls):
         '''Inherit the Namespaces from the bases.'''
 
         for base in filter(lambda x: hasattr(x, self.namespace_name),
                            cls.__bases__):
+            if not self.allow_inheritance(cls, base):
+                continue
+
             assert isinstance(getattr(base, self.namespace_name), type(self))
             self.join(getattr(base, self.namespace_name), cls)
 

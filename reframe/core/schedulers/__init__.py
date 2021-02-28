@@ -8,6 +8,7 @@
 #
 
 import abc
+import os
 import time
 
 import reframe.core.fields as fields
@@ -168,7 +169,7 @@ class Job(jsonext.JSONSerializable):
                  stderr=None,
                  max_pending_time=None,
                  sched_flex_alloc_nodes=None,
-                 sched_access=[],
+                 sched_access=None,
                  sched_exclusive_access=None,
                  sched_options=None):
 
@@ -185,14 +186,16 @@ class Job(jsonext.JSONSerializable):
 
         self._name = name
         self._workdir = workdir
-        self._script_filename = script_filename or '%s.sh' % name
-        self._stdout = stdout or '%s.out' % name
-        self._stderr = stderr or '%s.err' % name
+        self._script_filename = script_filename or f'{name}.sh'
+
+        basename = os.path.splitext(self._script_filename)[0]
+        self._stdout = stdout or f'{basename}.out'
+        self._stderr = stderr or f'{basename}.err'
         self._max_pending_time = max_pending_time
 
         # Backend scheduler related information
         self._sched_flex_alloc_nodes = sched_flex_alloc_nodes
-        self._sched_access = sched_access
+        self._sched_access = list(sched_access) if sched_access else []
         self._sched_exclusive_access = sched_exclusive_access
 
         # Live job information; to be filled during job's lifetime by the

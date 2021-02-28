@@ -106,7 +106,7 @@ def loader():
 
 
 def test_eq_hash(loader, exec_ctx):
-    cases = executors.generate_testcases(loader.load_all())
+    cases = executors.generate_testcases(loader.load_all(force=True))
     case0 = find_case('Test0', 'e0', 'p0', cases)
     case1 = find_case('Test0', 'e1', 'p0', cases)
     case0_copy = case0.clone()
@@ -384,11 +384,13 @@ def test_build_deps_deprecated_syntax(loader, exec_ctx):
 
 
 def test_build_deps(loader, exec_ctx):
-    checks = loader.load_all()
+    # We need to force reload the tests in order to properly populate the
+    # parameter space in every test
+    checks = loader.load_all(force=True)
     cases = executors.generate_testcases(checks)
 
     # Test calling getdep() before having built the graph
-    t = find_check('Test1_fully', checks)
+    t = find_check('Test1%kind=fully', checks)
     with pytest.raises(DependencyError):
         t.getdep('Test0', 'e0', 'p0')
 
@@ -397,110 +399,110 @@ def test_build_deps(loader, exec_ctx):
     dependencies.validate_deps(deps)
 
     # Check dependencies for fully connected graph
-    assert num_deps(deps, 'Test1_fully') == 16
+    assert num_deps(deps, 'Test1%kind=fully') == 16
     for p0 in ['sys0:p0', 'sys0:p1']:
         for p1 in ['sys0:p0', 'sys0:p1']:
             for e0 in ['e0', 'e1']:
                 for e1 in ['e0', 'e1']:
                     assert has_edge(deps,
-                                    Node('Test1_fully', p0, e0),
+                                    Node('Test1%kind=fully', p0, e0),
                                     Node('Test0', p1, e1))
 
     # Check dependencies with same partition
-    assert num_deps(deps, 'Test1_by_part') == 8
+    assert num_deps(deps, 'Test1%kind=by_part') == 8
     for p in ['sys0:p0', 'sys0:p1']:
         for e0 in ['e0', 'e1']:
             for e1 in ['e0', 'e1']:
                 assert has_edge(deps,
-                                Node('Test1_by_part', p, e0),
+                                Node('Test1%kind=by_part', p, e0),
                                 Node('Test0', p, e1))
 
     # Check dependencies with same partition environment
-    assert num_deps(deps, 'Test1_by_case') == 4
-    assert num_deps(deps, 'Test1_default') == 4
+    assert num_deps(deps, 'Test1%kind=by_case') == 4
+    assert num_deps(deps, 'Test1%kind=default') == 4
     for p in ['sys0:p0', 'sys0:p1']:
         for e in ['e0', 'e1']:
             assert has_edge(deps,
-                            Node('Test1_by_case', p, e),
+                            Node('Test1%kind=by_case', p, e),
                             Node('Test0', p, e))
             assert has_edge(deps,
-                            Node('Test1_default', p, e),
+                            Node('Test1%kind=default', p, e),
                             Node('Test0', p, e))
 
-    assert num_deps(deps, 'Test1_any') == 12
+    assert num_deps(deps, 'Test1%kind=any') == 12
     for p0 in ['sys0:p0', 'sys0:p1']:
         for p1 in ['sys0:p0', 'sys0:p1']:
             for e0 in ['e0', 'e1']:
                 for e1 in ['e0', 'e1']:
                     if (p0 == 'sys0:p0' or e1 == 'e1'):
                         assert has_edge(deps,
-                                        Node('Test1_any', p0, e0),
+                                        Node('Test1%kind=any', p0, e0),
                                         Node('Test0', p1, e1))
 
-    assert num_deps(deps, 'Test1_all') == 2
+    assert num_deps(deps, 'Test1%kind=all') == 2
     for p0 in ['sys0:p0', 'sys0:p1']:
         for p1 in ['sys0:p0', 'sys0:p1']:
             for e0 in ['e0', 'e1']:
                 for e1 in ['e0', 'e1']:
                     if (p0 == 'sys0:p0' and p1 == 'sys0:p0' and e1 == 'e1'):
                         assert has_edge(deps,
-                                        Node('Test1_any', p0, e0),
+                                        Node('Test1%kind=any', p0, e0),
                                         Node('Test0', p1, e1))
 
     # Check custom dependencies
-    assert num_deps(deps, 'Test1_custom') == 1
+    assert num_deps(deps, 'Test1%kind=custom') == 1
     assert has_edge(deps,
-                    Node('Test1_custom', 'sys0:p0', 'e0'),
+                    Node('Test1%kind=custom', 'sys0:p0', 'e0'),
                     Node('Test0', 'sys0:p1', 'e1'))
 
-    # Check dependencies of Test1_nodeps
-    assert num_deps(deps, 'Test1_nodeps') == 0
+    # Check dependencies of Test1%kind=nodeps
+    assert num_deps(deps, 'Test1%kind=nodeps') == 0
 
     # Check in-degree of Test0
 
-    # 4 from Test1_fully,
-    # 2 from Test1_by_part,
-    # 1 from Test1_by_case,
-    # 2 from Test1_any,
-    # 2 from Test1_all,
-    # 0 from Test1_custom,
-    # 1 from Test1_default
-    # 0 from Test1_nodeps
+    # 4 from Test1%kind=fully,
+    # 2 from Test1%kind=by_part,
+    # 1 from Test1%kind=by_case,
+    # 2 from Test1%kind=any,
+    # 2 from Test1%kind=all,
+    # 0 from Test1%kind=custom,
+    # 1 from Test1%kind=default
+    # 0 from Test1%kind=nodeps
     assert in_degree(deps, Node('Test0', 'sys0:p0', 'e0')) == 12
 
-    # 4 from Test1_fully,
-    # 2 from Test1_by_part,
-    # 1 from Test1_by_case,
-    # 2 from Test1_any,
-    # 0 from Test1_all,
-    # 0 from Test1_custom,
-    # 1 from Test1_default
-    # 0 from Test1_nodeps
+    # 4 from Test1%kind=fully,
+    # 2 from Test1%kind=by_part,
+    # 1 from Test1%kind=by_case,
+    # 2 from Test1%kind=any,
+    # 0 from Test1%kind=all,
+    # 0 from Test1%kind=custom,
+    # 1 from Test1%kind=default
+    # 0 from Test1%kind=nodeps
     assert in_degree(deps, Node('Test0', 'sys0:p1', 'e0')) == 10
 
-    # 4 from Test1_fully,
-    # 2 from Test1_by_part,
-    # 1 from Test1_by_case,
-    # 4 from Test1_any,
-    # 0 from Test1_all,
-    # 0 from Test1_custom,
-    # 1 from Test1_default
-    # 0 from Test1_nodeps
+    # 4 from Test1%kind=fully,
+    # 2 from Test1%kind=by_part,
+    # 1 from Test1%kind=by_case,
+    # 4 from Test1%kind=any,
+    # 0 from Test1%kind=all,
+    # 0 from Test1%kind=custom,
+    # 1 from Test1%kind=default
+    # 0 from Test1%kind=nodeps
     assert in_degree(deps, Node('Test0', 'sys0:p0', 'e1')) == 12
 
-    # 4 from Test1_fully,
-    # 2 from Test1_by_part,
-    # 1 from Test1_by_case,
-    # 4 from Test1_any,
-    # 0 from Test1_all,
-    # 1 from Test1_custom,
-    # 1 from Test1_default
-    # 0 from Test1_nodeps
+    # 4 from Test1%kind=fully,
+    # 2 from Test1%kind=by_part,
+    # 1 from Test1%kind=by_case,
+    # 4 from Test1%kind=any,
+    # 0 from Test1%kind=all,
+    # 1 from Test1%kind=custom,
+    # 1 from Test1%kind=default
+    # 0 from Test1%kind=nodeps
     assert in_degree(deps, Node('Test0', 'sys0:p1', 'e1')) == 13
 
     # Pick a check to test getdep()
-    check_e0 = find_case('Test1_by_part', 'e0', 'p0', cases).check
-    check_e1 = find_case('Test1_by_part', 'e1', 'p0', cases).check
+    check_e0 = find_case('Test1%kind=by_part', 'e0', 'p0', cases).check
+    check_e1 = find_case('Test1%kind=by_part', 'e1', 'p0', cases).check
 
     with pytest.raises(DependencyError):
         check_e0.getdep('Test0', 'p0')

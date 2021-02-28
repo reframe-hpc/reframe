@@ -10,6 +10,7 @@ import sys
 
 import reframe as rfm
 import reframe.core.runtime as rt
+import reframe.utility as util
 import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 import unittests.fixtures as fixtures
@@ -29,10 +30,18 @@ def _run(test, partition, prgenv):
 
 
 @pytest.fixture
-def HelloTest():
-    from unittests.resources.checks.hellocheck import HelloTest
-    yield HelloTest
-    del sys.modules['unittests.resources.checks.hellocheck']
+def module_import():
+    def _do_import(filename):
+        mod = util.import_module_from_file(filename, force=True)
+        return mod
+
+    return _do_import
+
+
+@pytest.fixture
+def HelloTest(module_import):
+    mod = module_import('unittests/resources/checks/hellocheck.py')
+    return mod.HelloTest
 
 
 @pytest.fixture
@@ -41,17 +50,15 @@ def hellotest(HelloTest):
 
 
 @pytest.fixture
-def hellomaketest():
-    from unittests.resources.checks.hellocheck_make import HelloMakeTest
-    yield HelloMakeTest
-    del sys.modules['unittests.resources.checks.hellocheck_make']
+def hellomaketest(module_import):
+    mod = module_import('unittests/resources/checks/hellocheck_make.py')
+    return mod.HelloMakeTest
 
 
 @pytest.fixture
-def pinnedtest():
-    from unittests.resources.checks.pinnedcheck import PinnedTest
-    yield PinnedTest
-    del sys.modules['unittests.resources.checks.pinnedcheck']
+def pinnedtest(module_import):
+    mod = module_import('unittests/resources/checks/pinnedcheck.py')
+    return mod.PinnedTest
 
 
 @pytest.fixture
@@ -154,10 +161,6 @@ def test_eq():
             self.name = 'T0'
 
     t0, t1 = T0(), T1()
-    assert t0 == t1
-    assert hash(t0) == hash(t1)
-
-    t1.name = 'T1'
     assert t0 != t1
     assert hash(t0) != hash(t1)
 
@@ -758,74 +761,8 @@ def test_require_deps(HelloTest, local_exec_ctx):
             assert t.z == 3
 
 
-def test_regression_test_name():
-    class MyTest(rfm.RegressionTest):
-        def __init__(self, a, b):
-            self.a = a
-            self.b = b
-
-    test = MyTest(1, 2)
-    assert os.path.abspath(os.path.dirname(__file__)) == test.prefix
-    assert 'test_regression_test_name.<locals>.MyTest_1_2' == test.name
-
-
-def test_strange_test_names():
-    class C:
-        def __init__(self, a):
-            self.a = a
-
-        def __repr__(self):
-            return 'C(%s)' % self.a
-
-    class MyTest(rfm.RegressionTest):
-        def __init__(self, a, b):
-            self.a = a
-            self.b = b
-
-    test = MyTest('(a*b+c)/12', C(33))
-    assert ('test_strange_test_names.<locals>.MyTest__a_b_c__12_C_33_' ==
-            test.name)
-
-
-def test_name_user_inheritance():
-    class MyBaseTest(rfm.RegressionTest):
-        def __init__(self, a, b):
-            self.a = a
-            self.b = b
-
-    class MyTest(MyBaseTest):
-        def __init__(self):
-            super().__init__(1, 2)
-
-    test = MyTest()
-    assert 'test_name_user_inheritance.<locals>.MyTest' == test.name
-
-
-def test_name_runonly_test():
-    class MyTest(rfm.RunOnlyRegressionTest):
-        def __init__(self, a, b):
-            self.a = a
-            self.b = b
-
-    test = MyTest(1, 2)
-    assert os.path.abspath(os.path.dirname(__file__)) == test.prefix
-    assert 'test_name_runonly_test.<locals>.MyTest_1_2' == test.name
-
-
-def test_name_compileonly_test():
-    class MyTest(rfm.CompileOnlyRegressionTest):
-        def __init__(self, a, b):
-            self.a = a
-            self.b = b
-
-    test = MyTest(1, 2)
-    assert os.path.abspath(os.path.dirname(__file__)) == test.prefix
-    assert 'test_name_compileonly_test.<locals>.MyTest_1_2' == test.name
-
-
-def test_registration_of_tests():
-    import unittests.resources.checks_unlisted.good as mod
-
+def test_registration_of_tests(module_import):
+    mod = module_import('unittests/resources/checks_unlisted/good.py')
     checks = mod._rfm_gettests()
     assert 13 == len(checks)
     assert [mod.MyBaseTest(0, 0),
