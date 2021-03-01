@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import os
 import pytest
 
 import reframe.core.buildsystems as bs
@@ -244,20 +245,19 @@ def test_singlesource_unknown_language():
 
 def test_easybuild(environ):
     build_system = bs.EasyBuild()
-    build_system.srcdir = 'easybuild'
     build_system.easyconfigs = ['ec1.eb', 'ec2.eb']
     build_system.options = ['-o1', '-o2']
-    assert (['EASYBUILD_BUILDPATH=easybuild/rfm_easybuild/build \\',
-             'EASYBUILD_INSTALLPATH=easybuild/rfm_easybuild \\',
-             'EASYBUILD_PREFIX=easybuild/rfm_easybuild \\',
-             'EASYBUILD_SOURCEPATH=easybuild/rfm_easybuild \\',
+    curdir = os.getcwd()
+    assert ([f'export EASYBUILD_BUILDPATH={curdir}/rfm_easybuild/build',
+             f'export EASYBUILD_INSTALLPATH={curdir}/rfm_easybuild',
+             f'export EASYBUILD_PREFIX={curdir}/rfm_easybuild',
+             f'export EASYBUILD_SOURCEPATH={curdir}/rfm_easybuild',
              'eb ec1.eb ec2.eb -o1 -o2'
              ] == build_system.emit_build_commands(environ))
 
 
 def test_easybuild_with_packaging(environ):
     build_system = bs.EasyBuild()
-    build_system.srcdir = 'easybuild'
     build_system.easyconfigs = ['ec1.eb', 'ec2.eb']
     build_system.options = ['-o1', '-o2']
     build_system.emit_package = True
@@ -265,10 +265,11 @@ def test_easybuild_with_packaging(environ):
         'type': 'rpm',
         'tool-options': "'-o1 -o2'"
     }
-    assert (['EASYBUILD_BUILDPATH=easybuild/rfm_easybuild/build \\',
-             'EASYBUILD_INSTALLPATH=easybuild/rfm_easybuild \\',
-             'EASYBUILD_PREFIX=easybuild/rfm_easybuild \\',
-             'EASYBUILD_SOURCEPATH=easybuild/rfm_easybuild \\',
+    curdir = os.getcwd()
+    assert ([f'export EASYBUILD_BUILDPATH={curdir}/rfm_easybuild/build',
+             f'export EASYBUILD_INSTALLPATH={curdir}/rfm_easybuild',
+             f'export EASYBUILD_PREFIX={curdir}/rfm_easybuild',
+             f'export EASYBUILD_SOURCEPATH={curdir}/rfm_easybuild',
              'eb ec1.eb ec2.eb -o1 -o2 --package --package-type=rpm '
              "--package-tool-options='-o1 -o2'"
              ] == build_system.emit_build_commands(environ))

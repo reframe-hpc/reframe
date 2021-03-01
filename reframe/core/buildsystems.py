@@ -657,11 +657,29 @@ class Autotools(ConfigureBasedBuildSystem):
 
 
 class EasyBuild(BuildSystem):
+    #: The list of easyconfigs
+    #:
+    #: :type: :class:`List[str]`
+    #: :default: ``[]``
     easyconfigs = fields.TypedField(typ.List[str])
+
+    #: Options to pass to the easybuild executable
+    #:
+    #: :type: :class:`List[str]`
+    #: :default: ``[]``
     options = fields.TypedField(typ.List[str])
+
+    #: Controls whether a package is created
+    #:
+    #: :type: :class:`bool`
+    #: :default: ``[]``
     emit_package = fields.TypedField(bool)
+
+    #: Options for the packaging tool
+    #:
+    #: :type: :class:`Dict[str, str]`
+    #: :default: ``{}``
     package_opts = fields.TypedField(typ.Dict[str, str])
-    srcdir = fields.TypedField(str, type(None))
 
     def __init__(self):
         super().__init__()
@@ -669,8 +687,7 @@ class EasyBuild(BuildSystem):
         self.options = []
         self.emit_package = False
         self.package_opts = {}
-        self._eb_modules = []
-        self.srcdir = None
+        self._eb_modules = None
 
     def emit_build_commands(self, environ):
         easyconfigs = ' '.join(self.easyconfigs)
@@ -681,12 +698,12 @@ class EasyBuild(BuildSystem):
 
         options = ' '.join(self.options)
 
-        self._eb_sandbox = os.path.join(self.srcdir, 'rfm_easybuild')
+        self._eb_sandbox = os.path.join(os.getcwd(), 'rfm_easybuild')
 
-        return [f'EASYBUILD_BUILDPATH={self._eb_sandbox}/build \\',
-                f'EASYBUILD_INSTALLPATH={self._eb_sandbox} \\',
-                f'EASYBUILD_PREFIX={self._eb_sandbox} \\',
-                f'EASYBUILD_SOURCEPATH={self._eb_sandbox} \\',
+        return [f'export EASYBUILD_BUILDPATH={self._eb_sandbox}/build',
+                f'export EASYBUILD_INSTALLPATH={self._eb_sandbox}',
+                f'export EASYBUILD_PREFIX={self._eb_sandbox}',
+                f'export EASYBUILD_SOURCEPATH={self._eb_sandbox}',
                 f'eb {easyconfigs} {options}']
 
     def _collect_eb_modules(self, build_stdout):
