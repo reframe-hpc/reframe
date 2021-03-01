@@ -28,7 +28,7 @@ class GridToolsBuildCheck(rfm.CompileOnlyRegressionTest):
         ]
         self.build_system.flags_from_environ = False
         self.build_system.make_opts = ['perftests']
-        self.build_system.max_concurrency = 2
+        self.build_system.max_concurrency = 8
         self.postbuild_cmds = ['ls tests/regression/']
         self.sanity_patterns = sn.assert_found(r'perftest',
                                                self.stdout)
@@ -52,7 +52,15 @@ class GridToolsGPUBuildCheck(GridToolsBuildCheck):
     def __init__(self):
         super().__init__()
         self.descr = 'GridTools GPU build test'
-        self.modules.append('cudatoolkit')
+        if self.current_system.name == 'dom':
+            self.modules += [
+                'cudatoolkit/10.2.89_3.29-7.0.2.1_3.5__g67354b4',
+                'cdt-cuda',
+                'gcc/8.3.0'
+            ]
+        else:
+            self.modules.append('cudatoolkit')
+
         self.build_system.config_opts += [
             '-DGT_CUDA_ARCH=sm_60',
             '-DGT_TESTS_REQUIRE_GPU="ON"'

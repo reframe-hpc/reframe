@@ -10,6 +10,7 @@ import sys
 import time
 
 import reframe
+import reframe.core.fields as fields
 import reframe.core.runtime as rt
 import reframe.utility as util
 import reframe.utility.jsonext as jsonext
@@ -656,6 +657,53 @@ def test_repr_default():
 ]'''
 
 
+def test_attrs():
+    class B:
+        z = fields.TypedField(int)
+
+        def __init__(self, x, y):
+            self.x = x
+            self.y = y
+
+    class C(B):
+        def __init__(self, x, y):
+            self._x = x
+            self.y = y
+            self.z = 3
+
+        def foo():
+            pass
+
+        @property
+        def x(self):
+            return self._x
+
+    class D(C):
+        pass
+
+    # Test undefined descriptors are not returned
+    b = B(-1, 0)
+    b_attrs = util.attrs(b)
+    assert b_attrs['x'] == -1
+    assert b_attrs['y'] == 0
+    assert 'z' not in b_attrs
+
+    c = C(1, 2)
+    c_attrs = util.attrs(c)
+    assert c_attrs['x'] == 1
+    assert c_attrs['y'] == 2
+    assert c_attrs['z'] == 3
+    assert 'foo' not in c_attrs
+
+    # Test inherited attributes
+    d = D(4, 5)
+    d_attrs = util.attrs(d)
+    assert d_attrs['x'] == 4
+    assert d_attrs['y'] == 5
+    assert d_attrs['z'] == 3
+    assert 'foo' not in d_attrs
+
+
 def test_change_dir_working(tmpdir):
     wd_save = os.getcwd()
     with osext.change_dir(tmpdir):
@@ -903,6 +951,16 @@ def test_scoped_dict_key_resolution():
 
     with pytest.raises(KeyError):
         scoped_dict['']
+
+    # Scopes must be requested with scope()
+    assert scoped_dict.scope('a') == {'k1': 1, 'k2': 2, 'k3': 9, 'k4': 10}
+    assert scoped_dict.scope('a:b') == {'k1': 3, 'k2': 2, 'k3': 4, 'k4': 10}
+    assert scoped_dict.scope('a:b:c') == {'k1': 3, 'k2': 5, 'k3': 6, 'k4': 10}
+    assert scoped_dict.scope('*') == {'k1': 7, 'k3': 9, 'k4': 10}
+
+    # This is resolved in scope 'a'
+    assert scoped_dict.scope('a:z') == {'k1': 1, 'k2': 2, 'k3': 9, 'k4': 10}
+    assert scoped_dict.scope(None) == {}
 
 
 def test_scoped_dict_setitem():

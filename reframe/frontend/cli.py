@@ -21,6 +21,7 @@ import reframe.core.logging as logging
 import reframe.core.runtime as runtime
 import reframe.core.warnings as warnings
 import reframe.frontend.argparse as argparse
+import reframe.frontend.ci as ci
 import reframe.frontend.dependencies as dependencies
 import reframe.frontend.filters as filters
 import reframe.frontend.runreport as runreport
@@ -119,7 +120,7 @@ def list_checks(testcases, printer, detailed=False):
     printer.info(
         '\n'.join(format_check(c, deps[c.name], detailed) for c in checks)
     )
-    printer.info(f'Found {len(checks)} check(s)')
+    printer.info(f'Found {len(checks)} check(s)\n')
 
 
 def logfiles_message():
@@ -272,6 +273,11 @@ def main():
         '-r', '--run', action='store_true',
         help='Run the selected checks'
     )
+    action_options.add_argument(
+        '--ci-generate', action='store', metavar='FILE',
+        help=('Generate into FILE a Gitlab CI pipeline '
+              'for the selected tests and exit'),
+    )
 
     # Run options
     run_options.add_argument(
@@ -334,6 +340,8 @@ def main():
         '--disable-hook', action='append', metavar='NAME', dest='hooks',
         default=[], help='Disable a pipeline hook for this run'
     )
+
+    # Environment options
     env_options.add_argument(
         '-M', '--map-module', action='append', metavar='MAPPING',
         dest='module_mappings', default=[],
@@ -443,12 +451,11 @@ def main():
         help='Use a login shell for job scripts'
     )
 
+    # Parse command line
+    options = argparser.parse_args()
     if len(sys.argv) == 1:
         argparser.print_help()
         sys.exit(1)
-
-    # Parse command line
-    options = argparser.parse_args()
 
     # First configure logging with our generic configuration so as to be able
     # to print pretty messages; logging will be reconfigured by user's
@@ -796,9 +803,23 @@ def main():
             list_checks(testcases, printer, options.list_detailed)
             sys.exit(0)
 
+        if options.ci_generate:
+            list_checks(testcases, printer)
+            printer.info('[Generate CI]')
+            with open(options.ci_generate, 'wt') as fp:
+                ci.emit_pipeline(fp, testcases)
+
+            printer.info(
+                f'  Gitlab pipeline generated successfully '
+                f'in {options.ci_generate!r}.\n'
+            )
+            sys.exit(0)
+
         if not options.run:
-            printer.error(f"No action specified. Please specify `-l'/`-L' for "
-                          f"listing or `-r' for running. "
+            printer.error("No action option specified. Available options:\n"
+                          "  - `-l'/`-L' for listing\n"
+                          "  - `-r' for running\n"
+                          "  - `--ci-generate' for generating a CI pipeline\n"
                           f"Try `{argparser.prog} -h' for more options.")
             sys.exit(1)
 

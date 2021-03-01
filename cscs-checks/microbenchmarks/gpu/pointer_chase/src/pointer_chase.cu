@@ -27,7 +27,9 @@
 */
 
 
-#define NODE_PADDING 0
+#ifndef NODE_PADDING
+# define NODE_PADDING 0
+#endif
 
 #ifndef HOSTNAME_SIZE
 # define HOSTNAME_SIZE 80

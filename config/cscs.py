@@ -32,6 +32,20 @@ site_configuration = {
                     'launcher': 'local'
                 },
                 {
+                    'name': 'a64fx',
+                    'scheduler': 'slurm',
+                    'access': [
+                        '-pa64fx'
+                    ],
+                    'environs': [
+                        'builtin',
+                        'PrgEnv-gnu'
+                    ],
+                    'descr': 'Fujitsu A64FX CPUs',
+                    'max_jobs': 100,
+                    'launcher': 'srun'
+                },
+                {
                     'name': 'amda100',
                     'scheduler': 'slurm',
                     'access': [
@@ -771,8 +785,7 @@ site_configuration = {
                 'ault'
             ],
             'modules': [
-                'gcc/9.3.0',
-                'openmpi/3.1.6'
+                'openmpi'
             ],
             'cc': 'mpicc',
             'cxx': 'mpicxx',

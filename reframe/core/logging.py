@@ -14,6 +14,7 @@ import sys
 import socket
 import time
 
+import reframe.utility as util
 import reframe.utility.color as color
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
@@ -467,30 +468,42 @@ class LoggerAdapter(logging.LoggerAdapter):
     def _update_check_extras(self):
         '''Return a dictionary with all the check-specific information.'''
 
+        exclude_check_attrs = {'build_job', 'current_environ',
+                               'current_partition', 'current_system', 'job'}
         if self.check is None:
             return
 
-        for attr, val in self.check.__dict__.items():
-            if not attr.startswith('_'):
+        for attr, val in util.attrs(self.check).items():
+            if not attr.startswith('_') and attr not in exclude_check_attrs:
                 self.extra[f'check_{attr}'] = val
 
-        # Additional dynamic properties
-        for prop in ('prefix', 'stagedir', 'outputdir', 'stdout',
-                     'stderr', 'build_stdout', 'build_stderr'):
-            self.extra[f'check_{prop}'] = getattr(self.check, prop)
-
         self.extra['check_info'] = self.check.info()
+
+        # Treat special cases
         if self.check.current_system:
             self.extra['check_system'] = self.check.current_system.name
 
         if self.check.current_partition:
+            cp = self.check.current_partition.fullname
             self.extra['check_partition'] = self.check.current_partition.name
+
+            # When logging performance references, we need only those of the
+            # current system
+            self.extra['check_reference'] = jsonext.dumps(
+                self.check.reference.scope(cp)
+            )
 
         if self.check.current_environ:
             self.extra['check_environ'] = self.check.current_environ.name
 
         if self.check.job:
-            self.extra['check_jobid'] = self.check.job.jobid
+            # Create extras for job attributes
+            for attr, val in util.attrs(self.check.job).items():
+                if not attr.startswith('_'):
+                    self.extra[f'check_job_{attr}'] = val
+
+            # Treat aliases
+            self.extra['check_jobid'] = self.extra['check_job_jobid']
             if self.check.job.completion_time:
                 # Here we preformat the `check_job_completion_time`, because
                 # the Graylog handler does not use a formatter

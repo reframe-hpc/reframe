@@ -65,7 +65,7 @@ def build_deps(cases, default_cases=None):
     # We use an ordered dict here, because we need to keep the order of
     # partitions and environments
     graph = collections.OrderedDict()
-    skipped_cases = []
+    unresolved_cases = []
     for c in cases:
         psrc = c.partition.name
         esrc = c.environ.name
@@ -78,31 +78,39 @@ def build_deps(cases, default_cases=None):
                     if when((psrc, esrc), (pdst, edst)):
                         c.deps.append(d)
         except DependencyError as e:
-            getlogger().warning(f'{e}; skipping dependent test cases:')
-
-            # FIXME: we need to unit test this properly
-            skip_nodes = {c}
-            while skip_nodes:
-                v = skip_nodes.pop()
-                skipped_cases.append(v)
-                getlogger().warning(f'  - {v}')
-                pruned_nodes = []
-                for u, adj in graph.items():
-                    if v in adj:
-                        skip_nodes.add(u)
-                        pruned_nodes.append(u)
-
-                for u in pruned_nodes:
-                    del graph[u]
-
+            getlogger().warning(e)
+            unresolved_cases.append(c)
             continue
 
         graph[c] = util.OrderedSet(c.deps)
+
+    # Skip also all cases that depend on the unresolved ones
+    skipped_cases = []
+    skip_nodes = set(unresolved_cases)
+    while skip_nodes:
+        v = skip_nodes.pop()
+        skipped_cases.append(v)
+        for u, adj in graph.items():
+            if v in adj:
+                skip_nodes.add(u)
+
+    # Prune graph
+    for c in skipped_cases:
+        # Cases originally discovered (unresolved_cases) are not in the graph,
+        # but we loop over them here; therefore we use pop()
+        graph.pop(c, None)
 
     # Calculate in-degree of each node
     for u, adjacent in graph.items():
         for v in adjacent:
             v.in_degree += 1
+
+    msg = 'skipping all dependent test cases\n'
+    for c in skipped_cases:
+        msg += f'  - {c}\n'
+
+    if skipped_cases:
+        getlogger().warning(msg)
 
     return graph, skipped_cases
 
@@ -162,7 +170,8 @@ def validate_deps(graph):
                 if n in path:
                     cycle_str = '->'.join(path + [n])
                     raise DependencyError(
-                        'found cyclic dependency between tests: ' + cycle_str)
+                        'found cyclic dependency between tests: ' + cycle_str
+                    )
 
                 if n not in visited:
                     unvisited.append((n, node))
@@ -204,6 +213,7 @@ def toposort(graph, is_subgraph=False):
     '''
     test_deps = _reduce_deps(graph)
     visited = util.OrderedSet()
+    levels = {}
 
     def retrieve(d, key, default):
         try:
@@ -221,9 +231,15 @@ def toposort(graph, is_subgraph=False):
         path.add(node)
 
         # Do a DFS visit of all the adjacent nodes
-        for adj in retrieve(test_deps, node, []):
-            if adj not in visited:
-                visit(adj, path)
+        adjacent = retrieve(test_deps, node, [])
+        for u in adjacent:
+            if u not in visited:
+                visit(u, path)
+
+        if adjacent:
+            levels[node] = max(levels[u] for u in adjacent) + 1
+        else:
+            levels[node] = 0
 
         path.pop()
         visited.add(node)
@@ -235,6 +251,7 @@ def toposort(graph, is_subgraph=False):
     # Index test cases by test name
     cases_by_name = {}
     for c in graph.keys():
+        c.level = levels[c.check.name]
         try:
             cases_by_name[c.check.name].append(c)
         except KeyError:
