@@ -1197,7 +1197,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                     self.build_system = 'Make'
 
             self.build_system.srcdir = self.sourcepath
-
         else:
             if not self.build_system:
                 self.build_system = 'SingleSource'
