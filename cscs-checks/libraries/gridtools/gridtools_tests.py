@@ -55,7 +55,7 @@ class GridToolsGPUBuildCheck(GridToolsBuildCheck):
         if self.current_system.name == 'dom':
             self.modules += [
                 'cudatoolkit/10.2.89_3.29-7.0.2.1_3.5__g67354b4',
-                'cdt-cuda/20.10',
+                'cdt-cuda',
                 'gcc/8.3.0'
             ]
         else:

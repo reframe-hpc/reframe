@@ -952,6 +952,16 @@ def test_scoped_dict_key_resolution():
     with pytest.raises(KeyError):
         scoped_dict['']
 
+    # Scopes must be requested with scope()
+    assert scoped_dict.scope('a') == {'k1': 1, 'k2': 2, 'k3': 9, 'k4': 10}
+    assert scoped_dict.scope('a:b') == {'k1': 3, 'k2': 2, 'k3': 4, 'k4': 10}
+    assert scoped_dict.scope('a:b:c') == {'k1': 3, 'k2': 5, 'k3': 6, 'k4': 10}
+    assert scoped_dict.scope('*') == {'k1': 7, 'k3': 9, 'k4': 10}
+
+    # This is resolved in scope 'a'
+    assert scoped_dict.scope('a:z') == {'k1': 1, 'k2': 2, 'k3': 9, 'k4': 10}
+    assert scoped_dict.scope(None) == {}
+
 
 def test_scoped_dict_setitem():
     scoped_dict = reframe.utility.ScopedDict({
