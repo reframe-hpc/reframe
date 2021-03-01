@@ -104,6 +104,10 @@ class LAMMPSCPUCheck(LAMMPSBaseCheck):
             self.num_tasks_per_node = 36
             self.num_tasks = 576
 
+        if self.current_system.name == 'eiger':
+            self.num_tasks_per_node = 128
+            self.num_tasks = 256 if self.scale == 'small' else 512
+
         references = {
             'prod': {
                 'small': {
@@ -119,9 +123,3 @@ class LAMMPSCPUCheck(LAMMPSBaseCheck):
         }
         self.reference = references[variant][scale]
         self.tags |= {'maintenance' if variant == 'maint' else 'production'}
-
-    @rfm.run_before('setup')
-    def setup_eiger(self):
-        if self.current_system.name == 'eiger':
-            self.num_tasks_per_node = 128
-            self.num_tasks = 256 if self.scale == 'small' else 512
