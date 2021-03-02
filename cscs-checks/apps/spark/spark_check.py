@@ -51,10 +51,10 @@ class SparkCheck(rfm.RunOnlyRegressionTest):
             f'--master $SPARKURL'
         ]
         if self.variant == 'spark':
-            self.executable_opts.extend([
+            self.executable_opts += [
                 '--class org.apache.spark.examples.SparkPi',
                 '$EBROOTSPARK/examples/jars/spark-examples*.jar 10000'
-            ])
+            ]
         else:
             self.executable_opts.append('spark_pi.py')
 
