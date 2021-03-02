@@ -54,11 +54,15 @@ uint64_t general_pointer_chase(int local_device, int remote_device, int init_mod
 {
   /*
    * Driver to manage the whole allocation, list traversal, etc.
+   * Before any timings are done, this function traverses the full list. This "fills up" the device
+   * caches and removes any spurious latencies on the first few node jumps. This means that there is no
+   * need to even traverse the full list when performing the timed traversal.
    * - local_device: ID of the device where the allocation of the list takes place
    * - remote_device: ID of the device doing the pointer chase.
    * - init_mode: see the List class.
    * - num_nodes: nodes in the liked list.
    * - stride: Gap (in nodes) between two consecutive nodes. This only applies if init_mode is 0.
+   * - num_jumps: Number of node jumps to carry out on the timed traversal.
    */
 
   XSetDevice(remote_device);
@@ -108,10 +112,10 @@ void local_pointer_chase(int num_devices, int init_mode, size_t num_nodes, size_
    */
   for (int gpu_id = 0; gpu_id < num_devices; gpu_id++)
   {
-    uint64_t timer = general_pointer_chase< List >(gpu_id, gpu_id, init_mode, num_nodes, stride, num_jumps);
+    uint64_t total_cycles = general_pointer_chase< List >(gpu_id, gpu_id, init_mode, num_nodes, stride, num_jumps);
 
     // Print the timings of the pointer chase
-    printf("[%s] On device %d, the chase took on average %d cycles per node jump.\n", nid, gpu_id, timer/num_jumps);
+    printf("[%s] On device %d, the chase took on average %d cycles per node jump.\n", nid, gpu_id, total_cycles/num_jumps);
   }
 }
 

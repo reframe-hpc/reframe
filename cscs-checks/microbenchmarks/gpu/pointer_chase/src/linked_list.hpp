@@ -99,7 +99,7 @@ __global__ void simple_traversal(Node * __restrict__ buffer)
   // Silly dep. to tell the compiler not to throw away this kernel.
   if (ptr->next->next == buffer)
   {
-    printf("The impossible just happened\n");
+    printf("The list has only 1 node\n");
   }
 }
 
