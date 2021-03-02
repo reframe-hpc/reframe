@@ -434,6 +434,43 @@ class OneTaskPerSocketOpenMP(OneTaskPerSocketOpenMPnomt):
 
 
 @rfm.simple_test
+class OneTaskPerSocket(AffinityTestBase):
+    '''One task per socket. No OMP threads.'''
+
+    num_tasks_per_socket = 1
+    num_cpus_per_task = 1
+    use_multithreading = False
+
+    def __init__(self):
+        super().__init__()
+        self.descr = 'One task per socket - wo. OMP.'
+
+    @rfm.run_before('run')
+    def set_num_tasks(self):
+        self.num_tasks = self.num_sockets
+
+    @rfm.run_before('sanity')
+    def consume_cpu_set(self):
+
+        if len(self.aff_cpus) != self.num_sockets:
+            print(self.aff_cpus)
+            raise SanityError('num_tasks does not match num_sockets')
+
+        for affinity_set in self.aff_cpus:
+            # Get CPU siblings by socket
+            cpu_siblings = self.get_sibling_cpus(
+                affinity_set[0], by='socket'
+            )
+
+            # All threads in the affinity set must belong to the same socket.
+            if not all(x in cpu_siblings for x in affinity_set):
+                raise SanityError('incorrect affinity set')
+
+            # Remove the sockets the cpu set.
+            self.cpu_set -= cpu_siblings
+
+
+@rfm.simple_test
 class ConsecutiveNumaFilling(AffinityTestBase):
     '''Fill the NUMA nodes with the tasks in consecutive order.
 
