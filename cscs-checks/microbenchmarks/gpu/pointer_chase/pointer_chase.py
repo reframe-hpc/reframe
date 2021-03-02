@@ -301,46 +301,45 @@ class GpuP2PLatency(GpuPointerChaseBase):
 
 
 @rfm.simple_test
-class GpuL2LatencyP2P(GpuP2PLatency):
-    '''The traversal is cached on the remote device's L2.'''
-    num_list_nodes = 5000
+class GpuP2PLatencyP2P(GpuP2PLatency):
+    '''Measure the latency to remote device.
 
-    def __init__(self):
-        super().__init__()
-        self.reference = {
-            'tsa:cn': {
-                'average_latency': (425, None, 0.1, 'clock cycles')
-            },
-            'ault:amda100': {
-                'average_latency': (760, None, 0.1, 'clock cycles')
-            },
-            'ault:amdv100': {
-                'average_latency': (760, None, 0.1, 'clock cycles')
-            },
-           'ault:amdvega': {
-                'average_latency': (315, None, 0.1, 'clock cycles')
-            },
-        }
-
-
-@rfm.simple_test
-class GpuDRAMLatencyP2P(GpuP2PLatency):
-    '''Measure the latency with remote access to DRAM.'''
+    Depending on the list size, the data might be cached in different places.
+    A list_size of 2000000 will place the list on the DRAM of the remote device.
+    '''
+    list_size = parameter([5000, 2000000])
     num_list_nodes = 2000000
 
     def __init__(self):
         super().__init__()
-        self.reference = {
-            'tsa:cn': {
-                'average_latency': (425, None, 0.1, 'clock cycles')
-            },
-            'ault:amda100': {
-                'average_latency': (1120, None, 0.1, 'clock cycles')
-            },
-            'ault:amdv100': {
-                'average_latency': (760, None, 0.1, 'clock cycles')
-            },
-           'ault:amdvega': {
-                'average_latency': (3550, None, 0.1, 'clock cycles')
-            },
-        }
+        self.num_list_nodes = self.list_size
+        if self.list_size == 5000:
+            self.reference = {
+                'tsa:cn': {
+                    'average_latency': (2981, None, 0.1, 'clock cycles')
+                },
+                'ault:amda100': {
+                    'average_latency': (760, None, 0.1, 'clock cycles')
+                },
+                'ault:amdv100': {
+                    'average_latency': (760, None, 0.1, 'clock cycles')
+                },
+               'ault:amdvega': {
+                    'average_latency': (315, None, 0.1, 'clock cycles')
+                },
+            }
+        elif self.list_size == 2000000:
+            self.reference = {
+                'tsa:cn': {
+                    'average_latency': (3219, None, 0.1, 'clock cycles')
+                },
+                'ault:amda100': {
+                    'average_latency': (1120, None, 0.1, 'clock cycles')
+                },
+                'ault:amdv100': {
+                    'average_latency': (760, None, 0.1, 'clock cycles')
+                },
+               'ault:amdvega': {
+                    'average_latency': (3550, None, 0.1, 'clock cycles')
+                },
+            }
