@@ -137,12 +137,12 @@ void print_device_table(int num_devices, std::queue<uint32_t> q, const char * ni
   for (int ds = 0; ds < num_devices; ds++)
   {
     printf("%4sGPU %2d", "", ds);
-  } printf("%10s\n", "Totals");
+  } printf("%10s\n", "Max");
 
   for (int j = 0; j < num_devices; j++)
   {
-    // Track the sum of the latencies
-    uint32_t totals = 0;
+    // Track the max latency
+    uint32_t max_latency = 0;
 
     printf("[%s] GPU %2d%4s", nid, j, " ");
     for (int i = 0; i < LIMITS; i++)
@@ -152,14 +152,14 @@ void print_device_table(int num_devices, std::queue<uint32_t> q, const char * ni
 
     for (int i = LIMITS; i < num_devices; i++)
     {
-      uint32_t timer = q.front();
+      uint32_t cycles = q.front();
       q.pop();
-      if (i != j)
+      if (cycles > max_latency)
       {
-        totals += timer;
+        max_latency = cycles;
       }
-      printf("%10d", timer);
-    } printf("%10d\n", totals);
+      printf("%10d", cycles);
+    } printf("%10d\n", max_latency);
   }
 }
 

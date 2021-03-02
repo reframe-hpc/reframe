@@ -7,31 +7,32 @@ import reframe.utility.sanity as sn
 import reframe as rfm
 
 import os
-from math import ceil
 
 
-class Pchase:
+class PchaseGlobal(rfm.RegressionMixin):
+    '''Handy class to store common test settings.
     '''
-    Public storage class to avoid writing the parameters below multiple times.
-    '''
-    single_device = ['daint:gpu', 'dom:gpu']
-    multi_device = ['ault:intelv100', 'ault:amdv100',
-                    'ault:amda100', 'ault:amdvega',
-                    'tsa:cn']
-    valid_systems = single_device+multi_device
-    valid_prog_environs = ['PrgEnv-gnu']
-
-
-#
-# PChase tests tracking the averaged latencies for all node jumps
-#
+    single_device_systems = variable(
+        list,
+        value=['daint:gpu', 'dom:gpu']
+    )
+    multi_device_systems = variable(
+        list,
+        value=[
+            'ault:intelv100', 'ault:amdv100',
+            'ault:amda100', 'ault:amdvega', 'tsa:cn'
+        ]
+    )
+    global_prog_environs = variable(list, value=['PrgEnv-gnu'])
 
 
 @rfm.simple_test
-class CompileGpuPointerChase(rfm.CompileOnlyRegressionTest):
+class CompileGpuPointerChase(rfm.CompileOnlyRegressionTest, PchaseGlobal):
     def __init__(self):
-        self.valid_systems = Pchase.valid_systems
-        self.valid_prog_environs = Pchase.valid_prog_environs
+        self.valid_systems = (
+            self.single_device_systems + self.multi_device_systems
+        )
+        self.valid_prog_environs = self.global_prog_environs
         self.exclusive_access = True
         self.build_system = 'Make'
         self.num_tasks = 0
@@ -82,15 +83,49 @@ class CompileGpuPointerChase(rfm.CompileOnlyRegressionTest):
             self.modules += ['rocm']
 
 
-class GpuPointerChaseBase(rfm.RunOnlyRegressionTest):
+class GpuPointerChaseBase(rfm.RunOnlyRegressionTest, PchaseGlobal):
+    '''Base RunOnly class.
+
+    This runs the pointer chase algo on the linked list from the code compiled
+    in the executable from the test above. The list is fully customisable
+    through the command line, so the number of nodes, and the stride size for
+    each jump will determine where the memory hits occur. This stride is set to
+    32 node lengths (a node is 8 Bytes) to ensure that there is only a single
+    node per cache line. The number of node jumps is set relatively large to
+    ensure that the background effects are averaged out.
+
+    Derived tests MUST set the number of list nodes.
+    '''
+    num_list_nodes = variable(int)
+
+    # Use a large stride to ensure there's only a single node per cache line
+    stride = variable(int, value=32)
+
+    # Set a large number of node jumps to smooth out spurious effects
+    num_node_jumps = variable(int, value=400000)
+
     def __init__(self):
-        self.valid_prog_environs = Pchase.valid_prog_environs
+        self.depends_on('CompileGpuPointerChase')
+        self.valid_prog_environs = self.global_prog_environs
         self.num_tasks = 0
         self.num_tasks_per_node = 1
         self.exclusive_access = True
         self.sanity_patterns = self.do_sanity_check()
         self.maintainers = ['JO']
         self.tags = {'benchmark'}
+
+    @rfm.require_deps
+    def set_executable(self, CompileGpuPointerChase):
+        self.executable = os.path.join(
+            CompileGpuPointerChase().stagedir, 'pChase.x')
+
+    @rfm.run_before('run')
+    def set_exec_opts(self):
+        self.executable_opts += [
+            f'--stride {self.stride}',
+            f'--nodes {self.num_list_nodes}',
+            f'--num-jumps {self.num_node_jumps}'
+        ]
 
     @rfm.run_before('run')
     def set_num_gpus_per_node(self):
@@ -108,7 +143,6 @@ class GpuPointerChaseBase(rfm.RunOnlyRegressionTest):
 
     @sn.sanity_function
     def do_sanity_check(self):
-
         # Check that every node has the right number of GPUs
         # Store this nodes in case they're used later by the perf functions.
         self.my_nodes = set(sn.extractall(
@@ -124,66 +158,13 @@ class GpuPointerChaseBase(rfm.RunOnlyRegressionTest):
             sn.assert_eq(self.job.num_tasks, nodes_at_end)))
 
 
-class GpuPointerChaseDep(GpuPointerChaseBase):
+class GpuPointerChaseSingle(GpuPointerChaseBase):
+    '''Base class for the single-GPU latency tests.'''
     def __init__(self):
         super().__init__()
-        self.depends_on('CompileGpuPointerChase')
-
-    @rfm.require_deps
-    def set_executable(self, CompileGpuPointerChase):
-        self.executable = os.path.join(
-            CompileGpuPointerChase().stagedir, 'pChase.x')
-
-
-@rfm.simple_test
-class GpuPointerChaseClockLatency(GpuPointerChaseDep):
-    '''
-    Check the clock latencies.
-    '''
-
-    def __init__(self):
-        super().__init__()
-        self.valid_systems = Pchase.valid_systems
-        self.executable_opts = ['--clock']
-        self.perf_patterns = {
-            'clock_latency': sn.max(sn.extractall(
-                r'^\s*\[[^\]]*\]\s*The clock latency on device \d+ '
-                r'is (\d+) cycles.', self.stdout, 1, int)
-            ),
-        }
-
-        self.reference = {
-            'daint:gpu': {
-                'clock_latency': (56, None, 0.1, 'cycles'),
-            },
-            'dom:gpu': {
-                'clock_latency': (56, None, 0.1, 'cycles'),
-            },
-            'tsa:cn': {
-                'clock_latency': (8, None, 0.1, 'cycles'),
-            },
-            'ault:amda100': {
-                'clock_latency': (7, None, 0.1, 'cycles'),
-            },
-            'ault:amdv100': {
-                'clock_latency': (8, None, 0.1, 'cycles'),
-            },
-            'ault:amdvega': {
-                'clock_latency': (40, None, 0.1, 'cycles'),
-            },
-        }
-
-
-@rfm.parameterized_test([1], [2], [4], [4096])
-class GpuPointerChaseSingle(GpuPointerChaseDep):
-    '''
-    Pointer chase on a single device with increasing stride.
-    '''
-
-    def __init__(self, stride):
-        super().__init__()
-        self.valid_systems = Pchase.valid_systems
-        self.executable_opts = ['--sparsity', f'{stride}']
+        self.valid_systems = (
+            self.single_device_systems + self.multi_device_systems
+        )
         self.perf_patterns = {
             'average_latency': sn.max(sn.extractall(
                 r'^\s*\[[^\]]*\]\s* On device \d+, '
@@ -192,119 +173,115 @@ class GpuPointerChaseSingle(GpuPointerChaseDep):
             ),
         }
 
-        if stride == 1:
-            self.reference = {
-                'tsa:cn': {
-                    'average_latency': (80, None, 0.1, 'clock cycles')
-                },
-                'ault:amda100': {
-                    'average_latency': (76, None, 0.1, 'clock cycles')
-                },
-                'ault:amdv100': {
-                    'average_latency': (77, None, 0.1, 'clock cycles')
-                },
-                'dom:gpu': {
-                    'average_latency': (143, None, 0.1, 'clock cycles')
-                },
-                'daint:gpu': {
-                    'average_latency': (143, None, 0.1, 'clock cycles')
-                },
-                'ault:amdvega': {
-                    'average_latency': (225, None, 0.1, 'clock cycles')
-                },
-            }
-        elif stride == 2:
-            self.reference = {
-                'tsa:cn': {
-                    'average_latency': (120, None, 0.1, 'clock cycles')
-                },
-                'ault:amda100': {
-                    'average_latency': (116, None, 0.1, 'clock cycles')
-                },
-                'ault:amdv100': {
-                    'average_latency': (118, None, 0.1, 'clock cycles')
-                },
-                'dom:gpu': {
-                    'average_latency': (181, None, 0.1, 'clock cycles')
-                },
-                'daint:gpu': {
-                    'average_latency': (181, None, 0.1, 'clock cycles')
-                },
-                'ault:amdvega': {
-                    'average_latency': (300, None, 0.1, 'clock cycles')
-                },
-            }
-        elif stride == 4:
-            self.reference = {
-                'tsa:cn': {
-                    'average_latency': (204, None, 0.1, 'clock cycles')
-                },
-                'ault:amda100': {
-                    'average_latency': (198, None, 0.1, 'clock cycles')
-                },
-                'ault:amdv100': {
-                    'average_latency': (204, None, 0.1, 'clock cycles')
-                },
-                'dom:gpu': {
-                    'average_latency': (260, None, 0.1, 'clock cycles')
-                },
-                'daint:gpu': {
-                    'average_latency': (260, None, 0.1, 'clock cycles')
-                },
-                'ault:amdvega': {
-                    'average_latency': (470, None, 0.1, 'clock cycles')
-                },
-            }
-        elif stride == 4096:
-            self.reference = {
-                'tsa:cn': {
-                    'average_latency': (220, None, 0.1, 'clock cycles')
-                },
-                'ault:amda100': {
-                    'average_latency': (206, None, 0.1, 'clock cycles')
-                },
-                'ault:amdv100': {
-                    'average_latency': (220, None, 0.1, 'clock cycles')
-                },
-                'dom:gpu': {
-                    'average_latency': (260, None, 0.1, 'clock cycles')
-                },
-                'daint:gpu': {
-                    'average_latency': (260, None, 0.1, 'clock cycles')
-                },
-                'ault:amdvega': {
-                    'average_latency': (800, None, 0.1, 'clock cycles')
-                },
-            }
-
-
 @rfm.simple_test
-class GpuPointerChaseAverageP2PLatency(GpuPointerChaseDep):
+class GpuL1Latency(GpuPointerChaseSingle):
+    '''Measure L1 latency.
+
+    The linked list fits in L1. The stride is set pretty large, but that does
+    not matter for this case since everything is in L1.
     '''
-    Average inter-node P2P latency.
-    '''
+    num_list_nodes = 16
 
     def __init__(self):
         super().__init__()
-        self.valid_systems = Pchase.multi_device
-        self.executable_opts = ['--multi-gpu']
-        self.perf_patterns = {
-            'average_latency': self.average_P2P_latency(),
-        }
-
         self.reference = {
-            'ault:amda100': {
-                'average_latency': (223, None, 0.1, 'clock cycles')
+            'dom:gpu': {
+                'average_latency': (103, None, 0.1, 'clock cycles')
             },
-            'ault:amdv100': {
-                'average_latency': (611, None, 0.1, 'clock cycles')
-            },
-            'ault:amdvega': {
-                'average_latency': (336, None, 0.1, 'clock cycles')
+            'daint:gpu': {
+                'average_latency': (103, None, 0.1, 'clock cycles')
             },
             'tsa:cn': {
-                'average_latency': (394, None, 0.1, 'clock cycles')
+                'average_latency': (28, None, 0.1, 'clock cycles')
             },
+            'ault:amda100': {
+                'average_latency': (33, None, 0.1, 'clock cycles')
+            },
+            'ault:amdv100': {
+                'average_latency': (28, None, 0.1, 'clock cycles')
+            },
+           'ault:amdvega': {
+                'average_latency': (140, None, 0.1, 'clock cycles')
+            },
+        }
+
+
+@rfm.simple_test
+class GpuL2Latency(GpuPointerChaseSingle):
+    '''Measure the L2 latency.
+
+    The linked list is larger than L1, but it fits in L2. The stride is set
+    to be larger than L1's cache line to avoid any hits in L1.
+    '''
+    num_list_nodes = 5000
+
+    def __init__(self):
+        super().__init__()
+        self.reference = {
+            'dom:gpu': {
+                'average_latency': (290, None, 0.1, 'clock cycles')
+            },
+            'daint:gpu': {
+                'average_latency': (258, None, 0.1, 'clock cycles')
+            },
+            'tsa:cn': {
+                'average_latency': (215, None, 0.1, 'clock cycles')
+            },
+            'ault:amda100': {
+                'average_latency': (204, None, 0.1, 'clock cycles')
+            },
+            'ault:amdv100': {
+                'average_latency': (215, None, 0.1, 'clock cycles')
+            },
+           'ault:amdvega': {
+                'average_latency': (290, None, 0.1, 'clock cycles')
+            },
+        }
+
+@rfm.simple_test
+class GpuDRAMLatency(GpuPointerChaseSingle):
+    '''Measure the DRAM latency.
+
+    The linked list is large enough to fill the last cache level. Also, the
+    stride during the traversal must me large enough that there are no
+    cache hits at all.
+    '''
+    num_list_nodes = 2000000
+
+    def __init__(self):
+        super().__init__()
+        self.reference = {
+            'dom:gpu': {
+                'average_latency': (506, None, 0.1, 'clock cycles')
+            },
+            'daint:gpu': {
+                'average_latency': (506, None, 0.1, 'clock cycles')
+            },
+            'tsa:cn': {
+                'average_latency': (425, None, 0.1, 'clock cycles')
+            },
+            'ault:amda100': {
+                'average_latency': (560, None, 0.1, 'clock cycles')
+            },
+            'ault:amdv100': {
+                'average_latency': (425, None, 0.1, 'clock cycles')
+            },
+           'ault:amdvega': {
+                'average_latency': (625, None, 0.1, 'clock cycles')
+            },
+        }
+
+
+class GpuP2PLatency(GpuPointerChaseBase):
+    '''List traversal is done from a remote GPU.'''
+    num_list_nodes = required
+
+    def __init__(self):
+        super().__init__()
+        self.valid_systems = self.multi_device_systems
+        self.executable_opts += ['--multi-gpu']
+        self.perf_patterns = {
+            'average_latency': self.average_P2P_latency(),
         }
 
     @sn.sanity_function
@@ -312,10 +289,58 @@ class GpuPointerChaseAverageP2PLatency(GpuPointerChaseDep):
         '''
         Extract the average P2P latency. Note that the pChase code
         returns a table with the cummulative latency for all P2P
-        list traversals.
+        list traversals, and the last column of this table has the max
+        values for each device.
         '''
-        return int(sn.evaluate(sn.max(sn.extractall(
-                   r'^\s*\[[^\]]*\]\s*GPU\s*\d+\s+(\s*\d+.\s+)+',
-                   self.stdout, 1, int)
-        ))/(self.num_gpus_per_node-1)
-        )
+        return int(sn.evaluate(
+            sn.max(sn.extractall(
+                r'^\s*\[[^\]]*\]\s*GPU\s*\d+\s+(\s*\d+.\s+)+',
+                self.stdout, 1, int)
+            )
+        ))
+
+
+@rfm.simple_test
+class GpuL2LatencyP2P(GpuP2PLatency):
+    '''The traversal is cached on the remote device's L2.'''
+    num_list_nodes = 5000
+
+    def __init__(self):
+        super().__init__()
+        self.reference = {
+            'tsa:cn': {
+                'average_latency': (425, None, 0.1, 'clock cycles')
+            },
+            'ault:amda100': {
+                'average_latency': (760, None, 0.1, 'clock cycles')
+            },
+            'ault:amdv100': {
+                'average_latency': (760, None, 0.1, 'clock cycles')
+            },
+           'ault:amdvega': {
+                'average_latency': (315, None, 0.1, 'clock cycles')
+            },
+        }
+
+
+@rfm.simple_test
+class GpuDRAMLatencyP2P(GpuP2PLatency):
+    '''Measure the latency with remote access to DRAM.'''
+    num_list_nodes = 2000000
+
+    def __init__(self):
+        super().__init__()
+        self.reference = {
+            'tsa:cn': {
+                'average_latency': (425, None, 0.1, 'clock cycles')
+            },
+            'ault:amda100': {
+                'average_latency': (1120, None, 0.1, 'clock cycles')
+            },
+            'ault:amdv100': {
+                'average_latency': (760, None, 0.1, 'clock cycles')
+            },
+           'ault:amdvega': {
+                'average_latency': (3550, None, 0.1, 'clock cycles')
+            },
+        }
