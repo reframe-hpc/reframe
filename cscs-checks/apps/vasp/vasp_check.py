@@ -13,7 +13,7 @@ class VASPCheck(rfm.RunOnlyRegressionTest):
             self.valid_prog_environs = ['cpeIntel']
         else:
             self.valid_prog_environs = ['builtin']
-            
+
         self.modules = ['VASP']
         force = sn.extractsingle(r'1 F=\s+(?P<result>\S+)',
                                  self.stdout, 'result', float)
