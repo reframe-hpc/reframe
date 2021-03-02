@@ -712,7 +712,7 @@ site_configuration = {
         },
         {
             'name': 'pilatus',
-            'descr': 'Alps Cray EX Supercomputer',
+            'descr': 'Alps Cray EX Supercomputer TDS',
             'hostnames': [
                 'pilatus'
             ],
@@ -957,8 +957,8 @@ site_configuration = {
                 'eiger', 'pilatus'
             ],
             'modules': [
-                {'name': 'cpeAMD', 'collection': False}
-            ]
+                'cpeAMD'
+            ],
         },
         {
             'name': 'cpeCray',
@@ -966,8 +966,8 @@ site_configuration = {
                 'eiger', 'pilatus'
             ],
             'modules': [
-                {'name': 'cpeCray', 'collection': False}
-            ]
+                'cpeCray'
+            ],
         },
         {
             'name': 'cpeGNU',
@@ -975,8 +975,8 @@ site_configuration = {
                 'eiger', 'pilatus'
             ],
             'modules': [
-                {'name': 'cpeGNU', 'collection': False}
-            ]
+                'cpeGNU'
+            ],
         },
         {
             'name': 'cpeIntel',
@@ -984,8 +984,8 @@ site_configuration = {
                 'pilatus'
             ],
             'modules': [
-                {'name': 'cpeIntel', 'collection': False}
-            ]
+                'cpeIntel'
+            ],
         },
         {
             'name': 'PrgEnv-cray',
