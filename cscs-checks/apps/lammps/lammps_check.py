@@ -41,7 +41,7 @@ class LAMMPSBaseCheck(rfm.RunOnlyRegressionTest):
         self.maintainers = ['TR', 'VH']
 
 
-@rfm.required_version('>=2.16')
+@rfm.required_version('>=2.16.0')
 @rfm.parameterized_test(*([s, v]
                           for s in ['small', 'large']
                           for v in ['prod', 'maint']))
@@ -85,16 +85,17 @@ class LAMMPSGPUCheck(LAMMPSBaseCheck):
         self.tags |= {'maintenance' if variant == 'maint' else 'production'}
 
 
-@rfm.required_version('>=2.16')
+@rfm.required_version('>=2.16.0')
 @rfm.parameterized_test(*([s, v]
                           for s in ['small', 'large']
                           for v in ['prod']))
 class LAMMPSCPUCheck(LAMMPSBaseCheck):
     def __init__(self, scale, variant):
         super().__init__()
-        self.valid_systems = ['daint:mc']
+        self.valid_systems = ['daint:mc', 'eiger:mc']
         self.executable = 'lmp_omp'
         self.executable_opts = ['-sf omp', '-pk omp 1', '-in in.lj.cpu']
+        self.scale = scale
         if scale == 'small':
             self.valid_systems += ['dom:mc']
             self.num_tasks = 216
@@ -103,14 +104,20 @@ class LAMMPSCPUCheck(LAMMPSBaseCheck):
             self.num_tasks_per_node = 36
             self.num_tasks = 576
 
+        if self.current_system.name == 'eiger':
+            self.num_tasks_per_node = 128
+            self.num_tasks = 256 if self.scale == 'small' else 512
+
         references = {
             'prod': {
                 'small': {
                     'dom:mc': {'perf': (4394, -0.05, None, 'timesteps/s')},
-                    'daint:mc': {'perf': (3824, -0.10, None, 'timesteps/s')}
+                    'daint:mc': {'perf': (3824, -0.10, None, 'timesteps/s')},
+                    'eiger:mc': {'perf': (5300, -0.05, None, 'timesteps/s')}
                 },
                 'large': {
-                    'daint:mc': {'perf': (5310, -0.65, None, 'timesteps/s')}
+                    'daint:mc': {'perf': (5310, -0.65, None, 'timesteps/s')},
+                    'eiger:mc': {'perf': (7100, -0.05, None, 'timesteps/s')}
                 }
             },
         }
