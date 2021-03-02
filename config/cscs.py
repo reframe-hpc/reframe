@@ -660,10 +660,10 @@ site_configuration = {
             ]
         },
         {
-            'name': 'pilatus',
-            'descr': 'Alps Cray EX Supercomputer (TDS)',
+            'name': 'eiger',
+            'descr': 'Alps Cray EX Supercomputer',
             'hostnames': [
-                'pilatus'
+                'eiger'
             ],
             'modules_system': 'lmod',
             'resourcesdir': '/apps/common/UES/reframe/resources',
@@ -711,10 +711,10 @@ site_configuration = {
             ]
         },
         {
-            'name': 'eiger',
+            'name': 'pilatus',
             'descr': 'Alps Cray EX Supercomputer',
             'hostnames': [
-                'eiger'
+                'pilatus'
             ],
             'modules_system': 'lmod',
             'resourcesdir': '/apps/common/UES/reframe/resources',
@@ -724,9 +724,14 @@ site_configuration = {
                     'scheduler': 'local',
                     'environs': [
                         'builtin',
+                        'PrgEnv-aocc',
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
-                        'PrgEnv-aocc'
+                        'PrgEnv-intel',
+                        'cpeAMD',
+                        'cpeCray',
+                        'cpeGNU',
+                        'cpeIntel'
                     ],
                     'descr': 'Login nodes',
                     'max_jobs': 4,
@@ -738,9 +743,14 @@ site_configuration = {
                     'scheduler': 'slurm',
                     'environs': [
                         'builtin',
+                        'PrgEnv-aocc',
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
-                        'PrgEnv-aocc'
+                        'PrgEnv-intel',
+                        'cpeAMD',
+                        'cpeCray',
+                        'cpeGNU',
+                        'cpeIntel'
                     ],
                     'max_jobs': 100,
                     'resources': [
@@ -906,6 +916,15 @@ site_configuration = {
             'ftn': 'gfortran'
         },
         {
+            'name': 'PrgEnv-aocc',
+            'target_systems': [
+                'eiger', 'pilatus'
+            ],
+            'modules': [
+                {'name': 'PrgEnv-aocc', 'collection': True}
+            ]
+        },
+        {
             'name': 'PrgEnv-cray',
             'target_systems': [
                 'eiger', 'pilatus'
@@ -924,12 +943,48 @@ site_configuration = {
             ]
         },
         {
-            'name': 'PrgEnv-aocc',
+            'name': 'PrgEnv-intel',
+            'target_systems': [
+                'pilatus'
+            ],
+            'modules': [
+                {'name': 'PrgEnv-intel', 'collection': True}
+            ]
+        },
+        {
+            'name': 'cpeAMD',
             'target_systems': [
                 'eiger', 'pilatus'
             ],
             'modules': [
-                {'name': 'PrgEnv-aocc', 'collection': True}
+                {'name': 'cpeAMD', 'collection': False}
+            ]
+        },
+        {
+            'name': 'cpeCray',
+            'target_systems': [
+                'eiger', 'pilatus'
+            ],
+            'modules': [
+                {'name': 'cpeCray', 'collection': False}
+            ]
+        },
+        {
+            'name': 'cpeGNU',
+            'target_systems': [
+                'eiger', 'pilatus'
+            ],
+            'modules': [
+                {'name': 'cpeGNU', 'collection': False}
+            ]
+        },
+        {
+            'name': 'cpeIntel',
+            'target_systems': [
+                'pilatus'
+            ],
+            'modules': [
+                {'name': 'cpeIntel', 'collection': False}
             ]
         },
         {

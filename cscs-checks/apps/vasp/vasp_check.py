@@ -9,7 +9,6 @@ import reframe.utility.sanity as sn
 
 class VASPCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        self.valid_prog_environs = ['builtin']
         self.modules = ['VASP']
         force = sn.extractsingle(r'1 F=\s+(?P<result>\S+)',
                                  self.stdout, 'result', float)
@@ -37,13 +36,18 @@ class VASPCpuCheck(VASPCheck):
     def __init__(self, variant):
         super().__init__()
         self.descr = f'VASP CPU check (variant: {variant})'
-        self.valid_systems = ['daint:mc', 'dom:mc', 'eiger:mc']
+        self.valid_systems = ['daint:mc', 'dom:mc', 'eiger:mc', 'pilatus:mc']
+        if self.current_system.name in ['daint', 'dom', 'eiger']:
+            self.valid_prog_environs = ['builtin']
+        elif self.current_system.name == 'pilatus':
+            self.valid_prog_environs = ['cpeIntel']
+
         self.executable = 'vasp_std'
         if self.current_system.name == 'dom':
             self.num_tasks = 72
             self.num_tasks_per_node = 12
             self.use_multithreading = True
-        elif self.current_system.name == 'eiger':
+        elif self.current_system.name in ['eiger', 'pilatus']:
             self.num_tasks = 64
             self.num_tasks_per_node = 4
             self.num_cpus_per_task = 8
@@ -64,12 +68,14 @@ class VASPCpuCheck(VASPCheck):
             'maint': {
                 'dom:mc': {'time': (148.7, None, 0.05, 's')},
                 'daint:mc': {'time': (105.3, None, 0.20, 's')},
-                'eiger:mc': {'time': (100.0, None, 0.10, 's')}
+                'eiger:mc': {'time': (100.0, None, 0.10, 's')},
+                'pilatus:mc': {'time': (100.0, None, 0.10, 's')}
             },
             'prod': {
                 'dom:mc': {'time': (148.7, None, 0.05, 's')},
                 'daint:mc': {'time': (105.3, None, 0.20, 's')},
-                'eiger:mc': {'time': (100.0, None, 0.10, 's')}
+                'eiger:mc': {'time': (100.0, None, 0.10, 's')},
+                'pilatus:mc': {'time': (100.0, None, 0.10, 's')}
             }
         }
         self.reference = references[variant]
@@ -90,6 +96,7 @@ class VASPGpuCheck(VASPCheck):
         super().__init__()
         self.descr = f'VASP GPU check (variant: {variant})'
         self.valid_systems = ['daint:gpu', 'dom:gpu']
+        self.valid_prog_environs = ['builtin']
         self.executable = 'vasp_gpu'
         self.variables = {'CRAY_CUDA_MPS': '1'}
         self.num_gpus_per_node = 1
