@@ -81,4 +81,4 @@ class HDF5Test(rfm.RegressionTest):
         self.postrun_cmds = ['h5dump h5ex_d_chunk.h5 > h5dump_out.txt']
 
         self.maintainers = ['SO', 'RS']
-        self.tags = {'production', 'craype'}
+        self.tags = {'production', 'craype', 'health'}
