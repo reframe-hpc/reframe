@@ -9,6 +9,10 @@ import reframe.utility.sanity as sn
 
 class VASPCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
+        if self.current_system.name == 'pilatus':
+            self.valid_prog_environs = ['cpeIntel']
+        else:
+            self.valid_prog_environs = ['builtin']
         self.modules = ['VASP']
         force = sn.extractsingle(r'1 F=\s+(?P<result>\S+)',
                                  self.stdout, 'result', float)
@@ -37,10 +41,6 @@ class VASPCpuCheck(VASPCheck):
         super().__init__()
         self.descr = f'VASP CPU check (variant: {variant})'
         self.valid_systems = ['daint:mc', 'dom:mc', 'eiger:mc', 'pilatus:mc']
-        if self.current_system.name in ['daint', 'dom', 'eiger']:
-            self.valid_prog_environs = ['builtin']
-        elif self.current_system.name == 'pilatus':
-            self.valid_prog_environs = ['cpeIntel']
 
         self.executable = 'vasp_std'
         if self.current_system.name == 'dom':
@@ -96,7 +96,6 @@ class VASPGpuCheck(VASPCheck):
         super().__init__()
         self.descr = f'VASP GPU check (variant: {variant})'
         self.valid_systems = ['daint:gpu', 'dom:gpu']
-        self.valid_prog_environs = ['builtin']
         self.executable = 'vasp_gpu'
         self.variables = {'CRAY_CUDA_MPS': '1'}
         self.num_gpus_per_node = 1
