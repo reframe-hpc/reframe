@@ -348,19 +348,6 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     container_platform = variable(type(None),
                                   field=ContainerPlatformField, value=None)
 
-    #: .. versionadded:: 3.5
-    #:
-    #: List of shell commands to execute before loading the environment for
-    #: this job.
-    #:
-    #: These commands do not execute in the context of ReFrame.
-    #: Instead, they are emitted in the generated job script just before the
-    #: actual job launch command.
-    #:
-    #: :type: :class:`List[str]`
-    #: :default: ``[]``
-    preload_cmds = variable(typ.List[str], value=[])
-
     #: .. versionadded:: 3.0
     #:
     #: List of shell commands to execute before launching this job.
@@ -1232,7 +1219,8 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
         with osext.change_dir(self._stagedir):
             try:
                 self._build_job.prepare(
-                    build_commands, environs, self.preload_cmds,
+                    build_commands, environs,
+                    self._current_partition.preload_cmds,
                     login=rt.runtime().get_option('general/0/use_login_shell'),
                     trap_errors=True
                 )
@@ -1360,7 +1348,8 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
             try:
                 self.logger.debug('Generating the run script')
                 self._job.prepare(
-                    commands, environs, self.preload_cmds,
+                    commands, environs,
+                    self._current_partition.preload_cmds,
                     login=rt.runtime().get_option('general/0/use_login_shell'),
                     trap_errors=rt.runtime().get_option(
                         'general/0/trap_job_errors'
