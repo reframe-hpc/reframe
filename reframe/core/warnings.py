@@ -74,7 +74,14 @@ def user_deprecation_warning(message, from_version='0.0.0'):
         stack_level += 1
 
     min_version = semver.VersionInfo.parse(from_version)
+
     version = semver.VersionInfo.parse(reframe.VERSION)
+    if version.prerelease:
+        # Promote prereleases, so that we issue the warning also in this case
+        version = semver.VersionInfo(
+            version.major, version.minor, version.patch
+        )
+
     if _RAISE_DEPRECATION_ALWAYS or version >= min_version:
         warnings.warn(message, ReframeDeprecationWarning,
                       stacklevel=stack_level)
