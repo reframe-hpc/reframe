@@ -658,9 +658,14 @@ def test_repr_default():
 
 
 def test_attrs():
-    class C:
+    class B:
         z = fields.TypedField(int)
 
+        def __init__(self, x, y):
+            self.x = x
+            self.y = y
+
+    class C(B):
         def __init__(self, x, y):
             self._x = x
             self.y = y
@@ -675,6 +680,13 @@ def test_attrs():
 
     class D(C):
         pass
+
+    # Test undefined descriptors are not returned
+    b = B(-1, 0)
+    b_attrs = util.attrs(b)
+    assert b_attrs['x'] == -1
+    assert b_attrs['y'] == 0
+    assert 'z' not in b_attrs
 
     c = C(1, 2)
     c_attrs = util.attrs(c)
@@ -939,6 +951,16 @@ def test_scoped_dict_key_resolution():
 
     with pytest.raises(KeyError):
         scoped_dict['']
+
+    # Scopes must be requested with scope()
+    assert scoped_dict.scope('a') == {'k1': 1, 'k2': 2, 'k3': 9, 'k4': 10}
+    assert scoped_dict.scope('a:b') == {'k1': 3, 'k2': 2, 'k3': 4, 'k4': 10}
+    assert scoped_dict.scope('a:b:c') == {'k1': 3, 'k2': 5, 'k3': 6, 'k4': 10}
+    assert scoped_dict.scope('*') == {'k1': 7, 'k3': 9, 'k4': 10}
+
+    # This is resolved in scope 'a'
+    assert scoped_dict.scope('a:z') == {'k1': 1, 'k2': 2, 'k3': 9, 'k4': 10}
+    assert scoped_dict.scope(None) == {}
 
 
 def test_scoped_dict_setitem():

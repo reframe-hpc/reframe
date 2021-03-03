@@ -275,7 +275,9 @@ def repr(obj, htchar=' ', lfchar='\n', indent=4, basic_offset=0):
 def attrs(obj):
     '''Inspect object and return its attributes and their values.
 
-    This function returns also any descriptors found at the owner class.
+    This function returns also any descriptors found at the owner class,
+    with the exception of descriptors without an assigned value, which are
+    expected to raise an ``AttributeError``.
 
     :arg obj: The object to inspect.
     :returns: an iterator over ``(attr_name, value)`` tuples
@@ -287,9 +289,13 @@ def attrs(obj):
 
     # Look for descriptors
     for cls in type(obj).mro():
-        for attr, value in cls.__dict__.items():
-            if inspect.isdatadescriptor(value):
-                ret[attr] = getattr(obj, attr)
+        for attr in cls.__dict__:
+            if inspect.isdatadescriptor(cls.__dict__[attr]):
+                try:
+                    ret[attr] = getattr(obj, attr)
+                except AttributeError:
+                    # Pass if the descriptor does not have an assigned value
+                    pass
 
     return ret
 
@@ -666,6 +672,7 @@ class ScopedDict(UserDict):
     ``d['*:k1']`` are all equivalent.
     If you try to retrieve a whole scope, e.g., ``d['a:b']``,
     :class:`KeyError` will be raised.
+    For retrieving scopes, you should use the :func:`scope` function.
 
     Key deletion follows the same resolution mechanism as key retrieval,
     except that you are allowed to delete whole scopes. For example, ``del
@@ -720,6 +727,29 @@ class ScopedDict(UserDict):
             self.data.setdefault(scope, {})
             for k, v in scope_dict.items():
                 self.data[scope][k] = v
+
+    def scope(self, name):
+        '''Retrieve a whole scope.
+
+        :arg scope: The name of the scope to retrieve.
+        :returns: A dictionary with the keys that are within the requested
+            scope.
+        '''
+
+        ret = {}
+        curr_scope = name
+        while curr_scope is not None:
+            if curr_scope in self.data:
+                for k, v in self.data[curr_scope].items():
+                    if k not in ret:
+                        ret[k] = v
+
+            if curr_scope == self._global_scope:
+                curr_scope = None
+            else:
+                curr_scope = self._parent_scope(curr_scope)
+
+        return ret
 
     def __str__(self):
         # just return the internal dictionary

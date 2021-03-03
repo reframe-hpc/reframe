@@ -17,6 +17,9 @@ class _UndefinedType:
     '''Custom type to flag a variable as undefined.'''
     __slots__ = ()
 
+    def __deepcopy__(self, memo):
+        return self
+
 
 _Undefined = _UndefinedType()
 
@@ -116,7 +119,7 @@ class VarSpace(namespaces.Namespace):
                     f'parent classes of class {cls.__qualname__!r}'
                 )
 
-            self.vars[key] = var
+            self.vars[key] = copy.deepcopy(var)
 
         # Carry over the set of injected variables
         self._injected_vars.update(other._injected_vars)
