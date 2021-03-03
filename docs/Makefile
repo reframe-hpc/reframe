@@ -44,10 +44,10 @@ latest:
 
 clean:
 	@echo 'Removing directories'
-	-$(RM) $(TARGET_DOCS) doctrees build_*
+	-$(RM) $(TARGET_DOCS) doctrees
 
 $(TARGET_DOCS): Makefile
-	@$(PYTHON) $(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "build_$(@)" $(SPHINXOPTS) $(O)
+	@$(PYTHON) $(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "" $(SPHINXOPTS) $(O)
 
 
 
