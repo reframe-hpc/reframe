@@ -22,7 +22,7 @@ class SystemPartition(jsonext.JSONSerializable):
 
     def __init__(self, parent, name, sched_type, launcher_type,
                  descr, access, container_environs, resources,
-                 local_env, environs, max_jobs, preload_cmds):
+                 local_env, environs, max_jobs, prepare_cmds):
         getlogger().debug(f'Initializing system partition {name!r}')
         self._parent_system = parent
         self._name = name
@@ -35,7 +35,7 @@ class SystemPartition(jsonext.JSONSerializable):
         self._local_env = local_env
         self._environs = environs
         self._max_jobs = max_jobs
-        self._preload_cmds = preload_cmds
+        self._prepare_cmds = prepare_cmds
         self._resources = {r['name']: r['options'] for r in resources}
 
     @property
@@ -100,12 +100,12 @@ class SystemPartition(jsonext.JSONSerializable):
         return self._max_jobs
 
     @property
-    def preload_cmds(self):
+    def prepare_cmds(self):
         '''Commands to be emitted before loading the modules.
 
         :type: :class:`List[str]`
         '''
-        return self._preload_cmds
+        return self._prepare_cmds
 
     @property
     def name(self):
@@ -327,7 +327,7 @@ class System(jsonext.JSONSerializable):
                         variables=site_config.get(f'{partid}/variables')
                     ),
                     max_jobs=site_config.get(f'{partid}/max_jobs'),
-                    preload_cmds=site_config.get(f'{partid}/preload_cmds')
+                    prepare_cmds=site_config.get(f'{partid}/prepare_cmds')
                 )
             )
 

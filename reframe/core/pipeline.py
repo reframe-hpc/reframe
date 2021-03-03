@@ -1220,7 +1220,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
             try:
                 self._build_job.prepare(
                     build_commands, environs,
-                    self._current_partition.preload_cmds,
+                    self._current_partition.prepare_cmds,
                     login=rt.runtime().get_option('general/0/use_login_shell'),
                     trap_errors=True
                 )
@@ -1349,7 +1349,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
                 self.logger.debug('Generating the run script')
                 self._job.prepare(
                     commands, environs,
-                    self._current_partition.preload_cmds,
+                    self._current_partition.prepare_cmds,
                     login=rt.runtime().get_option('general/0/use_login_shell'),
                     trap_errors=rt.runtime().get_option(
                         'general/0/trap_job_errors'

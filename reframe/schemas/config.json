@@ -220,7 +220,7 @@
                                 "modules": {"$ref": "#/defs/modules_list"},
                                 "variables": {"$ref": "#/defs/envvar_list"},
                                 "max_jobs": {"type": "number"},
-                                "preload_cmds": {
+                                "prepare_cmds": {
                                     "type": "array",
                                     "items": {"type": "string"}
                                  },
@@ -477,6 +477,6 @@
         "systems/partitions/variables": [],
         "systems/partitions/environs": [],
         "systems/partitions/max_jobs": 8,
-        "systems/partitions/preload_cmds": []
+        "systems/partitions/prepare_cmds": []
     }
 }
