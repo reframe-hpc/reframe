@@ -108,8 +108,8 @@ class CPUBandwidth(MemBandwidthTest):
         self.data_size = self.system_cache_sizes[partname][self.mem_level]
         self.num_cpus_per_task = self.system_num_cpus[partname]
         numa_domains = self.system_numa_domains[partname]
-        num_cpu_domain = self.num_cpus_per_task / (len(numa_domains) *
-                                                   self.num_tasks_per_core)
+        num_cpu_domain = self.num_cpus_per_task // (len(numa_domains) *
+                                                    self.num_tasks_per_core)
         # result for daint:mc: '-w S0:100MB:18:1:2 -w S1:100MB:18:1:2'
         # format: -w domain:data_size:nthreads:chunk_size:stride
         # chunk_size and stride affect which cpus from <domain> are selected
@@ -145,7 +145,7 @@ class CPUBandwidthCrossSocket(MemBandwidthTest):
         self.num_cpus_per_task = self.system_num_cpus[partname]
         numa_domains = self.system_numa_domains[partname]
 
-        num_cpu_domain = (self.num_cpus_per_task /
+        num_cpu_domain = (self.num_cpus_per_task //
                           (len(numa_domains) * self.num_tasks_per_core))
 
         # daint:mc: '-w S0:100MB:18:1:2-0:S1 -w S1:100MB:18:1:2-0:S0'
