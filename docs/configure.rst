@@ -112,6 +112,7 @@ The basic properties of a partition are the following:
   For a complete list of the supported container platforms, see `here <config_reference.html#.systems[].partitions[].container_platforms[].type>`__.
 * ``max_jobs``: The maximum number of concurrent regression tests that may be active (i.e., not completed) on this partition.
   This option is relevant only when ReFrame executes with the `asynchronous execution policy <pipeline.html#execution-policies>`__.
+* ``prepare_cmds``: List of commands to be emitted before the environment modules are loaded.
 * ``resources``: This is a set of optional additional scheduler resources that the tests can access transparently.
   For more information, please have a look `here <config_reference.html#custom-job-scheduler-resources>`__.
 

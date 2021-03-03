@@ -389,12 +389,15 @@ Generally, ReFrame generates the job shell scripts using the following pattern:
 
    #!/bin/bash -l
    {job_scheduler_preamble}
+   {prepare_cmds}
    {test_environment}
    {prerun_cmds}
    {parallel_launcher} {executable} {executable_opts}
    {postrun_cmds}
 
 The ``job_scheduler_preamble`` contains the backend job scheduler directives that control the job allocation.
+The ``prepare_cmds`` is set in the partition configuration.
+It is used to specify a list of commands that need to be emitted before the environment modules are loaded.
 The ``test_environment`` are the necessary commands for setting up the environment of the test.
 These include any modules or environment variables set at the `system partition level <config_reference.html#system-partition-configuration>`__ or any `modules <regression_test_api.html#reframe.core.pipeline.RegressionTest.modules>`__ or `environment variables <regression_test_api.html#reframe.core.pipeline.RegressionTest.variables>`__ set at the test level.
 Then the commands specified in :attr:`prerun_cmds <reframe.core.pipeline.RegressionTest.prerun_cmds>` follow, while those specified in the :attr:`postrun_cmds <reframe.core.pipeline.RegressionTest.postrun_cmds>` come after the launch of the parallel job.
