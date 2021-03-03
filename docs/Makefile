@@ -8,7 +8,6 @@ SPHINXOPTS  =
 SPHINXBUILD =  -msphinx
 SPHINXPROJ  = ReFrame
 SOURCEDIR   = .
-BUILDDIR    = $(VERSION)
 RM          = /bin/rm -rf
 
 TARGET_DOCS := \
@@ -45,10 +44,10 @@ latest:
 
 clean:
 	@echo 'Removing directories'
-	-$(RM) $(TARGET_DOCS) doctrees
+	-$(RM) $(TARGET_DOCS) doctrees build_*
 
 $(TARGET_DOCS): Makefile
-	@$(PYTHON) $(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+	@$(PYTHON) $(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "build_$(@)" $(SPHINXOPTS) $(O)
 
 
 
