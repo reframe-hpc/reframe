@@ -830,10 +830,18 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             self._cdt_environ = env.Environment('__rfm_cdt_environ')
 
     @property
+    def param_hash(self):
+        return self._param_hash
+
+    @property
+    def param_hash_short(self):
+        return self._param_hash[:8] if self.param_hash else None
+
+    @property
     def unique_id(self):
         ret = type(self).__qualname__
-        if self._param_hash:
-            ret += '_' + self._param_hash[:8]
+        if self.param_hash:
+            ret += '_' + self.param_hash_short
 
         return ret
 
@@ -1018,11 +1026,14 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
            method may be called at any point of the test's lifetime.
         '''
         ret = self.name
+        if self.param_hash:
+            ret += f' (/{self.param_hash_short})'
+
         if self.current_partition:
-            ret += ' on %s' % self.current_partition.fullname
+            ret += f' on {self.current_partition.fullname}'
 
         if self.current_environ:
-            ret += ' using %s' % self.current_environ.name
+            ret += f' using {self.current_environ.name}'
 
         return ret
 

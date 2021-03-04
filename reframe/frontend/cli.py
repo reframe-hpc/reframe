@@ -55,9 +55,16 @@ def format_check(check, check_deps, detailed=False):
         else:
             return '<none>'
 
+    def fmt_name(check):
+        ret = f'- {check.name}'
+        if check.param_hash:
+            ret += f' (parameter hash: {check.param_hash_short})'
+
+        return ret
+
     location = inspect.getfile(type(check))
     if not detailed:
-        return f'- {check.name} (found in {location!r})'
+        return fmt_name(check)
 
     if check.num_tasks > 0:
         node_alloc_scheme = (f'standard ({check.num_tasks} task(s) -- '
@@ -85,7 +92,8 @@ def format_check(check, check_deps, detailed=False):
         ),
         'Dependencies (actual)': fmt_deps()
     }
-    lines = [f'- {check.name}:']
+
+    lines = [fmt_name(check) + ':']
     for prop, val in check_info.items():
         lines.append(f'    {prop}:')
         if isinstance(val, dict):
