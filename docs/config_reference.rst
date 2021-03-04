@@ -313,7 +313,9 @@ System Partition Configuration
    :required: No
    :default: ``[]``
 
-   List of commands to be emitted before the environment modules are loaded.
+   List of shell commands to be emitted before any environment loading commands are emitted.
+
+   .. versionadded:: 3.5.0
 
 
 .. js:attribute:: .systems[].partitions[].resources

@@ -115,7 +115,8 @@ def fake_job(make_job):
     return ret
 
 
-def prepare_job(job, command='hostname', pre_run=None, post_run=None,
+def prepare_job(job, command='hostname',
+                pre_run=None, post_run=None,
                 prepare_cmds=None):
     environs = [Environment(name='foo', modules=['testmod_foo'])]
     pre_run = pre_run or ['echo prerun']
