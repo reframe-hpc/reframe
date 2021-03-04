@@ -51,6 +51,10 @@ site_configuration = {
                     ],
                     'container_platforms': [
                         {
+                            'type': 'Sarus',
+                            'modules': ['sarus']
+                        },
+                        {
                             'type': 'Singularity',
                             'modules': ['singularity']
                         }
