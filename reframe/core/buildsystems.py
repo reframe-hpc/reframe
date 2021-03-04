@@ -657,6 +657,19 @@ class Autotools(ConfigureBasedBuildSystem):
 
 
 class EasyBuild(BuildSystem):
+    '''A build system for building code using EasyBuild.
+
+    The generated build command has the following form:
+
+    . code::
+
+    export EASYBUILD_BUILDPATH=:attr:`reframe.core.pipeline.RegressionTest.stagedir`/rfm_easybuild/build
+    export EASYBUILD_INSTALLPATH=`reframe.core.pipeline.RegressionTest.stagedir`/rfm_easybuild
+    export EASYBUILD_PREFIX=`reframe.core.pipeline.RegressionTest.stagedir`/rfm_easybuild
+    export EASYBUILD_SOURCEPATH=`reframe.core.pipeline.RegressionTest.stagedir`/rfm_easybuild
+    eb [EASYCONFIGS] [OPTIONS]
+    '''
+
     #: The list of easyconfigs
     #:
     #: :type: :class:`List[str]`
