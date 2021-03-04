@@ -785,7 +785,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     def __rfm_init__(self):
         self.descr = self.name
-        self.executable = os.path.join('.', self.name)
+        self.executable = os.path.join('.', self.unique_id)
         self._perfvalues = {}
 
         # Static directories of the regression check
