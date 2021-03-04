@@ -63,6 +63,14 @@ class TestVar(VarDirective):
     def __set_name__(self, owner, name):
         self.name = name
 
+    def __repr__(self):
+        if self.is_defined():
+            return str(self.default_value)
+        else:
+            raise ValueError(
+                f'variable {self.name} is not assigned a value'
+            )
+
     @property
     def default_value(self):
         # Variables must be returned by-value to prevent an instance from

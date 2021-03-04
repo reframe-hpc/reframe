@@ -40,13 +40,9 @@ class RegressionTestMeta(type):
             except KeyError as err:
                 try:
                     # Handle variable access
-                    var = self['_rfm_local_var_space'][key]
-                    if var.is_defined():
-                        return var.default_value
-                    else:
-                        raise ValueError(
-                            f'variable {key!r} is not assigned a value'
-                        )
+                    v = self['_rfm_local_var_space'][key]
+                    v.__set_name__(self, key)
+                    return v
 
                 except KeyError:
                     # Handle parameter access
