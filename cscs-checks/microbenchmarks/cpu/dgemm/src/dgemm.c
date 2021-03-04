@@ -49,8 +49,11 @@ int main(int argc, char* argv[])
     printf("%s: LOOP COUNT\t\t\t:\t%d \n", hostname, LOOP_COUNT);
     printf("\n");
 
+#pragma omp parallel for
     for (i=0; i<m*k ; ++i) A[i] = i%3+1;
+#pragma omp parallel for
     for (i=0; i<k*n ; ++i) B[i] = i%3+1;
+#pragma omp parallel for
     for (i=0; i<m*n ; ++i) C[i] = i%3+1;
 
     gflop = (2.0 * m * n * k + 3.0 * m * n) * 1E-9;
