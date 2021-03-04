@@ -674,13 +674,14 @@ ReFrame can be used also to test applications that run inside a container.
 First, we need to enable the container platform support in ReFrame's configuration and, specifically, at the partition configuration level:
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 38-58
-   :emphasize-lines: 15-20
+   :lines: 38-62
+   :emphasize-lines: 15-24
 
 For each partition, users can define a list of container platforms supported using the :js:attr:`container_platforms` `configuration parameter <config_reference.html#.systems[].partitions[].container_platforms>`__.
-In this case, we define the `Singularity <https://sylabs.io>`__ platform, for which we set the :js:attr:`modules` parameter in order to instruct ReFrame to load the ``singularity`` module, whenever it needs to run with this container platform.
+In this case, we define the `Sarus <https://github.com/eth-cscs/sarus>`__ platform for which we set the :js:attr:`modules` parameter in order to instruct ReFrame to load the ``sarus`` module, whenever it needs to run with this container platform.
+Similarly, we add an entry for the `Singularity <https://sylabs.io>`__ platform.
 
-The following test will use a Singularity container to run:
+The following parameterized test, will create two tests, one for each of the supported container platforms:
 
 .. code-block:: console
 
@@ -693,29 +694,66 @@ The following test will use a Singularity container to run:
 
 A container-based test can be written as :class:`RunOnlyRegressionTest <reframe.core.pipeline.RunOnlyRegressionTest>` that sets the :attr:`container_platform <reframe.core.pipeline.RegressionTest.container_platform>` attribute.
 This attribute accepts a string that corresponds to the name of the container platform that will be used to run the container for this test.
-In this case, the test will be using `Singularity <https://sylabs.io>`__ as a container platform.
 If such a platform is not `configured <config_reference.html#container-platform-configuration>`__ for the current system, the test will fail.
 
-As soon as the container platform to be used is defined, you need to specify the container image to use and the commands to run inside the container by setting the :attr:`image <reframe.core.containers.ContainerPlatform.image>` and the :attr:`commands <reframe.core.containers.ContainerPlatform.commands>` container platform attributes.
-These two attributes are mandatory for container-based checks.
+As soon as the container platform to be used is defined, you need to specify the container image to use by setting the :attr:`image <reframe.core.containers.ContainerPlatform.image>`.
+In the ``Singularity`` test variant, we add the ``docker://`` prefix to the image name, in order to instruct ``Singularity`` to pull the image from `DockerHub <https://hub.docker.com/>`__.
+The default command that the container runs can be overwritten by setting the :attr:`command <reframe.core.containers.ContainerPlatform.command>` attribute of the container platform.
+
+The :attr:`image <reframe.core.containers.ContainerPlatform.image>` is the only mandatory attribute for container-based checks.
 It is important to note that the :attr:`executable <reframe.core.pipeline.RegressionTest.executable>` and :attr:`executable_opts <reframe.core.pipeline.RegressionTest.executable_opts>` attributes of the actual test are ignored in case of container-based tests.
 
-ReFrame will run the container as follows:
+ReFrame will run the container according to the given platform as follows:
 
-.. code-block:: console
+.. code-block:: bash
 
-    singularity exec -B"/path/to/test/stagedir:/workdir" docker://ubuntu:18.04 bash -c 'cd rfm_workdir; pwd; ls; cat /etc/os-release'
+    # Sarus
+    sarus run --mount=type=bind,source="/path/to/test/stagedir",destination="/rfm_workdir" ubuntu:18.04 bash -c 'cat /etc/os-release | tee /rfm_workdir/release.txt'
 
-By default ReFrame will mount the stage directory of the test under ``/rfm_workdir`` inside the container and it will always prepend a ``cd`` command to that directory.
-The user commands are then run from that directory one after the other.
+    # Singularity
+    singularity exec -B"/path/to/test/stagedir:/rfm_workdir" docker://ubuntu:18.04 bash -c 'cat /etc/os-release | tee /rfm_workdir/release.txt'
+
+
+In the ``Sarus`` case, ReFrame will prepend the following command in order to pull the container image before running the container:
+
+.. code-block:: bash
+
+   sarus pull ubuntu:18.04
+
+
+This is the default behavior of ReFrame, which can be changed if pulling the image is not desired by setting the :attr:`pull_image <reframe.core.containers.ContainerPlatform.pull_image>` attribute to :class:`False`.
+By default ReFrame will mount the stage directory of the test under ``/rfm_workdir`` inside the container.
 Once the commands are executed, the container is stopped and ReFrame goes on with the sanity and performance checks.
-Users may also change the default mount point of the stage directory by using :attr:`workdir <reframe.core.pipeline.RegressionTest.container_platform.workdir>` attribute:
 Besides the stage directory, additional mount points can be specified through the :attr:`mount_points <reframe.core.pipeline.RegressionTest.container_platform.mount_points>` attribute:
 
 .. code-block:: python
 
     self.container_platform.mount_points = [('/path/to/host/dir1', '/path/to/container/mount_point1'),
                                             ('/path/to/host/dir2', '/path/to/container/mount_point2')]
+
+
+The container filesystem is ephemeral, therefore, ReFrame mounts the stage directory under ``/rfm_workdir`` inside the container where the user can copy artifacts as needed.
+These artifacts will therefore be available inside the stage directory after the container execution finishes.
+This is very useful if the artifacts are needed for the sanity or performance checks.
+If the copy is not performed by the default container command, the user can override this command by settings the :attr:`command <reframe.core.containers.ContainerPlatform.command>` attribute such as to include the appropriate copy commands.
+In the current test, the output of the ``cat /etc/os-release`` is available both in the standard output as well as in the ``release.txt`` file, since we have used the command:
+
+.. code-block:: bash
+
+    bash -c 'cat /etc/os-release | tee /rfm_workdir/release.txt'
+
+
+and ``/rfm_workdir`` corresponds to the stage directory on the host system.
+Therefore, the ``release.txt`` file can now be used in the subsequent sanity checks:
+
+.. code-block:: python
+
+   os_release_pattern = r'18.04.\d+ LTS \(Bionic Beaver\)'
+   self.sanity_patterns = sn.all([
+       sn.assert_found(os_release_pattern, 'release.txt'),
+       sn.assert_found(os_release_pattern, self.stdout)
+   ])
+
 
 For a complete list of the available attributes of a specific container platform, please have a look at the :ref:`container-platforms` section of the :doc:`regression_test_api` guide.
 On how to configure ReFrame for running containerized tests, please have a look at the :ref:`container-platform-configuration` section of the :doc:`config_reference`.
