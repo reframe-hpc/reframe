@@ -16,6 +16,7 @@ class GromacsBaseCheck(rfm.RunOnlyRegressionTest):
             self.valid_prog_environs = ['cpeGNU']
         else:
             self.valid_prog_environs = ['builtin']
+
         self.executable = 'gmx_mpi'
 
         # Reset sources dir relative to the SCS apps prefix
