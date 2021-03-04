@@ -344,6 +344,8 @@ class GpuP2PLatencyP2P(GpuP2PLatency):
                     'average_latency': (760, None, 0.1, 'clock cycles')
                 },
                 'ault:amdvega': {
-                    'average_latency': (3550, None, 0.1, 'clock cycles')
+                    'average_latency': (
+                        3550, None, 0.1, 'clock cycles'
+                    )
                 },
             }

@@ -7,6 +7,10 @@
 #include <memory>
 #include <algorithm>
 #include <queue>
+#include <thread>
+#include <mutex>
+#include <vector>
+#include <functional>
 
 /*
  ~~ GPU Linked list pointer chase algorithm ~~
@@ -103,6 +107,21 @@ uint64_t general_pointer_chase(int local_device, int remote_device, int init_mod
    return l.timer;
 }
 
+std::mutex mtx;
+template < class L >
+void loc_ptr_ch(int gpu_id, int init_mode, size_t num_nodes, size_t stride, size_t num_jumps, char * nid)
+{
+  /*
+   * Low-level thread-safe local pointer chase function.
+   */
+  uint64_t total_cycles = general_pointer_chase< L >(gpu_id, gpu_id, init_mode, num_nodes, stride, num_jumps);
+
+  // Print the timings of the pointer chase
+  {
+    std::lock_guard<std::mutex> lg(mtx);
+    printf("[%s] On device %d, the chase took on average %d cycles per node jump.\n", nid, gpu_id, total_cycles/num_jumps);
+  }
+}
 
 template < class List >
 void local_pointer_chase(int num_devices, int init_mode, size_t num_nodes, size_t stride, size_t num_jumps, char * nid)
@@ -110,13 +129,18 @@ void local_pointer_chase(int num_devices, int init_mode, size_t num_nodes, size_
   /*
    * Specialised pointer chase on a single device.
    */
+  std::vector<std::thread> threads;
   for (int gpu_id = 0; gpu_id < num_devices; gpu_id++)
   {
-    uint64_t total_cycles = general_pointer_chase< List >(gpu_id, gpu_id, init_mode, num_nodes, stride, num_jumps);
-
-    // Print the timings of the pointer chase
-    printf("[%s] On device %d, the chase took on average %d cycles per node jump.\n", nid, gpu_id, total_cycles/num_jumps);
+    threads.push_back(std::thread(loc_ptr_ch<List>,
+                                  gpu_id, init_mode,
+                                  num_nodes, stride, num_jumps, nid
+                     )
+    );
   }
+
+  // Join all threads
+  std::for_each(threads.begin(), threads.end(), std::mem_fn(&std::thread::join));
 }
 
 
