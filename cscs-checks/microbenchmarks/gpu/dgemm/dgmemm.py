@@ -45,21 +45,16 @@ class GPUdgemmTest(rfm.RegressionTest):
             }
         }
 
-        self.maintainers = ['JO']
+        self.maintainers = ['JO', 'SK']
         self.tags = {'benchmark'}
-
-    @property
-    @sn.sanity_function
-    def num_tasks_assigned(self):
-        return self.job.num_tasks
 
     @sn.sanity_function
     def assert_num_gpus(self):
         return sn.assert_eq(
             sn.count(sn.findall(r'^\s*\[[^\]]*\]\s*Test passed', self.stdout)),
-            self.num_tasks_assigned)
+            sn.getattr(self.job, 'num_tasks'))
 
-    @rfm.run_after('setup')
+    @rfm.run_before('compile')
     def select_makefile(self):
         cp = self.current_partition.fullname
         if cp == 'ault:amdvega':
@@ -67,7 +62,7 @@ class GPUdgemmTest(rfm.RegressionTest):
         else:
             self.build_system.makefile = 'makefile.cuda'
 
-    @rfm.run_after('setup')
+    @rfm.run_before('compile')
     def set_gpu_arch(self):
         cp = self.current_partition.fullname
 

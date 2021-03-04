@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import reframe.utility.sanity as sn
+import reframe.utility.typecheck as typ
 import reframe as rfm
 
 import os
@@ -13,11 +14,11 @@ class PchaseGlobal(rfm.RegressionMixin):
     '''Handy class to store common test settings.
     '''
     single_device_systems = variable(
-        list,
+        typ.List[str],
         value=['daint:gpu', 'dom:gpu']
     )
     multi_device_systems = variable(
-        list,
+        typ.List[str],
         value=[
             'ault:intelv100', 'ault:amdv100',
             'ault:amda100', 'ault:amdvega', 'tsa:cn'
@@ -39,7 +40,7 @@ class CompileGpuPointerChase(rfm.CompileOnlyRegressionTest, PchaseGlobal):
         self.num_tasks_per_node = 1
         self.postbuild_cmds = ['ls .']
         self.sanity_patterns = sn.assert_found(r'pChase.x', self.stdout)
-        self.maintainers = ['JO']
+        self.maintainers = ['JO', 'SK']
         self.tags = {'benchmark'}
 
     @rfm.run_after('setup')
@@ -111,7 +112,7 @@ class GpuPointerChaseBase(rfm.RunOnlyRegressionTest, PchaseGlobal):
         self.num_tasks_per_node = 1
         self.exclusive_access = True
         self.sanity_patterns = self.do_sanity_check()
-        self.maintainers = ['JO']
+        self.maintainers = ['JO', 'SK']
         self.tags = {'benchmark'}
 
     @rfm.require_deps
@@ -160,6 +161,7 @@ class GpuPointerChaseBase(rfm.RunOnlyRegressionTest, PchaseGlobal):
 
 class GpuPointerChaseSingle(GpuPointerChaseBase):
     '''Base class for the single-GPU latency tests.'''
+
     def __init__(self):
         super().__init__()
         self.valid_systems = (
@@ -172,6 +174,7 @@ class GpuPointerChaseSingle(GpuPointerChaseBase):
                 r'cycles per node jump.', self.stdout, 1, int)
             ),
         }
+
 
 @rfm.simple_test
 class GpuL1Latency(GpuPointerChaseSingle):
@@ -200,7 +203,7 @@ class GpuL1Latency(GpuPointerChaseSingle):
             'ault:amdv100': {
                 'average_latency': (28, None, 0.1, 'clock cycles')
             },
-           'ault:amdvega': {
+            'ault:amdvega': {
                 'average_latency': (140, None, 0.1, 'clock cycles')
             },
         }
@@ -233,10 +236,11 @@ class GpuL2Latency(GpuPointerChaseSingle):
             'ault:amdv100': {
                 'average_latency': (215, None, 0.1, 'clock cycles')
             },
-           'ault:amdvega': {
+            'ault:amdvega': {
                 'average_latency': (290, None, 0.1, 'clock cycles')
             },
         }
+
 
 @rfm.simple_test
 class GpuDRAMLatency(GpuPointerChaseSingle):
@@ -266,7 +270,7 @@ class GpuDRAMLatency(GpuPointerChaseSingle):
             'ault:amdv100': {
                 'average_latency': (425, None, 0.1, 'clock cycles')
             },
-           'ault:amdvega': {
+            'ault:amdvega': {
                 'average_latency': (625, None, 0.1, 'clock cycles')
             },
         }
@@ -324,7 +328,7 @@ class GpuP2PLatencyP2P(GpuP2PLatency):
                 'ault:amdv100': {
                     'average_latency': (760, None, 0.1, 'clock cycles')
                 },
-               'ault:amdvega': {
+                'ault:amdvega': {
                     'average_latency': (315, None, 0.1, 'clock cycles')
                 },
             }
@@ -339,7 +343,7 @@ class GpuP2PLatencyP2P(GpuP2PLatency):
                 'ault:amdv100': {
                     'average_latency': (760, None, 0.1, 'clock cycles')
                 },
-               'ault:amdvega': {
+                'ault:amdvega': {
                     'average_latency': (3550, None, 0.1, 'clock cycles')
                 },
             }
