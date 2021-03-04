@@ -6,7 +6,6 @@
 import os
 import pytest
 import re
-import sys
 
 import reframe as rfm
 import reframe.core.runtime as rt

@@ -22,7 +22,6 @@ import traceback
 import reframe.utility.osext as osext
 from reframe.core.exceptions import ReframeSyntaxError, user_frame
 from reframe.core.logging import getlogger
-from reframe.core.parameters import TestParam
 from reframe.core.pipeline import RegressionTest
 from reframe.utility.versioning import VersionValidator
 
