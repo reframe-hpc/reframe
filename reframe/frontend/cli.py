@@ -72,6 +72,7 @@ def format_check(check, check_deps, detailed=False):
 
     check_info = {
         'Description': check.descr,
+        'Hash': check.hash_long,
         'Environment modules': fmt_list(check.modules),
         'Location': location,
         'Maintainers': fmt_list(check.maintainers),
@@ -722,7 +723,9 @@ def main():
                 testcases = filter(filters.have_not_hash(h), testcases)
 
         if hashes:
-            testcases = filter(filters.have_hash(hashes), testcases)
+            testcases = filter(
+                filters.have_hash('|'.join(f'^{h}' for h in hashes)), testcases
+            )
 
         # Filter test cases by name
         if exclude_names:
