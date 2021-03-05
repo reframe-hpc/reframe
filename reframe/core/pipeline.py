@@ -846,10 +846,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         return ret
 
     def _set_param_hash(self, params):
-        obj = {}
-        for name, value, _ in params:
-            obj[name] = value
-
+        obj = {
+            'test': type(self).__qualname__,
+            'params': {name: value for name, value, _ in params}
+        }
         h = hashlib.sha256()
         h.update(bytes(jsonext.dumps(obj), encoding='utf-8'))
         self._param_hash = h.hexdigest()

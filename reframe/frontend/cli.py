@@ -58,7 +58,7 @@ def format_check(check, check_deps, detailed=False):
     def fmt_name(check):
         ret = f'- {check.name}'
         if check.param_hash:
-            ret += f' (parameter hash: {check.param_hash_short})'
+            ret += f' (test hash: {check.param_hash_short})'
 
         return ret
 
@@ -705,14 +705,38 @@ def main():
         testcases = testcases_all
         printer.verbose(f'Generated {len(testcases)} test case(s)')
 
+        def split_names(nameopt):
+            '''Splits names specified in `-n` and `-x` options to actual names
+            or hashes'''
+            names, hashes = [], []
+            for n in nameopt:
+                if n.startswith('/'):
+                    hashes.append(n[1:])
+                else:
+                    names.append(n)
+
+            return names, hashes
+
+        exclude_names, exclude_hashes = split_names(options.exclude_names)
+        names, hashes = split_names(options.names)
+
+        # Filter test cases by hash
+        if exclude_hashes:
+            for h in exclude_hashes:
+                testcases = filter(filters.have_not_hash(h), testcases)
+
+        if hashes:
+            for h in hashes:
+                testcases = filter(filters.have_hash(h), testcases)
+
         # Filter test cases by name
-        if options.exclude_names:
-            for name in options.exclude_names:
+        if exclude_names:
+            for name in exclude_names:
                 testcases = filter(filters.have_not_name(name), testcases)
 
-        if options.names:
+        if names:
             testcases = filter(
-                filters.have_name('|'.join(options.names)), testcases
+                filters.have_name('|'.join(names)), testcases
             )
 
         testcases = list(testcases)
