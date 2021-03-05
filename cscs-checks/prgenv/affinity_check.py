@@ -43,10 +43,12 @@ class AffinityTestBase(rfm.RegressionTest):
 
     def __init__(self):
         self.valid_systems = ['daint:gpu', 'daint:mc',
-                              'dom:gpu', 'dom:mc', 'eiger:mc',
+                              'dom:gpu', 'dom:mc',
+                              'eiger:mc', 'pilatus:mc',
                               'ault:amdv100']
         self.valid_prog_environs = [
-            'PrgEnv-gnu', 'PrgEnv-cray', 'PrgEnv-intel', 'PrgEnv-pgi'
+            'PrgEnv-aocc', 'PrgEnv-cray', 'PrgEnv-gnu', 'PrgEnv-intel',
+            'PrgEnv-pgi'
         ]
         self.build_system = 'Make'
         self.build_system.options = ['-C affinity', 'MPI=1']
@@ -68,6 +70,7 @@ class AffinityTestBase(rfm.RegressionTest):
             'daint:gpu':  'topo_dom_gpu.json',
             'daint:mc':   'topo_dom_mc.json',
             'eiger:mc':   'topo_eiger_mc.json',
+            'pilatus:mc': 'topo_eiger_mc.json',
             'ault:amdv100': 'topo_ault_amdv100.json',
         }
 

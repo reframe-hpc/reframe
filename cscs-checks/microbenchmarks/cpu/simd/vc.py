@@ -77,6 +77,9 @@ class VcSimdTest(rfm.RegressionTest):
             'eiger:mc': {
                 'speedup': (1.32, -0.2, 0.2, '')
             },
+            'pilatus:mc': {
+                'speedup': (1.32, -0.2, 0.2, '')
+            },
             '*': {
                 'speedup': (1.0, None, None, '')
             }
