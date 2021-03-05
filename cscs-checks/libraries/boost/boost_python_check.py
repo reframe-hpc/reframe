@@ -12,8 +12,13 @@ class BoostPythonBindingsTest(rfm.RegressionTest):
     def __init__(self):
         self.descr = f'Test for Boost with Python bindings'
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'eiger:mc']
-        self.valid_prog_environs = ['builtin']
+                              'eiger:mc', 'pilatus:mc']
+
+        if self.current_system.name == 'pilatus':
+            self.valid_prog_environs = ['cpeGNU']
+        else:
+            self.valid_prog_environs = ['builtin']
+
         self.modules = [f'Boost']
         self.executable = f'python3 hello.py'
         self.sanity_patterns = sn.assert_found('hello, world', self.stdout)
