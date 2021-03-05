@@ -29,7 +29,7 @@ class ScaLAPACKTest(rfm.RegressionTest):
         self.tags = {'production', 'external-resources'}
 
 
-@rfm.required_version('>=2.14')
+@rfm.required_version('>=2.14.0')
 @rfm.parameterized_test(['static'], ['dynamic'])
 class ScaLAPACKSanity(ScaLAPACKTest):
     def __init__(self, linkage):
