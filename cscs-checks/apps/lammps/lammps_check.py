@@ -99,7 +99,7 @@ class LAMMPSCPUCheck(LAMMPSBaseCheck):
         if self.current_system.name in ['eiger', 'pilatus']:
             self.executable = 'lmp_mpi'
             self.executable_opts = ['-in in.lj.cpu']
-        else: 
+        else:
             self.executable = 'lmp_omp'
             self.executable_opts = ['-sf omp', '-pk omp 1', '-in in.lj.cpu']
 
