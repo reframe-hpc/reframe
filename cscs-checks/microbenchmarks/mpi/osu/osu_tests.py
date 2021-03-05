@@ -7,7 +7,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.required_version('>=2.16')
+@rfm.required_version('>=2.16.0')
 @rfm.parameterized_test(['production'])
 class AlltoallTest(rfm.RegressionTest):
     def __init__(self, variant):
@@ -73,7 +73,7 @@ class FlexAlltoallTest(rfm.RegressionTest):
         self.tags = {'diagnostic', 'ops', 'benchmark', 'craype'}
 
 
-@rfm.required_version('>=2.16')
+@rfm.required_version('>=2.16.0')
 @rfm.parameterized_test(['small'], ['large'])
 class AllreduceTest(rfm.RegressionTest):
     def __init__(self, variant):
@@ -156,13 +156,13 @@ class P2PBaseTest(rfm.RegressionTest):
         }
 
 
-@rfm.required_version('>=2.16')
+@rfm.required_version('>=2.16.0')
 @rfm.simple_test
 class P2PCPUBandwidthTest(P2PBaseTest):
     def __init__(self):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'arolla:cn', 'tsa:cn', 'eiger:mc']
+                              'arolla:cn', 'tsa:cn', 'eiger:mc', 'pilatus:mc']
         self.executable = './p2p_osu_bw'
         self.executable_opts = ['-x', '100', '-i', '1000']
         self.reference = {
@@ -181,6 +181,9 @@ class P2PCPUBandwidthTest(P2PBaseTest):
             'eiger:mc': {
                 'bw': (12240.0, -0.10, None, 'MB/s')
             },
+            'pilatus:mc': {
+                'bw': (12240.0, -0.10, None, 'MB/s')
+            },
             # keeping as reference:
             # 'monch:compute': {
             #     'bw': (6317.84, -0.15, None, 'MB/s')
@@ -192,13 +195,13 @@ class P2PCPUBandwidthTest(P2PBaseTest):
         }
 
 
-@rfm.required_version('>=2.16')
+@rfm.required_version('>=2.16.0')
 @rfm.simple_test
 class P2PCPULatencyTest(P2PBaseTest):
     def __init__(self):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'arolla:cn', 'tsa:cn', 'eiger:mc']
+                              'arolla:cn', 'tsa:cn', 'eiger:mc', 'pilatus:mc']
         self.executable_opts = ['-x', '100', '-i', '1000']
 
         self.executable = './p2p_osu_latency'
@@ -218,6 +221,9 @@ class P2PCPULatencyTest(P2PBaseTest):
             'eiger:mc': {
                 'latency': (2.33, None, 0.15, 'us')
             },
+            'pilatus:mc': {
+                'latency': (2.33, None, 0.15, 'us')
+            },
             # keeping as reference:
             # 'monch:compute': {
             #     'latency': (1.27, None, 0.1, 'us')
@@ -229,7 +235,7 @@ class P2PCPULatencyTest(P2PBaseTest):
         }
 
 
-@rfm.required_version('>=2.16')
+@rfm.required_version('>=2.16.0')
 @rfm.simple_test
 class G2GBandwidthTest(P2PBaseTest):
     def __init__(self):
@@ -267,7 +273,7 @@ class G2GBandwidthTest(P2PBaseTest):
         self.build_system.cppflags = ['-D_ENABLE_CUDA_']
 
 
-@rfm.required_version('>=2.16')
+@rfm.required_version('>=2.16.0')
 @rfm.simple_test
 class G2GLatencyTest(P2PBaseTest):
     def __init__(self):
