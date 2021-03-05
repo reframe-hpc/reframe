@@ -16,7 +16,7 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         self.descr = f'Jacobi (without tool) {lang} check'
         self.name = f'{type(self).__name__}_{lang.replace("+", "p")}'
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'eiger:mc']
+                              'eiger:mc', 'pilatus:mc']
         self.valid_prog_environs = [
             'PrgEnv-aocc',
             'PrgEnv-cray',
@@ -25,12 +25,12 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
             'PrgEnv-pgi',
         ]
         self.prgenv_flags = {
+            'PrgEnv-aocc': ['-O2', '-g', '-fopenmp'],
             'PrgEnv-cray': ['-O2', '-g',
                             '-homp' if lang == 'F90' else '-fopenmp'],
             'PrgEnv-gnu': ['-O2', '-g', '-fopenmp'],
             'PrgEnv-intel': ['-O2', '-g', '-qopenmp'],
-            'PrgEnv-pgi': ['-O2', '-g', '-mp'],
-            'PrgEnv-aocc': ['-O2', '-g', '-fopenmp'],
+            'PrgEnv-pgi': ['-O2', '-g', '-mp']
         }
         self.sourcesdir = os.path.join('src', lang)
         self.build_system = 'Make'
@@ -60,7 +60,7 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
             rf' available at {url}'
         )
         self.postrun_cmds += [f'echo "{readme_str}"']
-        if self.current_system.name in {'dom', 'daint', 'eiger'}:
+        if self.current_system.name in {'dom', 'daint', 'eiger', 'pilatus'}:
             # get general info about the environment:
             self.prerun_cmds += ['module list']
         self.perf_patterns = {
@@ -99,7 +99,7 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
 
     @rfm.run_before('compile')
     def alps_fix_aocc(self):
-        if self.current_partition.fullname == 'eiger:mc':
+        if self.current_partition.fullname in ['eiger:mc', 'pilatus:mc']:
             self.prebuild_cmds += ['module rm cray-libsci']
 
     @rfm.run_before('sanity')
@@ -114,14 +114,14 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
 
         # OpenMP support varies between compilers:
         self.openmp_versions = {
-            'PrgEnv-gnu': {'C++': 201511, 'F90': 201511},
-            'PrgEnv-pgi': {'C++': 201307, 'F90': 201307},
-            'PrgEnv-intel': {'C++': 201611, 'F90': 201611},
             'PrgEnv-aocc': {'C++': 201107, 'F90': 201307},
             'PrgEnv-cray': {
                 'C++': 201511 if cce_version == 10 else 201811,
                 'F90': 201511,
             },
+            'PrgEnv-gnu': {'C++': 201511, 'F90': 201511},
+            'PrgEnv-intel': {'C++': 201611, 'F90': 201611},
+            'PrgEnv-pgi': {'C++': 201307, 'F90': 201307}
         }
         found_version = sn.extractsingle(r'OpenMP-\s*(\d+)', self.stdout, 1,
                                          int)
