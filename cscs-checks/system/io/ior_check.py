@@ -27,7 +27,7 @@ class IorCheck(rfm.RegressionTest):
                 'valid_systems': ['eiger:mc', 'pilatus:mc'],
                 'eiger': {
                     'num_tasks': 10,
-                }
+                },
                 'pilatus': {
                     'num_tasks': 10,
                 }
