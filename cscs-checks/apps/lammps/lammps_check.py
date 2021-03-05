@@ -96,7 +96,7 @@ class LAMMPSCPUCheck(LAMMPSBaseCheck):
     def __init__(self, scale, variant):
         super().__init__()
         self.valid_systems = ['daint:mc', 'eiger:mc', 'pilatus:mc']
-        if self.current_system.name == 'pilatus':
+        if self.current_system.name in ['eiger', 'pilatus']:
             self.executable = 'lmp_mpi'
             self.executable_opts = ['-in in.lj.cpu']
         else: 
@@ -121,13 +121,13 @@ class LAMMPSCPUCheck(LAMMPSBaseCheck):
                 'small': {
                     'dom:mc': {'perf': (4394, -0.05, None, 'timesteps/s')},
                     'daint:mc': {'perf': (3824, -0.10, None, 'timesteps/s')},
-                    'eiger:mc': {'perf': (5300, -0.05, None, 'timesteps/s')},
-                    'pilatus:mc': {'perf': (5300, -0.05, None, 'timesteps/s')}
+                    'eiger:mc': {'perf': (4500, -0.10, None, 'timesteps/s')},
+                    'pilatus:mc': {'perf': (5000, -0.10, None, 'timesteps/s')}
                 },
                 'large': {
                     'daint:mc': {'perf': (5310, -0.65, None, 'timesteps/s')},
-                    'eiger:mc': {'perf': (7100, -0.05, None, 'timesteps/s')},
-                    'pilatus:mc': {'perf': (7100, -0.05, None, 'timesteps/s')}
+                    'eiger:mc': {'perf': (6500, -0.10, None, 'timesteps/s')},
+                    'pilatus:mc': {'perf': (7500, -0.10, None, 'timesteps/s')}
                 }
             },
         }
