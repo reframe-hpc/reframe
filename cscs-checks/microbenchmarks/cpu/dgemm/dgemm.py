@@ -7,7 +7,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.required_version('>=2.16-dev0')
+@rfm.required_version('>=2.16.0-dev0')
 @rfm.simple_test
 class DGEMMTest(rfm.RegressionTest):
     def __init__(self):
@@ -19,12 +19,12 @@ class DGEMMTest(rfm.RegressionTest):
         self.perf_patterns = {}
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                               'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn',
-                              'eiger:mc']
+                              'eiger:mc', 'pilatus:mc']
         if self.current_system.name in ['daint', 'dom']:
             self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel']
         elif self.current_system.name in ['arolla', 'tsa']:
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
-        elif self.current_system.name in ['eiger']:
+        elif self.current_system.name in ['eiger', 'pilatus']:
             self.valid_prog_environs = ['PrgEnv-gnu']
         else:
             self.valid_prog_environs = []
@@ -40,6 +40,7 @@ class DGEMMTest(rfm.RegressionTest):
             'dom:gpu': (300.0, -0.15, None, 'Gflop/s'),
             'dom:mc': (1040.0, -0.15, None, 'Gflop/s'),
             'eiger:mc': (3200.0, -0.15, None, 'Gflop/s'),
+            'pilatus:mc': (3200.0, -0.15, None, 'Gflop/s'),
         }
         self.maintainers = ['AJ', 'VH']
         self.tags = {'benchmark', 'diagnostic', 'craype'}
@@ -73,7 +74,7 @@ class DGEMMTest(rfm.RegressionTest):
             self.num_cpus_per_task = 16
         elif self.current_partition.fullname in ['arolla:pn', 'tsa:pn']:
             self.num_cpus_per_task = 40
-        elif self.current_partition.fullname in ['eiger:mc']:
+        elif self.current_partition.fullname in ['eiger:mc', 'pilatus:mc']:
             self.num_cpus_per_task = 128
 
         if self.num_cpus_per_task:
