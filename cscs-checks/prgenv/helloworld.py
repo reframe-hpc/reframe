@@ -26,10 +26,11 @@ class HelloWorldBaseTest(rfm.RegressionTest):
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                               'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn']
         if linkage == 'dynamic':
-            self.valid_systems.append('eiger:mc')
+            self.valid_systems += ['eiger:mc', 'pilatus:mc']
 
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-cray_classic',
-                                    'PrgEnv-intel', 'PrgEnv-gnu', 'PrgEnv-pgi',
+        self.valid_prog_environs = ['PrgEnv-aocc', 'PrgEnv-cray', 
+                                    'PrgEnv-cray_classic', 'PrgEnv-gnu',
+                                    'PrgEnv-intel', 'PrgEnv-pgi',
                                     'PrgEnv-gnu-nocuda', 'PrgEnv-pgi-nocuda']
 
         if self.current_system.name in ['arolla', 'tsa']:
