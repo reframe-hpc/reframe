@@ -56,11 +56,7 @@ def format_check(check, check_deps, detailed=False):
             return '<none>'
 
     def fmt_name(check):
-        ret = f'- {check.name}'
-        if check.param_hash:
-            ret += f' (test hash: {check.param_hash_short})'
-
-        return ret
+        return f'- {check.name} (/{check.hash_short})'
 
     location = inspect.getfile(type(check))
     if not detailed:
@@ -726,8 +722,7 @@ def main():
                 testcases = filter(filters.have_not_hash(h), testcases)
 
         if hashes:
-            for h in hashes:
-                testcases = filter(filters.have_hash(h), testcases)
+            testcases = filter(filters.have_hash(hashes), testcases)
 
         # Filter test cases by name
         if exclude_names:

@@ -178,10 +178,10 @@ class ParamSpace(namespaces.Namespace):
         '''
 
         # Set the values of the test parameters (if any)
+        injected = []
         if use_params and self.params:
             try:
                 # Consume the parameter space iterator
-                injected = []
                 param_values = next(self.unique_iter)
                 for index, key in enumerate(self.params):
                     setattr(obj, key, param_values[index])
@@ -201,6 +201,8 @@ class ParamSpace(namespaces.Namespace):
             # Otherwise init the params as None
             for key in self.params:
                 setattr(obj, key, None)
+
+        obj.params_inserted(injected)
 
     def __iter__(self):
         '''Create a generator object to iterate over the parameter space

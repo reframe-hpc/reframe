@@ -21,6 +21,7 @@ import itertools
 import numbers
 import os
 import shutil
+import sys
 
 import reframe.core.environments as env
 import reframe.core.fields as fields
@@ -741,7 +742,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: :type: boolean : :default: :class:`True`
     build_locally = variable(bool, value=True)
 
-    _param_hash = variable(str, type(None), value=None)
+    # The unique ID of the test: a SHA256 hash of the class name and the
+    # test's parameters if any
+    _unique_id = variable(bytes, type(None), value=None)
 
     def __new__(cls, *args, _rfm_use_params=False, **kwargs):
         obj = super().__new__(cls)
@@ -785,7 +788,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     def __rfm_init__(self):
         self.descr = self.name
-        self.executable = os.path.join('.', self.unique_id)
+        self.executable = os.path.join('.', self.unique_name)
         self._perfvalues = {}
 
         # Static directories of the regression check
@@ -829,30 +832,17 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             # Just an empty environment
             self._cdt_environ = env.Environment('__rfm_cdt_environ')
 
-    @property
-    def param_hash(self):
-        return self._param_hash
+    def _set_unique_id(self, params):
+        if self._unique_id is not None:
+            return
 
-    @property
-    def param_hash_short(self):
-        return self._param_hash[:8] if self.param_hash else None
-
-    @property
-    def unique_id(self):
-        ret = type(self).__qualname__
-        if self.param_hash:
-            ret += '_' + self.param_hash_short
-
-        return ret
-
-    def _set_param_hash(self, params):
         obj = {
             'test': type(self).__qualname__,
             'params': {name: value for name, value, _ in params}
         }
         h = hashlib.sha256()
         h.update(bytes(jsonext.dumps(obj), encoding='utf-8'))
-        self._param_hash = h.hexdigest()
+        self._unique_id = h.digest()
 
     def params_inserted(self, params):
         '''Callback that is called when all parameters have been injected in
@@ -866,8 +856,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         :meta private:
         '''
 
-        # Calculate the parameter hash
-        self._set_param_hash(params)
+        # Calculate the unique id
+        self._set_unique_id(params)
 
         # Generate the test name
         self.name = type(self).__qualname__
@@ -876,6 +866,22 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 value = fmtval(value)
 
             self.name += f'%{name}={value}'
+
+    @property
+    def hash_long(self):
+        return self._unique_id.hex()
+
+    @property
+    def hash_short(self):
+        return self.hash_long[:8]
+
+    @property
+    def unique_name(self):
+        ret = type(self).__qualname__
+        if not type(self).param_space.is_empty():
+            ret += f'_{self.hash_short}'
+
+        return ret
 
     @property
     def current_environ(self):
@@ -1025,10 +1031,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
            you use the :class:`RegressionTest`'s attributes, because this
            method may be called at any point of the test's lifetime.
         '''
-        ret = self.name
-        if self.param_hash:
-            ret += f' (/{self.param_hash_short})'
 
+        ret = f'{self.name} (/{self.hash_short})'
         if self.current_partition:
             ret += f' on {self.current_partition.fullname}'
 
@@ -1072,11 +1076,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             runtime = rt.runtime()
             self._stagedir = runtime.make_stagedir(
                 self.current_system.name, self._current_partition.name,
-                self._current_environ.name, self.unique_id
+                self._current_environ.name, self.unique_name
             )
             self._outputdir = runtime.make_outputdir(
                 self.current_system.name, self._current_partition.name,
-                self._current_environ.name, self.unique_id
+                self._current_environ.name, self.unique_name
             )
         except OSError as e:
             raise PipelineError('failed to set up paths') from e
@@ -1840,10 +1844,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         if not isinstance(other, RegressionTest):
             return NotImplemented
 
-        return self.unique_id == other.unique_id
+        return self._unique_id == other._unique_id
 
     def __hash__(self):
-        return hash(self.unique_id)
+        return int.from_bytes(self._unique_id[:4], sys.byteorder)
 
     def __rfm_json_decode__(self, json):
         # 'tags' are decoded as list, so we convert them to a set

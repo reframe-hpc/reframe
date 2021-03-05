@@ -157,20 +157,14 @@ class CleanupFailTest(rfm.RunOnlyRegressionTest):
 
 
 class SleepCheck(BaseFrontendCheck):
-    _next_id = 0
+    sleep_time = parameter()
 
-    def __init__(self, sleep_time):
+    def __init__(self):
         super().__init__()
-
-        # Simulate a parameterized test, so as to get a proper unique test id
-        self.params_inserted([('id', self._next_id, None),
-                              ('sleep_time', sleep_time, None)])
-        print(self.name, self.unique_id)
         self.sourcesdir = None
-        self.sleep_time = sleep_time
         self.executable = 'python3'
         self.executable_opts = [
-            '-c "from time import sleep; sleep(%s)"' % sleep_time
+            '-c "from time import sleep; sleep(%s)"' % self.sleep_time
         ]
         print_timestamp = (
             "python3 -c \"from datetime import datetime; "
@@ -180,7 +174,6 @@ class SleepCheck(BaseFrontendCheck):
         self.sanity_patterns = sn.assert_found(r'.*', self.stdout)
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
-        SleepCheck._next_id += 1
 
 
 class SleepCheckPollFail(SleepCheck, special=True):

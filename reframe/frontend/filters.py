@@ -15,6 +15,10 @@ def re_compile(patt):
         raise ReframeError(f'invalid regex: {patt!r}')
 
 
+def have_hash(hashes):
+    pass
+
+
 def have_name(patt):
     regex = re_compile(patt)
 
