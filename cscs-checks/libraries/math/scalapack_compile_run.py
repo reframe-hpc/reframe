@@ -15,10 +15,10 @@ class ScaLAPACKTest(rfm.RegressionTest):
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'scalapack')
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:mc', 'dom:gpu']
-        if self.linkage == 'dynamic':
-            self.valid_systems.append('eiger:mc')
+        if linkage == 'dynamic':
+            self.valid_systems += ['eiger:mc', 'pilatus:mc']
 
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
+        self.valid_prog_environs = ['PrgEnv-aocc', 'PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel']
         self.num_tasks = 16
         self.num_tasks_per_node = 8
