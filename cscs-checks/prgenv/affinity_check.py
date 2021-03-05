@@ -41,9 +41,9 @@ class AffinityTestBase(rfm.RegressionTest):
     # }
     system = variable(dict, value={})
 
-    valid_systems = ['daint:gpu', 'daint:mc',
-                     'dom:gpu', 'dom:mc', 'eiger:mc',
-                     'ault:amdv100'
+    valid_systems = [
+        'daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc', 'eiger:mc',
+        'ault:amdv100'
     ]
     valid_prog_environs = [
         'PrgEnv-gnu', 'PrgEnv-cray', 'PrgEnv-intel', 'PrgEnv-pgi'
@@ -178,6 +178,7 @@ class AffinityTestBase(rfm.RegressionTest):
         '''Extract the data from the affinity tool.'''
 
         re_aff_cpus = r'CPU affinity: \[\s+(?P<cpus>[\d+\s+]+)\]'
+
         def parse_cpus(x):
             return sorted([int(xi) for xi in x.split()])
 
@@ -467,7 +468,7 @@ class ConsecutiveSocketFilling(AffinityTestBase):
                 next(iter(cpus_present)), by='socket'
             )
             if (not all(cpu in cpuset_by_socket for cpu in cpus_present) and
-                len(cpuset_by_socket)==len(cpus_present)):
+                len(cpuset_by_socket) == len(cpus_present)):
                 raise SanityError(
                     f'socket {socket_number} not filled in order'
                 )
