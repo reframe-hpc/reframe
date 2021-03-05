@@ -14,12 +14,9 @@ class UlimitCheck(rfm.RegressionTest):
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                               'eiger:mc', 'pilatus:mc']
   
-        if self.current_system.name in ['eiger', 'pilatus']:
-            self.valid_prog_environs = ['PrgEnv-aocc', 'PrgEnv-cray',
-                                        'PrgEnv-gnu', 'PrgEnv-intel']
-        else:
-            self.valid_prog_environs = ['PrgEnv-cray',  'PrgEnv-gnu',
-                                        'PrgEnv-intel', 'PrgEnv-pgi']
+        self.valid_prog_environs = ['PrgEnv-aocc', 'PrgEnv-cray',
+                                    'PrgEnv-gnu', 'PrgEnv-intel',
+                                    'PrgEnv-pgi']
         self.sourcesdir += '/ulimit'
         self.sourcepath = 'ulimit.c'
         self.sanity_patterns = sn.all([
