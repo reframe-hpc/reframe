@@ -138,6 +138,7 @@ class RegressionMixin(metaclass=RegressionTestMeta):
 
     .. versionadded:: 3.4.2
     '''
+
     def __getattribute__(self, name):
         try:
             return super().__getattribute__(name)
@@ -618,7 +619,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    modules = variable(typ.List[str], typ.List[typ.Dict[str, object]], value=[])
+    modules = variable(
+        typ.List[str], typ.List[typ.Dict[str, object]], value=[])
 
     #: Environment variables to be set before running this test.
     #:
@@ -1253,6 +1255,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         # We raise a BuildError when we an exit code and it is non zero
         if self._build_job.exitcode:
             raise BuildError(self._build_job.stdout, self._build_job.stderr)
+
+        self.build_system.post_build(self._build_job)
 
     @_run_hooks('pre_run')
     @final

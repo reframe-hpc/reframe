@@ -123,8 +123,8 @@ class BuildSystem(abc.ABC):
     def emit_build_commands(self, environ):
         '''Return the list of commands for building using this build system.
 
-        The build commands may always assume to be issued from the top-level
-        directory of the code that is to be built.
+        The build commands, as well as this function, will always be executed
+        from the test's stage directory.
 
         :arg environ: The programming environment for which to emit the build
            instructions.
@@ -133,8 +133,24 @@ class BuildSystem(abc.ABC):
         :raises: :class:`BuildSystemError` in case of errors when generating
           the build instructions.
 
-        .. note::
-            This method is relevant only to developers of new build systems.
+        .. versionchanged:: 3.5.0
+           This function executes from the test stage directory.
+
+        :meta private:
+
+        '''
+
+    def post_build(self, buildjob):
+        '''Callback function that the framework will call when the compilation
+        is done.
+
+        Build systems may use this information to do some post processing and
+        provide additional, build system-specific, functionality to the users.
+
+        .. versionadded:: 3.5.0
+
+        :meta private:
+
         '''
 
     def _resolve_flags(self, flags, environ):
@@ -657,42 +673,65 @@ class Autotools(ConfigureBasedBuildSystem):
 
 
 class EasyBuild(BuildSystem):
-    '''A build system for building code using EasyBuild.
+    '''A build system for building test code using `EasyBuild
+    <https://easybuild.io/>`__.
 
-    The generated build command has the following form:
+    ReFrame will use EasyBuild to build and install the code in the test's
+    stage directory by default. ReFrame uses environment variables to
+    configure EasyBuild for running, so Users can pass additional options to
+    the ``eb`` command and modify the default behaviour.
 
-    . code::
+    .. versionadded:: 3.5.0
 
-    export EASYBUILD_BUILDPATH=:attr:`reframe.core.pipeline.RegressionTest.stagedir`/rfm_easybuild/build
-    export EASYBUILD_INSTALLPATH=`reframe.core.pipeline.RegressionTest.stagedir`/rfm_easybuild
-    export EASYBUILD_PREFIX=`reframe.core.pipeline.RegressionTest.stagedir`/rfm_easybuild
-    export EASYBUILD_SOURCEPATH=`reframe.core.pipeline.RegressionTest.stagedir`/rfm_easybuild
-    eb [EASYCONFIGS] [OPTIONS]
     '''
 
-    #: The list of easyconfigs
+    #: The list of easyconfig files to build and install.
+    #: This field is required.
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
     easyconfigs = fields.TypedField(typ.List[str])
 
-    #: Options to pass to the easybuild executable
+    #: Options to pass to the ``eb`` command.
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
     options = fields.TypedField(typ.List[str])
 
-    #: Controls whether a package is created
+    #: Instruct EasyBuild to emit a package for the built software.
+    #: This will essentially pass the ``--package`` option to ``eb``.
     #:
     #: :type: :class:`bool`
     #: :default: ``[]``
     emit_package = fields.TypedField(bool)
 
-    #: Options for the packaging tool
+    #: Options controlling the package creation from EasyBuild.
+    #: For each key/value pair of this dictionary, ReFrame will pass
+    #: ``--package-{key}={val}`` to the EasyBuild invocation.
     #:
     #: :type: :class:`Dict[str, str]`
     #: :default: ``{}``
     package_opts = fields.TypedField(typ.Dict[str, str])
+
+    #: Default prefix for the EasyBuild installation.
+    #:
+    #: Relative paths will be appended to the stage directory of the test.
+    #: ReFrame will set the following environment variables before running
+    #: EasyBuild.
+    #:
+    #: .. code-block:: bash
+    #:
+    #:    export EASYBUILD_BUILDPATH={prefix}/build
+    #:    export EASYBUILD_INSTALLPATH={prefix}
+    #:    export EASYBUILD_PREFIX={prefix}
+    #:    export EASYBUILD_SOURCEPATH={prefix}
+    #:
+    #: Users can change these defaults by passing specific options to the
+    #: ``eb`` command.
+    #:
+    #: :type: :class:`str`
+    #: :default: ``easybuild``
+    prefix = fields.TypedField(str)
 
     def __init__(self):
         super().__init__()
@@ -700,43 +739,44 @@ class EasyBuild(BuildSystem):
         self.options = []
         self.emit_package = False
         self.package_opts = {}
-        self._eb_modules = None
+        self.prefix = 'easybuild'
+        self._eb_modules = []
+        self._prefix_save = None
 
     def emit_build_commands(self, environ):
+        if not self.easyconfigs:
+            raise BuildSystemError(f"'easyconfigs' must not be empty")
+
         easyconfigs = ' '.join(self.easyconfigs)
         if self.emit_package:
             self.options.append('--package')
             for key, val in self.package_opts.items():
                 self.options.append(f'--package-{key}={val}')
 
+        prefix = os.path.join(os.getcwd(), self.prefix)
         options = ' '.join(self.options)
-
-        self._eb_sandbox = os.path.join(os.getcwd(), 'rfm_easybuild')
-
-        return [f'export EASYBUILD_BUILDPATH={self._eb_sandbox}/build',
-                f'export EASYBUILD_INSTALLPATH={self._eb_sandbox}',
-                f'export EASYBUILD_PREFIX={self._eb_sandbox}',
-                f'export EASYBUILD_SOURCEPATH={self._eb_sandbox}',
+        self._prefix_save = prefix
+        return [f'export EASYBUILD_BUILDPATH={prefix}/build',
+                f'export EASYBUILD_INSTALLPATH={prefix}',
+                f'export EASYBUILD_PREFIX={prefix}',
+                f'export EASYBUILD_SOURCEPATH={prefix}',
                 f'eb {easyconfigs} {options}']
 
-    def _collect_eb_modules(self, build_stdout):
-        modules_dir = os.path.join(self._eb_sandbox, 'modules', 'all')
-        build_stdout = os.path.join(self._eb_sandbox, '..', build_stdout)
-        with open(build_stdout) as fp:
+    def post_build(self, buildjob):
+        # Store the modules generated by EasyBuild
+
+        modulesdir = os.path.join(self._prefix_save, 'modules', 'all')
+        with open(buildjob.stdout) as fp:
             out = fp.read()
 
-        self._eb_modules = []
-        for m in re.findall(r'building and installing (\S+)...', out):
-            self._eb_modules.append({'name': m,
-                                     'collection': False,
-                                     'path': modules_dir})
+        self._eb_modules = [
+            {'name': m, 'collection': False, 'path': modulesdir}
+            for m in re.findall(r'building and installing (\S+)...', out)
+        ]
 
-    def eb_modules(self, build_stdout):
-        if self._eb_modules:
-            return self._eb_modules
-        else:
-            self._collect_eb_modules(build_stdout)
-            return self._eb_modules
+    @property
+    def generated_modules(self):
+        return self._eb_modules
 
 
 class BuildSystemField(fields.TypedField):

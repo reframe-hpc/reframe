@@ -7,6 +7,7 @@ import os
 import pytest
 
 import reframe.core.buildsystems as bs
+import reframe.utility.osext as osext
 import unittests.fixtures as fixtures
 from reframe.core.environments import ProgEnvironment
 from reframe.core.exceptions import BuildSystemError
@@ -243,20 +244,21 @@ def test_singlesource_unknown_language():
         build_system.emit_build_commands(ProgEnvironment('testenv'))
 
 
-def test_easybuild(environ):
+def test_easybuild(environ, tmp_path):
     build_system = bs.EasyBuild()
     build_system.easyconfigs = ['ec1.eb', 'ec2.eb']
     build_system.options = ['-o1', '-o2']
-    curdir = os.getcwd()
-    assert ([f'export EASYBUILD_BUILDPATH={curdir}/rfm_easybuild/build',
-             f'export EASYBUILD_INSTALLPATH={curdir}/rfm_easybuild',
-             f'export EASYBUILD_PREFIX={curdir}/rfm_easybuild',
-             f'export EASYBUILD_SOURCEPATH={curdir}/rfm_easybuild',
-             'eb ec1.eb ec2.eb -o1 -o2'
-             ] == build_system.emit_build_commands(environ))
+    with osext.change_dir(tmp_path):
+        assert build_system.emit_build_commands(environ) == [
+            f'export EASYBUILD_BUILDPATH={tmp_path}/easybuild/build',
+            f'export EASYBUILD_INSTALLPATH={tmp_path}/easybuild',
+            f'export EASYBUILD_PREFIX={tmp_path}/easybuild',
+            f'export EASYBUILD_SOURCEPATH={tmp_path}/easybuild',
+            'eb ec1.eb ec2.eb -o1 -o2'
+        ]
 
 
-def test_easybuild_with_packaging(environ):
+def test_easybuild_with_packaging(environ, tmp_path):
     build_system = bs.EasyBuild()
     build_system.easyconfigs = ['ec1.eb', 'ec2.eb']
     build_system.options = ['-o1', '-o2']
@@ -265,11 +267,18 @@ def test_easybuild_with_packaging(environ):
         'type': 'rpm',
         'tool-options': "'-o1 -o2'"
     }
-    curdir = os.getcwd()
-    assert ([f'export EASYBUILD_BUILDPATH={curdir}/rfm_easybuild/build',
-             f'export EASYBUILD_INSTALLPATH={curdir}/rfm_easybuild',
-             f'export EASYBUILD_PREFIX={curdir}/rfm_easybuild',
-             f'export EASYBUILD_SOURCEPATH={curdir}/rfm_easybuild',
-             'eb ec1.eb ec2.eb -o1 -o2 --package --package-type=rpm '
-             "--package-tool-options='-o1 -o2'"
-             ] == build_system.emit_build_commands(environ))
+    with osext.change_dir(tmp_path):
+        assert build_system.emit_build_commands(environ) == [
+            f'export EASYBUILD_BUILDPATH={tmp_path}/easybuild/build',
+            f'export EASYBUILD_INSTALLPATH={tmp_path}/easybuild',
+            f'export EASYBUILD_PREFIX={tmp_path}/easybuild',
+            f'export EASYBUILD_SOURCEPATH={tmp_path}/easybuild',
+            'eb ec1.eb ec2.eb -o1 -o2 --package --package-type=rpm '
+            "--package-tool-options='-o1 -o2'"
+        ]
+
+
+def test_easybuild_no_easyconfigs(environ):
+    build_system = bs.EasyBuild()
+    with pytest.raises(BuildSystemError):
+        build_system.emit_build_commands(environ)
