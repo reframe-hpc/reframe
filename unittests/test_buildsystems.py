@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import os
 import pytest
 
 import reframe.core.buildsystems as bs
