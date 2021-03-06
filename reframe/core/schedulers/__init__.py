@@ -333,7 +333,7 @@ class Job(jsonext.JSONSerializable):
     def submit_time(self):
         return self._submit_time
 
-    def prepare(self, commands, environs=None, **gen_opts):
+    def prepare(self, commands, environs=None, prepare_cmds=None, **gen_opts):
         environs = environs or []
         if self.num_tasks <= 0:
             getlogger().debug(f'[F] Flexible node allocation requested')
@@ -360,6 +360,10 @@ class Job(jsonext.JSONSerializable):
         with shell.generate_script(self.script_filename,
                                    **gen_opts) as builder:
             builder.write_prolog(self.scheduler.emit_preamble(self))
+            prepare_cmds = prepare_cmds or []
+            for c in prepare_cmds:
+                builder.write_body(c)
+
             builder.write(runtime.emit_loadenv_commands(*environs))
             for c in commands:
                 builder.write_body(c)

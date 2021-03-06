@@ -308,6 +308,16 @@ System Partition Configuration
    This option is relevant only when ReFrame executes with the `asynchronous execution policy <pipeline.html#execution-policies>`__.
 
 
+.. js:attribute:: .systems[].partitions[].prepare_cmds
+
+   :required: No
+   :default: ``[]``
+
+   List of shell commands to be emitted before any environment loading commands are emitted.
+
+   .. versionadded:: 3.5.0
+
+
 .. js:attribute:: .systems[].partitions[].resources
 
    :required: No

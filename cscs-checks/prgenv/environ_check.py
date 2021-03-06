@@ -96,7 +96,7 @@ class CrayVariablesCheckDaint(CrayVariablesCheck):
              self.cray_module in ['cray-petsc-complex',
                                   'cray-petsc-complex-64',
                                   'cudatoolkit']) or
-            (cdt and cdt < '20.11' and module_name == 'gcc')):
+            (cdt and cdt < '20.11' and self.cray_module == 'gcc')):
             self.valid_systems = []
 
 

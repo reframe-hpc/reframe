@@ -8,7 +8,6 @@ SPHINXOPTS  =
 SPHINXBUILD =  -msphinx
 SPHINXPROJ  = ReFrame
 SOURCEDIR   = .
-BUILDDIR    = $(VERSION)
 RM          = /bin/rm -rf
 
 TARGET_DOCS := \
@@ -48,7 +47,7 @@ clean:
 	-$(RM) $(TARGET_DOCS) doctrees
 
 $(TARGET_DOCS): Makefile
-	@$(PYTHON) $(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+	@$(PYTHON) $(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "" $(SPHINXOPTS) $(O)
 
 
 

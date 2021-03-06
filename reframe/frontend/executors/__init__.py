@@ -415,14 +415,16 @@ class Runner:
             # Print the summary line
             num_failures = len(self._stats.failed())
             num_completed = len(self._stats.completed())
-            if num_failures > 0 or num_completed < len(testcases):
+            num_tasks = len(self._stats.tasks())
+            if num_failures > 0 or num_completed < num_tasks:
                 status = 'FAILED'
             else:
                 status = 'PASSED'
 
+            total_run = len(testcases) - num_tasks + num_completed
             self._printer.status(
                 status,
-                f'Ran {num_completed}/{len(testcases)}'
+                f'Ran {num_completed}/{total_run}'
                 f' test case(s) from {num_checks} check(s) '
                 f'({num_failures} failure(s))',
                 just='center'
