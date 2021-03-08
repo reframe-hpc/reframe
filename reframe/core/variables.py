@@ -36,8 +36,16 @@ class TestVar(VarDirective):
     body. Instances of this class are injected into the regression test
     during class instantiation.
 
+    To support injecting attributes into the variable, this class implements a
+    separate dict `__attrs__` where these will be stored.
+
     :meta private:
     '''
+
+    __slots__ = (
+        'field_type', '_default_value', 'name',
+        'args', 'kwargs', '__attrs__'
+    )
 
     def __init__(self, *args, **kwargs):
         self.field_type = kwargs.pop('field', fields.TypedField)
@@ -51,6 +59,7 @@ class TestVar(VarDirective):
 
         self.args = args
         self.kwargs = kwargs
+        self.__attrs__ = dict()
 
     def is_defined(self):
         return self._default_value is not _Undefined
@@ -67,8 +76,31 @@ class TestVar(VarDirective):
         # modifying the class variable space.
         return copy.deepcopy(self._default_value)
 
+    @property
+    def attrs(self):
+        # Variable attributes must also be returned by-value.
+        return copy.deepcopy(self.__attrs__)
+
     def __set_name__(self, owner, name):
         self.name = name
+
+    def __setattr__(self, name, value):
+        '''Set any additional variable attribute into __attrs__.'''
+        if name in self.__slots__:
+            super().__setattr__(name, value)
+        else:
+            self.__attrs__[name] = value
+
+    def __getattr__(self, name):
+        '''Attribute lookup into __attrs__.'''
+        attrs = self.__getattribute__('__attrs__')
+        try:
+            return attrs[name]
+        except KeyError:
+            var_name = self.__getattribute__('name')
+            raise AttributeError(
+                f'variable {var_name!r} has no attribute {name!r}'
+            ) from None
 
     def _check_is_defined(self):
         if not self.is_defined():
@@ -525,6 +557,11 @@ class VarSpace(namespaces.Namespace):
             # If the var is defined, set its value
             if var.is_defined():
                 setattr(obj, name, var.default_value)
+
+                # If the variable value itself has attributes, inject them.
+                value = getattr(obj, name)
+                for attr, attr_value in var.attrs.items():
+                    setattr(value, attr, attr_value)
 
             # Track the variables that have been injected.
             self._injected_vars.add(name)
