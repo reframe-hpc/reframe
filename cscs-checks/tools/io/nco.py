@@ -37,9 +37,9 @@ class NCOBaseTest(rfm.RunOnlyRegressionTest):
         elif self.current_system.name == 'pilatus':
             self.valid_prog_environs = ['cpeGNU']
         else:
-            self.modules = ['NCO']
             self.valid_prog_environs = ['builtin']
 
+        self.modules = ['NCO']
         self.maintainers = ['SO', 'CB']
         self.tags = {'production', 'mch', 'external-resources'}
 
