@@ -20,3 +20,29 @@ class JupyterHubSubmitTest(rfm.RunOnlyRegressionTest):
         self.sanity_patterns = sn.assert_found(r'nid\d+', self.stdout)
         self.tags = {'production', 'maintenance', 'health'}
         self.maintainers = ['RS', 'TR']
+
+
+@rfm.simple_test
+class JupyterHubServerCheck(rfm.RunOnlyRegressionTest):
+    def __init__(self):
+        self.descr = 'Check JupyterHub server status and version'
+        self.valid_systems = ['daint:jupyter_gpu', 'daint:jupyter_mc',
+                              'dom:jupyter_gpu', 'dom:jupyter_mc']
+        self.valid_prog_environs = ['*']
+        self.sourcesdir = None
+        self.executable = 'time curl https://jupyter.cscs.ch/hub/api/'
+        self.num_tasks = 1
+        self.num_tasks_per_node = 1
+        self.sanity_patterns = sn.assert_found(r'{"version": "1.3.0"}',
+                                               self.stdout)
+        self.perf_patterns = {
+            'real_time': sn.extractsingle(r'\nreal.+m(?P<real_time>\S+)s',
+                                          self.stderr, 'real_time', float)
+        }
+        self.reference = {
+            '*': {
+                'real_time': (0.1, None, 0.1, 's')
+            }
+        }
+        self.tags = {'health'}
+        self.maintainers = ['CB']
