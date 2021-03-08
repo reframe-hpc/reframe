@@ -690,10 +690,12 @@ class TModImpl(ModulesSystemImpl):
         return path.split(':')
 
     def searchpath_add(self, *dirs):
-        self.execute('use', *dirs)
+        if dirs:
+            self.execute('use', *dirs)
 
     def searchpath_remove(self, *dirs):
-        self.execute('unuse', *dirs)
+        if dirs:
+            self.execute('unuse', *dirs)
 
     def emit_load_instr(self, module):
         commands = []
