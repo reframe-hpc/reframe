@@ -13,7 +13,7 @@ from reframe.core.exceptions import ConfigError, EnvironError
 
 
 @pytest.fixture(params=['tmod', 'tmod4', 'lmod', 'spack', 'nomod'])
-def modules_system(request, monkeypatch):
+def modules_system_nopath(request, monkeypatch):
     # Always pretend to be on a clean modules environment
     monkeypatch.setenv('MODULEPATH', '')
     monkeypatch.setenv('LOADEDMODULES', '')
@@ -25,8 +25,17 @@ def modules_system(request, monkeypatch):
         pytest.skip(f'{request.param} not supported')
 
     environ_save = env.snapshot()
-    m.searchpath_add(fixtures.TEST_MODULES)
     yield m
+    environ_save.restore()
+
+
+@pytest.fixture
+def modules_system(modules_system_nopath):
+    m = modules_system_nopath
+    environ_save = env.snapshot()
+    with m.change_module_path(fixtures.TEST_MODULES):
+        yield m
+
     environ_save.restore()
 
 
@@ -91,6 +100,18 @@ def test_module_load(modules_system):
         assert 'TESTMOD_FOO' not in os.environ
 
 
+def test_module_load_with_path(modules_system_nopath):
+    if modules_system_nopath.name in ['nomod', 'spack']:
+        pytest.skip('module load not supported')
+
+    modules_system_nopath.load_module('testmod_foo',
+                                      path=fixtures.TEST_MODULES)
+    with modules_system_nopath.change_module_path(fixtures.TEST_MODULES):
+        assert modules_system_nopath.is_module_loaded('testmod_foo')
+        assert 'testmod_foo' in modules_system_nopath.loaded_modules()
+        assert 'TESTMOD_FOO' in os.environ
+
+
 def test_module_load_collection(modules_system, module_collection):
     # Load a conflicting module first
     modules_system.load_module('testmod_bar')
@@ -120,7 +141,7 @@ def test_module_load_force_collection(modules_system, module_collection):
     # Load a conflicting module first
     modules_system.load_module('testmod_bar')
     unloaded = modules_system.load_module(module_collection,
-                                          force=True, collection=True)
+                                          collection=True, force=True)
     assert unloaded == [('test_collection', [])]
     assert modules_system.is_module_loaded('testmod_base')
     assert modules_system.is_module_loaded('testmod_foo')
@@ -202,40 +223,49 @@ def test_emit_load_commands(modules_system):
 
 def _emit_load_commands_tmod(modules_system):
     emit_cmds = modules_system.emit_load_commands
-    assert [emit_cmds('foo')] == ['module load foo']
-    assert [emit_cmds('foo/1.2')] == ['module load foo/1.2']
-    assert [emit_cmds('m0')] == ['module load m1', 'module load m2']
+    assert emit_cmds('foo') == ['module load foo']
+    assert emit_cmds('foo/1.2') == ['module load foo/1.2']
+
+    # Module mappings are not taking into account since v3.3
+    assert emit_cmds('m0') == ['module load m0']
 
 
 def _emit_load_commands_tmod4(modules_system):
     emit_cmds = modules_system.emit_load_commands
-    assert [emit_cmds('foo')] == ['module load foo']
-    assert [emit_cmds('foo', collection=True)] == ['module restore foo']
-    assert [emit_cmds('foo/1.2')] == ['module load foo/1.2']
-    assert [emit_cmds('m0')] == ['module load m1', 'module load m2']
-    assert [emit_cmds('m0', collection=True)] == ['module restore m1',
-                                                  'module restoreE m2']
+    assert emit_cmds('foo') == ['module load foo']
+    assert emit_cmds('foo', collection=True) == [
+        'module restore foo', f'module use {fixtures.TEST_MODULES}'
+    ]
+    assert emit_cmds('foo/1.2') == ['module load foo/1.2']
+    assert emit_cmds('foo', path='/path') == ['module use /path',
+                                              'module load foo',
+                                              'module unuse /path']
+
+    # Module mappings are not taking into account since v3.3
+    assert emit_cmds('m0') == ['module load m0']
+    assert emit_cmds('m0', collection=True) == [
+        'module restore m0', f'module use {fixtures.TEST_MODULES}'
+    ]
 
 
 def _emit_load_commands_lmod(modules_system):
-    emit_cmds = modules_system.emit_load_commands
-    assert [emit_cmds('foo')] == ['module load foo']
-    assert [emit_cmds('foo/1.2')] == ['module load foo/1.2']
-    assert [emit_cmds('m0')] == ['module load m1', 'module load m2']
+    return _emit_load_commands_tmod4(modules_system)
 
 
 def _emit_load_commands_spack(modules_system):
     emit_cmds = modules_system.emit_load_commands
-    assert [emit_cmds('foo')] == ['spack load foo']
-    assert [emit_cmds('foo/1.2')] == ['spack load foo/1.2']
-    assert [emit_cmds('m0')] == ['spack load m1', 'spack load m2']
+    assert emit_cmds('foo') == ['spack load foo']
+    assert emit_cmds('foo/1.2') == ['spack load foo/1.2']
+
+    # Module mappings are not taking into account since v3.3
+    assert emit_cmds('m0') == ['spack load m0']
 
 
 def _emit_load_commands_nomod(modules_system):
     emit_cmds = modules_system.emit_load_commands
-    assert [emit_cmds('foo')] == []
-    assert [emit_cmds('foo/1.2')] == []
-    assert [emit_cmds('m0')] == []
+    assert emit_cmds('foo') == []
+    assert emit_cmds('foo/1.2') == []
+    assert emit_cmds('m0') == []
 
 
 @fixtures.dispatch('modules_system', suffix=lambda ms: ms.name)
@@ -248,39 +278,47 @@ def test_emit_unload_commands(modules_system):
 
 def _emit_unload_commands_tmod(modules_system):
     emit_cmds = modules_system.emit_unload_commands
-    assert [emit_cmds('foo')] == ['module unload foo']
-    assert [emit_cmds('foo/1.2')] == ['module unload foo/1.2']
-    assert [emit_cmds('m0')] == ['module unload m2', 'module unload m1']
+    assert emit_cmds('foo') == ['module unload foo']
+    assert emit_cmds('foo/1.2') == ['module unload foo/1.2']
+
+    # Module mappings are not taking into account since v3.3
+    assert emit_cmds('m0') == ['module unload m0']
 
 
 def _emit_unload_commands_tmod4(modules_system):
     emit_cmds = modules_system.emit_unload_commands
-    assert [emit_cmds('foo')] == ['module unload foo']
-    assert [emit_cmds('foo', collection=True)] == []
-    assert [emit_cmds('foo/1.2')] == ['module unload foo/1.2']
-    assert [emit_cmds('m0')] == ['module unload m2', 'module unload m1']
-    assert [emit_cmds('m0', collection=True)] == []
+    assert emit_cmds('foo') == ['module unload foo']
+    assert emit_cmds('foo', collection=True) == []
+    assert emit_cmds('foo/1.2') == ['module unload foo/1.2']
+    assert emit_cmds('m0', collection=True) == []
+
+    # Module mappings are not taking into account since v3.3
+    assert emit_cmds('m0') == ['module unload m0']
 
 
 def _emit_unload_commands_lmod(modules_system):
     emit_cmds = modules_system.emit_unload_commands
-    assert [emit_cmds('foo')] == ['module unload foo']
-    assert [emit_cmds('foo/1.2')] == ['module unload foo/1.2']
-    assert [emit_cmds('m0')] == ['module unload m2', 'module unload m1']
+    assert emit_cmds('foo') == ['module unload foo']
+    assert emit_cmds('foo/1.2') == ['module unload foo/1.2']
+
+    # Module mappings are not taking into account since v3.3
+    assert emit_cmds('m0') == ['module unload m0']
 
 
 def _emit_unload_commands_spack(modules_system):
     emit_cmds = modules_system.emit_unload_commands
-    assert [emit_cmds('foo')] == ['spack unload foo']
-    assert [emit_cmds('foo/1.2')] == ['spack unload foo/1.2']
-    assert [emit_cmds('m0')] == ['spack unload m2', 'spack unload m1']
+    assert emit_cmds('foo') == ['spack unload foo']
+    assert emit_cmds('foo/1.2') == ['spack unload foo/1.2']
+
+    # Module mappings are not taking into account since v3.3
+    assert emit_cmds('m0') == ['spack unload m0']
 
 
 def _emit_unload_commands_nomod(modules_system):
     emit_cmds = modules_system.emit_unload_commands
-    assert [emit_cmds('foo')] == []
-    assert [emit_cmds('foo/1.2')] == []
-    assert [emit_cmds('m0')] == []
+    assert emit_cmds('foo') == []
+    assert emit_cmds('foo/1.2') == []
+    assert emit_cmds('m0') == []
 
 
 def test_module_construction():
@@ -303,6 +341,10 @@ def test_module_construction():
     m = modules.Module('foo/1.2', collection=True)
     assert m.collection is True
 
+    m = modules.Module('foo/1.2', path='/foo/modules')
+    assert m.path == '/foo/modules'
+    assert m.collection is False
+
 
 def test_module_equal():
     assert modules.Module('foo') == modules.Module('foo')
@@ -316,6 +358,7 @@ def test_module_equal():
     assert modules.Module('foo') != modules.Module('bar')
     assert modules.Module('foo') != modules.Module('foobar')
     assert modules.Module('foo') != modules.Module('foo', collection=True)
+    assert modules.Module('foo') != modules.Module('foo', path='/foo/modules')
 
 
 @pytest.fixture

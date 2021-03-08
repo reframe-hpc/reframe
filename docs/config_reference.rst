@@ -1276,6 +1276,18 @@ It can either be a simple string or a JSON object with the following attributes:
    A boolean value indicating whether this module refers to a module collection.
    Module collections are treated differently from simple modules when loading.
 
+.. js:attribute:: .path
+
+   :required: No
+   :default: ``null``
+
+   If the module is not present in the default ``MODULEPATH``, the module's location can be specified here.
+   ReFrame will make sure to set and restore the ``MODULEPATH`` accordingly for loading the module.
+
+
+   .. versionadded:: 3.5.0
+
+
 .. seealso::
 
    Module collections with `Environment Modules <https://modules.readthedocs.io/en/latest/MIGRATING.html#module-collection>`__ and `Lmod <https://lmod.readthedocs.io/en/latest/010_user.html#user-collections>`__.

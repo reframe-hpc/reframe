@@ -26,9 +26,11 @@ class Module:
 
     This class represents internally a module. Concrete module system
     implementation should deal only with that.
+
+    :meta private:
     '''
 
-    def __init__(self, name, collection=False):
+    def __init__(self, name, collection=False, path=None):
         if not isinstance(name, str):
             raise TypeError('module name not a string')
 
@@ -40,6 +42,8 @@ class Module:
             self._name, self._version = name.split('/', maxsplit=1)
         except ValueError:
             self._name, self._version = name, None
+
+        self._path = path
 
         # This module represents a "module collection" in TMod4
         self._collection = collection
@@ -55,6 +59,10 @@ class Module:
     @property
     def collection(self):
         return self._collection
+
+    @property
+    def path(self):
+        return self._path
 
     @property
     def fullname(self):
@@ -73,6 +81,9 @@ class Module:
         if not isinstance(other, type(self)):
             return NotImplemented
 
+        if self.path != other.path:
+            return False
+
         if self.collection != other.collection:
             return False
 
@@ -82,7 +93,8 @@ class Module:
             return self.name == other.name and self.version == other.version
 
     def __repr__(self):
-        return f'{type(self).__name__}({self.fullname}, {self.collection})'
+        return (f'{type(self).__name__}({self.fullname}, '
+                '{self.collection}, {self.path})')
 
     def __str__(self):
         return self.fullname
@@ -180,7 +192,7 @@ class ModulesSystem:
         '''
         return [str(m) for m in self._backend.loaded_modules()]
 
-    def conflicted_modules(self, name, collection=False):
+    def conflicted_modules(self, name, collection=False, path=None):
         '''Return the list of the modules conflicting with module ``name``.
 
         If module ``name`` resolves to multiple real modules, then the returned
@@ -188,23 +200,30 @@ class ModulesSystem:
         modules.
 
         :arg name: The name of the module.
-        :arg collection: The module is a "module collection" (TMod4 only).
+        :arg collection: The module is a "module collection" (TMod4/LMod only).
+        :arg path: The path where the module resides if not in the default
+            ``MODULEPATH``.
         :returns: A list of conflicting module names.
 
         .. versionchanged:: 3.3
-           The ``collection`` argument was added.
+           The ``collection`` argument is added.
+
+        .. versionchanged:: 3.5.0
+           The ``path`` argument is added.
 
         '''
         ret = []
         for m in self.resolve_module(name):
-            ret += self._conflicted_modules(m, collection)
+            ret += self._conflicted_modules(m, collection, path)
 
         return ret
 
-    def _conflicted_modules(self, name, collection=False):
+    def _conflicted_modules(self, name, collection=False, path=None):
         return [
             str(m)
-            for m in self._backend.conflicted_modules(Module(name, collection))
+            for m in self._backend.conflicted_modules(
+                Module(name, collection, path)
+            )
         ]
 
     def execute(self, cmd, *args):
@@ -216,13 +235,15 @@ class ModulesSystem:
         '''
         return self._backend.execute(cmd, *args)
 
-    def load_module(self, name, force=False, collection=False):
+    def load_module(self, name, collection=False, path=None, force=False):
         '''Load the module ``name``.
 
+        :arg collection: The module is a "module collection" (TMod4/Lmod only)
+        :arg path: The path where the module resides if not in the default
+            ``MODULEPATH``.
         :arg force: If set, forces the loading, unloading first any
             conflicting modules currently loaded. If module ``name`` refers to
             multiple real modules, all of the target modules will be loaded.
-        :arg collection: The module is a "module collection" (TMod4 only)
         :returns: A list of two-element tuples, where each tuple contains the
             module that was loaded and the list of modules that had to be
             unloaded first due to conflicts. This list will be normally of
@@ -230,18 +251,22 @@ class ModulesSystem:
             module ``name`` to multiple other modules.
 
         .. versionchanged:: 3.3
-           - The ``collection`` argument was added.
+           - The ``collection`` argument is added.
            - This function now returns a list of tuples.
+
+        .. versionchanged:: 3.5.0
+           - The ``path`` argument is added.
+           - The ``force`` argument is now the last argument.
 
         '''
         ret = []
         for m in self.resolve_module(name):
-            ret.append((m, self._load_module(m, force, collection)))
+            ret.append((m, self._load_module(m, collection, path, force)))
 
         return ret
 
-    def _load_module(self, name, force=False, collection=False):
-        module = Module(name, collection)
+    def _load_module(self, name, collection=False, path=None, force=False):
+        module = Module(name, collection, path)
         loaded_modules = self._backend.loaded_modules()
         if module in loaded_modules:
             # Do not try to load the module if it is already present
@@ -259,23 +284,28 @@ class ModulesSystem:
         self._backend.load_module(module)
         return [str(m) for m in unload_list]
 
-    def unload_module(self, name, collection=False):
+    def unload_module(self, name, collection=False, path=None):
         '''Unload module ``name``.
 
         :arg name: The name of the module to unload. If module ``name`` is
             resolved to multiple real modules, all the referred to modules
             will be unloaded in reverse order.
         :arg collection: The module is a "module collection" (TMod4 only)
+        :arg path: The path where the module resides if not in the default
+            ``MODULEPATH``.
 
         .. versionchanged:: 3.3
            The ``collection`` argument was added.
 
+        .. versionchanged:: 3.5.0
+           The ``path`` argument is added.
+
         '''
         for m in reversed(self.resolve_module(name)):
-            self._unload_module(m, collection)
+            self._unload_module(m, collection, path)
 
-    def _unload_module(self, name, collection=False):
-        self._backend.unload_module(Module(name, collection))
+    def _unload_module(self, name, collection=False, path=None):
+        self._backend.unload_module(Module(name, collection, path))
 
     def is_module_loaded(self, name):
         '''Check if module ``name`` is loaded.
@@ -354,42 +384,55 @@ class ModulesSystem:
         '''Remove ``dirs`` from the module system search path.'''
         return self._backend.searchpath_remove(*dirs)
 
-    def emit_load_commands(self, name, collection=False):
+    def change_module_path(self, *dirs):
+        return self._backend.change_module_path(*dirs)
+
+    def emit_load_commands(self, name, collection=False, path=None):
         '''Return the appropriate shell commands for loading a module.
 
         Module mappings are not taken into account by this function.
 
         :arg name: The name of the module to load.
-        :arg collection: The module is a "module collection" (TMod4 only)
+        :arg collection: The module is a "module collection" (TMod4/LMod only)
+        :arg path: The path where the module resides if not in the default
+            ``MODULEPATH``.
         :returns: A list of shell commands.
 
         .. versionchanged:: 3.3
            The ``collection`` argument was added and module mappings are no
            more taken into account by this function.
+
+        .. versionchanged:: 3.5.0
+           The ``path`` argument is added.
 
         '''
 
         # We don't consider module mappings here, because we cannot treat
         # correctly possible conflicts
-        return [self._backend.emit_load_instr(Module(name, collection))]
+        return self._backend.emit_load_instr(Module(name, collection, path))
 
-    def emit_unload_commands(self, name, collection=False):
+    def emit_unload_commands(self, name, collection=False, path=None):
         '''Return the appropriate shell commands for unloading a module.
 
         Module mappings are not taken into account by this function.
 
         :arg name: The name of the module to unload.
-        :arg collection: The module is a "module collection" (TMod4 only)
+        :arg collection: The module is a "module collection" (TMod4/LMod only)
+        :arg path: The path where the module resides if not in the default
+            ``MODULEPATH``.
         :returns: A list of shell commands.
 
         .. versionchanged:: 3.3
            The ``collection`` argument was added and module mappings are no
            more taken into account by this function.
 
+        .. versionchanged:: 3.5.0
+           The ``path`` argument is added.
+
         '''
 
         # See comment in emit_load_commands()
-        return [self._backend.emit_unload_instr(Module(name, collection))]
+        return self._backend.emit_unload_instr(Module(name, collection, path))
 
     def __str__(self):
         return str(self._backend)
@@ -414,6 +457,10 @@ class ModulesSystemImpl(abc.ABC):
             raise EnvironError('could not execute module operation') from e
 
         return exec_output
+
+    def execute_with_path(self, cmd, *args, path=None):
+        with self.change_module_path(path):
+            return self.execute(cmd, *args)
 
     @abc.abstractmethod
     def _execute(self, cmd, *args):
@@ -442,12 +489,7 @@ class ModulesSystemImpl(abc.ABC):
 
     @abc.abstractmethod
     def load_module(self, module):
-        '''Load the module ``name``.
-
-        If ``force`` is set, forces the loading,
-        unloading first any conflicting modules currently loaded.
-
-        Returns the unloaded modules as a list of module instances.'''
+        '''Load module ``module``.'''
 
     @abc.abstractmethod
     def unload_module(self, module):
@@ -507,6 +549,29 @@ class ModulesSystemImpl(abc.ABC):
 
         '''
         return source
+
+    def change_module_path(self, *dirs):
+        '''Temporarily change the module path.
+
+        :arg dirs: The directories to add to the module path.
+        :returns: a context manager that handles the temporary module path
+            change.
+
+        .. versionadded:: 3.5.0
+        '''
+
+        class _CtxMgr:
+            def __init__(this):
+                # Filter out empty paths
+                this._paths = [d for d in dirs if d]
+
+            def __enter__(this):
+                self.searchpath_add(*this._paths)
+
+            def __exit__(this, exc_type, exc_value, traceback):
+                self.searchpath_remove(*this._paths)
+
+        return _CtxMgr()
 
     def __repr__(self):
         return type(self).__name__ + '()'
@@ -603,7 +668,7 @@ class TModImpl(ModulesSystemImpl):
             return []
 
     def conflicted_modules(self, module):
-        output = self.execute('show', str(module))
+        output = self.execute_with_path('show', str(module), path=module.path)
         return [Module(m.group(1))
                 for m in re.finditer(r'^conflict\s+(\S+)',
                                      output, re.MULTILINE)]
@@ -612,7 +677,7 @@ class TModImpl(ModulesSystemImpl):
         return module in self.loaded_modules()
 
     def load_module(self, module):
-        self.execute('load', str(module))
+        self.execute_with_path('load', str(module), path=module.path)
 
     def unload_module(self, module):
         self.execute('unload', str(module))
@@ -625,16 +690,26 @@ class TModImpl(ModulesSystemImpl):
         return path.split(':')
 
     def searchpath_add(self, *dirs):
-        self.execute('use', *dirs)
+        if dirs:
+            self.execute('use', *dirs)
 
     def searchpath_remove(self, *dirs):
-        self.execute('unuse', *dirs)
+        if dirs:
+            self.execute('unuse', *dirs)
 
     def emit_load_instr(self, module):
-        return f'module load {module}'
+        commands = []
+        if module.path:
+            commands.append(f'module use {module.path}')
+
+        commands.append(f'module load {module.fullname}')
+        if module.path:
+            commands.append(f'module unuse {module.path}')
+
+        return commands
 
     def emit_unload_instr(self, module):
-        return f'module unload {module}'
+        return [f'module unload {module}']
 
 
 class TMod31Impl(TModImpl):
@@ -811,13 +886,13 @@ class TMod4Impl(TModImpl):
                 operation = 'use' if op == '+' else 'unuse'
                 cmds += [f'module {operation} {mp}']
 
-            return '\n'.join(cmds)
+            return cmds
 
         return super().emit_load_instr(module)
 
     def emit_unload_instr(self, module):
         if module.collection:
-            return ''
+            return []
 
         return super().emit_unload_instr(module)
 
@@ -906,7 +981,7 @@ class LModImpl(TMod4Impl):
             # collection
             return []
 
-        output = self.execute('show', str(module))
+        output = self.execute_with_path('show', str(module), path=module.path)
 
         # Lmod accepts both Lua and and Tcl syntax
         # The following test allows incorrect syntax, e.g., `conflict
@@ -980,10 +1055,10 @@ class NoModImpl(ModulesSystemImpl):
         pass
 
     def emit_load_instr(self, module):
-        return ''
+        return []
 
     def emit_unload_instr(self, module):
-        return ''
+        return []
 
 
 class SpackImpl(ModulesSystemImpl):
@@ -1065,7 +1140,7 @@ class SpackImpl(ModulesSystemImpl):
         pass
 
     def emit_load_instr(self, module):
-        return f'spack load {module}'
+        return [f'spack load {module.fullname}']
 
     def emit_unload_instr(self, module):
-        return f'spack unload {module}'
+        return [f'spack unload {module.fullname}']

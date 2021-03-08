@@ -619,7 +619,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    modules = variable(typ.List[str], value=[])
+    modules = variable(
+        typ.List[str], typ.List[typ.Dict[str, object]], value=[])
 
     #: Environment variables to be set before running this test.
     #:
@@ -1205,18 +1206,18 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             self.build_system.srcfile = self.sourcepath
             self.build_system.executable = self.executable
 
-        # Prepare build job
-        build_commands = [
-            *self.prebuild_cmds,
-            *self.build_system.emit_build_commands(self._current_environ),
-            *self.postbuild_cmds
-        ]
         user_environ = env.Environment(type(self).__name__,
                                        self.modules, self.variables.items())
         environs = [self._current_partition.local_env, self._current_environ,
                     user_environ, self._cdt_environ]
 
         with osext.change_dir(self._stagedir):
+            # Prepare build job
+            build_commands = [
+                *self.prebuild_cmds,
+                *self.build_system.emit_build_commands(self._current_environ),
+                *self.postbuild_cmds
+            ]
             try:
                 self._build_job.prepare(
                     build_commands, environs,
@@ -1255,6 +1256,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         # We raise a BuildError when we an exit code and it is non zero
         if self._build_job.exitcode:
             raise BuildError(self._build_job.stdout, self._build_job.stderr)
+
+        self.build_system.post_build(self._build_job)
 
     @_run_hooks('pre_run')
     @final
