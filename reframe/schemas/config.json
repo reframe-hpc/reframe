@@ -532,7 +532,7 @@
         "systems/partitions/modules": [],
         "systems/partitions/variables": [],
         "systems/partitions/max_jobs": 8,
-        "systems/partitions/prepare_cmds": []
+        "systems/partitions/prepare_cmds": [],
         "systems/partitions/processor": {},
         "systems/partitions/devices": [],
         "systems/partitions/extras": {}
