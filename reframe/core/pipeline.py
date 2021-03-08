@@ -1296,9 +1296,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             self.container_platform.validate()
 
             # We replace executable and executable_opts in case of containers
-            self.executable = self.container_platform.launch_command()
+            self.executable = self.container_platform.launch_command(
+                self.stagedir)
             self.executable_opts = []
-            prepare_container = self.container_platform.emit_prepare_commands()
+            prepare_container = self.container_platform.emit_prepare_commands(
+                self.stagedir)
             if prepare_container:
                 self.prerun_cmds += prepare_container
 
