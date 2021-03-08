@@ -43,7 +43,7 @@ class AffinityTestBase(rfm.RegressionTest):
 
     valid_systems = [
         'daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-        'eiger:mc', 'pilatus:mc'
+        'eiger:mc', 'pilatus:mc',
         'ault:amdv100'
     ]
     valid_prog_environs = [
@@ -560,7 +560,7 @@ class OneTaskPerNumaNode(AffinityTestBase):
     @rfm.run_before('run')
     def set_tasks(self):
         self.num_tasks = self.num_numa_nodes
-        if self.current_partition.fullname == 'eiger:mc':
+        if self.current_partition.fullname in {'eiger:mc', 'pilatus:mc'}:
             self.num_cpus_per_task = 16
 
     @rfm.run_before('sanity')
