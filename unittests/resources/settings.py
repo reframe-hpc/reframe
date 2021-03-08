@@ -62,7 +62,55 @@ site_configuration = {
                         }
                     ],
                     'environs': ['PrgEnv-gnu', 'builtin'],
-                    'max_jobs': 10
+                    'max_jobs': 10,
+                    'processor': {
+                        'arch': 'skylake',
+                        'num_cpus': 8,
+                        'num_cpus_per_core': 2,
+                        'num_cpus_per_socket': 8,
+                        'num_sockets': 1,
+                        'topology': {
+                            'numa_nodes': ['0x000000ff'],
+                            'sockets': ['0x000000ff'],
+                            'cores': ['0x00000003', '0x0000000c',
+                                      '0x00000030', '0x000000c0'],
+                            'caches': [
+                                {
+                                    'type': 'L1',
+                                    'size': 32768,
+                                    'linesize': 64,
+                                    'associativity': 0,
+                                    'num_cpus': 2,
+                                    'cpusets': ['0x00000003', '0x0000000c',
+                                                '0x00000030', '0x000000c0']
+                                },
+                                {
+                                    'type': 'L2',
+                                    'size': 262144,
+                                    'linesize': 64,
+                                    'associativity': 4,
+                                    'num_cpus': 2,
+                                    'cpusets': ['0x00000003', '0x0000000c',
+                                                '0x00000030', '0x000000c0']
+                                },
+                                {
+                                    'type': 'L3',
+                                    'size': 6291456,
+                                    'linesize': 64,
+                                    'associativity': 0,
+                                    'num_cpus': 8,
+                                    'cpusets': ['0x000000ff']
+                                }
+                            ]
+                        }
+                    },
+                    'devices': [
+                        {
+                            'type': 'gpu',
+                            'arch': 'p100',
+                            'num_devices': 1
+                        }
+                    ]
                 }
             ]
         },

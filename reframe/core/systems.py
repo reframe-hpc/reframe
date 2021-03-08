@@ -16,8 +16,11 @@ from reframe.core.environments import (Environment, ProgEnvironment)
 class ProcessorType(jsonext.JSONSerializable):
     '''A representation of a processor inside ReFrame.
 
+    .. versionadded:: 3.5.0
+
     .. warning::
        Users may not create :class:`ProcessorType` objects directly.
+
     '''
 
     def __init__(self, processor_info):
@@ -45,7 +48,7 @@ class ProcessorType(jsonext.JSONSerializable):
 
     @property
     def arch(self):
-        '''The microarchitecture of the processors.
+        '''The microarchitecture of the processor.
 
         :type: :class:`str` or :class:`None`
         '''
@@ -115,7 +118,7 @@ class ProcessorType(jsonext.JSONSerializable):
 
     @property
     def num_numa_nodes(self):
-        '''Number of numa nodes.
+        '''Number of NUMA nodes.
 
         :type: integral or :class:`None`
         '''
@@ -126,6 +129,11 @@ class ProcessorType(jsonext.JSONSerializable):
 
     @property
     def num_cores_per_numa_node(self):
+        '''Number of cores per NUMA node.
+
+        :type: integral or :class:`None`
+        '''
+
         if self.num_numa_nodes and self.num_cores:
             return self.num_cores // self.num_numa_nodes
         else:
@@ -135,14 +143,16 @@ class ProcessorType(jsonext.JSONSerializable):
 class DeviceType(jsonext.JSONSerializable):
     '''A representation of a device inside ReFrame.
 
+    .. versionadded:: 3.5.0
+
     .. warning::
        Users may not create :class:`DeviceType` objects directly.
+
     '''
 
     def __init__(self, device_info):
         self._type = None
         self._arch = None
-        self._vendor = None
         self._num_devices = 1
         self._info = device_info
 
@@ -155,6 +165,7 @@ class DeviceType(jsonext.JSONSerializable):
     @property
     def num_devices(self):
         '''Number of devices of this type.
+
         It will return 1 if it wasn't set in the configuration.
 
         :type: integral
@@ -184,14 +195,6 @@ class DeviceType(jsonext.JSONSerializable):
         :type: :class:`str` or :class:`None`
         '''
         return self._type
-
-    @property
-    def vendor(self):
-        '''The vendor of the device.
-
-        :type: :class:`str` or :class:`None`
-        '''
-        return self._vendor
 
 
 class SystemPartition(jsonext.JSONSerializable):
@@ -373,7 +376,7 @@ class SystemPartition(jsonext.JSONSerializable):
 
     @property
     def processor(self):
-        '''The processor object of the current partition.
+        '''Processor information for the current partition.
 
         .. versionadded:: 3.5.0
 
@@ -383,7 +386,7 @@ class SystemPartition(jsonext.JSONSerializable):
 
     @property
     def devices(self):
-        '''A list of the device objects of the current partition.
+        '''A list of devices in the current partition.
 
         .. versionadded:: 3.5.0
 
@@ -393,12 +396,13 @@ class SystemPartition(jsonext.JSONSerializable):
 
     @property
     def extras(self):
-        '''User defined attributes of the system. By default
-        it is an empty dictionary.
+        '''User defined attributes of the system.
+
+        By default, it is an empty dictionary.
 
         .. versionadded:: 3.5.0
 
-        :type: object
+        :type: :class:`object`
         '''
         return self._extras
 

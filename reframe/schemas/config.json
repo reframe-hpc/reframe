@@ -189,9 +189,8 @@
         "device_info": {
             "type": "object",
             "properties": {
-                "device_type": {"type": "string"},
+                "type": {"type": "string"},
                 "arch": {"type": "string"},
-                "vendor": {"type": "string"},
                 "num_devices": {"type": "number"}
             }
         }

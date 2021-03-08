@@ -366,3 +366,16 @@ def test_system_create():
     )
     assert resources_spec == ['#DW jobdw capacity=100GB',
                               '#DW stage_in source=/foo']
+
+    # Check processor info
+    assert partition.processor.info is not None
+    assert partition.processor.topology is not None
+    assert partition.processor.arch == 'skylake'
+    assert partition.processor.num_cpus == 8
+    assert partition.processor.num_cpus_per_core == 2
+    assert partition.processor.num_cpus_per_socket == 8
+    assert partition.processor.num_sockets == 1
+    assert partition.processor.num_cores == 4
+    assert partition.processor.num_cores_per_socket == 4
+    assert partition.processor.num_numa_nodes == 1
+    assert partition.processor.num_cores_per_numa_node == 4
