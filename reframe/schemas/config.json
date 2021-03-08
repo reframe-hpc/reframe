@@ -140,6 +140,40 @@
                 }
             ]
         },
+        "topology_info": {
+            "type": "object",
+            "properties": {
+                "numa_nodes": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                },
+                "sockets": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                },
+                "cores": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                },
+                "caches": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "type": {"type": "string"},
+                            "size": {"type": "number"},
+                            "linesize": {"type": "number"},
+                            "associativity": {"type": "number"},
+                            "num_cpus": {"type": "number"},
+                            "cpusets": {
+                                "type": "array",
+                                "items": {"type": "string"}
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "processor_info": {
             "type": "object",
             "properties": {
@@ -148,48 +182,17 @@
                 "num_cpus_per_core": {"type": "number"},
                 "num_cpus_per_socket": {"type": "number"},
                 "num_sockets": {"type": "number"},
-                "topology": {
-                    "type": "object",
-                    "properties": {
-                        "numa_nodes": {
-                            "type": "array",
-                            "items": {"type": "string"}
-                        },
-                        "sockets": {
-                            "type": "array",
-                            "items": {"type": "string"}
-                        },
-                        "cores": {
-                            "type": "array",
-                            "items": {"type": "string"}
-                        },
-                        "caches": {
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "type": {"type": "string"},
-                                    "size": {"type": "number"},
-                                    "linesize": {"type": "number"},
-                                    "associativity": {"type": "number"},
-                                    "num_cpus": {"type": "number"},
-                                    "cpusets": {
-                                        "type": "array",
-                                        "items": {"type": "string"}
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+                "topology": {"$ref": "#/defs/topology_info"}
+            },
+            "additionalProperties": false
         },
         "device_info": {
             "type": "object",
             "properties": {
-                "type": {"type": "string"},
+                "device_type": {"type": "string"},
                 "arch": {"type": "string"},
-                "vendor": {"type": "string"}
+                "vendor": {"type": "string"},
+                "num_devices": {"type": "number"}
             }
         }
     },

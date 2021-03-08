@@ -316,39 +316,140 @@ System Partition Configuration
    A list of job scheduler `resource specification <config_reference.html#custom-job-scheduler-resources>`__ objects.
 
 
-.. js:attribute:: .systems[].partitions[].arch
+.. js:attribute:: .systems[].partitions[].processor
 
    :required: No
-   :default: ``""``
+   :default: ``{}``
 
-   The microarchitecture of this partition.
-
-
-.. js:attribute:: .systems[].partitions[].sockets_per_node
-
-   :required: No
-   :default: ``None``
-
-   The number of sockets per node on this partition.
+   Processor information for this partition.
 
 
-.. js:attribute:: .systems[].partitions[].cores_per_socket
+.. js:attribute:: .systems[].partitions[].processor.arch
 
    :required: No
    :default: ``None``
 
-   The number of cores per socket on this partition.
+   The microarchitecture of the processors.
 
 
-.. js:attribute:: .systems[].partitions[].threads_per_core
+.. js:attribute:: .systems[].partitions[].processor.num_cpus
 
    :required: No
    :default: ``None``
 
-   The number of threads per core on this partition.
+   Number of logical CPUs.
 
 
-.. js:attribute:: .systems[].partitions[].extra_attributes
+.. js:attribute:: .systems[].partitions[].processor.num_cpus_per_core
+
+   :required: No
+   :default: ``None``
+
+   Number of logical CPUs per core.
+
+
+.. js:attribute:: .systems[].partitions[].processor.num_cpus_per_socket
+
+   :required: No
+   :default: ``None``
+
+   Number of logical CPUs per socket.
+
+
+.. js:attribute:: .systems[].partitions[].processor.num_sockets
+
+   :required: No
+   :default: ``None``
+
+   Number sockets on this partition.
+
+
+.. js:attribute:: .systems[].partitions[].processor.topology
+
+   :required: No
+   :default: ``None``
+
+   Processor topology. Example:
+
+   .. code-block:: python
+
+      'topology': {
+         'numa_nodes': ['0x000000ff'],
+         'sockets': ['0x000000ff'],
+         'cores': ['0x00000003', '0x0000000c',
+                   '0x00000030', '0x000000c0'],
+         'caches': [
+            {
+                  'type': 'L3',
+                  'size': 6291456,
+                  'linesize': 64,
+                  'associativity': 0,
+                  'num_cpus': 8,
+                  'cpusets': ['0x000000ff']
+            },
+            {
+                  'type': 'L2',
+                  'size': 262144,
+                  'linesize': 64,
+                  'associativity': 4,
+                  'num_cpus': 2,
+                  'cpusets': ['0x00000003', '0x0000000c',
+                              '0x00000030', '0x000000c0']
+            },
+            {
+                  'type': 'L1',
+                  'size': 32768,
+                  'linesize': 64,
+                  'associativity': 0,
+                  'num_cpus': 2,
+                  'cpusets': ['0x00000003', '0x0000000c',
+                              '0x00000030', '0x000000c0']
+            }
+         ]
+      }
+
+
+.. js:attribute:: .systems[].partitions[].devices
+
+   :required: No
+   :default: ``[]``
+
+   A list with device information for this partition.
+
+
+.. js:attribute:: .systems[].partitions[].devices[].device_type
+
+   :required: No
+   :default: ``None``
+
+   String describing the type of the device.
+
+
+.. js:attribute:: .systems[].partitions[].devices[].arch
+
+   :required: No
+   :default: ``None``
+
+   Architecture of the device.
+
+
+.. js:attribute:: .systems[].partitions[].devices[].vendor
+
+   :required: No
+   :default: ``None``
+
+   Vendor of the device.
+
+
+.. js:attribute:: .systems[].partitions[].devices[].num_devices
+
+   :required: No
+   :default: ``None``
+
+   Number of same type of devices.
+
+
+.. js:attribute:: .systems[].partitions[].extras
 
    :required: No
    :default: ``{}``

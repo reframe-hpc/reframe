@@ -29,13 +29,11 @@ class Processor(jsonext.JSONSerializable):
         self._topology = None
         self._info = processor_info
 
-        if processor_info == {}:
+        if not processor_info:
             return
 
-        for var in ['arch', 'num_cpus', 'num_cpus_per_core',
-                    'num_cpus_per_socket', 'num_sockets', 'topology']:
-            if var in processor_info:
-                setattr(self, f'_{var}', processor_info[var])
+        for key, val in processor_info.items():
+            setattr(self, f'_{key}', val)
 
     @property
     def info(self):
@@ -49,7 +47,7 @@ class Processor(jsonext.JSONSerializable):
     def arch(self):
         '''The microarchitecture of the processors.
 
-        :type: :class:`str`
+        :type: :class:`str` or :class:`None`
         '''
         return self._arch
 
@@ -57,7 +55,7 @@ class Processor(jsonext.JSONSerializable):
     def num_cpus(self):
         '''Number of logical CPUs.
 
-        :type: integral
+        :type: integral or :class:`None`
         '''
         return self._num_cpus
 
@@ -65,7 +63,7 @@ class Processor(jsonext.JSONSerializable):
     def num_cpus_per_core(self):
         '''Number of logical CPUs per core.
 
-        :type: integral
+        :type: integral or :class:`None`
         '''
         return self._num_cpus_per_core
 
@@ -73,7 +71,7 @@ class Processor(jsonext.JSONSerializable):
     def num_cpus_per_socket(self):
         '''Number of logical CPUs per socket.
 
-        :type: integral
+        :type: integral or :class:`None`
         '''
         return self._num_cpus_per_socket
 
@@ -81,23 +79,23 @@ class Processor(jsonext.JSONSerializable):
     def num_sockets(self):
         '''Number of sockets.
 
-        :type: integral
+        :type: integral or :class:`None`
         '''
         return self._num_sockets
 
     @property
     def topology(self):
-        '''Topology of the architecture.
+        '''Processor topology.
 
-        :type: :class:`Dict[str, obj]`
+        :type: :class:`Dict[str, obj]` or :class:`None`
         '''
         return self._topology
 
     @property
     def num_cores(self):
-        '''Number of cores. Derived by ``num_cpus // num_cpus_per_core``.
+        '''Total number of cores.
 
-        :type: integral
+        :type: integral or :class:`None`
         '''
         if self._num_cpus and self._num_cpus_per_core:
             return self._num_cpus // self._num_cpus_per_core
@@ -106,18 +104,32 @@ class Processor(jsonext.JSONSerializable):
 
     @property
     def num_cores_per_socket(self):
-        '''Number of cores per socket. Derived by
-        ``num_cores // num_sockets``.
+        '''Number of cores per socket.
 
-        :type: integral
+        :type: integral or :class:`None`
         '''
         if self.num_cores and self._num_sockets:
             return self.num_cores // self._num_sockets
         else:
             return None
 
-    def __str__(self):
-        return json.dumps(self._info, indent=2)
+    @property
+    def num_numa_nodes(self):
+        '''Number of numa nodes.
+
+        :type: integral or :class:`None`
+        '''
+        if self._topology and 'numa_nodes' in self._topology:
+            return len(self._topology['numa_nodes'])
+        else:
+            return None
+
+    @property
+    def num_cores_per_numa_node(self):
+        if self.num_numa_nodes and self.num_cores:
+            return self.num_cores // self.num_numa_nodes
+        else:
+            return None
 
 
 class Device(jsonext.JSONSerializable):
@@ -131,14 +143,23 @@ class Device(jsonext.JSONSerializable):
         self._type = None
         self._arch = None
         self._vendor = None
+        self._num_devices = 1
         self._info = device_info
 
-        if device_info == {}:
+        if not device_info:
             return
 
-        for var in ['arch', 'type', 'vendor']:
-            if var in device_info:
-                setattr(self, f'_{var}', device_info[var])
+        for key, val in device_info.items():
+            setattr(self, f'_{key}', val)
+
+    @property
+    def num_devices(self):
+        '''Number of devices of this type.
+        It will return 1 if it wasn't set in the configuration.
+
+        :type: integral
+        '''
+        return self._num_devices
 
     @property
     def info(self):
@@ -152,15 +173,15 @@ class Device(jsonext.JSONSerializable):
     def arch(self):
         '''The architecture of the device.
 
-        :type: :class:`str`
+        :type: :class:`str` or :class:`None`
         '''
         return self._arch
 
     @property
-    def type(self):
+    def device_type(self):
         '''The type of the device.
 
-        :type: :class:`str`
+        :type: :class:`str` or :class:`None`
         '''
         return self._type
 
@@ -168,12 +189,9 @@ class Device(jsonext.JSONSerializable):
     def vendor(self):
         '''The vendor of the device.
 
-        :type: :class:`str`
+        :type: :class:`str` or :class:`None`
         '''
         return self._vendor
-
-    def __str__(self):
-        return json.dumps(self._info, indent=2)
 
 
 class SystemPartition(jsonext.JSONSerializable):
@@ -357,7 +375,7 @@ class SystemPartition(jsonext.JSONSerializable):
     def processor(self):
         '''The processor object of the current partition.
 
-        .. versionadded:: 3.5
+        .. versionadded:: 3.5.0
 
         :type: :class:`reframe.core.systems.Processor`
         '''
@@ -367,7 +385,7 @@ class SystemPartition(jsonext.JSONSerializable):
     def devices(self):
         '''A list of the device objects of the current partition.
 
-        .. versionadded:: 3.5
+        .. versionadded:: 3.5.0
 
         :type: :class:`List[reframe.core.systems.Device]`
         '''
@@ -378,7 +396,7 @@ class SystemPartition(jsonext.JSONSerializable):
         '''User defined attributes of the system. By default
         it is an empty dictionary.
 
-        .. versionadded:: 3.5
+        .. versionadded:: 3.5.0
 
         :type: object
         '''
