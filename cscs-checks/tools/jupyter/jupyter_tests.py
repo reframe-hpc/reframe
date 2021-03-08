@@ -30,19 +30,12 @@ class JupyterHubServerCheck(rfm.RunOnlyRegressionTest):
                               'dom:jupyter_gpu', 'dom:jupyter_mc']
         self.valid_prog_environs = ['*']
         self.sourcesdir = None
-        self.executable = 'time curl https://jupyter.cscs.ch/hub/api/'
+        self.executable = 'curl https://jupyter.cscs.ch/hub/api/'
+        # TODO: set correct waiting time
+        self.time_limit = '1s'
         self.num_tasks = 1
         self.num_tasks_per_node = 1
         self.sanity_patterns = sn.assert_found(r'{"version": "1.3.0"}',
                                                self.stdout)
-        self.perf_patterns = {
-            'real_time': sn.extractsingle(r'\nreal.+m(?P<real_time>\S+)s',
-                                          self.stderr, 'real_time', float)
-        }
-        self.reference = {
-            '*': {
-                'real_time': (0.1, None, 0.1, 's')
-            }
-        }
         self.tags = {'health'}
         self.maintainers = ['CB']
