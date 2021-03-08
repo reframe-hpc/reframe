@@ -11,7 +11,10 @@ import reframe.utility.sanity as sn
 
 class LAMMPSBaseCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        self.valid_prog_environs = ['builtin']
+        if self.current_system.name == 'pilatus':
+            self.valid_prog_environs = ['cpeGNU']
+        else:
+            self.valid_prog_environs = ['builtin']
         self.modules = ['LAMMPS']
 
         # Reset sources dir relative to the SCS apps prefix
@@ -90,9 +93,15 @@ class LAMMPSGPUCheck(LAMMPSBaseCheck):
 class LAMMPSCPUCheck(LAMMPSBaseCheck):
     def __init__(self, scale, variant):
         super().__init__()
-        self.valid_systems = ['daint:mc']
-        self.executable = 'lmp_omp'
-        self.executable_opts = ['-sf omp', '-pk omp 1', '-in in.lj.cpu']
+        self.valid_systems = ['daint:mc', 'eiger:mc', 'pilatus:mc']
+        if self.current_system.name in ['eiger', 'pilatus']:
+            self.executable = 'lmp_mpi'
+            self.executable_opts = ['-in in.lj.cpu']
+        else:
+            self.executable = 'lmp_omp'
+            self.executable_opts = ['-sf omp', '-pk omp 1', '-in in.lj.cpu']
+
+        self.scale = scale
         if scale == 'small':
             self.valid_systems += ['dom:mc']
             self.num_tasks = 216
@@ -101,14 +110,22 @@ class LAMMPSCPUCheck(LAMMPSBaseCheck):
             self.num_tasks_per_node = 36
             self.num_tasks = 576
 
+        if self.current_system.name == 'eiger':
+            self.num_tasks_per_node = 128
+            self.num_tasks = 256 if self.scale == 'small' else 512
+
         references = {
             'prod': {
                 'small': {
                     'dom:mc': {'perf': (4394, -0.05, None, 'timesteps/s')},
-                    'daint:mc': {'perf': (3824, -0.10, None, 'timesteps/s')}
+                    'daint:mc': {'perf': (3824, -0.10, None, 'timesteps/s')},
+                    'eiger:mc': {'perf': (4500, -0.10, None, 'timesteps/s')},
+                    'pilatus:mc': {'perf': (5000, -0.10, None, 'timesteps/s')}
                 },
                 'large': {
-                    'daint:mc': {'perf': (5310, -0.65, None, 'timesteps/s')}
+                    'daint:mc': {'perf': (5310, -0.65, None, 'timesteps/s')},
+                    'eiger:mc': {'perf': (6500, -0.10, None, 'timesteps/s')},
+                    'pilatus:mc': {'perf': (7500, -0.10, None, 'timesteps/s')}
                 }
             },
         }

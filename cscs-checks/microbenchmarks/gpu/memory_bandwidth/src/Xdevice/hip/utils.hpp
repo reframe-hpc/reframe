@@ -2,6 +2,7 @@
 #define __INCLUDED_HIP_UTILS__
 
 #include <iostream>
+#include <unistd.h>
 #include <hip/hip_runtime.h>
 
 static inline void checkError(hipError_t errorCode)
@@ -26,6 +27,11 @@ static inline void checkError(hipError_t errorCode)
 void XMallocHost(void ** data, size_t size)
 {
   checkError( hipHostMalloc(data, size) );
+}
+
+void XHostMalloc(void** pHost, size_t size, unsigned int flags)
+{
+  checkError( hipHostMalloc(pHost, size, flags) );
 }
 
 void XFreeHost(void * data)
@@ -101,6 +107,11 @@ void XDeviceDisablePeerAccess(int peer)
 void XMemcpyPeerAsync(void * dst, int peerDevId, void * src, int srcDevId, size_t size, hipStream_t stream)
 {
   checkError( hipMemcpyPeerAsync(dst, peerDevId, src, srcDevId, size, stream) );
+}
+
+void XHostGetDevicePointer(void** device, void* host, unsigned int flags)
+{
+  checkError( hipHostGetDevicePointer(device, host, flags) );
 }
 
 int XGetLastError()

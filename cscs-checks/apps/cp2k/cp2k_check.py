@@ -9,7 +9,11 @@ import reframe.utility.sanity as sn
 
 class Cp2kCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        self.valid_prog_environs = ['builtin']
+        if self.current_system.name == 'pilatus':
+            self.valid_prog_environs = ['cpeGNU']
+        else:
+            self.valid_prog_environs = ['builtin']
+
         self.modules = ['CP2K']
         self.executable = 'cp2k.psmp'
         self.executable_opts = ['H2O-256.inp']
@@ -51,13 +55,13 @@ class Cp2kCpuCheck(Cp2kCheck):
     def __init__(self, scale, variant):
         super().__init__()
         self.descr = 'CP2K CPU check (version: %s, %s)' % (scale, variant)
-        self.valid_systems = ['daint:mc', 'eiger:mc']
+        self.valid_systems = ['daint:mc', 'eiger:mc', 'pilatus:mc']
         if scale == 'small':
             self.valid_systems += ['dom:mc']
             if self.current_system.name in ['daint', 'dom']:
                 self.num_tasks = 216
                 self.num_tasks_per_node = 36
-            elif self.current_system.name == 'eiger':
+            elif self.current_system.name in ['eiger', 'pilatus']:
                 self.num_tasks = 96
                 self.num_tasks_per_node = 16
                 self.num_cpus_per_task = 16
@@ -74,7 +78,7 @@ class Cp2kCpuCheck(Cp2kCheck):
             if self.current_system.name in ['daint', 'dom']:
                 self.num_tasks = 576
                 self.num_tasks_per_node = 36
-            elif self.current_system.name in ['eiger']:
+            elif self.current_system.name in ['eiger', 'pilatus']:
                 self.num_tasks = 256
                 self.num_tasks_per_node = 16
                 self.num_cpus_per_task = 16
@@ -92,22 +96,26 @@ class Cp2kCpuCheck(Cp2kCheck):
                 'small': {
                     'dom:mc': {'time': (202.2, None, 0.05, 's')},
                     'daint:mc': {'time': (180.9, None, 0.08, 's')},
-                    'eiger:mc': {'time': (70.0, None, 0.08, 's')}
+                    'eiger:mc': {'time': (70.0, None, 0.08, 's')},
+                    'pilatus:mc': {'time': (70.0, None, 0.08, 's')}
                 },
                 'large': {
                     'daint:mc': {'time': (141.0, None, 0.05, 's')},
-                    'eiger:mc': {'time': (46.0, None, 0.05, 's')}
+                    'eiger:mc': {'time': (46.0, None, 0.05, 's')},
+                    'pilatus:mc': {'time': (46.0, None, 0.05, 's')}
                 }
             },
             'prod': {
                 'small': {
                     'dom:mc': {'time': (202.2, None, 0.05, 's')},
                     'daint:mc': {'time': (180.9, None, 0.08, 's')},
-                    'eiger:mc': {'time': (70.0, None, 0.08, 's')}
+                    'eiger:mc': {'time': (70.0, None, 0.08, 's')},
+                    'pilatus:mc': {'time': (70.0, None, 0.08, 's')}
                 },
                 'large': {
                     'daint:mc': {'time': (113.0, None, 0.05, 's')},
-                    'eiger:mc': {'time': (46.0, None, 0.05, 's')}
+                    'eiger:mc': {'time': (46.0, None, 0.05, 's')},
+                    'pilatus:mc': {'time': (46.0, None, 0.05, 's')}
                 }
             }
         }

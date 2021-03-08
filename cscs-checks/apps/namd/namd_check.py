@@ -12,7 +12,11 @@ import reframe.utility.sanity as sn
 class NamdBaseCheck(rfm.RunOnlyRegressionTest):
     def __init__(self, arch, scale, variant):
         self.descr = f'NAMD check ({arch}, {variant})'
-        self.valid_prog_environs = ['builtin']
+        if self.current_system.name == 'pilatus':
+            self.valid_prog_environs = ['cpeIntel']
+        else:
+            self.valid_prog_environs = ['builtin']
+
         self.modules = ['NAMD']
 
         # Reset sources dir relative to the SCS apps prefix
@@ -24,14 +28,14 @@ class NamdBaseCheck(rfm.RunOnlyRegressionTest):
 
         if scale == 'small':
             # On Eiger a no-smp NAMD version is the default
-            if self.current_system.name == 'eiger':
+            if self.current_system.name in ['eiger', 'pilatus']:
                 self.num_tasks = 768
                 self.num_tasks_per_node = 128
             else:
                 self.num_tasks = 6
                 self.num_tasks_per_node = 1
         else:
-            if self.current_system.name == 'eiger':
+            if self.current_system.name in ['eiger', 'pilatus']:
                 self.num_tasks = 2048
                 self.num_tasks_per_node = 128
             else:
@@ -96,9 +100,9 @@ class NamdGPUCheck(NamdBaseCheck):
 class NamdCPUCheck(NamdBaseCheck):
     def __init__(self, scale, variant):
         super().__init__('cpu', scale, variant)
-        self.valid_systems = ['daint:mc', 'eiger:mc']
+        self.valid_systems = ['daint:mc', 'eiger:mc', 'pilatus:mc']
         # On Eiger a no-smp NAMD version is the default
-        if self.current_system.name == 'eiger':
+        if self.current_system.name in ['eiger', 'pilatus']:
             self.executable_opts = ['+idlepoll', 'stmv.namd']
             self.num_tasks_per_core = 2
         else:
@@ -109,12 +113,14 @@ class NamdCPUCheck(NamdBaseCheck):
             self.reference = {
                 'dom:mc': {'days_ns': (0.51, None, 0.05, 'days/ns')},
                 'daint:mc': {'days_ns': (0.51, None, 0.05, 'days/ns')},
-                'eiger:mc': {'days_ns': (0.12, None, 0.05, 'days/ns')}
+                'eiger:mc': {'days_ns': (0.12, None, 0.05, 'days/ns')},
+                'pilatus:mc': {'days_ns': (0.15, None, 0.05, 'days/ns')},
             }
         else:
             self.reference = {
                 'daint:mc': {'days_ns': (0.28, None, 0.05, 'days/ns')},
-                'eiger:mc': {'days_ns': (0.05, None, 0.05, 'days/ns')}
+                'eiger:mc': {'days_ns': (0.05, None, 0.05, 'days/ns')},
+                'pilatus:mc': {'days_ns': (0.06, None, 0.05, 'days/ns')}
             }
 
         self.tags |= {'maintenance' if variant == 'maint' else 'production'}
