@@ -361,7 +361,7 @@ System Partition Configuration
    :required: No
    :default: ``None``
 
-   Number sockets on this partition.
+   Number of sockets.
 
 
 .. js:attribute:: .systems[].partitions[].processor.topology

@@ -13,11 +13,11 @@ from reframe.core.modules import ModulesSystem
 from reframe.core.environments import (Environment, ProgEnvironment)
 
 
-class Processor(jsonext.JSONSerializable):
+class ProcessorType(jsonext.JSONSerializable):
     '''A representation of a processor inside ReFrame.
 
     .. warning::
-       Users may not create :class:`Processor` objects directly.
+       Users may not create :class:`ProcessorType` objects directly.
     '''
 
     def __init__(self, processor_info):
@@ -132,11 +132,11 @@ class Processor(jsonext.JSONSerializable):
             return None
 
 
-class Device(jsonext.JSONSerializable):
+class DeviceType(jsonext.JSONSerializable):
     '''A representation of a device inside ReFrame.
 
     .. warning::
-       Users may not create :class:`Device` objects directly.
+       Users may not create :class:`DeviceType` objects directly.
     '''
 
     def __init__(self, device_info):
@@ -217,8 +217,8 @@ class SystemPartition(jsonext.JSONSerializable):
         self._environs = environs
         self._max_jobs = max_jobs
         self._resources = {r['name']: r['options'] for r in resources}
-        self._processor = Processor(processor)
-        self._devices = [Device(d) for d in devices]
+        self._processor = ProcessorType(processor)
+        self._devices = [DeviceType(d) for d in devices]
         self._extras = extras
 
     @property
@@ -377,7 +377,7 @@ class SystemPartition(jsonext.JSONSerializable):
 
         .. versionadded:: 3.5.0
 
-        :type: :class:`reframe.core.systems.Processor`
+        :type: :class:`reframe.core.systems.ProcessorType`
         '''
         return self._processor
 
@@ -387,7 +387,7 @@ class SystemPartition(jsonext.JSONSerializable):
 
         .. versionadded:: 3.5.0
 
-        :type: :class:`List[reframe.core.systems.Device]`
+        :type: :class:`List[reframe.core.systems.DeviceType]`
         '''
         return self._devices
 
