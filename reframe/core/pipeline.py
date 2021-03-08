@@ -1221,6 +1221,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             try:
                 self._build_job.prepare(
                     build_commands, environs,
+                    self._current_partition.prepare_cmds,
                     login=rt.runtime().get_option('general/0/use_login_shell'),
                     trap_errors=True
                 )
@@ -1293,9 +1294,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                     'on the current partition: %s' % e) from None
 
             self.container_platform.validate()
-            self.container_platform.mount_points += [
-                (self._stagedir, self.container_platform.workdir)
-            ]
 
             # We replace executable and executable_opts in case of containers
             self.executable = self.container_platform.launch_command()
@@ -1307,6 +1305,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self.job.num_tasks = self.num_tasks
         self.job.num_tasks_per_node = self.num_tasks_per_node
         self.job.num_tasks_per_core = self.num_tasks_per_core
+        self.job.num_tasks_per_socket = self.num_tasks_per_socket
         self.job.num_cpus_per_task = self.num_cpus_per_task
         self.job.use_smt = self.use_multithreading
         self.job.time_limit = self.time_limit
@@ -1351,6 +1350,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 self.logger.debug('Generating the run script')
                 self._job.prepare(
                     commands, environs,
+                    self._current_partition.prepare_cmds,
                     login=rt.runtime().get_option('general/0/use_login_shell'),
                     trap_errors=rt.runtime().get_option(
                         'general/0/trap_job_errors'
