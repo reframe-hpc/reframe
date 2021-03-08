@@ -24,7 +24,9 @@ def modules_system_nopath(request, monkeypatch):
     except ConfigError:
         pytest.skip(f'{request.param} not supported')
 
-    return m
+    environ_save = env.snapshot()
+    yield m
+    environ_save.restore()
 
 
 @pytest.fixture
