@@ -7,7 +7,6 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.required_version('>=2.14')
 @rfm.simple_test
 class NvprofCheck(rfm.RegressionTest):
     def __init__(self):
@@ -39,8 +38,8 @@ class NvprofCheck(rfm.RegressionTest):
         # cuda/10.1
         self.postrun_cmds = ['cat /etc/modprobe.d/nvidia.conf']
         self.sanity_patterns = sn.all([
-            sn.assert_found('Profiling application: %s' %
-                            self.target_executable, self.stderr),
+            sn.assert_found(f'Profiling application: {self.target_executable}',
+                            self.stderr),
             sn.assert_found('[CUDA memcpy HtoD]', self.stderr),
             sn.assert_found('[CUDA memcpy DtoH]', self.stderr),
             sn.assert_found(r'\s+100(\s+\S+){3}\s+jacobi_kernel', self.stderr),
