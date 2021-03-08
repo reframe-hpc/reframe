@@ -42,7 +42,8 @@ class AffinityTestBase(rfm.RegressionTest):
     system = variable(dict, value={})
 
     valid_systems = [
-        'daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc', 'eiger:mc',
+        'daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+        'eiger:mc', 'pilatus:mc'
         'ault:amdv100'
     ]
     valid_prog_environs = [
@@ -63,8 +64,12 @@ class AffinityTestBase(rfm.RegressionTest):
         'daint:gpu':  'topo_dom_gpu.json',
         'daint:mc':   'topo_dom_mc.json',
         'eiger:mc':   'topo_eiger_mc.json',
+        'pilatus:mc':   'topo_eiger_mc.json',
         'ault:amdv100': 'topo_ault_amdv100.json',
     })
+
+    # Reference topology file as required variable
+    topo_file = variable(str)
 
     maintainers = ['RS', 'SK']
     tags = {'production', 'scs', 'maintenance', 'craype'}
@@ -80,8 +85,13 @@ class AffinityTestBase(rfm.RegressionTest):
 
     @rfm.run_before('compile')
     def set_topo_file(self):
+        '''Set the topo_file variable.
+
+        If not present in the topology dict, leave it as required.
+        '''
         cp = self.current_partition.fullname
-        self.topo_file = self.topology[cp]
+        if cp in self.topology:
+            self.topo_file = self.topology[cp]
 
     # FIXME: Update the hook below once the PR #1773 is merged.
     @rfm.run_after('compile')
@@ -539,7 +549,7 @@ class OneTaskPerNumaNode(AffinityTestBase):
     Multithreading is disabled.
     '''
 
-    valid_systems = ['eiger:mc']
+    valid_systems = ['eiger:mc', 'pilatus:mc']
     use_multithreading = False
     num_cpus_per_task = required
 
