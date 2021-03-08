@@ -46,7 +46,9 @@ site_configuration = {
                     'launcher': 'srun',
 
                     # Use the extensive syntax here
-                    'modules': [{'name': 'foogpu', 'collection': False, 'path': None}],
+                    'modules': [
+                        {'name': 'foogpu', 'collection': False, 'path': '/foo'}
+                    ],
                     'variables': [['FOO_GPU', 'yes']],
                     'resources': [
                         {

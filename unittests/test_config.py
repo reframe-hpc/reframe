@@ -274,7 +274,7 @@ def test_select_subconfig():
     assert (site_config.get('systems/0/partitions/0/resources/@gpu/name') ==
             'gpu')
     assert site_config.get('systems/0/partitions/0/modules') == [
-            {'name': 'foogpu', 'collection': False, 'path': None}
+        {'name': 'foogpu', 'collection': False, 'path': '/foo'}
     ]
     assert (site_config.get('systems/0/partitions/0/variables') ==
             [['FOO_GPU', 'yes']])
@@ -352,6 +352,9 @@ def test_system_create():
     assert partition.access == []
     assert partition.container_environs == {}
     assert partition.local_env.modules == ['foogpu']
+    assert partition.local_env.modules_detailed == [{
+        'name': 'foogpu', 'collection': False, 'path': '/foo'
+    }]
     assert partition.local_env.variables == {'FOO_GPU': 'yes'}
     assert partition.max_jobs == 10
     assert len(partition.environs) == 2
