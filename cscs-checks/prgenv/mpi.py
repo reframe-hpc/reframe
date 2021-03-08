@@ -38,7 +38,7 @@ class MpiInitTest(rfm.RegressionTest):
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                               'eiger:mc']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu', 'PrgEnv-pgi',
-                                    'PrgEnv-intel', 'PrgEnv-aocc']
+                                    'PrgEnv-intel']
         self.build_system = 'SingleSource'
         self.sourcesdir = 'src/mpi_thread'
         self.sourcepath = 'mpi_init_thread.cpp'
