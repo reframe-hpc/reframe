@@ -21,7 +21,7 @@ class AllocSpeedTest(rfm.RegressionTest):
             self.valid_systems += ['arolla:cn', 'arolla:pn',
                                    'tsa:cn', 'tsa:pn']
         else:
-            if self.current_system.name in {'dom', 'daint', 
+            if self.current_system.name in {'dom', 'daint',
                                             'eiger', 'pilatus'}:
                 self.modules = ['craype-hugepages%s' % hugepages]
 

@@ -25,7 +25,7 @@ class HDF5Test(rfm.RegressionTest):
 
         # PrgEnv-intel on Pilatus does not feature cray-hdf5 as of PE 21.02
         if self.current_system.name == 'pilatus':
-            self.valid_prog_environs = ['PrgEnv-aocc', 'PrgEnv-cray', 
+            self.valid_prog_environs = ['PrgEnv-aocc', 'PrgEnv-cray',
                                         'PrgEnv-gnu']
         else:
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',

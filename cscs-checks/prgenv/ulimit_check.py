@@ -13,7 +13,7 @@ class UlimitCheck(rfm.RegressionTest):
         self.descr = 'Checking the output of ulimit -s in node.'
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                               'eiger:mc', 'pilatus:mc']
-  
+
         self.valid_prog_environs = ['PrgEnv-aocc', 'PrgEnv-cray',
                                     'PrgEnv-gnu', 'PrgEnv-intel',
                                     'PrgEnv-pgi']

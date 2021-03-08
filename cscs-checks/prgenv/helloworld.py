@@ -28,7 +28,7 @@ class HelloWorldBaseTest(rfm.RegressionTest):
         if linkage == 'dynamic':
             self.valid_systems += ['eiger:mc', 'pilatus:mc']
 
-        self.valid_prog_environs = ['PrgEnv-aocc', 'PrgEnv-cray', 
+        self.valid_prog_environs = ['PrgEnv-aocc', 'PrgEnv-cray',
                                     'PrgEnv-cray_classic', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi',
                                     'PrgEnv-gnu-nocuda', 'PrgEnv-pgi-nocuda']

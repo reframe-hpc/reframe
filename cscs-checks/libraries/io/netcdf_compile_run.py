@@ -35,7 +35,7 @@ class NetCDFTest(rfm.RegressionTest):
             self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-gnu-nompi', 'PrgEnv-pgi-nompi']
         elif self.current_system.name in ['eiger', 'pilatus']:
-            self.valid_prog_environs = ['PrgEnv-aocc', 'PrgEnv-cray', 
+            self.valid_prog_environs = ['PrgEnv-aocc', 'PrgEnv-cray',
                                         'PrgEnv-gnu']
             self.modules = ['cray-hdf5', 'cray-netcdf']
         else:
