@@ -92,7 +92,9 @@ site_configuration = {
     'environments': [
         {
             'name': 'PrgEnv-gnu',
-            'modules': [{'name': 'PrgEnv-gnu', 'collection': False, 'path': None}],
+            'modules': [
+                {'name': 'PrgEnv-gnu', 'collection': False, 'path': None}
+            ],
         },
         {
             'name': 'PrgEnv-gnu',
