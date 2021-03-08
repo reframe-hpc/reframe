@@ -32,6 +32,20 @@ site_configuration = {
                     'launcher': 'local'
                 },
                 {
+                    'name': 'a64fx',
+                    'scheduler': 'slurm',
+                    'access': [
+                        '-pa64fx'
+                    ],
+                    'environs': [
+                        'builtin',
+                        'PrgEnv-gnu'
+                    ],
+                    'descr': 'Fujitsu A64FX CPUs',
+                    'max_jobs': 100,
+                    'launcher': 'srun'
+                },
+                {
                     'name': 'amda100',
                     'scheduler': 'slurm',
                     'access': [
@@ -646,57 +660,6 @@ site_configuration = {
             ]
         },
         {
-            'name': 'pilatus',
-            'descr': 'Alps Cray EX Supercomputer (TDS)',
-            'hostnames': [
-                'pilatus'
-            ],
-            'modules_system': 'lmod',
-            'resourcesdir': '/apps/common/UES/reframe/resources',
-            'partitions': [
-                {
-                    'name': 'login',
-                    'scheduler': 'local',
-                    'environs': [
-                        'builtin',
-                        'PrgEnv-cray',
-                        'PrgEnv-gnu',
-                        'PrgEnv-aocc'
-                    ],
-                    'descr': 'Login nodes',
-                    'max_jobs': 4,
-                    'launcher': 'local'
-                },
-                {
-                    'name': 'mc',
-                    'descr': 'Multicore nodes (AMD EPYC 7742, 256|512GB/cn)',
-                    'scheduler': 'slurm',
-                    'environs': [
-                        'builtin',
-                        'PrgEnv-cray',
-                        'PrgEnv-gnu',
-                        'PrgEnv-aocc'
-                    ],
-                    'max_jobs': 100,
-                    'resources': [
-                        {
-                            'name': 'switches',
-                            'options': [
-                                '--switches={num_switches}'
-                            ]
-                        },
-                        {
-                            'name': 'memory',
-                            'options': [
-                                '--mem={mem_per_node}'
-                            ]
-                        },
-                    ],
-                    'launcher': 'srun'
-                },
-            ]
-        },
-        {
             'name': 'eiger',
             'descr': 'Alps Cray EX Supercomputer',
             'hostnames': [
@@ -748,6 +711,67 @@ site_configuration = {
             ]
         },
         {
+            'name': 'pilatus',
+            'descr': 'Alps Cray EX Supercomputer TDS',
+            'hostnames': [
+                'pilatus'
+            ],
+            'modules_system': 'lmod',
+            'resourcesdir': '/apps/common/UES/reframe/resources',
+            'partitions': [
+                {
+                    'name': 'login',
+                    'scheduler': 'local',
+                    'environs': [
+                        'builtin',
+                        'PrgEnv-aocc',
+                        'PrgEnv-cray',
+                        'PrgEnv-gnu',
+                        'PrgEnv-intel',
+                        'cpeAMD',
+                        'cpeCray',
+                        'cpeGNU',
+                        'cpeIntel'
+                    ],
+                    'descr': 'Login nodes',
+                    'max_jobs': 4,
+                    'launcher': 'local'
+                },
+                {
+                    'name': 'mc',
+                    'descr': 'Multicore nodes (AMD EPYC 7742, 256|512GB/cn)',
+                    'scheduler': 'slurm',
+                    'environs': [
+                        'builtin',
+                        'PrgEnv-aocc',
+                        'PrgEnv-cray',
+                        'PrgEnv-gnu',
+                        'PrgEnv-intel',
+                        'cpeAMD',
+                        'cpeCray',
+                        'cpeGNU',
+                        'cpeIntel'
+                    ],
+                    'max_jobs': 100,
+                    'resources': [
+                        {
+                            'name': 'switches',
+                            'options': [
+                                '--switches={num_switches}'
+                            ]
+                        },
+                        {
+                            'name': 'memory',
+                            'options': [
+                                '--mem={mem_per_node}'
+                            ]
+                        },
+                    ],
+                    'launcher': 'srun'
+                },
+            ]
+        },
+        {
             'name': 'generic',
             'descr': 'Generic fallback system',
             'partitions': [
@@ -771,9 +795,7 @@ site_configuration = {
                 'ault'
             ],
             'modules': [
-                'gcc/9.3.0',
-                'cuda/11.0',
-                'openmpi/3.1.6'
+                'openmpi'
             ],
             'cc': 'mpicc',
             'cxx': 'mpicxx',
@@ -894,6 +916,15 @@ site_configuration = {
             'ftn': 'gfortran'
         },
         {
+            'name': 'PrgEnv-aocc',
+            'target_systems': [
+                'eiger', 'pilatus'
+            ],
+            'modules': [
+                {'name': 'PrgEnv-aocc', 'collection': True}
+            ]
+        },
+        {
             'name': 'PrgEnv-cray',
             'target_systems': [
                 'eiger', 'pilatus'
@@ -912,13 +943,49 @@ site_configuration = {
             ]
         },
         {
-            'name': 'PrgEnv-aocc',
+            'name': 'PrgEnv-intel',
+            'target_systems': [
+                'pilatus'
+            ],
+            'modules': [
+                {'name': 'PrgEnv-intel', 'collection': True}
+            ]
+        },
+        {
+            'name': 'cpeAMD',
             'target_systems': [
                 'eiger', 'pilatus'
             ],
             'modules': [
-                {'name': 'PrgEnv-aocc', 'collection': True}
-            ]
+                'cpeAMD'
+            ],
+        },
+        {
+            'name': 'cpeCray',
+            'target_systems': [
+                'eiger', 'pilatus'
+            ],
+            'modules': [
+                'cpeCray'
+            ],
+        },
+        {
+            'name': 'cpeGNU',
+            'target_systems': [
+                'eiger', 'pilatus'
+            ],
+            'modules': [
+                'cpeGNU'
+            ],
+        },
+        {
+            'name': 'cpeIntel',
+            'target_systems': [
+                'pilatus'
+            ],
+            'modules': [
+                'cpeIntel'
+            ],
         },
         {
             'name': 'PrgEnv-cray',

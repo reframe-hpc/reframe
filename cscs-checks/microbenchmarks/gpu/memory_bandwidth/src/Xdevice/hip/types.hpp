@@ -13,6 +13,7 @@ XMemcpyKind XMemcpyDeviceToDevice = hipMemcpyDeviceToDevice;
 XMemcpyKind XMemcpyHostToHost = hipMemcpyHostToHost;
 XMemcpyKind XMemcpyDefault = hipMemcpyDefault;
 
-
+// This flag is ignored by ROCm
+#define XHostAllocMapped 0x02
 
 #endif

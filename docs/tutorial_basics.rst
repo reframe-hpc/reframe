@@ -323,7 +323,7 @@ Note that you should *not* edit this configuration file in place.
 Here is how the new configuration file looks like with the needed additions highlighted:
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 10-24,76-97,130-
+   :lines: 10-24,80-101,134-
    :emphasize-lines: 3-15,31-42
 
 Here we define a system named ``catalina`` that has one partition named ``default``.
@@ -807,7 +807,7 @@ Let's extend our configuration file for Piz Daint.
 
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 10-45,58-66,73-
+   :lines: 10-45,62-70,77-
    :emphasize-lines: 16-48,70-101,114-120
 
 

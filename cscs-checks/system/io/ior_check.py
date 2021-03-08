@@ -23,6 +23,12 @@ class IorCheck(rfm.RegressionTest):
         self.prerun_cmds = ['mkdir -p ' + self.test_dir]
         self.test_file = os.path.join(self.test_dir, 'ior')
         self.fs = {
+            '/scratch/e1000': {
+                'valid_systems': ['eiger:mc'],
+                'eiger': {
+                    'num_tasks': 10,
+                }
+            },
             '/scratch/snx3000tds': {
                 'valid_systems': ['dom:gpu', 'dom:mc'],
                 'dom': {
@@ -105,7 +111,7 @@ class IorCheck(rfm.RegressionTest):
 
         self.maintainers = ['SO', 'GLR']
 
-        systems_to_test = ['dom', 'daint']
+        systems_to_test = ['dom', 'daint', 'eiger']
         if self.current_system.name in systems_to_test:
             self.tags |= {'production', 'external-resources'}
 
@@ -115,7 +121,8 @@ class IorCheck(rfm.RegressionTest):
         self.executable_opts += ['-o', self.test_file]
 
 
-@rfm.parameterized_test(['/scratch/snx3000tds'],
+@rfm.parameterized_test(['/scratch/e1000'],
+                        ['/scratch/snx3000tds'],
                         ['/scratch/snx3000'],
                         ['/users'],
                         ['/scratch/shared/fulen'])
@@ -132,7 +139,8 @@ class IorWriteCheck(IorCheck):
         self.tags |= {'write'}
 
 
-@rfm.parameterized_test(['/scratch/snx3000tds'],
+@rfm.parameterized_test(['/scratch/e1000'],
+                        ['/scratch/snx3000tds'],
                         ['/scratch/snx3000'],
                         ['/users'],
                         ['/scratch/shared/fulen'])

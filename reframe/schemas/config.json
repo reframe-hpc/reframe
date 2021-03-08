@@ -34,9 +34,11 @@
                         "type": "object",
                         "properties": {
                             "name": {"type": "string"},
-                            "collection": {"type": "boolean"}
+                            "collection": {"type": "boolean"},
+                            "path": {"type": ["string", "null"]}
                         },
-                        "required": ["name"]
+                        "required": ["name"],
+                        "additionalProperties": false
                     }
                 ]
             }
@@ -274,6 +276,10 @@
                                 "modules": {"$ref": "#/defs/modules_list"},
                                 "variables": {"$ref": "#/defs/envvar_list"},
                                 "max_jobs": {"type": "number"},
+                                "prepare_cmds": {
+                                    "type": "array",
+                                    "items": {"type": "string"}
+                                 },
                                 "processor": {"$ref": "#/defs/processor_info"},
                                 "devices": {
                                     "type": "array",
@@ -444,15 +450,9 @@
                     "save_log_files": {"type": "boolean"},
                     "target_systems": {"$ref": "#/defs/system_ref"},
                     "timestamp_dirs": {"type": "string"},
-                    "unload_modules": {
-                        "type": "array",
-                        "items": {"type": "string"}
-                    },
+                    "unload_modules": {"$ref": "#/defs/modules_list"},
                     "use_login_shell": {"type": "boolean"},
-                    "user_modules": {
-                        "type": "array",
-                        "items": {"type": "string"}
-                    },
+                    "user_modules": {"$ref": "#/defs/modules_list"},
                     "verbose": {"type": "number"}
                 },
                 "additionalProperties": false
@@ -532,6 +532,7 @@
         "systems/partitions/modules": [],
         "systems/partitions/variables": [],
         "systems/partitions/max_jobs": 8,
+        "systems/partitions/prepare_cmds": []
         "systems/partitions/processor": {},
         "systems/partitions/devices": [],
         "systems/partitions/extras": {}

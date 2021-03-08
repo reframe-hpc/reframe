@@ -206,7 +206,8 @@ class SystemPartition(jsonext.JSONSerializable):
 
     def __init__(self, parent, name, sched_type, launcher_type,
                  descr, access, container_environs, resources,
-                 local_env, environs, max_jobs, processor, devices, extras):
+                 local_env, environs, max_jobs, prepare_cmds,
+                 processor, devices, extras):
         getlogger().debug(f'Initializing system partition {name!r}')
         self._parent_system = parent
         self._name = name
@@ -219,6 +220,7 @@ class SystemPartition(jsonext.JSONSerializable):
         self._local_env = local_env
         self._environs = environs
         self._max_jobs = max_jobs
+        self._prepare_cmds = prepare_cmds
         self._resources = {r['name']: r['options'] for r in resources}
         self._processor = ProcessorType(processor)
         self._devices = [DeviceType(d) for d in devices]
@@ -284,6 +286,14 @@ class SystemPartition(jsonext.JSONSerializable):
         :type: integral
         '''
         return self._max_jobs
+
+    @property
+    def prepare_cmds(self):
+        '''Commands to be emitted before loading the modules.
+
+        :type: :class:`List[str]`
+        '''
+        return self._prepare_cmds
 
     @property
     def name(self):
@@ -537,6 +547,7 @@ class System(jsonext.JSONSerializable):
                         variables=site_config.get(f'{partid}/variables')
                     ),
                     max_jobs=site_config.get(f'{partid}/max_jobs'),
+                    prepare_cmds=site_config.get(f'{partid}/prepare_cmds'),
                     processor=site_config.get(f'{partid}/processor'),
                     devices=site_config.get(f'{partid}/devices'),
                     extras=site_config.get(f'{partid}/extras')

@@ -308,6 +308,16 @@ System Partition Configuration
    This option is relevant only when ReFrame executes with the `asynchronous execution policy <pipeline.html#execution-policies>`__.
 
 
+.. js:attribute:: .systems[].partitions[].prepare_cmds
+
+   :required: No
+   :default: ``[]``
+
+   List of shell commands to be emitted before any environment loading commands are emitted.
+
+   .. versionadded:: 3.5.0
+
+
 .. js:attribute:: .systems[].partitions[].resources
 
    :required: No
@@ -738,20 +748,23 @@ All logging handlers share the following set of common attributes:
    - ``%(check_perf_upper_thres)s``: The upper threshold of the performance difference from the reference value expressed as a fractional value.
      See the :attr:`reframe.core.pipeline.RegressionTest.reference` attribute of regression tests for more details.
    - ``%(check_perf_value)s``: The performance value obtained for a certain performance variable.
-   - ``%(check_perf_var)s``: The name of the `performance variable <tutorial_basic.html#writing-a-performance-test>`__ being logged.
+   - ``%(check_perf_var)s``: The name of the `performance variable <tutorial_basics.html#writing-a-performance-test>`__ being logged.
    - ``%(check_ATTR)s``: This will log the value of the attribute ``ATTR`` of the currently executing regression test.
      Dictionaries will be logged in JSON format and all other iterables, except strings, will be logged as comma-separated lists.
      If ``ATTR`` is not an attribute of the test, ``%(check_ATTR)s`` will be logged as ``null``.
      This allows users to log arbitrary attributes of their tests.
      For the complete list of test attributes, please refer to :doc:`regression_test_api`.
+   - ``%(check_job_ATTR)s``: This will log the value of the attribute ``ATTR`` of the :class:`job <reframe.core.schedulers.Job>` associated to the currently executing regression test.
    - ``%(osuser)s``: The name of the OS user running ReFrame.
    - ``%(osgroup)s``: The name of the OS group running ReFrame.
    - ``%(version)s``: The ReFrame version.
 
 
 .. versionadded:: 3.3
-   The ability to log arbitrary test attributes was added.
+   Allow arbitrary test attributes to be logged.
 
+.. versionadded:: 3.4.2
+   Allow arbitrary job attributes to be logged.
 
 .. js:attribute:: .logging[].handlers[].datefmt
 
@@ -1292,6 +1305,18 @@ It can either be a simple string or a JSON object with the following attributes:
 
    A boolean value indicating whether this module refers to a module collection.
    Module collections are treated differently from simple modules when loading.
+
+.. js:attribute:: .path
+
+   :required: No
+   :default: ``null``
+
+   If the module is not present in the default ``MODULEPATH``, the module's location can be specified here.
+   ReFrame will make sure to set and restore the ``MODULEPATH`` accordingly for loading the module.
+
+
+   .. versionadded:: 3.5.0
+
 
 .. seealso::
 

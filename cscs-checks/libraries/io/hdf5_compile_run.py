@@ -7,7 +7,6 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.required_version('>=2.14')
 @rfm.parameterized_test(*([lang, linkage] for lang in ['c', 'f90']
                           for linkage in ['static', 'dynamic']))
 class HDF5Test(rfm.RegressionTest):
@@ -22,6 +21,9 @@ class HDF5Test(rfm.RegressionTest):
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi']
+        if linkage == 'dynamic':
+            self.valid_systems += ['eiger:mc']
+
         self.modules = ['cray-hdf5']
         self.keep_files = ['h5dump_out.txt']
 
