@@ -7,7 +7,6 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.required_version('>=2.14.0')
 @rfm.parameterized_test(['dynamic'], ['static'])
 class PetscPoisson2DCheck(rfm.RegressionTest):
     def __init__(self, linkage):

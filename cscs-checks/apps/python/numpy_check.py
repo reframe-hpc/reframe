@@ -74,7 +74,6 @@ class NumpyBaseTest(rfm.RunOnlyRegressionTest):
         self.maintainers = ['RS', 'TR']
 
 
-@rfm.required_version('>=2.16.0')
 @rfm.simple_test
 class NumpyHaswellTest(NumpyBaseTest):
     def __init__(self):
@@ -83,7 +82,6 @@ class NumpyHaswellTest(NumpyBaseTest):
         self.num_cpus_per_task = 12
 
 
-@rfm.required_version('>=2.16.0')
 @rfm.simple_test
 class NumpyBroadwellTest(NumpyBaseTest):
     def __init__(self):

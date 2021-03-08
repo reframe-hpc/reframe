@@ -7,7 +7,6 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.required_version('>=2.16.0')
 @rfm.parameterized_test(['cblas_z'], ['zgemm'],
                         ['zsymmetrize'], ['ztranspose'])
 class MagmaCheck(rfm.RegressionTest):

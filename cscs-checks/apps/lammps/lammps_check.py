@@ -41,7 +41,6 @@ class LAMMPSBaseCheck(rfm.RunOnlyRegressionTest):
         self.maintainers = ['TR', 'VH']
 
 
-@rfm.required_version('>=2.16.0')
 @rfm.parameterized_test(*([s, v]
                           for s in ['small', 'large']
                           for v in ['prod', 'maint']))
@@ -85,7 +84,6 @@ class LAMMPSGPUCheck(LAMMPSBaseCheck):
         self.tags |= {'maintenance' if variant == 'maint' else 'production'}
 
 
-@rfm.required_version('>=2.16.0')
 @rfm.parameterized_test(*([s, v]
                           for s in ['small', 'large']
                           for v in ['prod']))

@@ -9,7 +9,6 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.required_version('>=2.14.0')
 @rfm.parameterized_test(['single'], ['funneled'], ['serialized'], ['multiple'])
 class MpiInitTest(rfm.RegressionTest):
     '''This test checks the value returned by calling MPI_Init_thread.

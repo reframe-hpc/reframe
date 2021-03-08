@@ -43,7 +43,6 @@ class AmberBaseCheck(rfm.RunOnlyRegressionTest):
         self.tags = {'scs', 'external-resources'}
 
 
-@rfm.required_version('>=2.16.0')
 @rfm.parameterized_test(*(
     [variant, arch, scale]
     for variant in ['prod', 'maint']
