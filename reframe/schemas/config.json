@@ -390,15 +390,9 @@
                     "save_log_files": {"type": "boolean"},
                     "target_systems": {"$ref": "#/defs/system_ref"},
                     "timestamp_dirs": {"type": "string"},
-                    "unload_modules": {
-                        "type": "array",
-                        "items": {"type": "string"}
-                    },
+                    "unload_modules": {"$ref": "#/defs/modules_list"},
                     "use_login_shell": {"type": "boolean"},
-                    "user_modules": {
-                        "type": "array",
-                        "items": {"type": "string"}
-                    },
+                    "user_modules": {"$ref": "#/defs/modules_list"},
                     "verbose": {"type": "number"}
                 },
                 "additionalProperties": false
