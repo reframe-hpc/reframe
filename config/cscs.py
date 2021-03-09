@@ -767,7 +767,20 @@ site_configuration = {
                             ]
                         },
                     ],
-                    'launcher': 'srun'
+                    'launcher': 'srun',
+                    'processor': [
+                        {
+                            'arch': 'AMD EPYC 7742 64-Core Processor',
+                            'num_cpus': 256,
+                            'num_cpus_per_core': 2,
+                            'num_cpus_per_socket' 128,
+                            # +num_cores
+                            # +num_cores_per_socket
+                            # +num_numa_nodes
+                            # +num_cores_per_numa_node
+                            # 'num_sockets'
+                        },
+                    ],
                 },
             ]
         },
