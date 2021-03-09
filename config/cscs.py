@@ -735,7 +735,13 @@ site_configuration = {
                     ],
                     'descr': 'Login nodes',
                     'max_jobs': 4,
-                    'launcher': 'local'
+                    'launcher': 'local',
+                    'processor': {
+                        'arch': 'zen2',
+                        'num_cpus': 256,
+                        'num_cpus_per_core': 2,
+                        'num_cpus_per_socket': 128,
+                    },
                 },
                 {
                     'name': 'mc',
@@ -769,7 +775,7 @@ site_configuration = {
                     ],
                     'launcher': 'srun',
                     'processor': {
-                        'arch': 'AMD EPYC 7742 64-Core Processor',
+                        'arch': 'zen2',
                         'num_cpus': 256,
                         'num_cpus_per_core': 2,
                         'num_cpus_per_socket': 128,
@@ -778,6 +784,11 @@ site_configuration = {
                         # +num_numa_nodes
                         # +num_cores_per_numa_node
                         # 'num_sockets'
+#                         'topology': {
+#                             'numa_nodes': [0x000000ff],
+#                             'sockets': [0x000000ff],
+#                             'cores': [0x00000003, 0x0000000c, 0x00000030, 0x000000c0]
+#                         },
                     },
                 },
             ]
