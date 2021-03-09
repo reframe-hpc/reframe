@@ -178,7 +178,14 @@ site_configuration = {
                     ],
                     'descr': 'Login nodes',
                     'max_jobs': 4,
-                    'launcher': 'local'
+                    'launcher': 'local',
+                    'processor': {
+                        'arch': 'haswell',
+                        'num_cpus': 20,
+                        'num_cpus_per_core': 2,
+                        'num_cpus_per_socket': 10,
+                        'num_sockets': 2,
+                    },
                 },
                 {
                     'name': 'gpu',
@@ -225,7 +232,14 @@ site_configuration = {
                             'options': ['--gres={gres}']
                         }
                     ],
-                    'launcher': 'srun'
+                    'launcher': 'srun',
+                    'processor': {
+                        'arch': 'haswell',
+                        'num_cpus': 24,
+                        'num_cpus_per_core': 2,
+                        'num_cpus_per_socket': 24,
+                        'num_sockets': 1,
+                    },
                 },
                 {
                     'name': 'mc',
@@ -272,7 +286,14 @@ site_configuration = {
                             'options': ['--gres={gres}']
                         }
                     ],
-                    'launcher': 'srun'
+                    'launcher': 'srun',
+                    'processor': {
+                        'arch': 'broadwell',
+                        'num_cpus': 72,
+                        'num_cpus_per_core': 2,
+                        'num_cpus_per_socket': 36,
+                        'num_sockets': 2,
+                    },
                 },
                 {
                     'name': 'jupyter_gpu',
@@ -287,7 +308,14 @@ site_configuration = {
                     ],
                     'descr': 'JupyterHub GPU nodes',
                     'max_jobs': 10,
-                    'launcher': 'srun'
+                    'launcher': 'srun',
+                    'processor': {
+                        'arch': 'haswell',
+                        'num_cpus': 24,
+                        'num_cpus_per_core': 2,
+                        'num_cpus_per_socket': 24,
+                        'num_sockets': 1,
+                    },
                 },
                 {
                     'name': 'jupyter_mc',
@@ -302,7 +330,14 @@ site_configuration = {
                     ],
                     'descr': 'JupyterHub multicore nodes',
                     'max_jobs': 10,
-                    'launcher': 'srun'
+                    'launcher': 'srun',
+                    'processor': {
+                        'arch': 'broadwell',
+                        'num_cpus': 72,
+                        'num_cpus_per_core': 2,
+                        'num_cpus_per_socket': 36,
+                        'num_sockets': 2,
+                    },
                 },
                 {
                     'name': 'xfer',
@@ -343,7 +378,14 @@ site_configuration = {
                     ],
                     'descr': 'Login nodes',
                     'max_jobs': 4,
-                    'launcher': 'local'
+                    'launcher': 'local',
+                    'processor': {
+                        'arch': 'haswell',
+                        'num_cpus': 20,
+                        'num_cpus_per_core': 2,
+                        'num_cpus_per_socket': 10,
+                        'num_sockets': 2,
+                    },
                 },
                 {
                     'name': 'gpu',
@@ -379,6 +421,13 @@ site_configuration = {
                     'descr': 'Hybrid nodes (Haswell/P100)',
                     'max_jobs': 100,
                     'launcher': 'srun',
+                    'processor': {
+                        'arch': 'haswell',
+                        'num_cpus': 24,
+                        'num_cpus_per_core': 2,
+                        'num_cpus_per_socket': 24,
+                        'num_sockets': 1,
+                    },
                     'resources': [
                         {
                             'name': 'gres',
@@ -425,7 +474,14 @@ site_configuration = {
                             'options': ['--gres={gres}']
                         }
                     ],
-                    'launcher': 'srun'
+                    'launcher': 'srun',
+                    'processor': {
+                        'arch': 'broadwell',
+                        'num_cpus': 72,
+                        'num_cpus_per_core': 2,
+                        'num_cpus_per_socket': 36,
+                        'num_sockets': 2,
+                    },
                 },
                 {
                     'name': 'jupyter_gpu',
@@ -440,7 +496,14 @@ site_configuration = {
                     ],
                     'descr': 'JupyterHub GPU nodes',
                     'max_jobs': 10,
-                    'launcher': 'srun'
+                    'launcher': 'srun',
+                    'processor': {
+                        'arch': 'haswell',
+                        'num_cpus': 24,
+                        'num_cpus_per_core': 2,
+                        'num_cpus_per_socket': 24,
+                        'num_sockets': 1,
+                    },
                 },
                 {
                     'name': 'jupyter_mc',
@@ -455,7 +518,15 @@ site_configuration = {
                     ],
                     'descr': 'JupyterHub multicore nodes',
                     'max_jobs': 10,
-                    'launcher': 'srun'
+                    'launcher': 'srun',
+                    'processor': {
+                        'arch': 'broadwell',
+                        'num_cpus': 72,
+                        'num_cpus_per_core': 2,
+                        'num_cpus_per_socket': 36,
+                        'num_sockets': 2,
+                    },
+
                 }
             ]
         },
@@ -679,7 +750,14 @@ site_configuration = {
                     ],
                     'descr': 'Login nodes',
                     'max_jobs': 4,
-                    'launcher': 'local'
+                    'launcher': 'local',
+                    'processor': {
+                        'arch': 'zen2',
+                        'num_cpus': 256,
+                        'num_cpus_per_core': 2,
+                        'num_cpus_per_socket': 128,
+                        'num_sockets': 2,
+                    },
                 },
                 {
                     'name': 'mc',
@@ -706,7 +784,14 @@ site_configuration = {
                             ]
                         },
                     ],
-                    'launcher': 'srun'
+                    'launcher': 'srun',
+                    'processor': {
+                        'arch': 'zen2',
+                        'num_cpus': 256,
+                        'num_cpus_per_core': 2,
+                        'num_cpus_per_socket': 128,
+                        'num_sockets': 2,
+                    },
                 },
             ]
         },
@@ -741,6 +826,7 @@ site_configuration = {
                         'num_cpus': 256,
                         'num_cpus_per_core': 2,
                         'num_cpus_per_socket': 128,
+                        'num_sockets': 2,
                     },
                 },
                 {
@@ -779,16 +865,7 @@ site_configuration = {
                         'num_cpus': 256,
                         'num_cpus_per_core': 2,
                         'num_cpus_per_socket': 128,
-                        # +num_cores
-                        # +num_cores_per_socket
-                        # +num_numa_nodes
-                        # +num_cores_per_numa_node
-                        # 'num_sockets'
-#                         'topology': {
-#                             'numa_nodes': [0x000000ff],
-#                             'sockets': [0x000000ff],
-#                             'cores': [0x00000003, 0x0000000c, 0x00000030, 0x000000c0]
-#                         },
+                        'num_sockets': 2,
                     },
                 },
             ]
