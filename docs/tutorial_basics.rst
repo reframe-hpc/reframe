@@ -232,11 +232,11 @@ ReFrame allows you to avoid this in several ways but the most compact is to defi
    :lines: 6-
 
 
-This is exactly the same test as the ``hello1.py`` except that it is decorated with the :func:`@parameterized_test <reframe.core.decorators.parameterized_test>` decorator instead of the :func:`@simple_test <reframe.core.decorators.simple_test>`.
-Also the constructor of the test now takes an argument.
-The :func:`@parameterized_test <>` decorator instructs ReFrame to instantiate a test class with different parameters.
-In this case the test will be instantiated for both C and C++ and then we use the ``lang`` parameter directly as the extension of the source file.
-Let's run now the test:
+This is exactly the same test as the ``hello1.py`` except that it defines the ``lang`` parameter to denote the programming language to be used by the test.
+The :py:func:`~reframe.core.pipeline.RegressionTest.parameter` ReFrame built-in defines a new parameter for the test and will cause multiple instantiations of the test, each one setting the :attr:`lang` attribute to the actual parameter value.
+In this example, two tests will be created, one with ``lang='c'`` and another with ``lang='cpp'``.
+The parameter is available as an attribute of the test class and, in this example, we use it to set the extension of the source file.
+Let's run the test now:
 
 
 .. code-block:: console
@@ -246,7 +246,7 @@ Let's run now the test:
 .. code-block:: none
 
    [ReFrame Setup]
-     version:           3.3-dev0 (rev: 5d246bff)
+     version:           3.6.0-dev.0+a3d0b0cd
      command:           './bin/reframe -c tutorials/basics/hello/hello2.py -r'
      launched by:       user@tresa.local
      working directory: '/Users/user/Repositories/reframe'
@@ -256,7 +256,7 @@ Let's run now the test:
      output directory:  '/Users/user/Repositories/reframe/output'
 
    [==========] Running 2 check(s)
-   [==========] Started on Mon Oct 12 18:24:31 2020
+   [==========] Started on Tue Mar  9 23:25:22 2021
 
    [----------] started processing HelloMultiLangTest_c (HelloMultiLangTest_c)
    [ RUN      ] HelloMultiLangTest_c on generic:default using builtin
@@ -264,15 +264,16 @@ Let's run now the test:
 
    [----------] started processing HelloMultiLangTest_cpp (HelloMultiLangTest_cpp)
    [ RUN      ] HelloMultiLangTest_cpp on generic:default using builtin
-   [     FAIL ] (1/2) HelloMultiLangTest_cpp on generic:default using builtin [compile: 0.001s run: n/a total: 0.009s]
+   [     FAIL ] (1/2) HelloMultiLangTest_cpp on generic:default using builtin [compile: 0.006s run: n/a total: 0.023s]
+   ==> test failed during 'compile': test staged in '/Users/user/Repositories/reframe/stage/generic/default/builtin/HelloMultiLangTest_cpp'
    [----------] finished processing HelloMultiLangTest_cpp (HelloMultiLangTest_cpp)
 
    [----------] waiting for spawned checks to finish
-   [       OK ] (2/2) HelloMultiLangTest_c on generic:default using builtin [compile: 0.254s run: 0.286s total: 0.555s]
+   [       OK ] (2/2) HelloMultiLangTest_c on generic:default using builtin [compile: 0.981s run: 0.468s total: 1.475s]
    [----------] all spawned checks have finished
 
-   [  FAILED  ] Ran 2 test case(s) from 2 check(s) (1 failure(s))
-   [==========] Finished on Mon Oct 12 18:24:32 2020
+   [  FAILED  ] Ran 2/2 test case(s) from 2 check(s) (1 failure(s))
+   [==========] Finished on Tue Mar  9 23:25:23 2021
 
    ==============================================================================
    SUMMARY OF FAILURES
@@ -284,12 +285,14 @@ Let's run now the test:
      * Stage directory: /Users/user/Repositories/reframe/stage/generic/default/builtin/HelloMultiLangTest_cpp
      * Node list: None
      * Job type: local (id=None)
+     * Dependencies (conceptual): []
+     * Dependencies (actual): []
      * Maintainers: []
      * Failing phase: compile
-     * Rerun with '-n HelloMultiLangTest_cpp -p builtin --system generic:default'
+     * Rerun with '-n HelloMultiLangTest_cpp -p builtin --system generic:default -r'
      * Reason: build system error: I do not know how to compile a C++ program
    ------------------------------------------------------------------------------
-   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-lbpo8oan.log'
+   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-wemvsvs2.log'
 
 
 Oops! The C++ test has failed.
@@ -356,8 +359,8 @@ Let's now rerun our "Hello, World!" tests:
 .. code-block:: none
 
    [ReFrame Setup]
-     version:           3.3-dev0 (rev: 5d246bff)
-     command:           './bin/reframe -C tutorials/config/settings.py -c tutorials/basics/hello/hello2.py -r'
+     version:           3.6.0-dev.0+a3d0b0cd
+     command:           './bin/reframe -C tutorials/config/mysettings.py -c tutorials/basics/hello/hello2.py -r'
      launched by:       user@tresa.local
      working directory: '/Users/user/Repositories/reframe'
      settings file:     'tutorials/config/settings.py'
@@ -366,7 +369,7 @@ Let's now rerun our "Hello, World!" tests:
      output directory:  '/Users/user/Repositories/reframe/output'
 
    [==========] Running 2 check(s)
-   [==========] Started on Mon Oct 12 18:28:48 2020
+   [==========] Started on Tue Mar  9 23:28:00 2021
 
    [----------] started processing HelloMultiLangTest_c (HelloMultiLangTest_c)
    [ RUN      ] HelloMultiLangTest_c on catalina:default using gnu
@@ -379,15 +382,15 @@ Let's now rerun our "Hello, World!" tests:
    [----------] finished processing HelloMultiLangTest_cpp (HelloMultiLangTest_cpp)
 
    [----------] waiting for spawned checks to finish
-   [       OK ] (1/4) HelloMultiLangTest_cpp on catalina:default using gnu [compile: 1.077s run: 1.475s total: 2.566s]
-   [       OK ] (2/4) HelloMultiLangTest_c on catalina:default using gnu [compile: 4.128s run: 2.860s total: 7.004s]
-   [       OK ] (3/4) HelloMultiLangTest_c on catalina:default using clang [compile: 0.241s run: 2.741s total: 2.998s]
-   [       OK ] (4/4) HelloMultiLangTest_cpp on catalina:default using clang [compile: 1.399s run: 0.356s total: 1.770s]
+   [       OK ] (1/4) HelloMultiLangTest_cpp on catalina:default using gnu [compile: 0.768s run: 1.115s total: 1.909s]
+   [       OK ] (2/4) HelloMultiLangTest_c on catalina:default using gnu [compile: 0.600s run: 2.230s total: 2.857s]
+   [       OK ] (3/4) HelloMultiLangTest_c on catalina:default using clang [compile: 0.238s run: 2.129s total: 2.393s]
+   [       OK ] (4/4) HelloMultiLangTest_cpp on catalina:default using clang [compile: 1.006s run: 0.427s total: 1.456s]
    [----------] all spawned checks have finished
 
-   [  PASSED  ] Ran 4 test case(s) from 2 check(s) (0 failure(s))
-   [==========] Finished on Mon Oct 12 18:28:56 2020
-   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-a_dt6nro.log'
+   [  PASSED  ] Ran 4/4 test case(s) from 2 check(s) (0 failure(s))
+   [==========] Finished on Tue Mar  9 23:28:03 2021
+   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-dnubkvfi.log'
 
 
 Notice how the same tests are now tried with both the ``gnu`` and ``clang`` programming environments, without having to touch them at all!
