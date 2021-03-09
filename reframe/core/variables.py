@@ -491,12 +491,7 @@ class VarSpace(namespaces.Namespace):
         # namespace and update it into the variable space.
         _assigned_vars = set()
         for key, value in cls.__dict__.items():
-            if key in local_varspace:
-                raise ValueError(
-                    f'cannot specify more than one action on variable '
-                    f'{key!r} in the same class'
-                )
-            elif key in self.vars:
+            if key in self.vars:
                 self.vars[key].define(value)
                 _assigned_vars.add(key)
 

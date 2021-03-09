@@ -254,3 +254,27 @@ def test_param_space_read_only():
 
     with pytest.raises(ValueError):
         Foo.param_space['a'] = (1, 2, 3)
+
+
+def test_parameter_override():
+    with pytest.raises(ValueError):
+        # Trigger the check from MetaNamespace
+        class MyTest(rfm.RegressionTest):
+            p = parameter([1, 2])
+            p = 0
+
+    # Trigger the check in the extend method from ParameterSpace
+    class Foo(rfm.RegressionTest):
+        p = parameter([1, 2])
+
+    with pytest.raises(ValueError):
+        class Bar(Foo):
+            p = 0
+
+
+def test_override_regular_attribute():
+    with pytest.raises(ValueError):
+        class Foo(rfm.RegressionTest):
+            p = 4
+            p = parameter([1, 2])
+            p = p+1

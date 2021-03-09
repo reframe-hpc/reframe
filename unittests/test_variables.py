@@ -100,10 +100,10 @@ def test_double_declare():
 
 
 def test_double_action_on_variable():
-    with pytest.raises(ValueError):
-        class MyTest(rfm.RegressionTest):
-            v0 = variable(int, value=2)
-            v0 = 2
+    '''Modifying a variable in the class body is permitted.'''
+    class MyTest(rfm.RegressionTest):
+        v0 = variable(int, value=2)
+        v0 += 2
 
 
 def test_set_var(OneVarTest):
@@ -208,3 +208,11 @@ def test_var_space_is_read_only():
 
     with pytest.raises(ValueError):
         Foo._rfm_var_space['v'] = 0
+
+
+def test_override_regular_attribute():
+    class Foo(rfm.RegressionTest):
+        v = 0
+        v = variable(int, value=40)
+
+    assert Foo.v == 40

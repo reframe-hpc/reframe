@@ -17,16 +17,40 @@ import reframe.core.variables as variables
 class RegressionTestMeta(type):
 
     class MetaNamespace(namespaces.LocalNamespace):
-        '''Custom namespace to control the cls attribute assignment.'''
+        '''Custom namespace to control the cls attribute assignment.
+
+        Regular Python class attributes can be overriden by either
+        parameters or variables respecting the order of execution.
+        A variable or a parameter may not be declared more than once in the
+        same class body. Overriding a variable with a parameter or the other
+        way around has an undefined behaviour. A variable's value may be
+        updated multiple times within the same class body. A parameter's
+        value may not be updated more than once within the same class body.
+        '''
+
         def __setitem__(self, key, value):
             if isinstance(value, variables.TestVar):
                 # Insert the attribute in the variable namespace
                 self['_rfm_local_var_space'][key] = value
+
+                # Override the regular class attribute (if present)
+                self._namespace.pop(key, None)
+
             elif isinstance(value, parameters.TestParam):
                 # Insert the attribute in the parameter namespace
                 self['_rfm_local_param_space'][key] = value
+
+                # Override the regular class attribute (if present)
+                self._namespace.pop(key, None)
+
+            elif key in self['_rfm_local_param_space']:
+                raise ValueError(
+                    f'cannot override parameter {key!r}'
+                )
             else:
-                super().__setitem__(key, value)
+                # Insert the items manually to overide the namespace clash
+                # check from the base namespace.
+                self._namespace[key] = value
 
         def __getitem__(self, key):
             '''Expose and control access to the local namespaces.
