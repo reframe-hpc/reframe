@@ -7,7 +7,6 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.required_version('>=2.14')
 @rfm.simple_test
 class GpuDirectCudaCheck(rfm.RegressionTest):
     def __init__(self):

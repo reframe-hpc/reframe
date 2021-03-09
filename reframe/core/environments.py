@@ -20,7 +20,7 @@ def normalize_module_list(modules):
     ret = []
     for m in modules:
         if isinstance(m, str):
-            ret.append({'name': m, 'collection': False})
+            ret.append({'name': m, 'collection': False, 'path': None})
         else:
             ret.append(m)
 

@@ -126,10 +126,11 @@ class Cp2kCpuCheck(Cp2kCheck):
     @rfm.run_before('run')
     def set_task_distribution(self):
         self.job.options = ['--distribution=block:block']
- 
+
     @rfm.run_before('run')
     def set_cpu_binding(self):
         self.job.launcher.options = ['--cpu-bind=cores']
+
 
 @rfm.parameterized_test(*([s, v]
                           for s in ['small', 'large']

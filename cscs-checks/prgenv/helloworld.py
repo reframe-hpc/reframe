@@ -106,7 +106,6 @@ class HelloWorldBaseTest(rfm.RegressionTest):
         self.compilation_time_seconds = elapsed.total_seconds()
 
 
-@rfm.required_version('>=2.14.0')
 @rfm.parameterized_test(*([lang, linkage]
                           for lang in ['cpp', 'c', 'f90']
                           for linkage in ['dynamic', 'static']))
@@ -132,14 +131,13 @@ class HelloWorldTestSerial(HelloWorldBaseTest):
         self.num_tasks_per_node = 1
         self.num_cpus_per_task = 1
         if (self.current_system.name in ['arolla', 'tsa'] and
-              linkage == 'dynamic'):
+            linkage == 'dynamic'):
             self.valid_prog_environs += ['PrgEnv-pgi-nompi',
                                          'PrgEnv-pgi-nompi-nocuda',
                                          'PrgEnv-gnu-nompi',
                                          'PrgEnv-gnu-nompi-nocuda']
 
 
-@rfm.required_version('>=2.14.0')
 @rfm.parameterized_test(*([lang, linkage]
                           for lang in ['cpp', 'c', 'f90']
                           for linkage in ['dynamic', 'static']))
@@ -162,7 +160,7 @@ class HelloWorldTestOpenMP(HelloWorldBaseTest):
         self.num_tasks_per_node = 1
         self.num_cpus_per_task = 4
         if (self.current_system.name in ['arolla', 'tsa'] and
-              linkage == 'dynamic'):
+            linkage == 'dynamic'):
             self.valid_prog_environs += ['PrgEnv-pgi-nompi',
                                          'PrgEnv-pgi-nompi-nocuda',
                                          'PrgEnv-gnu-nompi',
@@ -175,7 +173,6 @@ class HelloWorldTestOpenMP(HelloWorldBaseTest):
         }
 
 
-@rfm.required_version('>=2.14.0')
 @rfm.parameterized_test(*([lang, linkage]
                           for lang in ['cpp', 'c', 'f90']
                           for linkage in ['dynamic', 'static']))
@@ -202,7 +199,6 @@ class HelloWorldTestMPI(HelloWorldBaseTest):
         self.num_cpus_per_task = 1
 
 
-@rfm.required_version('>=2.14.0')
 @rfm.parameterized_test(*([lang, linkage]
                           for lang in ['cpp', 'c', 'f90']
                           for linkage in ['dynamic', 'static']))
