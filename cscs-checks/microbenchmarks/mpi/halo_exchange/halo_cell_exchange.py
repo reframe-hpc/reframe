@@ -7,15 +7,14 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.required_version('>=2.16-dev0')
 @rfm.simple_test
 class HaloCellExchangeTest(rfm.RegressionTest):
     def __init__(self):
         self.sourcepath = 'halo_cell_exchange.c'
         self.build_system = 'SingleSource'
         self.build_system.cflags = ['-O2']
-        self.valid_systems = ['daint:gpu', 'dom:gpu',
-                              'arolla:cn', 'tsa:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'daint:mc', 'dom:mc',
+                              'arolla:cn', 'tsa:cn', 'eiger:mc']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi',
                                     'PrgEnv-gnu']
         self.num_tasks = 6
@@ -67,6 +66,28 @@ class HaloCellExchangeTest(rfm.RegressionTest):
         }
 
         self.reference = {
+            'dom:mc': {
+                'time_2_10': (3.925395e-06, None, 0.50, 's'),
+                'time_2_10000': (9.721279e-06, None, 0.50, 's'),
+                'time_2_1000000': (4.934530e-04, None, 0.50, 's'),
+                'time_4_10': (5.878997e-06, None, 0.50, 's'),
+                'time_4_10000': (1.495080e-05, None, 0.50, 's'),
+                'time_4_1000000': (6.791397e-04, None, 0.50, 's'),
+                'time_6_10': (5.428815e-06, None, 0.50, 's'),
+                'time_6_10000': (1.540580e-05, None, 0.50, 's'),
+                'time_6_1000000': (9.179296e-04, None, 0.50, 's')
+            },
+            'daint:mc': {
+                'time_2_10': (1.5e-05, None, 0.50, 's'),
+                'time_2_10000': (9.1e-05, None, 0.50, 's'),
+                'time_2_1000000': (7.9e-04, None, 0.50, 's'),
+                'time_4_10': (3e-05, None, 0.50, 's'),
+                'time_4_10000': (1.3e-04, None, 0.50, 's'),
+                'time_4_1000000': (6.791397e-04, None, 0.50, 's'),
+                'time_6_10': (3.5e-05, None, 0.50, 's'),
+                'time_6_10000': (1.2e-04, None, 0.50, 's'),
+                'time_6_1000000': (9.179296e-04, None, 0.50, 's')
+            },
             'dom:gpu': {
                 'time_2_10': (3.925395e-06, None, 0.50, 's'),
                 'time_2_10000': (9.721279e-06, None, 0.50, 's'),
@@ -79,15 +100,26 @@ class HaloCellExchangeTest(rfm.RegressionTest):
                 'time_6_1000000': (9.179296e-04, None, 0.50, 's')
             },
             'daint:gpu': {
-                'time_2_10': (3.925395e-06, None, 0.50, 's'),
-                'time_2_10000': (9.721279e-06, None, 0.50, 's'),
-                'time_2_1000000': (4.934530e-04, None, 0.50, 's'),
-                'time_4_10': (5.878997e-06, None, 0.50, 's'),
-                'time_4_10000': (1.495080e-05, None, 0.50, 's'),
+                'time_2_10': (1.5e-05, None, 0.50, 's'),
+                'time_2_10000': (9.1e-05, None, 0.50, 's'),
+                'time_2_1000000': (7.9e-04, None, 0.50, 's'),
+                'time_4_10': (3e-05, None, 0.50, 's'),
+                'time_4_10000': (1.3e-04, None, 0.50, 's'),
                 'time_4_1000000': (6.791397e-04, None, 0.50, 's'),
-                'time_6_10': (5.428815e-06, None, 0.50, 's'),
-                'time_6_10000': (1.540580e-05, None, 0.50, 's'),
+                'time_6_10': (3.5e-05, None, 0.50, 's'),
+                'time_6_10000': (1.2e-04, None, 0.50, 's'),
                 'time_6_1000000': (9.179296e-04, None, 0.50, 's')
+            },
+            'eiger:mc': {
+                'time_2_10': (3.46e-06, None, 0.50, 's'),
+                'time_2_10000': (8.51e-06, None, 0.50, 's'),
+                'time_2_1000000': (2.07e-04, None, 0.50, 's'),
+                'time_4_10': (4.46e-06, None, 0.50, 's'),
+                'time_4_10000': (1.08e-05, None, 0.50, 's'),
+                'time_4_1000000': (3.55e-04, None, 0.50, 's'),
+                'time_6_10': (4.53e-06, None, 0.50, 's'),
+                'time_6_10000': (1.04e-05, None, 0.50, 's'),
+                'time_6_1000000': (3.55e-04, None, 0.50, 's')
             },
         }
 
