@@ -50,7 +50,7 @@ class RegressionTestMeta(type):
                         raise ValueError(
                             'accessing a test parameter from the class '
                             'body is disallowed'
-                        )
+                        ) from None
                     else:
                         # If 'key' is neither a variable nor a parameter,
                         # raise the exception from the base __getitem__.
@@ -186,7 +186,7 @@ class RegressionTestMeta(type):
             except KeyError:
                 raise AttributeError(
                     f'class {cls.__qualname__!r} has no attribute {name!r}'
-                )
+                ) from None
 
     @property
     def param_space(cls):
