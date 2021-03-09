@@ -19,7 +19,7 @@ class RegressionTestMeta(type):
     class MetaNamespace(namespaces.LocalNamespace):
         '''Custom namespace to control the cls attribute assignment.'''
         def __setitem__(self, key, value):
-            if isinstance(value, variables.VarDirective):
+            if isinstance(value, variables.TestVar):
                 # Insert the attribute in the variable namespace
                 self['_rfm_local_var_space'][key] = value
             elif isinstance(value, parameters.TestParam):
@@ -74,7 +74,7 @@ class RegressionTestMeta(type):
 
         # Directives to add/modify a regression test variable
         namespace['variable'] = variables.TestVar
-        namespace['required'] = variables.UndefineVar()
+        namespace['required'] = variables._Undefined
         return metacls.MetaNamespace(namespace)
 
     def __new__(metacls, name, bases, namespace, **kwargs):
@@ -179,10 +179,10 @@ class RegressionTestMeta(type):
         requested class attribute.
         '''
         try:
-            return cls._rfm_local_var_space[name]
+            return cls._rfm_var_space.vars[name]
         except KeyError:
             try:
-                return cls._rfm_local_param_space[name]
+                return cls._rfm_param_space.params[name]
             except KeyError:
                 raise AttributeError(
                     f'class {cls.__qualname__!r} has no attribute {name!r}'

@@ -196,7 +196,7 @@ def test_multiple_inheritance():
 
 def test_namespace_clash():
     class Spam(rfm.RegressionTest):
-        foo = variable(int, 1)
+        foo = variable(int)
 
     with pytest.raises(ValueError):
         class Ham(Spam):

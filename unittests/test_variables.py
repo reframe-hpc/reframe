@@ -149,9 +149,12 @@ def test_required_var_not_present(OneVarTest):
 
 
 def test_require_undeclared_variable(NoVarsTest):
-    with pytest.raises(ValueError):
-        class MyTest(NoVarsTest):
-            foo = required
+    '''Setting a regular variable as required is permitted.
+
+    The behaviour of such attribute is undefined.
+    '''
+    class MyTest(NoVarsTest):
+        foo = required
 
 
 def test_invalid_field():

@@ -63,6 +63,9 @@ class LocalNamespace:
             f'{name!r} is already present in the current namespace'
         )
 
+    def clear(self):
+        self._namespace = {}
+
 
 class Namespace(LocalNamespace, metaclass=abc.ABCMeta):
     '''Namespace of a regression test.

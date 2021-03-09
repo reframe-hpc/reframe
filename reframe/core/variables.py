@@ -25,11 +25,7 @@ class _UndefinedType:
 _Undefined = _UndefinedType()
 
 
-class VarDirective:
-    '''Base class for the variable directives.'''
-
-
-class TestVar(VarDirective):
+class TestVar:
     '''Regression test variable class.
 
     Stores the attributes of a variable when defined directly in the class
@@ -417,11 +413,6 @@ class TestVar(VarDirective):
         return math.ceil(self._default_value)
 
 
-class UndefineVar(VarDirective):
-    def __init__(self):
-        self.default_value = _Undefined
-
-
 class VarSpace(namespaces.Namespace):
     '''Variable space of a regression test.
 
@@ -494,13 +485,6 @@ class VarSpace(namespaces.Namespace):
 
                 # Add a new var
                 self.vars[key] = var
-            elif isinstance(var, VarDirective):
-                # Modify the value of a previously declared var.
-                # If var is an instance of UndefineVar, we set its default
-                # value to _Undefined. Alternatively, the value is just updated
-                # with the user's input.
-                self._check_var_is_declared(key)
-                self.vars[key].define(var.default_value)
 
         # If any previously declared variable was defined in the class body
         # by directly assigning it a value, retrieve this value from the class
@@ -520,11 +504,8 @@ class VarSpace(namespaces.Namespace):
         for key in _assigned_vars:
             delattr(cls, key)
 
-    def _check_var_is_declared(self, key):
-        if key not in self.vars:
-            raise ValueError(
-                f'variable {key!r} has not been declared'
-            )
+        # Clear the local var space
+        local_varspace.clear()
 
     def sanity(self, cls, illegal_names=None):
         '''Sanity checks post-creation of the var namespace.
