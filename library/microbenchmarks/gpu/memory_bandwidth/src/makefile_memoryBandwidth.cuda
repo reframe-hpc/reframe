@@ -1,0 +1,3 @@
+memory_bandwidth:
+	nvcc $@.cu -std=c++11 ${CXXFLAGS} -lnvidia-ml -O3 -o $@.x
+
