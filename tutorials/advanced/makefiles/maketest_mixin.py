@@ -12,7 +12,7 @@ class ElemTypeParam(rfm.RegressionMixin):
 
 
 @rfm.simple_test
-class MakefileTest(rfm.RegressionTest, ElemTypeParam):
+class MakefileTestAlt(rfm.RegressionTest, ElemTypeParam):
     def __init__(self):
         self.descr = 'Test demonstrating use of Makefiles'
         self.valid_systems = ['*']
@@ -27,7 +27,7 @@ class MakefileTest(rfm.RegressionTest, ElemTypeParam):
 
 
 @rfm.simple_test
-class MakeOnlyTest(rfm.CompileOnlyRegressionTest, ElemTypeParam):
+class MakeOnlyTestAlt(rfm.CompileOnlyRegressionTest, ElemTypeParam):
     def __init__(self):
         self.descr = 'Test demonstrating use of Makefiles'
         self.valid_systems = ['*']

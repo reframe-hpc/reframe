@@ -322,10 +322,10 @@ Notice how the parameters are expanded in each of the individual tests:
      output directory:  '/Users/user/Repositories/reframe/output'
 
    [List of matched checks]
-   - MakeOnlyTest_double (found in '/Users/user/Repositories/reframe/tutorials/advanced/makefiles/maketest_mixin.py')
-   - MakeOnlyTest_float (found in '/Users/user/Repositories/reframe/tutorials/advanced/makefiles/maketest_mixin.py')
-   - MakefileTest_double (found in '/Users/user/Repositories/reframe/tutorials/advanced/makefiles/maketest_mixin.py')
-   - MakefileTest_float (found in '/Users/user/Repositories/reframe/tutorials/advanced/makefiles/maketest_mixin.py')
+   - MakeOnlyTestAlt_double (found in '/Users/user/Repositories/reframe/tutorials/advanced/makefiles/maketest_mixin.py')
+   - MakeOnlyTestAlt_float (found in '/Users/user/Repositories/reframe/tutorials/advanced/makefiles/maketest_mixin.py')
+   - MakefileTestAlt_double (found in '/Users/user/Repositories/reframe/tutorials/advanced/makefiles/maketest_mixin.py')
+   - MakefileTestAlt_float (found in '/Users/user/Repositories/reframe/tutorials/advanced/makefiles/maketest_mixin.py')
    Found 4 check(s)
 
    Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-e384bvkd.log'
