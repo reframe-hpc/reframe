@@ -37,7 +37,7 @@ class RegressionTestMeta(type):
             '''
             try:
                 return super().__getitem__(key)
-            except Exception as err:
+            except KeyError as err:
                 try:
                     # Handle variable access
                     var = self['_rfm_local_var_space'][key]
@@ -45,7 +45,7 @@ class RegressionTestMeta(type):
                         return var.default_value
                     else:
                         raise ValueError(
-                            f'variable {key!r} does not have an assigned value'
+                            f'variable {key!r} is not assigned a value'
                         )
 
                 except KeyError:
@@ -58,7 +58,7 @@ class RegressionTestMeta(type):
                     else:
                         # If 'key' is neither a variable nor a parameter,
                         # raise the exception from the base __getitem__.
-                        raise err
+                        raise err from None
 
     @classmethod
     def __prepare__(metacls, name, bases, **kwargs):
