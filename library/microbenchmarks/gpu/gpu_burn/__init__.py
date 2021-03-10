@@ -9,6 +9,9 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
+__all__ = ['GpuBurnBase']
+
+
 class GpuBurnBase(rfm.RegressionTest, pin_prefix=True):
     # GPU build variables
     gpu_build = variable(str)

@@ -5,16 +5,13 @@
 #include "Xdevice/runtime.hpp"
 
 template<class dataFrom, class dataTo>
-float copyBandwidth(size_t size, int device, int repeat, XMemcpyKind cpyDir)
+float copyBandwidth(size_t size, int device, int repeat, XMemcpyKind copy_dir)
 {
   /*
-   Returns the average time taken for a copy from data_dst to data_src done
-   several times. These types can represent either host data or device data.
-   dataFrom and dataTo are RAII classes to handle both host and device data
-   in a much easier way (see types.hpp).
-   The template parameter memcpy is a storage class, where memcpy::value has the
-   right arguments for the copy, depending on whether dataFrom and dataTo are
-   host or device targeted classes.
+   Returns the average time (ms) taken for a copy from data_dst to data_src
+   done several times. These types can represent either host data or device
+   data. dataFrom and dataTo are RAII classes to handle both host and device
+   data in a much easier way (see types.hpp).
   */
 
   // Declare and allocate the buffers.
@@ -32,7 +29,7 @@ float copyBandwidth(size_t size, int device, int repeat, XMemcpyKind cpyDir)
   t.start();
   for ( int i = 0; i < repeat; i++ )
   {
-    XMemcpyAsync(data_dst.data, data_src.data, size, cpyDir, stream);
+    XMemcpyAsync(data_dst.data, data_src.data, size, copy_dir, stream);
   }
 
   // Do the timing
@@ -46,10 +43,10 @@ float copyBandwidth(size_t size, int device, int repeat, XMemcpyKind cpyDir)
 }
 
 
-float p2pBandwidth(size_t size, int send_device, int recv_device, int repeat, int peerAccess)
+float p2pBandwidth(size_t size, int send_device, int recv_device, int repeat, int peer_access)
 {
   /*
-   Time the data transfer across different devices. The peerAccess argument enables or
+   Time the data transfer across different devices. The peer_access argument enables or
    disables the direct memory access to another device.
   */
 
@@ -57,7 +54,7 @@ float p2pBandwidth(size_t size, int send_device, int recv_device, int repeat, in
   XSetDevice(send_device);
 
   // Check whether the sending device has peer access to the recv_device.
-  if (peerAccess && recv_device!=send_device)
+  if (peer_access && recv_device!=send_device)
   {
     int hasPeerAccess;
     XDeviceCanAccessPeer(&hasPeerAccess, send_device, recv_device);
@@ -66,7 +63,7 @@ float p2pBandwidth(size_t size, int send_device, int recv_device, int repeat, in
       return (float)-1;
     }
 
-    // Enable the peerAccess access.
+    // Enable the peer access.
     XDeviceEnablePeerAccess(recv_device, 0);
   }
 
@@ -89,7 +86,7 @@ float p2pBandwidth(size_t size, int send_device, int recv_device, int repeat, in
 
   // Start the timer and run the copy
   t.start();
-  if (peerAccess)
+  if (peer_access)
   {
     for ( int i = 0; i < repeat; i++ )
     {
@@ -111,7 +108,7 @@ float p2pBandwidth(size_t size, int send_device, int recv_device, int repeat, in
   XStreamDestroy(stream);
 
   // Unset the peer access
-  if (peerAccess && recv_device!=send_device)
+  if (peer_access && recv_device!=send_device)
   {
     XDeviceDisablePeerAccess(recv_device);
   }

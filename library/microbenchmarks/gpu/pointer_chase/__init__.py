@@ -10,6 +10,9 @@ import reframe as rfm
 import os
 
 
+__all__ = ['BuildGpuPChase', 'RunGpuPChaseSingle', 'RunGpuPChaseP2P']
+
+
 class BuildGpuPChaseBase(rfm.CompileOnlyRegressionTest, pin_prefix=True):
     ''' Base class to build the pointer chase executable.
 
