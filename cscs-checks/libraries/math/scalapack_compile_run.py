@@ -33,7 +33,7 @@ class ScaLAPACKTest(rfm.RegressionTest):
 class ScaLAPACKSanity(ScaLAPACKTest):
     def __init__(self, linkage):
         super().__init__(linkage)
-        self.sourcepath = 'scalapack_compile_run.f'
+        self.sourcepath = 'sample_pdsyev_call.f'
 
         def fortran_float(value):
             return float(value.replace('D', 'E'))
