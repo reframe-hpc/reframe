@@ -8,7 +8,7 @@ import os
 import reframe as rfm
 import reframe.utility.sanity as sn
 
-from library.microbenchmarks.gpu.gpu_burn_test import GpuBurnBase
+from library.microbenchmarks.gpu.gpu_burn import GpuBurnBase
 import cscslib.microbenchmarks.gpu.hooks as hooks
 
 @rfm.simple_test
