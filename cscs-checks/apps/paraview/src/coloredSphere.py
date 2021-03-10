@@ -9,20 +9,14 @@ if basename is None:
 
 Version = str(GetParaViewVersion())
 if(servermanager.vtkSMProxyManager.GetVersionMajor() == 5):
-    if(servermanager.vtkSMProxyManager.GetVersionMinor() == 7):
-        from paraview.modules.vtkPVClientServerCoreCorePython import (
-            vtkProcessModule)
-        info = GetOpenGLInformation(
-            location=servermanager.vtkSMSession.RENDER_SERVER
-        )
-    elif(servermanager.vtkSMProxyManager.GetVersionMinor() == 8):
+    if(servermanager.vtkSMProxyManager.GetVersionMinor() == 8):
         from paraview.modules.vtkRemotingCore import vtkProcessModule
         info = GetOpenGLInformation(
             location=servermanager.vtkSMSession.RENDER_SERVER
         )
-    else:
-        from paraview.servermanager import vtkProcessModule
-        from vtk.vtkPVClientServerCoreRendering import vtkPVOpenGLInformation
+    elif(servermanager.vtkSMProxyManager.GetVersionMinor() == 9):
+        from paraview.modules.vtkRemotingCore import vtkProcessModule
+        from paraview.modules.vtkRemotingViews import vtkPVOpenGLInformation
         info = vtkPVOpenGLInformation()
         info.CopyFromObject(None)
 

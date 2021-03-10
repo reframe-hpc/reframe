@@ -9,7 +9,6 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.required_version('>=2.14')
 @rfm.parameterized_test(*([lang, linkage] for lang in ['cpp', 'c', 'f90']
                           for linkage in ['dynamic', 'static']))
 class NetCDFTest(rfm.RegressionTest):
@@ -23,7 +22,10 @@ class NetCDFTest(rfm.RegressionTest):
         self.linkage = linkage
         self.descr = f'{lang_names[lang]} NetCDF {linkage.capitalize()}'
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'arolla:cn', 'tsa:cn']
+                              'arolla:cn', 'tsa:cn', 'eiger:mc']
+        if linkage == 'static':
+            self.valid_systems.remove('eiger:mc')
+
         if self.current_system.name in ['daint', 'dom']:
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                         'PrgEnv-intel', 'PrgEnv-pgi']
@@ -31,6 +33,11 @@ class NetCDFTest(rfm.RegressionTest):
         elif self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-gnu-nompi', 'PrgEnv-pgi-nompi']
+        elif self.current_system.name in ['eiger']:
+            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
+            self.modules = ['cray-hdf5', 'cray-netcdf']
+        else:
+            self.valid_prog_environs = []
 
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'netcdf')
