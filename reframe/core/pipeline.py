@@ -1211,6 +1211,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         environs = [self._current_partition.local_env, self._current_environ,
                     user_environ, self._cdt_environ]
 
+        # NOTE: Here we set the time_limit which should be taken into account
+        # in case the build job in not submitted locally.
+        self._build_job.time_limit = self.time_limit
+
         with osext.change_dir(self._stagedir):
             # Prepare build job
             build_commands = [
