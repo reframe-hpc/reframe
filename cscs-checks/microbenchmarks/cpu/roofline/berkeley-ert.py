@@ -103,6 +103,10 @@ class RunErt_Base(rfm.RegressionTest):
             'Results',
             'Scripts',
         ]
+        # Using a sourcepath trick here to remain close to the way building is
+        # executed in the official repo script (no makefile provided):
+        # https://bitbucket.org/berkeleylab/cs-roofline-toolkit/src/master/
+        # Empirical_Roofline_Tool-1.1.0/Python/ert_core.py#lines-279
         self.sourcepath = 'Kernels/kernel1.cxx Drivers/driver1.cxx'
         self.build_system = 'SingleSource'
         # get all parameters:
