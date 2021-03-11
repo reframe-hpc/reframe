@@ -34,9 +34,11 @@
                         "type": "object",
                         "properties": {
                             "name": {"type": "string"},
-                            "collection": {"type": "boolean"}
+                            "collection": {"type": "boolean"},
+                            "path": {"type": ["string", "null"]}
                         },
-                        "required": ["name"]
+                        "required": ["name"],
+                        "additionalProperties": false
                     }
                 ]
             }
@@ -139,6 +141,60 @@
                     "required": ["address"]
                 }
             ]
+        },
+        "topology_info": {
+            "type": "object",
+            "properties": {
+                "numa_nodes": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                },
+                "sockets": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                },
+                "cores": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                },
+                "caches": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "type": {"type": "string"},
+                            "size": {"type": "number"},
+                            "linesize": {"type": "number"},
+                            "associativity": {"type": "number"},
+                            "num_cpus": {"type": "number"},
+                            "cpusets": {
+                                "type": "array",
+                                "items": {"type": "string"}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "processor_info": {
+            "type": "object",
+            "properties": {
+                "arch": {"type": "string"},
+                "num_cpus": {"type": "number"},
+                "num_cpus_per_core": {"type": "number"},
+                "num_cpus_per_socket": {"type": "number"},
+                "num_sockets": {"type": "number"},
+                "topology": {"$ref": "#/defs/topology_info"}
+            },
+            "additionalProperties": false
+        },
+        "device_info": {
+            "type": "object",
+            "properties": {
+                "type": {"type": "string"},
+                "arch": {"type": "string"},
+                "num_devices": {"type": "number"}
+            }
         }
     },
     "type": "object",
@@ -220,6 +276,16 @@
                                 "modules": {"$ref": "#/defs/modules_list"},
                                 "variables": {"$ref": "#/defs/envvar_list"},
                                 "max_jobs": {"type": "number"},
+                                "prepare_cmds": {
+                                    "type": "array",
+                                    "items": {"type": "string"}
+                                 },
+                                "processor": {"$ref": "#/defs/processor_info"},
+                                "devices": {
+                                    "type": "array",
+                                    "items": {"$ref": "#/defs/device_info"}
+                                },
+                                "extras": {"type": "object"},
                                 "resources": {
                                     "type": "array",
                                     "items": {
@@ -384,15 +450,9 @@
                     "save_log_files": {"type": "boolean"},
                     "target_systems": {"$ref": "#/defs/system_ref"},
                     "timestamp_dirs": {"type": "string"},
-                    "unload_modules": {
-                        "type": "array",
-                        "items": {"type": "string"}
-                    },
+                    "unload_modules": {"$ref": "#/defs/modules_list"},
                     "use_login_shell": {"type": "boolean"},
-                    "user_modules": {
-                        "type": "array",
-                        "items": {"type": "string"}
-                    },
+                    "user_modules": {"$ref": "#/defs/modules_list"},
                     "verbose": {"type": "number"}
                 },
                 "additionalProperties": false
@@ -471,7 +531,10 @@
         "systems/partitions/resources/options": [],
         "systems/partitions/modules": [],
         "systems/partitions/variables": [],
-        "systems/partitions/environs": [],
-        "systems/partitions/max_jobs": 8
+        "systems/partitions/max_jobs": 8,
+        "systems/partitions/prepare_cmds": [],
+        "systems/partitions/processor": {},
+        "systems/partitions/devices": [],
+        "systems/partitions/extras": {}
     }
 }

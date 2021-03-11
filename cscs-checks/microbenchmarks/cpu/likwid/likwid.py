@@ -54,7 +54,6 @@ class MemBandwidthTest(rfm.RunOnlyRegressionTest):
         }
 
 
-@rfm.required_version('>=2.16-dev0')
 @rfm.parameterized_test(*[[l, k] for l in ['L1', 'L2', 'L3']
                           for k in ['load_avx', 'store_avx']],
                         ['memory', 'load_avx'],
@@ -63,7 +62,7 @@ class CPUBandwidth(MemBandwidthTest):
     def __init__(self, mem_level, kernel_name):
         super().__init__()
 
-        self.descr = 'CPU <- %s %s benchmark' % (mem_level, kernel_name)
+        self.descr = f'CPU <- {mem_level} {kernel_name} benchmark'
         self.valid_systems = ['daint:mc', 'daint:gpu', 'dom:gpu', 'dom:mc']
 
         # the kernel to run in likwid
@@ -108,26 +107,24 @@ class CPUBandwidth(MemBandwidthTest):
         self.data_size = self.system_cache_sizes[partname][self.mem_level]
         self.num_cpus_per_task = self.system_num_cpus[partname]
         numa_domains = self.system_numa_domains[partname]
-        num_cpu_domain = self.num_cpus_per_task / (len(numa_domains) *
-                                                   self.num_tasks_per_core)
+        num_cpu_domain = self.num_cpus_per_task // (len(numa_domains) *
+                                                    self.num_tasks_per_core)
         # result for daint:mc: '-w S0:100MB:18:1:2 -w S1:100MB:18:1:2'
         # format: -w domain:data_size:nthreads:chunk_size:stride
         # chunk_size and stride affect which cpus from <domain> are selected
-        workgroups = ['-w %s:%s:%d:1:2' %
-                      (dom, self.data_size, num_cpu_domain)
+        workgroups = [f'-w {dom}:{self.data_size}:{num_cpu_domain:d}:1:2'
                       for dom in numa_domains]
 
-        self.executable_opts = ['-t %s' % self.kernel_name] + workgroups
+        self.executable_opts = [f'-t {self.kernel_name}'] + workgroups
 
 
-@rfm.required_version('>=2.16-dev0')
 @rfm.simple_test
 class CPUBandwidthCrossSocket(MemBandwidthTest):
     def __init__(self):
         super().__init__()
 
-        self.descr = ("CPU S0 <- main memory S1 read " +
-                      "CPU S1 <- main memory S0 read")
+        self.descr = ('CPU S0 <- main memory S1 read '
+                      'CPU S1 <- main memory S0 read')
 
         self.valid_systems = ['daint:mc', 'dom:mc']
         self.kernel_name = 'load_avx'
@@ -146,15 +143,14 @@ class CPUBandwidthCrossSocket(MemBandwidthTest):
         self.num_cpus_per_task = self.system_num_cpus[partname]
         numa_domains = self.system_numa_domains[partname]
 
-        num_cpu_domain = (self.num_cpus_per_task /
+        num_cpu_domain = (self.num_cpus_per_task //
                           (len(numa_domains) * self.num_tasks_per_core))
 
         # daint:mc: '-w S0:100MB:18:1:2-0:S1 -w S1:100MB:18:1:2-0:S0'
         # format:
         # -w domain:data_size:nthreads:chunk_size:stride-stream_nr:mem_domain
         # chunk_size and stride affect which cpus from <domain> are selected
-        workgroups = ['-w %s:100MB:%d:1:2-0:%s' %
-                      (dom_cpu, num_cpu_domain, dom_mem)
+        workgroups = [f'-w {dom_cpu}:100MB:{num_cpu_domain:d}:1:2-0:{dom_mem}'
                       for dom_cpu, dom_mem in
                       zip(numa_domains[:2], reversed(numa_domains[:2]))]
 

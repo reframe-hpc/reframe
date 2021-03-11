@@ -1,0 +1,2 @@
+dgemm:
+	nvcc $@.cu -o $@.x ${CXXFLAGS} -lnvidia-ml -lcublas -std=c++14

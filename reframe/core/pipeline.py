@@ -139,8 +139,22 @@ class RegressionMixin(metaclass=RegressionTestMeta):
     .. versionadded:: 3.4.2
     '''
 
+    def __getattribute__(self, name):
+        try:
+            return super().__getattribute__(name)
+        except AttributeError:
+            # Intercept the AttributeError if the name corresponds to a
+            # required variable.
+            if (name in self._rfm_var_space.vars and
+                not self._rfm_var_space.vars[name].is_defined()):
+                raise AttributeError(
+                    f'required variable {name!r} has not been set'
+                ) from None
+            else:
+                super().__getattr__(name)
 
-class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
+
+class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     '''Base class for regression tests.
 
     All regression tests must eventually inherit from this class.
@@ -605,7 +619,8 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    modules = variable(typ.List[str], value=[])
+    modules = variable(
+        typ.List[str], typ.List[typ.Dict[str, object]], value=[])
 
     #: Environment variables to be set before running this test.
     #:
@@ -763,20 +778,6 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
 
     def __init__(self):
         pass
-
-    def __getattribute__(self, name):
-        try:
-            return super().__getattribute__(name)
-        except AttributeError:
-            # Intercept the AttributeError if the name corresponds to a
-            # required variable.
-            if (name in self._rfm_var_space.vars and
-                not self._rfm_var_space.vars[name].is_defined()):
-                raise AttributeError(
-                    f'required variable {name!r} has not been set'
-                ) from None
-            else:
-                super().__getattr__(name)
 
     def _append_parameters_to_name(self):
         if self._rfm_param_space.params:
@@ -1205,21 +1206,22 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
             self.build_system.srcfile = self.sourcepath
             self.build_system.executable = self.executable
 
-        # Prepare build job
-        build_commands = [
-            *self.prebuild_cmds,
-            *self.build_system.emit_build_commands(self._current_environ),
-            *self.postbuild_cmds
-        ]
         user_environ = env.Environment(type(self).__name__,
                                        self.modules, self.variables.items())
         environs = [self._current_partition.local_env, self._current_environ,
                     user_environ, self._cdt_environ]
 
         with osext.change_dir(self._stagedir):
+            # Prepare build job
+            build_commands = [
+                *self.prebuild_cmds,
+                *self.build_system.emit_build_commands(self._current_environ),
+                *self.postbuild_cmds
+            ]
             try:
                 self._build_job.prepare(
                     build_commands, environs,
+                    self._current_partition.prepare_cmds,
                     login=rt.runtime().get_option('general/0/use_login_shell'),
                     trap_errors=True
                 )
@@ -1254,6 +1256,8 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
         # We raise a BuildError when we an exit code and it is non zero
         if self._build_job.exitcode:
             raise BuildError(self._build_job.stdout, self._build_job.stderr)
+
+        self.build_system.post_build(self._build_job)
 
     @_run_hooks('pre_run')
     @final
@@ -1290,20 +1294,20 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
                     'on the current partition: %s' % e) from None
 
             self.container_platform.validate()
-            self.container_platform.mount_points += [
-                (self._stagedir, self.container_platform.workdir)
-            ]
 
             # We replace executable and executable_opts in case of containers
-            self.executable = self.container_platform.launch_command()
+            self.executable = self.container_platform.launch_command(
+                self.stagedir)
             self.executable_opts = []
-            prepare_container = self.container_platform.emit_prepare_commands()
+            prepare_container = self.container_platform.emit_prepare_commands(
+                self.stagedir)
             if prepare_container:
                 self.prerun_cmds += prepare_container
 
         self.job.num_tasks = self.num_tasks
         self.job.num_tasks_per_node = self.num_tasks_per_node
         self.job.num_tasks_per_core = self.num_tasks_per_core
+        self.job.num_tasks_per_socket = self.num_tasks_per_socket
         self.job.num_cpus_per_task = self.num_cpus_per_task
         self.job.use_smt = self.use_multithreading
         self.job.time_limit = self.time_limit
@@ -1348,6 +1352,7 @@ class RegressionTest(jsonext.JSONSerializable, metaclass=RegressionTestMeta):
                 self.logger.debug('Generating the run script')
                 self._job.prepare(
                     commands, environs,
+                    self._current_partition.prepare_cmds,
                     login=rt.runtime().get_option('general/0/use_login_shell'),
                     trap_errors=rt.runtime().get_option(
                         'general/0/trap_job_errors'

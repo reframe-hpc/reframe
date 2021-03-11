@@ -115,10 +115,13 @@ def fake_job(make_job):
     return ret
 
 
-def prepare_job(job, command='hostname', pre_run=None, post_run=None):
+def prepare_job(job, command='hostname',
+                pre_run=None, post_run=None,
+                prepare_cmds=None):
     environs = [Environment(name='foo', modules=['testmod_foo'])]
     pre_run = pre_run or ['echo prerun']
     post_run = post_run or ['echo postrun']
+    prepare_cmds = prepare_cmds or ['echo prepare']
     with rt.module_use('unittests/modules'):
         job.prepare(
             [
@@ -126,16 +129,18 @@ def prepare_job(job, command='hostname', pre_run=None, post_run=None):
                 job.launcher.run_command(job) + ' ' + command,
                 post_run
             ],
-            environs
+            environs,
+            prepare_cmds
         )
 
 
 def assert_job_script_sanity(job):
     '''Assert the sanity of the produced script file.'''
     with open(job.script_filename) as fp:
-        matches = re.findall(r'echo prerun|echo postrun|hostname',
+        matches = re.findall(r'echo prepare|echo prerun|echo postrun|hostname',
                              fp.read())
-        assert ['echo prerun', 'hostname', 'echo postrun'] == matches
+        assert ['echo prepare', 'echo prerun', 'hostname',
+                'echo postrun'] == matches
 
 
 def _expected_slurm_directives(job):
@@ -508,7 +513,8 @@ def test_cancel_with_grace(minimal_job, scheduler, local_only):
     prepare_job(minimal_job,
                 command='sleep 5 &',
                 pre_run=['trap -- "" TERM'],
-                post_run=['echo $!', 'wait'])
+                post_run=['echo $!', 'wait'],
+                prepare_cmds=[''])
     minimal_job.submit()
 
     # Stall a bit here to let the the spawned process start and install its
@@ -552,7 +558,8 @@ def test_cancel_term_ignore(minimal_job, scheduler, local_only):
                 command=os.path.join(fixtures.TEST_RESOURCES_CHECKS,
                                      'src', 'sleep_deeply.sh'),
                 pre_run=[''],
-                post_run=[''])
+                post_run=[''],
+                prepare_cmds=[''])
     minimal_job.submit()
 
     # Stall a bit here to let the the spawned process start and install its
