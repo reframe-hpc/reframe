@@ -12,8 +12,6 @@ import reframe.utility.sanity as sn
 class ScaLAPACKTest(rfm.RegressionTest):
     def __init__(self, linkage):
         self.linkage = linkage
-        self.sourcesdir = os.path.join(self.current_system.resourcesdir,
-                                       'scalapack')
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:mc', 'dom:gpu']
         if self.linkage == 'dynamic':
             self.valid_systems.append('eiger:mc')
