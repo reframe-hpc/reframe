@@ -5,114 +5,46 @@
 
 import reframe as rfm
 import reframe.utility.sanity as sn
-
-
-def sanity_evaluation(regex, regex_group, output, refvalue, field_msg, num_nodes, nodelist):
-    all_tested_nodes = sn.evaluate(sn.extractall(regex, output, regex_group))
-    num_tested_nodes = len(all_tested_nodes)
-    node_failure_msg = ('Requested %s node(s), but found %s node(s)' %
-                   (num_nodes, num_tested_nodes))
-    sn.evaluate(sn.assert_eq(num_tested_nodes, num_nodes,
-                                msg=node_failure_msg))
-
-    failures = []
-    for i in range(len(all_tested_nodes)):
-        stats = all_tested_nodes[i]
-        node = nodelist[i]
-        if stats != refvalue:
-            failures.append(node)
-
-    the_failure_msg = '%s is not set to "%s" for node(s): %s' % (field_msg, refvalue, ','.join(failures))
-    sn.evaluate(sn.assert_eq(len(failures), 0, msg=the_failure_msg))
-
-
-class NVIDIASMIBaseCheck(rfm.RunOnlyRegressionTest):
-    '''Base class for NVIDIA SMI tests'''
-
-    def __init__(self):
-        self.valid_systems = ['daint:gpu', 'dom:gpu']
-        self.valid_prog_environs = ['builtin']
-        self.executable = 'nvidia-smi'
-        self.num_tasks = 0
-        self.num_tasks_per_node = 1
-        self.exclusive = True
-        self.tags = {'nvidia', 'maintenance', 'production', 'single-node'}
-        self.maintainers = ['VH']
+import reframe.utility.typecheck as typ
 
 
 @rfm.simple_test
-class NVIDIASMIAccountCheck(NVIDIASMIBaseCheck):
-    '''Check whether Accounting mode is enabled'''
+class nvidia_smi_check(rfm.RunOnlyRegressionTest):
+    gpu_mode = parameter(['accounting', 'compute', 'ecc'])
+    valid_systems = ['daint:gpu', 'dom:gpu']
+    valid_prog_environs = ['builtin']
+    executable = 'nvidia-smi'
+    executable_opts = ['-a', '-d']
+    num_tasks = 0
+    num_tasks_per_node = 1
+    exclusive = True
+    tags = {'maintenance', 'production'}
+    maintainers = ['VH']
+    mode_values = variable(typ.Dict[str, str], value={
+        'accounting': 'Enabled',
+        'compute': 'Exclusive_Process',
+        'ecc': 'Enabled'
+    })
 
-    def __init__(self):
-        super().__init__()
-        self.executable_opts = ['-a', '-d', 'ACCOUNTING']
-        self.sanity_patterns = self.eval_sanity()
+    @rfm.run_before('run')
+    def set_variant_opts(self):
+        self.executable_opts.append(self.gpu_mode.upper())
 
-    @sn.sanity_function
-    def eval_sanity(self):
-        sanity_evaluation(
-            regex=r'Accounting Mode\s+: (?P<stats>\S+)',
-            regex_group='stats',
-            output=self.stdout,
-            refvalue='Enabled',
-            field_msg='Accounting mode',
-            num_nodes=self.job.num_tasks,
-            nodelist=self.job.nodelist,
+    @rfm.run_before('sanity')
+    def set_sanity(self):
+        modeval = self.mode_values[self.gpu_mode]
+        if self.gpu_mode == 'ecc':
+            patt = rf'Current\s+: {modeval}'
+        else:
+            patt = rf'{self.gpu_mode.capitalize()} Mode\s+: {modeval}'
+
+        num_gpus_detected = sn.count(sn.findall(patt, self.stdout))
+        num_gpus_all = self.num_tasks
+
+        # We can't an use f-string here, because it will misinterpret the
+        # placeholders for the sanity function message
+        errmsg = ('{0} out of {1} GPU(s) have the correct %s mode' %
+                  self.gpu_mode)
+        self.sanity_patterns = sn.assert_eq(
+            num_gpus_detected, num_gpus_all, errmsg
         )
-        return True
-
-
-@rfm.simple_test
-class NVIDIASMIComputeModeCheck(NVIDIASMIBaseCheck):
-    '''Check whether Compute mode is set to Exclusive_Process'''
-
-    def __init__(self):
-        super().__init__()
-        self.executable_opts = ['-a', '-d', 'COMPUTE']
-        self.sanity_patterns = self.eval_sanity()
-
-    @sn.sanity_function
-    def eval_sanity(self):
-        sanity_evaluation(
-            regex=r'Compute Mode\s+: (?P<stats>\S+)',
-            regex_group='stats',
-            output=self.stdout,
-            refvalue='Exclusive_Process',
-            field_msg='Compute mode',
-            num_nodes=self.job.num_tasks,
-            nodelist=self.job.nodelist,
-        )
-        return True
-
-
-@rfm.simple_test
-class NVIDIASMIECCModeCheck(NVIDIASMIBaseCheck):
-    '''Check whether ECC mode is enabled'''
-
-    def __init__(self):
-        super().__init__()
-        self.executable_opts = ['-a', '-d', 'ECC']
-        self.sanity_patterns = self.eval_sanity()
-
-    @sn.sanity_function
-    def eval_sanity(self):
-        sanity_evaluation(
-            regex=r'Current\s+: (?P<stats>\S+)',
-            regex_group='stats',
-            output=self.stdout,
-            refvalue='Enabled',
-            field_msg='Current ECC mode',
-            num_nodes=self.job.num_tasks,
-            nodelist=self.job.nodelist,
-        )
-        sanity_evaluation(
-            regex=r'Pending\s+: (?P<stats>\S+)',
-            regex_group='stats',
-            output=self.stdout,
-            refvalue='Enabled',
-            field_msg='Pending ECC mode',
-            num_nodes=self.job.num_tasks,
-            nodelist=self.job.nodelist,
-        )
-        return True
