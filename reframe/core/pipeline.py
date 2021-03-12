@@ -13,6 +13,7 @@ __all__ = [
 ]
 
 
+import contextlib
 import functools
 import glob
 import inspect
@@ -46,10 +47,13 @@ from reframe.core.warnings import user_deprecation_warning
 # Dependency kinds
 
 #: Constant to be passed as the ``how`` argument of the
-#: :func:`RegressionTest.depends_on` method. It denotes that test case
+#: :func:`~RegressionTest.depends_on` method. It denotes that test case
 #: dependencies will be explicitly specified by the user.
 #:
 #:  This constant is directly available under the :mod:`reframe` module.
+#:
+#: .. deprecated:: 3.3
+#:    Please use a callable as the ``how`` argument.
 DEPEND_EXACT = 1
 
 #: Constant to be passed as the ``how`` argument of the
@@ -58,6 +62,9 @@ DEPEND_EXACT = 1
 #: target test that use the same programming environment.
 #:
 #:  This constant is directly available under the :mod:`reframe` module.
+#:
+#: .. deprecated:: 3.3
+#:    Please use a callable as the ``how`` argument.
 DEPEND_BY_ENV = 2
 
 #: Constant to be passed as the ``how`` argument of the
@@ -65,6 +72,9 @@ DEPEND_BY_ENV = 2
 #: this test depends on all the test cases of the target test.
 #:
 #:  This constant is directly available under the :mod:`reframe` module.
+#:
+#: .. deprecated:: 3.3
+#:    Please use a callable as the ``how`` argument.
 DEPEND_FULLY = 3
 
 
@@ -802,21 +812,15 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         if name is not None:
             self.name = name
 
-        try:
-            if not self.descr:
+        # Pass if descr is a required variable.
+        with contextlib.suppress(AttributeError):
+            if self.descr is None:
                 self.descr = self.name
 
-        except AttributeError:
-            # Pass if descr is a required variable.
-            pass
-
-        try:
-            if not self.executable:
+        # Pass if the executable is a required variable.
+        with contextlib.suppress(AttributeError):
+            if self.executable is None:
                 self.executable = os.path.join('.', self.name)
-
-        except AttributeError:
-            # Pass if the executable is a required variable.
-            pass
 
         self._perfvalues = {}
 
