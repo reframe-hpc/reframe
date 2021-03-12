@@ -25,7 +25,6 @@ class BuildGpuPChaseBase(rfm.CompileOnlyRegressionTest, pin_prefix=True):
     num_tasks = 1
     build_system = 'Make'
     postbuild_cmds = ['ls .']
-    num_tasks = 0
     num_tasks_per_node = 1
     exclusive_access = True
     maintainers = ['JO', 'SK']
