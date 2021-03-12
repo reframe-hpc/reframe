@@ -234,7 +234,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`str`
     #: :default: ``self.name``
-    descr = variable(str)
+    descr = variable(str, type(None), value=None)
 
     #: The path to the source file or source directory of the test.
     #:
@@ -329,7 +329,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`str`
     #: :default: ``os.path.join('.', self.name)``
-    executable = variable(str)
+    executable = variable(str, type(None), value=None)
 
     #: List of options to be passed to the :attr:`executable`.
     #:
@@ -802,8 +802,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         if name is not None:
             self.name = name
 
-        self.descr = self.name
-        self.executable = os.path.join('.', self.name)
+        if not self.descr:
+            self.descr = self.name
+
+        if not self.executable:
+            self.executable = os.path.join('.', self.name)
+
         self._perfvalues = {}
 
         # Static directories of the regression check
