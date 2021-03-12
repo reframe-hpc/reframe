@@ -565,10 +565,12 @@ def find_modules(substr, environ_mapping=None):
 
     .. code:: python
 
-       @rfm.parameterized_test(*find_modules('netcdf'))
+       @rfm.simple_test
        class MyTest(rfm.RegressionTest):
-           def __init__(self, s, e, m):
-               self.descr = f'{s}, {e}, {m}'
+           module_info = parameter(find_modules('netcdf'))
+
+           def __init__(self):
+               s, e, m = self.module_info
                self.valid_systems = [s]
                self.valid_prog_environs = [e]
                self.modules = [m]
@@ -583,15 +585,17 @@ def find_modules(substr, environ_mapping=None):
     .. code:: python
 
        my_find_modules = functools.partial(find_modules, environ_mapping={
-           r'.*CrayGNU.*': {'PrgEnv-gnu'},
-           r'.*CrayIntel.*': {'PrgEnv-intel'},
-           r'.*CrayCCE.*': {'PrgEnv-cray'}
+           r'.*CrayGNU.*': 'PrgEnv-gnu',
+           r'.*CrayIntel.*': 'PrgEnv-intel',
+           r'.*CrayCCE.*': 'PrgEnv-cray'
        })
 
-       @rfm.parameterized_test(*my_find_modules('GROMACS'))
+       @rfm.simple_test
        class MyTest(rfm.RegressionTest):
-           def __init__(self, s, e, m):
-               self.descr = f'{s}, {e}, {m}'
+           module_info = parameter(my_find_modules('GROMACS'))
+
+           def __init__(self):
+               s, e, m = self.module_info
                self.valid_systems = [s]
                self.valid_prog_environs = [e]
                self.modules = [m]
