@@ -11,12 +11,11 @@ import reframe.utility.sanity as sn
 
 # TODO: sinfo, check if the normal, long, debug, etc... partitions are present?
 # TODO: scontrol, do we want to scontrol something specific?
-@rfm.parameterized_test(['squeue'],
-                        ['sacct'],
-                        ['sinfo'],
-                        ['scontrol'])
+@rfm.simple_test
 class SlurmCheck(rfm.RunOnlyRegressionTest):
-    def __init__(self, variant):
+    slurm_command = parameter(['squeue', 'sacct', 'sinfo', 'scontrol'])
+
+    def __init__(self):
         self.descr = 'Slurm command test'
         self.valid_systems = ['daint:login', 'dom:login']
         self.valid_prog_environs = ['builtin']
@@ -32,7 +31,7 @@ class SlurmCheck(rfm.RunOnlyRegressionTest):
                 'real_time': (0.02, None, 0.1, 's')
             },
             'sacct': {
-                'real_time': (0.7, None, 0.1, 's')
+                'real_time': (0.1, None, 0.1, 's')
             },
             'sinfo': {
                 'real_time': (0.02, None, 0.1, 's')
@@ -42,10 +41,8 @@ class SlurmCheck(rfm.RunOnlyRegressionTest):
             }
         }
 
-        self.executable = 'time ' + variant
-        if variant == 'sacct':
-            self.executable_opts = ['-a']
-        elif variant == 'scontrol':
+        self.executable = 'time ' + self.slurm_command
+        if self.slurm_command == 'scontrol':
             self.executable_opts = ['show partitions']
 
         self.postrun_cmds = ['echo $?']
