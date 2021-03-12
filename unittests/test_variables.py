@@ -5,7 +5,7 @@
 
 
 import pytest
-
+import math
 
 import reframe as rfm
 from reframe.core.fields import Field
@@ -216,7 +216,7 @@ def test_variable_with_attribute():
         pass
 
     class MyTest(rfm.RegressionTest):
-        v = variable(Foo, value = Foo())
+        v = variable(Foo, value=Foo())
         v.my_attr = 'Injected attribute'
 
     assert MyTest().v.my_attr == 'Injected attribute'
@@ -227,3 +227,179 @@ def test_local_varspace_is_empty():
         v = variable(int, value=0)
 
     assert len(MyTest._rfm_local_var_space) == 0
+
+
+def test_var_basic_operators():
+    class A(rfm.RegressionTest):
+        v = variable(int, value=2)
+        assert f'{v}' == '2'
+        assert str(v) == '2'
+        assert format(v) == format(2)
+        assert bytes(v) == bytes(2)
+        assert hash(v) == hash(2)
+        assert bool(v) == bool(2)
+
+
+def test_var_comp():
+    class A(rfm.RegressionTest):
+        v = variable(int, value=2)
+        assert v < 3
+        assert v <= 2
+        assert v == 2
+        assert v != 3
+        assert v > 1
+        assert v >= 2
+
+
+def test_var_container_operators():
+    class A(rfm.RegressionTest):
+        v = variable(dict, value={'a': 1, 'b': 2})
+        assert len(v) == 2
+        assert v['a'] == 1
+        v['c'] = 3
+        assert len(v) == 3
+        del v['c']
+        assert len(v) == 2
+        with pytest.raises(KeyError):
+            vv = v['c']
+        assert 'a' in v
+        reversed_keys = ''
+        for i in reversed(v):
+            reversed_keys += i
+        assert reversed_keys == 'ba'
+        iter_keys = ''
+        for i in iter(v):
+            iter_keys += i
+        assert iter_keys == 'ab'
+
+
+def test_var_add_operator():
+    class A(rfm.RegressionTest):
+        v = variable(int, value=2)
+        assert (v + 1) == 3
+        assert (1 + v) == 3
+        v += 1
+        assert v == 3
+
+
+def test_var_add_operator():
+    class A(rfm.RegressionTest):
+        v = variable(int, value=3)
+        assert (v - 1) == 2
+        assert (1 - v) == -2
+        v -= 1
+        assert v == 2
+
+
+def test_var_mult_operator():
+    class A(rfm.RegressionTest):
+        v = variable(int, value=2)
+        assert (v * 2) == 4
+        assert (2 * v) == 4
+        v *= 2
+        assert v == 4
+
+
+def test_var_div_operator():
+    class A(rfm.RegressionTest):
+        v = variable(int, value=4)
+        assert (v / 3) == 4/3
+        assert (3 / v) == 3/4
+        v /= 2
+        assert v == 2
+
+
+def test_var_floordiv_operator():
+    class A(rfm.RegressionTest):
+        v = variable(int, value=7)
+        assert (v // 2) == 3
+        assert (15 // v) == 2
+        v //= 2
+        assert v == 3
+
+
+def test_var_mod_operator():
+    class A(rfm.RegressionTest):
+        v = variable(int, value=4)
+        assert (v % 2) == 0
+        assert (3 % v) == 3
+        v %= 2
+        assert v == 0
+
+
+def test_var_divmod_operator():
+    class A(rfm.RegressionTest):
+        v = variable(int, value=4)
+        assert divmod(v, 2) == (2, 0)
+        assert divmod(5, v) == (1, 1)
+
+
+def test_var_pow_operator():
+    class A(rfm.RegressionTest):
+        v = variable(int, value=2)
+        assert (v ** 2) == 4
+        assert (3 ** v) == 9
+        v **= 2
+        assert v == 4
+
+
+def test_var_lshift_operator():
+    class A(rfm.RegressionTest):
+        v = variable(int, value=2)
+        assert (v << 1) == 4
+        assert (1 << v) == 4
+        v <<= 1
+        assert v == 4
+
+
+def test_var_rshift_operator():
+    class A(rfm.RegressionTest):
+        v = variable(int, value=8)
+        assert (v >> 1) == 4
+        assert (1024 >> v) == 4
+        v >>= 1
+        assert v == 4
+
+
+def test_var_and_operator():
+    class A(rfm.RegressionTest):
+        v = variable(int, value=3)
+        assert (v & 2) == 2
+        assert (2 & v) == 2
+        v &= 2
+        assert v == 2
+
+
+def test_var_or_operator():
+    class A(rfm.RegressionTest):
+        v = variable(int, value=1)
+        assert (v | 2) == 3
+        assert (2 | v) == 3
+        v |= 2
+        assert v == 3
+
+
+def test_var_xor_operator():
+    class A(rfm.RegressionTest):
+        v = variable(int, value=4)
+        assert (v ^ 1) == 5
+        assert (2 ^ v) == 6
+        v ^= 1
+        assert v == 5
+
+
+def test_other_numerical_operators():
+    class A(rfm.RegressionTest):
+        npi = variable(float, value=-3.141592)
+        v = variable(int, value=2)
+        assert -npi == 3.141592
+        assert +npi == -3.141592
+        assert abs(npi) == 3.141592
+        assert ~v == -3
+        assert int(npi) == -3
+        assert float(v) == float(2)
+        assert complex(v) == complex(2)
+        assert round(npi, 4) == -3.1416
+        assert math.trunc(npi) == -3
+        assert math.floor(npi) == -4
+        assert math.ceil(npi) == -3

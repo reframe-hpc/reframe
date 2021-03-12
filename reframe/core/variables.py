@@ -167,11 +167,11 @@ class TestVar:
 
     def __setitem__(self, key, value):
         self._check_is_defined()
-        return self._default_value.__setitem__(key, value)
+        self._default_value.__setitem__(key, value)
 
     def __delitem__(self, key):
         self._check_is_defined()
-        return self._default_value.__delitem__(key)
+        self._default_value.__delitem__(key)
 
     def __missing__(self, key):
         self._check_is_defined()
@@ -183,7 +183,7 @@ class TestVar:
 
     def __reversed__(self):
         self._check_is_defined()
-        return self._default_value.__reversed__()
+        return reversed(self._default_value)
 
     def __contains__(self, item):
         self._check_is_defined()
@@ -199,7 +199,7 @@ class TestVar:
         self._check_is_defined()
         return self._default_value - other
 
-    def __mult__(self, other):
+    def __mul__(self, other):
         self._check_is_defined()
         return self._default_value * other
 
@@ -255,7 +255,7 @@ class TestVar:
         self._check_is_defined()
         return other - self._default_value
 
-    def __rmult__(self, other):
+    def __rmul__(self, other):
         self._check_is_defined()
         return other * self._default_value
 
@@ -273,7 +273,7 @@ class TestVar:
 
     def __rmod__(self, other):
         self._check_is_defined()
-        return mod % self._default_value
+        return other % self._default_value
 
     def __rdivmod__(self, other):
         self._check_is_defined()
@@ -313,7 +313,7 @@ class TestVar:
         self._default_value -= other
         return self._default_value
 
-    def __imult__(self, other):
+    def __imul__(self, other):
         self._check_is_defined()
         self._default_value *= other
         return self._default_value
