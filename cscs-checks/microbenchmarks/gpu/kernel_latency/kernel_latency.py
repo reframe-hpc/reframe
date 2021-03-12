@@ -7,14 +7,13 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.required_version('>=2.16-dev0')
 @rfm.parameterized_test(['sync'], ['async'])
 class KernelLatencyTest(rfm.RegressionTest):
     def __init__(self, kernel_version):
-        self.valid_systems = ['daint:gpu', 'dom:gpu',
-                              'arolla:cn', 'tsa:cn',
-                              'ault:amdv100', 'ault:intelv100',
-                              'ault:amda100', 'ault:amdvega']
+        self.valid_systems = [
+            'daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn', 'ault:amdv100',
+            'ault:intelv100', 'ault:amda100', 'ault:amdvega'
+        ]
         cs = self.current_system.name
         if cs in {'dom', 'daint'}:
             self.valid_prog_environs = ['PrgEnv-cray_classic', 'PrgEnv-cray',
@@ -23,6 +22,8 @@ class KernelLatencyTest(rfm.RegressionTest):
             self.valid_prog_environs = ['PrgEnv-pgi']
         elif cs in {'ault'}:
             self.valid_prog_environs = ['PrgEnv-gnu']
+        else:
+            self.valid_prog_environs = []
 
         self.num_tasks = 0
         self.num_tasks_per_node = 1

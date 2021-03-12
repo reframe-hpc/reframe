@@ -9,7 +9,12 @@ import reframe.utility.sanity as sn
 
 class QuantumESPRESSOCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        self.valid_prog_environs = ['builtin']
+        if self.current_system.name == 'pilatus':
+            self.valid_prog_environs = ['cpeGNU']
+        else:
+            self.valid_prog_environs = ['builtin']
+
+        self.modules = ['QuantumESPRESSO']
         self.executable = 'pw.x'
         self.executable_opts = ['-in', 'ausurf.in']
 
@@ -39,15 +44,14 @@ class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
     def __init__(self, scale, variant):
         super().__init__()
         self.descr = f'QuantumESPRESSO CPU check (version: {scale}, {variant})'
-        self.valid_systems = ['daint:mc', 'eiger:mc']
-        self.modules = ['QuantumESPRESSO']
+        self.valid_systems = ['daint:mc', 'eiger:mc', 'pilatus:mc']
         if scale == 'small':
             self.valid_systems += ['dom:mc']
             energy_reference = -11427.09017218
             if self.current_system.name in ['daint', 'dom']:
                 self.num_tasks = 216
                 self.num_tasks_per_node = 36
-            elif self.current_system.name == 'eiger':
+            elif self.current_system.name in ['eiger', 'pilatus']:
                 self.num_tasks = 96
                 self.num_tasks_per_node = 16
                 self.num_cpus_per_task = 16
@@ -64,7 +68,7 @@ class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
             if self.current_system.name in ['daint']:
                 self.num_tasks = 576
                 self.num_tasks_per_node = 36
-            elif self.current_system.name in ['eiger']:
+            elif self.current_system.name in ['eiger', 'pilatus']:
                 self.num_tasks = 256
                 self.num_tasks_per_node = 16
                 self.num_cpus_per_task = 16
@@ -92,22 +96,26 @@ class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
                 'small': {
                     'dom:mc': {'time': (115.0, None, 0.05, 's')},
                     'daint:mc': {'time': (115.0, None, 0.10, 's')},
-                    'eiger:mc': {'time': (66.0, None, 0.10, 's')}
+                    'eiger:mc': {'time': (66.0, None, 0.10, 's')},
+                    'pilatus:mc': {'time': (66.0, None, 0.10, 's')}
                 },
                 'large': {
                     'daint:mc': {'time': (115.0, None, 0.10, 's')},
-                    'eiger:mc': {'time': (53.0, None, 0.10, 's')}
+                    'eiger:mc': {'time': (53.0, None, 0.10, 's')},
+                    'pilatus:mc': {'time': (53.0, None, 0.10, 's')}
                 }
             },
             'prod': {
                 'small': {
                     'dom:mc': {'time': (115.0, None, 0.05, 's')},
                     'daint:mc': {'time': (115.0, None, 0.10, 's')},
-                    'eiger:mc': {'time': (66.0, None, 0.10, 's')}
+                    'eiger:mc': {'time': (66.0, None, 0.10, 's')},
+                    'pilatus:mc': {'time': (66.0, None, 0.10, 's')}
                 },
                 'large': {
                     'daint:mc': {'time': (115.0, None, 0.10, 's')},
-                    'eiger:mc': {'time': (53.0, None, 0.10, 's')}
+                    'eiger:mc': {'time': (53.0, None, 0.10, 's')},
+                    'pilatus:mc': {'time': (53.0, None, 0.10, 's')}
                 }
             }
         }
@@ -123,6 +131,7 @@ class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
     def set_cpu_binding(self):
         self.job.launcher.options = ['--cpu-bind=cores']
 
+
 @rfm.parameterized_test(*([s, v]
                           for s in ['small', 'large']
                           for v in ['maint', 'prod']))
@@ -131,7 +140,6 @@ class QuantumESPRESSOGpuCheck(QuantumESPRESSOCheck):
         super().__init__()
         self.descr = f'QuantumESPRESSO GPU check (version: {scale}, {variant})'
         self.valid_systems = ['daint:gpu']
-        self.modules = ['QuantumESPRESSO']
         self.num_gpus_per_node = 1
         if scale == 'small':
             self.valid_systems += ['dom:gpu']

@@ -136,19 +136,20 @@ class DeprecatedField(Field):
     def __set_name__(self, owner, name):
         self._target_field.__set_name__(owner, name)
 
-    def __init__(self, target_field, message, op=OP_ALL):
+    def __init__(self, target_field, message, op=OP_ALL, from_version='0.0.0'):
         self._target_field = target_field
         self._message = message
         self._op = op
+        self._from_version = from_version
 
     def __set__(self, obj, value):
         if self._op & DeprecatedField.OP_SET:
-            user_deprecation_warning(self._message)
+            user_deprecation_warning(self._message, self._from_version)
 
         self._target_field.__set__(obj, value)
 
     def __get__(self, obj, objtype):
         if self._op & DeprecatedField.OP_GET:
-            user_deprecation_warning(self._message)
+            user_deprecation_warning(self._message, self._from_version)
 
         return self._target_field.__get__(obj, objtype)

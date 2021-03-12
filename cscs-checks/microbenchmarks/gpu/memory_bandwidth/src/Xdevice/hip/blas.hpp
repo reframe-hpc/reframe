@@ -39,6 +39,11 @@ void XblasDestroy(XblasHandle_t handle)
   checkError( rocblas_destroy_handle(handle) );
 }
 
+void XblasSetStream(XblasHandle_t handle, hipStream_t stream)
+{
+  checkError( rocblas_set_stream(handle, stream) );
+}
+
 auto XblasDgemm = rocblas_dgemm;
 auto XblasSgemm = rocblas_sgemm;
 
