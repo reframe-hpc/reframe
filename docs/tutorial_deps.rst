@@ -66,7 +66,7 @@ Here is the relevant part:
 
 First, since we will have multiple similar benchmarks, we move all the common functionality to the :class:`OSUBenchmarkTestBase` base class.
 Again nothing new here; we are going to use two nodes for the benchmark and we set :attr:`sourcesdir <reframe.core.pipeline.RegressionTest.sourcesdir>` to ``None``, since none of the benchmark tests will use any additional resources.
-As done previously, we define the dependencies with the the following line:
+As done previously, we define the dependencies with the following line:
 
 .. literalinclude:: ../tutorials/deps/osu_benchmarks.py
    :lines: 23
