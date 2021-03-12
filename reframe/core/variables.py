@@ -22,7 +22,7 @@ class _UndefinedType:
         return self
 
 
-_Undefined = _UndefinedType()
+Undefined = _UndefinedType()
 
 
 class TestVar:
@@ -45,7 +45,7 @@ class TestVar:
 
     def __init__(self, *args, **kwargs):
         self.field_type = kwargs.pop('field', fields.TypedField)
-        self._default_value = kwargs.pop('value', _Undefined)
+        self._default_value = kwargs.pop('value', Undefined)
 
         if not issubclass(self.field_type, fields.Field):
             raise ValueError(
@@ -58,10 +58,10 @@ class TestVar:
         self.__attrs__ = dict()
 
     def is_defined(self):
-        return self._default_value is not _Undefined
+        return self._default_value is not Undefined
 
     def undefine(self):
-        self._default_value = _Undefined
+        self._default_value = Undefined
 
     def define(self, value):
         self._default_value = value
@@ -106,7 +106,7 @@ class TestVar:
 
     def __repr__(self):
         self._check_is_defined()
-        return str(self._default_value)
+        return repr(self._default_value)
 
     def __str__(self):
         return self.__repr__()
@@ -223,9 +223,9 @@ class TestVar:
         self._check_is_defined()
         return divmod(self._default_value, other)
 
-    def __pow__(self, other):
+    def __pow__(self, other, *modulo):
         self._check_is_defined()
-        return self._default_value ** other
+        return pow(self._default_value, other, *modulo)
 
     def __lshift__(self, other):
         self._check_is_defined()
@@ -279,9 +279,9 @@ class TestVar:
         self._check_is_defined()
         return divmod(other, self._default_value)
 
-    def __rpow__(self, other):
+    def __rpow__(self, other, *modulo):
         self._check_is_defined()
-        return other ** self._default_value
+        return pow(other, self._default_value, *modulo)
 
     def __rlshift__(self, other):
         self._check_is_defined()
@@ -338,9 +338,9 @@ class TestVar:
         self._default_value %= other
         return self._default_value
 
-    def __ipow__(self, other, *args):
+    def __ipow__(self, other, *modulo):
         self._check_is_defined()
-        self._default_value **= other
+        self._default_value = pow(self._default_value, other, *modulo)
         return self._default_value
 
     def __ilshift__(self, other):
@@ -396,9 +396,9 @@ class TestVar:
         self._check_is_defined()
         return complex(self._default_value)
 
-    def __round__(self):
+    def __round__(self, *ndigits):
         self._check_is_defined()
-        return round(self._default_value)
+        return round(self._default_value, *ndigits)
 
     def __trunc__(self):
         self._check_is_defined()

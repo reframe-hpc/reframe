@@ -98,7 +98,7 @@ class RegressionTestMeta(type):
 
         # Directives to add/modify a regression test variable
         namespace['variable'] = variables.TestVar
-        namespace['required'] = variables._Undefined
+        namespace['required'] = variables.Undefined
         return metacls.MetaNamespace(namespace)
 
     def __new__(metacls, name, bases, namespace, **kwargs):

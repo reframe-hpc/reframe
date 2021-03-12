@@ -273,8 +273,26 @@ def test_parameter_override():
 
 
 def test_override_regular_attribute():
+    class Foo(rfm.RegressionTest):
+        p = 4
+        p = parameter([1, 2])
+
+    assert Foo.p == (1, 2,)
+
+def test_override_parameter():
     with pytest.raises(ValueError):
         class Foo(rfm.RegressionTest):
-            p = 4
             p = parameter([1, 2])
-            p = p+1
+            p = 1
+
+    with pytest.raises(ValueError):
+        class Foo(rfm.RegressionTest):
+            p = parameter([1, 2])
+            p += 1
+
+
+def test_local_paramspace_is_empty():
+    class MyTest(rfm.RegressionTest):
+        p = parameter([1, 2, 3])
+
+    assert len(MyTest._rfm_local_param_space) == 0

@@ -105,6 +105,8 @@ def test_double_action_on_variable():
         v0 = variable(int, value=2)
         v0 += 2
 
+    assert MyTest.v0 == 4
+
 
 def test_set_var(OneVarTest):
     class MyTest(OneVarTest):
@@ -146,15 +148,6 @@ def test_required_var_not_present(OneVarTest):
             pass
 
     mytest = MyTest()
-
-
-def test_require_undeclared_variable(NoVarsTest):
-    '''Setting a regular variable as required is permitted.
-
-    The behaviour of such attribute is undefined.
-    '''
-    class MyTest(NoVarsTest):
-        foo = required
 
 
 def test_invalid_field():
@@ -216,3 +209,21 @@ def test_override_regular_attribute():
         v = variable(int, value=40)
 
     assert Foo.v == 40
+
+
+def test_variable_with_attribute():
+    class Foo:
+        pass
+
+    class MyTest(rfm.RegressionTest):
+        v = variable(Foo, value = Foo())
+        v.my_attr = 'Injected attribute'
+
+    assert MyTest().v.my_attr == 'Injected attribute'
+
+
+def test_local_varspace_is_empty():
+    class MyTest(rfm.RegressionTest):
+        v = variable(int, value=0)
+
+    assert len(MyTest._rfm_local_var_space) == 0
