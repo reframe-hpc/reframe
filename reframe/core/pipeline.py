@@ -13,6 +13,7 @@ __all__ = [
 ]
 
 
+import contextlib
 import functools
 import glob
 import inspect
@@ -802,21 +803,15 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         if name is not None:
             self.name = name
 
-        try:
-            if not self.descr:
+        # Pass if descr is a required variable.
+        with contextlib.suppress(AttributeError):
+            if self.descr is None:
                 self.descr = self.name
 
-        except AttributeError:
-            # Pass if descr is a required variable.
-            pass
-
-        try:
-            if not self.executable:
+        # Pass if the executable is a required variable.
+        with contextlib.suppress(AttributeError):
+            if self.executable is None:
                 self.executable = os.path.join('.', self.name)
-
-        except AttributeError:
-            # Pass if the executable is a required variable.
-            pass
 
         self._perfvalues = {}
 
