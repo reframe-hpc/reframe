@@ -802,11 +802,21 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         if name is not None:
             self.name = name
 
-        if not self.descr:
-            self.descr = self.name
+        try:
+            if not self.descr:
+                self.descr = self.name
 
-        if not self.executable:
-            self.executable = os.path.join('.', self.name)
+        except AttributeError:
+            # Pass if descr is a required variable.
+            pass
+
+        try:
+            if not self.executable:
+                self.executable = os.path.join('.', self.name)
+
+        except AttributeError:
+            # Pass if the executable is a required variable.
+            pass
 
         self._perfvalues = {}
 
