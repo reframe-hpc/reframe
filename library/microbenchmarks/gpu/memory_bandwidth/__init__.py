@@ -92,7 +92,7 @@ class GpuBandwidthSingle(GpuBandwidthBase):
         # Extract the bandwidth corresponding to the right node, transfer and
         # device.
         return (rf'^[^,]*\[[^,]*\]\s*{direction}\s*bandwidth on device'
-                r' \d+ is \s*(\S+)\s*Mb/s.')
+                r' \d+ is \s*(\S+)\s*GB/s.')
 
     @sn.sanity_function
     def do_sanity_check(self):
