@@ -158,5 +158,5 @@ class RunGpuPChaseP2P(RunGpuPChaseBase):
     @rfm.run_before('performance')
     def set_performance_patterns(self):
         self.perf_patterns = {
-            'average_latency': average_P2P_latency(),
+            'average_latency': self.average_P2P_latency(),
         }

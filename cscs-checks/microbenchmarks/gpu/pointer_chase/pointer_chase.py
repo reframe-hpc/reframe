@@ -27,7 +27,7 @@ class PchaseGlobal(rfm.RegressionMixin):
             'ault:amda100', 'ault:amdvega', 'tsa:cn'
         ]
     )
-    global_prog_environs = variable(list, value=['PrgEnv-gnu'])
+    global_prog_environs = variable(typ.List[str], value=['PrgEnv-gnu'])
 
 
 @rfm.simple_test
@@ -39,10 +39,9 @@ class CompileGpuPChase(pchase.BuildGpuPChaseBase, PchaseGlobal, hooks.SetCompile
             self.single_device_systems + self.multi_device_systems
         )
         self.valid_prog_environs = self.global_prog_environs
-        self.exclusive_access = True
 
 
-class RunGpuPChaseSingle(pchase.RunGpuPChaseSingle, PchaseGlobal, hooks.SetGPUsPerNode):
+class RunGpuPChaseSingle(pchase.RunGpuPChaseSingle, PchaseGlobal, hooks.SetGPUsPerNode, hooks.SetCompileOpts):
     def __init__(self):
         self.depends_on('CompileGpuPChase')
         self.valid_systems = (
@@ -161,7 +160,7 @@ class GpuDRAMLatency(RunGpuPChaseSingle):
 
 
 @rfm.simple_test
-class GpuP2PLatencyP2P(pchase.RunGpuPChaseP2P):
+class GpuP2PLatencyP2P(pchase.RunGpuPChaseP2P, PchaseGlobal, hooks.SetGPUsPerNode, hooks.SetCompileOpts):
     '''Measure the latency to remote device.
 
     Depending on the list size, the data might be cached in different places.
@@ -171,7 +170,9 @@ class GpuP2PLatencyP2P(pchase.RunGpuPChaseP2P):
     list_size = parameter([5000, 2000000])
 
     def __init__(self):
+        self.depends_on('CompileGpuPChase')
         self.valid_systems = self.multi_device_systems
+        self.valid_prog_environs = self.global_prog_environs
         self.num_list_nodes = self.list_size
         if self.list_size == 5000:
             self.reference = {
@@ -205,3 +206,8 @@ class GpuP2PLatencyP2P(pchase.RunGpuPChaseP2P):
                     )
                 },
             }
+
+    @rfm.require_deps
+    def set_executable(self, CompileGpuPChase):
+        self.executable = os.path.join(
+            CompileGpuPChase().stagedir, 'pChase.x')

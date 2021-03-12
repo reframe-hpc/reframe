@@ -31,7 +31,7 @@ class SetCompileOpts(rfm.RegressionMixin):
         if cp in {'ault:amdvega'}:
             self.gpu_build = 'hip'
             self.modules = ['rocm']
-            self.gpu_arch = 'gfx906'
+            self.gpu_arch = 'gfx900,gfx906'
 
 
 class SetGPUsPerNode(rfm.RegressionMixin):
