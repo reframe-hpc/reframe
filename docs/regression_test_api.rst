@@ -29,6 +29,18 @@ Regression Test Class Decorators
 Pipeline Hooks
 --------------
 
+.. versionadded:: 2.20
+
+
+Pipeline hooks is an easy way to perform operations while the test traverses the execution pipeline.
+You can attach arbitrary functions to run before or after any pipeline stage, which are called *pipeline hooks*.
+Multiple hooks can be attached before or after the same pipeline stage, in which case the order of execution will match the order in which the functions are defined in the class body of the test.
+A single hook can also be applied to multiple stages and it will be executed multiple times.
+All pipeline hooks of a test class are inherited by its subclasses.
+Subclasses may override a pipeline hook of their parents by redefining the hook function and re-attaching it at the same pipeline stage.
+There are seven pipeline stages where you can attach test methods: ``init``, ``setup``, ``compile``, ``run``, ``sanity``, ``performance`` and ``cleanup``.
+
+
 .. autodecorator:: reframe.core.decorators.run_after(stage)
 
 .. autodecorator:: reframe.core.decorators.run_before(stage)
@@ -67,7 +79,7 @@ In essence, these builtins exert control over the test creation, and they allow 
             else:
                 do_other()
 
-  One of the most powerful features about these built-in functions is that they store their input information at the class level. 
+  One of the most powerful features about these built-in functions is that they store their input information at the class level.
   However, a parameter may only be accessed from the class instance and accessing it directly from the class body is disallowed.
   With this approach, extending or specializing an existing parametrized regression test becomes straightforward, since the test attribute additions and modifications made through built-in functions in the parent class are automatically inherited by the child test.
   For instance, continuing with the example above, one could override the :func:`__init__` method in the :class:`Foo` regression test as follows:
@@ -83,7 +95,7 @@ In essence, these builtins exert control over the test creation, and they allow 
 
   Note that this built-in parameter function provides an alternative method to parameterize a test to :func:`reframe.core.decorators.parameterized_test`, and the use of both approaches in the same test is currently disallowed.
   The two main advantages of the built-in :func:`parameter` over the decorated approach reside in the parameter inheritance across classes and the handling of large parameter sets.
-  As shown in the example above, the parameters declared with the built-in :func:`parameter` are automatically carried over into derived tests through class inheritance, whereas tests using the decorated approach would have to redefine the parameters on every test. 
+  As shown in the example above, the parameters declared with the built-in :func:`parameter` are automatically carried over into derived tests through class inheritance, whereas tests using the decorated approach would have to redefine the parameters on every test.
   Similarly, parameters declared through the built-in :func:`parameter` are regarded as fully independent from each other and ReFrame will automatically generate as many tests as available parameter combinations. This is a major advantage over the decorated approach, where one would have to manually expand the parameter combinations.
   This is illustrated in the example below, consisting of a case with two parameters, each having two possible values.
 
@@ -118,7 +130,7 @@ In essence, these builtins exert control over the test creation, and they allow 
 
   Inserts a new regression test variable.
   Declaring a test variable through the :func:`variable` built-in allows for a more robust test implementation than if the variables were just defined as regular test attributes (e.g. ``self.a = 10``).
-  Using variables declared through the :func:`variable` built-in guarantees that these regression test variables will not be redeclared by any child class, while also ensuring that any values that may be assigned to such variables comply with its original declaration. 
+  Using variables declared through the :func:`variable` built-in guarantees that these regression test variables will not be redeclared by any child class, while also ensuring that any values that may be assigned to such variables comply with its original declaration.
   In essence, by using test variables, the user removes any potential test errors that might be caused by accidentally overriding a class attribute. See the example below.
 
 

@@ -221,7 +221,6 @@ def run_before(stage):
     The ``stage`` argument can be any of ``'setup'``, ``'compile'``,
     ``'run'``, ``'sanity'``, ``'performance'`` or ``'cleanup'``.
 
-    .. versionadded:: 2.20
     '''
     return _runx('pre_' + stage)
 
@@ -229,10 +228,31 @@ def run_before(stage):
 def run_after(stage):
     '''Decorator for attaching a test method to a pipeline stage.
 
-    This is completely analogous to the
-    :py:attr:`reframe.core.decorators.run_before`.
+    This is analogous to the :py:attr:`~reframe.core.decorators.run_before`,
+    except that ``'init'`` can also be used as the ``stage`` argument. In this
+    case, the hook will execute right after the test is initialized. A
+    post-init hook is equivalent to defining the :func:`__init__` function in
+    the test. However, if :func:`__init__` is defined in the test, any
+    post-init hooks will be ignored. All the other properties of pipeline
+    hooks apply equally here. The following code
 
-    .. versionadded:: 2.20
+    .. code-block:: python
+
+       @rfm.run_after('init')
+       def foo(self):
+           self.x = 1
+
+
+    is equivalent to
+
+    .. code-block:: python
+
+       def __init__(self):
+           self.x = 1
+
+    .. versionchanged:: 3.5.1
+       Add the ability to define post-init hooks in tests.
+
     '''
     return _runx('post_' + stage)
 
