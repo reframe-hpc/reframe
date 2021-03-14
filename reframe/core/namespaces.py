@@ -10,6 +10,8 @@
 
 import abc
 
+import reframe.core.directives as directives
+
 
 class LocalNamespace:
     '''Local namespace of a regression test.
@@ -40,7 +42,7 @@ class LocalNamespace:
         return self._namespace[key]
 
     def __setitem__(self, key, value):
-        if key not in self._namespace:
+        if key not in self._namespace and key not in directives.NAMES:
             self._namespace[key] = value
         else:
             self._raise_namespace_clash(key)

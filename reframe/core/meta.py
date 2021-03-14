@@ -8,16 +8,20 @@
 #
 
 
-from reframe.core.exceptions import ReframeSyntaxError
+import functools
+
+import reframe.core.directives as directives
 import reframe.core.namespaces as namespaces
 import reframe.core.parameters as parameters
 import reframe.core.variables as variables
+from reframe.core.exceptions import ReframeSyntaxError
 
 
 class RegressionTestMeta(type):
 
     class MetaNamespace(namespaces.LocalNamespace):
         '''Custom namespace to control the cls attribute assignment.'''
+
         def __setitem__(self, key, value):
             if isinstance(value, variables.VarDirective):
                 # Insert the attribute in the variable namespace
@@ -79,6 +83,14 @@ class RegressionTestMeta(type):
         # Directives to add/modify a regression test variable
         namespace['variable'] = variables.TestVar
         namespace['required'] = variables.UndefineVar()
+
+        # Insert the directives
+        dir_registry = directives.DirectiveRegistry()
+        for fn_name in directives.NAMES:
+            fn_dir_add = functools.partial(dir_registry.add, fn_name)
+            namespace[fn_name] = fn_dir_add
+
+        namespace['_rfm_dir_registry'] = dir_registry
         return metacls.MetaNamespace(namespace)
 
     def __new__(metacls, name, bases, namespace, **kwargs):
@@ -127,6 +139,23 @@ class RegressionTestMeta(type):
         if fn_with_deps:
             hooks['post_setup'] = fn_with_deps + hooks.get('post_setup', [])
 
+        def apply_directives(obj):
+            directives.apply(cls, obj)
+            directives.reset(cls)
+
+        if hasattr(cls, '__init__'):
+            orig_init = cls.__init__
+
+            def replace_init(obj, *args, **kwargs):
+                apply_directives(obj)
+                orig_init(obj, *args, **kwargs)
+
+            cls.__init__ = replace_init
+        else:
+            hooks['pre_init'] = [
+                lambda obj: apply_directives(obj)
+            ]
+
         cls._rfm_pipeline_hooks = hooks
         cls._rfm_disabled_hooks = set()
         cls._final_methods = {v.__name__ for v in namespace.values()
@@ -140,6 +169,9 @@ class RegressionTestMeta(type):
             return
 
         for v in namespace.values():
+            if not hasattr(v, '__name__'):
+                continue
+
             for b in bases:
                 if not hasattr(b, '_final_methods'):
                     continue

@@ -1711,7 +1711,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         else:
             raise ValueError(f"unknown value passed to 'how' argument: {how}")
 
-    def depends_on(self, target, how=None, *args, **kwargs):
+    def _D_depends_on(self, target, how=None, *args, **kwargs):
         '''Add a dependency to another test.
 
         :arg target: The name of the test that this one will depend on.
@@ -1771,6 +1771,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             ``subdeps`` argument is deprecated.
 
         '''
+
         if not isinstance(target, str):
             raise TypeError("target argument must be of type: `str'")
 

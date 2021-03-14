@@ -10,6 +10,7 @@ import functools
 def deferrable(func):
     '''Function decorator for converting a function to a deferred
     expression.'''
+
     @functools.wraps(func)
     def _deferred(*args, **kwargs):
         return _DeferredExpression(func, *args, **kwargs)
