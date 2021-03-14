@@ -494,6 +494,31 @@ def test_extra_resources(HelloTest, testsys_system):
     assert expected_job_options == set(test.job.options)
 
 
+def test_pre_init_hook(local_exec_ctx):
+    with pytest.raises(ValueError):
+        @fixtures.custom_prefix('unittests/resources/checks')
+        class MyTest(rfm.RunOnlyRegressionTest):
+            @rfm.run_before('init')
+            def prepare(self):
+                self.x = 1
+
+
+def test_post_init_hook(local_exec_ctx):
+    @fixtures.custom_prefix('unittests/resources/checks')
+    class MyTest(rfm.RunOnlyRegressionTest):
+        valid_systems = ['*']
+        valid_prog_environs = ['*']
+        executable = 'echo'
+        executable_opts = ['hello']
+
+        @rfm.run_after('init')
+        def prepare(self):
+            self.sanity_patterns = sn.assert_found(r'hello', self.stdout)
+
+    test = MyTest()
+    _run(test, *local_exec_ctx)
+
+
 def test_setup_hooks(HelloTest, local_exec_ctx):
     @fixtures.custom_prefix('unittests/resources/checks')
     class MyTest(HelloTest):

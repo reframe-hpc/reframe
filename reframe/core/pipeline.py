@@ -82,7 +82,11 @@ def _run_hooks(name=None):
     def _deco(func):
         def hooks(obj, kind):
             if name is None:
-                hook_name = kind + func.__name__
+                fn_name = func.__name__
+                if fn_name == '__init__':
+                    fn_name = 'init'
+
+                hook_name = kind + fn_name
             elif name is not None and name.startswith(kind):
                 hook_name = name
             else:
@@ -786,7 +790,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         obj._rfm_init(name, prefix)
         return obj
 
-    @_run_hooks('post_init')
+    @_run_hooks()
     def __init__(self):
         pass
 

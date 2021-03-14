@@ -222,6 +222,9 @@ def run_before(stage):
     ``'run'``, ``'sanity'``, ``'performance'`` or ``'cleanup'``.
 
     '''
+    if stage == 'init':
+        raise ValueError('pre-init hooks are not allowed')
+
     return _runx('pre_' + stage)
 
 
