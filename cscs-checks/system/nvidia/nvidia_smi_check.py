@@ -15,7 +15,7 @@ class nvidia_smi_check(rfm.RunOnlyRegressionTest):
     valid_prog_environs = ['builtin']
     executable = 'nvidia-smi'
     executable_opts = ['-a', '-d']
-    num_tasks = 0
+    num_tasks = 1
     num_tasks_per_node = 1
     exclusive = True
     tags = {'maintenance', 'production'}
