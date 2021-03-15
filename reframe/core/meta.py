@@ -143,18 +143,14 @@ class RegressionTestMeta(type):
             directives.apply(cls, obj)
             directives.reset(cls)
 
-        if hasattr(cls, '__init__'):
-            orig_init = cls.__init__
+        if hasattr(cls, '__rfm_init__'):
+            orig_rfm_init = cls.__rfm_init__
 
-            def replace_init(obj, *args, **kwargs):
+            def augmented_init(obj, *args, **kwargs):
+                orig_rfm_init(obj, *args, **kwargs)
                 apply_directives(obj)
-                orig_init(obj, *args, **kwargs)
 
-            cls.__init__ = replace_init
-        else:
-            hooks['pre_init'] = [
-                lambda obj: apply_directives(obj)
-            ]
+            cls.__rfm_init__ = augmented_init
 
         cls._rfm_pipeline_hooks = hooks
         cls._rfm_disabled_hooks = set()

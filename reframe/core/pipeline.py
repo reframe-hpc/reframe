@@ -787,7 +787,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                         os.path.dirname(inspect.getfile(cls))
                     )
 
-        obj._rfm_init(name, prefix)
+        obj.__rfm_init__(name, prefix)
         return obj
 
     @_run_hooks()
@@ -813,7 +813,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 os.path.dirname(inspect.getfile(cls))
             )
 
-    def _rfm_init(self, name=None, prefix=None):
+    def __rfm_init__(self, name=None, prefix=None):
         if name is not None:
             self.name = name
 
@@ -872,6 +872,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             self._cdt_environ = env.Environment('__rfm_cdt_environ')
 
     # Export read-only views to interesting fields
+
     @property
     def current_environ(self):
         '''The programming environment that the regression test is currently
