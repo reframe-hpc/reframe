@@ -659,7 +659,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:       - Can be now set per partition via the configuration.
     time_limit = variable(type(None), field=fields.TimerField, value=None)
 
-
     #: .. versionadded:: 3.6
     #:
     #: The time limit for the build phase of the regression test.
@@ -1333,8 +1332,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self.job.num_cpus_per_task = self.num_cpus_per_task
         self.job.use_smt = self.use_multithreading
         self.job.time_limit = (self.time_limit or rt.runtime().get_option(
-                f'systems/@{self.current_system.name}/partitions/'
-                f'@{self.current_partition.name}/timelimit')
+            f'systems/@{self.current_system.name}/partitions/'
+            f'@{self.current_partition.name}/timelimit')
         )
         exec_cmd = [self.job.launcher.run_command(self.job),
                     self.executable, *self.executable_opts]
