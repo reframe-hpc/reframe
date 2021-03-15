@@ -287,6 +287,14 @@ System Partition Configuration
   A list of `environment module objects <#module-objects>`__ to be loaded before running a regression test on this partition.
 
 
+.. js:attribute:: .systems[].partitions[].timelimit
+
+   :required: No
+   :default: ``""``
+
+   The time limit for the jobs submitted on this partition.
+
+
 .. js:attribute:: .systems[].partitions[].variables
 
    :required: No
