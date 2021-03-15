@@ -84,6 +84,9 @@ class RegressionTestMeta(type):
                                 key in b._rfm_var_space):
                                     v = b._rfm_var_space[key]
                                     v.__set_name__(self, key)
+
+                                    # Store a deep-copy of the variable's
+                                    # value and return.
                                     self._namespace[key] = v.default_value
                                     return self._namespace[key]
 

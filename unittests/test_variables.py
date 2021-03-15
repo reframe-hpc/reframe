@@ -229,6 +229,16 @@ def test_local_varspace_is_empty():
     assert len(MyTest._rfm_local_var_space) == 0
 
 
+def test_upstream_var_fetching():
+    class Foo(rfm.RegressionTest):
+        v0 = variable(int, value=10)
+
+    class Bar(Foo):
+        v1 = variable(int, value=v0*2)
+
+    assert Bar().v1 == 20
+
+
 def test_var_basic_operators():
     class A(rfm.RegressionTest):
         v = variable(int, value=2)
@@ -263,12 +273,14 @@ def test_var_container_operators():
         with pytest.raises(KeyError):
             vv = v['c']
         assert 'a' in v
+
+        vv = variable(list, value=['a', 'b'])
         reversed_keys = ''
-        for i in reversed(v):
+        for i in reversed(vv):
             reversed_keys += i
         assert reversed_keys == 'ba'
         iter_keys = ''
-        for i in iter(v):
+        for i in iter(vv):
             iter_keys += i
         assert iter_keys == 'ab'
 
