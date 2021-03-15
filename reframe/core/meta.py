@@ -76,6 +76,17 @@ class RegressionTestMeta(type):
                             'body is disallowed'
                         ) from None
                     else:
+                        # As the last resource, look if key is a variable in
+                        # any of the base classes. If so, make its value
+                        # available in the current class' namespace.
+                        for b in self['_rfm_bases']:
+                            if (hasattr(b, '_rfm_var_space') and
+                                key in b._rfm_var_space):
+                                    v = b._rfm_var_space[key]
+                                    v.__set_name__(self, key)
+                                    self._namespace[key] = v.default_value
+                                    return self._namespace[key]
+
                         # If 'key' is neither a variable nor a parameter,
                         # raise the exception from the base __getitem__.
                         raise err from None
@@ -83,6 +94,9 @@ class RegressionTestMeta(type):
     @classmethod
     def __prepare__(metacls, name, bases, **kwargs):
         namespace = super().__prepare__(name, bases, **kwargs)
+
+        # Keep reference to the bases inside the namespace
+        namespace['_rfm_bases'] = bases
 
         # Regression test parameter space defined at the class level
         local_param_space = namespaces.LocalNamespace()

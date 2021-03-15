@@ -70,6 +70,7 @@ class TestVar:
     def default_value(self):
         # Variables must be returned by-value to prevent an instance from
         # modifying the class variable space.
+        self._check_is_defined()
         return copy.deepcopy(self._default_value)
 
     @property
