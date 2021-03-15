@@ -3,8 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import pytest
-
 import reframe as rfm
 import reframe.core.directives as directives
 

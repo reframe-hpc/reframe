@@ -20,9 +20,6 @@ object method, since they have served their purpose. This allows us to export
 functions such as `depends_on()` at the class level.
 '''
 
-import inspect
-
-
 NAMES = ('depends_on',)
 
 
