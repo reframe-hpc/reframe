@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -9,7 +9,6 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-# TODO: sinfo, check if the normal, long, debug, etc... partitions are present?
 # TODO: scontrol, do we want to scontrol something specific?
 @rfm.simple_test
 class SlurmCheck(rfm.RunOnlyRegressionTest):
@@ -47,4 +46,4 @@ class SlurmCheck(rfm.RunOnlyRegressionTest):
 
         self.postrun_cmds = ['echo $?']
         self.tags = {'ops', 'diagnostic', 'health'}
-        self.maintainers = ['CB']
+        self.maintainers = ['CB', 'VH']
