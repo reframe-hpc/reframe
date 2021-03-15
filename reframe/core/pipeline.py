@@ -225,7 +225,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:     .. versionchanged:: 3.3
     #:        Default value changed from ``[]`` to ``None``.
     #:
-    valid_prog_environgs = variable(typ.List[str], type(None), value=None)
+    valid_prog_environs = variable(typ.List[str], type(None), value=None)
 
     #: List of systems supported by this test.
     #: The general syntax for systems is ``<sysname>[:<partname>]``.
