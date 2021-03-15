@@ -27,7 +27,7 @@ class nvidia_smi_check(rfm.RunOnlyRegressionTest):
     })
 
     @rfm.run_before('run')
-    def set_variant_opts(self):
+    def set_display_opt(self):
         self.executable_opts.append(self.gpu_mode.upper())
 
     @rfm.run_before('sanity')
