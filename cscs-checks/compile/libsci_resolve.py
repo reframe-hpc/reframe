@@ -24,6 +24,7 @@ class NvidiaResolveTest(LibSciResolveBaseTest):
         super().__init__()
         self.descr = f'Module {module_name} resolves libsci_acc'
         self.build_system = 'SingleSource'
+        self.tags.add('health')
 
         self.module_name = module_name
         self.module_version = {
