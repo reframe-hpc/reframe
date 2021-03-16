@@ -279,6 +279,7 @@ def test_override_regular_attribute():
 
     assert Foo.p == (1, 2,)
 
+
 def test_override_parameter():
     with pytest.raises(ValueError):
         class Foo(rfm.RegressionTest):
