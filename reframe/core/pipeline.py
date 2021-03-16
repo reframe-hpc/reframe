@@ -13,6 +13,7 @@ __all__ = [
 ]
 
 
+import contextlib
 import functools
 import glob
 import inspect
@@ -46,10 +47,13 @@ from reframe.core.warnings import user_deprecation_warning
 # Dependency kinds
 
 #: Constant to be passed as the ``how`` argument of the
-#: :func:`RegressionTest.depends_on` method. It denotes that test case
+#: :func:`~RegressionTest.depends_on` method. It denotes that test case
 #: dependencies will be explicitly specified by the user.
 #:
 #:  This constant is directly available under the :mod:`reframe` module.
+#:
+#: .. deprecated:: 3.3
+#:    Please use a callable as the ``how`` argument.
 DEPEND_EXACT = 1
 
 #: Constant to be passed as the ``how`` argument of the
@@ -58,6 +62,9 @@ DEPEND_EXACT = 1
 #: target test that use the same programming environment.
 #:
 #:  This constant is directly available under the :mod:`reframe` module.
+#:
+#: .. deprecated:: 3.3
+#:    Please use a callable as the ``how`` argument.
 DEPEND_BY_ENV = 2
 
 #: Constant to be passed as the ``how`` argument of the
@@ -65,6 +72,9 @@ DEPEND_BY_ENV = 2
 #: this test depends on all the test cases of the target test.
 #:
 #:  This constant is directly available under the :mod:`reframe` module.
+#:
+#: .. deprecated:: 3.3
+#:    Please use a callable as the ``how`` argument.
 DEPEND_FULLY = 3
 
 
@@ -215,7 +225,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:     .. versionchanged:: 3.3
     #:        Default value changed from ``[]`` to ``None``.
     #:
-    valid_prog_environgs = variable(typ.List[str], type(None), value=None)
+    valid_prog_environs = variable(typ.List[str], type(None), value=None)
 
     #: List of systems supported by this test.
     #: The general syntax for systems is ``<sysname>[:<partname>]``.
@@ -234,7 +244,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`str`
     #: :default: ``self.name``
-    descr = variable(str)
+    descr = variable(str, type(None), value=None)
 
     #: The path to the source file or source directory of the test.
     #:
@@ -329,7 +339,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`str`
     #: :default: ``os.path.join('.', self.name)``
-    executable = variable(str)
+    executable = variable(str, type(None), value=None)
 
     #: List of options to be passed to the :attr:`executable`.
     #:
@@ -619,7 +629,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    modules = variable(typ.List[str], value=[])
+    modules = variable(
+        typ.List[str], typ.List[typ.Dict[str, object]], value=[])
 
     #: Environment variables to be set before running this test.
     #:
@@ -801,8 +812,16 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         if name is not None:
             self.name = name
 
-        self.descr = self.name
-        self.executable = os.path.join('.', self.name)
+        # Pass if descr is a required variable.
+        with contextlib.suppress(AttributeError):
+            if self.descr is None:
+                self.descr = self.name
+
+        # Pass if the executable is a required variable.
+        with contextlib.suppress(AttributeError):
+            if self.executable is None:
+                self.executable = os.path.join('.', self.name)
+
         self._perfvalues = {}
 
         # Static directories of the regression check
@@ -1205,18 +1224,18 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             self.build_system.srcfile = self.sourcepath
             self.build_system.executable = self.executable
 
-        # Prepare build job
-        build_commands = [
-            *self.prebuild_cmds,
-            *self.build_system.emit_build_commands(self._current_environ),
-            *self.postbuild_cmds
-        ]
         user_environ = env.Environment(type(self).__name__,
                                        self.modules, self.variables.items())
         environs = [self._current_partition.local_env, self._current_environ,
                     user_environ, self._cdt_environ]
 
         with osext.change_dir(self._stagedir):
+            # Prepare build job
+            build_commands = [
+                *self.prebuild_cmds,
+                *self.build_system.emit_build_commands(self._current_environ),
+                *self.postbuild_cmds
+            ]
             try:
                 self._build_job.prepare(
                     build_commands, environs,
@@ -1256,6 +1275,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         if self._build_job.exitcode:
             raise BuildError(self._build_job.stdout, self._build_job.stderr)
 
+        self.build_system.post_build(self._build_job)
+
     @_run_hooks('pre_run')
     @final
     def run(self):
@@ -1293,15 +1314,18 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             self.container_platform.validate()
 
             # We replace executable and executable_opts in case of containers
-            self.executable = self.container_platform.launch_command()
+            self.executable = self.container_platform.launch_command(
+                self.stagedir)
             self.executable_opts = []
-            prepare_container = self.container_platform.emit_prepare_commands()
+            prepare_container = self.container_platform.emit_prepare_commands(
+                self.stagedir)
             if prepare_container:
                 self.prerun_cmds += prepare_container
 
         self.job.num_tasks = self.num_tasks
         self.job.num_tasks_per_node = self.num_tasks_per_node
         self.job.num_tasks_per_core = self.num_tasks_per_core
+        self.job.num_tasks_per_socket = self.num_tasks_per_socket
         self.job.num_cpus_per_task = self.num_cpus_per_task
         self.job.use_smt = self.use_multithreading
         self.job.time_limit = self.time_limit

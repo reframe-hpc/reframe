@@ -131,6 +131,7 @@ class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
     def set_cpu_binding(self):
         self.job.launcher.options = ['--cpu-bind=cores']
 
+
 @rfm.parameterized_test(*([s, v]
                           for s in ['small', 'large']
                           for v in ['maint', 'prod']))
