@@ -182,7 +182,7 @@ site_configuration = {
                 },
                 {
                     'name': 'gpu',
-                    'timelimit': '10m',
+                    'time_limit': '10m',
                     'scheduler': 'slurm',
                     'container_platforms': [
                         {
@@ -231,7 +231,7 @@ site_configuration = {
                 {
                     'name': 'mc',
                     'scheduler': 'slurm',
-                    'timelimit': '10m',
+                    'time_limit': '10m',
                     'container_platforms': [
                         {
                             'type': 'Sarus',
@@ -350,7 +350,7 @@ site_configuration = {
                 {
                     'name': 'gpu',
                     'scheduler': 'slurm',
-                    'timelimit': '10m',
+                    'time_limit': '10m',
                     'container_platforms': [
                         {
                             'type': 'Sarus',
@@ -392,7 +392,7 @@ site_configuration = {
                 {
                     'name': 'mc',
                     'scheduler': 'slurm',
-                    'timelimit': '10m',
+                    'time_limit': '10m',
                     'container_platforms': [
                         {
                             'type': 'Sarus',

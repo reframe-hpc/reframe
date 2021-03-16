@@ -635,7 +635,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: Time limit is specified as a string in the form
     #: ``<days>d<hours>h<minutes>m<seconds>s`` or as number of seconds.
     #: If set to :class:`None`, the
-    #: `timelimit <config_reference.html#.systems[].partitions[].timelimit>`__
+    #: `time_limit <config_reference.html#.systems[].partitions[].time_limit>`__
     #: of a system partition will be used.
     #:
     #: :type: :class:`str` or :class:`float` or :class:`int`
@@ -654,14 +654,14 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:       - Support of `timedelta` objects is dropped.
     #:       - Number values are now accepted.
     #:
-    #:    .. versionchanged:: 3.6
+    #:    .. versionchanged:: 3.5.1
     #:       - The default value is now :class:`None`.
     #:       - Can be now set per partition via the configuration.
     time_limit = variable(type(None), field=fields.TimerField, value=None)
 
-    #: .. versionadded:: 3.6
+    #: .. versionadded:: 3.5.1
     #:
-    #: The time limit for the build phase of the regression test.
+    #: The time limit for the build job of the regression test.
     #:
     #: It is specified similarly to the :attr:`time_limit` attribute.
     #:
@@ -1229,8 +1229,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                     user_environ, self._cdt_environ]
         self._build_job.time_limit = (
             self.build_time_limit or rt.runtime().get_option(
-                f'systems/@{self.current_system.name}/partitions/'
-                f'@{self.current_partition.name}/timelimit')
+                f'systems/0/partitions/@{self.current_partition.name}'
+                f'/time_limit')
         )
         with osext.change_dir(self._stagedir):
             # Prepare build job
@@ -1332,8 +1332,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self.job.num_cpus_per_task = self.num_cpus_per_task
         self.job.use_smt = self.use_multithreading
         self.job.time_limit = (self.time_limit or rt.runtime().get_option(
-            f'systems/@{self.current_system.name}/partitions/'
-            f'@{self.current_partition.name}/timelimit')
+            f'systems/0/partitions/@{self.current_partition.name}/time_limit')
         )
         exec_cmd = [self.job.launcher.run_command(self.job),
                     self.executable, *self.executable_opts]
