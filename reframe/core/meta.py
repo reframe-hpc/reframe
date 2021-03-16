@@ -18,6 +18,7 @@ class RegressionTestMeta(type):
 
     class MetaNamespace(namespaces.LocalNamespace):
         '''Custom namespace to control the cls attribute assignment.'''
+
         def __setitem__(self, key, value):
             if isinstance(value, variables.VarDirective):
                 # Insert the attribute in the variable namespace

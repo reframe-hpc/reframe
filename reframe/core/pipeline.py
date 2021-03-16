@@ -790,7 +790,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         obj._rfm_init(name, prefix)
         return obj
 
-    @_run_hooks()
     def __init__(self):
         pass
 

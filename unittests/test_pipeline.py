@@ -504,19 +504,20 @@ def test_pre_init_hook(local_exec_ctx):
 
 
 def test_post_init_hook(local_exec_ctx):
-    @fixtures.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.RunOnlyRegressionTest):
-        valid_systems = ['*']
-        valid_prog_environs = ['*']
-        executable = 'echo'
-        executable_opts = ['hello']
+    class _MyTest(rfm.RunOnlyRegressionTest):
+        x = variable(int, value=0)
+        y = variable(int, value=0)
+
+        def __init__(self):
+            self.x = 1
 
         @rfm.run_after('init')
         def prepare(self):
-            self.sanity_patterns = sn.assert_found(r'hello', self.stdout)
+            self.y = 1
 
-    test = MyTest()
-    _run(test, *local_exec_ctx)
+    test = _MyTest()
+    assert test.x == 1
+    assert test.y == 1
 
 
 def test_setup_hooks(HelloTest, local_exec_ctx):
