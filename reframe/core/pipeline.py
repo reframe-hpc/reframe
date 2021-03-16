@@ -644,11 +644,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: Time limit is specified as a string in the form
     #: ``<days>d<hours>h<minutes>m<seconds>s`` or as number of seconds.
-    #: If set to :class:`None`, no time limit will be set.
-    #: The default time limit of the system partition's scheduler will be used.
+    #: If set to :class:`None`, the |time_limit|_
+    #: of the current system partition will be used.
     #:
     #: :type: :class:`str` or :class:`float` or :class:`int`
-    #: :default: ``'10m'``
+    #: :default: :class:`None`
     #:
     #: .. note::
     #:    .. versionchanged:: 2.15
@@ -662,7 +662,25 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:       - The old syntax using a ``(h, m, s)`` tuple is dropped.
     #:       - Support of `timedelta` objects is dropped.
     #:       - Number values are now accepted.
-    time_limit = variable(type(None), field=fields.TimerField, value='10m')
+    #:
+    #:    .. versionchanged:: 3.5.1
+    #:       The default value is now :class:`None` and it can be set globally
+    #:       per partition via the configuration.
+    #:
+    #:    .. |time_limit| replace:: :attr:`time_limit`
+    #:    .. _time_limit: #.systems[].partitions[].time_limit
+    time_limit = variable(type(None), field=fields.TimerField, value=None)
+
+    #: .. versionadded:: 3.5.1
+    #:
+    #: The time limit for the build job of the regression test.
+    #:
+    #: It is specified similarly to the :attr:`time_limit` attribute.
+    #:
+    #: :type: :class:`str` or :class:`float` or :class:`int`
+    #: :default: :class:`None`
+    build_time_limit = variable(type(None), field=fields.TimerField,
+                                value=None)
 
     #: .. versionadded:: 2.8
     #:
@@ -1228,7 +1246,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                                        self.modules, self.variables.items())
         environs = [self._current_partition.local_env, self._current_environ,
                     user_environ, self._cdt_environ]
-
+        self._build_job.time_limit = (
+            self.build_time_limit or rt.runtime().get_option(
+                f'systems/0/partitions/@{self.current_partition.name}'
+                f'/time_limit')
+        )
         with osext.change_dir(self._stagedir):
             # Prepare build job
             build_commands = [
@@ -1328,8 +1350,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self.job.num_tasks_per_socket = self.num_tasks_per_socket
         self.job.num_cpus_per_task = self.num_cpus_per_task
         self.job.use_smt = self.use_multithreading
-        self.job.time_limit = self.time_limit
-
+        self.job.time_limit = (self.time_limit or rt.runtime().get_option(
+            f'systems/0/partitions/@{self.current_partition.name}/time_limit')
+        )
         exec_cmd = [self.job.launcher.run_command(self.job),
                     self.executable, *self.executable_opts]
         commands = [*self.prerun_cmds, ' '.join(exec_cmd), *self.postrun_cmds]
