@@ -37,8 +37,8 @@ from reframe.core.buildsystems import BuildSystemField
 from reframe.core.containers import ContainerPlatformField
 from reframe.core.deferrable import _DeferredExpression
 from reframe.core.exceptions import (BuildError, DependencyError,
-                                     PipelineError, SanityError,
-                                     PerformanceError)
+                                     PerformanceError, PipelineError,
+                                     SanityError, SkipTestError)
 from reframe.core.meta import RegressionTestMeta
 from reframe.core.schedulers import Job
 from reframe.core.warnings import user_deprecation_warning
@@ -1840,6 +1840,26 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         raise DependencyError(f'could not resolve dependency to ({target!r}, '
                               f'{part!r}, {environ!r})')
+
+    def skip(self, msg=None):
+        '''Skip test.
+
+        :arg msg: A message explaining why the test was skipped.
+
+        .. versionadded:: 3.5.1
+        '''
+        raise SkipTestError(msg)
+
+    def skip_if(self, cond, msg=None):
+        '''Skip test if condition is true.
+
+        :arg cond: The condition to check for skipping the test.
+        :arg msg: A message explaining why the test was skipped.
+
+        .. versionadded:: 3.5.1
+        '''
+        if cond:
+            self.skip(msg)
 
     def __str__(self):
         return "%s(name='%s', prefix='%s')" % (type(self).__name__,

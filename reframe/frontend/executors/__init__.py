@@ -19,6 +19,7 @@ from reframe.core.exceptions import (AbortTaskError,
                                      JobNotStartedError,
                                      FailureLimitError,
                                      ForceExitError,
+                                     SkipTestError,
                                      TaskExit)
 from reframe.core.schedulers.local import LocalJobScheduler
 from reframe.frontend.printer import PrettyPrinter
@@ -131,6 +132,7 @@ class RegressionTask:
         self._current_stage = 'startup'
         self._exc_info = (None, None, None)
         self._listeners = list(listeners)
+        self._skipped = False
 
         # Reference count for dependent tests; safe to cleanup the test only
         # if it is zero
@@ -212,7 +214,8 @@ class RegressionTask:
 
     @property
     def failed(self):
-        return self._failed_stage is not None and not self._aborted
+        return (self._failed_stage is not None and
+                not self._aborted and not self._skipped)
 
     @property
     def failed_stage(self):
@@ -229,6 +232,10 @@ class RegressionTask:
     @property
     def aborted(self):
         return self._aborted
+
+    @property
+    def skipped(self):
+        return self._skipped
 
     def _notify_listeners(self, callback_name):
         for l in self._listeners:
@@ -260,7 +267,12 @@ class RegressionTask:
                 logger.debug(f'Entering stage: {self._current_stage}')
                 with update_timestamps():
                     return fn(*args, **kwargs)
-
+        except SkipTestError as e:
+            if not self.succeeded:
+                # Only skip a test if it hasn't finished yet;
+                # This practically ignores skipping during the cleanup phase
+                self.skip()
+                raise TaskExit from e
         except ABORT_REASONS:
             self.fail()
             raise
@@ -321,6 +333,12 @@ class RegressionTask:
         self._exc_info = exc_info or sys.exc_info()
         self._notify_listeners('on_task_failure')
 
+    def skip(self, exc_info=None):
+        self._skipped = True
+        self._failed_stage = self._current_stage
+        self._exc_info = exc_info or sys.exc_info()
+        self._notify_listeners('on_task_skip')
+
     def abort(self, cause=None):
         if self.failed or self._aborted:
             return
@@ -354,6 +372,10 @@ class TaskEventListener(abc.ABC):
     @abc.abstractmethod
     def on_task_exit(self, task):
         '''Called whenever a RegressionTask finishes.'''
+
+    @abc.abstractmethod
+    def on_task_skip(self, task):
+        '''Called whenever a RegressionTask is skipped.'''
 
     @abc.abstractmethod
     def on_task_failure(self, task):
@@ -415,18 +437,21 @@ class Runner:
             # Print the summary line
             num_failures = len(self._stats.failed())
             num_completed = len(self._stats.completed())
+            num_skipped = len(self._stats.skipped())
             num_tasks = len(self._stats.tasks())
-            if num_failures > 0 or num_completed < num_tasks:
+            if num_failures > 0 or num_completed + num_skipped < num_tasks:
                 status = 'FAILED'
             else:
                 status = 'PASSED'
 
             total_run = len(testcases) - num_tasks + num_completed
+            total_completed = len(self._stats.completed(0))
+            total_skipped = len(self._stats.skipped(0))
             self._printer.status(
                 status,
-                f'Ran {num_completed}/{total_run}'
+                f'Ran {total_completed}/{total_run}'
                 f' test case(s) from {num_checks} check(s) '
-                f'({num_failures} failure(s))',
+                f'({num_failures} failure(s), {total_skipped} skipped)',
                 just='center'
             )
             self._printer.timestamp('Finished on', 'short double line')

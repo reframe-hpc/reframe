@@ -276,6 +276,10 @@ class DependencyError(ReframeError):
     '''Raised when a dependency problem is encountered.'''
 
 
+class SkipTestError(ReframeError):
+    '''Raised when a test needs to be skipped.'''
+
+
 def user_frame(exc_type, exc_value, tb):
     '''Return a user frame from the exception's traceback.
 
