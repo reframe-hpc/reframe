@@ -20,9 +20,8 @@ class SlurmCheck(rfm.RunOnlyRegressionTest):
         self.valid_prog_environs = ['builtin']
         self.num_tasks = 1
         self.num_tasks_per_node = 1
-        self.sanity_patterns = sn.assert_found(r'0', self.stdout)
         self.perf_patterns = {
-            'real_time': sn.extractsingle(r'\nreal.+m(?P<real_time>\S+)s',
+            'real_time': sn.extractsingle(r'real (?P<real_time>\S+)',
                                           self.stderr, 'real_time', float)
         }
         self.reference = {
@@ -40,10 +39,13 @@ class SlurmCheck(rfm.RunOnlyRegressionTest):
             }
         }
 
-        self.executable = 'time ' + self.slurm_command
+        self.executable = 'time -p ' + self.slurm_command
         if self.slurm_command == 'scontrol':
             self.executable_opts = ['show partitions']
 
-        self.postrun_cmds = ['echo $?']
         self.tags = {'ops', 'diagnostic', 'health'}
         self.maintainers = ['CB', 'VH']
+
+    @rfm.run_before('sanity')
+    def set_sanity(self):
+        self.sanity_patterns = sn.assert_eq(self.job.exitcode, 0)
