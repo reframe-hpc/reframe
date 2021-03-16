@@ -34,4 +34,4 @@ class LibSciAccSymLinkTest(rfm.RunOnlyRegressionTest):
         self.sanity_patterns = sn.assert_found(f'{lib_name}.so', self.stdout)
 
         self.maintainers = ['AJ', 'LM']
-        self.tags = {'production', 'craype'}
+        self.tags = {'production', 'craype', 'health'}
