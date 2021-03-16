@@ -7,27 +7,31 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.parameterized_test(['float'], ['double'])
+@rfm.simple_test
 class MakefileTest(rfm.RegressionTest):
-    def __init__(self, elem_type):
+    elem_type = parameter(['float', 'double'])
+
+    def __init__(self):
         self.descr = 'Test demonstrating use of Makefiles'
         self.valid_systems = ['*']
         self.valid_prog_environs = ['clang', 'gnu']
         self.executable = './dotprod'
         self.executable_opts = ['100000']
         self.build_system = 'Make'
-        self.build_system.cppflags = [f'-DELEM_TYPE={elem_type}']
+        self.build_system.cppflags = [f'-DELEM_TYPE={self.elem_type}']
         self.sanity_patterns = sn.assert_found(
-            rf'Result \({elem_type}\):', self.stdout
+            rf'Result \({self.elem_type}\):', self.stdout
         )
 
 
-@rfm.parameterized_test(['float'], ['double'])
+@rfm.simple_test
 class MakeOnlyTest(rfm.CompileOnlyRegressionTest):
-    def __init__(self, elem_type):
+    elem_type = parameter(['float', 'double'])
+
+    def __init__(self):
         self.descr = 'Test demonstrating use of Makefiles'
         self.valid_systems = ['*']
         self.valid_prog_environs = ['clang', 'gnu']
         self.build_system = 'Make'
-        self.build_system.cppflags = [f'-DELEM_TYPE={elem_type}']
+        self.build_system.cppflags = [f'-DELEM_TYPE={self.elem_type}']
         self.sanity_patterns = sn.assert_not_found(r'warning', self.stdout)

@@ -13,6 +13,190 @@ from reframe.core.modules import ModulesSystem
 from reframe.core.environments import (Environment, ProgEnvironment)
 
 
+class ProcessorType(jsonext.JSONSerializable):
+    '''A representation of a processor inside ReFrame.
+
+    .. versionadded:: 3.5.0
+
+    .. warning::
+       Users may not create :class:`ProcessorType` objects directly.
+
+    '''
+
+    def __init__(self, processor_info):
+        self._arch = None
+        self._num_cpus = None
+        self._num_cpus_per_core = None
+        self._num_cpus_per_socket = None
+        self._num_sockets = None
+        self._topology = None
+        self._info = processor_info
+
+        if not processor_info:
+            return
+
+        for key, val in processor_info.items():
+            setattr(self, f'_{key}', val)
+
+    @property
+    def info(self):
+        '''All the available information from the configuration.
+
+        :type: :class:`dict`
+        '''
+        return self._info
+
+    @property
+    def arch(self):
+        '''The microarchitecture of the processor.
+
+        :type: :class:`str` or :class:`None`
+        '''
+        return self._arch
+
+    @property
+    def num_cpus(self):
+        '''Number of logical CPUs.
+
+        :type: integral or :class:`None`
+        '''
+        return self._num_cpus
+
+    @property
+    def num_cpus_per_core(self):
+        '''Number of logical CPUs per core.
+
+        :type: integral or :class:`None`
+        '''
+        return self._num_cpus_per_core
+
+    @property
+    def num_cpus_per_socket(self):
+        '''Number of logical CPUs per socket.
+
+        :type: integral or :class:`None`
+        '''
+        return self._num_cpus_per_socket
+
+    @property
+    def num_sockets(self):
+        '''Number of sockets.
+
+        :type: integral or :class:`None`
+        '''
+        return self._num_sockets
+
+    @property
+    def topology(self):
+        '''Processor topology.
+
+        :type: :class:`Dict[str, obj]` or :class:`None`
+        '''
+        return self._topology
+
+    @property
+    def num_cores(self):
+        '''Total number of cores.
+
+        :type: integral or :class:`None`
+        '''
+        if self._num_cpus and self._num_cpus_per_core:
+            return self._num_cpus // self._num_cpus_per_core
+        else:
+            return None
+
+    @property
+    def num_cores_per_socket(self):
+        '''Number of cores per socket.
+
+        :type: integral or :class:`None`
+        '''
+        if self.num_cores and self._num_sockets:
+            return self.num_cores // self._num_sockets
+        else:
+            return None
+
+    @property
+    def num_numa_nodes(self):
+        '''Number of NUMA nodes.
+
+        :type: integral or :class:`None`
+        '''
+        if self._topology and 'numa_nodes' in self._topology:
+            return len(self._topology['numa_nodes'])
+        else:
+            return None
+
+    @property
+    def num_cores_per_numa_node(self):
+        '''Number of cores per NUMA node.
+
+        :type: integral or :class:`None`
+        '''
+
+        if self.num_numa_nodes and self.num_cores:
+            return self.num_cores // self.num_numa_nodes
+        else:
+            return None
+
+
+class DeviceType(jsonext.JSONSerializable):
+    '''A representation of a device inside ReFrame.
+
+    .. versionadded:: 3.5.0
+
+    .. warning::
+       Users may not create :class:`DeviceType` objects directly.
+
+    '''
+
+    def __init__(self, device_info):
+        self._type = None
+        self._arch = None
+        self._num_devices = 1
+        self._info = device_info
+
+        if not device_info:
+            return
+
+        for key, val in device_info.items():
+            setattr(self, f'_{key}', val)
+
+    @property
+    def num_devices(self):
+        '''Number of devices of this type.
+
+        It will return 1 if it wasn't set in the configuration.
+
+        :type: integral
+        '''
+        return self._num_devices
+
+    @property
+    def info(self):
+        '''All the available information from the configuration.
+
+        :type: :class:`dict`
+        '''
+        return self._info
+
+    @property
+    def arch(self):
+        '''The architecture of the device.
+
+        :type: :class:`str` or :class:`None`
+        '''
+        return self._arch
+
+    @property
+    def device_type(self):
+        '''The type of the device.
+
+        :type: :class:`str` or :class:`None`
+        '''
+        return self._type
+
+
 class SystemPartition(jsonext.JSONSerializable):
     '''A representation of a system partition inside ReFrame.
 
@@ -22,7 +206,8 @@ class SystemPartition(jsonext.JSONSerializable):
 
     def __init__(self, parent, name, sched_type, launcher_type,
                  descr, access, container_environs, resources,
-                 local_env, environs, max_jobs):
+                 local_env, environs, max_jobs, prepare_cmds,
+                 processor, devices, extras):
         getlogger().debug(f'Initializing system partition {name!r}')
         self._parent_system = parent
         self._name = name
@@ -35,7 +220,11 @@ class SystemPartition(jsonext.JSONSerializable):
         self._local_env = local_env
         self._environs = environs
         self._max_jobs = max_jobs
+        self._prepare_cmds = prepare_cmds
         self._resources = {r['name']: r['options'] for r in resources}
+        self._processor = ProcessorType(processor)
+        self._devices = [DeviceType(d) for d in devices]
+        self._extras = extras
 
     @property
     def access(self):
@@ -97,6 +286,14 @@ class SystemPartition(jsonext.JSONSerializable):
         :type: integral
         '''
         return self._max_jobs
+
+    @property
+    def prepare_cmds(self):
+        '''Commands to be emitted before loading the modules.
+
+        :type: :class:`List[str]`
+        '''
+        return self._prepare_cmds
 
     @property
     def name(self):
@@ -186,6 +383,38 @@ class SystemPartition(jsonext.JSONSerializable):
                 return e
 
         return None
+
+    @property
+    def processor(self):
+        '''Processor information for the current partition.
+
+        .. versionadded:: 3.5.0
+
+        :type: :class:`reframe.core.systems.ProcessorType`
+        '''
+        return self._processor
+
+    @property
+    def devices(self):
+        '''A list of devices in the current partition.
+
+        .. versionadded:: 3.5.0
+
+        :type: :class:`List[reframe.core.systems.DeviceType]`
+        '''
+        return self._devices
+
+    @property
+    def extras(self):
+        '''User defined attributes of the system.
+
+        By default, it is an empty dictionary.
+
+        .. versionadded:: 3.5.0
+
+        :type: :class:`object`
+        '''
+        return self._extras
 
     def __eq__(self, other):
         if not isinstance(other, type(self)):
@@ -317,7 +546,11 @@ class System(jsonext.JSONSerializable):
                         modules=site_config.get(f'{partid}/modules'),
                         variables=site_config.get(f'{partid}/variables')
                     ),
-                    max_jobs=site_config.get(f'{partid}/max_jobs')
+                    max_jobs=site_config.get(f'{partid}/max_jobs'),
+                    prepare_cmds=site_config.get(f'{partid}/prepare_cmds'),
+                    processor=site_config.get(f'{partid}/processor'),
+                    devices=site_config.get(f'{partid}/devices'),
+                    extras=site_config.get(f'{partid}/extras')
                 )
             )
 

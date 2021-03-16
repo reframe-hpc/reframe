@@ -44,6 +44,9 @@ class TestCase:
         # Incoming dependencies
         self.in_degree = 0
 
+        # Level in the dependency chain
+        self.level = 0
+
     def __iter__(self):
         # Allow unpacking a test case with a single liner:
         #       c, p, e = case
@@ -303,7 +306,9 @@ class RegressionTask:
             with open(jsonfile, 'w') as fp:
                 jsonext.dump(self.check, fp, indent=2)
         except OSError as e:
-            self._printer.warning(f'could not dump test case {self.case}: {e}')
+            logging.getlogger().warning(
+                f'could not dump test case {self.case}: {e}'
+            )
 
         self._current_stage = 'finalize'
         self._notify_listeners('on_task_success')
@@ -410,14 +415,16 @@ class Runner:
             # Print the summary line
             num_failures = len(self._stats.failed())
             num_completed = len(self._stats.completed())
-            if num_failures:
+            num_tasks = len(self._stats.tasks())
+            if num_failures > 0 or num_completed < num_tasks:
                 status = 'FAILED'
             else:
                 status = 'PASSED'
 
+            total_run = len(testcases) - num_tasks + num_completed
             self._printer.status(
                 status,
-                f'Ran {num_completed}/{len(testcases)}'
+                f'Ran {num_completed}/{total_run}'
                 f' test case(s) from {num_checks} check(s) '
                 f'({num_failures} failure(s))',
                 just='center'

@@ -6,6 +6,7 @@
 import os
 import pytest
 import re
+import sys
 
 import reframe as rfm
 import reframe.core.runtime as rt
@@ -14,9 +15,6 @@ import reframe.utility.sanity as sn
 import unittests.fixtures as fixtures
 from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
                                      PerformanceError, SanityError)
-from reframe.frontend.loader import RegressionCheckLoader
-from unittests.resources.checks.hellocheck import HelloTest
-from unittests.resources.checks.pinnedcheck import PinnedTest
 
 
 def _run(test, partition, prgenv):
@@ -30,9 +28,30 @@ def _run(test, partition, prgenv):
     test.cleanup(remove_files=True)
 
 
-def load_test(testfile):
-    loader = RegressionCheckLoader(['unittests/resources/checks'])
-    return loader.load_from_file(testfile)
+@pytest.fixture
+def HelloTest():
+    from unittests.resources.checks.hellocheck import HelloTest
+    yield HelloTest
+    del sys.modules['unittests.resources.checks.hellocheck']
+
+
+@pytest.fixture
+def hellotest(HelloTest):
+    yield HelloTest()
+
+
+@pytest.fixture
+def hellomaketest():
+    from unittests.resources.checks.hellocheck_make import HelloMakeTest
+    yield HelloMakeTest
+    del sys.modules['unittests.resources.checks.hellocheck_make']
+
+
+@pytest.fixture
+def pinnedtest():
+    from unittests.resources.checks.pinnedcheck import PinnedTest
+    yield PinnedTest
+    del sys.modules['unittests.resources.checks.pinnedcheck']
 
 
 @pytest.fixture
@@ -65,11 +84,6 @@ def user_system(temp_runtime):
 
 
 @pytest.fixture
-def hellotest():
-    yield load_test('unittests/resources/checks/hellocheck.py')[0]
-
-
-@pytest.fixture
 def local_exec_ctx(generic_system):
     partition = fixtures.partition_by_name('default')
     environ = fixtures.environment_by_name('builtin', partition)
@@ -85,8 +99,9 @@ def local_user_exec_ctx(user_system):
     try:
         environ = partition.environs[0]
     except IndexError:
-        pytest.skip('no environments configured for partition: %s' %
-                    partition.fullname)
+        pytest.skip(
+            f'no environments configured for partition: {partition.fullname}'
+        )
 
     yield partition, environ
 
@@ -100,8 +115,9 @@ def remote_exec_ctx(user_system):
     try:
         environ = partition.environs[0]
     except IndexError:
-        pytest.skip('no environments configured for partition: %s' %
-                    partition.fullname)
+        pytest.skip(
+            f'no environments configured for partition: {partition.fullname}'
+        )
 
     yield partition, environ
 
@@ -111,7 +127,7 @@ def container_remote_exec_ctx(remote_exec_ctx):
     def _container_exec_ctx(platform):
         partition = remote_exec_ctx[0]
         if platform not in partition.container_environs.keys():
-            pytest.skip('%s is not configured on the system' % platform)
+            pytest.skip(f'{platform} is not configured on the system')
 
         yield from remote_exec_ctx
 
@@ -123,7 +139,7 @@ def container_local_exec_ctx(local_user_exec_ctx):
     def _container_exec_ctx(platform):
         partition = local_user_exec_ctx[0]
         if platform not in partition.container_environs.keys():
-            pytest.skip('%s is not configured on the system' % platform)
+            pytest.skip(f'{platform} is not configured on the system')
 
         yield from local_user_exec_ctx
 
@@ -160,9 +176,8 @@ def test_hellocheck(hellotest, remote_exec_ctx):
     _run(hellotest, *remote_exec_ctx)
 
 
-def test_hellocheck_make(remote_exec_ctx):
-    test = load_test('unittests/resources/checks/hellocheck_make.py')[0]
-    _run(test, *remote_exec_ctx)
+def test_hellocheck_make(hellomaketest, remote_exec_ctx):
+    _run(hellomaketest(), *remote_exec_ctx)
 
 
 def test_hellocheck_local(hellotest, local_exec_ctx):
@@ -269,8 +284,8 @@ def test_compile_only_warning(local_exec_ctx):
     _run(MyTest(), *local_exec_ctx)
 
 
-def test_pinned_test(local_exec_ctx):
-    class MyTest(PinnedTest):
+def test_pinned_test(pinnedtest, local_exec_ctx):
+    class MyTest(pinnedtest):
         pass
 
     pinned = MyTest()
@@ -450,7 +465,7 @@ def test_sourcepath_non_existent(local_exec_ctx):
         test.compile_wait()
 
 
-def test_extra_resources(testsys_system):
+def test_extra_resources(HelloTest, testsys_system):
     @fixtures.custom_prefix('unittests/resources/checks')
     class MyTest(HelloTest):
         def __init__(self):
@@ -474,12 +489,12 @@ def test_extra_resources(testsys_system):
     _run(test, partition, environ)
     expected_job_options = {'--gres=gpu:2',
                             '#DW jobdw capacity=100GB',
-                            '#DW stage_in source=%s' % test.stagedir,
+                            f'#DW stage_in source={test.stagedir}',
                             '--foo'}
     assert expected_job_options == set(test.job.options)
 
 
-def test_setup_hooks(local_exec_ctx):
+def test_setup_hooks(HelloTest, local_exec_ctx):
     @fixtures.custom_prefix('unittests/resources/checks')
     class MyTest(HelloTest):
         def __init__(self):
@@ -503,7 +518,7 @@ def test_setup_hooks(local_exec_ctx):
     assert test.count == 2
 
 
-def test_compile_hooks(local_exec_ctx):
+def test_compile_hooks(HelloTest, local_exec_ctx):
     @fixtures.custom_prefix('unittests/resources/checks')
     class MyTest(HelloTest):
         def __init__(self):
@@ -528,7 +543,7 @@ def test_compile_hooks(local_exec_ctx):
     assert test.count == 1
 
 
-def test_run_hooks(local_exec_ctx):
+def test_run_hooks(HelloTest, local_exec_ctx):
     @fixtures.custom_prefix('unittests/resources/checks')
     class MyTest(HelloTest):
         def __init__(self):
@@ -550,7 +565,7 @@ def test_run_hooks(local_exec_ctx):
     _run(MyTest(), *local_exec_ctx)
 
 
-def test_multiple_hooks(local_exec_ctx):
+def test_multiple_hooks(HelloTest, local_exec_ctx):
     @fixtures.custom_prefix('unittests/resources/checks')
     class MyTest(HelloTest):
         def __init__(self):
@@ -576,7 +591,7 @@ def test_multiple_hooks(local_exec_ctx):
     assert test.var == 3
 
 
-def test_stacked_hooks(local_exec_ctx):
+def test_stacked_hooks(HelloTest, local_exec_ctx):
     @fixtures.custom_prefix('unittests/resources/checks')
     class MyTest(HelloTest):
         def __init__(self):
@@ -596,7 +611,13 @@ def test_stacked_hooks(local_exec_ctx):
     assert test.var == 3
 
 
-def test_inherited_hooks(local_exec_ctx):
+def test_multiple_inheritance(HelloTest):
+    with pytest.raises(ValueError):
+        class MyTest(rfm.RunOnlyRegressionTest, HelloTest):
+            pass
+
+
+def test_inherited_hooks(HelloTest, local_exec_ctx):
     @fixtures.custom_prefix('unittests/resources/checks')
     class BaseTest(HelloTest):
         def __init__(self):
@@ -609,7 +630,7 @@ def test_inherited_hooks(local_exec_ctx):
         def x(self):
             self.var += 1
 
-    class C(rfm.RegressionTest):
+    class C(rfm.RegressionMixin):
         @rfm.run_before('run')
         def y(self):
             self.foo = 1
@@ -632,7 +653,7 @@ def test_inherited_hooks(local_exec_ctx):
     }
 
 
-def test_overriden_hooks(local_exec_ctx):
+def test_overriden_hooks(HelloTest, local_exec_ctx):
     @fixtures.custom_prefix('unittests/resources/checks')
     class BaseTest(HelloTest):
         def __init__(self):
@@ -666,7 +687,7 @@ def test_overriden_hooks(local_exec_ctx):
     assert test.foo == 10
 
 
-def test_disabled_hooks(local_exec_ctx):
+def test_disabled_hooks(HelloTest, local_exec_ctx):
     @fixtures.custom_prefix('unittests/resources/checks')
     class BaseTest(HelloTest):
         def __init__(self):
@@ -696,7 +717,7 @@ def test_disabled_hooks(local_exec_ctx):
     assert test.foo == 0
 
 
-def test_require_deps(local_exec_ctx):
+def test_require_deps(HelloTest, local_exec_ctx):
     import reframe.frontend.dependencies as dependencies
     import reframe.frontend.executors as executors
 
@@ -756,7 +777,7 @@ def test_strange_test_names():
             self.a = a
 
         def __repr__(self):
-            return 'C(%s)' % self.a
+            return f'C({self.a})'
 
     class MyTest(rfm.RegressionTest):
         def __init__(self, a, b):
@@ -1081,7 +1102,7 @@ def test_performance_var_evaluation(dummytest, sanity_file,
             sn.extractsingle(patt, perf_file, tag, float)
         )
         with open('perf.log', 'a') as fp:
-            fp.write('%s=%s' % (tag, val))
+            fp.write(f'{tag}={val}')
 
         return val
 
@@ -1117,14 +1138,12 @@ def container_test(tmp_path):
                 self.valid_systems = ['*']
                 self.container_platform = platform
                 self.container_platform.image = image
-                self.container_platform.commands = [
-                    'pwd', 'ls', 'cat /etc/os-release'
-                ]
-                self.container_platform.workdir = '/workdir'
+                self.container_platform.command = (
+                    "bash -c 'cd /rfm_workdir; pwd; ls; cat /etc/os-release'"
+                )
                 self.prerun_cmds = ['touch foo']
                 self.sanity_patterns = sn.all([
-                    sn.assert_found(
-                        r'^' + self.container_platform.workdir, self.stdout),
+                    sn.assert_found(r'^/rfm_workdir', self.stdout),
                     sn.assert_found(r'^foo', self.stdout),
                     sn.assert_found(
                         r'18\.04\.\d+ LTS \(Bionic Beaver\)', self.stdout),

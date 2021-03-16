@@ -39,6 +39,10 @@ void XblasDestroy(cublasHandle_t handle)
   checkError( cublasDestroy(handle) );
 }
 
+void XblasSetStream(cublasHandle_t h, cudaStream_t s)
+{
+  checkError ( cublasSetStream(h, s) );
+}
 
 auto XblasDgemm = cublasDgemm;
 auto XblasSgemm = cublasSgemm;

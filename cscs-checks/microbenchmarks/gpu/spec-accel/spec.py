@@ -24,8 +24,8 @@ class SpecAccelCheckBase(rfm.RegressionTest):
 
         app_source = os.path.join(self.current_system.resourcesdir,
                                   'SPEC_ACCELv1.2')
-        self.prebuild_cmds = ['cp -r %s/* .' % app_source,
-                              './install.sh -d . -f']
+        self.prebuild_cmds = [f'cp -r {app_source}/* .',
+                              f'./install.sh -d . -f']
 
         # I just want prebuild_cmds, but no action for the build_system
         # is not supported, so I find it something useless to do
@@ -49,13 +49,13 @@ class SpecAccelCheckBase(rfm.RegressionTest):
         outfile = sn.getitem(sn.glob('result/ACCEL.*.log'), 0)
         self.sanity_patterns_ = {
             env: sn.all([sn.assert_found(
-                r'Success.*%s' % bn, outfile) for bn in self.benchmarks[env]])
+                rf'Success.*{bn}', outfile) for bn in self.benchmarks[env]])
             for env in self.valid_prog_environs
         }
 
         self.perf_patterns_ = {
             env: {bench_name: sn.avg(sn.extractall(
-                  r'Success.*%s.*runtime=(?P<rt>[0-9.]+)' % bench_name,
+                  rf'Success.*{bench_name}.*runtime=(?P<rt>[0-9.]+)',
                   outfile, 'rt', float))
                   for bench_name in self.benchmarks[env]}
             for env in self.valid_prog_environs
@@ -67,14 +67,14 @@ class SpecAccelCheckBase(rfm.RegressionTest):
     @rfm.run_after('setup')
     def setup_per_env(self):
         envname = self.current_environ.name
-        self.prerun_cmds = ['source ./shrc', 'mv %s config' %
-                            self.configs[envname]]
+        self.prerun_cmds = [
+            f'source ./shrc',
+            f'mv {self.configs[envname]} config'
+        ]
         self.executable_opts = [
-            '--config=%s' %
-            self.configs[envname],
-            '--platform NVIDIA',
-            '--tune=base',
-            '--device GPU'] + self.benchmarks[envname]
+            f'--config={self.configs[envname]}', '--platform NVIDIA',
+            '--tune=base', '--device GPU'
+        ] + self.benchmarks[envname]
         self.reference = {
             'dom:gpu':   self.refs[envname],
             'daint:gpu': self.refs[envname]
@@ -88,7 +88,6 @@ class SpecAccelCheckBase(rfm.RegressionTest):
         self.job.launcher = getlauncher('local')()
 
 
-@rfm.required_version('>=2.16-dev0')
 @rfm.simple_test
 class SpecAccelCheckOpenCL(SpecAccelCheckBase):
     def __init__(self):
@@ -125,7 +124,6 @@ class SpecAccelCheckOpenCL(SpecAccelCheckBase):
         super().__init__(valid_prog_environs)
 
 
-@rfm.required_version('>=2.16-dev0')
 @rfm.simple_test
 class SpecAccelCheckOpenACC(SpecAccelCheckBase):
     def __init__(self):

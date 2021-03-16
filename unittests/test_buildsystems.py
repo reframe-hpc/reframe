@@ -6,6 +6,7 @@
 import pytest
 
 import reframe.core.buildsystems as bs
+import reframe.utility.osext as osext
 import unittests.fixtures as fixtures
 from reframe.core.environments import ProgEnvironment
 from reframe.core.exceptions import BuildSystemError
@@ -36,9 +37,9 @@ def build_system_with_flags(build_system):
     build_system.ftn = 'ftn'
     build_system.nvcc = 'clang'
     build_system.cppflags = ['-DFOO']
-    build_system.cflags = ['-Wall', '-std=c99', '-O3']
-    build_system.cxxflags = ['-Wall', '-std=c++11', '-O3']
-    build_system.fflags = ['-Wall', '-O3']
+    build_system.cflags = ['-Wall', '-std=c99', '-O2']
+    build_system.cxxflags = ['-Wall', '-std=c++11', '-O2']
+    build_system.fflags = ['-Wall', '-O2']
     build_system.ldflags = ['-static']
     return build_system
 
@@ -133,8 +134,8 @@ def _emit_from_buildsystem_Make(build_system_with_flags, environ):
     build_system_with_flags.max_concurrency = None
     expected = [
         'make -f Makefile_foo -C foodir -j CC="cc" CXX="CC" FC="ftn" '
-        'NVCC="clang" CPPFLAGS="-DFOO" CFLAGS="-Wall -std=c99 -O3" '
-        'CXXFLAGS="-Wall -std=c++11 -O3" FCFLAGS="-Wall -O3" '
+        'NVCC="clang" CPPFLAGS="-DFOO" CFLAGS="-Wall -std=c99 -O2" '
+        'CXXFLAGS="-Wall -std=c++11 -O2" FCFLAGS="-Wall -O2" '
         'LDFLAGS="-static" FOO=1'
     ]
     assert expected == build_system_with_flags.emit_build_commands(environ)
@@ -149,9 +150,9 @@ def _emit_from_buildsystem_CMake(build_system_with_flags, environ):
         'cd build/foo',
         'cmake -DCMAKE_C_COMPILER="cc" -DCMAKE_CXX_COMPILER="CC" '
         '-DCMAKE_Fortran_COMPILER="ftn" -DCMAKE_CUDA_COMPILER="clang" '
-        '-DCMAKE_C_FLAGS="-DFOO -Wall -std=c99 -O3" '
-        '-DCMAKE_CXX_FLAGS="-DFOO -Wall -std=c++11 -O3" '
-        '-DCMAKE_Fortran_FLAGS="-DFOO -Wall -O3" '
+        '-DCMAKE_C_FLAGS="-DFOO -Wall -std=c99 -O2" '
+        '-DCMAKE_CXX_FLAGS="-DFOO -Wall -std=c++11 -O2" '
+        '-DCMAKE_Fortran_FLAGS="-DFOO -Wall -O2" '
         '-DCMAKE_EXE_LINKER_FLAGS="-static" -DFOO=1 ../..',
         'make -j'
 
@@ -167,8 +168,8 @@ def _emit_from_buildsystem_Autotools(build_system_with_flags, environ):
         'mkdir -p build/foo',
         'cd build/foo',
         '../../configure CC="cc" CXX="CC" FC="ftn" '
-        'CPPFLAGS="-DFOO" CFLAGS="-Wall -std=c99 -O3" '
-        'CXXFLAGS="-Wall -std=c++11 -O3" FCFLAGS="-Wall -O3" '
+        'CPPFLAGS="-DFOO" CFLAGS="-Wall -std=c99 -O2" '
+        'CXXFLAGS="-Wall -std=c++11 -O2" FCFLAGS="-Wall -O2" '
         'LDFLAGS="-static" FOO=1',
         'make -j'
 
@@ -182,7 +183,7 @@ def _emit_from_buildsystem_SingleSource(build_system_with_flags, environ):
     build_system_with_flags.srcfile = 'foo.c'
     expected = [
         'cc -DFOO -I foodir/include -I bardir/include '
-        '-Wall -std=c99 -O3 foo.c -o foo.x -static'
+        '-Wall -std=c99 -O2 foo.c -o foo.x -static'
     ]
     assert expected == build_system_with_flags.emit_build_commands(environ)
 
@@ -240,3 +241,43 @@ def test_singlesource_unknown_language():
     build_system.srcfile = 'foo.bar'
     with pytest.raises(BuildSystemError, match='could not guess language'):
         build_system.emit_build_commands(ProgEnvironment('testenv'))
+
+
+def test_easybuild(environ, tmp_path):
+    build_system = bs.EasyBuild()
+    build_system.easyconfigs = ['ec1.eb', 'ec2.eb']
+    build_system.options = ['-o1', '-o2']
+    with osext.change_dir(tmp_path):
+        assert build_system.emit_build_commands(environ) == [
+            f'export EASYBUILD_BUILDPATH={tmp_path}/easybuild/build',
+            f'export EASYBUILD_INSTALLPATH={tmp_path}/easybuild',
+            f'export EASYBUILD_PREFIX={tmp_path}/easybuild',
+            f'export EASYBUILD_SOURCEPATH={tmp_path}/easybuild',
+            'eb ec1.eb ec2.eb -o1 -o2'
+        ]
+
+
+def test_easybuild_with_packaging(environ, tmp_path):
+    build_system = bs.EasyBuild()
+    build_system.easyconfigs = ['ec1.eb', 'ec2.eb']
+    build_system.options = ['-o1', '-o2']
+    build_system.emit_package = True
+    build_system.package_opts = {
+        'type': 'rpm',
+        'tool-options': "'-o1 -o2'"
+    }
+    with osext.change_dir(tmp_path):
+        assert build_system.emit_build_commands(environ) == [
+            f'export EASYBUILD_BUILDPATH={tmp_path}/easybuild/build',
+            f'export EASYBUILD_INSTALLPATH={tmp_path}/easybuild',
+            f'export EASYBUILD_PREFIX={tmp_path}/easybuild',
+            f'export EASYBUILD_SOURCEPATH={tmp_path}/easybuild',
+            'eb ec1.eb ec2.eb -o1 -o2 --package --package-type=rpm '
+            "--package-tool-options='-o1 -o2'"
+        ]
+
+
+def test_easybuild_no_easyconfigs(environ):
+    build_system = bs.EasyBuild()
+    with pytest.raises(BuildSystemError):
+        build_system.emit_build_commands(environ)

@@ -8,7 +8,7 @@ import setuptools
 from reframe import VERSION
 
 with open('README.md') as read_me:
-    long_description = ''.join(read_me.readlines()[16:])
+    long_description = ''.join(read_me.readlines()[17:])
 
 setuptools.setup(
     name='ReFrame-HPC',
@@ -25,7 +25,7 @@ setuptools.setup(
     ),
     package_data={'reframe': ['schemas/*']},
     include_package_data=True,
-    install_requires=['jsonschema'],
+    install_requires=['argcomplete', 'jsonschema', 'PyYAML', 'semver'],
     python_requires='>=3.6',
     scripts=['bin/reframe'],
     classifiers=(

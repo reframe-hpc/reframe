@@ -30,6 +30,7 @@ You can read a couple of use cases `here <usecases.html>`__.
 Publications
 ============
 
+* Slides [`pdf <https://drive.google.com/file/d/1kNZu1QNBDDsbKarzwNWYjTGKgOukg-96/view?usp=sharing>`__] @ `6th EasyBuild User Meeting 2021 <https://easybuild.io/eum21/>`__.
 * Slides [`pdf <https://drive.google.com/open?id=1W7R5lfRkXvBpVDSZ7dVBadk_d3K4dFrS>`__] @ `5th EasyBuild User Meeting 2020 <https://github.com/easybuilders/easybuild/wiki/5th-EasyBuild-User-Meeting>`__.
 * Slides [`pdf <https://drive.google.com/open?id=1Z3faPh9OSSXvlLHL07co3MRRn443dYsY>`__] @ `HPC System Testing BoF <https://sc19.supercomputing.org/session/?sess=sess324>`__, SC'19.
 * Slides [`pdf <https://drive.google.com/open?id=1JOFqY3ejbR1X5kTn_IZyp1GlCd2ZZS58>`__] @ `HUST 2019 <https://sc19.supercomputing.org/session/?sess=sess116>`__, SC'19.
@@ -49,8 +50,8 @@ Publications
    :maxdepth: 2
 
    started
-   configure
    tutorials
+   configure
    topics
    usecases
    migration_2_to_3

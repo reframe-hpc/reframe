@@ -9,29 +9,101 @@
 
 
 from reframe.core.exceptions import ReframeSyntaxError
+import reframe.core.namespaces as namespaces
 import reframe.core.parameters as parameters
+import reframe.core.variables as variables
 
 
 class RegressionTestMeta(type):
+
+    class MetaNamespace(namespaces.LocalNamespace):
+        '''Custom namespace to control the cls attribute assignment.'''
+        def __setitem__(self, key, value):
+            if isinstance(value, variables.VarDirective):
+                # Insert the attribute in the variable namespace
+                self['_rfm_local_var_space'][key] = value
+            elif isinstance(value, parameters.TestParam):
+                # Insert the attribute in the parameter namespace
+                self['_rfm_local_param_space'][key] = value
+            else:
+                super().__setitem__(key, value)
+
+        def __getitem__(self, key):
+            '''Expose and control access to the local namespaces.
+
+            Variables may only be retrieved if their value has been previously
+            set. Accessing a parameter in the class body is disallowed (the
+            actual test parameter is set during the class instantiation).
+            '''
+            try:
+                return super().__getitem__(key)
+            except KeyError as err:
+                try:
+                    # Handle variable access
+                    var = self['_rfm_local_var_space'][key]
+                    if var.is_defined():
+                        return var.default_value
+                    else:
+                        raise ValueError(
+                            f'variable {key!r} is not assigned a value'
+                        )
+
+                except KeyError:
+                    # Handle parameter access
+                    if key in self['_rfm_local_param_space']:
+                        raise ValueError(
+                            'accessing a test parameter from the class '
+                            'body is disallowed'
+                        )
+                    else:
+                        # If 'key' is neither a variable nor a parameter,
+                        # raise the exception from the base __getitem__.
+                        raise err from None
+
     @classmethod
-    def __prepare__(cls, name, bases, **kwargs):
+    def __prepare__(metacls, name, bases, **kwargs):
         namespace = super().__prepare__(name, bases, **kwargs)
 
         # Regression test parameter space defined at the class level
-        local_param_space = parameters.LocalParamSpace()
+        local_param_space = namespaces.LocalNamespace()
         namespace['_rfm_local_param_space'] = local_param_space
 
-        # Directive to add a regression test parameter directly in the
-        # class body as: `parameter('P0', 0,1,2,3)`.
-        namespace['parameter'] = local_param_space.add_param
+        # Directive to insert a regression test parameter directly in the
+        # class body as: `P0 = parameter([0,1,2,3])`.
+        namespace['parameter'] = parameters.TestParam
 
-        return namespace
+        # Regression test var space defined at the class level
+        local_var_space = namespaces.LocalNamespace()
+        namespace['_rfm_local_var_space'] = local_var_space
+
+        # Directives to add/modify a regression test variable
+        namespace['variable'] = variables.TestVar
+        namespace['required'] = variables.UndefineVar()
+        return metacls.MetaNamespace(namespace)
+
+    def __new__(metacls, name, bases, namespace, **kwargs):
+        return super().__new__(metacls, name, bases, dict(namespace), **kwargs)
 
     def __init__(cls, name, bases, namespace, **kwargs):
         super().__init__(name, bases, namespace, **kwargs)
 
-        # Build the regression test parameter space
-        cls._rfm_param_space = parameters.ParamSpace(cls)
+        # Create a set with the attribute names already in use.
+        cls._rfm_dir = set()
+        for base in bases:
+            if hasattr(base, '_rfm_dir'):
+                cls._rfm_dir.update(base._rfm_dir)
+
+        used_attribute_names = set(cls._rfm_dir)
+
+        # Build the var space and extend the target namespace
+        variables.VarSpace(cls, used_attribute_names)
+        used_attribute_names.update(cls._rfm_var_space.vars)
+
+        # Build the parameter space
+        parameters.ParamSpace(cls, used_attribute_names)
+
+        # Update used names set with the local __dict__
+        cls._rfm_dir.update(cls.__dict__)
 
         # Set up the hooks for the pipeline stages based on the _rfm_attach
         # attribute; all dependencies will be resolved first in the post-setup
@@ -99,6 +171,27 @@ class RegressionTestMeta(type):
 
         obj.__init__(*args, **kwargs)
         return obj
+
+    def __getattribute__(cls, name):
+        ''' Attribute lookup method for the MetaNamespace.
+
+        This metaclass implements a custom namespace, where built-in `variable`
+        and `parameter` types are stored in their own sub-namespaces (see
+        :class:`reframe.core.meta.RegressionTestMeta.MetaNamespace`).
+        This method will perform an attribute lookup on these sub-namespaces if
+        a call to the default `__getattribute__` method fails to retrieve the
+        requested class attribute.
+        '''
+        try:
+            return super().__getattribute__(name)
+        except AttributeError:
+            try:
+                return cls._rfm_local_var_space[name]
+            except KeyError:
+                try:
+                    return cls._rfm_local_param_space[name]
+                except KeyError:
+                    return super().__getattr__(name)
 
     @property
     def param_space(cls):
