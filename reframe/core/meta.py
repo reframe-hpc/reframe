@@ -80,15 +80,14 @@ class RegressionTestMeta(type):
                         # any of the base classes. If so, make its value
                         # available in the current class' namespace.
                         for b in self['_rfm_bases']:
-                            if (hasattr(b, '_rfm_var_space') and
-                                key in b._rfm_var_space):
-                                    v = b._rfm_var_space[key]
-                                    v.__set_name__(self, key)
+                            if key in b._rfm_var_space:
+                                v = b._rfm_var_space[key]
+                                v.__set_name__(self, key)
 
-                                    # Store a deep-copy of the variable's
-                                    # value and return.
-                                    self._namespace[key] = v.default_value
-                                    return self._namespace[key]
+                                # Store a deep-copy of the variable's
+                                # value and return.
+                                self._namespace[key] = v.default_value
+                                return self._namespace[key]
 
                         # If 'key' is neither a variable nor a parameter,
                         # raise the exception from the base __getitem__.
@@ -99,7 +98,9 @@ class RegressionTestMeta(type):
         namespace = super().__prepare__(name, bases, **kwargs)
 
         # Keep reference to the bases inside the namespace
-        namespace['_rfm_bases'] = bases
+        namespace['_rfm_bases'] = [
+            b for b in bases if hasattr(b, '_rfm_var_space')
+        ]
 
         # Regression test parameter space defined at the class level
         local_param_space = namespaces.LocalNamespace()

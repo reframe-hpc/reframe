@@ -303,7 +303,7 @@ def test_var_add_operator():
         assert v == 2
 
 
-def test_var_mult_operator():
+def test_var_mul_operator():
     class A(rfm.RegressionTest):
         v = variable(int, value=2)
         assert (v * 2) == 4
