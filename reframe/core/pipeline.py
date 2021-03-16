@@ -634,12 +634,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: Time limit is specified as a string in the form
     #: ``<days>d<hours>h<minutes>m<seconds>s`` or as number of seconds.
-    #: If set to :class:`None`, the
-    #: `time_limit <config_reference.html#.systems[].partitions[].time_limit>`__
-    #: of a system partition will be used.
+    #: If set to :class:`None`, the |time_limit|_
+    #: of the current system partition will be used.
     #:
     #: :type: :class:`str` or :class:`float` or :class:`int`
-    #: :default: ``None``
+    #: :default: :class:`None`
     #:
     #: .. note::
     #:    .. versionchanged:: 2.15
@@ -655,8 +654,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:       - Number values are now accepted.
     #:
     #:    .. versionchanged:: 3.5.1
-    #:       - The default value is now :class:`None`.
-    #:       - Can be now set per partition via the configuration.
+    #:       The default value is now :class:`None` and it can be set globally
+    #:       per partition via the configuration.
+    #:
+    #:    .. |time_limit| replace:: :attr:`time_limit`
+    #:    .. _time_limit: #.systems[].partitions[].time_limit
     time_limit = variable(type(None), field=fields.TimerField, value=None)
 
     #: .. versionadded:: 3.5.1
@@ -666,10 +668,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: It is specified similarly to the :attr:`time_limit` attribute.
     #:
     #: :type: :class:`str` or :class:`float` or :class:`int`
-    #: :default: ``None``
+    #: :default: :class:`None`
     build_time_limit = variable(type(None), field=fields.TimerField,
                                 value=None)
-
 
     #: .. versionadded:: 2.8
     #:
