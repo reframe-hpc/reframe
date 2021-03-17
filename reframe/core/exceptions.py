@@ -156,12 +156,10 @@ class ContainerError(ReframeError):
 class BuildError(ReframeError):
     '''Raised when a build fails.'''
 
-    def __init__(self, stdout, stderr):
+    def __init__(self, stdout, stderr, msg=None):
         super().__init__()
-        self._message = (
-            "standard error can be found in `%s', "
-            "standard output can be found in `%s'" % (stderr, stdout)
-        )
+        self._message = msg or (f'standard error can be found in {stderr!r}, '
+                                f'standard output can be found in {stdout!r}')
 
 
 class SpawnedProcessError(ReframeError):
