@@ -1,4 +1,13 @@
-========================================== Tutorial 1: Getting Started with ReFrame ========================================== .. versionadded:: 3.1 This tutorial will give you a first overview of ReFrame and will acquaint you with its basic concepts.  We will start with a simple "Hello, World!" test running with the default configuration and we will expand the example along the way.  We will also explore performance tests and port our tests to an HPC cluster.  The examples of this tutorial can be found under :obj:`tutorials/basics/`.
+==========================================
+ Tutorial 1: Getting Started with ReFrame
+==========================================
+
+ .. versionadded:: 3.1
+
+This tutorial will give you a first overview of ReFrame and will acquaint you with its basic concepts.
+We will start with a simple "Hello, World!" test running with the default configuration and we will expand the example along the way.
+We will also explore performance tests and port our tests to an HPC cluster.
+The examples of this tutorial can be found under :obj:`tutorials/basics/`.
 
 
 Getting Ready
@@ -406,7 +415,7 @@ We extend our C++ "Hello, World!" example to print the greetings from multiple t
    :language: cpp
    :lines: 6-
 
-This program takes as argument the number of threads it will create and it uses ``std::thread``, which is C++11 addition, meaning that we will need to pass ``-std=c++11``, as well as ``-pthread`` to our compilers.
+This program takes as argument the number of threads it will create and it uses ``std::thread``, which is C++11 addition, meaning that we will need to pass ``-std=c++11`` and ``-pthread`` to our compilers.
 Here is the corresponding ReFrame test, where the new concepts introduced are highlighted:
 
 .. code-block:: console
