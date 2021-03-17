@@ -31,8 +31,7 @@ class JupyterHubServerCheck(rfm.RunOnlyRegressionTest):
         self.valid_prog_environs = ['*']
         self.sourcesdir = None
         self.executable = 'curl https://jupyter.cscs.ch/hub/api/'
-        # TODO: set correct waiting time
-        self.time_limit = '1s'
+        self.time_limit = '30s'
         self.num_tasks = 1
         self.num_tasks_per_node = 1
         self.sanity_patterns = sn.assert_found(r'{"version": "1.3.0"}',
