@@ -90,13 +90,12 @@ class CrayVariablesCheckDaint(CrayVariablesCheck):
 
         # FIXME: These modules should be fixed in later releases,
         # while gcc was fixed in 20.11
-
         cdt = osext.cray_cdt_version()
         if ((cdt and cdt <= '20.11' and
-             self.cray_module in ['cray-petsc-complex',
+             self.cray_module in {'cray-petsc-complex',
                                   'cray-petsc-complex-64',
-                                  'cudatoolkit'])):
-             self.valid_systems = []
+                                  'cudatoolkit'})):
+            self.valid_systems = []
 
 
 @rfm.simple_test

@@ -14,7 +14,7 @@ class LibSciAccSymLinkTest(rfm.RunOnlyRegressionTest):
     lib_name = parameter([
         'libsci_acc_gnu_81_nv35', 'libsci_acc_gnu_81_nv60',
         'libsci_acc_cray_nv35', 'libsci_acc_cray_nv60',
-        'libsci_acc_cray_nv35_openacc','libsci_acc_cray_nv60_openacc'
+        'libsci_acc_cray_nv35_openacc', 'libsci_acc_cray_nv60_openacc'
     ])
 
     def __init__(self):
