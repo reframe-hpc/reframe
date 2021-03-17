@@ -28,14 +28,13 @@ class CudaSamplesTest(rfm.RegressionTest):
             self.valid_prog_environs = ['PrgEnv-cray',
                                         'PrgEnv-gnu',
                                         'PrgEnv-pgi']
-            self.modules = ['craype-accel-nvidia60']
+            self.modules = ['craype-accel-nvidia60', 'cdt-cuda']
 
         if self.current_system.name in ['arolla', 'tsa', 'ault']:
             self.exclusive_access = True
             self.nvidia_sm = '70'
         else:
             self.nvidia_sm = '60'
-            self.modules = ['cudatoolkit']
 
         output_patterns = {
             'deviceQuery': r'Result = PASS',
@@ -57,15 +56,3 @@ class CudaSamplesTest(rfm.RegressionTest):
         )
         self.maintainers = ['JO']
         self.tags = {'production'}
-
-    @rfm.run_before('compile')
-    def cdt2008_pgi_workaround(self):
-        if (self.current_environ.name == 'PrgEnv-pgi' and
-            osext.cray_cdt_version() == '20.08' and
-            self.current_system.name in ['daint', 'dom']):
-            self.variables['CUDA_HOME'] = '$CUDATOOLKIT_HOME'
-
-    @rfm.run_before('compile')
-    def dom_set_cuda_cdt(self):
-        if self.current_system.name == 'dom':
-            self.modules += ['cdt-cuda']

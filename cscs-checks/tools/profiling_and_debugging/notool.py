@@ -93,8 +93,8 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         self.build_system.ldflags = ['-lm']
 
     @rfm.run_before('compile')
-    def dom_set_cuda_cdt(self):
-        if self.current_partition.fullname == 'dom:gpu':
+    def set_cuda_cdt(self):
+        if self.current_partition.name == 'gpu':
             self.modules += ['cdt-cuda']
 
     @rfm.run_before('compile')

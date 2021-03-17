@@ -14,7 +14,10 @@ class CUDAFortranCheck(rfm.RegressionTest):
         self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.valid_prog_environs = ['PrgEnv-pgi']
         self.sourcepath = 'vecAdd_cuda.cuf'
-        self.modules = ['craype-accel-nvidia60']
+
+        # FIXME: PGI 20.x does not support CUDA 11, see case #275674
+        self.modules = ['craype-accel-nvidia60',
+                        'cudatoolkit/10.2.89_3.29-7.0.2.1_3.5__g67354b4']
         self.build_system = 'SingleSource'
         self.build_system.fflags = ['-ta=tesla:cc60']
         self.num_gpus_per_node = 1
@@ -23,17 +26,3 @@ class CUDAFortranCheck(rfm.RegressionTest):
         self.sanity_patterns = sn.assert_reference(result, 1., -1e-5, 1e-5)
         self.maintainers = ['TM', 'AJ']
         self.tags = {'production', 'craype'}
-
-    @rfm.run_before('compile')
-    def cdt_pgi_workaround(self):
-        cdt = osext.cray_cdt_version()
-        if not cdt:
-            return
-
-        if cdt == '20.08':
-            self.build_system.fflags += [
-                'CUDA_HOME=$CUDATOOLKIT_HOME', '-Mcuda=cuda10.2'
-            ]
-        else:
-            # FIXME: PGI 20.x does not support CUDA 11, see case #275674
-            self.modules += ['cudatoolkit/10.2.89_3.29-7.0.2.1_3.5__g67354b4']

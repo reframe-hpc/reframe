@@ -37,7 +37,7 @@ class CollectivesBaseTest(rfm.RegressionTest):
             self.num_tasks = 4
             self.num_gpus_per_node = 1
             self.num_tasks_per_node = 1
-            self.modules = ['craype-accel-nvidia60', 'CMake']
+            self.modules = ['craype-accel-nvidia60', 'CMake', 'cdt-cuda']
             self.variables['MPICH_RDMA_ENABLED_CUDA'] = '1'
             self.build_system.config_opts += [
                 '-DCUDA_COMPUTE_CAPABILITY="sm_60"'
@@ -86,11 +86,6 @@ class CollectivesBaseTest(rfm.RegressionTest):
             self.tags = {'mch'}
         else:
             self.tags = {'production', 'mch', 'craype'}
-
-    @rfm.run_before('compile')
-    def dom_set_cuda_cdt(self):
-        if self.current_system.name == 'dom':
-            self.modules += ['cdt-cuda']
 
     @rfm.run_before('run')
     def set_launcher_options(self):

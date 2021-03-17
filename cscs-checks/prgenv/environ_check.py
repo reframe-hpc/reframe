@@ -95,9 +95,8 @@ class CrayVariablesCheckDaint(CrayVariablesCheck):
         if ((cdt and cdt <= '20.11' and
              self.cray_module in ['cray-petsc-complex',
                                   'cray-petsc-complex-64',
-                                  'cudatoolkit']) or
-            (cdt and cdt < '20.11' and self.cray_module == 'gcc')):
-            self.valid_systems = []
+                                  'cudatoolkit'])):
+             self.valid_systems = []
 
 
 @rfm.simple_test
