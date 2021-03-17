@@ -9,12 +9,14 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.parameterized_test(['C++'], ['F90'])
+@rfm.simple_test
 class JacobiNoToolHybrid(rfm.RegressionTest):
-    def __init__(self, lang):
+    lang = parameter(['C++', 'F90'])
+
+    def __init__(self):
         super().__init__()
-        self.descr = f'Jacobi (without tool) {lang} check'
-        self.name = f'{type(self).__name__}_{lang.replace("+", "p")}'
+        self.descr = f'Jacobi (without tool) {self.lang} check'
+        self.name = f'{type(self).__name__}_{self.lang.replace("+", "p")}'
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                               'eiger:mc']
         self.valid_prog_environs = [
@@ -26,17 +28,17 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         ]
         self.prgenv_flags = {
             'PrgEnv-cray': ['-O2', '-g',
-                            '-homp' if lang == 'F90' else '-fopenmp'],
+                            '-homp' if self.lang == 'F90' else '-fopenmp'],
             'PrgEnv-gnu': ['-O2', '-g', '-fopenmp'],
             'PrgEnv-intel': ['-O2', '-g', '-qopenmp'],
             'PrgEnv-pgi': ['-O2', '-g', '-mp'],
             'PrgEnv-aocc': ['-O2', '-g', '-fopenmp'],
         }
-        self.sourcesdir = os.path.join('src', lang)
+        self.sourcesdir = os.path.join('src', self.lang)
         self.build_system = 'Make'
         self.executable = './jacobi'
         # NOTE: Restrict concurrency to allow creation of Fortran modules
-        if lang == 'F90':
+        if self.lang == 'F90':
             self.build_system.max_concurrency = 1
 
         self.num_tasks = 3
@@ -51,7 +53,6 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
             'OMP_PROC_BIND': 'true',
             'CRAYPE_LINK_TYPE': 'dynamic',
         }
-        self.lang = lang
         self.maintainers = ['JG', 'MKr']
         self.tags = {'production'}
         url = 'http://github.com/eth-cscs/hpctools'
@@ -77,9 +78,9 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
             f'echo CRAY_AOCC_VERSION=$CRAY_AOCC_VERSION',
         ]
         self.reference = {'*': {'elapsed_time': (0, None, None, 's')}}
-        if lang == 'C++':
+        if self.lang == 'C++':
             self.reference_lang = (0.38, -0.6, None, 's')
-        elif lang == 'F90':
+        elif self.lang == 'F90':
             self.reference_lang = (0.17, -0.6, None, 's')
 
     @rfm.run_before('compile')
