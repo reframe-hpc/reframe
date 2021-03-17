@@ -1301,10 +1301,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 with contextlib.suppress(OSError):
                     with open(os.path.join(
                         self._stagedir, self._build_job.stderr)) as f:
-                        error_message = '\n'.join([
-                            f'\nPreview of {self._build_job.stderr!r}:\n',
-                            *f.readlines()[:err_lines]
-                        ])
+                            error_message = '\n'.join([
+                                f'\nPreview of {self._build_job.stderr!r}:\n',
+                                *f.readlines()[:err_lines]
+                            ])
 
             raise BuildError(self._build_job.stdout, self._build_job.stderr,
                              error_message)
