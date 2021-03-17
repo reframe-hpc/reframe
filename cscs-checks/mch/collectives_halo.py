@@ -122,7 +122,7 @@ class HaloExchangeTest(CollectivesBaseTest):
                     'nocomm':  0.978306,
                     'nocomp':  1.36716,
                     'default': 2.53509
-                 },
+                },
             }
         )
         self.sourcesdir = 'https://github.com/eth-cscs/comm_overlap_bench.git'
