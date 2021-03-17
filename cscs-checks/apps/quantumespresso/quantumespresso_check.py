@@ -8,6 +8,9 @@ import reframe.utility.sanity as sn
 
 
 class QuantumESPRESSOCheck(rfm.RunOnlyRegressionTest):
+    scale = parameter(['small', 'large'])
+    variant = parameter(['maint', 'prod'])
+
     def __init__(self):
         if self.current_system.name == 'pilatus':
             self.valid_prog_environs = ['cpeGNU']
@@ -37,15 +40,14 @@ class QuantumESPRESSOCheck(rfm.RunOnlyRegressionTest):
         }
 
 
-@rfm.parameterized_test(*([s, v]
-                          for s in ['small', 'large']
-                          for v in ['maint', 'prod']))
+@rfm.simple_test
 class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
-    def __init__(self, scale, variant):
+    def __init__(self):
         super().__init__()
-        self.descr = f'QuantumESPRESSO CPU check (version: {scale}, {variant})'
+        self.descr = (f'QuantumESPRESSO CPU check (version: {self.scale}, '
+                      f'{self.variant})')
         self.valid_systems = ['daint:mc', 'eiger:mc', 'pilatus:mc']
-        if scale == 'small':
+        if self.scale == 'small':
             self.valid_systems += ['dom:mc']
             energy_reference = -11427.09017218
             if self.current_system.name in ['daint', 'dom']:
@@ -86,8 +88,6 @@ class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
         energy_diff = sn.abs(energy-energy_reference)
         self.sanity_patterns = sn.all([
             self.sanity_patterns,
-            # FIXME temporarily increase energy difference
-            # (different QE default on Dom and Daint)
             sn.assert_lt(energy_diff, 1e-6)
         ])
 
@@ -120,8 +120,10 @@ class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
             }
         }
 
-        self.reference = references[variant][scale]
-        self.tags |= {'maintenance' if variant == 'maint' else 'production'}
+        self.reference = references[self.variant][self.scale]
+        self.tags |= {
+            'maintenance' if self.variant == 'maint' else 'production'
+        }
 
     @rfm.run_before('run')
     def set_task_distribution(self):
@@ -131,16 +133,16 @@ class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
     def set_cpu_binding(self):
         self.job.launcher.options = ['--cpu-bind=cores']
 
-@rfm.parameterized_test(*([s, v]
-                          for s in ['small', 'large']
-                          for v in ['maint', 'prod']))
+
+@rfm.simple_test
 class QuantumESPRESSOGpuCheck(QuantumESPRESSOCheck):
-    def __init__(self, scale, variant):
+    def __init__(self):
         super().__init__()
-        self.descr = f'QuantumESPRESSO GPU check (version: {scale}, {variant})'
+        self.descr = (f'QuantumESPRESSO GPU check (version: {self.scale}, '
+                      f'{self.variant})')
         self.valid_systems = ['daint:gpu']
         self.num_gpus_per_node = 1
-        if scale == 'small':
+        if self.scale == 'small':
             self.valid_systems += ['dom:gpu']
             self.num_tasks = 6
             energy_reference = -11427.09017168
@@ -156,8 +158,6 @@ class QuantumESPRESSOGpuCheck(QuantumESPRESSOCheck):
         energy_diff = sn.abs(energy-energy_reference)
         self.sanity_patterns = sn.all([
             self.sanity_patterns,
-            # FIXME temporarily increase energy difference
-            # (different CUDA default on Dom and Daint)
             sn.assert_lt(energy_diff, 1e-7)
         ])
 
@@ -182,5 +182,7 @@ class QuantumESPRESSOGpuCheck(QuantumESPRESSOCheck):
             }
         }
 
-        self.reference = references[variant][scale]
-        self.tags |= {'maintenance' if variant == 'maint' else 'production'}
+        self.reference = references[self.variant][self.scale]
+        self.tags |= {
+            'maintenance' if self.variant == 'maint' else 'production'
+        }

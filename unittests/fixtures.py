@@ -127,7 +127,7 @@ def dispatch(argname, suffix=None):
             if not suffix:
                 fn_suffix = f'_{type(kwargs[argname]).__name__}'
             else:
-                fn_suffix = suffix(kwargs[argname])
+                fn_suffix = '_' + suffix(kwargs[argname])
 
             if target_fn_name.startswith('test'):
                 target_fn_name = target_fn_name[4:]

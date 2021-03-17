@@ -8,13 +8,15 @@ import reframe.utility.sanity as sn
 
 
 class CollectivesBaseTest(rfm.RegressionTest):
-    def __init__(self, variant, bench_reference):
+    variant = parameter(['default', 'nocomm', 'nocomp'])
+
+    def __init__(self, bench_reference):
         self.valid_systems = ['dom:gpu', 'daint:gpu', 'arolla:cn', 'tsa:cn']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.variables = {'G2G': '1'}
         self.executable = 'build/src/comm_overlap_benchmark'
-        if variant != 'default':
-            self.executable_opts = ['--' + variant]
+        if self.variant != 'default':
+            self.executable_opts = [f'--{self.variant}']
 
         self.build_system = 'CMake'
         self.build_system.builddir = 'build'
@@ -37,7 +39,7 @@ class CollectivesBaseTest(rfm.RegressionTest):
             self.num_tasks = 4
             self.num_gpus_per_node = 1
             self.num_tasks_per_node = 1
-            self.modules = ['craype-accel-nvidia60', 'CMake']
+            self.modules = ['craype-accel-nvidia60', 'CMake', 'cdt-cuda']
             self.variables['MPICH_RDMA_ENABLED_CUDA'] = '1'
             self.build_system.config_opts += [
                 '-DCUDA_COMPUTE_CAPABILITY="sm_60"'
@@ -68,7 +70,7 @@ class CollectivesBaseTest(rfm.RegressionTest):
             sysname = self.current_system.name
 
         try:
-            ref = bench_reference[sysname][variant]
+            ref = bench_reference[sysname][self.variant]
         except KeyError:
             ref = 0.0
 
@@ -87,11 +89,6 @@ class CollectivesBaseTest(rfm.RegressionTest):
         else:
             self.tags = {'production', 'mch', 'craype'}
 
-    @rfm.run_before('compile')
-    def dom_set_cuda_cdt(self):
-        if self.current_system.name == 'dom':
-            self.modules += ['cdt-cuda']
-
     @rfm.run_before('run')
     def set_launcher_options(self):
         if self.current_system.name in ['arolla', 'tsa']:
@@ -99,32 +96,34 @@ class CollectivesBaseTest(rfm.RegressionTest):
                                          '--cpu_bind=q']
 
 
-@rfm.parameterized_test(['default'], ['nocomm'], ['nocomp'])
+@rfm.simple_test
 class AlltoallvTest(CollectivesBaseTest):
-    def __init__(self, variant):
-        super().__init__(variant,
-                         {
-                             'daint': {
-                                 'nocomm':  0.0171947,
-                                 'nocomp':  0.0137893,
-                                 'default': 0.0138493
-                             },
-                         })
+    def __init__(self):
+        super().__init__(
+            {
+                'daint': {
+                    'nocomm':  0.0171947,
+                    'nocomp':  0.0137893,
+                    'default': 0.0138493
+                },
+            }
+        )
         self.strict_check = False
         self.sourcesdir = 'https://github.com/eth-cscs/comm_overlap_bench.git'
         self.prebuild_cmds = ['git checkout alltoallv']
 
 
-@rfm.parameterized_test(['default'], ['nocomm'], ['nocomp'])
+@rfm.simple_test
 class HaloExchangeTest(CollectivesBaseTest):
-    def __init__(self, variant):
-        super().__init__(variant,
-                         {
-                             'daint': {
-                                 'nocomm':  0.978306,
-                                 'nocomp':  1.36716,
-                                 'default': 2.53509
-                             },
-                         })
+    def __init__(self):
+        super().__init__(
+            {
+                'daint': {
+                    'nocomm':  0.978306,
+                    'nocomp':  1.36716,
+                    'default': 2.53509
+                },
+            }
+        )
         self.sourcesdir = 'https://github.com/eth-cscs/comm_overlap_bench.git'
         self.prebuild_cmds = ['git checkout barebones']

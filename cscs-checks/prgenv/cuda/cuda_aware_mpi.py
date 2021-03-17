@@ -6,7 +6,6 @@
 import os
 import reframe as rfm
 import reframe.utility.sanity as sn
-import reframe.utility.osext as osext
 
 
 @rfm.simple_test
@@ -27,7 +26,7 @@ class CudaAwareMPICheck(rfm.CompileOnlyRegressionTest):
         else:
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                         'PrgEnv-pgi']
-            self.modules = ['craype-accel-nvidia60']
+            self.modules = ['craype-accel-nvidia60', 'cdt-cuda']
 
         self.sanity_patterns = sn.assert_found(r'Finished building'
                                                r' CUDA samples', self.stdout)
@@ -51,13 +50,6 @@ class CudaAwareMPICheck(rfm.CompileOnlyRegressionTest):
         self.tags = {'production', 'scs'}
 
     @rfm.run_before('compile')
-    def cdt2008_pgi_workaround(self):
-        if (self.current_environ.name == 'PrgEnv-pgi' and
-            osext.cray_cdt_version() == '20.08' and
-            self.current_system.name in ['daint', 'dom']):
-            self.variables['CUDA_HOME'] = '$CUDATOOLKIT_HOME'
-
-    @rfm.run_before('compile')
     def set_compilers(self):
         if self.current_environ.name == 'PrgEnv-pgi':
             self.build_system.cflags = ['-std=c99', ' -O3']
@@ -66,11 +58,6 @@ class CudaAwareMPICheck(rfm.CompileOnlyRegressionTest):
             'MPICC="%s"' % self.current_environ.cc,
             'MPILD="%s"' % self.current_environ.cxx
         ]
-
-    @rfm.run_before('compile')
-    def dom_set_cuda_cdt(self):
-        if self.current_system.name == 'dom':
-            self.modules += ['cdt-cuda']
 
 
 class CudaAwareMPIRuns(rfm.RunOnlyRegressionTest):
@@ -87,7 +74,7 @@ class CudaAwareMPIRuns(rfm.RunOnlyRegressionTest):
         if self.current_system.name in ['arolla', 'tsa', 'ault']:
             self.valid_prog_environs = ['PrgEnv-gnu']
         else:
-            self.modules = ['craype-accel-nvidia60']
+            self.modules = ['craype-accel-nvidia60', 'cdt-cuda']
 
         self.prerun_cmds = ['export MPICH_RDMA_ENABLED_CUDA=1']
         self.sanity_patterns = sn.assert_found(r'Stopped after 1000 iterations'

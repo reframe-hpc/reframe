@@ -287,6 +287,15 @@ System Partition Configuration
   A list of `environment module objects <#module-objects>`__ to be loaded before running a regression test on this partition.
 
 
+.. js:attribute:: .systems[].partitions[].time_limit
+
+   :required: No
+   :default: ``null``
+
+   The time limit for the jobs submitted on this partition.
+   When the value is ``null``, no time limit is applied.
+
+
 .. js:attribute:: .systems[].partitions[].variables
 
    :required: No
@@ -325,6 +334,36 @@ System Partition Configuration
 
    A list of job scheduler `resource specification <config_reference.html#custom-job-scheduler-resources>`__ objects.
 
+
+.. js:attribute:: .systems[].partitions[].processor
+
+   :required: No
+   :default: ``{}``
+
+   Processor information for this partition stored in a `processor info object <#processor-info>`__.
+
+   .. versionadded:: 3.5.0
+
+
+.. js:attribute:: .systems[].partitions[].devices
+
+   :required: No
+   :default: ``[]``
+
+   A list with `device info objects <#device-info>`__ for this partition.
+
+   .. versionadded:: 3.5.0
+
+
+.. js:attribute:: .systems[].partitions[].extras
+
+   :required: No
+   :default: ``{}``
+
+   User defined attributes of the system partition that will be accessible from the ReFrame tests.
+   By default it is an empty dictionary.
+
+   .. versionadded:: 3.5.0
 
 
 .. _container-platform-configuration:
@@ -1261,14 +1300,14 @@ Module Objects
 A *module object* in ReFrame's configuration represents an environment module.
 It can either be a simple string or a JSON object with the following attributes:
 
-.. js:attribute:: .name
+.. attribute:: .name
 
    :required: Yes
 
    The name of the module.
 
 
-.. js:attribute:: .collection
+.. attribute:: .collection
 
    :required: No
    :default: ``false``
@@ -1276,6 +1315,146 @@ It can either be a simple string or a JSON object with the following attributes:
    A boolean value indicating whether this module refers to a module collection.
    Module collections are treated differently from simple modules when loading.
 
+.. js:attribute:: .path
+
+   :required: No
+   :default: ``null``
+
+   If the module is not present in the default ``MODULEPATH``, the module's location can be specified here.
+   ReFrame will make sure to set and restore the ``MODULEPATH`` accordingly for loading the module.
+
+
+   .. versionadded:: 3.5.0
+
+
 .. seealso::
 
    Module collections with `Environment Modules <https://modules.readthedocs.io/en/latest/MIGRATING.html#module-collection>`__ and `Lmod <https://lmod.readthedocs.io/en/latest/010_user.html#user-collections>`__.
+
+
+Processor Info
+--------------
+
+.. versionadded:: 3.5.0
+
+A *processor info object* in ReFrame's configuration is used to hold information about the processor of a system partition and is made available to the tests through the :attr:`processor <reframe.core.systems.SystemPartition.processor>` attribute of the :attr:`current_partition <reframe.core.pipeline.RegressionTest.current_partition>`.
+
+
+.. attribute:: .arch
+
+   :required: No
+   :default: ``None``
+
+   The microarchitecture of the processor.
+
+
+.. attribute:: .num_cpus
+
+   :required: No
+   :default: ``None``
+
+   Number of logical CPUs.
+
+
+.. attribute:: .num_cpus_per_core
+
+   :required: No
+   :default: ``None``
+
+   Number of logical CPUs per core.
+
+
+.. attribute:: .num_cpus_per_socket
+
+   :required: No
+   :default: ``None``
+
+   Number of logical CPUs per socket.
+
+
+.. attribute:: .num_sockets
+
+   :required: No
+   :default: ``None``
+
+   Number of sockets.
+
+
+.. attribute:: .topology
+
+   :required: No
+   :default: ``None``
+
+   Processor topology.
+   An example follows:
+
+   .. code-block:: python
+
+      'topology': {
+         'numa_nodes': ['0x000000ff'],
+         'sockets': ['0x000000ff'],
+         'cores': ['0x00000003', '0x0000000c',
+                   '0x00000030', '0x000000c0'],
+         'caches': [
+            {
+                  'type': 'L3',
+                  'size': 6291456,
+                  'linesize': 64,
+                  'associativity': 0,
+                  'num_cpus': 8,
+                  'cpusets': ['0x000000ff']
+            },
+            {
+                  'type': 'L2',
+                  'size': 262144,
+                  'linesize': 64,
+                  'associativity': 4,
+                  'num_cpus': 2,
+                  'cpusets': ['0x00000003', '0x0000000c',
+                              '0x00000030', '0x000000c0']
+            },
+            {
+                  'type': 'L1',
+                  'size': 32768,
+                  'linesize': 64,
+                  'associativity': 0,
+                  'num_cpus': 2,
+                  'cpusets': ['0x00000003', '0x0000000c',
+                              '0x00000030', '0x000000c0']
+            }
+         ]
+      }
+
+
+Device Info
+-----------
+
+.. versionadded:: 3.5.0
+
+
+A *device info object* in ReFrame's configuration is used to hold information about a specific type of devices in a system partition and is made available to the tests through the :attr:`devices <reframe.core.systems.SystemPartition.processor>` attribute of the :attr:`current_partition <reframe.core.pipeline.RegressionTest.current_partition>`.
+
+
+.. attribute:: .type
+
+   :required: No
+   :default: ``None``
+
+   The type of the device, for example ``"gpu"``.
+
+
+.. attribute:: .arch
+   :noindex:
+
+   :required: No
+   :default: ``None``
+
+   The microarchitecture of the device.
+
+
+.. attribute:: .num_devices
+
+   :required: No
+   :default: ``None``
+
+   Number of devices of this type inside the system partition.

@@ -19,7 +19,7 @@ class CudaStressTest(rfm.RegressionTest):
             self.modules = ['cuda/10.1.243']
         else:
             self.valid_prog_environs = ['PrgEnv-gnu']
-            self.modules = ['craype-accel-nvidia60']
+            self.modules = ['craype-accel-nvidia60', 'cdt-cuda']
 
         self.sourcepath = 'cuda_stencil_test.cu'
         self.build_system = 'SingleSource'
@@ -40,8 +40,3 @@ class CudaStressTest(rfm.RegressionTest):
         }
         self.tags = {'production', 'mch', 'craype'}
         self.maintainers = ['MKr', 'AJ']
-
-    @rfm.run_before('compile')
-    def dom_set_cuda_cdt(self):
-        if self.current_system.name == 'dom':
-            self.modules += ['cdt-cuda']
