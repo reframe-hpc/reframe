@@ -1187,7 +1187,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             raise PipelineError('no programming environment set')
 
         # Copy the check's resources to the stage directory
-        if os.path.isdir(os.path.join(self._prefix, self.sourcesdir)):
+        if self.sourcesdir:
             try:
                 commonpath = os.path.commonpath([self.sourcesdir,
                                                  self.sourcepath])
@@ -1201,10 +1201,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                     f'interpreted as relative to it'
                 )
 
-            self._copy_to_stagedir(os.path.join(self._prefix,
-                                                self.sourcesdir))
-        elif osext.is_url(self.sourcesdir):
-            self._clone_to_stagedir(self.sourcesdir)
+            if osext.is_url(self.sourcesdir):
+                self._clone_to_stagedir(self.sourcesdir)
+            else:
+                self._copy_to_stagedir(os.path.join(self._prefix,
+                                                    self.sourcesdir))
 
         # Verify the sourcepath and determine the sourcepath in the stagedir
         if (os.path.isabs(self.sourcepath) or
@@ -1899,12 +1900,12 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
         The resources of the test are copied to the stage directory and the
         rest of execution is delegated to the :func:`RegressionTest.run()`.
         '''
-
-        if os.path.isdir(os.path.join(self._prefix, self.sourcesdir)):
-            self._copy_to_stagedir(os.path.join(self._prefix,
-                                                self.sourcesdir))
-        elif osext.is_url(self.sourcesdir):
-            self._clone_to_stagedir(self.sourcesdir)
+        if self.sourcesdir:
+            if osext.is_url(self.sourcesdir):
+                self._clone_to_stagedir(self.sourcesdir)
+            else:
+                self._copy_to_stagedir(os.path.join(self._prefix,
+                                                    self.sourcesdir))
 
         super().run.__wrapped__(self)
 
