@@ -2,7 +2,7 @@
  Tutorial 1: Getting Started with ReFrame
 ==========================================
 
- .. versionadded:: 3.1
+.. versionadded:: 3.1
 
 This tutorial will give you a first overview of ReFrame and will acquaint you with its basic concepts.
 We will start with a simple "Hello, World!" test running with the default configuration and we will expand the example along the way.
