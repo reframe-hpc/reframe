@@ -274,6 +274,7 @@
                                     }
                                 },
                                 "modules": {"$ref": "#/defs/modules_list"},
+                                "time_limit": {"type": ["string", "null"]},
                                 "variables": {"$ref": "#/defs/envvar_list"},
                                 "max_jobs": {"type": "number"},
                                 "prepare_cmds": {

@@ -54,26 +54,25 @@ And here is the ReFrame version of it:
    :lines: 6-
 
 
-Regression tests in ReFrame are specially decorated classes that ultimately derive from :class:`RegressionTest <reframe.core.pipeline.RegressionTest>`.
+Regression tests in ReFrame are specially decorated classes that ultimately derive from :class:`~reframe.core.pipeline.RegressionTest`.
 The :func:`@simple_test <reframe.core.decorators.simple_test>` decorator registers a test class with ReFrame and makes it available to the framework.
-The test parameters are essentially attributes of the test class and are usually defined in the test class constructor (:func:`__init__` function).
-Each test must always set the :attr:`valid_systems <reframe.core.pipeline.RegressionTest.valid_systems>` and :attr:`valid_prog_environs <reframe.core.pipeline.RegressionTest.valid_prog_environs>` attributes.
+The test variables are essentially attributes of the test class and  can be defined either in the test constructor (:func:`__init__` function) or the class body using the :func:`~reframe.core.pipeline.RegressionTest.variable` ReFrame builtin.
+Each test must always set the :attr:`~reframe.core.pipeline.RegressionTest.valid_systems` and :attr:`~reframe.core.pipeline.RegressionTest.valid_prog_environs` attributes.
 These define the systems and/or system partitions that this test is allowed to run on, as well as the programming environments that it is valid for.
 A programming environment is essentially a compiler toolchain.
 We will see later on in the tutorial how a programming environment can be defined.
 The generic configuration of ReFrame assumes a single programming environment named ``builtin`` which comprises a C compiler that can be invoked with ``cc``.
 In this particular test we set both these attributes to ``['*']``, essentially allowing this test to run everywhere.
 
-Each regression test must always define the :attr:`sanity_patterns <reframe.core.pipeline.RegressionTest.sanity_patterns>` attribute.
+A ReFrame test must either define an executable to execute or a source file (or source code) to be compiled.
+In this example, it is enough to define the source file of our hello program.
+ReFrame knows the executable that was produced and will use that to run the test.
+
+Finally, each regression test must always define the :attr:`~reframe.core.pipeline.RegressionTest.sanity_patterns` attribute.
 This is a `lazily evaluated <deferrables.html>`__ expression that asserts the sanity of the test.
 In this particular case, we ask ReFrame to check for the desired phrase in the test's standard output.
 Note that ReFrame does not determine the success of a test by its exit code.
 The assessment of success is responsibility of the test itself.
-
-Finally, a test must either define an executable to execute or a source file (or source code) to be compiled.
-In this example, it is enough to define the source file of our hello program.
-ReFrame knows the executable that was produced and will use that to run the test.
-
 
 Before running the test let's inspect the directory structure surrounding it:
 
@@ -85,7 +84,7 @@ Before running the test let's inspect the directory structure surrounding it:
        └── hello.c
 
 Our test is ``hello1.py`` and its resources, i.e., the ``hello.c`` source file, are located inside the ``src/`` subdirectory.
-If not specified otherwise, the :attr:`sourcepath <reframe.core.pipeline.RegressionTest.sourcepath>` attribute is always resolved relative to ``src/``.
+If not specified otherwise, the :attr:`~reframe.core.pipeline.RegressionTest.sourcepath` attribute is always resolved relative to ``src/``.
 There is full flexibility in organizing the tests.
 Multiple tests may be defined in a single file or they may be split in multiple files.
 Similarly, several tests may share the same resources directory or they can simply have their own.
@@ -232,11 +231,11 @@ ReFrame allows you to avoid this in several ways but the most compact is to defi
    :lines: 6-
 
 
-This is exactly the same test as the ``hello1.py`` except that it is decorated with the :func:`@parameterized_test <reframe.core.decorators.parameterized_test>` decorator instead of the :func:`@simple_test <reframe.core.decorators.simple_test>`.
-Also the constructor of the test now takes an argument.
-The :func:`@parameterized_test <>` decorator instructs ReFrame to instantiate a test class with different parameters.
-In this case the test will be instantiated for both C and C++ and then we use the ``lang`` parameter directly as the extension of the source file.
-Let's run now the test:
+This is exactly the same test as the ``hello1.py`` except that it defines the ``lang`` parameter to denote the programming language to be used by the test.
+The :py:func:`~reframe.core.pipeline.RegressionTest.parameter` ReFrame built-in defines a new parameter for the test and will cause multiple instantiations of the test, each one setting the :attr:`lang` attribute to the actual parameter value.
+In this example, two tests will be created, one with ``lang='c'`` and another with ``lang='cpp'``.
+The parameter is available as an attribute of the test class and, in this example, we use it to set the extension of the source file.
+Let's run the test now:
 
 
 .. code-block:: console
@@ -246,7 +245,7 @@ Let's run now the test:
 .. code-block:: none
 
    [ReFrame Setup]
-     version:           3.3-dev0 (rev: 5d246bff)
+     version:           3.6.0-dev.0+a3d0b0cd
      command:           './bin/reframe -c tutorials/basics/hello/hello2.py -r'
      launched by:       user@tresa.local
      working directory: '/Users/user/Repositories/reframe'
@@ -256,7 +255,7 @@ Let's run now the test:
      output directory:  '/Users/user/Repositories/reframe/output'
 
    [==========] Running 2 check(s)
-   [==========] Started on Mon Oct 12 18:24:31 2020
+   [==========] Started on Tue Mar  9 23:25:22 2021
 
    [----------] started processing HelloMultiLangTest_c (HelloMultiLangTest_c)
    [ RUN      ] HelloMultiLangTest_c on generic:default using builtin
@@ -264,15 +263,16 @@ Let's run now the test:
 
    [----------] started processing HelloMultiLangTest_cpp (HelloMultiLangTest_cpp)
    [ RUN      ] HelloMultiLangTest_cpp on generic:default using builtin
-   [     FAIL ] (1/2) HelloMultiLangTest_cpp on generic:default using builtin [compile: 0.001s run: n/a total: 0.009s]
+   [     FAIL ] (1/2) HelloMultiLangTest_cpp on generic:default using builtin [compile: 0.006s run: n/a total: 0.023s]
+   ==> test failed during 'compile': test staged in '/Users/user/Repositories/reframe/stage/generic/default/builtin/HelloMultiLangTest_cpp'
    [----------] finished processing HelloMultiLangTest_cpp (HelloMultiLangTest_cpp)
 
    [----------] waiting for spawned checks to finish
-   [       OK ] (2/2) HelloMultiLangTest_c on generic:default using builtin [compile: 0.254s run: 0.286s total: 0.555s]
+   [       OK ] (2/2) HelloMultiLangTest_c on generic:default using builtin [compile: 0.981s run: 0.468s total: 1.475s]
    [----------] all spawned checks have finished
 
-   [  FAILED  ] Ran 2 test case(s) from 2 check(s) (1 failure(s))
-   [==========] Finished on Mon Oct 12 18:24:32 2020
+   [  FAILED  ] Ran 2/2 test case(s) from 2 check(s) (1 failure(s))
+   [==========] Finished on Tue Mar  9 23:25:23 2021
 
    ==============================================================================
    SUMMARY OF FAILURES
@@ -284,12 +284,14 @@ Let's run now the test:
      * Stage directory: /Users/user/Repositories/reframe/stage/generic/default/builtin/HelloMultiLangTest_cpp
      * Node list: None
      * Job type: local (id=None)
+     * Dependencies (conceptual): []
+     * Dependencies (actual): []
      * Maintainers: []
      * Failing phase: compile
-     * Rerun with '-n HelloMultiLangTest_cpp -p builtin --system generic:default'
+     * Rerun with '-n HelloMultiLangTest_cpp -p builtin --system generic:default -r'
      * Reason: build system error: I do not know how to compile a C++ program
    ------------------------------------------------------------------------------
-   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-lbpo8oan.log'
+   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-wemvsvs2.log'
 
 
 Oops! The C++ test has failed.
@@ -356,8 +358,8 @@ Let's now rerun our "Hello, World!" tests:
 .. code-block:: none
 
    [ReFrame Setup]
-     version:           3.3-dev0 (rev: 5d246bff)
-     command:           './bin/reframe -C tutorials/config/settings.py -c tutorials/basics/hello/hello2.py -r'
+     version:           3.6.0-dev.0+a3d0b0cd
+     command:           './bin/reframe -C tutorials/config/mysettings.py -c tutorials/basics/hello/hello2.py -r'
      launched by:       user@tresa.local
      working directory: '/Users/user/Repositories/reframe'
      settings file:     'tutorials/config/settings.py'
@@ -366,7 +368,7 @@ Let's now rerun our "Hello, World!" tests:
      output directory:  '/Users/user/Repositories/reframe/output'
 
    [==========] Running 2 check(s)
-   [==========] Started on Mon Oct 12 18:28:48 2020
+   [==========] Started on Tue Mar  9 23:28:00 2021
 
    [----------] started processing HelloMultiLangTest_c (HelloMultiLangTest_c)
    [ RUN      ] HelloMultiLangTest_c on catalina:default using gnu
@@ -379,15 +381,15 @@ Let's now rerun our "Hello, World!" tests:
    [----------] finished processing HelloMultiLangTest_cpp (HelloMultiLangTest_cpp)
 
    [----------] waiting for spawned checks to finish
-   [       OK ] (1/4) HelloMultiLangTest_cpp on catalina:default using gnu [compile: 1.077s run: 1.475s total: 2.566s]
-   [       OK ] (2/4) HelloMultiLangTest_c on catalina:default using gnu [compile: 4.128s run: 2.860s total: 7.004s]
-   [       OK ] (3/4) HelloMultiLangTest_c on catalina:default using clang [compile: 0.241s run: 2.741s total: 2.998s]
-   [       OK ] (4/4) HelloMultiLangTest_cpp on catalina:default using clang [compile: 1.399s run: 0.356s total: 1.770s]
+   [       OK ] (1/4) HelloMultiLangTest_cpp on catalina:default using gnu [compile: 0.768s run: 1.115s total: 1.909s]
+   [       OK ] (2/4) HelloMultiLangTest_c on catalina:default using gnu [compile: 0.600s run: 2.230s total: 2.857s]
+   [       OK ] (3/4) HelloMultiLangTest_c on catalina:default using clang [compile: 0.238s run: 2.129s total: 2.393s]
+   [       OK ] (4/4) HelloMultiLangTest_cpp on catalina:default using clang [compile: 1.006s run: 0.427s total: 1.456s]
    [----------] all spawned checks have finished
 
-   [  PASSED  ] Ran 4 test case(s) from 2 check(s) (0 failure(s))
-   [==========] Finished on Mon Oct 12 18:28:56 2020
-   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-a_dt6nro.log'
+   [  PASSED  ] Ran 4/4 test case(s) from 2 check(s) (0 failure(s))
+   [==========] Finished on Tue Mar  9 23:28:03 2021
+   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-dnubkvfi.log'
 
 
 Notice how the same tests are now tried with both the ``gnu`` and ``clang`` programming environments, without having to touch them at all!
@@ -632,16 +634,16 @@ In the test below, we highlight the lines that introduce new concepts.
    :emphasize-lines: 10-12,17-20,23-32
 
 First of all, notice that we restrict the programming environments to ``gnu`` only, since this test requires OpenMP, which our installation of Clang does not have.
-The next thing to notice is the :attr:`prebuild_cmds <reframe.core.pipeline.RegressionTest.prebuild_cmds>` attribute, which provides a list of commands to be executed before the build step.
+The next thing to notice is the :attr:`~reframe.core.pipeline.RegressionTest.prebuild_cmds` attribute, which provides a list of commands to be executed before the build step.
 These commands will be executed from the test's stage directory.
 In this case, we just fetch the source code of the benchmark.
 For running the benchmark, we need to set the OpenMP number of threads and pin them to the right CPUs through the ``OMP_NUM_THREADS`` and ``OMP_PLACES`` environment variables.
-You can set environment variables in a ReFrame test through the :attr:`variables <reframe.core.pipeline.RegressionTest.variables>` dictionary.
+You can set environment variables in a ReFrame test through the :attr:`~reframe.core.pipeline.RegressionTest.variables` dictionary.
 
-What makes a ReFrame test a performance test is the definition of the :attr:`perf_patterns <reframe.core.pipeline.RegressionTest.perf_patterns>` attribute.
+What makes a ReFrame test a performance test is the definition of the :attr:`~reframe.core.pipeline.RegressionTest.perf_patterns` attribute.
 This is a dictionary where the keys are *performance variables* and the values are lazily evaluated expressions for extracting the performance variable values from the test's output.
-In this example, we extract four performance variables, namely the memory bandwidth values for each of the "Copy", "Scale", "Add" and "Triad" sub-benchmarks of STREAM and we do so by using the :func:`extractsingle <reframe.utility.sanity.extractsingle>` sanity function.
-For each of the sub-benchmarks we extract the "Best Rate MB/s" column of the output (see below) and wee convert that to a float.
+In this example, we extract four performance variables, namely the memory bandwidth values for each of the "Copy", "Scale", "Add" and "Triad" sub-benchmarks of STREAM and we do so by using the :func:`~reframe.utility.sanity.extractsingle` sanity function.
+For each of the sub-benchmarks we extract the "Best Rate MB/s" column of the output (see below) and we convert that to a float.
 
 .. code-block:: none
 
@@ -757,7 +759,7 @@ Examining the performance logs
 
 ReFrame has a powerful mechanism for logging its activities as well as performance data.
 It supports different types of log channels and it can send data simultaneously in any number of them.
-For example, performance data might be logged in files and the same time being send to Syslog or to a centralized log management server.
+For example, performance data might be logged in files and the same time being sent to Syslog or to a centralized log management server.
 By default (i.e., starting off from the builtin configuration file), ReFrame sends performance data to files per test under the ``perflogs/`` directory:
 
 .. code-block:: none
@@ -798,7 +800,7 @@ Porting The Tests to an HPC cluster
 
 It's now time to port our tests to an HPC cluster.
 Obviously, HPC clusters are much more complex than our laptop or PC.
-Usually there are many more compilers, the user environment is handled in a different way, and the way to launch the tests varies significantly, since you have to go through a workload manager in order to acces the actual compute nodes.
+Usually there are many more compilers, the user environment is handled in a different way, and the way to launch the tests varies significantly, since you have to go through a workload manager in order to access the actual compute nodes.
 Besides that, there might be multiple types of compute nodes that we would like to run our tests on, but each type might be accessed in a different way.
 It is already apparent that porting even an as simple as a "Hello, World" test to such a system is not that straightforward.
 As we shall see in this section, ReFrame makes that pretty easy.
@@ -1065,7 +1067,7 @@ Adapting a test to new systems and programming environments
 -----------------------------------------------------------
 
 Unless a test is rather generic, you will need to make some adaptations for the system that you port it to.
-In this case, we will adapt the STREAM benchmark so as to run it with multiple compiler and adjust its execution parameters based on the target architecture of each partition.
+In this case, we will adapt the STREAM benchmark so as to run it with multiple compiler and adjust its execution based on the target architecture of each partition.
 Let's see and comment the changes:
 
 .. code-block:: console
@@ -1085,11 +1087,11 @@ Based on the system ReFrame runs on and the supported environments of the tests,
 During its execution, a test case goes through the *regression test pipeline*, which is a series of well defined phases.
 Users can attach arbitrary functions to run before or after any pipeline stage and this is exactly what the :func:`setflags` function is.
 We instruct ReFrame to run this function before the test enters the ``compile`` stage and set accordingly the compilation flags.
-The system partition and the programming environment of the currently running test case are available to a ReFrame test through the :attr:`current_partition <reframe.core.pipeline.RegressionTest.current_partition>` and :attr:`current_environ <reframe.core.pipeline.RegressionTest.current_environ>` attributes respectively.
+The system partition and the programming environment of the currently running test case are available to a ReFrame test through the :attr:`~reframe.core.pipeline.RegressionTest.current_partition` and :attr:`~reframe.core.pipeline.RegressionTest.current_environ` attributes respectively.
 These attributes, however, are only set after the first stage (``setup``) of the pipeline is executed, so we can't use them inside the test's constructor.
 
 We do exactly the same for setting the ``OMP_NUM_THREADS`` environment variables depending on the system partition we are running on, by attaching the :func:`set_num_threads` pipeline hook to the ``run`` phase of the test.
-In that same hook we also set the :attr:`num_cpus_per_task <reframe.core.pipeline.RegressionTest.num_cpus_per_task>` attribute of the test, so as to instruct the backend job scheduler to properly assign CPU cores to the test.
+In that same hook we also set the :attr:`~reframe.core.pipeline.RegressionTest.num_cpus_per_task` attribute of the test, so as to instruct the backend job scheduler to properly assign CPU cores to the test.
 In ReFrame tests you can set a series of task allocation attributes that will be used by the backend schedulers to emit the right job submission script.
 The section :ref:`scheduler_options` of the :doc:`regression_test_api` summarizes these attributes and the actual backend scheduler options that they correspond to.
 
