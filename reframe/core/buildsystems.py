@@ -6,6 +6,7 @@
 import abc
 import os
 import re
+import yaml
 
 import reframe.core.fields as fields
 import reframe.utility.typecheck as typ
@@ -777,6 +778,55 @@ class EasyBuild(BuildSystem):
     @property
     def generated_modules(self):
         return self._eb_modules
+
+
+class Spack(BuildSystem):
+    packages = fields.TypedField(typ.List[str])
+    environment = fields.TypedField(str, type(None))
+    upstreams = fields.TypedField(typ.List[str])
+    def __init__(self):
+        super().__init__()
+        self.packages = []
+        self.environment = None
+        self.upstreams = []
+
+    def _prepare_scope(self):
+        os.mkdir('rfm_scope')
+        scope_config = {
+            'config': {
+                'install_tree': 'spack/opt/spack',
+                'module_roots': {
+                    'tcl': 'spack/share/spack/modules',
+                    'lmod': 'spack/share/spack/lmod'
+                }
+            }
+        }
+        with open('rfm_scope/config.yaml', 'w') as fp:
+            yaml.dump(scope_config, fp, default_flow_style=False)
+
+        scope_upstreams = {'upstreams': {}}
+        for i, upstream in enumerate(self.upstreams, 1):
+            scope_upstreams['upstreams'].update({
+                f'spack-instance-{i}': {'install_tree': upstream}
+            })
+
+        with open('rfm_scope/upstreams.yaml', 'w') as fp:
+            yaml.dump(scope_upstreams, fp, default_flow_style=False)
+
+    def _emit_build_commands_pkgs(self, environ):
+        self._prepare_scope()
+        return [f'spack -C rfm_scope install {pkg}'
+                for pkg in self.packages]
+
+    def _emit_build_commands_env(self, environ):
+        return[f'spack env activate -d {self.environment}',
+               'spack install']
+
+    def emit_build_commands(self, environ):
+        if self.packages:
+            return self._emit_build_commands_pkgs(environ)
+        else:
+            return self._emit_build_commands_env(environ)
 
 
 class BuildSystemField(fields.TypedField):
