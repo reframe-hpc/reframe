@@ -7,7 +7,6 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-
 class QuantumESPRESSOCheck(rfm.RunOnlyRegressionTest):
     scale = parameter(['small', 'large'])
     variant = parameter(['maint', 'prod'])
@@ -140,7 +139,7 @@ class QuantumESPRESSOGpuCheck(QuantumESPRESSOCheck):
     def __init__(self):
         super().__init__()
         self.descr = (f'QuantumESPRESSO GPU check (version: {self.scale}, '
-                      'f{self.variant})')
+                      f'{self.variant})')
         self.valid_systems = ['daint:gpu']
         self.num_gpus_per_node = 1
         if self.scale == 'small':
