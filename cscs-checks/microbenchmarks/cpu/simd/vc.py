@@ -31,7 +31,11 @@ class VcSimdTest(rfm.RegressionTest):
 
     def __init__(self):
         self.valid_systems = ['*']
-        self.valid_prog_environs = ['builtin']
+        if self.current_system.name in ['eiger', 'pilatus']:
+             self.valid_prog_environs = ['cpeGNU']
+         else:
+             self.valid_prog_environs = ['PrgEnv-gnu']
+
         self.descr = 'finitediff example'
         self.build_system = 'SingleSource'
         self.testname = 'finitediff'
@@ -39,6 +43,7 @@ class VcSimdTest(rfm.RegressionTest):
         src1 = '%s/tsc.h' % src_url
         src2 = '%s/finitediff/main.cpp' % src_url
         self.prebuild_cmds = [
+            'module list',
             'wget %s %s' % (src1, src2),
             'sed -ie "s-../tsc.h-./tsc.h-" main.cpp',
         ]
