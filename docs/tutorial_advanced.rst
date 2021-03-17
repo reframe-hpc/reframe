@@ -28,22 +28,12 @@ Here is the adapted code with the relevant parts highlighted (for simplicity, we
 
 .. literalinclude:: ../tutorials/advanced/parameterized/stream.py
    :lines: 6-
-   :emphasize-lines: 5,7-10,18-19
+   :emphasize-lines: 7,10-11,20-21
 
-A parameterized test needs to be decorated with the :func:`@parameterized_test <reframe.core.decorators.parameterized_test>` decorator and must define its constructor such as to accept a set of parameters.
-In this case, the test takes a single parameter, which is the size of the benchmark's working set in bytes.
-Let's explain now the strange syntax of the arguments to the decorator.
-The :func:`@parameterized_test <reframe.core.decorators.parameterized_test>` decorator accepts a variable set of arguments, where each argument is a set of parameters (as an iterable) to be used for instantiating the test.
-To better contemplate this, let's decorate this test in an equivalent, but much more verbose way:
-
-.. code:: python
-
-   @rfm.parameterized_test([524288], [1048576], [2097152], [4194304],
-                           [8388608], [16777216], [33554432], [67108864],
-                           [134217728], [268435456], [536870912])
-
-For each of the argument lists passed to the decorator, ReFrame will instantiate a regression test with those arguments.
-So in this example, ReFrame will generate automatically 11 tests with different ``num_bytes`` parameters.
+Any ordinary ReFrame test becomes a parameterized one if the user defines parameters inside the class body of the test.
+This is done using the :py:func:`~reframe.core.pipeline.RegressionTest.parameter` ReFrame built-in function, which accepts the list of parameter values.
+For each parameter value ReFrame will instantiate a different regression test by assigning the corresponding value to an attribute named after the parameter.
+So in this example, ReFrame will generate automatically 11 tests with different values for their :attr:`num_bytes` attribute.
 From this point on, you can adapt the test based on the parameter values, as we do in this case, where we compute the STREAM array sizes, as well as the number of iterations to be performed on each benchmark, and we also compile the code accordingly.
 
 Let's try listing the generated tests:
@@ -56,37 +46,38 @@ Let's try listing the generated tests:
 .. code-block:: none
 
    [ReFrame Setup]
-     version:           3.4-dev2 (rev: f52a96d8)
+     version:           3.6.0-dev.0+2f8e5b3b
      command:           './bin/reframe -c tutorials/advanced/parameterized/stream.py -l'
      launched by:       user@tresa.local
      working directory: '/Users/user/Repositories/reframe'
-     settings file:     '/Users/user/Repositories/reframe/tutorials/config/settings.py'
+     settings file:     'tutorials/config/settings.py'
      check search path: '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py'
      stage directory:   '/Users/user/Repositories/reframe/stage'
      output directory:  '/Users/user/Repositories/reframe/output'
 
    [List of matched checks]
-   - StreamMultiSysTest_524288 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
-   - StreamMultiSysTest_8388608 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
    - StreamMultiSysTest_2097152 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
-   - StreamMultiSysTest_33554432 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
-   - StreamMultiSysTest_268435456 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
-   - StreamMultiSysTest_134217728 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
    - StreamMultiSysTest_67108864 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
-   - StreamMultiSysTest_16777216 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
+   - StreamMultiSysTest_1048576 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
    - StreamMultiSysTest_536870912 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
    - StreamMultiSysTest_4194304 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
-   - StreamMultiSysTest_1048576 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
+   - StreamMultiSysTest_33554432 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
+   - StreamMultiSysTest_8388608 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
+   - StreamMultiSysTest_268435456 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
+   - StreamMultiSysTest_16777216 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
+   - StreamMultiSysTest_524288 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
+   - StreamMultiSysTest_134217728 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
    Found 11 check(s)
-   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-kk15vaow.log'
+
+   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-s_ty1l50.log'
 
 
 ReFrame generates 11 tests from the single parameterized test that we have written and names them by appending a string representation of the parameter value.
 
 Test parameterization in ReFrame is very powerful since you can parameterize your tests on anything and you can create complex parameterization spaces.
 A common pattern is to parameterize a test on the environment module that loads a software in order to test different versions of it.
-For this reason, ReFrame offers the :func:`reframe.utility.find_modules` function, which allows you to parameterize test on the available modules for a given programming environment and partition combination.
-The following will create a test for each ``GROMACS`` module found on the software stack associated with a system partition and programming environment (toolchain):
+For this reason, ReFrame offers the :func:`~reframe.utility.find_modules` function, which allows you to parameterize a test on the available modules for a given programming environment and partition combination.
+The following example will create a test for each ``GROMACS`` module found on the software stack associated with a system partition and programming environment (toolchain):
 
 .. code:: python
 
@@ -94,19 +85,15 @@ The following will create a test for each ``GROMACS`` module found on the softwa
    import reframe.utility as util
 
 
-   @rfm.parameterized_test(*util.find_modules('GROMACS'))
-   class MyTest(rfm.RunOnlyRegressionTest):
-       def __init__(self, s, e, m):
-           self.descr = f'GROMACS test ({s}, {e}, {m})'
+   @rfm.simple_test
+   class MyTest(rfm.RegressionTest):
+       module_info = parameter(util.find_modules('GROMACS'))
+
+       def __init__(self):
+           s, e, m = self.module_info
            self.valid_systems = [s]
            self.valid_prog_environs = [e]
            self.modules = [m]
-           ...
-
-
-.. note::
-
-   ReFrame 3.4 extends further the test parameterization concept by introducing the more powerful :func:`parameter` class directive, which allows you to have hierarchies of parameterized tests and expand or reduce the parameterization space dynamically.
 
 
 
@@ -147,11 +134,11 @@ Let's have a look at the test itself:
 
 
 .. literalinclude:: ../tutorials/advanced/makefiles/maketest.py
-   :lines: 6-22
-   :emphasize-lines: 11,13-14
+   :lines: 6-24
+   :emphasize-lines: 13,15-16
 
 First, if you're using any build system other than ``SingleSource``, you must set the :attr:`executable` attribute of the test, because ReFrame cannot know what is the actual executable to be run.
-We then set the build system to :class:`Make <reframe.core.buildsystems.Make>` and set the preprocessor flags as we would do with the :class:`SingleSource` build system.
+We then set the build system to :class:`~reframe.core.buildsystems.Make` and set the preprocessor flags as we would do with the :class:`SingleSource` build system.
 
 Let's inspect the build script generated by ReFrame:
 
@@ -176,8 +163,8 @@ Let's inspect the build script generated by ReFrame:
    make -j 1 CPPFLAGS="-DELEM_TYPE=float"
 
 
-The compiler variables (``CC``, ``CXX`` etc.) are set based on the corresponding values specified in the `coniguration <config_reference.html#environment-configuration>`__ of the current environment.
-We can instruct the build system to ignore the default values from the environment by setting its :attr:`flags_from_environ <reframe.core.buildsystems.Make.flags_from_environ>` attribute to false:
+The compiler variables (``CC``, ``CXX`` etc.) are set based on the corresponding values specified in the `configuration <config_reference.html#environment-configuration>`__ of the current environment.
+We can instruct the build system to ignore the default values from the environment by setting its :attr:`~reframe.core.buildsystems.Make.flags_from_environ` attribute to false:
 
 .. code-block:: python
 
@@ -190,8 +177,8 @@ In this case, ``make`` will be invoked as follows:
   make -j 1 CPPFLAGS="-DELEM_TYPE=float"
 
 Notice that the ``-j 1`` option is always generated.
-We can increase the build concurrency by setting the :attr:`max_concurrency <reframe.core.buildsystems.Make.max_concurrency>` attribute.
-Finally, we may even use a custom Makefile by setting the :attr:`Make <reframe.core.buildsystems.Make.makefile>` attribute:
+We can increase the build concurrency by setting the :attr:`~reframe.core.buildsystems.Make.max_concurrency` attribute.
+Finally, we may even use a custom Makefile by setting the :attr:`~reframe.core.buildsystems.Make.makefile` attribute:
 
 .. code-block:: python
 
@@ -200,7 +187,7 @@ Finally, we may even use a custom Makefile by setting the :attr:`Make <reframe.c
 
 
 As a final note, as with the :class:`SingleSource` build system, it wouldn't have been necessary to specify one in this test, if we wouldn't have to set the CPPFLAGS.
-ReFrame could automatically figure out the correct build system if :attr:`sourcepath <reframe.core.pipeline.RegressionTest.sourcepath>` refers to a directory.
+ReFrame could automatically figure out the correct build system if :attr:`~reframe.core.pipeline.RegressionTest.sourcepath` refers to a directory.
 ReFrame will inspect the directory and it will first try to determine whether this is a CMake or Autotools-based project.
 
 More details on ReFrame's build systems can be found `here <regression_test_api.html#build-systems>`__.
@@ -211,7 +198,7 @@ Retrieving the source code from a Git repository
 
 It might be the case that a regression test needs to clone its source code from a remote repository.
 This can be achieved in two ways with ReFrame.
-One way is to set the :attr:`sourcesdir` attribute to :class:`None` and explicitly clone a repository using the :attr:`prebuild_cmds <reframe.core.pipeline.RegressionTest.prebuild_cmds>`:
+One way is to set the :attr:`sourcesdir` attribute to :class:`None` and explicitly clone a repository using the :attr:`~reframe.core.pipeline.RegressionTest.prebuild_cmds`:
 
 .. code-block:: python
 
@@ -224,7 +211,7 @@ Alternatively, we can retrieve specifically a Git repository by assigning its UR
 
    self.sourcesdir = 'https://github.com/me/myrepo'
 
-ReFrame will attempt to clone this repository inside the stage directory by executing ``git clone <repo> .`` and will then procede with the build procedure as usual.
+ReFrame will attempt to clone this repository inside the stage directory by executing ``git clone <repo> .`` and will then proceed with the build procedure as usual.
 
 .. note::
    ReFrame recognizes only URLs in the :attr:`sourcesdir` attribute and requires passwordless access to the repository.
@@ -237,9 +224,9 @@ Adding a configuration step before compiling the code
 
 It is often the case that a configuration step is needed before compiling a code with ``make``.
 To address this kind of projects, ReFrame aims to offer specific abstractions for "configure-make" style of build systems.
-It supports `CMake-based <https://cmake.org/>`__ projects through the :class:`CMake <reframe.core.buildsystems.CMake>` build system, as well as `Autotools-based <https://www.gnu.org/software/automake/>`__ projects through the :class:`Autotools <reframe.core.buildsystems.Autotools>` build system.
+It supports `CMake-based <https://cmake.org/>`__ projects through the :class:`~reframe.core.buildsystems.CMake` build system, as well as `Autotools-based <https://www.gnu.org/software/automake/>`__ projects through the :class:`~reframe.core.buildsystems.Autotools` build system.
 
-For other build systems, you can achieve the same effect using the :class:`Make <reframe.core.buildsystems.Make>` build system and the :attr:`prebuild_cmds <reframe.core.pipeline.RegressionTest.prebuild_cmds>` for performing the configuration step.
+For other build systems, you can achieve the same effect using the :class:`~reframe.core.buildsystems.Make` build system and the :attr:`~reframe.core.pipeline.RegressionTest.prebuild_cmds` for performing the configuration step.
 The following code snippet will configure a code with ``./custom_configure`` before invoking ``make``:
 
 .. code-block:: python
@@ -273,9 +260,9 @@ Here is the full regression test:
    :lines: 6-
    :emphasize-lines: 6
 
-There is nothing special for this test compared to those presented so far except that it derives from the :class:`RunOnlyRegressionTest <reframe.core.pipeline.RunOnlyRegressionTest>`.
+There is nothing special for this test compared to those presented so far except that it derives from the :class:`~reframe.core.pipeline.RunOnlyRegressionTest`.
 Run-only regression tests may also have resources, as for instance a pre-compiled executable or some input data.
-These resources may reside under the ``src/`` directory or under any directory specified in the :attr:`sourcesdir <reframe.core.pipeline.RegressionTest.sourcesdir>` attribute.
+These resources may reside under the ``src/`` directory or under any directory specified in the :attr:`~reframe.core.pipeline.RegressionTest.sourcesdir` attribute.
 These resources will be copied to the stage directory at the beginning of the run phase.
 
 
@@ -283,7 +270,7 @@ Writing a Compile-Only Regression Test
 --------------------------------------
 
 ReFrame provides the option to write compile-only tests which consist only of a compilation phase without a specified executable.
-This kind of tests must derive from the :class:`CompileOnlyRegressionTest <reframe.core.pipeline.CompileOnlyRegressionTest>` class provided by the framework.
+This kind of tests must derive from the :class:`~reframe.core.pipeline.CompileOnlyRegressionTest` class provided by the framework.
 The following test is a compile-only version of the :class:`MakefileTest` presented `previously <#more-on-building-tests>`__ which checks that no warnings are issued by the compiler:
 
 .. code-block:: console
@@ -292,11 +279,57 @@ The following test is a compile-only version of the :class:`MakefileTest` presen
 
 
 .. literalinclude:: ../tutorials/advanced/makefiles/maketest.py
-   :lines: 25-33
+   :lines: 27-37
    :emphasize-lines: 2
 
-What is worth noting here is that the standard output and standard error of the test, which are accessible through the :attr:`stdout <reframe.core.pipeline.RegressionTest.stdout>` and :attr:`stderr <reframe.core.pipeline.RegressionTest.stderr>` attributes, correspond now to the standard output and error of the compilation command.
+What is worth noting here is that the standard output and standard error of the test, which are accessible through the :attr:`~reframe.core.pipeline.RegressionTest.stdout` and :attr:`~reframe.core.pipeline.RegressionTest.stderr` attributes, correspond now to the standard output and error of the compilation command.
 Therefore sanity checking can be done in exactly the same way as with a normal test.
+
+
+Grouping parameter packs
+------------------------
+
+.. versionadded:: 3.4.2
+
+
+In the dot product example shown above, we had two independent tests that defined the same :attr:`elem_type` parameter.
+And the two tests cannot have a parent-child relationship, since one of them is a run-only test and the other is a compile-only one.
+ReFrame offers the :class:`~reframe.core.pipeline.RegressionMixin` class that allows you to group parameters and other `builtins <regression_test_api.html#builtins>`__ that are meant to be reused over otherwise unrelated tests.
+In the example below, we create an :class:`ElemTypeParam` mixin that holds the definition of the :attr:`elem_type` parameter which is inherited by both the concrete test classes:
+
+.. literalinclude:: ../tutorials/advanced/makefiles/maketest_mixin.py
+   :lines: 6-
+   :emphasize-lines: 5-6,10,25
+
+
+Notice how the parameters are expanded in each of the individual tests:
+
+.. code-block:: console
+
+   ./bin/reframe -c tutorials/advanced/makefiles/maketest_mixin.py -l
+
+
+.. code-block:: none
+
+   [ReFrame Setup]
+     version:           3.6.0-dev.0+2f8e5b3b
+     command:           './bin/reframe -c tutorials/advanced/makefiles/maketest_mixin.py -l'
+     launched by:       user@tresa.local
+     working directory: '/Users/user/Repositories/reframe'
+     settings file:     'tutorials/config/settings.py'
+     check search path: '/Users/user/Repositories/reframe/tutorials/advanced/makefiles/maketest_mixin.py'
+     stage directory:   '/Users/user/Repositories/reframe/stage'
+     output directory:  '/Users/user/Repositories/reframe/output'
+
+   [List of matched checks]
+   - MakeOnlyTestAlt_double (found in '/Users/user/Repositories/reframe/tutorials/advanced/makefiles/maketest_mixin.py')
+   - MakeOnlyTestAlt_float (found in '/Users/user/Repositories/reframe/tutorials/advanced/makefiles/maketest_mixin.py')
+   - MakefileTestAlt_double (found in '/Users/user/Repositories/reframe/tutorials/advanced/makefiles/maketest_mixin.py')
+   - MakefileTestAlt_float (found in '/Users/user/Repositories/reframe/tutorials/advanced/makefiles/maketest_mixin.py')
+   Found 4 check(s)
+
+   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-e384bvkd.log'
+
 
 
 Applying a Sanity Function Iteratively
@@ -327,31 +360,31 @@ Here is the corresponding regression test:
   :emphasize-lines: 12-
 
 First, we extract all the generated random numbers from the output.
-What we want to do is to apply iteratively the :func:`assert_bounded <reframe.utility.sanity.assert_bounded>` sanity function for each number.
-The problem here is that we cannot simply iterate over the ``numbers`` list, because that would trigger prematurely the evaluation of the :func:`extractall <reframe.utility.sanity.extractall>`.
+What we want to do is to apply iteratively the :func:`~reframe.utility.sanity.assert_bounded` sanity function for each number.
+The problem here is that we cannot simply iterate over the ``numbers`` list, because that would trigger prematurely the evaluation of the :func:`~reframe.utility.sanity.extractall`.
 We want to defer also the iteration.
-This can be achieved by using the :func:`map() <reframe.utility.sanity.map>` ReFrame sanity function, which is a replacement of Python's built-in :py:func:`map` function and does exactly what we want: it applies a function on all the elements of an iterable and returns another iterable with the transformed elements.
-Passing the result of the :py:func:`map` function to the :func:`all <reframe.utility.sanity.all>` sanity function ensures that all the elements lie between the desired bounds.
+This can be achieved by using the :func:`~reframe.utility.sanity.map` ReFrame sanity function, which is a replacement of Python's built-in :py:func:`map` function and does exactly what we want: it applies a function on all the elements of an iterable and returns another iterable with the transformed elements.
+Passing the result of the :py:func:`map` function to the :func:`~reframe.utility.sanity.all` sanity function ensures that all the elements lie between the desired bounds.
 
 There is still a small complication that needs to be addressed.
-As a direct replacement of the built-in :py:func:`all` function, ReFrame's :func:`all() <reframe.utility.sanity.all>` sanity function returns :class:`True` for empty iterables, which is not what we want.
+As a direct replacement of the built-in :py:func:`all` function, ReFrame's :func:`~reframe.utility.sanity.all` sanity function returns :class:`True` for empty iterables, which is not what we want.
 So we must make sure that all 100 numbers are generated.
-This is achieved by the ``sn.assert_eq(sn.count(numbers), 100)`` statement, which uses the :func:`count() <reframe.utility.sanity.count>` sanity function for counting the generated numbers.
+This is achieved by the ``sn.assert_eq(sn.count(numbers), 100)`` statement, which uses the :func:`~reframe.utility.sanity.count` sanity function for counting the generated numbers.
 Finally, we need to combine these two conditions to a single deferred expression that will be assigned to the test's :attr:`sanity_patterns`.
-We accomplish this by using again the :func:`all() <reframe.utility.sanity.all>` sanity function.
+We accomplish this by using the :func:`~reframe.utility.sanity.all` sanity function.
 
 For more information about how exactly sanity functions work and how their execution is deferred, please refer to :doc:`deferrables`.
 
 .. note::
    .. versionadded:: 2.13
-      ReFrame offers also the :func:`allx() <reframe.utility.sanity.allx>` sanity function which, conversely to the builtin :func:`all()` function, will return :class:`False` if its iterable argument is empty.
+      ReFrame offers also the :func:`~reframe.utility.sanity.allx` sanity function which, conversely to the builtin :func:`all()` function, will return :class:`False` if its iterable argument is empty.
 
 
 Customizing the Test Job Script
 -------------------------------
 
 It is often the case that we need to run some commands before or after the parallel launch of our executable.
-This can be easily achieved by using the :attr:`prerun_cmds <reframe.core.pipeline.RegressionTest.prerun_cmds>` and :attr:`postrun_cmds <reframe.core.pipeline.RegressionTest.postrun_cmds>` attributes of a ReFrame test.
+This can be easily achieved by using the :attr:`~reframe.core.pipeline.RegressionTest.prerun_cmds` and :attr:`~reframe.core.pipeline.RegressionTest.postrun_cmds` attributes of a ReFrame test.
 
 The following example is a slightly modified version of the random numbers test presented `above <#applying-a-sanity-function-iteratively>`__.
 The lower and upper limits for the random numbers are now set inside a helper shell script in ``limits.sh`` located in the test's resources, which we need to source before running our tests.
@@ -389,20 +422,23 @@ Generally, ReFrame generates the job shell scripts using the following pattern:
 
    #!/bin/bash -l
    {job_scheduler_preamble}
-   {test_environment}
+   {prepare_cmds}
+   {env_load_cmds}
    {prerun_cmds}
    {parallel_launcher} {executable} {executable_opts}
    {postrun_cmds}
 
 The ``job_scheduler_preamble`` contains the backend job scheduler directives that control the job allocation.
-The ``test_environment`` are the necessary commands for setting up the environment of the test.
+The ``prepare_cmds`` are commands that can be emitted before the test environment commands.
+These can be specified with the :js:attr:`prepare_cmds <.systems[].partitions[].prepare_cmds>` partition configuration option.
+The ``env_load_cmds`` are the necessary commands for setting up the environment of the test.
 These include any modules or environment variables set at the `system partition level <config_reference.html#system-partition-configuration>`__ or any `modules <regression_test_api.html#reframe.core.pipeline.RegressionTest.modules>`__ or `environment variables <regression_test_api.html#reframe.core.pipeline.RegressionTest.variables>`__ set at the test level.
-Then the commands specified in :attr:`prerun_cmds <reframe.core.pipeline.RegressionTest.prerun_cmds>` follow, while those specified in the :attr:`postrun_cmds <reframe.core.pipeline.RegressionTest.postrun_cmds>` come after the launch of the parallel job.
+Then the commands specified in :attr:`~reframe.core.pipeline.RegressionTest.prerun_cmds` follow, while those specified in the :attr:`~reframe.core.pipeline.RegressionTest.postrun_cmds` come after the launch of the parallel job.
 The parallel launch itself consists of three parts:
 
 #. The parallel launcher program (e.g., ``srun``, ``mpirun`` etc.) with its options,
-#. the regression test executable as specified in the :attr:`executable <reframe.core.pipeline.RegressionTest.executable>` attribute and
-#. the options to be passed to the executable as specified in the :attr:`executable_opts <reframe.core.pipeline.RegressionTest.executable_opts>` attribute.
+#. the regression test executable as specified in the :attr:`~reframe.core.pipeline.RegressionTest.executable` attribute and
+#. the options to be passed to the executable as specified in the :attr:`~reframe.core.pipeline.RegressionTest.executable_opts` attribute.
 
 
 Adding job scheduler options per test
@@ -424,7 +460,7 @@ Here is the test:
    :emphasize-lines: 16-18
 
 Each ReFrame test has an associated `run job descriptor <regression_test_api.html#reframe.core.pipeline.RegressionTest.job>`__ which represents the scheduler job that will be used to run this test.
-This object has an :attr:`options` attributes, which can be used to pass arbitrary options to the scheduler.
+This object has an :attr:`options` attribute, which can be used to pass arbitrary options to the scheduler.
 The job descriptor is initialized by the framework during the `setup <pipeline.html#the-regression-test-pipeline>`__ pipeline phase.
 For this reason, we cannot directly set the job options inside the test constructor and we have to use a pipeline hook that runs before running (i.e., submitting the test).
 
@@ -480,7 +516,7 @@ Let's see how we can rewrite the :class:`MemoryLimitTest` using the ``memory`` r
    :lines: 26-38
    :emphasize-lines: 11-13
 
-The extra resources that the test needs to obtain through its scheduler are specified in the :attr:`extra_resources <reframe.core.pipeline.RegressionTest.extra_resources>` attribute, which is a dictionary with the resource names as its keys and another dictionary assigning values to the resource placeholders as its values.
+The extra resources that the test needs to obtain through its scheduler are specified in the :attr:`~reframe.core.pipeline.RegressionTest.extra_resources` attribute, which is a dictionary with the resource names as its keys and another dictionary assigning values to the resource placeholders as its values.
 As you can see, this syntax is completely scheduler-agnostic.
 If the requested resource is not defined for the current partition, it will be simply ignored.
 
@@ -500,7 +536,7 @@ ReFrame gives the ability to do that and we will see some examples in this secti
 
 The most common case is to pass arguments to the launcher command that you cannot normally pass as job options.
 The ``--cpu-bind`` of ``srun`` is such an example.
-Inside a ReFrame test, you can access the parallel launcher through the :attr:`launcher <reframe.core.schedulers.Job.launcher>` of the job descriptor.
+Inside a ReFrame test, you can access the parallel launcher through the :attr:`~reframe.core.schedulers.Job.launcher` of the job descriptor.
 This object handles all the details of how the parallel launch command will be emitted.
 In the following test we run a CPU affinity test using `this <https://github.com/vkarak/affinity>`__ utility and we will pin the threads using the ``--cpu-bind`` option:
 
@@ -538,7 +574,7 @@ This can be achieved with the following pipeline hook:
            self.job.launcher = LauncherWrapper(self.job.launcher, 'ddt',
                                                ['--offline'])
 
-The :class:`LauncherWrapper <reframe.core.launchers.LauncherWrapper>` is a pseudo-launcher that wraps another one and allows you to prepend anything to it.
+The :class:`~reframe.core.launchers.LauncherWrapper` is a pseudo-launcher that wraps another one and allows you to prepend anything to it.
 In this case the resulting parallel launch command, if the current partition uses native Slurm, will be ``ddt --offline srun [OPTIONS]``.
 
 
@@ -566,8 +602,8 @@ The trick here is to replace the parallel launcher with the local one, which pra
            self.job.launcher = getlauncher('local')()
 
 
-The :func:`getlauncher <reframe.core.backends.getlauncher>` function takes the `registered <config_reference.html#systems-.partitions-.launcher>`__ name of a launcher and returns the class that implements it.
-You then instantiate the launcher and assign to the :attr:`launcher` attribute of the job descriptor.
+The :func:`~reframe.core.backends.getlauncher` function takes the `registered <config_reference.html#systems-.partitions-.launcher>`__ name of a launcher and returns the class that implements it.
+You then instantiate the launcher and assign to the :attr:`~reframe.core.schedulers.Job.launcher` attribute of the job descriptor.
 
 An alternative to this approach would be to define your own custom parallel launcher and register it with the framework.
 You could then use it as the scheduler of a system partition in the configuration, but this approach is less test-specific.
@@ -575,9 +611,9 @@ You could then use it as the scheduler of a system partition in the configuratio
 Adding more parallel launch commands
 ====================================
 
-ReFrame uses a parallel launcher by default for anything defined explicitly or implicitly in the :attr:`executable <reframe.core.pipeline.RegressionTest.executable>` test attribute.
+ReFrame uses a parallel launcher by default for anything defined explicitly or implicitly in the :attr:`~reframe.core.pipeline.RegressionTest.executable` test attribute.
 But what if we want to generate multiple parallel launch commands?
-One straightforward solution is to hardcode the parallel launch command inside the :attr:`prerun_cmds <reframe.core.pipeline.RegressionTest.prerun_cmds>` or :attr:`postrun_cmds <reframe.core.pipeline.RegressionTest.postrun_cmds>`, but this is not so portable.
+One straightforward solution is to hardcode the parallel launch command inside the :attr:`~reframe.core.pipeline.RegressionTest.prerun_cmds` or :attr:`~reframe.core.pipeline.RegressionTest.postrun_cmds`, but this is not so portable.
 The best way is to ask ReFrame to emit the parallel launch command for you.
 The following is a simple test for demonstration purposes that runs the ``hostname`` command several times using a parallel launcher.
 It resembles a scaling test, except that all happens inside a single ReFrame test, instead of launching multiple instances of a parameterized test.
@@ -592,7 +628,7 @@ It resembles a scaling test, except that all happens inside a single ReFrame tes
    :emphasize-lines: 17-23
 
 The additional parallel launch commands are inserted in either the :attr:`prerun_cmds` or :attr:`postrun_cmds` lists.
-To retrieve the actual parallel launch command for the current partition that the test is running on, you can use the :func:`run_command <reframe.core.launchers.Launcher.run_command>` method of the launcher object.
+To retrieve the actual parallel launch command for the current partition that the test is running on, you can use the :func:`~reframe.core.launchers.Launcher.run_command` method of the launcher object.
 Let's see how the generated job script looks like:
 
 .. code-block:: none
@@ -625,10 +661,10 @@ Flexible Regression Tests
 
 .. versionadded:: 2.15
 
-ReFrame can automatically set the number of tasks of a particular test, if its :attr:`num_tasks <reframe.core.pipeline.RegressionTest.num_tasks>` attribute is set to a negative value or zero.
+ReFrame can automatically set the number of tasks of a particular test, if its :attr:`~reframe.core.pipeline.RegressionTest.num_tasks` attribute is set to a negative value or zero.
 In ReFrame's terminology, such tests are called *flexible*.
 Negative values indicate the minimum number of tasks that are acceptable for this test (a value of ``-4`` indicates that at least ``4`` tasks are required).
-A zero value indicates the default minimum number of tasks which is equal to :attr:`num_tasks_per_node <reframe.core.pipeline.RegressionTest.num_tasks_per_node>`.
+A zero value indicates the default minimum number of tasks which is equal to :attr:`~reframe.core.pipeline.RegressionTest.num_tasks_per_node`.
 
 By default, ReFrame will spawn such a test on all the idle nodes of the current system partition, but this behavior can be adjusted with the |--flex-alloc-nodes|_ command-line option.
 Flexible tests are very useful for diagnostics tests, e.g., tests for checking the health of a whole set nodes.
@@ -644,12 +680,12 @@ The test will verify that all the nodes print the expected host name:
    :lines: 6-
    :emphasize-lines: 11-16
 
-The first thing to notice in this test is that :attr:`num_tasks <reframe.core.pipeline.RegressionTest.num_tasks>` is set to zero.
+The first thing to notice in this test is that :attr:`~reframe.core.pipeline.RegressionTest.num_tasks` is set to zero.
 This is a requirement for flexible tests.
 The sanity check of this test simply counts the host names printed and verifies that they are as many as expected.
-Notice, however, that the sanity check does not use :attr:`num_tasks` directly, but rather access the attribute through the :func:`sn.getattr() <reframe.utility.sanity.getattr>` sanity function, which is a replacement for the :func:`getattr` builtin.
+Notice, however, that the sanity check does not use :attr:`num_tasks` directly, but rather access the attribute through the :func:`~reframe.utility.sanity.getattr` sanity function, which is a replacement for the :func:`getattr` builtin.
 The reason for that is that at the time the sanity check expression is created, :attr:`num_tasks` is ``0`` and it will only be set to its actual value during the run phase.
-Consequently, we need to defer the attribute retrieval, thus we use the :func:`sn.getattr() <reframe.utility.sanity.getattr>` sanity function instead of accessing it directly
+Consequently, we need to defer the attribute retrieval, thus we use the :func:`~reframe.utility.sanity.getattr` sanity function instead of accessing it directly
 
 
 .. |--flex-alloc-nodes| replace:: :attr:`--flex-alloc-nodes`
@@ -671,13 +707,14 @@ ReFrame can be used also to test applications that run inside a container.
 First, we need to enable the container platform support in ReFrame's configuration and, specifically, at the partition configuration level:
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 38-58
-   :emphasize-lines: 15-20
+   :lines: 38-62
+   :emphasize-lines: 15-24
 
 For each partition, users can define a list of container platforms supported using the :js:attr:`container_platforms` `configuration parameter <config_reference.html#.systems[].partitions[].container_platforms>`__.
-In this case, we define the `Singularity <https://sylabs.io>`__ platform, for which we set the :js:attr:`modules` parameter in order to instruct ReFrame to load the ``singularity`` module, whenever it needs to run with this container platform.
+In this case, we define the `Sarus <https://github.com/eth-cscs/sarus>`__ platform for which we set the :js:attr:`modules` parameter in order to instruct ReFrame to load the ``sarus`` module, whenever it needs to run with this container platform.
+Similarly, we add an entry for the `Singularity <https://sylabs.io>`__ platform.
 
-The following test will use a Singularity container to run:
+The following parameterized test, will create two tests, one for each of the supported container platforms:
 
 .. code-block:: console
 
@@ -686,33 +723,70 @@ The following test will use a Singularity container to run:
 
 .. literalinclude:: ../tutorials/advanced/containers/container_test.py
    :lines: 6-
-   :emphasize-lines: 11-16
+   :emphasize-lines: 14-19
 
-A container-based test can be written as :class:`RunOnlyRegressionTest <reframe.core.pipeline.RunOnlyRegressionTest>` that sets the :attr:`container_platform <reframe.core.pipeline.RegressionTest.container_platform>` attribute.
+A container-based test can be written as :class:`~reframe.core.pipeline.RunOnlyRegressionTest` that sets the :attr:`~reframe.core.pipeline.RegressionTest.container_platform` attribute.
 This attribute accepts a string that corresponds to the name of the container platform that will be used to run the container for this test.
-In this case, the test will be using `Singularity <https://sylabs.io>`__ as a container platform.
 If such a platform is not `configured <config_reference.html#container-platform-configuration>`__ for the current system, the test will fail.
 
-As soon as the container platform to be used is defined, you need to specify the container image to use and the commands to run inside the container by setting the :attr:`image <reframe.core.containers.ContainerPlatform.image>` and the :attr:`commands <reframe.core.containers.ContainerPlatform.commands>` container platform attributes.
-These two attributes are mandatory for container-based checks.
-It is important to note that the :attr:`executable <reframe.core.pipeline.RegressionTest.executable>` and :attr:`executable_opts <reframe.core.pipeline.RegressionTest.executable_opts>` attributes of the actual test are ignored in case of container-based tests.
+As soon as the container platform to be used is defined, you need to specify the container image to use by setting the :attr:`~reframe.core.containers.ContainerPlatform.image`.
+In the ``Singularity`` test variant, we add the ``docker://`` prefix to the image name, in order to instruct ``Singularity`` to pull the image from `DockerHub <https://hub.docker.com/>`__.
+The default command that the container runs can be overwritten by setting the :attr:`~reframe.core.containers.ContainerPlatform.command` attribute of the container platform.
 
-ReFrame will run the container as follows:
+The :attr:`~reframe.core.containers.ContainerPlatform.image` is the only mandatory attribute for container-based checks.
+It is important to note that the :attr:`~reframe.core.pipeline.RegressionTest.executable` and :attr:`~reframe.core.pipeline.RegressionTest.executable_opts` attributes of the actual test are ignored in case of container-based tests.
 
-.. code-block:: console
+ReFrame will run the container according to the given platform as follows:
 
-    singularity exec -B"/path/to/test/stagedir:/workdir" docker://ubuntu:18.04 bash -c 'cd rfm_workdir; pwd; ls; cat /etc/os-release'
+.. code-block:: bash
 
-By default ReFrame will mount the stage directory of the test under ``/rfm_workdir`` inside the container and it will always prepend a ``cd`` command to that directory.
-The user commands are then run from that directory one after the other.
+    # Sarus
+    sarus run --mount=type=bind,source="/path/to/test/stagedir",destination="/rfm_workdir" ubuntu:18.04 bash -c 'cat /etc/os-release | tee /rfm_workdir/release.txt'
+
+    # Singularity
+    singularity exec -B"/path/to/test/stagedir:/rfm_workdir" docker://ubuntu:18.04 bash -c 'cat /etc/os-release | tee /rfm_workdir/release.txt'
+
+
+In the ``Sarus`` case, ReFrame will prepend the following command in order to pull the container image before running the container:
+
+.. code-block:: bash
+
+   sarus pull ubuntu:18.04
+
+
+This is the default behavior of ReFrame, which can be changed if pulling the image is not desired by setting the :attr:`~reframe.core.containers.ContainerPlatform.pull_image` attribute to :class:`False`.
+By default ReFrame will mount the stage directory of the test under ``/rfm_workdir`` inside the container.
 Once the commands are executed, the container is stopped and ReFrame goes on with the sanity and performance checks.
-Users may also change the default mount point of the stage directory by using :attr:`workdir <reframe.core.pipeline.RegressionTest.container_platform.workdir>` attribute:
-Besides the stage directory, additional mount points can be specified through the :attr:`mount_points <reframe.core.pipeline.RegressionTest.container_platform.mount_points>` attribute:
+Besides the stage directory, additional mount points can be specified through the :attr:`~reframe.core.pipeline.RegressionTest.container_platform.mount_points` attribute:
 
 .. code-block:: python
 
     self.container_platform.mount_points = [('/path/to/host/dir1', '/path/to/container/mount_point1'),
                                             ('/path/to/host/dir2', '/path/to/container/mount_point2')]
+
+
+The container filesystem is ephemeral, therefore, ReFrame mounts the stage directory under ``/rfm_workdir`` inside the container where the user can copy artifacts as needed.
+These artifacts will therefore be available inside the stage directory after the container execution finishes.
+This is very useful if the artifacts are needed for the sanity or performance checks.
+If the copy is not performed by the default container command, the user can override this command by settings the :attr:`~reframe.core.containers.ContainerPlatform.command` attribute such as to include the appropriate copy commands.
+In the current test, the output of the ``cat /etc/os-release`` is available both in the standard output as well as in the ``release.txt`` file, since we have used the command:
+
+.. code-block:: bash
+
+    bash -c 'cat /etc/os-release | tee /rfm_workdir/release.txt'
+
+
+and ``/rfm_workdir`` corresponds to the stage directory on the host system.
+Therefore, the ``release.txt`` file can now be used in the subsequent sanity checks:
+
+.. code-block:: python
+
+   os_release_pattern = r'18.04.\d+ LTS \(Bionic Beaver\)'
+   self.sanity_patterns = sn.all([
+       sn.assert_found(os_release_pattern, 'release.txt'),
+       sn.assert_found(os_release_pattern, self.stdout)
+   ])
+
 
 For a complete list of the available attributes of a specific container platform, please have a look at the :ref:`container-platforms` section of the :doc:`regression_test_api` guide.
 On how to configure ReFrame for running containerized tests, please have a look at the :ref:`container-platform-configuration` section of the :doc:`config_reference`.

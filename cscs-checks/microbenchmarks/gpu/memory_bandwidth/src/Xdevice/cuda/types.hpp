@@ -13,4 +13,6 @@ XMemcpyKind XMemcpyDeviceToDevice = cudaMemcpyDeviceToDevice;
 XMemcpyKind XMemcpyHostToHost = cudaMemcpyHostToHost;
 XMemcpyKind XMemcpyDefault = cudaMemcpyDefault;
 
+#define XHostAllocMapped cudaHostAllocMapped
+
 #endif

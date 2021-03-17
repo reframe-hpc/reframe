@@ -13,6 +13,7 @@ __all__ = [
 ]
 
 
+import contextlib
 import functools
 import glob
 import inspect
@@ -46,10 +47,13 @@ from reframe.core.warnings import user_deprecation_warning
 # Dependency kinds
 
 #: Constant to be passed as the ``how`` argument of the
-#: :func:`RegressionTest.depends_on` method. It denotes that test case
+#: :func:`~RegressionTest.depends_on` method. It denotes that test case
 #: dependencies will be explicitly specified by the user.
 #:
 #:  This constant is directly available under the :mod:`reframe` module.
+#:
+#: .. deprecated:: 3.3
+#:    Please use a callable as the ``how`` argument.
 DEPEND_EXACT = 1
 
 #: Constant to be passed as the ``how`` argument of the
@@ -58,6 +62,9 @@ DEPEND_EXACT = 1
 #: target test that use the same programming environment.
 #:
 #:  This constant is directly available under the :mod:`reframe` module.
+#:
+#: .. deprecated:: 3.3
+#:    Please use a callable as the ``how`` argument.
 DEPEND_BY_ENV = 2
 
 #: Constant to be passed as the ``how`` argument of the
@@ -65,6 +72,9 @@ DEPEND_BY_ENV = 2
 #: this test depends on all the test cases of the target test.
 #:
 #:  This constant is directly available under the :mod:`reframe` module.
+#:
+#: .. deprecated:: 3.3
+#:    Please use a callable as the ``how`` argument.
 DEPEND_FULLY = 3
 
 
@@ -138,19 +148,18 @@ class RegressionMixin(metaclass=RegressionTestMeta):
 
     .. versionadded:: 3.4.2
     '''
-    def __getattribute__(self, name):
-        try:
-            return super().__getattribute__(name)
-        except AttributeError:
-            # Intercept the AttributeError if the name corresponds to a
-            # required variable.
-            if (name in self._rfm_var_space.vars and
-                not self._rfm_var_space.vars[name].is_defined()):
-                raise AttributeError(
-                    f'required variable {name!r} has not been set'
-                ) from None
-            else:
-                super().__getattr__(name)
+
+    def __getattr__(self, name):
+        ''' Intercept the AttributeError if the name is a required variable.'''
+        if (name in self._rfm_var_space and
+            not self._rfm_var_space[name].is_defined()):
+            raise AttributeError(
+                f'required variable {name!r} has not been set'
+            ) from None
+        else:
+            raise AttributeError(
+                f'{type(self).__qualname__} object has no attribute {name!r}'
+            )
 
 
 class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
@@ -214,7 +223,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:     .. versionchanged:: 3.3
     #:        Default value changed from ``[]`` to ``None``.
     #:
-    valid_prog_environgs = variable(typ.List[str], type(None), value=None)
+    valid_prog_environs = variable(typ.List[str], type(None), value=None)
 
     #: List of systems supported by this test.
     #: The general syntax for systems is ``<sysname>[:<partname>]``.
@@ -233,7 +242,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`str`
     #: :default: ``self.name``
-    descr = variable(str)
+    descr = variable(str, type(None), value=None)
 
     #: The path to the source file or source directory of the test.
     #:
@@ -328,7 +337,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`str`
     #: :default: ``os.path.join('.', self.name)``
-    executable = variable(str)
+    executable = variable(str, type(None), value=None)
 
     #: List of options to be passed to the :attr:`executable`.
     #:
@@ -618,7 +627,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    modules = variable(typ.List[str], value=[])
+    modules = variable(
+        typ.List[str], typ.List[typ.Dict[str, object]], value=[])
 
     #: Environment variables to be set before running this test.
     #:
@@ -632,11 +642,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: Time limit is specified as a string in the form
     #: ``<days>d<hours>h<minutes>m<seconds>s`` or as number of seconds.
-    #: If set to :class:`None`, no time limit will be set.
-    #: The default time limit of the system partition's scheduler will be used.
+    #: If set to :class:`None`, the |time_limit|_
+    #: of the current system partition will be used.
     #:
     #: :type: :class:`str` or :class:`float` or :class:`int`
-    #: :default: ``'10m'``
+    #: :default: :class:`None`
     #:
     #: .. note::
     #:    .. versionchanged:: 2.15
@@ -650,7 +660,25 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:       - The old syntax using a ``(h, m, s)`` tuple is dropped.
     #:       - Support of `timedelta` objects is dropped.
     #:       - Number values are now accepted.
-    time_limit = variable(type(None), field=fields.TimerField, value='10m')
+    #:
+    #:    .. versionchanged:: 3.5.1
+    #:       The default value is now :class:`None` and it can be set globally
+    #:       per partition via the configuration.
+    #:
+    #:    .. |time_limit| replace:: :attr:`time_limit`
+    #:    .. _time_limit: #.systems[].partitions[].time_limit
+    time_limit = variable(type(None), field=fields.TimerField, value=None)
+
+    #: .. versionadded:: 3.5.1
+    #:
+    #: The time limit for the build job of the regression test.
+    #:
+    #: It is specified similarly to the :attr:`time_limit` attribute.
+    #:
+    #: :type: :class:`str` or :class:`float` or :class:`int`
+    #: :default: :class:`None`
+    build_time_limit = variable(type(None), field=fields.TimerField,
+                                value=None)
 
     #: .. versionadded:: 2.8
     #:
@@ -800,8 +828,16 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         if name is not None:
             self.name = name
 
-        self.descr = self.name
-        self.executable = os.path.join('.', self.name)
+        # Pass if descr is a required variable.
+        with contextlib.suppress(AttributeError):
+            if self.descr is None:
+                self.descr = self.name
+
+        # Pass if the executable is a required variable.
+        with contextlib.suppress(AttributeError):
+            if self.executable is None:
+                self.executable = os.path.join('.', self.name)
+
         self._perfvalues = {}
 
         # Static directories of the regression check
@@ -1204,21 +1240,26 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             self.build_system.srcfile = self.sourcepath
             self.build_system.executable = self.executable
 
-        # Prepare build job
-        build_commands = [
-            *self.prebuild_cmds,
-            *self.build_system.emit_build_commands(self._current_environ),
-            *self.postbuild_cmds
-        ]
         user_environ = env.Environment(type(self).__name__,
                                        self.modules, self.variables.items())
         environs = [self._current_partition.local_env, self._current_environ,
                     user_environ, self._cdt_environ]
-
+        self._build_job.time_limit = (
+            self.build_time_limit or rt.runtime().get_option(
+                f'systems/0/partitions/@{self.current_partition.name}'
+                f'/time_limit')
+        )
         with osext.change_dir(self._stagedir):
+            # Prepare build job
+            build_commands = [
+                *self.prebuild_cmds,
+                *self.build_system.emit_build_commands(self._current_environ),
+                *self.postbuild_cmds
+            ]
             try:
                 self._build_job.prepare(
                     build_commands, environs,
+                    self._current_partition.prepare_cmds,
                     login=rt.runtime().get_option('general/0/use_login_shell'),
                     trap_errors=True
                 )
@@ -1253,6 +1294,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         # We raise a BuildError when we an exit code and it is non zero
         if self._build_job.exitcode:
             raise BuildError(self._build_job.stdout, self._build_job.stderr)
+
+        self.build_system.post_build(self._build_job)
 
     @_run_hooks('pre_run')
     @final
@@ -1289,24 +1332,25 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                     'on the current partition: %s' % e) from None
 
             self.container_platform.validate()
-            self.container_platform.mount_points += [
-                (self._stagedir, self.container_platform.workdir)
-            ]
 
             # We replace executable and executable_opts in case of containers
-            self.executable = self.container_platform.launch_command()
+            self.executable = self.container_platform.launch_command(
+                self.stagedir)
             self.executable_opts = []
-            prepare_container = self.container_platform.emit_prepare_commands()
+            prepare_container = self.container_platform.emit_prepare_commands(
+                self.stagedir)
             if prepare_container:
                 self.prerun_cmds += prepare_container
 
         self.job.num_tasks = self.num_tasks
         self.job.num_tasks_per_node = self.num_tasks_per_node
         self.job.num_tasks_per_core = self.num_tasks_per_core
+        self.job.num_tasks_per_socket = self.num_tasks_per_socket
         self.job.num_cpus_per_task = self.num_cpus_per_task
         self.job.use_smt = self.use_multithreading
-        self.job.time_limit = self.time_limit
-
+        self.job.time_limit = (self.time_limit or rt.runtime().get_option(
+            f'systems/0/partitions/@{self.current_partition.name}/time_limit')
+        )
         exec_cmd = [self.job.launcher.run_command(self.job),
                     self.executable, *self.executable_opts]
         commands = [*self.prerun_cmds, ' '.join(exec_cmd), *self.postrun_cmds]
@@ -1347,6 +1391,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 self.logger.debug('Generating the run script')
                 self._job.prepare(
                     commands, environs,
+                    self._current_partition.prepare_cmds,
                     login=rt.runtime().get_option('general/0/use_login_shell'),
                     trap_errors=rt.runtime().get_option(
                         'general/0/trap_job_errors'

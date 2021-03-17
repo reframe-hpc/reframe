@@ -7,7 +7,6 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.required_version('>=2.14')
 @rfm.simple_test
 class GpuDirectCudaCheck(rfm.RegressionTest):
     def __init__(self):
@@ -18,7 +17,7 @@ class GpuDirectCudaCheck(rfm.RegressionTest):
         self.build_system = 'SingleSource'
         self.build_system.ldflags = ['-lcublas', '-lcudart']
         if self.current_system.name in ['daint', 'dom']:
-            self.modules = ['craype-accel-nvidia60']
+            self.modules = ['craype-accel-nvidia60', 'cdt-cuda']
             self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
             self.build_system.cxxflags = ['-ccbin CC', '-arch=sm_60']
         elif self.current_system.name in ['arolla', 'tsa']:
@@ -37,8 +36,3 @@ class GpuDirectCudaCheck(rfm.RegressionTest):
         self.sanity_patterns = sn.assert_reference(result, 1., -1e-5, 1e-5)
         self.maintainers = ['AJ', 'MKr']
         self.tags = {'production', 'mch', 'craype'}
-
-    @rfm.run_before('compile')
-    def dom_set_cuda_cdt(self):
-        if self.current_system.name == 'dom':
-            self.modules += ['cdt-cuda']
