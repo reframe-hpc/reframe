@@ -83,10 +83,7 @@ class GpuBurnTest(rfm.RegressionTest):
         # Nvidia options
         if cs in {'dom', 'daint'}:
             gpu_arch = '60'
-            self.modules = ['craype-accel-nvidia60']
-            if cs == 'dom':
-                self.modules += ['cdt-cuda']
-
+            self.modules = ['craype-accel-nvidia60', 'cdt-cuda']
         elif cs in {'arola', 'tsa'}:
             gpu_arch = '70'
             self.modules = ['cuda/10.1.243']

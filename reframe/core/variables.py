@@ -7,6 +7,7 @@
 # Functionality to build extensible variable spaces into ReFrame tests.
 #
 
+import math
 import copy
 
 import reframe.core.namespaces as namespaces
@@ -21,26 +22,30 @@ class _UndefinedType:
         return self
 
 
-_Undefined = _UndefinedType()
+Undefined = _UndefinedType()
 
 
-class VarDirective:
-    '''Base class for the variable directives.'''
-
-
-class TestVar(VarDirective):
+class TestVar:
     '''Regression test variable class.
 
     Stores the attributes of a variable when defined directly in the class
     body. Instances of this class are injected into the regression test
     during class instantiation.
 
+    To support injecting attributes into the variable, this class implements a
+    separate dict `__attrs__` where these will be stored.
+
     :meta private:
     '''
 
+    __slots__ = (
+        'field_type', '_default_value', 'name',
+        'args', 'kwargs', '__attrs__'
+    )
+
     def __init__(self, *args, **kwargs):
         self.field_type = kwargs.pop('field', fields.TypedField)
-        self._default_value = kwargs.pop('value', _Undefined)
+        self._default_value = kwargs.pop('value', Undefined)
 
         if not issubclass(self.field_type, fields.Field):
             raise ValueError(
@@ -50,29 +55,363 @@ class TestVar(VarDirective):
 
         self.args = args
         self.kwargs = kwargs
+        self.__attrs__ = dict()
 
     def is_defined(self):
-        return self._default_value is not _Undefined
+        return self._default_value is not Undefined
 
     def undefine(self):
-        self._default_value = _Undefined
+        self._default_value = Undefined
 
     def define(self, value):
         self._default_value = value
-
-    def __set_name__(self, owner, name):
-        self.name = name
 
     @property
     def default_value(self):
         # Variables must be returned by-value to prevent an instance from
         # modifying the class variable space.
+        self._check_is_defined()
         return copy.deepcopy(self._default_value)
 
+    @property
+    def attrs(self):
+        # Variable attributes must also be returned by-value.
+        return copy.deepcopy(self.__attrs__)
 
-class UndefineVar(VarDirective):
-    def __init__(self):
-        self.default_value = _Undefined
+    def __set_name__(self, owner, name):
+        self.name = name
+
+    def __setattr__(self, name, value):
+        '''Set any additional variable attribute into __attrs__.'''
+        if name in self.__slots__:
+            super().__setattr__(name, value)
+        else:
+            self.__attrs__[name] = value
+
+    def __getattr__(self, name):
+        '''Attribute lookup into __attrs__.'''
+        attrs = self.__getattribute__('__attrs__')
+        try:
+            return attrs[name]
+        except KeyError:
+            var_name = self.__getattribute__('name')
+            raise AttributeError(
+                f'variable {var_name!r} has no attribute {name!r}'
+            ) from None
+
+    def _check_is_defined(self):
+        if not self.is_defined():
+            raise ValueError(
+                f'variable {self.name} is not assigned a value'
+            )
+
+    def __repr__(self):
+        self._check_is_defined()
+        return repr(self._default_value)
+
+    def __str__(self):
+        return self.__repr__()
+
+    def __bytes__(self):
+        self._check_is_defined()
+        return bytes(self._default_value)
+
+    def __format__(self, *args):
+        self._check_is_defined()
+        return format(self._default_value, *args)
+
+    def __lt__(self, other):
+        self._check_is_defined()
+        return self._default_value < other
+
+    def __le__(self, other):
+        self._check_is_defined()
+        return self._default_value <= other
+
+    def __eq__(self, other):
+        self._check_is_defined()
+        return self._default_value == other
+
+    def __ne__(self, other):
+        self._check_is_defined()
+        return self._default_value != other
+
+    def __gt__(self, other):
+        self._check_is_defined()
+        return self._default_value > other
+
+    def __ge__(self, other):
+        self._check_is_defined()
+        return self._default_value >= other
+
+    def __hash__(self):
+        self._check_is_defined()
+        return hash(self._default_value)
+
+    def __bool__(self):
+        self._check_is_defined()
+        return bool(self._default_value)
+
+    # Container Operators
+
+    def __len__(self):
+        self._check_is_defined()
+        return len(self._default_value)
+
+    def __len_hint__(self):
+        self._check_is_defined()
+        return self._default_value.__len_hint__()
+
+    def __getitem__(self, key):
+        self._check_is_defined()
+        return self._default_value.__getitem__(key)
+
+    def __setitem__(self, key, value):
+        self._check_is_defined()
+        self._default_value.__setitem__(key, value)
+
+    def __delitem__(self, key):
+        self._check_is_defined()
+        self._default_value.__delitem__(key)
+
+    def __missing__(self, key):
+        self._check_is_defined()
+        return self._default_value.__missing__(key)
+
+    def __iter__(self):
+        self._check_is_defined()
+        return iter(self._default_value)
+
+    def __reversed__(self):
+        self._check_is_defined()
+        return reversed(self._default_value)
+
+    def __contains__(self, item):
+        self._check_is_defined()
+        return item in self._default_value
+
+    # Numeric operators
+
+    def __add__(self, other):
+        self._check_is_defined()
+        return self._default_value + other
+
+    def __sub__(self, other):
+        self._check_is_defined()
+        return self._default_value - other
+
+    def __mul__(self, other):
+        self._check_is_defined()
+        return self._default_value * other
+
+    def __matmul__(self, other):
+        self._check_is_defined()
+        return self._default_value @ other
+
+    def __truediv__(self, other):
+        self._check_is_defined()
+        return self._default_value / other
+
+    def __floordiv__(self, other):
+        self._check_is_defined()
+        return self._default_value // other
+
+    def __mod__(self, other):
+        self._check_is_defined()
+        return self._default_value % other
+
+    def __divmod__(self, other):
+        self._check_is_defined()
+        return divmod(self._default_value, other)
+
+    def __pow__(self, other, *modulo):
+        self._check_is_defined()
+        return pow(self._default_value, other, *modulo)
+
+    def __lshift__(self, other):
+        self._check_is_defined()
+        return self._default_value << other
+
+    def __rshift__(self, other):
+        self._check_is_defined()
+        return self._default_value >> other
+
+    def __and__(self, other):
+        self._check_is_defined()
+        return self._default_value & other
+
+    def __or__(self, other):
+        self._check_is_defined()
+        return self._default_value | other
+
+    def __xor__(self, other):
+        self._check_is_defined()
+        return self._default_value ^ other
+
+    def __radd__(self, other):
+        self._check_is_defined()
+        return other + self._default_value
+
+    def __rsub__(self, other):
+        self._check_is_defined()
+        return other - self._default_value
+
+    def __rmul__(self, other):
+        self._check_is_defined()
+        return other * self._default_value
+
+    def __rmatmul__(self, other):
+        self._check_is_defined()
+        return other @ self._default_value
+
+    def __rtruediv__(self, other):
+        self._check_is_defined()
+        return other / self._default_value
+
+    def __rfloordiv__(self, other):
+        self._check_is_defined()
+        return other // self._default_value
+
+    def __rmod__(self, other):
+        self._check_is_defined()
+        return other % self._default_value
+
+    def __rdivmod__(self, other):
+        self._check_is_defined()
+        return divmod(other, self._default_value)
+
+    def __rpow__(self, other, *modulo):
+        self._check_is_defined()
+        return pow(other, self._default_value, *modulo)
+
+    def __rlshift__(self, other):
+        self._check_is_defined()
+        return other << self._default_value
+
+    def __rrshift__(self, other):
+        self._check_is_defined()
+        return other >> self._default_value
+
+    def __rand__(self, other):
+        self._check_is_defined()
+        return other & self._default_value
+
+    def __ror__(self, other):
+        self._check_is_defined()
+        return other | self._default_value
+
+    def __rxor__(self, other):
+        self._check_is_defined()
+        return other ^ self._default_value
+
+    def __iadd__(self, other):
+        self._check_is_defined()
+        self._default_value += other
+        return self._default_value
+
+    def __isub__(self, other):
+        self._check_is_defined()
+        self._default_value -= other
+        return self._default_value
+
+    def __imul__(self, other):
+        self._check_is_defined()
+        self._default_value *= other
+        return self._default_value
+
+    def __imatmul__(self, other):
+        self._check_is_defined()
+        self._default_value @= other
+        return self._default_value
+
+    def __itruediv__(self, other):
+        self._check_is_defined()
+        self._default_value /= other
+        return self._default_value
+
+    def __ifloordiv__(self, other):
+        self._check_is_defined()
+        self._default_value //= other
+        return self._default_value
+
+    def __imod__(self, other):
+        self._check_is_defined()
+        self._default_value %= other
+        return self._default_value
+
+    def __ipow__(self, other, *modulo):
+        self._check_is_defined()
+        self._default_value = pow(self._default_value, other, *modulo)
+        return self._default_value
+
+    def __ilshift__(self, other):
+        self._check_is_defined()
+        self._default_value <<= other
+        return self._default_value
+
+    def __irshift__(self, other):
+        self._check_is_defined()
+        self._default_value >>= other
+        return self._default_value
+
+    def __iand__(self, other):
+        self._check_is_defined()
+        self._default_value &= other
+        return self._default_value
+
+    def __ior__(self, other):
+        self._check_is_defined()
+        self._default_value |= other
+        return self._default_value
+
+    def __ixor__(self, other):
+        self._check_is_defined()
+        self._default_value ^= other
+        return self._default_value
+
+    def __neg__(self):
+        self._check_is_defined()
+        return -self._default_value
+
+    def __pos__(self):
+        self._check_is_defined()
+        return +self._default_value
+
+    def __abs__(self):
+        self._check_is_defined()
+        return abs(self._default_value)
+
+    def __invert__(self):
+        self._check_is_defined()
+        return ~self._default_value
+
+    def __int__(self):
+        self._check_is_defined()
+        return int(self._default_value)
+
+    def __float__(self):
+        self._check_is_defined()
+        return float(self._default_value)
+
+    def __complex__(self):
+        self._check_is_defined()
+        return complex(self._default_value)
+
+    def __round__(self, *ndigits):
+        self._check_is_defined()
+        return round(self._default_value, *ndigits)
+
+    def __trunc__(self):
+        self._check_is_defined()
+        return math.trunc(self._default_value)
+
+    def __floor__(self):
+        self._check_is_defined()
+        return math.floor(self._default_value)
+
+    def __ceil__(self):
+        self._check_is_defined()
+        return math.ceil(self._default_value)
 
 
 class VarSpace(namespaces.Namespace):
@@ -147,25 +486,13 @@ class VarSpace(namespaces.Namespace):
 
                 # Add a new var
                 self.vars[key] = var
-            elif isinstance(var, VarDirective):
-                # Modify the value of a previously declared var.
-                # If var is an instance of UndefineVar, we set its default
-                # value to _Undefined. Alternatively, the value is just updated
-                # with the user's input.
-                self._check_var_is_declared(key)
-                self.vars[key].define(var.default_value)
 
         # If any previously declared variable was defined in the class body
         # by directly assigning it a value, retrieve this value from the class
         # namespace and update it into the variable space.
         _assigned_vars = set()
         for key, value in cls.__dict__.items():
-            if key in local_varspace:
-                raise ValueError(
-                    f'cannot specify more than one action on variable '
-                    f'{key!r} in the same class'
-                )
-            elif key in self.vars:
+            if key in self.vars:
                 self.vars[key].define(value)
                 _assigned_vars.add(key)
 
@@ -173,11 +500,8 @@ class VarSpace(namespaces.Namespace):
         for key in _assigned_vars:
             delattr(cls, key)
 
-    def _check_var_is_declared(self, key):
-        if key not in self.vars:
-            raise ValueError(
-                f'variable {key!r} has not been declared'
-            )
+        # Clear the local var space
+        local_varspace.clear()
 
     def sanity(self, cls, illegal_names=None):
         '''Sanity checks post-creation of the var namespace.
@@ -210,6 +534,11 @@ class VarSpace(namespaces.Namespace):
             # If the var is defined, set its value
             if var.is_defined():
                 setattr(obj, name, var.default_value)
+
+                # If the variable value itself has attributes, inject them.
+                value = getattr(obj, name)
+                for attr, attr_value in var.attrs.items():
+                    setattr(value, attr, attr_value)
 
             # Track the variables that have been injected.
             self._injected_vars.add(name)

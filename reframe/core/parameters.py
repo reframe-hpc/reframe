@@ -124,7 +124,8 @@ class ParamSpace(namespaces.Namespace):
     def extend(self, cls):
         '''Extend the parameter space with the local parameter space.'''
 
-        for name, p in cls._rfm_local_param_space.items():
+        local_param_space = getattr(cls, self.local_namespace_name)
+        for name, p in local_param_space.items():
             self.params[name] = (
                 p.filter_params(self.params.get(name, ())) + p.values
             )
@@ -138,6 +139,9 @@ class ParamSpace(namespaces.Namespace):
                     f'parameter {key!r} must be modified through the built-in '
                     f'parameter type'
                 )
+
+        # Clear the local param space
+        local_param_space.clear()
 
     def inject(self, obj, cls=None, use_params=False):
         '''Insert the params in the regression test.
