@@ -31,7 +31,7 @@ class NvprofCheck(rfm.RegressionTest):
             self.build_system.ldflags = ['-lstdc++', '-lm',
                                          '-L$EBROOTCUDA/lib64', '-lcudart']
         else:
-            self.modules = ['craype-accel-nvidia60']
+            self.modules = ['craype-accel-nvidia60', 'cdt-cuda']
 
         self.executable_opts = [self.target_executable]
         # Reminder: NVreg_RestrictProfilingToAdminUsers=0 (RFC-16) needed since
@@ -46,8 +46,3 @@ class NvprofCheck(rfm.RegressionTest):
         ])
         self.maintainers = ['JG', 'SK']
         self.tags = {'production', 'craype', 'maintenance'}
-
-    @rfm.run_before('compile')
-    def dom_set_cuda_cdt(self):
-        if self.current_system.name == 'dom':
-            self.modules += ['cdt-cuda']

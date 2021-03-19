@@ -24,6 +24,7 @@ site_configuration = {
                 {
                     'name': 'gpu',
                     'scheduler': 'slurm',
+                    'time_limit': '10m',
                     'access': [
                         '--constraint=gpu',
                         '--partition=cscsci',
@@ -58,6 +59,7 @@ site_configuration = {
                 {
                     'name': 'slurm',
                     'scheduler': 'slurm',
+                    'time_limit': '10m',
                     'access': [
                         '--constraint=gpu',
                         f'--account={osext.osgroup()}'
@@ -80,6 +82,7 @@ site_configuration = {
                 {
                     'name': 'pbs',
                     'scheduler': 'pbs',
+                    'time_limit': '10m',
                     'access': [
                         'proc=gpu',
                         f'-A {osext.osgroup()}'
@@ -94,6 +97,7 @@ site_configuration = {
                 {
                     'name': 'torque',
                     'scheduler': 'torque',
+                    'time_limit': '10m',
                     'access': [
                         '-l proc=gpu',
                         f'-A {osext.osgroup()}'
