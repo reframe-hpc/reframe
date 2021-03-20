@@ -1204,15 +1204,6 @@ General Configuration
    See also :option:`--non-default-craype` for more details.
 
 
-.. js:attribute:: .general[].preview_build_error
-
-   :required: No
-   :default: ``0``
-
-   The number of lines to print in the failure report if there is an error during the build job of the test.
-   In the default case, only the names of the stderr and stdout files of the build job are going to be reported.
-
-
 .. js:attribute:: .general[].purge_environment
 
    :required: No

@@ -1291,23 +1291,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         '''
         self._build_job.wait()
 
-        # We raise a BuildError when we get an exit code and it is non zero
+        # We raise a BuildError when we an exit code and it is non zero
         if self._build_job.exitcode:
-            error_message = None
-            err_lines = rt.runtime().get_option(
-                'general/0/preview_build_error'
-            )
-            if err_lines and err_lines > 0:
-                with contextlib.suppress(OSError):
-                    with open(os.path.join(self._stagedir,
-                                           self._build_job.stderr)) as f:
-                        error_message = '\n'.join([
-                            f'\nPreview of {self._build_job.stderr!r}:\n',
-                            *f.readlines()[:err_lines]
-                        ])
-
-            raise BuildError(self._build_job.stdout, self._build_job.stderr,
-                             error_message)
+            raise BuildError(self._build_job.stdout,
+                             self._build_job.stderr, self._stagedir)
 
         self.build_system.post_build(self._build_job)
 

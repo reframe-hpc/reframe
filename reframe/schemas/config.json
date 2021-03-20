@@ -446,7 +446,6 @@
                         "items": {"type": "string"}
                     },
                     "non_default_craype": {"type": "boolean"},
-                    "preview_build_error": {"type": "number"},
                     "purge_environment": {"type": "boolean"},
                     "report_file": {"type": "string"},
                     "save_log_files": {"type": "boolean"},
