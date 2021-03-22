@@ -236,8 +236,9 @@ def get_proc_info():
     # Try first to get information from the filesystem
     if glob.glob('/sys/'):
         topology_information = filesystem_info()
+    else:
+        # Try the `sysctl` command
+        topology_information = sysctl_info()
 
-    # Try the `sysctl` command
-    topology_information = sysctl_info()
     processor_info.update(topology_information)
     return processor_info
