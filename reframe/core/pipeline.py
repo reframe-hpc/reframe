@@ -842,7 +842,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         # Static directories of the regression check
         self._prefix = os.path.abspath(prefix)
-        if not os.path.isdir(os.path.join(self._prefix, self.sourcesdir)):
+        if (not os.path.isdir(os.path.join(self._prefix, self.sourcesdir)) and
+            not osext.is_url(self.sourcesdir)):
             self.sourcesdir = None
 
         # Runtime information of the test
