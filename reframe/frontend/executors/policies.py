@@ -103,6 +103,9 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
             if any(self._task_index[c].skipped
                    for c in case.deps if c in self._task_index):
+
+                # We raise the SkipTestError here and catch it immediately in
+                # order for `skip()` to get the correct exception context.
                 try:
                     raise SkipTestError('skipped due to skipped dependencies')
                 except SkipTestError as e:
