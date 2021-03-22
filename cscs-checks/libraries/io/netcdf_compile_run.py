@@ -47,7 +47,7 @@ class NetCDFTest(rfm.RegressionTest):
         self.num_tasks_per_node = 1
         self.sanity_patterns = sn.assert_found(r'SUCCESS', self.stdout)
         self.maintainers = ['AJ', 'SO']
-        self.tags = {'production', 'craype', 'external-resources'}
+        self.tags = {'production', 'craype', 'external-resources', 'health'}
 
     @rfm.run_before('compile')
     def setflags(self):
