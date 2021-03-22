@@ -422,7 +422,6 @@ class Runner:
         return self._stats
 
     def runall(self, testcases, restored_cases=None):
-        abort_reason = None
         num_checks = len({tc.check.name for tc in testcases})
         self._printer.separator('short double line',
                                 'Running %d check(s)' % num_checks)
@@ -444,7 +443,7 @@ class Runner:
             else:
                 status = 'PASSED'
 
-            total_run = len(testcases) - num_tasks + num_completed
+            total_run = len(testcases)
             total_completed = len(self._stats.completed(0))
             total_skipped = len(self._stats.skipped(0))
             self._printer.status(
