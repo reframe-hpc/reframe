@@ -30,7 +30,6 @@ class BuildHip(rfm.RegressionTest):
         self.build_system.config_opts = [
             f'-DCMAKE_INSTALL_PREFIX={self.hip_full_path}',
             f'-DHIP_PLATFORM={self.hip_platform}',
-            f'-DHIP_PATH={self.hip_full_path}'
         ]
 
     @rfm.run_before('sanity')
