@@ -1294,7 +1294,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         # We raise a BuildError when we an exit code and it is non zero
         if self._build_job.exitcode:
-            raise BuildError(self._build_job.stdout, self._build_job.stderr)
+            raise BuildError(self._build_job.stdout,
+                             self._build_job.stderr, self._stagedir)
 
         self.build_system.post_build(self._build_job)
 
