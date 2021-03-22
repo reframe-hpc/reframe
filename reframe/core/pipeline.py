@@ -842,7 +842,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         # Static directories of the regression check
         self._prefix = os.path.abspath(prefix)
-        if not os.path.isdir(os.path.join(self._prefix, self.sourcesdir)):
+        if (not os.path.isdir(os.path.join(self._prefix, self.sourcesdir)) and
+            not osext.is_url(self.sourcesdir)):
             self.sourcesdir = None
 
         # Runtime information of the test
@@ -1293,7 +1294,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         # We raise a BuildError when we an exit code and it is non zero
         if self._build_job.exitcode:
-            raise BuildError(self._build_job.stdout, self._build_job.stderr)
+            raise BuildError(self._build_job.stdout,
+                             self._build_job.stderr, self._stagedir)
 
         self.build_system.post_build(self._build_job)
 
