@@ -603,7 +603,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #:       ::
     #:
-    #:           self.sanity_patterns = sn.assert_found(r'.*', self.stdout)
+    #:           self.sanity_patterns = sn.assert_true(1)
     sanity_patterns = variable(_DeferredExpression, type(None), value=None)
 
     #: Patterns for verifying the performance of this test.
