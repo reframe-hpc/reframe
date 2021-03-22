@@ -9,10 +9,9 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-# TODO: scontrol, do we want to scontrol something specific?
 @rfm.simple_test
 class SlurmCheck(rfm.RunOnlyRegressionTest):
-    slurm_command = parameter(['squeue', 'sacct', 'sinfo', 'scontrol'])
+    slurm_command = parameter(['squeue', 'sacct'])
 
     def __init__(self):
         self.descr = 'Slurm command test'
@@ -30,18 +29,10 @@ class SlurmCheck(rfm.RunOnlyRegressionTest):
             },
             'sacct': {
                 'real_time': (0.1, None, 0.1, 's')
-            },
-            'sinfo': {
-                'real_time': (0.02, None, 0.1, 's')
-            },
-            'scontrol': {
-                'real_time': (0.01, None, 0.1, 's')
             }
         }
 
         self.executable = 'time -p ' + self.slurm_command
-        if self.slurm_command == 'scontrol':
-            self.executable_opts = ['show partitions']
 
         self.tags = {'ops', 'diagnostic', 'health'}
         self.maintainers = ['CB', 'VH']
