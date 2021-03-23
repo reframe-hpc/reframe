@@ -63,6 +63,7 @@ class HelloHip(rfm.RegressionTest):
     tags = {'production'}
 
     def __init__(self):
+        # FIXME: PR #1868 should move this into the class body.
         self.depends_on('BuildHip')
 
     @rfm.require_deps
