@@ -32,6 +32,7 @@ class RegressionTestMeta(type):
             if isinstance(value, variables.TestVar):
                 # Insert the attribute in the variable namespace
                 self['_rfm_local_var_space'][key] = value
+                value.__set_name__(self, key)
 
                 # Override the regular class attribute (if present)
                 self._namespace.pop(key, None)
@@ -64,9 +65,7 @@ class RegressionTestMeta(type):
             except KeyError as err:
                 try:
                     # Handle variable access
-                    v = self['_rfm_local_var_space'][key]
-                    v.__set_name__(self, key)
-                    return v
+                    return self['_rfm_local_var_space'][key]
 
                 except KeyError:
                     # Handle parameter access
@@ -81,12 +80,11 @@ class RegressionTestMeta(type):
                         # available in the current class' namespace.
                         for b in self['_rfm_bases']:
                             if key in b._rfm_var_space:
-                                v = b._rfm_var_space[key]
-                                v.__set_name__(self, key)
-
                                 # Store a deep-copy of the variable's
                                 # value and return.
-                                self._namespace[key] = v.default_value
+                                self._namespace[key] = (
+                                    b._rfm_var_space[key].default_value
+                                )
                                 return self._namespace[key]
 
                         # If 'key' is neither a variable nor a parameter,
