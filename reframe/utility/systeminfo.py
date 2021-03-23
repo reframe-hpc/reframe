@@ -9,6 +9,7 @@
 
 '''
 import archspec.cpu
+import contextlib
 import glob
 import os
 import re
@@ -53,27 +54,50 @@ def filesystem_info():
 
     cores = set()
     for cpu in cpu_dirs:
-        with open(os.path.join(cpu, 'topology/core_cpus')) as fp:
-            core_cpus = fp.read()
-            core_cpus = re.sub(r'[\s,]', '', core_cpus)
-            core_cpus = f'0x{core_cpus.upper()}'
-            cores.add(core_cpus)
+        core_cpus_path = os.path.join(cpu, 'topology/core_cpus')
+        thread_siblings_path = os.path.join(cpu, 'topology/thread_siblings')
+        if glob.glob(core_cpus_path):
+            cores_path = core_cpus_path
+        elif glob.glob(thread_siblings_path):
+            cores_path = thread_siblings_path
+        else:
+            # Information cannot be retrieved
+            continue
+
+        with contextlib.suppress(IOError):
+            with open(cores_path) as fp:
+                core_cpus = fp.read()
+                core_cpus = re.sub(r'[\s,]', '', core_cpus)
+                core_cpus = f'0x{core_cpus.upper()}'
+                cores.add(core_cpus)
 
     sockets = set()
     for cpu in cpu_dirs:
-        with open(os.path.join(cpu, 'topology/package_cpus')) as fp:
-            package_cpus = fp.read()
-            package_cpus = re.sub(r'[\s,]', '', package_cpus)
-            package_cpus = f'0x{package_cpus.upper()}'
-            sockets.add(package_cpus)
+        package_cpus_path = os.path.join(cpu, 'topology/package_cpus')
+        core_siblings_path = os.path.join(cpu, 'topology/core_siblings')
+        if glob.glob(package_cpus_path):
+            sockets_path = package_cpus_path
+        elif glob.glob(core_siblings_path):
+            sockets_path = core_siblings_path
+        else:
+            # Information cannot be retrieved
+            continue
+
+        with contextlib.suppress(IOError):
+            with open(sockets_path) as fp:
+                package_cpus = fp.read()
+                package_cpus = re.sub(r'[\s,]', '', package_cpus)
+                package_cpus = f'0x{package_cpus.upper()}'
+                sockets.add(package_cpus)
 
     numa_nodes = []
     for node in nodes:
-        with open(os.path.join(node, 'cpumap')) as fp:
-            cpumap = fp.read()
-            cpumap = re.sub(r'[\s,]', '', cpumap)
-            cpumap = f'0x{cpumap.upper()}'
-            numa_nodes.append(cpumap)
+        with contextlib.suppress(IOError):
+            with open(os.path.join(node, 'cpumap')) as fp:
+                cpumap = fp.read()
+                cpumap = re.sub(r'[\s,]', '', cpumap)
+                cpumap = f'0x{cpumap.upper()}'
+                numa_nodes.append(cpumap)
 
     numa_nodes.sort()
 
@@ -81,32 +105,60 @@ def filesystem_info():
     for cpu in cpu_dirs:
         cache_dirs = glob.glob(cpu + r'/cache/index[0-9]*')
         for cache in cache_dirs:
-            with open(os.path.join(cache, 'level')) as fp:
-                cache_level = int(fp.read())
+            cache_level = 0
+            cache_size = 0
+            cache_linesize = 0
+            cache_associativity = 0
+            cache_cpuset = ''
 
-            # Skip L1 instruction cache
-            with open(os.path.join(cache, 'type')) as fp:
-                if cache_level == 1 and fp.read() == 'Instruction\n':
-                    continue
+            with contextlib.suppress(IOError):
+                with open(os.path.join(cache, 'level')) as fp:
+                    cache_level = int(fp.read())
 
-            with open(os.path.join(cache, 'ways_of_associativity')) as fp:
-                cache_associativity = int(fp.read())
+            with contextlib.suppress(IOError):
+                # Skip L1 instruction cache
+                with open(os.path.join(cache, 'type')) as fp:
+                    if cache_level == 1 and fp.read() == 'Instruction\n':
+                        continue
 
-            with open(os.path.join(cache, 'size')) as fp:
-                cache_size = fp.read()
-                m = re.match(r'(?P<val>\d+)(?P<unit>\S)', cache_size)
-                if m:
-                    value = int(m.group('val'))
-                    unit = cache_units.get(m.group('unit'), 1)
-                    cache_size = value*unit
+            with contextlib.suppress(IOError):
+                with open(os.path.join(cache, 'size')) as fp:
+                    cache_size = fp.read()
+                    m = re.match(r'(?P<val>\d+)(?P<unit>\S)', cache_size)
+                    if m:
+                        value = int(m.group('val'))
+                        unit = cache_units.get(m.group('unit'), 1)
+                        cache_size = value*unit
 
-            with open(os.path.join(cache, 'coherency_line_size')) as fp:
-                cache_linesize = int(fp.read())
+            with contextlib.suppress(IOError):
+                with open(os.path.join(cache, 'coherency_line_size')) as fp:
+                    cache_linesize = int(fp.read())
 
-            with open(os.path.join(cache, 'shared_cpu_map')) as fp:
-                cache_cpuset = fp.read()
-                cache_cpuset = re.sub(r'[\s,]', '', cache_cpuset)
-                cache_cpuset = f'0x{cache_cpuset.upper()}'
+            # Don't take the associativity directly from
+            # "ways_of_associativity" file because  some archs (ia64, ppc)
+            # put 0 there when fully-associative, while others (x86)
+            # put something like -1 there.
+            with contextlib.suppress(IOError):
+                with open(os.path.join(cache, 'number_of_sets')) as fp:
+                    cache_number_of_sets = int(fp.read())
+
+                with open(os.path.join(cache,
+                                       'physical_line_partition')) as fp:
+                    cache_physical_line_partition = int(fp.read())
+
+                if (cache_linesize and
+                    cache_physical_line_partition and
+                    cache_number_of_sets):
+                    cache_associativity = (cache_size //
+                                           cache_linesize //
+                                           cache_physical_line_partition //
+                                           cache_number_of_sets)
+
+            with contextlib.suppress(IOError):
+                with open(os.path.join(cache, 'shared_cpu_map')) as fp:
+                    cache_cpuset = fp.read()
+                    cache_cpuset = re.sub(r'[\s,]', '', cache_cpuset)
+                    cache_cpuset = f'0x{cache_cpuset.upper()}'
 
             num_cpus = len(bits_from_string(cache_cpuset))
             caches.setdefault((cache_level, cache_size, cache_linesize,
@@ -117,8 +169,8 @@ def filesystem_info():
     num_cpus = len(cpu_dirs)
     num_cores = len(cores)
     num_sockets = len(sockets)
-    num_cpus_per_core = num_cpus // num_cores
-    num_cpus_per_socket = num_cpus // num_sockets
+    num_cpus_per_core = num_cpus // num_cores if num_cores else 0
+    num_cpus_per_socket = num_cpus // num_sockets if num_sockets else 0
 
     processor_info['num_cpus'] = num_cpus
     processor_info['num_cpus_per_core'] = num_cpus_per_core
@@ -230,9 +282,13 @@ def sysctl_info():
 
 
 def get_proc_info():
-    processor_info = {
-        'arch': archspec.cpu.host().name
-    }
+    try:
+        processor_info = {
+            'arch': archspec.cpu.host().name
+        }
+    except ModuleNotFoundError:
+        processor_info = {}
+
     # Try first to get information from the filesystem
     if glob.glob('/sys/'):
         topology_information = filesystem_info()
