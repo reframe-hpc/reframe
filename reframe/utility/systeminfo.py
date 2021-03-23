@@ -8,7 +8,6 @@
 .. versionadded:: 3.6.0
 
 '''
-import archspec.cpu
 import contextlib
 import glob
 import os
@@ -283,6 +282,8 @@ def sysctl_info():
 
 def get_proc_info():
     try:
+        import archspec.cpu
+
         processor_info = {
             'arch': archspec.cpu.host().name
         }
