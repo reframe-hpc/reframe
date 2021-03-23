@@ -11,6 +11,7 @@
 #
 
 import reframe as rfm
+import reframe.utility.sanity as sn
 
 
 @rfm.simple_test
@@ -21,6 +22,7 @@ class KeyboardInterruptCheck(rfm.RunOnlyRegressionTest):
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
         self.tags = {self.name}
+        self.sanity_patterns = sn.assert_true(1)
 
     @rfm.run_before('setup')
     def raise_keyboard_interrupt(self):
