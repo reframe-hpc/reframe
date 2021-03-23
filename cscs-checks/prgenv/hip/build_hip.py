@@ -47,14 +47,18 @@ class BuildHip(rfm.RegressionTest):
 class HelloHip(rfm.RegressionTest):
     '''A Hello World test for HIP.'''
 
+    # Declare custom test variables
     sample = variable(str, value='HelloWorld')
     sample_dir = variable(str, value='HIP-Examples-Applications')
+    hip_path = variable(str)
 
     valid_systems = ['daint:gpu', 'dom:gpu']
     valid_prog_environs = ['PrgEnv-gnu']
     modules = ['cdt-cuda']
     sourcesdir = 'https://github.com/ROCm-Developer-Tools/HIP-Examples.git'
+    prebuild_cmds = [f'cd {sample_dir}/{sample}']
     build_system = 'Make'
+    executable = f'{sample_dir}/{sample}/{sample}'
     maintainers = ['JO']
     tags = {'production'}
 
@@ -69,11 +73,6 @@ class HelloHip(rfm.RegressionTest):
     def set_env(self):
         self.variables = {'HIP_PATH': f'{self.hip_path}'}
         self.build_system.cxx = os.path.join(self.hip_path, 'bin', 'hipcc')
-        self.prebuild_cmds = [f'cd {self.sample_dir}/{self.sample}']
-
-    @rfm.run_before('run')
-    def set_executable(self):
-        self.executable = f'{self.sample_dir}/{self.sample}/{self.sample}'
 
     @rfm.run_before('sanity')
     def set_sanity(self):
