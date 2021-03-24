@@ -60,7 +60,7 @@ This provides the ReFrame internals with further control over the user's input, 
 In essence, these builtins exert control over the test creation, and they allow adding and/or modifying certain attributes of the regression test.
 
 
-.. py:function:: reframe.core.pipeline.RegressionTest.parameter(values=None, inherit_params=False, filter_params=None)
+.. py:function:: RegressionTest.parameter(values=None, inherit_params=False, filter_params=None)
 
   Inserts or modifies a regression test parameter.
   If a parameter with a matching name is already present in the parameter space of a parent class, the existing parameter values will be combined with those provided by this method following the inheritance behavior set by the arguments ``inherit_params`` and ``filter_params``.
@@ -126,7 +126,7 @@ In essence, these builtins exert control over the test creation, and they allow 
      This only has an effect if used with ``inherit_params=True``.
 
 
-.. py:function:: reframe.core.pipeline.RegressionTest.variable(*types, value=None)
+.. py:function:: RegressionTest.variable(*types, value=None)
 
   Inserts a new regression test variable.
   Declaring a test variable through the :func:`variable` built-in allows for a more robust test implementation than if the variables were just defined as regular test attributes (e.g. ``self.a = 10``).

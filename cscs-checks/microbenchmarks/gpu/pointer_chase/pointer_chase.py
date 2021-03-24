@@ -67,10 +67,7 @@ class CompileGpuPointerChase(rfm.CompileOnlyRegressionTest, PchaseGlobal):
         if nvidia_sm:
             self.build_system.cxxflags += [f'-arch=sm_{nvidia_sm}']
             if cp in {'dom:gpu', 'daint:gpu'}:
-                self.modules += ['craype-accel-nvidia60']
-                if cp == 'dom:gpu':
-                    self.modules += ['cdt-cuda']
-
+                self.modules += ['craype-accel-nvidia60', 'cdt-cuda']
             else:
                 self.modules += ['cuda']
 

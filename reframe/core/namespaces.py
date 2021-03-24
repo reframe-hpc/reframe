@@ -65,8 +65,11 @@ class LocalNamespace:
             f'{name!r} is already present in the current namespace'
         )
 
+    def clear(self):
+        self._namespace = {}
 
-class Namespace(metaclass=abc.ABCMeta):
+
+class Namespace(LocalNamespace, metaclass=abc.ABCMeta):
     '''Namespace of a regression test.
 
     The final namespace may be built by inheriting namespaces from
@@ -113,7 +116,7 @@ class Namespace(metaclass=abc.ABCMeta):
         '''
 
     def __init__(self, target_cls=None, illegal_names=None):
-        self._namespace = {}
+        super().__init__()
         if target_cls:
             # Assert the Namespace can be built for the target_cls
             self.assert_target_cls(target_cls)
@@ -175,5 +178,7 @@ class Namespace(metaclass=abc.ABCMeta):
            ``obj``.
         '''
 
-    def items(self):
-        return self._namespace.items()
+    def __setitem__(self, key, value):
+        raise ValueError(
+            f'cannot set item {key!r} into a {type(self).__qualname__} object'
+        )

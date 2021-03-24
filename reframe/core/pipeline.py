@@ -37,8 +37,8 @@ from reframe.core.buildsystems import BuildSystemField
 from reframe.core.containers import ContainerPlatformField
 from reframe.core.deferrable import _DeferredExpression
 from reframe.core.exceptions import (BuildError, DependencyError,
-                                     PipelineError, SanityError,
-                                     PerformanceError)
+                                     PerformanceError, PipelineError,
+                                     SanityError, SkipTestError)
 from reframe.core.meta import RegressionTestMeta
 from reframe.core.schedulers import Job
 from reframe.core.warnings import user_deprecation_warning
@@ -153,19 +153,17 @@ class RegressionMixin(metaclass=RegressionTestMeta):
     .. versionadded:: 3.4.2
     '''
 
-    def __getattribute__(self, name):
-        try:
-            return super().__getattribute__(name)
-        except AttributeError:
-            # Intercept the AttributeError if the name corresponds to a
-            # required variable.
-            if (name in self._rfm_var_space.vars and
-                not self._rfm_var_space.vars[name].is_defined()):
-                raise AttributeError(
-                    f'required variable {name!r} has not been set'
-                ) from None
-            else:
-                super().__getattr__(name)
+    def __getattr__(self, name):
+        ''' Intercept the AttributeError if the name is a required variable.'''
+        if (name in self._rfm_var_space and
+            not self._rfm_var_space[name].is_defined()):
+            raise AttributeError(
+                f'required variable {name!r} has not been set'
+            ) from None
+        else:
+            raise AttributeError(
+                f'{type(self).__qualname__} object has no attribute {name!r}'
+            )
 
 
 class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
@@ -229,7 +227,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:     .. versionchanged:: 3.3
     #:        Default value changed from ``[]`` to ``None``.
     #:
-    valid_prog_environgs = variable(typ.List[str], type(None), value=None)
+    valid_prog_environs = variable(typ.List[str], type(None), value=None)
 
     #: List of systems supported by this test.
     #: The general syntax for systems is ``<sysname>[:<partname>]``.
@@ -609,7 +607,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #:       ::
     #:
-    #:           self.sanity_patterns = sn.assert_found(r'.*', self.stdout)
+    #:           self.sanity_patterns = sn.assert_true(1)
     sanity_patterns = variable(_DeferredExpression, type(None), value=None)
 
     #: Patterns for verifying the performance of this test.
@@ -648,11 +646,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: Time limit is specified as a string in the form
     #: ``<days>d<hours>h<minutes>m<seconds>s`` or as number of seconds.
-    #: If set to :class:`None`, no time limit will be set.
-    #: The default time limit of the system partition's scheduler will be used.
+    #: If set to :class:`None`, the |time_limit|_
+    #: of the current system partition will be used.
     #:
     #: :type: :class:`str` or :class:`float` or :class:`int`
-    #: :default: ``'10m'``
+    #: :default: :class:`None`
     #:
     #: .. note::
     #:    .. versionchanged:: 2.15
@@ -666,7 +664,25 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:       - The old syntax using a ``(h, m, s)`` tuple is dropped.
     #:       - Support of `timedelta` objects is dropped.
     #:       - Number values are now accepted.
-    time_limit = variable(type(None), field=fields.TimerField, value='10m')
+    #:
+    #:    .. versionchanged:: 3.5.1
+    #:       The default value is now :class:`None` and it can be set globally
+    #:       per partition via the configuration.
+    #:
+    #:    .. |time_limit| replace:: :attr:`time_limit`
+    #:    .. _time_limit: #.systems[].partitions[].time_limit
+    time_limit = variable(type(None), field=fields.TimerField, value=None)
+
+    #: .. versionadded:: 3.5.1
+    #:
+    #: The time limit for the build job of the regression test.
+    #:
+    #: It is specified similarly to the :attr:`time_limit` attribute.
+    #:
+    #: :type: :class:`str` or :class:`float` or :class:`int`
+    #: :default: :class:`None`
+    build_time_limit = variable(type(None), field=fields.TimerField,
+                                value=None)
 
     #: .. versionadded:: 2.8
     #:
@@ -831,7 +847,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         # Static directories of the regression check
         self._prefix = os.path.abspath(prefix)
-        if not os.path.isdir(os.path.join(self._prefix, self.sourcesdir)):
+        if (not os.path.isdir(os.path.join(self._prefix, self.sourcesdir)) and
+            not osext.is_url(self.sourcesdir)):
             self.sourcesdir = None
 
         # Runtime information of the test
@@ -1234,7 +1251,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                                        self.modules, self.variables.items())
         environs = [self._current_partition.local_env, self._current_environ,
                     user_environ, self._cdt_environ]
-
+        self._build_job.time_limit = (
+            self.build_time_limit or rt.runtime().get_option(
+                f'systems/0/partitions/@{self.current_partition.name}'
+                f'/time_limit')
+        )
         with osext.change_dir(self._stagedir):
             # Prepare build job
             build_commands = [
@@ -1279,7 +1300,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         # We raise a BuildError when we an exit code and it is non zero
         if self._build_job.exitcode:
-            raise BuildError(self._build_job.stdout, self._build_job.stderr)
+            raise BuildError(self._build_job.stdout,
+                             self._build_job.stderr, self._stagedir)
 
         self.build_system.post_build(self._build_job)
 
@@ -1334,8 +1356,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self.job.num_tasks_per_socket = self.num_tasks_per_socket
         self.job.num_cpus_per_task = self.num_cpus_per_task
         self.job.use_smt = self.use_multithreading
-        self.job.time_limit = self.time_limit
-
+        self.job.time_limit = (self.time_limit or rt.runtime().get_option(
+            f'systems/0/partitions/@{self.current_partition.name}/time_limit')
+        )
         exec_cmd = [self.job.launcher.run_command(self.job),
                     self.executable, *self.executable_opts]
         commands = [*self.prerun_cmds, ' '.join(exec_cmd), *self.postrun_cmds]
@@ -1826,6 +1849,26 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         raise DependencyError(f'could not resolve dependency to ({target!r}, '
                               f'{part!r}, {environ!r})')
+
+    def skip(self, msg=None):
+        '''Skip test.
+
+        :arg msg: A message explaining why the test was skipped.
+
+        .. versionadded:: 3.5.1
+        '''
+        raise SkipTestError(msg)
+
+    def skip_if(self, cond, msg=None):
+        '''Skip test if condition is true.
+
+        :arg cond: The condition to check for skipping the test.
+        :arg msg: A message explaining why the test was skipped.
+
+        .. versionadded:: 3.5.1
+        '''
+        if cond:
+            self.skip(msg)
 
     def __str__(self):
         return "%s(name='%s', prefix='%s')" % (type(self).__name__,
