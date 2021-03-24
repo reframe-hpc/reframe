@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -30,6 +30,20 @@ site_configuration = {
                     'descr': 'Login nodes',
                     'max_jobs': 4,
                     'launcher': 'local'
+                },
+                {
+                    'name': 'a64fx',
+                    'scheduler': 'slurm',
+                    'access': [
+                        '-pa64fx'
+                    ],
+                    'environs': [
+                        'builtin',
+                        'PrgEnv-gnu'
+                    ],
+                    'descr': 'Fujitsu A64FX CPUs',
+                    'max_jobs': 100,
+                    'launcher': 'srun'
                 },
                 {
                     'name': 'amda100',
@@ -168,6 +182,7 @@ site_configuration = {
                 },
                 {
                     'name': 'gpu',
+                    'time_limit': '10m',
                     'scheduler': 'slurm',
                     'container_platforms': [
                         {
@@ -216,6 +231,7 @@ site_configuration = {
                 {
                     'name': 'mc',
                     'scheduler': 'slurm',
+                    'time_limit': '10m',
                     'container_platforms': [
                         {
                             'type': 'Sarus',
@@ -267,8 +283,9 @@ site_configuration = {
                         'builtin'
                     ],
                     'access': [
-                        '-Cgpu',
-                        '--reservation=jupyter_gpu'
+                        f'-Cgpu',
+                        f'--reservation=interact_gpu',
+                        f'--account={osext.osgroup()}'
                     ],
                     'descr': 'JupyterHub GPU nodes',
                     'max_jobs': 10,
@@ -281,10 +298,25 @@ site_configuration = {
                         'builtin'
                     ],
                     'access': [
-                        '-Cmc',
-                        '--reservation=jupyter_mc'
+                        f'-Cmc',
+                        f'--reservation=interact_mc',
+                        f'--account={osext.osgroup()}'
                     ],
                     'descr': 'JupyterHub multicore nodes',
+                    'max_jobs': 10,
+                    'launcher': 'srun'
+                },
+                {
+                    'name': 'xfer',
+                    'scheduler': 'slurm',
+                    'environs': [
+                        'builtin'
+                    ],
+                    'access': [
+                        f'--partition=xfer',
+                        f'--account={osext.osgroup()}'
+                    ],
+                    'descr': 'Nordend nodes for internal transfers',
                     'max_jobs': 10,
                     'launcher': 'srun'
                 }
@@ -318,6 +350,7 @@ site_configuration = {
                 {
                     'name': 'gpu',
                     'scheduler': 'slurm',
+                    'time_limit': '10m',
                     'container_platforms': [
                         {
                             'type': 'Sarus',
@@ -359,6 +392,7 @@ site_configuration = {
                 {
                     'name': 'mc',
                     'scheduler': 'slurm',
+                    'time_limit': '10m',
                     'container_platforms': [
                         {
                             'type': 'Sarus',
@@ -404,8 +438,9 @@ site_configuration = {
                         'builtin'
                     ],
                     'access': [
-                        '-Cgpu',
-                        '--reservation=jupyter_gpu'
+                        f'-Cgpu',
+                        f'--reservation=interact_gpu',
+                        f'--account={osext.osgroup()}'
                     ],
                     'descr': 'JupyterHub GPU nodes',
                     'max_jobs': 10,
@@ -418,8 +453,9 @@ site_configuration = {
                         'builtin'
                     ],
                     'access': [
-                        '-Cmc',
-                        '--reservation=jupyter_mc'
+                        f'-Cmc',
+                        f'--reservation=interact_mc',
+                        f'--account={osext.osgroup()}'
                     ],
                     'descr': 'JupyterHub multicore nodes',
                     'max_jobs': 10,
@@ -628,6 +664,118 @@ site_configuration = {
             ]
         },
         {
+            'name': 'eiger',
+            'descr': 'Alps Cray EX Supercomputer',
+            'hostnames': [
+                'eiger'
+            ],
+            'modules_system': 'lmod',
+            'resourcesdir': '/apps/common/UES/reframe/resources',
+            'partitions': [
+                {
+                    'name': 'login',
+                    'scheduler': 'local',
+                    'environs': [
+                        'builtin',
+                        'PrgEnv-cray',
+                        'PrgEnv-gnu',
+                        'PrgEnv-aocc'
+                    ],
+                    'descr': 'Login nodes',
+                    'max_jobs': 4,
+                    'launcher': 'local'
+                },
+                {
+                    'name': 'mc',
+                    'descr': 'Multicore nodes (AMD EPYC 7742, 256|512GB/cn)',
+                    'scheduler': 'slurm',
+                    'environs': [
+                        'builtin',
+                        'PrgEnv-cray',
+                        'PrgEnv-gnu',
+                        'PrgEnv-aocc'
+                    ],
+                    'max_jobs': 100,
+                    'resources': [
+                        {
+                            'name': 'switches',
+                            'options': [
+                                '--switches={num_switches}'
+                            ]
+                        },
+                        {
+                            'name': 'memory',
+                            'options': [
+                                '--mem={mem_per_node}'
+                            ]
+                        },
+                    ],
+                    'launcher': 'srun'
+                },
+            ]
+        },
+        {
+            'name': 'pilatus',
+            'descr': 'Alps Cray EX Supercomputer TDS',
+            'hostnames': [
+                'pilatus'
+            ],
+            'modules_system': 'lmod',
+            'resourcesdir': '/apps/common/UES/reframe/resources',
+            'partitions': [
+                {
+                    'name': 'login',
+                    'scheduler': 'local',
+                    'environs': [
+                        'builtin',
+                        'PrgEnv-aocc',
+                        'PrgEnv-cray',
+                        'PrgEnv-gnu',
+                        'PrgEnv-intel',
+                        'cpeAMD',
+                        'cpeCray',
+                        'cpeGNU',
+                        'cpeIntel'
+                    ],
+                    'descr': 'Login nodes',
+                    'max_jobs': 4,
+                    'launcher': 'local'
+                },
+                {
+                    'name': 'mc',
+                    'descr': 'Multicore nodes (AMD EPYC 7742, 256|512GB/cn)',
+                    'scheduler': 'slurm',
+                    'environs': [
+                        'builtin',
+                        'PrgEnv-aocc',
+                        'PrgEnv-cray',
+                        'PrgEnv-gnu',
+                        'PrgEnv-intel',
+                        'cpeAMD',
+                        'cpeCray',
+                        'cpeGNU',
+                        'cpeIntel'
+                    ],
+                    'max_jobs': 100,
+                    'resources': [
+                        {
+                            'name': 'switches',
+                            'options': [
+                                '--switches={num_switches}'
+                            ]
+                        },
+                        {
+                            'name': 'memory',
+                            'options': [
+                                '--mem={mem_per_node}'
+                            ]
+                        },
+                    ],
+                    'launcher': 'srun'
+                },
+            ]
+        },
+        {
             'name': 'generic',
             'descr': 'Generic fallback system',
             'partitions': [
@@ -651,9 +799,7 @@ site_configuration = {
                 'ault'
             ],
             'modules': [
-                'gcc/9.3.0',
-                'cuda/11.0',
-                'openmpi/3.1.6'
+                'openmpi'
             ],
             'cc': 'mpicc',
             'cxx': 'mpicxx',
@@ -680,7 +826,7 @@ site_configuration = {
         {
             'name': 'PrgEnv-pgi-nompi-nocuda',
             'target_systems': [
-                'arolla', 'tsa'
+                'arolla',
             ],
             'modules': [
                 'PrgEnv-pgi/19.9-nocuda'
@@ -690,9 +836,21 @@ site_configuration = {
             'ftn': 'pgf90'
         },
         {
+            'name': 'PrgEnv-pgi-nompi-nocuda',
+            'target_systems': [
+                'tsa',
+            ],
+            'modules': [
+                'PrgEnv-pgi/20.4-nocuda'
+            ],
+            'cc': 'pgcc',
+            'cxx': 'pgc++',
+            'ftn': 'pgf90'
+        },
+        {
             'name': 'PrgEnv-pgi-nompi',
             'target_systems': [
-                'arolla', 'tsa'
+                'arolla',
             ],
             'modules': [
                 'PrgEnv-pgi/19.9'
@@ -702,9 +860,21 @@ site_configuration = {
             'ftn': 'pgf90'
         },
         {
+            'name': 'PrgEnv-pgi-nompi',
+            'target_systems': [
+                'tsa',
+            ],
+            'modules': [
+                'PrgEnv-pgi/20.4'
+            ],
+            'cc': 'pgcc',
+            'cxx': 'pgc++',
+            'ftn': 'pgf90'
+        },
+        {
             'name': 'PrgEnv-pgi',
             'target_systems': [
-                'arolla', 'tsa'
+                'arolla',
             ],
             'modules': [
                 'PrgEnv-pgi/19.9'
@@ -714,12 +884,36 @@ site_configuration = {
             'ftn': 'mpifort'
         },
         {
+            'name': 'PrgEnv-pgi',
+            'target_systems': [
+                'tsa',
+            ],
+            'modules': [
+                'PrgEnv-pgi/20.4'
+            ],
+            'cc': 'mpicc',
+            'cxx': 'mpicxx',
+            'ftn': 'mpifort'
+        },
+        {
             'name': 'PrgEnv-pgi-nocuda',
             'target_systems': [
-                'arolla', 'tsa'
+                'arolla',
             ],
             'modules': [
                 'PrgEnv-pgi/19.9-nocuda'
+            ],
+            'cc': 'mpicc',
+            'cxx': 'mpicxx',
+            'ftn': 'mpifort'
+        },
+        {
+            'name': 'PrgEnv-pgi-nocuda',
+            'target_systems': [
+                'tsa',
+            ],
+            'modules': [
+                'PrgEnv-pgi/20.4-nocuda'
             ],
             'cc': 'mpicc',
             'cxx': 'mpicxx',
@@ -772,6 +966,78 @@ site_configuration = {
             'cc': 'gcc',
             'cxx': 'g++',
             'ftn': 'gfortran'
+        },
+        {
+            'name': 'PrgEnv-aocc',
+            'target_systems': [
+                'eiger', 'pilatus'
+            ],
+            'modules': [
+                {'name': 'PrgEnv-aocc', 'collection': True}
+            ]
+        },
+        {
+            'name': 'PrgEnv-cray',
+            'target_systems': [
+                'eiger', 'pilatus'
+            ],
+            'modules': [
+                {'name': 'PrgEnv-cray', 'collection': True}
+            ]
+        },
+        {
+            'name': 'PrgEnv-gnu',
+            'target_systems': [
+                'eiger', 'pilatus'
+            ],
+            'modules': [
+                {'name': 'PrgEnv-gnu', 'collection': True}
+            ]
+        },
+        {
+            'name': 'PrgEnv-intel',
+            'target_systems': [
+                'pilatus'
+            ],
+            'modules': [
+                {'name': 'PrgEnv-intel', 'collection': True}
+            ]
+        },
+        {
+            'name': 'cpeAMD',
+            'target_systems': [
+                'eiger', 'pilatus'
+            ],
+            'modules': [
+                'cpeAMD'
+            ],
+        },
+        {
+            'name': 'cpeCray',
+            'target_systems': [
+                'eiger', 'pilatus'
+            ],
+            'modules': [
+                'cpeCray'
+            ],
+        },
+        {
+            'name': 'cpeGNU',
+            'target_systems': [
+                'eiger', 'pilatus'
+            ],
+            'modules': [
+                'cpeGNU'
+            ],
+        },
+        {
+            'name': 'cpeIntel',
+            'target_systems': [
+                'pilatus'
+            ],
+            'modules': [
+                'cpeIntel'
+            ],
         },
         {
             'name': 'PrgEnv-cray',
