@@ -232,14 +232,12 @@ class RegressionTestMeta(type):
         # Make the parameter space available as read-only
         return cls._rfm_param_space
 
-    def is_abstract(cls):
-        '''Check if the test is an abstract test.
+    def has_undefined_params(cls):
+        '''Check if the test has undefined parameters.
 
-        If the parameter space has undefined parameters, the test is considered
-        an abstract test. If that is the case, the length of the parameter
-        space is just 0.
+        If this is the case, the length of the parameter space is just 0.
 
-        :return: bool indicating wheteher the test is abstract or not
+        :return: bool indicating wheteher the test has undefined parameters.
 
         :meta private:
         '''

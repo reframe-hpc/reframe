@@ -21,6 +21,7 @@ class TwoParams(NoParams):
 
 
 class Abstract(TwoParams):
+    '''An abstract test is a test with undefined parameters.'''
     P0 = parameter()
 
 
@@ -81,14 +82,14 @@ def test_is_abstract_test():
     class MyTest(Abstract):
         pass
 
-    assert MyTest.is_abstract()
+    assert MyTest.has_undefined_params()
 
 
 def test_is_not_abstract_test():
     class MyTest(TwoParams):
         pass
 
-    assert not MyTest.is_abstract()
+    assert not MyTest.has_undefined_params()
 
 
 def test_param_len_is_zero():
