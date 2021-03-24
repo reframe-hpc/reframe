@@ -8,6 +8,7 @@
 #
 
 import reframe as rfm
+import reframe.utility.sanity as sn
 
 # We just import this individually for testing purposes
 from reframe.core.pipeline import RegressionTest
@@ -17,6 +18,7 @@ class _Base(RegressionTest):
     def __init__(self):
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
+        self.sanity_patterns = sn.assert_true(1)
 
 
 @rfm.parameterized_test(*((x, y) for x in range(3) for y in range(2)))

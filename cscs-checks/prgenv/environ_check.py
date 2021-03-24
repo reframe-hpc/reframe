@@ -88,15 +88,12 @@ class CrayVariablesCheckDaint(CrayVariablesCheck):
         super().__init__()
         self.valid_systems = ['daint:login', 'dom:login']
 
-        # FIXME: These modules should be fixed in later releases,
-        # while gcc was fixed in 20.11
-
+        # FIXME: These modules should be fixed in later releases
         cdt = osext.cray_cdt_version()
         if ((cdt and cdt <= '20.11' and
-             self.cray_module in ['cray-petsc-complex',
+             self.cray_module in {'cray-petsc-complex',
                                   'cray-petsc-complex-64',
-                                  'cudatoolkit']) or
-            (cdt and cdt < '20.11' and self.cray_module == 'gcc')):
+                                  'cudatoolkit'})):
             self.valid_systems = []
 
 

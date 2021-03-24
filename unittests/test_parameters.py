@@ -183,9 +183,20 @@ def test_param_space_clash():
             '''Trigger error from param name clashing.'''
 
 
+def test_multiple_inheritance():
+    class Spam(rfm.RegressionMixin):
+        P0 = parameter()
+
+    class Ham(rfm.RegressionMixin):
+        P0 = parameter([2])
+
+    class Eggs(Spam, Ham):
+        '''Multiple inheritance is allowed if only one class defines P0.'''
+
+
 def test_namespace_clash():
     class Spam(rfm.RegressionTest):
-        foo = variable(int, 1)
+        foo = variable(int)
 
     with pytest.raises(ValueError):
         class Ham(Spam):
@@ -235,3 +246,54 @@ def test_param_access():
         class Foo(rfm.RegressionTest):
             p = parameter([1, 2, 3])
             x = f'accessing {p!r} in the class body is disallowed.'
+
+
+def test_param_space_read_only():
+    class Foo(rfm.RegressionMixin):
+        pass
+
+    with pytest.raises(ValueError):
+        Foo.param_space['a'] = (1, 2, 3)
+
+
+def test_parameter_override():
+    with pytest.raises(ValueError):
+        # Trigger the check from MetaNamespace
+        class MyTest(rfm.RegressionTest):
+            p = parameter([1, 2])
+            p = 0
+
+    # Trigger the check in the extend method from ParameterSpace
+    class Foo(rfm.RegressionTest):
+        p = parameter([1, 2])
+
+    with pytest.raises(ValueError):
+        class Bar(Foo):
+            p = 0
+
+
+def test_override_regular_attribute():
+    class Foo(rfm.RegressionTest):
+        p = 4
+        p = parameter([1, 2])
+
+    assert Foo.p == (1, 2,)
+
+
+def test_override_parameter():
+    with pytest.raises(ValueError):
+        class Foo(rfm.RegressionTest):
+            p = parameter([1, 2])
+            p = 1
+
+    with pytest.raises(ValueError):
+        class Foo(rfm.RegressionTest):
+            p = parameter([1, 2])
+            p += 1
+
+
+def test_local_paramspace_is_empty():
+    class MyTest(rfm.RegressionTest):
+        p = parameter([1, 2, 3])
+
+    assert len(MyTest._rfm_local_param_space) == 0
