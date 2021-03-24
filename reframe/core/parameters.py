@@ -46,9 +46,6 @@ class TestParam:
         self.values = tuple(values)
         self.filter_params = filter_params
 
-    def __set_name__(self, owner, name):
-        self.name = name
-
 
 class ParamSpace(namespaces.Namespace):
     ''' Regression test parameter space
