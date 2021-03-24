@@ -82,9 +82,8 @@ class RegressionTestMeta(type):
                             if key in b._rfm_var_space:
                                 # Store a deep-copy of the variable's
                                 # value and return.
-                                self._namespace[key] = (
-                                    b._rfm_var_space[key].default_value
-                                )
+                                v = b._rfm_var_space[key].default_value
+                                self._namespace[key] = v
                                 return self._namespace[key]
 
                         # If 'key' is neither a variable nor a parameter,
