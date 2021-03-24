@@ -10,8 +10,6 @@
 
 import abc
 
-import reframe.core.directives as directives
-
 
 class LocalNamespace:
     '''Local namespace of a regression test.
