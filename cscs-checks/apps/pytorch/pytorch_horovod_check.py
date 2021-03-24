@@ -19,8 +19,7 @@ class PytorchHorovodTest(rfm.RunOnlyRegressionTest):
             self.valid_systems += ['dom:gpu']
 
         self.valid_prog_environs = ['builtin']
-        cray_cdt_version = osext.cray_cdt_version()
-        self.modules = [f'Horovod/0.19.5-CrayGNU-{cray_cdt_version}-pt-1.6.0']
+        self.modules = [f'PyTorch']
         self.num_tasks_per_node = 1
         self.num_cpus_per_task = 12
         self.num_tasks = mpi_task
