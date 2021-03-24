@@ -1776,65 +1776,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     # Directives
 
     def _D_depends_on(self, target, how=None, *args, **kwargs):
-        '''Add a dependency to another test.
-
-        :arg target: The name of the test that this one will depend on.
-        :arg how: A callable that defines how the test cases of this test
-            depend on the the test cases of the target test.
-            This callable should accept two arguments:
-
-            - The source test case (i.e., a test case of this test)
-              represented as a two-element tuple containing the names of the
-              partition and the environment of the current test case.
-            - Test destination test case (i.e., a test case of the target
-              test) represented as a two-element tuple containing the names of
-              the partition and the environment of the current target test
-              case.
-
-            It should return :class:`True` if a dependency between the source
-            and destination test cases exists, :class:`False` otherwise.
-
-            This function will be called multiple times by the framework when
-            the test DAG is constructed, in order to determine the
-            connectivity of the two tests.
-
-            In the following example, this test depends on ``T1`` when their
-            partitions match, otherwise their test cases are independent.
-
-            .. code-block:: python
-
-                def by_part(src, dst):
-                    p0, _ = src
-                    p1, _  = dst
-                    return p0 == p1
-
-                self.depends_on('T0', how=by_part)
-
-            The framework offers already a set of predefined relations between
-            the test cases of inter-dependent tests. See the
-            :mod:`reframe.utility.udeps` for more details.
-
-            The default ``how`` function is
-            :func:`reframe.utility.udeps.by_case`, where test cases on
-            different partitions and environments are independent.
-
-        .. seealso::
-           - :doc:`dependencies`
-           - :ref:`test-case-deps-management`
-
-
-
-        .. versionadded:: 2.21
-
-        .. versionchanged:: 3.3
-           Dependencies between test cases from different partitions are now
-           allowed. The ``how`` argument now accepts a callable.
-
-         .. deprecated:: 3.3
-            Passing an integer to the ``how`` argument as well as using the
-            ``subdeps`` argument is deprecated.
-
-        '''
+        '''Add a dependency to another test.'''
 
         if not isinstance(target, str):
             raise TypeError("target argument must be of type: `str'")
@@ -1853,22 +1795,13 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self._userdeps.append((target, how))
 
     def _D_skip(self, msg=None):
-        '''Skip test.
+        '''Skip test.'''
 
-        :arg msg: A message explaining why the test was skipped.
-
-        .. versionadded:: 3.5.1
-        '''
         raise SkipTestError(msg)
 
     def _D_skip_if(self, cond, msg=None):
-        '''Skip test if condition is true.
+        '''Skip test if condition is true.'''
 
-        :arg cond: The condition to check for skipping the test.
-        :arg msg: A message explaining why the test was skipped.
-
-        .. versionadded:: 3.5.1
-        '''
         if cond:
             self.skip(msg)
 

@@ -216,6 +216,88 @@ In essence, these builtins exert control over the test creation, and they allow 
       :class:`reframe.core.fields.Field`.
 
 
+Directives
+----------
+
+.. versionadded:: 3.5.2
+
+Directives are special functions that are called at the class level but will be applied to the newly created test.
+Directives can also be invoked as normal test methods once the test has been created.
+Using directives and `builtins <#builtins>`__ together, it is possible to completely get rid of the :func:`__init__` method in the tests.
+Static test information can be defined in the test class body and any adaptations based on the current system and/or environment can be made inside `pipeline hooks <#pipeline-hooks>`__.
+
+.. py:function:: RegressionTest.depends_on(target, how=None, *args, **kwargs)
+
+   .. versionadded:: 2.21 (as a test method)
+
+   Add a dependency to another test.
+
+   :arg target: The name of the test that this one will depend on.
+   :arg how: A callable that defines how the test cases of this test depend on the the test cases of the target test. This callable should accept two arguments:
+
+       - The source test case (i.e., a test case of this test) represented as a two-element tuple containing the names of the partition and the environment of the current test case.
+       - Test destination test case (i.e., a test case of the target test) represented as a two-element tuple containing the names of the partition and the environment of the current target test case.
+
+       It should return :class:`True` if a dependency between the source and destination test cases exists, :class:`False` otherwise.
+
+       This function will be called multiple times by the framework when the test DAG is constructed, in order to determine the connectivity of the two tests.
+
+       In the following example, test ``T1`` depends on ``T0`` when their partitions match, otherwise their test cases are independent.
+
+       .. code-block:: python
+
+           def by_part(src, dst):
+               p0, _ = src
+               p1, _  = dst
+               return p0 == p1
+
+           class T1(rfm.RegressionTest):
+               depends_on('T0', how=by_part)
+
+       The framework offers already a set of predefined relations between the test cases of inter-dependent tests. See the :mod:`reframe.utility.udeps` for more details.
+
+       The default ``how`` function is :func:`~reframe.utility.udeps.by_case`, where test cases on different partitions and environments are independent.
+
+   .. seealso::
+      - :doc:`dependencies`
+      - :ref:`test-case-deps-management`
+
+   .. versionchanged:: 3.3
+      Dependencies between test cases from different partitions are now allowed. The ``how`` argument now accepts a callable.
+
+   .. deprecated:: 3.3
+      Passing an integer to the ``how`` argument as well as using the ``subdeps`` argument is deprecated.
+
+   .. versionchanged:: 3.5.2
+      This function has become a directive.
+
+
+.. py:function:: RegressionTest.skip(msg=None)
+
+   Skip test.
+
+   :arg msg: A message explaining why the test was skipped.
+
+   .. versionadded:: 3.5.1
+
+   .. versionchanged:: 3.5.2
+      This function has become a directive.
+
+
+.. py:function:: RegressionTest.skip_if(cond, msg=None)
+
+   Skip test if condition is true.
+
+   :arg cond: The condition to check for skipping the test.
+   :arg msg: A message explaining why the test was skipped.
+
+   .. versionadded:: 3.5.1
+
+   .. versionchanged:: 3.5.2
+      This function has become a directive.
+
+
+
 Environments and Systems
 ------------------------
 
