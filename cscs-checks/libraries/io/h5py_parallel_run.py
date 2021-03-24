@@ -23,4 +23,5 @@ class H5PyTest(rfm.RunOnlyRegressionTest):
         self.executable = 'python'
         self.executable_opts = ['h5py_mpi_test.py']
         self.postrun_cmds = ['h5dump parallel_test.hdf5']
+        self.tags = {'health'}
         self.maintainers = ['TM']
