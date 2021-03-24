@@ -42,7 +42,7 @@ class LocalNamespace:
         return self._namespace[key]
 
     def __setitem__(self, key, value):
-        if key not in self._namespace and key not in directives.NAMES:
+        if key not in self._namespace:
             self._namespace[key] = value
         else:
             self._raise_namespace_clash(key)

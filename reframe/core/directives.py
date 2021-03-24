@@ -20,7 +20,7 @@ object method, since they have served their purpose. This allows us to export
 functions such as `depends_on()` at the class level.
 '''
 
-NAMES = ('depends_on',)
+NAMES = ('depends_on', 'skip', 'skip_if')
 
 
 class _Directive:

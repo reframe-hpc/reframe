@@ -1735,6 +1735,46 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         else:
             raise ValueError(f"unknown value passed to 'how' argument: {how}")
 
+    def getdep(self, target, environ=None, part=None):
+        '''Retrieve the test case of a target dependency.
+
+        This is a low-level method. The :func:`@require_deps
+        <reframe.core.decorators.require_deps>` decorators should be
+        preferred.
+
+        :arg target: The name of the target dependency to be retrieved.
+        :arg environ: The name of the programming environment that will be
+            used to retrieve the test case of the target test. If ``None``,
+            :attr:`RegressionTest.current_environ` will be used.
+
+        .. versionadded:: 2.21
+
+        '''
+        if self.current_environ is None:
+            raise DependencyError(
+                'cannot resolve dependencies before the setup phase'
+            )
+
+        if environ is None:
+            environ = self.current_environ.name
+
+        if part is None:
+            part = self.current_partition.name
+
+        if self._case is None or self._case() is None:
+            raise DependencyError('no test case is associated with this test')
+
+        for d in self._case().deps:
+            if (d.check.name == target and
+                d.environ.name == environ and
+                d.partition.name == part):
+                return d.check
+
+        raise DependencyError(f'could not resolve dependency to ({target!r}, '
+                              f'{part!r}, {environ!r})')
+
+    # Directives
+
     def _D_depends_on(self, target, how=None, *args, **kwargs):
         '''Add a dependency to another test.
 
@@ -1812,45 +1852,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         self._userdeps.append((target, how))
 
-    def getdep(self, target, environ=None, part=None):
-        '''Retrieve the test case of a target dependency.
-
-        This is a low-level method. The :func:`@require_deps
-        <reframe.core.decorators.require_deps>` decorators should be
-        preferred.
-
-        :arg target: The name of the target dependency to be retrieved.
-        :arg environ: The name of the programming environment that will be
-            used to retrieve the test case of the target test. If ``None``,
-            :attr:`RegressionTest.current_environ` will be used.
-
-        .. versionadded:: 2.21
-
-        '''
-        if self.current_environ is None:
-            raise DependencyError(
-                'cannot resolve dependencies before the setup phase'
-            )
-
-        if environ is None:
-            environ = self.current_environ.name
-
-        if part is None:
-            part = self.current_partition.name
-
-        if self._case is None or self._case() is None:
-            raise DependencyError('no test case is associated with this test')
-
-        for d in self._case().deps:
-            if (d.check.name == target and
-                d.environ.name == environ and
-                d.partition.name == part):
-                return d.check
-
-        raise DependencyError(f'could not resolve dependency to ({target!r}, '
-                              f'{part!r}, {environ!r})')
-
-    def skip(self, msg=None):
+    def _D_skip(self, msg=None):
         '''Skip test.
 
         :arg msg: A message explaining why the test was skipped.
@@ -1859,7 +1861,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         '''
         raise SkipTestError(msg)
 
-    def skip_if(self, cond, msg=None):
+    def _D_skip_if(self, cond, msg=None):
         '''Skip test if condition is true.
 
         :arg cond: The condition to check for skipping the test.
