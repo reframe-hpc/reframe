@@ -5,7 +5,6 @@
 
 import reframe as rfm
 import reframe.utility.sanity as sn
-import reframe.utility.osext as osext
 
 
 @rfm.parameterized_test(*[[model, mpi_task]
