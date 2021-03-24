@@ -211,6 +211,13 @@ def test_override_regular_attribute():
     assert Foo.v == 40
 
 
+def test_var_name_is_set():
+    class MyTest (rfm.RegressionTest):
+        v = variable(int)
+
+    assert MyTest.v.name == 'v'
+
+
 def test_variable_with_attribute():
     class Foo:
         pass
