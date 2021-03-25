@@ -7,7 +7,6 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.required_version('>=2.14')
 @rfm.parameterized_test(*([lang, linkage] for lang in ['c', 'f90']
                           for linkage in ['static', 'dynamic']))
 class HDF5Test(rfm.RegressionTest):
@@ -81,4 +80,4 @@ class HDF5Test(rfm.RegressionTest):
         self.postrun_cmds = ['h5dump h5ex_d_chunk.h5 > h5dump_out.txt']
 
         self.maintainers = ['SO', 'RS']
-        self.tags = {'production', 'craype'}
+        self.tags = {'production', 'craype', 'health'}

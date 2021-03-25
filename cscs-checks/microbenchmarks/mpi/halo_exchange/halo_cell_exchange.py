@@ -7,7 +7,6 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.required_version('>=2.16-dev0')
 @rfm.simple_test
 class HaloCellExchangeTest(rfm.RegressionTest):
     def __init__(self):

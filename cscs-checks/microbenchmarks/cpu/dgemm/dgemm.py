@@ -7,7 +7,6 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.required_version('>=2.16-dev0')
 @rfm.simple_test
 class DGEMMTest(rfm.RegressionTest):
     def __init__(self):
@@ -36,12 +35,10 @@ class DGEMMTest(rfm.RegressionTest):
         self.build_system.cflags = ['-O3']
         self.sys_reference = {
             'daint:gpu': (300.0, -0.15, None, 'Gflop/s'),
-            'daint:mc': (860.0, -0.15, None, 'Gflop/s'),
+            'daint:mc': (1040.0, -0.15, None, 'Gflop/s'),
             'dom:gpu': (300.0, -0.15, None, 'Gflop/s'),
-            'dom:mc': (860.0, -0.15, None, 'Gflop/s'),
-
-            # FIXME: This needs further investigation (see SD-51352)
-            'eiger:mc': (650.0, -0.15, None, 'Gflop/s'),
+            'dom:mc': (1040.0, -0.15, None, 'Gflop/s'),
+            'eiger:mc': (3200.0, -0.15, None, 'Gflop/s'),
         }
         self.maintainers = ['AJ', 'VH']
         self.tags = {'benchmark', 'diagnostic', 'craype'}
@@ -80,7 +77,10 @@ class DGEMMTest(rfm.RegressionTest):
 
         if self.num_cpus_per_task:
             self.variables = {
-                'OMP_NUM_THREADS': str(self.num_cpus_per_task)
+                'OMP_NUM_THREADS': str(self.num_cpus_per_task),
+                'OMP_BIND': 'cores',
+                'OMP_PROC_BIND': 'spread',
+                'OMP_SCHEDULE': 'static'
             }
 
     @sn.sanity_function

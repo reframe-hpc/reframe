@@ -119,11 +119,53 @@ def make_cases(make_loader):
     return _make_cases
 
 
+@pytest.fixture(params=['pre_setup', 'post_setup',
+                        'pre_compile', 'post_compile',
+                        'pre_run', 'post_run',
+                        'pre_sanity', 'post_sanity',
+                        'pre_performance', 'post_performance',
+                        'pre_cleanup', 'post_cleanup'])
+def make_cases_for_skipping(request):
+    import reframe as rfm
+    import reframe.utility.sanity as sn
+
+    def _make_cases():
+        @fixtures.custom_prefix('unittests/resources/checks')
+        class _T0(rfm.RegressionTest):
+            valid_systems = ['*']
+            valid_prog_environs = ['*']
+            sourcepath = 'hello.c'
+            executable = 'echo'
+            sanity_patterns = sn.assert_true(1)
+
+            def check_and_skip(self):
+                self.skip_if(True)
+
+            # Attach the hook manually based on the request.param
+            when, stage = request.param.split('_', maxsplit=1)
+            hook = rfm.run_before if when == 'pre' else rfm.run_after
+            check_and_skip = hook(stage)(check_and_skip)
+
+        class _T1(rfm.RunOnlyRegressionTest):
+            valid_systems = ['*']
+            valid_prog_environs = ['*']
+            sanity_patterns = sn.assert_true(1)
+
+            def __init__(self):
+                self.depends_on(_T0.__qualname__)
+
+        cases = executors.generate_testcases([_T0(), _T1()])
+        depgraph, _ = dependencies.build_deps(cases)
+        return dependencies.toposort(depgraph), request.param
+
+    return _make_cases
+
+
 def assert_runall(runner):
     # Make sure that all cases finished, failed or
     # were aborted
     for t in runner.stats.tasks():
-        assert t.succeeded or t.failed or t.aborted
+        assert t.succeeded or t.failed or t.aborted or t.skipped
 
 
 def assert_all_dead(runner):
@@ -299,6 +341,40 @@ def test_strict_performance_check(make_runner, make_cases, common_exec_ctx):
     assert 1 == num_failures_stage(runner, 'cleanup')
 
 
+def test_runall_skip_tests(make_runner, make_cases,
+                           make_cases_for_skipping,
+                           common_exec_ctx):
+    runner = make_runner(max_retries=1)
+    more_cases, stage = make_cases_for_skipping()
+    cases = make_cases() + more_cases
+    runner.runall(cases)
+
+    def assert_reported_skipped(num_skipped):
+        report = runner.stats.json()
+        assert report[0]['num_skipped'] == num_skipped
+
+        num_reported = 0
+        for tc in report[0]['testcases']:
+            if tc['result'] == 'skipped':
+                num_reported += 1
+
+        assert num_reported == num_skipped
+
+    assert_runall(runner)
+    assert 11 == runner.stats.num_cases(0)
+    assert 5 == runner.stats.num_cases(1)
+    assert 5 == len(runner.stats.failed(0))
+    assert 5 == len(runner.stats.failed(1))
+    if stage.endswith('cleanup'):
+        assert 0 == len(runner.stats.skipped(0))
+        assert 0 == len(runner.stats.skipped(1))
+        assert_reported_skipped(0)
+    else:
+        assert 2 == len(runner.stats.skipped(0))
+        assert 0 == len(runner.stats.skipped(1))
+        assert_reported_skipped(2)
+
+
 # We explicitly ask for a system with a non-local scheduler here, to make sure
 # that the execution policies behave correctly with forced local tests
 def test_force_local_execution(make_runner, make_cases, testsys_exec_ctx):
@@ -466,6 +542,9 @@ class _TaskEventMonitor(executors.TaskEventListener):
         pass
 
     def on_task_failure(self, task):
+        pass
+
+    def on_task_skip(self, task):
         pass
 
     def on_task_setup(self, task):

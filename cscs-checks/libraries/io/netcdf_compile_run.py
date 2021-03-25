@@ -9,7 +9,6 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.required_version('>=2.14')
 @rfm.parameterized_test(*([lang, linkage] for lang in ['cpp', 'c', 'f90']
                           for linkage in ['dynamic', 'static']))
 class NetCDFTest(rfm.RegressionTest):
@@ -48,7 +47,7 @@ class NetCDFTest(rfm.RegressionTest):
         self.num_tasks_per_node = 1
         self.sanity_patterns = sn.assert_found(r'SUCCESS', self.stdout)
         self.maintainers = ['AJ', 'SO']
-        self.tags = {'production', 'craype', 'external-resources'}
+        self.tags = {'production', 'craype', 'external-resources', 'health'}
 
     @rfm.run_before('compile')
     def setflags(self):

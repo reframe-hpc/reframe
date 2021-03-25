@@ -9,18 +9,20 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class ContainerTest(rfm.RunOnlyRegressionTest):
+    platform = parameter(['Sarus', 'Singularity'])
+
     def __init__(self):
-        self.descr = 'Run commands inside a container'
+        self.descr = f'Run commands inside a container using {self.platform}'
         self.valid_systems = ['daint:gpu']
         self.valid_prog_environs = ['builtin']
-        self.container_platform = 'Singularity'
-        self.container_platform.image = 'docker://ubuntu:18.04'
-        self.container_platform.commands = [
-            'pwd', 'ls', 'cat /etc/os-release'
-        ]
-        self.container_platform.workdir = '/workdir'
+        image_prefix = 'docker://' if self.platform == 'Singularity' else ''
+        self.container_platform = self.platform
+        self.container_platform.image = f'{image_prefix}ubuntu:18.04'
+        self.container_platform.command = (
+            "bash -c 'cat /etc/os-release | tee /rfm_workdir/release.txt'"
+        )
+        os_release_pattern = r'18.04.\d+ LTS \(Bionic Beaver\)'
         self.sanity_patterns = sn.all([
-            sn.assert_found(r'^' + self.container_platform.workdir,
-                            self.stdout),
-            sn.assert_found(r'18.04.\d+ LTS \(Bionic Beaver\)', self.stdout),
+            sn.assert_found(os_release_pattern, 'release.txt'),
+            sn.assert_found(os_release_pattern, self.stdout)
         ])

@@ -7,7 +7,6 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.required_version('>=2.14')
 @rfm.simple_test
 class NvprofCheck(rfm.RegressionTest):
     def __init__(self):
@@ -32,23 +31,18 @@ class NvprofCheck(rfm.RegressionTest):
             self.build_system.ldflags = ['-lstdc++', '-lm',
                                          '-L$EBROOTCUDA/lib64', '-lcudart']
         else:
-            self.modules = ['craype-accel-nvidia60']
+            self.modules = ['craype-accel-nvidia60', 'cdt-cuda']
 
         self.executable_opts = [self.target_executable]
         # Reminder: NVreg_RestrictProfilingToAdminUsers=0 (RFC-16) needed since
         # cuda/10.1
         self.postrun_cmds = ['cat /etc/modprobe.d/nvidia.conf']
         self.sanity_patterns = sn.all([
-            sn.assert_found('Profiling application: %s' %
-                            self.target_executable, self.stderr),
+            sn.assert_found(f'Profiling application: {self.target_executable}',
+                            self.stderr),
             sn.assert_found('[CUDA memcpy HtoD]', self.stderr),
             sn.assert_found('[CUDA memcpy DtoH]', self.stderr),
             sn.assert_found(r'\s+100(\s+\S+){3}\s+jacobi_kernel', self.stderr),
         ])
         self.maintainers = ['JG', 'SK']
         self.tags = {'production', 'craype', 'maintenance'}
-
-    @rfm.run_before('compile')
-    def dom_set_cuda_cdt(self):
-        if self.current_system.name == 'dom':
-            self.modules += ['cdt-cuda']

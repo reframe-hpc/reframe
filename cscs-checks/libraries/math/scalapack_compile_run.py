@@ -3,8 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import os
-
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -12,8 +10,6 @@ import reframe.utility.sanity as sn
 class ScaLAPACKTest(rfm.RegressionTest):
     def __init__(self, linkage):
         self.linkage = linkage
-        self.sourcesdir = os.path.join(self.current_system.resourcesdir,
-                                       'scalapack')
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:mc', 'dom:gpu']
         if self.linkage == 'dynamic':
             self.valid_systems.append('eiger:mc')
@@ -29,12 +25,11 @@ class ScaLAPACKTest(rfm.RegressionTest):
         self.tags = {'production', 'external-resources'}
 
 
-@rfm.required_version('>=2.14')
 @rfm.parameterized_test(['static'], ['dynamic'])
 class ScaLAPACKSanity(ScaLAPACKTest):
     def __init__(self, linkage):
         super().__init__(linkage)
-        self.sourcepath = 'scalapack_compile_run.f'
+        self.sourcepath = 'sample_pdsyev_call.f'
 
         def fortran_float(value):
             return float(value.replace('D', 'E'))
