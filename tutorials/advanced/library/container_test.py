@@ -1,0 +1,55 @@
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+import reframe as rfm
+import reframe.utility.sanity as sn
+
+class ContainerBase(rfm.RunOnlyRegressionTest, pin_prefix=True):
+    # This base test is platform independent.
+    platform = parameter()
+    image_prefix = variable(str, value='')
+
+    # Parametrize the test on two different versions of ubuntu.
+    dist = parameter(['18.04', '20.04'])
+    dist_name = variable(dict, value={
+        '18.04': 'Bionic Beaver',
+        '20.04': 'Focal Fossa',
+    })
+
+    @property
+    def os_release_pattern(self):
+        name = self.dist_name[self.dist]
+        return rf'{self.dist}.\d+ LTS \({name}\)'
+
+    @rfm.run_after('setup')
+    def set_description(self):
+        self.descr = f'Run commands inside a container using ubuntu {self.dist}'
+
+    @rfm.run_before('run')
+    def set_container_platform(self):
+        self.container_platform = self.platform
+        self.container_platform.image = f'{self.image_prefix}ubuntu:{self.dist}'
+        self.container_platform.command = (
+            "bash -c /rfm_workdir/get_os_release.sh"
+        )
+
+    @rfm.run_before('sanity')
+    def set_sanity_patterns(self):
+        self.sanity_patterns = sn.all([
+            sn.assert_found(os_release_pattern, 'release.txt'),
+            sn.assert_found(os_release_pattern, self.stdout)
+        ])
+
+
+@rfm.simple_test
+class ContainerTest(ContainerBase):
+    platform = parameter(['Sarus', 'Singularity'])
+    valid_systems = ['daint:gpu']
+    valid_prog_environs = ['builtin']
+
+    @rfm.run_after('setup')
+    def set_image_prefix(self):
+        if self.platform == 'Singularity':
+            self.image_prefix = 'docker://'
