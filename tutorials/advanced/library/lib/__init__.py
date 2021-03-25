@@ -6,6 +6,7 @@
 import reframe as rfm
 import reframe.utility.sanity as sn
 
+
 class ContainerBase(rfm.RunOnlyRegressionTest, pin_prefix=True):
     '''Test that asserts the ubuntu version of the image.'''
 
@@ -25,12 +26,16 @@ class ContainerBase(rfm.RunOnlyRegressionTest, pin_prefix=True):
 
     @rfm.run_after('setup')
     def set_description(self):
-        self.descr = f'Run commands inside a container using ubuntu {self.dist}'
+        self.descr = (
+            f'Run commands inside a container using ubuntu {self.dist}'
+        )
 
     @rfm.run_before('run')
     def set_container_platform(self):
         self.container_platform = self.platform
-        self.container_platform.image = f'{self.image_prefix}ubuntu:{self.dist}'
+        self.container_platform.image = (
+            f'{self.image_prefix}ubuntu:{self.dist}'
+        )
         self.container_platform.command = (
             "bash -c /rfm_workdir/get_os_release.sh"
         )

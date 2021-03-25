@@ -6,6 +6,7 @@
 import reframe as rfm
 import tutorials.advanced.library.lib as lib
 
+
 @rfm.simple_test
 class ContainerTest(lib.ContainerBase):
     platform = parameter(['Sarus', 'Singularity'])
