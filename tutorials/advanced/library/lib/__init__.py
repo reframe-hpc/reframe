@@ -7,7 +7,9 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 class ContainerBase(rfm.RunOnlyRegressionTest, pin_prefix=True):
-    # This base test is platform independent.
+    '''Test that asserts the ubuntu version of the image.'''
+
+    # Derived tests must override this parameter
     platform = parameter()
     image_prefix = variable(str, value='')
 
@@ -18,10 +20,8 @@ class ContainerBase(rfm.RunOnlyRegressionTest, pin_prefix=True):
         '20.04': 'Focal Fossa',
     })
 
-    @property
-    def os_release_pattern(self):
-        name = self.dist_name[self.dist]
-        return rf'{self.dist}.\d+ LTS \({name}\)'
+    # FIXME: This won't be needed in the future
+    sanity_patterns = sn.assert_true(True)
 
     @rfm.run_after('setup')
     def set_description(self):
@@ -35,21 +35,14 @@ class ContainerBase(rfm.RunOnlyRegressionTest, pin_prefix=True):
             "bash -c /rfm_workdir/get_os_release.sh"
         )
 
+    @property
+    def os_release_pattern(self):
+        name = self.dist_name[self.dist]
+        return rf'{self.dist}.\d+ LTS \({name}\)'
+
     @rfm.run_before('sanity')
     def set_sanity_patterns(self):
         self.sanity_patterns = sn.all([
-            sn.assert_found(os_release_pattern, 'release.txt'),
-            sn.assert_found(os_release_pattern, self.stdout)
+            sn.assert_found(self.os_release_pattern, 'release.txt'),
+            sn.assert_found(self.os_release_pattern, self.stdout)
         ])
-
-
-@rfm.simple_test
-class ContainerTest(ContainerBase):
-    platform = parameter(['Sarus', 'Singularity'])
-    valid_systems = ['daint:gpu']
-    valid_prog_environs = ['builtin']
-
-    @rfm.run_after('setup')
-    def set_image_prefix(self):
-        if self.platform == 'Singularity':
-            self.image_prefix = 'docker://'
