@@ -8,10 +8,12 @@
 #
 
 
-from reframe.core.exceptions import ReframeSyntaxError
 import reframe.core.namespaces as namespaces
 import reframe.core.parameters as parameters
 import reframe.core.variables as variables
+
+from reframe.core.exceptions import ReframeSyntaxError
+from reframe.core.hooks import Hook, HookRegistry
 
 
 class RegressionTestMeta(type):
@@ -143,27 +145,34 @@ class RegressionTestMeta(type):
         # Set up the hooks for the pipeline stages based on the _rfm_attach
         # attribute; all dependencies will be resolved first in the post-setup
         # phase if not assigned elsewhere
-        hooks = {}
+        local_hooks = {}
         fn_with_deps = []
         for v in namespace.values():
             if hasattr(v, '_rfm_attach'):
                 for phase in v._rfm_attach:
                     try:
-                        hooks[phase].append(v)
+                        local_hooks[phase].append(Hook(v))
                     except KeyError:
-                        hooks[phase] = [v]
+                        local_hooks[phase] = [Hook(v)]
 
             try:
                 if v._rfm_resolve_deps:
-                    fn_with_deps.append(v)
+                    fn_with_deps.append(Hook(v))
             except AttributeError:
                 pass
 
         if fn_with_deps:
-            hooks['post_setup'] = fn_with_deps + hooks.get('post_setup', [])
+            local_hooks['post_setup'] = (
+                fn_with_deps + local_hooks.get('post_setup', [])
+            )
 
+        hooks = HookRegistry(local_hooks)
+        for b in bases:
+            if hasattr(b, '_rfm_pipeline_hooks'):
+                hooks.update(getattr(b, '_rfm_pipeline_hooks'))
+
+        hooks.update(local_hooks)
         cls._rfm_pipeline_hooks = hooks
-        cls._rfm_disabled_hooks = set()
         cls._final_methods = {v.__name__ for v in namespace.values()
                               if hasattr(v, '_rfm_final')}
 

@@ -78,58 +78,6 @@ DEPEND_BY_ENV = 2
 DEPEND_FULLY = 3
 
 
-def _run_hooks(name=None):
-    def _deco(func):
-        def hooks(obj, kind):
-            if name is None:
-                fn_name = func.__name__
-                if fn_name == '__init__':
-                    fn_name = 'init'
-
-                hook_name = kind + fn_name
-            elif name is not None and name.startswith(kind):
-                hook_name = name
-            else:
-                # Just any name that does not exist
-                hook_name = 'xxx'
-
-            func_names = set()
-            disabled_hooks = set()
-            func_list = []
-            for cls in type(obj).mro():
-                if hasattr(cls, '_rfm_disabled_hooks'):
-                    disabled_hooks |= cls._rfm_disabled_hooks
-
-                try:
-                    funcs = cls._rfm_pipeline_hooks.get(hook_name, [])
-                    if any(fn.__name__ in func_names for fn in funcs):
-                        # hook has been overriden
-                        continue
-
-                    func_names |= {fn.__name__ for fn in funcs}
-                    func_list += funcs
-                except AttributeError:
-                    pass
-
-            # Remove the disabled hooks before returning
-            return [fn for fn in func_list
-                    if fn.__name__ not in disabled_hooks]
-
-        '''Run the hooks before and after func.'''
-        @functools.wraps(func)
-        def _fn(obj, *args, **kwargs):
-            for h in hooks(obj, 'pre_'):
-                h(obj)
-
-            func(obj, *args, **kwargs)
-            for h in hooks(obj, 'post_'):
-                h(obj)
-
-        return _fn
-
-    return _deco
-
-
 def final(fn):
     fn._rfm_final = True
 
@@ -183,24 +131,22 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     '''
 
-    @classmethod
-    def disable_hook(cls, hook_name):
+    def disable_hook(self, hook_name):
         '''Disable pipeline hook by name.
 
         :arg hook_name: The function name of the hook to be disabled.
 
         :meta private:
         '''
-        cls._rfm_disabled_hooks.add(hook_name)
+        self._disabled_hooks.add(hook_name)
 
     @classmethod
     def pipeline_hooks(cls):
         ret = {}
-        for c in cls.mro():
-            if hasattr(c, '_rfm_pipeline_hooks'):
-                for kind, hook in c._rfm_pipeline_hooks.items():
-                    ret.setdefault(kind, [])
-                    ret[kind] += hook
+        for phase, hooks in cls._rfm_pipeline_hooks.items():
+            ret[phase] = []
+            for h in hooks:
+                ret[phase].append(h.fn)
 
         return ret
 
@@ -803,7 +749,13 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                         os.path.dirname(inspect.getfile(cls))
                     )
 
-        obj._rfm_init(name, prefix)
+        # Apply the hooks only once (not when deep-copying)
+        if not hasattr(cls, '_rfm_first_init'):
+            cls._rfm_pipeline_hooks.apply(obj)
+            cls._rfm_first_init = True
+
+        # Initialize the test
+        obj.__rfm_init__(name, prefix)
         return obj
 
     def __init__(self):
@@ -828,7 +780,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 os.path.dirname(inspect.getfile(cls))
             )
 
-    def _rfm_init(self, name=None, prefix=None):
+    def __rfm_init__(self, name=None, prefix=None):
         if name is not None:
             self.name = name
 
@@ -887,7 +839,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             # Just an empty environment
             self._cdt_environ = env.Environment('__rfm_cdt_environ')
 
+        # Disabled hooks
+        self._disabled_hooks = set()
+
     # Export read-only views to interesting fields
+
     @property
     def current_environ(self):
         '''The programming environment that the regression test is currently
@@ -1116,7 +1072,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     def _setup_perf_logging(self):
         self._perf_logger = logging.getperflogger(self)
 
-    @_run_hooks()
     @final
     def setup(self, partition, environ, **job_opts):
         '''The setup phase of the regression test pipeline.
@@ -1166,7 +1121,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self.logger.debug(f'Cloning URL {url} into stage directory')
         osext.git_clone(self.sourcesdir, self._stagedir)
 
-    @_run_hooks('pre_compile')
     @final
     def compile(self):
         '''The compilation phase of the regression test pipeline.
@@ -1273,7 +1227,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
             self._build_job.submit()
 
-    @_run_hooks('post_compile')
     @final
     def compile_wait(self):
         '''Wait for compilation phase to finish.
@@ -1303,7 +1256,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         self.build_system.post_build(self._build_job)
 
-    @_run_hooks('pre_run')
     @final
     def run(self):
         '''The run phase of the regression test pipeline.
@@ -1454,7 +1406,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                                  'please use run_complete() instead')
         return self.run_complete()
 
-    @_run_hooks('post_run')
     @final
     def run_wait(self):
         '''Wait for the run phase of this test to finish.
@@ -1485,12 +1436,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                                  'please use run_wait() instead')
         self.run_wait()
 
-    @_run_hooks()
     @final
     def sanity(self):
         self.check_sanity()
 
-    @_run_hooks()
     @final
     def performance(self):
         try:
@@ -1658,7 +1607,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 else:
                     shutil.copy2(f, self.outputdir)
 
-    @_run_hooks()
     @final
     def cleanup(self, remove_files=False):
         '''The cleanup phase of the regression test pipeline.
@@ -1892,7 +1840,6 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
     module.
     '''
 
-    @_run_hooks()
     def setup(self, partition, environ, **job_opts):
         '''The setup stage of the regression test pipeline.
 
@@ -1918,7 +1865,6 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
         This is a no-op for this type of test.
         '''
 
-    @_run_hooks('pre_run')
     def run(self):
         '''The run phase of the regression test pipeline.
 
@@ -1948,7 +1894,6 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
     module.
     '''
 
-    @_run_hooks()
     def setup(self, partition, environ, **job_opts):
         '''The setup stage of the regression test pipeline.
 
