@@ -783,9 +783,39 @@ class EasyBuild(BuildSystem):
 
 
 class Spack(BuildSystem):
+    '''A build system for building test code using `Spack
+    <https://spack.io/>`__.
+
+    ReFrame will use Spack to build and install the code in the test's
+    stage directory.
+
+    .. versionadded:: 3.6.0
+
+    '''
+
+    #: The list of packages and specs to build and install.
+    #: This field is required.
+    #:
+    #: :type: :class:`List[str]`
+    #: :default: ``[]``
     packages = fields.TypedField(typ.List[str])
-    environment = fields.TypedField(str, type(None))
+
+    #: List of upstreams Spack repositories to include when building from
+    #: a list of packages and specs.
+    #: This is ignored when passing an environment.
+    #:
+    #: :type: :class:`List[str]`
+    #: :default: ``[]``
     upstreams = fields.TypedField(typ.List[str])
+
+    #: Spack environment.
+    #: ReFrame activates this environment to build and install the specified
+    #: packages.
+    #: This field is required.
+    #:
+    #: :type: :class:`str` or :class:`None`
+    #: :default: :class:`None`
+    environment = fields.TypedField(str, type(None))
 
     def __init__(self):
         super().__init__()
@@ -795,17 +825,20 @@ class Spack(BuildSystem):
         self._prefix_save = None
 
     def _prepare_scope(self):
-        os.mkdir('rfm_scope')
+        self._scope_dir = 'rfm_spack_scope'
+        os.mkdir(self._scope_dir)
         scope_config = {
             'config': {
                 'install_tree': 'spack/opt/spack',
                 'module_roots': {
                     'tcl': 'spack/share/spack/modules',
                     'lmod': 'spack/share/spack/lmod'
-                }
+                },
+                'source_cache': 'spack/var/cache/source',
+                'misc_cache': 'spack/var/cache/misc'
             }
         }
-        with open('rfm_scope/config.yaml', 'w') as fp:
+        with open(f'{self._scope_dir}/config.yaml', 'w') as fp:
             yaml.dump(scope_config, fp, default_flow_style=False)
 
         scope_upstreams = {'upstreams': {}}
@@ -814,12 +847,12 @@ class Spack(BuildSystem):
                 f'spack-instance-{i}': {'install_tree': upstream}
             })
 
-        with open('rfm_scope/upstreams.yaml', 'w') as fp:
+        with open(f'{self._scope_dir}/upstreams.yaml', 'w') as fp:
             yaml.dump(scope_upstreams, fp, default_flow_style=False)
 
     def _emit_build_commands_pkgs(self, environ):
         self._prepare_scope()
-        return [f'spack -C rfm_scope install {pkg}'
+        return [f'spack -C {self._scope_dir} install {pkg}'
                 for pkg in self.packages]
 
     def _emit_build_commands_env(self, environ):
@@ -839,30 +872,17 @@ class Spack(BuildSystem):
         with open(os.path.join(self._prefix_save, buildjob.stdout)) as fp:
             out = fp.read()
 
-        matches = re.findall(r'\[\+\] \S+/spack/opt/spack/(\S+)/\S+/(\S+)',
+        matches = re.findall(r'\[\+\] \S+/spack/opt/spack/\S+/(\S+)',
                              out)
-
-        self._spack_modules = [{'name': os.path.basename(mod),
-                                'collection': False,
-                                'path': None}
-                               for _, mod in matches]
-
-        spack_arch = matches[0][0]
-        modulesdir = os.path.join(self._prefix_save, 'spack', 'share',
-                                  'spack', 'modules', spack_arch)
 
         self._modules = [{'name': os.path.basename(mod),
                           'collection': False,
-                          'path': modulesdir}
-                         for mod in glob.glob(f'{modulesdir}/*')]
+                          'path': None}
+                         for mod in matches]
 
     @property
     def generated_modules(self):
         return self._modules
-
-    @property
-    def generated_spack_modules(self):
-        return self._spack_modules
 
 
 class BuildSystemField(fields.TypedField):
