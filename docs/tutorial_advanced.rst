@@ -805,11 +805,13 @@ Also, for illustrative purposes, we parametrize this library test on a few diffe
 Thus, removing all the system and configuration specific variables, and moving as many assignments as possible into the class body, the system agnostic library test looks as follows:
 
 .. code-block:: console
+
    cat tutorials/advanced/library/lib/__init__.py
+
 
 .. literalinclude:: ../tutorials/advanced/library/lib/__init__.py
    :lines: 6-
-   :emphasize-lines: 7-16
+   :emphasize-lines: 8-17
 
 Note that the class :class:`ContainerBase` is not decorated since it does not specify the required variables ``valid_systems`` and ``valid_prog_environs``, and it declares the ``platform`` parameter without any defined values assigned.
 Hence, the user can simply derive from this test and specialize it to use the desired container platforms.
@@ -823,7 +825,7 @@ This is the case with the :func:`set_container_platform` hook, which depends on 
 Hence, the derived test **must** define all the required parameters and variables; otherwise ReFrame will notice that the test is not well defined and it will raise an error accordingly.
 
 Before moving onwards to the derived test, note that the :class:`ContainerBase` class takes the additional argument ``pin_prefix=True``, which locks the prefix of all derived tests to this base test.
-This will allow the retrieval of the sources located at in the library by any derived test, regardless of what their containing directory is.
+This will allow the retrieval of the sources located in the library by any derived test, regardless of what their containing directory is.
 
 .. code-block:: console
 
