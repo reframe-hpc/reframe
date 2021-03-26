@@ -238,11 +238,11 @@ def run_after(stage):
 
     This is analogous to the :py:attr:`~reframe.core.decorators.run_before`,
     except that ``'init'`` can also be used as the ``stage`` argument. In this
-    case, the hook will execute right after the test is initialized (i.e. after the 
-    :func:`__init__` method is called), before entering the test's pipeline.
-    In essence, a post-init hook is equivalent to defining additional 
-    :func:`__init__` functions in the test. All the other properties of
-    pipeline hooks apply equally here. The following code
+    case, the hook will execute right after the test is initialized (i.e.
+    after the :func:`__init__` method is called), before entering the test's
+    pipeline. In essence, a post-init hook is equivalent to defining
+    additional :func:`__init__` functions in the test. All the other
+    properties of pipeline hooks apply equally here. The following code
 
     .. code-block:: python
 

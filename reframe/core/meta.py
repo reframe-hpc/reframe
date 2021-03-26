@@ -8,6 +8,8 @@
 #
 
 
+import contextlib
+
 import reframe.core.namespaces as namespaces
 import reframe.core.parameters as parameters
 import reframe.core.variables as variables
@@ -155,11 +157,9 @@ class RegressionTestMeta(type):
                     except KeyError:
                         local_hooks[phase] = [Hook(v)]
 
-            try:
+            with contextlib.suppress(AttributeError):
                 if v._rfm_resolve_deps:
                     fn_with_deps.append(Hook(v))
-            except AttributeError:
-                pass
 
         if fn_with_deps:
             local_hooks['post_setup'] = (

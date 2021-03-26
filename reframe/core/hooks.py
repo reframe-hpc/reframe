@@ -11,22 +11,21 @@ import reframe.utility as util
 def _attach_hooks(hooks, name=None):
     def _deco(func):
         def select_hooks(obj, kind):
-            if name is None:
+            phase = name
+            if phase is None:
                 fn_name = func.__name__
                 if fn_name == '__init__':
                     fn_name = 'init'
 
-                hook_kind = kind + fn_name
-            elif name is not None and name.startswith(kind):
-                hook_kind = name
-            else:
-                # Just any name that does not exist
-                hook_kind = 'xxx'
+                phase = kind + fn_name
+            elif phase is not None and not phase.startswith(kind):
+                # Just any phase that does not exist
+                phase = 'xxx'
 
-            if hook_kind not in hooks:
+            if phase not in hooks:
                 return []
 
-            return [h for h in hooks[hook_kind]
+            return [h for h in hooks[phase]
                     if h.name not in obj._disabled_hooks]
 
         @functools.wraps(func)
