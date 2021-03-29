@@ -37,4 +37,4 @@ class JupyterHubServerCheck(rfm.RunOnlyRegressionTest):
         self.sanity_patterns = sn.assert_found(r'{"version": "1.3.0"}',
                                                self.stdout)
         self.tags = {'health'}
-        self.maintainers = ['CB']
+        self.maintainers = ['CB', 'TR']
