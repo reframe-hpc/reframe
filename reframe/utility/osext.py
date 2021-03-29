@@ -77,7 +77,6 @@ def run_command(cmd, check=False, timeout=None, shell=False, log=True):
 def run_command_async(cmd,
                       stdout=subprocess.PIPE,
                       stderr=subprocess.PIPE,
-                      stdin=subprocess.PIPE,
                       shell=False,
                       log=True,
                       **popen_args):
@@ -113,7 +112,7 @@ def run_command_async(cmd,
     return subprocess.Popen(args=cmd,
                             stdout=stdout,
                             stderr=stderr,
-                            stdin=stdin,
+                            stdin=subprocess.DEVNULL,
                             universal_newlines=True,
                             shell=shell,
                             **popen_args)
