@@ -24,6 +24,7 @@ import shutil
 
 import reframe.core.environments as env
 import reframe.core.fields as fields
+import reframe.core.hooks as hooks
 import reframe.core.logging as logging
 import reframe.core.runtime as rt
 import reframe.utility as util
@@ -717,7 +718,15 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: :type: boolean : :default: :class:`True`
     build_locally = variable(bool, value=True)
 
-    def __new__(cls, *args, _rfm_use_params=False, **kwargs):
+    def __reduce_ex__(self, proto):
+        # We should not reattach the hooks when we are deep copying the test
+        new = functools.partial(
+            RegressionTest.__new__, _rfm_attach_hooks=False
+        )
+        return new, (type(self),), self.__dict__
+
+    def __new__(cls, *args,
+                _rfm_use_params=False, _rfm_attach_hooks=True, **kwargs):
         obj = super().__new__(cls)
 
         # Insert the var & param spaces
@@ -749,10 +758,16 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                         os.path.dirname(inspect.getfile(cls))
                     )
 
-        # Apply the hooks only once (not when deep-copying)
-        if not hasattr(cls, '_rfm_first_init'):
-            cls._rfm_pipeline_hooks.apply(obj)
-            cls._rfm_first_init = True
+        if _rfm_attach_hooks:
+            cls._add_hooks('__init__')
+            cls._add_hooks('setup')
+            cls._add_hooks('compile', 'pre_compile')
+            cls._add_hooks('compile_wait', 'post_compile')
+            cls._add_hooks('run', 'pre_run')
+            cls._add_hooks('run_wait', 'post_run')
+            cls._add_hooks('sanity')
+            cls._add_hooks('performance')
+            cls._add_hooks('cleanup')
 
         # Initialize the test
         obj.__rfm_init__(name, prefix)
@@ -767,6 +782,32 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                                    for key in self._rfm_param_space.params])
         else:
             return ''
+
+    @classmethod
+    def _add_hooks(cls, fn_name, kind=None):
+        if fn_name in cls.__dict__:
+            # If a parent test has been instantiated, this function has been
+            # replaced, so we need to remove any hooks from it, so that the
+            # hooks are not applied twice for the derived class
+            cls._remove_hooks(fn_name)
+
+        pipeline_hooks = cls._rfm_pipeline_hooks
+        fn = getattr(cls, fn_name)
+        with contextlib.suppress(AttributeError):
+            fn = fn.__rfm_pipeline_fn__
+
+        new_fn = hooks.attach_hooks(pipeline_hooks, kind)(fn)
+        setattr(cls, fn_name, new_fn)
+
+    @classmethod
+    def _remove_hooks(cls, fn_name):
+        for c in cls.mro():
+            if c == cls or fn_name not in c.__dict__:
+                continue
+
+            fn = getattr(c, fn_name)
+            if hasattr(fn, '__rfm_pipeline_fn__'):
+                setattr(c, fn_name, fn.__rfm_pipeline_fn__)
 
     @classmethod
     def __init_subclass__(cls, *, special=False, pin_prefix=False, **kwargs):

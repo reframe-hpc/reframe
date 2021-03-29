@@ -258,7 +258,7 @@ def run_after(stage):
        def __init__(self):
            self.x = 1
 
-    .. versionchanged:: 3.5.1
+    .. versionchanged:: 3.5.2
        Add the ability to define post-init hooks in tests.
 
     '''

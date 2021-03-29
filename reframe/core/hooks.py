@@ -3,12 +3,22 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import contextlib
 import functools
 
 import reframe.utility as util
 
 
-def _attach_hooks(hooks, name=None):
+def attach_hooks(hooks, name=None):
+    '''Attach pipeline hooks to phase ``name''.
+
+    This function returns a decorator for pipeline functions that will run the
+    registered hooks before and after the function.
+
+    If ``name'' is :class:`None`, both pre- and post-hooks will run, otherwise
+    only the hooks of the phase ``name'' will be executed.
+    '''
+
     def _deco(func):
         def select_hooks(obj, kind):
             phase = name
@@ -26,7 +36,9 @@ def _attach_hooks(hooks, name=None):
                 return []
 
             return [h for h in hooks[phase]
-                    if h.name not in obj._disabled_hooks]
+                    if h.__name__ not in obj._disabled_hooks]
+
+        func.__rfm_pipeline_fn__ = func
 
         @functools.wraps(func)
         def _fn(obj, *args, **kwargs):
@@ -43,25 +55,30 @@ def _attach_hooks(hooks, name=None):
 
 
 class Hook:
+    '''A pipeline hook.
+
+    This is essentially a function wrapper that hashes the functions by name,
+    since we want hooks to be overriden by name in subclasses.
+    '''
+
     def __init__(self, fn):
         self.__fn = fn
+
+    def __getattr__(self, attr):
+        return getattr(self.__fn, attr)
 
     @property
     def fn(self):
         return self.__fn
 
-    @property
-    def name(self):
-        return self.__fn.__name__
-
     def __hash__(self):
-        return hash(self.name)
+        return hash(self.__name__)
 
     def __eq__(self, other):
         if not isinstance(other, type(self)):
             return NotImplemented
 
-        return self.name == other.name
+        return self.__name__ == other.__name__
 
     def __call__(self, *args, **kwargs):
         return self.__fn(*args, **kwargs)
@@ -72,6 +89,36 @@ class Hook:
 
 class HookRegistry:
     '''Global hook registry.'''
+
+    @classmethod
+    def create(cls, namespace):
+        '''Create a hook registry from a class namespace.
+
+        Hook functions have an `_rfm_attach` attribute that specify the stages
+        of the pipeline where they must be attached. Dependencies will be
+        resolved first in the post-setup phase if not assigned elsewhere.
+        '''
+
+        local_hooks = {}
+        fn_with_deps = []
+        for v in namespace.values():
+            if hasattr(v, '_rfm_attach'):
+                for phase in v._rfm_attach:
+                    try:
+                        local_hooks[phase].append(Hook(v))
+                    except KeyError:
+                        local_hooks[phase] = [Hook(v)]
+
+            with contextlib.suppress(AttributeError):
+                if v._rfm_resolve_deps:
+                    fn_with_deps.append(Hook(v))
+
+        if fn_with_deps:
+            local_hooks['post_setup'] = (
+                fn_with_deps + local_hooks.get('post_setup', [])
+            )
+
+        return cls(local_hooks)
 
     def __init__(self, hooks=None):
         self.__hooks = {}
@@ -84,6 +131,9 @@ class HookRegistry:
     def __setitem__(self, key, name):
         self.__hooks[key] = name
 
+    def __contains__(self, key):
+        return key in self.__hooks
+
     def __getattr__(self, name):
         return getattr(self.__hooks, name)
 
@@ -93,16 +143,5 @@ class HookRegistry:
             for h in hks:
                 self.__hooks[phase].add(h)
 
-    def apply(self, obj):
-        cls = type(obj)
-        cls.__init__ = _attach_hooks(self.__hooks)(cls.__init__)
-        cls.setup = _attach_hooks(self.__hooks)(cls.setup)
-        cls.compile = _attach_hooks(self.__hooks, 'pre_compile')(cls.compile)
-        cls.compile_wait = _attach_hooks(self.__hooks, 'post_compile')(
-            cls.compile_wait
-        )
-        cls.run = _attach_hooks(self.__hooks, 'pre_run')(cls.run)
-        cls.run_wait = _attach_hooks(self.__hooks, 'post_run')(cls.run_wait)
-        cls.sanity = _attach_hooks(self.__hooks)(cls.sanity)
-        cls.performance = _attach_hooks(self.__hooks)(cls.performance)
-        cls.cleanup = _attach_hooks(self.__hooks)(cls.cleanup)
+    def __repr__(self):
+        return repr(self.__hooks)

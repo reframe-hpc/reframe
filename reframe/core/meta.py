@@ -147,32 +147,12 @@ class RegressionTestMeta(type):
         # Set up the hooks for the pipeline stages based on the _rfm_attach
         # attribute; all dependencies will be resolved first in the post-setup
         # phase if not assigned elsewhere
-        local_hooks = {}
-        fn_with_deps = []
-        for v in namespace.values():
-            if hasattr(v, '_rfm_attach'):
-                for phase in v._rfm_attach:
-                    try:
-                        local_hooks[phase].append(Hook(v))
-                    except KeyError:
-                        local_hooks[phase] = [Hook(v)]
-
-            with contextlib.suppress(AttributeError):
-                if v._rfm_resolve_deps:
-                    fn_with_deps.append(Hook(v))
-
-        if fn_with_deps:
-            local_hooks['post_setup'] = (
-                fn_with_deps + local_hooks.get('post_setup', [])
-            )
-
-        hooks = HookRegistry(local_hooks)
+        hooks = HookRegistry.create(namespace)
         for b in bases:
             if hasattr(b, '_rfm_pipeline_hooks'):
                 hooks.update(getattr(b, '_rfm_pipeline_hooks'))
 
-        hooks.update(local_hooks)
-        cls._rfm_pipeline_hooks = hooks
+        cls._rfm_pipeline_hooks = hooks  # HookRegistry(local_hooks)
         cls._final_methods = {v.__name__ for v in namespace.values()
                               if hasattr(v, '_rfm_final')}
 

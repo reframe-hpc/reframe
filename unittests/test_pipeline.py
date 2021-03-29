@@ -689,6 +689,35 @@ def test_inherited_hooks(HelloTest, local_exec_ctx):
     }
 
 
+def test_inherited_hooks_from_instantiated_tests(HelloTest, local_exec_ctx):
+    @fixtures.custom_prefix('unittests/resources/checks')
+    class T0(HelloTest):
+        def __init__(self):
+            super().__init__()
+            self.name = type(self).__name__
+            self.executable = os.path.join('.', self.name)
+            self.var = 0
+
+        @rfm.run_after('setup')
+        def x(self):
+            self.var += 1
+
+    class T1(T0):
+        @rfm.run_before('run')
+        def y(self):
+            self.foo = 1
+
+    t0 = T0()
+    t1 = T1()
+    print('==> running t0')
+    _run(t0, *local_exec_ctx)
+    print('==> running t1')
+    _run(t1, *local_exec_ctx)
+    assert t0.var == 1
+    assert t1.var == 1
+    assert t1.foo == 1
+
+
 def test_overriden_hooks(HelloTest, local_exec_ctx):
     @fixtures.custom_prefix('unittests/resources/checks')
     class BaseTest(HelloTest):
