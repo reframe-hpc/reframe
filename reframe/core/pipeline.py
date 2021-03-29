@@ -225,7 +225,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #:     .. versionchanged:: 3.6
     #:        Default value changed from ``None`` to ``required``.
-    #:
     valid_prog_environs = variable(typ.List[str])
 
     #: List of systems supported by this test.
@@ -241,7 +240,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #:     .. versionchanged:: 3.6
     #:        Default value changed from ``None`` to ``required``.
-    #:
     valid_systems = variable(typ.List[str])
 
     #: A detailed description of the test.
@@ -592,17 +590,16 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: Refer to the :doc:`ReFrame Tutorials </tutorials>` for concrete usage
     #: examples.
     #:
-    #: If set to :class:`None`, a sanity error will be raised during sanity
-    #: checking.
+    #: If not set a sanity error will be raised during sanity checking.
     #:
     #: :type: A deferrable expression (i.e., the result of a :doc:`sanity
-    #:     function </sanity_functions_reference>`) or :class:`None`
-    #: :default: :class:`None`
+    #:     function </sanity_functions_reference>`)
+    #: :default: :class:`required`
     #:
     #: .. note::
     #:    .. versionchanged:: 2.9
     #:       The default behaviour has changed and it is now considered a
-    #:       sanity failure if this attribute is set to :class:`None`.
+    #:       sanity failure if this attribute is set to :class:`required`.
     #:
     #:       If a test doesn't care about its output, this must be stated
     #:       explicitly as follows:
@@ -610,6 +607,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:       ::
     #:
     #:           self.sanity_patterns = sn.assert_true(1)
+    #:
+    #:    .. versionchanged:: 3.6
+    #:       The default value has changed from ``None`` to ``required``.
     sanity_patterns = variable(_DeferredExpression)
 
     #: Patterns for verifying the performance of this test.
