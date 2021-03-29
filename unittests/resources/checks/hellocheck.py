@@ -32,3 +32,14 @@ class CompileOnlyHelloTest(rfm.CompileOnlyRegressionTest):
         self.valid_prog_environs = ['*']
         self.sourcepath = 'hello.c'
         self.sanity_patterns = sn.assert_not_found(r'(?i)error', self.stdout)
+
+
+@rfm.simple_test
+class SkipTest(rfm.RunOnlyRegressionTest):
+    '''Test to be always skipped'''
+    valid_systems = ['*']
+    valid_prog_environs = ['*']
+    sanity_patterns = sn.assert_true(1)
+
+    def __init__(self):
+        self.skip_if(True, 'unsupported')
