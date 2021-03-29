@@ -826,7 +826,7 @@ site_configuration = {
         {
             'name': 'PrgEnv-pgi-nompi-nocuda',
             'target_systems': [
-                'arolla', 'tsa'
+                'arolla',
             ],
             'modules': [
                 'PrgEnv-pgi/19.9-nocuda'
@@ -836,9 +836,21 @@ site_configuration = {
             'ftn': 'pgf90'
         },
         {
+            'name': 'PrgEnv-pgi-nompi-nocuda',
+            'target_systems': [
+                'tsa',
+            ],
+            'modules': [
+                'PrgEnv-pgi/20.4-nocuda'
+            ],
+            'cc': 'pgcc',
+            'cxx': 'pgc++',
+            'ftn': 'pgf90'
+        },
+        {
             'name': 'PrgEnv-pgi-nompi',
             'target_systems': [
-                'arolla', 'tsa'
+                'arolla',
             ],
             'modules': [
                 'PrgEnv-pgi/19.9'
@@ -848,9 +860,21 @@ site_configuration = {
             'ftn': 'pgf90'
         },
         {
+            'name': 'PrgEnv-pgi-nompi',
+            'target_systems': [
+                'tsa',
+            ],
+            'modules': [
+                'PrgEnv-pgi/20.4'
+            ],
+            'cc': 'pgcc',
+            'cxx': 'pgc++',
+            'ftn': 'pgf90'
+        },
+        {
             'name': 'PrgEnv-pgi',
             'target_systems': [
-                'arolla', 'tsa'
+                'arolla',
             ],
             'modules': [
                 'PrgEnv-pgi/19.9'
@@ -860,12 +884,36 @@ site_configuration = {
             'ftn': 'mpifort'
         },
         {
+            'name': 'PrgEnv-pgi',
+            'target_systems': [
+                'tsa',
+            ],
+            'modules': [
+                'PrgEnv-pgi/20.4'
+            ],
+            'cc': 'mpicc',
+            'cxx': 'mpicxx',
+            'ftn': 'mpifort'
+        },
+        {
             'name': 'PrgEnv-pgi-nocuda',
             'target_systems': [
-                'arolla', 'tsa'
+                'arolla',
             ],
             'modules': [
                 'PrgEnv-pgi/19.9-nocuda'
+            ],
+            'cc': 'mpicc',
+            'cxx': 'mpicxx',
+            'ftn': 'mpifort'
+        },
+        {
+            'name': 'PrgEnv-pgi-nocuda',
+            'target_systems': [
+                'tsa',
+            ],
+            'modules': [
+                'PrgEnv-pgi/20.4-nocuda'
             ],
             'cc': 'mpicc',
             'cxx': 'mpicxx',
