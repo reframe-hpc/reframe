@@ -29,13 +29,6 @@ def test_command_success():
     assert completed.stdout == 'foobar\n'
 
 
-def test_command_stdin_isatty():
-    completed = osext.run_command(
-        "python -c 'import sys; print(sys.stdin.isatty())'")
-    assert completed.returncode == 0
-    assert completed.stdout == 'False\n'
-
-
 def test_command_success_cmd_seq():
     completed = osext.run_command(['echo', 'foobar'])
     assert completed.returncode == 0
