@@ -211,7 +211,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: by this test.
     #:
     #: :type: :class:`List[str]`
-    #: :default: ``None``
+    #: :default: ``required``
     #:
     #: .. note::
     #:     .. versionchanged:: 2.12
@@ -223,7 +223,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:     .. versionchanged:: 3.3
     #:        Default value changed from ``[]`` to ``None``.
     #:
-    valid_prog_environs = variable(typ.List[str], type(None), value=None)
+    #:     .. versionchanged:: 3.6
+    #:        Default value changed from ``None`` to ``required``.
+    #:
+    valid_prog_environs = variable(typ.List[str])
 
     #: List of systems supported by this test.
     #: The general syntax for systems is ``<sysname>[:<partname>]``.
@@ -236,7 +239,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:     .. versionchanged:: 3.3
     #:        Default value changed from ``[]`` to ``None``.
     #:
-    valid_systems = variable(typ.List[str], type(None), value=None)
+    #:     .. versionchanged:: 3.6
+    #:        Default value changed from ``None`` to ``required``.
+    #:
+    valid_systems = variable(typ.List[str])
 
     #: A detailed description of the test.
     #:
@@ -604,7 +610,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:       ::
     #:
     #:           self.sanity_patterns = sn.assert_true(1)
-    sanity_patterns = variable(_DeferredExpression, type(None), value=None)
+    sanity_patterns = variable(_DeferredExpression)
 
     #: Patterns for verifying the performance of this test.
     #:
@@ -1520,11 +1526,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 sn.assert_eq(self.job.exitcode, 0,
                              msg='job exited with exit code {0}')
             ]
-            if self.sanity_patterns is not None:
+            if hasattr(self, 'sanity_patterns'):
                 sanity_patterns.append(self.sanity_patterns)
 
             self.sanity_patterns = sn.all(sanity_patterns)
-        elif self.sanity_patterns is None:
+        elif not hasattr(self, 'sanity_patterns'):
             raise SanityError('sanity_patterns not set')
 
         with osext.change_dir(self._stagedir):
