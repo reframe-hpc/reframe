@@ -248,7 +248,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`str`
     #: :default: ``self.name``
-    descr = variable(str, type(None), value=None)
+    descr = variable(str)
 
     #: The path to the source file or source directory of the test.
     #:
@@ -343,7 +343,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`str`
     #: :default: ``os.path.join('.', self.name)``
-    executable = variable(str, type(None), value=None)
+    executable = variable(str)
 
     #: List of options to be passed to the :attr:`executable`.
     #:
@@ -835,14 +835,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             self.name = name
 
         # Pass if descr is a required variable.
-        with contextlib.suppress(AttributeError):
-            if self.descr is None:
-                self.descr = self.name
+        if not hasattr(self, 'descr'):
+            self.descr = self.name
 
         # Pass if the executable is a required variable.
-        with contextlib.suppress(AttributeError):
-            if self.executable is None:
-                self.executable = os.path.join('.', self.name)
+        if not hasattr(self, 'executable'):
+            self.executable = os.path.join('.', self.name)
 
         self._perfvalues = {}
 
