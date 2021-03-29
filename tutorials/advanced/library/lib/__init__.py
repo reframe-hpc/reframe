@@ -21,9 +21,6 @@ class ContainerBase(rfm.RunOnlyRegressionTest, pin_prefix=True):
         '20.04': 'Focal Fossa',
     })
 
-    # FIXME: This won't be needed in the future
-    sanity_patterns = sn.assert_true(True)
-
     @rfm.run_after('setup')
     def set_description(self):
         self.descr = (
