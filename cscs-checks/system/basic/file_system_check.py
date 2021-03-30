@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 
+import getpass
 import os
 import re
 
@@ -34,7 +35,7 @@ class FileSystemCommandCheck(rfm.RunOnlyRegressionTest):
 
 # TODO: if we test only one scratch space we don't need a parameter
 @rfm.simple_test
-class FileSystemChangeDirCheck(FileSystemCommandCheck):
+class fs_check_cd_dir(FileSystemCommandCheck):
     directory = parameter(['SCRATCH'])
 
     def __init__(self):
@@ -51,7 +52,7 @@ class FileSystemChangeDirCheck(FileSystemCommandCheck):
 
 
 @rfm.simple_test
-class FileSystemLsDirCheck(FileSystemCommandCheck):
+class fs_check_ls_dir(FileSystemCommandCheck):
     directory = parameter(['SCRATCH'])
 
     def __init__(self):
@@ -70,7 +71,7 @@ class FileSystemLsDirCheck(FileSystemCommandCheck):
 
 # TODO: PROJECT is empty
 @rfm.simple_test
-class FileSystemDuDirCheck(FileSystemCommandCheck):
+class fs_check_du_dir(FileSystemCommandCheck):
     directory = parameter(['PROJECT',
                            'HOME',
                            'SCRATCH'])
@@ -112,7 +113,7 @@ class FileSystemDuDirCheck(FileSystemCommandCheck):
 
 
 @rfm.simple_test
-class FileSystemTouchFileCheck(FileSystemCommandCheck):
+class fs_check_touch_file(FileSystemCommandCheck):
     directory = parameter(['SCRATCH'])
 
     def __init__(self):
@@ -128,7 +129,7 @@ class FileSystemTouchFileCheck(FileSystemCommandCheck):
 
 
 @rfm.simple_test
-class FileSystemCatCheck(FileSystemCommandCheck):
+class fs_check_cat_file(FileSystemCommandCheck):
     file = parameter(['/apps/daint/system/etc/BatchDisabled',
                       '/etc/opt/slurm/cgroup.conf',
                       '/etc/opt/slurm/plugstack.conf',
@@ -155,20 +156,18 @@ class FileSystemCatCheck(FileSystemCommandCheck):
 
 
 # TODO: this test is almost identical to the cat one
-# TODO: /project/csstaff/jenscscs is temporary to speedup the test
 @rfm.simple_test
-class FileSystemFindCheck(FileSystemCommandCheck):
+class fs_check_find_dir(FileSystemCommandCheck):
     directory = parameter([
-        '/project/csstaff/jenscscs',
+        '/project/csstaff',
         '/users/jenscscs',
         '/apps/daint/UES/jenscscs/regression/production/reports'])
 
     # TODO: find correct test name
     def __init__(self):
         super().__init__()
-        # TODO: enable this to hide test to non jenscscs users
-#        if getpass.getuser() != jenscscs:
-#            self.valid_systems = []
+        if getpass.getuser() != 'jenscscs':
+            self.valid_systems = []
         self.reference = {
             'daint:login': {
                 # TODO: real times have large variances,
