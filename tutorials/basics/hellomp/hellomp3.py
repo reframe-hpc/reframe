@@ -26,4 +26,3 @@ class HelloThreadedExtended2Test(rfm.RegressionTest):
         environ = self.current_environ.name
         if environ in {'clang', 'gnu'}:
             self.build_system.cxxflags += ['-pthread']
-
