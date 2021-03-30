@@ -243,7 +243,6 @@ class TestWithGenerator(rfm.RunOnlyRegressionTest):
     def __init__(self):
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
-        self.sanity_patterns = sn.assert_true(1)
 
         def foo():
             yield True
@@ -258,7 +257,6 @@ class TestWithFileObject(rfm.RunOnlyRegressionTest):
     def __init__(self):
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
-        self.sanity_patterns = sn.assert_true(1)
         with open(__file__) as fp:
             pass
 
