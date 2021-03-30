@@ -43,7 +43,7 @@ class MemBandwidthTest(rfm.RunOnlyRegressionTest):
         }
 
         self.maintainers = ['SK']
-        self.tags = {'benchmark', 'diagnostic'}
+        self.tags = {'benchmark', 'diagnostic', 'health'}
 
         bw_pattern = sn.extractsingle(r'MByte/s:\s*(?P<bw>\S+)',
                                       self.stdout, 'bw',  float)
