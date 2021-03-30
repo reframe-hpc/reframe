@@ -15,7 +15,13 @@ class HelloThreadedExtendedTest(rfm.RegressionTest):
         self.sourcepath = 'hello_threads.cpp'
         self.executable_opts = ['16']
         self.build_system = 'SingleSource'
-        self.build_system.cxxflags = ['-std=c++11', '-pthread', '-Wall']
+        self.build_system.cxxflags = ['-std=c++11', '-Wall']
         num_messages = sn.len(sn.findall(r'\[\s?\d+\] Hello, World\!',
                                          self.stdout))
         self.sanity_patterns = sn.assert_eq(num_messages, 16)
+
+    @rfm.run_before('compile')
+    def setpthreadsflag(self):
+        environ = self.current_environ.name
+        if environ in {'clang', 'gnu'}:
+            self.build_system.cxxflags += ['-pthread']
