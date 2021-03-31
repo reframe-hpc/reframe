@@ -77,7 +77,7 @@ if [ $? -eq 0 ]; then
     CMD $python -m ensurepip --root $(pwd)/external/ --default-pip
 fi
 
-# ensurepip installs pip in `external/usr/` whereas the --target option installs
+# ensurepip installs pip in `external/usr/` whereas the `--root` option installs
 # everything under `external/`. That's why we include both in the PYTHONPATH
 
 export PYTHONPATH=$(pwd)/external:$(pwd)/external/usr/lib/python$pyver/site-packages:$PYTHONPATH
