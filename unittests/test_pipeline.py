@@ -240,6 +240,23 @@ def test_run_only_sanity(local_exec_ctx):
     _run(MyTest(), *local_exec_ctx)
 
 
+def test_run_only_set_sanity_in_a_hook(local_exec_ctx):
+    @fixtures.custom_prefix('unittests/resources/checks')
+    class MyTest(rfm.RunOnlyRegressionTest):
+        executable = './hello.sh'
+        executable_opts = ['Hello, World!']
+        local = True
+        valid_prog_environs = ['*']
+        valid_systems = ['*']
+
+        @rfm.run_after('run')
+        def set_sanity(self):
+            self.sanity_patterns = sn.assert_found(
+                r'Hello, World\!', self.stdout)
+
+    _run(MyTest(), *local_exec_ctx)
+
+
 def test_run_only_no_srcdir(local_exec_ctx):
     @fixtures.custom_prefix('foo/bar/')
     class MyTest(rfm.RunOnlyRegressionTest):

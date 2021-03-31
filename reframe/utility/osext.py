@@ -112,6 +112,7 @@ def run_command_async(cmd,
     return subprocess.Popen(args=cmd,
                             stdout=stdout,
                             stderr=stderr,
+                            stdin=subprocess.DEVNULL,
                             universal_newlines=True,
                             shell=shell,
                             **popen_args)
