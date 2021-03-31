@@ -70,15 +70,16 @@ fi
 # Check if ensurepip is installed
 $python -m ensurepip --version &> /dev/null
 
+export PATH=$(pwd)/external/usr/bin:$PATH
+
 # Install pip for Python 3
 if [ $? -eq 0 ]; then
-    CMD $python -m ensurepip --root external/ --default-pip
+    CMD $python -m ensurepip --root $(pwd)/external/ --default-pip
 fi
 
-# ensurepip installs pip in `external/usr/` whereas the --target option installs
+# ensurepip installs pip in `external/usr/` whereas the `--root` option installs
 # everything under `external/`. That's why we include both in the PYTHONPATH
 
-export PATH=$(pwd)/external/usr/bin:$PATH
 export PYTHONPATH=$(pwd)/external:$(pwd)/external/usr/lib/python$pyver/site-packages:$PYTHONPATH
 
 CMD $python -m pip install --no-cache-dir -q --upgrade pip --target=external/
