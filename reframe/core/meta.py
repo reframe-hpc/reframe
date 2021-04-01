@@ -8,14 +8,12 @@
 #
 
 
-import contextlib
-
 import reframe.core.namespaces as namespaces
 import reframe.core.parameters as parameters
 import reframe.core.variables as variables
 
 from reframe.core.exceptions import ReframeSyntaxError
-from reframe.core.hooks import Hook, HookRegistry
+from reframe.core.hooks import HookRegistry
 
 
 class RegressionTestMeta(type):
