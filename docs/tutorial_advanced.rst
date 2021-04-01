@@ -801,7 +801,7 @@ So far, all the examples shown above were tight to a particular system or config
 However, the introduction of the :py:func:`~reframe.core.pipeline.RegressionTest.parameter` and :py:func:`~reframe.core.pipeline.RegressionTest.variable` ReFrame built-ins solves this problem, eliminating the need to specify any of the test variables in the :func:`__init__` method.
 Hence, these parameters and variables can be treated as simple class attributes, which allows us to leverage Python's class inheritance and write more modular tests.
 For simplicity, we illustrate this concept with the above :class:`ContainerTest` example, where the goal here is to re-write this test as a library that users can simply import from and derive their tests without having to rewrite the bulk of the test.
-Also, for illustrative purposes, we parametrize this library test on a few different images (the above example just used ``ubuntu:18.04``) and throw the container commands into a separate bash script just to create some source files.
+Also, for illustrative purposes, we parameterize this library test on a few different image tags (the above example just used ``ubuntu:18.04``) and throw the container commands into a separate bash script just to create some source files.
 Thus, removing all the system and configuration specific variables, and moving as many assignments as possible into the class body, the system agnostic library test looks as follows:
 
 .. code-block:: console
@@ -820,9 +820,9 @@ In this example, we have parametrized the base test to run with the ``ubuntu:18.
 
 On the other hand, the rest of the test depends on the values from the test parameters, and a parameter is only assigned a specific value after the class has been instantiated.
 Thus, the rest of the test is expressed as hooks, without the need to write anything in the :func:`__init__` method.
-In fact, note that writing the test in this way permits having hooks that depend on undefined variables or parameters.
+In fact, writing the test in this way permits having hooks that depend on undefined variables or parameters.
 This is the case with the :func:`set_container_platform` hook, which depends on the undefined parameter ``platform``.
-Hence, the derived test **must** define all the required parameters and variables; otherwise ReFrame will notice that the test is not well defined and it will raise an error accordingly.
+Hence, the derived test **must** define all the required parameters and variables; otherwise ReFrame will notice that the test is not well defined and will raise an error accordingly.
 
 Before moving onwards to the derived test, note that the :class:`ContainerBase` class takes the additional argument ``pin_prefix=True``, which locks the prefix of all derived tests to this base test.
 This will allow the retrieval of the sources located in the library by any derived test, regardless of what their containing directory is.
@@ -835,7 +835,7 @@ This will allow the retrieval of the sources located in the library by any deriv
 .. literalinclude:: ../tutorials/advanced/library/lib/src/get_os_release.sh
    :lines: 1-
 
-Now from the user's perspective, the only thing to do is importing the above base test and specify the required variables and parameters.
+Now from the user's perspective, the only thing to do is to import the above base test and specify the required variables and parameters.
 For consistency with the above example, we set the ``platform`` parameter to use Sarus and Singularity, and we configure the test to run on Piz Daint with the built-in programming environment.
 Hence, the above :class:`ContainerTest` is now reduced to the following:
 
