@@ -21,7 +21,7 @@ class HelloThreadedExtendedTest(rfm.RegressionTest):
         self.sanity_patterns = sn.assert_eq(num_messages, 16)
 
     @rfm.run_before('compile')
-    def setpthreadsflag(self):
+    def set_threading_flags(self):
         environ = self.current_environ.name
         if environ in {'clang', 'gnu'}:
             self.build_system.cxxflags += ['-pthread']

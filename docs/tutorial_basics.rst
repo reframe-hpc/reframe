@@ -436,7 +436,7 @@ Since the above option might not be valid for other compilers, we use pipeline h
 .. code-block:: python
 
    @rfm.run_before('compile')
-   def setpthreadsflag(self):
+   def set_threading_flags(self):
        environ = self.current_environ.name
        if environ in {'clang', 'gnu'}:
            self.build_system.cxxflags += ['-pthread']
@@ -444,15 +444,14 @@ Since the above option might not be valid for other compilers, we use pipeline h
 
 .. note::
 
-   The pipeline hooks are covered in more detail in a following tutorial section.
-   For a detailed coverage of the regression test pipeline, please refer to :doc:`pipeline`.
+   The pipeline hooks, as well as the regression test pipeline itself, are covered in more detail later on in the tutorial.
 
 
 ReFrame delegates the compilation of a test to a *build system*, which is an abstraction of the steps needed to compile the test.
 Build systems take also care of interactions with the programming environment if necessary.
 Compilation flags are a property of the build system.
 If not explicitly specified, ReFrame will try to pick the correct build system (e.g., CMake, Autotools etc.) by inspecting the test resources, but in cases as the one presented here where we need to set the compilation flags, we need to specify a build system explicitly.
-In this example, we instruct ReFrame to compile a single source file using the ``-std=c++11 -pthread -Wall`` (for GCC and Clang).
+In this example, we instruct ReFrame to compile a single source file using the ``-std=c++11 -pthread -Wall`` compilation flags.
 Finally, we set the arguments to be passed to the generated executable in :attr:`executable_opts <reframe.core.pipeline.RegressionTest.executable_opts>`.
 
 
@@ -1094,7 +1093,7 @@ Let's see and comment the changes:
 First of all, we need to add the new programming environments in the list of the supported ones.
 Now there is the problem that each compiler has its own flags for enabling OpenMP, so we need to differentiate the behavior of the test based on the programming environment.
 For this reason, we define the flags for each compiler in a separate dictionary (``self.flags``) and we set them in the :func:`setflags` pipeline hook.
-Let's explain what is this all about.
+We have first seen the pipeline hooks in the multithreaded "Hello, World!" example and now we explain them in more detail.
 When ReFrame loads a test file, it instantiates all the tests it finds in it.
 Based on the system ReFrame runs on and the supported environments of the tests, it will generate different test cases for each system partition and environment combination and it will finally send the test cases for execution.
 During its execution, a test case goes through the *regression test pipeline*, which is a series of well defined phases.
