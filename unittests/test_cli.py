@@ -734,7 +734,8 @@ def test_maxfail_option(run_reframe):
     )
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
-    assert 'Ran 2/2 test case(s) from 2 check(s) (0 failure(s))' in stdout
+    assert ('Ran 2/2 test case(s) from 2 check(s) '
+            '(0 failure(s), 0 skipped)') in stdout
     assert returncode == 0
 
 

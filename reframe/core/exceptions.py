@@ -7,6 +7,7 @@
 # Base regression exceptions
 #
 
+import contextlib
 import inspect
 import os
 import sys
@@ -156,12 +157,23 @@ class ContainerError(ReframeError):
 class BuildError(ReframeError):
     '''Raised when a build fails.'''
 
-    def __init__(self, stdout, stderr):
+    def __init__(self, stdout, stderr, prefix=None):
         super().__init__()
-        self._message = (
-            "standard error can be found in `%s', "
-            "standard output can be found in `%s'" % (stderr, stdout)
-        )
+        num_lines = 10
+        prefix = prefix or '.'
+        lines = [
+            f'stdout: {stdout!r}, stderr: {stderr!r}',
+            f'--- {stderr} (first {num_lines} lines) ---'
+        ]
+        with contextlib.suppress(OSError):
+            with open(os.path.join(prefix, stderr)) as fp:
+                for i, line in enumerate(fp):
+                    if i < num_lines:
+                        # Remove trailing '\n'
+                        lines.append(line[:-1])
+
+        lines += [f'--- {stderr} --- ']
+        self._message = '\n'.join(lines)
 
 
 class SpawnedProcessError(ReframeError):
@@ -274,6 +286,10 @@ class JobNotStartedError(JobError):
 
 class DependencyError(ReframeError):
     '''Raised when a dependency problem is encountered.'''
+
+
+class SkipTestError(ReframeError):
+    '''Raised when a test needs to be skipped.'''
 
 
 def user_frame(exc_type, exc_value, tb):

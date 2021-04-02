@@ -13,7 +13,6 @@ __all__ = [
 ]
 
 
-import contextlib
 import functools
 import glob
 import inspect
@@ -37,8 +36,8 @@ from reframe.core.buildsystems import BuildSystemField
 from reframe.core.containers import ContainerPlatformField
 from reframe.core.deferrable import _DeferredExpression
 from reframe.core.exceptions import (BuildError, DependencyError,
-                                     PipelineError, SanityError,
-                                     PerformanceError)
+                                     PerformanceError, PipelineError,
+                                     SanityError, SkipTestError)
 from reframe.core.meta import RegressionTestMeta
 from reframe.core.schedulers import Job
 from reframe.core.warnings import user_deprecation_warning
@@ -211,7 +210,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: by this test.
     #:
     #: :type: :class:`List[str]`
-    #: :default: ``None``
+    #: :default: ``required``
     #:
     #: .. note::
     #:     .. versionchanged:: 2.12
@@ -223,7 +222,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:     .. versionchanged:: 3.3
     #:        Default value changed from ``[]`` to ``None``.
     #:
-    valid_prog_environs = variable(typ.List[str], type(None), value=None)
+    #:     .. versionchanged:: 3.6
+    #:        Default value changed from ``None`` to ``required``.
+    valid_prog_environs = variable(typ.List[str])
 
     #: List of systems supported by this test.
     #: The general syntax for systems is ``<sysname>[:<partname>]``.
@@ -236,13 +237,15 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:     .. versionchanged:: 3.3
     #:        Default value changed from ``[]`` to ``None``.
     #:
-    valid_systems = variable(typ.List[str], type(None), value=None)
+    #:     .. versionchanged:: 3.6
+    #:        Default value changed from ``None`` to ``required``.
+    valid_systems = variable(typ.List[str])
 
     #: A detailed description of the test.
     #:
     #: :type: :class:`str`
     #: :default: ``self.name``
-    descr = variable(str, type(None), value=None)
+    descr = variable(str)
 
     #: The path to the source file or source directory of the test.
     #:
@@ -337,7 +340,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`str`
     #: :default: ``os.path.join('.', self.name)``
-    executable = variable(str, type(None), value=None)
+    executable = variable(str)
 
     #: List of options to be passed to the :attr:`executable`.
     #:
@@ -586,25 +589,27 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: Refer to the :doc:`ReFrame Tutorials </tutorials>` for concrete usage
     #: examples.
     #:
-    #: If set to :class:`None`, a sanity error will be raised during sanity
-    #: checking.
+    #: If not set a sanity error will be raised during sanity checking.
     #:
     #: :type: A deferrable expression (i.e., the result of a :doc:`sanity
-    #:     function </sanity_functions_reference>`) or :class:`None`
-    #: :default: :class:`None`
+    #:     function </sanity_functions_reference>`)
+    #: :default: :class:`required`
     #:
     #: .. note::
     #:    .. versionchanged:: 2.9
     #:       The default behaviour has changed and it is now considered a
-    #:       sanity failure if this attribute is set to :class:`None`.
+    #:       sanity failure if this attribute is set to :class:`required`.
     #:
     #:       If a test doesn't care about its output, this must be stated
     #:       explicitly as follows:
     #:
     #:       ::
     #:
-    #:           self.sanity_patterns = sn.assert_found(r'.*', self.stdout)
-    sanity_patterns = variable(_DeferredExpression, type(None), value=None)
+    #:           self.sanity_patterns = sn.assert_true(1)
+    #:
+    #:    .. versionchanged:: 3.6
+    #:       The default value has changed from ``None`` to ``required``.
+    sanity_patterns = variable(_DeferredExpression)
 
     #: Patterns for verifying the performance of this test.
     #:
@@ -829,20 +834,19 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             self.name = name
 
         # Pass if descr is a required variable.
-        with contextlib.suppress(AttributeError):
-            if self.descr is None:
-                self.descr = self.name
+        if not hasattr(self, 'descr'):
+            self.descr = self.name
 
         # Pass if the executable is a required variable.
-        with contextlib.suppress(AttributeError):
-            if self.executable is None:
-                self.executable = os.path.join('.', self.name)
+        if not hasattr(self, 'executable'):
+            self.executable = os.path.join('.', self.name)
 
         self._perfvalues = {}
 
         # Static directories of the regression check
         self._prefix = os.path.abspath(prefix)
-        if not os.path.isdir(os.path.join(self._prefix, self.sourcesdir)):
+        if (not os.path.isdir(os.path.join(self._prefix, self.sourcesdir)) and
+            not osext.is_url(self.sourcesdir)):
             self.sourcesdir = None
 
         # Runtime information of the test
@@ -1293,7 +1297,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         # We raise a BuildError when we an exit code and it is non zero
         if self._build_job.exitcode:
-            raise BuildError(self._build_job.stdout, self._build_job.stderr)
+            raise BuildError(self._build_job.stdout,
+                             self._build_job.stderr, self._stagedir)
 
         self.build_system.post_build(self._build_job)
 
@@ -1518,11 +1523,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 sn.assert_eq(self.job.exitcode, 0,
                              msg='job exited with exit code {0}')
             ]
-            if self.sanity_patterns is not None:
+            if hasattr(self, 'sanity_patterns'):
                 sanity_patterns.append(self.sanity_patterns)
 
             self.sanity_patterns = sn.all(sanity_patterns)
-        elif self.sanity_patterns is None:
+        elif not hasattr(self, 'sanity_patterns'):
             raise SanityError('sanity_patterns not set')
 
         with osext.change_dir(self._stagedir):
@@ -1840,6 +1845,26 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         raise DependencyError(f'could not resolve dependency to ({target!r}, '
                               f'{part!r}, {environ!r})')
+
+    def skip(self, msg=None):
+        '''Skip test.
+
+        :arg msg: A message explaining why the test was skipped.
+
+        .. versionadded:: 3.5.1
+        '''
+        raise SkipTestError(msg)
+
+    def skip_if(self, cond, msg=None):
+        '''Skip test if condition is true.
+
+        :arg cond: The condition to check for skipping the test.
+        :arg msg: A message explaining why the test was skipped.
+
+        .. versionadded:: 3.5.1
+        '''
+        if cond:
+            self.skip(msg)
 
     def __str__(self):
         return "%s(name='%s', prefix='%s')" % (type(self).__name__,
