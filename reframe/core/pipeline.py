@@ -1297,7 +1297,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             raise BuildError(self._build_job.stdout,
                              self._build_job.stderr, self._stagedir)
 
-        self.build_system.post_build(self._build_job)
+        with osext.change_dir(self._stagedir):
+            self.build_system.post_build(self._build_job)
 
     @_run_hooks('pre_run')
     @final
