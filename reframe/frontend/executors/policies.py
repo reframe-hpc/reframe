@@ -409,7 +409,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             else:
                 self.printer.status('HOLD', task.check.info(), just='right')
         except TaskExit:
-            if not task.failed or not task.skipped:
+            if not (task.failed or task.skipped):
                 with contextlib.suppress(TaskExit):
                     self._reschedule(task)
 
