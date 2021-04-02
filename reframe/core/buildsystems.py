@@ -147,7 +147,11 @@ class BuildSystem(abc.ABC):
         Build systems may use this information to do some post processing and
         provide additional, build system-specific, functionality to the users.
 
+        This function will always be executed from the test's stage directory.
+
         .. versionadded:: 3.5.0
+        .. versionchanged:: 3.5.2
+           The function is executed from the stage directory.
 
         :meta private:
 
