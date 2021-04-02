@@ -795,7 +795,7 @@ On how to configure ReFrame for running containerized tests, please have a look 
 Writing reusable tests
 ----------------------
 
-.. versionadded:: 3.5
+.. versionadded:: 3.5.0
 
 So far, all the examples shown above were tight to a particular system or configuration, which makes reusing these tests in other systems not straightforward.
 However, the introduction of the :py:func:`~reframe.core.pipeline.RegressionTest.parameter` and :py:func:`~reframe.core.pipeline.RegressionTest.variable` ReFrame built-ins solves this problem, eliminating the need to specify any of the test variables in the :func:`__init__` method.
