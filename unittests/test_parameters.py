@@ -82,14 +82,14 @@ def test_is_abstract_test():
     class MyTest(Abstract):
         pass
 
-    assert MyTest.has_undefined_params()
+    assert MyTest.is_abstract()
 
 
 def test_is_not_abstract_test():
     class MyTest(TwoParams):
         pass
 
-    assert not MyTest.has_undefined_params()
+    assert not MyTest.is_abstract()
 
 
 def test_param_len_is_zero():
