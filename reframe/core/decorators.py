@@ -262,6 +262,7 @@ def run_after(stage):
        Add the ability to define post-init hooks in tests.
 
     '''
+    stage = stage if stage != 'init' else '__init__'
     return _runx('post_' + stage)
 
 
