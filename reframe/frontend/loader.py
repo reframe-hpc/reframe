@@ -81,10 +81,9 @@ class RegressionCheckLoader:
 
         name = type(check).__name__
         checkfile = os.path.relpath(inspect.getfile(type(check)))
-        required_attrs = ['sanity_patterns',
-                          'valid_systems', 'valid_prog_environs']
+        required_attrs = ['valid_systems', 'valid_prog_environs']
         for attr in required_attrs:
-            if getattr(check, attr) is None:
+            if not hasattr(check, attr):
                 getlogger().warning(
                     f'{checkfile}: {attr!r} not defined for test {name!r}; '
                     f'skipping...'
