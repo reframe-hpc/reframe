@@ -159,13 +159,17 @@ class fs_check_cat_file(FileSystemCommandCheck):
 @rfm.simple_test
 class fs_check_find_dir(FileSystemCommandCheck):
     directory = parameter([
-        '/project/csstaff',
-        '/users/jenscscs',
+        '/project',
+        'HOME',
         '/apps/daint/UES/jenscscs/regression/production/reports'])
 
     # TODO: find correct test name
     def __init__(self):
         super().__init__()
+        if self.directory is 'HOME':
+            self.directory_name = osext.expandvars('$' + self.directory)
+        else:
+            self.directory_name = self.directory
         if getpass.getuser() != 'jenscscs':
             self.valid_systems = []
         self.reference = {
@@ -179,4 +183,4 @@ class fs_check_find_dir(FileSystemCommandCheck):
             }
         }
         self.executable_opts = ['find', self.directory,
-                                ' -maxdepth 1 > /dev/null']
+                                ' -maxdepth 1 | head -2000 > /dev/null']
