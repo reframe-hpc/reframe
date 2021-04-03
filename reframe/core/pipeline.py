@@ -767,7 +767,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                     )
 
         # Attach the hooks to the pipeline stages
-        print(cls._rfm_pipeline_hooks)
         for stage in _PIPELINE_STAGES:
             cls._add_hooks(stage)
 

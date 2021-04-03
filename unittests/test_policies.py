@@ -63,10 +63,11 @@ class timer:
 
 @pytest.fixture
 def temp_runtime(tmp_path):
-    def _temp_runtime(site_config, system=None, options={}):
+    def _temp_runtime(site_config, system=None, options=None):
+        options = options or {}
         options.update({'systems/prefix': str(tmp_path)})
         with rt.temp_runtime(site_config, system, options):
-            yield rt.runtime
+            yield
 
     yield _temp_runtime
 
@@ -819,6 +820,9 @@ def test_compile_fail_reschedule_main_loop(async_runner, make_cases,
     assert_runall(runner)
     assert num_checks == len(stats.failed())
 
+    with contextlib.suppress(StopIteration):
+        next(ctx)
+
 
 def test_compile_fail_reschedule_busy_loop(async_runner, make_cases,
                                            make_async_exec_ctx):
@@ -834,6 +838,8 @@ def test_compile_fail_reschedule_busy_loop(async_runner, make_cases,
     assert num_checks == stats.num_cases()
     assert_runall(runner)
     assert num_checks == len(stats.failed())
+    with contextlib.suppress(StopIteration):
+        next(ctx)
 
 
 @pytest.fixture
@@ -875,8 +881,12 @@ def test_restore_session(report_file, make_runner,
     assert new_report['runs'][0]['testcases'][0]['name'] == 'T1'
 
     # Remove the test case dump file and retry
-    os.remove(tmp_path / 'stage' / 'generic' / 'default' /
-              'builtin' / 'T4' / '.rfm_testcase.json')
+    try:
+        os.remove(tmp_path / 'stage' / 'generic' / 'default' /
+                  'builtin' / 'T4' / '.rfm_testcase.json')
+    except OSError:
+        import reframe.utility as util
+        print('==> dep_cases', util.repr(dep_cases))
 
     with pytest.raises(ReframeError, match=r'could not restore testcase'):
         report.restore_dangling(testgraph)

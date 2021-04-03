@@ -56,10 +56,11 @@ def pinnedtest():
 
 @pytest.fixture
 def temp_runtime(tmp_path):
-    def _temp_runtime(config_file, system=None, options={}):
+    def _temp_runtime(config_file, system=None, options=None):
+        options = options or {}
         options.update({'systems/prefix': str(tmp_path)})
         with rt.temp_runtime(config_file, system, options):
-            yield rt.runtime()
+            yield
 
     yield _temp_runtime
 
