@@ -262,7 +262,15 @@ def run_after(stage):
        Add the ability to define post-init hooks in tests.
 
     '''
-    stage = stage if stage != 'init' else '__init__'
+
+    # Map user stage names to the actual pipeline functions if needed
+    if stage == 'init':
+        stage = '__init__'
+    elif stage == 'compile':
+        stage = 'compile_wait'
+    elif stage == 'run':
+        stage = 'run_wait'
+
     return _runx('post_' + stage)
 
 

@@ -78,20 +78,15 @@ DEPEND_BY_ENV = 2
 DEPEND_FULLY = 3
 
 
-#: Pipeline stages
-#:
-#: :meta private:
-_rfm_pipeline_stages = {
-    '__init__': None,
-    'setup': None,
-    'compile': 'pre_compile',
-    'compile_wait': 'post_compile',
-    'run': 'pre_run',
-    'run_wait': 'post_run',
-    'sanity': None,
-    'performance': None,
-    'cleanup': None
-}
+_PIPELINE_STAGES = (
+    '__init__',
+    'setup',
+    'compile', 'compile_wait',
+    'run', 'run_wait',
+    'sanity',
+    'performance',
+    'cleanup'
+)
 
 
 def final(fn):
@@ -772,8 +767,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                     )
 
         # Attach the hooks to the pipeline stages
-        for key, value in _rfm_pipeline_stages.items():
-            cls._add_hooks(key, value)
+        print(cls._rfm_pipeline_hooks)
+        for stage in _PIPELINE_STAGES:
+            cls._add_hooks(stage)
 
         # Initialize the test
         obj.__rfm_init__(name, prefix)
@@ -790,15 +786,15 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             return ''
 
     @classmethod
-    def _add_hooks(cls, fn_name, kind=None):
+    def _add_hooks(cls, stage):
         pipeline_hooks = cls._rfm_pipeline_hooks
-        fn = getattr(cls, fn_name)
-        new_fn = hooks.attach_hooks(pipeline_hooks, kind)(fn)
-        setattr(cls, '_rfm_decorated_'+fn_name, new_fn)
+        fn = getattr(cls, stage)
+        new_fn = hooks.attach_hooks(pipeline_hooks)(fn)
+        setattr(cls, '_rfm_pipeline_fn_' + stage, new_fn)
 
     def __getattribute__(self, name):
-        if name in _rfm_pipeline_stages:
-            name = f'_rfm_decorated_{name}'
+        if name in _PIPELINE_STAGES:
+            name = f'_rfm_pipeline_fn_{name}'
 
         return super().__getattribute__(name)
 

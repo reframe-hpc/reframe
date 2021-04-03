@@ -9,7 +9,7 @@ import functools
 import reframe.utility as util
 
 
-def attach_hooks(hooks, name=None):
+def attach_hooks(hooks):
     '''Attach pipeline hooks to phase ``name''.
 
     This function returns a decorator for pipeline functions that will run the
@@ -21,14 +21,7 @@ def attach_hooks(hooks, name=None):
 
     def _deco(func):
         def select_hooks(obj, kind):
-            phase = name
-            if phase is None:
-                fn_name = func.__name__
-                phase = kind + fn_name
-            elif phase is not None and not phase.startswith(kind):
-                # Just any phase that does not exist
-                phase = 'xxx'
-
+            phase = kind + func.__name__
             if phase not in hooks:
                 return []
 
