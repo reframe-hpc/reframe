@@ -24,9 +24,6 @@ def attach_hooks(hooks, name=None):
             phase = name
             if phase is None:
                 fn_name = func.__name__
-                if fn_name == '__init__':
-                    fn_name = 'init'
-
                 phase = kind + fn_name
             elif phase is not None and not phase.startswith(kind):
                 # Just any phase that does not exist
@@ -37,8 +34,6 @@ def attach_hooks(hooks, name=None):
 
             return [h for h in hooks[phase]
                     if h.__name__ not in obj._disabled_hooks]
-
-        func.__rfm_pipeline_fn__ = func
 
         @functools.wraps(func)
         def _fn(obj, *args, **kwargs):
