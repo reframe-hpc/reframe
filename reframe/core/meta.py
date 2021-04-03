@@ -220,13 +220,12 @@ class RegressionTestMeta(type):
         return cls._rfm_param_space
 
     def is_abstract(cls):
-        '''Check if the test is an abstract test.
+        '''Check if the class is an abstract test.
 
-        If the parameter space has undefined parameters, the test is considered
-        an abstract test. If that is the case, the length of the parameter
-        space is just 0.
+        This is the case when some parameters are undefined, which results in
+        the length of the parameter space being 0.
 
-        :return: bool indicating wheteher the test is abstract or not
+        :return: bool indicating wheteher the test has undefined parameters.
 
         :meta private:
         '''

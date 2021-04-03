@@ -272,6 +272,20 @@ def test_run_only_no_srcdir(local_exec_ctx):
     _run(test, *local_exec_ctx)
 
 
+def test_run_only_srcdir_set_to_none(local_exec_ctx):
+    @fixtures.custom_prefix('foo/bar/')
+    class MyTest(rfm.RunOnlyRegressionTest):
+        executable = 'echo'
+        valid_prog_environs = ['*']
+        valid_systems = ['*']
+        sourcesdir = None
+        sanity_patterns = sn.assert_true(1)
+
+    test = MyTest()
+    assert test.sourcesdir is None
+    _run(test, *local_exec_ctx)
+
+
 def test_compile_only_failure(local_exec_ctx):
     @fixtures.custom_prefix('unittests/resources/checks')
     class MyTest(rfm.CompileOnlyRegressionTest):
