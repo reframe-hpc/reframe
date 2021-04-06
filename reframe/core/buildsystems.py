@@ -825,8 +825,8 @@ class Spack(BuildSystem):
         self._prefix_save = None
 
     def _prepare_scope(self):
-        self._scope_dir = 'rfm_spack_scope'
-        os.mkdir(self._scope_dir)
+        self.scope_dir = 'rfm_spack_scope'
+        os.mkdir(self.scope_dir)
         scope_config = {
             'config': {
                 'install_tree': 'spack/opt/spack',
@@ -838,7 +838,7 @@ class Spack(BuildSystem):
                 'misc_cache': 'spack/var/cache/misc'
             }
         }
-        with open(f'{self._scope_dir}/config.yaml', 'w') as fp:
+        with open(f'{self.scope_dir}/config.yaml', 'w') as fp:
             yaml.dump(scope_config, fp, default_flow_style=False)
 
         scope_upstreams = {'upstreams': {}}
@@ -847,12 +847,12 @@ class Spack(BuildSystem):
                 f'spack-instance-{i}': {'install_tree': upstream}
             })
 
-        with open(f'{self._scope_dir}/upstreams.yaml', 'w') as fp:
+        with open(f'{self.scope_dir}/upstreams.yaml', 'w') as fp:
             yaml.dump(scope_upstreams, fp, default_flow_style=False)
 
     def _emit_build_commands_pkgs(self, environ):
         self._prepare_scope()
-        return [f'spack -C {self._scope_dir} install {pkg}'
+        return [f'spack -C {self.scope_dir} install {pkg}'
                 for pkg in self.packages]
 
     def _emit_build_commands_env(self, environ):
@@ -875,9 +875,7 @@ class Spack(BuildSystem):
         matches = re.findall(r'\[\+\] \S+/spack/opt/spack/\S+/(\S+)',
                              out)
 
-        self._modules = [{'name': os.path.basename(mod),
-                          'collection': False,
-                          'path': None}
+        self._modules = [os.path.basename(mod)
                          for mod in matches]
 
     @property
