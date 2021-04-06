@@ -226,7 +226,7 @@ def temp_runtime(tmp_path):
             fp.write(f'site_configuration = {util.ppretty(site_config)}')
 
         with rt.temp_runtime(fp.name):
-            yield rt.runtime()
+            yield
 
     return _temp_runtime
 
