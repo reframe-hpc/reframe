@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import reframe as rfm
-import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 
 
@@ -24,16 +23,12 @@ class CUDAFortranCheck(rfm.RegressionTest):
         self.maintainers = ['TM', 'AJ']
         self.tags = {'production', 'craype'}
 
+    # FIXME: PGI 20.x does not support CUDA 11, see case #275674
     @rfm.run_before('compile')
-    def cdt_pgi_workaround(self):
-        cdt = osext.cray_cdt_version()
-        if not cdt:
-            return
-
-        if cdt == '20.08':
-            self.build_system.fflags += [
-                'CUDA_HOME=$CUDATOOLKIT_HOME', '-Mcuda=cuda10.2'
-            ]
+    def cudatoolkit_pgi_20x_workaround(self):
+        if self.current_system.name == 'daint':
+            cudatoolkit_version = '10.2.89_3.29-7.0.2.1_3.5__g67354b4'
         else:
-            # FIXME: PGI 20.x does not support CUDA 11, see case #275674
-            self.modules += ['cudatoolkit/10.2.89_3.29-7.0.2.1_3.5__g67354b4']
+            cudatoolkit_version = '10.2.89_3.29-7.0.2.1_3.27__g67354b4'
+
+        self.modules += [f'cudatoolkit/{cudatoolkit_version}']

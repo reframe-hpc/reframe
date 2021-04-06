@@ -7,10 +7,12 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.simple_test
-class MakefileTest(rfm.RegressionTest):
+class ElemTypeParam(rfm.RegressionMixin):
     elem_type = parameter(['float', 'double'])
 
+
+@rfm.simple_test
+class MakefileTestAlt(rfm.RegressionTest, ElemTypeParam):
     def __init__(self):
         self.descr = 'Test demonstrating use of Makefiles'
         self.valid_systems = ['*']
@@ -25,9 +27,7 @@ class MakefileTest(rfm.RegressionTest):
 
 
 @rfm.simple_test
-class MakeOnlyTest(rfm.CompileOnlyRegressionTest):
-    elem_type = parameter(['float', 'double'])
-
+class MakeOnlyTestAlt(rfm.CompileOnlyRegressionTest, ElemTypeParam):
     def __init__(self):
         self.descr = 'Test demonstrating use of Makefiles'
         self.valid_systems = ['*']

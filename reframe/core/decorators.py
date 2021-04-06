@@ -20,7 +20,9 @@ import sys
 import traceback
 
 import reframe.utility.osext as osext
-from reframe.core.exceptions import ReframeSyntaxError, user_frame
+from reframe.core.exceptions import (ReframeSyntaxError,
+                                     SkipTestError,
+                                     user_frame)
 from reframe.core.logging import getlogger
 from reframe.core.pipeline import RegressionTest
 from reframe.utility.versioning import VersionValidator
@@ -54,12 +56,15 @@ def _register_test(cls, args=None):
 
             try:
                 ret.append(_instantiate(cls, args))
+            except SkipTestError as e:
+                getlogger().warning(f'skipping test {cls.__name__!r}: {e}')
             except Exception:
                 frame = user_frame(*sys.exc_info())
-                msg = "skipping test due to errors: %s: " % cls.__name__
-                msg += "use `-v' for more information\n"
-                msg += "  FILE: %s:%s" % (frame.filename, frame.lineno)
-                getlogger().warning(msg)
+                getlogger().warning(
+                    f"skipping test {cls.__name__!r} due to errors: "
+                    f"use `-v' for more information\n"
+                    f"    FILE: {frame.filename}:{frame.lineno}"
+                )
                 getlogger().verbose(traceback.format_exc())
 
         return ret
@@ -80,8 +85,8 @@ def _validate_test(cls):
                                  'subclass of RegressionTest')
 
     if (cls.is_abstract()):
-        raise ValueError(f'decorated test ({cls.__qualname__!r}) is an'
-                         f' abstract test')
+        raise ValueError(f'decorated test ({cls.__qualname__!r}) has one or '
+                         f'more undefined parameters')
 
 
 def simple_test(cls):
