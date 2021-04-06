@@ -845,8 +845,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         # Static directories of the regression check
         self._prefix = os.path.abspath(prefix)
-        if (not os.path.isdir(os.path.join(self._prefix, self.sourcesdir)) and
-            not osext.is_url(self.sourcesdir)):
+        if (self.sourcesdir == 'src' and
+            not os.path.isdir(os.path.join(self._prefix, self.sourcesdir))):
             self.sourcesdir = None
 
         # Runtime information of the test
@@ -1300,7 +1300,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             raise BuildError(self._build_job.stdout,
                              self._build_job.stderr, self._stagedir)
 
-        self.build_system.post_build(self._build_job)
+        with osext.change_dir(self._stagedir):
+            self.build_system.post_build(self._build_job)
 
     @_run_hooks('pre_run')
     @final
