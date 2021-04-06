@@ -56,10 +56,11 @@ def pinnedtest():
 
 @pytest.fixture
 def temp_runtime(tmp_path):
-    def _temp_runtime(config_file, system=None, options={}):
+    def _temp_runtime(config_file, system=None, options=None):
+        options = options or {}
         options.update({'systems/prefix': str(tmp_path)})
         with rt.temp_runtime(config_file, system, options):
-            yield rt.runtime()
+            yield
 
     yield _temp_runtime
 
@@ -240,6 +241,23 @@ def test_run_only_sanity(local_exec_ctx):
     _run(MyTest(), *local_exec_ctx)
 
 
+def test_run_only_set_sanity_in_a_hook(local_exec_ctx):
+    @fixtures.custom_prefix('unittests/resources/checks')
+    class MyTest(rfm.RunOnlyRegressionTest):
+        executable = './hello.sh'
+        executable_opts = ['Hello, World!']
+        local = True
+        valid_prog_environs = ['*']
+        valid_systems = ['*']
+
+        @rfm.run_after('run')
+        def set_sanity(self):
+            self.sanity_patterns = sn.assert_found(
+                r'Hello, World\!', self.stdout)
+
+    _run(MyTest(), *local_exec_ctx)
+
+
 def test_run_only_no_srcdir(local_exec_ctx):
     @fixtures.custom_prefix('foo/bar/')
     class MyTest(rfm.RunOnlyRegressionTest):
@@ -249,6 +267,20 @@ def test_run_only_no_srcdir(local_exec_ctx):
             self.valid_prog_environs = ['*']
             self.valid_systems = ['*']
             self.sanity_patterns = sn.assert_found(r'hello', self.stdout)
+
+    test = MyTest()
+    assert test.sourcesdir is None
+    _run(test, *local_exec_ctx)
+
+
+def test_run_only_srcdir_set_to_none(local_exec_ctx):
+    @fixtures.custom_prefix('foo/bar/')
+    class MyTest(rfm.RunOnlyRegressionTest):
+        executable = 'echo'
+        valid_prog_environs = ['*']
+        valid_systems = ['*']
+        sourcesdir = None
+        sanity_patterns = sn.assert_true(1)
 
     test = MyTest()
     assert test.sourcesdir is None
@@ -494,6 +526,57 @@ def test_extra_resources(HelloTest, testsys_system):
     assert expected_job_options == set(test.job.options)
 
 
+def test_unkown_pre_hook():
+    with pytest.raises(ValueError):
+        class MyTest(rfm.RunOnlyRegressionTest):
+            @rfm.run_before('foo')
+            def prepare(self):
+                self.x = 1
+
+
+def test_unkown_post_hook():
+    with pytest.raises(ValueError):
+        class MyTest(rfm.RunOnlyRegressionTest):
+            @rfm.run_after('foo')
+            def prepare(self):
+                self.x = 1
+
+
+def test_pre_init_hook():
+    with pytest.raises(ValueError):
+        class MyTest(rfm.RunOnlyRegressionTest):
+            @rfm.run_before('init')
+            def prepare(self):
+                self.x = 1
+
+
+def test_post_init_hook(local_exec_ctx):
+    class _T0(rfm.RunOnlyRegressionTest):
+        x = variable(str, value='y')
+        y = variable(str, value='x')
+
+        def __init__(self):
+            self.x = 'x'
+
+        @rfm.run_after('init')
+        def prepare(self):
+            self.y += 'y'
+
+    class _T1(_T0):
+        def __init__(self):
+            super().__init__()
+            self.z = 'z'
+
+    t0 = _T0()
+    assert t0.x == 'x'
+    assert t0.y == 'xy'
+
+    t1 = _T1()
+    assert t1.x == 'x'
+    assert t1.y == 'xy'
+    assert t1.z == 'z'
+
+
 def test_setup_hooks(HelloTest, local_exec_ctx):
     @fixtures.custom_prefix('unittests/resources/checks')
     class MyTest(HelloTest):
@@ -653,6 +736,35 @@ def test_inherited_hooks(HelloTest, local_exec_ctx):
     }
 
 
+def test_inherited_hooks_from_instantiated_tests(HelloTest, local_exec_ctx):
+    @fixtures.custom_prefix('unittests/resources/checks')
+    class T0(HelloTest):
+        def __init__(self):
+            super().__init__()
+            self.name = type(self).__name__
+            self.executable = os.path.join('.', self.name)
+            self.var = 0
+
+        @rfm.run_after('setup')
+        def x(self):
+            self.var += 1
+
+    class T1(T0):
+        @rfm.run_before('run')
+        def y(self):
+            self.foo = 1
+
+    t0 = T0()
+    t1 = T1()
+    print('==> running t0')
+    _run(t0, *local_exec_ctx)
+    print('==> running t1')
+    _run(t1, *local_exec_ctx)
+    assert t0.var == 1
+    assert t1.var == 1
+    assert t1.foo == 1
+
+
 def test_overriden_hooks(HelloTest, local_exec_ctx):
     @fixtures.custom_prefix('unittests/resources/checks')
     class BaseTest(HelloTest):
@@ -711,7 +823,7 @@ def test_disabled_hooks(HelloTest, local_exec_ctx):
             self.var += 5
 
     test = MyTest()
-    MyTest.disable_hook('y')
+    test.disable_hook('y')
     _run(test, *local_exec_ctx)
     assert test.var == 5
     assert test.foo == 0
