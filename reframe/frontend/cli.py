@@ -450,6 +450,13 @@ def main():
         action='store_true',
         help='Use a login shell for job scripts'
     )
+    argparser.add_argument(
+        dest='report_hostlist',
+        envvar='RFM_REPORT_HOSTLIST',
+        configvar='general/report_hostlist',
+        action='store_true',
+        help='Use hostlist format to report nodelist'
+    )
 
     # Parse command line
     options = argparser.parse_args()

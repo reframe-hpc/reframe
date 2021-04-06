@@ -112,6 +112,7 @@ class TestStats:
                     'maintainers': check.maintainers,
                     'name': check.name,
                     'nodelist': [],
+                    'hostlist': None,
                     'outputdir': None,
                     'perfvars': None,
                     'result': None,
@@ -140,6 +141,7 @@ class TestStats:
                     entry['job_stderr'] = check.stderr.evaluate()
                     entry['job_stdout'] = check.stdout.evaluate()
                     entry['nodelist'] = check.job.nodelist or []
+                    entry['hostlist'] = check.job.hostlist or ''
 
                 if check.build_job:
                     entry['build_stderr'] = check.build_stderr.evaluate()
