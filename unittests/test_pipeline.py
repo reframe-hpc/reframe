@@ -526,9 +526,24 @@ def test_extra_resources(HelloTest, testsys_system):
     assert expected_job_options == set(test.job.options)
 
 
-def test_pre_init_hook(local_exec_ctx):
+def test_unkown_pre_hook():
     with pytest.raises(ValueError):
-        @fixtures.custom_prefix('unittests/resources/checks')
+        class MyTest(rfm.RunOnlyRegressionTest):
+            @rfm.run_before('foo')
+            def prepare(self):
+                self.x = 1
+
+
+def test_unkown_post_hook():
+    with pytest.raises(ValueError):
+        class MyTest(rfm.RunOnlyRegressionTest):
+            @rfm.run_after('foo')
+            def prepare(self):
+                self.x = 1
+
+
+def test_pre_init_hook():
+    with pytest.raises(ValueError):
         class MyTest(rfm.RunOnlyRegressionTest):
             @rfm.run_before('init')
             def prepare(self):

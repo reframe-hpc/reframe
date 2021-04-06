@@ -214,6 +214,13 @@ def _runx(phase):
     return deco
 
 
+# Valid pipeline stages that users can specify in the `run_before()` and
+# `run_after()` decorators
+_USER_PIPELINE_STAGES = (
+    'init', 'setup', 'compile', 'run', 'sanity', 'performance', 'cleanup'
+)
+
+
 def run_before(stage):
     '''Decorator for attaching a test method to a pipeline stage.
 
@@ -227,6 +234,9 @@ def run_before(stage):
     ``'run'``, ``'sanity'``, ``'performance'`` or ``'cleanup'``.
 
     '''
+    if stage not in _USER_PIPELINE_STAGES:
+        raise ValueError(f'invalid pipeline stage specified: {stage!r}')
+
     if stage == 'init':
         raise ValueError('pre-init hooks are not allowed')
 
@@ -262,6 +272,9 @@ def run_after(stage):
        Add the ability to define post-init hooks in tests.
 
     '''
+
+    if stage not in _USER_PIPELINE_STAGES:
+        raise ValueError(f'invalid pipeline stage specified: {stage!r}')
 
     # Map user stage names to the actual pipeline functions if needed
     if stage == 'init':
