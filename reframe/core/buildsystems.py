@@ -878,8 +878,11 @@ class Spack(BuildSystem):
         matches = re.findall(r'\[\+\] \S+/spack/opt/spack/\S+/(\S+)',
                              out)
 
-        self._modules = [os.path.basename(mod)
-                         for mod in matches]
+        self._modules = [] #[os.path.basename(mod.split('-')[-1])
+        for mod in matches:
+            mod = os.path.basename(mod)
+            name, version, hashid = mod.split('-')
+            self._modules.append(f'{name}@{version}/{hashid}')
 
     @property
     def generated_modules(self):
