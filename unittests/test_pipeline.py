@@ -15,6 +15,7 @@ import reframe.utility.sanity as sn
 import unittests.fixtures as fixtures
 from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
                                      PerformanceError, SanityError)
+from unittests.fixtures import *
 
 
 def _run(test, partition, prgenv):
@@ -55,31 +56,20 @@ def pinnedtest():
 
 
 @pytest.fixture
-def temp_runtime(tmp_path):
-    def _temp_runtime(config_file, system=None, options=None):
-        options = options or {}
-        options.update({'systems/prefix': str(tmp_path)})
-        with rt.temp_runtime(config_file, system, options):
-            yield
-
-    yield _temp_runtime
+def generic_system(make_exec_ctx_g):
+    yield from make_exec_ctx_g(fixtures.TEST_CONFIG_FILE, 'generic')
 
 
 @pytest.fixture
-def generic_system(temp_runtime):
-    yield from temp_runtime(fixtures.TEST_CONFIG_FILE, 'generic')
+def testsys_system(make_exec_ctx_g):
+    yield from make_exec_ctx_g(fixtures.TEST_CONFIG_FILE, 'testsys')
 
 
 @pytest.fixture
-def testsys_system(temp_runtime):
-    yield from temp_runtime(fixtures.TEST_CONFIG_FILE, 'testsys')
-
-
-@pytest.fixture
-def user_system(temp_runtime):
+def user_system(make_exec_ctx_g):
     if fixtures.USER_CONFIG_FILE:
-        yield from temp_runtime(fixtures.USER_CONFIG_FILE,
-                                fixtures.USER_SYSTEM)
+        yield from make_exec_ctx_g(fixtures.USER_CONFIG_FILE,
+                                   fixtures.USER_SYSTEM)
     else:
         yield generic_system
 

@@ -7,13 +7,14 @@ import reframe.core.runtime as rt
 import reframe.core.warnings as warn
 import reframe.utility.color as color
 import unittests.fixtures as fixtures
+from unittests.fixtures import *
 
 
 @pytest.fixture(params=['colors', 'nocolors'])
-def with_colors(request):
-    with rt.temp_runtime(fixtures.BUILTIN_CONFIG_FILE, 'generic',
-                         {'general/colorize': request.param == 'colors'}):
-        yield request.param == 'colors'
+def with_colors(request, make_exec_ctx):
+    make_exec_ctx(fixtures.BUILTIN_CONFIG_FILE, 'generic',
+                  {'general/colorize': request.param == 'colors'})
+    yield request.param == 'colors'
 
 
 def test_deprecation_warning():

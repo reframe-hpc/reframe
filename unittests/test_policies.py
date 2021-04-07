@@ -27,6 +27,7 @@ from reframe.core.exceptions import (AbortTaskError,
 from reframe.frontend.loader import RegressionCheckLoader
 
 import unittests.fixtures as fixtures
+from unittests.fixtures import make_exec_ctx, make_exec_ctx_g
 from unittests.resources.checks.hellocheck import HelloTest
 from unittests.resources.checks.frontend_checks import (
     BadSetupCheck,
@@ -62,17 +63,6 @@ class timer:
 
 
 @pytest.fixture
-def temp_runtime(tmp_path):
-    def _temp_runtime(site_config, system=None, options=None):
-        options = options or {}
-        options.update({'systems/prefix': str(tmp_path)})
-        with rt.temp_runtime(site_config, system, options):
-            yield
-
-    yield _temp_runtime
-
-
-@pytest.fixture
 def make_loader():
     def _make_loader(check_search_path):
         return RegressionCheckLoader(check_search_path,
@@ -82,13 +72,13 @@ def make_loader():
 
 
 @pytest.fixture
-def common_exec_ctx(temp_runtime):
-    yield from temp_runtime(fixtures.TEST_CONFIG_FILE, 'generic')
+def common_exec_ctx(make_exec_ctx_g):
+    yield from make_exec_ctx_g(system='generic')
 
 
 @pytest.fixture
-def testsys_exec_ctx(temp_runtime):
-    yield from temp_runtime(fixtures.TEST_CONFIG_FILE, 'testsys:gpu')
+def testsys_exec_ctx(make_exec_ctx_g):
+    yield from make_exec_ctx_g(system='testsys:gpu')
 
 
 @pytest.fixture(params=[policies.SerialExecutionPolicy,
@@ -552,20 +542,8 @@ class _TaskEventMonitor(executors.TaskEventListener):
         pass
 
 
-@pytest.fixture
-def make_async_exec_ctx(temp_runtime):
-    tmprt = None
-
-    def _make_async_exec_ctx(max_jobs):
-        nonlocal tmprt
-        tmprt = temp_runtime(fixtures.TEST_CONFIG_FILE, 'generic',
-                             {'systems/partitions/max_jobs': max_jobs})
-        next(tmprt)
-
-    yield _make_async_exec_ctx
-
-    with contextlib.suppress(StopIteration):
-        next(tmprt)
+def max_jobs_opts(n):
+    return {'systems/partitions/max_jobs': n}
 
 
 @pytest.fixture
@@ -595,11 +573,9 @@ def _read_timestamps(tasks):
     return begin_stamps, end_stamps
 
 
-def test_concurrency_unlimited(async_runner, make_cases, make_async_exec_ctx):
+def test_concurrency_unlimited(async_runner, make_cases, make_exec_ctx):
     num_checks = 3
-
-    # Trigger evaluation of the execution context
-    make_async_exec_ctx(max_jobs=num_checks)
+    make_exec_ctx(options=max_jobs_opts(num_checks))
 
     runner, monitor = async_runner
     runner.runall(make_cases([SleepCheck(.5) for i in range(num_checks)]))
@@ -623,10 +599,10 @@ def test_concurrency_unlimited(async_runner, make_cases, make_async_exec_ctx):
         pytest.skip('the system seems too much loaded.')
 
 
-def test_concurrency_limited(async_runner, make_cases, make_async_exec_ctx):
+def test_concurrency_limited(async_runner, make_cases, make_exec_ctx):
     # The number of checks must be <= 2*max_jobs.
     num_checks, max_jobs = 5, 3
-    make_async_exec_ctx(max_jobs)
+    make_exec_ctx(options=max_jobs_opts(max_jobs))
 
     runner, monitor = async_runner
     runner.runall(make_cases([SleepCheck(.5) for i in range(num_checks)]))
@@ -665,9 +641,9 @@ def test_concurrency_limited(async_runner, make_cases, make_async_exec_ctx):
         pytest.skip('the system seems too loaded.')
 
 
-def test_concurrency_none(async_runner, make_cases, make_async_exec_ctx):
+def test_concurrency_none(async_runner, make_cases, make_exec_ctx):
     num_checks = 3
-    make_async_exec_ctx(max_jobs=1)
+    make_exec_ctx(options=max_jobs_opts(1))
 
     runner, monitor = async_runner
     runner.runall(make_cases([SleepCheck(.5) for i in range(num_checks)]))
@@ -706,8 +682,8 @@ def assert_interrupted_run(runner):
 
 
 def test_kbd_interrupt_in_wait_with_concurrency(async_runner, make_cases,
-                                                make_async_exec_ctx):
-    make_async_exec_ctx(max_jobs=4)
+                                                make_exec_ctx):
+    make_exec_ctx(options=max_jobs_opts(4))
     runner, _ = async_runner
     with pytest.raises(KeyboardInterrupt):
         runner.runall(make_cases([
@@ -719,13 +695,14 @@ def test_kbd_interrupt_in_wait_with_concurrency(async_runner, make_cases,
 
 
 def test_kbd_interrupt_in_wait_with_limited_concurrency(
-        async_runner, make_cases, make_async_exec_ctx):
+        async_runner, make_cases, make_exec_ctx
+):
     # The general idea for this test is to allow enough time for all the
     # four checks to be submitted and at the same time we need the
     # KeyboardInterruptCheck to finish first (the corresponding wait should
     # trigger the failure), so as to make the framework kill the remaining
     # three.
-    make_async_exec_ctx(max_jobs=2)
+    make_exec_ctx(options=max_jobs_opts(2))
     runner, _ = async_runner
     with pytest.raises(KeyboardInterrupt):
         runner.runall(make_cases([
@@ -737,8 +714,8 @@ def test_kbd_interrupt_in_wait_with_limited_concurrency(
 
 
 def test_kbd_interrupt_in_setup_with_concurrency(async_runner, make_cases,
-                                                 make_async_exec_ctx):
-    make_async_exec_ctx(max_jobs=4)
+                                                 make_exec_ctx):
+    make_exec_ctx(options=max_jobs_opts(4))
     runner, _ = async_runner
     with pytest.raises(KeyboardInterrupt):
         runner.runall(make_cases([
@@ -750,8 +727,9 @@ def test_kbd_interrupt_in_setup_with_concurrency(async_runner, make_cases,
 
 
 def test_kbd_interrupt_in_setup_with_limited_concurrency(
-        async_runner, make_cases, make_async_exec_ctx):
-    make_async_exec_ctx(max_jobs=2)
+        async_runner, make_cases, make_exec_ctx
+):
+    make_exec_ctx(options=max_jobs_opts(2))
     runner, _ = async_runner
     with pytest.raises(KeyboardInterrupt):
         runner.runall(make_cases([
@@ -763,8 +741,8 @@ def test_kbd_interrupt_in_setup_with_limited_concurrency(
 
 
 def test_run_complete_fails_main_loop(async_runner, make_cases,
-                                      make_async_exec_ctx):
-    make_async_exec_ctx(max_jobs=1)
+                                      make_exec_ctx):
+    make_exec_ctx(options=max_jobs_opts(1))
     runner, _ = async_runner
     num_checks = 3
     runner.runall(make_cases([SleepCheckPollFail(10),
@@ -781,8 +759,8 @@ def test_run_complete_fails_main_loop(async_runner, make_cases,
 
 
 def test_run_complete_fails_busy_loop(async_runner, make_cases,
-                                      make_async_exec_ctx):
-    make_async_exec_ctx(max_jobs=1)
+                                      make_exec_ctx):
+    make_exec_ctx(options=max_jobs_opts(1))
     runner, _ = async_runner
     num_checks = 3
     runner.runall(make_cases([SleepCheckPollFailLate(1),
@@ -799,8 +777,8 @@ def test_run_complete_fails_busy_loop(async_runner, make_cases,
 
 
 def test_compile_fail_reschedule_main_loop(async_runner, make_cases,
-                                           make_async_exec_ctx):
-    make_async_exec_ctx(max_jobs=1)
+                                           make_exec_ctx):
+    make_exec_ctx(options=max_jobs_opts(1))
     runner, _ = async_runner
     num_checks = 2
     runner.runall(make_cases([SleepCheckPollFail(.1), CompileFailureCheck()]))
@@ -812,8 +790,8 @@ def test_compile_fail_reschedule_main_loop(async_runner, make_cases,
 
 
 def test_compile_fail_reschedule_busy_loop(async_runner, make_cases,
-                                           make_async_exec_ctx):
-    make_async_exec_ctx(max_jobs=1)
+                                           make_exec_ctx):
+    make_exec_ctx(options=max_jobs_opts(1))
     runner, _ = async_runner
     num_checks = 2
     runner.runall(

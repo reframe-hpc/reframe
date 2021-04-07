@@ -16,6 +16,7 @@ import reframe.frontend.runreport as runreport
 import reframe.core.logging as logging
 import reframe.core.runtime as rt
 import unittests.fixtures as fixtures
+from unittests.fixtures import *
 
 
 def run_command_inline(argv, funct, *args, **kwargs):
@@ -107,22 +108,11 @@ def run_reframe(tmp_path, perflogdir):
 
 
 @pytest.fixture
-def temp_runtime(tmp_path):
-    def _temp_runtime(site_config, system=None, options=None):
-        options = options or {}
-        options.update({'systems/prefix': tmp_path})
-        with rt.temp_runtime(site_config, system, options):
-            yield
-
-    yield _temp_runtime
-
-
-@pytest.fixture
-def user_exec_ctx(temp_runtime):
+def user_exec_ctx(make_exec_ctx_g):
     if fixtures.USER_CONFIG_FILE is None:
         pytest.skip('no user configuration file supplied')
 
-    yield from temp_runtime(fixtures.USER_CONFIG_FILE, fixtures.USER_SYSTEM)
+    yield from make_exec_ctx_g(fixtures.USER_CONFIG_FILE, fixtures.USER_SYSTEM)
 
 
 @pytest.fixture

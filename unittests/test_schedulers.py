@@ -19,6 +19,7 @@ from reframe.core.exceptions import (
 )
 from reframe.core.schedulers import Job
 from reframe.core.schedulers.slurm import _SlurmNode, _create_nodes
+from unittests.fixtures import *
 
 
 @pytest.fixture
@@ -44,24 +45,12 @@ def local_only(scheduler):
 
 
 @pytest.fixture
-def temp_runtime(tmp_path):
-    def _temp_runtime(site_config, system=None, options=None):
-        options = options or {}
-        options.update({'systems/prefix': tmp_path})
-        with rt.temp_runtime(site_config, system, options):
-            yield
-
-    yield _temp_runtime
-
-
-@pytest.fixture
-def exec_ctx(temp_runtime, scheduler):
+def exec_ctx(make_exec_ctx, scheduler):
     if fixtures.USER_CONFIG_FILE and scheduler.registered_name != 'local':
-        rt = temp_runtime(fixtures.USER_CONFIG_FILE, fixtures.USER_SYSTEM)
+        make_exec_ctx(fixtures.USER_CONFIG_FILE, fixtures.USER_SYSTEM)
     else:
-        rt = temp_runtime(fixtures.TEST_CONFIG_FILE, 'generic')
+        make_exec_ctx(fixtures.TEST_CONFIG_FILE, 'generic')
 
-    next(rt)
     if scheduler.registered_name == 'squeue':
         # slurm backend fulfills the functionality of the squeue backend, so
         # if squeue is not configured, use slurm instead
@@ -253,10 +242,9 @@ def test_prepare_without_smt(fake_job, slurm_only):
         assert re.search(r'--hint=nomultithread', fp.read()) is not None
 
 
-def test_prepare_nodes_option(temp_runtime, make_job, slurm_only):
-    rt = temp_runtime(fixtures.TEST_CONFIG_FILE, 'generic',
-                      {'schedulers/use_nodes_option': True})
-    next(rt)
+def test_prepare_nodes_option(make_exec_ctx, make_job, slurm_only):
+    make_exec_ctx(fixtures.TEST_CONFIG_FILE, 'generic',
+                  {'schedulers/use_nodes_option': True})
     job = make_job()
     job.num_tasks = 16
     job.num_tasks_per_node = 2

@@ -21,6 +21,7 @@ import unittests.fixtures as fixtures
 from reframe.core.exceptions import (ConfigError,
                                      SpawnedProcessError,
                                      SpawnedProcessTimeout)
+from unittests.fixtures import *
 
 
 def test_command_success():
@@ -1440,27 +1441,16 @@ def test_cray_cle_info_missing_parts(tmp_path):
     assert cle_info.patchset == '09'
 
 
-@pytest.fixture
-def temp_runtime(tmp_path):
-    def _temp_runtime(site_config, system=None, options=None):
-        options = options or {}
-        options.update({'systems/prefix': tmp_path})
-        with rt.temp_runtime(site_config, system, options):
-            yield
-
-    yield _temp_runtime
-
-
 @pytest.fixture(params=['tmod', 'tmod4', 'lmod', 'nomod'])
-def user_exec_ctx(request, temp_runtime):
+def user_exec_ctx(request, make_exec_ctx_g):
     if fixtures.USER_CONFIG_FILE:
         config_file, system = fixtures.USER_CONFIG_FILE, fixtures.USER_SYSTEM
     else:
         config_file, system = fixtures.BUILTIN_CONFIG_FILE, 'generic'
 
     try:
-        yield from temp_runtime(config_file, system,
-                                {'systems/modules_system': request.param})
+        yield from make_exec_ctx_g(config_file, system,
+                                   {'systems/modules_system': request.param})
     except ConfigError as e:
         pytest.skip(str(e))
 

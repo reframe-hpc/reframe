@@ -7,13 +7,20 @@ import pytest
 
 import reframe.core.runtime as rt
 import unittests.fixtures as fixtures
+
 from reframe.frontend.argparse import ArgumentParser
+from unittests.fixtures import *
 
 
 @pytest.fixture
-def argparser():
-    with rt.temp_runtime(fixtures.TEST_CONFIG_FILE):
-        return ArgumentParser()
+def default_exec_ctx(make_exec_ctx_g):
+    yield from make_exec_ctx_g(fixtures.BUILTIN_CONFIG_FILE)
+
+
+@pytest.fixture
+def argparser(make_exec_ctx):
+    make_exec_ctx()
+    return ArgumentParser()
 
 
 @pytest.fixture
@@ -122,59 +129,56 @@ def extended_parser():
     return parser
 
 
-def test_option_precedence(extended_parser):
-    with rt.temp_runtime(fixtures.BUILTIN_CONFIG_FILE):
-        with rt.temp_environment(variables={
-                'RFM_TIMESTAMP': '%F',
-                'RFM_NON_DEFAULT_CRAYPE': 'yes',
-                'RFM_MODULES_PRELOAD': 'a,b,c',
-                'RFM_CHECK_SEARCH_PATH': 'x:y:z'
+def test_option_precedence(default_exec_ctx, extended_parser):
+    with rt.temp_environment(variables={
+            'RFM_TIMESTAMP': '%F',
+            'RFM_NON_DEFAULT_CRAYPE': 'yes',
+            'RFM_MODULES_PRELOAD': 'a,b,c',
+            'RFM_CHECK_SEARCH_PATH': 'x:y:z'
 
-        }):
-            options = extended_parser.parse_args(
-                ['--timestamp=%FT%T', '--nocolor']
-            )
-            assert options.recursive is None
-            assert options.timestamp == '%FT%T'
-            assert options.non_default_craype is True
-            assert options.config_file is None
-            assert options.prefix is None
-            assert options.stagedir == '/foo'
-            assert options.module == ['a', 'b', 'c']
-            assert options.check_path == ['x', 'y', 'z']
-            assert options.colorize is False
-
-
-def test_option_with_config(extended_parser):
-    with rt.temp_runtime(fixtures.BUILTIN_CONFIG_FILE):
-        with rt.temp_environment(variables={
-                'RFM_TIMESTAMP': '%F',
-                'RFM_NON_DEFAULT_CRAYPE': 'yes',
-                'RFM_MODULES_PRELOAD': 'a,b,c',
-                'RFM_KEEP_STAGE_FILES': 'no'
-        }):
-            site_config = rt.runtime().site_config
-            options = extended_parser.parse_args(
-                ['--timestamp=%FT%T', '--nocolor']
-            )
-            options.update_config(site_config)
-            assert site_config.get('general/0/check_search_recursive') is False
-            assert site_config.get('general/0/timestamp_dirs') == '%FT%T'
-            assert site_config.get('general/0/non_default_craype') is True
-            assert site_config.get('systems/0/prefix') == '.'
-            assert site_config.get('general/0/colorize') is False
-            assert site_config.get('general/0/keep_stage_files') is False
-
-            # Defaults specified in parser override those in configuration file
-            assert site_config.get('systems/0/stagedir') == '/foo'
+    }):
+        options = extended_parser.parse_args(
+            ['--timestamp=%FT%T', '--nocolor']
+        )
+        assert options.recursive is None
+        assert options.timestamp == '%FT%T'
+        assert options.non_default_craype is True
+        assert options.config_file is None
+        assert options.prefix is None
+        assert options.stagedir == '/foo'
+        assert options.module == ['a', 'b', 'c']
+        assert options.check_path == ['x', 'y', 'z']
+        assert options.colorize is False
 
 
-def test_option_envvar_conversion_error(extended_parser):
-    with rt.temp_runtime(fixtures.BUILTIN_CONFIG_FILE):
-        with rt.temp_environment(variables={
-                'RFM_NON_DEFAULT_CRAYPE': 'foo',
-        }):
-            site_config = rt.runtime().site_config
-            options = extended_parser.parse_args(['--nocolor'])
-            errors = options.update_config(site_config)
-            assert len(errors) == 1
+def test_option_with_config(default_exec_ctx, extended_parser, tmp_path):
+    with rt.temp_environment(variables={
+            'RFM_TIMESTAMP': '%F',
+            'RFM_NON_DEFAULT_CRAYPE': 'yes',
+            'RFM_MODULES_PRELOAD': 'a,b,c',
+            'RFM_KEEP_STAGE_FILES': 'no'
+    }):
+        site_config = rt.runtime().site_config
+        options = extended_parser.parse_args(
+            ['--timestamp=%FT%T', '--nocolor']
+        )
+        options.update_config(site_config)
+        assert site_config.get('general/0/check_search_recursive') is False
+        assert site_config.get('general/0/timestamp_dirs') == '%FT%T'
+        assert site_config.get('general/0/non_default_craype') is True
+        assert site_config.get('systems/0/prefix') == str(tmp_path)
+        assert site_config.get('general/0/colorize') is False
+        assert site_config.get('general/0/keep_stage_files') is False
+
+        # Defaults specified in parser override those in configuration file
+        assert site_config.get('systems/0/stagedir') == '/foo'
+
+
+def test_option_envvar_conversion_error(default_exec_ctx, extended_parser):
+    with rt.temp_environment(variables={
+            'RFM_NON_DEFAULT_CRAYPE': 'foo',
+    }):
+        site_config = rt.runtime().site_config
+        options = extended_parser.parse_args(['--nocolor'])
+        errors = options.update_config(site_config)
+        assert len(errors) == 1

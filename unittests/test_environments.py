@@ -11,6 +11,7 @@ import reframe.core.environments as env
 import reframe.core.runtime as rt
 import unittests.fixtures as fixtures
 from reframe.core.exceptions import EnvironError
+from unittests.fixtures import *
 
 
 @pytest.fixture
@@ -40,13 +41,12 @@ def modules_system():
 
 
 @pytest.fixture
-def user_runtime():
+def user_runtime(make_exec_ctx_g):
     if fixtures.USER_CONFIG_FILE:
-        with rt.temp_runtime(fixtures.USER_CONFIG_FILE,
-                             fixtures.USER_SYSTEM):
-            yield rt.runtime()
+        yield from make_exec_ctx_g(fixtures.USER_CONFIG_FILE,
+                                   fixtures.USER_SYSTEM)
     else:
-        yield rt.runtime()
+        yield from make_exec_ctx_g()
 
 
 @pytest.fixture
