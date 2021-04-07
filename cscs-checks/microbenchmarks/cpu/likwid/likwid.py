@@ -15,7 +15,8 @@ class MemBandwidthTest(rfm.RunOnlyRegressionTest):
 
         self.executable = 'likwid-bench'
 
-        self.num_tasks = 0
+        self.num_tasks = 4
+        self.num_tasks_per_node = 1
         self.num_tasks_per_core = 2
         self.system_num_cpus = {
             'daint:mc':  72,
@@ -42,11 +43,11 @@ class MemBandwidthTest(rfm.RunOnlyRegressionTest):
                           'memory': '1200MB'},
         }
 
-        self.maintainers = ['SK']
+        self.maintainers = ['SK', 'CB']
         self.tags = {'benchmark', 'diagnostic', 'health'}
 
-        bw_pattern = sn.extractsingle(r'MByte/s:\s*(?P<bw>\S+)',
-                                      self.stdout, 'bw',  float)
+        bw_pattern = sn.min(sn.extractall(r'MByte/s:\s*(?P<bw>\S+)',
+                                          self.stdout, 'bw', float))
 
         self.sanity_patterns = sn.assert_ge(bw_pattern, 0.0)
         self.perf_patterns = {
