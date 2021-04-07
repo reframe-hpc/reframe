@@ -108,10 +108,11 @@ def run_reframe(tmp_path, perflogdir):
 
 @pytest.fixture
 def temp_runtime(tmp_path):
-    def _temp_runtime(site_config, system=None, options={}):
+    def _temp_runtime(site_config, system=None, options=None):
+        options = options or {}
         options.update({'systems/prefix': tmp_path})
         with rt.temp_runtime(site_config, system, options):
-            yield rt.runtime
+            yield
 
     yield _temp_runtime
 
