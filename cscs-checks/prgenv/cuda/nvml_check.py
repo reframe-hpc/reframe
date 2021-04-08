@@ -43,4 +43,4 @@ class NvmlCheck(rfm.RegressionTest):
 
         self.sanity_patterns = sn.assert_found(regex, self.stdout)
         self.maintainers = ['AJ', 'SK']
-        self.tags = {'production', 'craype', 'external-resources'}
+        self.tags = {'production', 'craype', 'external-resources', 'health'}

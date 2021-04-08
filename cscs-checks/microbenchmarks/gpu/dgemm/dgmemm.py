@@ -46,7 +46,7 @@ class GPUdgemmTest(rfm.RegressionTest):
         }
 
         self.maintainers = ['JO', 'SK']
-        self.tags = {'benchmark'}
+        self.tags = {'benchmark', 'health'}
 
     @sn.sanity_function
     def assert_num_gpus(self):

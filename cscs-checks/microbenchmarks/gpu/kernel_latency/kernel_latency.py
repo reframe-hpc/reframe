@@ -87,7 +87,7 @@ class KernelLatencyTest(rfm.RegressionTest):
         self.reference = self.sys_reference[kernel_version]
 
         self.maintainers = ['TM']
-        self.tags = {'benchmark', 'diagnostic', 'craype'}
+        self.tags = {'benchmark', 'diagnostic', 'craype', 'health'}
 
     @property
     @sn.sanity_function

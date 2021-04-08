@@ -49,7 +49,7 @@ class GPUShmemTest(rfm.RegressionTest):
         }
 
         self.maintainers = ['SK']
-        self.tags = {'benchmark', 'diagnostic', 'craype'}
+        self.tags = {'benchmark', 'diagnostic', 'craype', 'health'}
 
     @property
     @sn.sanity_function
