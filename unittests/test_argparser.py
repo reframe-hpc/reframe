@@ -9,7 +9,7 @@ import reframe.core.runtime as rt
 import unittests.utility as test_util
 
 from reframe.frontend.argparse import ArgumentParser
-from unittests.fixtures import *
+from unittests.fixtures import *    # noqa: F401
 
 
 @pytest.fixture

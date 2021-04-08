@@ -15,7 +15,7 @@ import reframe.utility.sanity as sn
 import unittests.utility as test_util
 from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
                                      PerformanceError, SanityError)
-from unittests.fixtures import *
+from unittests.fixtures import *    # noqa: F401
 
 
 def _run(test, partition, prgenv):

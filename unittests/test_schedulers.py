@@ -19,7 +19,7 @@ from reframe.core.exceptions import (
 )
 from reframe.core.schedulers import Job
 from reframe.core.schedulers.slurm import _SlurmNode, _create_nodes
-from unittests.fixtures import *
+from unittests.fixtures import *    # noqa: F401
 
 
 @pytest.fixture

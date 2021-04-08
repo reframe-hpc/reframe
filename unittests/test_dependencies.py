@@ -18,7 +18,7 @@ from reframe.core.environments import Environment
 from reframe.core.exceptions import DependencyError
 from reframe.core.warnings import ReframeDeprecationWarning
 from reframe.frontend.loader import RegressionCheckLoader
-from unittests.fixtures import *
+from unittests.fixtures import *    # noqa: F401
 
 
 class Node:
