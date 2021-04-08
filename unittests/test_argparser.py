@@ -6,7 +6,7 @@
 import pytest
 
 import reframe.core.runtime as rt
-import unittests.fixtures as fixtures
+import unittests.utility as test_util
 
 from reframe.frontend.argparse import ArgumentParser
 from unittests.fixtures import *
@@ -14,7 +14,7 @@ from unittests.fixtures import *
 
 @pytest.fixture
 def default_exec_ctx(make_exec_ctx_g):
-    yield from make_exec_ctx_g(fixtures.BUILTIN_CONFIG_FILE)
+    yield from make_exec_ctx_g(test_util.BUILTIN_CONFIG_FILE)
 
 
 @pytest.fixture

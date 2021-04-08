@@ -1,8 +1,6 @@
-import contextlib
 import functools
 import inspect
 import os
-import pytest
 import sys
 
 import reframe.core.config as config

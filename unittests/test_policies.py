@@ -26,8 +26,8 @@ from reframe.core.exceptions import (AbortTaskError,
                                      TaskDependencyError)
 from reframe.frontend.loader import RegressionCheckLoader
 
-import unittests.fixtures as fixtures
-from unittests.fixtures import make_exec_ctx, make_exec_ctx_g
+import unittests.utility as test_util
+from unittests.fixtures import *
 from unittests.resources.checks.hellocheck import HelloTest
 from unittests.resources.checks.frontend_checks import (
     BadSetupCheck,
@@ -121,7 +121,7 @@ def make_cases_for_skipping(request):
     import reframe.utility.sanity as sn
 
     def _make_cases():
-        @fixtures.custom_prefix('unittests/resources/checks')
+        @test_util.custom_prefix('unittests/resources/checks')
         class _T0(rfm.RegressionTest):
             valid_systems = ['*']
             valid_prog_environs = ['*']
@@ -160,7 +160,6 @@ def assert_runall(runner):
 
 
 def assert_all_dead(runner):
-    stats = runner.stats
     for t in runner.stats.tasks():
         job = t.check.job
         if job:
@@ -385,7 +384,6 @@ def test_force_local_execution(make_runner, make_cases, testsys_exec_ctx):
 
 def test_kbd_interrupt_within_test(make_runner, make_cases, common_exec_ctx):
     runner = make_runner()
-    check = KeyboardInterruptCheck()
     with pytest.raises(KeyboardInterrupt):
         runner.runall(make_cases([KeyboardInterruptCheck()]))
 

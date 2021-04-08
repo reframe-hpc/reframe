@@ -15,7 +15,7 @@ import reframe.core.environments as env
 import reframe.frontend.runreport as runreport
 import reframe.core.logging as logging
 import reframe.core.runtime as rt
-import unittests.fixtures as fixtures
+import unittests.utility as test_util
 from unittests.fixtures import *
 
 
@@ -109,15 +109,16 @@ def run_reframe(tmp_path, perflogdir):
 
 @pytest.fixture
 def user_exec_ctx(make_exec_ctx_g):
-    if fixtures.USER_CONFIG_FILE is None:
+    if test_util.USER_CONFIG_FILE is None:
         pytest.skip('no user configuration file supplied')
 
-    yield from make_exec_ctx_g(fixtures.USER_CONFIG_FILE, fixtures.USER_SYSTEM)
+    yield from make_exec_ctx_g(test_util.USER_CONFIG_FILE,
+                               test_util.USER_SYSTEM)
 
 
 @pytest.fixture
 def remote_exec_ctx(user_exec_ctx):
-    partition = fixtures.partition_by_scheduler()
+    partition = test_util.partition_by_scheduler()
     if not partition:
         pytest.skip('job submission not supported')
 
@@ -224,7 +225,7 @@ def test_check_submit_success(run_reframe, remote_exec_ctx):
     # This test will run on the auto-detected system
     partition, environ = remote_exec_ctx
     returncode, stdout, _ = run_reframe(
-        config_file=fixtures.USER_CONFIG_FILE,
+        config_file=test_util.USER_CONFIG_FILE,
         local=False,
         system=partition.fullname,
         # Pick up the programming environment of the partition
@@ -633,7 +634,7 @@ def test_unload_module(run_reframe, user_exec_ctx):
     # more exhaustively.
 
     ms = rt.runtime().modules_system
-    if not fixtures.has_sane_modules_system():
+    if not test_util.has_sane_modules_system():
         pytest.skip('no modules system found')
 
     with rt.module_use('unittests/modules'):
@@ -652,14 +653,14 @@ def test_unload_module(run_reframe, user_exec_ctx):
 
 def test_unuse_module_path(run_reframe, user_exec_ctx):
     ms = rt.runtime().modules_system
-    if not fixtures.has_sane_modules_system():
+    if not test_util.has_sane_modules_system():
         pytest.skip('no modules system found')
 
     module_path = 'unittests/modules'
     ms.searchpath_add(module_path)
     returncode, stdout, stderr = run_reframe(
         more_options=[f'--module-path=-{module_path}', '--module=testmod_foo'],
-        config_file=fixtures.USER_CONFIG_FILE, action='run',
+        config_file=test_util.USER_CONFIG_FILE, action='run',
         system=rt.runtime().system.name
     )
     ms.searchpath_remove(module_path)
@@ -669,14 +670,13 @@ def test_unuse_module_path(run_reframe, user_exec_ctx):
 
 
 def test_use_module_path(run_reframe, user_exec_ctx):
-    ms = rt.runtime().modules_system
-    if not fixtures.has_sane_modules_system():
+    if not test_util.has_sane_modules_system():
         pytest.skip('no modules system found')
 
     module_path = 'unittests/modules'
     returncode, stdout, stderr = run_reframe(
         more_options=[f'--module-path=+{module_path}', '--module=testmod_foo'],
-        config_file=fixtures.USER_CONFIG_FILE, action='run',
+        config_file=test_util.USER_CONFIG_FILE, action='run',
         system=rt.runtime().system.name
     )
     assert 'Traceback' not in stdout
@@ -686,8 +686,7 @@ def test_use_module_path(run_reframe, user_exec_ctx):
 
 
 def test_overwrite_module_path(run_reframe, user_exec_ctx):
-    ms = rt.runtime().modules_system
-    if not fixtures.has_sane_modules_system():
+    if not test_util.has_sane_modules_system():
         pytest.skip('no modules system found')
 
     module_path = 'unittests/modules'
@@ -696,7 +695,7 @@ def test_overwrite_module_path(run_reframe, user_exec_ctx):
 
     returncode, stdout, stderr = run_reframe(
         more_options=[f'--module-path={module_path}', '--module=testmod_foo'],
-        config_file=fixtures.USER_CONFIG_FILE, action='run',
+        config_file=test_util.USER_CONFIG_FILE, action='run',
         system=rt.runtime().system.name
     )
     assert 'Traceback' not in stdout

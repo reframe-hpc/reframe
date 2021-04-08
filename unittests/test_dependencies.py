@@ -8,12 +8,11 @@ import itertools
 import pytest
 
 import reframe as rfm
-import reframe.core.runtime as rt
 import reframe.frontend.dependencies as dependencies
 import reframe.frontend.executors as executors
 import reframe.utility as util
+import reframe.utility.sanity as sn
 import reframe.utility.udeps as udeps
-import unittests.fixtures as fixtures
 
 from reframe.core.environments import Environment
 from reframe.core.exceptions import DependencyError
