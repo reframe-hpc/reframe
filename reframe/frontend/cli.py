@@ -796,7 +796,7 @@ def main():
         # Disable hooks
         for tc in testcases:
             for h in options.hooks:
-                type(tc.check).disable_hook(h)
+                tc.check.disable_hook(h)
 
         # Act on checks
         if options.list or options.list_detailed:

@@ -85,8 +85,8 @@ def _validate_test(cls):
                                  'subclass of RegressionTest')
 
     if (cls.is_abstract()):
-        raise ValueError(f'decorated test ({cls.__qualname__!r}) is an'
-                         f' abstract test')
+        raise ValueError(f'decorated test ({cls.__qualname__!r}) has one or '
+                         f'more undefined parameters')
 
 
 def simple_test(cls):
@@ -214,6 +214,13 @@ def _runx(phase):
     return deco
 
 
+# Valid pipeline stages that users can specify in the `run_before()` and
+# `run_after()` decorators
+_USER_PIPELINE_STAGES = (
+    'init', 'setup', 'compile', 'run', 'sanity', 'performance', 'cleanup'
+)
+
+
 def run_before(stage):
     '''Decorator for attaching a test method to a pipeline stage.
 
@@ -226,19 +233,57 @@ def run_before(stage):
     The ``stage`` argument can be any of ``'setup'``, ``'compile'``,
     ``'run'``, ``'sanity'``, ``'performance'`` or ``'cleanup'``.
 
-    .. versionadded:: 2.20
     '''
+    if stage not in _USER_PIPELINE_STAGES:
+        raise ValueError(f'invalid pipeline stage specified: {stage!r}')
+
+    if stage == 'init':
+        raise ValueError('pre-init hooks are not allowed')
+
     return _runx('pre_' + stage)
 
 
 def run_after(stage):
     '''Decorator for attaching a test method to a pipeline stage.
 
-    This is completely analogous to the
-    :py:attr:`reframe.core.decorators.run_before`.
+    This is analogous to the :py:attr:`~reframe.core.decorators.run_before`,
+    except that ``'init'`` can also be used as the ``stage`` argument. In this
+    case, the hook will execute right after the test is initialized (i.e.
+    after the :func:`__init__` method is called), before entering the test's
+    pipeline. In essence, a post-init hook is equivalent to defining
+    additional :func:`__init__` functions in the test. All the other
+    properties of pipeline hooks apply equally here. The following code
 
-    .. versionadded:: 2.20
+    .. code-block:: python
+
+       @rfm.run_after('init')
+       def foo(self):
+           self.x = 1
+
+
+    is equivalent to
+
+    .. code-block:: python
+
+       def __init__(self):
+           self.x = 1
+
+    .. versionchanged:: 3.5.2
+       Add the ability to define post-init hooks in tests.
+
     '''
+
+    if stage not in _USER_PIPELINE_STAGES:
+        raise ValueError(f'invalid pipeline stage specified: {stage!r}')
+
+    # Map user stage names to the actual pipeline functions if needed
+    if stage == 'init':
+        stage = '__init__'
+    elif stage == 'compile':
+        stage = 'compile_wait'
+    elif stage == 'run':
+        stage = 'run_wait'
+
     return _runx('post_' + stage)
 
 
