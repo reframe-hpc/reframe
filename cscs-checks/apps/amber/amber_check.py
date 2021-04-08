@@ -67,7 +67,8 @@ class AmberCheck(AmberBaseCheck):
                     'perf': (30.0, -0.05, None, 'ns/day')
                 },
             }
-            self.tags |= {'health' if variant == 'prod' and scale == 'small'}
+            if variant == 'prod' and scale == 'small':
+                self.tags.add('health')
         elif arch == 'CPU':
             self.valid_systems = ['daint:mc']
             if scale == 'small':
