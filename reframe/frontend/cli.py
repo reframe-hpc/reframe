@@ -26,6 +26,7 @@ import reframe.frontend.dependencies as dependencies
 import reframe.frontend.filters as filters
 import reframe.frontend.runreport as runreport
 import reframe.utility.jsonext as jsonext
+# import reframe.utility.xmlext as xmlext
 import reframe.utility.osext as osext
 
 
@@ -1019,6 +1020,17 @@ def main():
             except OSError as e:
                 printer.warning(
                     f'failed to generate report in {report_file!r}: {e}'
+                )
+
+            xml_data = runner.stats.junit(json_report).decode()
+            xml_report_file = f'{report_file}.xml'
+            try:
+                with open(xml_report_file, 'w') as fp:
+                    fp.write(str(xml_data))
+                    fp.write('\n')
+            except OSError as e:
+                printer.warning(
+                    f'failed to generate report in {xml_report_file!r}: {e}'
                 )
 
         if not success:
