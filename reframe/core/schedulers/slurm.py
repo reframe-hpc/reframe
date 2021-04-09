@@ -551,6 +551,10 @@ class SqueueJobScheduler(SlurmJobScheduler):
     SQUEUE_DELAY = 2
 
     def poll(self, *jobs):
+        if jobs:
+            # Filter out non-jobs
+            jobs = [job for job in jobs if job is not None]
+
         if not jobs:
             return
 

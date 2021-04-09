@@ -20,3 +20,9 @@ class HelloThreadedExtended2Test(rfm.RegressionTest):
         num_messages = sn.len(sn.findall(r'\[\s?\d+\] Hello, World\!',
                                          self.stdout))
         self.sanity_patterns = sn.assert_eq(num_messages, 16)
+
+    @rfm.run_before('compile')
+    def set_threading_flags(self):
+        environ = self.current_environ.name
+        if environ in {'clang', 'gnu'}:
+            self.build_system.cxxflags += ['-pthread']

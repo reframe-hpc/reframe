@@ -8,13 +8,13 @@
 #
 
 
-import functools
-
-import reframe.core.directives as directives
 import reframe.core.namespaces as namespaces
 import reframe.core.parameters as parameters
 import reframe.core.variables as variables
 from reframe.core.exceptions import ReframeSyntaxError
+
+from reframe.core.exceptions import ReframeSyntaxError
+from reframe.core.hooks import HookRegistry
 
 
 class RegressionTestMeta(type):
@@ -154,40 +154,12 @@ class RegressionTestMeta(type):
         # Set up the hooks for the pipeline stages based on the _rfm_attach
         # attribute; all dependencies will be resolved first in the post-setup
         # phase if not assigned elsewhere
-        hooks = {}
-        fn_with_deps = []
-        for v in namespace.values():
-            if hasattr(v, '_rfm_attach'):
-                for phase in v._rfm_attach:
-                    try:
-                        hooks[phase].append(v)
-                    except KeyError:
-                        hooks[phase] = [v]
+        hooks = HookRegistry.create(namespace)
+        for b in bases:
+            if hasattr(b, '_rfm_pipeline_hooks'):
+                hooks.update(getattr(b, '_rfm_pipeline_hooks'))
 
-            try:
-                if v._rfm_resolve_deps:
-                    fn_with_deps.append(v)
-            except AttributeError:
-                pass
-
-        if fn_with_deps:
-            hooks['post_setup'] = fn_with_deps + hooks.get('post_setup', [])
-
-        def apply_directives(obj):
-            directives.apply(cls, obj)
-            directives.reset(cls)
-
-        if hasattr(cls, '__rfm_init__'):
-            orig_rfm_init = cls.__rfm_init__
-
-            def augmented_init(obj, *args, **kwargs):
-                orig_rfm_init(obj, *args, **kwargs)
-                apply_directives(obj)
-
-            cls.__rfm_init__ = augmented_init
-
-        cls._rfm_pipeline_hooks = hooks
-        cls._rfm_disabled_hooks = set()
+        cls._rfm_pipeline_hooks = hooks  # HookRegistry(local_hooks)
         cls._final_methods = {v.__name__ for v in namespace.values()
                               if hasattr(v, '_rfm_final')}
 
@@ -260,13 +232,12 @@ class RegressionTestMeta(type):
         return cls._rfm_param_space
 
     def is_abstract(cls):
-        '''Check if the test is an abstract test.
+        '''Check if the class is an abstract test.
 
-        If the parameter space has undefined parameters, the test is considered
-        an abstract test. If that is the case, the length of the parameter
-        space is just 0.
+        This is the case when some parameters are undefined, which results in
+        the length of the parameter space being 0.
 
-        :return: bool indicating wheteher the test is abstract or not
+        :return: bool indicating wheteher the test has undefined parameters.
 
         :meta private:
         '''
