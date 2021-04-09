@@ -9,69 +9,77 @@ import reframe as rfm
 import library.microbenchmarks.gpu.memory_bandwidth as mb
 import cscslib.microbenchmarks.gpu.hooks as hooks
 
+class PrgEnvMixin(rfm.RegressionMixin):
+    @rfm.run_after('init')
+    def arola_tsa_valid_prog_environs(self):
+        if self.current_system.name in ['arolla', 'tsa']:
+            self.valid_prog_environs = ['PrgEnv-gnu-nompi']
+
 
 @rfm.simple_test
-class GpuBandwidthCheck(mb.GpuBandwidthSingle, hooks.SetCompileOpts, hooks.SetGPUsPerNode):
+class GpuBandwidthCheck(mb.GpuBandwidthSingle, PrgEnvMixin,
+                        hooks.SetCompileOpts, hooks.SetGPUsPerNode):
     valid_systems = [
         'daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn',
         'ault:amdv100', 'ault:intelv100', 'ault:amda100', 'ault:amdvega'
     ]
     valid_prog_environs = ['PrgEnv-gnu']
-
-    def __init__(self):
-        if self.current_system.name in ['arolla', 'tsa']:
-            self.valid_prog_environs = ['PrgEnv-gnu-nompi']
-
-        self.reference = {
-            'daint:gpu': {
-                'h2d': (11.881, -0.1, None, 'GB/s'),
-                'd2h': (12.571, -0.1, None, 'GB/s'),
-                'd2d': (499, -0.1, None, 'GB/s')
-            },
-            'dom:gpu': {
-                'h2d': (11.881, -0.1, None, 'GB/s'),
-                'd2h': (12.571, -0.1, None, 'GB/s'),
-                'd2d': (499, -0.1, None, 'GB/s')
-            },
-            'tsa:cn': {
-                'h2d': (13.000, -0.1, None, 'GB/s'),
-                'd2h': (12.416, -0.1, None, 'GB/s'),
-                'd2d': (777.000, -0.1, None, 'GB/s')
-            },
-            'ault:amda100': {
-                'h2d': (25.500, -0.1, None, 'GB/s'),
-                'd2h': (26.170, -0.1, None, 'GB/s'),
-                'd2d': (1322.500, -0.1, None, 'GB/s')
-            },
-            'ault:amdv100': {
-                'h2d': (13.189, -0.1, None, 'GB/s'),
-                'd2h': (13.141, -0.1, None, 'GB/s'),
-                'd2d': (777.788, -0.1, None, 'GB/s')
-            },
-            'ault:intelv100': {
-                'h2d': (13.183, -0.1, None, 'GB/s'),
-                'd2h': (13.411, -0.1, None, 'GB/s'),
-                'd2d': (778.200, -0.1, None, 'GB/s')
-            },
-            'ault:amdvega': {
-                'h2d': (14, -0.1, None, 'GB/s'),
-                'd2h': (14, -0.1, None, 'GB/s'),
-                'd2d': (575.700, -0.1, None, 'GB/s')
-            },
-        }
-        self.tags.update({'diagnostic', 'mch', 'craype'})
-
+    num_tasks = 0
+    reference = {
+        'daint:gpu': {
+            'h2d': (11.881, -0.1, None, 'GB/s'),
+            'd2h': (12.571, -0.1, None, 'GB/s'),
+            'd2d': (499, -0.1, None, 'GB/s')
+        },
+        'dom:gpu': {
+            'h2d': (11.881, -0.1, None, 'GB/s'),
+            'd2h': (12.571, -0.1, None, 'GB/s'),
+            'd2d': (499, -0.1, None, 'GB/s')
+        },
+        'tsa:cn': {
+            'h2d': (13.000, -0.1, None, 'GB/s'),
+            'd2h': (12.416, -0.1, None, 'GB/s'),
+            'd2d': (777.000, -0.1, None, 'GB/s')
+        },
+        'ault:amda100': {
+            'h2d': (25.500, -0.1, None, 'GB/s'),
+            'd2h': (26.170, -0.1, None, 'GB/s'),
+            'd2d': (1322.500, -0.1, None, 'GB/s')
+        },
+        'ault:amdv100': {
+            'h2d': (13.189, -0.1, None, 'GB/s'),
+            'd2h': (13.141, -0.1, None, 'GB/s'),
+            'd2d': (777.788, -0.1, None, 'GB/s')
+        },
+        'ault:intelv100': {
+            'h2d': (13.183, -0.1, None, 'GB/s'),
+            'd2h': (13.411, -0.1, None, 'GB/s'),
+            'd2d': (778.200, -0.1, None, 'GB/s')
+        },
+        'ault:amdvega': {
+            'h2d': (14, -0.1, None, 'GB/s'),
+            'd2h': (14, -0.1, None, 'GB/s'),
+            'd2d': (575.700, -0.1, None, 'GB/s')
+        },
+    }
+    tags = {'diagnostic', 'mch', 'craype', 'benchmark'}
+    maintainers = ['AJ', 'SK']
 
 @rfm.simple_test
-class MultiGpuBandwidthCheck(mb.GpuBandwidthMulti, hooks.SetCompileOpts, hooks.SetGPUsPerNode):
-    valid_systems = ['tsa:cn', 'arola:cn',
-                     'ault:amdv100', 'ault:intelv100',
-                     'ault:amda100', 'ault:amdvega']
+class MultiGpuBandwidthCheck(mb.GpuBandwidthMulti, PrgEnvMixin,
+                             hooks.SetCompileOpts, hooks.SetGPUsPerNode):
+    valid_systems = [
+        'tsa:cn', 'arola:cn', 'ault:amdv100', 'ault:intelv100',
+        'ault:amda100', 'ault:amdvega'
+    ]
     valid_prog_environs = ['PrgEnv-gnu']
+    num_tasks = 0
+    tags = {'diagnostic', 'mch', 'craype', 'benchmark'}
+    maintainers = ['AJ', 'SK']
 
-    def __init__(self):
-        if self.current_system.name in ['arolla', 'tsa']:
-            self.valid_prog_environs = ['PrgEnv-gnu-nompi']
+    @rfm.run_before('performance')
+    def set_references(self):
+        '''The references depend on the parameter p2p.'''
 
         if self.p2p:
             self.reference = {
@@ -115,5 +123,3 @@ class MultiGpuBandwidthCheck(mb.GpuBandwidthMulti, hooks.SetCompileOpts, hooks.S
                     'bw':   (11.75, -0.1, None, 'GB/s'),
                 },
             }
-
-        self.tags.update({'diagnostic', 'mch', 'craype'})

@@ -51,3 +51,18 @@ class GpuBurnTest(GpuBurnBase, hooks.SetCompileOpts, hooks.SetGPUsPerNode):
 
     maintainers = ['AJ', 'TM']
     tags = {'diagnostic', 'benchmark', 'craype'}
+
+    @rfm.run_before('performance')
+    def report_nid_with_smallest_flops(self):
+        regex = r'\[(\S+)\] GPU\s+\d\(OK\): (\d+) GF/s'
+        rptf = os.path.join(self.stagedir, sn.evaluate(self.stdout))
+        self.nids = sn.extractall(regex, rptf, 1)
+        self.flops = sn.extractall(regex, rptf, 2, float)
+
+        # Find index of smallest flops and update reference dictionary to
+        # include our patched units
+        index = self.flops.evaluate().index(min(self.flops))
+        unit = f'GF/s ({self.nids[index]})'
+        for key, ref in self.reference.items():
+            if not key.endswith(':temp'):
+                self.reference[key] = (*ref[:3], unit)

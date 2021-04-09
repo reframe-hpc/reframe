@@ -35,6 +35,9 @@ class TestStats:
     def failed(self, run=-1):
         return [t for t in self.tasks(run) if t.failed]
 
+    def skipped(self, run=-1):
+        return [t for t in self.tasks(run) if t.skipped]
+
     def aborted(self, run=-1):
         return [t for t in self.tasks(run) if t.aborted]
 
@@ -83,6 +86,7 @@ class TestStats:
             testcases = []
             num_failures = 0
             num_aborted = 0
+            num_skipped = 0
             for t in run:
                 check = t.check
                 partition = check.current_partition
@@ -158,6 +162,9 @@ class TestStats:
                             'traceback': t.exc_info[2]
                         }
                         entry['fail_severe'] = errors.is_severe(*t.exc_info)
+                elif t.skipped:
+                    entry['result'] = 'skipped'
+                    num_skipped += 1
                 else:
                     entry['result'] = 'success'
                     entry['outputdir'] = check.outputdir
@@ -183,6 +190,7 @@ class TestStats:
                 'num_cases': len(run),
                 'num_failures': num_failures,
                 'num_aborted': num_aborted,
+                'num_skipped': num_skipped,
                 'runid': runid,
                 'testcases': testcases
             })

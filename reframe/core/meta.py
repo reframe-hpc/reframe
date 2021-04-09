@@ -8,25 +8,52 @@
 #
 
 
-from reframe.core.exceptions import ReframeSyntaxError
 import reframe.core.namespaces as namespaces
 import reframe.core.parameters as parameters
 import reframe.core.variables as variables
+
+from reframe.core.exceptions import ReframeSyntaxError
+from reframe.core.hooks import HookRegistry
 
 
 class RegressionTestMeta(type):
 
     class MetaNamespace(namespaces.LocalNamespace):
-        '''Custom namespace to control the cls attribute assignment.'''
+        '''Custom namespace to control the cls attribute assignment.
+
+        Regular Python class attributes can be overriden by either
+        parameters or variables respecting the order of execution.
+        A variable or a parameter may not be declared more than once in the
+        same class body. Overriding a variable with a parameter or the other
+        way around has an undefined behaviour. A variable's value may be
+        updated multiple times within the same class body. A parameter's
+        value may not be updated more than once within the same class body.
+        '''
+
         def __setitem__(self, key, value):
-            if isinstance(value, variables.VarDirective):
+            if isinstance(value, variables.TestVar):
                 # Insert the attribute in the variable namespace
                 self['_rfm_local_var_space'][key] = value
+                value.__set_name__(self, key)
+
+                # Override the regular class attribute (if present)
+                self._namespace.pop(key, None)
+
             elif isinstance(value, parameters.TestParam):
                 # Insert the attribute in the parameter namespace
                 self['_rfm_local_param_space'][key] = value
+
+                # Override the regular class attribute (if present)
+                self._namespace.pop(key, None)
+
+            elif key in self['_rfm_local_param_space']:
+                raise ValueError(
+                    f'cannot override parameter {key!r}'
+                )
             else:
-                super().__setitem__(key, value)
+                # Insert the items manually to overide the namespace clash
+                # check from the base namespace.
+                self._namespace[key] = value
 
         def __getitem__(self, key):
             '''Expose and control access to the local namespaces.
@@ -40,13 +67,7 @@ class RegressionTestMeta(type):
             except KeyError as err:
                 try:
                     # Handle variable access
-                    var = self['_rfm_local_var_space'][key]
-                    if var.is_defined():
-                        return var.default_value
-                    else:
-                        raise ValueError(
-                            f'variable {key!r} is not assigned a value'
-                        )
+                    return self['_rfm_local_var_space'][key]
 
                 except KeyError:
                     # Handle parameter access
@@ -54,8 +75,19 @@ class RegressionTestMeta(type):
                         raise ValueError(
                             'accessing a test parameter from the class '
                             'body is disallowed'
-                        )
+                        ) from None
                     else:
+                        # As the last resource, look if key is a variable in
+                        # any of the base classes. If so, make its value
+                        # available in the current class' namespace.
+                        for b in self['_rfm_bases']:
+                            if key in b._rfm_var_space:
+                                # Store a deep-copy of the variable's
+                                # value and return.
+                                v = b._rfm_var_space[key].default_value
+                                self._namespace[key] = v
+                                return self._namespace[key]
+
                         # If 'key' is neither a variable nor a parameter,
                         # raise the exception from the base __getitem__.
                         raise err from None
@@ -63,6 +95,11 @@ class RegressionTestMeta(type):
     @classmethod
     def __prepare__(metacls, name, bases, **kwargs):
         namespace = super().__prepare__(name, bases, **kwargs)
+
+        # Keep reference to the bases inside the namespace
+        namespace['_rfm_bases'] = [
+            b for b in bases if hasattr(b, '_rfm_var_space')
+        ]
 
         # Regression test parameter space defined at the class level
         local_param_space = namespaces.LocalNamespace()
@@ -78,7 +115,7 @@ class RegressionTestMeta(type):
 
         # Directives to add/modify a regression test variable
         namespace['variable'] = variables.TestVar
-        namespace['required'] = variables.UndefineVar()
+        namespace['required'] = variables.Undefined
         return metacls.MetaNamespace(namespace)
 
     def __new__(metacls, name, bases, namespace, **kwargs):
@@ -108,27 +145,12 @@ class RegressionTestMeta(type):
         # Set up the hooks for the pipeline stages based on the _rfm_attach
         # attribute; all dependencies will be resolved first in the post-setup
         # phase if not assigned elsewhere
-        hooks = {}
-        fn_with_deps = []
-        for v in namespace.values():
-            if hasattr(v, '_rfm_attach'):
-                for phase in v._rfm_attach:
-                    try:
-                        hooks[phase].append(v)
-                    except KeyError:
-                        hooks[phase] = [v]
+        hooks = HookRegistry.create(namespace)
+        for b in bases:
+            if hasattr(b, '_rfm_pipeline_hooks'):
+                hooks.update(getattr(b, '_rfm_pipeline_hooks'))
 
-            try:
-                if v._rfm_resolve_deps:
-                    fn_with_deps.append(v)
-            except AttributeError:
-                pass
-
-        if fn_with_deps:
-            hooks['post_setup'] = fn_with_deps + hooks.get('post_setup', [])
-
-        cls._rfm_pipeline_hooks = hooks
-        cls._rfm_disabled_hooks = set()
+        cls._rfm_pipeline_hooks = hooks  # HookRegistry(local_hooks)
         cls._final_methods = {v.__name__ for v in namespace.values()
                               if hasattr(v, '_rfm_final')}
 
@@ -172,7 +194,7 @@ class RegressionTestMeta(type):
         obj.__init__(*args, **kwargs)
         return obj
 
-    def __getattribute__(cls, name):
+    def __getattr__(cls, name):
         ''' Attribute lookup method for the MetaNamespace.
 
         This metaclass implements a custom namespace, where built-in `variable`
@@ -183,15 +205,14 @@ class RegressionTestMeta(type):
         requested class attribute.
         '''
         try:
-            return super().__getattribute__(name)
-        except AttributeError:
+            return cls._rfm_var_space.vars[name]
+        except KeyError:
             try:
-                return cls._rfm_local_var_space[name]
+                return cls._rfm_param_space.params[name]
             except KeyError:
-                try:
-                    return cls._rfm_local_param_space[name]
-                except KeyError:
-                    return super().__getattr__(name)
+                raise AttributeError(
+                    f'class {cls.__qualname__!r} has no attribute {name!r}'
+                ) from None
 
     @property
     def param_space(cls):
@@ -199,13 +220,12 @@ class RegressionTestMeta(type):
         return cls._rfm_param_space
 
     def is_abstract(cls):
-        '''Check if the test is an abstract test.
+        '''Check if the class is an abstract test.
 
-        If the parameter space has undefined parameters, the test is considered
-        an abstract test. If that is the case, the length of the parameter
-        space is just 0.
+        This is the case when some parameters are undefined, which results in
+        the length of the parameter space being 0.
 
-        :return: bool indicating wheteher the test is abstract or not
+        :return: bool indicating wheteher the test has undefined parameters.
 
         :meta private:
         '''

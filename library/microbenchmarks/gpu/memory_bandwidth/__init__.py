@@ -9,8 +9,18 @@ import reframe as rfm
 
 __all__ = ['GpuBandwidthSingle', 'GpuBandwidthMulti']
 
+
 class GpuBandwidthBase(rfm.RegressionTest, pin_prefix=True):
-    ''' Base class to the gpu bandwidth test.'''
+    '''Base class to the gpu bandwidth test.
+
+    The source code can be compiled for both CUDA and HIP. This option must be
+    set by derived class defining the `gpu_build` variable. A specific target
+    architecture can be specified through the variable `gpu_arch`.
+
+    By default, these benchmarks have default values for the size of the copy
+    buffer (`copy_size`) and the number of times this copy is performed
+    (`num_copies`). These values can also be overriden by a derived class.
+    '''
 
     # Default copy variables
     copy_size = variable(int, value=1073741824)
@@ -18,10 +28,8 @@ class GpuBandwidthBase(rfm.RegressionTest, pin_prefix=True):
 
     build_system = 'Make'
     executable = 'memory_bandwidth.x'
-    num_tasks = 0
+    num_tasks = required
     num_tasks_per_node = 1
-    exclusive_access = True
-    tags = {'benchmark'}
     maintainers = ['AJ', 'SK']
 
     # GPU build options
@@ -57,17 +65,49 @@ class GpuBandwidthBase(rfm.RegressionTest, pin_prefix=True):
             f'--copies {self.num_copies}',
         ]
 
-
-class GpuBandwidthSingle(GpuBandwidthBase):
-    '''GPU memory andwidth benchmark.
-
-    Evaluates the individual host-device, device-host and device-device
-    bandwidth for all the GPUs on each node.
-    '''
-
     @rfm.run_before('sanity')
     def set_sanity_patterns(self):
         self.sanity_patterns = self.do_sanity_check()
+
+    @sn.sanity_function
+    def do_sanity_check(self):
+        node_names = set(sn.extractall(
+            r'^\s*\[([^\]]*)\]\s*Found %s device\(s\).'
+            % self.num_gpus_per_node, self.stdout, 1
+        ))
+        sn.evaluate(sn.assert_eq(
+            self.job.num_tasks, len(node_names),
+            msg='requested {0} node(s), got {1} (nodelist: %s)' %
+            ','.join(sorted(node_names))))
+        good_nodes = set(sn.extractall(
+            r'^\s*\[([^\]]*)\]\s*Test Result\s*=\s*PASS',
+            self.stdout, 1
+        ))
+        sn.evaluate(sn.assert_eq(
+            node_names, good_nodes,
+            msg='check failed on the following node(s): %s' %
+            ','.join(sorted(node_names - good_nodes)))
+        )
+        return True
+
+
+class GpuBandwidthSingle(GpuBandwidthBase):
+    '''GPU memory bandwidth benchmark.
+
+    Evaluates the individual host-device, device-host and device-device
+    bandwidth for all the GPUs on each node.
+
+    -- Sanity --
+    Tests that the number of nodes and the number of devices per node matches
+    the variables specified in the test.
+
+    -- Performance --
+    The performance patterns are:
+     - h2d: Host to device bandwidth in GB/s.
+     - d2h: Device to host bandwidth in GB/s.
+     - d2d: Device to device bandwidth in GB/s.
+
+    '''
 
     @rfm.run_before('performance')
     def set_perf_patterns(self):
@@ -91,29 +131,8 @@ class GpuBandwidthSingle(GpuBandwidthBase):
 
         # Extract the bandwidth corresponding to the right node, transfer and
         # device.
-        return (rf'^[^,]*\[[^,]*\]\s*{direction}\s*bandwidth on device'
+        return (rf'^[^,]*\[[^\]]*\]\s*{direction}\s*bandwidth on device'
                 r' \d+ is \s*(\S+)\s*GB/s.')
-
-    @sn.sanity_function
-    def do_sanity_check(self):
-        node_names = set(sn.extractall(
-            r'^\s*\[([^,]{1,20})\]\s*Found %s device\(s\).'
-            % self.num_gpus_per_node, self.stdout, 1
-        ))
-        sn.evaluate(sn.assert_eq(
-            self.job.num_tasks, len(node_names),
-            msg='requested {0} node(s), got {1} (nodelist: %s)' %
-            ','.join(sorted(node_names))))
-        good_nodes = set(sn.extractall(
-            r'^\s*\[([^,]{1,20})\]\s*Test Result\s*=\s*PASS',
-            self.stdout, 1
-        ))
-        sn.evaluate(sn.assert_eq(
-            node_names, good_nodes,
-            msg='check failed on the following node(s): %s' %
-            ','.join(sorted(node_names - good_nodes)))
-        )
-        return True
 
 
 class GpuBandwidthMulti(GpuBandwidthBase):
@@ -121,20 +140,24 @@ class GpuBandwidthMulti(GpuBandwidthBase):
 
     Evaluates the copy bandwidth amongst all devices in a compute node.
     This test assesses the bandwidth with and without direct peer memory
-    acess.
+    acess (see the parameter `p2p`).
+
+    -- Sanity --
+    Tests that the number of nodes and the number of devices per node matches
+    the variables specified in the test.
+
+    -- Performance --
+    The performance patterns are:
+     - bw: The average bandwidth with all the other devices in the node.
     '''
 
     p2p = parameter([True, False])
 
     @rfm.run_before('run')
-    def set_exec_opts(self):
+    def extend_exec_opts(self):
         self.executable_opts += ['--multi-gpu']
         if self.p2p:
             self.executable_opts += ['--p2p']
-
-    @rfm.run_before('sanity')
-    def set_sanity_patterns(self):
-        self.sanity_patterns = self.do_sanity_check()
 
     @rfm.run_before('performance')
     def set_perf_patterns(self):
@@ -143,25 +166,3 @@ class GpuBandwidthMulti(GpuBandwidthBase):
                 r'^[^,]*\[[^\]]*\]\s+GPU\s+\d+\s+(\s*\d+.\d+\s)+',
                 self.stdout, 1, float))
         }
-
-    @sn.sanity_function
-    def do_sanity_check(self):
-        node_names = set(sn.extractall(
-            r'^\s*\[([^,]{1,20})\]\s*Found %s device\(s\).'
-            % self.num_gpus_per_node, self.stdout, 1
-        ))
-        sn.evaluate(sn.assert_eq(
-            self.job.num_tasks, len(node_names),
-            msg='requested {0} node(s), got {1} (nodelist: %s)' %
-            ','.join(sorted(node_names))))
-        good_nodes = set(sn.extractall(
-            r'^\s*\[([^,]{1,20})\]\s*Test Result\s*=\s*PASS',
-            self.stdout, 1
-        ))
-        sn.evaluate(sn.assert_eq(
-            node_names, good_nodes,
-            msg='check failed on the following node(s): %s' %
-            ','.join(sorted(node_names - good_nodes)))
-        )
-
-        return True

@@ -7,10 +7,12 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.parameterized_test(*([1 << pow] for pow in range(19, 30)))
+@rfm.simple_test
 class StreamMultiSysTest(rfm.RegressionTest):
-    def __init__(self, num_bytes):
-        array_size = (num_bytes >> 3) // 3
+    num_bytes = parameter(1 << pow for pow in range(19, 30))
+
+    def __init__(self):
+        array_size = (self.num_bytes >> 3) // 3
         ntimes = 100*1024*1024 // array_size
         self.descr = f'STREAM test (array size: {array_size}, ntimes: {ntimes})'    # noqa: E501
         self.valid_systems = ['*']

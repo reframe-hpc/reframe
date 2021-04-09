@@ -13,7 +13,7 @@ class SetCompileOpts(rfm.RegressionMixin):
         self.gpu_build = 'cuda'
         if cs in {'dom', 'daint'}:
             self.gpu_arch = '60'
-            self.modules = ['craype-accel-nvidia60']
+            self.modules = ['craype-accel-nvidia60', 'cdt-cuda']
             if cs == 'dom':
                 self.modules += ['cdt-cuda']
 

@@ -31,7 +31,8 @@ class PchaseGlobal(rfm.RegressionMixin):
 
 
 @rfm.simple_test
-class CompileGpuPChase(pchase.BuildGpuPChaseBase, PchaseGlobal, hooks.SetCompileOpts):
+class CompileGpuPChase(pchase.BuildGpuPChaseBase, PchaseGlobal,
+                       hooks.SetCompileOpts):
     ''' Build the executable.'''
 
     def __init__(self):
@@ -41,7 +42,8 @@ class CompileGpuPChase(pchase.BuildGpuPChaseBase, PchaseGlobal, hooks.SetCompile
         self.valid_prog_environs = self.global_prog_environs
 
 
-class RunGpuPChaseSingle(pchase.RunGpuPChaseSingle, PchaseGlobal, hooks.SetGPUsPerNode, hooks.SetCompileOpts):
+class RunGpuPChaseSingle(pchase.RunGpuPChaseSingle, PchaseGlobal,
+                         hooks.SetGPUsPerNode, hooks.SetCompileOpts):
     def __init__(self):
         self.depends_on('CompileGpuPChase')
         self.valid_systems = (
@@ -160,11 +162,13 @@ class GpuDRAMLatency(RunGpuPChaseSingle):
 
 
 @rfm.simple_test
-class GpuP2PLatencyP2P(pchase.RunGpuPChaseP2P, PchaseGlobal, hooks.SetGPUsPerNode, hooks.SetCompileOpts):
+class GpuP2PLatencyP2P(pchase.RunGpuPChaseP2P, PchaseGlobal,
+                       hooks.SetGPUsPerNode, hooks.SetCompileOpts):
     '''Measure the latency to remote device.
 
     Depending on the list size, the data might be cached in different places.
-    A list_size of 2000000 will place the list on the DRAM of the remote device.
+    A list_size of 2000000 will place the list on the DRAM of the remote
+    device.
     '''
 
     list_size = parameter([5000, 2000000])
