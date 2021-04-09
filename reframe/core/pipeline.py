@@ -21,6 +21,7 @@ import numbers
 import os
 import shutil
 
+import reframe.core.directives as directives
 import reframe.core.environments as env
 import reframe.core.fields as fields
 import reframe.core.hooks as hooks
@@ -772,6 +773,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         # Initialize the test
         obj.__rfm_init__(name, prefix)
+
+        # Apply the directives
+        directives.apply(cls, obj)
         return obj
 
     def __init__(self):
@@ -789,11 +793,13 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         pipeline_hooks = cls._rfm_pipeline_hooks
         fn = getattr(cls, stage)
         new_fn = hooks.attach_hooks(pipeline_hooks)(fn)
-        setattr(cls, '_rfm_pipeline_fn_' + stage, new_fn)
+        setattr(cls, '_P_' + stage, new_fn)
 
     def __getattribute__(self, name):
         if name in _PIPELINE_STAGES:
-            name = f'_rfm_pipeline_fn_{name}'
+            name = f'_P_{name}'
+        elif name in directives.NAMES:
+            name = f'_D_{name}'
 
         return super().__getattribute__(name)
 

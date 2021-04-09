@@ -53,7 +53,7 @@ class _Directive:
         return self._kwargs
 
     def apply(self, obj):
-        fn = getattr(obj, '_D_' + self.name)
+        fn = getattr(obj, self.name)
         fn(*self.args, **self.kwargs)
 
 
@@ -72,8 +72,10 @@ class DirectiveRegistry:
 def apply(cls, obj):
     '''Apply all directives of class ``cls`` to the object ``obj``.'''
 
-    for d in cls._rfm_dir_registry.directives:
-        d.apply(obj)
+    for c in cls.mro():
+        if hasattr(c, '_rfm_dir_registry'):
+            for d in c._rfm_dir_registry.directives:
+                d.apply(obj)
 
 
 def reset(cls):

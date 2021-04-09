@@ -7,7 +7,9 @@
 # Meta-class for creating regression tests.
 #
 
+import functools
 
+import reframe.core.directives as directives
 import reframe.core.namespaces as namespaces
 import reframe.core.parameters as parameters
 import reframe.core.variables as variables
@@ -159,7 +161,7 @@ class RegressionTestMeta(type):
             if hasattr(b, '_rfm_pipeline_hooks'):
                 hooks.update(getattr(b, '_rfm_pipeline_hooks'))
 
-        cls._rfm_pipeline_hooks = hooks  # HookRegistry(local_hooks)
+        cls._rfm_pipeline_hooks = hooks
         cls._final_methods = {v.__name__ for v in namespace.values()
                               if hasattr(v, '_rfm_final')}
 
