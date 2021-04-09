@@ -77,7 +77,7 @@ class RunGpuPChaseBase(rfm.RunOnlyRegressionTest, pin_prefix=True):
     num_list_nodes = variable(int)
 
     # Use a large stride to ensure there's only a single node per cache line
-    stride = variable(int, value=32) # (128 Bytes)
+    stride = variable(int, value=32)  # (128 Bytes)
 
     # Set a large number of node jumps to smooth out spurious effects
     num_node_jumps = variable(int, value=400000)

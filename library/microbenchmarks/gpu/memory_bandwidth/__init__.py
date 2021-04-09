@@ -48,7 +48,7 @@ class GpuBandwidthBase(rfm.RegressionTest, pin_prefix=True):
             self.build_system.makefile = 'makefile.cuda'
             if self.gpu_arch:
                 self.build_system.cxxflags += [f'-arch=compute_{self.gpu_arch}',
-                                              f'-code=sm_{self.gpu_arch}']
+                                               f'-code=sm_{self.gpu_arch}']
         elif self.gpu_build == 'hip':
             self.build_system.makefile = 'makefile.hip'
             if self.gpu_arch:
@@ -111,14 +111,14 @@ class GpuBandwidthSingle(GpuBandwidthBase):
 
     @rfm.run_before('performance')
     def set_perf_patterns(self):
-       self.perf_patterns = {
-           'h2d': sn.min(sn.extractall(self._xfer_pattern('h2d'),
-                                       self.stdout, 1, float)),
-           'd2h': sn.min(sn.extractall(self._xfer_pattern('d2h'),
-                                       self.stdout, 1, float)),
-           'd2d': sn.min(sn.extractall(self._xfer_pattern('d2d'),
-                                       self.stdout, 1, float)),
-       }
+        self.perf_patterns = {
+            'h2d': sn.min(sn.extractall(self._xfer_pattern('h2d'),
+                                        self.stdout, 1, float)),
+            'd2h': sn.min(sn.extractall(self._xfer_pattern('d2h'),
+                                        self.stdout, 1, float)),
+            'd2d': sn.min(sn.extractall(self._xfer_pattern('d2d'),
+                                        self.stdout, 1, float)),
+        }
 
     def _xfer_pattern(self, xfer_kind):
         '''generates search pattern for performance analysis'''

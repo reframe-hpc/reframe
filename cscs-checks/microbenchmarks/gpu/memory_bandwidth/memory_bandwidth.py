@@ -9,6 +9,7 @@ import reframe as rfm
 import library.microbenchmarks.gpu.memory_bandwidth as mb
 import cscslib.microbenchmarks.gpu.hooks as hooks
 
+
 class PrgEnvMixin(rfm.RegressionMixin):
     @rfm.run_after('init')
     def arola_tsa_valid_prog_environs(self):
@@ -64,6 +65,7 @@ class GpuBandwidthCheck(mb.GpuBandwidthSingle, PrgEnvMixin,
     }
     tags = {'diagnostic', 'mch', 'craype', 'benchmark'}
     maintainers = ['AJ', 'SK']
+
 
 @rfm.simple_test
 class MultiGpuBandwidthCheck(mb.GpuBandwidthMulti, PrgEnvMixin,
