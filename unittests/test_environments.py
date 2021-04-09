@@ -9,7 +9,7 @@ import pytest
 
 import reframe.core.environments as env
 import reframe.core.runtime as rt
-import unittests.fixtures as fixtures
+import unittests.utility as test_util
 from reframe.core.exceptions import EnvironError
 
 
@@ -24,11 +24,11 @@ def base_environ(monkeypatch):
 
 @pytest.fixture
 def modules_system():
-    if not fixtures.has_sane_modules_system():
+    if not test_util.has_sane_modules_system():
         pytest.skip('no modules system configured')
 
     modsys = rt.runtime().modules_system
-    modsys.searchpath_add(fixtures.TEST_MODULES)
+    modsys.searchpath_add(test_util.TEST_MODULES)
 
     # Always add a base module; this is a workaround for the modules
     # environment's inconsistent behaviour, that starts with an empty
@@ -36,17 +36,16 @@ def modules_system():
     # present modules are removed.
     modsys.load_module('testmod_base')
     yield modsys
-    modsys.searchpath_remove(fixtures.TEST_MODULES)
+    modsys.searchpath_remove(test_util.TEST_MODULES)
 
 
 @pytest.fixture
-def user_runtime():
-    if fixtures.USER_CONFIG_FILE:
-        with rt.temp_runtime(fixtures.USER_CONFIG_FILE,
-                             fixtures.USER_SYSTEM):
-            yield rt.runtime()
+def user_runtime(make_exec_ctx_g):
+    if test_util.USER_CONFIG_FILE:
+        yield from make_exec_ctx_g(test_util.USER_CONFIG_FILE,
+                                   test_util.USER_SYSTEM)
     else:
-        yield rt.runtime()
+        yield from make_exec_ctx_g()
 
 
 @pytest.fixture
@@ -93,14 +92,14 @@ def test_env_load_restore(base_environ, env0):
     assert os.environ['_var1'] == 'val1'
     assert os.environ['_var2'] == 'val1'
     assert os.environ['_var3'] == 'val1'
-    if fixtures.has_sane_modules_system():
+    if test_util.has_sane_modules_system():
         assert_modules_loaded(env0.modules)
 
     assert rt.is_env_loaded(env0)
     snapshot.restore()
     base_environ == env.snapshot()
     assert os.environ['_var0'] == 'val0'
-    if fixtures.has_sane_modules_system():
+    if test_util.has_sane_modules_system():
         assert not rt.runtime().modules_system.is_module_loaded('testmod_foo')
 
     assert not rt.is_env_loaded(env0)

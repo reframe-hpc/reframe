@@ -4,8 +4,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 #
-# unittests/fixtures.py -- Fixtures used in multiple unit tests
+# unittests/utility.py -- Utilities used in unit tests
 #
+
 import functools
 import inspect
 import os

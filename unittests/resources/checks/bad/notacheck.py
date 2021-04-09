@@ -3,4 +3,4 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import _foo # noqa: F401
+import _foo  # noqa: F401
