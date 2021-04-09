@@ -1022,8 +1022,9 @@ def main():
                     f'failed to generate report in {report_file!r}: {e}'
                 )
 
+            # Build xml report
             xml_data = runner.stats.junit(json_report).decode()
-            xml_report_file = f'{report_file}.xml'
+            xml_report_file = os.path.splitext(report_file)[0]+'.xml'
             try:
                 with open(xml_report_file, 'w') as fp:
                     fp.write(str(xml_data))

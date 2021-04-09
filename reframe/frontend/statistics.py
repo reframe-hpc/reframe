@@ -209,17 +209,17 @@ class TestStats:
                 'failures': str(json_report['session_info']['num_failures']),
                 'tests': str(json_report['session_info']['num_cases']),
                 'time': str(json_report['session_info']['time_elapsed']),
-                # 'hostname': 'dom',
             }
         )
 
         for testid in range(len(json_report['runs'][0]['testcases'])):
             tid = json_report['runs'][0]['testcases'][testid]
+            name = f"{tid['name']} on {tid['system']} using {tid['environment']}"
             testcase = ET.SubElement(
                 xml_testsuite, 'testcase',
                 attrib={
                     'classname': tid['filename'],
-                    'name': tid['name'],
+                    'name': name,
                     'time': str(tid['time_total']),
                 }
             )
