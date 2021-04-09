@@ -319,7 +319,7 @@ class RegressionTask:
                 jsonext.dump(self.check, fp, indent=2)
         except OSError as e:
             logging.getlogger().warning(
-                f'could not dump test case {self.case}: {e}'
+                f'could not dump test case {self.testcase}: {e}'
             )
 
         self._current_stage = 'finalize'
