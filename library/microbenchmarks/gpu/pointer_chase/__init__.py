@@ -4,10 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import reframe.utility.sanity as sn
-import reframe.utility.typecheck as typ
 import reframe as rfm
-
-import os
 
 
 __all__ = ['BuildGpuPChase', 'RunGpuPChaseSingle', 'RunGpuPChaseP2P']
