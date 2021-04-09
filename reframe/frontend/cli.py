@@ -26,7 +26,6 @@ import reframe.frontend.dependencies as dependencies
 import reframe.frontend.filters as filters
 import reframe.frontend.runreport as runreport
 import reframe.utility.jsonext as jsonext
-# import reframe.utility.xmlext as xmlext
 import reframe.utility.osext as osext
 
 

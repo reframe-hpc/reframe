@@ -6,6 +6,7 @@
 import inspect
 import traceback
 import xml.etree.ElementTree as ET
+
 import reframe.core.runtime as rt
 import reframe.core.exceptions as errors
 
