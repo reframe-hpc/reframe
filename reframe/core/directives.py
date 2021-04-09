@@ -15,9 +15,7 @@ the class body during its creation.
 A directive simply captures the arguments passed to it and all directives are
 stored in a registry inside the class. When the final object is created, they
 will be applied to that instance by calling the target method on the freshly
-created object. As soon as they are applied, they set to point to the actual
-object method, since they have served their purpose. This allows us to export
-functions such as `depends_on()` at the class level.
+created object.
 '''
 
 NAMES = ('depends_on', 'skip', 'skip_if')
@@ -76,18 +74,3 @@ def apply(cls, obj):
         if hasattr(c, '_rfm_dir_registry'):
             for d in c._rfm_dir_registry.directives:
                 d.apply(obj)
-
-
-def reset(cls):
-    '''Reset all directives in ``cls`` to point to the corresponding class
-    methods.'''
-
-    for d in NAMES:
-        meth_name = '_D_' + d
-
-        # A directive may be defined in a subclass of `RegressionTest`, but
-        # this will be called on every class that is being created. So we need
-        # to update the directive only when the target method exists
-        if hasattr(cls, meth_name):
-            meth = getattr(cls, meth_name)
-            setattr(cls, d, meth)

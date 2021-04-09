@@ -224,7 +224,7 @@ In essence, these builtins exert control over the test creation, and they allow 
 Directives
 ----------
 
-.. versionadded:: 3.5.2
+.. versionadded:: 3.5.3
 
 Directives are special functions that are called at the class level but will be applied to the newly created test.
 Directives can also be invoked as normal test methods once the test has been created.
@@ -273,7 +273,7 @@ Static test information can be defined in the test class body and any adaptation
    .. deprecated:: 3.3
       Passing an integer to the ``how`` argument as well as using the ``subdeps`` argument is deprecated.
 
-   .. versionchanged:: 3.5.2
+   .. versionchanged:: 3.5.3
       This function has become a directive.
 
 
@@ -285,7 +285,7 @@ Static test information can be defined in the test class body and any adaptation
 
    .. versionadded:: 3.5.1
 
-   .. versionchanged:: 3.5.2
+   .. versionchanged:: 3.5.3
       This function has become a directive.
 
 
@@ -298,7 +298,7 @@ Static test information can be defined in the test class body and any adaptation
 
    .. versionadded:: 3.5.1
 
-   .. versionchanged:: 3.5.2
+   .. versionchanged:: 3.5.3
       This function has become a directive.
 
 

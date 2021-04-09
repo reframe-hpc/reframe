@@ -222,7 +222,7 @@ _USER_PIPELINE_STAGES = (
 
 
 def run_before(stage):
-    '''Decorator for attaching a test method to a pipeline  stage.
+    '''Decorator for attaching a test method to a pipeline stage.
 
     The method will run just before the specified pipeline stage and it should
     not accept any arguments except ``self``.
