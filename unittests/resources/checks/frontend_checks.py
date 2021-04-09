@@ -9,6 +9,7 @@
 
 import os
 import signal
+import sys
 import time
 
 import reframe as rfm

@@ -11,7 +11,7 @@ import socket
 import time
 
 import reframe.core.runtime as rt
-import unittests.fixtures as fixtures
+import unittests.utility as test_util
 from reframe.core.backends import (getlauncher, getscheduler)
 from reframe.core.environments import Environment
 from reframe.core.exceptions import (
@@ -34,40 +34,29 @@ def scheduler(request):
 @pytest.fixture
 def slurm_only(scheduler):
     if scheduler.registered_name not in ('slurm', 'squeue'):
-        pytest.skip(f'test is relevant only for Slurm backends')
+        pytest.skip('test is relevant only for Slurm backends')
 
 
 @pytest.fixture
 def local_only(scheduler):
     if scheduler.registered_name != 'local':
-        pytest.skip(f'test is relevant only for the local scheduler')
+        pytest.skip('test is relevant only for the local scheduler')
 
 
 @pytest.fixture
-def temp_runtime(tmp_path):
-    def _temp_runtime(site_config, system=None, options={}):
-        options.update({'systems/prefix': tmp_path})
-        with rt.temp_runtime(site_config, system, options):
-            yield rt.runtime
-
-    yield _temp_runtime
-
-
-@pytest.fixture
-def exec_ctx(temp_runtime, scheduler):
-    if fixtures.USER_CONFIG_FILE and scheduler.registered_name != 'local':
-        rt = temp_runtime(fixtures.USER_CONFIG_FILE, fixtures.USER_SYSTEM)
+def exec_ctx(make_exec_ctx, scheduler):
+    if test_util.USER_CONFIG_FILE and scheduler.registered_name != 'local':
+        make_exec_ctx(test_util.USER_CONFIG_FILE, test_util.USER_SYSTEM)
     else:
-        rt = temp_runtime(fixtures.TEST_CONFIG_FILE, 'generic')
+        make_exec_ctx(test_util.TEST_CONFIG_FILE, 'generic')
 
-    next(rt)
     if scheduler.registered_name == 'squeue':
         # slurm backend fulfills the functionality of the squeue backend, so
         # if squeue is not configured, use slurm instead
-        partition = (fixtures.partition_by_scheduler('squeue') or
-                     fixtures.partition_by_scheduler('slurm'))
+        partition = (test_util.partition_by_scheduler('squeue') or
+                     test_util.partition_by_scheduler('slurm'))
     else:
-        partition = fixtures.partition_by_scheduler(scheduler.registered_name)
+        partition = test_util.partition_by_scheduler(scheduler.registered_name)
 
     if partition is None:
         pytest.skip(
@@ -252,10 +241,9 @@ def test_prepare_without_smt(fake_job, slurm_only):
         assert re.search(r'--hint=nomultithread', fp.read()) is not None
 
 
-def test_prepare_nodes_option(temp_runtime, make_job, slurm_only):
-    rt = temp_runtime(fixtures.TEST_CONFIG_FILE, 'generic',
-                      {'schedulers/use_nodes_option': True})
-    next(rt)
+def test_prepare_nodes_option(make_exec_ctx, make_job, slurm_only):
+    make_exec_ctx(test_util.TEST_CONFIG_FILE, 'generic',
+                  {'schedulers/use_nodes_option': True})
     job = make_job()
     job.num_tasks = 16
     job.num_tasks_per_node = 2
@@ -555,7 +543,7 @@ def test_cancel_term_ignore(minimal_job, scheduler, local_only):
     #  kills it.
     minimal_job.time_limit = '1m'
     prepare_job(minimal_job,
-                command=os.path.join(fixtures.TEST_RESOURCES_CHECKS,
+                command=os.path.join(test_util.TEST_RESOURCES_CHECKS,
                                      'src', 'sleep_deeply.sh'),
                 pre_run=[''],
                 post_run=[''],

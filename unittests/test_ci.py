@@ -6,6 +6,7 @@
 
 import io
 import jsonschema
+import pytest
 import requests
 import yaml
 
@@ -29,8 +30,12 @@ def test_ci_gitlab_pipeline():
         pipeline = fp.getvalue()
 
     # Fetch the latest Gitlab CI JSON schema
-    response = requests.get('https://json.schemastore.org/gitlab-ci')
-    assert response.ok
+    try:
+        response = requests.get('https://json.schemastore.org/gitlab-ci')
+    except requests.exceptions.ConnectionError as e:
+        pytest.skip(f'could not reach URL: {e}')
+    else:
+        assert response.ok
 
     schema = response.json()
     jsonschema.validate(yaml.safe_load(pipeline), schema)
