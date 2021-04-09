@@ -8,7 +8,7 @@ import reframe.utility.sanity as sn
 
 
 @rfm.simple_test
-class JupyterHubSubmitTest(rfm.RunOnlyRegressionTest):
+class jupyterhub_submit_test(rfm.RunOnlyRegressionTest):
     valid_systems = ['daint:jupyter_gpu', 'daint:jupyter_mc',
                      'dom:jupyter_gpu', 'dom:jupyter_mc']
     valid_prog_environs = ['*']
@@ -25,7 +25,7 @@ class JupyterHubSubmitTest(rfm.RunOnlyRegressionTest):
 
 
 @rfm.simple_test
-class JupyterHubServerCheck(rfm.RunOnlyRegressionTest):
+class jupyterhub_api_test(rfm.RunOnlyRegressionTest):
     descr = 'Check JupyterHub server status and version'
     valid_systems = ['daint:jupyter_gpu', 'daint:jupyter_mc',
                      'dom:jupyter_gpu', 'dom:jupyter_mc']
@@ -33,8 +33,6 @@ class JupyterHubServerCheck(rfm.RunOnlyRegressionTest):
     sourcesdir = None
     executable = 'curl https://jupyter.cscs.ch/hub/api/'
     time_limit = '30s'
-    num_tasks = 1
-    num_tasks_per_node = 1
     tags = {'health'}
     maintainers = ['CB', 'TR']
 
