@@ -214,7 +214,9 @@ class TestStats:
 
         for testid in range(len(json_report['runs'][0]['testcases'])):
             tid = json_report['runs'][0]['testcases'][testid]
-            name = f"{tid['name']} on {tid['system']} using {tid['environment']}"
+            name = (
+                f"{tid['name']} on {tid['system']} using {tid['environment']}"
+            )
             testcase = ET.SubElement(
                 xml_testsuite, 'testcase',
                 attrib={
