@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 #
-# unittests/test_util.py -- Fixtures used in multiple unit tests
+# unittests/conftest.py -- pytest fixtures used in multiple unit tests
 #
 
 import contextlib
@@ -13,14 +13,6 @@ import pytest
 import reframe.core.runtime as rt
 
 from .utility import TEST_CONFIG_FILE
-
-# pytest seems to be very strict on how you can import fixtures: you can't
-# access them from the module, but you have to import them specifically. Also,
-# all dependent fixtures must be imported, not just the one to be used. So we
-# define here the `__all__` variable to include all the pytest fixtures
-# defined here, so that clients can do `from unittests.fixtures import *`
-
-__all__ = ['make_exec_ctx', 'make_exec_ctx_g']
 
 
 class _ExecutionContext:

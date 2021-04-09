@@ -19,15 +19,14 @@ import reframe.frontend.executors.policies as policies
 import reframe.frontend.runreport as runreport
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
+import unittests.utility as test_util
+
 from reframe.core.exceptions import (AbortTaskError,
                                      FailureLimitError,
                                      ReframeError,
                                      ForceExitError,
                                      TaskDependencyError)
 from reframe.frontend.loader import RegressionCheckLoader
-
-import unittests.utility as test_util
-from unittests.fixtures import *    # noqa: F401
 from unittests.resources.checks.hellocheck import HelloTest
 from unittests.resources.checks.frontend_checks import (
     BadSetupCheck,

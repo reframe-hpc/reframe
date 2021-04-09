@@ -1,3 +1,12 @@
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+#
+# unittests/utility.py -- Utilities used in unit tests
+#
+
 import functools
 import inspect
 import os

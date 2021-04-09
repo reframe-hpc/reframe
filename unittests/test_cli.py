@@ -16,7 +16,6 @@ import reframe.frontend.runreport as runreport
 import reframe.core.logging as logging
 import reframe.core.runtime as rt
 import unittests.utility as test_util
-from unittests.fixtures import *    # noqa: F401
 
 
 def run_command_inline(argv, funct, *args, **kwargs):

@@ -23,7 +23,6 @@ import reframe.utility.sanity as sn
 from reframe.core.exceptions import ConfigError, ReframeError
 from reframe.core.backends import (getlauncher, getscheduler)
 from reframe.core.schedulers import Job
-from unittests.fixtures import *    # noqa: F401
 
 
 @pytest.fixture

@@ -6,7 +6,6 @@ import reframe
 import reframe.core.warnings as warn
 import reframe.utility.color as color
 import unittests.utility as test_util
-from unittests.fixtures import *    # noqa: F401
 
 
 @pytest.fixture(params=['colors', 'nocolors'])

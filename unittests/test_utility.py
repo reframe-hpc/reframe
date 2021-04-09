@@ -21,7 +21,6 @@ import unittests.utility as test_util
 from reframe.core.exceptions import (ConfigError,
                                      SpawnedProcessError,
                                      SpawnedProcessTimeout)
-from unittests.fixtures import *    # noqa: F401
 
 
 def test_command_success():

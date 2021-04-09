@@ -11,7 +11,6 @@ import reframe.core.environments as env
 import reframe.core.runtime as rt
 import unittests.utility as test_util
 from reframe.core.exceptions import EnvironError
-from unittests.fixtures import *    # noqa: F401
 
 
 @pytest.fixture
