@@ -47,8 +47,10 @@ class GpuBandwidthBase(rfm.RegressionTest, pin_prefix=True):
         if self.gpu_build == 'cuda':
             self.build_system.makefile = 'makefile.cuda'
             if self.gpu_arch:
-                self.build_system.cxxflags += [f'-arch=compute_{self.gpu_arch}',
-                                               f'-code=sm_{self.gpu_arch}']
+                self.build_system.cxxflags += [
+                    f'-arch=compute_{self.gpu_arch}',
+                    f'-code=sm_{self.gpu_arch}'
+                ]
         elif self.gpu_build == 'hip':
             self.build_system.makefile = 'makefile.hip'
             if self.gpu_arch:
