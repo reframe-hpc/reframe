@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import reframe.utility.sanity as sn
 import reframe as rfm
 
 import library.microbenchmarks.gpu.memory_bandwidth as mb
@@ -19,7 +18,7 @@ class PrgEnvMixin(rfm.RegressionMixin):
 
 @rfm.simple_test
 class GpuBandwidthCheck(mb.GpuBandwidthSingle, PrgEnvMixin,
-                        hooks.SetCompileOpts, hooks.SetGPUsPerNode):
+                        hooks.SetArchAndModules, hooks.SetGPUsPerNode):
     valid_systems = [
         'daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn',
         'ault:amdv100', 'ault:intelv100', 'ault:amda100', 'ault:amdvega'
@@ -69,7 +68,7 @@ class GpuBandwidthCheck(mb.GpuBandwidthSingle, PrgEnvMixin,
 
 @rfm.simple_test
 class MultiGpuBandwidthCheck(mb.GpuBandwidthMulti, PrgEnvMixin,
-                             hooks.SetCompileOpts, hooks.SetGPUsPerNode):
+                             hooks.SetArchAndModules, hooks.SetGPUsPerNode):
     valid_systems = [
         'tsa:cn', 'arola:cn', 'ault:amdv100', 'ault:intelv100',
         'ault:amda100', 'ault:amdvega'

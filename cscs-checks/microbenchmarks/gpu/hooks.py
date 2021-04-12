@@ -2,7 +2,7 @@
 import reframe as rfm
 
 
-class SetCompileOpts(rfm.RegressionMixin):
+class SetArchAndModules(rfm.RegressionMixin):
     '''Set the compile options for the gpu microbenchmarks.'''
     @rfm.run_after('setup')
     def set_gpu_arch(self):

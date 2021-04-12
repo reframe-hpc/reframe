@@ -12,7 +12,7 @@ from library.microbenchmarks.gpu.gpu_burn import GpuBurnBase
 import cscslib.microbenchmarks.gpu.hooks as hooks
 
 @rfm.simple_test
-class GpuBurnTest(GpuBurnBase, hooks.SetCompileOpts, hooks.SetGPUsPerNode):
+class GpuBurnTest(GpuBurnBase, hooks.SetArchAndModules, hooks.SetGPUsPerNode):
     valid_systems = [
         'daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn', 'ault:amdv100',
         'ault:intelv100', 'ault:amda100', 'ault:amdvega'

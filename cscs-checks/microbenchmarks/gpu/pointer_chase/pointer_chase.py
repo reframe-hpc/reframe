@@ -5,7 +5,6 @@
 
 import os
 
-import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
 import reframe as rfm
 
@@ -32,7 +31,7 @@ class PchaseGlobal(rfm.RegressionMixin):
 
 @rfm.simple_test
 class CompileGpuPChase(pchase.BuildGpuPChaseBase, PchaseGlobal,
-                       hooks.SetCompileOpts):
+                       hooks.SetArchAndModules):
     ''' Build the executable.'''
 
     def __init__(self):
@@ -43,7 +42,7 @@ class CompileGpuPChase(pchase.BuildGpuPChaseBase, PchaseGlobal,
 
 
 class RunGpuPChaseSingle(pchase.RunGpuPChaseSingle, PchaseGlobal,
-                         hooks.SetGPUsPerNode, hooks.SetCompileOpts):
+                         hooks.SetGPUsPerNode, hooks.SetArchAndModules):
     def __init__(self):
         self.depends_on('CompileGpuPChase')
         self.valid_systems = (
@@ -163,7 +162,7 @@ class GpuDRAMLatency(RunGpuPChaseSingle):
 
 @rfm.simple_test
 class GpuP2PLatencyP2P(pchase.RunGpuPChaseP2P, PchaseGlobal,
-                       hooks.SetGPUsPerNode, hooks.SetCompileOpts):
+                       hooks.SetGPUsPerNode, hooks.SetArchAndModules):
     '''Measure the latency to remote device.
 
     Depending on the list size, the data might be cached in different places.
