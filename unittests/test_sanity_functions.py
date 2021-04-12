@@ -13,7 +13,7 @@ import sys
 
 import reframe.utility.sanity as sn
 from reframe.core.exceptions import SanityError
-from unittests.fixtures import TEST_RESOURCES_CHECKS
+from unittests.utility import TEST_RESOURCES_CHECKS
 
 
 @pytest.fixture
