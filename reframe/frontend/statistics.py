@@ -210,6 +210,7 @@ class TestStats:
                 'failures': str(json_report['session_info']['num_failures']),
                 'tests': str(json_report['session_info']['num_cases']),
                 'time': str(json_report['session_info']['time_elapsed']),
+                'hostname': json_report['session_info']['hostname'],
             }
         )
 
