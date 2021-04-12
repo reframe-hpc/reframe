@@ -15,7 +15,7 @@ class MemBandwidthTest(rfm.RunOnlyRegressionTest):
 
         self.executable = 'likwid-bench'
 
-        self.num_tasks = 4
+        self.num_tasks = 1
         self.num_tasks_per_node = 1
         self.num_tasks_per_core = 2
         self.system_num_cpus = {
