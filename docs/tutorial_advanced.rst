@@ -499,7 +499,7 @@ You can then use those resources transparently from within your test.
 To achieve this in our case, we first need to define a ``memory`` resource in the configuration:
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 31-52,59-75
+   :lines: 31-52,63-79
    :emphasize-lines: 17-22,32-38
 
 Notice that we do not define the resource for all the partitions, but only for those that it makes sense.

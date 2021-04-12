@@ -336,8 +336,8 @@ Notice, how you can define the actual commands for invoking the C, C++ and Fortr
 As soon as a programming environment defines the different compilers, ReFrame will automatically pick the right compiler based on the source file extension.
 In addition to C, C++ and Fortran programs, ReFrame will recognize the ``.cu`` extension as well and will try to invoke the ``nvcc`` compiler for CUDA programs.
 
-Finally, the new system that we defined may be identified by the hostname ``tresa`` (see the :js:attr:`hostnames` configuration parameter).
-This will help ReFrame to automatically pick the right configuration when running on it.
+Finally, the new system that we defined may be identified by the hostname ``tresa`` (see the :js:attr:`hostnames` configuration parameter) and it will not use any environment modules system (see the :js:attr:`modules_system` configuration parameter).
+The :js:attr:`hostnames` attribute will help ReFrame to automatically pick the right configuration when running on it.
 Notice, how the ``generic`` system matches any hostname, so that it acts as a fallback system.
 
 .. note::

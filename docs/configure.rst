@@ -76,9 +76,9 @@ Each system is associated with a set of properties, which in this case are the f
   This should be an alphanumeric string (dashes ``-`` are allowed) and it will be used to refer to this system in other contexts.
 * ``descr``: A detailed description of the system.
 * ``hostnames``: This is a list of hostname patterns following the `Python Regular Expression Syntax <https://docs.python.org/3/library/re.html#regular-expression-syntax>`__, which will be used by ReFrame when it tries to automatically select a configuration entry for the current system.
-* ``modules_system``: In our example, this is only defined for Piz Daint and refers to the environment modules system that should be used for loading environment modules on this system.
-  In this case, the classic Tcl implementation of the `environment modules <https://sourceforge.net/projects/modules/files/Modules/modules-3.2.10/>`__.
-  For a complete list of the supported modules systems, see `here <config_reference.html#.systems[].modules_system>`__.
+* ``modules_system``: This refers to the modules management backend which should be used for loading environment modules on this system.
+  Multiple backends are supported, as well as the special ``nomod`` backend which implements the different modules system operations as no-ops.
+  For the complete list of the supported modules systems, see `here <config_reference.html#.systems[].modules_system>`__.
 * ``partitions``: The list of partitions that are defined for this system.
   Each partition is defined as a separate object.
   We devote the rest of this section in system partitions, since they are an essential part of ReFrame's configuration.
