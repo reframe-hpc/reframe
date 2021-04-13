@@ -1723,3 +1723,42 @@ def test_is_copyable():
     assert util.is_copyable(len)
     assert util.is_copyable(int)
     assert not util.is_copyable(foo())
+
+
+def test_nodelist_abbrev():
+    nid_nodes = [f'nid{n:03}' for n in range(5, 20)]
+    cid_nodes = [f'cid{n:03}' for n in range(20)]
+
+    random.shuffle(nid_nodes)
+    random.shuffle(cid_nodes)
+    nid_nodes.insert(0, 'nid002')
+    nid_nodes.insert(0, 'nid001')
+    nid_nodes.append('nid125')
+    cid_nodes += ['cid055', 'cid056']
+
+    all_nodes = nid_nodes + cid_nodes
+    random.shuffle(all_nodes)
+
+    nodelist = util.nodelist_abbrev
+    assert nodelist(nid_nodes) == 'nid00[1-2],nid0[05-19],nid125'
+    assert nodelist(cid_nodes) == 'cid0[00-19],cid05[5-6]'
+    assert nodelist(all_nodes) == (
+        'cid0[00-19],cid05[5-6],nid00[1-2],nid0[05-19],nid125'
+    )
+
+    # Test non-contiguous nodes
+    nid_nodes = []
+    for i in range(3):
+        nid_nodes += [f'nid{n:03}' for n in range(10*i, 10*i+5)]
+
+    random.shuffle(nid_nodes)
+    assert nodelist(nid_nodes) == 'nid00[0-4],nid01[0-4],nid02[0-4]'
+    assert nodelist(['nid01', 'nid10', 'nid20']) == 'nid01,nid10,nid20'
+    assert nodelist([]) == ''
+    assert nodelist(['nid001']) == 'nid001'
+
+    with pytest.raises(TypeError, match='nodes argument must be a Sequence'):
+        nodelist(1)
+
+    with pytest.raises(TypeError, match='nodes argument cannot be a string'):
+        nodelist('foo')
