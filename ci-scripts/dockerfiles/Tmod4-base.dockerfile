@@ -4,9 +4,6 @@ ENV TZ=Europe/Zurich
 ENV DEBIAN_FRONTEND=noninteractive
 ENV _TMOD_VER=4.6.0
 
-# ReFrame user
-RUN useradd -ms /bin/bash rfmuser
-
 # ReFrame requirements
 RUN \
   apt-get -y update && \
@@ -29,5 +26,3 @@ RUN \
   rm -rf /var/lib/apt/lists/*
 
 ENV BASH_ENV=/usr/local/Modules/init/profile.sh
-
-USER rfmuser

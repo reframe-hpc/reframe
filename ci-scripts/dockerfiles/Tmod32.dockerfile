@@ -4,6 +4,11 @@
 
 FROM reframehpc/rfm-ci-base:tmod32
 
+# ReFrame user
+RUN useradd -ms /bin/bash rfmuser
+
+USER rfmuser
+
 # Install ReFrame from the current directory
 COPY --chown=rfmuser . /home/rfmuser/reframe/
 
