@@ -883,7 +883,7 @@ class OrderedSet(collections.abc.MutableSet):
         if not vals:
             return type(self).__name__ + '()'
         else:
-            return '{' + ', '.join(repr(v) for v in vals) + '}'
+            return '{' + ', '.join(builtins.repr(v) for v in vals) + '}'
 
     # Container i/face
     def __contains__(self, item):

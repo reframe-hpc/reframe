@@ -17,3 +17,9 @@ class HelloThreadedTest(rfm.RegressionTest):
         self.build_system.cxxflags = ['-std=c++11', '-Wall']
         self.executable_opts = ['16']
         self.sanity_patterns = sn.assert_found(r'Hello, World\!', self.stdout)
+
+    @rfm.run_before('compile')
+    def set_threading_flags(self):
+        environ = self.current_environ.name
+        if environ in {'clang', 'gnu'}:
+            self.build_system.cxxflags += ['-pthread']
