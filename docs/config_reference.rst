@@ -1224,6 +1224,16 @@ General Configuration
       Default value has changed to avoid generating a report file per session.
 
 
+.. js:attribute:: .general[].report_junit
+
+   :required: No
+   :default: ``"${HOME}/.reframe/reports/run-report.xml"``
+
+   The file where ReFrame will store its report in junit xml format.
+
+   .. versionadded:: 3.6
+
+
 .. js:attribute:: .general[].save_log_files
 
    :required: No

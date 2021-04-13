@@ -207,6 +207,12 @@ def main():
         envvar='RFM_REPORT_FILE',
         configvar='general/report_file'
     )
+    output_options.add_argument(
+        '--report-junit', action='store', metavar='FILE',
+        help="Store XML junit run report in FILE",
+        envvar='RFM_REPORT_JUNIT',
+        configvar='general/report_junit'
+    )
 
     # Check discovery options
     locate_options.add_argument(
@@ -1021,9 +1027,11 @@ def main():
                     f'failed to generate report in {report_file!r}: {e}'
                 )
 
-            # Build xml report
+            # Generate the junit xml report for this session
+            xml_report_file = os.path.normpath(
+                osext.expandvars(rt.get_option('general/0/report_junit'))
+            )
             xml_data = runner.stats.junit(json_report).decode()
-            xml_report_file = os.path.splitext(report_file)[0]+'.xml'
             try:
                 with open(xml_report_file, 'w') as fp:
                     fp.write(str(xml_data))

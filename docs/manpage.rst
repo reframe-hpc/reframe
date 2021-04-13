@@ -266,6 +266,19 @@ Options controlling ReFrame output
    .. versionadded:: 3.1
 
 
+.. option:: --report-junit=FILE
+
+   The file where ReFrame will store its report in junit xml format.
+   The ``FILE`` argument may contain the special placeholder ``{sessionid}``,
+   in which case ReFrame will generate a new report each time it is run by
+   appending a counter to the report file.
+
+   This option can also be set using the :envvar:`RFM_REPORT_JUNIT` environment
+   variable or the :js:attr:`report_junit` general configuration parameter.
+
+   .. versionadded:: 3.1
+
+
 -------------------------------------
 Options controlling ReFrame execution
 -------------------------------------
