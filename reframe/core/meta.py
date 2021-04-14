@@ -11,6 +11,7 @@
 import reframe.core.namespaces as namespaces
 import reframe.core.parameters as parameters
 import reframe.core.variables as variables
+import reframe.core.fixtures as fixtures
 
 from reframe.core.exceptions import ReframeSyntaxError
 from reframe.core.hooks import HookRegistry
@@ -46,9 +47,20 @@ class RegressionTestMeta(type):
                 # Override the regular class attribute (if present)
                 self._namespace.pop(key, None)
 
+            elif isinstance(value, fixtures.TestFixture):
+                # Insert the attribute in the fixture namespace
+                self['_rfm_local_fixture_space'][key] = value
+
+                # Override the regular class attribute (if present)
+                self._namespace.pop(key, None)
+
             elif key in self['_rfm_local_param_space']:
                 raise ValueError(
                     f'cannot override parameter {key!r}'
+                )
+            elif key in self['_rfm_local_fixture_space']:
+                raise ValueError(
+                    f'cannot override fixture {key!r}'
                 )
             else:
                 # Insert the items manually to overide the namespace clash
@@ -75,6 +87,11 @@ class RegressionTestMeta(type):
                         raise ValueError(
                             'accessing a test parameter from the class '
                             'body is disallowed'
+                        ) from None
+                    elif key in self['_rfm_local_fixture_space']:
+                        raise ValueError(
+                            'accessing a fixture from the class body is '
+                            'disallowed'
                         ) from None
                     else:
                         # As the last resource, look if key is a variable in
@@ -116,6 +133,13 @@ class RegressionTestMeta(type):
         # Directives to add/modify a regression test variable
         namespace['variable'] = variables.TestVar
         namespace['required'] = variables.Undefined
+
+        # Regression test fixture space
+        local_fixture_space = namespaces.LocalNamespace()
+        namespace['_rfm_local_fixture_space'] = local_fixture_space
+
+        # Directive to add a fixture
+        namespace['fixture'] = fixtures.TestFixture
         return metacls.MetaNamespace(namespace)
 
     def __new__(metacls, name, bases, namespace, **kwargs):
@@ -138,6 +162,10 @@ class RegressionTestMeta(type):
 
         # Build the parameter space
         parameters.ParamSpace(cls, used_attribute_names)
+        used_attribute_names.update(cls._rfm_param_space.params)
+
+        # Build the fixture space
+        fixtures.FixtureSpace(cls, used_attribute_names)
 
         # Update used names set with the local __dict__
         cls._rfm_dir.update(cls.__dict__)
@@ -218,6 +246,10 @@ class RegressionTestMeta(type):
     def param_space(cls):
         # Make the parameter space available as read-only
         return cls._rfm_param_space
+
+    @property
+    def fixtures(cls):
+        return cls._rfm_fixture_space
 
     def is_abstract(cls):
         '''Check if the class is an abstract test.
