@@ -28,22 +28,22 @@ from reframe.core.pipeline import RegressionTest
 from reframe.utility.versioning import VersionValidator
 
 
-def _register_test(cls, args=None, params_index=None):
+def _register_test(cls, args=None, params_idx=None, fixture_idx=None):
     '''Register the test.
 
-    Register the test with _rfm_use_params set to the params_index value.
+    Register the test with _rfm_use_params set to the params_idx value.
     This additional argument initializes the test parameter to a specific
     parameter combination. Otherwise, the regression test parameters would
     simply be initialized to None.
     '''
     def _instantiate(cls, args):
         if isinstance(args, collections.abc.Sequence):
-            return cls(*args, _rfm_use_params=params_index)
+            return cls(*args, _rfm_use_params=params_idx)
         elif isinstance(args, collections.abc.Mapping):
-            args['_rfm_use_params'] = params_index
+            args['_rfm_use_params'] = params_idx
             return cls(**args)
         elif args is None:
-            return cls(_rfm_use_params=params_index)
+            return cls(_rfm_use_params=params_idx)
 
     def _instantiate_all():
         ret = []
@@ -101,8 +101,9 @@ def simple_test(cls):
     '''
     _validate_test(cls)
 
-    for i,_ in enumerate(cls.param_space):
-        _register_test(cls, params_index=i)
+    for p,_ in enumerate(cls.param_space):
+        for f,_ enumerate(cls.fixture_space):
+          _register_test(cls, params_idx=p, fixture_idx=f)
 
     return cls
 

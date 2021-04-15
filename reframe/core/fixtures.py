@@ -20,9 +20,13 @@ class TestFixture:
     :meta private:
     '''
 
-    def __init__(self, fixture, scope='test'):
-        self.fixture = fixture
+    def __init__(self, cls, scope='test'):
+        self.cls = cls
         self.scope = scope
+
+    @property
+    def num_instances(self):
+        return len(self.cls.fixture_space)*len(self.cls.param_space)
 
 
 class FixtureSpace(namespaces.Namespace):
@@ -38,6 +42,8 @@ class FixtureSpace(namespaces.Namespace):
 
     def __init__(self, target_cls=None, target_namespace=None):
         super().__init__(target_cls, target_namespace)
+
+        self.__random_access_iter = [x for x in iter(self)]
 
     def join(self, other, cls):
         '''Join other fixture spaces into the current one.
@@ -77,7 +83,16 @@ class FixtureSpace(namespaces.Namespace):
         pass
 
     def __iter__(self):
-        yield from self._namespace
+        yield from itertools.product(
+            *(list(range(f.num_instances) for f in self.fixtures.values()))
+        )
+
+    def __len__(self):
+        l = 1
+        for f in self.fixtures.values():
+            l *= f.num_instances
+
+        return l
 
     @property
     def fixtures(self):

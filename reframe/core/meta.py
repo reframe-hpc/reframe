@@ -248,7 +248,7 @@ class RegressionTestMeta(type):
         return cls._rfm_param_space
 
     @property
-    def fixtures(cls):
+    def fixture_space(cls):
         return cls._rfm_fixture_space
 
     def is_abstract(cls):
