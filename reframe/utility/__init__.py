@@ -701,28 +701,6 @@ def _rl_encode(seq):
     return encoded
 
 
-class _NodeElem:
-    def __init__(self, nodename):
-        m = re.search('(^\D+)(\d+)', nodename)
-        if m is None:
-            self._basename = nodename
-            self._nodeid = -1
-        else:
-            self._basename = m.group(1)
-            self._nodeid = int(m.group(2).lstrip('0'))
-
-    @property
-    def basename(self):
-        return self._basename
-
-    @property
-    def nodeid(self):
-        return self._nodeid
-
-    def __repr__(self):
-        return f'{type(self)}({self.basename}, {self.nodeid})'
-
-
 def _parse_node(nodename):
     m = re.search('(^\D+)(\d+)', nodename)
     if m is None:
