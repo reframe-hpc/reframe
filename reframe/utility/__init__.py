@@ -648,6 +648,18 @@ def _delta_encode(seq):
 
     The input list must be at least of size 1.
 
+    Example of delta encoding:
+
+    - Input list:
+       1 2 5 6 7 8 9 125
+
+    - Output list:
+       1 1 3 1 1 1 1 106
+       ^
+       |
+     First element
+     of the original list.
+
     :returns: the encoded list. The first element of the encoded sequence is
         the first element of the original sequence.
 
@@ -666,6 +678,21 @@ def _rl_encode(seq):
     '''Run-length encode a delta-encoded sequence.
 
     The input list must be at least of size 1.
+
+    Example of run-length encoding:
+
+    - Original list:
+       1 2 5 6 7 8 9 125
+
+    - Delta-encoded list:
+       1 1 3 1 1 1 1 106
+
+    - Run-length-encoded list:
+
+       (1,1,2), (5,1,5), (125,1,1)
+
+    For convenience, in each RLE unit we use the first element of the original
+    unit and not the delta value from the previous unit.
 
     :returns: the encoded list. Each element of the list is a three-tuple
         containing the first element of the unit, the delta value of the unit
@@ -702,7 +729,7 @@ def _rl_encode(seq):
 
 
 def _parse_node(nodename):
-    m = re.search('(^\D+)(\d+)', nodename)
+    m = re.search(r'(^\D+)(\d+)', nodename)
     if m is None:
         basename = nodename
         width = 0
