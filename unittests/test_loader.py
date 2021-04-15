@@ -84,19 +84,19 @@ def test_special_test():
         @rfm.simple_test
         class TestOverride(rfm.RegressionTest):
             def setup(self, partition, environ, **job_opts):
-                super().setup(system, environ, **job_opts)
+                super().setup(partition, environ, **job_opts)
 
     with pytest.raises(ReframeSyntaxError):
         @rfm.simple_test
         class TestOverrideRunOnly(rfm.RunOnlyRegressionTest):
             def setup(self, partition, environ, **job_opts):
-                super().setup(system, environ, **job_opts)
+                super().setup(partition, environ, **job_opts)
 
     with pytest.raises(ReframeSyntaxError):
         @rfm.simple_test
         class TestOverrideCompileOnly(rfm.CompileOnlyRegressionTest):
             def setup(self, partition, environ, **job_opts):
-                super().setup(system, environ, **job_opts)
+                super().setup(partition, environ, **job_opts)
 
     @rfm.simple_test
     class TestSimple(rfm.RegressionTest):
@@ -109,7 +109,7 @@ def test_special_test():
             pass
 
         def setup(self, partition, environ, **job_opts):
-            super().setup(system, environ, **job_opts)
+            super().setup(partition, environ, **job_opts)
 
     @rfm.simple_test
     class TestSpecialRunOnly(rfm.RunOnlyRegressionTest,
@@ -118,7 +118,7 @@ def test_special_test():
             pass
 
         def setup(self, partition, environ, **job_opts):
-            super().setup(system, environ, **job_opts)
+            super().setup(partition, environ, **job_opts)
 
         def run(self):
             super().run()
@@ -130,7 +130,7 @@ def test_special_test():
             pass
 
         def setup(self, partition, environ, **job_opts):
-            super().setup(system, environ, **job_opts)
+            super().setup(partition, environ, **job_opts)
 
         def run(self):
             super().run()
@@ -142,7 +142,7 @@ def test_special_test():
                 pass
 
             def setup(self, partition, environ, **job_opts):
-                super().setup(system, environ, **job_opts)
+                super().setup(partition, environ, **job_opts)
 
     @rfm.simple_test
     class TestFinal(rfm.RegressionTest):

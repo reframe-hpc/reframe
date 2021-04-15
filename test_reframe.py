@@ -14,7 +14,7 @@ sys.path = [prefix, external] + sys.path
 
 import argparse                         # noqa: F401, F403
 import pytest                           # noqa: F401, F403
-import unittests.fixtures as fixtures   # noqa: F401, F403
+import unittests.utility as test_util   # noqa: F401, F403
 
 
 if __name__ == '__main__':
@@ -39,9 +39,9 @@ if __name__ == '__main__':
         '--rfm-help', action='help', help='Print this help message and exit.'
     )
     options, rem_args = parser.parse_known_args()
-    fixtures.USER_CONFIG_FILE = options.rfm_user_config
-    fixtures.USER_SYSTEM = options.rfm_user_system
-    fixtures.init_runtime()
+    test_util.USER_CONFIG_FILE = options.rfm_user_config
+    test_util.USER_SYSTEM = options.rfm_user_system
+    test_util.init_runtime()
 
     # If no positional argument is specified, use the `unittests` directory,
     # so as to avoid any automatic discovery of random unit tests from the
