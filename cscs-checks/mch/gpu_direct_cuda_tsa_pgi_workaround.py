@@ -8,7 +8,7 @@ import reframe.utility.sanity as sn
 
 
 @rfm.simple_test
-class GpuDirectCudaCheck(rfm.RegressionTest):
+class GpuDirectCudaCheckTsaPgiWorkaround(rfm.RegressionTest):
     def __init__(self):
         self.descr = 'tests gpu-direct for CUDA'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn']
@@ -36,3 +36,9 @@ class GpuDirectCudaCheck(rfm.RegressionTest):
         self.sanity_patterns = sn.assert_reference(result, 1., -1e-5, 1e-5)
         self.maintainers = ['AJ', 'MKr']
         self.tags = {'production', 'mch', 'craype'}
+
+    @rfm.run_before('compile')
+    def setflags(self):
+        if self.current_system.name in ['arolla', 'tsa']:
+            if self.current_environ.name.startswith('PrgEnv-pgi'):
+                self.build_system.cxxflags += ['-D__PGIC__=19']
