@@ -102,7 +102,7 @@ def simple_test(cls):
     _validate_test(cls)
 
     for p,_ in enumerate(cls.param_space):
-        for f,_ enumerate(cls.fixture_space):
+        for f,_ in enumerate(cls.fixture_space):
           _register_test(cls, params_idx=p, fixture_idx=f)
 
     return cls
