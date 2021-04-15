@@ -86,8 +86,8 @@ class ParamSpace(namespaces.Namespace):
     def __init__(self, target_cls=None, target_namespace=None):
         super().__init__(target_cls, target_namespace)
 
-        # Internal parameter space usage tracker
-        self.__unique_iter = iter(self)
+        # Store all param combinations to allow random access.
+        self.__random_access_iter = [x for x in iter(self)]
 
     def join(self, other, cls):
         '''Join other parameter space into the current one.
@@ -140,37 +140,31 @@ class ParamSpace(namespaces.Namespace):
         # Clear the local param space
         local_param_space.clear()
 
-    def inject(self, obj, cls=None, use_params=False):
+    def inject(self, obj, cls=None, params_index=None):
         '''Insert the params in the regression test.
 
         Create and initialize the regression test parameters as object
         attributes. The values assigned to these parameters exclusively depend
-        on the use_params argument. If this is set to True, the current object
-        uses the parameter space iterator (see
-        :class:`reframe.core.pipeline.RegressionTest` and consumes a set of
-        parameter values (i.e. a point in the parameter space). Contrarily, if
-        use_params is False, the regression test parameters are initialized as
+        on the value of params_index. This argument is simply an index to a
+        a given parametere combination. If params_index is left with its
+        default value, the regression test parameters are initialized as
         None.
 
         :param obj: The test object.
         :param cls: The test class.
-        :param use_param: bool that dictates whether an instance of the
-            :class:`reframe.core.pipeline.RegressionTest` is to use the
-            parameter values defined in the parameter space.
-
+        :param param_index: index to a point in the parameter space.
         '''
         # Set the values of the test parameters (if any)
-        if use_params and self.params:
+        if self.params and not params_index is None:
             try:
                 # Consume the parameter space iterator
-                param_values = next(self.unique_iter)
+                param_values = self.random_access_iter[params_index]
                 for index, key in enumerate(self.params):
                     setattr(obj, key, param_values[index])
 
-            except StopIteration as no_params:
+            except IndexError as no_params:
                 raise RuntimeError(
-                    f'exhausted parameter space: all possible parameter value'
-                    f' combinations have been used for '
+                    f'parameter space index out of range for '
                     f'{obj.__class__.__qualname__}'
                 ) from None
 
@@ -196,9 +190,9 @@ class ParamSpace(namespaces.Namespace):
         return self._namespace
 
     @property
-    def unique_iter(self):
-        '''Expose the internal iterator as read-only'''
-        return self.__unique_iter
+    def random_access_iter(self):
+        '''Expose the internal random access iterator as read-only'''
+        return self.__random_access_iter
 
     def __len__(self):
         '''Returns the number of all possible parameter combinations.
