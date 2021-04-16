@@ -18,8 +18,6 @@ class FileSystemCommandCheck(rfm.RunOnlyRegressionTest):
         # TODO: test from cn as well
         self.valid_systems = ['daint:login', 'dom:login']
         self.valid_prog_environs = ['builtin']
-        self.num_tasks = 1
-        self.num_tasks_per_node = 1
         self.perf_patterns = {
             'real_time': sn.extractsingle(r'real (?P<real_time>\S+)',
                                           self.stderr, 'real_time', float)
@@ -33,7 +31,6 @@ class FileSystemCommandCheck(rfm.RunOnlyRegressionTest):
         self.sanity_patterns = sn.assert_eq(self.job.exitcode, 0)
 
 
-# TODO: if we test only one scratch space we don't need a parameter
 @rfm.simple_test
 class fs_check_cd_dir(FileSystemCommandCheck):
     directory = parameter(['SCRATCH'])
