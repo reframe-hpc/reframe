@@ -59,7 +59,8 @@ class FixtureSpace(namespaces.Namespace):
 
     def extend(self, cls):
         local_fixture_space = getattr(cls, self.local_namespace_name)
-        for name, fixture in local_fixture_space.items():
+        while(local_fixture_space):
+            name, fixture = local_fixture_space.popitem()
             self.fixtures[name] = fixture
 
         # If any previously declared fixture was defined in the class body
@@ -71,9 +72,6 @@ class FixtureSpace(namespaces.Namespace):
                     f'fixture {key!r} must be modified through the built-in '
                     f'fixture type'
                 )
-
-        # Clear the local fixture space
-        local_fixture_space.clear()
 
     def inject(self, obj, objtype=None):
         pass
