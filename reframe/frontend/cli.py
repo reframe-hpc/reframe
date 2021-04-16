@@ -34,6 +34,7 @@ from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
 from reframe.frontend.executors import Runner, generate_testcases
+from reframe.frontend.statistics import junit
 
 
 def format_check(check, check_deps, detailed=False):
@@ -1031,7 +1032,8 @@ def main():
             xml_report_file = os.path.normpath(
                 osext.expandvars(rt.get_option('general/0/report_junit'))
             )
-            xml_data = runner.stats.junit(json_report).decode()
+            xml_data = junit(json_report).decode()
+            # xml_data = runner.stats.junit(json_report).decode()
             try:
                 with open(xml_report_file, 'w') as fp:
                     fp.write(str(xml_data))

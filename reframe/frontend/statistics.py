@@ -199,42 +199,6 @@ class TestStats:
 
         return self._run_data
 
-    def junit(self, json_report, force=False):
-        # https://github.com/windyroad/JUnit-Schema/blob/master/JUnit.xsd
-        xml_testsuites = ET.Element('testsuites')
-        xml_testsuite = ET.SubElement(
-            xml_testsuites, 'testsuite',
-            attrib={
-                'name': 'rfm',
-                'errors': '0',
-                'failures': str(json_report['session_info']['num_failures']),
-                'tests': str(json_report['session_info']['num_cases']),
-                'time': str(json_report['session_info']['time_elapsed']),
-                'hostname': json_report['session_info']['hostname'],
-            }
-        )
-
-        for testid in range(len(json_report['runs'][0]['testcases'])):
-            tid = json_report['runs'][0]['testcases'][testid]
-            name = (
-                f"{tid['name']} on {tid['system']} using {tid['environment']}"
-            )
-            testcase = ET.SubElement(
-                xml_testsuite, 'testcase',
-                attrib={
-                    'classname': tid['filename'],
-                    'name': name,
-                    'time': str(tid['time_total']),
-                }
-            )
-            if not tid['result'] == 'success':
-                testcase_msg = ET.SubElement(
-                    testcase, 'failure', attrib={'message': tid['fail_phase']}
-                )
-                testcase_msg.text = tid['fail_reason']
-
-        return ET.tostring(xml_testsuites, encoding='utf8', method='xml')
-
     def print_failure_report(self, printer):
         line_width = 78
         printer.info(line_width * '=')
@@ -302,8 +266,8 @@ class TestStats:
         stats_header = row_format.format('Phase', '#', 'Failing test cases')
         num_tests = len(self.tasks(current_run))
         num_failures = 0
-        for ll in failures.values():
-            num_failures += len(ll)
+        for fl in failures.values():
+            num_failures += len(fl)
 
         stats_body = ['']
         stats_body.append(f'Total number of test cases: {num_tests}')
@@ -360,3 +324,40 @@ class TestStats:
                               report_end])
 
         return ''
+
+
+def junit(json_report):
+    # https://github.com/windyroad/JUnit-Schema/blob/master/JUnit.xsd
+    xml_testsuites = ET.Element('testsuites')
+    xml_testsuite = ET.SubElement(
+        xml_testsuites, 'testsuite',
+        attrib={
+            'name': 'rfm',
+            'errors': '0',
+            'failures': str(json_report['session_info']['num_failures']),
+            'tests': str(json_report['session_info']['num_cases']),
+            'time': str(json_report['session_info']['time_elapsed']),
+            'hostname': json_report['session_info']['hostname'],
+        }
+    )
+
+    for testid in range(len(json_report['runs'][0]['testcases'])):
+        tid = json_report['runs'][0]['testcases'][testid]
+        name = (
+            f"{tid['name']} on {tid['system']} using {tid['environment']}"
+        )
+        testcase = ET.SubElement(
+            xml_testsuite, 'testcase',
+            attrib={
+                'classname': tid['filename'],
+                'name': name,
+                'time': str(tid['time_total']),
+            }
+        )
+        if not tid['result'] == 'success':
+            testcase_msg = ET.SubElement(
+                testcase, 'failure', attrib={'message': tid['fail_phase']}
+            )
+            testcase_msg.text = tid['fail_reason']
+
+    return ET.tostring(xml_testsuites, encoding='utf8', method='xml')
