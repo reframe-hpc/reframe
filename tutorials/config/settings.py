@@ -13,6 +13,7 @@ site_configuration = {
             'name': 'catalina',
             'descr': 'My Mac',
             'hostnames': ['tresa'],
+            'modules_system': 'nomod',
             'partitions': [
                 {
                     'name': 'default',
