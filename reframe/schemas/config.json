@@ -487,7 +487,7 @@
         "general/non_default_craype": false,
         "general/purge_environment": false,
         "general/report_file": "${HOME}/.reframe/reports/run-report.json",
-        "general/report_junit": "${HOME}/.reframe/reports/run-report.xml",
+        "general/report_junit": "",
         "general/save_log_files": false,
         "general/target_systems": ["*"],
         "general/timestamp_dirs": "",

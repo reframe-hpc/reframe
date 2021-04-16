@@ -34,7 +34,7 @@ from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
 from reframe.frontend.executors import Runner, generate_testcases
-from reframe.frontend.statistics import junit
+from reframe.frontend.statistics import junit_lxml
 
 
 def format_check(check, check_deps, detailed=False):
@@ -1029,18 +1029,21 @@ def main():
                 )
 
             # Generate the junit xml report for this session
-            xml_report_file = os.path.normpath(
-                osext.expandvars(rt.get_option('general/0/report_junit'))
-            )
-            xml_data = junit(json_report).decode()
-            try:
-                with open(xml_report_file, 'w') as fp:
-                    fp.write(str(xml_data))
-                    fp.write('\n')
-            except OSError as e:
-                printer.warning(
-                    f'failed to generate report in {xml_report_file!r}: {e}'
+            report_xml = 'general/0/report_junit'
+            if site_config.get(report_xml) or os.getenv('RFM_REPORT_JUNIT'):
+                xml_report_file = os.path.normpath(
+                    osext.expandvars(rt.get_option(report_xml))
                 )
+                xml_data = junit_lxml(json_report).decode()
+                try:
+                    with open(xml_report_file, 'w') as fp:
+                        fp.write(str(xml_data))
+                        fp.write('\n')
+                except OSError as e:
+                    printer.warning(
+                        f'failed to generate report in {xml_report_file!r}:'
+                        f'{e}'
+                    )
 
         if not success:
             sys.exit(1)
