@@ -8,17 +8,16 @@ import itertools
 import pytest
 
 import reframe as rfm
-import reframe.core.runtime as rt
 import reframe.frontend.dependencies as dependencies
 import reframe.frontend.executors as executors
 import reframe.utility as util
+import reframe.utility.sanity as sn
 import reframe.utility.udeps as udeps
+
 from reframe.core.environments import Environment
 from reframe.core.exceptions import DependencyError
 from reframe.core.warnings import ReframeDeprecationWarning
 from reframe.frontend.loader import RegressionCheckLoader
-
-import unittests.fixtures as fixtures
 
 
 class Node:
@@ -84,19 +83,8 @@ def find_case(cname, ename, partname, cases):
 
 
 @pytest.fixture
-def temp_runtime(tmp_path):
-    def _temp_runtime(site_config, system=None, options=None):
-        options = options or {}
-        options.update({'systems/prefix': tmp_path})
-        with rt.temp_runtime(site_config, system, options):
-            yield
-
-    yield _temp_runtime
-
-
-@pytest.fixture
-def exec_ctx(temp_runtime):
-    yield from temp_runtime(fixtures.TEST_CONFIG_FILE, 'sys0')
+def default_exec_ctx(make_exec_ctx_g):
+    yield from make_exec_ctx_g(system='sys0')
 
 
 @pytest.fixture
@@ -106,7 +94,7 @@ def loader():
     ])
 
 
-def test_eq_hash(loader, exec_ctx):
+def test_eq_hash(loader, default_exec_ctx):
     cases = executors.generate_testcases(loader.load_all())
     case0 = find_case('Test0', 'e0', 'p0', cases)
     case1 = find_case('Test0', 'e1', 'p0', cases)
@@ -330,7 +318,7 @@ def test_dependecies_how_functions_undoc():
     assert len(deps) == 9
 
 
-def test_build_deps_deprecated_syntax(loader, exec_ctx):
+def test_build_deps_deprecated_syntax(loader, default_exec_ctx):
     class Test0(rfm.RegressionTest):
         def __init__(self):
             self.valid_systems = ['sys0:p0', 'sys0:p1']
@@ -384,7 +372,7 @@ def test_build_deps_deprecated_syntax(loader, exec_ctx):
         assert len(deps) == 6
 
 
-def test_build_deps(loader, exec_ctx):
+def test_build_deps(loader, default_exec_ctx):
     checks = loader.load_all()
     cases = executors.generate_testcases(checks)
 
@@ -523,7 +511,7 @@ def test_build_deps(loader, exec_ctx):
         check_e1.getdep('Test0', 'e0', 'p1')
 
 
-def test_build_deps_empty(exec_ctx):
+def test_build_deps_empty(default_exec_ctx):
     assert {} == dependencies.build_deps([])[0]
 
 
@@ -543,7 +531,7 @@ def make_test():
     return _make_test
 
 
-def test_valid_deps(make_test, exec_ctx):
+def test_valid_deps(make_test, default_exec_ctx):
     #
     #       t0       +-->t5<--+
     #       ^        |        |
@@ -581,7 +569,7 @@ def test_valid_deps(make_test, exec_ctx):
     )
 
 
-def test_cyclic_deps(make_test, exec_ctx):
+def test_cyclic_deps(make_test, default_exec_ctx):
     #
     #       t0       +-->t5<--+
     #       ^        |        |
@@ -627,7 +615,7 @@ def test_cyclic_deps(make_test, exec_ctx):
             't3->t1->t4->t3' in str(exc_info.value))
 
 
-def test_cyclic_deps_by_env(make_test, exec_ctx):
+def test_cyclic_deps_by_env(make_test, default_exec_ctx):
     t0 = make_test('t0')
     t1 = make_test('t1')
     t1.depends_on('t0', udeps.env_is('e0'))
@@ -642,11 +630,11 @@ def test_cyclic_deps_by_env(make_test, exec_ctx):
             't0->t1->t0' in str(exc_info.value))
 
 
-def test_validate_deps_empty(exec_ctx):
+def test_validate_deps_empty(default_exec_ctx):
     dependencies.validate_deps({})
 
 
-def test_skip_unresolved_deps(make_test, temp_runtime):
+def test_skip_unresolved_deps(make_test, make_exec_ctx):
     #
     #       t0    t4
     #      ^  ^   ^
@@ -657,8 +645,7 @@ def test_skip_unresolved_deps(make_test, temp_runtime):
     #          t3
     #
 
-    rt = temp_runtime(fixtures.TEST_CONFIG_FILE, system='sys0:p0')
-    next(rt)
+    make_exec_ctx(system='sys0:p0')
 
     t0 = make_test('t0')
     t0.valid_systems = ['sys0:p1']
@@ -713,7 +700,7 @@ def assert_topological_order(cases, graph):
     assert cases_order in valid_orderings
 
 
-def test_prune_deps(make_test, exec_ctx):
+def test_prune_deps(make_test, default_exec_ctx):
     #
     #       t0       +-->t5<--+
     #       ^        |        |
@@ -768,7 +755,7 @@ def test_prune_deps(make_test, exec_ctx):
             assert len(pruned_deps[node('t0')]) == 0
 
 
-def test_toposort(make_test, exec_ctx):
+def test_toposort(make_test, default_exec_ctx):
     #
     #       t0       +-->t5<--+
     #       ^        |        |
@@ -818,7 +805,7 @@ def test_toposort(make_test, exec_ctx):
     assert cases_by_level[4] == {'t4'}
 
 
-def test_toposort_subgraph(make_test, exec_ctx):
+def test_toposort_subgraph(make_test, default_exec_ctx):
     #
     #       t0
     #       ^
