@@ -1033,7 +1033,6 @@ def main():
                 osext.expandvars(rt.get_option('general/0/report_junit'))
             )
             xml_data = junit(json_report).decode()
-            # xml_data = runner.stats.junit(json_report).decode()
             try:
                 with open(xml_report_file, 'w') as fp:
                     fp.write(str(xml_data))

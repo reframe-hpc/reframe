@@ -343,20 +343,20 @@ def junit(json_report):
 
     for testid in range(len(json_report['runs'][0]['testcases'])):
         tid = json_report['runs'][0]['testcases'][testid]
-        name = (
-            f"{tid['name']} on {tid['system']} using {tid['environment']}"
+        casename = (
+            f"{tid['name']}[{tid['system']}, {tid['environment']}]"
         )
         testcase = ET.SubElement(
             xml_testsuite, 'testcase',
             attrib={
                 'classname': tid['filename'],
-                'name': name,
+                'name': casename,
                 'time': str(tid['time_total']),
             }
         )
-        if not tid['result'] == 'success':
+        if tid['result'] == 'failure':
             testcase_msg = ET.SubElement(
-                testcase, 'failure', attrib={'message': tid['fail_phase']}
+                testcase, 'failure', attrib={'type': tid['fail_phase']}
             )
             testcase_msg.text = tid['fail_reason']
 
