@@ -254,13 +254,13 @@ class RegressionTestMeta(type):
                     ) from None
 
     @property
-    def num_variants(cls):
+    def _rfm_num_variants(cls):
         '''Number unique tests that can be instantiated from this class.'''
         return len(cls._rfm_param_space)*len(cls._rfm_fixture_space)
 
     def __iter__(cls):
         '''Iterator that walks through the test IDs from this class.'''
-        yield from range(cls.num_variants)
+        yield from range(cls._rfm_num_variants)
 
     def _map_test_id(cls, variant):
         '''Map a test ID into its respective parameter and fixture variant IDs.

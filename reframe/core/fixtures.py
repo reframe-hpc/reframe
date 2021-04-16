@@ -13,7 +13,6 @@ import itertools
 
 import reframe.core.namespaces as namespaces
 
-
 class TestFixture:
     '''Regression test fixture class.
 
@@ -21,6 +20,13 @@ class TestFixture:
     '''
 
     def __init__(self, cls, scope='test'):
+        # Can't use isinstance here because of circular deps.
+        if not hasattr(cls, '_rfm_num_variants'):
+            raise ValueError(
+                f'{cls.__qualname__!r} must be a derived class from '
+                f'{"RegressionTest"!r}'
+            ) from None
+
         self.cls = cls
         self.scope = scope
 
@@ -79,13 +85,14 @@ class FixtureSpace(namespaces.Namespace):
     def __iter__(self):
         '''Walk through all index combinations for all fixtures.'''
         yield from itertools.product(
-            *(list(range(f.cls.num_variants) for f in self.fixtures.values()))
+            *(list(range(f.cls._rfm_num_variants)
+            for f in self.fixtures.values()))
         )
 
     def __len__(self):
         l = 1
         for f in self.fixtures.values():
-            l *= f.cls.num_variants
+            l *= f.cls._rfm_num_variants
 
         return l
 
