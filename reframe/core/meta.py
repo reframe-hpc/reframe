@@ -214,10 +214,17 @@ class RegressionTestMeta(type):
         these would otherwise affect the __init__ method's signature, and these
         internal mechanisms must be fully transparent to the user.
         '''
-        obj = cls.__new__(cls, *args, **kwargs)
 
-        # Intercept constructor arguments
-        kwargs.pop('_rfm_use_params', None)
+        # Intercept constructor arguments and map the test variant to the
+        # IDs in the parameter and fixture spaces.
+        param_var, fixt_var = cls._map_test_id(
+            kwargs.pop('_rfm_test_id', None)
+        )
+
+        obj = cls.__new__(
+            cls, *args, _rfm_param_variant=param_var,
+            _rfm_fixt_variant=fixt_var, **kwargs
+        )
 
         obj.__init__(*args, **kwargs)
         return obj
@@ -232,24 +239,45 @@ class RegressionTestMeta(type):
         a call to the default `__getattribute__` method fails to retrieve the
         requested class attribute.
         '''
+
         try:
             return cls._rfm_var_space.vars[name]
         except KeyError:
             try:
                 return cls._rfm_param_space.params[name]
             except KeyError:
-                raise AttributeError(
-                    f'class {cls.__qualname__!r} has no attribute {name!r}'
-                ) from None
+                try:
+                    return cls._rfm_fixture_space.fixtures[name]
+                except KeyError:
+                    raise AttributeError(
+                        f'class {cls.__qualname__!r} has no attribute {name!r}'
+                    ) from None
+
+    @property
+    def num_variants(cls):
+        '''Number unique tests that can be instantiated from this class.'''
+        return len(cls._rfm_param_space)*len(cls._rfm_fixture_space)
+
+    def __iter__(cls):
+        '''Iterator that walks through the test IDs from this class.'''
+        yield from range(cls.num_variants)
+
+    def _map_test_id(cls, variant):
+        '''Map a test ID into its respective parameter and fixture variant IDs.
+
+        The parameter space index is the fast running one.
+        '''
+
+        if variant is None:
+            return (None,)*2
+
+        p_space_len = len(cls._rfm_param_space)
+        return variant%p_space_len, variant//p_space_len
 
     @property
     def param_space(cls):
         # Make the parameter space available as read-only
         return cls._rfm_param_space
-
-    @property
-    def fixture_space(cls):
-        return cls._rfm_fixture_space
 
     def is_abstract(cls):
         '''Check if the class is an abstract test.

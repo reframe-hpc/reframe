@@ -24,10 +24,6 @@ class TestFixture:
         self.cls = cls
         self.scope = scope
 
-    @property
-    def num_instances(self):
-        return len(self.cls.fixture_space)*len(self.cls.param_space)
-
 
 class FixtureSpace(namespaces.Namespace):
     ''' Regression test fixture space.'''
@@ -83,14 +79,15 @@ class FixtureSpace(namespaces.Namespace):
         pass
 
     def __iter__(self):
+        '''Walk through all index combinations for all fixtures.'''
         yield from itertools.product(
-            *(list(range(f.num_instances) for f in self.fixtures.values()))
+            *(list(range(f.cls.num_variants) for f in self.fixtures.values()))
         )
 
     def __len__(self):
         l = 1
         for f in self.fixtures.values():
-            l *= f.num_instances
+            l *= f.cls.num_variants
 
         return l
 

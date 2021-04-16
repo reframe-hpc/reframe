@@ -28,22 +28,15 @@ from reframe.core.pipeline import RegressionTest
 from reframe.utility.versioning import VersionValidator
 
 
-def _register_test(cls, args=None, params_idx=None, fixture_idx=None):
-    '''Register the test.
-
-    Register the test with _rfm_use_params set to the params_idx value.
-    This additional argument initializes the test parameter to a specific
-    parameter combination. Otherwise, the regression test parameters would
-    simply be initialized to None.
-    '''
+def _register_test(cls, args=None):
+    '''Register the test.'''
     def _instantiate(cls, args):
         if isinstance(args, collections.abc.Sequence):
-            return cls(*args, _rfm_use_params=params_idx)
+            return cls(*args)
         elif isinstance(args, collections.abc.Mapping):
-            args['_rfm_use_params'] = params_idx
             return cls(**args)
         elif args is None:
-            return cls(_rfm_use_params=params_idx)
+            return cls()
 
     def _instantiate_all():
         ret = []
@@ -94,16 +87,15 @@ def simple_test(cls):
     '''Class decorator for registering tests with ReFrame.
 
     The decorated class must derive from
-    :class:`reframe.core.pipeline.RegressionTest`.  This decorator is also
+    :class:`reframe.core.pipeline.RegressionTest`. This decorator is also
     available directly under the :mod:`reframe` module.
 
     .. versionadded:: 2.13
     '''
     _validate_test(cls)
 
-    for p,_ in enumerate(cls.param_space):
-        for f,_ in enumerate(cls.fixture_space):
-          _register_test(cls, params_idx=p, fixture_idx=f)
+    for test_id in cls:
+        _register_test(cls, args={'_rfm_test_id':test_id})
 
     return cls
 

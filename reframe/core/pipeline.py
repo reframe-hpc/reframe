@@ -734,12 +734,13 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: :type: boolean : :default: :class:`True`
     build_locally = variable(bool, value=True)
 
-    def __new__(cls, *args, _rfm_use_params=None, **kwargs):
+    def __new__(cls, *args, _rfm_param_variant=None, _rfm_fixt_variant=None,
+                **kwargs):
         obj = super().__new__(cls)
 
         # Insert the var & param spaces
         cls._rfm_var_space.inject(obj, cls)
-        cls._rfm_param_space.inject(obj, cls, _rfm_use_params)
+        cls._rfm_param_space.inject(obj, cls, _rfm_param_variant)
 
         # Create a test name from the class name and the constructor's
         # arguments
