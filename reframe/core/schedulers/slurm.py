@@ -368,9 +368,7 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         if nodespec and nodespec != 'None assigned':
             job._nodelist = [n.name for n in self._get_nodes_by_name(nodespec)]
-            if rt.runtime().get_option('general/0/report_hostlist'):
-                job._hostlist = nodespec
-    
+
     def _update_completion_time(self, job, timestamps):
         if job._completion_time is not None:
             return

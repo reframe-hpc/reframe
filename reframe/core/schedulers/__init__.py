@@ -201,7 +201,6 @@ class Job(jsonext.JSONSerializable):
         self._exitcode = None
         self._state = None
         self._nodelist = None
-        self._hostlist = None
         self._submit_time = None
         self._completion_time = None
 
@@ -326,18 +325,6 @@ class Job(jsonext.JSONSerializable):
         :type: :class:`List[str]` or :class:`None`
         '''
         return self._nodelist
-
-    @property
-    def hostlist(self):
-        '''The hostlist of this job.
-
-        The value of this field is scheduler-specific.
-
-        .. versionadded:: 3.6
-
-        :type: :class`str` or :class:`None`
-        '''
-        return self._hostlist
 
     @property
     def submit_time(self):
