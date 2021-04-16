@@ -746,6 +746,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         # arguments
         name = cls.__qualname__
         name += obj._append_parameters_to_name()
+        name += obj._append_fixture_id(_rfm_fixt_variant)
 
         # or alternatively, if the parameterized test was defined the old way.
         if args or kwargs:
@@ -782,6 +783,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         if self._rfm_param_space.params:
             return '_' + '_'.join([util.toalphanum(str(self.__dict__[key]))
                                    for key in self._rfm_param_space.params])
+        else:
+            return ''
+
+    def _append_fixture_id(self, fixt_id):
+        if self._rfm_fixture_space.fixtures and not fixt_id is None:
+            return f'_v{fixt_id}'
         else:
             return ''
 
