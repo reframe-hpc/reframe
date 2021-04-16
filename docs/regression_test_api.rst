@@ -29,6 +29,23 @@ Regression Test Class Decorators
 Pipeline Hooks
 --------------
 
+.. versionadded:: 2.20
+
+
+Pipeline hooks is an easy way to perform operations while the test traverses the execution pipeline.
+You can attach arbitrary functions to run before or after any pipeline stage, which are called *pipeline hooks*.
+Multiple hooks can be attached before or after the same pipeline stage, in which case the order of execution will match the order in which the functions are defined in the class body of the test.
+A single hook can also be applied to multiple stages and it will be executed multiple times.
+All pipeline hooks of a test class are inherited by its subclasses.
+Subclasses may override a pipeline hook of their parents by redefining the hook function and re-attaching it at the same pipeline stage.
+There are seven pipeline stages where you can attach test methods: ``init``, ``setup``, ``compile``, ``run``, ``sanity``, ``performance`` and ``cleanup``.
+The ``init`` stage is not a real pipeline stage, but it refers to the test initialization.
+
+Hooks attached to any stage will run exactly before or after this stage executes.
+So although a "post-init" and a "pre-setup" hook will both run *after* a test has been initialized and *before* the test goes through the first pipeline stage, they will execute in different times:
+the post-init hook will execute *right after* the test is initialized.
+The framework will then continue with other activities and it will execute the pre-setup hook *just before* it schedules the test for executing its setup stage.
+
 .. autodecorator:: reframe.core.decorators.run_after(stage)
 
 .. autodecorator:: reframe.core.decorators.run_before(stage)

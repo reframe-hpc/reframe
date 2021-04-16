@@ -21,6 +21,7 @@ class TwoParams(NoParams):
 
 
 class Abstract(TwoParams):
+    '''An abstract test is a test with undefined parameters.'''
     P0 = parameter()
 
 
