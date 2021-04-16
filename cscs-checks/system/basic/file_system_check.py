@@ -45,7 +45,7 @@ class fs_check_cd_dir(FileSystemCommandCheck):
                 'real_time': (0.1, None, 0.1, 's')
             }
         }
-        self.executable_opts = ['cd', osext.expandvars('$' + self.directory)]
+        self.executable_opts = ['cd', osext.expandvars(f'${self.directory}')]
 
 
 @rfm.simple_test
