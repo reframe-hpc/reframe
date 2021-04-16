@@ -11,7 +11,7 @@ import reframe.utility.sanity as sn
 class jupyterhub_submit_test(rfm.RunOnlyRegressionTest):
     valid_systems = ['daint:jupyter_gpu', 'daint:jupyter_mc',
                      'dom:jupyter_gpu', 'dom:jupyter_mc']
-    valid_prog_environs = ['*']
+    valid_prog_environs = ['builtin']
     sourcesdir = None
     executable = 'hostname'
     time_limit = '1m'
@@ -29,7 +29,7 @@ class jupyterhub_api_test(rfm.RunOnlyRegressionTest):
     descr = 'Check JupyterHub server status and version'
     valid_systems = ['daint:jupyter_gpu', 'daint:jupyter_mc',
                      'dom:jupyter_gpu', 'dom:jupyter_mc']
-    valid_prog_environs = ['*']
+    valid_prog_environs = ['builtin']
     sourcesdir = None
     executable = 'curl https://jupyter.cscs.ch/hub/api/'
     time_limit = '30s'
