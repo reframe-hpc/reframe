@@ -1746,6 +1746,9 @@ def test_nodelist_abbrev():
     assert nodelist([]) == ''
     assert nodelist(['nid001']) == 'nid001'
 
+    # Test node duplicates
+    assert nodelist(['nid001', 'nid001', 'nid002']) == 'nid001,nid00[1-2]'
+
     with pytest.raises(TypeError, match='nodes argument must be a Sequence'):
         nodelist(1)
 
