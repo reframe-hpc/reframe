@@ -927,26 +927,6 @@ def test_name_compileonly_test():
     assert 'test_name_compileonly_test.<locals>.MyTest_1_2' == test.name
 
 
-def test_registration_of_tests():
-    import unittests.resources.checks_unlisted.good as mod
-
-    checks = mod._rfm_gettests()
-    assert 13 == len(checks)
-    assert [mod.MyBaseTest(0, 0),
-            mod.MyBaseTest(0, 1),
-            mod.MyBaseTest(1, 0),
-            mod.MyBaseTest(1, 1),
-            mod.MyBaseTest(2, 0),
-            mod.MyBaseTest(2, 1),
-            mod.AnotherBaseTest(0, 0),
-            mod.AnotherBaseTest(0, 1),
-            mod.AnotherBaseTest(1, 0),
-            mod.AnotherBaseTest(1, 1),
-            mod.AnotherBaseTest(2, 0),
-            mod.AnotherBaseTest(2, 1),
-            mod.MyBaseTest(10, 20)] == checks
-
-
 def test_trap_job_errors_without_sanity_patterns(local_exec_ctx):
     rt.runtime().site_config.add_sticky_option('general/trap_job_errors', True)
 
