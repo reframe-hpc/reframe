@@ -164,7 +164,9 @@ def test_simple_test_decorator():
         assert test.P2 is not None
 
 
-@pytest.mark.filterwarnings('ignore::reframe.core.warnings.ReframeDeprecationWarning')
+@pytest.mark.filterwarnings(
+    'ignore::reframe.core.warnings.ReframeDeprecationWarning'
+)
 def test_parameterized_test_is_incompatible():
     with pytest.raises(ValueError):
         @rfm.parameterized_test(['var'])
