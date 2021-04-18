@@ -10,6 +10,7 @@ import lxml.etree as LX
 
 import reframe.core.runtime as rt
 import reframe.core.exceptions as errors
+import reframe.utility as util
 
 
 class TestStats:
@@ -219,8 +220,9 @@ class TestStats:
             printer.info(f"  * System partition: {r['system']}")
             printer.info(f"  * Environment: {r['environment']}")
             printer.info(f"  * Stage directory: {r['stagedir']}")
-            nodelist = ','.join(r['nodelist']) if r['nodelist'] else None
-            printer.info(f"  * Node list: {nodelist}")
+            printer.info(
+                f"  * Node list: {util.nodelist_abbrev(r['nodelist'])}"
+            )
             job_type = 'local' if r['scheduler'] == 'local' else 'batch job'
             jobid = r['jobid']
             printer.info(f"  * Job type: {job_type} (id={r['jobid']})")
