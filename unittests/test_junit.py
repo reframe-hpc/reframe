@@ -14,10 +14,6 @@ from reframe.frontend.statistics import junit_lxml
 # https://github.com/SuminAndrew/lxml-asserts/blob/master/LICENSE
 
 
-def raise_exc_info(exc_info):
-    raise exc_info[1].with_traceback(exc_info[2])
-
-
 def _describe_element(elem):
     return elem.getroottree().getpath(elem)
 
