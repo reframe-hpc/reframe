@@ -408,10 +408,10 @@ class Logger(logging.Logger):
         return self.log(ERROR, msg, *args, **kwargs)
 
     def warning(self, msg, *args, **kwargs):
-        return self.log(WARNING, msg, *args, **kwargs)
+        self.log(WARNING, msg, *args, **kwargs)
 
     def info(self, msg, *args, **kwargs):
-        return self.log(INFO, msg, *args, **kwargs)
+        self.log(INFO, msg, *args, **kwargs)
 
     def verbose(self, message, *args, **kwargs):
         self.log(VERBOSE, message, *args, **kwargs)
@@ -421,6 +421,10 @@ class Logger(logging.Logger):
 
     def debug2(self, message, *args, **kwargs):
         self.log(DEBUG2, message, *args, **kwargs)
+
+
+# This is a cache for warnings that we don't want to repeat
+_WARN_ONCE = set()
 
 
 class LoggerAdapter(logging.LoggerAdapter):
@@ -550,7 +554,13 @@ class LoggerAdapter(logging.LoggerAdapter):
     def verbose(self, message, *args, **kwargs):
         self.log(VERBOSE, message, *args, **kwargs)
 
-    def warning(self, message, *args, **kwargs):
+    def warning(self, message, *args, cache=False, **kwargs):
+        if cache:
+            if message in _WARN_ONCE:
+                return
+
+            _WARN_ONCE.add(message)
+
         message = '%s: %s' % (sys.argv[0], message)
         if self.colorize:
             message = color.colorize(message, color.YELLOW)
@@ -594,6 +604,7 @@ class logging_context:
         self._orig_logger = _context_logger
         if check is not None:
             _context_logger = LoggerAdapter(_logger, check)
+            _context_logger.colorize = self._orig_logger.colorize
 
     def __enter__(self):
         return _context_logger
