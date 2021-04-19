@@ -36,3 +36,10 @@ class GpuDirectCudaCheck(rfm.RegressionTest):
         self.sanity_patterns = sn.assert_reference(result, 1., -1e-5, 1e-5)
         self.maintainers = ['AJ', 'MKr']
         self.tags = {'production', 'mch', 'craype'}
+
+    #FIXME this is a workaround for PGI on Tsa
+    @rfm.run_before('compile')
+    def pgi_workaround_tsa(self):
+        if self.current_system.name in ['arolla', 'tsa']:
+            if self.current_environ.name.startswith('PrgEnv-pgi'):
+                self.build_system.cxxflags += ['-D__PGIC__=19']
