@@ -20,6 +20,7 @@ import sys
 import traceback
 
 import reframe.utility.osext as osext
+import reframe.core.warnings as warn
 from reframe.core.exceptions import (ReframeSyntaxError,
                                      SkipTestError,
                                      user_frame)
@@ -60,10 +61,12 @@ def _register_test(cls, args=None):
                 getlogger().warning(f'skipping test {cls.__name__!r}: {e}')
             except Exception:
                 frame = user_frame(*sys.exc_info())
+                filename = frame.filename if frame else 'n/a'
+                lineno = frame.lineno if frame else 'n/a'
                 getlogger().warning(
                     f"skipping test {cls.__name__!r} due to errors: "
                     f"use `-v' for more information\n"
-                    f"    FILE: {frame.filename}:{frame.lineno}"
+                    f"    FILE: {filename}:{lineno}"
                 )
                 getlogger().verbose(traceback.format_exc())
 
@@ -121,7 +124,20 @@ def parameterized_test(*inst):
    .. note::
       This decorator does not instantiate any test.  It only registers them.
       The actual instantiation happens during the loading phase of the test.
+
+   .. deprecated:: 3.6.0
+
+      Please use the :func:`~reframe.core.pipeline.RegressionTest.parameter`
+      built-in instead.
+
     '''
+
+    warn.user_deprecation_warning(
+        'the @parameterized_test decorator is deprecated; '
+        'please use the parameter() built-in instead',
+        from_version='3.6.0'
+    )
+
     def _do_register(cls):
         _validate_test(cls)
         if not cls.param_space.is_empty():
