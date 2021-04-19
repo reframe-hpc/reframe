@@ -9,8 +9,14 @@ import os
 import re
 
 import reframe as rfm
-import reframe.utility.sanity as sn
 import reframe.utility.osext as osext
+import reframe.utility.sanity as sn
+
+
+class FileSystemGlobal(rfm.RegressionMixin):
+    '''Handy class to store common test settings.
+    '''
+    scratch = parameter(variable(list, value=['SCRATCH']))
 
 
 class FileSystemCommandCheck(rfm.RunOnlyRegressionTest):
@@ -31,8 +37,7 @@ class FileSystemCommandCheck(rfm.RunOnlyRegressionTest):
 
 
 @rfm.simple_test
-class fs_check_cd_dir(FileSystemCommandCheck):
-    directory = parameter(['SCRATCH'])
+class fs_check_cd_dir(FileSystemCommandCheck, FileSystemGlobal):
     reference = {
         'daint:login': {
             'real_time': (0.1, None, 0.1, 's')
@@ -44,12 +49,11 @@ class fs_check_cd_dir(FileSystemCommandCheck):
 
     @rfm.run_before('run')
     def set_executable_ops(self):
-        self.executable_opts = ['cd', osext.expandvars(f'${self.directory}')]
+        self.executable_opts = ['cd', osext.expandvars(f'${self.scratch}')]
 
 
 @rfm.simple_test
-class fs_check_ls_dir(FileSystemCommandCheck):
-    directory = parameter(['SCRATCH'])
+class fs_check_ls_dir(FileSystemCommandCheck, FileSystemGlobal):
     reference = {
         'daint:login': {
             'real_time': (0.1, None, 0.1, 's')
@@ -62,11 +66,11 @@ class fs_check_ls_dir(FileSystemCommandCheck):
     @rfm.run_before('run')
     def set_executable_ops(self):
         self.executable_opts = ['/usr/bin/ls',
-                                osext.expandvars(f'${self.directory}')]
+                                osext.expandvars(f'${self.scratch}')]
 
 
 @rfm.simple_test
-class fs_check_du_dir(FileSystemCommandCheck):
+class fs_check_du_dir(FileSystemCommandCheck, FileSystemGlobal):
     directory = parameter(['PROJECT',
                            'HOME',
                            'SCRATCH'])
@@ -106,12 +110,11 @@ class fs_check_du_dir(FileSystemCommandCheck):
 
 
 @rfm.simple_test
-class fs_check_touch_file(FileSystemCommandCheck):
-    directory = parameter(['SCRATCH'])
+class fs_check_touch_file(FileSystemCommandCheck, FileSystemGlobal):
 
     @rfm.run_before('run')
     def set_executable_ops(self):
-        self.test_file = os.path.join(osext.expandvars(f'${self.directory}'),
+        self.test_file = os.path.join(osext.expandvars(f'${self.scratch}'),
                                       'reframe_touch_test_file')
         self.executable_opts = ['touch', self.test_file]
 
