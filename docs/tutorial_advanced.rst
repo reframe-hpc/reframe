@@ -798,8 +798,10 @@ Writing reusable tests
 .. versionadded:: 3.5.0
 
 So far, all the examples shown above were tight to a particular system or configuration, which makes reusing these tests in other systems not straightforward.
-However, the introduction of the :py:func:`~reframe.core.pipeline.RegressionTest.parameter` and :py:func:`~reframe.core.pipeline.RegressionTest.variable` ReFrame built-ins solves this problem, eliminating the need to specify any of the test variables in the :func:`__init__` method.
-Hence, these parameters and variables can be treated as simple class attributes, which allows us to leverage Python's class inheritance and write more modular tests.
+However, the introduction of the :py:func:`~reframe.core.pipeline.RegressionTest.parameter` and :py:func:`~reframe.core.pipeline.RegressionTest.variable` ReFrame built-ins solves this problem, eliminating the need to specify any of the test variables in the :func:`__init__` method and simplifying code reuse.
+Hence, readers who are not familiar with these built-in functions are encouraged to read their basic use examples (see :py:func:`~reframe.core.pipeline.RegressionTest.parameter` and :py:func:`~reframe.core.pipeline.RegressionTest.variable`) before delving any deeper into this tutorial.
+
+In essence, parameters and variables can be treated as simple class attributes, which allows us to leverage Python's class inheritance and write more modular tests.
 For simplicity, we illustrate this concept with the above :class:`ContainerTest` example, where the goal here is to re-write this test as a library that users can simply import from and derive their tests without having to rewrite the bulk of the test.
 Also, for illustrative purposes, we parameterize this library test on a few different image tags (the above example just used ``ubuntu:18.04``) and throw the container commands into a separate bash script just to create some source files.
 Thus, removing all the system and configuration specific variables, and moving as many assignments as possible into the class body, the system agnostic library test looks as follows:
