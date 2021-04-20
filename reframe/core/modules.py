@@ -1008,6 +1008,14 @@ class LModImpl(TMod4Impl):
 class NoModImpl(ModulesSystemImpl):
     '''A convenience class that implements a no-op a modules system.'''
 
+    def _warn(self, msg):
+        getlogger().warning(
+            f"no modules system is set: {msg}: "
+            f"check the 'modules_system' configuration "
+            f"parameter for your system",
+            cache=True
+        )
+
     def available_modules(self, substr):
         return []
 
@@ -1021,10 +1029,10 @@ class NoModImpl(ModulesSystemImpl):
         return ''
 
     def load_module(self, module):
-        pass
+        self._warn(f'module {module.name!r} will not be loaded')
 
     def unload_module(self, module):
-        pass
+        self._warn(f'module {module.name!r} will not be unloaded')
 
     def is_module_loaded(self, module):
         #
@@ -1043,21 +1051,23 @@ class NoModImpl(ModulesSystemImpl):
         return ''
 
     def unload_all(self):
-        pass
+        self._warn('no module will be purged')
 
     def searchpath(self):
         return []
 
     def searchpath_add(self, *dirs):
-        pass
+        self._warn('MODULEPATH will not be modified')
 
     def searchpath_remove(self, *dirs):
-        pass
+        self._warn('MODULEPATH will not be modified')
 
     def emit_load_instr(self, module):
+        self._warn(f'module {module.name!r} will not be loaded')
         return []
 
     def emit_unload_instr(self, module):
+        self._warn(f'module {module.name!r} will not be unloaded')
         return []
 
 

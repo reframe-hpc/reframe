@@ -499,7 +499,7 @@ You can then use those resources transparently from within your test.
 To achieve this in our case, we first need to define a ``memory`` resource in the configuration:
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 30-51,58-74
+   :lines: 31-52,63-79
    :emphasize-lines: 17-22,32-38
 
 Notice that we do not define the resource for all the partitions, but only for those that it makes sense.
@@ -707,7 +707,7 @@ ReFrame can be used also to test applications that run inside a container.
 First, we need to enable the container platform support in ReFrame's configuration and, specifically, at the partition configuration level:
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 38-62
+   :lines: 39-63
    :emphasize-lines: 15-24
 
 For each partition, users can define a list of container platforms supported using the :js:attr:`container_platforms` `configuration parameter <config_reference.html#.systems[].partitions[].container_platforms>`__.

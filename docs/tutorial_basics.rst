@@ -325,8 +325,8 @@ Note that you should *not* edit this configuration file in place.
 Here is how the new configuration file looks like with the needed additions highlighted:
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 10-24,80-101,134-
-   :emphasize-lines: 3-15,31-42
+   :lines: 10-25,81-102,135-
+   :emphasize-lines: 3-16,32-43
 
 Here we define a system named ``catalina`` that has one partition named ``default``.
 This partition makes no use of any `workload manager <config_reference.html#.systems[].partitions[].scheduler>`__, but instead launches any jobs locally as OS processes.
@@ -336,8 +336,8 @@ Notice, how you can define the actual commands for invoking the C, C++ and Fortr
 As soon as a programming environment defines the different compilers, ReFrame will automatically pick the right compiler based on the source file extension.
 In addition to C, C++ and Fortran programs, ReFrame will recognize the ``.cu`` extension as well and will try to invoke the ``nvcc`` compiler for CUDA programs.
 
-Finally, the new system that we defined may be identified by the hostname ``tresa`` (see the :js:attr:`hostnames` configuration parameter).
-This will help ReFrame to automatically pick the right configuration when running on it.
+Finally, the new system that we defined may be identified by the hostname ``tresa`` (see the :js:attr:`hostnames` configuration parameter) and it will not use any environment modules system (see the :js:attr:`modules_system` configuration parameter).
+The :js:attr:`hostnames` attribute will help ReFrame to automatically pick the right configuration when running on it.
 Notice, how the ``generic`` system matches any hostname, so that it acts as a fallback system.
 
 .. note::
@@ -827,8 +827,8 @@ Let's extend our configuration file for Piz Daint.
 
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 10-45,62-70,77-
-   :emphasize-lines: 16-48,70-101,114-120
+   :lines: 10-46,63-71,78-
+   :emphasize-lines: 17-49,71-102,115-121
 
 
 First of all, we need to define a new system and set the list of hostnames that will help ReFrame identify it.
