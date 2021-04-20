@@ -70,7 +70,7 @@ In essence, these builtins exert control over the test creation, and they allow 
   Inserts or modifies a regression test parameter.
   If a parameter with a matching name is already present in the parameter space of a parent class, the existing parameter values will be combined with those provided by this method following the inheritance behavior set by the arguments ``inherit_params`` and ``filter_params``.
   Instead, if no parameter with a matching name exists in any of the parent parameter spaces, a new regression test parameter is created.
-  A regression test can be parametrized as follows:
+  A regression test can be parameterized as follows:
 
   .. code:: python
 
@@ -85,9 +85,9 @@ In essence, these builtins exert control over the test creation, and they allow 
             else:
                 do_other()
 
-  One of the most powerful features about these built-in functions is that they store their input information at the class level.
+  One of the most powerful features of these built-in functions is that they store their input information at the class level.
   However, a parameter may only be accessed from the class instance and accessing it directly from the class body is disallowed.
-  With this approach, extending or specializing an existing parametrized regression test becomes straightforward, since the test attribute additions and modifications made through built-in functions in the parent class are automatically inherited by the child test.
+  With this approach, extending or specializing an existing parameterized regression test becomes straightforward, since the test attribute additions and modifications made through built-in functions in the parent class are automatically inherited by the child test.
   For instance, continuing with the example above, one could override the :func:`do_something` hook in the :class:`Foo` regression test as follows:
 
   .. code:: python
@@ -211,7 +211,7 @@ In essence, these builtins exert control over the test creation, and they allow 
       what = 'Hello'
 
 
-    # A parametrized test with type-checking
+    # A parameterized test with type-checking
     @rfm.simple_test
     class FoodTest(EchoBaseTest):
       param = parameter(['Bacon', 'Eggs'])

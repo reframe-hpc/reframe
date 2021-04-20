@@ -818,7 +818,7 @@ Thus, removing all the system and configuration specific variables, and moving a
 Note that the class :class:`ContainerBase` is not decorated since it does not specify the required variables ``valid_systems`` and ``valid_prog_environs``, and it declares the ``platform`` parameter without any defined values assigned.
 Hence, the user can simply derive from this test and specialize it to use the desired container platforms.
 Since the parameters are defined directly in the class body, the user is also free to override or extend any of the other parameters in a derived test.
-In this example, we have parametrized the base test to run with the ``ubuntu:18.04`` and ``ubuntu:20.04`` images, but these values from ``dist`` (and also the ``dist_name`` variable) could be modified by the derived class if needed.
+In this example, we have parameterized the base test to run with the ``ubuntu:18.04`` and ``ubuntu:20.04`` images, but these values from ``dist`` (and also the ``dist_name`` variable) could be modified by the derived class if needed.
 
 On the other hand, the rest of the test depends on the values from the test parameters, and a parameter is only assigned a specific value after the class has been instantiated.
 Thus, the rest of the test is expressed as hooks, without the need to write anything in the :func:`__init__` method.
