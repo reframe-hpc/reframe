@@ -973,7 +973,7 @@ site_configuration = {
                 'eiger', 'pilatus'
             ],
             'modules': [
-                {'name': 'PrgEnv-aocc', 'collection': True}
+                {'name': 'PrgEnv-aocc', 'collection': False}
             ]
         },
         {
@@ -982,7 +982,7 @@ site_configuration = {
                 'eiger', 'pilatus'
             ],
             'modules': [
-                {'name': 'PrgEnv-cray', 'collection': True}
+                {'name': 'PrgEnv-cray', 'collection': False}
             ]
         },
         {
@@ -991,16 +991,16 @@ site_configuration = {
                 'eiger', 'pilatus'
             ],
             'modules': [
-                {'name': 'PrgEnv-gnu', 'collection': True}
+                {'name': 'PrgEnv-gnu', 'collection': False}
             ]
         },
         {
             'name': 'PrgEnv-intel',
             'target_systems': [
-                'pilatus'
+                'eiger', 'pilatus'
             ],
             'modules': [
-                {'name': 'PrgEnv-intel', 'collection': True}
+                {'name': 'PrgEnv-intel', 'collection': False}
             ]
         },
         {
@@ -1033,7 +1033,7 @@ site_configuration = {
         {
             'name': 'cpeIntel',
             'target_systems': [
-                'pilatus'
+                'eiger', 'pilatus'
             ],
             'modules': [
                 'cpeIntel'
