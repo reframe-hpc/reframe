@@ -74,7 +74,7 @@ def test_instantiate_and_inherit(OneVarTest):
     Ensure that inheriting from this class after the instantiation does not
     raise a namespace clash with the vars.
     '''
-    inst = OneVarTest()
+    OneVarTest()
 
     class MyTest(OneVarTest):
         pass
@@ -126,7 +126,7 @@ def test_var_type(OneVarTest):
         foo = 'bananas'
 
     with pytest.raises(TypeError):
-        inst = MyTest()
+        MyTest()
 
 
 def test_require_var(OneVarTest):
@@ -137,7 +137,7 @@ def test_require_var(OneVarTest):
             print(self.foo)
 
     with pytest.raises(AttributeError):
-        inst = MyTest()
+        MyTest()
 
 
 def test_required_var_not_present(OneVarTest):
@@ -147,7 +147,7 @@ def test_required_var_not_present(OneVarTest):
         def __init__(self):
             pass
 
-    mytest = MyTest()
+    MyTest()
 
 
 def test_invalid_field():
@@ -209,6 +209,13 @@ def test_override_regular_attribute():
         v = variable(int, value=40)
 
     assert Foo.v == 40
+
+
+def test_var_name_is_set():
+    class MyTest (rfm.RegressionTest):
+        v = variable(int)
+
+    assert MyTest.v.name == 'v'
 
 
 def test_variable_with_attribute():
@@ -294,7 +301,7 @@ def test_var_add_operator():
         assert v == 3
 
 
-def test_var_add_operator():
+def test_var_sub_operator():
     class A(rfm.RegressionTest):
         v = variable(int, value=3)
         assert (v - 1) == 2

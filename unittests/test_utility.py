@@ -16,7 +16,7 @@ import reframe.utility as util
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
-import unittests.fixtures as fixtures
+import unittests.utility as test_util
 
 from reframe.core.exceptions import (ConfigError,
                                      SpawnedProcessError,
@@ -57,7 +57,7 @@ def test_command_timeout():
     assert exc_info.value.timeout == 2
 
     # Try to get the string repr. of the exception: see bug #658
-    s = str(exc_info.value)
+    str(exc_info.value)
 
 
 def test_command_async():
@@ -237,12 +237,12 @@ def test_is_url():
 @pytest.fixture
 def git_only():
     try:
-        completed = osext.run_command('git --version', check=True, log=False)
+        osext.run_command('git --version', check=True, log=False)
     except (SpawnedProcessError, FileNotFoundError):
         pytest.skip('no git installation found on system')
 
     try:
-        completed = osext.run_command('git status', check=True, log=False)
+        osext.run_command('git status', check=True, log=False)
     except (SpawnedProcessError, FileNotFoundError):
         pytest.skip('not inside a git repository')
 
@@ -529,7 +529,7 @@ def test_import_from_file_load_twice():
 
 
 def test_import_from_file_load_namespace_package():
-    module = util.import_module_from_file('unittests/resources')
+    util.import_module_from_file('unittests/resources')
     assert 'unittests' in sys.modules
     assert 'unittests.resources' in sys.modules
 
@@ -1100,7 +1100,7 @@ def test_sequence_view():
         l.clear()
 
     with pytest.raises(AttributeError):
-        s = l.copy()
+        l.copy()
 
     with pytest.raises(AttributeError):
         l.extend([3, 4])
@@ -1225,10 +1225,10 @@ def test_ordered_set_str(random_seed):
 
 def test_ordered_set_construction_error():
     with pytest.raises(TypeError):
-        s = util.OrderedSet(2)
+        util.OrderedSet(2)
 
     with pytest.raises(TypeError):
-        s = util.OrderedSet(1, 2, 3)
+        util.OrderedSet(1, 2, 3)
 
 
 def test_ordered_set_repr():
@@ -1440,26 +1440,16 @@ def test_cray_cle_info_missing_parts(tmp_path):
     assert cle_info.patchset == '09'
 
 
-@pytest.fixture
-def temp_runtime(tmp_path):
-    def _temp_runtime(site_config, system=None, options={}):
-        options.update({'systems/prefix': tmp_path})
-        with rt.temp_runtime(site_config, system, options) as ctx:
-            yield ctx
-
-    yield _temp_runtime
-
-
 @pytest.fixture(params=['tmod', 'tmod4', 'lmod', 'nomod'])
-def user_exec_ctx(request, temp_runtime):
-    if fixtures.USER_CONFIG_FILE:
-        config_file, system = fixtures.USER_CONFIG_FILE, fixtures.USER_SYSTEM
+def user_exec_ctx(request, make_exec_ctx_g):
+    if test_util.USER_CONFIG_FILE:
+        config_file, system = test_util.USER_CONFIG_FILE, test_util.USER_SYSTEM
     else:
-        config_file, system = fixtures.BUILTIN_CONFIG_FILE, 'generic'
+        config_file, system = test_util.BUILTIN_CONFIG_FILE, 'generic'
 
     try:
-        yield from temp_runtime(config_file, system,
-                                {'systems/modules_system': request.param})
+        yield from make_exec_ctx_g(config_file, system,
+                                   {'systems/modules_system': request.param})
     except ConfigError as e:
         pytest.skip(str(e))
 
@@ -1472,9 +1462,9 @@ def modules_system(user_exec_ctx, monkeypatch):
     monkeypatch.setenv('_LMFILES_', '')
 
     ms = rt.runtime().system.modules_system
-    ms.searchpath_add(fixtures.TEST_MODULES)
+    ms.searchpath_add(test_util.TEST_MODULES)
     yield ms
-    ms.searchpath_remove(fixtures.TEST_MODULES)
+    ms.searchpath_remove(test_util.TEST_MODULES)
 
 
 def test_find_modules(modules_system):
@@ -1722,3 +1712,45 @@ def test_is_copyable():
     assert util.is_copyable(len)
     assert util.is_copyable(int)
     assert not util.is_copyable(foo())
+
+
+def test_nodelist_abbrev():
+    nid_nodes = [f'nid{n:03}' for n in range(5, 20)]
+    cid_nodes = [f'cid{n:03}' for n in range(20)]
+
+    random.shuffle(nid_nodes)
+    random.shuffle(cid_nodes)
+    nid_nodes.insert(0, 'nid002')
+    nid_nodes.insert(0, 'nid001')
+    nid_nodes.append('nid125')
+    cid_nodes += ['cid055', 'cid056']
+
+    all_nodes = nid_nodes + cid_nodes
+    random.shuffle(all_nodes)
+
+    nodelist = util.nodelist_abbrev
+    assert nodelist(nid_nodes) == 'nid00[1-2],nid0[05-19],nid125'
+    assert nodelist(cid_nodes) == 'cid0[00-19],cid05[5-6]'
+    assert nodelist(all_nodes) == (
+        'cid0[00-19],cid05[5-6],nid00[1-2],nid0[05-19],nid125'
+    )
+
+    # Test non-contiguous nodes
+    nid_nodes = []
+    for i in range(3):
+        nid_nodes += [f'nid{n:03}' for n in range(10*i, 10*i+5)]
+
+    random.shuffle(nid_nodes)
+    assert nodelist(nid_nodes) == 'nid00[0-4],nid01[0-4],nid02[0-4]'
+    assert nodelist(['nid01', 'nid10', 'nid20']) == 'nid01,nid10,nid20'
+    assert nodelist([]) == ''
+    assert nodelist(['nid001']) == 'nid001'
+
+    # Test node duplicates
+    assert nodelist(['nid001', 'nid001', 'nid002']) == 'nid001,nid00[1-2]'
+
+    with pytest.raises(TypeError, match='nodes argument must be a Sequence'):
+        nodelist(1)
+
+    with pytest.raises(TypeError, match='nodes argument cannot be a string'):
+        nodelist('foo')

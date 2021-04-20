@@ -10,6 +10,7 @@ import sys
 import time
 
 from reframe.core.exceptions import (FailureLimitError,
+                                     SkipTestError,
                                      TaskDependencyError,
                                      TaskExit)
 from reframe.core.logging import getlogger
@@ -100,6 +101,17 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
                    for c in case.deps if c in self._task_index):
                 raise TaskDependencyError('dependencies failed')
 
+            if any(self._task_index[c].skipped
+                   for c in case.deps if c in self._task_index):
+
+                # We raise the SkipTestError here and catch it immediately in
+                # order for `skip()` to get the correct exception context.
+                try:
+                    raise SkipTestError('skipped due to skipped dependencies')
+                except SkipTestError as e:
+                    task.skip()
+                    raise TaskExit from e
+
             partname = task.testcase.partition.fullname
             task.setup(task.testcase.partition,
                        task.testcase.environ,
@@ -132,12 +144,10 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
             self._retired_tasks.append(task)
             task.finalize()
-
         except TaskExit:
             return
         except ABORT_REASONS as e:
             task.abort(e)
-
             raise
         except BaseException:
             task.fail(sys.exc_info())
@@ -150,6 +160,10 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def on_task_exit(self, task):
         pass
+
+    def on_task_skip(self, task):
+        msg = str(task.exc_info[1])
+        self.printer.status('SKIP', msg, just='right')
 
     def on_task_failure(self, task):
         self._num_failed_tasks += 1
@@ -247,6 +261,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             getlogger().debug2('Task was not running')
             pass
 
+    # FIXME: The following functions are very similar and they are also reused
+    # in the serial policy; we should refactor them
     def deps_failed(self, task):
         # NOTE: Restored dependencies are not in the task_index
         return any(self._task_index[c].failed
@@ -257,6 +273,11 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         return all(self._task_index[c].succeeded
                    for c in task.testcase.deps if c in self._task_index)
 
+    def deps_skipped(self, task):
+        # NOTE: Restored dependencies are not in the task_index
+        return any(self._task_index[c].skipped
+                   for c in task.testcase.deps if c in self._task_index)
+
     def on_task_setup(self, task):
         partname = task.check.current_partition.fullname
         self._ready_tasks[partname].append(task)
@@ -264,6 +285,17 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def on_task_run(self, task):
         partname = task.check.current_partition.fullname
         self._running_tasks[partname].append(task)
+
+    def on_task_skip(self, task):
+        # Remove the task from the running list if it was skipped after the
+        # run phase
+        if task.check.current_partition:
+            partname = task.check.current_partition.fullname
+            if task.failed_stage in ('run_complete', 'run_wait'):
+                self._running_tasks[partname].remove(task)
+
+        msg = str(task.exc_info[1])
+        self.printer.status('SKIP', msg, just='right')
 
     def on_task_failure(self, task):
         if task.aborted:
@@ -308,7 +340,13 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._completed_tasks.append(task)
 
     def _setup_task(self, task):
-        if self.deps_succeeded(task):
+        if self.deps_skipped(task):
+            try:
+                raise SkipTestError('skipped due to skipped dependencies')
+            except SkipTestError as e:
+                task.skip()
+                return False
+        elif self.deps_succeeded(task):
             try:
                 task.setup(task.testcase.partition,
                            task.testcase.environ,
@@ -346,7 +384,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         try:
             partname = partition.fullname
             if not self._setup_task(task):
-                if not task.failed:
+                if not task.skipped and not task.failed:
                     self.printer.status(
                         'DEP', '%s on %s using %s' %
                         (check.name, partname, environ.name),
@@ -371,7 +409,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             else:
                 self.printer.status('HOLD', task.check.info(), just='right')
         except TaskExit:
-            if not task.failed:
+            if not task.failed and not task.skipped:
                 with contextlib.suppress(TaskExit):
                     self._reschedule(task)
 
@@ -380,7 +418,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             # If abort was caused due to failure elsewhere, abort current
             # task as well
             task.abort(e)
-
             self._failall(e)
             raise
 
@@ -416,7 +453,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def _setup_all(self):
         still_waiting = []
         for task in self._waiting_tasks:
-            if not self._setup_task(task) and not task.failed:
+            if (not self._setup_task(task) and
+                not task.failed and not task.skipped):
                 still_waiting.append(task)
 
         self._waiting_tasks[:] = still_waiting

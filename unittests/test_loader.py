@@ -48,13 +48,6 @@ def test_load_all(loader_with_path):
     assert 12 == len(checks)
 
 
-def test_load_new_syntax(loader):
-    checks = loader.load_from_file(
-        'unittests/resources/checks_unlisted/good.py'
-    )
-    assert 13 == len(checks)
-
-
 def test_conflicted_checks(loader_with_path):
     loader_with_path._ignore_conflicts = False
     with pytest.raises(NameConflictError):
@@ -84,19 +77,19 @@ def test_special_test():
         @rfm.simple_test
         class TestOverride(rfm.RegressionTest):
             def setup(self, partition, environ, **job_opts):
-                super().setup(system, environ, **job_opts)
+                super().setup(partition, environ, **job_opts)
 
     with pytest.raises(ReframeSyntaxError):
         @rfm.simple_test
         class TestOverrideRunOnly(rfm.RunOnlyRegressionTest):
             def setup(self, partition, environ, **job_opts):
-                super().setup(system, environ, **job_opts)
+                super().setup(partition, environ, **job_opts)
 
     with pytest.raises(ReframeSyntaxError):
         @rfm.simple_test
         class TestOverrideCompileOnly(rfm.CompileOnlyRegressionTest):
             def setup(self, partition, environ, **job_opts):
-                super().setup(system, environ, **job_opts)
+                super().setup(partition, environ, **job_opts)
 
     @rfm.simple_test
     class TestSimple(rfm.RegressionTest):
@@ -109,7 +102,7 @@ def test_special_test():
             pass
 
         def setup(self, partition, environ, **job_opts):
-            super().setup(system, environ, **job_opts)
+            super().setup(partition, environ, **job_opts)
 
     @rfm.simple_test
     class TestSpecialRunOnly(rfm.RunOnlyRegressionTest,
@@ -118,7 +111,7 @@ def test_special_test():
             pass
 
         def setup(self, partition, environ, **job_opts):
-            super().setup(system, environ, **job_opts)
+            super().setup(partition, environ, **job_opts)
 
         def run(self):
             super().run()
@@ -130,7 +123,7 @@ def test_special_test():
             pass
 
         def setup(self, partition, environ, **job_opts):
-            super().setup(system, environ, **job_opts)
+            super().setup(partition, environ, **job_opts)
 
         def run(self):
             super().run()
@@ -142,7 +135,7 @@ def test_special_test():
                 pass
 
             def setup(self, partition, environ, **job_opts):
-                super().setup(system, environ, **job_opts)
+                super().setup(partition, environ, **job_opts)
 
     @rfm.simple_test
     class TestFinal(rfm.RegressionTest):

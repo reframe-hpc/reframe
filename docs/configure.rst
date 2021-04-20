@@ -68,7 +68,7 @@ Each system is a different object inside the ``systems`` section.
 In our example we define three systems, a Mac laptop, Piz Daint and a generic fallback system:
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 11-89
+   :lines: 11-90
 
 Each system is associated with a set of properties, which in this case are the following:
 
@@ -76,9 +76,9 @@ Each system is associated with a set of properties, which in this case are the f
   This should be an alphanumeric string (dashes ``-`` are allowed) and it will be used to refer to this system in other contexts.
 * ``descr``: A detailed description of the system.
 * ``hostnames``: This is a list of hostname patterns following the `Python Regular Expression Syntax <https://docs.python.org/3/library/re.html#regular-expression-syntax>`__, which will be used by ReFrame when it tries to automatically select a configuration entry for the current system.
-* ``modules_system``: In our example, this is only defined for Piz Daint and refers to the environment modules system that should be used for loading environment modules on this system.
-  In this case, the classic Tcl implementation of the `environment modules <https://sourceforge.net/projects/modules/files/Modules/modules-3.2.10/>`__.
-  For a complete list of the supported modules systems, see `here <config_reference.html#.systems[].modules_system>`__.
+* ``modules_system``: This refers to the modules management backend which should be used for loading environment modules on this system.
+  Multiple backends are supported, as well as the special ``nomod`` backend which implements the different modules system operations as no-ops.
+  For the complete list of the supported modules systems, see `here <config_reference.html#.systems[].modules_system>`__.
 * ``partitions``: The list of partitions that are defined for this system.
   Each partition is defined as a separate object.
   We devote the rest of this section in system partitions, since they are an essential part of ReFrame's configuration.
@@ -90,7 +90,7 @@ The ``login`` partition refers to the login nodes of the system, whereas the ``g
 Let's pick the ``gpu`` partition and look into it in more detail:
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 38-58
+   :lines: 39-59
 
 The basic properties of a partition are the following:
 
@@ -132,7 +132,7 @@ In our example, we define environments for all the basic compilers as well as a 
 In certain contexts, it is useful to see a ReFrame environment as a wrapper of a programming toolchain (MPI + compiler combination):
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 90-148
+   :lines: 91-149
 
 Each environment is associated with a name.
 This name will be used to reference this environment in different contexts, as for example in the ``environs`` property of the system partitions.
@@ -154,7 +154,7 @@ Additionally, it allows for logging performance data from performance tests into
 Let's see how logging is defined in our example configuration, which also represents a typical one for logging:
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 149-184
+   :lines: 150-185
 
 Logging is configured under the ``logging`` section of the configuration, which is a list of logger objects.
 Unless you want to configure logging differently for different systems, a single logger object is enough.
