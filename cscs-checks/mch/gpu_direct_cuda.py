@@ -38,8 +38,8 @@ class GpuDirectCudaCheck(rfm.RegressionTest):
         self.tags = {'production', 'mch', 'craype'}
 
     @rfm.run_before('compile')
-    #FIXME this is a workaround for PGI on Tsa
     def pgi_workaround_tsa(self):
-        if self.current_system.name in ['arolla', 'tsa']:
+        # FIXME: this is a temporary workaround for PGI on Tsa
+        if self.current_system.name in ('arolla', 'tsa'):
             if self.current_environ.name.startswith('PrgEnv-pgi'):
                 self.build_system.cxxflags += ['-D__PGIC__=19']
