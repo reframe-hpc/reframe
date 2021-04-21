@@ -325,8 +325,8 @@ Note that you should *not* edit this configuration file in place.
 Here is how the new configuration file looks like with the needed additions highlighted:
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 10-24,80-101,134-
-   :emphasize-lines: 3-15,31-42
+   :lines: 10-25,81-102,135-
+   :emphasize-lines: 3-16,32-43
 
 Here we define a system named ``catalina`` that has one partition named ``default``.
 This partition makes no use of any `workload manager <config_reference.html#.systems[].partitions[].scheduler>`__, but instead launches any jobs locally as OS processes.
@@ -336,8 +336,8 @@ Notice, how you can define the actual commands for invoking the C, C++ and Fortr
 As soon as a programming environment defines the different compilers, ReFrame will automatically pick the right compiler based on the source file extension.
 In addition to C, C++ and Fortran programs, ReFrame will recognize the ``.cu`` extension as well and will try to invoke the ``nvcc`` compiler for CUDA programs.
 
-Finally, the new system that we defined may be identified by the hostname ``tresa`` (see the :js:attr:`hostnames` configuration parameter).
-This will help ReFrame to automatically pick the right configuration when running on it.
+Finally, the new system that we defined may be identified by the hostname ``tresa`` (see the :js:attr:`hostnames` configuration parameter) and it will not use any environment modules system (see the :js:attr:`modules_system` configuration parameter).
+The :js:attr:`hostnames` attribute will help ReFrame to automatically pick the right configuration when running on it.
 Notice, how the ``generic`` system matches any hostname, so that it acts as a fallback system.
 
 .. note::
@@ -417,7 +417,7 @@ We extend our C++ "Hello, World!" example to print the greetings from multiple t
    :language: cpp
    :lines: 6-
 
-This program takes as argument the number of threads it will create and it uses ``std::thread``, which is C++11 addition, meaning that we will need to pass ``-std=c++11`` to our compilers.
+This program takes as argument the number of threads it will create and it uses ``std::thread``, which is a C++11 addition, meaning that we will need to pass ``-std=c++11`` to our compilers.
 Here is the corresponding ReFrame test, where the new concepts introduced are highlighted:
 
 .. code-block:: console
@@ -429,12 +429,30 @@ Here is the corresponding ReFrame test, where the new concepts introduced are hi
    :lines: 6-
    :emphasize-lines: 11-13
 
+
+In order to compile applications using ``std::thread`` with GCC and Clang, the ``-pthread`` option has to be passed to the compiler.
+Since the above option might not be valid for other compilers, we use pipeline hooks to differentiate based on the programming environment as follows:
+
+.. code-block:: python
+
+   @rfm.run_before('compile')
+   def set_threading_flags(self):
+       environ = self.current_environ.name
+       if environ in {'clang', 'gnu'}:
+           self.build_system.cxxflags += ['-pthread']
+
+
+.. note::
+
+   The pipeline hooks, as well as the regression test pipeline itself, are covered in more detail later on in the tutorial.
+
+
 ReFrame delegates the compilation of a test to a *build system*, which is an abstraction of the steps needed to compile the test.
 Build systems take also care of interactions with the programming environment if necessary.
 Compilation flags are a property of the build system.
 If not explicitly specified, ReFrame will try to pick the correct build system (e.g., CMake, Autotools etc.) by inspecting the test resources, but in cases as the one presented here where we need to set the compilation flags, we need to specify a build system explicitly.
-In this example, we instruct ReFrame to compile a single source file using the ``-std=c++11 -Wall`` compilation flags.
-Finally, we set the arguments to be passed to the generated executable in :attr:`~reframe.core.pipeline.RegressionTest.executable_opts`.
+In this example, we instruct ReFrame to compile a single source file using the ``-std=c++11 -pthread -Wall`` compilation flags.
+Finally, we set the arguments to be passed to the generated executable in :attr:`executable_opts <reframe.core.pipeline.RegressionTest.executable_opts>`.
 
 
 .. code-block:: console
@@ -809,8 +827,8 @@ Let's extend our configuration file for Piz Daint.
 
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 10-45,62-70,77-
-   :emphasize-lines: 16-48,70-101,114-120
+   :lines: 10-46,63-71,78-
+   :emphasize-lines: 17-49,71-102,115-121
 
 
 First of all, we need to define a new system and set the list of hostnames that will help ReFrame identify it.
@@ -1075,7 +1093,7 @@ Let's see and comment the changes:
 First of all, we need to add the new programming environments in the list of the supported ones.
 Now there is the problem that each compiler has its own flags for enabling OpenMP, so we need to differentiate the behavior of the test based on the programming environment.
 For this reason, we define the flags for each compiler in a separate dictionary (``self.flags``) and we set them in the :func:`setflags` pipeline hook.
-Let's explain what is this all about.
+We have first seen the pipeline hooks in the multithreaded "Hello, World!" example and now we explain them in more detail.
 When ReFrame loads a test file, it instantiates all the tests it finds in it.
 Based on the system ReFrame runs on and the supported environments of the tests, it will generate different test cases for each system partition and environment combination and it will finally send the test cases for execution.
 During its execution, a test case goes through the *regression test pipeline*, which is a series of well defined phases.
