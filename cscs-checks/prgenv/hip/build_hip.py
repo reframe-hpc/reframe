@@ -15,7 +15,7 @@ class BuildHip(rfm.RegressionTest):
     # HIP build variables
     hip_path = variable(str, value='hip')
     hip_full_path = variable(str)
-    hip_platform = variable(str, value='nvcc')
+    hip_platform = variable(str, value='nvidia')
 
     valid_systems = ['daint:gpu', 'dom:gpu']
     valid_prog_environs = ['PrgEnv-gnu']
