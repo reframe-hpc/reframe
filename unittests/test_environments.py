@@ -238,6 +238,9 @@ def test_emit_loadenv_commands(base_environ, user_runtime,
 
 def test_emit_loadenv_commands_ignore_confict(base_environ,
                                               make_exec_ctx, env0):
+    if not test_util.has_sane_modules_system():
+        pytest.skip('no modules system configured')
+
     if test_util.USER_CONFIG_FILE:
         make_exec_ctx(test_util.USER_CONFIG_FILE, test_util.USER_SYSTEM,
                       options={'general/resolve_module_conflicts': False})
