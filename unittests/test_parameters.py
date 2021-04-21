@@ -139,8 +139,8 @@ def test_consume_param_space():
     assert test.P1 is None
     assert test.P2 is None
 
-#    with pytest.raises(RuntimeError):
-    test = MyTest(_rfm_test_id=i+1)
+    with pytest.raises(RuntimeError):
+        test = MyTest(_rfm_test_id=i+1)
 
 
 def test_register_abstract_test():
