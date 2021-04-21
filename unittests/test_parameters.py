@@ -128,8 +128,8 @@ def test_consume_param_space():
     class MyTest(ExtendParams):
         pass
 
-    for i,_ in enumerate(MyTest.param_space):
-        test = MyTest(_rfm_use_params=i)
+    for i in MyTest:
+        test = MyTest(_rfm_test_id=i)
         assert test.P0 is not None
         assert test.P1 is not None
         assert test.P2 is not None
@@ -139,8 +139,8 @@ def test_consume_param_space():
     assert test.P1 is None
     assert test.P2 is None
 
-    with pytest.raises(RuntimeError):
-        test = MyTest(_rfm_use_params=i+1)
+#    with pytest.raises(RuntimeError):
+    test = MyTest(_rfm_test_id=i+1)
 
 
 def test_register_abstract_test():
@@ -236,10 +236,10 @@ def test_param_deepcopy():
     class Bar(Base):
         pass
 
-    assert Foo(_rfm_use_params=0).p0.val == -20
-    assert Foo(_rfm_use_params=1).p0.val == -20
-    assert Bar(_rfm_use_params=0).p0.val == 1
-    assert Bar(_rfm_use_params=1).p0.val == 2
+    assert Foo(_rfm_test_id=0).p0.val == -20
+    assert Foo(_rfm_test_id=1).p0.val == -20
+    assert Bar(_rfm_test_id=0).p0.val == 1
+    assert Bar(_rfm_test_id=1).p0.val == 2
 
 
 def test_param_access():

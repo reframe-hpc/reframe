@@ -79,8 +79,12 @@ class FixtureSpace(namespaces.Namespace):
                     f'fixture type'
                 )
 
-    def inject(self, obj, objtype=None):
-        pass
+    def inject(self, obj, cls=None, fixture_index=None):
+        if fixture_index and fixture_index >= len(self):
+            raise RuntimeError(
+                f'fixture index out of range for '
+                f'{obj.__class__.__qualname__}'
+            )
 
     def __iter__(self):
         '''Walk through all index combinations for all fixtures.'''

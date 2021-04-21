@@ -738,9 +738,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 **kwargs):
         obj = super().__new__(cls)
 
-        # Insert the var & param spaces
+        # Insert the var, params & fixture deps
         cls._rfm_var_space.inject(obj, cls)
         cls._rfm_param_space.inject(obj, cls, _rfm_param_variant)
+        cls._rfm_fixture_space.inject(obj, cls, _rfm_fixt_variant)
 
         # Create a test name from the class name and the constructor's
         # arguments
