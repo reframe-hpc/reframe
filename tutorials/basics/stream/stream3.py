@@ -9,54 +9,45 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class StreamMultiSysTest(rfm.RegressionTest):
-    def __init__(self):
-        self.valid_systems = ['*']
-        self.valid_prog_environs = ['cray', 'gnu', 'intel', 'pgi']
-        self.prebuild_cmds = [
-            'wget http://www.cs.virginia.edu/stream/FTP/Code/stream.c',
-        ]
-        self.build_system = 'SingleSource'
-        self.sourcepath = 'stream.c'
-        self.build_system.cppflags = ['-DSTREAM_ARRAY_SIZE=$((1 << 25))']
-        self.sanity_patterns = sn.assert_found(r'Solution Validates',
-                                               self.stdout)
-        self.perf_patterns = {
-            'Copy': sn.extractsingle(r'Copy:\s+(\S+)\s+.*',
-                                     self.stdout, 1, float),
-            'Scale': sn.extractsingle(r'Scale:\s+(\S+)\s+.*',
-                                      self.stdout, 1, float),
-            'Add': sn.extractsingle(r'Add:\s+(\S+)\s+.*',
-                                    self.stdout, 1, float),
-            'Triad': sn.extractsingle(r'Triad:\s+(\S+)\s+.*',
-                                      self.stdout, 1, float)
+    valid_systems = ['*']
+    valid_prog_environs = ['cray', 'gnu', 'intel', 'pgi']
+    prebuild_cmds = [
+        'wget http://www.cs.virginia.edu/stream/FTP/Code/stream.c',
+    ]
+    build_system = 'SingleSource'
+    sourcepath = 'stream.c'
+    variables = {
+        'OMP_NUM_THREADS': '4',
+        'OMP_PLACES': 'cores'
+    }
+    reference = {
+        'catalina': {
+            'Copy':  (25200, -0.05, 0.05, 'MB/s'),
+            'Scale': (16800, -0.05, 0.05, 'MB/s'),
+            'Add':   (18500, -0.05, 0.05, 'MB/s'),
+            'Triad': (18800, -0.05, 0.05, 'MB/s')
         }
-        self.reference = {
-            'catalina': {
-                'Copy':  (25200, -0.05, 0.05, 'MB/s'),
-                'Scale': (16800, -0.05, 0.05, 'MB/s'),
-                'Add':   (18500, -0.05, 0.05, 'MB/s'),
-                'Triad': (18800, -0.05, 0.05, 'MB/s')
-            }
-        }
+    }
 
-        # Flags per programming environment
-        self.flags = {
-            'cray':  ['-fopenmp', '-O3', '-Wall'],
-            'gnu':   ['-fopenmp', '-O3', '-Wall'],
-            'intel': ['-qopenmp', '-O3', '-Wall'],
-            'pgi':   ['-mp', '-O3']
-        }
+    # Flags per programming environment
+    flags = variable(dict, value={
+        'cray':  ['-fopenmp', '-O3', '-Wall'],
+        'gnu':   ['-fopenmp', '-O3', '-Wall'],
+        'intel': ['-qopenmp', '-O3', '-Wall'],
+        'pgi':   ['-mp', '-O3']
+    })
 
-        # Number of cores for each system
-        self.cores = {
-            'catalina:default': 4,
-            'daint:gpu': 12,
-            'daint:mc': 36,
-            'daint:login': 10
-        }
+    # Number of cores for each system
+    cores = variable(dict, value={
+        'catalina:default': 4,
+        'daint:gpu': 12,
+        'daint:mc': 36,
+        'daint:login': 10
+    })
 
     @rfm.run_before('compile')
-    def setflags(self):
+    def set_compiler_flags(self):
+        self.build_system.cppflags = ['-DSTREAM_ARRAY_SIZE=$((1 << 25))']
         environ = self.current_environ.name
         self.build_system.cflags = self.flags.get(environ, [])
 
@@ -67,4 +58,22 @@ class StreamMultiSysTest(rfm.RegressionTest):
         self.variables = {
             'OMP_NUM_THREADS': str(num_threads),
             'OMP_PLACES': 'cores'
+        }
+
+    @rfm.run_before('sanity')
+    def set_sanity_patterns(self):
+        self.sanity_patterns = sn.assert_found(r'Solution Validates',
+                                               self.stdout)
+
+    @rfm.run_before('performace')
+    def set_perf_patterns(self):
+        self.perf_patterns = {
+            'Copy': sn.extractsingle(r'Copy:\s+(\S+)\s+.*',
+                                     self.stdout, 1, float),
+            'Scale': sn.extractsingle(r'Scale:\s+(\S+)\s+.*',
+                                      self.stdout, 1, float),
+            'Add': sn.extractsingle(r'Add:\s+(\S+)\s+.*',
+                                    self.stdout, 1, float),
+            'Triad': sn.extractsingle(r'Triad:\s+(\S+)\s+.*',
+                                      self.stdout, 1, float)
         }

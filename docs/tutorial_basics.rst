@@ -653,7 +653,7 @@ In the test below, we highlight the lines that introduce new concepts.
 
 .. literalinclude:: ../tutorials/basics/stream/stream1.py
    :lines: 6-
-   :emphasize-lines: 10-12,17-20,23-32
+   :emphasize-lines: 9-11,14-17,29-40
 
 First of all, notice that we restrict the programming environments to ``gnu`` only, since this test requires OpenMP, which our installation of Clang does not have.
 The next thing to notice is the :attr:`~reframe.core.pipeline.RegressionTest.prebuild_cmds` attribute, which provides a list of commands to be executed before the build step.
@@ -746,7 +746,7 @@ In the following example, we set the reference values for all the STREAM sub-ben
 
 .. literalinclude:: ../tutorials/basics/stream/stream2.py
    :lines: 6-
-   :emphasize-lines: 33-
+   :emphasize-lines: 18-25
 
 
 The performance reference tuple consists of the reference value, the lower and upper thresholds expressed as fractional numbers relative to the reference value, and the unit of measurement.
@@ -1098,16 +1098,16 @@ Let's see and comment the changes:
 
 .. literalinclude:: ../tutorials/basics/stream/stream3.py
    :lines: 6-
-   :emphasize-lines: 9,37-
+   :emphasize-lines: 8, 27-41, 46-56
 
 First of all, we need to add the new programming environments in the list of the supported ones.
 Now there is the problem that each compiler has its own flags for enabling OpenMP, so we need to differentiate the behavior of the test based on the programming environment.
-For this reason, we define the flags for each compiler in a separate dictionary (``self.flags``) and we set them in the :func:`setflags` pipeline hook.
+For this reason, we define the flags for each compiler in a separate dictionary (``flags`` variable) and we set them in the :func:`set_compiler_flags` pipeline hook.
 We have first seen the pipeline hooks in the multithreaded "Hello, World!" example and now we explain them in more detail.
 When ReFrame loads a test file, it instantiates all the tests it finds in it.
 Based on the system ReFrame runs on and the supported environments of the tests, it will generate different test cases for each system partition and environment combination and it will finally send the test cases for execution.
 During its execution, a test case goes through the *regression test pipeline*, which is a series of well defined phases.
-Users can attach arbitrary functions to run before or after any pipeline stage and this is exactly what the :func:`setflags` function is.
+Users can attach arbitrary functions to run before or after any pipeline stage and this is exactly what the :func:`set_compiler_flags` function is.
 We instruct ReFrame to run this function before the test enters the ``compile`` stage and set accordingly the compilation flags.
 The system partition and the programming environment of the currently running test case are available to a ReFrame test through the :attr:`~reframe.core.pipeline.RegressionTest.current_partition` and :attr:`~reframe.core.pipeline.RegressionTest.current_environ` attributes respectively.
 These attributes, however, are only set after the first stage (``setup``) of the pipeline is executed, so we can't use them inside the test's constructor.
