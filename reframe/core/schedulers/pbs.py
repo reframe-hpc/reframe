@@ -55,6 +55,9 @@ class _PbsJob(sched.Job):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._cancelled = False
+
+        # This is set by the scheduler when both the job's state is
+        # 'COMPLETED' and the job's stdout and stderr are written back
         self._completed = False
 
     @property
@@ -196,6 +199,7 @@ class PbsJobScheduler(sched.JobScheduler):
                      'assuming all jobs completed')
             for job in jobs:
                 job._state = 'COMPLETED'
+                job._completed = True
 
             return
 
