@@ -22,9 +22,9 @@ class NetCDFTest(rfm.RegressionTest):
         self.linkage = linkage
         self.descr = f'{lang_names[lang]} NetCDF {linkage.capitalize()}'
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'arolla:cn', 'tsa:cn', 'eiger:mc']
-        if linkage == 'static':
-            self.valid_systems.remove('eiger:mc')
+                              'arolla:cn', 'tsa:cn']
+        if linkage == 'dynamic':
+            self.valid_systems += ['eiger:mc', 'pilatus:mc']
 
         if self.current_system.name in ['daint', 'dom']:
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
@@ -33,8 +33,9 @@ class NetCDFTest(rfm.RegressionTest):
         elif self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-gnu-nompi', 'PrgEnv-pgi-nompi']
-        elif self.current_system.name in ['eiger']:
-            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
+        elif self.current_system.name in ['eiger', 'pilatus']:
+            self.valid_prog_environs = ['PrgEnv-aocc', 'PrgEnv-cray',
+                                        'PrgEnv-gnu']
             self.modules = ['cray-hdf5', 'cray-netcdf']
         else:
             self.valid_prog_environs = []

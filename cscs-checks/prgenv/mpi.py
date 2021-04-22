@@ -36,9 +36,9 @@ class MpiInitTest(rfm.RegressionTest):
 
     def __init__(self, required_thread):
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'eiger:mc']
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu', 'PrgEnv-pgi',
-                                    'PrgEnv-intel']
+                              'eiger:mc', 'pilatus:mc']
+        self.valid_prog_environs = ['PrgEnv-aocc', 'PrgEnv-cray', 'PrgEnv-gnu',
+                                    'PrgEnv-intel', 'PrgEnv-pgi']
         self.build_system = 'SingleSource'
         self.sourcesdir = 'src/mpi_thread'
         self.sourcepath = 'mpi_init_thread.cpp'
@@ -96,7 +96,7 @@ class MpiHelloTest(rfm.RegressionTest):
     def __init__(self):
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                               'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn',
-                              'eiger:mc']
+                              'eiger:mc', 'pilatus:mc']
         self.valid_prog_environs = ['PrgEnv-cray']
         if self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True

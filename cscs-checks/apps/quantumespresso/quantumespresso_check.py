@@ -12,7 +12,7 @@ class QuantumESPRESSOCheck(rfm.RunOnlyRegressionTest):
     variant = parameter(['maint', 'prod'])
 
     def __init__(self):
-        if self.current_system.name == 'pilatus':
+        if self.current_system.name in ['eiger', 'pilatus']:
             self.valid_prog_environs = ['cpeGNU']
         else:
             self.valid_prog_environs = ['builtin']

@@ -13,13 +13,14 @@ class DefaultPrgEnvCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
         self.descr = 'Ensure PrgEnv-cray is loaded by default'
         self.valid_prog_environs = ['builtin']
-        self.valid_systems = ['daint:login', 'dom:login', 'eiger:login']
+        self.valid_systems = ['daint:login', 'dom:login',
+                              'eiger:login', 'pilatus:login']
         self.executable = 'module'
         self.maintainers = ['TM', 'CB']
         self.tags = {'production', 'craype'}
         self.sanity_patterns = sn.assert_found(r'^PrgEnv-cray', self.stderr)
 
-        if self.current_system.name == 'eiger':
+        if self.current_system.name in ['eiger', 'pilatus']:
             self.executable_opts = ['list']
             prgenv_patt = r'1\) cpe-cray'
         else:
@@ -33,11 +34,12 @@ class DefaultPrgEnvCheck(rfm.RunOnlyRegressionTest):
 class EnvironmentCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
         self.descr = 'Ensure programming environment is loaded correctly'
-        self.valid_systems = ['daint:login', 'dom:login', 'eiger:login']
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu', 'PrgEnv-pgi',
-                                    'PrgEnv-intel', 'PrgEnv-aocc']
+        self.valid_systems = ['daint:login', 'dom:login',
+                              'eiger:login', 'pilatus:login']
+        self.valid_prog_environs = ['PrgEnv-aocc', 'PrgEnv-cray', 'PrgEnv-gnu',
+                                    'PrgEnv-intel', 'PrgEnv-pgi']
         self.executable = 'module'
-        if self.current_system.name == 'eiger':
+        if self.current_system.name in ['eiger', 'pilatus']:
             self.executable_opts = ['list']
         else:
             self.executable_opts = ['list', '-t']
@@ -50,7 +52,7 @@ class EnvironmentCheck(rfm.RunOnlyRegressionTest):
         # NOTE: On eiger, the first module of each programming environment,
         # follows the 'cpe-<name>' pattern where <name> corresponds to the
         # 'PrgEnv-<name>' used.
-        if self.current_system.name == 'eiger':
+        if self.current_system.name in ['eiger', 'pilatus']:
             module_patt = rf'1\) cpe-{self.current_environ.name[7:]}'
         else:
             module_patt = rf'^{self.current_environ.name}'
