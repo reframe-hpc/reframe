@@ -12,5 +12,5 @@ class HelloTest(rfm.RegressionTest):
     valid_systems = ['*']
     valid_prog_environs = ['*']
     sourcepath = 'hello.c'
-    executable_opts = ['> hello.out'] 
+    executable_opts = ['> hello.out']
     sanity_patterns = sn.assert_found(r'Hello, World\!', 'hello.out')

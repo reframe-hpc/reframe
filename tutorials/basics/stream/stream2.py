@@ -51,4 +51,3 @@ class StreamWithRefTest(rfm.RegressionTest):
             'Triad': sn.extractsingle(r'Triad:\s+(\S+)\s+.*',
                                       self.stdout, 1, float)
         }
-        

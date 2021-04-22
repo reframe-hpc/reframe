@@ -92,7 +92,7 @@ class OSUAllreduceTest(OSUBenchmarkTestBase):
             'mpi', 'collective', 'osu_allreduce'
         )
         self.executable_opts = ['-m', '8', '-x', '1000', '-i', '20000']
-    
+
     @rfm.run_before('performance')
     def set_perf_patterns(self):
         self.perf_patterns = {
