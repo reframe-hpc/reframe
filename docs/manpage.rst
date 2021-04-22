@@ -276,7 +276,7 @@ Options controlling ReFrame output
    This option can also be set using the :envvar:`RFM_REPORT_JUNIT` environment
    variable or the :js:attr:`report_junit` general configuration parameter.
 
-   .. versionadded:: 3.6
+   .. versionadded:: 3.6.0
 
 
 -------------------------------------
