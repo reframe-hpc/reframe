@@ -462,6 +462,13 @@ def main():
         action='store_true',
         help='Use a login shell for job scripts'
     )
+    argparser.add_argument(
+        dest='graylog_server',
+        envvar='RFM_RESOLVE_MODULE_CONFLICTS',
+        configvar='general/resolve_module_conflicts',
+        action='store_true',
+        help='Resolve module conflicts automatically'
+    )
 
     # Parse command line
     options = argparser.parse_args()
