@@ -28,7 +28,7 @@ Here is the adapted code with the relevant parts highlighted (for simplicity, we
 
 .. literalinclude:: ../tutorials/advanced/parameterized/stream.py
    :lines: 6-
-   :emphasize-lines: 7,10-11,20-21
+   :emphasize-lines: 7-9,44-51,55-56
 
 Any ordinary ReFrame test becomes a parameterized one if the user defines parameters inside the class body of the test.
 This is done using the :py:func:`~reframe.core.pipeline.RegressionTest.parameter` ReFrame built-in function, which accepts the list of parameter values.
@@ -89,7 +89,8 @@ The following example will create a test for each ``GROMACS`` module found on th
    class MyTest(rfm.RegressionTest):
        module_info = parameter(util.find_modules('GROMACS'))
 
-       def __init__(self):
+       @rfm.run_after('init')
+       def process_module_info(self):
            s, e, m = self.module_info
            self.valid_systems = [s]
            self.valid_prog_environs = [e]
@@ -134,8 +135,8 @@ Let's have a look at the test itself:
 
 
 .. literalinclude:: ../tutorials/advanced/makefiles/maketest.py
-   :lines: 6-24
-   :emphasize-lines: 13,15-16
+   :lines: 6-29
+   :emphasize-lines: 18,22-24
 
 First, if you're using any build system other than ``SingleSource``, you must set the :attr:`executable` attribute of the test, because ReFrame cannot know what is the actual executable to be run.
 We then set the build system to :class:`~reframe.core.buildsystems.Make` and set the preprocessor flags as we would do with the :class:`SingleSource` build system.
@@ -279,7 +280,7 @@ The following test is a compile-only version of the :class:`MakefileTest` presen
 
 
 .. literalinclude:: ../tutorials/advanced/makefiles/maketest.py
-   :lines: 27-37
+   :lines: 32-
    :emphasize-lines: 2
 
 What is worth noting here is that the standard output and standard error of the test, which are accessible through the :attr:`~reframe.core.pipeline.RegressionTest.stdout` and :attr:`~reframe.core.pipeline.RegressionTest.stderr` attributes, correspond now to the standard output and error of the compilation command.
@@ -299,7 +300,7 @@ In the example below, we create an :class:`ElemTypeParam` mixin that holds the d
 
 .. literalinclude:: ../tutorials/advanced/makefiles/maketest_mixin.py
    :lines: 6-
-   :emphasize-lines: 5-6,10,25
+   :emphasize-lines: 5-6,10,30
 
 
 Notice how the parameters are expanded in each of the individual tests:
@@ -398,7 +399,7 @@ Here is the modified test file:
 
 .. literalinclude:: ../tutorials/advanced/random/prepostrun.py
    :lines: 6-
-   :emphasize-lines: 11-12,17,20
+   :emphasize-lines: 10-11,19,22
 
 The :attr:`prerun_cmds` and :attr:`postrun_cmds` are lists of commands to be emitted in the generated job script before and after the parallel launch of the executable.
 Obviously, the working directory for these commands is that of the job script itself, which is the stage directory of the test.
@@ -457,7 +458,7 @@ Here is the test:
 
 .. literalinclude:: ../tutorials/advanced/jobopts/eatmemory.py
    :lines: 6-23
-   :emphasize-lines: 16-18
+   :emphasize-lines: 12-14
 
 Each ReFrame test has an associated `run job descriptor <regression_test_api.html#reframe.core.pipeline.RegressionTest.job>`__ which represents the scheduler job that will be used to run this test.
 This object has an :attr:`options` attribute, which can be used to pass arbitrary options to the scheduler.
@@ -513,8 +514,8 @@ Let's see how we can rewrite the :class:`MemoryLimitTest` using the ``memory`` r
 
 
 .. literalinclude:: ../tutorials/advanced/jobopts/eatmemory.py
-   :lines: 26-38
-   :emphasize-lines: 11-13
+   :lines: 28-
+   :emphasize-lines: 7-9
 
 The extra resources that the test needs to obtain through its scheduler are specified in the :attr:`~reframe.core.pipeline.RegressionTest.extra_resources` attribute, which is a dictionary with the resource names as its keys and another dictionary assigning values to the resource placeholders as its values.
 As you can see, this syntax is completely scheduler-agnostic.
@@ -566,8 +567,7 @@ This can be achieved with the following pipeline hook:
    from reframe.core.launchers import LauncherWrapper
 
    class DebuggerTest(rfm.RunOnlyRegressionTest):
-       def __init__(self):
-           ...
+       ...
 
        @rfm.run_before('run')
        def set_launcher(self):
@@ -592,10 +592,9 @@ The trick here is to replace the parallel launcher with the local one, which pra
 
 
    class CustomLauncherTest(rfm.RunOnlyRegressionTest):
-       def __init__(self):
-           ...
-           self.executable = 'custom_scheduler'
-           self.executable_opts = [...]
+       ...
+       executable = 'custom_scheduler'
+       executable_opts = [...]
 
        @rfm.run_before('run')
        def replace_launcher(self):
@@ -625,7 +624,7 @@ It resembles a scaling test, except that all happens inside a single ReFrame tes
 
 .. literalinclude:: ../tutorials/advanced/multilaunch/multilaunch.py
    :lines: 6-
-   :emphasize-lines: 17-23
+   :emphasize-lines: 12-19
 
 The additional parallel launch commands are inserted in either the :attr:`prerun_cmds` or :attr:`postrun_cmds` lists.
 To retrieve the actual parallel launch command for the current partition that the test is running on, you can use the :func:`~reframe.core.launchers.Launcher.run_command` method of the launcher object.
@@ -678,7 +677,7 @@ The test will verify that all the nodes print the expected host name:
 
 .. literalinclude:: ../tutorials/advanced/flexnodes/flextest.py
    :lines: 6-
-   :emphasize-lines: 11-16
+   :emphasize-lines: 10-
 
 The first thing to notice in this test is that :attr:`~reframe.core.pipeline.RegressionTest.num_tasks` is set to zero.
 This is a requirement for flexible tests.

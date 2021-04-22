@@ -9,15 +9,17 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class AffinityTest(rfm.RegressionTest):
-    def __init__(self):
-        self.valid_systems = ['daint:gpu', 'daint:mc']
-        self.valid_prog_environs = ['*']
-        self.sourcesdir = 'https://github.com/vkarak/affinity.git'
-        self.build_system = 'Make'
-        self.build_system.options = ['OPENMP=1']
-        self.executable = './affinity'
-        self.sanity_patterns = sn.assert_found(r'CPU affinity', self.stdout)
+    valid_systems = ['daint:gpu', 'daint:mc']
+    valid_prog_environs = ['*']
+    sourcesdir = 'https://github.com/vkarak/affinity.git'
+    build_system = 'Make'
+    build_system.options = ['OPENMP=1']
+    executable = './affinity'
 
     @rfm.run_before('run')
     def set_cpu_binding(self):
         self.job.launcher.options = ['--cpu-bind=cores']
+
+    @rfm.run_before('sanity')
+    def set_sanity_patterns(self):
+        self.sanity_patterns = sn.assert_found(r'CPU affinity', self.stdout)
