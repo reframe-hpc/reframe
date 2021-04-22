@@ -851,6 +851,21 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
 
 
+.. envvar:: RFM_RESOLVE_MODULE_CONFLICTS
+
+   Resolve module conflicts automatically.
+
+   .. versionadded:: 3.6.0
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     n/a
+      Associated configuration parameter :js:attr:`resolve_module_conflicts` general configuration parameter
+      ================================== ==================
+
+
 .. envvar:: RFM_SAVE_LOG_FILES
 
    Save ReFrame log files in the output directory before exiting.
