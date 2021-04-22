@@ -166,6 +166,14 @@ An action must always be specified.
    List selected tests providing detailed information per test.
 
 
+.. option:: --list-tags
+
+   List the unique tags of the selected tests.
+   The tags are printed in alphabetical order.
+
+   .. versionadded:: 3.6.0
+
+
 .. option:: -r, --run
 
    Execute the selected tests.

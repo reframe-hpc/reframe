@@ -123,6 +123,14 @@ def list_checks(testcases, printer, detailed=False):
     printer.info(f'Found {len(checks)} check(s)\n')
 
 
+def list_tags(testcases, printer):
+    printer.info('[List of unique tags]')
+    tags = set()
+    tags = tags.union(*(t.check.tags for t in testcases))
+    printer.info(', '.join(f'{t!r}' for t in sorted(tags)))
+    printer.info(f'Found {len(tags)} tag(s)\n')
+
+
 def logfiles_message():
     log_files = logging.log_files()
     msg = 'Log file(s) saved in: '
@@ -268,6 +276,10 @@ def main():
     action_options.add_argument(
         '-L', '--list-detailed', action='store_true',
         help='List the selected checks providing details for each test'
+    )
+    action_options.add_argument(
+        '--list-tags', action='store_true',
+        help='List the unique tags found in the selected tests and exit'
     )
     action_options.add_argument(
         '-r', '--run', action='store_true',
@@ -810,6 +822,10 @@ def main():
             list_checks(testcases, printer, options.list_detailed)
             sys.exit(0)
 
+        if options.list_tags:
+            list_tags(testcases, printer)
+            sys.exit(0)
+
         if options.ci_generate:
             list_checks(testcases, printer)
             printer.info('[Generate CI]')
@@ -826,6 +842,7 @@ def main():
             printer.error("No action option specified. Available options:\n"
                           "  - `-l'/`-L' for listing\n"
                           "  - `-r' for running\n"
+                          "  - `--list-tags' for listing unique test tags\n"
                           "  - `--ci-generate' for generating a CI pipeline\n"
                           f"Try `{argparser.prog} -h' for more options.")
             sys.exit(1)
