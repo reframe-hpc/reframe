@@ -853,7 +853,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
 .. envvar:: RFM_RESOLVE_MODULE_CONFLICTS
 
-   Solve module conflicts automatically.
+   Resolve module conflicts automatically.
 
    .. versionadded:: 3.6.0
 
