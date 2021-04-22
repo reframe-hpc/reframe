@@ -279,7 +279,7 @@ def main():
     )
     action_options.add_argument(
         '--list-tags', action='store_true',
-        help='List the unique tags found in the selected tests'
+        help='List the unique tags found in the selected tests and exit'
     )
     action_options.add_argument(
         '-r', '--run', action='store_true',
@@ -835,6 +835,7 @@ def main():
             printer.error("No action option specified. Available options:\n"
                           "  - `-l'/`-L' for listing\n"
                           "  - `-r' for running\n"
+                          "  - `--list-tags' for listing unique test tags\n"
                           "  - `--ci-generate' for generating a CI pipeline\n"
                           f"Try `{argparser.prog} -h' for more options.")
             sys.exit(1)

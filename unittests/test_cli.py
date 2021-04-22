@@ -501,7 +501,7 @@ def test_timestamp_option(run_reframe):
 
 def test_list_empty_prgenvs_check_and_options(run_reframe):
     returncode, stdout, _ = run_reframe(
-        checkpath=['unittests/resources/checks/hellocheck.py'],
+        checkpath=['unittests/resources/checks/frontend_checks.py'],
         action='list',
         environs=[],
         more_options=['-n', 'NoPrgEnvCheck'],
