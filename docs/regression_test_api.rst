@@ -100,31 +100,6 @@ In essence, these builtins exert control over the test creation, and they allow 
             else:
                 override_other()
 
-  Note that this built-in parameter function provides an alternative method to parameterize a test to :func:`reframe.core.decorators.parameterized_test`, and the use of both approaches in the same test is currently disallowed.
-  In fact, the :func:`parameterized_test` decorator will be deprecated in a future release and its use is discouraged.
-  The two main advantages of the built-in :func:`parameter` over the decorated approach reside in the parameter inheritance across classes and the handling of large parameter sets.
-  As shown in the example above, the parameters declared with the built-in :func:`parameter` are automatically carried over into derived tests through class inheritance, whereas tests using the decorated approach would have to redefine the parameters on every test.
-  Similarly, parameters declared through the built-in :func:`parameter` are regarded as fully independent from each other and ReFrame will automatically generate as many tests as available parameter combinations. This is a major advantage over the decorated approach, where one would have to manually expand the parameter combinations.
-  This is illustrated in the example below, consisting of a case with two parameters, each having two possible values.
-
-  .. code:: python
-
-    # Parameterized test with two parameters (p0 = ['a', 'b'] and p1 = ['x', 'y'])
-    @rfm.parameterized_test(['a','x'], ['a','y'], ['b','x'], ['b', 'y'])
-    class Foo(rfm.RegressionTest):
-      def __init__(self, p0, p1):
-        do_some_work(p0, p1)
-
-    # This is easier to write with the parameter built-in.
-    @rfm.simple_test
-    class Bar(rfm.RegressionTest):
-      p0 = parameter(['a', 'b'])
-      p1 = parameter(['x', 'y'])
-
-      @rfm.run_after('init')
-      def do_something(self):
-        do_some_work(self.p0, self.p1)
-
 
   :param values: A list containing the parameter values.
      If no values are passed when creating a new parameter, the parameter is considered as *declared* but not *defined* (i.e. an abstract parameter).
