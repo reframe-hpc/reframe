@@ -983,8 +983,8 @@ site_configuration = {
                 'eiger', 'pilatus'
             ],
             'modules': [
-                {'name': 'PrgEnv-aocc'}
-            ]
+                'PrgEnv-aocc'
+            ],
         },
         {
             'name': 'PrgEnv-cray',
@@ -992,8 +992,8 @@ site_configuration = {
                 'eiger', 'pilatus'
             ],
             'modules': [
-                {'name': 'PrgEnv-cray'}
-            ]
+                'PrgEnv-cray'
+            ],
         },
         {
             'name': 'PrgEnv-gnu',
@@ -1001,8 +1001,8 @@ site_configuration = {
                 'eiger', 'pilatus'
             ],
             'modules': [
-                {'name': 'PrgEnv-gnu'}
-            ]
+                'PrgEnv-gnu'
+            ],
         },
         {
             'name': 'PrgEnv-intel',
@@ -1010,8 +1010,8 @@ site_configuration = {
                 'eiger', 'pilatus'
             ],
             'modules': [
-                {'name': 'PrgEnv-intel'}
-            ]
+                'PrgEnv-intel'
+            ],
         },
         {
             'name': 'cpeAMD',
@@ -1053,7 +1053,7 @@ site_configuration = {
             'name': 'PrgEnv-cray',
             'modules': [
                 'PrgEnv-cray'
-            ]
+            ],
         },
         {
             'name': 'PrgEnv-gnu',
