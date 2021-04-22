@@ -12,7 +12,7 @@ import reframe.utility.sanity as sn
 class NamdBaseCheck(rfm.RunOnlyRegressionTest):
     def __init__(self, arch, scale, variant):
         self.descr = f'NAMD check ({arch}, {variant})'
-        if self.current_system.name == ['eiger', 'pilatus']:
+        if self.current_system.name in ['eiger', 'pilatus']:
             self.valid_prog_environs = ['cpeIntel']
         else:
             self.valid_prog_environs = ['builtin']
