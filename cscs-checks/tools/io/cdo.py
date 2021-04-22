@@ -41,9 +41,10 @@ class CDOBaseTest(rfm.RunOnlyRegressionTest):
             self.modules = ['cdo', 'netcdf-fortran']
         elif self.current_system.name in ['eiger', 'pilatus']:
             self.valid_prog_environs = ['cpeGNU']
-        else:
             self.modules = ['CDO']
+        else:
             self.valid_prog_environs = ['builtin']
+            self.modules = ['CDO']
 
         self.maintainers = ['SO', 'CB']
         self.tags = {'production', 'mch', 'external-resources'}
