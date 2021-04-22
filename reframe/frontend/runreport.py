@@ -13,9 +13,13 @@ import reframe.core.exceptions as errors
 import reframe.utility.jsonext as jsonext
 import reframe.utility.versioning as versioning
 
+from io import BytesIO, StringIO
+from lxml import etree
+from reframe.frontend.statistics import junit_lxml
 
 DATA_VERSION = '1.3.0'
 _SCHEMA = os.path.join(rfm.INSTALL_PREFIX, 'reframe/schemas/runreport.json')
+_JUNIT_SCHEMA = os.path.join(rfm.INSTALL_PREFIX, 'reframe/schemas/JUnit.xsd')
 
 
 class _RunReport:
@@ -152,3 +156,33 @@ def load_report(filename):
         )
 
     return _RunReport(report)
+
+
+def load_xml_report(filename):
+    try:
+        with open(filename, 'r') as fp:
+            json_report = json.load(fp)
+    except OSError as e:
+        raise errors.ReframeError(
+            f'failed to load report xml file {filename!r}') from e
+    except json.JSONDecodeError as e:
+        raise errors.ReframeError(
+            f'report file {filename!r} is not a valid JSON file') from e
+
+    # https://raw.githubusercontent.com/windyroad/JUnit-Schema/master/JUnit.xsd
+    f = open(_JUNIT_SCHEMA, 'rb')
+    try:
+        schema = etree.XMLSchema(file=f)
+    finally:
+        f.close()
+
+    rfm_tree = etree.fromstring(junit_lxml(json_report))
+    text = etree.tostring(rfm_tree)
+    f = BytesIO(text) if isinstance(text, bytes) else StringIO(text)
+    tree_valid = etree.parse(f)
+    try:
+        schema.validate(tree_valid)
+    except ValidationError as e:
+        raise errors.ReframeError(f'invalid junit report {filename!r}') from e
+
+    return _RunReport(json_report)

@@ -226,6 +226,9 @@ def test_runall(make_runner, make_cases, common_exec_ctx, tmp_path):
     with open(report_file, 'w') as fp:
         jsonext.dump(report, fp)
 
+    # Validate the junit report
+    runreport.load_xml_report(report_file)
+
     # Read and validate the report using the runreport module
     runreport.load_report(report_file)
 
@@ -466,7 +469,7 @@ def assert_dependency_run(runner):
     assert_runall(runner)
     stats = runner.stats
     assert 10 == stats.num_cases(0)
-    assert 4  == len(stats.failed())
+    assert 4 == len(stats.failed())
     for tf in stats.failed():
         check = tf.testcase.check
         _, exc_value, _ = tf.exc_info
