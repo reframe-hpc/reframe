@@ -13,8 +13,11 @@ class AffinityTest(rfm.RegressionTest):
     valid_prog_environs = ['*']
     sourcesdir = 'https://github.com/vkarak/affinity.git'
     build_system = 'Make'
-    build_system.options = ['OPENMP=1']
     executable = './affinity'
+
+    @rfm.run_before('compile')
+    def set_build_system_options(self):
+        self.build_system.options = ['OPENMP=1']
 
     @rfm.run_before('run')
     def set_cpu_binding(self):
