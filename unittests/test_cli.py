@@ -89,6 +89,8 @@ def run_reframe(tmp_path, perflogdir):
             argv += ['-l']
         elif action == 'list_detailed':
             argv += ['-L']
+        elif action == 'list_tags':
+            argv += ['--list-tags']
         elif action == 'help':
             argv += ['-h']
 
@@ -499,7 +501,7 @@ def test_timestamp_option(run_reframe):
 
 def test_list_empty_prgenvs_check_and_options(run_reframe):
     returncode, stdout, _ = run_reframe(
-        checkpath=['unittests/resources/checks/frontend_checks.py'],
+        checkpath=['unittests/resources/checks/hellocheck.py'],
         action='list',
         environs=[],
         more_options=['-n', 'NoPrgEnvCheck'],
@@ -538,6 +540,19 @@ def test_list_with_details(run_reframe):
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert returncode == 0
+
+def test_list_tags(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        checkpath=['unittests/resources/checks/hellocheck.py',
+                   'unittests/resources/checks/hellocheck_make.py'],
+        action='list_tags'
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert 'Found 2 tag(s)' in stdout
+    assert "'bar', 'foo'" in stdout
+    assert returncode == 0
+
 
 
 def test_filtering_multiple_criteria(run_reframe):
