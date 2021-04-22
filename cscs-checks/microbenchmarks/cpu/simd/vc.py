@@ -33,7 +33,7 @@ class VcSimdTest(rfm.RegressionTest):
         self.valid_systems = ['*']
         if self.current_system.name in ['eiger', 'pilatus']:
              self.valid_prog_environs = ['cpeGNU']
-         else:
+        else:
              self.valid_prog_environs = ['PrgEnv-gnu']
 
         self.descr = 'finitediff example'

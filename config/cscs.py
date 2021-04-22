@@ -696,7 +696,7 @@ site_configuration = {
                     'scheduler': 'slurm',
                     'environs': [
                         'builtin',
-                        'PrgEnv-aocc'
+                        'PrgEnv-aocc',
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
