@@ -541,6 +541,7 @@ def test_list_with_details(run_reframe):
     assert 'Traceback' not in stderr
     assert returncode == 0
 
+
 def test_list_tags(run_reframe):
     returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks/hellocheck.py',
@@ -552,7 +553,6 @@ def test_list_tags(run_reframe):
     assert 'Found 2 tag(s)' in stdout
     assert "'bar', 'foo'" in stdout
     assert returncode == 0
-
 
 
 def test_filtering_multiple_criteria(run_reframe):
