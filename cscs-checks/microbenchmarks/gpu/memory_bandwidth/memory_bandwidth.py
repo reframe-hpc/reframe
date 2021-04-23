@@ -40,7 +40,7 @@ class GpuBandwidthCheck(mb.GpuBandwidthSingle, BaseCSCS):
             'd2d': (499, -0.1, None, 'GB/s')
         },
         'tsa:cn': {
-            'h2d': (13.000, -0.1, None, 'GB/s'),
+            'h2d': (12.000, -0.1, None, 'GB/s'),
             'd2h': (12.416, -0.1, None, 'GB/s'),
             'd2d': (777.000, -0.1, None, 'GB/s')
         },
@@ -87,10 +87,10 @@ class MultiGpuBandwidthCheck(mb.GpuBandwidthMulti, BaseCSCS):
         if self.p2p:
             self.reference = {
                 'tsa:cn': {
-                    'bw':   (172.5, -0.05, None, 'GB/s'),
+                    'bw':   (163, -0.05, None, 'GB/s'),
                 },
                 'arola:cn': {
-                    'bw':   (172.5, -0.05, None, 'GB/s'),
+                    'bw':   (163, -0.05, None, 'GB/s'),
                 },
                 'ault:amda100': {
                     'bw':   (282.07, -0.1, None, 'GB/s'),
@@ -108,10 +108,10 @@ class MultiGpuBandwidthCheck(mb.GpuBandwidthMulti, BaseCSCS):
         else:
             self.reference = {
                 'tsa:cn': {
-                    'bw': (79.6, -0.05, None, 'GB/s'),
+                    'bw': (74, -0.05, None, 'GB/s'),
                 },
                 'arola:cn': {
-                    'bw': (79.6, -0.05, None, 'GB/s'),
+                    'bw': (74, -0.05, None, 'GB/s'),
                 },
                 'ault:amda100': {
                     'bw': (54.13, -0.1, None, 'GB/s'),
