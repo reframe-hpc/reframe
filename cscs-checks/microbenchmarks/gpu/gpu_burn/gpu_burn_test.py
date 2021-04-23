@@ -12,7 +12,7 @@ from library.microbenchmarks.gpu.gpu_burn import GpuBurnBase
 import cscslib.microbenchmarks.gpu.hooks as hooks
 
 @rfm.simple_test
-class GpuBurnTest(GpuBurnBase, hooks.SetArchAndModules, hooks.SetGPUsPerNode):
+class GpuBurnTest(GpuBurnBase):
     valid_systems = [
         'daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn', 'ault:amdv100',
         'ault:intelv100', 'ault:amda100', 'ault:amdvega'
@@ -51,6 +51,10 @@ class GpuBurnTest(GpuBurnBase, hooks.SetArchAndModules, hooks.SetGPUsPerNode):
 
     maintainers = ['AJ', 'TM']
     tags = {'diagnostic', 'benchmark', 'craype'}
+
+    # Inject external hooks
+    set_gpu_arch = rfm.run_after('setup')(hooks.set_gpu_arch)
+    set_gpus_per_node = rfm.run_before('run')(hooks.set_gpus_per_node)
 
     @rfm.run_before('performance')
     def report_nid_with_smallest_flops(self):

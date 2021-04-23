@@ -9,16 +9,19 @@ import library.microbenchmarks.gpu.memory_bandwidth as mb
 import cscslib.microbenchmarks.gpu.hooks as hooks
 
 
-class PrgEnvMixin(rfm.RegressionMixin):
+class BaseCSCS(rfm.RegressionMixin):
     @rfm.run_after('init')
     def arola_tsa_valid_prog_environs(self):
         if self.current_system.name in ['arolla', 'tsa']:
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
 
+    # Inject external hooks
+    set_gpu_arch = rfm.run_after('setup')(hooks.set_gpu_arch)
+    set_gpus_per_node = rfm.run_before('run')(hooks.set_gpus_per_node)
+
 
 @rfm.simple_test
-class GpuBandwidthCheck(mb.GpuBandwidthSingle, PrgEnvMixin,
-                        hooks.SetArchAndModules, hooks.SetGPUsPerNode):
+class GpuBandwidthCheck(mb.GpuBandwidthSingle, BaseCSCS):
     valid_systems = [
         'daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn',
         'ault:amdv100', 'ault:intelv100', 'ault:amda100', 'ault:amdvega'
@@ -67,8 +70,7 @@ class GpuBandwidthCheck(mb.GpuBandwidthSingle, PrgEnvMixin,
 
 
 @rfm.simple_test
-class MultiGpuBandwidthCheck(mb.GpuBandwidthMulti, PrgEnvMixin,
-                             hooks.SetArchAndModules, hooks.SetGPUsPerNode):
+class MultiGpuBandwidthCheck(mb.GpuBandwidthMulti, BaseCSCS):
     valid_systems = [
         'tsa:cn', 'arola:cn', 'ault:amdv100', 'ault:intelv100',
         'ault:amda100', 'ault:amdvega'

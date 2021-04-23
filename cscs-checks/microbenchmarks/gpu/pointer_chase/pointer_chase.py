@@ -12,7 +12,7 @@ import library.microbenchmarks.gpu.pointer_chase as pchase
 import cscslib.microbenchmarks.gpu.hooks as hooks
 
 
-class PchaseGlobal(rfm.RegressionMixin):
+class BaseCSCS(rfm.RegressionMixin):
     '''Handy class to store common test settings.'''
 
     single_device_systems = variable(
@@ -28,10 +28,13 @@ class PchaseGlobal(rfm.RegressionMixin):
     )
     global_prog_environs = variable(typ.List[str], value=['PrgEnv-gnu'])
 
+    # Inject external hooks
+    set_gpu_arch = rfm.run_after('setup')(hooks.set_gpu_arch)
+    set_gpus_per_node = rfm.run_before('run')(hooks.set_gpus_per_node)
+
 
 @rfm.simple_test
-class CompileGpuPChase(pchase.BuildGpuPChaseBase, PchaseGlobal,
-                       hooks.SetArchAndModules):
+class CompileGpuPChase(pchase.BuildGpuPChaseBase, BaseCSCS):
     ''' Build the executable.'''
 
     def __init__(self):
@@ -41,8 +44,7 @@ class CompileGpuPChase(pchase.BuildGpuPChaseBase, PchaseGlobal,
         self.valid_prog_environs = self.global_prog_environs
 
 
-class RunGpuPChaseSingle(pchase.RunGpuPChaseSingle, PchaseGlobal,
-                         hooks.SetGPUsPerNode, hooks.SetArchAndModules):
+class RunGpuPChaseSingle(pchase.RunGpuPChaseSingle, BaseCSCS):
     def __init__(self):
         self.depends_on('CompileGpuPChase')
         self.valid_systems = (
@@ -161,8 +163,7 @@ class GpuDRAMLatency(RunGpuPChaseSingle):
 
 
 @rfm.simple_test
-class GpuP2PLatencyP2P(pchase.RunGpuPChaseP2P, PchaseGlobal,
-                       hooks.SetGPUsPerNode, hooks.SetArchAndModules):
+class GpuP2PLatencyP2P(pchase.RunGpuPChaseP2P, BaseCSCS):
     '''Measure the latency to remote device.
 
     Depending on the list size, the data might be cached in different places.
