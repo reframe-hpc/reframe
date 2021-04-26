@@ -14,7 +14,7 @@ class DeferredIterationTest(rfm.RunOnlyRegressionTest):
     valid_prog_environs = ['*']
     executable = './random_numbers.sh'
 
-    @rfm.run_after('sanity')
+    @rfm.run_before('sanity')
     def set_sanity_patterns(self):
         numbers = sn.extractall(
             r'Random: (?P<number>\S+)', self.stdout, 'number', float
