@@ -115,7 +115,7 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
 
         # OpenMP support varies between compilers:
         self.openmp_versions = {
-            'PrgEnv-aocc': {'C++': 201107, 'F90': 201307},
+            'PrgEnv-aocc': {'C++': 201511, 'F90': 201307},
             'PrgEnv-cray': {
                 'C++': 201511 if cce_version == 10 else 201811,
                 'F90': 201511,
