@@ -236,6 +236,30 @@ def test_emit_loadenv_commands(base_environ, user_runtime,
     assert expected_commands == rt.emit_loadenv_commands(env0)
 
 
+def test_emit_loadenv_commands_ignore_confict(base_environ,
+                                              make_exec_ctx, env0):
+    if not test_util.has_sane_modules_system():
+        pytest.skip('no modules system configured')
+
+    if test_util.USER_CONFIG_FILE:
+        make_exec_ctx(test_util.USER_CONFIG_FILE, test_util.USER_SYSTEM,
+                      options={'general/resolve_module_conflicts': False})
+    else:
+        make_exec_ctx(options={'general/resolve_module_conflicts': False})
+
+    # Load a conflicting module
+    ms = rt.runtime().modules_system
+    with ms.change_module_path(test_util.TEST_MODULES):
+        ms.load_module('testmod_bar')
+        expected_commands = [
+            ms.emit_load_commands('testmod_foo')[0],
+            'export _var0=val1',
+            'export _var2=$_var0',
+            'export _var3=${_var1}',
+        ]
+        assert expected_commands == rt.emit_loadenv_commands(env0)
+
+
 def test_emit_loadenv_commands_with_confict(base_environ, user_runtime,
                                             modules_system, env0):
     # Load a conflicting module
