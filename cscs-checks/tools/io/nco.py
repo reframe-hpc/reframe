@@ -36,10 +36,11 @@ class NCOBaseTest(rfm.RunOnlyRegressionTest):
             self.modules = ['nco']
         elif self.current_system.name in ['eiger', 'pilatus']:
             self.valid_prog_environs = ['cpeGNU']
+            self.modules = ['NCO']
         else:
             self.valid_prog_environs = ['builtin']
+            self.modules = ['NCO']
 
-        self.modules = ['NCO']
         self.maintainers = ['SO', 'CB']
         self.tags = {'production', 'mch', 'external-resources'}
 
