@@ -20,13 +20,8 @@ class DefaultPrgEnvCheck(rfm.RunOnlyRegressionTest):
         self.tags = {'production', 'craype'}
         self.sanity_patterns = sn.assert_found(r'^PrgEnv-cray', self.stderr)
 
-        if self.current_system.name in ['eiger', 'pilatus']:
-            self.executable_opts = ['list']
-            prgenv_patt = r'1\) cpe-cray'
-        else:
-            self.executable_opts = ['list', '-t']
-            prgenv_patt = r'^PrgEnv-cray'
-
+        self.executable_opts = ['--terse', 'list']
+        prgenv_patt = r'^PrgEnv-cray'
         self.sanity_patterns = sn.assert_found(prgenv_patt, self.stderr)
 
 
@@ -39,23 +34,14 @@ class EnvironmentCheck(rfm.RunOnlyRegressionTest):
         self.valid_prog_environs = ['PrgEnv-aocc', 'PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi']
         self.executable = 'module'
-        if self.current_system.name in ['eiger', 'pilatus']:
-            self.executable_opts = ['list']
-        else:
-            self.executable_opts = ['list', '-t']
+        self.executable_opts = ['--terse', 'list']
 
         self.maintainers = ['TM', 'CB']
         self.tags = {'production', 'craype'}
 
     @rfm.run_before('sanity')
     def set_sanity(self):
-        # NOTE: On eiger, the first module of each programming environment,
-        # follows the 'cpe-<name>' pattern where <name> corresponds to the
-        # 'PrgEnv-<name>' used.
-        if self.current_system.name in ['eiger', 'pilatus']:
-            module_patt = rf'1\) cpe-{self.current_environ.name[7:]}'
-        else:
-            module_patt = rf'^{self.current_environ.name}'
+        module_patt = rf'^{self.current_environ.name}'
 
         self.sanity_patterns = sn.assert_found(module_patt, self.stderr)
 
