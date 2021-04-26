@@ -166,6 +166,14 @@ An action must always be specified.
    List selected tests providing detailed information per test.
 
 
+.. option:: --list-tags
+
+   List the unique tags of the selected tests.
+   The tags are printed in alphabetical order.
+
+   .. versionadded:: 3.6.0
+
+
 .. option:: -r, --run
 
    Execute the selected tests.
@@ -848,6 +856,21 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
       Associated command line option     :option:`--report-file`
       Associated configuration parameter :js:attr:`report_file` general configuration parameter
+      ================================== ==================
+
+
+.. envvar:: RFM_RESOLVE_MODULE_CONFLICTS
+
+   Resolve module conflicts automatically.
+
+   .. versionadded:: 3.6.0
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     n/a
+      Associated configuration parameter :js:attr:`resolve_module_conflicts` general configuration parameter
       ================================== ==================
 
 
