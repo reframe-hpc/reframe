@@ -256,7 +256,7 @@ Hence, we move the ``sourcepath`` assignment into a pre-compile hook.
 .. literalinclude:: ../tutorials/basics/hello/hello2.py
    :lines: 19-
 
-The use of hooks is covered in more detail later on, but for now, let's just think of them as a way to deffer the execution of a function to a given stage of the test's pipeline.
+The use of hooks is covered in more detail later on, but for now, let's just think of them as a way to defer the execution of a function to a given stage of the test's pipeline.
 By using hooks, any user could now derive from this class and attach other hooks (for example, adding some compiler flags) without having to worry about overriding the base method that sets the ``sourcepath`` variable.
 
 Let's run the test now:
