@@ -31,6 +31,7 @@ class MpiTCheck(rfm.RegressionTest):
         # {{{ 0/ MPICH version:
         # MPI VERSION    : CRAY MPICH version 7.7.15 (ANL base 3.2)
         # MPI VERSION    : CRAY MPICH version 8.0.16.17 (ANL base 3.3)
+        # MPI VERSION    : CRAY MPICH version 8.1.4.31 (ANL base 3.4a2)
         regex = r'^MPI VERSION\s+: CRAY MPICH version \S+ \(ANL base (\S+)\)'
         rpt_file = os.path.join(self.stagedir, self.rpt)
         mpich_version = sn.extractsingle(regex, rpt_file, 1)
@@ -42,7 +43,11 @@ class MpiTCheck(rfm.RegressionTest):
             '3.3': {
                 'control': 'mpit_control_vars_33.ref',
                 'categories': 'mpit_categories_33.ref',
-            }
+            },
+            '3.4a2': {
+                'control': 'mpit_control_vars_34a2.ref',
+                'categories': 'mpit_categories_34a2.ref',
+            },
         }
         # }}}
         # {{{ 1/ MPI Control Variables: MPIR_...
@@ -56,7 +61,7 @@ class MpiTCheck(rfm.RegressionTest):
         # --- extract runtime data:
         regex = r'^\t(?P<vars>MPIR\S+)\t'
         self.run_control_vars = sorted(sn.extractall(regex, rpt_file, 'vars'))
-        # --- debug with: grep -P '\tMPIR+\S*\t' rpt |awk '{print $1}' |sort
+        # --- debug with:"grep -P '\tMPIR+\S*\t' rpt | awk '{print $1}' | sort"
         # }}}
         # {{{ 2/ MPI Category:
         # --- extract reference data:
@@ -72,6 +77,7 @@ class MpiTCheck(rfm.RegressionTest):
                  r' performance variables, \d+ subcategories)')
         rpt = os.path.join(self.stagedir, self.rpt)
         self.run_cat_vars = sorted(sn.extractall(regex, rpt, 'category'))
+        # --- debug with:"grep Category rpt | sort"
         # }}}
         # {{{ 3/ Extracted lists can be compared (when sorted):
         self.sanity_patterns = sn.all([
