@@ -39,7 +39,7 @@ class StreamWithRefTest(rfm.RegressionTest):
         self.sanity_patterns = sn.assert_found(r'Solution Validates',
                                                self.stdout)
 
-    @rfm.run_before('performace')
+    @rfm.run_before('performance')
     def set_perf_patterns(self):
         self.perf_patterns = {
             'Copy': sn.extractsingle(r'Copy:\s+(\S+)\s+.*',
