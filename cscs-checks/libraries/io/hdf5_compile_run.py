@@ -22,7 +22,7 @@ class HDF5Test(rfm.RegressionTest):
         if linkage == 'dynamic':
             self.valid_systems += ['eiger:mc', 'pilatus:mc']
 
-        # PrgEnv-intel on Eiger and Pilatus does not feature cray-hdf5 as of PE 21.02
+        # no cray-hdf5 as of PE 21.02 with PrgEnv-intel on Eiger and Pilatus
         if self.current_system.name in ['eiger', 'pilatus']:
             self.valid_prog_environs = ['PrgEnv-aocc', 'PrgEnv-cray',
                                         'PrgEnv-gnu']

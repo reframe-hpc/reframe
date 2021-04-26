@@ -663,7 +663,7 @@ site_configuration = {
                 }
             ]
         },
-        { 
+        {
             'name': 'eiger',
             'descr': 'Alps Cray EX Supercomputer',
             'hostnames': [
