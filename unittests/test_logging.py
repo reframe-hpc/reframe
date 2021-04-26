@@ -216,21 +216,6 @@ def test_logger_job_attributes(logfile, logger_with_check):
     assert _pattern_in_logfile(r'12345 localhost', logfile)
 
 
-@pytest.fixture
-def temp_runtime(tmp_path):
-    def _temp_runtime(logging_config):
-        site_config = copy.deepcopy(settings.site_configuration)
-        site_config['logging'] = [logging_config]
-        with tempfile.NamedTemporaryFile(mode='w+t', dir=str(tmp_path),
-                                         suffix='.py', delete=False) as fp:
-            fp.write(f'site_configuration = {util.ppretty(site_config)}')
-
-        with rt.temp_runtime(fp.name):
-            yield
-
-    return _temp_runtime
-
-
 def _flush_handlers():
     for h in rlog.getlogger().logger.handlers:
         h.flush()
@@ -252,30 +237,47 @@ def _found_in_logfile(string, filename):
 
 
 @pytest.fixture
-def basic_config(temp_runtime, logfile):
-    yield from temp_runtime({
-        'level': 'info',
-        'handlers': [
-            {
-                'type': 'file',
-                'name': str(logfile),
-                'level': 'warning',
-                'format': '[%(asctime)s] %(levelname)s: '
-                '%(check_name)s: %(message)s',
-                'datefmt': '%F',
-                'append': True,
-            },
-        ],
-        'handlers_perflog': []
-    })
+def config_file(tmp_path, logfile):
+    def _config_file(logging_config=None):
+        if logging_config is None:
+            logging_config = {
+                'level': 'info',
+                'handlers': [
+                    {
+                        'type': 'file',
+                        'name': str(logfile),
+                        'level': 'warning',
+                        'format': '[%(asctime)s] %(levelname)s: '
+                        '%(check_name)s: %(message)s',
+                        'datefmt': '%F',
+                        'append': True,
+                    },
+                ],
+                'handlers_perflog': []
+            }
+
+        site_config = copy.deepcopy(settings.site_configuration)
+        site_config['logging'] = [logging_config]
+        with tempfile.NamedTemporaryFile(mode='w+t', dir=str(tmp_path),
+                                         suffix='.py', delete=False) as fp:
+            fp.write(f'site_configuration = {util.ppretty(site_config)}')
+
+        return fp.name
+
+    return _config_file
 
 
-def test_valid_level(basic_config):
+@pytest.fixture
+def default_exec_ctx(make_exec_ctx_g, config_file):
+    yield from make_exec_ctx_g(config_file())
+
+
+def test_valid_level(default_exec_ctx):
     rlog.configure_logging(rt.runtime().site_config)
     assert rlog.INFO == rlog.getlogger().getEffectiveLevel()
 
 
-def test_handler_level(basic_config, logfile):
+def test_handler_level(default_exec_ctx, logfile):
     rlog.configure_logging(rt.runtime().site_config)
     rlog.getlogger().info('foo')
     rlog.getlogger().warning('bar')
@@ -283,7 +285,7 @@ def test_handler_level(basic_config, logfile):
     assert _found_in_logfile('bar', logfile)
 
 
-def test_handler_append(basic_config, logfile):
+def test_handler_append(default_exec_ctx, logfile):
     rlog.configure_logging(rt.runtime().site_config)
     rlog.getlogger().warning('foo')
     _close_handlers()
@@ -296,9 +298,9 @@ def test_handler_append(basic_config, logfile):
     assert _found_in_logfile('bar', logfile)
 
 
-def test_handler_noappend(temp_runtime, logfile):
-    runtime = temp_runtime(
-        {
+def test_handler_noappend(make_exec_ctx, config_file, logfile):
+    make_exec_ctx(
+        config_file({
             'level': 'info',
             'handlers': [
                 {
@@ -311,10 +313,8 @@ def test_handler_noappend(temp_runtime, logfile):
                 }
             ],
             'handlers_perflog': []
-        }
-
+        })
     )
-    next(runtime)
 
     rlog.configure_logging(rt.runtime().site_config)
     rlog.getlogger().warning('foo')
@@ -328,7 +328,19 @@ def test_handler_noappend(temp_runtime, logfile):
     assert _found_in_logfile('bar', logfile)
 
 
-def test_date_format(basic_config, logfile):
+def test_warn_once(default_exec_ctx, logfile):
+    rlog.configure_logging(rt.runtime().site_config)
+    rlog.getlogger().warning('foo', cache=True)
+    rlog.getlogger().warning('foo', cache=True)
+    rlog.getlogger().warning('foo', cache=True)
+    _flush_handlers()
+    _close_handlers()
+
+    with open(logfile, 'rt') as fp:
+        assert len(re.findall('foo', fp.read())) == 1
+
+
+def test_date_format(default_exec_ctx, logfile):
     rlog.configure_logging(rt.runtime().site_config)
     rlog.getlogger().warning('foo')
     assert _found_in_logfile(datetime.now().strftime('%F'), logfile)
@@ -339,13 +351,14 @@ def stream(request):
     return request.param
 
 
-def test_stream_handler(temp_runtime, logfile, stream):
-    runtime = temp_runtime({
-        'level': 'info',
-        'handlers': [{'type': 'stream', 'name': stream}],
-        'handlers_perflog': []
-    })
-    next(runtime)
+def test_stream_handler(make_exec_ctx, config_file, stream):
+    make_exec_ctx(
+        config_file({
+            'level': 'info',
+            'handlers': [{'type': 'stream', 'name': stream}],
+            'handlers_perflog': []
+        })
+    )
     rlog.configure_logging(rt.runtime().site_config)
     raw_logger = rlog.getlogger().logger
     assert len(raw_logger.handlers) == 1
@@ -356,39 +369,41 @@ def test_stream_handler(temp_runtime, logfile, stream):
     assert handler.stream == stream
 
 
-def test_multiple_handlers(temp_runtime, logfile):
-    runtime = temp_runtime({
-        'level': 'info',
-        'handlers': [
-            {'type': 'stream', 'name': 'stderr'},
-            {'type': 'file', 'name': str(logfile)},
-            {'type': 'syslog', 'address': '/dev/log'}
-        ],
-        'handlers_perflog': []
-    })
-    next(runtime)
+def test_multiple_handlers(make_exec_ctx, config_file, logfile):
+    make_exec_ctx(
+        config_file({
+            'level': 'info',
+            'handlers': [
+                {'type': 'stream', 'name': 'stderr'},
+                {'type': 'file', 'name': str(logfile)},
+                {'type': 'syslog', 'address': '/dev/log'}
+            ],
+            'handlers_perflog': []
+        })
+    )
     rlog.configure_logging(rt.runtime().site_config)
     assert len(rlog.getlogger().logger.handlers) == 3
 
 
-def test_file_handler_timestamp(temp_runtime, logfile):
-    runtime = temp_runtime({
-        'level': 'info',
-        'handlers': [
-            {
-                'type': 'file',
-                'name': str(logfile),
-                'level': 'warning',
-                'format': '[%(asctime)s] %(levelname)s: '
-                '%(check_name)s: %(message)s',
-                'datefmt': '%F',
-                'timestamp': '%F',
-                'append': True,
-            },
-        ],
-        'handlers_perflog': []
-    })
-    next(runtime)
+def test_file_handler_timestamp(make_exec_ctx, config_file, logfile):
+    make_exec_ctx(
+        config_file({
+            'level': 'info',
+            'handlers': [
+                {
+                    'type': 'file',
+                    'name': str(logfile),
+                    'level': 'warning',
+                    'format': '[%(asctime)s] %(levelname)s: '
+                    '%(check_name)s: %(message)s',
+                    'datefmt': '%F',
+                    'timestamp': '%F',
+                    'append': True,
+                },
+            ],
+            'handlers_perflog': []
+        })
+    )
     rlog.configure_logging(rt.runtime().site_config)
     rlog.getlogger().warning('foo')
     base, ext = os.path.splitext(logfile)
@@ -396,7 +411,7 @@ def test_file_handler_timestamp(temp_runtime, logfile):
     assert os.path.exists(filename)
 
 
-def test_syslog_handler(temp_runtime):
+def test_syslog_handler(make_exec_ctx, config_file):
     import platform
 
     if platform.system() == 'Linux':
@@ -406,26 +421,28 @@ def test_syslog_handler(temp_runtime):
     else:
         pytest.skip('unknown system platform')
 
-    runtime = temp_runtime({
-        'level': 'info',
-        'handlers': [{'type': 'syslog', 'address': addr}],
-        'handlers_perflog': []
-    })
-    next(runtime)
+    make_exec_ctx(
+        config_file({
+            'level': 'info',
+            'handlers': [{'type': 'syslog', 'address': addr}],
+            'handlers_perflog': []
+        })
+    )
     rlog.configure_logging(rt.runtime().site_config)
     rlog.getlogger().info('foo')
 
 
-def test_syslog_handler_tcp_port_noint(temp_runtime):
-    runtime = temp_runtime({
-        'level': 'info',
-        'handlers': [{
-            'type': 'syslog',
-            'address': 'foo.server.org:bar',
-        }],
-        'handlers_perflog': []
-    })
-    next(runtime)
+def test_syslog_handler_tcp_port_noint(make_exec_ctx, config_file):
+    make_exec_ctx(
+        config_file({
+            'level': 'info',
+            'handlers': [{
+                'type': 'syslog',
+                'address': 'foo.server.org:bar',
+            }],
+            'handlers_perflog': []
+        })
+    )
     with pytest.raises(ConfigError, match="not an integer: 'bar'"):
         rlog.configure_logging(rt.runtime().site_config)
 
@@ -439,12 +456,12 @@ def test_global_noconfig():
     assert rlog.getlogger() is rlog.null_logger
 
 
-def test_global_config(basic_config):
+def test_global_config(default_exec_ctx):
     rlog.configure_logging(rt.runtime().site_config)
     assert rlog.getlogger() is not rlog.null_logger
 
 
-def test_logging_context(basic_config, logfile):
+def test_logging_context(default_exec_ctx, logfile):
     rlog.configure_logging(rt.runtime().site_config)
     with rlog.logging_context() as logger:
         assert logger is rlog.getlogger()
@@ -455,7 +472,7 @@ def test_logging_context(basic_config, logfile):
     assert _found_in_logfile('error from context', logfile)
 
 
-def test_logging_context_check(basic_config, logfile, fake_check):
+def test_logging_context_check(default_exec_ctx, logfile, fake_check):
     rlog.configure_logging(rt.runtime().site_config)
     with rlog.logging_context(check=fake_check):
         rlog.getlogger().error('error from context')
@@ -467,7 +484,7 @@ def test_logging_context_check(basic_config, logfile, fake_check):
                              logfile)
 
 
-def test_logging_context_error(basic_config, logfile):
+def test_logging_context_error(default_exec_ctx, logfile):
     rlog.configure_logging(rt.runtime().site_config)
     try:
         with rlog.logging_context(level=rlog.ERROR):

@@ -8,7 +8,7 @@ import pytest
 
 import reframe.core.environments as env
 import reframe.core.modules as modules
-import unittests.fixtures as fixtures
+import unittests.utility as test_util
 from reframe.core.exceptions import ConfigError, EnvironError
 
 
@@ -33,7 +33,7 @@ def modules_system_nopath(request, monkeypatch):
 def modules_system(modules_system_nopath):
     m = modules_system_nopath
     environ_save = env.snapshot()
-    with m.change_module_path(fixtures.TEST_MODULES):
+    with m.change_module_path(test_util.TEST_MODULES):
         yield m
 
     environ_save.restore()
@@ -42,12 +42,12 @@ def modules_system(modules_system_nopath):
 def test_searchpath(modules_system):
     if modules_system.name in ['nomod', 'spack']:
         # Simply test that no exceptions are thrown
-        modules_system.searchpath_remove(fixtures.TEST_MODULES)
+        modules_system.searchpath_remove(test_util.TEST_MODULES)
     else:
-        assert fixtures.TEST_MODULES in modules_system.searchpath
+        assert test_util.TEST_MODULES in modules_system.searchpath
 
-        modules_system.searchpath_remove(fixtures.TEST_MODULES)
-        assert fixtures.TEST_MODULES not in modules_system.searchpath
+        modules_system.searchpath_remove(test_util.TEST_MODULES)
+        assert test_util.TEST_MODULES not in modules_system.searchpath
 
 
 @pytest.fixture
@@ -105,8 +105,8 @@ def test_module_load_with_path(modules_system_nopath):
         pytest.skip('module load not supported')
 
     modules_system_nopath.load_module('testmod_foo',
-                                      path=fixtures.TEST_MODULES)
-    with modules_system_nopath.change_module_path(fixtures.TEST_MODULES):
+                                      path=test_util.TEST_MODULES)
+    with modules_system_nopath.change_module_path(test_util.TEST_MODULES):
         assert modules_system_nopath.is_module_loaded('testmod_foo')
         assert 'testmod_foo' in modules_system_nopath.loaded_modules()
         assert 'TESTMOD_FOO' in os.environ
@@ -213,7 +213,7 @@ def _test_module_available_substr(modules_system):
         assert (modules == ['testmod_bar', 'testmod_base', 'testmod_boo'])
 
 
-@fixtures.dispatch('modules_system', suffix=lambda ms: ms.name)
+@test_util.dispatch('modules_system', suffix=lambda ms: ms.name)
 def test_emit_load_commands(modules_system):
     modules_system.module_map = {
         'm0': ['m1', 'm2']
@@ -234,7 +234,7 @@ def _emit_load_commands_tmod4(modules_system):
     emit_cmds = modules_system.emit_load_commands
     assert emit_cmds('foo') == ['module load foo']
     assert emit_cmds('foo', collection=True) == [
-        'module restore foo', f'module use {fixtures.TEST_MODULES}'
+        'module restore foo', f'module use {test_util.TEST_MODULES}'
     ]
     assert emit_cmds('foo/1.2') == ['module load foo/1.2']
     assert emit_cmds('foo', path='/path') == ['module use /path',
@@ -244,7 +244,7 @@ def _emit_load_commands_tmod4(modules_system):
     # Module mappings are not taking into account since v3.3
     assert emit_cmds('m0') == ['module load m0']
     assert emit_cmds('m0', collection=True) == [
-        'module restore m0', f'module use {fixtures.TEST_MODULES}'
+        'module restore m0', f'module use {test_util.TEST_MODULES}'
     ]
 
 
@@ -268,7 +268,7 @@ def _emit_load_commands_nomod(modules_system):
     assert emit_cmds('m0') == []
 
 
-@fixtures.dispatch('modules_system', suffix=lambda ms: ms.name)
+@test_util.dispatch('modules_system', suffix=lambda ms: ms.name)
 def test_emit_unload_commands(modules_system):
     modules_system.module_map = {
         'm0': ['m1', 'm2']

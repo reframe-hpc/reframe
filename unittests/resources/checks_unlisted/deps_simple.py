@@ -18,12 +18,12 @@ class Test0(rfm.RunOnlyRegressionTest):
         self.sanity_patterns = sn.assert_found(self.name, self.stdout)
 
 
-@rfm.parameterized_test(*([kind] for kind in ['default', 'fully',
-                                              'by_part', 'by_case',
-                                              'custom', 'any', 'all',
-                                              'nodeps']))
+@rfm.simple_test
 class Test1(rfm.RunOnlyRegressionTest):
-    def __init__(self, kind):
+    kind = parameter(['default', 'fully', 'by_part', 'by_case',
+                      'custom', 'any', 'all', 'nodeps'])
+
+    def __init__(self):
         def custom_deps(src, dst):
             return (
                 src[0] == 'p0' and
@@ -48,7 +48,7 @@ class Test1(rfm.RunOnlyRegressionTest):
         self.executable = 'echo'
         self.executable_opts = [self.name]
         self.sanity_patterns = sn.assert_found(self.name, self.stdout)
-        if kind == 'default':
+        if self.kind == 'default':
             self.depends_on('Test0')
         else:
-            self.depends_on('Test0', kindspec[kind])
+            self.depends_on('Test0', kindspec[self.kind])
