@@ -25,9 +25,9 @@ class StreamMultiSysTest(rfm.RegressionTest):
         'OMP_PLACES': 'cores'
     }
     reference = {
-            '*': {
-                'Triad': (0, None, None, 'MB/s'),
-            }
+        '*': {
+            'Triad': (0, None, None, 'MB/s'),
+        }
     }
 
     # Flags per programming environment
@@ -76,7 +76,7 @@ class StreamMultiSysTest(rfm.RegressionTest):
         self.sanity_patterns = sn.assert_found(r'Solution Validates',
                                                self.stdout)
 
-    @rfm.run_before('performace')
+    @rfm.run_before('performance')
     def set_perf_patterns(self):
         self.perf_patterns = {
             'Triad': sn.extractsingle(r'Triad:\s+(\S+)\s+.*',
