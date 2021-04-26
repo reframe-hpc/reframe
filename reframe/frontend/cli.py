@@ -610,6 +610,12 @@ def main():
 
     printer.debug(format_env(options.env_vars))
 
+    # Check that the check path files exist
+    if options.checkpath:
+        for f in options.checkpath:
+            if not os.path.exists(f):
+                printer.warning(f"check path {f} doesn't exist")
+
     # Setup the check loader
     if options.restore_session is not None:
         # We need to load the failed checks only from a report
