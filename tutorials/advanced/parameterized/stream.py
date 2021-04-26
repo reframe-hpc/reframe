@@ -52,7 +52,7 @@ class StreamMultiSysTest(rfm.RegressionTest):
         self.ntimes = 100*1024*1024 // self.array_size
         self.descr = (
             f'STREAM test (array size: {self.array_size}, '
-            f'ntimes: {self.ntimes})'    # noqa: E501
+            f'ntimes: {self.ntimes})'
         )
 
     @rfm.run_before('compile')

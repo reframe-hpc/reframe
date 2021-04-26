@@ -13,7 +13,7 @@ class ContainerTest(rfm.RunOnlyRegressionTest):
     valid_systems = ['daint:gpu']
     valid_prog_environs = ['builtin']
 
-    @rfm.run_after('init')
+    @rfm.run_before('run')
     def set_container_variables(self):
         self.descr = f'Run commands inside a container using {self.platform}'
         image_prefix = 'docker://' if self.platform == 'Singularity' else ''

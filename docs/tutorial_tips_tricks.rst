@@ -129,7 +129,7 @@ Trying to use the standard print here :func:`print` function here would be of li
        valid_systems = ['*']
        valid_prog_environs = ['*']
 
-       @rfm.run_after('init')
+       @rfm.run_after('compile')
        def set_sourcepath(self):
            self.sourcepath = f'hello.{self.lang}'
 

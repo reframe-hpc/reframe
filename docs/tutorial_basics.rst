@@ -238,10 +238,26 @@ This parameter will cause as many instantiations as parameter values available, 
 Hence, this example will create two test instances, one with ``lang='c'`` and another with ``lang='cpp'``.
 The parameter is available as an attribute of the test instance and, in this example, we use it to set the extension of the source file.
 However, at the class level, a test parameter holds all the possible values for itself, and this is only assigned a single value after the class is instantiated.
-In this case, the variable ``sourcepath`` must be set to ``f'hello.{self.lang}'``, but ``self.lang`` only acquires a specific value after the class is instantiated.
-For this reason the assignment of the ``sourcepath`` variable is deferred with a post-init hook, which will get executed after the class instantiation.
+Therefore, the variable ``sourcepath``, which depends on this parameter, also needs to be set after the class instantiation.
+The simplest way to do this would be to move the ``sourcepath`` assignment into the :func:`__init__` method as shown in the code snippet below, but this has some disadvantages when writing larger tests.
 
-The use of hooks is covered later on, but for now, let's just think of them as a way to postpone the execution of a given function after the test class is instantiated.
+.. code-block:: python
+
+  def __init__(self):
+      self.sourcepath = f'hello.{self.lang}'
+
+For example, when writing a base class for a test with a large amount of code into the :func:`__init__` method, the derived class may want to do a partial override of the code in this function.
+This would force us to understand the full implementation of the base class' :func:`__init__` despite that we may just be interested in overriding a small part of it.
+Doable, but not ideal.
+Instead, through pipeline hooks, ReFrame provides a mechanism to attach independent functions to execute at a given time before the data they set is required by the test.
+This is exactly what we want to do here, and we know that the test sources are needed to compile the code.
+Hence, we move the ``sourcepath`` assignment into a pre-compile hook.
+
+.. literalinclude:: ../tutorials/basics/hello/hello2.py
+   :lines: 19-
+
+The use of hooks is covered in more detail later on, but for now, let's just think of them as a way to deffer the execution of a function to a given stage of the test's pipeline.
+By using hooks, any user could now derive from this class and attach other hooks (for example, adding some compiler flags) without having to worry about overriding the base method that sets the ``sourcepath`` variable.
 
 Let's run the test now:
 
@@ -445,7 +461,7 @@ If not explicitly specified, ReFrame will try to pick the correct build system (
 In this example, we instruct ReFrame to compile a single source file using the ``-std=c++11 -pthread -Wall`` compilation flags.
 However, the flag ``-pthread`` is only needed to compile applications using ``std::thread`` with the GCC and Clang compilers.
 Hence, since this flag may not be valid for other compilers, we need to include it only in the tests that use either GCC or Clang.
-Similarly to the ``lang`` parameter in the previous example, the information regarding which compiler is being used is only available after the class is instantiated, so we also defer the addition of this optional compiler flag with a pipeline hook.
+Similarly to the ``lang`` parameter in the previous example, the information regarding which compiler is being used is only available after the class is instantiated (after completion of the ``setup`` pipeline stage), so we also defer the addition of this optional compiler flag with a pipeline hook.
 In this case, we set the :func:`set_compile_flags` hook to run before the ReFrame pipeline stage ``compile``.
 
 .. note::
