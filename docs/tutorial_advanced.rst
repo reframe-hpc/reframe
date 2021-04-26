@@ -722,7 +722,7 @@ The following parameterized test, will create two tests, one for each of the sup
 
 .. literalinclude:: ../tutorials/advanced/containers/container_test.py
    :lines: 6-
-   :emphasize-lines: 14-19
+   :emphasize-lines: 16-22
 
 A container-based test can be written as :class:`~reframe.core.pipeline.RunOnlyRegressionTest` that sets the :attr:`~reframe.core.pipeline.RegressionTest.container_platform` attribute.
 This attribute accepts a string that corresponds to the name of the container platform that will be used to run the container for this test.
@@ -778,13 +778,8 @@ In the current test, the output of the ``cat /etc/os-release`` is available both
 and ``/rfm_workdir`` corresponds to the stage directory on the host system.
 Therefore, the ``release.txt`` file can now be used in the subsequent sanity checks:
 
-.. code-block:: python
-
-   os_release_pattern = r'18.04.\d+ LTS \(Bionic Beaver\)'
-   self.sanity_patterns = sn.all([
-       sn.assert_found(os_release_pattern, 'release.txt'),
-       sn.assert_found(os_release_pattern, self.stdout)
-   ])
+.. literalinclude:: ../tutorials/advanced/containers/container_test.py
+   :lines: 15-17
 
 
 For a complete list of the available attributes of a specific container platform, please have a look at the :ref:`container-platforms` section of the :doc:`regression_test_api` guide.
