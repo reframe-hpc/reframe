@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -9,44 +9,16 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class GPUdgemmTest(rfm.RegressionTest):
-    def __init__(self):
-        self.valid_systems = ['daint:gpu', 'dom:gpu',
-                              'ault:amdv100', 'ault:intelv100',
-                              'ault:amda100', 'ault:amdvega']
-        self.valid_prog_environs = ['PrgEnv-gnu']
-        self.num_tasks = 0
-        self.num_tasks_per_node = 1
-        self.build_system = 'Make'
-        self.executable = 'dgemm.x'
-        self.sanity_patterns = self.assert_num_gpus()
-        self.perf_patterns = {
-            'perf': sn.min(sn.extractall(
-                r'^\s*\[[^\]]*\]\s*GPU\s*\d+: (?P<fp>\S+) TF/s',
-                self.stdout, 'fp', float))
-        }
-        self.reference = {
-            'dom:gpu': {
-                'perf': (3.35, -0.1, None, 'TF/s')
-            },
-            'daint:gpu': {
-                'perf': (3.35, -0.1, None, 'TF/s')
-            },
-            'ault:amdv100': {
-                'perf': (5.25, -0.1, None, 'TF/s')
-            },
-            'ault:intelv100': {
-                'perf': (5.25, -0.1, None, 'TF/s')
-            },
-            'ault:amda100': {
-                'perf': (10.5, -0.1, None, 'TF/s')
-            },
-            'ault:amdvega': {
-                'perf': (3.45, -0.1, None, 'TF/s')
-            }
-        }
-
-        self.maintainers = ['JO', 'SK']
-        self.tags = {'benchmark', 'health'}
+    valid_systems = ['daint:gpu', 'dom:gpu',
+                     'ault:amdv100', 'ault:intelv100',
+                     'ault:amda100', 'ault:amdvega']
+    valid_prog_environs = ['PrgEnv-gnu']
+    num_tasks = 0
+    num_tasks_per_node = 1
+    build_system = 'Make'
+    executable = 'dgemm.x'
+    maintainers = ['JO', 'SK']
+    tags = {'benchmark', 'health'}
 
     @sn.sanity_function
     def assert_num_gpus(self):
@@ -90,3 +62,32 @@ class GPUdgemmTest(rfm.RegressionTest):
         if amd_trgt:
             self.build_system.cxxflags += [f'--amdgpu-target={amd_trgt}']
             self.modules += ['rocm']
+
+    @rfm.run_before('sanity')
+    def set_sanity_and_perf(self):
+        self.sanity_patterns = self.assert_num_gpus()
+        self.perf_patterns = {
+            'perf': sn.min(sn.extractall(
+                r'^\s*\[[^\]]*\]\s*GPU\s*\d+: (?P<fp>\S+) TF/s',
+                self.stdout, 'fp', float))
+        }
+        self.reference = {
+            'dom:gpu': {
+                'perf': (3.35, -0.1, None, 'TF/s')
+            },
+            'daint:gpu': {
+                'perf': (3.35, -0.1, None, 'TF/s')
+            },
+            'ault:amdv100': {
+                'perf': (5.25, -0.1, None, 'TF/s')
+            },
+            'ault:intelv100': {
+                'perf': (5.25, -0.1, None, 'TF/s')
+            },
+            'ault:amda100': {
+                'perf': (10.5, -0.1, None, 'TF/s')
+            },
+            'ault:amdvega': {
+                'perf': (3.45, -0.1, None, 'TF/s')
+            }
+        }
