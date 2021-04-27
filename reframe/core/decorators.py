@@ -8,7 +8,7 @@
 #
 
 __all__ = [
-    'parameterized_test', 'simple_test', 'required_version',
+    'simple_test', 'required_version',
     'require_deps', 'run_before', 'run_after'
 ]
 
@@ -20,7 +20,6 @@ import sys
 import traceback
 
 import reframe.utility.osext as osext
-import reframe.core.warnings as warn
 from reframe.core.exceptions import (ReframeSyntaxError,
                                      SkipTestError,
                                      user_frame)
@@ -107,50 +106,6 @@ def simple_test(cls):
         _register_test(cls)
 
     return cls
-
-
-def parameterized_test(*inst):
-    '''Class decorator for registering multiple instantiations of a test class.
-
-   The decorated class must derive from
-   :class:`reframe.core.pipeline.RegressionTest`. This decorator is also
-   available directly under the :mod:`reframe` module.
-
-   :arg inst: The different instantiations of the test. Each instantiation
-        argument may be either a sequence or a mapping.
-
-   .. versionadded:: 2.13
-
-   .. note::
-      This decorator does not instantiate any test.  It only registers them.
-      The actual instantiation happens during the loading phase of the test.
-
-   .. deprecated:: 3.6.0
-
-      Please use the :func:`~reframe.core.pipeline.RegressionTest.parameter`
-      built-in instead.
-
-    '''
-
-    warn.user_deprecation_warning(
-        'the @parameterized_test decorator is deprecated; '
-        'please use the parameter() built-in instead',
-        from_version='3.6.0'
-    )
-
-    def _do_register(cls):
-        _validate_test(cls)
-        if not cls.param_space.is_empty():
-            raise ValueError(
-                f'{cls.__qualname__!r} is already a parameterized test'
-            )
-
-        for args in inst:
-            _register_test(cls, args)
-
-        return cls
-
-    return _do_register
 
 
 def required_version(*versions):
