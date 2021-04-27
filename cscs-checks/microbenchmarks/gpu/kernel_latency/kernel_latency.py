@@ -168,4 +168,4 @@ class KernelLatencyTest(rfm.RegressionTest):
                 },
             },
         }
-        self.reference = self.sys_reference[kernel_version]
+        self.reference = self.sys_reference[self.kernel_version]
