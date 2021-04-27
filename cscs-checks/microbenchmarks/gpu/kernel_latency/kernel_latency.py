@@ -7,13 +7,47 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.parameterized_test(['sync'], ['async'])
+@rfm.simple_test
 class KernelLatencyTest(rfm.RegressionTest):
-    def __init__(self, kernel_version):
-        self.valid_systems = [
-            'daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn', 'ault:amdv100',
-            'ault:intelv100', 'ault:amda100', 'ault:amdvega'
-        ]
+    kernel_version = parameter(['sync', 'async'])
+    valid_systems = [
+        'daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn', 'ault:amdv100',
+        'ault:intelv100', 'ault:amda100', 'ault:amdvega'
+    ]
+    valid_prog_environs = ['*']
+    num_tasks = 0
+    num_tasks_per_node = 1
+    build_system = 'Make'
+    executable = 'kernel_latency.x'
+    maintainers = ['TM']
+    tags = {'benchmark', 'diagnostic', 'craype', 'health'}
+
+    @property
+    @sn.sanity_function
+    def num_tasks_assigned(self):
+        return self.job.num_tasks
+
+    @sn.sanity_function
+    def assert_count_gpus(self):
+        return sn.all([
+            sn.assert_eq(
+                sn.count(
+                    sn.findall(r'\[\S+\] Found \d+ gpu\(s\)',
+                               self.stdout)
+                ),
+                self.num_tasks_assigned
+            ),
+            sn.assert_eq(
+                sn.count(
+                    sn.findall(r'\[\S+\] \[gpu \d+\] Kernel launch '
+                               r'latency: \S+ us', self.stdout)
+                ),
+                self.num_tasks_assigned * self.num_gpus_per_node
+            )
+        ])
+
+    @rfm.run_after('init')
+    def set_valid_prgenv(self):
         cs = self.current_system.name
         if cs in {'dom', 'daint'}:
             self.valid_prog_environs = ['PrgEnv-cray_classic', 'PrgEnv-cray',
@@ -25,74 +59,12 @@ class KernelLatencyTest(rfm.RegressionTest):
         else:
             self.valid_prog_environs = []
 
-        self.num_tasks = 0
-        self.num_tasks_per_node = 1
-        self.build_system = 'Make'
-        self.executable = 'kernel_latency.x'
-        if kernel_version == 'sync':
+    @rfm.run_after('setup')
+    def set_build_flags(self):
+        if self.kernel_version == 'sync':
             self.build_system.cppflags = ['-D SYNCKERNEL=1']
         else:
             self.build_system.cppflags = ['-D SYNCKERNEL=0']
-
-        self.sanity_patterns = self.assert_count_gpus()
-
-        self.perf_patterns = {
-            'latency': sn.max(sn.extractall(
-                r'\[\S+\] \[gpu \d+\] Kernel launch latency: '
-                r'(?P<latency>\S+) us', self.stdout, 'latency', float))
-        }
-        self.sys_reference = {
-            'sync': {
-                'dom:gpu': {
-                    'latency': (6.6, None, 0.10, 'us')
-                },
-                'daint:gpu': {
-                    'latency': (6.6, None, 0.10, 'us')
-                },
-                'ault:intelv100': {
-                    'latency': (7.15, None, 0.10, 'us')
-                },
-                'ault:amdv100': {
-                    'latency': (7.15, None, 0.10, 'us')
-                },
-                'ault:amda100': {
-                    'latency': (9.65, None, 0.10, 'us')
-                },
-                'ault:amdvega': {
-                    'latency': (15.1, None, 0.10, 'us')
-                },
-            },
-            'async': {
-                'dom:gpu': {
-                    'latency': (2.2, None, 0.10, 'us')
-                },
-                'daint:gpu': {
-                    'latency': (2.2, None, 0.10, 'us')
-                },
-                'ault:intelv100': {
-                    'latency': (1.83, None, 0.10, 'us')
-                },
-                'ault:amdv100': {
-                    'latency': (1.83, None, 0.10, 'us')
-                },
-                'ault:amda100': {
-                    'latency': (2.7, None, 0.10, 'us')
-                },
-                'ault:amdvega': {
-                    'latency': (2.64, None, 0.10, 'us')
-                },
-            },
-        }
-
-        self.reference = self.sys_reference[kernel_version]
-
-        self.maintainers = ['TM']
-        self.tags = {'benchmark', 'diagnostic', 'craype', 'health'}
-
-    @property
-    @sn.sanity_function
-    def num_tasks_assigned(self):
-        return self.job.num_tasks
 
     @rfm.run_after('setup')
     def select_makefile(self):
@@ -146,21 +118,54 @@ class KernelLatencyTest(rfm.RegressionTest):
         elif cp in {'ault:amdvega'}:
             self.num_gpus_per_node = 3
 
-    @sn.sanity_function
-    def assert_count_gpus(self):
-        return sn.all([
-            sn.assert_eq(
-                sn.count(
-                    sn.findall(r'\[\S+\] Found \d+ gpu\(s\)',
-                               self.stdout)
-                ),
-                self.num_tasks_assigned
-            ),
-            sn.assert_eq(
-                sn.count(
-                    sn.findall(r'\[\S+\] \[gpu \d+\] Kernel launch '
-                               r'latency: \S+ us', self.stdout)
-                ),
-                self.num_tasks_assigned * self.num_gpus_per_node
-            )
-        ])
+    @rfm.run_before('sanity')
+    def set_sanity_and_perf(self):
+        self.sanity_patterns = self.assert_count_gpus()
+        self.perf_patterns = {
+            'latency': sn.max(sn.extractall(
+                r'\[\S+\] \[gpu \d+\] Kernel launch latency: '
+                r'(?P<latency>\S+) us', self.stdout, 'latency', float))
+        }
+        self.sys_reference = {
+            'sync': {
+                'dom:gpu': {
+                    'latency': (6.6, None, 0.10, 'us')
+                },
+                'daint:gpu': {
+                    'latency': (6.6, None, 0.10, 'us')
+                },
+                'ault:intelv100': {
+                    'latency': (7.15, None, 0.10, 'us')
+                },
+                'ault:amdv100': {
+                    'latency': (7.15, None, 0.10, 'us')
+                },
+                'ault:amda100': {
+                    'latency': (9.65, None, 0.10, 'us')
+                },
+                'ault:amdvega': {
+                    'latency': (15.1, None, 0.10, 'us')
+                },
+            },
+            'async': {
+                'dom:gpu': {
+                    'latency': (2.2, None, 0.10, 'us')
+                },
+                'daint:gpu': {
+                    'latency': (2.2, None, 0.10, 'us')
+                },
+                'ault:intelv100': {
+                    'latency': (1.83, None, 0.10, 'us')
+                },
+                'ault:amdv100': {
+                    'latency': (1.83, None, 0.10, 'us')
+                },
+                'ault:amda100': {
+                    'latency': (2.7, None, 0.10, 'us')
+                },
+                'ault:amdvega': {
+                    'latency': (2.64, None, 0.10, 'us')
+                },
+            },
+        }
+        self.reference = self.sys_reference[kernel_version]
