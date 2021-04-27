@@ -5,6 +5,7 @@
 
 import json
 import jsonschema
+import lxml.etree as etree
 import os
 import re
 
@@ -13,13 +14,8 @@ import reframe.core.exceptions as errors
 import reframe.utility.jsonext as jsonext
 import reframe.utility.versioning as versioning
 
-from io import BytesIO, StringIO
-from lxml import etree
-from reframe.frontend.statistics import junit_lxml
-
 DATA_VERSION = '1.3.0'
 _SCHEMA = os.path.join(rfm.INSTALL_PREFIX, 'reframe/schemas/runreport.json')
-_JUNIT_SCHEMA = os.path.join(rfm.INSTALL_PREFIX, 'reframe/schemas/JUnit.xsd')
 
 
 class _RunReport:
@@ -158,31 +154,46 @@ def load_report(filename):
     return _RunReport(report)
 
 
-def load_xml_report(filename):
-    try:
-        with open(filename, 'r') as fp:
-            json_report = json.load(fp)
-    except OSError as e:
-        raise errors.ReframeError(
-            f'failed to load report xml file {filename!r}') from e
-    except json.JSONDecodeError as e:
-        raise errors.ReframeError(
-            f'report file {filename!r} is not a valid JSON file') from e
+def junit_xml_report(json_report):
+    '''Generate a JUnit report from a standard ReFrame JSON report.'''
 
-    # https://raw.githubusercontent.com/windyroad/JUnit-Schema/master/JUnit.xsd
-    f = open(_JUNIT_SCHEMA, 'rb')
-    try:
-        schema = etree.XMLSchema(file=f)
-    finally:
-        f.close()
+    xml_testsuites = etree.Element('testsuites')
+    xml_testsuite = etree.SubElement(
+        xml_testsuites, 'testsuite',
+        attrib={
+            'name': 'rfm',
+            'errors': '0',
+            'failures': str(json_report['session_info']['num_failures']),
+            'tests': str(json_report['session_info']['num_cases']),
+            'time': str(json_report['session_info']['time_elapsed']),
+            'hostname': json_report['session_info']['hostname'],
+        }
+    )
 
-    rfm_tree = etree.fromstring(junit_lxml(json_report))
-    text = etree.tostring(rfm_tree)
-    f = BytesIO(text) if isinstance(text, bytes) else StringIO(text)
-    tree_valid = etree.parse(f)
-    try:
-        schema.validate(tree_valid)
-    except ValidationError as e:
-        raise errors.ReframeError(f'invalid junit report {filename!r}') from e
+    for testid in range(len(json_report['runs'][0]['testcases'])):
+        tid = json_report['runs'][0]['testcases'][testid]
+        casename = (
+            f"{tid['name']}[{tid['system']}, {tid['environment']}]"
+        )
+        testcase = etree.SubElement(
+            xml_testsuite, 'testcase',
+            attrib={
+                'classname': tid['filename'],
+                'name': casename,
+                'time': str(tid['time_total']),
+            }
+        )
+        if tid['result'] == 'failure':
+            testcase_msg = etree.SubElement(
+                testcase, 'failure', attrib={'type': tid['fail_phase']}
+            )
+            testcase_msg.text = tid['fail_reason']
 
-    return _RunReport(json_report)
+    return xml_testsuites
+
+
+def junit_dump(xml, fp):
+    fp.write(
+        etree.tostring(xml, encoding='utf8', pretty_print=True,
+                       method='xml', xml_declaration=True).decode()
+    )

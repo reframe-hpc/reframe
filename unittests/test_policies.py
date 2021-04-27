@@ -21,6 +21,7 @@ import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 import unittests.utility as test_util
 
+from lxml import etree
 from reframe.core.exceptions import (AbortTaskError,
                                      FailureLimitError,
                                      ReframeError,
@@ -178,6 +179,16 @@ def _validate_runreport(report):
     jsonschema.validate(json.loads(report), schema)
 
 
+def _validate_junit_report(report):
+    # Cloned from
+    # https://raw.githubusercontent.com/windyroad/JUnit-Schema/master/JUnit.xsd
+    schema_file = 'reframe/schemas/junit.xsd'
+    with open(schema_file) as fp:
+        schema = etree.XMLSchema(etree.parse(fp))
+
+    schema.assert_(report)
+
+
 def _generate_runreport(run_stats, time_start, time_end):
     return {
         'session_info': {
@@ -227,7 +238,8 @@ def test_runall(make_runner, make_cases, common_exec_ctx, tmp_path):
         jsonext.dump(report, fp)
 
     # Validate the junit report
-    runreport.load_xml_report(report_file)
+    xml_report = runreport.junit_xml_report(report)
+    _validate_junit_report(xml_report)
 
     # Read and validate the report using the runreport module
     runreport.load_report(report_file)

@@ -5,8 +5,6 @@
 
 import inspect
 import traceback
-import xml.etree.ElementTree as ET
-import lxml.etree as LX
 
 import reframe.core.runtime as rt
 import reframe.core.exceptions as errors
@@ -327,77 +325,3 @@ class TestStats:
                               report_end])
 
         return ''
-
-
-def junit_xml(json_report):
-    # https://github.com/windyroad/JUnit-Schema/blob/master/JUnit.xsd
-    xml_testsuites = ET.Element('testsuites')
-    xml_testsuite = ET.SubElement(
-        xml_testsuites, 'testsuite',
-        attrib={
-            'name': 'rfm',
-            'errors': '0',
-            'failures': str(json_report['session_info']['num_failures']),
-            'tests': str(json_report['session_info']['num_cases']),
-            'time': str(json_report['session_info']['time_elapsed']),
-            'hostname': json_report['session_info']['hostname'],
-        }
-    )
-
-    for testid in range(len(json_report['runs'][0]['testcases'])):
-        tid = json_report['runs'][0]['testcases'][testid]
-        casename = (
-            f"{tid['name']}[{tid['system']}, {tid['environment']}]"
-        )
-        testcase = ET.SubElement(
-            xml_testsuite, 'testcase',
-            attrib={
-                'classname': tid['filename'],
-                'name': casename,
-                'time': str(tid['time_total']),
-            }
-        )
-        if tid['result'] == 'failure':
-            testcase_msg = ET.SubElement(
-                testcase, 'failure', attrib={'type': tid['fail_phase']}
-            )
-            testcase_msg.text = tid['fail_reason']
-
-    return ET.tostring(xml_testsuites, encoding='utf8', method='xml')
-
-def junit_lxml(json_report):
-    # https://lxml.de/tutorial.html
-    xml_testsuites = LX.Element('testsuites')
-    xml_testsuite = LX.SubElement(
-        xml_testsuites, 'testsuite',
-        attrib={
-            'name': 'rfm',
-            'errors': '0',
-            'failures': str(json_report['session_info']['num_failures']),
-            'tests': str(json_report['session_info']['num_cases']),
-            'time': str(json_report['session_info']['time_elapsed']),
-            'hostname': json_report['session_info']['hostname'],
-        }
-    )
-
-    for testid in range(len(json_report['runs'][0]['testcases'])):
-        tid = json_report['runs'][0]['testcases'][testid]
-        casename = (
-            f"{tid['name']}[{tid['system']}, {tid['environment']}]"
-        )
-        testcase = LX.SubElement(
-            xml_testsuite, 'testcase',
-            attrib={
-                'classname': tid['filename'],
-                'name': casename,
-                'time': str(tid['time_total']),
-            }
-        )
-        if tid['result'] == 'failure':
-            testcase_msg = LX.SubElement(
-                testcase, 'failure', attrib={'type': tid['fail_phase']}
-            )
-            testcase_msg.text = tid['fail_reason']
-
-    return LX.tostring(xml_testsuites, encoding='utf8', pretty_print=True,
-                       method='xml', xml_declaration=True)

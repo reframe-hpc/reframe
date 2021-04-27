@@ -34,7 +34,6 @@ from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
 from reframe.frontend.executors import Runner, generate_testcases
-from reframe.frontend.statistics import junit_lxml
 
 
 def format_check(check, check_deps, detailed=False):
@@ -210,7 +209,7 @@ def main():
     )
     output_options.add_argument(
         '--report-junit', action='store', metavar='FILE',
-        help="Store XML junit run report in FILE",
+        help="Store a JUnit report in FILE",
         envvar='RFM_REPORT_JUNIT',
         configvar='general/report_junit'
     )
@@ -1029,19 +1028,17 @@ def main():
                 )
 
             # Generate the junit xml report for this session
-            report_xml = 'general/0/report_junit'
-            if site_config.get(report_xml) or os.getenv('RFM_REPORT_JUNIT'):
-                xml_report_file = os.path.normpath(
-                    osext.expandvars(rt.get_option(report_xml))
-                )
-                xml_data = junit_lxml(json_report).decode()
+            junit_report_file = rt.get_option('general/0/report_junit')
+            if junit_report_file:
+                # Expand variables in filename
+                junit_report_file = osext.expandvars(junit_report_file)
+                junit_xml = runreport.junit_xml_report(json_report)
                 try:
-                    with open(xml_report_file, 'w') as fp:
-                        fp.write(str(xml_data))
-                        fp.write('\n')
+                    with open(junit_report_file, 'w') as fp:
+                        runreport.junit_dump(junit_xml, fp)
                 except OSError as e:
                     printer.warning(
-                        f'failed to generate report in {xml_report_file!r}:'
+                        f'failed to generate report in {junit_report_file!r}: '
                         f'{e}'
                     )
 
