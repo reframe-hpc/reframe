@@ -23,24 +23,28 @@ class NvmlCheck(rfm.RegressionTest):
                     require < high bandwidth double precision.
     '''
 
-    def __init__(self):
-        self.descr = 'check GPU compute mode'
-        self.valid_systems = ['daint:gpu', 'dom:gpu']
-        self.valid_prog_environs = ['PrgEnv-gnu']
-        self.modules = ['craype-accel-nvidia60']
-        self.build_system = 'SingleSource'
-        self.sourcepath = 'example.c'
-        self.prebuild_cmds = [
-            'cp $CUDATOOLKIT_HOME/nvml/example/example.c .',
-            'patch -i ./nvml_example.patch'
-        ]
+    descr = 'check GPU compute mode'
+    valid_systems = ['daint:gpu', 'dom:gpu']
+    valid_prog_environs = ['PrgEnv-gnu']
+    modules = ['craype-accel-nvidia60']
+    build_system = 'SingleSource'
+    sourcepath = 'example.c'
+    prebuild_cmds = [
+        'cp $CUDATOOLKIT_HOME/nvml/example/example.c .',
+        'patch -i ./nvml_example.patch'
+    ]
+    maintainers = ['AJ', 'SK']
+    tags = {'production', 'craype', 'external-resources', 'health'}
+
+    @rfm.run_before('compile')
+    def set_build_flags(self):
         self.build_system.ldflags = ['-lnvidia-ml']
+
+    @rfm.run_before('sanity')
+    def set_sanity_patterns(self):
         if self.current_system.name in {'dom', 'daint'}:
             regex = (r"\s+Changing device.s compute mode from "
                      r"'Exclusive Process' to ")
         else:
             regex = r"\s+Changing device.s compute mode from 'Default' to "
-
         self.sanity_patterns = sn.assert_found(regex, self.stdout)
-        self.maintainers = ['AJ', 'SK']
-        self.tags = {'production', 'craype', 'external-resources', 'health'}
