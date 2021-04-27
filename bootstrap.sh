@@ -71,11 +71,12 @@ fi
 
 # Check if ensurepip is installed
 $python -m ensurepip --version &> /dev/null
+epip=$?
 
 export PATH=$(pwd)/external/usr/bin:$PATH
 
 # Install pip for Python 3
-if [ $? -eq 0 ]; then
+if [ $epip -eq 0 ]; then
     CMD $python -m ensurepip --root $(pwd)/external/ --default-pip
 fi
 

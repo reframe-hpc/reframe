@@ -117,18 +117,24 @@ Trying to use the standard print here :func:`print` function here would be of li
 
 
 .. code-block:: python
-   :emphasize-lines: 11
+   :emphasize-lines: 15-17
 
    import reframe as rfm
    import reframe.utility.sanity as sn
 
 
-   @rfm.parameterized_test(['c'], ['cpp'])
+   @rfm.simple_test
    class HelloMultiLangTest(rfm.RegressionTest):
-       def __init__(self, lang):
-           self.valid_systems = ['*']
-           self.valid_prog_environs = ['*']
-           self.sourcepath = f'hello.{lang}'
+       lang = parameter(['c', 'cpp'])
+       valid_systems = ['*']
+       valid_prog_environs = ['*']
+
+       @rfm.run_after('compile')
+       def set_sourcepath(self):
+           self.sourcepath = f'hello.{self.lang}'
+
+       @rfm.run_before('sanity')
+       def set_sanity_patterns(self):
            self.sanity_patterns = sn.assert_found(r'Hello, World\!', sn.print(self.stdout))
 
 
@@ -327,12 +333,11 @@ Assume you have a test that loads a ``gromacs`` module:
 .. code-block:: python
 
    class GromacsTest(rfm.RunOnlyRegressionTest):
-       def __init__(self):
-           ...
-           self.modules = ['gromacs']
+       ...
+       modules = ['gromacs']
 
 
-This test would the default version of the module in the system, but you might want to test another version, before making that new one the default.
+This test would use the default version of the module in the system, but you might want to test another version, before making that new one the default.
 You can ask ReFrame to temporarily replace the ``gromacs`` module with another one as follows:
 
 
