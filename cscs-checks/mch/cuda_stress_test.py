@@ -9,9 +9,18 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class CudaStressTest(rfm.RegressionTest):
-    def __init__(self):
-        self.descr = 'MCH CUDA stress test'
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn']
+    descr = 'MCH CUDA stress test'
+    valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn']
+    valid_prog_environs = ['*']
+    sourcepath = 'cuda_stencil_test.cu'
+    build_system = 'SingleSource'
+    num_tasks = 1
+    num_gpus_per_node = 1
+    tags = {'production', 'mch', 'craype', 'health'}
+    maintainers = ['MKr', 'AJ']
+
+    @rfm.run_after('init')
+    def set_environment(self):
         if self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-gnu-nompi',
@@ -21,11 +30,12 @@ class CudaStressTest(rfm.RegressionTest):
             self.valid_prog_environs = ['PrgEnv-gnu']
             self.modules = ['craype-accel-nvidia60', 'cdt-cuda']
 
-        self.sourcepath = 'cuda_stencil_test.cu'
-        self.build_system = 'SingleSource'
+    @rfm.run_before('compile')
+    def set_compile_flags(self):
         self.build_system.cxxflags = ['-std=c++11']
-        self.num_tasks = 1
-        self.num_gpus_per_node = 1
+
+    @rfm.run_before('sanity')
+    def set_sanity_and_perf(self):
         self.sanity_patterns = sn.assert_found(r'Result: OK', self.stdout)
         self.perf_patterns = {
             'time': sn.extractsingle(r'Timing: (\S+)', self.stdout, 1, float)
@@ -38,5 +48,3 @@ class CudaStressTest(rfm.RegressionTest):
                 'time': (1.39758, None, 0.05, 's')
             },
         }
-        self.tags = {'production', 'mch', 'craype', 'health'}
-        self.maintainers = ['MKr', 'AJ']
