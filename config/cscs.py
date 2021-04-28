@@ -984,7 +984,7 @@ site_configuration = {
             ],
             'modules': [
                 'PrgEnv-aocc'
-            ],
+            ]
         },
         {
             'name': 'PrgEnv-cray',
@@ -993,7 +993,7 @@ site_configuration = {
             ],
             'modules': [
                 'PrgEnv-cray'
-            ],
+            ]
         },
         {
             'name': 'PrgEnv-gnu',
@@ -1002,7 +1002,7 @@ site_configuration = {
             ],
             'modules': [
                 'PrgEnv-gnu'
-            ],
+            ]
         },
         {
             'name': 'PrgEnv-intel',
@@ -1011,7 +1011,7 @@ site_configuration = {
             ],
             'modules': [
                 'PrgEnv-intel'
-            ],
+            ]
         },
         {
             'name': 'cpeAMD',
@@ -1053,7 +1053,7 @@ site_configuration = {
             'name': 'PrgEnv-cray',
             'modules': [
                 'PrgEnv-cray'
-            ],
+            ]
         },
         {
             'name': 'PrgEnv-gnu',
