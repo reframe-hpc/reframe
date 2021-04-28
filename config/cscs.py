@@ -667,7 +667,7 @@ site_configuration = {
             'name': 'eiger',
             'descr': 'Alps Cray EX Supercomputer',
             'hostnames': [
-                'alps'
+                'eiger'
             ],
             'modules_system': 'lmod',
             'resourcesdir': '/apps/common/UES/reframe/resources',
