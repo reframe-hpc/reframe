@@ -9,11 +9,13 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class DeferredIterationTest(rfm.RunOnlyRegressionTest):
-    def __init__(self):
-        self.descr = 'Apply a sanity function iteratively'
-        self.valid_systems = ['*']
-        self.valid_prog_environs = ['*']
-        self.executable = './random_numbers.sh'
+    descr = 'Apply a sanity function iteratively'
+    valid_systems = ['*']
+    valid_prog_environs = ['*']
+    executable = './random_numbers.sh'
+
+    @rfm.run_before('sanity')
+    def set_sanity_patterns(self):
         numbers = sn.extractall(
             r'Random: (?P<number>\S+)', self.stdout, 'number', float
         )

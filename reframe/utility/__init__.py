@@ -573,7 +573,8 @@ def find_modules(substr, environ_mapping=None):
        class MyTest(rfm.RegressionTest):
            module_info = parameter(find_modules('netcdf'))
 
-           def __init__(self):
+           @rfm.run_after('init')
+           def apply_module_info(self):
                s, e, m = self.module_info
                self.valid_systems = [s]
                self.valid_prog_environs = [e]
@@ -598,7 +599,8 @@ def find_modules(substr, environ_mapping=None):
        class MyTest(rfm.RegressionTest):
            module_info = parameter(my_find_modules('GROMACS'))
 
-           def __init__(self):
+           @rfm.run_after('init')
+           def apply_module_info(self):
                s, e, m = self.module_info
                self.valid_systems = [s]
                self.valid_prog_environs = [e]
