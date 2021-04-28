@@ -71,10 +71,12 @@ class NamdBaseCheck(rfm.RunOnlyRegressionTest):
         }
 
 
-@rfm.parameterized_test(*([s, v]
-                          for s in ['small', 'large']
-                          for v in ['maint', 'prod']))
+@rfm.simple_test
 class NamdGPUCheck(NamdBaseCheck):
+    test_configuration = parameter(*([s, v]
+                                     for s in ['small', 'large']
+                                     for v in ['maint', 'prod']))
+
     def __init__(self, scale, variant):
         super().__init__('gpu', scale, variant)
         self.valid_systems = ['daint:gpu']
@@ -94,10 +96,12 @@ class NamdGPUCheck(NamdBaseCheck):
             }
 
 
-@rfm.parameterized_test(*([s, v]
-                          for s in ['small', 'large']
-                          for v in ['maint', 'prod']))
+@rfm.simple_test
 class NamdCPUCheck(NamdBaseCheck):
+    test_configuration = parameter(*([s, v]
+                                     for s in ['small', 'large']
+                                     for v in ['maint', 'prod']))
+
     def __init__(self, scale, variant):
         super().__init__('cpu', scale, variant)
         self.valid_systems = ['daint:mc', 'eiger:mc', 'pilatus:mc']
