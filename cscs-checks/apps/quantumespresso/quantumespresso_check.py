@@ -56,12 +56,12 @@ class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
             elif self.current_system.name in ['eiger', 'pilatus']:
                 self.num_tasks = 96
                 self.num_tasks_per_node = 16
-                self.num_cpus_per_task = 16
+                self.num_cpus_per_task = 1
                 self.num_tasks_per_core = 1
                 self.use_multithreading = False
                 self.variables = {
                     'MPICH_OFI_STARTUP_CONNECT': '1',
-                    'OMP_NUM_THREADS': '8',
+                    'OMP_NUM_THREADS': str(self.num_cpus_per_task),
                     'OMP_PLACES': 'cores',
                     'OMP_PROC_BIND': 'close'
                 }
@@ -73,12 +73,12 @@ class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
             elif self.current_system.name in ['eiger', 'pilatus']:
                 self.num_tasks = 256
                 self.num_tasks_per_node = 16
-                self.num_cpus_per_task = 16
+                self.num_cpus_per_task = 1
                 self.num_tasks_per_core = 1
                 self.use_multithreading = False
                 self.variables = {
                     'MPICH_OFI_STARTUP_CONNECT': '1',
-                    'OMP_NUM_THREADS': '8',
+                    'OMP_NUM_THREADS': str(self.num_cpus_per_task),
                     'OMP_PLACES': 'cores',
                     'OMP_PROC_BIND': 'close'
                 }
