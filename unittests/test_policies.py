@@ -239,6 +239,7 @@ def test_runall(make_runner, make_cases, common_exec_ctx, tmp_path):
 
     # Validate the junit report
     xml_report = runreport.junit_xml_report(report)
+    # print(f'xml_report={xml_report}')
     _validate_junit_report(xml_report)
 
     # Read and validate the report using the runreport module
@@ -481,7 +482,7 @@ def assert_dependency_run(runner):
     assert_runall(runner)
     stats = runner.stats
     assert 10 == stats.num_cases(0)
-    assert 4  == len(stats.failed())
+    assert 4 == len(stats.failed())
     for tf in stats.failed():
         check = tf.testcase.check
         _, exc_value, _ = tf.exc_info

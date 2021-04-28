@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import dateutil.parser as parser
 import json
 import jsonschema
 import lxml.etree as etree
@@ -158,18 +159,24 @@ def junit_xml_report(json_report):
     '''Generate a JUnit report from a standard ReFrame JSON report.'''
 
     xml_testsuites = etree.Element('testsuites')
+    isotime = parser.parse(json_report['session_info']['time_start'][:-6])
     xml_testsuite = etree.SubElement(
         xml_testsuites, 'testsuite',
         attrib={
-            'name': 'rfm',
             'errors': '0',
             'failures': str(json_report['session_info']['num_failures']),
+            'hostname': json_report['session_info']['hostname'],
+            'id': '0',
+            'name': 'rfm',
+            'package': 'rfm',
             'tests': str(json_report['session_info']['num_cases']),
             'time': str(json_report['session_info']['time_elapsed']),
-            'hostname': json_report['session_info']['hostname'],
+            'timestamp': isotime.isoformat(),
         }
     )
-
+    testsuite_properties = etree.SubElement(xml_testsuite, 'properties')
+    # etree.SubElement(testsuite_properties, "property",
+    #                  {'name': 'x', 'value': '0'})
     for testid in range(len(json_report['runs'][0]['testcases'])):
         tid = json_report['runs'][0]['testcases'][testid]
         casename = (
@@ -185,10 +192,41 @@ def junit_xml_report(json_report):
         )
         if tid['result'] == 'failure':
             testcase_msg = etree.SubElement(
-                testcase, 'failure', attrib={'type': tid['fail_phase']}
+                testcase, 'failure', attrib={'type': 'failure',
+                                             'message': tid['fail_phase']}
             )
-            testcase_msg.text = tid['fail_reason']
+            testcase_msg.text = f"{tid['fail_phase']}: {tid['fail_reason']}"
 
+    testsuite_stdo = etree.SubElement(xml_testsuite, 'system-out')
+    testsuite_stdo.text = ''
+    testsuite_stde = etree.SubElement(xml_testsuite, 'system-err')
+    testsuite_stde.text = ''
+
+    # ---
+    # testcase_error = etree.SubElement(
+    #     xml_testsuite, 'testcase',
+    #     attrib={'classname': 'rfmE', 'name': 'test error', 'time': '0'}
+    # )
+    # testcase_error_msg = etree.SubElement(
+    #     testcase_error, 'error',
+    #     attrib={'message': 'no test error', 'type': 'error'}
+    # )
+    # testcase_error_msg.text = 'E'
+    # ---
+    # testcase_skip = etree.SubElement(
+    #     xml_testsuite, 'testcase',
+    #     attrib={'classname': 'rfmS', 'name': 'test skip', 'time': '0'}
+    # )
+    # testcase_skip_msg = etree.SubElement(
+    #     testcase_skip, 'skipped',
+    #     attrib={'message': 'no test skipped', 'type': 'skipped'}
+    # )
+    # testcase_skip_msg.text = 'S'
+
+    # debug_str = etree.tostring(xml_testsuites, encoding='utf8',
+    #                            pretty_print=True, method='xml',
+    #                            xml_declaration=True).decode()
+    # print(f'xml_testsuites={debug_str}')
     return xml_testsuites
 
 
