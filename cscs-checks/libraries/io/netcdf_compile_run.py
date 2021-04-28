@@ -33,6 +33,7 @@ class NetCDFTest(rfm.RegressionTest):
         elif self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-gnu-nompi', 'PrgEnv-pgi-nompi']
+        # no cray-netcdf as of PE 21.02 with PrgEnv-intel
         elif self.current_system.name in ['eiger', 'pilatus']:
             self.valid_prog_environs = ['PrgEnv-aocc', 'PrgEnv-cray',
                                         'PrgEnv-gnu']
