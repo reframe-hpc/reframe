@@ -1234,6 +1234,24 @@ General Configuration
    .. versionadded:: 3.6
 
 
+.. js:attribute:: .general[].resolve_module_conflicts
+
+   :required: No
+   :default: ``true``
+
+   ReFrame by default resolves any module conflicts and emits the right sequence of ``module unload`` and ``module load`` commands, in order to load the requested modules.
+   This option disables this behavior if set to ``false``.
+
+   You should avoid using this option for modules system that cannot handle module conflicts automatically, such as early Tmod verions.
+
+   Disabling the automatic module conflict resolution, however, can be useful when modules in a remote system partition are not present on the host where ReFrame runs.
+   In order to resolve any module conflicts and generate the right load sequence of modules, ReFrame loads temporarily the requested modules and tracks any conflicts along the way.
+   By disabling this option, ReFrame will simply emit the requested ``module load`` commands without attempting to load any module.
+
+
+   .. versionadded:: 3.6.0
+
+
 .. js:attribute:: .general[].save_log_files
 
    :required: No

@@ -13,27 +13,27 @@ import reframe.utility.udeps as udeps
 class OSUBenchmarkTestBase(rfm.RunOnlyRegressionTest):
     '''Base class of OSU benchmarks runtime tests'''
 
-    def __init__(self):
-        self.valid_systems = ['daint:gpu']
-        self.valid_prog_environs = ['gnu', 'pgi', 'intel']
-        self.sourcesdir = None
-        self.num_tasks = 2
-        self.num_tasks_per_node = 1
-        self.sanity_patterns = sn.assert_found(r'^8', self.stdout)
+    valid_systems = ['daint:gpu']
+    valid_prog_environs = ['gnu', 'pgi', 'intel']
+    sourcesdir = None
+    num_tasks = 2
+    num_tasks_per_node = 1
+
+    @rfm.run_after('init')
+    def set_dependencies(self):
         self.depends_on('OSUBuildTest', udeps.by_env)
+
+    @rfm.run_before('sanity')
+    def set_sanity_patterns(self):
+        self.sanity_patterns = sn.assert_found(r'^8', self.stdout)
 
 
 @rfm.simple_test
 class OSULatencyTest(OSUBenchmarkTestBase):
-    def __init__(self):
-        super().__init__()
-        self.descr = 'OSU latency test'
-        self.perf_patterns = {
-            'latency': sn.extractsingle(r'^8\s+(\S+)', self.stdout, 1, float)
-        }
-        self.reference = {
-            '*': {'latency': (0, None, None, 'us')}
-        }
+    descr = 'OSU latency test'
+    reference = {
+        '*': {'latency': (0, None, None, 'us')}
+    }
 
     @rfm.require_deps
     def set_executable(self, OSUBuildTest):
@@ -43,19 +43,19 @@ class OSULatencyTest(OSUBenchmarkTestBase):
         )
         self.executable_opts = ['-x', '100', '-i', '1000']
 
+    @rfm.run_before('performance')
+    def set_perf_patterns(self):
+        self.perf_patterns = {
+            'latency': sn.extractsingle(r'^8\s+(\S+)', self.stdout, 1, float)
+        }
+
 
 @rfm.simple_test
 class OSUBandwidthTest(OSUBenchmarkTestBase):
-    def __init__(self):
-        super().__init__()
-        self.descr = 'OSU bandwidth test'
-        self.perf_patterns = {
-            'bandwidth': sn.extractsingle(r'^4194304\s+(\S+)',
-                                          self.stdout, 1, float)
-        }
-        self.reference = {
-            '*': {'bandwidth': (0, None, None, 'MB/s')}
-        }
+    descr = 'OSU bandwidth test'
+    reference = {
+        '*': {'bandwidth': (0, None, None, 'MB/s')}
+    }
 
     @rfm.require_deps
     def set_executable(self, OSUBuildTest):
@@ -65,20 +65,24 @@ class OSUBandwidthTest(OSUBenchmarkTestBase):
         )
         self.executable_opts = ['-x', '100', '-i', '1000']
 
+    @rfm.run_before('performance')
+    def set_perf_patterns(self):
+        self.perf_patterns = {
+            'bandwidth': sn.extractsingle(r'^4194304\s+(\S+)',
+                                          self.stdout, 1, float)
+        }
+
 
 @rfm.simple_test
 class OSUAllreduceTest(OSUBenchmarkTestBase):
     mpi_tasks = parameter(1 << i for i in range(1, 5))
+    descr = 'OSU Allreduce test'
+    reference = {
+        '*': {'latency': (0, None, None, 'us')}
+    }
 
-    def __init__(self):
-        super().__init__()
-        self.descr = 'OSU Allreduce test'
-        self.perf_patterns = {
-            'latency': sn.extractsingle(r'^8\s+(\S+)', self.stdout, 1, float)
-        }
-        self.reference = {
-            '*': {'latency': (0, None, None, 'us')}
-        }
+    @rfm.run_after('init')
+    def set_num_tasks(self):
         self.num_tasks = self.mpi_tasks
 
     @rfm.require_deps
@@ -89,17 +93,23 @@ class OSUAllreduceTest(OSUBenchmarkTestBase):
         )
         self.executable_opts = ['-m', '8', '-x', '1000', '-i', '20000']
 
+    @rfm.run_before('performance')
+    def set_perf_patterns(self):
+        self.perf_patterns = {
+            'latency': sn.extractsingle(r'^8\s+(\S+)', self.stdout, 1, float)
+        }
+
 
 @rfm.simple_test
 class OSUBuildTest(rfm.CompileOnlyRegressionTest):
-    def __init__(self):
-        self.descr = 'OSU benchmarks build test'
-        self.valid_systems = ['daint:gpu']
-        self.valid_prog_environs = ['gnu', 'pgi', 'intel']
+    descr = 'OSU benchmarks build test'
+    valid_systems = ['daint:gpu']
+    valid_prog_environs = ['gnu', 'pgi', 'intel']
+    build_system = 'Autotools'
+
+    @rfm.run_after('init')
+    def inject_dependencies(self):
         self.depends_on('OSUDownloadTest', udeps.fully)
-        self.build_system = 'Autotools'
-        self.build_system.max_concurrency = 8
-        self.sanity_patterns = sn.assert_not_found('error', self.stderr)
 
     @rfm.require_deps
     def set_sourcedir(self, OSUDownloadTest):
@@ -108,18 +118,28 @@ class OSUBuildTest(rfm.CompileOnlyRegressionTest):
             'osu-micro-benchmarks-5.6.2'
         )
 
+    @rfm.run_before('compile')
+    def set_build_system_attrs(self):
+        self.build_system.max_concurrency = 8
+
+    @rfm.run_before('sanity')
+    def set_sanity_patterns(self):
+        self.sanity_patterns = sn.assert_not_found('error', self.stderr)
+
 
 @rfm.simple_test
 class OSUDownloadTest(rfm.RunOnlyRegressionTest):
-    def __init__(self):
-        self.descr = 'OSU benchmarks download sources'
-        self.valid_systems = ['daint:login']
-        self.valid_prog_environs = ['builtin']
-        self.executable = 'wget'
-        self.executable_opts = [
-            'http://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-5.6.2.tar.gz'  # noqa: E501
-        ]
-        self.postrun_cmds = [
-            'tar xzf osu-micro-benchmarks-5.6.2.tar.gz'
-        ]
+    descr = 'OSU benchmarks download sources'
+    valid_systems = ['daint:login']
+    valid_prog_environs = ['builtin']
+    executable = 'wget'
+    executable_opts = [
+        'http://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-5.6.2.tar.gz'  # noqa: E501
+    ]
+    postrun_cmds = [
+        'tar xzf osu-micro-benchmarks-5.6.2.tar.gz'
+    ]
+
+    @rfm.run_before('sanity')
+    def set_sanity_patterns(self):
         self.sanity_patterns = sn.assert_not_found('error', self.stderr)

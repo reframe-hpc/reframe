@@ -56,7 +56,7 @@ And here is the ReFrame version of it:
 
 Regression tests in ReFrame are specially decorated classes that ultimately derive from :class:`~reframe.core.pipeline.RegressionTest`.
 The :func:`@simple_test <reframe.core.decorators.simple_test>` decorator registers a test class with ReFrame and makes it available to the framework.
-The test variables are essentially attributes of the test class and  can be defined either in the test constructor (:func:`__init__` function) or the class body using the :func:`~reframe.core.pipeline.RegressionTest.variable` ReFrame builtin.
+The test variables are essentially attributes of the test class and can be defined directly in the class body.
 Each test must always set the :attr:`~reframe.core.pipeline.RegressionTest.valid_systems` and :attr:`~reframe.core.pipeline.RegressionTest.valid_prog_environs` attributes.
 These define the systems and/or system partitions that this test is allowed to run on, as well as the programming environments that it is valid for.
 A programming environment is essentially a compiler toolchain.
@@ -67,12 +67,14 @@ In this particular test we set both these attributes to ``['*']``, essentially a
 A ReFrame test must either define an executable to execute or a source file (or source code) to be compiled.
 In this example, it is enough to define the source file of our hello program.
 ReFrame knows the executable that was produced and will use that to run the test.
+In this example, we redirect the executable's output into a file by defining the optional variable :attr:`~reframe.core.pipeline.RegressionTest.executable_opts`.
+This output redirection is not strictly necessary and it is just done here to keep this first example as intuitive as possible.
 
 Finally, each regression test must always define the :attr:`~reframe.core.pipeline.RegressionTest.sanity_patterns` attribute.
 This is a `lazily evaluated <deferrables.html>`__ expression that asserts the sanity of the test.
-In this particular case, we ask ReFrame to check for the desired phrase in the test's standard output.
+In this particular case, we ask ReFrame to check that the executable has produced the desired phrase into the output file ``hello.out``.
 Note that ReFrame does not determine the success of a test by its exit code.
-The assessment of success is responsibility of the test itself.
+Instead, the assessment of success is responsibility of the test itself.
 
 Before running the test let's inspect the directory structure surrounding it:
 
@@ -231,10 +233,32 @@ ReFrame allows you to avoid this in several ways but the most compact is to defi
    :lines: 6-
 
 
-This is exactly the same test as the ``hello1.py`` except that it defines the ``lang`` parameter to denote the programming language to be used by the test.
-The :py:func:`~reframe.core.pipeline.RegressionTest.parameter` ReFrame built-in defines a new parameter for the test and will cause multiple instantiations of the test, each one setting the :attr:`lang` attribute to the actual parameter value.
-In this example, two tests will be created, one with ``lang='c'`` and another with ``lang='cpp'``.
-The parameter is available as an attribute of the test class and, in this example, we use it to set the extension of the source file.
+This test extends the ``hello1.py`` test by defining the ``lang`` parameter with the :py:func:`~reframe.core.pipeline.RegressionTest.parameter` built-in.
+This parameter will cause as many instantiations as parameter values available, each one setting the :attr:`lang` attribute to one single value.
+Hence, this example will create two test instances, one with ``lang='c'`` and another with ``lang='cpp'``.
+The parameter is available as an attribute of the test instance and, in this example, we use it to set the extension of the source file.
+However, at the class level, a test parameter holds all the possible values for itself, and this is only assigned a single value after the class is instantiated.
+Therefore, the variable ``sourcepath``, which depends on this parameter, also needs to be set after the class instantiation.
+The simplest way to do this would be to move the ``sourcepath`` assignment into the :func:`__init__` method as shown in the code snippet below, but this has some disadvantages when writing larger tests.
+
+.. code-block:: python
+
+  def __init__(self):
+      self.sourcepath = f'hello.{self.lang}'
+
+For example, when writing a base class for a test with a large amount of code into the :func:`__init__` method, the derived class may want to do a partial override of the code in this function.
+This would force us to understand the full implementation of the base class' :func:`__init__` despite that we may just be interested in overriding a small part of it.
+Doable, but not ideal.
+Instead, through pipeline hooks, ReFrame provides a mechanism to attach independent functions to execute at a given time before the data they set is required by the test.
+This is exactly what we want to do here, and we know that the test sources are needed to compile the code.
+Hence, we move the ``sourcepath`` assignment into a pre-compile hook.
+
+.. literalinclude:: ../tutorials/basics/hello/hello2.py
+   :lines: 19-
+
+The use of hooks is covered in more detail later on, but for now, let's just think of them as a way to defer the execution of a function to a given stage of the test's pipeline.
+By using hooks, any user could now derive from this class and attach other hooks (for example, adding some compiler flags) without having to worry about overriding the base method that sets the ``sourcepath`` variable.
+
 Let's run the test now:
 
 
@@ -427,33 +451,35 @@ Here is the corresponding ReFrame test, where the new concepts introduced are hi
 
 .. literalinclude:: ../tutorials/basics/hellomp/hellomp1.py
    :lines: 6-
-   :emphasize-lines: 11-13
+   :emphasize-lines: 10-10, 13-18
 
 
-In order to compile applications using ``std::thread`` with GCC and Clang, the ``-pthread`` option has to be passed to the compiler.
-Since the above option might not be valid for other compilers, we use pipeline hooks to differentiate based on the programming environment as follows:
-
-.. code-block:: python
-
-   @rfm.run_before('compile')
-   def set_threading_flags(self):
-       environ = self.current_environ.name
-       if environ in {'clang', 'gnu'}:
-           self.build_system.cxxflags += ['-pthread']
-
+ReFrame delegates the compilation of a test to a :attr:`~reframe.core.pipeline.RegressionTest.build_system`, which is an abstraction of the steps needed to compile the test.
+Build systems take also care of interactions with the programming environment if necessary.
+Compilation flags are a property of the build system.
+If not explicitly specified, ReFrame will try to pick the correct build system (e.g., CMake, Autotools etc.) by inspecting the test resources, but in cases as the one presented here where we need to set the compilation flags, we need to specify a build system explicitly.
+In this example, we instruct ReFrame to compile a single source file using the ``-std=c++11 -pthread -Wall`` compilation flags.
+However, the flag ``-pthread`` is only needed to compile applications using ``std::thread`` with the GCC and Clang compilers.
+Hence, since this flag may not be valid for other compilers, we need to include it only in the tests that use either GCC or Clang.
+Similarly to the ``lang`` parameter in the previous example, the information regarding which compiler is being used is only available after the class is instantiated (after completion of the ``setup`` pipeline stage), so we also defer the addition of this optional compiler flag with a pipeline hook.
+In this case, we set the :func:`set_compile_flags` hook to run before the ReFrame pipeline stage ``compile``.
 
 .. note::
 
    The pipeline hooks, as well as the regression test pipeline itself, are covered in more detail later on in the tutorial.
 
 
-ReFrame delegates the compilation of a test to a *build system*, which is an abstraction of the steps needed to compile the test.
-Build systems take also care of interactions with the programming environment if necessary.
-Compilation flags are a property of the build system.
-If not explicitly specified, ReFrame will try to pick the correct build system (e.g., CMake, Autotools etc.) by inspecting the test resources, but in cases as the one presented here where we need to set the compilation flags, we need to specify a build system explicitly.
-In this example, we instruct ReFrame to compile a single source file using the ``-std=c++11 -pthread -Wall`` compilation flags.
-Finally, we set the arguments to be passed to the generated executable in :attr:`executable_opts <reframe.core.pipeline.RegressionTest.executable_opts>`.
+In this example, the generated executable takes a single argument which sets the number of threads that will be used.
+As seen in the previous examples, executable options are defined with the :attr:`executable_opts <reframe.core.pipeline.RegressionTest.executable_opts>` variable, and here is set to ``'16'``.
+Also, the reader may notice that this example no longer redirects the standard output of the executable into a file as the previous examples did.
+Instead, just with the purpose of keeping the :attr:`executable_opts <reframe.core.pipeline.RegressionTest.executable_opts>` simple, we use ReFrame's internal mechanism to process the standard output of the executable.
+Similarly to the parameters and the compiler settings, the output of a test is private to each of the instances of the :class:`HelloThreadedTest` class.
+So, instead of inspecting an external file to evaluate the sanity of the test, we can just set our sanity function to inspect this attribute that contains the test's standard output.
+This output is stored under :attr:`self.stdout` and is populated only after the executable has run.
+Therefore, we can set the :attr:`~reframe.core.pipeline.RegressionTest.sanity_patterns` with the :func:`set_sanity_patterns` pipeline hook that is scheduled to run before the ``sanity`` pipeline stage.
+Again, pipeline stages will be covered detail further on, so for now, just think of this ``sanity`` stage as a step that occurs after the test's executable is run.
 
+Let's run the test now:
 
 .. code-block:: console
 
@@ -531,7 +557,7 @@ So far, we have seen only a ``grep``-like search for a string in the output, but
 In fact, you can practically do almost any operation in the output and process it as you would like before assessing the test's sanity.
 The syntax feels also quite natural since it is fully integrated in Python.
 
-In the following we extend the sanity checking of the multithreaded "Hello, World!", such that not only the output pattern we are looking for is more restrictive, but also we check that all the threads produce a greetings line.
+In the following we extend the sanity checking of the multithreaded "Hello, World!", such that not only the output pattern we are looking for is more restrictive, but also we check that all the threads produce a greetings line. See the highlighted lines in the modified version of the ``set_sanity_patterns`` pipeline hook.
 
 .. code-block:: console
 
@@ -540,7 +566,7 @@ In the following we extend the sanity checking of the multithreaded "Hello, Worl
 
 .. literalinclude:: ../tutorials/basics/hellomp/hellomp2.py
    :lines: 6-
-   :emphasize-lines: 14-16
+   :emphasize-lines: 22-24
 
 The sanity checking is straightforward.
 We find all the matches of the required pattern, we count them and finally we check their number.
@@ -626,7 +652,7 @@ To fix this test, we need to compile with ``-DSYNC_MESSAGES``, which will synchr
 
 .. literalinclude:: ../tutorials/basics/hellomp/hellomp3.py
    :lines: 6-
-   :emphasize-lines: 13
+   :emphasize-lines: 15
 
 
 Writing A Performance Test
@@ -643,7 +669,7 @@ In the test below, we highlight the lines that introduce new concepts.
 
 .. literalinclude:: ../tutorials/basics/stream/stream1.py
    :lines: 6-
-   :emphasize-lines: 10-12,17-20,23-32
+   :emphasize-lines: 9-11,14-17,29-40
 
 First of all, notice that we restrict the programming environments to ``gnu`` only, since this test requires OpenMP, which our installation of Clang does not have.
 The next thing to notice is the :attr:`~reframe.core.pipeline.RegressionTest.prebuild_cmds` attribute, which provides a list of commands to be executed before the build step.
@@ -736,7 +762,7 @@ In the following example, we set the reference values for all the STREAM sub-ben
 
 .. literalinclude:: ../tutorials/basics/stream/stream2.py
    :lines: 6-
-   :emphasize-lines: 33-
+   :emphasize-lines: 18-25
 
 
 The performance reference tuple consists of the reference value, the lower and upper thresholds expressed as fractional numbers relative to the reference value, and the unit of measurement.
@@ -1088,16 +1114,16 @@ Let's see and comment the changes:
 
 .. literalinclude:: ../tutorials/basics/stream/stream3.py
    :lines: 6-
-   :emphasize-lines: 9,37-
+   :emphasize-lines: 8, 27-41, 46-56
 
 First of all, we need to add the new programming environments in the list of the supported ones.
 Now there is the problem that each compiler has its own flags for enabling OpenMP, so we need to differentiate the behavior of the test based on the programming environment.
-For this reason, we define the flags for each compiler in a separate dictionary (``self.flags``) and we set them in the :func:`setflags` pipeline hook.
+For this reason, we define the flags for each compiler in a separate dictionary (``flags`` variable) and we set them in the :func:`set_compiler_flags` pipeline hook.
 We have first seen the pipeline hooks in the multithreaded "Hello, World!" example and now we explain them in more detail.
 When ReFrame loads a test file, it instantiates all the tests it finds in it.
 Based on the system ReFrame runs on and the supported environments of the tests, it will generate different test cases for each system partition and environment combination and it will finally send the test cases for execution.
 During its execution, a test case goes through the *regression test pipeline*, which is a series of well defined phases.
-Users can attach arbitrary functions to run before or after any pipeline stage and this is exactly what the :func:`setflags` function is.
+Users can attach arbitrary functions to run before or after any pipeline stage and this is exactly what the :func:`set_compiler_flags` function is.
 We instruct ReFrame to run this function before the test enters the ``compile`` stage and set accordingly the compilation flags.
 The system partition and the programming environment of the currently running test case are available to a ReFrame test through the :attr:`~reframe.core.pipeline.RegressionTest.current_partition` and :attr:`~reframe.core.pipeline.RegressionTest.current_environ` attributes respectively.
 These attributes, however, are only set after the first stage (``setup``) of the pipeline is executed, so we can't use them inside the test's constructor.

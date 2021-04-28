@@ -328,6 +328,18 @@ def test_handler_noappend(make_exec_ctx, config_file, logfile):
     assert _found_in_logfile('bar', logfile)
 
 
+def test_warn_once(default_exec_ctx, logfile):
+    rlog.configure_logging(rt.runtime().site_config)
+    rlog.getlogger().warning('foo', cache=True)
+    rlog.getlogger().warning('foo', cache=True)
+    rlog.getlogger().warning('foo', cache=True)
+    _flush_handlers()
+    _close_handlers()
+
+    with open(logfile, 'rt') as fp:
+        assert len(re.findall('foo', fp.read())) == 1
+
+
 def test_date_format(default_exec_ctx, logfile):
     rlog.configure_logging(rt.runtime().site_config)
     rlog.getlogger().warning('foo')
