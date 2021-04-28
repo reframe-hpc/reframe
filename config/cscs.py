@@ -980,7 +980,7 @@ site_configuration = {
         {
             'name': 'PrgEnv-aocc',
             'target_systems': [
-                'alps', 'eiger', 'pilatus'
+                'eiger', 'pilatus'
             ],
             'modules': [
                 'PrgEnv-aocc'
@@ -989,7 +989,7 @@ site_configuration = {
         {
             'name': 'PrgEnv-cray',
             'target_systems': [
-                'alps', 'eiger', 'pilatus'
+                'eiger', 'pilatus'
             ],
             'modules': [
                 'PrgEnv-cray'
@@ -998,7 +998,7 @@ site_configuration = {
         {
             'name': 'PrgEnv-gnu',
             'target_systems': [
-                'alps', 'eiger', 'pilatus'
+                'eiger', 'pilatus'
             ],
             'modules': [
                 'PrgEnv-gnu'
@@ -1007,7 +1007,7 @@ site_configuration = {
         {
             'name': 'PrgEnv-intel',
             'target_systems': [
-                'alps', 'eiger', 'pilatus'
+                'eiger', 'pilatus'
             ],
             'modules': [
                 'PrgEnv-intel'
@@ -1016,7 +1016,7 @@ site_configuration = {
         {
             'name': 'cpeAMD',
             'target_systems': [
-                'alps', 'eiger', 'pilatus'
+                'eiger', 'pilatus'
             ],
             'modules': [
                 'cpeAMD'
@@ -1025,7 +1025,7 @@ site_configuration = {
         {
             'name': 'cpeCray',
             'target_systems': [
-                'alps', 'eiger', 'pilatus'
+                'eiger', 'pilatus'
             ],
             'modules': [
                 'cpeCray'
@@ -1034,7 +1034,7 @@ site_configuration = {
         {
             'name': 'cpeGNU',
             'target_systems': [
-                'alps', 'eiger', 'pilatus'
+                'eiger', 'pilatus'
             ],
             'modules': [
                 'cpeGNU'
@@ -1043,7 +1043,7 @@ site_configuration = {
         {
             'name': 'cpeIntel',
             'target_systems': [
-                'alps', 'eiger', 'pilatus'
+                'eiger', 'pilatus'
             ],
             'modules': [
                 'cpeIntel'
