@@ -16,8 +16,7 @@ class IPCMagicCheck(rfm.RunOnlyRegressionTest):
         self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.modules = [
-            f'jupyterlab',
-            f'ipcmagic',
+            f'jupyterlab', f'ipcmagic',
             f'Horovod/0.21.0-CrayGNU-{osext.cray_cdt_version()}-tf-2.4.0'
         ]
         self.num_tasks = 2
