@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import decimal
 import json
 import jsonschema
 import lxml.etree as etree
@@ -185,7 +186,7 @@ def junit_xml_report(json_report):
             attrib={
                 'classname': tid['filename'],
                 'name': casename,
-                'time': str(tid['time_total']),
+                'time': str(decimal.Decimal(tid['time_total'])),
             }
         )
         if tid['result'] == 'failure':
