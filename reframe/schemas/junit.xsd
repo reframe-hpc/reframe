@@ -5,7 +5,7 @@
 	 attributeFormDefault="unqualified">
 	<xs:annotation>
 		<xs:documentation xml:lang="en">JUnit test result schema for the Apache Ant JUnit and JUnitReport tasks
-Copyright © 2011, Windy Road Technology Pty. Limited
+Copyright 2011, Windy Road Technology Pty. Limited
 The Apache Ant JUnit XML Schema is distributed under the terms of the Apache License Version 2.0 http://www.apache.org/licenses/
 Permission to waive conditions of this license may be requested from Windy Road Support (http://windyroad.org/support).</xs:documentation>
 	</xs:annotation>
