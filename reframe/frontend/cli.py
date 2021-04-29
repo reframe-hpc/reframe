@@ -469,7 +469,7 @@ def main():
         help='Use a login shell for job scripts'
     )
     argparser.add_argument(
-        dest='graylog_server',
+        dest='resolve_module_conflicts',
         envvar='RFM_RESOLVE_MODULE_CONFLICTS',
         configvar='general/resolve_module_conflicts',
         action='store_true',
