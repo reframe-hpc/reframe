@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import dateutil.parser as parser
 import json
 import jsonschema
 import lxml.etree as etree
@@ -159,7 +158,6 @@ def junit_xml_report(json_report):
     '''Generate a JUnit report from a standard ReFrame JSON report.'''
 
     xml_testsuites = etree.Element('testsuites')
-    isotime = parser.parse(json_report['session_info']['time_start'][:-6])
     xml_testsuite = etree.SubElement(
         xml_testsuites, 'testsuite',
         attrib={
@@ -171,7 +169,7 @@ def junit_xml_report(json_report):
             'package': 'reframe',
             'tests': str(json_report['session_info']['num_cases']),
             'time': str(json_report['session_info']['time_elapsed']),
-            'timestamp': isotime.isoformat(),
+            'timestamp': json_report['session_info']['time_start'][:-5],
         }
     )
     testsuite_properties = etree.SubElement(xml_testsuite, 'properties')
@@ -197,10 +195,10 @@ def junit_xml_report(json_report):
             )
             testcase_msg.text = f"{tid['fail_phase']}: {tid['fail_reason']}"
 
-    testsuite_stdo = etree.SubElement(xml_testsuite, 'system-out')
-    testsuite_stdo.text = ''
-    testsuite_stde = etree.SubElement(xml_testsuite, 'system-err')
-    testsuite_stde.text = ''
+    testsuite_stdout = etree.SubElement(xml_testsuite, 'system-out')
+    testsuite_stdout.text = ''
+    testsuite_stderr = etree.SubElement(xml_testsuite, 'system-err')
+    testsuite_stderr.text = ''
 
     # ---
     # testcase_error = etree.SubElement(
@@ -223,10 +221,6 @@ def junit_xml_report(json_report):
     # )
     # testcase_skip_msg.text = 'S'
 
-    # debug_str = etree.tostring(xml_testsuites, encoding='utf8',
-    #                            pretty_print=True, method='xml',
-    #                            xml_declaration=True).decode()
-    # print(f'xml_testsuites={debug_str}')
     return xml_testsuites
 
 
