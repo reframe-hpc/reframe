@@ -10,14 +10,20 @@ import reframe.utility.sanity as sn
 
 
 class GridToolsBuildCheck(rfm.CompileOnlyRegressionTest):
-    def __init__(self):
-        self.valid_prog_environs = ['builtin']
-        self.modules = ['CMake', 'Boost']
-        self.valid_systems = ['daint:gpu', 'dom:gpu']
+    valid_prog_environs = ['builtin']
+    modules = ['CMake', 'Boost']
+    valid_systems = ['daint:gpu', 'dom:gpu']
 
-        self.sourcesdir = 'https://github.com/GridTools/gridtools.git'
-        self.build_system = 'CMake'
+    sourcesdir = 'https://github.com/GridTools/gridtools.git'
+    build_system = 'CMake'
+    postbuild_cmds = ['ls tests/regression/']
+    tags = {'scs', 'benchmark'}
+    maintainers = ['CB']
+
+    @rfm.run_before('compile')
+    def set_build_options(self):
         self.build_system.config_opts = [
+            '-DCMAKE_BUILD_TYPE=Debug',
             '-DCMAKE_CXX_FLAGS=-std=c++14',
             '-DCMAKE_CXX_COMPILER=CC',
             '-DCMAKE_C_COMPILER=cc',
@@ -29,38 +35,44 @@ class GridToolsBuildCheck(rfm.CompileOnlyRegressionTest):
         self.build_system.flags_from_environ = False
         self.build_system.make_opts = ['perftests']
         self.build_system.max_concurrency = 8
-        self.postbuild_cmds = ['ls tests/regression/']
+
+    @rfm.run_before('sanity')
+    def set_sanity_patterns(self):
         self.sanity_patterns = sn.assert_found(r'perftest',
                                                self.stdout)
-        self.tags = {'scs', 'benchmark'}
-        self.maintainers = ['CB']
 
 
 @rfm.simple_test
 class GridToolsCPUBuildCheck(GridToolsBuildCheck):
-    def __init__(self):
-        super().__init__()
-        self.descr = 'GridTools CPU build test'
+    descr = 'GridTools CPU build test'
+
+    @rfm.run_after('init')
+    def add_valid_systems(self):
+        self.valid_systems += ['daint:mc', 'dom:mc']
+
+    @rfm.run_before('compile')
+    def set_cpu_build_option(self):
         self.build_system.config_opts += [
             '-DGT_TESTS_REQUIRE_GPU="OFF"'
         ]
-        self.valid_systems += ['daint:mc', 'dom:mc']
 
 
 @rfm.simple_test
 class GridToolsGPUBuildCheck(GridToolsBuildCheck):
-    def __init__(self):
-        super().__init__()
-        self.descr = 'GridTools GPU build test'
+    descr = 'GridTools GPU build test'
+
+    @rfm.run_before('compile')
+    def set_env(self):
         if self.current_system.name == 'dom':
             self.modules += [
-                'cudatoolkit/10.2.89_3.29-7.0.2.1_3.5__g67354b4',
-                'cdt-cuda',
-                'gcc/8.3.0'
+                'cudatoolkit'
+                'cdt-cuda'
             ]
         else:
             self.modules.append('cudatoolkit')
 
+    @rfm.run_before('compile')
+    def set_gpu_build_options(self):
         self.build_system.config_opts += [
             '-DGT_CUDA_ARCH=sm_60',
             '-DGT_TESTS_REQUIRE_GPU="ON"'
@@ -68,11 +80,13 @@ class GridToolsGPUBuildCheck(GridToolsBuildCheck):
 
 
 class GridToolsRunCheck(rfm.RunOnlyRegressionTest):
-    def __init__(self):
-        self.valid_prog_environs = ['builtin']
-        self.modules = ['CMake', 'Boost']
-        self.valid_systems = ['daint:gpu', 'dom:gpu']
-        self.num_tasks = 1
+    valid_prog_environs = ['builtin']
+    modules = ['CMake', 'Boost']
+    valid_systems = ['daint:gpu', 'dom:gpu']
+    num_tasks = 1
+
+    @rfm.run_before('sanity')
+    def set_sanity_patterns(self):
         self.sanity_patterns = sn.assert_found(r'PASSED', self.stdout)
         literal_eval = sn.sanity_function(ast.literal_eval)
         self.perf_patterns = {
@@ -82,54 +96,48 @@ class GridToolsRunCheck(rfm.RunOnlyRegressionTest):
         }
 
 
-@rfm.parameterized_test(['horizontal_diffusion/cpu_kfirst_double'],
-                        ['horizontal_diffusion/cpu_ifirst_double'])
+@rfm.simple_test
 class GridToolsCPURunCheck(GridToolsRunCheck):
-    def __init__(self, variant):
-        super().__init__()
-        self.descr = 'GridTools CPU run test'
-        self.depends_on('GridToolsCPUBuildCheck')
-        self.valid_systems += ['daint:mc', 'dom:mc']
-        self.num_gpus_per_node = 0
-        self.variant_data = {
-            'horizontal_diffusion/cpu_kfirst_double': {
-                'reference': {
-                    'daint:mc': {
-                        'wall_time': (11.0, None, 0.05, 's')
-                    },
-                    'daint:gpu': {
-                        'wall_time': (1.09, None, 0.05, 's')
-                    },
-                    'dom:mc': {
-                        'wall_time': (11.0, None, 0.05, 's')
-                    },
-                    'dom:gpu': {
-                        'wall_time': (1.09, None, 0.05, 's')
-                    }
+    variant = parameter(['horizontal_diffusion/cpu_kfirst_double',
+                        'horizontal_diffusion/cpu_ifirst_double'])
+    descr = 'GridTools CPU run test'
+    num_gpus_per_node = 0
+    variant_data = {
+        'horizontal_diffusion/cpu_kfirst_double': {
+            'reference': {
+                'daint:mc': {
+                    'wall_time': (11.0, None, 0.05, 's')
+                },
+                'daint:gpu': {
+                    'wall_time': (1.09, None, 0.05, 's')
+                },
+                'dom:mc': {
+                    'wall_time': (11.0, None, 0.05, 's')
+                },
+                'dom:gpu': {
+                    'wall_time': (1.09, None, 0.05, 's')
                 }
-            },
-            'horizontal_diffusion/cpu_ifirst_double': {
-                'reference': {
-                    'daint:mc': {
-                        'wall_time': (9.0, None, 0.05, 's')
-                    },
-                    'daint:gpu': {
-                        'wall_time': (1.0, None, 0.05, 's')
-                    },
-                    'dom:mc': {
-                        'wall_time': (9.0, None, 0.05, 's')
-                    },
-                    'dom:gpu': {
-                        'wall_time': (1.0, None, 0.05, 's')
-                    }
+            }
+        },
+        'horizontal_diffusion/cpu_ifirst_double': {
+            'reference': {
+                'daint:mc': {
+                    'wall_time': (9.0, None, 0.05, 's')
+                },
+                'daint:gpu': {
+                    'wall_time': (1.0, None, 0.05, 's')
+                },
+                'dom:mc': {
+                    'wall_time': (9.0, None, 0.05, 's')
+                },
+                'dom:gpu': {
+                    'wall_time': (1.0, None, 0.05, 's')
                 }
             }
         }
-        self.executable_opts = ['256', '256', '80', '3',
-                                f'--gtest_filter={variant}*']
-        self.reference = self.variant_data[variant]['reference']
-        self.tags = {'scs', 'benchmark'}
-        self.maintainers = ['CB']
+    }
+    tags = {'scs', 'benchmark'}
+    maintainers = ['CB']
 
     @rfm.require_deps
     def set_executable(self, GridToolsCPUBuildCheck):
@@ -138,46 +146,74 @@ class GridToolsCPURunCheck(GridToolsRunCheck):
             'tests', 'regression', 'perftests'
         )
 
+    @rfm.run_after('init')
+    def add_valid_systems(self):
+        self.valid_systems += ['daint:mc', 'dom:mc']
 
-@rfm.parameterized_test(['horizontal_diffusion/gpu_double'],
-                        ['horizontal_diffusion/gpu_horizontal_double'])
+    @rfm.run_after('init')
+    def set_dependencies(self):
+        self.depends_on('GridToolsCPUBuildCheck')
+
+    @rfm.run_before('run')
+    def set_executable_opts(self):
+        self.executable_opts = ['256', '256', '80', '3',
+                                f'--gtest_filter={self.variant}*']
+
+    @rfm.run_before('sanity')
+    def set_performance_reference(self):
+        self.reference = self.variant_data[self.variant]['reference']
+
+
+@rfm.simple_test
 class GridToolsGPURunCheck(GridToolsRunCheck):
-    def __init__(self, variant):
-        super().__init__()
-        self.descr = 'GridTools GPU run test'
-        self.depends_on('GridToolsGPUBuildCheck')
-        self.modules.append('cudatoolkit')
-        self.num_gpus_per_node = 1
-        self.variant_data = {
-            'horizontal_diffusion/gpu_double': {
-                'reference': {
-                    'daint:gpu': {
-                        'wall_time': (0.004, None, 0.05, 's')
-                    },
-                    'dom:gpu': {
-                        'wall_time': (0.004, None, 0.05, 's')
-                    }
+    variant = parameter(['horizontal_diffusion/gpu_double',
+                         'horizontal_diffusion/gpu_horizontal_double'])
+    descr = 'GridTools GPU run test'
+    num_gpus_per_node = 1
+    variant_data = {
+        'horizontal_diffusion/gpu_double': {
+            'reference': {
+                'daint:gpu': {
+                    'wall_time': (0.004, None, 0.05, 's')
+                },
+                'dom:gpu': {
+                    'wall_time': (0.004, None, 0.05, 's')
                 }
-            },
-            'horizontal_diffusion/gpu_horizontal_double': {
-                'reference': {
-                    'daint:gpu': {
-                        'wall_time': (0.003, None, 0.05, 's')
-                    },
-                    'dom:gpu': {
-                        'wall_time': (0.003, None, 0.05, 's')
-                    }
+            }
+        },
+        'horizontal_diffusion/gpu_horizontal_double': {
+            'reference': {
+                'daint:gpu': {
+                    'wall_time': (0.003, None, 0.05, 's')
+                },
+                'dom:gpu': {
+                    'wall_time': (0.003, None, 0.05, 's')
                 }
             }
         }
-        self.executable_opts = ['512', '512', '160', '3',
-                                f'--gtest_filter={variant}*']
-        self.reference = self.variant_data[variant]['reference']
-        self.tags = {'scs', 'benchmark'}
-        self.maintainers = ['CB']
+    }
+    tags = {'scs', 'benchmark'}
+    maintainers = ['CB']
 
     @rfm.require_deps
     def set_executable(self, GridToolsGPUBuildCheck):
         self.executable = os.path.join(
             GridToolsGPUBuildCheck().stagedir,
             'tests', 'regression', 'perftests')
+
+    @rfm.run_after('init')
+    def set_dependencies(self):
+        self.depends_on('GridToolsGPUBuildCheck')
+
+    @rfm.run_before('compile')
+    def modules_update(self):
+        self.modules.append('cudatoolkit')
+
+    @rfm.run_before('run')
+    def set_executable_opts(self):
+        self.executable_opts = ['512', '512', '160', '3',
+                                f'--gtest_filter={self.variant}*']
+
+    @rfm.run_before('sanity')
+    def set_performance_reference(self):
+        self.reference = self.variant_data[self.variant]['reference']
