@@ -1227,11 +1227,12 @@ General Configuration
 .. js:attribute:: .general[].report_junit
 
    :required: No
-   :default: ``"${HOME}/.reframe/reports/run-report.xml"``
+   :default: ``null``
 
-   The file where ReFrame will store its report in junit xml format.
+   The file where ReFrame will store its report in JUnit format.
+   The report adheres to the XSD schema `here <https://github.com/windyroad/JUnit-Schema/blob/master/JUnit.xsd>`__.
 
-   .. versionadded:: 3.6
+   .. versionadded:: 3.6.0
 
 
 .. js:attribute:: .general[].resolve_module_conflicts

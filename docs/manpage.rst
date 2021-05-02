@@ -276,13 +276,11 @@ Options controlling ReFrame output
 
 .. option:: --report-junit=FILE
 
-   The file where ReFrame will store its report in junit xml format.
-   The ``FILE`` argument may contain the special placeholder ``{sessionid}``,
-   in which case ReFrame will generate a new report each time it is run by
-   appending a counter to the report file.
+   Instruct ReFrame to generate a JUnit XML report in ``FILE``.
+   The ``FILE`` argument may contain the special placeholder ``{sessionid}``, in which case ReFrame will generate a new report each time it is run by appending a counter to the report file.
+   The generated report adheres to the XSD schema `here <https://github.com/windyroad/JUnit-Schema/blob/master/JUnit.xsd>`__.
 
-   This option can also be set using the :envvar:`RFM_REPORT_JUNIT` environment
-   variable or the :js:attr:`report_junit` general configuration parameter.
+   This option can also be set using the :envvar:`RFM_REPORT_JUNIT` environment variable or the :js:attr:`report_junit` general configuration parameter.
 
    .. versionadded:: 3.6.0
 
@@ -869,6 +867,21 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
       Associated command line option     :option:`--report-file`
       Associated configuration parameter :js:attr:`report_file` general configuration parameter
+      ================================== ==================
+
+
+.. envvar:: RFM_REPORT_JUNIT
+
+   The file where ReFrame will generate a JUnit XML report.
+
+   .. versionadded:: 3.6.0
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     :option:`--report-junit`
+      Associated configuration parameter :js:attr:`report_junit` general configuration parameter
       ================================== ==================
 
 

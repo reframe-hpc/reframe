@@ -183,7 +183,7 @@ def _validate_junit_report(report):
     # Cloned from
     # https://raw.githubusercontent.com/windyroad/JUnit-Schema/master/JUnit.xsd
     schema_file = 'reframe/schemas/junit.xsd'
-    with open(schema_file) as fp:
+    with open(schema_file, encoding='utf-8') as fp:
         schema = etree.XMLSchema(etree.parse(fp))
 
     schema.assert_(report)
@@ -481,7 +481,7 @@ def assert_dependency_run(runner):
     assert_runall(runner)
     stats = runner.stats
     assert 10 == stats.num_cases(0)
-    assert  4 == len(stats.failed())
+    assert 4  == len(stats.failed())
     for tf in stats.failed():
         check = tf.testcase.check
         _, exc_value, _ = tf.exc_info

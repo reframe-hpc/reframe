@@ -170,12 +170,12 @@ def junit_xml_report(json_report):
             'package': 'reframe',
             'tests': str(json_report['session_info']['num_cases']),
             'time': str(json_report['session_info']['time_elapsed']),
+
+            # XSD schema does not like the timezone format, so we remove it
             'timestamp': json_report['session_info']['time_start'][:-5],
         }
     )
     testsuite_properties = etree.SubElement(xml_testsuite, 'properties')
-    # etree.SubElement(testsuite_properties, "property",
-    #                  {'name': 'x', 'value': '0'})
     for testid in range(len(json_report['runs'][0]['testcases'])):
         tid = json_report['runs'][0]['testcases'][testid]
         casename = (
@@ -186,6 +186,10 @@ def junit_xml_report(json_report):
             attrib={
                 'classname': tid['filename'],
                 'name': casename,
+
+                # XSD schema does not like the exponential format and since we
+                # do not want to impose a fixed width, we pass it to `Decimal`
+                # to format it automatically.
                 'time': str(decimal.Decimal(tid['time_total'])),
             }
         )
@@ -200,28 +204,6 @@ def junit_xml_report(json_report):
     testsuite_stdout.text = ''
     testsuite_stderr = etree.SubElement(xml_testsuite, 'system-err')
     testsuite_stderr.text = ''
-
-    # ---
-    # testcase_error = etree.SubElement(
-    #     xml_testsuite, 'testcase',
-    #     attrib={'classname': 'rfmE', 'name': 'test error', 'time': '0'}
-    # )
-    # testcase_error_msg = etree.SubElement(
-    #     testcase_error, 'error',
-    #     attrib={'message': 'no test error', 'type': 'error'}
-    # )
-    # testcase_error_msg.text = 'E'
-    # ---
-    # testcase_skip = etree.SubElement(
-    #     xml_testsuite, 'testcase',
-    #     attrib={'classname': 'rfmS', 'name': 'test skip', 'time': '0'}
-    # )
-    # testcase_skip_msg = etree.SubElement(
-    #     testcase_skip, 'skipped',
-    #     attrib={'message': 'no test skipped', 'type': 'skipped'}
-    # )
-    # testcase_skip_msg.text = 'S'
-
     return xml_testsuites
 
 
