@@ -10,16 +10,16 @@
 #
 
 import functools
-import os
 import itertools
 import re
 import time
+import xml.etree.ElementTree as ET
 
 import reframe.core.runtime as rt
 import reframe.core.schedulers as sched
 import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
-from reframe.core.exceptions import JobError, JobSchedulerError
+from reframe.core.exceptions import JobSchedulerError
 from reframe.utility import seconds_to_hms
 
 
@@ -37,18 +37,6 @@ SGE_CANCEL_DELAY = 3
 
 
 _run_strict = functools.partial(osext.run_command, check=True)
-
-
-JOB_STATES = {
-    'Q': 'QUEUED',
-    'H': 'HELD',
-    'R': 'RUNNING',
-    'E': 'EXITING',
-    'T': 'MOVED',
-    'W': 'WAITING',
-    'S': 'SUSPENDED',
-    'C': 'COMPLETED',
-}
 
 
 class _SgeJob(sched.Job):
@@ -175,21 +163,10 @@ class SgeJobScheduler(sched.JobScheduler):
         if not jobs:
             return
 
+        user = osext.osuser()
         completed = osext.run_command(
-            f'qstat -f -j {",".join(job.jobid for job in jobs)}'
+            f'qstat -xml -u {user}'
         )
-
-        # If qstat cannot find any of the job IDs, it will return 1.
-        # Otherwise, it will return with return code 0 and print information
-        # only for the jobs it could find.
-        if completed.returncode == 1:
-            self.log('Return code is 1: jobids not known by scheduler, '
-                     'assuming all jobs completed')
-            for job in jobs:
-                job._state = 'COMPLETED'
-                job._completed = True
-
-            return
 
         if completed.returncode != 0:
             raise JobSchedulerError(
@@ -197,15 +174,45 @@ class SgeJobScheduler(sched.JobScheduler):
                 f'(standard error follows):\n{completed.stderr}'
             )
 
+        root = ET.fromstring(completed.stdout)
+
         # Store information for each job separately
         jobinfo = {}
-        for job_raw_info in completed.stdout.split('\n\n'):
-            jobid_match = re.search(
-                r'^job_number:\s*(?P<jobid>\S+)', job_raw_info, re.MULTILINE
-            )
-            if jobid_match:
-                jobid = jobid_match.group('jobid')
-                jobinfo[jobid] = job_raw_info
+        for queue_info in root:
+
+            # Reads the XML and prints jobs with status belonging to user.
+            if queue_info is None:
+                raise JobSchedulerError('Decomposition error!\n')
+
+            for job_list in queue_info:
+                if job_list.find("JB_owner").text != user:
+                    # Not a job of this user.
+                    continue
+
+                job_number = job_list.find("JB_job_number").text
+
+                if job_number not in [job.jobid for job in jobs]:
+                    # Not a reframe job.
+                    continue
+
+                state = job_list.find("state").text
+
+                # For the list of known statuses see `man 5 sge_status`
+                # (https://arc.liv.ac.uk/SGE/htmlman/htmlman5/sge_status.html)
+                if state in ['r', 'hr', 't', 'Rr', 'Rt']:
+                    jobinfo[job_number] = 'RUNNING'
+                elif state in ['qw', 'Rq', 'hqw', 'hRwq']:
+                    jobinfo[job_number] = 'PENDING'
+                elif state in ['s', 'ts', 'S', 'tS', 'T', 'tT', 'Rs',
+                               'Rts', 'RS', 'RtS', 'RT', 'RtT']:
+                    jobinfo[job_number] = 'SUSPENDED'
+                elif state in ['Eqw', 'Ehqw', 'EhRqw']:
+                    jobinfo[job_number] = 'ERROR'
+                elif state in ['dr', 'dt', 'dRr', 'dRt', 'ds',
+                               'dS', 'dT', 'dRs', 'dRS', 'dRT']:
+                    jobinfo[job_number] = 'DELETING'
+                elif state == 'z':
+                    jobinfo[job_number] = 'COMPLETED'
 
         for job in jobs:
             if job.jobid not in jobinfo:
@@ -215,4 +222,4 @@ class SgeJobScheduler(sched.JobScheduler):
                 job._completed = True
                 continue
 
-            job._state = 'RUNNING'
+            job._state = jobinfo[job.jobid]
