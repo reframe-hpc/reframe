@@ -631,7 +631,7 @@ def find_modules(substr, environ_mapping=None):
             return True
 
         for patt, environs in environ_mapping.items():
-            if re.match(patt, m) and e in environs:
+            if re.match(patt, m) and e == environs:
                 return True
 
         return False
