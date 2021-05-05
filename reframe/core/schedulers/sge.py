@@ -10,52 +10,22 @@
 #
 
 import functools
-import itertools
 import re
 import time
 import xml.etree.ElementTree as ET
 
 import reframe.core.runtime as rt
-import reframe.core.schedulers as sched
 import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
 from reframe.core.exceptions import JobSchedulerError
 from reframe.utility import seconds_to_hms
-
-
-# Time to wait after a job is finished for its standard output/error to be
-# written to the corresponding files.
-# FIXME: Consider making this a configuration parameter
-SGE_OUTPUT_WRITEBACK_WAIT = 3
-
-
-# Minimum amount of time between its submission and its cancellation. If you
-# immediately cancel a SGE job after submission, its output files may never
-# appear in the output causing the wait() to hang.
-# FIXME: Consider making this a configuration parameter
-SGE_CANCEL_DELAY = 3
-
+from reframe.core.schedulers.pbs import PbsJobScheduler
 
 _run_strict = functools.partial(osext.run_command, check=True)
 
 
-class _SgeJob(sched.Job):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._cancelled = False
-        self._completed = False
-
-    @property
-    def cancelled(self):
-        return self._cancelled
-
-    @property
-    def completed(self):
-        return self._completed
-
-
 @register_scheduler('sge')
-class SgeJobScheduler(sched.JobScheduler):
+class SgeJobScheduler(PbsJobScheduler):
     TASKS_OPT = ('-l select={num_nodes}:mpiprocs={num_tasks_per_node}'
                  ':ncpus={num_cpus_per_node}')
 
@@ -92,12 +62,6 @@ class SgeJobScheduler(sched.JobScheduler):
                 *(self._format_option(opt) for opt in rem_opts),
                 *verb_opts]
 
-    def _format_option(self, option):
-        return self._prefix + ' ' + option
-
-    def make_job(self, *args, **kwargs):
-        return _SgeJob(*args, **kwargs)
-
     def emit_preamble(self, job):
         preamble = [
             self._format_option('-N "%s"' % job.name),
@@ -115,13 +79,6 @@ class SgeJobScheduler(sched.JobScheduler):
 
         return preamble
 
-    def allnodes(self):
-        raise NotImplementedError('sge backend does not support node listing')
-
-    def filternodes(self, job, nodes):
-        raise NotImplementedError('sge backend does not support '
-                                  'node filtering')
-
     def submit(self, job):
         # `-o` and `-e` options are only recognized in command line by the PBS,
         # SGE, and Slurm wrappers.
@@ -134,26 +91,6 @@ class SgeJobScheduler(sched.JobScheduler):
 
         job._jobid = jobid_match.group('jobid')
         job._submit_time = time.time()
-
-    def wait(self, job):
-        intervals = itertools.cycle([1, 2, 3])
-        while not self.finished(job):
-            self.poll(job)
-            time.sleep(next(intervals))
-
-    def cancel(self, job):
-        time_from_submit = time.time() - job.submit_time
-        if time_from_submit < SGE_CANCEL_DELAY:
-            time.sleep(SGE_CANCEL_DELAY - time_from_submit)
-
-        _run_strict(f'qdel {job.jobid}', timeout=self._submit_timeout)
-        job._cancelled = True
-
-    def finished(self, job):
-        if job.exception:
-            raise job.exception
-
-        return job.completed
 
     def poll(self, *jobs):
         if jobs:
