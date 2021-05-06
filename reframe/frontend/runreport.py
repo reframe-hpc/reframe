@@ -3,8 +3,10 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import decimal
 import json
 import jsonschema
+import lxml.etree as etree
 import os
 import re
 
@@ -12,7 +14,6 @@ import reframe as rfm
 import reframe.core.exceptions as errors
 import reframe.utility.jsonext as jsonext
 import reframe.utility.versioning as versioning
-
 
 DATA_VERSION = '1.3.0'
 _SCHEMA = os.path.join(rfm.INSTALL_PREFIX, 'reframe/schemas/runreport.json')
@@ -152,3 +153,62 @@ def load_report(filename):
         )
 
     return _RunReport(report)
+
+
+def junit_xml_report(json_report):
+    '''Generate a JUnit report from a standard ReFrame JSON report.'''
+
+    xml_testsuites = etree.Element('testsuites')
+    xml_testsuite = etree.SubElement(
+        xml_testsuites, 'testsuite',
+        attrib={
+            'errors': '0',
+            'failures': str(json_report['session_info']['num_failures']),
+            'hostname': json_report['session_info']['hostname'],
+            'id': '0',
+            'name': 'reframe',
+            'package': 'reframe',
+            'tests': str(json_report['session_info']['num_cases']),
+            'time': str(json_report['session_info']['time_elapsed']),
+
+            # XSD schema does not like the timezone format, so we remove it
+            'timestamp': json_report['session_info']['time_start'][:-5],
+        }
+    )
+    testsuite_properties = etree.SubElement(xml_testsuite, 'properties')
+    for testid in range(len(json_report['runs'][0]['testcases'])):
+        tid = json_report['runs'][0]['testcases'][testid]
+        casename = (
+            f"{tid['name']}[{tid['system']}, {tid['environment']}]"
+        )
+        testcase = etree.SubElement(
+            xml_testsuite, 'testcase',
+            attrib={
+                'classname': tid['filename'],
+                'name': casename,
+
+                # XSD schema does not like the exponential format and since we
+                # do not want to impose a fixed width, we pass it to `Decimal`
+                # to format it automatically.
+                'time': str(decimal.Decimal(tid['time_total'])),
+            }
+        )
+        if tid['result'] == 'failure':
+            testcase_msg = etree.SubElement(
+                testcase, 'failure', attrib={'type': 'failure',
+                                             'message': tid['fail_phase']}
+            )
+            testcase_msg.text = f"{tid['fail_phase']}: {tid['fail_reason']}"
+
+    testsuite_stdout = etree.SubElement(xml_testsuite, 'system-out')
+    testsuite_stdout.text = ''
+    testsuite_stderr = etree.SubElement(xml_testsuite, 'system-err')
+    testsuite_stderr.text = ''
+    return xml_testsuites
+
+
+def junit_dump(xml, fp):
+    fp.write(
+        etree.tostring(xml, encoding='utf8', pretty_print=True,
+                       method='xml', xml_declaration=True).decode()
+    )

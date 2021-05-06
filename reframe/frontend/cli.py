@@ -215,6 +215,12 @@ def main():
         envvar='RFM_REPORT_FILE',
         configvar='general/report_file'
     )
+    output_options.add_argument(
+        '--report-junit', action='store', metavar='FILE',
+        help="Store a JUnit report in FILE",
+        envvar='RFM_REPORT_JUNIT',
+        configvar='general/report_junit'
+    )
 
     # Check discovery options
     locate_options.add_argument(
@@ -1044,6 +1050,21 @@ def main():
                 printer.warning(
                     f'failed to generate report in {report_file!r}: {e}'
                 )
+
+            # Generate the junit xml report for this session
+            junit_report_file = rt.get_option('general/0/report_junit')
+            if junit_report_file:
+                # Expand variables in filename
+                junit_report_file = osext.expandvars(junit_report_file)
+                junit_xml = runreport.junit_xml_report(json_report)
+                try:
+                    with open(junit_report_file, 'w') as fp:
+                        runreport.junit_dump(junit_xml, fp)
+                except OSError as e:
+                    printer.warning(
+                        f'failed to generate report in {junit_report_file!r}: '
+                        f'{e}'
+                    )
 
         if not success:
             sys.exit(1)
