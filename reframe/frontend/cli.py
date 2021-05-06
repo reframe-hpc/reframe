@@ -475,6 +475,18 @@ def main():
         action='store_true',
         help='Resolve module conflicts automatically'
     )
+    argparser.add_argument(
+        dest='httpjson_server',
+        envvar='RFM_HTTPJSON_ADDRESS',
+        configvar='logging/handlers_perflog/httpjson_address',
+        help='HTTP Json server address'
+    )
+    argparser.add_argument(
+        dest='httpjson_url',
+        envvar='RFM_HTTPJSON_URL',
+        configvar='logging/handlers_perflog/httpjson_url',
+        help='HTTP Json url'
+    )
 
     # Parse command line
     options = argparser.parse_args()

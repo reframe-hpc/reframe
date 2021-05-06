@@ -1118,6 +1118,16 @@ site_configuration = {
                         'facility': 'reframe',
                         'data-version': '1.0',
                     }
+                },
+                {
+                    'type': 'httpjson',
+                    'address': 'httpjson-server:12345',
+                    'level': 'info',
+                    'format': '%(message)s',
+                    'extras': {
+                        'facility': 'reframe',
+                        'data-version': '1.0',
+                    }
                 }
             ]
         }

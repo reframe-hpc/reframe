@@ -53,7 +53,7 @@
             "properties": {
                 "type": {
                     "type": "string",
-                    "enum": ["file", "filelog", "graylog", "stream", "syslog"]
+                    "enum": ["file", "filelog", "graylog", "stream", "syslog", "httpjson"]
                 },
                 "level": {"$ref": "#/defs/loglevel"},
                 "format": {"type": "string"},
@@ -137,6 +137,19 @@
                                               "local4", "local5",
                                               "local6", "local7"]},
                         "address": {"type": "string"}
+                    },
+                    "required": ["address"]
+                }
+            ]
+        },
+        "httpjson_handler": {
+            "allOf": [
+                {"$ref": "#/defs/handler_common"},
+                {
+                    "properties": {
+                        "address": {"type": "string"},
+                        "extras": {"type": "object"},
+                        "url": {"type": "string"}
                     },
                     "required": ["address"]
                 }
@@ -386,7 +399,8 @@
                                 {"$ref": "#/defs/filelog_handler"},
                                 {"$ref": "#/defs/graylog_handler"},
                                 {"$ref": "#/defs/stream_handler"},
-                                {"$ref": "#/defs/syslog_handler"}
+                                {"$ref": "#/defs/syslog_handler"},
+                                {"$ref": "#/defs/httpjson_handler"}
                             ]
                         },
                         "minItems": 1
@@ -508,6 +522,8 @@
         "logging/handlers*/filelog_append": true,
         "logging/handlers*/filelog_basedir": "./perflogs",
         "logging/handlers*/graylog_extras": {},
+        "logging/handlers*/httpjson_extras": {},
+        "logging/handlers*/httpjson_url": "",
         "logging/handlers*/stream_name": "stdout",
         "logging/handlers*/syslog_socktype": "udp",
         "logging/handlers*/syslog_facility": "user",
