@@ -6,7 +6,6 @@
 import abc
 import os
 import re
-import yaml
 
 import reframe.core.fields as fields
 import reframe.utility.typecheck as typ
