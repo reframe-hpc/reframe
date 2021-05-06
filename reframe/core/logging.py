@@ -337,17 +337,12 @@ def _create_graylog_handler(site_config, config_prefix):
                                   include_extra_fields=True,
                                   json_default=jsonext.encode)
 
-def _create_httpjson_handler(site_config, config_prefix):
-    try:
-        import pygelf
-    except ImportError:
-        return None
 
+def _create_httpjson_handler(site_config, config_prefix):
     address = site_config.get(f'{config_prefix}/address')
     host, port = address.split(':', maxsplit=1)
     if not port:
         raise ConfigError('http json handler: no port specified')
-
 
     # Check if the remote server is up and accepts connections; if not we will
     # skip the handler
@@ -386,12 +381,12 @@ class HTTPJSONHandler(logging.Handler):
 
     def _record_to_json(self, record):
         json_record = {
-            k:v for k, v in record.__dict__.items()
+            k: v for k, v in record.__dict__.items()
             if not (k.startswith('_') or k in HTTPJSONHandler.LOG_ATTRS)
         }
         if self._extras:
             json_record.update({
-                k:v for k, v in self._extras.items()
+                k: v for k, v in self._extras.items()
                 if not (k.startswith('_') or k in HTTPJSONHandler.LOG_ATTRS)
             })
 
