@@ -166,6 +166,14 @@ An action must always be specified.
    List selected tests providing detailed information per test.
 
 
+.. option:: --list-tags
+
+   List the unique tags of the selected tests.
+   The tags are printed in alphabetical order.
+
+   .. versionadded:: 3.6.0
+
+
 .. option:: -r, --run
 
    Execute the selected tests.
@@ -264,6 +272,16 @@ Options controlling ReFrame output
    This option can also be set using the :envvar:`RFM_REPORT_FILE` environment variable or the :js:attr:`report_file` general configuration parameter.
 
    .. versionadded:: 3.1
+
+
+.. option:: --report-junit=FILE
+
+   Instruct ReFrame to generate a JUnit XML report in ``FILE``.
+   The generated report adheres to the XSD schema `here <https://github.com/windyroad/JUnit-Schema/blob/master/JUnit.xsd>`__ and it takes into account only the first run, ignoring retries of failed tests.
+
+   This option can also be set using the :envvar:`RFM_REPORT_JUNIT` environment variable or the :js:attr:`report_junit` general configuration parameter.
+
+   .. versionadded:: 3.6.0
 
 
 -------------------------------------
@@ -848,6 +866,36 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
       Associated command line option     :option:`--report-file`
       Associated configuration parameter :js:attr:`report_file` general configuration parameter
+      ================================== ==================
+
+
+.. envvar:: RFM_REPORT_JUNIT
+
+   The file where ReFrame will generate a JUnit XML report.
+
+   .. versionadded:: 3.6.0
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     :option:`--report-junit`
+      Associated configuration parameter :js:attr:`report_junit` general configuration parameter
+      ================================== ==================
+
+
+.. envvar:: RFM_RESOLVE_MODULE_CONFLICTS
+
+   Resolve module conflicts automatically.
+
+   .. versionadded:: 3.6.0
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     n/a
+      Associated configuration parameter :js:attr:`resolve_module_conflicts` general configuration parameter
       ================================== ==================
 
 

@@ -20,7 +20,7 @@ def test_not_set_attribute():
 
     c = FieldTester()
     with pytest.raises(AttributeError):
-        a = c.var
+        c.var
 
     with pytest.raises(AttributeError):
         getattr(c, 'var')
@@ -151,14 +151,14 @@ def test_deprecated_field():
 
     # Test get operation
     with warnings.catch_warnings(record=True) as w:
-        a = tester.ro
+        tester.ro
         assert len(w) == 0
 
     with pytest.warns(ReframeDeprecationWarning):
-        a = tester.value
+        tester.value
 
     with pytest.warns(ReframeDeprecationWarning):
-        a = tester.wo
+        tester.wo
 
 
 def test_deprecated_field_future_version():

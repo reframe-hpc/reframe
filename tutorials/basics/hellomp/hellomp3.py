@@ -9,20 +9,22 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class HelloThreadedExtended2Test(rfm.RegressionTest):
-    def __init__(self):
-        self.valid_systems = ['*']
-        self.valid_prog_environs = ['*']
-        self.sourcepath = 'hello_threads.cpp'
-        self.executable_opts = ['16']
-        self.build_system = 'SingleSource'
-        self.build_system.cppflags = ['-DSYNC_MESSAGES']
-        self.build_system.cxxflags = ['-std=c++11', '-Wall']
-        num_messages = sn.len(sn.findall(r'\[\s?\d+\] Hello, World\!',
-                                         self.stdout))
-        self.sanity_patterns = sn.assert_eq(num_messages, 16)
+    valid_systems = ['*']
+    valid_prog_environs = ['*']
+    sourcepath = 'hello_threads.cpp'
+    build_system = 'SingleSource'
+    executable_opts = ['16']
 
     @rfm.run_before('compile')
-    def set_threading_flags(self):
+    def set_compilation_flags(self):
+        self.build_system.cppflags = ['-DSYNC_MESSAGES']
+        self.build_system.cxxflags = ['-std=c++11', '-Wall']
         environ = self.current_environ.name
         if environ in {'clang', 'gnu'}:
             self.build_system.cxxflags += ['-pthread']
+
+    @rfm.run_before('sanity')
+    def set_sanity_patterns(self):
+        num_messages = sn.len(sn.findall(r'\[\s?\d+\] Hello, World\!',
+                                         self.stdout))
+        self.sanity_patterns = sn.assert_eq(num_messages, 16)

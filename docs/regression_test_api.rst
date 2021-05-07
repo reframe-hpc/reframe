@@ -70,7 +70,7 @@ In essence, these builtins exert control over the test creation, and they allow 
   Inserts or modifies a regression test parameter.
   If a parameter with a matching name is already present in the parameter space of a parent class, the existing parameter values will be combined with those provided by this method following the inheritance behavior set by the arguments ``inherit_params`` and ``filter_params``.
   Instead, if no parameter with a matching name exists in any of the parent parameter spaces, a new regression test parameter is created.
-  A regression test can be parametrized as follows:
+  A regression test can be parameterized as follows:
 
   .. code:: python
 
@@ -78,48 +78,27 @@ In essence, these builtins exert control over the test creation, and they allow 
         variant = parameter(['A', 'B'])
         # print(variant) # Error: a parameter may only be accessed from the class instance.
 
-        def __init__(self):
+        @rfm.run_after('init')
+        def do_something(self):
             if self.variant == 'A':
                 do_this()
             else:
                 do_other()
 
-  One of the most powerful features about these built-in functions is that they store their input information at the class level.
+  One of the most powerful features of these built-in functions is that they store their input information at the class level.
   However, a parameter may only be accessed from the class instance and accessing it directly from the class body is disallowed.
-  With this approach, extending or specializing an existing parametrized regression test becomes straightforward, since the test attribute additions and modifications made through built-in functions in the parent class are automatically inherited by the child test.
-  For instance, continuing with the example above, one could override the :func:`__init__` method in the :class:`Foo` regression test as follows:
+  With this approach, extending or specializing an existing parameterized regression test becomes straightforward, since the test attribute additions and modifications made through built-in functions in the parent class are automatically inherited by the child test.
+  For instance, continuing with the example above, one could override the :func:`do_something` hook in the :class:`Foo` regression test as follows:
 
   .. code:: python
 
     class Bar(Foo):
-        def __init__(self):
+        @rfm.run_after('init')
+        def do_something(self):
             if self.variant == 'A':
                 override_this()
             else:
                 override_other()
-
-  Note that this built-in parameter function provides an alternative method to parameterize a test to :func:`reframe.core.decorators.parameterized_test`, and the use of both approaches in the same test is currently disallowed.
-  The two main advantages of the built-in :func:`parameter` over the decorated approach reside in the parameter inheritance across classes and the handling of large parameter sets.
-  As shown in the example above, the parameters declared with the built-in :func:`parameter` are automatically carried over into derived tests through class inheritance, whereas tests using the decorated approach would have to redefine the parameters on every test.
-  Similarly, parameters declared through the built-in :func:`parameter` are regarded as fully independent from each other and ReFrame will automatically generate as many tests as available parameter combinations. This is a major advantage over the decorated approach, where one would have to manually expand the parameter combinations.
-  This is illustrated in the example below, consisting of a case with two parameters, each having two possible values.
-
-  .. code:: python
-
-    # Parameterized test with two parameters (p0 = ['a', 'b'] and p1 = ['x', 'y'])
-    @rfm.parameterized_test(['a','x'], ['a','y'], ['b','x'], ['b', 'y'])
-    class Foo(rfm.RegressionTest):
-      def __init__(self, p0, p1):
-        do_something(p0, p1)
-
-    # This is easier to write with the parameter built-in.
-    @rfm.simple_test
-    class Bar(rfm.RegressionTest):
-      p0 = parameter(['a', 'b'])
-      p1 = parameter(['x', 'y'])
-
-      def __init__(self):
-        do_something(self.p0, self.p1)
 
 
   :param values: A list containing the parameter values.
@@ -136,7 +115,7 @@ In essence, these builtins exert control over the test creation, and they allow 
   Inserts a new regression test variable.
   Declaring a test variable through the :func:`variable` built-in allows for a more robust test implementation than if the variables were just defined as regular test attributes (e.g. ``self.a = 10``).
   Using variables declared through the :func:`variable` built-in guarantees that these regression test variables will not be redeclared by any child class, while also ensuring that any values that may be assigned to such variables comply with its original declaration.
-  In essence, by using test variables, the user removes any potential test errors that might be caused by accidentally overriding a class attribute. See the example below.
+  In essence, declaring test variables with the :func:`variable` built-in removes any potential test errors that might be caused by accidentally overriding a class attribute. See the example below.
 
 
   .. code:: python
@@ -145,27 +124,42 @@ In essence, these builtins exert control over the test creation, and they allow 
         my_var = variable(int, value=8)
         not_a_var = my_var - 4
 
-        def __init__(self):
+        @rfm.run_after('init')
+        def access_vars(self):
             print(self.my_var) # prints 8.
             # self.my_var = 'override' # Error: my_var must be an int!
             self.not_a_var = 'override' # However, this would work. Dangerous!
             self.my_var = 10 # tests may also assign values the standard way
 
-  The argument ``value`` in the :func:`variable` built-in sets the default value for the variable.
-  Note that a variable may be accesed directly from the class body as long as its value was previously assigned in the same class body.
-  As mentioned above, a variable may not be declared more than once, but its default value can be updated by simply assigning it a new value directly in the class body. However, a variable may only be acted upon once in the same class body.
+  Here, the argument ``value`` in the :func:`variable` built-in sets the default value for the variable.
+  This value may be accessed directly from the class body, as long as it was assigned before either in the same class body or in the class body of a parent class.
+  This behavior extends the standard Python data model, where a regular class attribute from a parent class is never available in the class body of a child class.
+  Hence, using the :func:`variable` built-in enables us to directly use or modify any variables that may have been declared upstream the class inheritance chain, without altering their original value at the parent class level.
 
   .. code:: python
 
     class Bar(Foo):
+        print(my_var) # prints 8
+        # print(not_a_var) # This is standard Python and raises a NameError
+
+        # Since my_var is available, we can also update its value:
         my_var = 4
-        # my_var = 'override' # Error again!
-        # my_var = 8 # Error: Double action on `my_var` is not allowed.
 
-        def __init__(self):
-            print(self.my_var) # prints 4.
+        # Bar inherits the full declaration of my_var with the original type-checking.
+        # my_var = 'override' # Wrong type error again!
 
-  Here, the class :class:`Bar` inherits the variables from :class:`Foo` and can see that ``my_var`` has already been declared in the parent class. Therefore, the value of ``my_var`` is updated ensuring that the new value complies to the original variable declaration.
+        @rfm.run_after('init')
+        def access_vars(self):
+            print(self.my_var) # prints 4
+            print(self.not_a_var) # prints 4
+
+
+    print(Foo.my_var) # prints 8
+    print(Bar.my_var) # prints 4
+
+
+  Here, :class:`Bar` inherits the variables from :class:`Foo` and can see that ``my_var`` has already been declared in the parent class. Therefore, the value of ``my_var`` is updated ensuring that the new value complies to the original variable declaration.
+  However, the value of ``my_var`` at :class:`Foo` remains unchanged.
 
   These examples above assumed that a default value can be provided to the variables in the bases tests, but that might not always be the case.
   For example, when writing a test library, one might want to leave some variables undefined and force the user to set these when using the test.
@@ -177,9 +171,11 @@ In essence, these builtins exert control over the test creation, and they allow 
     class EchoBaseTest(rfm.RunOnlyRegressionTest):
       what = variable(str)
 
-      def __init__(self):
-          self.valid_systems = ['*']
-          self.valid_prog_environs = ['PrgEnv-gnu']
+      valid_systems = ['*']
+      valid_prog_environs = ['PrgEnv-gnu']
+
+      @rfm.run_before('run')
+      def set_exec_and_sanity(self):
           self.executable = f'echo {self.what}'
           self.sanity_patterns = sn.assert_found(fr'{self.what}')
 
@@ -190,14 +186,14 @@ In essence, these builtins exert control over the test creation, and they allow 
       what = 'Hello'
 
 
-    # A parametrized test with type-checking
+    # A parameterized test with type-checking
     @rfm.simple_test
     class FoodTest(EchoBaseTest):
       param = parameter(['Bacon', 'Eggs'])
 
-      def __init__(self):
+      @rfm.run_after('init')
+      def set_vars_with_params(self):
         self.what = self.param
-        super().__init__()
 
 
   Similarly to a variable with a value already assigned to it, the value of a required variable may be set either directly in the class body, on the :func:`__init__` method, or in any other hook before it is referenced.
@@ -210,7 +206,7 @@ In essence, these builtins exert control over the test creation, and they allow 
       what = required
 
 
-  Running the above test will cause the :func:`__init__` method from :class:`EchoBaseTest` to throw an error indicating that the variable ``what`` has not been set.
+  Running the above test will cause the :func:`set_exec_and_sanity` hook from :class:`EchoBaseTest` to throw an error indicating that the variable ``what`` has not been set.
 
   :param types: the supported types for the variable.
   :param value: the default value assigned to the variable. If no value is provided, the variable is set as ``required``.
