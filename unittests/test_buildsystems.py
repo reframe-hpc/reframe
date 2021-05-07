@@ -243,6 +243,35 @@ def test_singlesource_unknown_language():
         build_system.emit_build_commands(ProgEnvironment('testenv'))
 
 
+def test_spack(environ, tmp_path):
+    build_system = bs.Spack()
+    build_system.environment = 'spack_env'
+    with osext.change_dir(tmp_path):
+        assert build_system.emit_build_commands(environ) == [
+            f'spack env activate -d {build_system.environment}',
+            f'spack install'
+        ]
+
+
+def test_spack_with_spec(environ, tmp_path):
+    build_system = bs.Spack()
+    build_system.environment = 'spack_env'
+    build_system.specs = ['spec1@version1', 'spec2@version2']
+    specs_str = ' '.join(build_system.specs)
+    with osext.change_dir(tmp_path):
+        assert build_system.emit_build_commands(environ) == [
+            f'spack env activate -d {build_system.environment}',
+            f'spack add {specs_str}',
+            f'spack install'
+        ]
+
+
+def test_spack_no_env(environ, tmp_path):
+    build_system = bs.Spack()
+    with pytest.raises(BuildSystemError):
+        build_system.emit_build_commands(environ)
+
+
 def test_easybuild(environ, tmp_path):
     build_system = bs.EasyBuild()
     build_system.easyconfigs = ['ec1.eb', 'ec2.eb']

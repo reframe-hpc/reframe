@@ -817,6 +817,9 @@ class Spack(BuildSystem):
 
     def emit_build_commands(self, environ):
         self._prefix_save = os.getcwd()
+        if not self.environment:
+            raise BuildSystemError(f"'environment' must not be empty")
+
         ret = [f'spack env activate -d {self.environment}']
         if self.specs:
             specs_str = ' '.join(self.specs)
