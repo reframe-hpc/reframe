@@ -167,7 +167,7 @@ def junit_xml_report(json_report):
                 'failures': str(rfm_run['num_failures']),
                 'hostname': json_report['session_info']['hostname'],
                 'id': str(run_id),
-                'name': f'ReFrame run {run_id + 1}',
+                'name': f'ReFrame run {run_id}',
                 'package': 'reframe',
                 'tests': str(rfm_run['num_cases']),
                 'time': str(json_report['session_info']['time_elapsed']),
