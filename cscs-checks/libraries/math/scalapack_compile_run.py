@@ -12,9 +12,8 @@ class ScaLAPACKTest(rfm.RegressionTest):
     linkage = parameter(['static', 'dynamic'])
 
     sourcepath = 'sample_pdsyev_call.f'
-    valid_systems = ['daint:gpu', 'daint:mc', 'dom:mc', 'dom:gpu']
-    valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
-                           'PrgEnv-intel']
+    valid_systems = ['daint:gpu', 'daint:mc', 'dom:mc', 'dom:gpu', 'eiger:mc']
+    valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu', 'PrgEnv-intel']
     num_tasks = 16
     num_tasks_per_node = 8
     build_system = 'SingleSource'
@@ -27,13 +26,14 @@ class ScaLAPACKTest(rfm.RegressionTest):
 
     @rfm.run_after('init')
     def set_linkage(self):
-        if self.linkage == 'dynamic':
-            self.valid_systems.append('eiger:mc')
-        variables = {'CRAYPE_LINK_TYPE': self.linkage}
+        if self.current_system.name == 'eiger':
+            self.skip_if(self.linkage == 'static',
+                         'static linking not supported on Eiger')
+
+        self.variables = {'CRAYPE_LINK_TYPE': self.linkage}
 
     @rfm.run_before('sanity')
     def set_sanity_patterns(self):
-
         def fortran_float(value):
             return float(value.replace('D', 'E'))
 
