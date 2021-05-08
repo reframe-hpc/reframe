@@ -13,7 +13,7 @@ class NamdBaseCheck(rfm.RunOnlyRegressionTest):
     def __init__(self, arch, scale, variant):
         self.descr = f'NAMD check ({arch}, {variant})'
         if self.current_system.name in ['eiger', 'pilatus']:
-            self.valid_prog_environs = ['cpeIntel']
+            self.valid_prog_environs = ['cpeGNU']
         else:
             self.valid_prog_environs = ['builtin']
 
@@ -114,13 +114,13 @@ class NamdCPUCheck(NamdBaseCheck):
                 'dom:mc': {'days_ns': (0.51, None, 0.05, 'days/ns')},
                 'daint:mc': {'days_ns': (0.51, None, 0.05, 'days/ns')},
                 'eiger:mc': {'days_ns': (0.12, None, 0.05, 'days/ns')},
-                'pilatus:mc': {'days_ns': (0.15, None, 0.05, 'days/ns')},
+                'pilatus:mc': {'days_ns': (0.12, None, 0.05, 'days/ns')},
             }
         else:
             self.reference = {
                 'daint:mc': {'days_ns': (0.28, None, 0.05, 'days/ns')},
                 'eiger:mc': {'days_ns': (0.05, None, 0.05, 'days/ns')},
-                'pilatus:mc': {'days_ns': (0.06, None, 0.05, 'days/ns')}
+                'pilatus:mc': {'days_ns': (0.05, None, 0.05, 'days/ns')}
             }
 
         self.tags |= {'maintenance' if variant == 'maint' else 'production'}
