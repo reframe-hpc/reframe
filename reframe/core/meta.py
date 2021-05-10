@@ -11,9 +11,9 @@
 import reframe.core.namespaces as namespaces
 import reframe.core.parameters as parameters
 import reframe.core.variables as variables
+import reframe.core.hooks as hooks
 
 from reframe.core.exceptions import ReframeSyntaxError
-from reframe.core.hooks import HookRegistry
 
 
 class RegressionTestMeta(type):
@@ -116,6 +116,25 @@ class RegressionTestMeta(type):
         # Directives to add/modify a regression test variable
         namespace['variable'] = variables.TestVar
         namespace['required'] = variables.Undefined
+
+        # Hook-related functionality
+        namespace['run_before'] = hooks.run_before
+        namespace['run_after'] = hooks.run_after
+        namespace['init'] = hooks.run_after('__init__')
+        namespace['pre_setup'] = hooks.run_before('setup')
+        namespace['post_setup'] = hooks.run_after('setup')
+        namespace['pre_compile'] = hooks.run_before('compile')
+        namespace['post_compile'] = hooks.run_after('compile_wait')
+        namespace['pre_run'] = hooks.run_before('run')
+        namespace['post_run'] = hooks.run_after('run_wait')
+        namespace['pre_sanity'] = hooks.run_before('sanity')
+        namespace['post_sanity'] = hooks.run_after('sanity')
+        namespace['pre_performance'] = hooks.run_before('performance')
+        namespace['post_performance'] = hooks.run_after('performance')
+        namespace['pre_cleanup'] = hooks.run_before('cleanup')
+        namespace['post_cleanup'] = hooks.run_after('cleanup')
+
+        namespace['require_deps'] = hooks.require_deps
         return metacls.MetaNamespace(namespace)
 
     def __new__(metacls, name, bases, namespace, **kwargs):
@@ -145,12 +164,12 @@ class RegressionTestMeta(type):
         # Set up the hooks for the pipeline stages based on the _rfm_attach
         # attribute; all dependencies will be resolved first in the post-setup
         # phase if not assigned elsewhere
-        hooks = HookRegistry.create(namespace)
+        hook_reg = hooks.HookRegistry.create(namespace)
         for b in bases:
             if hasattr(b, '_rfm_pipeline_hooks'):
-                hooks.update(getattr(b, '_rfm_pipeline_hooks'))
+                hook_reg.update(getattr(b, '_rfm_pipeline_hooks'))
 
-        cls._rfm_pipeline_hooks = hooks  # HookRegistry(local_hooks)
+        cls._rfm_pipeline_hooks = hook_reg
         cls._final_methods = {v.__name__ for v in namespace.values()
                               if hasattr(v, '_rfm_final')}
 

@@ -9,6 +9,90 @@ import functools
 import reframe.utility as util
 
 
+def _runx(phase):
+    '''Backend function to attach a hook to a given phase.
+
+    :meta private:
+    '''
+    def deco(func):
+        if hasattr(func, '_rfm_attach'):
+            func._rfm_attach.append(phase)
+        else:
+            func._rfm_attach = [phase]
+
+        try:
+            # no need to resolve dependencies independently; this function is
+            # already attached to a different phase
+            func._rfm_resolve_deps = False
+        except AttributeError:
+            pass
+
+        @functools.wraps(func)
+        def _fn(*args, **kwargs):
+            func(*args, **kwargs)
+
+        return _fn
+
+    return deco
+
+
+def run_before(stage):
+    '''Decorator for attaching a test method to another method or stage.
+
+    The method will run just before the specified stage and it should
+    not accept any arguments except ``self``.
+
+    This decorator can be stacked, in which case the function will be attached
+    to multiple methods.
+    '''
+
+    return _runx('pre_' + stage)
+
+
+def run_after(stage):
+    '''Decorator for attaching a test method to another method or stage.
+
+    This is analogous to the :py:attr:`~reframe.core.decorators.run_before`.
+    '''
+
+    return _runx('post_' + stage)
+
+
+def require_deps(func):
+    '''Denote that the decorated test method will use the test dependencies.
+
+    The arguments of the decorated function must be named after the
+    dependencies that the function intends to use. The decorator will bind the
+    arguments to a partial realization of the
+    :func:`reframe.core.pipeline.RegressionTest.getdep` function, such that
+    conceptually the new function arguments will be the following:
+
+    .. code-block:: python
+
+       new_arg = functools.partial(getdep, orig_arg_name)
+
+    The converted arguments are essentially functions accepting a single
+    argument, which is the target test's programming environment.
+
+    Additionally, this decorator will attach the function to run *after* the
+    test's setup phase, but *before* any other "post_setup" pipeline hook.
+
+    This decorator is also directly available under the :mod:`reframe` module.
+
+    .. versionadded:: 2.21
+
+    '''
+    tests = inspect.getfullargspec(func).args[1:]
+    func._rfm_resolve_deps = True
+
+    @functools.wraps(func)
+    def _fn(obj, *args):
+        newargs = [functools.partial(obj.getdep, t) for t in tests]
+        func(obj, *newargs)
+
+    return _fn
+
+
 def attach_hooks(hooks):
     '''Attach pipeline hooks to phase ``name''.
 
