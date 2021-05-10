@@ -277,11 +277,14 @@ Options controlling ReFrame output
 .. option:: --report-junit=FILE
 
    Instruct ReFrame to generate a JUnit XML report in ``FILE``.
-   The generated report adheres to the XSD schema `here <https://github.com/windyroad/JUnit-Schema/blob/master/JUnit.xsd>`__ and it takes into account only the first run, ignoring retries of failed tests.
+   The generated report adheres to the XSD schema `here <https://github.com/windyroad/JUnit-Schema/blob/master/JUnit.xsd>`__ where each retry is treated as an individual testsuite.
 
    This option can also be set using the :envvar:`RFM_REPORT_JUNIT` environment variable or the :js:attr:`report_junit` general configuration parameter.
 
    .. versionadded:: 3.6.0
+
+   .. versionchanged:: 3.6.1
+      Added support for retries in the JUnit XML report.
 
 
 -------------------------------------
