@@ -147,11 +147,10 @@
                 {"$ref": "#/defs/handler_common"},
                 {
                     "properties": {
-                        "address": {"type": "string"},
-                        "extras": {"type": "object"},
-                        "url": {"type": "string"}
+                        "uri": {"type": "string"},
+                        "extras": {"type": "object"}
                     },
-                    "required": ["address"]
+                    "required": ["uri"]
                 }
             ]
         },
@@ -523,7 +522,7 @@
         "logging/handlers*/filelog_basedir": "./perflogs",
         "logging/handlers*/graylog_extras": {},
         "logging/handlers*/httpjson_extras": {},
-        "logging/handlers*/httpjson_url": "",
+        "logging/handlers*/httpjson_uri": "",
         "logging/handlers*/stream_name": "stdout",
         "logging/handlers*/syslog_socktype": "udp",
         "logging/handlers*/syslog_facility": "user",

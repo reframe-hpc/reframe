@@ -339,25 +339,28 @@ def _create_graylog_handler(site_config, config_prefix):
 
 
 def _create_httpjson_handler(site_config, config_prefix):
-    address = site_config.get(f'{config_prefix}/address')
-    host, port = address.split(':', maxsplit=1)
-    if not port:
-        raise ConfigError('http json handler: no port specified')
+    uri_re = re.compile('(?P<scheme>https?)://(?P<host>\S+):(?P<port>\d*)'
+                        '/(?P<url>\S*)$')
+    uri = site_config.get(f'{config_prefix}/uri')
+    match = uri_re.match(uri)
+    if not match:
+        raise ConfigError('http json handler: invalid uri scheme')
 
     # Check if the remote server is up and accepts connections; if not we will
     # skip the handler
     try:
-        with socket.create_connection((host, port), timeout=1):
+        with socket.create_connection((match['host'], match['port']),
+                                      timeout=1):
             pass
     except OSError as e:
         getlogger().warning(
-            f"could not connect to http log server at '{address}': {e}"
+            f"could not connect to http log server at "
+            f"\'{match['host']}:{match['port']}\': {e}"
         )
         return None
 
-    url = site_config.get(f'{config_prefix}/url')
     extras = site_config.get(f'{config_prefix}/extras')
-    return HTTPJSONHandler(host, port, url, extras)
+    return HTTPJSONHandler(uri, extras)
 
 
 class HTTPJSONHandler(logging.Handler):
@@ -372,11 +375,9 @@ class HTTPJSONHandler(logging.Handler):
         'stack_info', 'thread', 'threadName', 'exc_text'
     }
 
-    def __init__(self, host, port, url, extras=None):
+    def __init__(self, uri, extras=None):
         super().__init__()
-        self._host = host
-        self._url = url
-        self._port = port
+        self._uri = uri
         self._extras = extras
 
     def _record_to_json(self, record):
@@ -396,8 +397,8 @@ class HTTPJSONHandler(logging.Handler):
         json_record = self._record_to_json(record)
         try:
             requests.post(
-                f'http://{self._host}:{self._port}/{self._url}',
-                data=json_record, headers={'Content-type': 'application/json'}
+                self._uri, data=json_record,
+                headers={'Content-type': 'application/json'}
             )
         except requests.exceptions.RequestException as e:
             raise LoggingError('logging failed') from e
