@@ -343,7 +343,9 @@ def _create_httpjson_handler(site_config, config_prefix):
     url = site_config.get(f'{config_prefix}/url')
     parsed_url = urllib.parse.urlparse(url)
     if parsed_url.scheme not in {'http', 'https'}:
-        raise ConfigError('http json handler: invalid url scheme')
+        raise ConfigError(
+            "httpjson handler: invalid url scheme: use 'http' or 'https'"
+        )
 
     if not parsed_url.hostname:
         raise ConfigError('http json handler: invalid hostname')
@@ -362,8 +364,8 @@ def _create_httpjson_handler(site_config, config_prefix):
             pass
     except OSError as e:
         getlogger().warning(
-            f"could not connect to http log server at "
-            f"\'{parsed_url.hostname}:{parsed_url.port}\': {e}"
+            f'httpjson: could not connect to server'
+            f'{parsed_url.hostname}:{parsed_url.port}: {e}'
         )
         return None
 

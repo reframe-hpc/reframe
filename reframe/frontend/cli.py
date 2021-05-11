@@ -476,16 +476,10 @@ def main():
         help='Resolve module conflicts automatically'
     )
     argparser.add_argument(
-        dest='httpjson_server',
-        envvar='RFM_HTTPJSON_ADDRESS',
-        configvar='logging/handlers_perflog/httpjson_address',
-        help='HTTP Json server address'
-    )
-    argparser.add_argument(
-        dest='httpjson_uri',
+        dest='httpjson_url',
         envvar='RFM_HTTPJSON_URL',
         configvar='logging/handlers_perflog/httpjson_url',
-        help='HTTP JSON URL'
+        help='URL of HTTP server accepting JSON logs'
     )
 
     # Parse command line
