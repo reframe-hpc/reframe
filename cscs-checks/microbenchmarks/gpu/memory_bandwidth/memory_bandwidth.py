@@ -5,11 +5,11 @@
 
 import reframe as rfm
 
-import library.microbenchmarks.gpu.memory_bandwidth as mb
 import cscslib.microbenchmarks.gpu.hooks as hooks
+from library.microbenchmarks.gpu.memory_bandwidth import *
 
 
-class BaseCSCS(rfm.RegressionMixin):
+class Base_CSCS(rfm.RegressionMixin):
     @rfm.run_after('init')
     def arola_tsa_valid_prog_environs(self):
         if self.current_system.name in ['arolla', 'tsa']:
@@ -21,7 +21,7 @@ class BaseCSCS(rfm.RegressionMixin):
 
 
 @rfm.simple_test
-class GpuBandwidthCheck(mb.GpuBandwidthSingle, BaseCSCS):
+class GPU_bandwidth_check(GPU_bandwidth_single, Base_CSCS):
     valid_systems = [
         'daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn',
         'ault:amdv100', 'ault:intelv100', 'ault:amda100', 'ault:amdvega'
@@ -70,7 +70,7 @@ class GpuBandwidthCheck(mb.GpuBandwidthSingle, BaseCSCS):
 
 
 @rfm.simple_test
-class MultiGpuBandwidthCheck(mb.GpuBandwidthMulti, BaseCSCS):
+class Multi_GPU_bandwidth_check(GPU_bandwidth_multi, Base_CSCS):
     valid_systems = [
         'tsa:cn', 'arola:cn', 'ault:amdv100', 'ault:intelv100',
         'ault:amda100', 'ault:amdvega'

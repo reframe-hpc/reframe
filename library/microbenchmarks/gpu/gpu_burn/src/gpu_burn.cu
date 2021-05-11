@@ -403,7 +403,16 @@ template<class T> void launch(int duration)
 }
 
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
+ /*
+  * The time of the burn can be set by passing the time in seconds as an
+  * as an executable argument. If this value is prepended with the `-d` option,
+  * the matrix operations will be double-precesion.
+  *
+  * By default, the code will run for 10s in single-precision mode.
+  */
+
     int runLength = 10;
     bool useDoubles = false;
     int thisParam = 0;
@@ -412,7 +421,7 @@ int main(int argc, char **argv) {
         thisParam++;
     }
     if (argc-thisParam < 2)
-        printf("Run length not specified in the command line.  Burning for 10 secs\n");
+        printf("Run length not specified in the command line. Burning for 10 secs\n");
     else
         runLength = atoi(argv[1+thisParam]);
 

@@ -7,10 +7,10 @@ import reframe.utility.sanity as sn
 import reframe as rfm
 
 
-__all__ = ['BuildGpuPChase', 'RunGpuPChaseSingle', 'RunGpuPChaseP2P']
+__all__ = ['Build_GPU_pchase', 'Run_GPU_pchase', 'Run_GPU_pchase_D2D']
 
 
-class BuildGpuPChaseBase(rfm.CompileOnlyRegressionTest, pin_prefix=True):
+class Build_GPU_pchase(rfm.CompileOnlyRegressionTest, pin_prefix=True):
     ''' Base class to build the pointer chase executable.
 
     Derived classes must define the variable `gpu_build` to indicate if the
@@ -18,6 +18,18 @@ class BuildGpuPChaseBase(rfm.CompileOnlyRegressionTest, pin_prefix=True):
 
     The name of the resulting executable is `pChase.x`.
     '''
+
+    #: Set the build option to either 'cuda' or 'hip'.
+    #:
+    #: :default: ``required``
+    gpu_build = variable(str)
+
+    #: Set the GPU architecture.
+    #: This variable will be passed to the compiler to generate the
+    #: arch-specific code.
+    #:
+    #: :default: ``None``
+    gpu_arch = variable(str, type(None), value=None)
 
     num_tasks = 1
     build_system = 'Make'
@@ -27,18 +39,16 @@ class BuildGpuPChaseBase(rfm.CompileOnlyRegressionTest, pin_prefix=True):
     maintainers = ['JO', 'SK']
     tags = {'benchmark'}
 
-    # GPU build options
-    # The build can either be 'cuda' or 'hip'. This variable is required.
-    # However, specifying the device's architecture is entirely optional.
-    gpu_build = variable(str)
-    gpu_arch = variable(str, type(None), value=None)
-
     @rfm.run_before('compile')
     def set_gpu_build(self):
-        '''This hook requires the `gpu_build` variable to be set.
+        '''Set the build options.
 
-        Both the cuda and hip options are supported by the test sources.
+        This hook requires the `gpu_build` variable to be set. Both 'cuda' and
+        'hip' options are supported by the test sources.
+        The supported options are 'cuda' and 'hip'. See the vendor-specific
+        docs for the supported options for the ``gpu_arch`` variable.
         '''
+
         if self.gpu_build == 'cuda':
             self.build_system.makefile = 'makefile.cuda'
             if self.gpu_arch:
@@ -55,10 +65,12 @@ class BuildGpuPChaseBase(rfm.CompileOnlyRegressionTest, pin_prefix=True):
 
     @rfm.run_before('sanity')
     def set_sanity(self):
+        '''Assert that the executable is present.'''
+
         self.sanity_patterns = sn.assert_found(r'pChase.x', self.stdout)
 
 
-class RunGpuPChaseBase(rfm.RunOnlyRegressionTest, pin_prefix=True):
+class Run_GPU_pchase_base(rfm.RunOnlyRegressionTest, pin_prefix=True):
     '''Base RunOnly class for the gpu pointer chase test.
 
     This runs the pointer chase algo on the linked list from the code compiled
@@ -69,17 +81,27 @@ class RunGpuPChaseBase(rfm.RunOnlyRegressionTest, pin_prefix=True):
     node per cache line. The number of node jumps is set relatively large to
     ensure that the background effects are averaged out.
 
-    Derived tests MUST set the number of list nodes, the executable and the
+    Derived tests must set the number of list nodes, the executable and the
     number of gpus per compute node.
     '''
 
-    # Linked list length
+    #: Variable that sets the size of the linked list.
+    #:
+    #: :default:``required``
     num_list_nodes = variable(int)
 
-    # Use a large stride to ensure there's only a single node per cache line
+    #: Variable to set the stride (in mumber of nodes) amongst nodes in the
+    #: linked list. We Use a large stride to ensure there's only a single
+    #: node per cache line.
+    #:
+    #: :default:``32``
     stride = variable(int, value=32)  # (128 Bytes)
 
-    # Set a large number of node jumps to smooth out spurious effects
+    #: Variable to set the total number of node jumps on the list traversal.
+    #: We use a relatively large number of jumps to smooth out potential
+    #: spurious effects.
+    #:
+    #: :default:``400000``
     num_node_jumps = variable(int, value=400000)
 
     # Mark the required variables
@@ -91,17 +113,23 @@ class RunGpuPChaseBase(rfm.RunOnlyRegressionTest, pin_prefix=True):
 
     @rfm.run_before('run')
     def set_exec_opts(self):
+        '''Set the list travesal options as executable args.'''
+
         self.executable_opts += [
             f'--stride {self.stride}',
             f'--nodes {self.num_list_nodes}',
             f'--num-jumps {self.num_node_jumps}'
         ]
 
+    @rfm.run_before('sanity')
+    def set_sanity(self):
+        self.sanity_patterns = self.do_sanity_check()
+
     @sn.sanity_function
     def do_sanity_check(self):
-        # Check that every node has the right number of GPUs
-        # Store this nodes in case they're used later by the perf functions.
-        self.my_nodes = set(sn.extractall(
+        '''Check that every node has the right number of GPUs.'''
+
+        my_nodes = set(sn.extractall(
             rf'^\s*\[([^\]]*)\]\s*Found {self.num_gpus_per_node} device\(s\).',
             self.stdout, 1))
 
@@ -110,16 +138,16 @@ class RunGpuPChaseBase(rfm.RunOnlyRegressionTest, pin_prefix=True):
             r'^\s*\[([^\]]*)\]\s*Pointer chase complete.',
             self.stdout, 1)))
         return sn.evaluate(sn.assert_eq(
-            sn.assert_eq(self.job.num_tasks, len(self.my_nodes)),
+            sn.assert_eq(self.job.num_tasks, len(my_nodes)),
             sn.assert_eq(self.job.num_tasks, nodes_at_end)))
 
-    @rfm.run_before('sanity')
-    def set_sanity(self):
-        self.sanity_patterns = self.do_sanity_check()
 
+class Run_GPU_pchase(Run_GPU_pchase_base):
+    '''Base class for intra-GPU latency tests.
 
-class RunGpuPChaseSingle(RunGpuPChaseBase):
-    '''Base class for intra-GPU latency tests.'''
+    Derived classes must set the dependency with respect to a derived class
+    from :class:`Build_GPU_pchase`.
+    '''
 
     @rfm.run_before('performance')
     def set_performance_patterns(self):
@@ -132,17 +160,21 @@ class RunGpuPChaseSingle(RunGpuPChaseBase):
         }
 
 
-class RunGpuPChaseP2P(RunGpuPChaseBase):
-    '''Base class for inter-GPU (P2P) latency tests.'''
+class Run_GPU_pchase_D2D(Run_GPU_pchase_base):
+    '''Base class for inter-device (D2D) latency tests.
+
+    Derived classes must set the dependency with respect to a derived class
+    from :class:`Build_GPU_pchase`.
+    '''
 
     executable_opts = ['--multi-gpu']
 
     @sn.sanity_function
-    def average_P2P_latency(self):
-        '''
-        Extract the average P2P latency. Note that the pChase code
-        returns a table with the cummulative latency for all P2P
-        list traversals, and the last column of this table has the max
+    def average_D2D_latency(self):
+        '''Extract the average D2D latency.
+
+        The pChase code returns a table with the cummulative latency for all
+        D2D list traversals, and the last column of this table has the max
         values for each device.
         '''
         return int(sn.evaluate(
@@ -155,5 +187,5 @@ class RunGpuPChaseP2P(RunGpuPChaseBase):
     @rfm.run_before('performance')
     def set_performance_patterns(self):
         self.perf_patterns = {
-            'average_latency': self.average_P2P_latency(),
+            'average_latency': self.average_D2D_latency(),
         }

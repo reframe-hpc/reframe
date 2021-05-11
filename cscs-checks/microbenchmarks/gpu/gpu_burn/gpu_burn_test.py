@@ -8,11 +8,11 @@ import os
 import reframe as rfm
 import reframe.utility.sanity as sn
 
-from library.microbenchmarks.gpu.gpu_burn import GpuBurnBase
+from library.microbenchmarks.gpu.gpu_burn import GPU_burn
 import cscslib.microbenchmarks.gpu.hooks as hooks
 
 @rfm.simple_test
-class GpuBurnTest(GpuBurnBase):
+class GPU_burn_check(GPU_burn):
     valid_systems = [
         'daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn', 'ault:amdv100',
         'ault:intelv100', 'ault:amda100', 'ault:amdvega'

@@ -7,23 +7,33 @@ import reframe.utility.sanity as sn
 import reframe as rfm
 
 
-__all__ = ['GpuBandwidthSingle', 'GpuBandwidthMulti']
+__all__ = ['GPU_bandwidth_single', 'GPU_bandwidth_multi']
 
 
-class GpuBandwidthBase(rfm.RegressionTest, pin_prefix=True):
-    '''Base class to the gpu bandwidth test.
+class GPU_bandwidth_base(rfm.RegressionTest, pin_prefix=True):
+    '''Base class to the gpu bandwidth test.'''
 
-    The source code can be compiled for both CUDA and HIP. This option must be
-    set by derived class defining the `gpu_build` variable. A specific target
-    architecture can be specified through the variable `gpu_arch`.
+    #: Set the build option to either 'cuda' or 'hip'.
+    #:
+    #: :default: ``required``
+    gpu_build = variable(str)
 
-    By default, these benchmarks have default values for the size of the copy
-    buffer (`copy_size`) and the number of times this copy is performed
-    (`num_copies`). These values can also be overriden by a derived class.
-    '''
+    #: Set the GPU architecture.
+    #: This variable will be passed to the compiler to generate the
+    #: arch-specific code.
+    #:
+    #: :default: ``None``
+    gpu_arch = variable(str, type(None), value=None)
 
-    # Default copy variables
+    #: Size of the array used to measure the bandwidth.
+    #:
+    #: :default:``1024**3``
     copy_size = variable(int, value=1073741824)
+
+    #: Number of times each type of copies is performed.
+    #: The returned bandiwdth values are averaged over this number of times.
+    #:
+    #: :default:``20``
     num_copies = variable(int, value=20)
 
     build_system = 'Make'
@@ -32,18 +42,16 @@ class GpuBandwidthBase(rfm.RegressionTest, pin_prefix=True):
     num_tasks_per_node = 1
     maintainers = ['AJ', 'SK']
 
-    # GPU build options
-    # The build can either be 'cuda' or 'hip'. This variable is required.
-    # However, specifying the device's architecture is entirely optional.
-    gpu_build = variable(str)
-    gpu_arch = variable(str, type(None), value=None)
-
     @rfm.run_before('compile')
     def set_gpu_build(self):
-        '''This hook requires the `gpu_build` variable to be set.
+        '''Set the build options.
 
-        Both the cuda and hip options are supported by the test sources.
+        This hook requires the `gpu_build` variable to be set. Both 'cuda' and
+        'hip' options are supported by the test sources.
+        The supported options are 'cuda' and 'hip'. See the vendor-specific
+        docs for the supported options for the ``gpu_arch`` variable.
         '''
+
         if self.gpu_build == 'cuda':
             self.build_system.makefile = 'makefile.cuda'
             if self.gpu_arch:
@@ -62,6 +70,8 @@ class GpuBandwidthBase(rfm.RegressionTest, pin_prefix=True):
 
     @rfm.run_before('run')
     def set_exec_opts(self):
+        '''Pass the copy size and number of copies as executable args.'''
+
         self.executable_opts += [
             f'--size {self.copy_size}',
             f'--copies {self.num_copies}',
@@ -73,6 +83,8 @@ class GpuBandwidthBase(rfm.RegressionTest, pin_prefix=True):
 
     @sn.sanity_function
     def do_sanity_check(self):
+        '''Check that all nodes completed successfully.'''
+
         node_names = set(sn.extractall(
             r'^\s*\[([^\]]*)\]\s*Found %s device\(s\).'
             % self.num_gpus_per_node, self.stdout, 1
@@ -93,7 +105,7 @@ class GpuBandwidthBase(rfm.RegressionTest, pin_prefix=True):
         return True
 
 
-class GpuBandwidthSingle(GpuBandwidthBase):
+class GPU_bandwidth_single(GPU_bandwidth_base):
     '''GPU memory bandwidth benchmark.
 
     Evaluates the individual host-device, device-host and device-device
@@ -137,12 +149,12 @@ class GpuBandwidthSingle(GpuBandwidthBase):
                 r' \d+ is \s*(\S+)\s*GB/s.')
 
 
-class GpuBandwidthMulti(GpuBandwidthBase):
+class GPU_bandwidth_multi(GPU_bandwidth_base):
     '''Multi-GPU memory bandwidth benchmark.
 
     Evaluates the copy bandwidth amongst all devices in a compute node.
     This test assesses the bandwidth with and without direct peer memory
-    acess (see the parameter `p2p`).
+    access (see the parameter `p2p`).
 
     -- Sanity --
     Tests that the number of nodes and the number of devices per node matches
@@ -153,10 +165,14 @@ class GpuBandwidthMulti(GpuBandwidthBase):
      - bw: The average bandwidth with all the other devices in the node.
     '''
 
+    #: Parameter to test the multi-gpu bandwidth with and without P2P
+    #: memory access.
+    #: This option is passed as an argument to the executable.
     p2p = parameter([True, False])
 
     @rfm.run_before('run')
     def extend_exec_opts(self):
+        '''Add the multi-gpu related arguments to the executable options.'''
         self.executable_opts += ['--multi-gpu']
         if self.p2p:
             self.executable_opts += ['--p2p']
