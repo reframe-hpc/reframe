@@ -1328,6 +1328,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         if not self.current_system or not self._current_partition:
             raise PipelineError('no system or system partition is set')
 
+        self.prerun_cmds.insert(0, self.build_system.prepare_run())
         if self.container_platform:
             try:
                 cp_name = type(self.container_platform).__name__
