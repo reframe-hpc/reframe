@@ -357,8 +357,8 @@ def _create_httpjson_handler(site_config, config_prefix):
     # Check if the remote server is up and accepts connections; if not we will
     # skip the handler
     try:
-        with socket.create_connection(
-            (parsed_url.hostname, parsed_url.port), timeout=1):
+        with socket.create_connection((parsed_url.hostname, parsed_url.port),
+                                      timeout=1):
             pass
     except OSError as e:
         getlogger().warning(
