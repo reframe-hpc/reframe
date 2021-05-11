@@ -16,8 +16,13 @@ class Base_CSCS(rfm.RegressionMixin):
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
 
     # Inject external hooks
-    set_gpu_arch = rfm.run_after('setup')(hooks.set_gpu_arch)
-    set_gpus_per_node = rfm.run_before('run')(hooks.set_gpus_per_node)
+    @rfm.run_after('setup')
+    def set_gpu_arch(self):
+        hooks.set_gpu_arch(self)
+
+    @rfm.run_before('run')
+    def set_gpus_per_node(self):
+        hooks.set_gpus_per_node(self)
 
 
 @rfm.simple_test
