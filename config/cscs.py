@@ -1121,9 +1121,8 @@ site_configuration = {
                 },
                 {
                     'type': 'httpjson',
-                    'uri': 'http://httpjson-server:12345/rfm',
+                    'url': 'http://httpjson-server:12345/rfm',
                     'level': 'info',
-                    'format': '%(message)s',
                     'extras': {
                         'facility': 'reframe',
                         'data-version': '1.0',

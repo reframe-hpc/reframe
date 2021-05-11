@@ -14,6 +14,7 @@ import shutil
 import sys
 import socket
 import time
+import urllib
 
 import reframe.utility as util
 import reframe.utility.color as color
@@ -339,28 +340,35 @@ def _create_graylog_handler(site_config, config_prefix):
 
 
 def _create_httpjson_handler(site_config, config_prefix):
-    uri_re = re.compile('(?P<scheme>https?)://(?P<host>\S+):(?P<port>\d*)'
-                        '/(?P<url>\S*)$')
-    uri = site_config.get(f'{config_prefix}/uri')
-    match = uri_re.match(uri)
-    if not match:
-        raise ConfigError('http json handler: invalid uri scheme')
+    url = site_config.get(f'{config_prefix}/url')
+    parsed_url = urllib.parse.urlparse(url)
+    if parsed_url.scheme not in {'http', 'https'}:
+        raise ConfigError('http json handler: invalid url scheme')
+
+    if not parsed_url.hostname:
+        raise ConfigError('http json handler: invalid hostname')
+
+    try:
+        if not parsed_url.port:
+            raise ConfigError('http json handler: no port given')
+    except ValueError as e:
+        raise ConfigError('http json handler: invalid port') from e
 
     # Check if the remote server is up and accepts connections; if not we will
     # skip the handler
     try:
-        with socket.create_connection((match['host'], match['port']),
-                                      timeout=1):
+        with socket.create_connection(
+            (parsed_url.hostname, parsed_url.port), timeout=1):
             pass
     except OSError as e:
         getlogger().warning(
             f"could not connect to http log server at "
-            f"\'{match['host']}:{match['port']}\': {e}"
+            f"\'{parsed_url.hostname}:{parsed_url.port}\': {e}"
         )
         return None
 
     extras = site_config.get(f'{config_prefix}/extras')
-    return HTTPJSONHandler(uri, extras)
+    return HTTPJSONHandler(url, extras)
 
 
 class HTTPJSONHandler(logging.Handler):
@@ -375,9 +383,9 @@ class HTTPJSONHandler(logging.Handler):
         'stack_info', 'thread', 'threadName', 'exc_text'
     }
 
-    def __init__(self, uri, extras=None):
+    def __init__(self, url, extras=None):
         super().__init__()
-        self._uri = uri
+        self._url = url
         self._extras = extras
 
     def _record_to_json(self, record):
@@ -397,7 +405,7 @@ class HTTPJSONHandler(logging.Handler):
         json_record = self._record_to_json(record)
         try:
             requests.post(
-                self._uri, data=json_record,
+                self._url, data=json_record,
                 headers={'Content-type': 'application/json'}
             )
         except requests.exceptions.RequestException as e:

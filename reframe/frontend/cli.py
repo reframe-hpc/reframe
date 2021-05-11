@@ -483,9 +483,9 @@ def main():
     )
     argparser.add_argument(
         dest='httpjson_uri',
-        envvar='RFM_HTTPJSON_URI',
-        configvar='logging/handlers_perflog/httpjson_uri',
-        help='HTTP JSON uri'
+        envvar='RFM_HTTPJSON_URL',
+        configvar='logging/handlers_perflog/httpjson_url',
+        help='HTTP JSON URL'
     )
 
     # Parse command line

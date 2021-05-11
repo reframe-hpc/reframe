@@ -1009,13 +1009,13 @@ The ``httpjson`` log handler
 This handler sends log records in JSON format to a server using HTTP POST requests.
 The additional properties for the ``httpjson`` handler are the following:
 
-.. js:attribute:: .logging[].handlers[].uri
+.. js:attribute:: .logging[].handlers[].url
 
-.. object:: .logging[].handlers_perflog[].uri
+.. object:: .logging[].handlers_perflog[].url
 
    :required: Yes
 
-   The uri to be used in the http(s) request server defined as ``http(s)://host:port/url``.
+   The URL to be used in the HTTP(S) request server.
 
 
 .. js:attribute:: .logging[].handlers[].extras
@@ -1029,8 +1029,7 @@ The additional properties for the ``httpjson`` handler are the following:
    These may depend on the server configuration.
 
 
-This log handler uses internally `requests <https://pypi.org/project/requests/>`__.
-The ``httpjson`` handler sends log messages in JSON format using an HTTP POST request to the specified uri.
+The ``httpjson`` handler sends log messages in JSON format using an HTTP POST request to the specified URL.
 
 An example configuration of this handler for performance logging is shown here:
 
@@ -1040,7 +1039,6 @@ An example configuration of this handler for performance logging is shown here:
        'type': 'httpjson',
        'address': 'http://httpjson-server:12345/rfm',
        'level': 'info',
-       'format': '%(message)s',
        'extras': {
            'facility': 'reframe',
            'data-version': '1.0'
@@ -1048,7 +1046,6 @@ An example configuration of this handler for performance logging is shown here:
    }
 
 
-Although the ``format`` is defined for this handler, it is not only the log message that will be transmitted.
 This handler transmits the whole log record, meaning that all the information will be available and indexable at the remote end.
 
 

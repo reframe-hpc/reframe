@@ -712,17 +712,17 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       Please :envvar:`RFM_GRAYLOG_ADDRESS` instead.
 
 
-.. envvar:: RFM_HTTPJSON_URI
+.. envvar:: RFM_HTTPJSON_URL
 
-   The uri of the server to send performance logs in JSON format.
-   The uri is specified in ``http(s)://host:port/url`` format.
+   The URL of the server to send performance logs in JSON format.
+   The URL is specified in ``scheme://host:port/path`` format.
 
    .. table::
       :align: left
 
       ================================== ==================
       Associated command line option     N/A
-      Associated configuration parameter :js:attr:`uri` httpjson log handler configuration parameter
+      Associated configuration parameter :js:attr:`url` httpjson log handler configuration parameter
       ================================== ==================
 
 
