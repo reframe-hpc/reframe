@@ -7,6 +7,8 @@
 # Meta-class for creating regression tests.
 #
 
+import functools
+import types
 
 import reframe.core.namespaces as namespaces
 import reframe.core.parameters as parameters
@@ -92,6 +94,48 @@ class RegressionTestMeta(type):
                         # raise the exception from the base __getitem__.
                         raise err from None
 
+    class WrappedFunction:
+        '''Descriptor to wrap a free function as a bound-method.
+
+        The free function object is wrapped by the constructor. Instances
+        of this class should be inserted into the namespace of the target class
+        with the desired name for the bound-method. Since this class is a descriptor,
+        the `__get__` method will return the right bound-method when accessed
+        from a class instance.
+        '''
+
+        __slots__ = ('fn')
+
+        def __init__(self, fn, name=None):
+            @functools.wraps(fn)
+            def fn_(*args, **kwargs):
+                return fn(*args, **kwargs)
+
+            self.fn = fn_
+            if name:
+                self.fn.__name__ = name
+
+        def __get__(self, obj, objtype=None):
+            if objtype is None:
+                objtype = type(obj)
+
+            self.fn.__qualname__ = '.'.join(
+                [objtype.__qualname__, self.fn.__name__]
+            )
+            if obj is None:
+                return self.fn
+
+            return types.MethodType(self.fn, obj)
+
+        def __getattr__(self, name):
+            return getattr(self.fn, name)
+
+        def __setattr__(self, name, value):
+            if name in self.__slots__:
+                super().__setattr__(name, value)
+            else:
+                setattr(self.fn, name, value)
+
     @classmethod
     def __prepare__(metacls, name, bases, **kwargs):
         namespace = super().__prepare__(name, bases, **kwargs)
@@ -116,6 +160,14 @@ class RegressionTestMeta(type):
         # Directives to add/modify a regression test variable
         namespace['variable'] = variables.TestVar
         namespace['required'] = variables.Undefined
+
+        # Directive to bind a free function into the class
+        def bind(fn, name=None):
+            inst = metacls.WrappedFunction(fn, name)
+            namespace[inst.__name__] = inst
+            return inst
+
+        namespace['bind'] = bind
 
         # Hook-related functionality
         namespace['run_before'] = hooks.run_before
