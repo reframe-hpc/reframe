@@ -172,20 +172,6 @@ class RegressionTestMeta(type):
         # Hook-related functionality
         namespace['run_before'] = hooks.run_before
         namespace['run_after'] = hooks.run_after
-        namespace['init'] = hooks.run_after('__init__')
-        namespace['pre_setup'] = hooks.run_before('setup')
-        namespace['post_setup'] = hooks.run_after('setup')
-        namespace['pre_compile'] = hooks.run_before('compile')
-        namespace['post_compile'] = hooks.run_after('compile_wait')
-        namespace['pre_run'] = hooks.run_before('run')
-        namespace['post_run'] = hooks.run_after('run_wait')
-        namespace['pre_sanity'] = hooks.run_before('sanity')
-        namespace['post_sanity'] = hooks.run_after('sanity')
-        namespace['pre_performance'] = hooks.run_before('performance')
-        namespace['post_performance'] = hooks.run_after('performance')
-        namespace['pre_cleanup'] = hooks.run_before('cleanup')
-        namespace['post_cleanup'] = hooks.run_after('cleanup')
-
         namespace['require_deps'] = hooks.require_deps
         return metacls.MetaNamespace(namespace)
 
