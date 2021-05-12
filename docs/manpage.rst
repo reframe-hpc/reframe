@@ -715,6 +715,23 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       Please :envvar:`RFM_GRAYLOG_ADDRESS` instead.
 
 
+.. envvar:: RFM_HTTPJSON_URL
+
+   The URL of the server to send performance logs in JSON format.
+   The URL is specified in ``scheme://host:port/path`` format.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :js:attr:`url` httpjson log handler configuration parameter
+      ================================== ==================
+
+
+.. versionadded:: 3.6.1
+
+
 .. envvar:: RFM_IGNORE_CHECK_CONFLICTS
 
    Ignore tests with conflicting names when loading.

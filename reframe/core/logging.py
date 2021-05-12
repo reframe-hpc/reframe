@@ -9,10 +9,12 @@ import logging.handlers
 import numbers
 import os
 import re
+import requests
 import shutil
 import sys
 import socket
 import time
+import urllib
 
 import reframe.utility as util
 import reframe.utility.color as color
@@ -68,11 +70,11 @@ def _check_level(level):
     elif isinstance(level, str):
         norm_level = level.lower()
         if norm_level not in _log_level_values:
-            raise ValueError('logger level %s not available' % level)
+            raise ValueError(f'logger level {level} not available')
         else:
             ret = _log_level_values[norm_level]
     else:
-        raise TypeError('logger level %s not an int or a valid string' % level)
+        raise TypeError(f'logger level {level} not an int or a valid string')
 
     return ret
 
@@ -140,8 +142,8 @@ class MultiFileHandler(logging.FileHandler):
             dirname = self._prefix % record.__dict__
             os.makedirs(dirname, exist_ok=True)
         except KeyError as e:
-            raise LoggingError('logging failed: unknown placeholder in '
-                               'filename pattern: %s' % e) from None
+            raise LoggingError(f'logging failed: unknown placeholder in '
+                               f'filename pattern: {e}') from None
         except OSError as e:
             raise LoggingError('logging failed') from e
 
@@ -240,7 +242,7 @@ def _create_file_handler(site_config, config_prefix):
     timestamp = site_config.get(f'{config_prefix}/timestamp')
     if timestamp:
         basename, ext = os.path.splitext(filename)
-        filename = '%s_%s%s' % (basename, time.strftime(timestamp), ext)
+        filename = f'{basename}_{time.strftime(timestamp)}{ext}'
 
     append = site_config.get(f'{config_prefix}/append')
     return logging.handlers.RotatingFileHandler(filename,
@@ -337,6 +339,81 @@ def _create_graylog_handler(site_config, config_prefix):
                                   json_default=jsonext.encode)
 
 
+def _create_httpjson_handler(site_config, config_prefix):
+    url = site_config.get(f'{config_prefix}/url')
+    parsed_url = urllib.parse.urlparse(url)
+    if parsed_url.scheme not in {'http', 'https'}:
+        raise ConfigError(
+            "httpjson handler: invalid url scheme: use 'http' or 'https'"
+        )
+
+    if not parsed_url.hostname:
+        raise ConfigError('http json handler: invalid hostname')
+
+    try:
+        if not parsed_url.port:
+            raise ConfigError('http json handler: no port given')
+    except ValueError as e:
+        raise ConfigError('http json handler: invalid port') from e
+
+    # Check if the remote server is up and accepts connections; if not we will
+    # skip the handler
+    try:
+        with socket.create_connection((parsed_url.hostname, parsed_url.port),
+                                      timeout=1):
+            pass
+    except OSError as e:
+        getlogger().warning(
+            f'httpjson: could not connect to server'
+            f'{parsed_url.hostname}:{parsed_url.port}: {e}'
+        )
+        return None
+
+    extras = site_config.get(f'{config_prefix}/extras')
+    return HTTPJSONHandler(url, extras)
+
+
+class HTTPJSONHandler(logging.Handler):
+    # These are the `LogRecord` attributes which are defined in
+    # https://docs.python.org/3/library/logging.html#logrecord-attributes
+    # as well as the 'exc_text' which is used to cache the traceback text
+    LOG_ATTRS = {
+        'args', 'asctime', 'created', 'exc_info',
+        'filename', 'funcName', 'levelname', 'levelno',
+        'lineno', 'message', 'module', 'msecs', 'msg', 'name',
+        'pathname', 'process', 'processName', 'relativeCreated',
+        'stack_info', 'thread', 'threadName', 'exc_text'
+    }
+
+    def __init__(self, url, extras=None):
+        super().__init__()
+        self._url = url
+        self._extras = extras
+
+    def _record_to_json(self, record):
+        json_record = {
+            k: v for k, v in record.__dict__.items()
+            if not (k.startswith('_') or k in HTTPJSONHandler.LOG_ATTRS)
+        }
+        if self._extras:
+            json_record.update({
+                k: v for k, v in self._extras.items()
+                if not (k.startswith('_') or k in HTTPJSONHandler.LOG_ATTRS)
+            })
+
+        return _xfmt(json_record).encode('utf-8')
+
+    def emit(self, record):
+        json_record = self._record_to_json(record)
+        try:
+            requests.post(
+                self._url, data=json_record,
+                headers={'Content-type': 'application/json'}
+            )
+        except requests.exceptions.RequestException as e:
+            raise LoggingError('logging failed') from e
+
+
 def _extract_handlers(site_config, handlers_group):
     handler_prefix = f'logging/0/{handlers_group}'
     handlers_list = site_config.get(handler_prefix)
@@ -361,9 +438,17 @@ def _extract_handlers(site_config, handlers_group):
                 getlogger().warning('could not initialize the '
                                     'graylog handler; ignoring ...')
                 continue
+        elif handler_type == 'httpjson':
+            hdlr = _create_httpjson_handler(
+                site_config, f'{handler_prefix}/{i}'
+            )
+            if hdlr is None:
+                getlogger().warning('could not initialize the '
+                                    'httpjson handler; ignoring ...')
+                continue
         else:
             # Should not enter here
-            raise AssertionError(f"unknown handler type: {handler_type}")
+            raise AssertionError(f'unknown handler type: {handler_type}')
 
         level = site_config.get(f'{handler_prefix}/{i}/level')
         fmt = site_config.get(f'{handler_prefix}/{i}/format')
@@ -561,14 +646,14 @@ class LoggerAdapter(logging.LoggerAdapter):
 
             _WARN_ONCE.add(message)
 
-        message = '%s: %s' % (sys.argv[0], message)
+        message = f'{sys.argv[0]}: {message}'
         if self.colorize:
             message = color.colorize(message, color.YELLOW)
 
         super().warning(message, *args, **kwargs)
 
     def error(self, message, *args, **kwargs):
-        message = '%s: %s' % (sys.argv[0], message)
+        message = f'{sys.argv[0]}: {message}'
         if self.colorize:
             message = color.colorize(message, color.RED)
 
@@ -615,7 +700,7 @@ class logging_context:
         # Log any exceptions thrown with the current context logger
         if exc_type is not None:
             msg = 'caught {0}: {1}'
-            exc_fullname = '%s.%s' % (exc_type.__module__, exc_type.__name__)
+            exc_fullname = f'{exc_type.__module__}.{exc_type.__name__}'
             getlogger().log(self._level, msg.format(exc_fullname, exc_value))
 
         # Restore context logger
