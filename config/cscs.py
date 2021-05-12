@@ -1110,16 +1110,6 @@ site_configuration = {
                     'append': True
                 },
                 {
-                    'type': 'graylog',
-                    'address': 'graylog-server:12345',
-                    'level': 'info',
-                    'format': '%(message)s',
-                    'extras': {
-                        'facility': 'reframe',
-                        'data-version': '1.0',
-                    }
-                },
-                {
                     'type': 'httpjson',
                     'url': 'http://httpjson-server:12345/rfm',
                     'level': 'info',
