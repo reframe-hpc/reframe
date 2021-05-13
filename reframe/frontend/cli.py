@@ -593,7 +593,7 @@ def main():
 
     # Setup the check loader
     if options.restore_session is not None:
-        # We need to load the failed checks only from a report
+        # We need to load the failed checks only from a list of reports
         if options.restore_session:
             filenames = options.restore_session.split(',')
         else:
@@ -602,18 +602,7 @@ def main():
                 new=False
             )]
 
-
-        reports = []
-        for filename in filenames:
-            report = runreport.load_report(filename)
-            reports.append(report)
-
-        # pop the last report, merge in the other reports
-        # this is almost certainly not the right way to go about this
-        report = reports.pop()
-        for rpt in reports:
-            report._cases_index.update(rpt._cases_index)
-
+        report = runreport.load_report(*filenames)
         check_search_path = list(report.slice('filename', unique=True))
         check_search_recursive = False
 
@@ -797,6 +786,8 @@ def main():
             printer.debug(dependencies.format_deps(testgraph))
             if options.restore_session is not None:
                 testgraph, restored_cases = report.restore_dangling(testgraph)
+                print(dependencies.format_deps(testgraph))
+                print(restored_cases)
 
         testcases = dependencies.toposort(
             testgraph,
