@@ -706,6 +706,8 @@ All logging handlers share the following set of common attributes:
      See `here <#the-stream-log-handler>`__ for more details.
    - ``syslog``: This handler sends log records to a Syslog facility.
      See `here <#the-syslog-log-handler>`__ for more details.
+   - ``httpjson``: This handler sends log records in JSON format using HTTP post requests.
+     See `here <#the-httpjson-log-handler>`__ for more details.
 
 
 .. js:attribute:: .logging[].handlers[].level
@@ -999,6 +1001,52 @@ The additional properties for the ``syslog`` handler are the following:
    The socket address where this handler will connect to.
    This can either be of the form ``<host>:<port>`` or simply a path that refers to a Unix domain socket.
 
+
+---------------------------
+The ``httpjson`` log handler
+---------------------------
+
+This handler sends log records in JSON format to a server using HTTP POST requests.
+The additional properties for the ``httpjson`` handler are the following:
+
+.. js:attribute:: .logging[].handlers[].url
+
+.. object:: .logging[].handlers_perflog[].url
+
+   :required: Yes
+
+   The URL to be used in the HTTP(S) request server.
+
+
+.. js:attribute:: .logging[].handlers[].extras
+
+.. object:: .logging[].handlers_perflog[].extras
+
+   :required: No
+   :default: ``{}``
+
+   A set of optional key/value pairs to be passed with each log record to the server.
+   These may depend on the server configuration.
+
+
+The ``httpjson`` handler sends log messages in JSON format using an HTTP POST request to the specified URL.
+
+An example configuration of this handler for performance logging is shown here:
+
+.. code:: python
+
+   {
+       'type': 'httpjson',
+       'address': 'http://httpjson-server:12345/rfm',
+       'level': 'info',
+       'extras': {
+           'facility': 'reframe',
+           'data-version': '1.0'
+       }
+   }
+
+
+This handler transmits the whole log record, meaning that all the information will be available and indexable at the remote end.
 
 
 Scheduler Configuration
