@@ -13,8 +13,11 @@ __all__ = ['BuildGpuPchase', 'RunGpuPchase', 'RunGpuPchaseD2D']
 class BuildGpuPchase(rfm.CompileOnlyRegressionTest, pin_prefix=True):
     ''' Base class to build the pointer chase executable.
 
-    Derived classes must define the variable `gpu_build` to indicate if the
-    test should be build using cuda or hip.
+    The test sources can be compiled for both CUDA and HIP. This is set with
+    the `gpu_build` variable, which must be set by a derived class to either
+    'cuda' or 'hip'. This source code can also be compiled for a specific
+    device architecture by setting the `gpu_arch` variable to an AMD or NVIDIA
+    supported architecture code.
 
     The name of the resulting executable is `pChase.x`.
     '''

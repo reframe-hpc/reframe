@@ -11,7 +11,14 @@ __all__ = ['GpuBandwidth', 'GpuBandwidthD2D']
 
 
 class GpuBandwidthBase(rfm.RegressionTest, pin_prefix=True):
-    '''Base class to the gpu bandwidth test.'''
+    '''Base class to the gpu bandwidth test.
+
+    The test sources can be compiled for both CUDA and HIP. This is set with
+    the `gpu_build` variable, which must be set by a derived class to either
+    'cuda' or 'hip'. This source code can also be compiled for a specific
+    device architecture by setting the `gpu_arch` variable to an AMD or NVIDIA
+    supported architecture code.
+    '''
 
     #: Set the build option to either 'cuda' or 'hip'.
     #:
@@ -108,22 +115,17 @@ class GpuBandwidth(GpuBandwidthBase):
     '''GPU memory bandwidth benchmark.
 
     Evaluates the individual host-device, device-host and device-device
-    bandwidth for all the GPUs on each node.
-
-    -- Sanity --
-    Tests that the number of nodes and the number of devices per node matches
-    the variables specified in the test.
-
-    -- Performance --
-    The performance patterns are:
-     - h2d: Host to device bandwidth in GB/s.
-     - d2h: Device to host bandwidth in GB/s.
-     - d2d: Device to device bandwidth in GB/s.
-
+    bandwidth (in GB/s) for all the GPUs on each node.
     '''
 
     @rfm.run_before('performance')
     def set_perf_patterns(self):
+        '''Set the performance patterns.
+
+        These include host-device (h2d), device-host (d2h) and device=device
+        (d2d) transfers.
+        '''
+
         self.perf_patterns = {
             'h2d': sn.min(sn.extractall(self._xfer_pattern('h2d'),
                                         self.stdout, 1, float)),
@@ -151,17 +153,9 @@ class GpuBandwidth(GpuBandwidthBase):
 class GpuBandwidthD2D(GpuBandwidthBase):
     '''Multi-GPU memory bandwidth benchmark.
 
-    Evaluates the copy bandwidth amongst all devices in a compute node.
-    This test assesses the bandwidth with and without direct peer memory
-    access (see the parameter `p2p`).
-
-    -- Sanity --
-    Tests that the number of nodes and the number of devices per node matches
-    the variables specified in the test.
-
-    -- Performance --
-    The performance patterns are:
-     - bw: The average bandwidth with all the other devices in the node.
+    Evaluates the copy bandwidth (in GB/s) amongst all devices in a compute
+    node. This test assesses the bandwidth with and without direct peer
+    memory access (see the parameter `p2p`).
     '''
 
     #: Parameter to test the multi-gpu bandwidth with and without P2P
@@ -178,6 +172,13 @@ class GpuBandwidthD2D(GpuBandwidthBase):
 
     @rfm.run_before('performance')
     def set_perf_patterns(self):
+        '''Set the performance patterns.
+
+        In addition to the individual transfer rates amongst devices, this test
+        also reports the average bandwidth per device with all the other
+        devices. Hence, the performance pattern will report the device with the
+        lowest average copy bandwidth with all the other devices.
+        '''
         self.perf_patterns = {
             'bw': sn.min(sn.extractall(
                 r'^[^,]*\[[^\]]*\]\s+GPU\s+\d+\s+(\s*\d+.\d+\s)+',
