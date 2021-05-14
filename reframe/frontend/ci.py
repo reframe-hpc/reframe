@@ -27,7 +27,9 @@ def _emit_gitlab_pipeline(testcases):
 
         report_file = f'{testcase.check.name}-report.json'
         if testcase.level:
-            restore_files = ','.join([f'{t.check.name}-report.json' for t in tc.deps])
+            restore_files = ','.join(
+                f'{t.check.name}-report.json' for t in tc.deps
+            )
         else:
             restore_files = None
 
