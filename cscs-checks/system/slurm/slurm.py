@@ -257,3 +257,36 @@ class MemoryOverconsumptionMpiCheck(SlurmCompiledBaseCheck):
             'pilatus:mc': 250,
         }
         return reference_meminfo[self.current_partition.fullname]
+
+
+@rfm.simple_test
+class slurm_response_check(rfm.RunOnlyRegressionTest):
+    command = parameter(['squeue', 'sacct'])
+    descr = 'Slurm command test'
+    valid_systems = ['daint:login', 'dom:login']
+    valid_prog_environs = ['builtin']
+    num_tasks = 1
+    num_tasks_per_node = 1
+    reference = {
+        'squeue': {
+            'real_time': (0.02, None, 0.1, 's')
+        },
+        'sacct': {
+            'real_time': (0.1, None, 0.1, 's')
+        }
+    }
+    executable = 'time -p'
+    tags = {'diagnostic', 'health'}
+    maintainers = ['CB', 'VH']
+
+    @rfm.run_before('run')
+    def set_exec_opts(self):
+        self.executable_opts = [self.command]
+
+    @rfm.run_before('sanity')
+    def set_sanity(self):
+        self.sanity_patterns = sn.assert_eq(self.job.exitcode, 0)
+        self.perf_patterns = {
+            'real_time': sn.extractsingle(r'real (?P<real_time>\S+)',
+                                          self.stderr, 'real_time', float)
+        }

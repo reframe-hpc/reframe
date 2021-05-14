@@ -81,10 +81,9 @@ class RegressionCheckLoader:
 
         name = type(check).__name__
         checkfile = os.path.relpath(inspect.getfile(type(check)))
-        required_attrs = ['sanity_patterns',
-                          'valid_systems', 'valid_prog_environs']
+        required_attrs = ['valid_systems', 'valid_prog_environs']
         for attr in required_attrs:
-            if getattr(check, attr) is None:
+            if not hasattr(check, attr):
                 getlogger().warning(
                     f'{checkfile}: {attr!r} not defined for test {name!r}; '
                     f'skipping...'
@@ -127,8 +126,7 @@ class RegressionCheckLoader:
         if hasattr(module, '_get_checks'):
             getlogger().warning(
                 f'{module.__file__}: _get_checks() is no more supported '
-                f'in test files: please use @reframe.simple_test or '
-                f'@reframe.parameterized_test decorators'
+                f'in test files: please use @reframe.simple_test decorator'
             )
 
         if not hasattr(module, '_rfm_gettests'):
@@ -168,18 +166,20 @@ class RegressionCheckLoader:
         getlogger().debug(f'  > Loaded {len(ret)} test(s)')
         return ret
 
-    def load_from_file(self, filename, **check_args):
+    def load_from_file(self, filename, force=False):
         if not self._validate_source(filename):
             return []
 
-        return self.load_from_module(util.import_module_from_file(filename))
+        return self.load_from_module(
+            util.import_module_from_file(filename, force)
+        )
 
-    def load_from_dir(self, dirname, recurse=False):
+    def load_from_dir(self, dirname, recurse=False, force=False):
         checks = []
         for entry in os.scandir(dirname):
             if recurse and entry.is_dir():
                 checks.extend(
-                    self.load_from_dir(entry.path, recurse)
+                    self.load_from_dir(entry.path, recurse, force)
                 )
 
             if (entry.name.startswith('.') or
@@ -187,23 +187,28 @@ class RegressionCheckLoader:
                 not entry.is_file()):
                 continue
 
-            checks.extend(self.load_from_file(entry.path))
+            checks += self.load_from_file(entry.path, force)
 
         return checks
 
-    def load_all(self):
+    def load_all(self, force=False):
         '''Load all checks in self._load_path.
 
-        If a prefix exists, it will be prepended to each path.'''
+        If a prefix exists, it will be prepended to each path.
+
+        :arg force: Force reloading of test files.
+        :returns: The list of loaded tests.
+        '''
         checks = []
         for d in self._load_path:
             getlogger().debug(f'Looking for tests in {d!r}')
             if not os.path.exists(d):
+                getlogger().warning(f'check path {d!r} does not exist')
                 continue
 
             if os.path.isdir(d):
-                checks.extend(self.load_from_dir(d, self._recurse))
+                checks += self.load_from_dir(d, self._recurse, force)
             else:
-                checks.extend(self.load_from_file(d))
+                checks += self.load_from_file(d, force)
 
         return checks
