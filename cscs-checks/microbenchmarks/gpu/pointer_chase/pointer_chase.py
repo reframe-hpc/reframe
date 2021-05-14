@@ -12,8 +12,8 @@ import cscslib.microbenchmarks.gpu.hooks as hooks
 from library.microbenchmarks.gpu.pointer_chase import *
 
 
-class Base_CSCS(rfm.RegressionMixin):
-    '''Handy class to store common test settings.'''
+class SystemConfigCSCS(rfm.RegressionMixin):
+    '''CSCS system settings shared across all pointer chase tests.'''
 
     single_device_systems = variable(
         typ.List[str],
@@ -39,7 +39,7 @@ class Base_CSCS(rfm.RegressionMixin):
 
 
 @rfm.simple_test
-class Build_GPU_pchase_check(Build_GPU_pchase, Base_CSCS):
+class build_gpu_pchase_check(BuildGpuPchase, SystemConfigCSCS):
     ''' Build the executable.'''
 
     @rfm.run_after('init')
@@ -50,10 +50,10 @@ class Build_GPU_pchase_check(Build_GPU_pchase, Base_CSCS):
         self.valid_prog_environs = self.global_prog_environs
 
 
-class Base_pchase(Run_GPU_pchase, Base_CSCS):
+class RunPchaseBase(RunGpuPchase, SystemConfigCSCS):
     @rfm.run_after('init')
     def set_deps_and_prgenvs(self):
-        self.depends_on('Build_GPU_pchase_check')
+        self.depends_on('build_gpu_pchase_check')
         self.valid_systems = (
             self.single_device_systems + self.multi_device_systems
         )
@@ -61,13 +61,13 @@ class Base_pchase(Run_GPU_pchase, Base_CSCS):
         self.exclusive_access = True
 
     @rfm.require_deps
-    def set_executable(self, Build_GPU_pchase_check):
+    def set_executable(self, build_gpu_pchase_check):
         self.executable = os.path.join(
-            Build_GPU_pchase_check().stagedir, 'pChase.x')
+            build_gpu_pchase_check().stagedir, 'pChase.x')
 
 
 @rfm.simple_test
-class GPU_L1_latency_check(Base_pchase):
+class gpu_l1_latency_check(RunPchaseBase):
     '''Measure L1 latency.
 
     The linked list fits in L1. The stride is set pretty large, but that does
@@ -98,7 +98,7 @@ class GPU_L1_latency_check(Base_pchase):
 
 
 @rfm.simple_test
-class GPU_L2_latency_check(Base_pchase):
+class gpu_l2_latency_check(RunPchaseBase):
     '''Measure the L2 latency.
 
     The linked list is larger than L1, but it fits in L2. The stride is set
@@ -129,7 +129,7 @@ class GPU_L2_latency_check(Base_pchase):
 
 
 @rfm.simple_test
-class GPU_DRAM_latency_check(Base_pchase):
+class gpu_dram_latency_check(RunPchaseBase):
     '''Measure the DRAM latency.
 
     The linked list is large enough to fill the last cache level. Also, the
@@ -161,7 +161,7 @@ class GPU_DRAM_latency_check(Base_pchase):
 
 
 @rfm.simple_test
-class GPU_latency_check_D2D(Run_GPU_pchase_D2D, Base_CSCS):
+class gpu_latency_d2d_check(RunGpuPchaseD2D, SystemConfigCSCS):
     '''Measure the latency to remote device.
 
     Depending on the list size, the data might be cached in different places.
@@ -173,7 +173,7 @@ class GPU_latency_check_D2D(Run_GPU_pchase_D2D, Base_CSCS):
 
     @rfm.run_after('init')
     def set_deps_and_prgenvs(self):
-        self.depends_on('Build_GPU_pchase_check')
+        self.depends_on('build_gpu_pchase_check')
         self.valid_systems = self.multi_device_systems
         self.valid_prog_environs = self.global_prog_environs
         self.num_list_nodes = self.list_size
@@ -214,6 +214,6 @@ class GPU_latency_check_D2D(Run_GPU_pchase_D2D, Base_CSCS):
             }
 
     @rfm.require_deps
-    def set_executable(self, Build_GPU_pchase_check):
+    def set_executable(self, build_gpu_pchase_check):
         self.executable = os.path.join(
-            Build_GPU_pchase_check().stagedir, 'pChase.x')
+            build_gpu_pchase_check().stagedir, 'pChase.x')

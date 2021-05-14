@@ -7,10 +7,10 @@ import reframe.utility.sanity as sn
 import reframe as rfm
 
 
-__all__ = ['Build_GPU_pchase', 'Run_GPU_pchase', 'Run_GPU_pchase_D2D']
+__all__ = ['BuildGpuPchase', 'RunGpuPchase', 'RunGpuPchaseD2D']
 
 
-class Build_GPU_pchase(rfm.CompileOnlyRegressionTest, pin_prefix=True):
+class BuildGpuPchase(rfm.CompileOnlyRegressionTest, pin_prefix=True):
     ''' Base class to build the pointer chase executable.
 
     Derived classes must define the variable `gpu_build` to indicate if the
@@ -41,10 +41,9 @@ class Build_GPU_pchase(rfm.CompileOnlyRegressionTest, pin_prefix=True):
 
     @rfm.run_before('compile')
     def set_gpu_build(self):
-        '''Set the build options.
+        '''Set the build options before the compile pipeline stage.
 
-        This hook requires the `gpu_build` variable to be set. Both 'cuda' and
-        'hip' options are supported by the test sources.
+        This hook requires the `gpu_build` variable to be set.
         The supported options are 'cuda' and 'hip'. See the vendor-specific
         docs for the supported options for the ``gpu_arch`` variable.
         '''
@@ -70,7 +69,7 @@ class Build_GPU_pchase(rfm.CompileOnlyRegressionTest, pin_prefix=True):
         self.sanity_patterns = sn.assert_found(r'pChase.x', self.stdout)
 
 
-class Run_GPU_pchase_base(rfm.RunOnlyRegressionTest, pin_prefix=True):
+class RunGpuPchaseBase(rfm.RunOnlyRegressionTest, pin_prefix=True):
     '''Base RunOnly class for the gpu pointer chase test.
 
     This runs the pointer chase algo on the linked list from the code compiled
@@ -142,11 +141,11 @@ class Run_GPU_pchase_base(rfm.RunOnlyRegressionTest, pin_prefix=True):
             sn.assert_eq(self.job.num_tasks, nodes_at_end)))
 
 
-class Run_GPU_pchase(Run_GPU_pchase_base):
+class RunGpuPchase(RunGpuPchaseBase):
     '''Base class for intra-GPU latency tests.
 
     Derived classes must set the dependency with respect to a derived class
-    from :class:`Build_GPU_pchase`.
+    from :class:`BuildGpuPchase`.
     '''
 
     @rfm.run_before('performance')
@@ -160,11 +159,11 @@ class Run_GPU_pchase(Run_GPU_pchase_base):
         }
 
 
-class Run_GPU_pchase_D2D(Run_GPU_pchase_base):
+class RunGpuPchaseD2D(RunGpuPchaseBase):
     '''Base class for inter-device (D2D) latency tests.
 
     Derived classes must set the dependency with respect to a derived class
-    from :class:`Build_GPU_pchase`.
+    from :class:`BuildGpuPchase`.
     '''
 
     executable_opts = ['--multi-gpu']

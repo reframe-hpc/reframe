@@ -8,10 +8,10 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-__all__ = ['GPU_burn']
+__all__ = ['GpuBurn']
 
 
-class GPU_burn(rfm.RegressionTest, pin_prefix=True):
+class GpuBurn(rfm.RegressionTest, pin_prefix=True):
     '''Base class for the GPU Burn test.
 
     -- Compile --
@@ -70,10 +70,9 @@ class GPU_burn(rfm.RegressionTest, pin_prefix=True):
 
     @rfm.run_before('compile')
     def set_gpu_build(self):
-        '''Set the build options.
+        '''Set the build options before the compile pipeline stage.
 
-        This hook requires the `gpu_build` variable to be set. Both 'cuda' and
-        'hip' options are supported by the test sources.
+        This hook requires the `gpu_build` variable to be set.
         The supported options are 'cuda' and 'hip'. See the vendor-specific
         docs for the supported options for the ``gpu_arch`` variable.
         '''

@@ -7,10 +7,10 @@ import reframe.utility.sanity as sn
 import reframe as rfm
 
 
-__all__ = ['GPU_bandwidth_single', 'GPU_bandwidth_multi']
+__all__ = ['GpuBandwidth', 'GpuBandwidthD2D']
 
 
-class GPU_bandwidth_base(rfm.RegressionTest, pin_prefix=True):
+class GpuBandwidthBase(rfm.RegressionTest, pin_prefix=True):
     '''Base class to the gpu bandwidth test.'''
 
     #: Set the build option to either 'cuda' or 'hip'.
@@ -44,10 +44,9 @@ class GPU_bandwidth_base(rfm.RegressionTest, pin_prefix=True):
 
     @rfm.run_before('compile')
     def set_gpu_build(self):
-        '''Set the build options.
+        '''Set the build options before the compile pipeline stage.
 
-        This hook requires the `gpu_build` variable to be set. Both 'cuda' and
-        'hip' options are supported by the test sources.
+        This hook requires the `gpu_build` variable to be set.
         The supported options are 'cuda' and 'hip'. See the vendor-specific
         docs for the supported options for the ``gpu_arch`` variable.
         '''
@@ -105,7 +104,7 @@ class GPU_bandwidth_base(rfm.RegressionTest, pin_prefix=True):
         return True
 
 
-class GPU_bandwidth_single(GPU_bandwidth_base):
+class GpuBandwidth(GpuBandwidthBase):
     '''GPU memory bandwidth benchmark.
 
     Evaluates the individual host-device, device-host and device-device
@@ -149,7 +148,7 @@ class GPU_bandwidth_single(GPU_bandwidth_base):
                 r' \d+ is \s*(\S+)\s*GB/s.')
 
 
-class GPU_bandwidth_multi(GPU_bandwidth_base):
+class GpuBandwidthD2D(GpuBandwidthBase):
     '''Multi-GPU memory bandwidth benchmark.
 
     Evaluates the copy bandwidth amongst all devices in a compute node.
