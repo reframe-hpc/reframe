@@ -5,6 +5,7 @@
 
 import reframe as rfm
 import reframe.utility.sanity as sn
+import time
 
 from library.microbenchmarks.gpu.gpu_burn import GpuBurn
 
@@ -30,8 +31,24 @@ class gpu_usage_report_check(GpuBurn):
     executable_opts = ['-d', f'{burn_time}']
     perf_floor = variable(float, value=-1.0)
 
+    @rfm.run_before('run')
+    def set_launcher_opts(self):
+       '''Make slurm's output unbuffered.
+
+       Without this, the jobreport data gets written into the stdout after the
+       job is completed, causing the sanity function to issue a sanity error.
+       '''
+       self.job.launcher.options = ['-u']
+
     @rfm.run_before('sanity')
     def set_sanity_patterns(self):
+        '''Set sanity patterns and wait for the jobreport.
+
+        If a large number of nodes is used, the final jobreport output happens
+        much later after job has already completed. Forcing a wait of 10s
+        seems to do the trick.
+        '''
+        time.wait(10)
         self.sanity_patterns = self.gpu_usage_sanity()
 
     @sn.sanity_function
@@ -55,16 +72,14 @@ class gpu_usage_report_check(GpuBurn):
         self.nodes_reported = sn.extractall(patt, self.stdout, 1)
         usage = sn.extractall(patt, self.stdout, 2, int)
         time_reported = sn.extractall(patt, self.stdout, 3, int)
-        return sn.evaluate(sn.all([
+        return sn.all([
             sn.assert_ge(sn.count(self.nodes_reported), 1),
             set(self.nodes_reported).issubset(full_node_set),
             sn.all(
                 map(lambda x, y: self.burn_time/x <= y, time_reported, usage)
             ),
-            sn.all(
-                map(lambda x: x >= self.burn_time, time_reported)
-            )
-        ]))
+            sn.assert_ge(sn.min(time_reported), self.burn_time)
+        ])
 
     @rfm.run_before('performance')
     def set_perf_patterns(self):
