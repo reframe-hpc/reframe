@@ -48,7 +48,7 @@ class gpu_usage_report_check(GpuBurn):
         much later after job has already completed. Forcing a wait of 10s
         seems to do the trick.
         '''
-        time.wait(10)
+        time.sleep(10)
         self.sanity_patterns = self.gpu_usage_sanity()
 
     @sn.sanity_function
