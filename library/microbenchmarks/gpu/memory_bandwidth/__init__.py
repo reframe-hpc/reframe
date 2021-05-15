@@ -51,7 +51,7 @@ class GpuBandwidthBase(rfm.RegressionTest, pin_prefix=True):
 
     @rfm.run_before('compile')
     def set_gpu_build(self):
-        '''Set the build options before the compile pipeline stage.
+        '''Set the build options [pre-compile hook].
 
         This hook requires the `gpu_build` variable to be set.
         The supported options are 'cuda' and 'hip'. See the vendor-specific
