@@ -10,3 +10,4 @@ conflict testmod_foo
 conflict testmod_boo
 
 setenv TESTMOD_BAR "BAR"
+setenv TESTMOD_ERROR "BARERROR"
