@@ -16,6 +16,7 @@ from reframe.core.exceptions import ReframeSyntaxError
 from reframe.core.hooks import HookRegistry
 from reframe.core.deferrable import deferrable
 
+
 class RegressionTestMeta(type):
 
     class MetaNamespace(namespaces.LocalNamespace):
@@ -157,7 +158,7 @@ class RegressionTestMeta(type):
 
         # Register all the sanity functions based on the _rfm_sanity_fn attr.
         sanity_fn = {
-            k:v for k,v in namespace.items() if hasattr(v, '_rfm_sanity_fn')
+            k: v for k, v in namespace.items() if hasattr(v, '_rfm_sanity_fn')
         }
 
         for b in bases:
