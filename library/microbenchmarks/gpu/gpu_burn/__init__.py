@@ -15,11 +15,11 @@ class GpuBurn(rfm.RegressionTest, pin_prefix=True):
     '''Base class for the GPU Burn test.
 
     The test sources can be compiled for both CUDA and HIP. This is set with
-    the `gpu_build` variable, which must be set by a derived class to either
+    the ``gpu_build`` variable, which must be set by a derived class to either
     'cuda' or 'hip'. This source code can also be compiled for a specific
-    device architecture by setting the `gpu_arch` variable to an AMD or NVIDIA
-    supported architecture code. For the run stage, this test requires that
-    derived classes set the variables, num_tasks and num_gpus_per_node.
+    device architecture by setting the ``gpu_arch`` variable to an AMD or
+    NVIDIA supported architecture code. For the run stage, this test requires
+    that derived classes set the variables, num_tasks and num_gpus_per_node.
 
     The duration of the run can be changed by passing the value (in seconds) of
     the desired run length. If this value is prepended with `-d`, the matrix
@@ -56,12 +56,13 @@ class GpuBurn(rfm.RegressionTest, pin_prefix=True):
             'temp': (0, None, None, 'degC')
         }
     }
+    sanity_patterns = sn.assert_true(1)
 
     @rfm.run_before('compile')
     def set_gpu_build(self):
         '''Set the build options [pre-compile hook].
 
-        This hook requires the `gpu_build` variable to be set.
+        This hook requires the ``gpu_build`` variable to be set.
         The supported options are 'cuda' and 'hip'. See the vendor-specific
         docs for the supported options for the ``gpu_arch`` variable.
         '''
@@ -87,17 +88,17 @@ class GpuBurn(rfm.RegressionTest, pin_prefix=True):
 
         The GPU burn app is multi-threaded and will run in all the gpus present
         in the node. Thus, the total number of times the gpu burn runs is the
-        product of the number of nodes (`self.job.num_tasks`) and the number
+        product of the number of nodes (``self.job.num_tasks``) and the number
         of gpus per node.
         '''
 
         return self.job.num_tasks * self.num_gpus_per_node
 
-    @rfm.run_before('sanity')
-    def set_sanity_patterns(self):
-        '''Set the sanity patterns to count the number of successful burns.'''
+    @sanity_function
+    def count_successful_burns(self):
+        '''Count the number of successful burns.'''
 
-        self.sanity_patterns = sn.assert_eq(sn.count(sn.findall(
+        return sn.assert_eq(sn.count(sn.findall(
             r'^\s*\[[^\]]*\]\s*GPU\s*\d+\(OK\)', self.stdout)
         ), self.num_tasks_assigned)
 

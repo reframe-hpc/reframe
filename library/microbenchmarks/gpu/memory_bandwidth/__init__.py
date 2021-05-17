@@ -48,6 +48,7 @@ class GpuBandwidthBase(rfm.RegressionTest, pin_prefix=True):
     num_tasks = required
     num_tasks_per_node = 1
     maintainers = ['AJ', 'SK']
+    sanity_patterns = sn.assert_true(1)
 
     @rfm.run_before('compile')
     def set_gpu_build(self):
@@ -83,32 +84,29 @@ class GpuBandwidthBase(rfm.RegressionTest, pin_prefix=True):
             f'--copies {self.num_copies}',
         ]
 
-    @rfm.run_before('sanity')
-    def set_sanity_patterns(self):
-        self.sanity_patterns = self.do_sanity_check()
-
-    @sn.sanity_function
-    def do_sanity_check(self):
+    @sanity_function
+    def assert_all_nodes_ok(self):
         '''Check that all nodes completed successfully.'''
 
         node_names = set(sn.extractall(
             r'^\s*\[([^\]]*)\]\s*Found %s device\(s\).'
             % self.num_gpus_per_node, self.stdout, 1
         ))
-        sn.evaluate(sn.assert_eq(
+        req_nodes = sn.assert_eq(
             self.job.num_tasks, len(node_names),
             msg='requested {0} node(s), got {1} (nodelist: %s)' %
-            ','.join(sorted(node_names))))
+            ','.join(sorted(node_names)))
         good_nodes = set(sn.extractall(
             r'^\s*\[([^\]]*)\]\s*Test Result\s*=\s*PASS',
             self.stdout, 1
         ))
-        sn.evaluate(sn.assert_eq(
+        failed_nodes = sn.assert_eq(
             node_names, good_nodes,
             msg='check failed on the following node(s): %s' %
-            ','.join(sorted(node_names - good_nodes)))
+            ','.join(sorted(node_names - good_nodes))
         )
-        return True
+
+        return sn.all([req_nodes, failed_nodes])
 
 
 class GpuBandwidth(GpuBandwidthBase):
