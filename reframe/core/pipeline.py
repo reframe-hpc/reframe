@@ -1468,6 +1468,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     def sanity(self):
         self.check_sanity()
 
+#                    raise SanityError()
     @final
     def performance(self):
         try:
@@ -1496,18 +1497,21 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
               more details.
 
         '''
+
+        sanity_patterns = []
         if rt.runtime().get_option('general/0/trap_job_errors'):
-            sanity_patterns = [
+            sanity_patterns.append(
                 sn.assert_eq(self.job.exitcode, 0,
                              msg='job exited with exit code {0}')
-            ]
-            if hasattr(self, 'sanity_patterns'):
-                sanity_patterns.append(self.sanity_patterns)
+            )
 
-            self.sanity_patterns = sn.all(sanity_patterns)
+        if hasattr(self, 'sanity_patterns'):
+            sanity_patterns.append(self.sanity_patterns)
         elif not hasattr(self, 'sanity_patterns'):
             raise SanityError('sanity_patterns not set')
 
+        sanity_patterns.extend([fn(self) for fn in self._rfm_sanity])
+        self.sanity_patterns = sn.all(sanity_patterns)
         with osext.change_dir(self._stagedir):
             success = sn.evaluate(self.sanity_patterns)
             if not success:

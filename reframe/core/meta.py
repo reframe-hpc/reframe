@@ -14,7 +14,7 @@ import reframe.core.variables as variables
 
 from reframe.core.exceptions import ReframeSyntaxError
 from reframe.core.hooks import HookRegistry
-
+from reframe.core.deferrable import deferrable
 
 class RegressionTestMeta(type):
 
@@ -116,6 +116,14 @@ class RegressionTestMeta(type):
         # Directives to add/modify a regression test variable
         namespace['variable'] = variables.TestVar
         namespace['required'] = variables.Undefined
+
+        # Machinery to add a new sanity function
+        def sanity_function(fn):
+            _def_fn = deferrable(fn)
+            setattr(_def_fn, '_rfm_sanity_fn', True)
+            return _def_fn
+
+        namespace['sanity_function'] = sanity_function
         return metacls.MetaNamespace(namespace)
 
     def __new__(metacls, name, bases, namespace, **kwargs):
@@ -126,9 +134,9 @@ class RegressionTestMeta(type):
 
         # Create a set with the attribute names already in use.
         cls._rfm_dir = set()
-        for base in bases:
-            if hasattr(base, '_rfm_dir'):
-                cls._rfm_dir.update(base._rfm_dir)
+        for b in bases:
+            if hasattr(b, '_rfm_dir'):
+                cls._rfm_dir.update(b._rfm_dir)
 
         used_attribute_names = set(cls._rfm_dir)
 
@@ -146,11 +154,23 @@ class RegressionTestMeta(type):
         # attribute; all dependencies will be resolved first in the post-setup
         # phase if not assigned elsewhere
         hooks = HookRegistry.create(namespace)
+
+        # Register all the sanity functions based on the _rfm_sanity_fn attr.
+        sanity_fn = {
+            k:v for k,v in namespace.items() if hasattr(v, '_rfm_sanity_fn')
+        }
+
         for b in bases:
             if hasattr(b, '_rfm_pipeline_hooks'):
                 hooks.update(getattr(b, '_rfm_pipeline_hooks'))
 
-        cls._rfm_pipeline_hooks = hooks  # HookRegistry(local_hooks)
+            if hasattr(b, '_rfm_sanity'):
+                fns = getattr(b, '_rfm_sanity')
+                for fn in [fn for fn in fns if fn.__name__ not in sanity_fn]:
+                    sanity_fn[fn.__name__] = fn
+
+        cls._rfm_pipeline_hooks = hooks
+        cls._rfm_sanity = sanity_fn.values()
         cls._final_methods = {v.__name__ for v in namespace.values()
                               if hasattr(v, '_rfm_final')}
 
