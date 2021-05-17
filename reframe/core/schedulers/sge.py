@@ -161,4 +161,9 @@ class SgeJobScheduler(PbsJobScheduler):
             self.log(f'Job {job.jobid} not known to scheduler, '
                      f'assuming job completed')
             job._state = 'COMPLETED'
-            job._completed = True
+
+    def finished(self, job):
+        if job.exception:
+            raise job.exception
+
+        return job.state == 'COMPLETED'
