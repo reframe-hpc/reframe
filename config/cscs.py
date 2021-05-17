@@ -973,7 +973,7 @@ site_configuration = {
                 'eiger', 'pilatus'
             ],
             'modules': [
-                {'name': 'PrgEnv-aocc', 'collection': True}
+                'PrgEnv-aocc'
             ]
         },
         {
@@ -982,7 +982,7 @@ site_configuration = {
                 'eiger', 'pilatus'
             ],
             'modules': [
-                {'name': 'PrgEnv-cray', 'collection': True}
+                'PrgEnv-cray'
             ]
         },
         {
@@ -991,16 +991,16 @@ site_configuration = {
                 'eiger', 'pilatus'
             ],
             'modules': [
-                {'name': 'PrgEnv-gnu', 'collection': True}
+                'PrgEnv-gnu'
             ]
         },
         {
             'name': 'PrgEnv-intel',
             'target_systems': [
-                'pilatus'
+                'eiger', 'pilatus'
             ],
             'modules': [
-                {'name': 'PrgEnv-intel', 'collection': True}
+                'PrgEnv-intel'
             ]
         },
         {
@@ -1033,7 +1033,7 @@ site_configuration = {
         {
             'name': 'cpeIntel',
             'target_systems': [
-                'pilatus'
+                'eiger', 'pilatus'
             ],
             'modules': [
                 'cpeIntel'
@@ -1110,10 +1110,9 @@ site_configuration = {
                     'append': True
                 },
                 {
-                    'type': 'graylog',
-                    'address': 'graylog-server:12345',
+                    'type': 'httpjson',
+                    'url': 'http://httpjson-server:12345/rfm',
                     'level': 'info',
-                    'format': '%(message)s',
                     'extras': {
                         'facility': 'reframe',
                         'data-version': '1.0',

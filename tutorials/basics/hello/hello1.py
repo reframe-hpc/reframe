@@ -9,8 +9,8 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class HelloTest(rfm.RegressionTest):
-    def __init__(self):
-        self.valid_systems = ['*']
-        self.valid_prog_environs = ['*']
-        self.sourcepath = 'hello.c'
-        self.sanity_patterns = sn.assert_found(r'Hello, World\!', self.stdout)
+    valid_systems = ['*']
+    valid_prog_environs = ['*']
+    sourcepath = 'hello.c'
+    executable_opts = ['> hello.out']
+    sanity_patterns = sn.assert_found(r'Hello, World\!', 'hello.out')
