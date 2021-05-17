@@ -1505,12 +1505,13 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                              msg='job exited with exit code {0}')
             )
 
+        sn_fns = [fn(self) for fn in self._rfm_sanity]
         if hasattr(self, 'sanity_patterns'):
             sanity_patterns.append(self.sanity_patterns)
-        elif not hasattr(self, 'sanity_patterns'):
+        elif not hasattr(self, 'sanity_patterns') and len(sn_fns) == 0:
             raise SanityError('sanity_patterns not set')
 
-        sanity_patterns.extend([fn(self) for fn in self._rfm_sanity])
+        sanity_patterns.extend(sn_fns)
         self.sanity_patterns = sn.all(sanity_patterns)
         with osext.change_dir(self._stagedir):
             success = sn.evaluate(self.sanity_patterns)

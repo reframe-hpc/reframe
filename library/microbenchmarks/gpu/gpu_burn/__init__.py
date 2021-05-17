@@ -56,7 +56,6 @@ class GpuBurn(rfm.RegressionTest, pin_prefix=True):
             'temp': (0, None, None, 'degC')
         }
     }
-    sanity_patterns = sn.assert_true(1)
 
     @rfm.run_before('compile')
     def set_gpu_build(self):

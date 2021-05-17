@@ -41,7 +41,6 @@ class BuildGpuPchase(rfm.CompileOnlyRegressionTest, pin_prefix=True):
     exclusive_access = True
     maintainers = ['JO', 'SK']
     tags = {'benchmark'}
-    sanity_patterns = sn.assert_true(1)
 
     @rfm.run_before('compile')
     def set_gpu_build(self):
@@ -113,7 +112,6 @@ class RunGpuPchaseBase(rfm.RunOnlyRegressionTest, pin_prefix=True):
 
     maintainers = ['JO', 'SK']
     tags = {'benchmark'}
-    sanity_patterns = sn.assert_true(1)
 
     @rfm.run_before('run')
     def set_exec_opts(self):

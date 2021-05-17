@@ -48,7 +48,6 @@ class GpuBandwidthBase(rfm.RegressionTest, pin_prefix=True):
     num_tasks = required
     num_tasks_per_node = 1
     maintainers = ['AJ', 'SK']
-    sanity_patterns = sn.assert_true(1)
 
     @rfm.run_before('compile')
     def set_gpu_build(self):
