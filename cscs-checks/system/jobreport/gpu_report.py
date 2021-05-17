@@ -10,6 +10,7 @@ import time
 from reframe.core.exceptions import SanityError
 from library.microbenchmarks.gpu.gpu_burn import GpuBurn
 
+
 @rfm.simple_test
 class gpu_usage_report_check(GpuBurn):
     '''Check the output from the job report.
@@ -34,12 +35,12 @@ class gpu_usage_report_check(GpuBurn):
 
     @rfm.run_before('run')
     def set_launcher_opts(self):
-       '''Make slurm's output unbuffered.
+        '''Make slurm's output unbuffered.
 
-       Without this, the jobreport data gets written into the stdout after the
-       job is completed, causing the sanity function to issue a sanity error.
-       '''
-       self.job.launcher.options = ['-u']
+        Without this, the jobreport data gets written into the stdout after the
+        job is completed, causing the sanity function to issue a sanity error.
+        '''
+        self.job.launcher.options = ['-u']
 
     @rfm.run_before('sanity')
     def set_sanity_patterns(self):
@@ -103,7 +104,5 @@ class gpu_usage_report_check(GpuBurn):
             },
         }
         self.perf_patterns = {
-            'nodes_reported':sn.count(self.nodes_reported)
+            'nodes_reported': sn.count(self.nodes_reported)
         }
-
-
