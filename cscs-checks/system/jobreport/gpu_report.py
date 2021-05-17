@@ -7,6 +7,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 import time
 
+from reframe.core.exceptions import SanityError
 from library.microbenchmarks.gpu.gpu_burn import GpuBurn
 
 @rfm.simple_test
@@ -45,10 +46,17 @@ class gpu_usage_report_check(GpuBurn):
         '''Set sanity patterns and wait for the jobreport.
 
         If a large number of nodes is used, the final jobreport output happens
-        much later after job has already completed. Forcing a wait of 10s
-        seems to do the trick.
+        much later after job has already completed (this could be up to 25s).
+        However, this wait might not be necessary for a small node count, so
+        we use the try/except block below to wait only if a first call to the
+        sanity function does not succeed.
         '''
-        time.sleep(10)
+
+        try:
+            sn.evaluate(self.gpu_usage_sanity())
+        except SanityError:
+            time.sleep(25)
+
         self.sanity_patterns = self.gpu_usage_sanity()
 
     @sn.sanity_function
