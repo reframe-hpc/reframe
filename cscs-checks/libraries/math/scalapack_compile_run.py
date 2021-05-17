@@ -12,9 +12,9 @@ class ScaLAPACKTest(rfm.RegressionTest):
     linkage = parameter(['static', 'dynamic'])
 
     sourcepath = 'sample_pdsyev_call.f'
-    valid_systems = ['daint:gpu', 'daint:mc', 'dom:mc', 'dom:gpu', 
+    valid_systems = ['daint:gpu', 'daint:mc', 'dom:mc', 'dom:gpu',
                      'eiger:mc', 'pilatus:mc']
-    valid_prog_environs = ['PrgEnv-aocc', 'PrgEnv-cray', 'PrgEnv-gnu', 
+    valid_prog_environs = ['PrgEnv-aocc', 'PrgEnv-cray', 'PrgEnv-gnu',
                            'PrgEnv-intel']
     num_tasks = 16
     num_tasks_per_node = 8

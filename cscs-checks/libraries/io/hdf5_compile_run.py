@@ -23,7 +23,8 @@ class HDF5Test(rfm.RegressionTest):
             self.valid_systems += ['eiger:mc', 'pilatus:mc']
 
         if self.current_system.name in ['eiger', 'pilatus']:
-            # no cray-hdf5 as of PE 21.02 with PrgEnv-intel on Eiger and Pilatus
+            # no cray-hdf5 as of PE 21.02 with PrgEnv-intel on Eiger and
+            # Pilatus
             self.valid_prog_environs = ['PrgEnv-aocc', 'PrgEnv-cray',
                                         'PrgEnv-gnu']
         else:
