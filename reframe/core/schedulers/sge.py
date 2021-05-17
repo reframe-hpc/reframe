@@ -18,8 +18,8 @@ import reframe.core.runtime as rt
 import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
 from reframe.core.exceptions import JobSchedulerError
-from reframe.utility import seconds_to_hms
 from reframe.core.schedulers.pbs import PbsJobScheduler
+from reframe.utility import seconds_to_hms
 
 _run_strict = functools.partial(osext.run_command, check=True)
 
@@ -126,7 +126,7 @@ class SgeJobScheduler(PbsJobScheduler):
                     # Not a job of this user.
                     continue
 
-                job_number = job_list.find("JB_job_number").text
+                jobid = job_list.find("JB_job_number").text
 
                 if job_number not in [job.jobid for job in jobs]:
                     # Not a reframe job.
