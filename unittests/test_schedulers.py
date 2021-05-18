@@ -26,7 +26,7 @@ def launcher():
     return getlauncher('local')
 
 
-@pytest.fixture(params=['slurm', 'squeue', 'local', 'pbs', 'torque'])
+@pytest.fixture(params=['sge', 'slurm', 'squeue', 'local', 'pbs', 'torque'])
 def scheduler(request):
     return getscheduler(request.param)
 
@@ -130,6 +130,25 @@ def assert_job_script_sanity(job):
                              fp.read())
         assert ['echo prepare', 'echo prerun', 'hostname',
                 'echo postrun'] == matches
+
+
+def _expected_sge_directives(job):
+    num_nodes = job.num_tasks // job.num_tasks_per_node
+    num_cpus_per_node = job.num_cpus_per_task * job.num_tasks_per_node
+    return set([
+        '#$ -N "testjob"',
+        '#$ -l walltime=0:5:0',
+        '#$ -o %s' % job.stdout,
+        '#$ -e %s' % job.stderr,
+        '#$ -l select=%s:mpiprocs=%s:ncpus=%s'
+        ':mem=100GB:cpu_type=haswell' % (num_nodes,
+                                         job.num_tasks_per_node,
+                                         num_cpus_per_node),
+        '#$ --account=spam',
+        '#$ --gres=gpu:4',
+        '#DW jobdw capacity=100GB',
+        '#DW stage_in source=/foo'
+    ])
 
 
 def _expected_slurm_directives(job):
