@@ -14,13 +14,13 @@ class GpuBandwidthBase(rfm.RegressionTest, pin_prefix=True):
     '''Base class to the gpu bandwidth test.
 
     The test sources can be compiled for both CUDA and HIP. This is set with
-    the `gpu_build` variable, which must be set by a derived class to either
-    'cuda' or 'hip'. This source code can also be compiled for a specific
-    device architecture by setting the `gpu_arch` variable to an AMD or NVIDIA
-    supported architecture code.
+    the ``gpu_build`` variable, which must be set by a derived class to either
+    ``'cuda'`` or ``'hip'``. This source code can also be compiled for a
+    specific device architecture by setting the ``gpu_arch`` variable to an
+    AMD or NVIDIA supported architecture code.
     '''
 
-    #: Set the build option to either 'cuda' or 'hip'.
+    #: Set the build option to either ``'cuda'`` or ``'hip'``.
     #:
     #: :default: ``required``
     gpu_build = variable(str)
@@ -53,9 +53,10 @@ class GpuBandwidthBase(rfm.RegressionTest, pin_prefix=True):
     def set_gpu_build(self):
         '''Set the build options [pre-compile hook].
 
-        This hook requires the `gpu_build` variable to be set.
-        The supported options are 'cuda' and 'hip'. See the vendor-specific
-        docs for the supported options for the ``gpu_arch`` variable.
+        This hook requires the ``gpu_build`` variable to be set.
+        The supported options are ``'cuda'`` and ``'hip'``. See the
+        vendor-specific docs for the supported options for the ``gpu_arch``
+        variable.
         '''
 
         if self.gpu_build == 'cuda':
