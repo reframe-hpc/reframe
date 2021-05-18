@@ -16,8 +16,8 @@ class BuildGpuPchase(rfm.CompileOnlyRegressionTest, pin_prefix=True):
     The test sources can be compiled for both CUDA and HIP. This is set with
     the `gpu_build` variable, which must be set by a derived class to either
     'cuda' or 'hip'. This source code can also be compiled for a specific
-    device architecture by setting the ``gpu_arch`` variable to an AMD or NVIDIA
-    supported architecture code.
+    device architecture by setting the ``gpu_arch`` variable to an AMD or
+    NVIDIA supported architecture code.
 
     The name of the resulting executable is ``pChase.x``.
     '''

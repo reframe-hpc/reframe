@@ -63,8 +63,9 @@ class GpuBurn(rfm.RegressionTest, pin_prefix=True):
         '''Set the build options [pre-compile hook].
 
         This hook requires the ``gpu_build`` variable to be set.
-        The supported options are ``'cuda'`` and ``'hip'``. See the vendor-specific
-        docs for the supported options for the ``gpu_arch`` variable.
+        The supported options are ``'cuda'`` and ``'hip'``. See the
+        vendor-specific docs for the supported options for the ``gpu_arch``
+        variable.
         '''
 
         if self.gpu_build == 'cuda':
