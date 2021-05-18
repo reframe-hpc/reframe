@@ -101,22 +101,25 @@ class SgeJobScheduler(PbsJobScheduler):
             return
 
         user = osext.osuser()
-        completed = osext.run_command(
-            f'qstat -xml -u {user}'
-        )
-
+        completed = osext.run_command(f'qstat -xml -u {user}')
         if completed.returncode != 0:
             raise JobSchedulerError(
                 f'qstat failed with exit code {completed.returncode} '
                 f'(standard error follows):\n{completed.stderr}'
             )
 
+        # Index the jobs to poll on their jobid
+        jobs_to_poll = {job.jobid: job for job in jobs}
+
+        # Parse the XML
         root = ET.fromstring(completed.stdout)
 
-        # Store information for each job separately
-        jobinfo = {}
-        for queue_info in root:
+        # We are iterating over the returned XML and update the status of the
+        # jobs relevant to ReFrame; the naming convention of variables matches
+        # that of SGE's XML output
 
+        known_jobs = set()  # jobs known to the SGE scheduler
+        for queue_info in root:
             # Reads the XML and prints jobs with status belonging to user.
             if queue_info is None:
                 raise JobSchedulerError('Decomposition error!\n')
@@ -127,36 +130,40 @@ class SgeJobScheduler(PbsJobScheduler):
                     continue
 
                 jobid = job_list.find("JB_job_number").text
-
-                if job_number not in [job.jobid for job in jobs]:
-                    # Not a reframe job.
+                if job_number not in jobs_to_poll:
+                    # Not a reframe job
                     continue
 
                 state = job_list.find("state").text
+                job = jobs_to_poll[job_number]
+                known_jobs.add(job)
 
                 # For the list of known statuses see `man 5 sge_status`
                 # (https://arc.liv.ac.uk/SGE/htmlman/htmlman5/sge_status.html)
                 if state in ['r', 'hr', 't', 'Rr', 'Rt']:
-                    jobinfo[job_number] = 'RUNNING'
+                    job._state = 'RUNNING'
                 elif state in ['qw', 'Rq', 'hqw', 'hRwq']:
-                    jobinfo[job_number] = 'PENDING'
+                    job._state = 'PENDING'
                 elif state in ['s', 'ts', 'S', 'tS', 'T', 'tT', 'Rs',
                                'Rts', 'RS', 'RtS', 'RT', 'RtT']:
-                    jobinfo[job_number] = 'SUSPENDED'
+                    job._state = 'SUSPENDED'
                 elif state in ['Eqw', 'Ehqw', 'EhRqw']:
-                    jobinfo[job_number] = 'ERROR'
+                    job._state = 'ERROR'
                 elif state in ['dr', 'dt', 'dRr', 'dRt', 'ds',
                                'dS', 'dT', 'dRs', 'dRS', 'dRT']:
-                    jobinfo[job_number] = 'DELETING'
+                    job._state = 'DELETING'
                 elif state == 'z':
-                    jobinfo[job_number] = 'COMPLETED'
+                    job._state = 'COMPLETED'
 
-        for job in jobs:
-            if job.jobid not in jobinfo:
-                self.log(f'Job {job.jobid} not known to scheduler, '
-                         f'assuming job completed')
-                job._state = 'COMPLETED'
-                job._completed = True
-                continue
+        # Mark any "unknown" job as completed
+        unknown_jobs = set(jobs) - known_jobs
+        for job in unknown_jobs:
+            self.log(f'Job {job.jobid} not known to scheduler, '
+                     f'assuming job completed')
+            job._state = 'COMPLETED'
 
-            job._state = jobinfo[job.jobid]
+    def finished(self, job):
+        if job.exception:
+            raise job.exception
+
+        return job.state == 'COMPLETED'
