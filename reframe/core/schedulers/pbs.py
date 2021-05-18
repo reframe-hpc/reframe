@@ -55,6 +55,9 @@ class _PbsJob(sched.Job):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._cancelled = False
+
+        # This is set by the scheduler when both the job's state is
+        # 'COMPLETED' and the job's stdout and stderr are written back
         self._completed = False
 
     @property
@@ -191,11 +194,12 @@ class PbsJobScheduler(sched.JobScheduler):
         # If qstat cannot find any of the job IDs, it will return 153.
         # Otherwise, it will return with return code 0 and print information
         # only for the jobs it could find.
-        if completed.returncode == 153:
-            self.log('Return code is 153: jobids not known by scheduler, '
-                     'assuming all jobs completed')
+        if completed.returncode in (153, 35):
+            self.log(f'Return code is {completed.returncode}: '
+                     f'assuming all jobs completed')
             for job in jobs:
                 job._state = 'COMPLETED'
+                job._completed = True
 
             return
 
