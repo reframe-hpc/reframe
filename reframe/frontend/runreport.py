@@ -24,6 +24,7 @@ class _RunReport:
 
     def __init__(self, report):
         self._report = report
+        self._fallbacks = []    # fallback reports
 
         # Index all runs by test case; if a test case has run multiple times,
         # only the last time will be indexed
@@ -43,6 +44,9 @@ class _RunReport:
 
     def __getattr__(self, name):
         return getattr(self._report, name)
+
+    def add_fallback(self, report):
+        self._fallbacks.append(report)
 
     def slice(self, prop, when=None, unique=False):
         '''Slice the report on property ``prop``.'''
@@ -68,7 +72,15 @@ class _RunReport:
 
     def case(self, check, part, env):
         c, p, e = check.name, part.fullname, env.name
-        return self._cases_index.get((c, p, e))
+        ret = self._cases_index.get((c, p, e))
+        if ret is None:
+            # Look up the case in the fallback reports
+            for rpt in self._fallbacks:
+                ret = rpt._cases_index.get((c, p, e))
+                if ret is not None:
+                    break
+
+        return ret
 
     def restore_dangling(self, graph):
         '''Restore dangling dependencies in graph from the report data.
@@ -90,7 +102,7 @@ class _RunReport:
         if tc is None:
             raise errors.ReframeError(
                 f'could not restore testcase {testcase!r}: '
-                f'not found in the report file'
+                f'not found in the report files'
             )
 
         dump_file = os.path.join(tc['stagedir'], '.rfm_testcase.json')
@@ -121,7 +133,7 @@ def next_report_filename(filepatt, new=True):
     return filepatt.format(sessionid=new_id)
 
 
-def load_report(filename):
+def _load_report(filename):
     try:
         with open(filename) as fp:
             report = json.load(fp)
@@ -153,6 +165,17 @@ def load_report(filename):
         )
 
     return _RunReport(report)
+
+
+def load_report(*filenames):
+    primary = filenames[0]
+    rpt = _load_report(primary)
+
+    # Add fallback reports
+    for f in filenames[1:]:
+        rpt.add_fallback(_load_report(f))
+
+    return rpt
 
 
 def junit_xml_report(json_report):
