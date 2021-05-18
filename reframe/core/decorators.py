@@ -27,7 +27,7 @@ from reframe.core.exceptions import (ReframeSyntaxError,
 from reframe.core.logging import getlogger
 from reframe.core.pipeline import RegressionTest
 from reframe.utility.versioning import VersionValidator
-from reframe.core.hooks import (require_deps, run_before, run_after)
+from reframe.core.hooks import run_before, run_after, require_deps
 
 
 def _register_test(cls, args=None):
@@ -206,26 +206,3 @@ def required_version(*versions):
         return cls
 
     return _skip_tests
-
-
-def _runx(phase):
-    def deco(func):
-        if hasattr(func, '_rfm_attach'):
-            func._rfm_attach.append(phase)
-        else:
-            func._rfm_attach = [phase]
-
-        try:
-            # no need to resolve dependencies independently; this function is
-            # already attached to a different phase
-            func._rfm_resolve_deps = False
-        except AttributeError:
-            pass
-
-        @functools.wraps(func)
-        def _fn(*args, **kwargs):
-            func(*args, **kwargs)
-
-        return _fn
-
-    return deco

@@ -5,6 +5,7 @@
 
 import contextlib
 import functools
+import inspect
 
 import reframe.utility as util
 
