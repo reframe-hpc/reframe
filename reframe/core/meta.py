@@ -100,8 +100,8 @@ class RegressionTestMeta(type):
         The free function object is wrapped by the constructor. Instances
         of this class should be inserted into the namespace of the target class
         with the desired name for the bound-method. Since this class is a
-        descriptor, the `__get__` method will return the right bound-method when
-        accessed from a class instance.
+        descriptor, the `__get__` method will return the right bound-method
+        when accessed from a class instance.
         '''
 
         __slots__ = ('fn')
