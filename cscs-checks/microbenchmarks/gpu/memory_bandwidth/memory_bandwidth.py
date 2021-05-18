@@ -5,8 +5,8 @@
 
 import reframe as rfm
 
-import cscslib.microbenchmarks.gpu.hooks as hooks
-from library.microbenchmarks.gpu.memory_bandwidth import *
+import cscstests.microbenchmarks.gpu.hooks as hooks
+from hpctestlib.microbenchmarks.gpu.memory_bandwidth import *
 
 
 class SystemConfigCSCS(rfm.RegressionMixin):
@@ -21,8 +21,8 @@ class SystemConfigCSCS(rfm.RegressionMixin):
         hooks.set_gpu_arch(self)
 
     @rfm.run_before('run')
-    def set_gpus_per_node(self):
-        hooks.set_gpus_per_node(self)
+    def set_num_gpus_per_node(self):
+        hooks.set_num_gpus_per_node(self)
 
 
 @rfm.simple_test

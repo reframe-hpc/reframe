@@ -16,13 +16,14 @@ class GpuBurn(rfm.RegressionTest, pin_prefix=True):
 
     The test sources can be compiled for both CUDA and HIP. This is set with
     the ``gpu_build`` variable, which must be set by a derived class to either
-    'cuda' or 'hip'. This source code can also be compiled for a specific
-    device architecture by setting the ``gpu_arch`` variable to an AMD or
-    NVIDIA supported architecture code. For the run stage, this test requires
-    that derived classes set the variables, num_tasks and num_gpus_per_node.
+    ``'cuda'`` or ``'hip'``. This source code can also be compiled for a
+    specific device architecture by setting the ``gpu_arch`` variable to an
+    AMD or NVIDIA supported architecture code. For the run stage, this test
+    requires that derived classes set the variables, num_tasks and
+    num_gpus_per_node.
 
     The duration of the run can be changed by passing the value (in seconds) of
-    the desired run length. If this value is prepended with `-d`, the matrix
+    the desired run length. If this value is prepended with ``-d``, the matrix
     operations will take place using double precision. By default, the code
     will run for 10s in single precision mode.
 
@@ -30,7 +31,7 @@ class GpuBurn(rfm.RegressionTest, pin_prefix=True):
     temperatures recorded for each device after the burn.
     '''
 
-    #: Set the build option to either 'cuda' or 'hip'.
+    #: Set the build option to either ``'cuda'`` or ``'hip'``.
     #:
     #: :default: ``required``
     gpu_build = variable(str)
@@ -62,8 +63,9 @@ class GpuBurn(rfm.RegressionTest, pin_prefix=True):
         '''Set the build options [pre-compile hook].
 
         This hook requires the ``gpu_build`` variable to be set.
-        The supported options are 'cuda' and 'hip'. See the vendor-specific
-        docs for the supported options for the ``gpu_arch`` variable.
+        The supported options are ``'cuda'`` and ``'hip'``. See the
+        vendor-specific docs for the supported options for the ``gpu_arch``
+        variable.
         '''
 
         if self.gpu_build == 'cuda':

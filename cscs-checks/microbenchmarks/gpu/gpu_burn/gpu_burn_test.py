@@ -8,8 +8,9 @@ import os
 import reframe as rfm
 import reframe.utility.sanity as sn
 
-from library.microbenchmarks.gpu.gpu_burn import GpuBurn
-import cscslib.microbenchmarks.gpu.hooks as hooks
+from hpctestlib.microbenchmarks.gpu.gpu_burn import GpuBurn
+import cscstests.microbenchmarks.gpu.hooks as hooks
+
 
 @rfm.simple_test
 class gpu_burn_check(GpuBurn):
@@ -58,8 +59,8 @@ class gpu_burn_check(GpuBurn):
         hooks.set_gpu_arch(self)
 
     @rfm.run_before('run')
-    def set_gpus_per_node(self):
-        hooks.set_gpus_per_node(self)
+    def set_num_gpus_per_node(self):
+        hooks.set_num_gpus_per_node(self)
 
     @rfm.run_before('performance')
     def report_nid_with_smallest_flops(self):

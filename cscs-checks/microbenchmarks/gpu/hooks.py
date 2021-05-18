@@ -40,7 +40,7 @@ def set_gpu_arch(self):
         self.gpu_arch = 'gfx900,gfx906'
 
 
-def set_gpus_per_node(self):
+def set_num_gpus_per_node(self):
     '''Set the GPUs per node for the GPU microbenchmarks.'''
 
     cs = self.current_system.name
