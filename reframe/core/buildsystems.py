@@ -163,11 +163,8 @@ class BuildSystem(abc.ABC):
         Build systems may use this information to add commands on the run
         script before anything set by the user.
 
-        This function will always be executed from the test's stage directory.
-
-        .. versionadded:: 3.6.1
-
         :meta private:
+
         '''
 
     def _resolve_flags(self, flags, environ):
