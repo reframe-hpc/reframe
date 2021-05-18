@@ -122,7 +122,7 @@ class SgeJobScheduler(PbsJobScheduler):
         for queue_info in root:
             # Reads the XML and prints jobs with status belonging to user.
             if queue_info is None:
-                raise JobSchedulerError('Decomposition error!\n')
+                raise JobSchedulerError('could not retrieve queue information!\n')
 
             for job_list in queue_info:
                 if job_list.find("JB_owner").text != user:
@@ -130,12 +130,12 @@ class SgeJobScheduler(PbsJobScheduler):
                     continue
 
                 jobid = job_list.find("JB_job_number").text
-                if job_number not in jobs_to_poll:
+                if jobid not in jobs_to_poll:
                     # Not a reframe job
                     continue
 
                 state = job_list.find("state").text
-                job = jobs_to_poll[job_number]
+                job = jobs_to_poll[jobid]
                 known_jobs.add(job)
 
                 # For the list of known statuses see `man 5 sge_status`
