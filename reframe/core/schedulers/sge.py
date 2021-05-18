@@ -122,7 +122,7 @@ class SgeJobScheduler(PbsJobScheduler):
         for queue_info in root:
             # Reads the XML and prints jobs with status belonging to user.
             if queue_info is None:
-                raise JobSchedulerError('could not retrieve queue information!\n')
+                raise JobSchedulerError('could not retrieve queue information')
 
             for job_list in queue_info:
                 if job_list.find("JB_owner").text != user:
