@@ -9,7 +9,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.parameterized_test(['single'], ['funneled'], ['serialized'], ['multiple'])
+@rfm.simple_test
 class MpiInitTest(rfm.RegressionTest):
     '''This test checks the value returned by calling MPI_Init_thread.
 
@@ -33,22 +33,32 @@ class MpiInitTest(rfm.RegressionTest):
       mpi_thread_queried=MPI_THREAD_SERIALIZED 2']
 
     '''
+    required_thread = parameter(['single', 'funneled', 'serialized',
+                                 'multiple'])
 
-    def __init__(self, required_thread):
+    def __init__(self):
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                               'eiger:mc', 'pilatus:mc']
         self.valid_prog_environs = ['PrgEnv-aocc', 'PrgEnv-cray', 'PrgEnv-gnu',
-                                    'PrgEnv-intel', 'PrgEnv-pgi']
+                                    'PrgEnv-intel', 'PrgEnv-pgi',
+                                    'cpeAMD', 'cpeCray', 'cpeGNU', 'cpeIntel']
         self.build_system = 'SingleSource'
         self.sourcesdir = 'src/mpi_thread'
         self.sourcepath = 'mpi_init_thread.cpp'
-        self.cppflags = {
-            'single':     ['-D_MPI_THREAD_SINGLE'],
-            'funneled':   ['-D_MPI_THREAD_FUNNELED'],
-            'serialized': ['-D_MPI_THREAD_SERIALIZED'],
-            'multiple':   ['-D_MPI_THREAD_MULTIPLE']
+        # NOTE: occasionally, the wrapper fails to find the mpich dir, hence:
+        mpich_pkg_config_path = '$CRAY_MPICH_PREFIX/lib/pkgconfig'
+        self.variables = {
+            'PKG_CONFIG_PATH': f'$PKG_CONFIG_PATH:{mpich_pkg_config_path}'
         }
-        self.build_system.cppflags = self.cppflags[required_thread]
+        cppflags = '`pkg-config --cflags mpich` `pkg-config --libs mpich`'
+        self.cppflags = {
+            'single':     [cppflags, '-D_MPI_THREAD_SINGLE'],
+            'funneled':   [cppflags, '-D_MPI_THREAD_FUNNELED'],
+            'serialized': [cppflags, '-D_MPI_THREAD_SERIALIZED'],
+            'multiple':   [cppflags, '-D_MPI_THREAD_MULTIPLE']
+        }
+        self.build_system.cppflags = self.cppflags[self.required_thread]
+        self.prebuild_cmds = ['module list']
         self.time_limit = '1m'
         self.maintainers = ['JG', 'AJ']
         self.tags = {'production', 'craype'}
