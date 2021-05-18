@@ -120,6 +120,12 @@ class RegressionTestMeta(type):
 
         # Machinery to add a new sanity function
         def sanity_function(fn):
+            '''Mark a function to be executed during the sanity stage.
+
+            Decodated functions must be unary and they will be converted into
+            deferred expressions. Multiple functions can be decorated per test.
+            '''
+
             _def_fn = deferrable(fn)
             setattr(_def_fn, '_rfm_sanity_fn', True)
             return _def_fn

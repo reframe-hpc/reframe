@@ -551,10 +551,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: Refer to the :doc:`ReFrame Tutorials </tutorials>` for concrete usage
     #: examples.
     #:
-    #: If not set a sanity error will be raised during sanity checking.
+    #: If not set a sanity error may be raised during sanity checking, unless
+    #: other sanity checking functions already exist.
     #:
     #: :type: A deferrable expression (i.e., the result of a :doc:`sanity
-    #:     function </sanity_functions_reference>`)
+    #:     function </sanity_functions_reference>`) or a string containing a
+    #:     regex with a pattern to match on the stdout of the test.
     #: :default: :class:`required`
     #:
     #: .. note::
@@ -571,6 +573,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #:    .. versionchanged:: 3.6
     #:       The default value has changed from ``None`` to ``required``.
+    #:
+    #:    .. versionchanged: x.x.x
+    #:       This variable now also accepts strings containing regular
+    #:       expressions that would be matched in the test's standard
+    #:       output.
     sanity_patterns = variable(_DeferredExpression, str)
 
     #: Patterns for verifying the performance of this test.
