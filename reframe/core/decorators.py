@@ -14,7 +14,6 @@ __all__ = [
 
 
 import collections
-import functools
 import inspect
 import sys
 import traceback
