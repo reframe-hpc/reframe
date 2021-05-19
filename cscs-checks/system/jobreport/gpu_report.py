@@ -8,7 +8,7 @@ import reframe.utility.sanity as sn
 import time
 
 from reframe.core.exceptions import SanityError
-from library.microbenchmarks.gpu.gpu_burn import GpuBurn
+from hpctestlib.microbenchmarks.gpu.gpu_burn import GpuBurn
 
 
 @rfm.simple_test
@@ -53,12 +53,14 @@ class gpu_usage_report_check(GpuBurn):
         sanity function does not succeed.
         '''
 
+        super().set_sanity_patterns()
+        self.sanity_patterns = sn.all([
+            self.sanity_patterns, self.gpu_usage_sanity()
+        ])
         try:
-            sn.evaluate(self.gpu_usage_sanity())
+            sn.evaluate(self.sanity_patterns())
         except SanityError:
             time.sleep(25)
-
-        self.sanity_patterns = self.gpu_usage_sanity()
 
     @sn.sanity_function
     def gpu_usage_sanity(self):
