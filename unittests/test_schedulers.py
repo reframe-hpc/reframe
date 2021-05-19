@@ -137,7 +137,7 @@ def _expected_sge_directives(job):
     num_cpus_per_node = job.num_cpus_per_task * job.num_tasks_per_node
     return set([
         '#$ -N "testjob"',
-        '#$ -l walltime=0:5:0',
+        '#$ -l h_rt=0:5:0',
         '#$ -o %s' % job.stdout,
         '#$ -e %s' % job.stderr,
         '#$ -l select=%s:mpiprocs=%s:ncpus=%s'
@@ -224,7 +224,7 @@ def test_prepare(fake_job):
 
     prepare_job(fake_job)
     with open(fake_job.script_filename) as fp:
-        found_directives = set(re.findall(r'^\#\w+ .*', fp.read(),
+        found_directives = set(re.findall(r'^\#\S+ .*', fp.read(),
                                           re.MULTILINE))
 
     expected_directives = globals()[f'_expected_{sched_name}_directives']

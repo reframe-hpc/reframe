@@ -64,16 +64,17 @@ class SgeJobScheduler(PbsJobScheduler):
 
     def emit_preamble(self, job):
         preamble = [
-            self._format_option('-N "%s"' % job.name),
-            self._format_option('-o %s' % job.stdout),
-            self._format_option('-e %s' % job.stderr),
-            self._format_option('-wd %s' % job.workdir),
+            self._format_option(f'-N "{job.name}"'),
+            self._format_option(f'-o {job.stdout}'),
+            self._format_option(f'-e {job.stderr}'),
+            self._format_option(f'-wd {job.workdir}')
         ]
 
         if job.time_limit is not None:
             h, m, s = seconds_to_hms(job.time_limit)
             preamble.append(
-                self._format_option('-l h_rt=%d:%d:%d' % (h, m, s)))
+                self._format_option(f'-l h_rt=%d:%d:%d' % (h, m, s))
+            )
 
         preamble += self._emit_lselect_option(job)
 
