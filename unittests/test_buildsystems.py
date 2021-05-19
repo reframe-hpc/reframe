@@ -248,6 +248,7 @@ def test_spack(environ, tmp_path):
     build_system.environment = 'spack_env'
     with osext.change_dir(tmp_path):
         assert build_system.emit_build_commands(environ) == [
+            f'. $SPACK_ROOT/share/spack/setup-env.sh',
             f'spack env activate -d {build_system.environment}',
             f'spack install'
         ]
@@ -260,6 +261,7 @@ def test_spack_with_spec(environ, tmp_path):
     specs_str = ' '.join(build_system.specs)
     with osext.change_dir(tmp_path):
         assert build_system.emit_build_commands(environ) == [
+            f'. $SPACK_ROOT/share/spack/setup-env.sh',
             f'spack env activate -d {build_system.environment}',
             f'spack add {specs_str}',
             f'spack install'
