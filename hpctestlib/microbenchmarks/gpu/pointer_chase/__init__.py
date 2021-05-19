@@ -16,10 +16,10 @@ class BuildGpuPchase(rfm.CompileOnlyRegressionTest, pin_prefix=True):
     The test sources can be compiled for both CUDA and HIP. This is set with
     the `gpu_build` variable, which must be set by a derived class to either
     'cuda' or 'hip'. This source code can also be compiled for a specific
-    device architecture by setting the `gpu_arch` variable to an AMD or NVIDIA
-    supported architecture code.
+    device architecture by setting the ``gpu_arch`` variable to an AMD or
+    NVIDIA supported architecture code.
 
-    The name of the resulting executable is `pChase.x`.
+    The name of the resulting executable is ``pChase.x``.
     '''
 
     #: Set the build option to either 'cuda' or 'hip'.
@@ -44,11 +44,12 @@ class BuildGpuPchase(rfm.CompileOnlyRegressionTest, pin_prefix=True):
 
     @rfm.run_before('compile')
     def set_gpu_build(self):
-        '''Set the build options before the compile pipeline stage.
+        '''Set the build options [pre-compile hook].
 
-        This hook requires the `gpu_build` variable to be set.
-        The supported options are 'cuda' and 'hip'. See the vendor-specific
-        docs for the supported options for the ``gpu_arch`` variable.
+        This hook requires the ``gpu_build`` variable to be set.
+        The supported options are ``'cuda'`` and ``'hip'``. See the
+        vendor-specific docs for the supported options for the ``gpu_arch``
+        variable.
         '''
 
         if self.gpu_build == 'cuda':
@@ -139,9 +140,10 @@ class RunGpuPchaseBase(rfm.RunOnlyRegressionTest, pin_prefix=True):
         nodes_at_end = len(set(sn.extractall(
             r'^\s*\[([^\]]*)\]\s*Pointer chase complete.',
             self.stdout, 1)))
-        return sn.evaluate(sn.assert_eq(
-            sn.assert_eq(self.job.num_tasks, len(my_nodes)),
-            sn.assert_eq(self.job.num_tasks, nodes_at_end)))
+        return sn.assert_eq(
+            sn.assert_eq(self.job.num_tasks, sn.count(my_nodes)),
+            sn.assert_eq(self.job.num_tasks, nodes_at_end)
+        )
 
 
 class RunGpuPchase(RunGpuPchaseBase):
@@ -179,11 +181,9 @@ class RunGpuPchaseD2D(RunGpuPchaseBase):
         D2D list traversals, and the last column of this table has the max
         values for each device.
         '''
-        return int(sn.evaluate(
-            sn.max(sn.extractall(
-                r'^\s*\[[^\]]*\]\s*GPU\s*\d+\s+(\s*\d+.\s+)+',
-                self.stdout, 1, int)
-            )
+        return sn.max(sn.extractall(
+            r'^\s*\[[^\]]*\]\s*GPU\s*\d+\s+(\s*\d+.\s+)+',
+            self.stdout, 1, int
         ))
 
     @rfm.run_before('performance')
