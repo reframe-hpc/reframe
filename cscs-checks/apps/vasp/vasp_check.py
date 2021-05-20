@@ -9,7 +9,7 @@ import reframe.utility.sanity as sn
 
 class VASPCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        if self.current_system.name == 'pilatus':
+        if self.current_system.name in ['eiger', 'pilatus']:
             self.valid_prog_environs = ['cpeIntel']
         else:
             self.valid_prog_environs = ['builtin']

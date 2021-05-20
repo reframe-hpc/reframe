@@ -677,9 +677,14 @@ site_configuration = {
                     'scheduler': 'local',
                     'environs': [
                         'builtin',
+                        'PrgEnv-aocc',
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
-                        'PrgEnv-aocc'
+                        'PrgEnv-intel',
+                        'cpeAMD',
+                        'cpeCray',
+                        'cpeGNU',
+                        'cpeIntel'
                     ],
                     'descr': 'Login nodes',
                     'max_jobs': 4,
@@ -691,9 +696,14 @@ site_configuration = {
                     'scheduler': 'slurm',
                     'environs': [
                         'builtin',
+                        'PrgEnv-aocc',
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
-                        'PrgEnv-aocc'
+                        'PrgEnv-intel',
+                        'cpeAMD',
+                        'cpeCray',
+                        'cpeGNU',
+                        'cpeIntel'
                     ],
                     'max_jobs': 100,
                     'resources': [
