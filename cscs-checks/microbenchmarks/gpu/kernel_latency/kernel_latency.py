@@ -18,7 +18,7 @@ class gpu_kernel_latency_check(GpuKernelLatency):
     ]
     num_tasks = 0
     sys_reference = variable(dict, value={
-        True: {
+        'sync': {
             'dom:gpu': {
                 'latency': (6.6, None, 0.10, 'us')
             },
@@ -38,7 +38,7 @@ class gpu_kernel_latency_check(GpuKernelLatency):
                 'latency': (15.1, None, 0.10, 'us')
             },
         },
-        False: {
+        'async': {
             'dom:gpu': {
                 'latency': (2.2, None, 0.10, 'us')
             },
@@ -84,5 +84,5 @@ class gpu_kernel_latency_check(GpuKernelLatency):
 
     @rfm.run_before('performance')
     def set_references(self):
-        '''Set the refences based on the ``sync_launch`` parameter.'''
-        self.reference = self.sys_reference[self.sync_launch]
+        '''Set the refences based on the ``launch_mode`` parameter.'''
+        self.reference = self.sys_reference[self.launch_mode]

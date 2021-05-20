@@ -21,7 +21,7 @@ class GpuKernelLatency(rfm.RegressionTest, pin_prefix=True):
     requires that derived classes set the variables, num_tasks and
     num_gpus_per_node.
 
-    This test is parameterized with the parameter ``sync_launch`` to test the
+    This test is parameterized with the parameter ``launch_mode`` to test the
     GPU kernel latency when the kernels are lauched synchronously and
     asynchronously. This is controlled through different compile options.
 
@@ -41,7 +41,7 @@ class GpuKernelLatency(rfm.RegressionTest, pin_prefix=True):
     gpu_arch = variable(str, type(None), value=None)
 
     # Parameterize the test with different kernel lauch modes.
-    sync_launch = parameter([True, False])
+    launch_mode = parameter(['sync', 'async'])
 
     # Required variables
     num_tasks = required
@@ -61,9 +61,9 @@ class GpuKernelLatency(rfm.RegressionTest, pin_prefix=True):
     def set_cxxflags(self):
         '''Set the build options that compile the desired launch mode.'''
 
-        if self.sync_launch:
+        if self.launch_mode == 'sync':
             self.build_system.cppflags += ['-D SYNCKERNEL=1']
-        else:
+        elif self.launch_mode == 'async':
             self.build_system.cppflags += ['-D SYNCKERNEL=0']
 
     @rfm.run_before('compile')
