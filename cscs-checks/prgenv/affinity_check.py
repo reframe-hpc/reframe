@@ -13,7 +13,37 @@ import reframe.utility.osext as osext
 from reframe.core.exceptions import SanityError
 
 
-class AffinityTestBase(rfm.RegressionTest):
+@rfm.simple_test
+class CompileAffinityTool(rfm.CompileOnlyRegressionTest):
+    valid_systems = [
+        'daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+        'eiger:mc', 'pilatus:mc',
+        'ault:amdv100'
+    ]
+    valid_prog_environs = [
+        'PrgEnv-gnu', 'PrgEnv-cray', 'PrgEnv-intel', 'PrgEnv-pgi'
+    ]
+    build_system = 'Make'
+
+    # The github URL can not be specifid as `self.sourcedir` as that
+    # would prevent the src folder from being copied to stage which is
+    # necessary since these tests need files from it.
+    sourcesdir = os.path.join('src/affinity_ref')
+    prebuild_cmds = ['git clone https://github.com/vkarak/affinity']
+    postbuild_cmds = ['ls affinity']
+    maintainers = ['RS', 'SK']
+    tags = {'production', 'scs', 'maintenance', 'craype'}
+
+    @rfm.run_before('compile')
+    def set_build_opts(self):
+        self.build_system.options = ['-C affinity', 'MPI=1']
+
+    @rfm.run_before('sanity')
+    def assert_exec_exists(self):
+        self.sanity_patterns = sn.assert_found(r'affinity', self.stdout)
+
+
+class AffinityTestBase(rfm.RunOnlyRegressionTest):
     '''Base class for the affinity checks.
 
     It reads a reference file for each valid system, which allows this base
@@ -49,13 +79,6 @@ class AffinityTestBase(rfm.RegressionTest):
     valid_prog_environs = [
         'PrgEnv-gnu', 'PrgEnv-cray', 'PrgEnv-intel', 'PrgEnv-pgi'
     ]
-    build_system = 'Make'
-
-    # The github URL can not be specifid as `self.sourcedir` as that
-    # would prevent the src folder from being copied to stage which is
-    # necessary since these tests need files from it.
-    sourcesdir = os.path.join('src/affinity_ref')
-    prebuild_cmds = ['git clone https://github.com/vkarak/affinity']
 
     # Dict with the partition's topology - output of "lscpu -e"
     topology = variable(dict, value={
@@ -74,24 +97,27 @@ class AffinityTestBase(rfm.RegressionTest):
     maintainers = ['RS', 'SK']
     tags = {'production', 'scs', 'maintenance', 'craype'}
 
-    def __init__(self):
-        # FIXME: These two right now cannot be set in the class body.
-        self.executable = './affinity/affinity'
-        self.build_system.options = ['-C affinity', 'MPI=1']
+    @rfm.run_after('init')
+    def set_deps(self):
+        self.depends_on('CompileAffinityTool')
 
-    @rfm.run_before('sanity')
-    def set_sanity(self):
-        self.sanity_patterns = self.assert_consumed_cpu_set()
+    @rfm.require_deps
+    def set_executable(self, CompileAffinityTool):
+        self.executable = os.path.join(
+            CompileAffinityTool().stagedir, 'affinity/affinity'
+        )
 
-    @rfm.run_before('compile')
-    def set_topo_file(self):
+    @rfm.require_deps
+    def set_topo_file(self, CompileAffinityTool):
         '''Set the topo_file variable.
 
         If not present in the topology dict, leave it as required.
         '''
         cp = self.current_partition.fullname
         if cp in self.topology:
-            self.topo_file = self.topology[cp]
+            self.topo_file = os.path.join(
+                CompileAffinityTool().stagedir, self.topology[cp]
+            )
 
     # FIXME: Update the hook below once the PR #1773 is merged.
     @rfm.run_after('compile')
@@ -118,7 +144,7 @@ class AffinityTestBase(rfm.RegressionTest):
 
         cp = self.current_partition.fullname
         with osext.change_dir(self.stagedir):
-            with open(self.topology[cp], 'r') as topo:
+            with open(self.topo_file, 'r') as topo:
                 lscpu = json.load(topo)['cpus']
 
         # Build the cpu set
@@ -223,6 +249,10 @@ class AffinityTestBase(rfm.RegressionTest):
         hint = self.system.get(cp, {}).get('hint', None) or self.hint
         if hint:
             self.job.launcher.options += [f'--hint={hint}']
+
+    @rfm.run_before('sanity')
+    def set_sanity(self):
+        self.sanity_patterns = self.assert_consumed_cpu_set()
 
 
 class AffinityOpenMPBase(AffinityTestBase):
