@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import reframe as rfm
-import reframe.utility.sanity as sn
 
 from hpctestlib.microbenchmarks.gpu.dgemm import DgemmGpu
 import cscstests.microbenchmarks.gpu.hooks as hooks
