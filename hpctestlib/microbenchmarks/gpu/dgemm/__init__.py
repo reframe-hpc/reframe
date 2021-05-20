@@ -96,4 +96,3 @@ class DgemmGpu(rfm.RegressionTest, pin_prefix=True):
         return sn.assert_eq(
             sn.count(sn.findall(r'^\s*\[[^\]]*\]\s*Test passed', self.stdout)),
             sn.getattr(self.job, 'num_tasks'))
-
