@@ -43,6 +43,15 @@ class CompileAffinityTool(rfm.CompileOnlyRegressionTest):
         self.sanity_patterns = sn.assert_found(r'affinity', self.stdout)
 
 
+@rfm.simple_test
+class CompileAffinityToolNoOmp(CompileAffinityTool):
+    valid_systems = ['eiger:mc', 'pilatus:mc']
+
+    @rfm.run_before('compile')
+    def set_build_opts(self):
+        self.build_system.options = ['-C affinity', 'MPI=1', 'OPENMP=0']
+
+
 class AffinityTestBase(rfm.RunOnlyRegressionTest):
     '''Base class for the affinity checks.
 
@@ -583,9 +592,27 @@ class OneTaskPerNumaNode(AffinityTestBase):
     use_multithreading = False
     num_cpus_per_task = required
 
-    @rfm.run_before('compile')
-    def build_settings(self):
-        self.build_system.options += ['OPENMP=0']
+    @rfm.run_after('init')
+    def set_deps(self):
+        self.depends_on('CompileAffinityToolNoOmp')
+
+    @rfm.require_deps
+    def set_executable(self, CompileAffinityToolNoOmp):
+        self.executable = os.path.join(
+            CompileAffinityToolNoOmp().stagedir, 'affinity/affinity'
+        )
+
+    @rfm.require_deps
+    def set_topo_file(self, CompileAffinityToolNoOmp):
+        '''Set the topo_file variable.
+
+        If not present in the topology dict, leave it as required.
+        '''
+        cp = self.current_partition.fullname
+        if cp in self.topology:
+            self.topo_file = os.path.join(
+                CompileAffinityToolNoOmp().stagedir, self.topology[cp]
+            )
 
     @rfm.run_before('run')
     def set_tasks(self):
