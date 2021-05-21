@@ -1359,8 +1359,14 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         )
         exec_cmd = [self.job.launcher.run_command(self.job),
                     self.executable, *self.executable_opts]
+
+        if self.build_system:
+            prepare_cmds = self.build_system.prepare_cmds()
+        else:
+            prepare_cmds = []
+
         commands = [
-            *self.build_system.prepare_cmds(),
+            *prepare_cmds,
             *self.prerun_cmds,
             ' '.join(exec_cmd),
             *self.postrun_cmds
