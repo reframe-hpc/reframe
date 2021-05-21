@@ -32,6 +32,7 @@ class gpu_usage_report_check(GpuBurn):
     burn_time = variable(int, value=10)
     executable_opts = ['-d', f'{burn_time}']
     perf_floor = variable(float, value=-0.2)
+    tags = {'production'}
 
     @rfm.run_before('run')
     def set_launcher_opts(self):
