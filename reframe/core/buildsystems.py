@@ -817,7 +817,6 @@ class Spack(BuildSystem):
     specs = fields.TypedField(typ.List[str])
 
     #: Spack environment.
-    #: This field is required.
     #:
     #: ReFrame activates this environment to build and install the specified
     #: packages:
@@ -826,14 +825,30 @@ class Spack(BuildSystem):
     #:
     #:    spack env activate -d <environment directory>
     #:
+    #: This field is required.
+    #:
     #: :type: :class:`str` or :class:`None`
     #: :default: :class:`None`
     environment = fields.TypedField(str, type(None))
+
+    #: Emit the necessary ``spack load`` commands before running the test.
+    #:
+    #: :type: :class:`bool`
+    #: :default: :obj:`True`
+    emit_load_cmds = fields.TypedField(bool)
+
+    #: Options to pass to ``spack install``
+    #:
+    #: :type: :class:`List[str]`
+    #: :default: ``[]``
+    install_opts = fields.TypedField(typ.List[str])
 
     def __init__(self):
         super().__init__()
         self.specs = []
         self.environment = None
+        self.emit_load_cmds = True
+        self.install_opts = []
         self._prefix_save = None
 
     def emit_build_commands(self, environ):
@@ -846,7 +861,11 @@ class Spack(BuildSystem):
             specs_str = ' '.join(self.specs)
             ret.append(f'spack add {specs_str}')
 
-        ret.append('spack install')
+        install_cmd = 'spack install'
+        if self.install_opts:
+            install_cmd += ' ' + ' '.join(self.install_opts)
+
+        ret.append(install_cmd)
         return ret
 
     def _env_activate_cmds(self):
@@ -855,7 +874,7 @@ class Spack(BuildSystem):
 
     def prepare_cmds(self):
         cmds = self._env_activate_cmds()
-        if self.specs:
+        if self.specs and self.emit_load_cmds:
             cmds.append('spack load ' + ' '.join(s for s in self.specs))
 
         return cmds

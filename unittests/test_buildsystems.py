@@ -246,11 +246,12 @@ def test_singlesource_unknown_language():
 def test_spack(environ, tmp_path):
     build_system = bs.Spack()
     build_system.environment = 'spack_env'
+    build_system.install_opts = ['-j 10']
     with osext.change_dir(tmp_path):
         assert build_system.emit_build_commands(environ) == [
             f'. $SPACK_ROOT/share/spack/setup-env.sh',
             f'spack env activate -d {build_system.environment}',
-            f'spack install'
+            f'spack install -j 10'
         ]
         assert build_system.prepare_cmds() == [
             f'. $SPACK_ROOT/share/spack/setup-env.sh',
