@@ -868,11 +868,10 @@ class Spack(BuildSystem):
 
         matches = re.findall(r'\[\+\] \S+/spack/opt/spack/\S+/(\S+)',
                              out)
-
         self._modules = []
         for mod in matches:
             mod = os.path.basename(mod)
-            name, version, hashid = mod.split('-')
+            name, version, hashid = mod.rsplit('-', maxsplit=2)
             self._modules.append(f'{name}@{version}/{hashid}')
 
     @property
