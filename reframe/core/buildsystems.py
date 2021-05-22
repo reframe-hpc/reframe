@@ -12,6 +12,13 @@ import reframe.utility.typecheck as typ
 from reframe.core.exceptions import BuildSystemError
 
 
+class _UndefinedType:
+    '''Used as an initial value for undefined values instead of None.'''
+
+
+_Undefined = _UndefinedType()
+
+
 class BuildSystem(abc.ABC):
     '''The abstract base class of any build system.
 
@@ -810,7 +817,7 @@ class Spack(BuildSystem):
     #:
     #: .. code-block:: bash
     #:
-    #:    spack env activate -d <environment directory>
+    #:    spack env activate -V -d <environment directory>
     #:
     #: ReFrame looks for environments in the test's
     #: :attr:`~reframe.core.pipeline.RegressionTest.sourcesdir`.
@@ -819,7 +826,7 @@ class Spack(BuildSystem):
     #:
     #: :type: :class:`str` or :class:`None`
     #: :default: :class:`None`
-    environment = fields.TypedField(str, type(None))
+    environment = fields.TypedField(typ.Str[r'\S+'], _UndefinedType)
 
     #: The list of specs to build and install within the given environment.
     #:
@@ -852,15 +859,15 @@ class Spack(BuildSystem):
     def __init__(self):
         super().__init__()
         self.specs = []
-        self.environment = None
+        self.environment = _Undefined
         self.emit_load_cmds = True
         self.install_opts = []
         self._prefix_save = None
 
     def emit_build_commands(self, environ):
         self._prefix_save = os.getcwd()
-        if not self.environment:
-            raise BuildSystemError(f"'environment' must not be empty")
+        if self.environment is _Undefined:
+            raise BuildSystemError(f'no Spack environment is defined')
 
         ret = self._env_activate_cmds()
         if self.specs:
@@ -876,7 +883,7 @@ class Spack(BuildSystem):
 
     def _env_activate_cmds(self):
         return [f'. $SPACK_ROOT/share/spack/setup-env.sh',
-                f'spack env activate -d {self.environment}']
+                f'spack env activate -V -d {self.environment}']
 
     def prepare_cmds(self):
         cmds = self._env_activate_cmds()
