@@ -796,12 +796,30 @@ class Spack(BuildSystem):
     '''A build system for building test code using `Spack
     <https://spack.io/>`__.
 
-    ReFrame will use Spack to build and install the code given an environment
-    and a set of specs.
+    ReFrame will use a user-provided Spack environment in order to build and
+    test a set of specs.
 
     .. versionadded:: 3.6.1
 
     '''
+
+    #: The Spack environment to use for building this test.
+    #:
+    #: ReFrame will activate and install this environment.
+    #: This environment will also be used to run the test.
+    #:
+    #: .. code-block:: bash
+    #:
+    #:    spack env activate -d <environment directory>
+    #:
+    #: ReFrame looks for environments in the test's
+    #: :attr:`~reframe.core.pipeline.RegressionTest.sourcesdir`.
+    #:
+    #: This field is required.
+    #:
+    #: :type: :class:`str` or :class:`None`
+    #: :default: :class:`None`
+    environment = fields.TypedField(str, type(None))
 
     #: The list of specs to build and install within the given environment.
     #:
@@ -810,26 +828,14 @@ class Spack(BuildSystem):
     #:
     #: .. code-block:: bash
     #:
-    #:    spack add spec1 spec2 spec3
+    #:    spack add spec1 spec2 ... specN
+    #:
+    #: If no spec is passed, ReFrame will simply install what is prescribed by
+    #: the environment.
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
     specs = fields.TypedField(typ.List[str])
-
-    #: Spack environment.
-    #:
-    #: ReFrame activates this environment to build and install the specified
-    #: packages:
-    #:
-    #: .. code-block:: bash
-    #:
-    #:    spack env activate -d <environment directory>
-    #:
-    #: This field is required.
-    #:
-    #: :type: :class:`str` or :class:`None`
-    #: :default: :class:`None`
-    environment = fields.TypedField(str, type(None))
 
     #: Emit the necessary ``spack load`` commands before running the test.
     #:
