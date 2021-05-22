@@ -20,6 +20,7 @@ import sys
 import traceback
 
 import reframe.utility.osext as osext
+import reframe.core.warnings as warn
 from reframe.core.exceptions import (ReframeSyntaxError,
                                      SkipTestError,
                                      user_frame)
@@ -60,10 +61,12 @@ def _register_test(cls, args=None):
                 getlogger().warning(f'skipping test {cls.__name__!r}: {e}')
             except Exception:
                 frame = user_frame(*sys.exc_info())
+                filename = frame.filename if frame else 'n/a'
+                lineno = frame.lineno if frame else 'n/a'
                 getlogger().warning(
                     f"skipping test {cls.__name__!r} due to errors: "
                     f"use `-v' for more information\n"
-                    f"    FILE: {frame.filename}:{frame.lineno}"
+                    f"    FILE: {filename}:{lineno}"
                 )
                 getlogger().verbose(traceback.format_exc())
 
@@ -121,7 +124,20 @@ def parameterized_test(*inst):
    .. note::
       This decorator does not instantiate any test.  It only registers them.
       The actual instantiation happens during the loading phase of the test.
+
+   .. deprecated:: 3.6.0
+
+      Please use the :func:`~reframe.core.pipeline.RegressionTest.parameter`
+      built-in instead.
+
     '''
+
+    warn.user_deprecation_warning(
+        'the @parameterized_test decorator is deprecated; '
+        'please use the parameter() built-in instead',
+        from_version='3.6.0'
+    )
+
     def _do_register(cls):
         _validate_test(cls)
         if not cls.param_space.is_empty():
@@ -214,6 +230,13 @@ def _runx(phase):
     return deco
 
 
+# Valid pipeline stages that users can specify in the `run_before()` and
+# `run_after()` decorators
+_USER_PIPELINE_STAGES = (
+    'init', 'setup', 'compile', 'run', 'sanity', 'performance', 'cleanup'
+)
+
+
 def run_before(stage):
     '''Decorator for attaching a test method to a pipeline stage.
 
@@ -226,19 +249,57 @@ def run_before(stage):
     The ``stage`` argument can be any of ``'setup'``, ``'compile'``,
     ``'run'``, ``'sanity'``, ``'performance'`` or ``'cleanup'``.
 
-    .. versionadded:: 2.20
     '''
+    if stage not in _USER_PIPELINE_STAGES:
+        raise ValueError(f'invalid pipeline stage specified: {stage!r}')
+
+    if stage == 'init':
+        raise ValueError('pre-init hooks are not allowed')
+
     return _runx('pre_' + stage)
 
 
 def run_after(stage):
     '''Decorator for attaching a test method to a pipeline stage.
 
-    This is completely analogous to the
-    :py:attr:`reframe.core.decorators.run_before`.
+    This is analogous to the :py:attr:`~reframe.core.decorators.run_before`,
+    except that ``'init'`` can also be used as the ``stage`` argument. In this
+    case, the hook will execute right after the test is initialized (i.e.
+    after the :func:`__init__` method is called), before entering the test's
+    pipeline. In essence, a post-init hook is equivalent to defining
+    additional :func:`__init__` functions in the test. All the other
+    properties of pipeline hooks apply equally here. The following code
 
-    .. versionadded:: 2.20
+    .. code-block:: python
+
+       @rfm.run_after('init')
+       def foo(self):
+           self.x = 1
+
+
+    is equivalent to
+
+    .. code-block:: python
+
+       def __init__(self):
+           self.x = 1
+
+    .. versionchanged:: 3.5.2
+       Add the ability to define post-init hooks in tests.
+
     '''
+
+    if stage not in _USER_PIPELINE_STAGES:
+        raise ValueError(f'invalid pipeline stage specified: {stage!r}')
+
+    # Map user stage names to the actual pipeline functions if needed
+    if stage == 'init':
+        stage = '__init__'
+    elif stage == 'compile':
+        stage = 'compile_wait'
+    elif stage == 'run':
+        stage = 'run_wait'
+
     return _runx('post_' + stage)
 
 

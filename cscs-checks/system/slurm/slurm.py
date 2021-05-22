@@ -16,7 +16,8 @@ class SlurmSimpleBaseCheck(rfm.RunOnlyRegressionTest):
                               'dom:gpu', 'dom:mc',
                               'arolla:cn', 'arolla:pn',
                               'tsa:cn', 'tsa:pn',
-                              'daint:xfer', 'eiger:mc']
+                              'daint:xfer', 'eiger:mc',
+                              'pilatus:mc']
         self.valid_prog_environs = ['PrgEnv-cray']
         self.tags = {'slurm', 'maintenance', 'ops',
                      'production', 'single-node'}
@@ -59,6 +60,7 @@ class HostnameCheck(SlurmSimpleBaseCheck):
             'dom:gpu': r'^nid\d{5}$',
             'dom:mc': r'^nid\d{5}$',
             'eiger:mc': r'^nid\d{6}$',
+            'pilatus:mc': r'^nid\d{6}$'
         }
 
     @rfm.run_before('sanity')
@@ -79,7 +81,7 @@ class EnvironmentVariableCheck(SlurmSimpleBaseCheck):
                               'dom:gpu', 'dom:mc',
                               'arolla:cn', 'arolla:pn',
                               'tsa:cn', 'tsa:pn',
-                              'eiger:mc']
+                              'eiger:mc', 'pilatus:mc']
         self.executable = '/bin/echo'
         self.executable_opts = ['$MY_VAR']
         self.variables = {'MY_VAR': 'TEST123456!'}
@@ -181,7 +183,7 @@ class MemoryOverconsumptionCheck(SlurmCompiledBaseCheck):
     def __init__(self):
         super().__init__()
         self.time_limit = '1m'
-        self.valid_systems += ['eiger:mc']
+        self.valid_systems += ['eiger:mc', 'pilatus:mc']
         self.sourcepath = 'eatmemory.c'
         self.tags.add('mem')
         self.executable_opts = ['4000M']
@@ -254,6 +256,39 @@ class MemoryOverconsumptionMpiCheck(SlurmCompiledBaseCheck):
             'daint:mc': 62,  # this will pass with 64 GB and above memory sizes
             # this will pass with 256 GB and above memory sizes:
             'eiger:mc': 250,
-            'pilatus:mc': 250,
+            'pilatus:mc': 250
         }
         return reference_meminfo[self.current_partition.fullname]
+
+
+@rfm.simple_test
+class slurm_response_check(rfm.RunOnlyRegressionTest):
+    command = parameter(['squeue', 'sacct'])
+    descr = 'Slurm command test'
+    valid_systems = ['daint:login', 'dom:login']
+    valid_prog_environs = ['builtin']
+    num_tasks = 1
+    num_tasks_per_node = 1
+    reference = {
+        'squeue': {
+            'real_time': (0.02, None, 0.1, 's')
+        },
+        'sacct': {
+            'real_time': (0.1, None, 0.1, 's')
+        }
+    }
+    executable = 'time -p'
+    tags = {'diagnostic', 'health'}
+    maintainers = ['CB', 'VH']
+
+    @rfm.run_before('run')
+    def set_exec_opts(self):
+        self.executable_opts = [self.command]
+
+    @rfm.run_before('sanity')
+    def set_sanity(self):
+        self.sanity_patterns = sn.assert_eq(self.job.exitcode, 0)
+        self.perf_patterns = {
+            'real_time': sn.extractsingle(r'real (?P<real_time>\S+)',
+                                          self.stderr, 'real_time', float)
+        }

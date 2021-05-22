@@ -24,8 +24,11 @@ class IorCheck(rfm.RegressionTest):
         self.test_file = os.path.join(self.test_dir, 'ior')
         self.fs = {
             '/scratch/e1000': {
-                'valid_systems': ['eiger:mc'],
+                'valid_systems': ['eiger:mc', 'pilatus:mc'],
                 'eiger': {
+                    'num_tasks': 10,
+                },
+                'pilatus': {
                     'num_tasks': 10,
                 }
             },
@@ -111,7 +114,7 @@ class IorCheck(rfm.RegressionTest):
 
         self.maintainers = ['SO', 'GLR']
 
-        systems_to_test = ['dom', 'daint', 'eiger']
+        systems_to_test = ['dom', 'daint', 'eiger', 'pilatus']
         if self.current_system.name in systems_to_test:
             self.tags |= {'production', 'external-resources'}
 

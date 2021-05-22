@@ -7,7 +7,7 @@ import pytest
 
 import reframe.core.buildsystems as bs
 import reframe.utility.osext as osext
-import unittests.fixtures as fixtures
+import unittests.utility as test_util
 from reframe.core.environments import ProgEnvironment
 from reframe.core.exceptions import BuildSystemError
 
@@ -44,17 +44,17 @@ def build_system_with_flags(build_system):
     return build_system
 
 
-@fixtures.dispatch('build_system')
+@test_util.dispatch('build_system')
 def test_emit_from_env(build_system, environ):
     pytest.skip('unsupported for this build system')
 
 
-@fixtures.dispatch('build_system_with_flags')
+@test_util.dispatch('build_system_with_flags')
 def test_emit_from_buildsystem(build_system_with_flags, environ):
     pytest.skip('unsupported for this build system')
 
 
-@fixtures.dispatch('build_system')
+@test_util.dispatch('build_system')
 def test_emit_no_env_defaults(build_system, environ):
     pytest.skip('unsupported for this build system')
 
