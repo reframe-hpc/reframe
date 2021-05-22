@@ -279,6 +279,11 @@ def main():
               'for the selected tests and exit'),
     )
 
+    # FIXME: Remove this
+    action_options.add_argument(
+        '--proc-config', action='store_true'
+    )
+
     # Run options
     run_options.add_argument(
         '-J', '--job-option', action='append', metavar='OPT',
@@ -813,6 +818,14 @@ def main():
                 f'  Gitlab pipeline generated successfully '
                 f'in {options.ci_generate!r}.\n'
             )
+            sys.exit(0)
+
+        # FIXME: Remove this one
+        if options.proc_config:
+            import reframe.utility as util
+            from reframe.utility.systeminfo import get_proc_info
+
+            printer.info(util.ppretty(get_proc_info()))
             sys.exit(0)
 
         if not options.run:
