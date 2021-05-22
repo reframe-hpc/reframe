@@ -25,11 +25,13 @@ def _emit_gitlab_pipeline(testcases):
         else:
             config_opt = ''
 
-        report_file = f'rfm-report-{testcase.level}.json'
+        report_file = f'{testcase.check.name}-report.json'
         if testcase.level:
-            restore_file = f'rfm-report-{testcase.level - 1}.json'
+            restore_files = ','.join(
+                f'{t.check.name}-report.json' for t in tc.deps
+            )
         else:
-            restore_file = None
+            restore_files = None
 
         return ' '.join([
             program,
@@ -37,7 +39,7 @@ def _emit_gitlab_pipeline(testcases):
             f'{" ".join("-c " + c for c in checkpath)}',
             f'-R' if recurse else '',
             f'--report-file={report_file}',
-            f'--restore-session={restore_file}' if restore_file else '',
+            f'--restore-session={restore_files}' if restore_files else '',
             '-n', testcase.check.name, '-r'
         ])
 
@@ -54,7 +56,7 @@ def _emit_gitlab_pipeline(testcases):
             'stage': f'rfm-stage-{tc.level}',
             'script': [rfm_command(tc)],
             'artifacts': {
-                'paths': [f'rfm-report-{tc.level}.json']
+                'paths': [f'{tc.check.name}-report.json']
             },
             'needs': [t.check.name for t in tc.deps]
         }

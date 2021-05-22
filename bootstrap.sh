@@ -9,10 +9,12 @@
 # Bootstrap script for running ReFrame from source
 #
 
-BLUE='\033[0;34m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-NC='\033[0m'
+if [ -t 1 ]; then
+    BLUE='\033[0;34m'
+    GREEN='\033[0;32m'
+    YELLOW='\033[0;33m'
+    NC='\033[0m'
+fi
 
 CMD()
 {
@@ -69,16 +71,18 @@ fi
 
 # Check if ensurepip is installed
 $python -m ensurepip --version &> /dev/null
-
-# Install pip for Python 3
-if [ $? -eq 0 ]; then
-    CMD $python -m ensurepip --root external/ --default-pip
-fi
-
-# ensurepip installs pip in `external/usr/` whereas the --target option installs
-# everything under `external/`. That's why we include both in the PYTHONPATH
+epip=$?
 
 export PATH=$(pwd)/external/usr/bin:$PATH
+
+# Install pip for Python 3
+if [ $epip -eq 0 ]; then
+    CMD $python -m ensurepip --root $(pwd)/external/ --default-pip
+fi
+
+# ensurepip installs pip in `external/usr/` whereas the `--root` option installs
+# everything under `external/`. That's why we include both in the PYTHONPATH
+
 export PYTHONPATH=$(pwd)/external:$(pwd)/external/usr/lib/python$pyver/site-packages:$PYTHONPATH
 
 CMD $python -m pip install --no-cache-dir -q --upgrade pip --target=external/

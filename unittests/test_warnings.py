@@ -3,17 +3,16 @@ import semver
 import warnings
 
 import reframe
-import reframe.core.runtime as rt
 import reframe.core.warnings as warn
 import reframe.utility.color as color
-import unittests.fixtures as fixtures
+import unittests.utility as test_util
 
 
 @pytest.fixture(params=['colors', 'nocolors'])
-def with_colors(request):
-    with rt.temp_runtime(fixtures.BUILTIN_CONFIG_FILE, 'generic',
-                         {'general/colorize': request.param == 'colors'}):
-        yield request.param == 'colors'
+def with_colors(request, make_exec_ctx):
+    make_exec_ctx(test_util.BUILTIN_CONFIG_FILE, 'generic',
+                  {'general/colorize': request.param == 'colors'})
+    yield request.param == 'colors'
 
 
 def test_deprecation_warning():
@@ -63,4 +62,4 @@ def test_random_warning_formatting():
     message = warnings.formatwarning(
         'deprecated', UserWarning, 'file', 10, 'a = 1'
     )
-    assert message == f'file:10: UserWarning: deprecated\n  a = 1\n'
+    assert message == 'file:10: UserWarning: deprecated\n  a = 1\n'

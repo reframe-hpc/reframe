@@ -677,9 +677,14 @@ site_configuration = {
                     'scheduler': 'local',
                     'environs': [
                         'builtin',
+                        'PrgEnv-aocc',
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
-                        'PrgEnv-aocc'
+                        'PrgEnv-intel',
+                        'cpeAMD',
+                        'cpeCray',
+                        'cpeGNU',
+                        'cpeIntel'
                     ],
                     'descr': 'Login nodes',
                     'max_jobs': 4,
@@ -691,9 +696,14 @@ site_configuration = {
                     'scheduler': 'slurm',
                     'environs': [
                         'builtin',
+                        'PrgEnv-aocc',
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
-                        'PrgEnv-aocc'
+                        'PrgEnv-intel',
+                        'cpeAMD',
+                        'cpeCray',
+                        'cpeGNU',
+                        'cpeIntel'
                     ],
                     'max_jobs': 100,
                     'resources': [
@@ -826,7 +836,7 @@ site_configuration = {
         {
             'name': 'PrgEnv-pgi-nompi-nocuda',
             'target_systems': [
-                'arolla', 'tsa'
+                'arolla',
             ],
             'modules': [
                 'PrgEnv-pgi/19.9-nocuda'
@@ -836,9 +846,21 @@ site_configuration = {
             'ftn': 'pgf90'
         },
         {
+            'name': 'PrgEnv-pgi-nompi-nocuda',
+            'target_systems': [
+                'tsa',
+            ],
+            'modules': [
+                'PrgEnv-pgi/20.4-nocuda'
+            ],
+            'cc': 'pgcc',
+            'cxx': 'pgc++',
+            'ftn': 'pgf90'
+        },
+        {
             'name': 'PrgEnv-pgi-nompi',
             'target_systems': [
-                'arolla', 'tsa'
+                'arolla',
             ],
             'modules': [
                 'PrgEnv-pgi/19.9'
@@ -848,9 +870,21 @@ site_configuration = {
             'ftn': 'pgf90'
         },
         {
+            'name': 'PrgEnv-pgi-nompi',
+            'target_systems': [
+                'tsa',
+            ],
+            'modules': [
+                'PrgEnv-pgi/20.4'
+            ],
+            'cc': 'pgcc',
+            'cxx': 'pgc++',
+            'ftn': 'pgf90'
+        },
+        {
             'name': 'PrgEnv-pgi',
             'target_systems': [
-                'arolla', 'tsa'
+                'arolla',
             ],
             'modules': [
                 'PrgEnv-pgi/19.9'
@@ -860,12 +894,36 @@ site_configuration = {
             'ftn': 'mpifort'
         },
         {
+            'name': 'PrgEnv-pgi',
+            'target_systems': [
+                'tsa',
+            ],
+            'modules': [
+                'PrgEnv-pgi/20.4'
+            ],
+            'cc': 'mpicc',
+            'cxx': 'mpicxx',
+            'ftn': 'mpifort'
+        },
+        {
             'name': 'PrgEnv-pgi-nocuda',
             'target_systems': [
-                'arolla', 'tsa'
+                'arolla',
             ],
             'modules': [
                 'PrgEnv-pgi/19.9-nocuda'
+            ],
+            'cc': 'mpicc',
+            'cxx': 'mpicxx',
+            'ftn': 'mpifort'
+        },
+        {
+            'name': 'PrgEnv-pgi-nocuda',
+            'target_systems': [
+                'tsa',
+            ],
+            'modules': [
+                'PrgEnv-pgi/20.4-nocuda'
             ],
             'cc': 'mpicc',
             'cxx': 'mpicxx',
@@ -925,7 +983,7 @@ site_configuration = {
                 'eiger', 'pilatus'
             ],
             'modules': [
-                {'name': 'PrgEnv-aocc', 'collection': True}
+                'PrgEnv-aocc'
             ]
         },
         {
@@ -934,7 +992,7 @@ site_configuration = {
                 'eiger', 'pilatus'
             ],
             'modules': [
-                {'name': 'PrgEnv-cray', 'collection': True}
+                'PrgEnv-cray'
             ]
         },
         {
@@ -943,16 +1001,16 @@ site_configuration = {
                 'eiger', 'pilatus'
             ],
             'modules': [
-                {'name': 'PrgEnv-gnu', 'collection': True}
+                'PrgEnv-gnu'
             ]
         },
         {
             'name': 'PrgEnv-intel',
             'target_systems': [
-                'pilatus'
+                'eiger', 'pilatus'
             ],
             'modules': [
-                {'name': 'PrgEnv-intel', 'collection': True}
+                'PrgEnv-intel'
             ]
         },
         {
@@ -985,7 +1043,7 @@ site_configuration = {
         {
             'name': 'cpeIntel',
             'target_systems': [
-                'pilatus'
+                'eiger', 'pilatus'
             ],
             'modules': [
                 'cpeIntel'
@@ -1062,10 +1120,9 @@ site_configuration = {
                     'append': True
                 },
                 {
-                    'type': 'graylog',
-                    'address': 'graylog-server:12345',
+                    'type': 'httpjson',
+                    'url': 'http://httpjson-server:12345/rfm',
                     'level': 'info',
-                    'format': '%(message)s',
                     'extras': {
                         'facility': 'reframe',
                         'data-version': '1.0',

@@ -123,6 +123,14 @@ def list_checks(testcases, printer, detailed=False):
     printer.info(f'Found {len(checks)} check(s)\n')
 
 
+def list_tags(testcases, printer):
+    printer.info('[List of unique tags]')
+    tags = set()
+    tags = tags.union(*(t.check.tags for t in testcases))
+    printer.info(', '.join(f'{t!r}' for t in sorted(tags)))
+    printer.info(f'Found {len(tags)} tag(s)\n')
+
+
 def logfiles_message():
     log_files = logging.log_files()
     msg = 'Log file(s) saved in: '
@@ -207,6 +215,12 @@ def main():
         envvar='RFM_REPORT_FILE',
         configvar='general/report_file'
     )
+    output_options.add_argument(
+        '--report-junit', action='store', metavar='FILE',
+        help="Store a JUnit report in FILE",
+        envvar='RFM_REPORT_JUNIT',
+        configvar='general/report_junit'
+    )
 
     # Check discovery options
     locate_options.add_argument(
@@ -268,6 +282,10 @@ def main():
     action_options.add_argument(
         '-L', '--list-detailed', action='store_true',
         help='List the selected checks providing details for each test'
+    )
+    action_options.add_argument(
+        '--list-tags', action='store_true',
+        help='List the unique tags found in the selected tests and exit'
     )
     action_options.add_argument(
         '-r', '--run', action='store_true',
@@ -455,6 +473,19 @@ def main():
         action='store_true',
         help='Use a login shell for job scripts'
     )
+    argparser.add_argument(
+        dest='resolve_module_conflicts',
+        envvar='RFM_RESOLVE_MODULE_CONFLICTS',
+        configvar='general/resolve_module_conflicts',
+        action='store_true',
+        help='Resolve module conflicts automatically'
+    )
+    argparser.add_argument(
+        dest='httpjson_url',
+        envvar='RFM_HTTPJSON_URL',
+        configvar='logging/handlers_perflog/httpjson_url',
+        help='URL of HTTP server accepting JSON logs'
+    )
 
     # Parse command line
     options = argparser.parse_args()
@@ -598,16 +629,16 @@ def main():
 
     # Setup the check loader
     if options.restore_session is not None:
-        # We need to load the failed checks only from a report
+        # We need to load the failed checks only from a list of reports
         if options.restore_session:
-            filename = options.restore_session
+            filenames = options.restore_session.split(',')
         else:
-            filename = runreport.next_report_filename(
+            filenames = [runreport.next_report_filename(
                 osext.expandvars(site_config.get('general/0/report_file')),
                 new=False
-            )
+            )]
 
-        report = runreport.load_report(filename)
+        report = runreport.load_report(*filenames)
         check_search_path = list(report.slice('filename', unique=True))
         check_search_recursive = False
 
@@ -791,6 +822,8 @@ def main():
             printer.debug(dependencies.format_deps(testgraph))
             if options.restore_session is not None:
                 testgraph, restored_cases = report.restore_dangling(testgraph)
+                print(dependencies.format_deps(testgraph))
+                print(restored_cases)
 
         testcases = dependencies.toposort(
             testgraph,
@@ -801,11 +834,15 @@ def main():
         # Disable hooks
         for tc in testcases:
             for h in options.hooks:
-                type(tc.check).disable_hook(h)
+                tc.check.disable_hook(h)
 
         # Act on checks
         if options.list or options.list_detailed:
             list_checks(testcases, printer, options.list_detailed)
+            sys.exit(0)
+
+        if options.list_tags:
+            list_tags(testcases, printer)
             sys.exit(0)
 
         if options.ci_generate:
@@ -832,6 +869,7 @@ def main():
             printer.error("No action option specified. Available options:\n"
                           "  - `-l'/`-L' for listing\n"
                           "  - `-r' for running\n"
+                          "  - `--list-tags' for listing unique test tags\n"
                           "  - `--ci-generate' for generating a CI pipeline\n"
                           f"Try `{argparser.prog} -h' for more options.")
             sys.exit(1)
@@ -1033,6 +1071,21 @@ def main():
                 printer.warning(
                     f'failed to generate report in {report_file!r}: {e}'
                 )
+
+            # Generate the junit xml report for this session
+            junit_report_file = rt.get_option('general/0/report_junit')
+            if junit_report_file:
+                # Expand variables in filename
+                junit_report_file = osext.expandvars(junit_report_file)
+                junit_xml = runreport.junit_xml_report(json_report)
+                try:
+                    with open(junit_report_file, 'w') as fp:
+                        runreport.junit_dump(junit_xml, fp)
+                except OSError as e:
+                    printer.warning(
+                        f'failed to generate report in {junit_report_file!r}: '
+                        f'{e}'
+                    )
 
         if not success:
             sys.exit(1)

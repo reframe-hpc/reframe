@@ -9,12 +9,14 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class HostnameCheck(rfm.RunOnlyRegressionTest):
-    def __init__(self):
-        self.valid_systems = ['daint:gpu', 'daint:mc']
-        self.valid_prog_environs = ['cray']
-        self.executable = 'hostname'
-        self.num_tasks = 0
-        self.num_tasks_per_node = 1
+    valid_systems = ['daint:gpu', 'daint:mc']
+    valid_prog_environs = ['cray']
+    executable = 'hostname'
+    num_tasks = 0
+    num_tasks_per_node = 1
+
+    @rfm.run_before('sanity')
+    def set_sanity_patterns(self):
         self.sanity_patterns = sn.assert_eq(
             sn.getattr(self, 'num_tasks'),
             sn.count(sn.findall(r'^nid\d+$', self.stdout))

@@ -12,7 +12,7 @@ import reframe.utility.sanity as sn
 
 class GromacsBaseCheck(rfm.RunOnlyRegressionTest):
     def __init__(self, output_file):
-        if self.current_system.name == 'pilatus':
+        if self.current_system.name in ['eiger', 'pilatus']:
             self.valid_prog_environs = ['cpeGNU']
         else:
             self.valid_prog_environs = ['builtin']
