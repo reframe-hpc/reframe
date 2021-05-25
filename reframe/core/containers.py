@@ -38,21 +38,6 @@ class ContainerPlatform(abc.ABC):
     #: :default: :class:`None`
     command = fields.TypedField(str, type(None))
 
-    _commands = fields.TypedField(typ.List[str])
-    #: The commands to be executed within the container.
-    #:
-    #: .. deprecated:: 3.5.0
-    #:    Please use the `command` field instead.
-    #:
-    #: :type: :class:`list[str]`
-    #: :default: ``[]``
-    commands = fields.DeprecatedField(
-        _commands,
-        'The `commands` field is deprecated, please use the `command` field '
-        'to set the command to be executed by the container.',
-        fields.DeprecatedField.OP_SET, from_version='3.5.0'
-    )
-
     #: Pull the container image before running.
     #:
     #: This does not have any effect for the `Singularity` container platform.
@@ -80,33 +65,9 @@ class ContainerPlatform(abc.ABC):
     #: :default: ``[]``
     options = fields.TypedField(typ.List[str])
 
-    _workdir = fields.TypedField(str, type(None))
-    #: The working directory of ReFrame inside the container.
-    #:
-    #: This is the directory where the test's stage directory is mounted inside
-    #: the container. This directory is always mounted regardless if
-    #: :attr:`mount_points` is set or not.
-    #:
-    #: .. deprecated:: 3.5
-    #:    Please use the `options` field to set the working directory.
-    #:
-    #: :type: :class:`str`
-    #: :default: ``/rfm_workdir``
-    workdir = fields.DeprecatedField(
-        _workdir,
-        'The `workdir` field is deprecated, please use the `options` field to '
-        'set the container working directory',
-        fields.DeprecatedField.OP_SET, from_version='3.5.0'
-    )
-
     def __init__(self):
         self.image = None
         self.command = None
-
-        # NOTE: Here we set the target fields directly to avoid the deprecation
-        # warnings
-        self._commands = []
-        self._workdir = _STAGEDIR_MOUNT
 
         self.mount_points  = []
         self.options = []
@@ -171,10 +132,6 @@ class Docker(ContainerPlatform):
             return (f'docker run --rm {" ".join(run_opts)} '
                     f'{self.image} {self.command}')
 
-        if self.commands:
-            return (f"docker run --rm {' '.join(run_opts)} {self.image} "
-                    f"bash -c 'cd {self.workdir}; {'; '.join(self.commands)}'")
-
         return f'docker run --rm {" ".join(run_opts)} {self.image}'
 
 
@@ -215,10 +172,6 @@ class Sarus(ContainerPlatform):
         if self.command:
             return (f'{self._command} run {" ".join(run_opts)} {self.image} '
                     f'{self.command}')
-
-        if self.commands:
-            return (f"{self._command} run {' '.join(run_opts)} {self.image} "
-                    f"bash -c 'cd {self.workdir}; {'; '.join(self.commands)}'")
 
         return f'{self._command} run {" ".join(run_opts)} {self.image}'
 
@@ -261,10 +214,6 @@ class Singularity(ContainerPlatform):
         if self.command:
             return (f'singularity exec {" ".join(run_opts)} '
                     f'{self.image} {self.command}')
-
-        if self.commands:
-            return (f"singularity exec {' '.join(run_opts)} {self.image} "
-                    f"bash -c 'cd {self.workdir}; {'; '.join(self.commands)}'")
 
         return f'singularity run {" ".join(run_opts)} {self.image}'
 
