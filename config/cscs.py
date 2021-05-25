@@ -677,9 +677,14 @@ site_configuration = {
                     'scheduler': 'local',
                     'environs': [
                         'builtin',
+                        'PrgEnv-aocc',
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
-                        'PrgEnv-aocc'
+                        'PrgEnv-intel',
+                        'cpeAMD',
+                        'cpeCray',
+                        'cpeGNU',
+                        'cpeIntel'
                     ],
                     'descr': 'Login nodes',
                     'max_jobs': 4,
@@ -691,9 +696,14 @@ site_configuration = {
                     'scheduler': 'slurm',
                     'environs': [
                         'builtin',
+                        'PrgEnv-aocc',
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
-                        'PrgEnv-aocc'
+                        'PrgEnv-intel',
+                        'cpeAMD',
+                        'cpeCray',
+                        'cpeGNU',
+                        'cpeIntel'
                     ],
                     'max_jobs': 100,
                     'resources': [
@@ -1110,10 +1120,9 @@ site_configuration = {
                     'append': True
                 },
                 {
-                    'type': 'graylog',
-                    'address': 'graylog-server:12345',
+                    'type': 'httpjson',
+                    'url': 'http://httpjson-server:12345/rfm',
                     'level': 'info',
-                    'format': '%(message)s',
                     'extras': {
                         'facility': 'reframe',
                         'data-version': '1.0',
