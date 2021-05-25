@@ -6,7 +6,6 @@
 import pytest
 
 import reframe.core.containers as containers
-import reframe.core.warnings as warn
 from reframe.core.exceptions import ContainerError
 
 
