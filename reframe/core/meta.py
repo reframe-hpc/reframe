@@ -62,6 +62,7 @@ class RegressionTestMeta(type):
             set. Accessing a parameter in the class body is disallowed (the
             actual test parameter is set during the class instantiation).
             '''
+
             try:
                 return super().__getitem__(key)
             except KeyError as err:
@@ -186,6 +187,7 @@ class RegressionTestMeta(type):
         these would otherwise affect the __init__ method's signature, and these
         internal mechanisms must be fully transparent to the user.
         '''
+
         obj = cls.__new__(cls, *args, **kwargs)
 
         # Intercept constructor arguments
@@ -197,13 +199,14 @@ class RegressionTestMeta(type):
     def __getattr__(cls, name):
         ''' Attribute lookup method for the MetaNamespace.
 
-        This metaclass implements a custom namespace, where built-in `variable`
-        and `parameter` types are stored in their own sub-namespaces (see
+        This metaclass uses a custom namespace, where ``variable`` built-in
+        and ``parameter`` types are stored in their own sub-namespaces (see
         :class:`reframe.core.meta.RegressionTestMeta.MetaNamespace`).
         This method will perform an attribute lookup on these sub-namespaces if
-        a call to the default `__getattribute__` method fails to retrieve the
+        a call to the default ``__getattribute__`` method fails to retrieve the
         requested class attribute.
         '''
+
         try:
             return cls._rfm_var_space.vars[name]
         except KeyError:
@@ -214,9 +217,52 @@ class RegressionTestMeta(type):
                     f'class {cls.__qualname__!r} has no attribute {name!r}'
                 ) from None
 
+    def __setattr__(cls, name, value):
+        ''' Handle the special treatment required for variables and parameters.
+
+        A variable's default value can be updated when accessed as a regular
+        class attribute. This behaviour does not apply when the assigned value
+        is a descriptor object. In that case, the task of setting the value is
+        delegated to the base :func:`__setattr__` (this is to comply with
+        standard Python behaviour). However, since the variables are already
+        descriptors which are injected during class instantiation, we disallow
+        any attempt to override this descriptor (since it would be silently
+        re-overriden in any case).
+
+        Altering the value of a parameter when accessed as a class attribute
+        is not allowed.
+        '''
+
+        # Set the value of a variable (except when the value is a descriptor).
+        try:
+            var_space = super().__getattribute__('_rfm_var_space')
+            if name in var_space:
+                if not hasattr(value, '__get__'):
+                    var_space[name].define(value)
+                    return
+                elif not var_space[name].field is value:
+                    desc = '.'.join([cls.__qualname__, name])
+                    raise ValueError(
+                        f'cannot override variable descriptor {desc!r}'
+                    )
+
+        except AttributeError:
+            pass
+
+        # Catch attempts to override a test parameter
+        try:
+            param_space = super().__getattribute__('_rfm_param_space')
+            if name in param_space.params:
+                raise ValueError(f'cannot override parameter {name!r}')
+
+        except AttributeError:
+            pass
+
+        super().__setattr__(name, value)
+
     @property
     def param_space(cls):
-        # Make the parameter space available as read-only
+        ''' Make the parameter space available as read-only.'''
         return cls._rfm_param_space
 
     def is_abstract(cls):
