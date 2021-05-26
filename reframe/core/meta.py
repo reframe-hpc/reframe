@@ -230,7 +230,7 @@ class RegressionTestMeta(type):
         re-overriden in any case).
 
         Altering the value of a parameter when accessed as a class attribute
-        is not allowed.
+        is not allowed. This would break the parameter space internals.
         '''
 
         # Set the value of a variable (except when the value is a descriptor).
