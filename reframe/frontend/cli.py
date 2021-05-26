@@ -21,6 +21,7 @@ import reframe.core.logging as logging
 import reframe.core.runtime as runtime
 import reframe.core.warnings as warnings
 import reframe.frontend.argparse as argparse
+import reframe.frontend.autodetect as autodetect
 import reframe.frontend.ci as ci
 import reframe.frontend.dependencies as dependencies
 import reframe.frontend.filters as filters
@@ -425,9 +426,8 @@ def main():
         help='Print the value of configuration parameter PARAM and exit'
     )
     misc_options.add_argument(
-        '--detect-system-topology', action='store_true',
-        help=('Detect and store topology information '
-              'for the current system and exit')
+        '--detect-local-topology', action='store', nargs='?', const='-',
+        help='Detect the local system topology and exit'
     )
     misc_options.add_argument(
         '--system', action='store', help='Load configuration for SYSTEM',
@@ -485,6 +485,13 @@ def main():
         envvar='RFM_HTTPJSON_URL',
         configvar='logging/handlers_perflog/httpjson_url',
         help='URL of HTTP server accepting JSON logs'
+    )
+    argparser.add_argument(
+        dest='detect_remote_system_topology',
+        envvar='RFM_DETECT_REMOTE_SYSTEM_TOPOLOGY',
+        configvar='general/detect_remote_system_topology',
+        action='store_true',
+        help='Detect remote system topology'
     )
 
     # Parse command line
@@ -587,6 +594,7 @@ def main():
         sys.exit(1)
 
     rt = runtime.runtime()
+    autodetect.detect_procinfo()
     try:
         if site_config.get('general/0/module_map_file'):
             rt.modules_system.load_mapping_from_file(
@@ -625,11 +633,24 @@ def main():
 
         sys.exit(0)
 
-    if options.detect_system_topology:
+    if options.detect_local_topology:
         import reframe.utility as util
         from reframe.utility.systeminfo import get_proc_info
 
-        printer.info(util.ppretty(get_proc_info()))
+        topofile = options.detect_local_topology
+        if topofile == '-':
+            json.dump(get_proc_info(), sys.stdout, indent=2)
+            sys.stdout.write('\n')
+        else:
+            try:
+                with open(topofile, 'w') as fp:
+                    json.dump(get_proc_info(), fp, indent=2)
+                    fp.write('\n')
+            except OSError as e:
+                getlogger().error(
+                    f'could not write topology file: {topofile!r}')
+                sys.exit(1)
+
         sys.exit(0)
 
     printer.debug(format_env(options.env_vars))

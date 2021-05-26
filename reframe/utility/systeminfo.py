@@ -36,7 +36,7 @@ def string_from_bits(ids):
     for id in ids:
         ret |= (1 << id)
 
-    return hex(ret).upper()
+    return hex(ret).lower()
 
 
 def filesystem_info():
@@ -243,7 +243,7 @@ def sysctl_info():
 
         match = re.search(rf'machdep\.cpu\.cache\.L{i}_associativity: '
                           rf'(?P<associativity>\d+)',
-                    exec_output.stdout)
+                          exec_output.stdout)
         ca = int(match.group('associativity')) if match else 0
         cache_associativity.append(ca)
 
@@ -253,7 +253,8 @@ def sysctl_info():
     processor_info['num_cpus'] = num_cpus
     processor_info['num_cpus_per_socket'] = num_cpus_per_socket
     processor_info['num_cpus_per_core'] = num_cpus_per_core
-    processor_info['topology']['numa_nodes'] = string_from_bits(range(num_cpus))
+    processor_info['topology']['numa_nodes'] = string_from_bits(
+        range(num_cpus))
     processor_info['topology']['sockets'] = [
         string_from_bits(range(start, start+num_cpus_per_socket)) for start
         in range(0, num_cpus, num_cpus_per_socket)
