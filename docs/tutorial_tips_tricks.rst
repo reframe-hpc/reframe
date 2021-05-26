@@ -168,7 +168,7 @@ For lightweight tests which execute in a few seconds, this trial and error may n
 However, when dealing with tests which take longer to run, this method can quickly become tedious and inefficient.
 
 When a test fails, ReFrame will keep the test output in the stage directory after its execution, which means that one can load this output into a Python shell or another helper script without having to rerun the expensive test again.
-If the test is not failing but the user still wants to experiment or modify the existing :attr:`sanity_patterns` or :attr:`perf_patterns`, the command line option ``--keep-stage-files``  can be used when running ReFrame to avoid deleting the stage directory.
+If the test is not failing but the user still wants to experiment or modify the existing :attr:`sanity_patterns` or :attr:`perf_patterns`, the command line option ``--keep-stage-files`` can be used when running ReFrame to avoid deleting the stage directory.
 With the executable's output available in the stage directory, one can simply use the `re <https://docs.python.org/3/library/re.html>`_ module to debug regular expressions as shown below.
 
 .. code-block:: python
