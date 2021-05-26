@@ -346,20 +346,6 @@ class SystemPartition(jsonext.JSONSerializable):
         '''
         return self._launcher_type
 
-    @property
-    def launcher(self):
-        '''See :attr:`launcher_type`.
-
-        .. deprecated:: 3.2
-           Please use :attr:`launcher_type` instead.
-        '''
-
-        from reframe.core.warnings import user_deprecation_warning
-
-        user_deprecation_warning("the 'launcher' attribute is deprecated; "
-                                 "please use 'launcher_type' instead")
-        return self.launcher_type
-
     def get_resource(self, name, **values):
         '''Instantiate managed resource ``name`` with ``value``.
 

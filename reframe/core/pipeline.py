@@ -1435,17 +1435,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         return self._job.finished()
 
     @final
-    def poll(self):
-        '''See :func:`run_complete`.
-
-        .. deprecated:: 3.2
-
-        '''
-        user_deprecation_warning('calling poll() is deprecated; '
-                                 'please use run_complete() instead')
-        return self.run_complete()
-
-    @final
     def run_wait(self):
         '''Wait for the run phase of this test to finish.
 
@@ -1464,16 +1453,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         '''
         self._job.wait()
-
-    @final
-    def wait(self):
-        '''See :func:`run_wait`.
-
-        .. deprecated:: 3.2
-        '''
-        user_deprecation_warning('calling wait() is deprecated; '
-                                 'please use run_wait() instead')
-        self.run_wait()
 
     @final
     def sanity(self):

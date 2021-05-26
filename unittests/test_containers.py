@@ -6,7 +6,6 @@
 import pytest
 
 import reframe.core.containers as containers
-import reframe.core.warnings as warn
 from reframe.core.exceptions import ContainerError
 
 
@@ -271,23 +270,3 @@ def expected_run_with_workdir(container_variant_noopt):
     elif container_variant_noopt == 'Singularity':
         return ("singularity exec -B\"/foo:/rfm_workdir\" --foo image:tag "
                 "bash -c 'cd foodir; cmd1; cmd2'")
-
-
-def test_run_with_commands(container_platform_noopt,
-                           expected_run_with_commands):
-    with pytest.warns(warn.ReframeDeprecationWarning):
-        container_platform_noopt.commands = ['cmd1', 'cmd2']
-
-    found_commands = container_platform_noopt.launch_command('/foo')
-    assert found_commands == expected_run_with_commands
-
-
-def test_run_with_workdir(container_platform_noopt, expected_run_with_workdir):
-    with pytest.warns(warn.ReframeDeprecationWarning):
-        container_platform_noopt.commands = ['cmd1', 'cmd2']
-
-    with pytest.warns(warn.ReframeDeprecationWarning):
-        container_platform_noopt.workdir = 'foodir'
-
-    found_commands = container_platform_noopt.launch_command('/foo')
-    assert found_commands == expected_run_with_workdir
