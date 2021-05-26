@@ -203,6 +203,7 @@ class RegressionCheckLoader:
         for d in self._load_path:
             getlogger().debug(f'Looking for tests in {d!r}')
             if not os.path.exists(d):
+                getlogger().warning(f'check path {d!r} does not exist')
                 continue
 
             if os.path.isdir(d):
