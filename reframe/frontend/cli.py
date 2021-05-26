@@ -297,11 +297,6 @@ def main():
               'for the selected tests and exit'),
     )
 
-    # FIXME: Remove this
-    action_options.add_argument(
-        '--proc-config', action='store_true'
-    )
-
     # Run options
     run_options.add_argument(
         '-J', '--job-option', action='append', metavar='OPT',
@@ -428,6 +423,11 @@ def main():
         '--show-config', action='store', nargs='?', const='all',
         metavar='PARAM',
         help='Print the value of configuration parameter PARAM and exit'
+    )
+    misc_options.add_argument(
+        '--detect-system-topology', action='store_true',
+        help=('Detect and store topology information '
+              'for the current system and exit')
     )
     misc_options.add_argument(
         '--system', action='store', help='Load configuration for SYSTEM',
@@ -623,6 +623,13 @@ def main():
             else:
                 printer.info(json.dumps(value, indent=2))
 
+        sys.exit(0)
+
+    if options.detect_system_topology:
+        import reframe.utility as util
+        from reframe.utility.systeminfo import get_proc_info
+
+        printer.info(util.ppretty(get_proc_info()))
         sys.exit(0)
 
     printer.debug(format_env(options.env_vars))
@@ -855,14 +862,6 @@ def main():
                 f'  Gitlab pipeline generated successfully '
                 f'in {options.ci_generate!r}.\n'
             )
-            sys.exit(0)
-
-        # FIXME: Remove this one
-        if options.proc_config:
-            import reframe.utility as util
-            from reframe.utility.systeminfo import get_proc_info
-
-            printer.info(util.ppretty(get_proc_info()))
             sys.exit(0)
 
         if not options.run:
