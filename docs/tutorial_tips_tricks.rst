@@ -168,7 +168,7 @@ For lightweight tests which execute in a few seconds, this trial and error may n
 However, when dealing with tests which take longer to run, this method can quickly become tedious and inefficient.
 
 .. tip::
-   When dealing with ``make``-based projects which take a long time to compile, use the command line option :option:`--dont-restage` in order to speed up the compile stage in subsequent runs.
+   When dealing with ``make``-based projects which take a long time to compile, you can use the command line option :option:`--dont-restage` in order to speed up the compile stage in subsequent runs.
 
 When a test fails, ReFrame will keep the test output in the stage directory after its execution, which means that one can load this output into a Python shell or another helper script without having to rerun the expensive test again.
 If the test is not failing but the user still wants to experiment or modify the existing :attr:`~reframe.core.pipeline.RegressionTest.sanity_patterns` or :attr:`~reframe.core.pipeline.RegressionTest.perf_patterns`, the command line option :option:`--keep-stage-files` can be used when running ReFrame to avoid deleting the stage directory.
