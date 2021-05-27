@@ -475,6 +475,12 @@ def main():
         action='store_true',
         help='Resolve module conflicts automatically'
     )
+    argparser.add_argument(
+        dest='httpjson_url',
+        envvar='RFM_HTTPJSON_URL',
+        configvar='logging/handlers_perflog/httpjson_url',
+        help='URL of HTTP server accepting JSON logs'
+    )
 
     # Parse command line
     options = argparser.parse_args()
@@ -618,16 +624,16 @@ def main():
 
     # Setup the check loader
     if options.restore_session is not None:
-        # We need to load the failed checks only from a report
+        # We need to load the failed checks only from a list of reports
         if options.restore_session:
-            filename = options.restore_session
+            filenames = options.restore_session.split(',')
         else:
-            filename = runreport.next_report_filename(
+            filenames = [runreport.next_report_filename(
                 osext.expandvars(site_config.get('general/0/report_file')),
                 new=False
-            )
+            )]
 
-        report = runreport.load_report(filename)
+        report = runreport.load_report(*filenames)
         check_search_path = list(report.slice('filename', unique=True))
         check_search_recursive = False
 
@@ -811,6 +817,8 @@ def main():
             printer.debug(dependencies.format_deps(testgraph))
             if options.restore_session is not None:
                 testgraph, restored_cases = report.restore_dangling(testgraph)
+                print(dependencies.format_deps(testgraph))
+                print(restored_cases)
 
         testcases = dependencies.toposort(
             testgraph,

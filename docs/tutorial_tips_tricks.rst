@@ -161,6 +161,48 @@ If we run the test, we can see that the correct standard output filename will be
    [==========] Finished on Wed Jan 20 17:19:01 2021
 
 
+Debugging sanity and performance patterns
+=========================================
+When creating a new test that requires a complex output parsing for either the sanity or performance stages, setting the :attr:`sanity_patterns` and :attr:`perf_patterns` may involve some trial and error to debug the complex regular expressions required.
+For lightweight tests which execute in a few seconds, this trial and error may not be an issue at all.
+However, when dealing with tests which take longer to run, this method can quickly become tedious and inefficient.
+
+.. tip::
+   When dealing with ``make``-based projects which take a long time to compile, you can use the command line option :option:`--dont-restage` in order to speed up the compile stage in subsequent runs.
+
+When a test fails, ReFrame will keep the test output in the stage directory after its execution, which means that one can load this output into a Python shell or another helper script without having to rerun the expensive test again.
+If the test is not failing but the user still wants to experiment or modify the existing :attr:`~reframe.core.pipeline.RegressionTest.sanity_patterns` or :attr:`~reframe.core.pipeline.RegressionTest.perf_patterns`, the command line option :option:`--keep-stage-files` can be used when running ReFrame to avoid deleting the stage directory.
+With the executable's output available in the stage directory, one can simply use the `re <https://docs.python.org/3/library/re.html>`_ module to debug regular expressions as shown below.
+
+.. code-block:: python
+
+    >>> import re
+
+    >>> # Read the test's output
+    >>> with open(the_output_file, 'r') as f:
+    ...     test_output = ''.join(f.readlines())
+    ...
+    >>> # Evaluate the regular expression
+    >>> re.find(the_regex_pattern, test_output)
+
+Alternatively to using the `re <https://docs.python.org/3/library/re.html>`_ module, one could use all the sanity functions provided by ReFrame directly from the Python shell.
+In order to do so, if ReFrame was installed manually using the ``bootstrap.sh`` script, one will have to make all the Python modules from the ``external`` directory accessible to the Python shell as shown below.
+
+.. code-block:: python
+
+    >>> import sys
+    >>> import os
+
+    >>> # Make the external modules available
+    >>> sys.path = [os.path.abspath('external')] + sys.path
+
+    >>> # Import ReFrame-provided sanity functions
+    >>> import reframe.utility.sanity as sn
+
+    >>> # Evaluate the regular expression
+    >>> assert sn.evaluate(sn.assert_found(the_regex_pattern, the_output_file))
+
+
 Debugging test loading
 ======================
 

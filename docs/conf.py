@@ -143,7 +143,7 @@ html_context = {
 html_theme_options = {
     'logo_only': True
 }
-html_logo = "_static/img/reframe-logo-dark-bg.svg"
+html_logo = "_static/img/reframe-logo-dark-bg.png"
 autodoc_default_flags = ['members']
 
 # End of READTHEDOCS

@@ -853,6 +853,28 @@ def test_restore_session(report_file, make_runner,
     assert new_report['runs'][0]['num_cases'] == 1
     assert new_report['runs'][0]['testcases'][0]['name'] == 'T1'
 
+    # Generate an empty report and load it as primary with the original report
+    # as a fallback, in order to test if the dependencies are still resolved
+    # correctly
+    empty_report = tmp_path / 'empty.json'
+
+    with open(empty_report, 'w') as fp:
+        empty_run = [
+            {
+                'num_cases': 0,
+                'num_failures': 0,
+                'num_aborted': 0,
+                'num_skipped': 0,
+                'runid': 0,
+                'testcases': []
+            }
+        ]
+        jsonext.dump(_generate_runreport(empty_run, *tm.timestamps()), fp)
+
+    report2 = runreport.load_report(empty_report, report_file)
+    restored_cases = report2.restore_dangling(testgraph)[1]
+    assert {tc.check.name for tc in restored_cases} == {'T4', 'T5'}
+
     # Remove the test case dump file and retry
     os.remove(tmp_path / 'stage' / 'generic' / 'default' /
               'builtin' / 'T4' / '.rfm_testcase.json')
