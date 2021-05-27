@@ -59,7 +59,7 @@ class gpu_usage_report_check(GpuBurn):
             self.sanity_patterns, self.gpu_usage_sanity()
         ])
         try:
-            sn.evaluate(self.sanity_patterns)
+            sn.evaluate(self.gpu_usage_sanity())
         except SanityError:
             time.sleep(25)
 
