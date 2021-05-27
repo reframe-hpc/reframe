@@ -39,20 +39,22 @@ class TestVar:
     '''
 
     __slots__ = (
-        'field', '_default_value', 'name', '__attrs__'
+        'field_type', '_default_value', 'name',
+        'args', 'kwargs', '__attrs__'
     )
 
     def __init__(self, *args, **kwargs):
-        field_type = kwargs.pop('field', fields.TypedField)
+        self.field_type = kwargs.pop('field', fields.TypedField)
         self._default_value = kwargs.pop('value', Undefined)
 
-        if not issubclass(field_type, fields.Field):
+        if not issubclass(self.field_type, fields.Field):
             raise ValueError(
-                f'field {field_type!r} is not derived from '
+                f'field {self.field_type!r} is not derived from '
                 f'{fields.Field.__qualname__}'
             )
 
-        self.field = field_type(*args, **kwargs)
+        self.args = args
+        self.kwargs = kwargs
         self.__attrs__ = dict()
 
     def is_defined(self):
@@ -526,7 +528,7 @@ class VarSpace(namespaces.Namespace):
         '''
 
         for name, var in self.items():
-            setattr(cls, name, var.field)
+            setattr(cls, name, var.field_type(*var.args, **var.kwargs))
             getattr(cls, name).__set_name__(obj, name)
 
             # If the var is defined, set its value

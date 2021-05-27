@@ -301,12 +301,3 @@ def test_local_paramspace_is_empty():
         p = parameter([1, 2, 3])
 
     assert len(MyTest._rfm_local_param_space) == 0
-
-
-def test_class_attr_access():
-    class MyTest(rfm.RegressionTest):
-        p = parameter([1, 2, 3])
-
-    assert MyTest.p == (1, 2, 3,)
-    with pytest.raises(ValueError, match='cannot override parameter'):
-        MyTest.p = (4, 5,)
