@@ -45,12 +45,12 @@ class TrilinosTest(rfm.RegressionTest):
         self.maintainers = ['AJ', 'CB']
         self.tags = {'production', 'craype'}
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def set_cxxflags(self):
         flags = self.prgenv_flags[self.current_environ.name]
         self.build_system.cxxflags = flags
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def cdt2006_workaround_intel(self):
         if (self.current_environ.name == 'PrgEnv-intel' and
             osext.cray_cdt_version() == '20.06'):
@@ -61,7 +61,7 @@ class TrilinosTest(rfm.RegressionTest):
             ]
             self.variables['PKG_CONFIG_PATH'] = '.:$PKG_CONFIG_PATH'
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def cdt2006_workaround_dynamic(self):
         if (osext.cray_cdt_version() == '20.06' and
             self.linkage == 'dynamic' and

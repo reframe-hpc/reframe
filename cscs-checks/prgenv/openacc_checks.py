@@ -46,7 +46,7 @@ class OpenACCFortranCheck(rfm.RegressionTest):
         self.maintainers = ['TM', 'AJ']
         self.tags = {'production', 'craype'}
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def setflags(self):
         if self.current_environ.name.startswith('PrgEnv-cray'):
             self.build_system.fflags = ['-hacc', '-hnoomp']
@@ -56,7 +56,7 @@ class OpenACCFortranCheck(rfm.RegressionTest):
             elif self.current_system.name in ['arolla', 'tsa']:
                 self.build_system.fflags = ['-acc', '-ta=tesla:cc70']
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def cdt2008_pgi_workaround(self):
         cdt = osext.cray_cdt_version()
         if not cdt:

@@ -63,7 +63,7 @@ class MpiInitTest(rfm.RegressionTest):
         self.maintainers = ['JG', 'AJ']
         self.tags = {'production', 'craype'}
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity(self):
         # {{{ 0/ MPICH version:
         # MPI VERSION  : CRAY MPICH version 7.7.15 (ANL base 3.2)

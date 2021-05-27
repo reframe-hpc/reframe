@@ -49,7 +49,7 @@ class CudaAwareMPICheck(rfm.CompileOnlyRegressionTest):
         self.maintainers = ['JO']
         self.tags = {'production', 'scs'}
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def set_compilers(self):
         if self.current_environ.name == 'PrgEnv-pgi':
             self.build_system.cflags = ['-std=c99', ' -O3']
@@ -81,7 +81,7 @@ class CudaAwareMPIRuns(rfm.RunOnlyRegressionTest):
                                                r' with residue 0.00024',
                                                self.stdout)
 
-    @rfm.require_deps
+    @require_deps
     def set_executable(self, CudaAwareMPICheck):
         self.executable = os.path.join(
             CudaAwareMPICheck().stagedir,
@@ -105,7 +105,7 @@ class CudaAwareMPIOneNodeCheck(CudaAwareMPIRuns):
 
         self.prerun_cmds += ['export CRAY_CUDA_MPS=1']
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_num_gpus_per_node(self):
         cp = self.current_partition.fullname
         self.num_gpus_per_node = self.partition_num_gpus_per_node.get(cp, 1)

@@ -37,7 +37,7 @@ class GpuDirectCudaCheck(rfm.RegressionTest):
         self.maintainers = ['AJ', 'MKr']
         self.tags = {'production', 'mch', 'craype'}
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def pgi_workaround_tsa(self):
         # FIXME: this is a temporary workaround for PGI on Tsa
         if self.current_system.name in ('arolla', 'tsa'):
