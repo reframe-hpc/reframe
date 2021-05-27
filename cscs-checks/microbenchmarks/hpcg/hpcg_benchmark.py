@@ -8,7 +8,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-class HPCGHookMixin:
+class HPCGHookMixin(rfm.RegressionMixin):
     @run_before('run')
     def guide_node_guess(self):
         '''Guide the node guess based on the test's needs.'''
