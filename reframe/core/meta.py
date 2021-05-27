@@ -197,14 +197,15 @@ class RegressionTestMeta(type):
         return obj
 
     def __getattr__(cls, name):
-        ''' Attribute lookup method for the MetaNamespace.
+        '''Attribute lookup method for the MetaNamespace.
 
         This metaclass uses a custom namespace, where ``variable`` built-in
         and ``parameter`` types are stored in their own sub-namespaces (see
-        :class:`reframe.core.meta.RegressionTestMeta.MetaNamespace`).
-        This method will perform an attribute lookup on these sub-namespaces if
-        a call to the default ``__getattribute__`` method fails to retrieve the
-        requested class attribute.
+        :class:`reframe.core.meta.RegressionTestMeta.MetaNamespace`). This
+        method will perform an attribute lookup on these sub-namespaces if a
+        call to the default :func:`__getattribute__` method fails to retrieve
+        the requested class attribute.
+
         '''
 
         try:
@@ -218,7 +219,7 @@ class RegressionTestMeta(type):
                 ) from None
 
     def __setattr__(cls, name, value):
-        ''' Handle the special treatment required for variables and parameters.
+        '''Handle the special treatment required for variables and parameters.
 
         A variable's default value can be updated when accessed as a regular
         class attribute. This behaviour does not apply when the assigned value
