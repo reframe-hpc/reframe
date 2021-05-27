@@ -39,7 +39,8 @@ site_configuration = {
                     ],
                     'environs': [
                         'builtin',
-                        'PrgEnv-gnu'
+                        'PrgEnv-gnu',
+                        'PrgEnv-fujitsu'
                     ],
                     'descr': 'Fujitsu A64FX CPUs',
                     'max_jobs': 100,
@@ -814,6 +815,18 @@ site_configuration = {
             'cc': 'mpicc',
             'cxx': 'mpicxx',
             'ftn': 'mpif90'
+        },
+        {
+            'name': 'PrgEnv-fujitsu',
+            'target_systems': [
+                'ault'
+            ],
+            'modules': [
+                'a64fxsdk'
+            ],
+            'cc': 'mpifccpx',
+            'cxx': 'mpiFCCpx',
+            'ftn': 'mpifrtpx'
         },
         {
             'name': 'builtin',

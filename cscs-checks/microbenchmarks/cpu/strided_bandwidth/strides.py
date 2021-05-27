@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import reframe as rfm
-import reframe.utility.sanity as sn
 
 from hpctestlib.microbenchmarks.cpu.strided_bandwidth import StridedBandwidth
 
@@ -30,8 +29,15 @@ class strided_bandwidth_check(StridedBandwidth):
     stride = parameter([1, 8, 16])
 
     valid_systems = ['daint:gpu', 'dom:gpu', 'daint:mc', 'dom:mc',
-                     'eiger:mc', 'pilatus:mc']
+                     'eiger:mc', 'pilatus:mc', 'ault:a64fx']
     valid_prog_environs = ['PrgEnv-gnu']
+
+    @rfm.run_after('init')
+    def set_valid_systems(self):
+        cp = self.current_system.name
+        if cp == 'ault':
+            self.valid_prog_environs = ['PrgEnv-fujitsu']
+
     system_num_cpus = variable(
         dict, value={
             'daint:mc':  72,
@@ -39,7 +45,8 @@ class strided_bandwidth_check(StridedBandwidth):
             'dom:mc':  72,
             'dom:gpu': 24,
             'eiger:mc': 128,
-            'pilatus:mc': 128
+            'pilatus:mc': 128,
+            'ault:a64fx': 48,
         }
     )
     reference_per_stride = variable(
@@ -62,7 +69,10 @@ class strided_bandwidth_check(StridedBandwidth):
                 },
                 'pilatus:mc': {
                     'bandwidth': (270, -0.1, 0.1, 'GB/s')
-                }
+                },
+                'ault:a64fx': {
+                    'bandwidth': (50, -0.1, 0.1, 'GB/s')
+                },
             },
             8: {
                 'dom:gpu': {
@@ -82,7 +92,10 @@ class strided_bandwidth_check(StridedBandwidth):
                 },
                 'pilatus:mc': {
                     'bandwidth': (33, -0.1, 0.2, 'GB/s')
-                }
+                },
+                'ault:a64fx': {
+                    'bandwidth': (45, -0.1, 0.1, 'GB/s')
+                },
             },
             16: {
                 'dom:gpu': {
@@ -99,6 +112,12 @@ class strided_bandwidth_check(StridedBandwidth):
                 },
                 'eiger:mc': {
                     'bandwidth': (33, -0.1, 0.2, 'GB/s')
+                },
+                'pilatus:mc': {
+                    'bandwidth': (33, -0.1, 0.2, 'GB/s')
+                },
+                'ault:a64fx': {
+                    'bandwidth': (25, -0.1, 0.1, 'GB/s')
                 },
             }
         }
