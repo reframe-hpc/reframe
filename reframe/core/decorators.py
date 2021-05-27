@@ -20,13 +20,13 @@ import traceback
 
 import reframe.utility.osext as osext
 import reframe.core.warnings as warn
+import reframe.core.hooks as hooks
 from reframe.core.exceptions import (ReframeSyntaxError,
                                      SkipTestError,
                                      user_frame)
 from reframe.core.logging import getlogger
 from reframe.core.pipeline import RegressionTest
 from reframe.utility.versioning import VersionValidator
-from reframe.core.hooks import run_before, run_after, require_deps
 
 
 def _register_test(cls, args=None):
@@ -205,3 +205,43 @@ def required_version(*versions):
         return cls
 
     return _skip_tests
+
+
+def run_before(stage):
+    '''Alias for backwards compatibility with the run_before decorator.
+
+    See :func:`~reframe.core.hooks.run_before`.
+    '''
+    warn.user_deprecation_warning(
+        'using the @rfm.run_before decorator from the rfm module is '
+        'deprecated; please use the built-in decorator @run_before instead.',
+        from_version='3.7.0'
+    )
+    return hooks.run_before(stage)
+
+
+def run_after(stage):
+    '''Alias for backwards compatibility with the run_after decorator.
+
+    See :func:`~reframe.core.hooks.run_after`.
+    '''
+    warn.user_deprecation_warning(
+        'using the @rfm.run_after decorator from the rfm module is '
+        'deprecated; please use the built-in decorator @run_after instead.',
+        from_version='3.7.0'
+    )
+    return hooks.run_after(stage)
+
+
+def require_deps(fn):
+    '''Alias for backwards compatibility with the require_deps decorator.
+
+    See :func:`~reframe.core.hooks.require_deps`.
+    '''
+    warn.user_deprecation_warning(
+        'using the @rfm.require_deps decorator from the rfm module is '
+        'deprecated; please use the built-in decorator @require_deps instead.',
+        from_version='3.7.0'
+    )
+    return hooks.require_deps(fn)
+

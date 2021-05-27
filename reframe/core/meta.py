@@ -176,6 +176,22 @@ class RegressionTestMeta(type):
         return metacls.MetaNamespace(namespace)
 
     def __new__(metacls, name, bases, namespace, **kwargs):
+        ''' Remove directives from the class namespace.
+
+        It does not make sense to have some directives available after the
+        class was created or even at the instance level (e.g. doing
+        ``self.parameter([1, 2, 3])`` does not make sense). So here, we
+        intercept those directives out of the namespace before the class is
+        constructed.
+        '''
+
+        blacklist = [
+            'parameter', 'variable', 'bind', 'run_before', 'run_after',
+            'require_deps'
+        ]
+        for b in blacklist:
+            namespace.pop(b, None)
+
         return super().__new__(metacls, name, bases, dict(namespace), **kwargs)
 
     def __init__(cls, name, bases, namespace, **kwargs):
