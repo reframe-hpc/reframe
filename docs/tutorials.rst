@@ -9,6 +9,7 @@ ReFrame Tutorials
    tutorial_advanced
    tutorial_deps
    tutorial_tips_tricks
+   tutorial_easybuild
 
 
 Online Tutorials
