@@ -594,7 +594,7 @@ def main():
         sys.exit(1)
 
     rt = runtime.runtime()
-    autodetect.detect_procinfo()
+    autodetect.detect_topology()
     try:
         if site_config.get('general/0/module_map_file'):
             rt.modules_system.load_mapping_from_file(
