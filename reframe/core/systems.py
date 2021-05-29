@@ -4,11 +4,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import json
-import os
 
 import reframe.utility as util
 import reframe.utility.jsonext as jsonext
-import reframe.utility.systeminfo as sysinfo
 from reframe.core.backends import (getlauncher, getscheduler)
 from reframe.core.environments import (Environment, ProgEnvironment)
 from reframe.core.logging import getlogger
