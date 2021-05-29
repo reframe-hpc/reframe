@@ -3,7 +3,6 @@ import os
 import tempfile
 
 import reframe as rfm
-import reframe.core.shell as shell
 import reframe.utility.osext as osext
 import reframe.utility.systeminfo as sysinfo
 from reframe.core.logging import getlogger
@@ -53,9 +52,10 @@ def _remote_detect(part):
                              name='rfm-detect-job',
                              sched_access=part.access)
             with osext.change_dir(dirname):
-                job.prepare([f'{rfm_exec} --detect-local-topology=topo.json'],
+                launcher_cmd = job.launcher.run_command(job)
+                job.prepare([f'{launcher_cmd} {rfm_exec} '
+                             f'--detect-local-topology=topo.json'],
                             trap_errors=True)
-
                 with open(job.script_filename) as fp:
                     getlogger().debug(
                         f'submitting remote job script:\n{fp.read()}'

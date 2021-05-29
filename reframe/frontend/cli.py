@@ -634,7 +634,6 @@ def main():
         sys.exit(0)
 
     if options.detect_local_topology:
-        import reframe.utility as util
         from reframe.utility.systeminfo import get_proc_info
 
         topofile = options.detect_local_topology
