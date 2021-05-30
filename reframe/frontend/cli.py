@@ -426,8 +426,8 @@ def main():
         help='Print the value of configuration parameter PARAM and exit'
     )
     misc_options.add_argument(
-        '--detect-local-topology', action='store', nargs='?', const='-',
-        help='Detect the local system topology and exit'
+        '--detect-host-topology', action='store', nargs='?', const='-',
+        help='Detect the local host topology and exit'
     )
     misc_options.add_argument(
         '--system', action='store', help='Load configuration for SYSTEM',
@@ -633,10 +633,10 @@ def main():
 
         sys.exit(0)
 
-    if options.detect_local_topology:
+    if options.detect_host_topology:
         from reframe.utility.systeminfo import get_proc_info
 
-        topofile = options.detect_local_topology
+        topofile = options.detect_host_topology
         if topofile == '-':
             json.dump(get_proc_info(), sys.stdout, indent=2)
             sys.stdout.write('\n')
@@ -647,7 +647,8 @@ def main():
                     fp.write('\n')
             except OSError as e:
                 getlogger().error(
-                    f'could not write topology file: {topofile!r}')
+                    f'could not write topology file: {topofile!r}'
+                )
                 sys.exit(1)
 
         sys.exit(0)

@@ -54,7 +54,7 @@ def _remote_detect(part):
             with osext.change_dir(dirname):
                 launcher_cmd = job.launcher.run_command(job)
                 job.prepare([f'{launcher_cmd} {rfm_exec} '
-                             f'--detect-local-topology=topo.json'],
+                             f'--detect-host-topology=topo.json'],
                             trap_errors=True)
                 with open(job.script_filename) as fp:
                     getlogger().debug(
