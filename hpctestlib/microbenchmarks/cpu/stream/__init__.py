@@ -10,14 +10,13 @@ import reframe.utility.sanity as sn
 __all__ = ['Stream']
 
 
-class Stream(rfm.RegressionTest, pin_prefix=True):
+class Stream(rfm.RegressionTest):
     '''Stream benchmark.
 
     For info on the executable, see the executable sources.
 
     Derived tests must set the variables ``num_tasks`` and
     ``num_cpus_per_task``.
-
     '''
 
     # Required variables
