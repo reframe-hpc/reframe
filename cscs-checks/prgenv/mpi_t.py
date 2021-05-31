@@ -9,7 +9,7 @@ import reframe.utility.sanity as sn
 
 
 @rfm.simple_test
-class MpiTCheck(rfm.RegressionTest):
+class MpiT_Check(rfm.RegressionTest):
     def __init__(self):
         self.descr = 'Checks MPI_T control/performance variables/categories'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'daint:mc', 'dom:mc',
@@ -69,6 +69,7 @@ class MpiTCheck(rfm.RegressionTest):
             self.stagedir,
             reference_files[sn.evaluate(mpich_version)]['categories'])
         # }}}
+
         # {{{ 1/ MPI Control Variables: MPIR_...
         # --- extract runtime data:
         regex = r'^\t(?P<vars>MPIR\S+)\t'
