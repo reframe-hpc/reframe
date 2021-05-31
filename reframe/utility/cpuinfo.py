@@ -13,40 +13,43 @@ import reframe.utility.osext as osext
 from reframe.core.exceptions import SpawnedProcessError
 
 
-def bits_from_string(mask):
-    ret = []
-    mask_int = int(mask, 0)
-    index = 0
-    while mask_int:
-        if mask_int & 1:
-            ret.append(index)
+def _bits_from_str(mask_s):
+    '''Return the set bits from a string representing a bit array.'''
 
-        index += 1
-        mask_int >>= 1
+    bits = []
+    mask = int(mask_s, 0)
+    pos = 0
+    while mask:
+        if mask & 1:
+            bits.append(pos)
 
-    return ret
+        pos += 1
+        mask >>= 1
+
+    return bits
 
 
-def string_from_bits(ids):
+def _str_from_bits(bits):
+    '''Return a string representation of a bit array with ``bits`` set.'''
+
     ret = 0
-    for id in ids:
-        ret |= (1 << id)
+    for b in bits:
+        ret |= (1 << b)
 
     return hex(ret).lower()
 
 
-def filesystem_info():
+def _sysfs_topo():
     cache_units = {
         'K': 1024,
-        'M': 1048576,
-        'G': 1073741824
+        'M': 1024*1024,
+        'G': 1024*1024*1024
     }
-    processor_info = {
+    cpuinfo = {
         'topology': {}
     }
     cpu_dirs = glob.glob(r'/sys/devices/system/cpu/cpu[0-9]*')
     nodes = glob.glob(r'/sys/devices/system/node/node[0-9]*')
-
     cores = set()
     for cpu in cpu_dirs:
         core_cpus_path = os.path.join(cpu, 'topology/core_cpus')
@@ -63,7 +66,7 @@ def filesystem_info():
             with open(cores_path) as fp:
                 core_cpus = fp.read()
                 core_cpus = re.sub(r'[\s,]', '', core_cpus)
-                core_cpus = f'0x{core_cpus.upper()}'
+                core_cpus = f'0x{core_cpus.lower()}'
                 cores.add(core_cpus)
 
     sockets = set()
@@ -82,7 +85,7 @@ def filesystem_info():
             with open(sockets_path) as fp:
                 package_cpus = fp.read()
                 package_cpus = re.sub(r'[\s,]', '', package_cpus)
-                package_cpus = f'0x{package_cpus.upper()}'
+                package_cpus = f'0x{package_cpus.lower()}'
                 sockets.add(package_cpus)
 
     numa_nodes = []
@@ -91,11 +94,10 @@ def filesystem_info():
             with open(os.path.join(node, 'cpumap')) as fp:
                 cpumap = fp.read()
                 cpumap = re.sub(r'[\s,]', '', cpumap)
-                cpumap = f'0x{cpumap.upper()}'
+                cpumap = f'0x{cpumap.lower()}'
                 numa_nodes.append(cpumap)
 
     numa_nodes.sort()
-
     caches = {}
     for cpu in cpu_dirs:
         cache_dirs = glob.glob(cpu + r'/cache/index[0-9]*')
@@ -105,7 +107,6 @@ def filesystem_info():
             cache_linesize = 0
             cache_associativity = 0
             cache_cpuset = ''
-
             with contextlib.suppress(IOError):
                 with open(os.path.join(cache, 'level')) as fp:
                     cache_level = int(fp.read())
@@ -132,7 +133,7 @@ def filesystem_info():
             # Don't take the associativity directly from
             # "ways_of_associativity" file because  some archs (ia64, ppc)
             # put 0 there when fully-associative, while others (x86)
-            # put something like -1 there.
+            # put something like -1.
             with contextlib.suppress(IOError):
                 with open(os.path.join(cache, 'number_of_sets')) as fp:
                     cache_number_of_sets = int(fp.read())
@@ -153,9 +154,9 @@ def filesystem_info():
                 with open(os.path.join(cache, 'shared_cpu_map')) as fp:
                     cache_cpuset = fp.read()
                     cache_cpuset = re.sub(r'[\s,]', '', cache_cpuset)
-                    cache_cpuset = f'0x{cache_cpuset.upper()}'
+                    cache_cpuset = f'0x{cache_cpuset.lower()}'
 
-            num_cpus = len(bits_from_string(cache_cpuset))
+            num_cpus = len(_bits_from_str(cache_cpuset))
             caches.setdefault((cache_level, cache_size, cache_linesize,
                                cache_associativity, num_cpus), set())
             caches[(cache_level, cache_size, cache_linesize,
@@ -167,17 +168,18 @@ def filesystem_info():
     num_cpus_per_core = num_cpus // num_cores if num_cores else 0
     num_cpus_per_socket = num_cpus // num_sockets if num_sockets else 0
 
-    processor_info['num_cpus'] = num_cpus
-    processor_info['num_cpus_per_core'] = num_cpus_per_core
-    processor_info['num_cpus_per_socket'] = num_cpus_per_socket
-    processor_info['num_sockets'] = num_sockets
-    processor_info['topology']['numa_nodes'] = numa_nodes
-    processor_info['topology']['sockets'] = sorted(list(sockets))
-    processor_info['topology']['cores'] = sorted(list(cores))
-    processor_info['topology']['caches'] = []
+    # Fill in the cpuinfo
+    cpuinfo['num_cpus'] = num_cpus
+    cpuinfo['num_cpus_per_core'] = num_cpus_per_core
+    cpuinfo['num_cpus_per_socket'] = num_cpus_per_socket
+    cpuinfo['num_sockets'] = num_sockets
+    cpuinfo['topology']['numa_nodes'] = numa_nodes
+    cpuinfo['topology']['sockets'] = sorted(list(sockets))
+    cpuinfo['topology']['cores'] = sorted(list(cores))
+    cpuinfo['topology']['caches'] = []
     for cache_type, cpusets in caches.items():
-        (cache_level, cache_size, cache_linesize, cache_associativity,
-         num_cpus) = cache_type
+        (cache_level, cache_size,
+         cache_linesize, cache_associativity, num_cpus) = cache_type
         c = {
             'type': f'L{cache_level}',
             'size': cache_size,
@@ -186,19 +188,19 @@ def filesystem_info():
             'num_cpus': num_cpus,
             'cpusets': sorted(list(cpusets))
         }
-        processor_info['topology']['caches'].append(c)
+        cpuinfo['topology']['caches'].append(c)
 
-    return processor_info
+    return cpuinfo
 
 
-def sysctl_info():
+def _sysctl_topo():
     try:
         exec_output = osext.run_command('sysctl hw machdep.cpu.cache',
                                         check=True)
     except (FileNotFoundError, SpawnedProcessError):
         return {}
 
-    processor_info = {
+    cpuinfo = {
         'topology': {}
     }
     match = re.search(r'hw\.ncpu: (?P<num_cpus>\d+)', exec_output.stdout)
@@ -214,7 +216,7 @@ def sysctl_info():
                       exec_output.stdout)
     if match:
         num_sockets = int(match.group('num_sockets'))
-        processor_info['num_sockets'] = num_sockets
+        cpuinfo['num_sockets'] = num_sockets
 
     match = re.search(r'hw\.cacheconfig:(?P<cacheconfig>(\s\d+)*)',
                       exec_output.stdout)
@@ -231,8 +233,8 @@ def sysctl_info():
     if match:
         linesize = int(match.group('linesize'))
 
-    cache_associativity = [0]
     # index 0 is referring to memory
+    cache_associativity = [0]
     for i in range(1, len(cachesize)):
         if cachesize[i] == 0:
             break
@@ -240,26 +242,26 @@ def sysctl_info():
         match = re.search(rf'machdep\.cpu\.cache\.L{i}_associativity: '
                           rf'(?P<associativity>\d+)',
                           exec_output.stdout)
-        ca = int(match.group('associativity')) if match else 0
-        cache_associativity.append(ca)
+        assoc = int(match.group('associativity')) if match else 0
+        cache_associativity.append(assoc)
 
     num_cpus_per_socket = num_cpus // num_sockets
     num_cpus_per_core = num_cpus // num_cores
 
-    processor_info['num_cpus'] = num_cpus
-    processor_info['num_cpus_per_socket'] = num_cpus_per_socket
-    processor_info['num_cpus_per_core'] = num_cpus_per_core
-    processor_info['topology']['numa_nodes'] = string_from_bits(
-        range(num_cpus))
-    processor_info['topology']['sockets'] = [
-        string_from_bits(range(start, start+num_cpus_per_socket)) for start
-        in range(0, num_cpus, num_cpus_per_socket)
+    # Fill in the cpuinfo
+    cpuinfo['num_cpus'] = num_cpus
+    cpuinfo['num_cpus_per_socket'] = num_cpus_per_socket
+    cpuinfo['num_cpus_per_core'] = num_cpus_per_core
+    cpuinfo['topology']['numa_nodes'] = _str_from_bits(range(num_cpus))
+    cpuinfo['topology']['sockets'] = [
+        _str_from_bits(range(start, start+num_cpus_per_socket))
+        for start in range(0, num_cpus, num_cpus_per_socket)
     ]
-    processor_info['topology']['cores'] = [
-        string_from_bits(range(start, start+num_cpus_per_core)) for start
-        in range(0, num_cpus, num_cpus_per_core)
+    cpuinfo['topology']['cores'] = [
+        _str_from_bits(range(start, start+num_cpus_per_core))
+        for start in range(0, num_cpus, num_cpus_per_core)
     ]
-    processor_info['topology']['caches'] = []
+    cpuinfo['topology']['caches'] = []
     for i in range(1, len(cache_associativity)):
         t = {
             'type': f'L{i}',
@@ -268,26 +270,26 @@ def sysctl_info():
             'associativity': cache_associativity[i],
             'num_cpus': cacheconfig[i],
             'cpusets': [
-                string_from_bits(range(start, start+cacheconfig[i]))
+                _str_from_bits(range(start, start+cacheconfig[i]))
                 for start in range(0, num_cpus, cacheconfig[i])
             ]
         }
-        processor_info['topology']['caches'].append(t)
+        cpuinfo['topology']['caches'].append(t)
 
-    return processor_info
+    return cpuinfo
 
 
-def get_proc_info():
-    processor_info = {
+def cpuinfo():
+    ret = {
         'arch': archspec.cpu.host().name
     }
 
     # Try first to get information from the filesystem
-    if glob.glob('/sys/'):
-        topology_information = filesystem_info()
+    if os.path.isdir('/sys'):
+        topology = _sysfs_topo()
     else:
-        # Try the `sysctl` command
-        topology_information = sysctl_info()
+        # Try with the `sysctl` command
+        topology = _sysctl_topo()
 
-    processor_info.update(topology_information)
-    return processor_info
+    ret.update(topology)
+    return ret

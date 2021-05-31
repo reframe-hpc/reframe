@@ -1,13 +1,18 @@
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import json
 import os
 import tempfile
 
 import reframe as rfm
 import reframe.utility.osext as osext
-import reframe.utility.systeminfo as sysinfo
 from reframe.core.logging import getlogger
 from reframe.core.runtime import runtime
 from reframe.core.schedulers import Job
+from reframe.utility.cpuinfo import cpuinfo
 
 
 def _load_topology(filename):
@@ -110,7 +115,7 @@ def detect_topology():
         getlogger().debug(f'> no topology file found; auto-detecting...')
         if _is_part_local(part):
             # Unconditionally detect the system for fully local partitions
-            part.processor._info = sysinfo.get_proc_info()
+            part.processor._info = cpuinfo()
             _save_topology(topo_file, part.processor.info)
         elif detect_remote_systems:
             part.processor._info = _remote_detect(part)

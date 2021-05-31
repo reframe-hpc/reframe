@@ -634,16 +634,16 @@ def main():
         sys.exit(0)
 
     if options.detect_host_topology:
-        from reframe.utility.systeminfo import get_proc_info
+        from reframe.utility.cpuinfo import cpuinfo
 
         topofile = options.detect_host_topology
         if topofile == '-':
-            json.dump(get_proc_info(), sys.stdout, indent=2)
+            json.dump(cpuinfo(), sys.stdout, indent=2)
             sys.stdout.write('\n')
         else:
             try:
                 with open(topofile, 'w') as fp:
-                    json.dump(get_proc_info(), fp, indent=2)
+                    json.dump(cpuinfo(), fp, indent=2)
                     fp.write('\n')
             except OSError as e:
                 getlogger().error(

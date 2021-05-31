@@ -769,7 +769,7 @@ def test_maxfail_negative(run_reframe):
 
 
 def test_detect_host_topology(run_reframe):
-    import reframe.utility.systeminfo as sysinfo
+    from reframe.utility.cpuinfo import cpuinfo
 
     returncode, stdout, stderr = run_reframe(
         more_options=['--detect-host-topology']
@@ -777,11 +777,11 @@ def test_detect_host_topology(run_reframe):
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert returncode == 0
-    assert stdout == json.dumps(sysinfo.get_proc_info(), indent=2) + '\n'
+    assert stdout == json.dumps(cpuinfo(), indent=2) + '\n'
 
 
 def test_detect_host_topology_file(run_reframe, tmp_path):
-    import reframe.utility.systeminfo as sysinfo
+    from reframe.utility.cpuinfo import cpuinfo
 
     topo_file = tmp_path / 'topo.json'
     returncode, stdout, stderr = run_reframe(
@@ -791,4 +791,4 @@ def test_detect_host_topology_file(run_reframe, tmp_path):
     assert 'Traceback' not in stderr
     assert returncode == 0
     with open(topo_file) as fp:
-        assert json.load(fp) == sysinfo.get_proc_info()
+        assert json.load(fp) == cpuinfo()
