@@ -11,14 +11,25 @@ __all__ = ['Stream']
 
 
 class Stream(rfm.RegressionTest, pin_prefix=True):
-    '''This test checks the stream test:
-       Function    Best Rate MB/s  Avg time     Min time     Max time
-       Triad:          13991.7     0.017174     0.017153     0.017192
+    '''Stream benchmark.
+
+    For info on the executable, see the executable sources.
+
+    Derived tests must set the variables ``num_tasks`` and
+    ``num_cpus_per_task``.
+
     '''
+
+    # Required variables
+    num_tasks = required
+    num_cpus_per_task = required
 
     descr = 'STREAM Benchmark'
     exclusive_access = True
     use_multithreading = False
+    prebuild_cmds = [
+        'wget http://www.cs.virginia.edu/stream/FTP/Code/stream.c',
+    ]
     sourcepath = 'stream.c'
     build_system = 'SingleSource'
     num_tasks_per_node = 1
@@ -26,13 +37,12 @@ class Stream(rfm.RegressionTest, pin_prefix=True):
         'OMP_PLACES': 'threads',
         'OMP_PROC_BIND': 'spread'
     }
-
-    num_tasks = required
-    num_cpus_per_task = required
-
     reference = {
         '*': {
-            'triad': (None, None, None, 'MB/s')
+            'triad': (None, None, None, 'MB/s'),
+            'add': (None, None, None, 'MB/s'),
+            'copy': (None, None, None, 'MB/s'),
+            'scale': (None, None, None, 'MB/s')
         }
     }
     maintainers = ['RS', 'SK']
@@ -57,5 +67,14 @@ class Stream(rfm.RegressionTest, pin_prefix=True):
         self.perf_patterns = {
             'triad': sn.min(sn.extractall(
                 r'Triad:\s+(?P<triad>\S+)\s+\S+', self.stdout, 'triad', float
-            ))
+            )),
+            'add': sn.min(sn.extractall(
+                r'Add:\s+(?P<add>\S+)\s+\S+', self.stdout, 'add', float
+            )),
+            'copy': sn.min(sn.extractall(
+                r'Copy:\s+(?P<copy>\S+)\s+\S+', self.stdout, 'copy', float
+            )),
+            'scale': sn.min(sn.extractall(
+                r'Scale:\s+(?P<scale>\S+)\s+\S+', self.stdout, 'scale', float
+            )),
         }

@@ -17,6 +17,9 @@ class StridedBandwidth(rfm.RegressionTest, pin_prefix=True):
     (in bytes), the stride (in multiples of 8 bytes) and the number of threads
     to run this application with.
 
+    Derived tests must set the parameter ``stride``, and the variables
+    ``num_cpus`` and ``num_tasks``.
+
     The performance stage measures the bandiwdth in GB/s.
     '''
 
@@ -31,9 +34,11 @@ class StridedBandwidth(rfm.RegressionTest, pin_prefix=True):
     #: :default: ``required``
     num_cpus = variable(int)
 
+    # Required variables
+    num_tasks = required
+
     sourcepath = 'strides.cpp'
     build_system = 'SingleSource'
-    num_tasks = 0
     num_tasks_per_node = 1
     reference = {
         '*': {
