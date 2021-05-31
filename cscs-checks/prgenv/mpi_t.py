@@ -50,7 +50,7 @@ class MpiT_Check(rfm.RegressionTest):
         # MPI VERSION    : CRAY MPICH version 8.1.5.32 (ANL base 3.4a2)
         regex = r'^MPI VERSION\s+: CRAY MPICH version (\S+) \(ANL base \S+\)'
         mpich_version_major = sn.extractsingle_s(
-                r'^(\d+)\.\d+\.\d+', sn.extractsingle(regex, rpt_file, 1), 1
+            r'^(\d+)\.\d+\.\d+', sn.extractsingle(regex, rpt_file, 1), 1
         )
         if mpich_version_major == '7':
             mpich_version_minor = sn.extractsingle_s(
@@ -69,7 +69,6 @@ class MpiT_Check(rfm.RegressionTest):
             self.stagedir,
             reference_files[sn.evaluate(mpich_version)]['categories'])
         # }}}
-
         # {{{ 1/ MPI Control Variables: MPIR_...
         # --- extract runtime data:
         regex = r'^\t(?P<vars>MPIR\S+)\t'
