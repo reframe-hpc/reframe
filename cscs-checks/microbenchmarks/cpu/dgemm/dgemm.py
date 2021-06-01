@@ -23,7 +23,7 @@ class dgemm_check(Dgemm):
     valid_systems = [
         'daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
         'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn',
-        'eiger:mc', 'pilatus:mc'
+        'eiger:mc', 'pilatus:mc', 'ault:a64fx'
     ]
     num_tasks = 0
     sys_reference = variable(
@@ -34,6 +34,7 @@ class dgemm_check(Dgemm):
             'dom:mc':     (1040.0, -0.15, None, 'Gflop/s'),
             'eiger:mc':   (3200.0, -0.15, None, 'Gflop/s'),
             'pilatus:mc': (3200.0, -0.15, None, 'Gflop/s'),
+            'ault:a64fx': (1930.0, -0.15, None, 'Gflop/s'),
             '*':          (None, None, None, 'Gflop/s'),
         },
     )
@@ -47,6 +48,16 @@ class dgemm_check(Dgemm):
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
         elif self.current_system.name in ['eiger', 'pilatus']:
             self.valid_prog_environs = ['PrgEnv-gnu']
+        elif self.current_system.name in ['ault']:
+            self.valid_prog_environs = ['PrgEnv-fujitsu']
+
+    @rfm.run_after('setup')
+    def skip_incompatible_combinations(self):
+        '''Fujitsu env only available in ault's a64fx partition.'''
+        if self.current_environ.name.startswith('PrgEnv-fujitsu'):
+            self.skip_if(
+                self.current_partition.fullname not in {'ault:a64fx'}
+            )
 
     @rfm.run_after('setup')
     def set_num_cpus_per_task(self):
@@ -60,9 +71,11 @@ class dgemm_check(Dgemm):
             self.num_cpus_per_task = 40
         elif self.current_partition.fullname in ['eiger:mc', 'pilatus:mc']:
             self.num_cpus_per_task = 128
+        elif self.current_partition.fullname in ['ault:a64fx']:
+            self.num_cpus_per_task = 48
 
     @rfm.run_before('compile')
-    def setflags(self):
+    def set_flags(self):
         if self.current_environ.name.startswith('PrgEnv-gnu'):
             self.build_system.cflags += ['-fopenmp']
         elif self.current_environ.name.startswith('PrgEnv-intel'):
@@ -73,6 +86,9 @@ class dgemm_check(Dgemm):
             self.build_system.ldflags = [
                 '-mkl', '-static-intel', '-liomp5', '-lpthread', '-lm', '-ldl'
             ]
+        elif self.current_environ.name.startswith('PrgEnv-fujitsu'):
+            self.build_system.cflags += ['-fopenmp', '-Nlibomp', '-mt']
+            self.build_system.ldflags += ['-SSL2BLAMP', '-mt']
 
         if self.current_partition.fullname in ['arolla:cn', 'arolla:pn',
                                                'tsa:cn', 'tsa:pn']:
