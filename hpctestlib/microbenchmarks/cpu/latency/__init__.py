@@ -39,10 +39,13 @@ class CpuLatency(rfm.RegressionTest, pin_prefix=True):
 
     @rfm.run_before('run')
     def set_exc_opts(self):
+        '''Set the ``buffer_sizes`` as the executable options.'''
         self.executable_opts = self.buffer_sizes
 
     @rfm.run_before('sanity')
     def set_sanity_patterns(self):
+        '''Verify the number of reported latency measurements.'''
+
         self.sanity_patterns = sn.assert_eq(
             sn.count(sn.findall(r'latency \(ns\)', self.stdout)),
             self.num_tasks*sn.count(self.executable_opts)
@@ -61,29 +64,27 @@ class CpuLatency(rfm.RegressionTest, pin_prefix=True):
     def set_references(self):
         '''Set dummy references to get the perf values in the perf report.
 
-        This will create as many levels as passed in ``buffer_sizes``. Derived
+        This will create as many levels as items in ``buffer_sizes``. Derived
         test must override this hook if they wish to use their own reference
         values.
         '''
 
-        refs = {'*': {}}
-        dummy_ref = (None, None, None, 'ns')
-        for i, buff in enumerate(self.buffer_sizes):
-            level = i+1
-            refs['*'].update({f'latencyL{level}': dummy_ref})
-
-        self.reference = refs
+        self.reference = {
+            '*': {
+                f'latencyL{i+1}': (None, None, None, 'ns')
+                for i, buff in enumerate(self.buffer_sizes)
+            }
+        }
 
     @rfm.run_before('performance')
     def set_perf_patterns(self):
         '''Set the performance patters to extract all latency levels.
 
-        The levels are named from ``L1`` to ``L(n+1)``, where ``n`` is the
+        The levels are named from ``L1`` to ``L{n}``, where ``n`` is the
         length of ``buffer_sizes``.
         '''
 
-        self.perf_patterns = {}
-        for i, buff in enumerate(self.buffer_sizes):
-            level = i+1
-            level_name = f'latencyL{level}'
-            self.perf_patterns.update({level_name: self.get_latency(buff)})
+        self.perf_patterns = {
+            f'latencyL{i+1}': self.get_latency(buff)
+            for i, buff in enumerate(self.buffer_sizes)
+        }
