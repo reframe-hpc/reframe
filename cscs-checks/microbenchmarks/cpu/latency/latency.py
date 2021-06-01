@@ -15,10 +15,15 @@ class cpu_latency_check(CpuLatency):
     num_tasks = 0
     valid_systems = [
         'daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-        'ault:intel', 'ault:amdvega', 'tave:compute'
+        'ault:intel', 'ault:amdvega', 'tave:compute', 'ault:a64fx'
     ]
     valid_prog_environs = ['PrgEnv-gnu']
     tags = {'benchmark', 'diagnostic'}
+
+    @rfm.run_after('init')
+    def set_valid_environs(self):
+        if self.current_system.name in {'ault'}:
+            self.valid_prog_environs = ['PrgEnv-fujitsu']
 
     @rfm.run_after('setup')
     def set_modules(self):
@@ -71,5 +76,11 @@ class cpu_latency_check(CpuLatency):
                 'latencyL2': (12.15, -0.01, 0.05, 'ns'),
                 'latencyL3': (137, -0.01, 0.05, 'ns'),
                 'latencyL4': (150, -0.05, 0.05, 'ns')
+            },
+            'ault:a64fx': {
+                'latencyL1': (2.78, None, 0.05, 'ns'),
+                'latencyL2': (14.3, None, 0.05, 'ns'),
+                'latencyL3': (32.1, None, 0.05, 'ns'),
+                'latencyL4': (146,  None, 0.05, 'ns')
             },
         }
