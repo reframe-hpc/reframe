@@ -15,19 +15,11 @@ class stream_check(Stream):
 
     valid_systems = [
         'daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-        'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn'
+        'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn', 'ault:a64fx'
     ]
     valid_prog_environs = [
         'PrgEnv-cray', 'PrgEnv-gnu', 'PrgEnv-intel', 'PrgEnv-pgi'
     ]
-    prgenv_flags = variable(
-        dict, value={
-            'PrgEnv-cray': ['-fopenmp', '-O3'],
-            'PrgEnv-gnu': ['-fopenmp', '-O3'],
-            'PrgEnv-intel': ['-qopenmp', '-O3'],
-            'PrgEnv-pgi': ['-mp', '-O3']
-        }
-    )
     stream_cpus_per_task = variable(
         dict, value={
             'arolla:cn': 16,
@@ -38,6 +30,7 @@ class stream_check(Stream):
             'dom:mc': 36,
             'tsa:cn': 16,
             'tsa:pn': 16,
+            'ault:a64fx': 48,
         }
     )
     triad_reference = variable(
@@ -65,7 +58,10 @@ class stream_check(Stream):
                 'daint:mc': {'triad': (88500, -0.05, None, 'MB/s')},
                 'dom:gpu': {'triad': (44500, -0.05, None, 'MB/s')},
                 'dom:mc': {'triad': (88500, -0.05, None, 'MB/s')},
-            }
+            },
+            'PrgEnv-fujitsu': {
+                'ault:a64fx': {'triad': (85500, -0.05, None, 'MB/s')},
+            },
         }
     )
     num_tasks = 1
@@ -76,6 +72,8 @@ class stream_check(Stream):
         '''Special conditions for arolla and tsa.'''
         if self.current_system.name in ['arolla', 'tsa']:
             self.valid_prog_environs = ['PrgEnv-gnu']
+        elif self.current_system.name in ['ault']:
+            self.valid_prog_environs = ['PrgEnv-fujitsu']
 
     @rfm.run_after('setup')
     def set_num_cpus_per_task(self):
@@ -87,8 +85,17 @@ class stream_check(Stream):
     @rfm.run_before('compile')
     def set_compiler_flags(self):
         '''Set build flags for the different environments.'''
+
         envname = self.current_environ.name
-        self.build_system.cflags = self.prgenv_flags.get(envname, ['-O3'])
+        if envname in {'PrgEnv-cray', 'PrgEnv-gnu'}:
+            self.build_system.cflags += ['-fopenmp', '-O3']
+        elif envname in {'PrgEnv-intel'}:
+            self.build_system.cflags += ['-qopenmp', '-O3']
+        elif envname in {'PrgEnv-intel'}:
+            self.build_system.cflags += ['-mp', '-O3']
+        elif envname in {'PrgEnv-fujitsu'}:
+            self.build_system.cflags += ['-fopenmp', '-mt', '-O3']
+            self.build_system.ldflags += ['-mt']
 
     @rfm.run_before('run')
     def set_env_vars(self):
