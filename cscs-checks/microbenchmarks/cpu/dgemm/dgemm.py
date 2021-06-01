@@ -9,6 +9,7 @@ import reframe.utility.osext as osext
 
 from hpctestlib.microbenchmarks.cpu.dgemm import Dgemm
 
+
 @rfm.simple_test
 class dgemm_check(Dgemm):
     '''CSCS DGEMM check.
@@ -21,8 +22,8 @@ class dgemm_check(Dgemm):
 
     valid_systems = [
         'daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-         'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn',
-         'eiger:mc', 'pilatus:mc'
+        'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn',
+        'eiger:mc', 'pilatus:mc'
     ]
     num_tasks = 0
     sys_reference = variable(
