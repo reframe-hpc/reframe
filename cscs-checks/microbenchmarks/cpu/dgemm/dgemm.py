@@ -5,66 +5,50 @@
 
 import reframe as rfm
 import reframe.utility.sanity as sn
+import reframe.utility.osext as osext
 
+from hpctestlib.microbenchmarks.cpu.dgemm import Dgemm
 
 @rfm.simple_test
-class DGEMMTest(rfm.RegressionTest):
-    def __init__(self):
-        self.descr = 'DGEMM performance test'
-        self.sourcepath = 'dgemm.c'
-        self.sanity_patterns = self.eval_sanity()
+class dgemm_check(Dgemm):
+    '''CSCS DGEMM check.
 
-        # the perf patterns are automaticaly generated inside sanity
-        self.perf_patterns = {}
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn',
-                              'eiger:mc', 'pilatus:mc']
+    The matrix dimensions are set in the base class.
+    Every node reports its performance in Gflops/s. To do so, this class
+    overrides the performance patterns and references from the base test.
+    This is done in the ``set_perf_patterns`` pre-performance hook.
+    '''
+
+    valid_systems = [
+        'daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+         'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn',
+         'eiger:mc', 'pilatus:mc'
+    ]
+    num_tasks = 0
+    sys_reference = variable(
+        dict, value={
+            'daint:gpu':  (300.0, -0.15, None, 'Gflop/s'),
+            'daint:mc':   (1040.0, -0.15, None, 'Gflop/s'),
+            'dom:gpu':    (300.0, -0.15, None, 'Gflop/s'),
+            'dom:mc':     (1040.0, -0.15, None, 'Gflop/s'),
+            'eiger:mc':   (3200.0, -0.15, None, 'Gflop/s'),
+            'pilatus:mc': (3200.0, -0.15, None, 'Gflop/s'),
+            '*':          (None, None, None, 'Gflop/s'),
+        },
+    )
+    tags = {'benchmark', 'diagnostic', 'craype'}
+
+    @rfm.run_after('init')
+    def set_valid_prog_environs(self):
         if self.current_system.name in ['daint', 'dom']:
             self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel']
         elif self.current_system.name in ['arolla', 'tsa']:
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
         elif self.current_system.name in ['eiger', 'pilatus']:
             self.valid_prog_environs = ['PrgEnv-gnu']
-        else:
-            self.valid_prog_environs = []
 
-        self.num_tasks = 0
-        self.use_multithreading = False
-        self.executable_opts = ['6144', '12288', '3072']
-        self.build_system = 'SingleSource'
-        self.build_system.cflags = ['-O3']
-        self.sys_reference = {
-            'daint:gpu': (300.0, -0.15, None, 'Gflop/s'),
-            'daint:mc': (1040.0, -0.15, None, 'Gflop/s'),
-            'dom:gpu': (300.0, -0.15, None, 'Gflop/s'),
-            'dom:mc': (1040.0, -0.15, None, 'Gflop/s'),
-            'eiger:mc': (3200.0, -0.15, None, 'Gflop/s'),
-            'pilatus:mc': (3200.0, -0.15, None, 'Gflop/s'),
-        }
-        self.maintainers = ['AJ', 'VH']
-        self.tags = {'benchmark', 'diagnostic', 'craype'}
-
-    @rfm.run_before('compile')
-    def setflags(self):
-        if self.current_environ.name.startswith('PrgEnv-gnu'):
-            self.build_system.cflags += ['-fopenmp']
-        elif self.current_environ.name.startswith('PrgEnv-intel'):
-            self.build_system.cppflags = [
-                '-DMKL_ILP64', '-I${MKLROOT}/include'
-            ]
-            self.build_system.cflags = ['-qopenmp']
-            self.build_system.ldflags = [
-                '-mkl', '-static-intel', '-liomp5', '-lpthread', '-lm', '-ldl'
-            ]
-
-        if self.current_partition.fullname in ['arolla:cn', 'arolla:pn',
-                                               'tsa:cn', 'tsa:pn']:
-            self.build_system.cflags += ['-I$EBROOTOPENBLAS/include']
-            self.build_system.ldflags = ['-L$EBROOTOPENBLAS/lib', '-lopenblas',
-                                         '-lpthread', '-lgfortran']
-
-    @rfm.run_before('run')
-    def set_tasks(self):
+    @rfm.run_after('setup')
+    def set_num_cpus_per_task(self):
         if self.current_partition.fullname in ['daint:gpu', 'dom:gpu']:
             self.num_cpus_per_task = 12
         elif self.current_partition.fullname in ['daint:mc', 'dom:mc']:
@@ -76,33 +60,48 @@ class DGEMMTest(rfm.RegressionTest):
         elif self.current_partition.fullname in ['eiger:mc', 'pilatus:mc']:
             self.num_cpus_per_task = 128
 
-        if self.num_cpus_per_task:
-            self.variables = {
-                'OMP_NUM_THREADS': str(self.num_cpus_per_task),
-                'OMP_BIND': 'cores',
-                'OMP_PROC_BIND': 'spread',
-                'OMP_SCHEDULE': 'static'
+    @rfm.run_before('compile')
+    def setflags(self):
+        if self.current_environ.name.startswith('PrgEnv-gnu'):
+            self.build_system.cflags += ['-fopenmp']
+        elif self.current_environ.name.startswith('PrgEnv-intel'):
+            self.build_system.cppflags = [
+                '-DMKL_ILP64', '-I${MKLROOT}/include'
+            ]
+            self.build_system.cflags += ['-qopenmp']
+            self.build_system.ldflags = [
+                '-mkl', '-static-intel', '-liomp5', '-lpthread', '-lm', '-ldl'
+            ]
+
+        if self.current_partition.fullname in ['arolla:cn', 'arolla:pn',
+                                               'tsa:cn', 'tsa:pn']:
+            self.build_system.cflags += ['-I$EBROOTOPENBLAS/include']
+            self.build_system.ldflags = ['-L$EBROOTOPENBLAS/lib', '-lopenblas',
+                                         '-lpthread', '-lgfortran']
+
+    @rfm.run_before('performance')
+    def set_perf_patterns(self):
+        '''Override base performance patterns.
+
+        Set each node as a performance variable reporting the Gflop/s.
+        The ``reference`` values for each node are extracted from the
+        ``sys_reference`` dict.
+        '''
+
+        part_name = self.current_partition.fullname
+        with osext.change_dir(self.stagedir):
+            node_names = sn.evaluate(self.get_nodenames())
+
+        # If part_name not in sys_reference, default back to '*'
+        if part_name not in self.sys_reference:
+            part_name = '*'
+
+        # Set references and perf patterns.
+        self.reference = {
+            part_name: {
+                nid: self.sys_reference[part_name] for nid in node_names
             }
-
-    @sn.sanity_function
-    def eval_sanity(self):
-        all_tested_nodes = sn.evaluate(sn.extractall(
-            r'(?P<hostname>\S+):\s+Time for \d+ DGEMM operations',
-            self.stdout, 'hostname'))
-        num_tested_nodes = len(all_tested_nodes)
-        failure_msg = ('Requested %s node(s), but found %s node(s)' %
-                       (self.job.num_tasks, num_tested_nodes))
-        sn.evaluate(sn.assert_eq(num_tested_nodes, self.job.num_tasks,
-                                 msg=failure_msg))
-
-        for hostname in all_tested_nodes:
-            partition_name = self.current_partition.fullname
-            ref_name = '%s:%s' % (partition_name, hostname)
-            self.reference[ref_name] = self.sys_reference.get(
-                partition_name, (0.0, None, None, 'Gflop/s')
-            )
-            self.perf_patterns[hostname] = sn.extractsingle(
-                r'%s:\s+Avg\. performance\s+:\s+(?P<gflops>\S+)'
-                r'\sGflop/s' % hostname, self.stdout, 'gflops', float)
-
-        return True
+        }
+        self.perf_patterns = {
+            nid: self.get_node_performance(nid) for nid in node_names
+        }
