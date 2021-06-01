@@ -54,7 +54,9 @@ class StridedBandwidth(rfm.RegressionTest, pin_prefix=True):
         In order, these are the buffer size, stride and number of threads. See
         the main docstring above for more info.
         '''
-        self.executable_opts = ['100000000', f'{self.stride}', f'{self.num_cpus}']
+        self.executable_opts = [
+            '100000000', f'{self.stride}', f'{self.num_cpus}'
+        ]
 
     @rfm.run_before('sanity')
     def set_sanity_patterns(self):
