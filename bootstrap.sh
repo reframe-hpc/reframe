@@ -69,6 +69,10 @@ if $python -c 'import sys; sys.exit(sys.version_info[:2] >= (3, 6))'; then
     exit 1
 fi
 
+# Disable the user installation scheme which is the default for Debian and
+# cannot be combined with `--target`
+export PIP_USER=0
+
 # Check if ensurepip is installed
 $python -m ensurepip --version &> /dev/null
 epip=$?
