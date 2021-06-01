@@ -16,6 +16,7 @@ import reframe.core.environments as env
 import reframe.frontend.runreport as runreport
 import reframe.core.logging as logging
 import reframe.core.runtime as rt
+import reframe.utility.osext as osext
 import unittests.utility as test_util
 
 
@@ -53,7 +54,13 @@ def perflogdir(tmp_path):
 
 
 @pytest.fixture
-def run_reframe(tmp_path, perflogdir):
+def rm_config_meta():
+    yield
+    osext.rmtree('unittests/resources/_meta')
+
+
+@pytest.fixture
+def run_reframe(tmp_path, perflogdir, rm_config_meta):
     def _run_reframe(system='generic:default',
                      checkpath=['unittests/resources/checks/hellocheck.py'],
                      environs=['builtin'],

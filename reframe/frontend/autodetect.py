@@ -15,18 +15,18 @@ from reframe.core.schedulers import Job
 from reframe.utility.cpuinfo import cpuinfo
 
 
-def _load_topology(filename):
+def _load_info(filename):
     try:
         with open(filename) as fp:
             return json.load(fp)
     except OSError as e:
         getlogger().warning(
-            f'could not load topology file: {filename!r}: {e}'
+            f'could not load file: {filename!r}: {e}'
         )
         return {}
 
 
-def _save_topology(filename, topo_info):
+def _save_info(filename, topo_info):
     if not topo_info:
         return
 
@@ -94,31 +94,60 @@ def detect_topology():
 
     for part in rt.system.partitions:
         getlogger().debug(f'detecting topology info for {part.fullname}')
+        found_procinfo = False
+        found_devinfo  = False
         if part.processor.info != {}:
             # Processor info set up already in the configuration
             getlogger().debug(
                 f'> topology found in configuration file; skipping...'
             )
+            found_procinfo = True
+
+        if part.devices:
+            # Devices set up already in the configuration
+            getlogger().debug(
+                f'> devices found in configuration file; skipping...'
+            )
+            found_devinfo = True
+
+        if found_procinfo and found_devinfo:
             continue
 
         topo_file = os.path.join(
             config_prefix, f'{rt.system.name}-{part.name}', 'processor.json'
         )
-        if os.path.exists(topo_file):
+        dev_file = os.path.join(
+            config_prefix, f'{rt.system.name}-{part.name}', 'devices.json'
+        )
+        if not found_procinfo and os.path.exists(topo_file):
             getlogger().debug(
                 f'> found topology file {topo_file!r}; loading...'
             )
-            part.processor._info = _load_topology(topo_file)
+            part.processor._info = _load_info(topo_file)
+            found_procinfo = True
+
+        if not found_devinfo and os.path.exists(dev_file):
+            getlogger().debug(
+                f'> found devices file {dev_file!r}; loading...'
+            )
+            part._devices = _load_info(dev_file)
+            found_devinfo = True
+
+        if found_procinfo and found_devinfo:
             continue
 
-        # No topology found, try to auto-detect it
-        getlogger().debug(f'> no topology file found; auto-detecting...')
-        if _is_part_local(part):
-            # Unconditionally detect the system for fully local partitions
-            part.processor._info = cpuinfo()
-            _save_topology(topo_file, part.processor.info)
-        elif detect_remote_systems:
-            part.processor._info = _remote_detect(part)
-            _save_topology(topo_file, part.processor.info)
+        if not found_procinfo:
+            # No topology found, try to auto-detect it
+            getlogger().debug(f'> no topology file found; auto-detecting...')
+            if _is_part_local(part):
+                # Unconditionally detect the system for fully local partitions
+                part.processor._info = cpuinfo()
+                _save_info(topo_file, part.processor.info)
+            elif detect_remote_systems:
+                part.processor._info = _remote_detect(part)
+                _save_info(topo_file, part.processor.info)
 
-        getlogger().debug(f'> saved topology in {topo_file!r}')
+            getlogger().debug(f'> saved topology in {topo_file!r}')
+
+        if not found_devinfo:
+            getlogger().debug(f'> device auto-detection is not supported')
