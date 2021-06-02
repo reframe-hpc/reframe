@@ -17,7 +17,6 @@ import reframe.core.environments as env
 import reframe.frontend.runreport as runreport
 import reframe.core.logging as logging
 import reframe.core.runtime as rt
-import reframe.utility.osext as osext
 import unittests.utility as test_util
 
 
