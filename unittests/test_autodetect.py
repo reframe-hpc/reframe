@@ -17,7 +17,8 @@ from reframe.utility.cpuinfo import cpuinfo
 @pytest.fixture
 def exec_ctx(make_exec_ctx_g, tmp_path):
     # Copy the default settings to the temp dir
-    shutil.copy('reframe/core/settings.py', tmp_path / 'settings.py')
+    config_file = tmp_path / 'conf.py'
+    shutil.copy('reframe/core/settings.py', config_file)
 
     # Create a devices file manually, since it is not auto-generated
     meta_prefix = tmp_path / '_meta' / 'generic-default'
@@ -31,7 +32,7 @@ def exec_ctx(make_exec_ctx_g, tmp_path):
             }
         ], fp)
 
-    yield from make_exec_ctx_g(tmp_path / 'settings.py')
+    yield from make_exec_ctx_g(config_file)
 
 
 def test_autotect(exec_ctx):

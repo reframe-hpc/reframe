@@ -10,6 +10,7 @@ import json
 import os
 import pytest
 import re
+import shutil
 import sys
 
 import reframe.core.environments as env
@@ -56,7 +57,7 @@ def perflogdir(tmp_path):
 @pytest.fixture
 def rm_config_meta():
     yield
-    osext.rmtree('unittests/resources/_meta')
+    shutil.rmtree('unittests/resources/_meta', ignore_errors=True)
 
 
 @pytest.fixture
