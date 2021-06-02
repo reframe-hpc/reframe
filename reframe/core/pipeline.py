@@ -573,12 +573,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #:    .. versionchanged:: 3.6
     #:       The default value has changed from ``None`` to ``required``.
-    #:
-    #:    .. versionchanged: x.x.x
-    #:       This variable now also accepts strings containing regular
-    #:       expressions that would be matched in the test's standard
-    #:       output.
-    sanity_patterns = variable(_DeferredExpression, str)
+    sanity_patterns = variable(_DeferredExpression)
 
     #: Patterns for verifying the performance of this test.
     #:
@@ -1506,15 +1501,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         # Merge sanity functions and sanity_patterns
         sn_fns = [fn(self) for fn in self._rfm_sanity]
-        if hasattr(self, 'sanity_patterns'):
-            if type(self.sanity_patterns) is str:
-                sn_fns.append(
-                    sn.assert_found(self.sanity_patterns, self.stdout)
-                )
-            else:
+        if sn_fns != []:
+            if hasattr(self, 'sanity_patterns'):
                 sn_fns.append(self.sanity_patterns)
 
-        if sn_fns != []:
             self.sanity_patterns = sn.all(sn_fns)
 
         if rt.runtime().get_option('general/0/trap_job_errors'):
