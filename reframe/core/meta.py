@@ -121,10 +121,10 @@ class RegressionTestMeta(type):
 
         # Machinery to add a new sanity function
         def sanity_function(fn):
-            '''Mark a function to be executed during the sanity stage.
+            '''Mark a function as the test's sanity function.
 
-            Decodated functions must be unary and they will be converted into
-            deferred expressions. Multiple functions can be decorated per test.
+            Decorated functions must be unary and they will be converted into
+            deferred expressions.
             '''
 
             _def_fn = deferrable(fn)
@@ -132,6 +132,7 @@ class RegressionTestMeta(type):
             return _def_fn
 
         namespace['sanity_function'] = sanity_function
+        namespace['deferred_function'] = deferrable
         return metacls.MetaNamespace(namespace)
 
     def __new__(metacls, name, bases, namespace, **kwargs):
