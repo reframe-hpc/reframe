@@ -134,10 +134,10 @@ class RegressionTestMeta(type):
             return self.fn(*args, **kwargs)
 
         def __getattr__(self, name):
-           if name in self.__slots__:
-               return super().__getattr__(name)
-           else:
-               return getattr(self.fn, name)
+            if name in self.__slots__:
+                return super().__getattr__(name)
+            else:
+                return getattr(self.fn, name)
 
         def __setattr__(self, name, value):
             if name in self.__slots__:
