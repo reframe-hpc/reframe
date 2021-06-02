@@ -103,16 +103,18 @@ class RegressionTestMeta(type):
         with the desired name for the bound-method. Since this class is a
         descriptor, the `__get__` method will return the right bound-method
         when accessed from a class instance.
+
+        :meta private:
         '''
 
         __slots__ = ('fn')
 
         def __init__(self, fn, name=None):
             @functools.wraps(fn)
-            def fn_(*args, **kwargs):
+            def _fn(*args, **kwargs):
                 return fn(*args, **kwargs)
 
-            self.fn = fn_
+            self.fn = _fn
             if name:
                 self.fn.__name__ = name
 
@@ -128,8 +130,14 @@ class RegressionTestMeta(type):
 
             return types.MethodType(self.fn, obj)
 
+        def __call__(self, *args, **kwargs):
+            return self.fn(*args, **kwargs)
+
         def __getattr__(self, name):
-            return getattr(self.fn, name)
+           if name in self.__slots__:
+               return super().__getattr__(name)
+           else:
+               return getattr(self.fn, name)
 
         def __setattr__(self, name, value):
             if name in self.__slots__:
@@ -162,8 +170,17 @@ class RegressionTestMeta(type):
         namespace['variable'] = variables.TestVar
         namespace['required'] = variables.Undefined
 
-        # Directive to bind a free function into the class
         def bind(fn, name=None):
+            '''Directive to bind a free function to a class.
+
+            By default, the function is bound with the same name as the free
+            function. However, the function can be bound using a different name
+            with the ``name`` argument.
+
+            :param fn: external function to be bound to a class.
+            :param name: bind the function under a diferent name.
+            '''
+
             inst = metacls.WrappedFunction(fn, name)
             namespace[inst.__name__] = inst
             return inst
