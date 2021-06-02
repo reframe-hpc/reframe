@@ -1,48 +1,43 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
 import reframe as rfm
 
-from hpctestlib.microbenchmarks.gpu.shmem import GpuShmem
+from hpctestlib.microbenchmarks.gpu.dgemm import DgemmGpu
 import cscstests.microbenchmarks.gpu.hooks as hooks
 
 
 @rfm.simple_test
-class gpu_shmem_check(GpuShmem):
+class dgemm_gpu_check(DgemmGpu):
     valid_systems = ['daint:gpu', 'dom:gpu',
                      'ault:amdv100', 'ault:intelv100',
                      'ault:amda100', 'ault:amdvega']
     valid_prog_environs = ['PrgEnv-gnu']
     num_tasks = 0
-    num_tasks_per_node = 1
-    build_system = 'Make'
-    executable = 'shmem.x'
     reference = {
-        # theoretical limit for P100:
-        # 8 [B/cycle] * 1.328 [GHz] * 16 [bankwidth] * 56 [SM] = 9520 GB/s
         'dom:gpu': {
-            'bandwidth': (8850, -0.01, 9520/8850 - 1, 'GB/s')
+            'perf': (3.35, -0.1, None, 'TF/s')
         },
         'daint:gpu': {
-            'bandwidth': (8850, -0.01, 9520/8850 - 1, 'GB/s')
+            'perf': (3.35, -0.1, None, 'TF/s')
         },
         'ault:amdv100': {
-            'bandwidth': (13020, -0.01, None, 'GB/s')
+            'perf': (5.25, -0.1, None, 'TF/s')
         },
         'ault:intelv100': {
-            'bandwidth': (13020, -0.01, None, 'GB/s')
+            'perf': (5.25, -0.1, None, 'TF/s')
         },
         'ault:amda100': {
-            'bandwidth': (18139, -0.01, None, 'GB/s')
+            'perf': (10.5, -0.1, None, 'TF/s')
         },
         'ault:amdvega': {
-            'bandwidth': (9060, -0.01, None, 'GB/s')
+            'perf': (3.45, -0.1, None, 'TF/s')
         }
     }
-    maintainers = ['SK', 'JO']
-    tags = {'benchmark', 'diagnostic', 'craype'}
+    maintainers = ['JO', 'SK']
+    tags = {'benchmark'}
 
     # Inject external hooks
     @rfm.run_after('setup')

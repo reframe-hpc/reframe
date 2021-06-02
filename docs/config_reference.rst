@@ -1002,9 +1002,9 @@ The additional properties for the ``syslog`` handler are the following:
    This can either be of the form ``<host>:<port>`` or simply a path that refers to a Unix domain socket.
 
 
----------------------------
+----------------------------
 The ``httpjson`` log handler
----------------------------
+----------------------------
 
 This handler sends log records in JSON format to a server using HTTP POST requests.
 The additional properties for the ``httpjson`` handler are the following:
@@ -1019,6 +1019,7 @@ The additional properties for the ``httpjson`` handler are the following:
 
 
 .. js:attribute:: .logging[].handlers[].extras
+   :noindex:
 
 .. object:: .logging[].handlers_perflog[].extras
 

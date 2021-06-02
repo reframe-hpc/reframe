@@ -1,4 +1,3 @@
-CXXFLAGS?=--amdgpu-target=gfx906,gfx908
 ROCM_ROOT?=/opt/rocm
 RSMI_ROOT?=/opt/rocm/rocm_smi
 
