@@ -29,6 +29,8 @@ def test_directives():
             assert not hasattr(self, 'run_after')
             assert not hasattr(self, 'require_deps')
 
+    MyTest()
+
 
 def test_bind_directive():
     def ext_fn(x):
@@ -56,8 +58,8 @@ def test_bind_directive():
         assert ext_fn._rfm_foo
 
         def __init__(self):
-            assert isinstance(self.ext_fn(), MyTest)
-            assert isinstance(self.ext(), MyTest)
+            assert self.ext_fn() is self
+            assert self.ext() is self
 
     # Test __get__
     MyTest()
