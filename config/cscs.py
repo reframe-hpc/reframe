@@ -771,6 +771,7 @@ site_configuration = {
                         'cpeIntel'
                     ],
                     'max_jobs': 100,
+                    'access': ['-Cmc', f'--account={osext.osgroup()}'],
                     'resources': [
                         {
                             'name': 'switches',
