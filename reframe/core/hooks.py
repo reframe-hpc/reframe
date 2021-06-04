@@ -134,6 +134,7 @@ def require_deps(func):
     .. versionadded:: 2.21
 
     '''
+
     tests = inspect.getfullargspec(func).args[1:]
     func._rfm_resolve_deps = True
 

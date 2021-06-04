@@ -47,12 +47,20 @@ So although a "post-init" and a "pre-setup" hook will both run *after* a test ha
 the post-init hook will execute *right after* the test is initialized.
 The framework will then continue with other activities and it will execute the pre-setup hook *just before* it schedules the test for executing its setup stage.
 
-.. autodecorator:: reframe.core.decorators.run_after(stage)
+.. py:decorator:: reframe.core.decorators.run_before(stage)
 
-.. autodecorator:: reframe.core.decorators.run_before(stage)
+  Alias for backwards compatibility with the run_before decorator.
+  See :func:`~RegressionTest.run_before`.
 
-.. autodecorator:: reframe.core.decorators.require_deps
+.. py:decorator:: reframe.core.decorators.run_after(stage)
 
+  Alias for backwards compatibility with the run_after decorator.
+  See :func:`~RegressionTest.run_after`.
+
+.. py:decorator:: reframe.core.decorators.require_deps
+
+  Alias for backwards compatibility with the require_deps decorator.
+  See :func:`~RegressionTest.require_deps`.
 
 
 Builtins
@@ -177,7 +185,7 @@ Built-in types
       what = variable(str)
 
       valid_systems = ['*']
-      valid_prog_environs = ['PrgEnv-gnu']
+      valid_prog_environs = ['*']
 
       @rfm.run_before('run')
       def set_exec_and_sanity(self):
@@ -236,6 +244,58 @@ Built-in functions
 
   :param fn: external function to be bound to a class.
   :param name: bind the function under a different name.
+
+
+.. py:function:: RegressionTest.run_before(stage)
+
+  Decorator for attaching a test method to a pipeline stage.
+  The method will run just before the specified pipeline stage and it should not accept any arguments except ``self``.
+  This decorator can be stacked, in which case the function will be attached to multiple pipeline stages.
+  The ``stage`` argument can be any of ``'setup'``, ``'compile'``, ``'run'``, ``'sanity'``, ``'performance'`` or ``'cleanup'``.
+
+
+.. py:function:: RegressionTest.run_after(stage)
+
+  Decorator for attaching a test method to a pipeline stage.
+  This is analogous to :func:`~RegressionTest.run_before`, except that ``'init'`` can also be used as the ``stage`` argument.
+  In this case, the hook will execute right after the test is initialized (i.e. after the :func:`__init__` method is called), before entering the test's pipeline.
+  In essence, a post-init hook is equivalent to defining additional :func:`__init__` functions in the test.
+  All the other properties of pipeline hooks apply equally here.
+  The following code
+
+  .. code-block:: python
+
+   class MyTest(rfm.RegressionTest):
+     @run_after('init')
+     def foo(self):
+         self.x = 1
+
+  is equivalent to
+
+  .. code-block:: python
+
+   class MyTest(rfm.RegressionTest):
+     def __init__(self):
+         self.x = 1
+
+  .. versionchanged:: 3.5.2
+     Add the ability to define post-init hooks in tests.
+
+
+.. py:function:: RegressionTest.require_deps(func)
+
+  Decorator to denote that a function will use the test dependencies.
+  The arguments of the decorated function must be named after the dependencies that the function intends to use.
+  The decorator will bind the arguments to a partial realization of the :func:`~reframe.core.pipeline.RegressionTest.getdep` function, such that conceptually the new function arguments will be the following:
+
+  .. code-block:: python
+
+     new_arg = functools.partial(getdep, orig_arg_name)
+
+  The converted arguments are essentially functions accepting a single argument, which is the target test's programming environment.
+  Additionally, this decorator will attach the function to run *after* the test's setup phase, but *before* any other "post-setup" pipeline hook.
+
+  .. versionadded:: 2.21
 
 
 Environments and Systems
