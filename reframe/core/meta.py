@@ -259,7 +259,7 @@ class RegressionTestMeta(type):
             return _def_fn
 
         namespace['sanity_function'] = sanity_function
-        namespace['deferred_function'] = deferrable
+        namespace['deferrable'] = deferrable
         return metacls.MetaNamespace(namespace)
 
     def __new__(metacls, name, bases, namespace, **kwargs):
@@ -376,7 +376,6 @@ class RegressionTestMeta(type):
         method will perform an attribute lookup on these sub-namespaces if a
         call to the default :func:`__getattribute__` method fails to retrieve
         the requested class attribute.
-
         '''
 
         try:

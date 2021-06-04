@@ -957,7 +957,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         return self._outputdir
 
     @property
-    @sn.sanity_function
+    @deferrable
     def stdout(self):
         '''The name of the file containing the standard output of the test.
 
@@ -972,7 +972,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         return self.job.stdout if self.job else None
 
     @property
-    @sn.sanity_function
+    @deferrable
     def stderr(self):
         '''The name of the file containing the standard error of the test.
 
@@ -991,12 +991,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         return self._build_job
 
     @property
-    @sn.sanity_function
+    @deferrable
     def build_stdout(self):
         return self.build_job.stdout if self.build_job else None
 
     @property
-    @sn.sanity_function
+    @deferrable
     def build_stderr(self):
         return self.build_job.stderr if self.build_job else None
 
@@ -1960,12 +1960,12 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
                                           **job_opts)
 
     @property
-    @sn.sanity_function
+    @deferrable
     def stdout(self):
         return self.build_job.stdout if self.build_job else None
 
     @property
-    @sn.sanity_function
+    @deferrable
     def stderr(self):
         return self.build_job.stderr if self.build_job else None
 
