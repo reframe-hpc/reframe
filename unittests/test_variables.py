@@ -36,7 +36,7 @@ def test_custom_variable(OneVarTest):
     assert not isinstance(OneVarTest.foo, Field)
     inst = OneVarTest()
     assert hasattr(OneVarTest, 'foo')
-    assert isinstance(OneVarTest.foo, Field)
+    assert not isinstance(OneVarTest.foo, Field)
     assert hasattr(inst, 'foo')
     assert inst.foo == 10
 
@@ -136,7 +136,7 @@ def test_set_var(OneVarTest):
     assert hasattr(OneVarTest, 'foo')
     assert not isinstance(OneVarTest.foo, Field)
     assert hasattr(MyTest, 'foo')
-    assert isinstance(MyTest.foo, Field)
+    assert not isinstance(MyTest.foo, Field)
     assert hasattr(inst, 'foo')
     assert inst.foo == 4
 

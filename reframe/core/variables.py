@@ -544,3 +544,7 @@ class VarSpace(namespaces.Namespace):
     @property
     def vars(self):
         return self._namespace
+
+    @property
+    def injected_vars(self):
+        return self._injected_vars

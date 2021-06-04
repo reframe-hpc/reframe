@@ -286,6 +286,30 @@ class RegressionTestMeta(type):
         obj.__init__(*args, **kwargs)
         return obj
 
+    def __getattribute__(cls, name):
+        '''Handle special attribute access for variables.
+
+        If the variable descriptor has already been injected into the class,
+        do not return the descriptor object and return the variable value
+        instead.
+
+        .. warning::
+            .. versionchanged:: 3.7.0
+               Prior versions exposed the variable descriptor object after the
+               first class instantiation, instead of the variable's value.
+        '''
+
+        try:
+            var_space = super().__getattribute__('_rfm_var_space')
+        except AttributeError:
+            var_space = None
+
+        # If the variable is already injected, delegate lookup to __getattr__.
+        if var_space and name in var_space.injected_vars:
+            raise AttributeError('delegate variable lookup to __getattr__')
+
+        return super().__getattribute__(name)
+
     def __getattr__(cls, name):
         '''Attribute lookup method for the MetaNamespace.
 
@@ -295,7 +319,6 @@ class RegressionTestMeta(type):
         method will perform an attribute lookup on these sub-namespaces if a
         call to the default :func:`__getattribute__` method fails to retrieve
         the requested class attribute.
-
         '''
 
         try:
