@@ -3,8 +3,26 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import pytest
+
 import reframe as rfm
 import reframe.core.meta as meta
+
+
+def test_class_attr_access():
+    '''Test that `__getattr__` avoids infinite recursion.'''
+    def my_test(key):
+        class MyMeta(meta.RegressionTestMeta):
+            def __init__(cls, name, bases, namespace, **kwargs):
+                getattr(cls, f'{key}')
+
+        msg = f'has no attribute {key!r}'
+        with pytest.raises(AttributeError, match=msg):
+            class Foo(metaclass=MyMeta):
+                pass
+
+    my_test('_rfm_var_space')
+    my_test('_rfm_param_space')
 
 
 def test_directives():
@@ -13,7 +31,7 @@ def test_directives():
     def ext_fn(x):
         pass
 
-    class MyTest(rfm.RegressionTest):
+    class MyTest(metaclass=meta.RegressionTestMeta):
         p = parameter()
         v = variable(int)
         bind(ext_fn, name='ext')
@@ -38,7 +56,7 @@ def test_bind_directive():
 
     ext_fn._rfm_foo = True
 
-    class MyTest(rfm.RegressionTest):
+    class MyTest(metaclass=meta.RegressionTestMeta):
         bind(ext_fn)
         bind(ext_fn, name='ext')
 
