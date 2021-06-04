@@ -396,7 +396,7 @@ class RegressionTestMeta(type):
         This is the case when some parameters are undefined, which results in
         the length of the parameter space being 0.
 
-        :return: bool indicating wheteher the test has undefined parameters.
+        :return: bool indicating whether the test has undefined parameters.
 
         :meta private:
         '''
