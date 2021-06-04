@@ -6,6 +6,7 @@ This page provides a reference guide of the ReFrame API for writing regression t
 Internal data structures and APIs are covered only to the extent that this might be helpful to the final user of the framework.
 
 
+ .. _regression-bases:
 
 Regression Test Base Classes
 ----------------------------
@@ -59,11 +60,15 @@ Builtins
 
 .. versionadded:: 3.4.2
 
-ReFrame provides built-in functions that facilitate the creation of extensible tests (i.e. a test library).
-These *builtins* are intended to be used directly in the class body of the test, allowing the ReFrame internals to *pre-process* their input before the actual test creation takes place.
-This provides the ReFrame internals with further control over the user's input, making the process of writing regression tests less error-prone thanks to a better error checking.
+ReFrame provides built-in types and functions which facilitate the process of writing extensible regression tests (i.e. a test library).
+These *builtins* are only available when used directly in the class body of classes derived from any of the :ref:`regression-bases`.
+Through builtins, ReFrame internals are able to *pre-process* and validate the test input before the actual test creation takes place.
+This provides the ReFrame internals with further control over the user's input, making the process of writing regression tests less error-prone.
 In essence, these builtins exert control over the test creation, and they allow adding and/or modifying certain attributes of the regression test.
 
+
+Built-in types
+~~~~~~~~~~~~~~
 
 .. py:function:: RegressionTest.parameter(values=None, inherit_params=False, filter_params=None)
 
@@ -215,6 +220,22 @@ In essence, these builtins exert control over the test creation, and they allow 
       :class:`reframe.core.fields.TypedField`.
       Note that the field validator provided by this argument must derive from
       :class:`reframe.core.fields.Field`.
+
+
+Built-in functions
+~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 3.6.2
+
+
+.. py:function:: RegressionTest.bind(func, name=None)
+
+  Bind a free function to a regression test.
+  By default, the function is bound with the same name as the free function.
+  However, the function can be bound using a different name with the ``name`` argument.
+
+  :param fn: external function to be bound to a class.
+  :param name: bind the function under a different name.
 
 
 Environments and Systems

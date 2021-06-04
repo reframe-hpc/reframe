@@ -176,9 +176,6 @@ class RegressionTestMeta(type):
             By default, the function is bound with the same name as the free
             function. However, the function can be bound using a different name
             with the ``name`` argument.
-
-            :param fn: external function to be bound to a class.
-            :param name: bind the function under a diferent name.
             '''
 
             inst = metacls.WrappedFunction(fn, name)
