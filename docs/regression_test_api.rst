@@ -91,7 +91,7 @@ Built-in types
         variant = parameter(['A', 'B'])
         # print(variant) # Error: a parameter may only be accessed from the class instance.
 
-        @rfm.run_after('init')
+        @run_after('init')
         def do_something(self):
             if self.variant == 'A':
                 do_this()
@@ -106,7 +106,7 @@ Built-in types
   .. code:: python
 
     class Bar(Foo):
-        @rfm.run_after('init')
+        @run_after('init')
         def do_something(self):
             if self.variant == 'A':
                 override_this()
@@ -137,7 +137,7 @@ Built-in types
         my_var = variable(int, value=8)
         not_a_var = my_var - 4
 
-        @rfm.run_after('init')
+        @run_after('init')
         def access_vars(self):
             print(self.my_var) # prints 8.
             # self.my_var = 'override' # Error: my_var must be an int!
@@ -161,7 +161,7 @@ Built-in types
         # Bar inherits the full declaration of my_var with the original type-checking.
         # my_var = 'override' # Wrong type error again!
 
-        @rfm.run_after('init')
+        @run_after('init')
         def access_vars(self):
             print(self.my_var) # prints 4
             print(self.not_a_var) # prints 4
@@ -187,7 +187,7 @@ Built-in types
       valid_systems = ['*']
       valid_prog_environs = ['*']
 
-      @rfm.run_before('run')
+      @run_before('run')
       def set_exec_and_sanity(self):
           self.executable = f'echo {self.what}'
           self.sanity_patterns = sn.assert_found(fr'{self.what}')
@@ -204,7 +204,7 @@ Built-in types
     class FoodTest(EchoBaseTest):
       param = parameter(['Bacon', 'Eggs'])
 
-      @rfm.run_after('init')
+      @run_after('init')
       def set_vars_with_params(self):
         self.what = self.param
 
