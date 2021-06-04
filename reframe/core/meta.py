@@ -18,6 +18,11 @@ import reframe.core.hooks as hooks
 from reframe.core.exceptions import ReframeSyntaxError
 
 
+_USER_PIPELINE_STAGES = (
+    'init', 'setup', 'compile', 'run', 'sanity', 'performance', 'cleanup'
+)
+
+
 class RegressionTestMeta(type):
 
     class MetaNamespace(namespaces.LocalNamespace):
@@ -185,8 +190,59 @@ class RegressionTestMeta(type):
         namespace['bind'] = bind
 
         # Hook-related functionality
-        namespace['run_before'] = hooks.run_before
-        namespace['run_after'] = hooks.run_after
+        def run_before(stage):
+            '''Decorator for attaching a test method to a pipeline stage.
+
+            The method will run just before the specified pipeline stage and it
+            should not accept any arguments except ``self``. This decorator can
+            be stacked, in which case the function will be attached to multiple
+            pipeline stages.
+
+            The ``stage`` argument can be any of ``'setup'``, ``'compile'``,
+            ``'run'``, ``'sanity'``, ``'performance'`` or ``'cleanup'``.
+            '''
+
+            if stage not in _USER_PIPELINE_STAGES:
+                raise ValueError(
+                    f'invalid pipeline stage specified: {stage!r}'
+                )
+
+            if stage == 'init':
+                raise ValueError('pre-init hooks are not allowed')
+
+            return hooks.attach_to('pre_' + stage)
+
+        namespace['run_before'] = run_before
+
+        def run_after(stage):
+            '''Decorator for attaching a test method to a pipeline stage.
+
+            This is analogous to the run_before method above, except that
+            ``'init'`` can also be used as the ``stage`` argument. In this
+            case, the hook will execute right after the test is initialized
+            (i.e. after the :func:`__init__` method is called), before 
+            entering the test's pipeline. In essence, a post-init hook is
+            equivalent to defining additional :func:`__init__` functions in
+            the test. All the other properties of pipeline hooks apply equally
+            here.
+            '''
+
+            if stage not in _USER_PIPELINE_STAGES:
+                raise ValueError(
+                    f'invalid pipeline stage specified: {stage!r}'
+                )
+
+            # Map user stage names to the actual pipeline functions if needed
+            if stage == 'init':
+                stage = '__init__'
+            elif stage == 'compile':
+                stage = 'compile_wait'
+            elif stage == 'run':
+                stage = 'run_wait'
+
+            return hooks.attach_to('post_' + stage)
+
+        namespace['run_after'] = run_after
         namespace['require_deps'] = hooks.require_deps
         return metacls.MetaNamespace(namespace)
 

@@ -207,30 +207,86 @@ def required_version(*versions):
     return _skip_tests
 
 
-def run_before(stage):
-    '''Alias for backwards compatibility with the run_before decorator.
+# Valid pipeline stages that users can specify in the `run_before()` and
+# `run_after()` decorators
+_USER_PIPELINE_STAGES = (
+    'init', 'setup', 'compile', 'run', 'sanity', 'performance', 'cleanup'
+)
 
-    See :func:`~reframe.core.hooks.run_before`.
+
+def run_before(stage):
+    '''Decorator for attaching a test method to a pipeline stage.
+
+    The method will run just before the specified pipeline stage and it should
+    not accept any arguments except ``self``.
+
+    This decorator can be stacked, in which case the function will be attached
+    to multiple pipeline stages.
+
+    The ``stage`` argument can be any of ``'setup'``, ``'compile'``,
+    ``'run'``, ``'sanity'``, ``'performance'`` or ``'cleanup'``.
+
     '''
     warn.user_deprecation_warning(
         'using the @rfm.run_before decorator from the rfm module is '
         'deprecated; please use the built-in decorator @run_before instead.',
         from_version='3.7.0'
     )
-    return hooks.run_before(stage)
+    if stage not in _USER_PIPELINE_STAGES:
+        raise ValueError(f'invalid pipeline stage specified: {stage!r}')
+
+    if stage == 'init':
+        raise ValueError('pre-init hooks are not allowed')
+
+    return hooks.attach_to('pre_' + stage)
 
 
 def run_after(stage):
-    '''Alias for backwards compatibility with the run_after decorator.
+    '''Decorator for attaching a test method to a pipeline stage.
 
-    See :func:`~reframe.core.hooks.run_after`.
+    This is analogous to the :py:attr:`~reframe.core.decorators.run_before`,
+    except that ``'init'`` can also be used as the ``stage`` argument. In this
+    case, the hook will execute right after the test is initialized (i.e.
+    after the :func:`__init__` method is called), before entering the test's
+    pipeline. In essence, a post-init hook is equivalent to defining
+    additional :func:`__init__` functions in the test. All the other
+    properties of pipeline hooks apply equally here. The following code
+
+    .. code-block:: python
+
+       @rfm.run_after('init')
+       def foo(self):
+           self.x = 1
+
+
+    is equivalent to
+
+    .. code-block:: python
+
+       def __init__(self):
+           self.x = 1
+
+    .. versionchanged:: 3.5.2
+       Add the ability to define post-init hooks in tests.
+
     '''
     warn.user_deprecation_warning(
         'using the @rfm.run_after decorator from the rfm module is '
         'deprecated; please use the built-in decorator @run_after instead.',
         from_version='3.7.0'
     )
-    return hooks.run_after(stage)
+    if stage not in _USER_PIPELINE_STAGES:
+        raise ValueError(f'invalid pipeline stage specified: {stage!r}')
+
+    # Map user stage names to the actual pipeline functions if needed
+    if stage == 'init':
+        stage = '__init__'
+    elif stage == 'compile':
+        stage = 'compile_wait'
+    elif stage == 'run':
+        stage = 'run_wait'
+
+    return hooks.attach_to('post_' + stage)
 
 
 def require_deps(fn):
@@ -244,4 +300,3 @@ def require_deps(fn):
         from_version='3.7.0'
     )
     return hooks.require_deps(fn)
-
