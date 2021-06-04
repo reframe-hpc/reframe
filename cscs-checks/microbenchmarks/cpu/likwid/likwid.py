@@ -102,7 +102,7 @@ class CPUBandwidth(MemBandwidthTest):
             },
         }
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_exec_opts(self):
         partname = self.current_partition.fullname
         self.data_size = self.system_cache_sizes[partname][self.mem_level]
@@ -138,7 +138,7 @@ class CPUBandwidthCrossSocket(MemBandwidthTest):
             },
         }
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_exec_opts(self):
         partname = self.current_partition.fullname
         self.num_cpus_per_task = self.system_num_cpus[partname]

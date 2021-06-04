@@ -58,7 +58,7 @@ class GpuBurn(rfm.RegressionTest, pin_prefix=True):
         }
     }
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def set_gpu_build(self):
         '''Set the build options [pre-compile hook].
 
@@ -95,15 +95,15 @@ class GpuBurn(rfm.RegressionTest, pin_prefix=True):
 
         return self.job.num_tasks * self.num_gpus_per_node
 
-    @sanity_function
-    def count_successful_burns(self):
-        '''Count the number of successful burns.'''
+    @run_before('sanity')
+    def set_sanity_patterns(self):
+        '''Set the sanity patterns to count the number of successful burns.'''
 
         return sn.assert_eq(sn.count(sn.findall(
             r'^\s*\[[^\]]*\]\s*GPU\s*\d+\(OK\)', self.stdout)
         ), self.num_tasks_assigned)
 
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_perf_patterns(self):
         '''Extract the minimum performance and maximum temperature recorded.
 

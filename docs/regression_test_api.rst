@@ -6,6 +6,7 @@ This page provides a reference guide of the ReFrame API for writing regression t
 Internal data structures and APIs are covered only to the extent that this might be helpful to the final user of the framework.
 
 
+ .. _regression-bases:
 
 Regression Test Base Classes
 ----------------------------
@@ -46,12 +47,20 @@ So although a "post-init" and a "pre-setup" hook will both run *after* a test ha
 the post-init hook will execute *right after* the test is initialized.
 The framework will then continue with other activities and it will execute the pre-setup hook *just before* it schedules the test for executing its setup stage.
 
-.. autodecorator:: reframe.core.decorators.run_after(stage)
+.. py:decorator:: reframe.core.decorators.run_before(stage)
 
-.. autodecorator:: reframe.core.decorators.run_before(stage)
+  Alias for backwards compatibility with the run_before decorator.
+  See :func:`~RegressionTest.run_before`.
 
-.. autodecorator:: reframe.core.decorators.require_deps
+.. py:decorator:: reframe.core.decorators.run_after(stage)
 
+  Alias for backwards compatibility with the run_after decorator.
+  See :func:`~RegressionTest.run_after`.
+
+.. py:decorator:: reframe.core.decorators.require_deps
+
+  Alias for backwards compatibility with the require_deps decorator.
+  See :func:`~RegressionTest.require_deps`.
 
 
 Builtins
@@ -59,11 +68,15 @@ Builtins
 
 .. versionadded:: 3.4.2
 
-ReFrame provides built-in functions that facilitate the creation of extensible tests (i.e. a test library).
-These *builtins* are intended to be used directly in the class body of the test, allowing the ReFrame internals to *pre-process* their input before the actual test creation takes place.
-This provides the ReFrame internals with further control over the user's input, making the process of writing regression tests less error-prone thanks to a better error checking.
+ReFrame provides built-in types and functions which facilitate the process of writing extensible regression tests (i.e. a test library).
+These *builtins* are only available when used directly in the class body of classes derived from any of the :ref:`regression-bases`.
+Through builtins, ReFrame internals are able to *pre-process* and validate the test input before the actual test creation takes place.
+This provides the ReFrame internals with further control over the user's input, making the process of writing regression tests less error-prone.
 In essence, these builtins exert control over the test creation, and they allow adding and/or modifying certain attributes of the regression test.
 
+
+Built-in types
+~~~~~~~~~~~~~~
 
 .. py:function:: RegressionTest.parameter(values=None, inherit_params=False, filter_params=None)
 
@@ -78,7 +91,7 @@ In essence, these builtins exert control over the test creation, and they allow 
         variant = parameter(['A', 'B'])
         # print(variant) # Error: a parameter may only be accessed from the class instance.
 
-        @rfm.run_after('init')
+        @run_after('init')
         def do_something(self):
             if self.variant == 'A':
                 do_this()
@@ -93,7 +106,7 @@ In essence, these builtins exert control over the test creation, and they allow 
   .. code:: python
 
     class Bar(Foo):
-        @rfm.run_after('init')
+        @run_after('init')
         def do_something(self):
             if self.variant == 'A':
                 override_this()
@@ -124,7 +137,7 @@ In essence, these builtins exert control over the test creation, and they allow 
         my_var = variable(int, value=8)
         not_a_var = my_var - 4
 
-        @rfm.run_after('init')
+        @run_after('init')
         def access_vars(self):
             print(self.my_var) # prints 8.
             # self.my_var = 'override' # Error: my_var must be an int!
@@ -148,7 +161,7 @@ In essence, these builtins exert control over the test creation, and they allow 
         # Bar inherits the full declaration of my_var with the original type-checking.
         # my_var = 'override' # Wrong type error again!
 
-        @rfm.run_after('init')
+        @run_after('init')
         def access_vars(self):
             print(self.my_var) # prints 4
             print(self.not_a_var) # prints 4
@@ -172,9 +185,9 @@ In essence, these builtins exert control over the test creation, and they allow 
       what = variable(str)
 
       valid_systems = ['*']
-      valid_prog_environs = ['PrgEnv-gnu']
+      valid_prog_environs = ['*']
 
-      @rfm.run_before('run')
+      @run_before('run')
       def set_exec_and_sanity(self):
           self.executable = f'echo {self.what}'
           self.sanity_patterns = sn.assert_found(fr'{self.what}')
@@ -191,7 +204,7 @@ In essence, these builtins exert control over the test creation, and they allow 
     class FoodTest(EchoBaseTest):
       param = parameter(['Bacon', 'Eggs'])
 
-      @rfm.run_after('init')
+      @run_after('init')
       def set_vars_with_params(self):
         self.what = self.param
 
@@ -215,6 +228,74 @@ In essence, these builtins exert control over the test creation, and they allow 
       :class:`reframe.core.fields.TypedField`.
       Note that the field validator provided by this argument must derive from
       :class:`reframe.core.fields.Field`.
+
+
+Built-in functions
+~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 3.6.2
+
+
+.. py:function:: RegressionTest.bind(func, name=None)
+
+  Bind a free function to a regression test.
+  By default, the function is bound with the same name as the free function.
+  However, the function can be bound using a different name with the ``name`` argument.
+
+  :param fn: external function to be bound to a class.
+  :param name: bind the function under a different name.
+
+
+.. py:function:: RegressionTest.run_before(stage)
+
+  Decorator for attaching a test method to a pipeline stage.
+  The method will run just before the specified pipeline stage and it should not accept any arguments except ``self``.
+  This decorator can be stacked, in which case the function will be attached to multiple pipeline stages.
+  The ``stage`` argument can be any of ``'setup'``, ``'compile'``, ``'run'``, ``'sanity'``, ``'performance'`` or ``'cleanup'``.
+
+
+.. py:function:: RegressionTest.run_after(stage)
+
+  Decorator for attaching a test method to a pipeline stage.
+  This is analogous to :func:`~RegressionTest.run_before`, except that ``'init'`` can also be used as the ``stage`` argument.
+  In this case, the hook will execute right after the test is initialized (i.e. after the :func:`__init__` method is called), before entering the test's pipeline.
+  In essence, a post-init hook is equivalent to defining additional :func:`__init__` functions in the test.
+  All the other properties of pipeline hooks apply equally here.
+  The following code
+
+  .. code-block:: python
+
+   class MyTest(rfm.RegressionTest):
+     @run_after('init')
+     def foo(self):
+         self.x = 1
+
+  is equivalent to
+
+  .. code-block:: python
+
+   class MyTest(rfm.RegressionTest):
+     def __init__(self):
+         self.x = 1
+
+  .. versionchanged:: 3.5.2
+     Add the ability to define post-init hooks in tests.
+
+
+.. py:function:: RegressionTest.require_deps(func)
+
+  Decorator to denote that a function will use the test dependencies.
+  The arguments of the decorated function must be named after the dependencies that the function intends to use.
+  The decorator will bind the arguments to a partial realization of the :func:`~reframe.core.pipeline.RegressionTest.getdep` function, such that conceptually the new function arguments will be the following:
+
+  .. code-block:: python
+
+     new_arg = functools.partial(getdep, orig_arg_name)
+
+  The converted arguments are essentially functions accepting a single argument, which is the target test's programming environment.
+  Additionally, this decorator will attach the function to run *after* the test's setup phase, but *before* any other "post-setup" pipeline hook.
+
+  .. versionadded:: 2.21
 
 
 Environments and Systems

@@ -7,14 +7,21 @@
 # Meta-class for creating regression tests.
 #
 
+import functools
+import types
 
 import reframe.core.namespaces as namespaces
 import reframe.core.parameters as parameters
 import reframe.core.variables as variables
+import reframe.core.hooks as hooks
 
 from reframe.core.exceptions import ReframeSyntaxError
-from reframe.core.hooks import HookRegistry
 from reframe.core.deferrable import deferrable
+
+
+_USER_PIPELINE_STAGES = (
+    'init', 'setup', 'compile', 'run', 'sanity', 'performance', 'cleanup'
+)
 
 
 class RegressionTestMeta(type):
@@ -94,6 +101,56 @@ class RegressionTestMeta(type):
                         # raise the exception from the base __getitem__.
                         raise err from None
 
+    class WrappedFunction:
+        '''Descriptor to wrap a free function as a bound-method.
+
+        The free function object is wrapped by the constructor. Instances
+        of this class should be inserted into the namespace of the target class
+        with the desired name for the bound-method. Since this class is a
+        descriptor, the `__get__` method will return the right bound-method
+        when accessed from a class instance.
+
+        :meta private:
+        '''
+
+        __slots__ = ('fn')
+
+        def __init__(self, fn, name=None):
+            @functools.wraps(fn)
+            def _fn(*args, **kwargs):
+                return fn(*args, **kwargs)
+
+            self.fn = _fn
+            if name:
+                self.fn.__name__ = name
+
+        def __get__(self, obj, objtype=None):
+            if objtype is None:
+                objtype = type(obj)
+
+            self.fn.__qualname__ = '.'.join(
+                [objtype.__qualname__, self.fn.__name__]
+            )
+            if obj is None:
+                return self.fn
+
+            return types.MethodType(self.fn, obj)
+
+        def __call__(self, *args, **kwargs):
+            return self.fn(*args, **kwargs)
+
+        def __getattr__(self, name):
+            if name in self.__slots__:
+                return super().__getattr__(name)
+            else:
+                return getattr(self.fn, name)
+
+        def __setattr__(self, name, value):
+            if name in self.__slots__:
+                super().__setattr__(name, value)
+            else:
+                setattr(self.fn, name, value)
+
     @classmethod
     def __prepare__(metacls, name, bases, **kwargs):
         namespace = super().__prepare__(name, bases, **kwargs)
@@ -119,7 +176,77 @@ class RegressionTestMeta(type):
         namespace['variable'] = variables.TestVar
         namespace['required'] = variables.Undefined
 
-        # Machinery to add a new sanity function
+        def bind(fn, name=None):
+            '''Directive to bind a free function to a class.
+
+            By default, the function is bound with the same name as the free
+            function. However, the function can be bound using a different name
+            with the ``name`` argument.
+            '''
+
+            inst = metacls.WrappedFunction(fn, name)
+            namespace[inst.__name__] = inst
+            return inst
+
+        namespace['bind'] = bind
+
+        # Hook-related functionality
+        def run_before(stage):
+            '''Decorator for attaching a test method to a pipeline stage.
+
+            The method will run just before the specified pipeline stage and it
+            should not accept any arguments except ``self``. This decorator can
+            be stacked, in which case the function will be attached to multiple
+            pipeline stages.
+
+            The ``stage`` argument can be any of ``'setup'``, ``'compile'``,
+            ``'run'``, ``'sanity'``, ``'performance'`` or ``'cleanup'``.
+            '''
+
+            if stage not in _USER_PIPELINE_STAGES:
+                raise ValueError(
+                    f'invalid pipeline stage specified: {stage!r}'
+                )
+
+            if stage == 'init':
+                raise ValueError('pre-init hooks are not allowed')
+
+            return hooks.attach_to('pre_' + stage)
+
+        namespace['run_before'] = run_before
+
+        def run_after(stage):
+            '''Decorator for attaching a test method to a pipeline stage.
+
+            This is analogous to the run_before method above, except that
+            ``'init'`` can also be used as the ``stage`` argument. In this
+            case, the hook will execute right after the test is initialized
+            (i.e. after the :func:`__init__` method is called), before 
+            entering the test's pipeline. In essence, a post-init hook is
+            equivalent to defining additional :func:`__init__` functions in
+            the test. All the other properties of pipeline hooks apply equally
+            here.
+            '''
+
+            if stage not in _USER_PIPELINE_STAGES:
+                raise ValueError(
+                    f'invalid pipeline stage specified: {stage!r}'
+                )
+
+            # Map user stage names to the actual pipeline functions if needed
+            if stage == 'init':
+                stage = '__init__'
+            elif stage == 'compile':
+                stage = 'compile_wait'
+            elif stage == 'run':
+                stage = 'run_wait'
+
+            return hooks.attach_to('post_' + stage)
+
+        namespace['run_after'] = run_after
+        namespace['require_deps'] = hooks.require_deps
+
+        # Machinery to add sanity function
         def sanity_function(fn):
             '''Mark a function as the test's sanity function.
 
@@ -136,6 +263,22 @@ class RegressionTestMeta(type):
         return metacls.MetaNamespace(namespace)
 
     def __new__(metacls, name, bases, namespace, **kwargs):
+        ''' Remove directives from the class namespace.
+
+        It does not make sense to have some directives available after the
+        class was created or even at the instance level (e.g. doing
+        ``self.parameter([1, 2, 3])`` does not make sense). So here, we
+        intercept those directives out of the namespace before the class is
+        constructed.
+        '''
+
+        blacklist = [
+            'parameter', 'variable', 'bind', 'run_before', 'run_after',
+            'require_deps', 'deferrable', 'sanity_function'
+        ]
+        for b in blacklist:
+            namespace.pop(b, None)
+
         return super().__new__(metacls, name, bases, dict(namespace), **kwargs)
 
     def __init__(cls, name, bases, namespace, **kwargs):
@@ -162,24 +305,24 @@ class RegressionTestMeta(type):
         # Set up the hooks for the pipeline stages based on the _rfm_attach
         # attribute; all dependencies will be resolved first in the post-setup
         # phase if not assigned elsewhere
-        hooks = HookRegistry.create(namespace)
+        hook_reg = hooks.HookRegistry.create(namespace)
+        for b in bases:
+            if hasattr(b, '_rfm_pipeline_hooks'):
+                hook_reg.update(getattr(b, '_rfm_pipeline_hooks'))
+
+        cls._rfm_pipeline_hooks = hook_reg
 
         # Register all the sanity functions based on the _rfm_sanity_fn attr.
         sanity_fn = {
             k: v for k, v in namespace.items() if hasattr(v, '_rfm_sanity_fn')
         }
+        for b in [base for base in bases if hasattr(base, '_rfm_sanity')]:
+            fns = getattr(b, '_rfm_sanity')
+            for fn in [fn for fn in fns if fn.__name__ not in sanity_fn]:
+                sanity_fn[fn.__name__] = fn
 
-        for b in bases:
-            if hasattr(b, '_rfm_pipeline_hooks'):
-                hooks.update(getattr(b, '_rfm_pipeline_hooks'))
-
-            if hasattr(b, '_rfm_sanity'):
-                fns = getattr(b, '_rfm_sanity')
-                for fn in [fn for fn in fns if fn.__name__ not in sanity_fn]:
-                    sanity_fn[fn.__name__] = fn
-
-        cls._rfm_pipeline_hooks = hooks
         cls._rfm_sanity = sanity_fn.values()
+
         cls._final_methods = {v.__name__ for v in namespace.values()
                               if hasattr(v, '_rfm_final')}
 

@@ -33,7 +33,7 @@ class BadSetupCheck(BaseFrontendCheck):
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
 
-    @rfm.run_after('setup')
+    @run_after('setup')
     def raise_error(self):
         raise ReframeError('Setup failure')
 
@@ -46,7 +46,7 @@ class BadSetupCheckEarly(BaseFrontendCheck):
         self.valid_prog_environs = ['*']
         self.local = False
 
-    @rfm.run_before('setup')
+    @run_before('setup')
     def raise_error_early(self):
         raise ReframeError('Setup failure')
 
@@ -116,7 +116,7 @@ class KeyboardInterruptCheck(BaseFrontendCheck, special=True):
         self.valid_prog_environs = ['*']
         self.phase = phase
 
-    @rfm.run_before('setup')
+    @run_before('setup')
     def raise_before_setup(self):
         if self.phase == 'setup':
             raise KeyboardInterrupt
@@ -151,7 +151,7 @@ class CleanupFailTest(rfm.RunOnlyRegressionTest):
         self.executable = 'echo foo'
         self.sanity_patterns = sn.assert_found(r'foo', self.stdout)
 
-    @rfm.run_before('cleanup')
+    @run_before('cleanup')
     def fail(self):
         # Make this test fail on purpose
         raise Exception

@@ -129,11 +129,11 @@ Trying to use the standard print here :func:`print` function here would be of li
        valid_systems = ['*']
        valid_prog_environs = ['*']
 
-       @rfm.run_after('compile')
+       @run_after('compile')
        def set_sourcepath(self):
            self.sourcepath = f'hello.{self.lang}'
 
-       @rfm.run_before('sanity')
+       @run_before('sanity')
        def set_sanity_patterns(self):
            self.sanity_patterns = sn.assert_found(r'Hello, World\!', sn.print(self.stdout))
 
