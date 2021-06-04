@@ -23,11 +23,11 @@ class RegressionTestMeta(type):
     class MetaNamespace(namespaces.LocalNamespace):
         '''Custom namespace to control the cls attribute assignment.
 
-        Regular Python class attributes can be overriden by either
+        Regular Python class attributes can be overridden by either
         parameters or variables respecting the order of execution.
         A variable or a parameter may not be declared more than once in the
         same class body. Overriding a variable with a parameter or the other
-        way around has an undefined behaviour. A variable's value may be
+        way around has an undefined behavior. A variable's value may be
         updated multiple times within the same class body. A parameter's
         value may not be updated more than once within the same class body.
         '''
@@ -178,7 +178,7 @@ class RegressionTestMeta(type):
             with the ``name`` argument.
 
             :param fn: external function to be bound to a class.
-            :param name: bind the function under a diferent name.
+            :param name: bind the function under a different name.
             '''
 
             inst = metacls.WrappedFunction(fn, name)
@@ -272,7 +272,7 @@ class RegressionTestMeta(type):
         to perform specific reframe-internal actions. This gives extra control
         over the class instantiation process, allowing reframe to instantiate
         the regression test class differently if this class was registered or
-        not (e.g. when deep-copying a regression test object). These interal
+        not (e.g. when deep-copying a regression test object). These internal
         arguments must be intercepted before the object initialization, since
         these would otherwise affect the __init__ method's signature, and these
         internal mechanisms must be fully transparent to the user.
@@ -287,16 +287,18 @@ class RegressionTestMeta(type):
         return obj
 
     def __getattribute__(cls, name):
-        '''Handle special attribute access for variables.
-
-        If the variable descriptor has already been injected into the class,
-        do not return the descriptor object and return the variable value
-        instead.
+        '''Attribute lookup method for custom class attributes.
+        
+        ReFrame test variables are descriptors injected at the class level.
+        If a variable descriptor has already been injected into the class,
+        do not return the descriptor object and return the default value
+        associated with that variable instead.
 
         .. warning::
             .. versionchanged:: 3.7.0
-               Prior versions exposed the variable descriptor object after the
-               first class instantiation, instead of the variable's value.
+               Prior versions exposed the variable descriptor object if this
+               was already present in the class, instead of returning the
+               variable's default value.
         '''
 
         try:
@@ -308,40 +310,49 @@ class RegressionTestMeta(type):
         if var_space and name in var_space.injected_vars:
             raise AttributeError('delegate variable lookup to __getattr__')
 
+        # Default back to the base method if no special treatment required.
         return super().__getattribute__(name)
 
     def __getattr__(cls, name):
-        '''Attribute lookup method for the MetaNamespace.
+        '''Backup attribute lookup method into custom namespaces.
 
-        This metaclass uses a custom namespace, where ``variable`` built-in
-        and ``parameter`` types are stored in their own sub-namespaces (see
-        :class:`reframe.core.meta.RegressionTestMeta.MetaNamespace`). This
-        method will perform an attribute lookup on these sub-namespaces if a
-        call to the default :func:`__getattribute__` method fails to retrieve
-        the requested class attribute.
+        Some ReFrame built-in types are stored under their own sub-namespaces.
+        This method will perform an attribute lookup on these sub-namespaces
+        if a call to the default :func:`__getattribute__` method fails to
+        retrieve the requested class attribute.
         '''
 
         try:
-            return cls._rfm_var_space.vars[name]
+            var_space = super().__getattribute__('_rfm_var_space')
+            return var_space.vars[name]
+        except AttributeError:
+            '''Catch early access attempt to the variable space.'''
         except KeyError:
-            try:
-                return cls._rfm_param_space.params[name]
-            except KeyError:
-                raise AttributeError(
-                    f'class {cls.__qualname__!r} has no attribute {name!r}'
-                ) from None
+            '''Requested name not in variable space.'''
+
+        try:
+            param_space = super().__getattribute__('_rfm_param_space')
+            return param_space.params[name]
+        except AttributeError:
+            '''Catch early access attempt to the parameter space.'''
+        except KeyError:
+            '''Requested name not in parameter space.'''
+
+        raise AttributeError(
+            f'class {cls.__qualname__!r} has no attribute {name!r}'
+        ) from None
 
     def __setattr__(cls, name, value):
         '''Handle the special treatment required for variables and parameters.
 
         A variable's default value can be updated when accessed as a regular
-        class attribute. This behaviour does not apply when the assigned value
+        class attribute. This behavior does not apply when the assigned value
         is a descriptor object. In that case, the task of setting the value is
         delegated to the base :func:`__setattr__` (this is to comply with
-        standard Python behaviour). However, since the variables are already
+        standard Python behavior). However, since the variables are already
         descriptors which are injected during class instantiation, we disallow
         any attempt to override this descriptor (since it would be silently
-        re-overriden in any case).
+        re-overridden in any case).
 
         Altering the value of a parameter when accessed as a class attribute
         is not allowed. This would break the parameter space internals.
