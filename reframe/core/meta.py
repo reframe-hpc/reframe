@@ -178,9 +178,7 @@ class RegressionTestMeta(type):
         def bind(fn, name=None):
             '''Directive to bind a free function to a class.
 
-            By default, the function is bound with the same name as the free
-            function. However, the function can be bound using a different name
-            with the ``name`` argument.
+            See online docs for more information.
             '''
 
             inst = metacls.WrappedFunction(fn, name)
@@ -193,13 +191,7 @@ class RegressionTestMeta(type):
         def run_before(stage):
             '''Decorator for attaching a test method to a pipeline stage.
 
-            The method will run just before the specified pipeline stage and it
-            should not accept any arguments except ``self``. This decorator can
-            be stacked, in which case the function will be attached to multiple
-            pipeline stages.
-
-            The ``stage`` argument can be any of ``'setup'``, ``'compile'``,
-            ``'run'``, ``'sanity'``, ``'performance'`` or ``'cleanup'``.
+            See online docs for more information.
             '''
 
             if stage not in _USER_PIPELINE_STAGES:
@@ -217,14 +209,7 @@ class RegressionTestMeta(type):
         def run_after(stage):
             '''Decorator for attaching a test method to a pipeline stage.
 
-            This is analogous to the run_before method above, except that
-            ``'init'`` can also be used as the ``stage`` argument. In this
-            case, the hook will execute right after the test is initialized
-            (i.e. after the :func:`__init__` method is called), before 
-            entering the test's pipeline. In essence, a post-init hook is
-            equivalent to defining additional :func:`__init__` functions in
-            the test. All the other properties of pipeline hooks apply equally
-            here.
+            See online docs for more information.
             '''
 
             if stage not in _USER_PIPELINE_STAGES:
@@ -247,7 +232,7 @@ class RegressionTestMeta(type):
         return metacls.MetaNamespace(namespace)
 
     def __new__(metacls, name, bases, namespace, **kwargs):
-        ''' Remove directives from the class namespace.
+        '''Remove directives from the class namespace.
 
         It does not make sense to have some directives available after the
         class was created or even at the instance level (e.g. doing

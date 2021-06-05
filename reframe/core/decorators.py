@@ -217,14 +217,9 @@ _USER_PIPELINE_STAGES = (
 def run_before(stage):
     '''Decorator for attaching a test method to a pipeline stage.
 
-    The method will run just before the specified pipeline stage and it should
-    not accept any arguments except ``self``.
-
-    This decorator can be stacked, in which case the function will be attached
-    to multiple pipeline stages.
-
-    The ``stage`` argument can be any of ``'setup'``, ``'compile'``,
-    ``'run'``, ``'sanity'``, ``'performance'`` or ``'cleanup'``.
+    .. deprecated:: 3.7.0
+       Please use the :func:`~reframe.core.pipeline.RegressionMixin.run_before`
+       built-in function.
 
     '''
     warn.user_deprecation_warning(
@@ -244,30 +239,9 @@ def run_before(stage):
 def run_after(stage):
     '''Decorator for attaching a test method to a pipeline stage.
 
-    This is analogous to the :py:attr:`~reframe.core.decorators.run_before`,
-    except that ``'init'`` can also be used as the ``stage`` argument. In this
-    case, the hook will execute right after the test is initialized (i.e.
-    after the :func:`__init__` method is called), before entering the test's
-    pipeline. In essence, a post-init hook is equivalent to defining
-    additional :func:`__init__` functions in the test. All the other
-    properties of pipeline hooks apply equally here. The following code
-
-    .. code-block:: python
-
-       @rfm.run_after('init')
-       def foo(self):
-           self.x = 1
-
-
-    is equivalent to
-
-    .. code-block:: python
-
-       def __init__(self):
-           self.x = 1
-
-    .. versionchanged:: 3.5.2
-       Add the ability to define post-init hooks in tests.
+    .. deprecated:: 3.7.0
+       Please use the :func:`~reframe.core.pipeline.RegressionMixin.run_after`
+       built-in function.
 
     '''
     warn.user_deprecation_warning(
@@ -290,9 +264,15 @@ def run_after(stage):
 
 
 def require_deps(fn):
-    '''Alias for backwards compatibility with the require_deps decorator.
+    '''Decorator to denote that a function will use the test dependencies.
 
-    See :func:`~reframe.core.hooks.require_deps`.
+    .. versionadded:: 2.21
+
+    .. deprecated:: 3.7.0
+       Please use the
+       :func:`~reframe.core.pipeline.RegressionTest.require_deps` built-in
+       function.
+
     '''
     warn.user_deprecation_warning(
         'using the @rfm.require_deps decorator from the rfm module is '

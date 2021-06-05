@@ -1,9 +1,9 @@
-========================
-ReFrame Programming APIs
-========================
+================
+Programming APIs
+================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    regression_test_api
    sanity_functions_reference
