@@ -755,10 +755,6 @@ site_configuration = {
                     'name': 'mc',
                     'descr': 'Multicore nodes (AMD EPYC 7742, 256|512GB/cn)',
                     'scheduler': 'slurm',
-                    'access': [
-                        f'--constraint=mc',
-                        f'--account={osext.osgroup()}'
-                    ],
                     'environs': [
                         'builtin',
                         'PrgEnv-aocc',
