@@ -576,6 +576,16 @@ Miscellaneous options
 
    This option can also be set using the :envvar:`RFM_SYSTEM` environment variable.
 
+.. _--detect-host-topology:
+
+.. option:: --detect-host-topology[=FILE]
+
+   Detect the local host processor topology, store it to ``FILE`` and exit.
+   If no ``FILE`` is specified, the standard output will be used.
+
+   .. versionadded:: 3.6.2
+
+
 .. option:: --failure-stats
 
    Print failure statistics at the end of the run.
@@ -695,6 +705,19 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
       Associated command line option     :option:`-C`
       Associated configuration parameter N/A
+      ================================== ==================
+
+
+.. envvar:: RFM_DETECT_REMOTE_SYSTEM_TOPOLOGY
+
+   Auto-detect processor information of remote partitions as well.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     n/a
+      Associated configuration parameter :js:attr:`detect_remote_system_topology` general configuration parameter
       ================================== ==================
 
 

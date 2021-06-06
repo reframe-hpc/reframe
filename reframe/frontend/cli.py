@@ -426,12 +426,12 @@ def main():
         help='Print the value of configuration parameter PARAM and exit'
     )
     misc_options.add_argument(
-        '--detect-host-topology', action='store', nargs='?', const='-',
-        help='Detect the local host topology and exit'
-    )
-    misc_options.add_argument(
         '--system', action='store', help='Load configuration for SYSTEM',
         envvar='RFM_SYSTEM'
+    )
+    misc_options.add_argument(
+        '--detect-host-topology', action='store', nargs='?', const='-',
+        help='Detect the local host topology and exit'
     )
     misc_options.add_argument(
         '--upgrade-config-file', action='store', metavar='OLD[:NEW]',

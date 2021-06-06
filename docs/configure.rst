@@ -397,3 +397,40 @@ Let's see some concrete examples:
      "CC"
 
   If you explicitly query a configuration value which is not defined in the configuration file, ReFrame will print its default value.
+
+
+.. _proc-autodetection:
+
+------------------------------------
+Auto-detecting processor information
+------------------------------------
+
+.. versionadded:: 3.6.2
+
+.. |devices| replace:: :attr:`devices`
+.. _devices: config_reference.html#.systems[].partitions[].devices
+.. |processor| replace:: :attr:`processor`
+.. _processor: config_reference.html#.systems[].partitions[].processor
+.. |detect_remote_system_topology| replace:: :attr:`processor`
+.. _detect_remote_system_topology: config_reference.html#.general[].detect_remote_system_topology
+
+ReFrame is able to detect the processor topology of both local and remote partitions automatically.
+The processor and device information are made available to the tests through the corresponding attributes of the :attr:`~reframe.core.pipeline.RegressionTest.current_partition` allowing a test to modify its behavior accordingly.
+Currently, ReFrame supports auto-detection of the local or remote processor information only.
+It does not support auto-detection of devices, in which cases users should explicitly specify this information using the |devices|_ configuration option.
+The processor information auto-detection works as follows:
+
+#. If the |processor|_ configuration is option is defined, then no auto-detection is attempted.
+
+#. If the |processor|_ configuration option is not defined, ReFrame will look for a processor configuration metadata file in ``{configdir}/_meta/{system}-{part}/processor.json`` or in ``~/.reframe/topology/{system}-{part}/processor.json`` in case of the builtin configuration file.
+   If the file is found, the topology information is loaded from there.
+   These files are generated automatically by ReFrame from previous runs.
+
+#. If the corresponding metadata files are not found, the processor information will be auto-detected.
+   If the system partition is local (i.e., ``local`` scheduler + ``local`` launcher), the processor information is auto-detected unconditionally and stored in the corresponding metadata file for this partition.
+   If the partition is remote, ReFrame will not try to auto-detect it unless the :envvar:`RFM_DETECT_REMOTE_SYSTEM_TOPOLOGY` or the |detect_remote_system_topology|_ configuration option is set.
+
+   For detecting remote processor information, ReFrame will generate a job script based on the partition information and launch itself on the remote system with ``{launcher} reframe --detect-host-topology=topo.json``.
+   The :option:`--detect-host-topology` option causes ReFrame to detect the topology of the current host.
+
+   In case of errors during auto-detection, ReFrame will simply issue a warning and continue.

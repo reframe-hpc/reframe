@@ -1201,6 +1201,18 @@ General Configuration
    The command-line option sets the configuration option to ``false``.
 
 
+.. js:attribute:: .general[].detect_remote_system_topology
+
+   :required: No
+   :default: ``false``
+
+   Try to auto-detect processor information of remote partitions as well.
+   This may slow down the initialization of the framework, since it involves submitting auto-detection jobs to the remote partitions.
+   For more information on how ReFrame auto-detects processor information, you may refer to :ref:`proc-autodetection`.
+
+   .. versionadded:: 3.6.2
+
+
 .. js:attribute:: .general[].ignore_check_conflicts
 
    :required: No
