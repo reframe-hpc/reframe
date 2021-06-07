@@ -231,7 +231,7 @@ class RegressionTestMeta(type):
         namespace['run_after'] = run_after
         namespace['require_deps'] = hooks.require_deps
 
-        # Machinery to add sanity function
+        # Machinery to add a sanity function
         def sanity_function(fn):
             '''Mark a function as the test's sanity function.
 
@@ -297,16 +297,27 @@ class RegressionTestMeta(type):
 
         cls._rfm_pipeline_hooks = hook_reg
 
-        # Register all the sanity functions based on the _rfm_sanity_fn attr.
-        sanity_fn = {
-            k: v for k, v in namespace.items() if hasattr(v, '_rfm_sanity_fn')
-        }
-        for b in [base for base in bases if hasattr(base, '_rfm_sanity')]:
-            fns = getattr(b, '_rfm_sanity')
-            for fn in [fn for fn in fns if fn.__name__ not in sanity_fn]:
-                sanity_fn[fn.__name__] = fn
+        # Gather all the locally defined sanity functions based on the
+        # _rfm_sanity_fn attribute.
+        local_sn_fn = [
+            v for v in namespace.values() if hasattr(v, '_rfm_sanity_fn')
+        ]
+        if local_sn_fn != []:
+            if len(local_sn_fn) > 1:
+                raise ReframeSyntaxError(
+                    f'class {cls.__qualname__!r} defines more than one sanity '
+                    'function in the class body.'
+                )
 
-        cls._rfm_sanity = sanity_fn.values()
+            cls._rfm_sanity = local_sn_fn[0]
+        else:
+            # Search the bases if no local sanity functions exist.
+            for b in bases:
+                try:
+                    cls._rfm_sanity = getattr(b, '_rfm_sanity')
+                    break
+                except AttributeError:
+                    continue
 
         cls._final_methods = {v.__name__ for v in namespace.values()
                               if hasattr(v, '_rfm_final')}

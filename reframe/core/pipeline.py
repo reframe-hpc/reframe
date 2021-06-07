@@ -1494,6 +1494,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         '''The sanity checking phase of the regression test pipeline.
 
         :raises reframe.core.exceptions.SanityError: If the sanity check fails.
+        :raises reframe.core.exceptions.ReframeSyntaxError: If the sanity
+            function cannot be resolved due to ambiguous syntax.
 
         .. warning::
 
@@ -1510,13 +1512,17 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         '''
 
-        # Merge sanity functions and sanity_patterns
-        sn_fns = [fn(self) for fn in self._rfm_sanity]
-        if sn_fns != []:
+        if hasattr(self, '_rfm_sanity'):
+            # Using more than one type of syntax to set the sanity patterns is
+            # not allowed.
             if hasattr(self, 'sanity_patterns'):
-                sn_fns.append(self.sanity_patterns)
+                raise ReframeSyntaxError(
+                    f"assigning a sanity function to the 'sanity_patterns' "
+                    f"variable conflicts with using the 'sanity_function' "
+                    f"decorator in class {self.__class__.__qualname__}"
+                )
 
-            self.sanity_patterns = sn.all(sn_fns)
+            self.sanity_patterns = self._rfm_sanity()
 
         if rt.runtime().get_option('general/0/trap_job_errors'):
             sanity_patterns = [
