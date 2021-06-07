@@ -39,7 +39,7 @@ class EnvironmentCheck(rfm.RunOnlyRegressionTest):
         self.maintainers = ['TM', 'CB']
         self.tags = {'production', 'craype'}
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity(self):
         module_patt = rf'^{self.current_environ.name}'
 

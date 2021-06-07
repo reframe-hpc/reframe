@@ -49,7 +49,7 @@ class GpuBandwidthBase(rfm.RegressionTest, pin_prefix=True):
     num_tasks_per_node = 1
     maintainers = ['AJ', 'SK']
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def set_gpu_build(self):
         '''Set the build options [pre-compile hook].
 
@@ -75,7 +75,7 @@ class GpuBandwidthBase(rfm.RegressionTest, pin_prefix=True):
         else:
             raise ValueError('unknown gpu_build option')
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_exec_opts(self):
         '''Pass the copy size and number of copies as executable args.'''
 
@@ -84,7 +84,7 @@ class GpuBandwidthBase(rfm.RegressionTest, pin_prefix=True):
             f'--copies {self.num_copies}',
         ]
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity_patterns(self):
         self.sanity_patterns = self.do_sanity_check()
 
@@ -119,7 +119,7 @@ class GpuBandwidth(GpuBandwidthBase):
     bandwidth (in GB/s) for all the GPUs on each node.
     '''
 
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_perf_patterns(self):
         '''Set the performance patterns.
 
@@ -164,14 +164,14 @@ class GpuBandwidthD2D(GpuBandwidthBase):
     #: This option is passed as an argument to the executable.
     p2p = parameter([True, False])
 
-    @rfm.run_before('run')
+    @run_before('run')
     def extend_exec_opts(self):
         '''Add the multi-gpu related arguments to the executable options.'''
         self.executable_opts += ['--multi-gpu']
         if self.p2p:
             self.executable_opts += ['--p2p']
 
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_perf_patterns(self):
         '''Set the performance patterns.
 

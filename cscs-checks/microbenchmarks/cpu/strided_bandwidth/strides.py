@@ -71,7 +71,7 @@ class StridedBandwidthTest(StridedBase):
             }
         }
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_exec_opts(self):
         self.num_cpus = self.system_num_cpus[self.current_partition.fullname]
 
@@ -105,7 +105,7 @@ class StridedBandwidthTest64(StridedBase):
             }
         }
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_exec_opts(self):
         self.num_cpus = self.system_num_cpus[self.current_partition.fullname]
 
@@ -136,7 +136,7 @@ class StridedBandwidthTest128(StridedBase):
             },
         }
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_exec_opts(self):
         self.num_cpus = self.system_num_cpus[self.current_partition.fullname]
 

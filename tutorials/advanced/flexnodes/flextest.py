@@ -15,7 +15,7 @@ class HostnameCheck(rfm.RunOnlyRegressionTest):
     num_tasks = 0
     num_tasks_per_node = 1
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity_patterns(self):
         self.sanity_patterns = sn.assert_eq(
             sn.getattr(self, 'num_tasks'),

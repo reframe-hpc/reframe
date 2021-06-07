@@ -19,7 +19,7 @@ class jupyterhub_submit_test(rfm.RunOnlyRegressionTest):
     tags = {'production', 'post-maintenance', 'health'}
     maintainers = ['RS', 'TR']
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity_check(self):
         self.sanity_patterns = sn.assert_found(r'nid\d+', self.stdout)
 
@@ -36,7 +36,7 @@ class jupyterhub_api_test(rfm.RunOnlyRegressionTest):
     tags = {'health'}
     maintainers = ['CB', 'TR']
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity_check(self):
         self.sanity_patterns = sn.assert_found(r'{"version": "1.3.0"}',
                                                self.stdout)

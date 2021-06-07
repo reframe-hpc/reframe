@@ -24,12 +24,12 @@ class OpenCLCheck(rfm.RegressionTest):
 
         self.sanity_patterns = sn.assert_found('SUCCESS', self.stdout)
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def setflags(self):
         if self.current_environ.name == 'PrgEnv-pgi':
             self.build_system.cflags = ['-mmmx']
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def cdt2006_pgi_workaround(self):
         cdt = osext.cray_cdt_version()
         if not cdt:
