@@ -1522,13 +1522,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                     f"decorator in class {self.__class__.__qualname__}"
                 )
 
-            try:
-                self.sanity_patterns = self._rfm_sanity()
-            except TypeError:
-                raise SanityError(
-                    f'function {self._rfm_sanity.__name__!r} does not return '
-                    f'a deferrable expression.'
-                )
+            self.sanity_patterns = self._rfm_sanity()
 
         if rt.runtime().get_option('general/0/trap_job_errors'):
             sanity_patterns = [
