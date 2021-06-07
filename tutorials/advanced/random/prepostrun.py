@@ -16,7 +16,7 @@ class PrepostRunTest(rfm.RunOnlyRegressionTest):
     postrun_cmds = ['echo FINISHED']
     executable = './random_numbers.sh'
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity_patterns(self):
         numbers = sn.extractall(
             r'Random: (?P<number>\S+)', self.stdout, 'number', float

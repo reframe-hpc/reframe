@@ -70,7 +70,7 @@ class BuildGpuPchase(rfm.CompileOnlyRegressionTest, pin_prefix=True):
     def set_sanity(self):
         '''Assert that the executable is present.'''
 
-        self.sanity_patterns = sn.assert_found(r'pChase.x', self.stdout)
+        return sn.assert_found(r'pChase.x', self.stdout)
 
 
 class RunGpuPchaseBase(rfm.RunOnlyRegressionTest, pin_prefix=True):

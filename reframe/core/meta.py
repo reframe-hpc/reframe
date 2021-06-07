@@ -16,6 +16,12 @@ import reframe.core.variables as variables
 import reframe.core.hooks as hooks
 
 from reframe.core.exceptions import ReframeSyntaxError
+from reframe.core.deferrable import deferrable
+
+
+_USER_PIPELINE_STAGES = (
+    'init', 'setup', 'compile', 'run', 'sanity', 'performance', 'cleanup'
+)
 
 
 class RegressionTestMeta(type):
@@ -173,12 +179,7 @@ class RegressionTestMeta(type):
         def bind(fn, name=None):
             '''Directive to bind a free function to a class.
 
-            By default, the function is bound with the same name as the free
-            function. However, the function can be bound using a different name
-            with the ``name`` argument.
-
-            :param fn: external function to be bound to a class.
-            :param name: bind the function under a different name.
+            See online docs for more information.
             '''
 
             inst = metacls.WrappedFunction(fn, name)
@@ -188,13 +189,66 @@ class RegressionTestMeta(type):
         namespace['bind'] = bind
 
         # Hook-related functionality
-        namespace['run_before'] = hooks.run_before
-        namespace['run_after'] = hooks.run_after
+        def run_before(stage):
+            '''Decorator for attaching a test method to a pipeline stage.
+
+            See online docs for more information.
+            '''
+
+            if stage not in _USER_PIPELINE_STAGES:
+                raise ValueError(
+                    f'invalid pipeline stage specified: {stage!r}'
+                )
+
+            if stage == 'init':
+                raise ValueError('pre-init hooks are not allowed')
+
+            return hooks.attach_to('pre_' + stage)
+
+        namespace['run_before'] = run_before
+
+        def run_after(stage):
+            '''Decorator for attaching a test method to a pipeline stage.
+
+            See online docs for more information.
+            '''
+
+            if stage not in _USER_PIPELINE_STAGES:
+                raise ValueError(
+                    f'invalid pipeline stage specified: {stage!r}'
+                )
+
+            # Map user stage names to the actual pipeline functions if needed
+            if stage == 'init':
+                stage = '__init__'
+            elif stage == 'compile':
+                stage = 'compile_wait'
+            elif stage == 'run':
+                stage = 'run_wait'
+
+            return hooks.attach_to('post_' + stage)
+
+        namespace['run_after'] = run_after
         namespace['require_deps'] = hooks.require_deps
+
+        # Machinery to add a sanity function
+        def sanity_function(fn):
+            '''Mark a function as the test's sanity function.
+
+            Decorated functions must be unary and they will be converted into
+            deferred expressions.
+            '''
+
+            _def_fn = deferrable(fn)
+            setattr(_def_fn, '_rfm_sanity_fn', True)
+            return _def_fn
+
+        namespace['sanity_function'] = sanity_function
+        namespace['deferrable'] = deferrable
         return metacls.MetaNamespace(namespace)
 
     def __new__(metacls, name, bases, namespace, **kwargs):
-        ''' Remove directives from the class namespace.
+        '''Remove directives from the class namespace.
 
         It does not make sense to have some directives available after the
         class was created or even at the instance level (e.g. doing
@@ -205,7 +259,7 @@ class RegressionTestMeta(type):
 
         blacklist = [
             'parameter', 'variable', 'bind', 'run_before', 'run_after',
-            'require_deps'
+            'require_deps', 'deferrable', 'sanity_function'
         ]
         for b in blacklist:
             namespace.pop(b, None)
@@ -217,9 +271,9 @@ class RegressionTestMeta(type):
 
         # Create a set with the attribute names already in use.
         cls._rfm_dir = set()
-        for base in bases:
-            if hasattr(base, '_rfm_dir'):
-                cls._rfm_dir.update(base._rfm_dir)
+        for b in bases:
+            if hasattr(b, '_rfm_dir'):
+                cls._rfm_dir.update(b._rfm_dir)
 
         used_attribute_names = set(cls._rfm_dir)
 
@@ -242,6 +296,29 @@ class RegressionTestMeta(type):
                 hook_reg.update(getattr(b, '_rfm_pipeline_hooks'))
 
         cls._rfm_pipeline_hooks = hook_reg
+
+        # Gather all the locally defined sanity functions based on the
+        # _rfm_sanity_fn attribute.
+        local_sn_fn = [
+            v for v in namespace.values() if hasattr(v, '_rfm_sanity_fn')
+        ]
+        if local_sn_fn != []:
+            if len(local_sn_fn) > 1:
+                raise ReframeSyntaxError(
+                    f'class {cls.__qualname__!r} defines more than one sanity '
+                    'function in the class body.'
+                )
+
+            cls._rfm_sanity = local_sn_fn[0]
+        else:
+            # Search the bases if no local sanity functions exist.
+            for b in bases:
+                try:
+                    cls._rfm_sanity = getattr(b, '_rfm_sanity')
+                    break
+                except AttributeError:
+                    continue
+
         cls._final_methods = {v.__name__ for v in namespace.values()
                               if hasattr(v, '_rfm_final')}
 
@@ -249,14 +326,12 @@ class RegressionTestMeta(type):
         cls._final_methods.update(*(b._final_methods for b in bases
                                     if hasattr(b, '_final_methods')))
 
-        if hasattr(cls, '_rfm_special_test') and cls._rfm_special_test:
+        if getattr(cls, '_rfm_special_test', None):
             return
 
+        bases_w_final = [b for b in bases if hasattr(b, '_final_methods')]
         for v in namespace.values():
-            for b in bases:
-                if not hasattr(b, '_final_methods'):
-                    continue
-
+            for b in bases_w_final:
                 if callable(v) and v.__name__ in b._final_methods:
                     msg = (f"'{cls.__qualname__}.{v.__name__}' attempts to "
                            f"override final method "
@@ -288,7 +363,7 @@ class RegressionTestMeta(type):
 
     def __getattribute__(cls, name):
         '''Attribute lookup method for custom class attributes.
-        
+
         ReFrame test variables are descriptors injected at the class level.
         If a variable descriptor has already been injected into the class,
         do not return the descriptor object and return the default value

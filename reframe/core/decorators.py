@@ -207,36 +207,72 @@ def required_version(*versions):
     return _skip_tests
 
 
-def run_before(stage):
-    '''Alias for backwards compatibility with the run_before decorator.
+# Valid pipeline stages that users can specify in the `run_before()` and
+# `run_after()` decorators
+_USER_PIPELINE_STAGES = (
+    'init', 'setup', 'compile', 'run', 'sanity', 'performance', 'cleanup'
+)
 
-    See :func:`~reframe.core.hooks.run_before`.
+
+def run_before(stage):
+    '''Decorator for attaching a test method to a pipeline stage.
+
+    .. deprecated:: 3.7.0
+       Please use the :func:`~reframe.core.pipeline.RegressionMixin.run_before`
+       built-in function.
+
     '''
     warn.user_deprecation_warning(
         'using the @rfm.run_before decorator from the rfm module is '
         'deprecated; please use the built-in decorator @run_before instead.',
         from_version='3.7.0'
     )
-    return hooks.run_before(stage)
+    if stage not in _USER_PIPELINE_STAGES:
+        raise ValueError(f'invalid pipeline stage specified: {stage!r}')
+
+    if stage == 'init':
+        raise ValueError('pre-init hooks are not allowed')
+
+    return hooks.attach_to('pre_' + stage)
 
 
 def run_after(stage):
-    '''Alias for backwards compatibility with the run_after decorator.
+    '''Decorator for attaching a test method to a pipeline stage.
 
-    See :func:`~reframe.core.hooks.run_after`.
+    .. deprecated:: 3.7.0
+       Please use the :func:`~reframe.core.pipeline.RegressionMixin.run_after`
+       built-in function.
+
     '''
     warn.user_deprecation_warning(
         'using the @rfm.run_after decorator from the rfm module is '
         'deprecated; please use the built-in decorator @run_after instead.',
         from_version='3.7.0'
     )
-    return hooks.run_after(stage)
+    if stage not in _USER_PIPELINE_STAGES:
+        raise ValueError(f'invalid pipeline stage specified: {stage!r}')
+
+    # Map user stage names to the actual pipeline functions if needed
+    if stage == 'init':
+        stage = '__init__'
+    elif stage == 'compile':
+        stage = 'compile_wait'
+    elif stage == 'run':
+        stage = 'run_wait'
+
+    return hooks.attach_to('post_' + stage)
 
 
 def require_deps(fn):
-    '''Alias for backwards compatibility with the require_deps decorator.
+    '''Decorator to denote that a function will use the test dependencies.
 
-    See :func:`~reframe.core.hooks.require_deps`.
+    .. versionadded:: 2.21
+
+    .. deprecated:: 3.7.0
+       Please use the
+       :func:`~reframe.core.pipeline.RegressionTest.require_deps` built-in
+       function.
+
     '''
     warn.user_deprecation_warning(
         'using the @rfm.require_deps decorator from the rfm module is '
@@ -244,4 +280,3 @@ def require_deps(fn):
         from_version='3.7.0'
     )
     return hooks.require_deps(fn)
-

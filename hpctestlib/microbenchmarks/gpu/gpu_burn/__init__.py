@@ -99,7 +99,7 @@ class GpuBurn(rfm.RegressionTest, pin_prefix=True):
     def set_sanity_patterns(self):
         '''Set the sanity patterns to count the number of successful burns.'''
 
-        self.sanity_patterns = sn.assert_eq(sn.count(sn.findall(
+        return sn.assert_eq(sn.count(sn.findall(
             r'^\s*\[[^\]]*\]\s*GPU\s*\d+\(OK\)', self.stdout)
         ), self.num_tasks_assigned)
 
