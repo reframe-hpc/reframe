@@ -326,14 +326,12 @@ class RegressionTestMeta(type):
         cls._final_methods.update(*(b._final_methods for b in bases
                                     if hasattr(b, '_final_methods')))
 
-        if hasattr(cls, '_rfm_special_test') and cls._rfm_special_test:
+        if getattr(cls, '_rfm_special_test', None):
             return
 
+        bases_w_final = [b for b in bases if hasattr(b, '_final_methods')]
         for v in namespace.values():
-            for b in bases:
-                if not hasattr(b, '_final_methods'):
-                    continue
-
+            for b in bases_w_final:
                 if callable(v) and v.__name__ in b._final_methods:
                     msg = (f"'{cls.__qualname__}.{v.__name__}' attempts to "
                            f"override final method "
