@@ -38,7 +38,8 @@ from reframe.core.containers import ContainerPlatformField
 from reframe.core.deferrable import _DeferredExpression
 from reframe.core.exceptions import (BuildError, DependencyError,
                                      PerformanceError, PipelineError,
-                                     SanityError, SkipTestError)
+                                     SanityError, SkipTestError,
+                                     ReframeSyntaxError)
 from reframe.core.meta import RegressionTestMeta
 from reframe.core.schedulers import Job
 from reframe.core.warnings import user_deprecation_warning
@@ -1519,7 +1520,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 raise ReframeSyntaxError(
                     f"assigning a sanity function to the 'sanity_patterns' "
                     f"variable conflicts with using the 'sanity_function' "
-                    f"decorator in class {self.__class__.__qualname__}"
+                    f"decorator (class {self.__class__.__qualname__})"
                 )
 
             self.sanity_patterns = self._rfm_sanity()
