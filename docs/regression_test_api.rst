@@ -1,6 +1,6 @@
-====================
-Regression Tests API
-====================
+===================
+Regression Test API
+===================
 
 This page provides a reference guide of the ReFrame API for writing regression tests covering all the relevant details.
 Internal data structures and APIs are covered only to the extent that this might be helpful to the final user of the framework.
@@ -8,17 +8,18 @@ Internal data structures and APIs are covered only to the extent that this might
 
  .. _regression-bases:
 
-Regression Test Base Classes
-----------------------------
+-----------------
+Test Base Classes
+-----------------
 
 .. automodule:: reframe.core.pipeline
    :members:
    :show-inheritance:
 
 
-
-Regression Test Class Decorators
---------------------------------
+---------------
+Test Decorators
+---------------
 
 .. autodecorator:: reframe.core.decorators.parameterized_test(*inst)
 
@@ -27,42 +28,7 @@ Regression Test Class Decorators
 .. autodecorator:: reframe.core.decorators.simple_test
 
 
-Pipeline Hooks
---------------
-
-.. versionadded:: 2.20
-
-
-Pipeline hooks is an easy way to perform operations while the test traverses the execution pipeline.
-You can attach arbitrary functions to run before or after any pipeline stage, which are called *pipeline hooks*.
-Multiple hooks can be attached before or after the same pipeline stage, in which case the order of execution will match the order in which the functions are defined in the class body of the test.
-A single hook can also be applied to multiple stages and it will be executed multiple times.
-All pipeline hooks of a test class are inherited by its subclasses.
-Subclasses may override a pipeline hook of their parents by redefining the hook function and re-attaching it at the same pipeline stage.
-There are seven pipeline stages where you can attach test methods: ``init``, ``setup``, ``compile``, ``run``, ``sanity``, ``performance`` and ``cleanup``.
-The ``init`` stage is not a real pipeline stage, but it refers to the test initialization.
-
-Hooks attached to any stage will run exactly before or after this stage executes.
-So although a "post-init" and a "pre-setup" hook will both run *after* a test has been initialized and *before* the test goes through the first pipeline stage, they will execute in different times:
-the post-init hook will execute *right after* the test is initialized.
-The framework will then continue with other activities and it will execute the pre-setup hook *just before* it schedules the test for executing its setup stage.
-
-.. py:decorator:: reframe.core.decorators.run_before(stage)
-
-  Alias for backwards compatibility with the run_before decorator.
-  See :func:`~RegressionTest.run_before`.
-
-.. py:decorator:: reframe.core.decorators.run_after(stage)
-
-  Alias for backwards compatibility with the run_after decorator.
-  See :func:`~RegressionTest.run_after`.
-
-.. py:decorator:: reframe.core.decorators.require_deps
-
-  Alias for backwards compatibility with the require_deps decorator.
-  See :func:`~RegressionTest.require_deps`.
-
-
+--------
 Builtins
 --------
 
@@ -76,9 +42,9 @@ In essence, these builtins exert control over the test creation, and they allow 
 
 
 Built-in types
-~~~~~~~~~~~~~~
+--------------
 
-.. py:function:: RegressionTest.parameter(values=None, inherit_params=False, filter_params=None)
+.. py:function:: RegressionMixin.parameter(values=None, inherit_params=False, filter_params=None)
 
   Inserts or modifies a regression test parameter.
   If a parameter with a matching name is already present in the parameter space of a parent class, the existing parameter values will be combined with those provided by this method following the inheritance behavior set by the arguments ``inherit_params`` and ``filter_params``.
@@ -123,7 +89,7 @@ Built-in types
      This only has an effect if used with ``inherit_params=True``.
 
 
-.. py:function:: RegressionTest.variable(*types, value=None)
+.. py:function:: RegressionMixin.variable(*types, value=None)
 
   Inserts a new regression test variable.
   Declaring a test variable through the :func:`variable` built-in allows for a more robust test implementation than if the variables were just defined as regular test attributes (e.g. ``self.a = 10``).
@@ -230,33 +196,44 @@ Built-in types
       :class:`reframe.core.fields.Field`.
 
 
-Built-in functions
-~~~~~~~~~~~~~~~~~~
+Pipeline Hooks
+--------------
 
-.. versionadded:: 3.6.2
+Pipeline hooks is a type of built-in functions that provide an easy way to perform operations while the test traverses the execution pipeline.
+You can attach arbitrary functions to run before or after any pipeline stage, which are called *pipeline hooks*.
+Multiple hooks can be attached before or after the same pipeline stage, in which case the order of execution will match the order in which the functions are defined in the class body of the test.
+A single hook can also be applied to multiple stages and it will be executed multiple times.
+All pipeline hooks of a test class are inherited by its subclasses.
+Subclasses may override a pipeline hook of their parents by redefining the hook function and re-attaching it at the same pipeline stage.
+There are seven pipeline stages where you can attach test methods: ``init``, ``setup``, ``compile``, ``run``, ``sanity``, ``performance`` and ``cleanup``.
+The ``init`` stage is not a real pipeline stage, but it refers to the test initialization.
 
+Hooks attached to any stage will run exactly before or after this stage executes.
+So although a "post-init" and a "pre-setup" hook will both run *after* a test has been initialized and *before* the test goes through the first pipeline stage, they will execute in different times:
+the post-init hook will execute *right after* the test is initialized.
+The framework will then continue with other activities and it will execute the pre-setup hook *just before* it schedules the test for executing its setup stage.
 
-.. py:function:: RegressionTest.bind(func, name=None)
+.. note::
+   Pipeline hooks were introduced in 2.20 but since 3.6.2 can be declared using the regression test built-in function described in this section.
 
-  Bind a free function to a regression test.
-  By default, the function is bound with the same name as the free function.
-  However, the function can be bound using a different name with the ``name`` argument.
+.. warning::
+   .. versionchanged:: 3.7.0
+      Declaring pipeline hooks using the same name functions from the :py:mod:`reframe` or :py:mod:`reframe.core.decorators` modules is now deprecated.
+      You should use the built-in functions described in this section instead.
 
-  :param fn: external function to be bound to a class.
-  :param name: bind the function under a different name.
-
-
-.. py:function:: RegressionTest.run_before(stage)
+.. py:decorator:: RegressionMixin.run_before(stage)
 
   Decorator for attaching a test method to a pipeline stage.
+
   The method will run just before the specified pipeline stage and it should not accept any arguments except ``self``.
   This decorator can be stacked, in which case the function will be attached to multiple pipeline stages.
   The ``stage`` argument can be any of ``'setup'``, ``'compile'``, ``'run'``, ``'sanity'``, ``'performance'`` or ``'cleanup'``.
 
 
-.. py:function:: RegressionTest.run_after(stage)
+.. py:decorator:: RegressionMixin.run_after(stage)
 
   Decorator for attaching a test method to a pipeline stage.
+
   This is analogous to :func:`~RegressionTest.run_before`, except that ``'init'`` can also be used as the ``stage`` argument.
   In this case, the hook will execute right after the test is initialized (i.e. after the :func:`__init__` method is called), before entering the test's pipeline.
   In essence, a post-init hook is equivalent to defining additional :func:`__init__` functions in the test.
@@ -282,9 +259,24 @@ Built-in functions
      Add the ability to define post-init hooks in tests.
 
 
-.. py:function:: RegressionTest.require_deps(func)
+Built-in functions
+------------------
+
+.. py:function:: RegressionMixin.bind(func, name=None)
+
+  Bind a free function to a regression test.
+  By default, the function is bound with the same name as the free function.
+  However, the function can be bound using a different name with the ``name`` argument.
+
+  :param fn: external function to be bound to a class.
+  :param name: bind the function under a different name.
+
+  .. versionadded:: 3.6.2
+
+.. py:decorator:: RegressionMixin.require_deps(func)
 
   Decorator to denote that a function will use the test dependencies.
+
   The arguments of the decorated function must be named after the dependencies that the function intends to use.
   The decorator will bind the arguments to a partial realization of the :func:`~reframe.core.pipeline.RegressionTest.getdep` function, such that conceptually the new function arguments will be the following:
 
@@ -295,9 +287,16 @@ Built-in functions
   The converted arguments are essentially functions accepting a single argument, which is the target test's programming environment.
   Additionally, this decorator will attach the function to run *after* the test's setup phase, but *before* any other "post-setup" pipeline hook.
 
-  .. versionadded:: 2.21
+  .. warning::
+     .. versionchanged:: 3.7.0
+        Using this function from the :py:mod:`reframe` or :py:mod:`reframe.core.decorators` modules is now deprecated.
+        You should use the built-in function described here.
 
 
+
+
+
+------------------------
 Environments and Systems
 ------------------------
 
@@ -309,7 +308,7 @@ Environments and Systems
    :members:
    :show-inheritance:
 
-
+-------------------------------------
 Job Schedulers and Parallel Launchers
 -------------------------------------
 
@@ -337,6 +336,7 @@ Job Schedulers and Parallel Launchers
 
    :arg name: The registered name of the scheduler backend.
 
+----------------
 Runtime Services
 ----------------
 
@@ -345,6 +345,7 @@ Runtime Services
    :show-inheritance:
 
 
+---------------
 Modules Systems
 ---------------
 
@@ -353,6 +354,7 @@ Modules Systems
    :show-inheritance:
 
 
+-------------
 Build Systems
 -------------
 
@@ -384,6 +386,7 @@ It is up to the concrete build system implementations on how to use or not these
 
 .. _container-platforms:
 
+-------------------
 Container Platforms
 -------------------
 
@@ -394,7 +397,7 @@ Container Platforms
    :exclude-members: ContainerPlatformField
    :show-inheritance:
 
-
+----------------------------
 The :py:mod:`reframe` module
 ----------------------------
 
@@ -437,7 +440,8 @@ The :py:mod:`reframe` module offers direct access to the basic test classes, con
 
 .. py:decorator:: reframe.require_deps
 
-   See :func:`@reframe.core.decorators.require_deps <reframe.core.decorators.require_deps>`.
+   .. deprecated:: 3.7.0
+      Please use the :func:`~reframe.core.pipeline.RegressionMixin.require_deps` built-in function
 
 
 .. py:decorator:: reframe.required_version
@@ -447,12 +451,14 @@ The :py:mod:`reframe` module offers direct access to the basic test classes, con
 
 .. py:decorator:: reframe.run_after
 
-   See :func:`@reframe.core.decorators.run_after <reframe.core.decorators.run_after>`.
+   .. deprecated:: 3.7.0
+      Please use the :func:`~reframe.core.pipeline.RegressionMixin.run_after` built-in function
 
 
 .. py:decorator:: reframe.run_before
 
-   See :func:`@reframe.core.decorators.run_before <reframe.core.decorators.run_before>`.
+   .. deprecated:: 3.7.0
+      Please use the :func:`~reframe.core.pipeline.RegressionMixin.run_before` built-in function
 
 
 .. py:decorator:: reframe.simple_test
@@ -463,6 +469,7 @@ The :py:mod:`reframe` module offers direct access to the basic test classes, con
 
 .. _scheduler_options:
 
+----------------------------------------------------
 Mapping of Test Attributes to Job Scheduler Backends
 ----------------------------------------------------
 
