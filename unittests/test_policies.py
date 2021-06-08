@@ -134,7 +134,7 @@ def make_cases_for_skipping(request):
 
             # Attach the hook manually based on the request.param
             when, stage = request.param.split('_', maxsplit=1)
-            hook = rfm.run_before if when == 'pre' else rfm.run_after
+            hook = run_before if when == 'pre' else run_after
             check_and_skip = hook(stage)(check_and_skip)
 
         class _T1(rfm.RunOnlyRegressionTest):

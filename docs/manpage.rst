@@ -1,6 +1,6 @@
-==============================
-ReFrame Command Line Reference
-==============================
+======================
+Command Line Reference
+======================
 
 
 Synopsis

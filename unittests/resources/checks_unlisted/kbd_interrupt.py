@@ -22,6 +22,6 @@ class KeyboardInterruptCheck(rfm.RunOnlyRegressionTest):
         self.valid_prog_environs = ['*']
         self.tags = {self.name}
 
-    @rfm.run_before('setup')
+    @run_before('setup')
     def raise_keyboard_interrupt(self):
         raise KeyboardInterrupt

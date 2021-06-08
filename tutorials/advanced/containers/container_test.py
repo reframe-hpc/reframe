@@ -16,7 +16,7 @@ class ContainerTest(rfm.RunOnlyRegressionTest):
     os_release_pattern = r'18.04.\d+ LTS \(Bionic Beaver\)'
     sanity_patterns = sn.assert_found(os_release_pattern, 'release.txt')
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_container_variables(self):
         self.descr = f'Run commands inside a container using {self.platform}'
         image_prefix = 'docker://' if self.platform == 'Singularity' else ''

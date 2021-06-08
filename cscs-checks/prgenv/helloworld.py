@@ -87,7 +87,7 @@ class HelloWorldBaseTest(rfm.RegressionTest):
         self.maintainers = ['VH', 'EK']
         self.tags = {'production', 'craype'}
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def setflags(self):
         envname = re.sub(r'(PrgEnv-\w+).*', lambda m: m.group(1),
                          self.current_environ.name)
@@ -96,11 +96,11 @@ class HelloWorldBaseTest(rfm.RegressionTest):
         self.build_system.cxxflags = prgenv_flags
         self.build_system.fflags = prgenv_flags
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def compile_timer_start(self):
         self.compilation_time_seconds = datetime.now()
 
-    @rfm.run_after('compile')
+    @run_after('compile')
     def compile_timer_end(self):
         elapsed = datetime.now() - self.compilation_time_seconds
         self.compilation_time_seconds = elapsed.total_seconds()
