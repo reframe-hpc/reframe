@@ -552,12 +552,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: Refer to the :doc:`ReFrame Tutorials </tutorials>` for concrete usage
     #: examples.
     #:
-    #: If not set a sanity error may be raised during sanity checking, unless
+    #: If not set, a sanity error may be raised during sanity checking if no
     #: other sanity checking functions already exist.
     #:
     #: :type: A deferrable expression (i.e., the result of a :doc:`sanity
-    #:     function </sanity_functions_reference>`) or a string containing a
-    #:     regex with a pattern to match on the stdout of the test.
+    #:     function </sanity_functions_reference>`)
     #: :default: :class:`required`
     #:
     #: .. note::
@@ -1530,7 +1529,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 sn.assert_eq(self.job.exitcode, 0,
                              msg='job exited with exit code {0}')
             ]
-
             if hasattr(self, 'sanity_patterns'):
                 sanity_patterns.append(self.sanity_patterns)
 
