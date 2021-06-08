@@ -1,3 +1,5 @@
+ .. _deferrable-functions:
+
 ==========================
 Sanity Functions Reference
 ==========================
@@ -53,7 +55,7 @@ Users can write their own sanity functions as well.
 The page ":doc:`deferrables`" explains in detail how sanity functions work and how users can write their own.
 
 
-.. py:decorator:: sanity_function
+.. py:decorator:: reframe.utility.sanity.sanity_function(func)
 
     Sanity function decorator.
 
@@ -61,7 +63,9 @@ The page ":doc:`deferrables`" explains in detail how sanity functions work and h
 
     .. code:: python
 
-        @sanity_function
+        import reframe.utility.sanity as sn
+
+        @sn.sanity_function
         def myfunc(*args):
             do_sth()
 
