@@ -31,6 +31,7 @@ class strided_bandwidth_check(StridedBandwidth):
     valid_systems = ['daint:gpu', 'dom:gpu', 'daint:mc', 'dom:mc',
                      'eiger:mc', 'pilatus:mc', 'ault:a64fx']
     valid_prog_environs = ['PrgEnv-gnu']
+    num_tasks = 0
 
     @rfm.run_after('init')
     def set_valid_systems(self):
