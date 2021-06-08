@@ -15,13 +15,13 @@ class HelloThreadedTest(rfm.RegressionTest):
     build_system = 'SingleSource'
     executable_opts = ['16']
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def set_compilation_flags(self):
         self.build_system.cxxflags = ['-std=c++11', '-Wall']
         environ = self.current_environ.name
         if environ in {'clang', 'gnu'}:
             self.build_system.cxxflags += ['-pthread']
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity_patterns(self):
         self.sanity_patterns = sn.assert_found(r'Hello, World\!', self.stdout)

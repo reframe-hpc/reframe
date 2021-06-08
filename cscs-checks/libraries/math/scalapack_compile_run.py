@@ -22,11 +22,11 @@ class ScaLAPACKTest(rfm.RegressionTest):
     maintainers = ['CB', 'LM']
     tags = {'production', 'external-resources'}
 
-    @rfm.run_after('init')
+    @run_after('init')
     def set_build_flags(self):
         self.build_system.fflags = ['-O3']
 
-    @rfm.run_after('init')
+    @run_after('init')
     def set_linkage(self):
         if self.current_system.name in ['eiger', 'pilatus']:
             self.skip_if(self.linkage == 'static',
@@ -34,7 +34,7 @@ class ScaLAPACKTest(rfm.RegressionTest):
 
         self.variables = {'CRAYPE_LINK_TYPE': self.linkage}
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity_patterns(self):
         def fortran_float(value):
             return float(value.replace('D', 'E'))

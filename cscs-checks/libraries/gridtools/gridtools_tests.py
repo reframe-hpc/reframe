@@ -131,7 +131,7 @@ class GridToolsCPURunCheck(GridToolsRunCheck):
         self.tags = {'scs', 'benchmark'}
         self.maintainers = ['CB']
 
-    @rfm.require_deps
+    @require_deps
     def set_executable(self, GridToolsCPUBuildCheck):
         self.executable = os.path.join(
             GridToolsCPUBuildCheck().stagedir,
@@ -176,7 +176,7 @@ class GridToolsGPURunCheck(GridToolsRunCheck):
         self.tags = {'scs', 'benchmark'}
         self.maintainers = ['CB']
 
-    @rfm.require_deps
+    @require_deps
     def set_executable(self, GridToolsGPUBuildCheck):
         self.executable = os.path.join(
             GridToolsGPUBuildCheck().stagedir,

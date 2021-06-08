@@ -64,7 +64,7 @@ class SpecAccelCheckBase(rfm.RegressionTest):
         self.maintainers = ['SK']
         self.tags = {'diagnostic', 'external-resources'}
 
-    @rfm.run_after('setup')
+    @run_after('setup')
     def setup_per_env(self):
         envname = self.current_environ.name
         self.prerun_cmds = [

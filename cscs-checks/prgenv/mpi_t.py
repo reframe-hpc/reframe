@@ -26,7 +26,7 @@ class MpiT_Check(rfm.RegressionTest):
         self.maintainers = ['JG']
         self.tags = {'craype', 'maintenance'}
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity(self):
         rpt_file = os.path.join(self.stagedir, self.rpt)
         reference_files = {

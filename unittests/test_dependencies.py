@@ -345,7 +345,7 @@ def test_build_deps_deprecated_syntax(loader, default_exec_ctx):
 
         # We will do our assertions in a post-init hook
 
-        @rfm.run_after('init')
+        @run_after('init')
         def assert_deps(self):
             if self.kind == rfm.DEPEND_FULLY:
                 assert self._userdeps == [('Test0', udeps.by_part)]

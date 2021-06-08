@@ -19,11 +19,11 @@ class OSUBenchmarkTestBase(rfm.RunOnlyRegressionTest):
     num_tasks = 2
     num_tasks_per_node = 1
 
-    @rfm.run_after('init')
+    @run_after('init')
     def set_dependencies(self):
         self.depends_on('OSUBuildTest', udeps.by_env)
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity_patterns(self):
         self.sanity_patterns = sn.assert_found(r'^8', self.stdout)
 
@@ -35,7 +35,7 @@ class OSULatencyTest(OSUBenchmarkTestBase):
         '*': {'latency': (0, None, None, 'us')}
     }
 
-    @rfm.require_deps
+    @require_deps
     def set_executable(self, OSUBuildTest):
         self.executable = os.path.join(
             OSUBuildTest().stagedir,
@@ -43,7 +43,7 @@ class OSULatencyTest(OSUBenchmarkTestBase):
         )
         self.executable_opts = ['-x', '100', '-i', '1000']
 
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_perf_patterns(self):
         self.perf_patterns = {
             'latency': sn.extractsingle(r'^8\s+(\S+)', self.stdout, 1, float)
@@ -57,7 +57,7 @@ class OSUBandwidthTest(OSUBenchmarkTestBase):
         '*': {'bandwidth': (0, None, None, 'MB/s')}
     }
 
-    @rfm.require_deps
+    @require_deps
     def set_executable(self, OSUBuildTest):
         self.executable = os.path.join(
             OSUBuildTest().stagedir,
@@ -65,7 +65,7 @@ class OSUBandwidthTest(OSUBenchmarkTestBase):
         )
         self.executable_opts = ['-x', '100', '-i', '1000']
 
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_perf_patterns(self):
         self.perf_patterns = {
             'bandwidth': sn.extractsingle(r'^4194304\s+(\S+)',
@@ -81,11 +81,11 @@ class OSUAllreduceTest(OSUBenchmarkTestBase):
         '*': {'latency': (0, None, None, 'us')}
     }
 
-    @rfm.run_after('init')
+    @run_after('init')
     def set_num_tasks(self):
         self.num_tasks = self.mpi_tasks
 
-    @rfm.require_deps
+    @require_deps
     def set_executable(self, OSUBuildTest):
         self.executable = os.path.join(
             OSUBuildTest().stagedir,
@@ -93,7 +93,7 @@ class OSUAllreduceTest(OSUBenchmarkTestBase):
         )
         self.executable_opts = ['-m', '8', '-x', '1000', '-i', '20000']
 
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_perf_patterns(self):
         self.perf_patterns = {
             'latency': sn.extractsingle(r'^8\s+(\S+)', self.stdout, 1, float)
@@ -107,22 +107,22 @@ class OSUBuildTest(rfm.CompileOnlyRegressionTest):
     valid_prog_environs = ['gnu', 'pgi', 'intel']
     build_system = 'Autotools'
 
-    @rfm.run_after('init')
+    @run_after('init')
     def inject_dependencies(self):
         self.depends_on('OSUDownloadTest', udeps.fully)
 
-    @rfm.require_deps
+    @require_deps
     def set_sourcedir(self, OSUDownloadTest):
         self.sourcesdir = os.path.join(
             OSUDownloadTest(part='login', environ='builtin').stagedir,
             'osu-micro-benchmarks-5.6.2'
         )
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def set_build_system_attrs(self):
         self.build_system.max_concurrency = 8
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity_patterns(self):
         self.sanity_patterns = sn.assert_not_found('error', self.stderr)
 
@@ -140,6 +140,6 @@ class OSUDownloadTest(rfm.RunOnlyRegressionTest):
         'tar xzf osu-micro-benchmarks-5.6.2.tar.gz'
     ]
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity_patterns(self):
         self.sanity_patterns = sn.assert_not_found('error', self.stderr)

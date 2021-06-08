@@ -44,7 +44,7 @@ class AutomaticArraysCheck(rfm.RegressionTest):
         self.maintainers = ['AJ', 'MKr']
         self.tags = {'production', 'mch', 'craype'}
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def setflags(self):
         if self.current_environ.name.startswith('PrgEnv-cray'):
             envname = 'PrgEnv-cray'
@@ -64,7 +64,7 @@ class AutomaticArraysCheck(rfm.RegressionTest):
 
         self.reference = self.arrays_reference[envname]
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def cdt2008_pgi_workaround(self):
         cdt = osext.cray_cdt_version()
         if not cdt:

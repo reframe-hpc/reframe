@@ -13,6 +13,6 @@ class DeprecatedTest(rfm.RunOnlyRegressionTest):
         self.executable = 'echo hello'
         self.sanity_patterns = sn.assert_found('hello', self.stdout)
 
-    @rfm.run_before('setup')
+    @run_before('setup')
     def deprecation_warning(self):
         user_deprecation_warning('feature foo is deprecated')
