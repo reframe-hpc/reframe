@@ -262,13 +262,38 @@ The framework will then continue with other activities and it will execute the p
 Built-in functions
 ------------------
 
+.. py:decorator:: RegressionMixin.sanity_function(func)
+
+  Shorthand for assigning a member function as the sanity function of the test.
+
+  This decorator will convert the decorated method into a :func:`~RegressionMixin.deferrable` and mark it to be executed during the test's sanity stage.
+  This syntax removes the need of setting the variable :attr:`~RegressionTest.sanity_patterns` in the test.
+  In fact, when this decorator is used, manually setting :attr:`~RegressionTest.sanity_patterns` in the test is not allowed.
+
+  Decorated functions may be overridden by derived classes, and derived classes may also decorate a different method as the test's sanity function.
+  Decorating multiple member functions in the same class is not allowed.
+  However, a :class:`RegressionTest` may inherit from multiple :class:`RegressionMixin` classes with their own sanity functions.
+  In this case, the derived class will follow Python's `MRO <https://docs.python.org/3/library/stdtypes.html#class.__mro__>`_ to find a suitable sanity function.
+
+  .. warning:: Not to be mistaken with :func:`reframe.utility.sanity.sanity_function`.
+  .. versionadded:: 3.7.0
+
+.. py:decorator:: RegressionMixin.deferrable(func)
+
+  Converts the decorated method into a deferrable expression (see :ref:`deferrable-functions`).
+
+  This decorator is equivalent to :func:`reframe.utility.sanity.sanity_function`.
+
+  .. versionadded:: 3.7.0
+
 .. py:function:: RegressionMixin.bind(func, name=None)
 
   Bind a free function to a regression test.
+
   By default, the function is bound with the same name as the free function.
   However, the function can be bound using a different name with the ``name`` argument.
 
-  :param fn: external function to be bound to a class.
+  :param func: external function to be bound to a class.
   :param name: bind the function under a different name.
 
   .. versionadded:: 3.6.2
