@@ -3,7 +3,7 @@ How ReFrame Executes Tests
 ==========================
 
 A ReFrame test will be normally tried for different programming environments and different partitions within the same ReFrame run.
-These are defined in the test's :func:`__init__` method, but it is not this original test object that is scheduled for execution.
+These can be defined in the test's class body, in a post-init hook or in its :func:`__init__` method, but it is not this original test object that is scheduled for execution.
 The following figure explains in more detail the process:
 
 .. figure:: _static/img/reframe-test-cases.svg
