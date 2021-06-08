@@ -82,10 +82,12 @@ class GridToolsRunCheck(rfm.RunOnlyRegressionTest):
         }
 
 
-@rfm.parameterized_test(['horizontal_diffusion/cpu_kfirst_double'],
-                        ['horizontal_diffusion/cpu_ifirst_double'])
+@rfm.simple_test
 class GridToolsCPURunCheck(GridToolsRunCheck):
-    def __init__(self, variant):
+    diffusion_scheme = parameter(['horizontal_diffusion/cpu_kfirst_double',
+                                  'horizontal_diffusion/cpu_ifirst_double'])
+
+    def __init__(self):
         super().__init__()
         self.descr = 'GridTools CPU run test'
         self.depends_on('GridToolsCPUBuildCheck')
@@ -126,8 +128,8 @@ class GridToolsCPURunCheck(GridToolsRunCheck):
             }
         }
         self.executable_opts = ['256', '256', '80', '3',
-                                f'--gtest_filter={variant}*']
-        self.reference = self.variant_data[variant]['reference']
+                                f'--gtest_filter={self.diffusion_scheme}*']
+        self.reference = self.variant_data[self.diffusion_scheme]['reference']
         self.tags = {'scs', 'benchmark'}
         self.maintainers = ['CB']
 
@@ -139,10 +141,13 @@ class GridToolsCPURunCheck(GridToolsRunCheck):
         )
 
 
-@rfm.parameterized_test(['horizontal_diffusion/gpu_double'],
-                        ['horizontal_diffusion/gpu_horizontal_double'])
+@rfm.simple_test
 class GridToolsGPURunCheck(GridToolsRunCheck):
-    def __init__(self, variant):
+    diffusion_scheme = parameter(
+        ['horizontal_diffusion/gpu_double',
+         'horizontal_diffusion/gpu_horizontal_double'])
+
+    def __init__(self):
         super().__init__()
         self.descr = 'GridTools GPU run test'
         self.depends_on('GridToolsGPUBuildCheck')
@@ -171,8 +176,8 @@ class GridToolsGPURunCheck(GridToolsRunCheck):
             }
         }
         self.executable_opts = ['512', '512', '160', '3',
-                                f'--gtest_filter={variant}*']
-        self.reference = self.variant_data[variant]['reference']
+                                f'--gtest_filter={self.diffusion_scheme}*']
+        self.reference = self.variant_data[self.diffusion_scheme]['reference']
         self.tags = {'scs', 'benchmark'}
         self.maintainers = ['CB']
 
