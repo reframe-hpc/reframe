@@ -305,7 +305,7 @@ class RegressionTestMeta(type):
         if local_sn_fn != []:
             if len(local_sn_fn) > 1:
                 raise ReframeSyntaxError(
-                    f'class {cls.__qualname__!r} defines more than one sanity '
+                    f'{cls.__qualname__!r} defines more than one sanity '
                     'function in the class body.'
                 )
 
@@ -315,6 +315,14 @@ class RegressionTestMeta(type):
             for b in bases:
                 try:
                     cls._rfm_sanity = getattr(b, '_rfm_sanity')
+                    if cls._rfm_sanity.__name__ in namespace:
+                        raise ReframeSyntaxError(
+                            f'{cls.__qualname__!r} overrides the candidate '
+                            f'sanity function '
+                            f'{cls._rfm_sanity.__qualname__!r} without '
+                            f'defining an alternative'
+                        )
+
                     break
                 except AttributeError:
                     continue

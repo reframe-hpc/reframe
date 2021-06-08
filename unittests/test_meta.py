@@ -8,6 +8,8 @@ import pytest
 import reframe.core.meta as meta
 import reframe.core.deferrable as deferrable
 
+from reframe.core.exceptions import ReframeSyntaxError
+
 
 @pytest.fixture
 def MyMeta():
@@ -15,6 +17,7 @@ def MyMeta():
         pass
 
     yield Foo
+
 
 def test_directives(MyMeta):
     '''Test that directives are not available as instance attributes.'''
@@ -92,6 +95,7 @@ def test_sanity_function_decorator(MyMeta):
     assert Foo._rfm_sanity.__name__ == 'my_sanity'
     assert type(Foo._rfm_sanity()) is deferrable._DeferredExpression
 
+    # Test override sanity
     class Bar(Foo):
         @sanity_function
         def extended_sanity(self):
@@ -101,6 +105,7 @@ def test_sanity_function_decorator(MyMeta):
     assert Bar._rfm_sanity.__name__ == 'extended_sanity'
     assert type(Bar._rfm_sanity()) is deferrable._DeferredExpression
 
+    # Test bases lookup
     class Baz(MyMeta):
         pass
 
@@ -110,6 +115,12 @@ def test_sanity_function_decorator(MyMeta):
     assert hasattr(MyTest, '_rfm_sanity')
     assert MyTest._rfm_sanity.__name__ == 'my_sanity'
     assert type(MyTest._rfm_sanity()) is deferrable._DeferredExpression
+
+    # Test incomplete sanity override
+    with pytest.raises(ReframeSyntaxError):
+        class MyWrongTest(Foo):
+            def my_sanity(self):
+                pass
 
 
 def test_deferrable_decorator(MyMeta):
