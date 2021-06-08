@@ -9,7 +9,7 @@ import reframe.utility.sanity as sn
 
 
 @rfm.simple_test
-class MpiT_Check(rfm.RegressionTest):
+class mpit_check(rfm.RegressionTest):
     def __init__(self):
         self.descr = 'Checks MPI_T control/performance variables/categories'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'daint:mc', 'dom:mc',
