@@ -46,12 +46,12 @@ class Stream(rfm.RegressionTest):
     }
     maintainers = ['RS', 'SK']
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_omp_num_threads(self):
         '''Set the number of OMP threads to ``num_cpus_per_task``.'''
         self.variables['OMP_NUM_THREADS'] = f'{self.num_cpus_per_task}'
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity_patterns(self):
         '''Set sanity patterns to check the error threshold.'''
 
@@ -59,7 +59,7 @@ class Stream(rfm.RegressionTest):
             r'Solution Validates: avg error less than', self.stdout
         )
 
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_performance_patterns(self):
         '''Set performance to track the triad bandwidth.'''
 

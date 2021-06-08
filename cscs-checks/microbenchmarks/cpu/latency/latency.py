@@ -19,19 +19,19 @@ class cpu_latency_check(CpuLatency):
     valid_prog_environs = ['PrgEnv-gnu']
     tags = {'benchmark', 'diagnostic'}
 
-    @rfm.run_after('init')
+    @run_after('init')
     def set_valid_environs(self):
         if self.current_system.name in {'ault'}:
             self.valid_prog_environs = ['PrgEnv-fujitsu']
 
-    @rfm.run_after('setup')
+    @run_after('setup')
     def set_modules(self):
         if self.current_system.name in {'daint', 'dom'}:
             self.modules = ['craype-hugepages1G']
         if self.current_system.name in {'tave'}:
             self.modules = ['craype-hugepages512M']
 
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_references(self):
         self.reference = {
             'dom:mc': {

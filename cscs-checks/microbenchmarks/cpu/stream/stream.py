@@ -66,7 +66,7 @@ class stream_check(Stream):
     num_tasks = 1
     tags = {'production', 'craype'}
 
-    @rfm.run_after('init')
+    @run_after('init')
     def filter_valid_prog_environs(self):
         '''Special conditions for arolla and tsa.'''
         if self.current_system.name in ['arolla', 'tsa']:
@@ -74,14 +74,14 @@ class stream_check(Stream):
         elif self.current_system.name in ['ault']:
             self.valid_prog_environs = ['PrgEnv-fujitsu']
 
-    @rfm.run_after('setup')
+    @run_after('setup')
     def set_num_cpus_per_task(self):
         '''If partition not in ``stream_cpus_per_task``, leave as required.'''
         self.num_cpus_per_task = self.stream_cpus_per_task.get(
             self.current_partition.fullname, self.required
         )
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def set_compiler_flags(self):
         '''Set build flags for the different environments.'''
 
@@ -96,13 +96,13 @@ class stream_check(Stream):
             self.build_system.cflags += ['-fopenmp', '-mt', '-O3']
             self.build_system.ldflags += ['-mt']
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_env_vars(self):
         '''Special environment treatment for the PrgEnv-pgi.'''
         if self.current_environ.name == 'PrgEnv-pgi':
             self.variables['OMP_PROC_BIND'] = 'true'
 
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_perf_references(self):
         '''Set performance refs as defined in ``triad_reference``.
 

@@ -47,7 +47,7 @@ class StridedBandwidth(rfm.RegressionTest, pin_prefix=True):
     }
     maintainers = ['SK']
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_exec_opts(self):
         '''Set the exec options.
 
@@ -58,7 +58,7 @@ class StridedBandwidth(rfm.RegressionTest, pin_prefix=True):
             '100000000', f'{self.stride}', f'{self.num_cpus}'
         ]
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity_patterns(self):
         ''' Assert that the bandwidth is reported for all the tasks.'''
 
@@ -67,7 +67,7 @@ class StridedBandwidth(rfm.RegressionTest, pin_prefix=True):
             self.job.num_tasks
         )
 
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_perf_patterns(self):
         '''Extract the min bandwidth as a performance metric.'''
 

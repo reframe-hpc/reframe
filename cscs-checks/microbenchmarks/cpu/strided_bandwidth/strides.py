@@ -33,7 +33,7 @@ class strided_bandwidth_check(StridedBandwidth):
     valid_prog_environs = ['PrgEnv-gnu']
     num_tasks = 0
 
-    @rfm.run_after('init')
+    @run_after('init')
     def set_valid_systems(self):
         cp = self.current_system.name
         if cp == 'ault':
@@ -125,10 +125,10 @@ class strided_bandwidth_check(StridedBandwidth):
     )
     tags = {'benchmark', 'diagnostic'}
 
-    @rfm.run_after('setup')
+    @run_after('setup')
     def set_num_cpus(self):
         self.num_cpus = self.system_num_cpus[self.current_partition.fullname]
 
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_references(self):
         self.reference = self.reference_per_stride[self.stride]

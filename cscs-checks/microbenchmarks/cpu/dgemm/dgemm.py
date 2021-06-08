@@ -40,7 +40,7 @@ class dgemm_check(Dgemm):
     )
     tags = {'benchmark', 'diagnostic', 'craype'}
 
-    @rfm.run_after('init')
+    @run_after('init')
     def set_valid_prog_environs(self):
         if self.current_system.name in ['daint', 'dom']:
             self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel']
@@ -51,7 +51,7 @@ class dgemm_check(Dgemm):
         elif self.current_system.name in ['ault']:
             self.valid_prog_environs = ['PrgEnv-fujitsu']
 
-    @rfm.run_after('setup')
+    @run_after('setup')
     def skip_incompatible_combinations(self):
         '''Fujitsu env only available in ault's a64fx partition.'''
         if self.current_environ.name.startswith('PrgEnv-fujitsu'):
@@ -59,7 +59,7 @@ class dgemm_check(Dgemm):
                 self.current_partition.fullname not in {'ault:a64fx'}
             )
 
-    @rfm.run_after('setup')
+    @run_after('setup')
     def set_num_cpus_per_task(self):
         if self.current_partition.fullname in ['daint:gpu', 'dom:gpu']:
             self.num_cpus_per_task = 12
@@ -74,7 +74,7 @@ class dgemm_check(Dgemm):
         elif self.current_partition.fullname in ['ault:a64fx']:
             self.num_cpus_per_task = 48
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def set_flags(self):
         if self.current_environ.name.startswith('PrgEnv-gnu'):
             self.build_system.cflags += ['-fopenmp']
@@ -96,7 +96,7 @@ class dgemm_check(Dgemm):
             self.build_system.ldflags = ['-L$EBROOTOPENBLAS/lib', '-lopenblas',
                                          '-lpthread', '-lgfortran']
 
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_perf_patterns(self):
         '''Override base performance patterns.
 

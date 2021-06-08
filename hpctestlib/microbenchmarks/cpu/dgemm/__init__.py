@@ -38,11 +38,11 @@ class Dgemm(rfm.RegressionTest, pin_prefix=True):
     }
     maintainers = ['AJ', 'VH']
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def set_c_flags(self):
         self.build_system.cflags += ['-O3']
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_env_vars(self):
         '''Set the environment variables.'''
 
@@ -62,7 +62,7 @@ class Dgemm(rfm.RegressionTest, pin_prefix=True):
             self.stdout, 'hostname'
         ))
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity_patterns(self):
         '''Assert that all requested nodes have completed.'''
 
@@ -88,7 +88,7 @@ class Dgemm(rfm.RegressionTest, pin_prefix=True):
             self.get_node_performance(nid) for nid in self.get_nodenames()
         ])
 
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_perf_patterns(self):
         '''Set the perf patterns to check the min performance reported.'''
 

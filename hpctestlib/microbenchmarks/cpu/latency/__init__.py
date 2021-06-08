@@ -33,16 +33,16 @@ class CpuLatency(rfm.RegressionTest, pin_prefix=True):
     num_tasks_per_node = 1
     maintainers = ['SK', 'JO']
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def set_compiler_flags(self):
         self.build_system.cxxflags = ['-O3']
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_exc_opts(self):
         '''Set the ``buffer_sizes`` as the executable options.'''
         self.executable_opts = self.buffer_sizes
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity_patterns(self):
         '''Verify the number of reported latency measurements.'''
 
@@ -60,7 +60,7 @@ class CpuLatency(rfm.RegressionTest, pin_prefix=True):
             buffer_size, self.stdout, 'bw', float
         ))
 
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_references(self):
         '''Set dummy references to get the perf values in the perf report.
 
@@ -76,7 +76,7 @@ class CpuLatency(rfm.RegressionTest, pin_prefix=True):
             }
         }
 
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_perf_patterns(self):
         '''Set the performance patters to extract all latency levels.
 
