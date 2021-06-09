@@ -51,7 +51,7 @@ class NetCDFTest(rfm.RegressionTest):
         self.maintainers = ['AJ', 'SO']
         self.tags = {'production', 'craype', 'external-resources', 'health'}
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def setflags(self):
         if self.current_system.name in ['arolla', 'tsa']:
             self.modules = ['netcdf', 'netcdf-c++', 'netcdf-fortran']

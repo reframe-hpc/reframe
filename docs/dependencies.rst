@@ -211,7 +211,7 @@ In fact, you can rewrite :func:`set_executable` function as follows:
 
 .. code:: python
 
-   @rfm.run_after('setup')
+   @run_after('setup')
    def set_executable(self):
        target = self.getdep('OSUBuildTest')
        self.executable = os.path.join(

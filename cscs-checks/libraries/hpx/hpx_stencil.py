@@ -50,7 +50,7 @@ class Stencil4HPXCheck(rfm.RunOnlyRegressionTest):
         self.tags = {'production'}
         self.maintainers = ['VH', 'JG']
 
-    @rfm.run_after('setup')
+    @run_after('setup')
     def set_tasks(self):
         if self.current_partition.fullname == 'daint:gpu':
             self.num_tasks = 1
@@ -69,11 +69,11 @@ class Stencil4HPXCheck(rfm.RunOnlyRegressionTest):
             self.num_tasks_per_node = 1
             self.num_cpus_per_task = 36
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_exec_opts(self):
         self.executable_opts += ['--hpx:threads=%s' % self.num_cpus_per_task]
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity(self):
         result = sn.findall(r'(?P<tid>\d+),\s*(?P<time>(\d+)?.?\d+),'
                             r'\s*(?P<pts>\d+),\s*(?P<parts>\d+),'
@@ -137,7 +137,7 @@ class Stencil8HPXCheck(rfm.RunOnlyRegressionTest):
         self.tags = {'production'}
         self.maintainers = ['VH', 'JG']
 
-    @rfm.run_after('setup')
+    @run_after('setup')
     def set_tasks(self):
         if self.current_partition.fullname == 'daint:gpu':
             self.num_tasks = 2
@@ -158,11 +158,11 @@ class Stencil8HPXCheck(rfm.RunOnlyRegressionTest):
             self.num_cpus_per_task = 18
             self.num_tasks_per_socket = 1
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_exec_opts(self):
         self.executable_opts += ['--hpx:threads=%s' % self.num_cpus_per_task]
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity(self):
         result = sn.findall(r'(?P<lid>\d+),\s*(?P<tid>\d+),'
                             r'\s*(?P<time>(\d+)?.?\d+),'

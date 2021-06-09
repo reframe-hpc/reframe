@@ -42,7 +42,7 @@ class BuildGpuPchase(rfm.CompileOnlyRegressionTest, pin_prefix=True):
     maintainers = ['JO', 'SK']
     tags = {'benchmark'}
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def set_gpu_build(self):
         '''Set the build options [pre-compile hook].
 
@@ -66,7 +66,7 @@ class BuildGpuPchase(rfm.CompileOnlyRegressionTest, pin_prefix=True):
         else:
             raise ValueError('unknown gpu_build option')
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity(self):
         '''Assert that the executable is present.'''
 
@@ -114,7 +114,7 @@ class RunGpuPchaseBase(rfm.RunOnlyRegressionTest, pin_prefix=True):
     maintainers = ['JO', 'SK']
     tags = {'benchmark'}
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_exec_opts(self):
         '''Set the list travesal options as executable args.'''
 
@@ -124,7 +124,7 @@ class RunGpuPchaseBase(rfm.RunOnlyRegressionTest, pin_prefix=True):
             f'--num-jumps {self.num_node_jumps}'
         ]
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity(self):
         self.sanity_patterns = self.do_sanity_check()
 
@@ -153,7 +153,7 @@ class RunGpuPchase(RunGpuPchaseBase):
     from :class:`BuildGpuPchase`.
     '''
 
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_performance_patterns(self):
         self.perf_patterns = {
             'average_latency': sn.max(sn.extractall(
@@ -186,7 +186,7 @@ class RunGpuPchaseD2D(RunGpuPchaseBase):
             self.stdout, 1, int
         ))
 
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_performance_patterns(self):
         self.perf_patterns = {
             'average_latency': self.average_D2D_latency(),

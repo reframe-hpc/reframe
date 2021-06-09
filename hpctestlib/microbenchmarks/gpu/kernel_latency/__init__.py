@@ -57,7 +57,7 @@ class GpuKernelLatency(rfm.RegressionTest, pin_prefix=True):
         }
     }
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def set_cxxflags(self):
         '''Set the build options that compile the desired launch mode.'''
 
@@ -66,7 +66,7 @@ class GpuKernelLatency(rfm.RegressionTest, pin_prefix=True):
         elif self.launch_mode == 'async':
             self.build_system.cppflags += ['-D SYNCKERNEL=0']
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def set_gpu_build(self):
         '''Set the build options [pre-compile hook].
 
@@ -93,12 +93,12 @@ class GpuKernelLatency(rfm.RegressionTest, pin_prefix=True):
         else:
             raise ValueError('unknown gpu_build option')
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity_patterns(self):
         '''Set sanity function'''
         self.sanity_patterns = self.assert_count_gpus()
 
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_perf_patterns(self):
         '''Set performance patterns.'''
         self.perf_patterns = {
