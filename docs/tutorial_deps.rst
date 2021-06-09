@@ -19,18 +19,18 @@ We first create a basic run-only test, that fetches the benchmarks:
 
 
 .. literalinclude:: ../tutorials/deps/osu_benchmarks.py
-   :lines: 112-124
+   :lines: 130-
 
 This test doesn't need any specific programming environment, so we simply pick the ``builtin`` environment in the ``login`` partition.
 The build tests would then copy the benchmark code and build it for the different programming environments:
 
 .. literalinclude:: ../tutorials/deps/osu_benchmarks.py
-   :lines: 93-109
+   :lines: 103-128
 
-The only new thing that comes in with the :class:`OSUBuildTest` test is the following line:
+The only new thing that comes in with the :class:`OSUBuildTest` test is the following:
 
 .. literalinclude:: ../tutorials/deps/osu_benchmarks.py
-   :lines: 99
+   :lines: 110-112
 
 Here we tell ReFrame that this test depends on a test named :class:`OSUDownloadTest`.
 This test may or may not be defined in the same test file; all ReFrame needs is the test name.
@@ -46,7 +46,7 @@ The next step for the :class:`OSUBuildTest` is to set its :attr:`sourcesdir` to 
 This is achieved with the following specially decorated function:
 
 .. literalinclude:: ../tutorials/deps/osu_benchmarks.py
-   :lines: 104-109
+   :lines: 114-119
 
 The :func:`@require_deps <reframe.core.decorators.require_deps>` decorator binds each argument of the decorated function to the corresponding target dependency.
 In order for the binding to work correctly the function arguments must be named after the target dependencies.
@@ -62,14 +62,14 @@ For the next test we need to use the OSU benchmark binaries that we just built, 
 Here is the relevant part:
 
 .. literalinclude:: ../tutorials/deps/osu_benchmarks.py
-   :lines: 13-44
+   :lines: 13-50
 
 First, since we will have multiple similar benchmarks, we move all the common functionality to the :class:`OSUBenchmarkTestBase` base class.
 Again nothing new here; we are going to use two nodes for the benchmark and we set :attr:`sourcesdir <reframe.core.pipeline.RegressionTest.sourcesdir>` to ``None``, since none of the benchmark tests will use any additional resources.
-As done previously, we define the dependencies with the following line:
+As done previously, we define the dependencies with the following:
 
 .. literalinclude:: ../tutorials/deps/osu_benchmarks.py
-   :lines: 23
+   :lines: 22-24
 
 Here we tell ReFrame that this test depends on a test named :class:`OSUBuildTest` "by environment."
 This means that the test cases of this test will only depend on the test cases of the :class:`OSUBuildTest` that use the same environment;
@@ -87,7 +87,7 @@ The :class:`OSUAllreduceTest` shown below is similar to the other two, except th
 It is essentially a scalability test that is running the ``osu_allreduce`` executable created by the :class:`OSUBuildTest` for 2, 4, 8 and 16 nodes.
 
 .. literalinclude:: ../tutorials/deps/osu_benchmarks.py
-   :lines: 69-88
+   :lines: 76-100
 
 The full set of OSU example tests is shown below:
 

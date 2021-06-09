@@ -46,7 +46,7 @@ class GpuDirectAccCheck(rfm.RegressionTest):
         self.maintainers = ['AJ', 'MKr']
         self.tags = {'production', 'mch', 'craype'}
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def setflags(self):
         if self.current_environ.name.startswith('PrgEnv-cray'):
             self.build_system.fflags = ['-hacc', '-hnoomp']
@@ -57,7 +57,7 @@ class GpuDirectAccCheck(rfm.RegressionTest):
             elif self.current_system.name in ['arolla', 'tsa']:
                 self.build_system.fflags += ['-ta=tesla:cc70']
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def cdt2008_pgi_workaround(self):
         cdt = osext.cray_cdt_version()
         if not cdt:

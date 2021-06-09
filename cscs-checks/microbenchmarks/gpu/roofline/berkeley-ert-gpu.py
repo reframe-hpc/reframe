@@ -51,7 +51,7 @@ class RunErt_Base(rfm.RegressionTest):
         # sanity step
 
     # {{{ hooks
-    @rfm.run_before('compile')
+    @run_before('compile')
     def set_compiler_flags_and_variables(self):
         self.sourcesdir = os.path.join(
             self.current_system.resourcesdir,
@@ -99,7 +99,7 @@ class RunErt_Base(rfm.RegressionTest):
             self.prgenv_flags[self.current_environ.name]
         self.prebuild_cmds = ['module list', 'which gcc', 'which nvcc']
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_run_cmds(self):
         # Usage: ./exe gpu_blocks gpu_threads
         ert_gpu_blocks = sn.getattr(self, 'ert_gpu_blocks')
@@ -115,7 +115,7 @@ class RunErt_Base(rfm.RegressionTest):
             './Scripts/summary.py < max > sum',
         ]
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity(self):
         self.sanity_patterns = sn.all(
             [
@@ -173,7 +173,7 @@ class PlotErt_Base(rfm.RunOnlyRegressionTest):
         # }}}
 
     # {{{ hooks
-    @rfm.run_before('run')
+    @run_before('run')
     def check_gnuplot(self):
         gnuplot = which('gnuplot')
         if gnuplot is None:
@@ -291,7 +291,7 @@ class P100_PlotErt(PlotErt_Base):
         # }}}
 
     # {{{ hooks
-    @rfm.require_deps
+    @require_deps
     def prepare_logs(self, P100_RunErt):
         """
         get all the summary files from the compute jobs for postprocessing
@@ -415,7 +415,7 @@ class V100_PlotErt(PlotErt_Base):
         # }}}
 
     # {{{ hooks
-    @rfm.require_deps
+    @require_deps
     def prepare_logs(self, V100_RunErt):
         """
         get all the summary files from the compute jobs for postprocessing

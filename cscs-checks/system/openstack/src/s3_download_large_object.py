@@ -2,7 +2,6 @@
 
 import time
 import sys
-import subprocess
 import tempfile
 import tools
 

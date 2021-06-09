@@ -637,7 +637,7 @@ class TModImpl(ModulesSystemImpl):
     def _execute(self, cmd, *args):
         modulecmd = self.modulecmd(cmd, *args)
         completed = osext.run_command(modulecmd)
-        if re.search(r'ERROR', completed.stderr) is not None:
+        if re.search(r'\bERROR\b', completed.stderr) is not None:
             raise SpawnedProcessError(modulecmd,
                                       completed.stdout,
                                       completed.stderr,
@@ -769,7 +769,7 @@ class TMod31Impl(TModImpl):
     def _execute(self, cmd, *args):
         modulecmd = self.modulecmd(cmd, *args)
         completed = osext.run_command(modulecmd)
-        if re.search(r'ERROR', completed.stderr) is not None:
+        if re.search(r'\bERROR\b', completed.stderr) is not None:
             raise SpawnedProcessError(modulecmd,
                                       completed.stdout,
                                       completed.stderr,

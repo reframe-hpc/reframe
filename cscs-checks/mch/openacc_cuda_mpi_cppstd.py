@@ -44,7 +44,7 @@ class OpenaccCudaCpp(rfm.RegressionTest):
         self.maintainers = ['AJ', 'MKr']
         self.tags = {'production', 'mch', 'craype'}
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def setflags(self):
         if self.current_environ.name.startswith('PrgEnv-cray'):
             self.build_system.fflags += ['-hacc', '-hnoomp']
@@ -69,7 +69,7 @@ class OpenaccCudaCpp(rfm.RegressionTest):
                     '-L$EBROOTCUDA/lib64', '-lcublas', '-lcudart'
                 ]
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def cdt2006_pgi_workaround(self):
         cdt = osext.cray_cdt_version()
         if not cdt:
