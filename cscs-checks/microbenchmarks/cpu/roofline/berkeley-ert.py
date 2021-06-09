@@ -81,7 +81,7 @@ class RunErt_Base(rfm.RegressionTest):
         # sanity step
 
     # {{{ hooks
-    @rfm.run_before('compile')
+    @run_before('compile')
     def set_compiler_flags_and_variables(self):
         self.sourcesdir = os.path.join(
             self.current_system.resourcesdir,
@@ -134,7 +134,7 @@ class RunErt_Base(rfm.RegressionTest):
         self.build_system.cxxflags = self.prgenv_flags[envname]
         self.prebuild_cmds = ['module list', 'which gcc']
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_run_cmds(self):
         self.variables = {
             'OMP_NUM_THREADS': str(self.num_cpus_per_task),
@@ -150,7 +150,7 @@ class RunErt_Base(rfm.RegressionTest):
             for i in range(1, ert_repeat)
         ]
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_postrun_cmds(self):
         self.postrun_cmds += [
             'cat try.* | ./Scripts/preprocess.py > pre',
@@ -158,7 +158,7 @@ class RunErt_Base(rfm.RegressionTest):
             './Scripts/summary.py < max > sum',
         ]
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity(self):
         self.sanity_patterns = sn.all(
             [
@@ -216,7 +216,7 @@ class PlotErt_Base(rfm.RunOnlyRegressionTest):
         # }}}
 
     # {{{ hooks
-    @rfm.run_before('run')
+    @run_before('run')
     def check_gnuplot(self):
         gnuplot = which('gnuplot')
         if gnuplot is None:
@@ -316,7 +316,7 @@ class HWL_PlotErt(PlotErt_Base):
         # }}}
 
     # {{{ hooks
-    @rfm.require_deps
+    @require_deps
     def prepare_logs(self, HWL_RunErt):
         """
         get all the summary files from the compute jobs for postprocessing
@@ -426,7 +426,7 @@ class BWL_PlotErt(PlotErt_Base):
         # }}}
 
     # {{{ hooks
-    @rfm.require_deps
+    @require_deps
     def prepare_logs(self, HWL_RunErt):
         """
         get all the summary files from the compute jobs for postprocessing

@@ -5,8 +5,53 @@
 
 import contextlib
 import functools
+import inspect
 
 import reframe.utility as util
+
+
+def attach_to(phase):
+    '''Backend function to attach a hook to a given phase.
+
+    :meta private:
+    '''
+    def deco(func):
+        if hasattr(func, '_rfm_attach'):
+            func._rfm_attach.append(phase)
+        else:
+            func._rfm_attach = [phase]
+
+        try:
+            # no need to resolve dependencies independently; this function is
+            # already attached to a different phase
+            func._rfm_resolve_deps = False
+        except AttributeError:
+            pass
+
+        @functools.wraps(func)
+        def _fn(*args, **kwargs):
+            func(*args, **kwargs)
+
+        return _fn
+
+    return deco
+
+
+def require_deps(func):
+    '''Denote that the decorated test method will use the test dependencies.
+
+    See online docs for more information.
+    '''
+
+    tests = inspect.getfullargspec(func).args[1:]
+    func._rfm_resolve_deps = True
+
+    @functools.wraps(func)
+    def _fn(obj, *args):
+        newargs = [functools.partial(obj.getdep, t) for t in tests]
+        func(obj, *newargs)
+
+    return _fn
 
 
 def attach_hooks(hooks):
@@ -31,11 +76,11 @@ def attach_hooks(hooks):
         @functools.wraps(func)
         def _fn(obj, *args, **kwargs):
             for h in select_hooks(obj, 'pre_'):
-                h(obj)
+                getattr(obj, h.__name__)()
 
             func(obj, *args, **kwargs)
             for h in select_hooks(obj, 'post_'):
-                h(obj)
+                getattr(obj, h.__name__)()
 
         return _fn
 

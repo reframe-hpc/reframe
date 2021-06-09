@@ -46,7 +46,7 @@ class StreamMultiSysTest(rfm.RegressionTest):
         'daint:login': 10
     })
 
-    @rfm.run_after('init')
+    @run_after('init')
     def set_variables(self):
         self.array_size = (self.num_bytes >> 3) // 3
         self.ntimes = 100*1024*1024 // self.array_size
@@ -55,14 +55,14 @@ class StreamMultiSysTest(rfm.RegressionTest):
             f'ntimes: {self.ntimes})'
         )
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def set_compiler_flags(self):
         self.build_system.cppflags = [f'-DSTREAM_ARRAY_SIZE={self.array_size}',
                                       f'-DNTIMES={self.ntimes}']
         environ = self.current_environ.name
         self.build_system.cflags = self.flags.get(environ, [])
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_num_threads(self):
         num_threads = self.cores.get(self.current_partition.fullname, 1)
         self.num_cpus_per_task = num_threads
@@ -71,12 +71,12 @@ class StreamMultiSysTest(rfm.RegressionTest):
             'OMP_PLACES': 'cores'
         }
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity_patterns(self):
         self.sanity_patterns = sn.assert_found(r'Solution Validates',
                                                self.stdout)
 
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_perf_patterns(self):
         self.perf_patterns = {
             'Triad': sn.extractsingle(r'Triad:\s+(\S+)\s+.*',
