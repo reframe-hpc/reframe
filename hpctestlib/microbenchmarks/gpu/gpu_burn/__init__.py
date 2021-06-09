@@ -83,7 +83,7 @@ class GpuBurn(rfm.RegressionTest, pin_prefix=True):
             raise ValueError('unknown gpu_build option')
 
     @property
-    @sn.sanity_function
+    @deferrable
     def num_tasks_assigned(self):
         '''Total number of times the gpu burn will run.
 
@@ -95,8 +95,8 @@ class GpuBurn(rfm.RegressionTest, pin_prefix=True):
 
         return self.job.num_tasks * self.num_gpus_per_node
 
-    @run_before('sanity')
-    def set_sanity_patterns(self):
+    @sanity_function
+    def count_successful_burns(self):
         '''Set the sanity patterns to count the number of successful burns.'''
 
         return sn.assert_eq(sn.count(sn.findall(

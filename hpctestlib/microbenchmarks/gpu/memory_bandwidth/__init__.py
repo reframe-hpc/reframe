@@ -84,12 +84,8 @@ class GpuBandwidthBase(rfm.RegressionTest, pin_prefix=True):
             f'--copies {self.num_copies}',
         ]
 
-    @run_before('sanity')
-    def set_sanity_patterns(self):
-        self.sanity_patterns = self.do_sanity_check()
-
-    @sn.sanity_function
-    def do_sanity_check(self):
+    @sanity_function
+    def assert_successful_completion(self):
         '''Check that all nodes completed successfully.'''
 
         node_names = set(sn.extractall(
