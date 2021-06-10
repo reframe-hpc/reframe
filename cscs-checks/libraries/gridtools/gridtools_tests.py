@@ -9,7 +9,9 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
+@rfm.simple_test
 class GridToolsBuildCheck(rfm.CompileOnlyRegressionTest):
+    target = parameter(['cpu', 'gpu'])
     valid_prog_environs = ['builtin']
     modules = ['CMake', 'Boost']
     valid_systems = ['daint:gpu', 'dom:gpu']
@@ -19,6 +21,12 @@ class GridToolsBuildCheck(rfm.CompileOnlyRegressionTest):
     postbuild_cmds = ['ls tests/regression/']
     tags = {'scs', 'benchmark'}
     maintainers = ['CB']
+
+    @rfm.run_after('init')
+    def set_valid_systems_and_description(self):
+        if self.target == 'cpu':
+            self.valid_systems += ['daint:mc', 'dom:mc']
+        self.descr = f'GridTools {self.target} build test'
 
     @rfm.run_before('compile')
     def set_build_options(self):
@@ -32,51 +40,29 @@ class GridToolsBuildCheck(rfm.CompileOnlyRegressionTest):
             '-DGT_TESTS_REQUIRE_C_COMPILER=ON',
             '-DGT_TESTS_REQUIRE_OpenMP="ON"'
         ]
+        if self.target == 'cpu':
+            self.build_system.config_opts += [
+                '-DGT_TESTS_REQUIRE_GPU="OFF"'
+            ]
+        else:
+            self.build_system.config_opts += [
+                '-DGT_CUDA_ARCH=sm_60',
+                '-DGT_TESTS_REQUIRE_GPU="ON"'
+            ]
+
         self.build_system.flags_from_environ = False
         self.build_system.make_opts = ['perftests']
         self.build_system.max_concurrency = 8
+
+    @rfm.run_before('compile')
+    def set_env(self):
+        if self.target == 'gpu':
+            self.modules.append('cudatoolkit')
 
     @rfm.run_before('sanity')
     def set_sanity_patterns(self):
         self.sanity_patterns = sn.assert_found(r'perftest',
                                                self.stdout)
-
-
-@rfm.simple_test
-class GridToolsCPUBuildCheck(GridToolsBuildCheck):
-    descr = 'GridTools CPU build test'
-
-    @rfm.run_after('init')
-    def add_valid_systems(self):
-        self.valid_systems += ['daint:mc', 'dom:mc']
-
-    @rfm.run_before('compile')
-    def set_cpu_build_option(self):
-        self.build_system.config_opts += [
-            '-DGT_TESTS_REQUIRE_GPU="OFF"'
-        ]
-
-
-@rfm.simple_test
-class GridToolsGPUBuildCheck(GridToolsBuildCheck):
-    descr = 'GridTools GPU build test'
-
-    @rfm.run_before('compile')
-    def set_env(self):
-        if self.current_system.name == 'dom':
-            self.modules += [
-                'cudatoolkit'
-                'cdt-cuda'
-            ]
-        else:
-            self.modules.append('cudatoolkit')
-
-    @rfm.run_before('compile')
-    def set_gpu_build_options(self):
-        self.build_system.config_opts += [
-            '-DGT_CUDA_ARCH=sm_60',
-            '-DGT_TESTS_REQUIRE_GPU="ON"'
-        ]
 
 
 class GridToolsRunCheck(rfm.RunOnlyRegressionTest):
@@ -140,9 +126,9 @@ class GridToolsCPURunCheck(GridToolsRunCheck):
     maintainers = ['CB']
 
     @require_deps
-    def set_executable(self, GridToolsCPUBuildCheck):
+    def set_executable(self, GridToolsBuildCheck_cpu):
         self.executable = os.path.join(
-            GridToolsCPUBuildCheck().stagedir,
+            GridToolsBuildCheck_cpu().stagedir,
             'tests', 'regression', 'perftests'
         )
 
@@ -152,7 +138,7 @@ class GridToolsCPURunCheck(GridToolsRunCheck):
 
     @rfm.run_after('init')
     def set_dependencies(self):
-        self.depends_on('GridToolsCPUBuildCheck')
+        self.depends_on('GridToolsBuildCheck_cpu')
 
     @rfm.run_before('run')
     def set_executable_opts(self):
@@ -196,14 +182,14 @@ class GridToolsGPURunCheck(GridToolsRunCheck):
     maintainers = ['CB']
 
     @require_deps
-    def set_executable(self, GridToolsGPUBuildCheck):
+    def set_executable(self, GridToolsBuildCheck_gpu):
         self.executable = os.path.join(
-            GridToolsGPUBuildCheck().stagedir,
+            GridToolsBuildCheck_gpu().stagedir,
             'tests', 'regression', 'perftests')
 
     @rfm.run_after('init')
     def set_dependencies(self):
-        self.depends_on('GridToolsGPUBuildCheck')
+        self.depends_on('GridToolsBuildCheck_gpu')
 
     @rfm.run_before('compile')
     def modules_update(self):
