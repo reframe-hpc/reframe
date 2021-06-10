@@ -21,6 +21,7 @@ import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 import unittests.utility as test_util
 
+from lxml import etree
 from reframe.core.exceptions import (AbortTaskError,
                                      FailureLimitError,
                                      ReframeError,
@@ -133,7 +134,7 @@ def make_cases_for_skipping(request):
 
             # Attach the hook manually based on the request.param
             when, stage = request.param.split('_', maxsplit=1)
-            hook = rfm.run_before if when == 'pre' else rfm.run_after
+            hook = run_before if when == 'pre' else run_after
             check_and_skip = hook(stage)(check_and_skip)
 
         class _T1(rfm.RunOnlyRegressionTest):
@@ -176,6 +177,16 @@ def _validate_runreport(report):
         schema = json.loads(fp.read())
 
     jsonschema.validate(json.loads(report), schema)
+
+
+def _validate_junit_report(report):
+    # Cloned from
+    # https://raw.githubusercontent.com/windyroad/JUnit-Schema/master/JUnit.xsd
+    schema_file = 'reframe/schemas/junit.xsd'
+    with open(schema_file, encoding='utf-8') as fp:
+        schema = etree.XMLSchema(etree.parse(fp))
+
+    schema.assert_(report)
 
 
 def _generate_runreport(run_stats, time_start, time_end):
@@ -225,6 +236,10 @@ def test_runall(make_runner, make_cases, common_exec_ctx, tmp_path):
     report_file = tmp_path / 'report.json'
     with open(report_file, 'w') as fp:
         jsonext.dump(report, fp)
+
+    # Validate the junit report
+    xml_report = runreport.junit_xml_report(report)
+    _validate_junit_report(xml_report)
 
     # Read and validate the report using the runreport module
     runreport.load_report(report_file)
@@ -837,6 +852,28 @@ def test_restore_session(report_file, make_runner,
     new_report = _generate_runreport(runner.stats.json(), *tm.timestamps())
     assert new_report['runs'][0]['num_cases'] == 1
     assert new_report['runs'][0]['testcases'][0]['name'] == 'T1'
+
+    # Generate an empty report and load it as primary with the original report
+    # as a fallback, in order to test if the dependencies are still resolved
+    # correctly
+    empty_report = tmp_path / 'empty.json'
+
+    with open(empty_report, 'w') as fp:
+        empty_run = [
+            {
+                'num_cases': 0,
+                'num_failures': 0,
+                'num_aborted': 0,
+                'num_skipped': 0,
+                'runid': 0,
+                'testcases': []
+            }
+        ]
+        jsonext.dump(_generate_runreport(empty_run, *tm.timestamps()), fp)
+
+    report2 = runreport.load_report(empty_report, report_file)
+    restored_cases = report2.restore_dangling(testgraph)[1]
+    assert {tc.check.name for tc in restored_cases} == {'T4', 'T5'}
 
     # Remove the test case dump file and retry
     os.remove(tmp_path / 'stage' / 'generic' / 'default' /

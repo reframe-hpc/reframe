@@ -7,13 +7,20 @@
 # Meta-class for creating regression tests.
 #
 
+import functools
+import types
 
 import reframe.core.namespaces as namespaces
 import reframe.core.parameters as parameters
 import reframe.core.variables as variables
+import reframe.core.hooks as hooks
 
 from reframe.core.exceptions import ReframeSyntaxError
-from reframe.core.hooks import HookRegistry
+
+
+_USER_PIPELINE_STAGES = (
+    'init', 'setup', 'compile', 'run', 'sanity', 'performance', 'cleanup'
+)
 
 
 class RegressionTestMeta(type):
@@ -62,6 +69,7 @@ class RegressionTestMeta(type):
             set. Accessing a parameter in the class body is disallowed (the
             actual test parameter is set during the class instantiation).
             '''
+
             try:
                 return super().__getitem__(key)
             except KeyError as err:
@@ -92,6 +100,56 @@ class RegressionTestMeta(type):
                         # raise the exception from the base __getitem__.
                         raise err from None
 
+    class WrappedFunction:
+        '''Descriptor to wrap a free function as a bound-method.
+
+        The free function object is wrapped by the constructor. Instances
+        of this class should be inserted into the namespace of the target class
+        with the desired name for the bound-method. Since this class is a
+        descriptor, the `__get__` method will return the right bound-method
+        when accessed from a class instance.
+
+        :meta private:
+        '''
+
+        __slots__ = ('fn')
+
+        def __init__(self, fn, name=None):
+            @functools.wraps(fn)
+            def _fn(*args, **kwargs):
+                return fn(*args, **kwargs)
+
+            self.fn = _fn
+            if name:
+                self.fn.__name__ = name
+
+        def __get__(self, obj, objtype=None):
+            if objtype is None:
+                objtype = type(obj)
+
+            self.fn.__qualname__ = '.'.join(
+                [objtype.__qualname__, self.fn.__name__]
+            )
+            if obj is None:
+                return self.fn
+
+            return types.MethodType(self.fn, obj)
+
+        def __call__(self, *args, **kwargs):
+            return self.fn(*args, **kwargs)
+
+        def __getattr__(self, name):
+            if name in self.__slots__:
+                return super().__getattr__(name)
+            else:
+                return getattr(self.fn, name)
+
+        def __setattr__(self, name, value):
+            if name in self.__slots__:
+                super().__setattr__(name, value)
+            else:
+                setattr(self.fn, name, value)
+
     @classmethod
     def __prepare__(metacls, name, bases, **kwargs):
         namespace = super().__prepare__(name, bases, **kwargs)
@@ -116,9 +174,80 @@ class RegressionTestMeta(type):
         # Directives to add/modify a regression test variable
         namespace['variable'] = variables.TestVar
         namespace['required'] = variables.Undefined
+
+        def bind(fn, name=None):
+            '''Directive to bind a free function to a class.
+
+            See online docs for more information.
+            '''
+
+            inst = metacls.WrappedFunction(fn, name)
+            namespace[inst.__name__] = inst
+            return inst
+
+        namespace['bind'] = bind
+
+        # Hook-related functionality
+        def run_before(stage):
+            '''Decorator for attaching a test method to a pipeline stage.
+
+            See online docs for more information.
+            '''
+
+            if stage not in _USER_PIPELINE_STAGES:
+                raise ValueError(
+                    f'invalid pipeline stage specified: {stage!r}'
+                )
+
+            if stage == 'init':
+                raise ValueError('pre-init hooks are not allowed')
+
+            return hooks.attach_to('pre_' + stage)
+
+        namespace['run_before'] = run_before
+
+        def run_after(stage):
+            '''Decorator for attaching a test method to a pipeline stage.
+
+            See online docs for more information.
+            '''
+
+            if stage not in _USER_PIPELINE_STAGES:
+                raise ValueError(
+                    f'invalid pipeline stage specified: {stage!r}'
+                )
+
+            # Map user stage names to the actual pipeline functions if needed
+            if stage == 'init':
+                stage = '__init__'
+            elif stage == 'compile':
+                stage = 'compile_wait'
+            elif stage == 'run':
+                stage = 'run_wait'
+
+            return hooks.attach_to('post_' + stage)
+
+        namespace['run_after'] = run_after
+        namespace['require_deps'] = hooks.require_deps
         return metacls.MetaNamespace(namespace)
 
     def __new__(metacls, name, bases, namespace, **kwargs):
+        '''Remove directives from the class namespace.
+
+        It does not make sense to have some directives available after the
+        class was created or even at the instance level (e.g. doing
+        ``self.parameter([1, 2, 3])`` does not make sense). So here, we
+        intercept those directives out of the namespace before the class is
+        constructed.
+        '''
+
+        blacklist = [
+            'parameter', 'variable', 'bind', 'run_before', 'run_after',
+            'require_deps'
+        ]
+        for b in blacklist:
+            namespace.pop(b, None)
+
         return super().__new__(metacls, name, bases, dict(namespace), **kwargs)
 
     def __init__(cls, name, bases, namespace, **kwargs):
@@ -145,12 +274,12 @@ class RegressionTestMeta(type):
         # Set up the hooks for the pipeline stages based on the _rfm_attach
         # attribute; all dependencies will be resolved first in the post-setup
         # phase if not assigned elsewhere
-        hooks = HookRegistry.create(namespace)
+        hook_reg = hooks.HookRegistry.create(namespace)
         for b in bases:
             if hasattr(b, '_rfm_pipeline_hooks'):
-                hooks.update(getattr(b, '_rfm_pipeline_hooks'))
+                hook_reg.update(getattr(b, '_rfm_pipeline_hooks'))
 
-        cls._rfm_pipeline_hooks = hooks  # HookRegistry(local_hooks)
+        cls._rfm_pipeline_hooks = hook_reg
         cls._final_methods = {v.__name__ for v in namespace.values()
                               if hasattr(v, '_rfm_final')}
 
@@ -186,6 +315,7 @@ class RegressionTestMeta(type):
         these would otherwise affect the __init__ method's signature, and these
         internal mechanisms must be fully transparent to the user.
         '''
+
         obj = cls.__new__(cls, *args, **kwargs)
 
         # Intercept constructor arguments
@@ -195,15 +325,17 @@ class RegressionTestMeta(type):
         return obj
 
     def __getattr__(cls, name):
-        ''' Attribute lookup method for the MetaNamespace.
+        '''Attribute lookup method for the MetaNamespace.
 
-        This metaclass implements a custom namespace, where built-in `variable`
-        and `parameter` types are stored in their own sub-namespaces (see
-        :class:`reframe.core.meta.RegressionTestMeta.MetaNamespace`).
-        This method will perform an attribute lookup on these sub-namespaces if
-        a call to the default `__getattribute__` method fails to retrieve the
-        requested class attribute.
+        This metaclass uses a custom namespace, where ``variable`` built-in
+        and ``parameter`` types are stored in their own sub-namespaces (see
+        :class:`reframe.core.meta.RegressionTestMeta.MetaNamespace`). This
+        method will perform an attribute lookup on these sub-namespaces if a
+        call to the default :func:`__getattribute__` method fails to retrieve
+        the requested class attribute.
+
         '''
+
         try:
             return cls._rfm_var_space.vars[name]
         except KeyError:
@@ -214,9 +346,52 @@ class RegressionTestMeta(type):
                     f'class {cls.__qualname__!r} has no attribute {name!r}'
                 ) from None
 
+    def __setattr__(cls, name, value):
+        '''Handle the special treatment required for variables and parameters.
+
+        A variable's default value can be updated when accessed as a regular
+        class attribute. This behaviour does not apply when the assigned value
+        is a descriptor object. In that case, the task of setting the value is
+        delegated to the base :func:`__setattr__` (this is to comply with
+        standard Python behaviour). However, since the variables are already
+        descriptors which are injected during class instantiation, we disallow
+        any attempt to override this descriptor (since it would be silently
+        re-overriden in any case).
+
+        Altering the value of a parameter when accessed as a class attribute
+        is not allowed. This would break the parameter space internals.
+        '''
+
+        # Set the value of a variable (except when the value is a descriptor).
+        try:
+            var_space = super().__getattribute__('_rfm_var_space')
+            if name in var_space:
+                if not hasattr(value, '__get__'):
+                    var_space[name].define(value)
+                    return
+                elif not var_space[name].field is value:
+                    desc = '.'.join([cls.__qualname__, name])
+                    raise ValueError(
+                        f'cannot override variable descriptor {desc!r}'
+                    )
+
+        except AttributeError:
+            pass
+
+        # Catch attempts to override a test parameter
+        try:
+            param_space = super().__getattribute__('_rfm_param_space')
+            if name in param_space.params:
+                raise ValueError(f'cannot override parameter {name!r}')
+
+        except AttributeError:
+            pass
+
+        super().__setattr__(name, value)
+
     @property
     def param_space(cls):
-        # Make the parameter space available as read-only
+        ''' Make the parameter space available as read-only.'''
         return cls._rfm_param_space
 
     def is_abstract(cls):

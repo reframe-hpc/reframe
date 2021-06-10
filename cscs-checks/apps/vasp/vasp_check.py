@@ -9,7 +9,7 @@ import reframe.utility.sanity as sn
 
 class VASPCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        if self.current_system.name == 'pilatus':
+        if self.current_system.name in ['eiger', 'pilatus']:
             self.valid_prog_environs = ['cpeIntel']
         else:
             self.valid_prog_environs = ['builtin']
@@ -82,11 +82,11 @@ class VASPCpuCheck(VASPCheck):
         self.reference = references[variant]
         self.tags |= {'maintenance' if variant == 'maint' else 'production'}
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_task_distribution(self):
         self.job.options = ['--distribution=block:block']
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_cpu_binding(self):
         self.job.launcher.options = ['--cpu-bind=cores']
 
