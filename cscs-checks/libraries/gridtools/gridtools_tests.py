@@ -27,7 +27,7 @@ class GridToolsBuildCheck(rfm.CompileOnlyRegressionTest):
         if self.target == 'cpu':
             self.valid_systems += ['daint:mc', 'dom:mc']
         self.descr = f'GridTools {self.target} build test'
-            
+
     @rfm.run_before('compile')
     def set_build_options(self):
         self.build_system.config_opts = [
