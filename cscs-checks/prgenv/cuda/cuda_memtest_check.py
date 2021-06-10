@@ -36,7 +36,7 @@ class CudaMemtest(rfm.RegressionTest):
     def num_tasks_assigned(self):
         return self.job.num_tasks
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity_patterns(self):
         valid_test_ids = {i for i in range(11) if i not in {6, 9}}
         assert_finished_tests = [

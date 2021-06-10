@@ -36,11 +36,11 @@ class NvmlCheck(rfm.RegressionTest):
     maintainers = ['AJ', 'SK']
     tags = {'production', 'craype', 'external-resources', 'health'}
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def set_build_flags(self):
         self.build_system.ldflags = ['-lnvidia-ml']
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity_patterns(self):
         if self.current_system.name in {'dom', 'daint'}:
             regex = (r"\s+Changing device.s compute mode from "
