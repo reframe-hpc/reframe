@@ -205,7 +205,7 @@ class TestStats:
         run_report = self.json()[-1]
         last_run = run_report['runid']
         for r in run_report['testcases']:
-            if r['result'] == 'success' or r['result'] == 'aborted':
+            if r['result'] == 'success' or r['result'] == 'aborted' or r['result'] == 'skipped':
                 continue
 
             retry_info = (
