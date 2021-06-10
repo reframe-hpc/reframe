@@ -26,11 +26,11 @@ class nvidia_smi_check(rfm.RunOnlyRegressionTest):
         'ecc': 'Enabled'
     })
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_display_opt(self):
         self.executable_opts.append(self.gpu_mode.upper())
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity(self):
         modeval = self.mode_values[self.gpu_mode]
         if self.gpu_mode == 'ecc':

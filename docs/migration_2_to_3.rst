@@ -98,7 +98,7 @@ Rewriting this using pipeline hooks is quite straightforward and leads to nicer 
 
 .. code:: python
 
-   @rfm.run_before('compile')
+   @run_before('compile')
    def setflags(self):
        if self.current_environ.name == 'gnu':
            self.build_system.cflags = ['-fopenmp']
@@ -106,7 +106,7 @@ Rewriting this using pipeline hooks is quite straightforward and leads to nicer 
            self.build_system.cflags = ['-qopenmp']
 
 
-You could equally attach this function to run after the "setup" phase with ``@rfm.run_after('setup')``, as in the original example, but attaching it to the "compile" phase makes more sense.
+You could equally attach this function to run after the "setup" phase with ``@run_after('setup')``, as in the original example, but attaching it to the "compile" phase makes more sense.
 However, you can't attach this function *before* the "setup" phase, because the ``current_environ`` will not be available and it will be still ``None``.
 
 .. warning::
@@ -147,7 +147,7 @@ Prior to ReFrame 3, this was written as follows:
 	 class MyTest(rfm.RegressionTest):
 	     ...
 
-	     @rfm.run_before('run')
+	     @run_before('run')
 	     def setlauncher(self):
 	         self.job.launcher = getlauncher('local')()
 

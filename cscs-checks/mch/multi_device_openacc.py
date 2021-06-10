@@ -33,7 +33,7 @@ class MultiDeviceOpenaccTest(rfm.RegressionTest):
         self.maintainers = ['LM', 'AJ']
         self.tags = {'production', 'mch'}
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def setflags(self):
         if self.current_environ.name.startswith('PrgEnv-pgi'):
             self.build_system.fflags += ['-acc']

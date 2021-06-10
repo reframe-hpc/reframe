@@ -63,7 +63,7 @@ class HostnameCheck(SlurmSimpleBaseCheck):
             'pilatus:mc': r'^nid\d{6}$'
         }
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity_patterns(self):
         partname = self.current_partition.fullname
         num_matches = sn.count(
@@ -114,7 +114,7 @@ class RequestLargeMemoryNodeCheck(SlurmSimpleBaseCheck):
                                         self.stdout, 'mem', float)
         self.sanity_patterns = sn.assert_bounded(mem_obtained, 122.0, 128.0)
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_memory_limit(self):
         self.job.options = ['--mem=120000']
 
@@ -171,7 +171,7 @@ class ConstraintRequestCabinetGrouping(SlurmSimpleBaseCheck):
         cabinet = self.cabinets.get(self.current_system.name, r'$^')
         self.sanity_patterns = sn.assert_found(fr'{cabinet}.*', self.stdout)
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_slurm_constraint(self):
         cabinet = self.cabinets.get(self.current_partition.fullname)
         if cabinet:
@@ -191,7 +191,7 @@ class MemoryOverconsumptionCheck(SlurmCompiledBaseCheck):
             r'(exceeded memory limit)|(Out Of Memory)', self.stderr
         )
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_memory_limit(self):
         self.job.options = ['--mem=2000']
 
@@ -230,7 +230,7 @@ class MemoryOverconsumptionMpiCheck(SlurmCompiledBaseCheck):
         # }}}
 
     # {{{ hooks
-    @rfm.run_before('run')
+    @run_before('run')
     def set_tasks(self):
         tasks_per_node = {
             'dom:mc': 36,
@@ -281,11 +281,11 @@ class slurm_response_check(rfm.RunOnlyRegressionTest):
     tags = {'diagnostic', 'health'}
     maintainers = ['CB', 'VH']
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_exec_opts(self):
         self.executable_opts = [self.command]
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity(self):
         self.sanity_patterns = sn.assert_eq(self.job.exitcode, 0)
         self.perf_patterns = {

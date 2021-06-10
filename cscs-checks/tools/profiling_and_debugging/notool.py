@@ -83,7 +83,7 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         elif self.lang == 'F90':
             self.reference_lang = (0.17, -0.6, None, 's')
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def set_flags(self):
         envname = self.current_environ.name
         # if generic, falls back to -g:
@@ -93,17 +93,17 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         self.build_system.fflags = prgenv_flags
         self.build_system.ldflags = ['-lm']
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def set_cuda_cdt(self):
         if self.current_partition.name == 'gpu':
             self.modules += ['cdt-cuda']
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def alps_fix_aocc(self):
         if self.current_partition.fullname in ['eiger:mc', 'pilatus:mc']:
             self.prebuild_cmds += ['module rm cray-libsci']
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity(self):
         envname = self.current_environ.name
         # CCE specific:
@@ -134,7 +134,7 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
             ]
         )
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_reference(self):
         if self.current_system.name in {'dom', 'daint'}:
             self.reference['*:elapsed_time'] = self.reference_lang

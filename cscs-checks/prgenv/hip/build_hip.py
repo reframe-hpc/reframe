@@ -27,7 +27,7 @@ class BuildHip(rfm.RegressionTest):
     maintainers = ['JO']
     tags = {'production'}
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def set_compile_options(self):
         self.hip_full_path = os.path.abspath(
             os.path.join(self.stagedir, self.hip_path)
@@ -38,7 +38,7 @@ class BuildHip(rfm.RegressionTest):
             f'-DHIP_PLATFORM={self.hip_platform}',
         ]
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity_patterns(self):
         self.sanity_patterns = sn.assert_found(r'nvcc:\s+NVIDIA', self.stdout)
 
@@ -62,19 +62,19 @@ class HelloHip(rfm.RegressionTest):
     maintainers = ['JO']
     tags = {'production'}
 
-    @rfm.run_after('init')
+    @run_after('init')
     def set_deps(self):
         self.depends_on('BuildHip')
 
-    @rfm.require_deps
+    @require_deps
     def get_hip_path(self, BuildHip):
         self.hip_path = BuildHip().hip_full_path
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def set_env(self):
         self.variables = {'HIP_PATH': f'{self.hip_path}'}
         self.build_system.cxx = os.path.join(self.hip_path, 'bin', 'hipcc')
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity(self):
         self.sanity_patterns = sn.assert_found(r'HelloWorld', self.stdout)

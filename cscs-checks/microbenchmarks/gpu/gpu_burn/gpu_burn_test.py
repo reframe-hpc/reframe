@@ -54,15 +54,15 @@ class gpu_burn_check(GpuBurn):
     tags = {'diagnostic', 'benchmark', 'craype'}
 
     # Inject external hooks
-    @rfm.run_after('setup')
+    @run_after('setup')
     def set_gpu_arch(self):
         hooks.set_gpu_arch(self)
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_num_gpus_per_node(self):
         hooks.set_num_gpus_per_node(self)
 
-    @rfm.run_before('performance')
+    @run_before('performance')
     def report_nid_with_smallest_flops(self):
         regex = r'\[(\S+)\] GPU\s+\d\(OK\): (\d+) GF/s'
         rptf = os.path.join(self.stagedir, sn.evaluate(self.stdout))
