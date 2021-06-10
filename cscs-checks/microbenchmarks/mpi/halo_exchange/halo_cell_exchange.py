@@ -136,7 +136,7 @@ class HaloCellExchangeTest(rfm.RegressionTest):
         self.maintainers = ['AJ']
         self.tags = {'benchmark'}
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def pgi_workaround(self):
         if self.current_system.name in ['daint', 'dom']:
             if self.current_environ.name == 'PrgEnv-pgi':
