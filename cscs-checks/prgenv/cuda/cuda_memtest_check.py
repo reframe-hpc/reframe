@@ -8,7 +8,7 @@ import reframe.utility.sanity as sn
 
 
 @rfm.simple_test
-class CudaMemtest(rfm.RegressionTest):
+class cuda_memtest_check(rfm.RegressionTest):
     valid_systems = ['daint:gpu', 'dom:gpu', 'ault:amdv100',
                      'ault:intelv100']
     valid_prog_environs = ['PrgEnv-cray']
@@ -31,18 +31,14 @@ class CudaMemtest(rfm.RegressionTest):
     executable_opts = ['--disable_test', '6', '--num_passes', '1']
     tags = {'diagnostic', 'ops', 'craype', 'health'}
 
-    @property
-    @sn.sanity_function
-    def num_tasks_assigned(self):
-        return self.job.num_tasks
-
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity_patterns(self):
         valid_test_ids = {i for i in range(11) if i not in {6, 9}}
         assert_finished_tests = [
             sn.assert_eq(
                 sn.count(sn.findall('Test%s finished' % test_id, self.stdout)),
-                self.num_tasks_assigned)
+                self.job.num_tasks
+            )
             for test_id in valid_test_ids
         ]
         self.sanity_patterns = sn.all([

@@ -19,7 +19,7 @@ class CudaStressTest(rfm.RegressionTest):
     tags = {'production', 'mch', 'craype', 'health'}
     maintainers = ['MKr', 'AJ']
 
-    @rfm.run_after('init')
+    @run_after('init')
     def set_environment(self):
         if self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
@@ -30,11 +30,11 @@ class CudaStressTest(rfm.RegressionTest):
             self.valid_prog_environs = ['PrgEnv-gnu']
             self.modules = ['craype-accel-nvidia60', 'cdt-cuda']
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def set_compile_flags(self):
         self.build_system.cxxflags = ['-std=c++11']
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity_and_perf(self):
         self.sanity_patterns = sn.assert_found(r'Result: OK', self.stdout)
         self.perf_patterns = {

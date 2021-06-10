@@ -45,10 +45,10 @@ class gpu_shmem_check(GpuShmem):
     tags = {'benchmark', 'diagnostic', 'craype', 'health'}
 
     # Inject external hooks
-    @rfm.run_after('setup')
+    @run_after('setup')
     def set_gpu_arch(self):
         hooks.set_gpu_arch(self)
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_num_gpus_per_node(self):
         hooks.set_num_gpus_per_node(self)

@@ -15,7 +15,7 @@ class MultiLaunchTest(rfm.RunOnlyRegressionTest):
     num_tasks = 4
     num_tasks_per_node = 1
 
-    @rfm.run_before('run')
+    @run_before('run')
     def pre_launch(self):
         cmd = self.job.launcher.run_command(self.job)
         self.prerun_cmds = [
@@ -23,7 +23,7 @@ class MultiLaunchTest(rfm.RunOnlyRegressionTest):
             for n in range(1, self.num_tasks)
         ]
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity_patterns(self):
         self.sanity_patterns = sn.assert_eq(
             sn.count(sn.extractall(r'^nid\d+', self.stdout)), 10

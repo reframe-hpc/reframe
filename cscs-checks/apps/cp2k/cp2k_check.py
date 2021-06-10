@@ -123,11 +123,11 @@ class Cp2kCpuCheck(Cp2kCheck):
         self.reference = references[variant][scale]
         self.tags |= {'maintenance' if variant == 'maint' else 'production'}
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_task_distribution(self):
         self.job.options = ['--distribution=block:block']
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_cpu_binding(self):
         self.job.launcher.options = ['--cpu-bind=cores']
 

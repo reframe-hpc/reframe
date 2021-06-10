@@ -23,7 +23,7 @@ class HelloWorldHPXCheck(rfm.RunOnlyRegressionTest):
         self.tags = {'production'}
         self.maintainers = ['VH', 'JG']
 
-    @rfm.run_after('setup')
+    @run_after('setup')
     def set_tasks(self):
         if self.current_partition.fullname == 'daint:gpu':
             self.num_tasks = 2
@@ -42,11 +42,11 @@ class HelloWorldHPXCheck(rfm.RunOnlyRegressionTest):
             self.num_tasks_per_node = 1
             self.num_cpus_per_task = 36
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_exec_opts(self):
         self.executable_opts = ['--hpx:threads=%s' % self.num_cpus_per_task]
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity(self):
         hellos = sn.findall(r'hello world from OS-thread \s*(?P<tid>\d+) on '
                             r'locality (?P<lid>\d+)', self.stdout)
