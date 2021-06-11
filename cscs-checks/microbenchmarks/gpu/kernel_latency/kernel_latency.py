@@ -59,7 +59,7 @@ class gpu_kernel_latency_check(GpuKernelLatency):
         },
     })
     maintainers = ['TM', 'JO']
-    tags = {'benchmark', 'diagnostic', 'craype'}
+    tags = {'benchmark', 'diagnostic', 'craype', 'health'}
 
     @run_after('init')
     def set_valid_prog_environs(self):
