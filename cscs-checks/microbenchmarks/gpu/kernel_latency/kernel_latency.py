@@ -59,9 +59,9 @@ class gpu_kernel_latency_check(GpuKernelLatency):
         },
     })
     maintainers = ['TM', 'JO']
-    tags = {'benchmark', 'diagnostic', 'craype'}
+    tags = {'benchmark', 'diagnostic', 'craype', 'health'}
 
-    @rfm.run_after('init')
+    @run_after('init')
     def set_valid_prog_environs(self):
         cs = self.current_system.name
         if cs in {'dom', 'daint'}:
@@ -73,15 +73,15 @@ class gpu_kernel_latency_check(GpuKernelLatency):
             self.valid_prog_environs = ['PrgEnv-gnu']
 
     # Inject external hooks
-    @rfm.run_after('setup')
+    @run_after('setup')
     def set_gpu_arch(self):
         hooks.set_gpu_arch(self)
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_num_gpus_per_node(self):
         hooks.set_num_gpus_per_node(self)
 
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_references(self):
         '''Set the refences based on the ``launch_mode`` parameter.'''
         self.reference = self.sys_reference[self.launch_mode]

@@ -26,7 +26,7 @@ class ParaViewCheck(rfm.RunOnlyRegressionTest):
         self.maintainers = ['JF', 'TM']
         self.tags = {'scs', 'production'}
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity(self):
         if self.current_partition.name == 'mc':
             self.sanity_patterns = sn.all([

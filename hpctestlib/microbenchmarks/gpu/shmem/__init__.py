@@ -50,7 +50,7 @@ class GpuShmem(rfm.RegressionTest, pin_prefix=True):
         },
     }
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def set_gpu_build(self):
         '''Set the build options [pre-compile hook].
 
@@ -74,12 +74,12 @@ class GpuShmem(rfm.RegressionTest, pin_prefix=True):
         else:
             raise ValueError('unknown gpu_build option')
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity_patterns(self):
         '''Set the ``sanity_patterns`` variable.'''
         self.sanity_patterns = self.assert_count_gpus()
 
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_perf_patterns(self):
         '''Extract the bandwidth data from the stdout.'''
 

@@ -8,8 +8,8 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-class HPCGHookMixin:
-    @rfm.run_before('run')
+class HPCGHookMixin(rfm.RegressionMixin):
+    @run_before('run')
     def guide_node_guess(self):
         '''Guide the node guess based on the test's needs.'''
 
@@ -94,13 +94,13 @@ class HPCGCheckRef(rfm.RegressionTest, HPCGHookMixin):
     def num_tasks_assigned(self):
         return self.job.num_tasks
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def set_tasks(self):
         self.num_tasks_per_node = self.system_num_tasks.get(
             self.current_partition.fullname, 1
         )
 
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_performance(self):
         num_nodes = self.num_tasks_assigned / self.num_tasks_per_node
         self.perf_patterns = {
@@ -110,7 +110,7 @@ class HPCGCheckRef(rfm.RegressionTest, HPCGHookMixin):
                 self.output_file, 'perf',  float) / num_nodes
         }
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity(self):
         self.sanity_patterns = sn.all([
             sn.assert_eq(4, sn.count(
@@ -176,7 +176,7 @@ class HPCGCheckMKL(rfm.RegressionTest, HPCGHookMixin):
                    f'{self.num_cpus_per_task}t*.*')
         return sn.getitem(sn.glob(pattern), 0)
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def set_tasks(self):
         if self.current_partition.fullname in ['daint:gpu', 'dom:gpu']:
             self.num_tasks_per_node = 2
@@ -185,7 +185,7 @@ class HPCGCheckMKL(rfm.RegressionTest, HPCGHookMixin):
             self.num_tasks_per_node = 4
             self.num_cpus_per_task = 18
 
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_performance(self):
         # since this is a flexible test, we divide the extracted
         # performance by the number of nodes and compare
@@ -198,7 +198,7 @@ class HPCGCheckMKL(rfm.RegressionTest, HPCGHookMixin):
                 self.outfile_lazy, 'perf',  float) / num_nodes
         }
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity(self):
         self.sanity_patterns = sn.all([
             sn.assert_not_found(

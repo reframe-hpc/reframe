@@ -31,7 +31,7 @@ class HaswellFmaCheck(rfm.CompileOnlyRegressionTest):
         self.maintainers = ['AJ', 'CB']
         self.tags = {'production', 'craype'}
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def setflags(self):
         if self.current_environ.name == 'PrgEnv-cray':
             self.build_system.cflags = ['-Ofast', '-S']

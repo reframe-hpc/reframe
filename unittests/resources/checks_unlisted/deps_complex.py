@@ -49,7 +49,7 @@ class BaseTest(rfm.RunOnlyRegressionTest):
     def count(self):
         return self._count
 
-    @rfm.run_before('run')
+    @run_before('run')
     def write_count(self):
         self.executable_opts = [str(self.count), '> out.txt']
 
@@ -70,7 +70,7 @@ class T1(BaseTest):
         self.depends_on('T5')
         self.sanity_patterns = sn.assert_eq(self.count, 14)
 
-    @rfm.require_deps
+    @require_deps
     def prepend_output(self, T4, T5):
         with open(os.path.join(T4().stagedir, 'out.txt')) as fp:
             self._count += int(fp.read())
@@ -88,7 +88,7 @@ class T2(BaseTest):
         # Make this test fail on purpose: expected value is 31 normally
         self.sanity_patterns = sn.assert_eq(self.count, 30)
 
-    @rfm.require_deps
+    @require_deps
     def prepend_output(self, T6):
         with open(os.path.join(T6().stagedir, 'out.txt')) as fp:
             self._count += int(fp.read())
@@ -108,7 +108,7 @@ class T4(BaseTest):
         self.depends_on('T0')
         self.sanity_patterns = sn.assert_eq(self.count, 4)
 
-    @rfm.require_deps
+    @require_deps
     def prepend_output(self, T0):
         with open(os.path.join(T0().stagedir, 'out.txt')) as fp:
             self._count += int(fp.read())
@@ -121,7 +121,7 @@ class T5(BaseTest):
         self.depends_on('T4')
         self.sanity_patterns = sn.assert_eq(self.count, 9)
 
-    @rfm.require_deps
+    @require_deps
     def prepend_output(self, T4):
         with open(os.path.join(T4().stagedir, 'out.txt')) as fp:
             self._count += int(fp.read())
@@ -135,7 +135,7 @@ class T6(BaseTest):
         self.depends_on('T5')
         self.sanity_patterns = sn.assert_eq(self.count, 29)
 
-    @rfm.require_deps
+    @require_deps
     def prepend_output(self, T1, T5):
         with open(os.path.join(T1().stagedir, 'out.txt')) as fp:
             self._count += int(fp.read())
@@ -151,7 +151,7 @@ class T7(BaseTest):
         self.depends_on('T2')
         self.sanity_patterns = sn.assert_eq(self.count, 38)
 
-    @rfm.require_deps
+    @require_deps
     def prepend_output(self, T2):
         with open(os.path.join(T2().stagedir, 'out.txt')) as fp:
             self._count += int(fp.read())
@@ -164,12 +164,12 @@ class T8(BaseTest):
         self.depends_on('T1')
         self.sanity_patterns = sn.assert_eq(self.count, 22)
 
-    @rfm.require_deps
+    @require_deps
     def prepend_output(self, T1):
         with open(os.path.join(T1().stagedir, 'out.txt')) as fp:
             self._count += int(fp.read())
 
-    @rfm.run_after('setup')
+    @run_after('setup')
     def fail(self):
         # Make this test fail on purpose
         raise Exception
@@ -185,7 +185,7 @@ class T9(BaseTest):
         self.depends_on('T8')
         self.sanity_patterns = sn.assert_eq(self.count, 31)
 
-    @rfm.require_deps
+    @require_deps
     def prepend_output(self, T8):
         with open(os.path.join(T8().stagedir, 'out.txt')) as fp:
             self._count += int(fp.read())

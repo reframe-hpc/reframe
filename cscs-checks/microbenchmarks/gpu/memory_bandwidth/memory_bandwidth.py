@@ -10,17 +10,17 @@ from hpctestlib.microbenchmarks.gpu.memory_bandwidth import *
 
 
 class SystemConfigCSCS(rfm.RegressionMixin):
-    @rfm.run_after('init')
+    @run_after('init')
     def arola_tsa_valid_prog_environs(self):
         if self.current_system.name in ['arolla', 'tsa']:
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
 
     # Inject external hooks
-    @rfm.run_after('setup')
+    @run_after('setup')
     def set_gpu_arch(self):
         hooks.set_gpu_arch(self)
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_num_gpus_per_node(self):
         hooks.set_num_gpus_per_node(self)
 
@@ -85,7 +85,7 @@ class gpu_bandwidth_d2d_check(GpuBandwidthD2D, SystemConfigCSCS):
     tags = {'diagnostic', 'mch', 'craype', 'benchmark'}
     maintainers = ['AJ', 'SK']
 
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_references(self):
         '''The references depend on the parameter p2p.'''
 
