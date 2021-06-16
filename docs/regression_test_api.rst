@@ -266,23 +266,21 @@ Built-in functions
 
   Shorthand for assigning a member function as the sanity function of the test.
 
-  This decorator will convert the decorated method into a :func:`~RegressionMixin.deferrable` and mark it to be executed during the test's sanity stage.
-  This syntax removes the need of setting the variable :attr:`~RegressionTest.sanity_patterns` in the test.
-  In fact, when this decorator is used, manually setting :attr:`~RegressionTest.sanity_patterns` in the test is not allowed.
+  This decorator will also decorate the decorated method into a :func:`~RegressionMixin.deferrable` and mark it to be executed during the test's sanity stage.
+  When this decorator is used, manually assigning a value to :attr:`~RegressionTest.sanity_patterns` in the test is not allowed.
 
   Decorated functions may be overridden by derived classes, and derived classes may also decorate a different method as the test's sanity function.
   Decorating multiple member functions in the same class is not allowed.
   However, a :class:`RegressionTest` may inherit from multiple :class:`RegressionMixin` classes with their own sanity functions.
   In this case, the derived class will follow Python's `MRO <https://docs.python.org/3/library/stdtypes.html#class.__mro__>`_ to find a suitable sanity function.
 
-  .. warning:: Not to be mistaken with :func:`reframe.utility.sanity.sanity_function`.
   .. versionadded:: 3.7.0
 
 .. py:decorator:: RegressionMixin.deferrable(func)
 
-  Converts the decorated method into a deferrable expression (see :ref:`deferrable-functions`).
+  Converts the decorated method into a deferrable function.
 
-  This decorator is equivalent to :func:`reframe.utility.sanity.sanity_function`.
+  See :ref:`deferrable-functions` for further information on deferrable functions.
 
   .. versionadded:: 3.7.0
 
