@@ -289,7 +289,8 @@ class TestStats:
                 failed_name = failed_list[0][1:]
                 failed_env = failed_list[1].strip()
                 failed_system = failed_list[2][:-1].strip()
-                stats_body.append(f' -n {failed_name} -p {failed_env} --system {failed_system} -r')                
+                stats_body.append(f' -n {failed_name} -p {failed_env}'
+                                  f' --system {failed_system} -r')
 
         if stats_body:
             for line in (stats_start, stats_title, *stats_body, stats_end):
