@@ -264,9 +264,9 @@ Built-in functions
 
 .. py:decorator:: RegressionMixin.sanity_function(func)
 
-  Shorthand for assigning a member function as the sanity function of the test.
+  Decorate a member function as the sanity function of the test.
 
-  This decorator will also decorate the decorated method into a :func:`~RegressionMixin.deferrable` and mark it to be executed during the test's sanity stage.
+  This decorator will convert the decorated method into a :func:`~RegressionMixin.deferrable` and mark it to be executed during the test's sanity stage.
   When this decorator is used, manually assigning a value to :attr:`~RegressionTest.sanity_patterns` in the test is not allowed.
 
   Decorated functions may be overridden by derived classes, and derived classes may also decorate a different method as the test's sanity function.

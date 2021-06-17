@@ -2,15 +2,16 @@
 Understanding the Mechanism of Deferrable Functions
 ===================================================
 
-This section describes the mechanism behind the deferrable functions which are used for the sanity and performance checking.
-Generally, writing a new sanity function is as straightforward as decorating a simple Python function with the :func:`~reframe.core.pipeline.RegressionMixin.sanity_function` decorator.
-However, it is important to understand how and when a deferrable function is evaluated, especially if your function takes as arguments the results of other deferrable functions.
+This section describes the mechanism behind deferrable functions, which in ReFrame, they are mostly used for sanity and performance checking.
+Generally, writing a new sanity function in a :class:`~reframe.core.pipeline.RegressionTest` is as straightforward as decorating a simple member function with the built-in :func:`~reframe.core.pipeline.RegressionMixin.sanity_function` decorator.
+Behind the scenes, this decorator will convert the Python function into a deferrable function and schedule its evaluation for the sanity stage of the test.
+However, when dealing with more complex scenarios such as a deferrable function taking as an argument the results from other deferrable functions, it is crucial to understand how a deferrable function differs from a regular Python function, and when is it actually evaluated.
 
 What Is a Deferrable Function?
 ------------------------------
 
 A deferrable function is a function whose a evaluation is deferred to a later point in time.
-You can define any function as deferrable by wrapping it with the :func:`~reframe.core.pipeline.RegressionMixin.deferrable` when decorating a member function of a class derived from :class:`~reframe.core.pipeline.RegressionMixin`. Alternatively, the :func:`reframe.utility.sanity.deferrable` decorator can be used for any other function.
+You can define any function as deferrable by wrapping it with the :func:`~reframe.core.pipeline.RegressionMixin.deferrable` when decorating a member function of a class derived from :class:`~reframe.core.pipeline.RegressionMixin`, or alternatively, the :func:`reframe.utility.sanity.deferrable` decorator can be used for any other function.
 The example below demonstrates a simple scenario:
 
 .. code-block:: python
