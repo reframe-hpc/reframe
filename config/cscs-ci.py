@@ -144,6 +144,77 @@ site_configuration = {
             ]
         },
         {
+            'name': 'eiger',
+            'descr': 'Alps Cray EX Supercomputer',
+            'hostnames': [
+                'eiger'
+            ],
+            'modules_system': 'lmod',
+            'resourcesdir': '/apps/common/UES/reframe/resources',
+            'partitions': [
+                {
+                    'name': 'mc',
+                    'descr': 'Multicore nodes (AMD EPYC 7742, 256|512GB/cn)',
+                    'scheduler': 'slurm',
+                    'environs': [
+                        'builtin',
+                    ],
+                    'max_jobs': 100,
+                    'resources': [
+                        {
+                            'name': 'switches',
+                            'options': [
+                                '--switches={num_switches}'
+                            ]
+                        },
+                        {
+                            'name': 'memory',
+                            'options': [
+                                '--mem={mem_per_node}'
+                            ]
+                        },
+                    ],
+                    'launcher': 'srun'
+                },
+            ]
+        },
+        {
+            'name': 'pilatus',
+            'descr': 'Alps Cray EX Supercomputer TDS',
+            'hostnames': [
+                'pilatus'
+            ],
+            'modules_system': 'lmod',
+            'resourcesdir': '/apps/common/UES/reframe/resources',
+            'partitions': [
+                {
+                    'name': 'mc',
+                    'descr': 'Multicore nodes (AMD EPYC 7742, 256|512GB/cn)',
+                    'scheduler': 'slurm',
+                    'environs': [
+                        'builtin',
+                    ],
+                    'max_jobs': 100,
+                    'access': ['-Cmc', f'--account={osext.osgroup()}'],
+                    'resources': [
+                        {
+                            'name': 'switches',
+                            'options': [
+                                '--switches={num_switches}'
+                            ]
+                        },
+                        {
+                            'name': 'memory',
+                            'options': [
+                                '--mem={mem_per_node}'
+                            ]
+                        },
+                    ],
+                    'launcher': 'srun'
+                },
+            ]
+        },
+        {
             'name': 'generic',
             'descr': 'Generic example system',
             'partitions': [
