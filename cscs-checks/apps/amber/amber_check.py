@@ -135,7 +135,7 @@ class AmberBaseCheck(rfm.RunOnlyRegressionTest):
         energy_reference = self.ener_ref[self.benchmark][0]
         energy_diff = sn.abs(energy - energy_reference)
         ref_ener_diff = sn.abs(self.ener_ref[self.benchmark][0] *
-                self.ener_ref[self.benchmark][1])
+                               self.ener_ref[self.benchmark][1])
         self.sanity_patterns = sn.all([
             sn.assert_found(r'Final Performance Info:', self.output_file),
             sn.assert_lt(energy_diff, ref_ener_diff)
@@ -145,7 +145,8 @@ class AmberBaseCheck(rfm.RunOnlyRegressionTest):
     def set_perf_patterns(self):
         self.perf_patterns = {
             self.benchmark: sn.extractsingle(r'ns/day =\s+(?P<perf>\S+)',
-                                     self.output_file, 'perf', float, item=1)
+                                             self.output_file, 'perf',
+                                             float, item=1)
         }
 
 
@@ -202,12 +203,12 @@ class AmberCPUCheck(AmberBaseCheck):
     @run_after('init')
     def set_num_tasks_cray_xc(self):
         if self.current_system.name in ['daint', 'dom']:
-           self.num_tasks_per_node = 36
-           if self.scale == 'small':
-               self.num_nodes = 6
-           else:
-               self.num_nodes = 16
-           self.num_tasks = self.num_nodes * self.num_tasks_per_node
+            self.num_tasks_per_node = 36
+            if self.scale == 'small':
+                self.num_nodes = 6
+            else:
+                self.num_nodes = 16
+            self.num_tasks = self.num_nodes * self.num_tasks_per_node
 
     @run_after('init')
     def set_num_tasks_cray_shasta(self):
@@ -220,4 +221,3 @@ class AmberCPUCheck(AmberBaseCheck):
                 # need to decrease to just 8 nodes
                 self.num_nodes = 8
             self.num_tasks = self.num_nodes * self.num_tasks_per_node
-
