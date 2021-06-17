@@ -10,77 +10,77 @@ import reframe.utility.sanity as sn
 
 
 REFERENCE_GPU_PERFORMANCE = {
-    'daint:gpu' : {
-        'Cellulose_production_NVE' : (30.0, -0.05, None, 'ns/day'),
-        'FactorIX_production_NVE' : (134.0, -0.05, None, 'ns/day'),
-        'JAC_production_NVE_4fs' : (742, -0.05, None, 'ns/day'),
-        'JAC_production_NVE' : (388.0, -0.05, None, 'ns/day'),
+    'daint:gpu': {
+        'Cellulose_production_NVE': (30.0, -0.05, None, 'ns/day'),
+        'FactorIX_production_NVE': (134.0, -0.05, None, 'ns/day'),
+        'JAC_production_NVE_4fs': (742, -0.05, None, 'ns/day'),
+        'JAC_production_NVE': (388.0, -0.05, None, 'ns/day'),
     },
-    'dom:gpu' : {
-        'Cellulose_production_NVE' : (30.0, -0.05, None, 'ns/day'),
-        'FactorIX_production_NVE' : (134.0, -0.05, None, 'ns/day'),
-        'JAC_production_NVE_4fs' : (742.0, -0.05, None, 'ns/day'),
-        'JAC_production_NVE' : (388.0, -0.05, None, 'ns/day'),
+    'dom:gpu': {
+        'Cellulose_production_NVE': (30.0, -0.05, None, 'ns/day'),
+        'FactorIX_production_NVE': (134.0, -0.05, None, 'ns/day'),
+        'JAC_production_NVE_4fs': (742.0, -0.05, None, 'ns/day'),
+        'JAC_production_NVE': (388.0, -0.05, None, 'ns/day'),
     },
-    '*' : {
-        'Cellulose_production_NVE' : (0.0, None, None, 'ns/day'),
-        'FactorIX_production_NVE' : (0.0, None, None, 'ns/day'),
-        'JAC_production_NVE_4fs' : (0.0, None, None, 'ns/day'),
-        'JAC_production_NVE' : (0.0, None, None, 'ns/day'),
+    '*': {
+        'Cellulose_production_NVE': (0.0, None, None, 'ns/day'),
+        'FactorIX_production_NVE': (0.0, None, None, 'ns/day'),
+        'JAC_production_NVE_4fs': (0.0, None, None, 'ns/day'),
+        'JAC_production_NVE': (0.0, None, None, 'ns/day'),
     },
 }
 
 REFERENCE_CPU_PERFORMANCE_SMALL = {
-    'daint:mc' : {
-        'Cellulose_production_NVE' : (8.0, -0.30, None, 'ns/day'),
-        'FactorIX_production_NVE' : (34.0, -0.30, None, 'ns/day'),
-        'JAC_production_NVE_4fs' : (150.0, -0.30, None, 'ns/day'),
-        'JAC_production_NVE' : (90.0, -0.30, None, 'ns/day'),
+    'daint:mc': {
+        'Cellulose_production_NVE': (8.0, -0.30, None, 'ns/day'),
+        'FactorIX_production_NVE': (34.0, -0.30, None, 'ns/day'),
+        'JAC_production_NVE_4fs': (150.0, -0.30, None, 'ns/day'),
+        'JAC_production_NVE': (90.0, -0.30, None, 'ns/day'),
     },
-    'dom:mc' : {
-        'Cellulose_production_NVE' : (8.0, -0.30, None, 'ns/day'),
-        'FactorIX_production_NVE' : (34.0, -0.30, None, 'ns/day'),
-        'JAC_production_NVE_4fs' : (150.0, -0.30, None, 'ns/day'),
-        'JAC_production_NVE' : (90.0, -0.30, None, 'ns/day'),
+    'dom:mc': {
+        'Cellulose_production_NVE': (8.0, -0.30, None, 'ns/day'),
+        'FactorIX_production_NVE': (34.0, -0.30, None, 'ns/day'),
+        'JAC_production_NVE_4fs': (150.0, -0.30, None, 'ns/day'),
+        'JAC_production_NVE': (90.0, -0.30, None, 'ns/day'),
+    }
+    'eiger:mc': {
+        'Cellulose_production_NVE': (3.2, -0.30, None, 'ns/day'),
+        'FactorIX_production_NVE': (7.0, -0.30, None, 'ns/day'),
+        'JAC_production_NVE_4fs': (45.0, -0.30, None, 'ns/day'),
+        'JAC_production_NVE': (30.0, -0.30, None, 'ns/day'),
     },
-    'eiger:mc' : {
-        'Cellulose_production_NVE' : (3.2, -0.30, None, 'ns/day'),
-        'FactorIX_production_NVE' : (7.0, -0.30, None, 'ns/day'),
-        'JAC_production_NVE_4fs' : (45.0, -0.30, None, 'ns/day'),
-        'JAC_production_NVE' : (30.0, -0.30, None, 'ns/day'),
+    'pilatus:mc': {
+        'Cellulose_production_NVE': (3.2, -0.30, None, 'ns/day'),
+        'FactorIX_production_NVE': (7.0, -0.30, None, 'ns/day'),
+        'JAC_production_NVE_4fs': (45.0, -0.30, None, 'ns/day'),
+        'JAC_production_NVE': (30.0, -0.30, None, 'ns/day'),
     },
-    'pilatus:mc' : {
-        'Cellulose_production_NVE' : (3.2, -0.30, None, 'ns/day'),
-        'FactorIX_production_NVE' : (7.0, -0.30, None, 'ns/day'),
-        'JAC_production_NVE_4fs' : (45.0, -0.30, None, 'ns/day'),
-        'JAC_production_NVE' : (30.0, -0.30, None, 'ns/day'),
-    },
-    '*' : {
-        'Cellulose_production_NVE' : (0.0, None, None, 'ns/day'),
-        'FactorIX_production_NVE' : (0.0, None, None, 'ns/day'),
-        'JAC_production_NVE_4fs' : (0.0, None, None, 'ns/day'),
-        'JAC_production_NVE' : (0.0, None, None, 'ns/day'),
+    '*': {
+        'Cellulose_production_NVE': (0.0, None, None, 'ns/day'),
+        'FactorIX_production_NVE': (0.0, None, None, 'ns/day'),
+        'JAC_production_NVE_4fs': (0.0, None, None, 'ns/day'),
+        'JAC_production_NVE': (0.0, None, None, 'ns/day'),
     },
 }
 
 REFERENCE_CPU_PERFORMANCE_LARGE = {
-    'daint:mc' : {
-        'Cellulose_production_NVE' : (10.0, -0.30, None, 'ns/day'),
-        'FactorIX_production_NVE' : (36.0, -0.30, None, 'ns/day'),
-        'JAC_production_NVE_4fs' : (135.0, -0.30, None, 'ns/day'),
-        'JAC_production_NVE' : (78.0, -0.30, None, 'ns/day'),
+    'daint:mc': {
+        'Cellulose_production_NVE': (10.0, -0.30, None, 'ns/day'),
+        'FactorIX_production_NVE': (36.0, -0.30, None, 'ns/day'),
+        'JAC_production_NVE_4fs': (135.0, -0.30, None, 'ns/day'),
+        'JAC_production_NVE': (78.0, -0.30, None, 'ns/day'),
     },
-    'eiger:mc' : {
-        'Cellulose_production_NVE' : (1.3, -0.30, None, 'ns/day'),
-        'FactorIX_production_NVE' : (3.5, -0.30, None, 'ns/day'),
-        'JAC_production_NVE_4fs' : (30.5, -0.30, None, 'ns/day'),
-        'JAC_production_NVE' : (17.0, -0.30, None, 'ns/day'),
+    'eiger:mc': {
+        'Cellulose_production_NVE': (1.3, -0.30, None, 'ns/day'),
+        'FactorIX_production_NVE': (3.5, -0.30, None, 'ns/day'),
+        'JAC_production_NVE_4fs': (30.5, -0.30, None, 'ns/day'),
+        'JAC_production_NVE': (17.0, -0.30, None, 'ns/day'),
     },
-    '*' : {
-        'Cellulose_production_NVE' : (0.0, None, None, 'ns/day'),
-        'FactorIX_production_NVE' : (0.0, None, None, 'ns/day'),
-        'JAC_production_NVE_4fs' : (0.0, None, None, 'ns/day'),
-        'JAC_production_NVE' : (0.0, None, None, 'ns/day'),
+    '*': {
+        'Cellulose_production_NVE': (0.0, None, None, 'ns/day'),
+        'FactorIX_production_NVE': (0.0, None, None, 'ns/day'),
+        'JAC_production_NVE_4fs': (0.0, None, None, 'ns/day'),
+        'JAC_production_NVE': (0.0, None, None, 'ns/day'),
     },
 }
 
@@ -115,10 +115,10 @@ class AmberBaseCheck(rfm.RunOnlyRegressionTest):
     def set_energy_and_tolerance_reference(self):
         self.ener_ref = {
             # every system has a different reference energy and drift
-            'Cellulose_production_NVE' : (-443246, 5.0E-05),
-            'FactorIX_production_NVE' : (-234188, 1.0E-04),
-            'JAC_production_NVE_4fs' : (-44810, 1.0E-03),
-            'JAC_production_NVE' : (-58138, 5.0E-04),
+            'Cellulose_production_NVE': (-443246, 5.0E-05),
+            'FactorIX_production_NVE': (-234188, 1.0E-04),
+            'JAC_production_NVE_4fs': (-44810, 1.0E-03),
+            'JAC_production_NVE': (-58138, 5.0E-04),
         }
 
     @run_after('setup')
