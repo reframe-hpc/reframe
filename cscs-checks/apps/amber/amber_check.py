@@ -42,7 +42,7 @@ REFERENCE_CPU_PERFORMANCE_SMALL = {
         'FactorIX_production_NVE': (34.0, -0.30, None, 'ns/day'),
         'JAC_production_NVE_4fs': (150.0, -0.30, None, 'ns/day'),
         'JAC_production_NVE': (90.0, -0.30, None, 'ns/day'),
-    }
+    },
     'eiger:mc': {
         'Cellulose_production_NVE': (3.2, -0.30, None, 'ns/day'),
         'FactorIX_production_NVE': (7.0, -0.30, None, 'ns/day'),
