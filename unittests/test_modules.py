@@ -60,6 +60,12 @@ def module_collection(modules_system, tmp_path, monkeypatch):
     monkeypatch.setenv('HOME', str(tmp_path))
     coll_name = 'test_collection'
 
+    # Lmod uses LMOD_SYSTEM_NAME differentiate between collections of
+    # different systems, which is added used as a postfix to the collection
+    # name so we monkeypatch it since the test directory is temporary
+    if modules_system.name == 'lmod':
+        monkeypatch.delenv('LMOD_SYSTEM_NAME', failing=False)
+
     # Create modules collections with conflicting modules
     modules_system.load_module('testmod_base')
     modules_system.load_module('testmod_foo')
