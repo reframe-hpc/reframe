@@ -5,7 +5,7 @@
 
 import reframe as rfm
 import reframe.utility.sanity as sn
-
+import cscstests.microbenchmarks.gpu.hooks as hooks
 
 @rfm.simple_test
 class CudaSamplesTest(rfm.RegressionTest):
@@ -23,7 +23,7 @@ class CudaSamplesTest(rfm.RegressionTest):
     tags = {'production'}
 
     # Required variables
-    nvidia_sm = variable(str)
+    gpu_arch = variable(str, type(None))
 
     @run_after('init')
     def set_descr(self):
@@ -45,31 +45,12 @@ class CudaSamplesTest(rfm.RegressionTest):
         if self.current_system.name in {'dom'}:
             self.valid_prog_environs += ['PrgEnv-nvidia']
 
-    @run_after('setup')
-    def set_gpu_arch(self):
-        if self.current_system.name in ['arolla', 'tsa', 'ault']:
-            self.exclusive_access = True
-            self.nvidia_sm = '70'
-        elif self.current_partition.fullname in {'ault:amda100'}:
-            self.nvidia_sm = '80'
-        else:
-            self.nvidia_sm = '60'
-
-    @run_after('setup')
-    def set_modules(self):
-        if self.current_system.name in {'arolla', 'tsa'}:
-            self.modules = ['cuda/10.1.243']
-        elif self.current_system.name in {'ault'}:
-            self.modules = ['cuda/11.0']
-        elif self.current_system.name in {'dom', 'daint'}:
-            self.modules = ['craype-accel-nvidia60']
-            if self.current_environ.name not in {'PrgEnv-nvidia'}:
-                self.modules += ['cdt-cuda']
+    run_after('setup')(bind(hooks.set_gpu_arch))
 
     @run_before('compile')
     def set_build_options(self):
         self.build_system.options = [
-            f'SMS="{self.nvidia_sm}"', f'CUDA_PATH=$CUDA_HOME'
+            f'SMS="{self.gpu_arch}"', f'CUDA_PATH=$CUDA_HOME'
         ]
         self.prebuild_cmds = [
             f'git checkout v11.0', f'cd Samples/{self.sample}'
