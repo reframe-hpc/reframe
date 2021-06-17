@@ -122,6 +122,17 @@ def test_sanity_function_decorator(MyMeta):
             def my_sanity(self):
                 pass
 
+    # Test error when double-declaring @sanity_function in the same class
+    with pytest.raises(ReframeSyntaxError):
+        class MyWrongTest(MyMeta):
+            @sanity_function
+            def sn_fn_a(self):
+                pass
+
+            @sanity_function
+            def sn_fn_b(self):
+                pass
+
 
 def test_deferrable_decorator(MyMeta):
     class MyTest(MyMeta):
