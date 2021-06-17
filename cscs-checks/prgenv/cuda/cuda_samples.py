@@ -7,6 +7,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 import cscstests.microbenchmarks.gpu.hooks as hooks
 
+
 @rfm.simple_test
 class CudaSamplesTest(rfm.RegressionTest):
     sample = parameter([
