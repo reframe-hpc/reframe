@@ -7,78 +7,51 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-REFERENCE_GPU_PERFORMANCE = {
-    'daint:gpu': {
+daint_gpu_performance = {
         'Cellulose_production_NVE': (30.0, -0.05, None, 'ns/day'),
         'FactorIX_production_NVE': (134.0, -0.05, None, 'ns/day'),
+        'JAC_production_NVE': (388.0, -0.05, None, 'ns/day'),
         'JAC_production_NVE_4fs': (742, -0.05, None, 'ns/day'),
-        'JAC_production_NVE': (388.0, -0.05, None, 'ns/day'),
-    },
-    'dom:gpu': {
-        'Cellulose_production_NVE': (30.0, -0.05, None, 'ns/day'),
-        'FactorIX_production_NVE': (134.0, -0.05, None, 'ns/day'),
-        'JAC_production_NVE_4fs': (742.0, -0.05, None, 'ns/day'),
-        'JAC_production_NVE': (388.0, -0.05, None, 'ns/day'),
-    },
-    '*': {
-        'Cellulose_production_NVE': (0.0, None, None, 'ns/day'),
-        'FactorIX_production_NVE': (0.0, None, None, 'ns/day'),
-        'JAC_production_NVE_4fs': (0.0, None, None, 'ns/day'),
-        'JAC_production_NVE': (0.0, None, None, 'ns/day'),
-    },
+}
+
+REFERENCE_GPU_PERFORMANCE = {
+    'daint:gpu' : daint_gpu_performance,
+    'dom:gpu' : daint_gpu_performance
+}
+
+daint_mc_performance_small = {
+        'Cellulose_production_NVE': (8.0, -0.30, None, 'ns/day'),
+        'FactorIX_production_NVE': (34.0, -0.30, None, 'ns/day'),
+        'JAC_production_NVE': (90.0, -0.30, None, 'ns/day'),
+        'JAC_production_NVE_4fs': (150.0, -0.30, None, 'ns/day'),
+}
+
+eiger_mc_performance_small = {
+        'Cellulose_production_NVE': (3.2, -0.30, None, 'ns/day'),
+        'FactorIX_production_NVE': (7.0, -0.30, None, 'ns/day'),
+        'JAC_production_NVE': (30.0, -0.30, None, 'ns/day'),
+        'JAC_production_NVE_4fs': (45.0, -0.30, None, 'ns/day'),
 }
 
 REFERENCE_CPU_PERFORMANCE_SMALL = {
-    'daint:mc': {
-        'Cellulose_production_NVE': (8.0, -0.30, None, 'ns/day'),
-        'FactorIX_production_NVE': (34.0, -0.30, None, 'ns/day'),
-        'JAC_production_NVE_4fs': (150.0, -0.30, None, 'ns/day'),
-        'JAC_production_NVE': (90.0, -0.30, None, 'ns/day'),
-    },
-    'dom:mc': {
-        'Cellulose_production_NVE': (8.0, -0.30, None, 'ns/day'),
-        'FactorIX_production_NVE': (34.0, -0.30, None, 'ns/day'),
-        'JAC_production_NVE_4fs': (150.0, -0.30, None, 'ns/day'),
-        'JAC_production_NVE': (90.0, -0.30, None, 'ns/day'),
-    },
-    'eiger:mc': {
-        'Cellulose_production_NVE': (3.2, -0.30, None, 'ns/day'),
-        'FactorIX_production_NVE': (7.0, -0.30, None, 'ns/day'),
-        'JAC_production_NVE_4fs': (45.0, -0.30, None, 'ns/day'),
-        'JAC_production_NVE': (30.0, -0.30, None, 'ns/day'),
-    },
-    'pilatus:mc': {
-        'Cellulose_production_NVE': (3.2, -0.30, None, 'ns/day'),
-        'FactorIX_production_NVE': (7.0, -0.30, None, 'ns/day'),
-        'JAC_production_NVE_4fs': (45.0, -0.30, None, 'ns/day'),
-        'JAC_production_NVE': (30.0, -0.30, None, 'ns/day'),
-    },
-    '*': {
-        'Cellulose_production_NVE': (0.0, None, None, 'ns/day'),
-        'FactorIX_production_NVE': (0.0, None, None, 'ns/day'),
-        'JAC_production_NVE_4fs': (0.0, None, None, 'ns/day'),
-        'JAC_production_NVE': (0.0, None, None, 'ns/day'),
-    },
+    'daint:mc': daint_mc_performance_small,
+    'dom:mc': daint_mc_performance_small,
+    'eiger:mc': eiger_mc_performance_small,
+    'pilatus:mc': eiger_mc_performance_small,
 }
 
 REFERENCE_CPU_PERFORMANCE_LARGE = {
     'daint:mc': {
         'Cellulose_production_NVE': (10.0, -0.30, None, 'ns/day'),
         'FactorIX_production_NVE': (36.0, -0.30, None, 'ns/day'),
-        'JAC_production_NVE_4fs': (135.0, -0.30, None, 'ns/day'),
         'JAC_production_NVE': (78.0, -0.30, None, 'ns/day'),
+        'JAC_production_NVE_4fs': (135.0, -0.30, None, 'ns/day'),
     },
     'eiger:mc': {
         'Cellulose_production_NVE': (1.3, -0.30, None, 'ns/day'),
         'FactorIX_production_NVE': (3.5, -0.30, None, 'ns/day'),
-        'JAC_production_NVE_4fs': (30.5, -0.30, None, 'ns/day'),
         'JAC_production_NVE': (17.0, -0.30, None, 'ns/day'),
-    },
-    '*': {
-        'Cellulose_production_NVE': (0.0, None, None, 'ns/day'),
-        'FactorIX_production_NVE': (0.0, None, None, 'ns/day'),
-        'JAC_production_NVE_4fs': (0.0, None, None, 'ns/day'),
-        'JAC_production_NVE': (0.0, None, None, 'ns/day'),
+        'JAC_production_NVE_4fs': (30.5, -0.30, None, 'ns/day'),
     },
 }
 
@@ -91,8 +64,9 @@ class AmberBaseCheck(rfm.RunOnlyRegressionTest):
             'num_switches': 1
         }
     }
-    maintainers = ['SO', 'VH']
+    maintainers = ['VH', 'SO']
     tags = {'scs', 'external-resources'}
+
     benchmark = parameter([
         # NVE simulations
         'Cellulose_production_NVE',
@@ -140,6 +114,10 @@ class AmberBaseCheck(rfm.RunOnlyRegressionTest):
         ])
 
     @run_after('setup')
+    def set_generic_perf_references(self):
+        self.reference.update({'*': {self.benchmark: (0, None, None, 'ns/day')}})
+
+    @run_after('setup')
     def set_perf_patterns(self):
         self.perf_patterns = {
             self.benchmark: sn.extractsingle(r'ns/day =\s+(?P<perf>\S+)',
@@ -157,15 +135,9 @@ class AmberGPUCheck(AmberBaseCheck):
     executable = 'pmemd.cuda.MPI'
     input_file = 'mdin.GPU'
     output_file = 'amber.out'
+    descr = f'Amber GPU check'
     tags = {'maintenance', 'production', 'health'}
-
-    @run_after('init')
-    def set_description(self):
-        self.descr = f'Amber GPU check'
-
-    @run_after('setup')
-    def set_perf_reference(self):
-        self.reference = REFERENCE_GPU_PERFORMANCE
+    reference = REFERENCE_GPU_PERFORMANCE
 
 
 @rfm.simple_test
@@ -176,6 +148,7 @@ class AmberCPUCheck(AmberBaseCheck):
     input_file = 'mdin.CPU'
     output_file = 'amber.out'
     tags = {'maintenance', 'production'}
+    reference = REFERENCE_CPU_PERFORMANCE_LARGE
 
     @run_after('init')
     def set_description(self):
@@ -187,7 +160,7 @@ class AmberCPUCheck(AmberBaseCheck):
             self.valid_systems += ['dom:mc', 'pilatus:mc']
 
     @run_after('init')
-    def set_prgenvs(self):
+    def set_hierarchical_prgenvs(self):
         if self.current_system.name in ['eiger', 'pilatus']:
             self.valid_prog_environs = ['cpeIntel']
 
@@ -195,8 +168,6 @@ class AmberCPUCheck(AmberBaseCheck):
     def set_perf_reference(self):
         if self.scale == 'small':
             self.reference = REFERENCE_CPU_PERFORMANCE_SMALL
-        else:
-            self.reference = REFERENCE_CPU_PERFORMANCE_LARGE
 
     @run_after('init')
     def set_num_tasks_cray_xc(self):
