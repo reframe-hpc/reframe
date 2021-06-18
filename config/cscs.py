@@ -377,7 +377,8 @@ site_configuration = {
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
-                        'PrgEnv-pgi'
+                        'PrgEnv-pgi',
+                        'PrgEnv-nvidia'
                     ],
                     'descr': 'Hybrid nodes (Haswell/P100)',
                     'max_jobs': 100,
@@ -1072,6 +1073,14 @@ site_configuration = {
             'name': 'PrgEnv-pgi',
             'modules': [
                 'PrgEnv-pgi'
+            ]
+        },
+        {
+            'name': 'PrgEnv-nvidia',
+            'modules': [
+                'PrgEnv-nvidia',
+                # FIXME: We should not be forcing a cdt version
+                'cdt/21.05'
             ]
         },
         {
