@@ -1078,7 +1078,8 @@ site_configuration = {
         {
             'name': 'PrgEnv-nvidia',
             'modules': [
-                'PrgEnv-nvidia'
+                'PrgEnv-nvidia',
+                'cdt/21.05'
             ]
         },
         {
