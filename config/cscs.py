@@ -1079,6 +1079,7 @@ site_configuration = {
             'name': 'PrgEnv-nvidia',
             'modules': [
                 'PrgEnv-nvidia',
+                #FIXME: We should not be forcing a cdt version
                 'cdt/21.05'
             ]
         },
