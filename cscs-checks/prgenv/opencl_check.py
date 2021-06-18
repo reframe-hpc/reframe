@@ -15,14 +15,22 @@ class OpenCLCheck(rfm.RegressionTest):
         self.tags = {'production', 'craype'}
 
         self.valid_systems = ['daint:gpu', 'dom:gpu']
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
-        self.modules = ['craype-accel-nvidia60']
+        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi',
+                                    'PrgEnv-nvidia']
         self.build_system = 'Make'
         self.sourcesdir = 'src/opencl'
         self.num_gpus_per_node = 1
         self.executable = 'vecAdd'
 
         self.sanity_patterns = sn.assert_found('SUCCESS', self.stdout)
+
+    @run_after('setup')
+    def setup_nvidia(self):
+        if self.current_environ.name == 'PrgEnv-nvidia':
+            self.variables.update(
+                {'CUDATOOLKIT_HOME': '$CRAY_NVIDIA_PREFIX/cuda'})
+        else:
+            self.modules = ['craype-accel-nvidia60']
 
     @run_before('compile')
     def setflags(self):

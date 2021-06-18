@@ -13,16 +13,15 @@ def set_gpu_arch(self):
 
     cs = self.current_system.name
     cp = self.current_partition.fullname
+    ce = self.current_environ.name
     self.gpu_arch = None
 
     # Nvidia options
     self.gpu_build = 'cuda'
     if cs in {'dom', 'daint'}:
         self.gpu_arch = '60'
-        self.modules = ['craype-accel-nvidia60', 'cdt-cuda']
-        if cs == 'dom':
-            self.modules += ['cdt-cuda']
-
+        if ce != 'PrgEnv-nvidia':
+            self.modules = ['craype-accel-nvidia60', 'cdt-cuda']
     elif cs in {'arola', 'tsa'}:
         self.gpu_arch = '70'
         self.modules = ['cuda/10.1.243']

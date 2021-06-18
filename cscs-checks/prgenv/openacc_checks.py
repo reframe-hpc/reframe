@@ -17,7 +17,8 @@ class OpenACCFortranCheck(rfm.RegressionTest):
             self.num_tasks = 2
 
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn']
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
+        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi',
+                                    'PrgEnv-nvidia']
         self.sourcesdir = 'src/openacc'
         if self.num_tasks == 1:
             self.sourcepath = 'vecAdd_openacc_nompi.f90'
@@ -26,9 +27,7 @@ class OpenACCFortranCheck(rfm.RegressionTest):
         else:
             self.sourcepath = 'vecAdd_openacc_mpi.f90'
 
-        if self.current_system.name in ['daint', 'dom']:
-            self.modules = ['craype-accel-nvidia60']
-        elif self.current_system.name in ['arolla', 'tsa']:
+        if self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
             self.variables = {
                 'CRAY_ACCEL_TARGET': 'nvidia70',
@@ -46,11 +45,29 @@ class OpenACCFortranCheck(rfm.RegressionTest):
         self.maintainers = ['TM', 'AJ']
         self.tags = {'production', 'craype'}
 
+    @run_after('setup')
+    def set_modules(self):
+        if (self.current_system.name in ['daint', 'dom'] and
+            self.current_environ.name != 'PrgEnv-nvidia'):
+            self.modules = ['craype-accel-nvidia60']
+
+    # FIXME: PGI 20.x does not support CUDA 11, see case #275674
+    @run_before('compile')
+    def cudatoolkit_pgi_20x_workaround(self):
+        if self.current_system.name == 'daint':
+            cudatoolkit_version = '10.2.89_3.29-7.0.2.1_3.27__g67354b4'
+        else:
+            self.variables['CUDA_HOME'] = '$CUDATOOLKIT_HOME'
+            cudatoolkit_version = '10.2.89_3.28-2.1__g52c0314'
+
+        self.modules += [f'cudatoolkit/{cudatoolkit_version}']
+
     @run_before('compile')
     def setflags(self):
         if self.current_environ.name.startswith('PrgEnv-cray'):
             self.build_system.fflags = ['-hacc', '-hnoomp']
-        elif self.current_environ.name.startswith('PrgEnv-pgi'):
+        elif (self.current_environ.name.startswith('PrgEnv-pgi') or
+              self.current_environ.name == 'PrgEnv-nvidia'):
             if self.current_system.name in ['daint', 'dom']:
                 self.build_system.fflags = ['-acc', '-ta=tesla:cc60']
             elif self.current_system.name in ['arolla', 'tsa']:

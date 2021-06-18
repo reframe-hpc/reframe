@@ -9,15 +9,16 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class CrayCPUTargetTest(rfm.RunOnlyRegressionTest):
-    def __init__(self):
-        self.descr = 'Checks whether CRAY_CPU_TARGET is set'
-        self.valid_systems = ['daint:login', 'dom:login']
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
-                                    'PrgEnv-intel', 'PrgEnv-pgi']
-        self.sourcesdir = None
-        self.executable = 'echo CRAY_CPU_TARGET=$CRAY_CPU_TARGET'
+    descr = 'Checks whether CRAY_CPU_TARGET is set'
+    valid_systems = ['daint:login', 'dom:login']
+    valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu', 'PrgEnv-intel',
+                           'PrgEnv-pgi', 'PrgEnv-nvidia']
+    sourcesdir = None
+    executable = 'echo CRAY_CPU_TARGET=$CRAY_CPU_TARGET'
+    maintainers = ['TM', 'LM']
+    tags = {'production', 'maintenance', 'craype'}
+
+    @run_before('sanity')
+    def set_sanity(self):
         self.sanity_patterns = sn.assert_found(r'CRAY_CPU_TARGET=\S+',
                                                self.stdout)
-
-        self.maintainers = ['TM', 'LM']
-        self.tags = {'production', 'maintenance', 'craype'}
