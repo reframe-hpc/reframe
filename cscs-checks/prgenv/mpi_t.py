@@ -20,8 +20,9 @@ class mpit_check(rfm.RegressionTest):
         self.build_system = 'SingleSource'
         self.sourcesdir = 'src/mpi_t'
         self.sourcepath = 'mpit_vars.c'
-        self.num_tasks_per_node = 1
+        self.prebuild_cmds = ['module list']
         self.variables = {'MPICH_VERSION_DISPLAY': '1', 'MPITEST_VERBOSE': '1'}
+        self.num_tasks_per_node = 1
         self.rpt = 'rpt'
         self.executable_opts = [f'&> {self.rpt}']
         self.maintainers = ['JG']
@@ -32,23 +33,34 @@ class mpit_check(rfm.RegressionTest):
         rpt_file = os.path.join(self.stagedir, self.rpt)
         reference_files = {
             '7.7': {
-                'control': 'mpit_control_vars_7.7.ref',
-                'categories': 'mpit_categories_7.7.ref',
+                'control': 'ref/mpit_control_vars_7.7.ref',
+                'categories': 'ref/mpit_categories_7.7.ref',
             },
             '8.1.4': {
-                'control': 'mpit_control_vars_8.1.4.ref',
-                'categories': 'mpit_categories_8.1.4.ref',
+                'control': 'ref/mpit_control_vars_8.1.4.ref',
+                'categories': 'ref/mpit_categories_8.1.4.ref',
             },
             '8.1.5': {
-                'control': 'mpit_control_vars_8.1.5.ref',
-                'categories': 'mpit_categories_8.1.5.ref',
+                'control': 'ref/mpit_control_vars_8.1.5.ref',
+                'categories': 'ref/mpit_categories_8.1.5.ref',
+            },
+            '8.1.6': {
+                'control': 'ref/mpit_control_vars_8.1.5.ref',
+                'categories': 'ref/mpit_categories_8.1.5.ref',
             },
         }
         # {{{ 0/ MPICH version:
-        # MPI VERSION    : CRAY MPICH version 7.7.15 (ANL base 3.2)
-        # MPI VERSION    : CRAY MPICH version 8.0.16.17 (ANL base 3.3)
-        # MPI VERSION    : CRAY MPICH version 8.1.4.31 (ANL base 3.4a2)
-        # MPI VERSION    : CRAY MPICH version 8.1.5.32 (ANL base 3.4a2)
+        # MPI VERSION  : CRAY MPICH version 7.7.15 (ANL base 3.2)
+        # MPI VERSION  : CRAY MPICH version 8.0.16.17 (ANL base 3.3)
+        # MPI VERSION  : CRAY MPICH version 8.1.4.31 (ANL base 3.4a2)
+        # MPI VERSION  : CRAY MPICH version 8.1.5.32 (ANL base 3.4a2)
+        #
+        # cdt/21.02 cray-mpich/7.7.16
+        # cdt/21.05 cray-mpich/7.7.17
+        #
+        # cpe/21.04 cray-mpich/8.1.4
+        # cpe/21.05 cray-mpich/8.1.5
+        # cpe/21.06 cray-mpich/8.1.6
         regex = r'^MPI VERSION\s+: CRAY MPICH version (\S+) \(ANL base \S+\)'
         mpich_version_major = sn.extractsingle_s(
             r'^(\d+)\.\d+\.\d+', sn.extractsingle(regex, rpt_file, 1), 1

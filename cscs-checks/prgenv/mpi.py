@@ -69,7 +69,8 @@ class MpiInitTest(rfm.RegressionTest):
         # {{{ 0/ MPICH version:
         # MPI VERSION  : CRAY MPICH version 7.7.15 (ANL base 3.2)
         # MPI VERSION  : CRAY MPICH version 8.0.16.17 (ANL base 3.3)
-        # MPI VERSION    : CRAY MPICH version 8.1.4.31 (ANL base 3.4a2)
+        # MPI VERSION  : CRAY MPICH version 8.1.4.31 (ANL base 3.4a2)
+        # MPI VERSION  : CRAY MPICH version 8.1.5.32 (ANL base 3.4a2)
         regex = r'= MPI VERSION\s+: CRAY MPICH version \S+ \(ANL base (\S+)\)'
         stdout = os.path.join(self.stagedir, sn.evaluate(self.stdout))
         mpich_version = sn.extractsingle(regex, stdout, 1)
