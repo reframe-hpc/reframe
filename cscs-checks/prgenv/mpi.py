@@ -41,25 +41,22 @@ class MpiInitTest(rfm.RegressionTest):
                               'eiger:mc', 'pilatus:mc']
         self.valid_prog_environs = [
             'PrgEnv-aocc', 'PrgEnv-cray', 'PrgEnv-gnu', 'PrgEnv-intel',
-            'PrgEnv-pgi', 'PrgEnv-nvidia', 'cpeAMD', 'cpeCray', 'cpeGNU',
-            'cpeIntel']
+            'PrgEnv-pgi', 'PrgEnv-nvidia']
         self.build_system = 'SingleSource'
         self.sourcesdir = 'src/mpi_thread'
         self.sourcepath = 'mpi_init_thread.cpp'
-        # NOTE: occasionally, the wrapper fails to find the mpich dir, hence:
-        mpich_pkg_config_path = '$CRAY_MPICH_PREFIX/lib/pkgconfig'
-        self.variables = {
-            'PKG_CONFIG_PATH': f'$PKG_CONFIG_PATH:{mpich_pkg_config_path}'
-        }
-        cppflags = '`pkg-config --cflags mpich` `pkg-config --libs mpich`'
+        if self.current_system.name in ['pilatus', 'eiger']:
+            # FIXME: workaround for C4KCUST-308
+            self.modules = ['cray-mpich', 'cray-libsci']
+
+        self.prebuild_cmds += ['module list']
         self.cppflags = {
-            'single':     [cppflags, '-D_MPI_THREAD_SINGLE'],
-            'funneled':   [cppflags, '-D_MPI_THREAD_FUNNELED'],
-            'serialized': [cppflags, '-D_MPI_THREAD_SERIALIZED'],
-            'multiple':   [cppflags, '-D_MPI_THREAD_MULTIPLE']
+            'single':     ['-D_MPI_THREAD_SINGLE'],
+            'funneled':   ['-D_MPI_THREAD_FUNNELED'],
+            'serialized': ['-D_MPI_THREAD_SERIALIZED'],
+            'multiple':   ['-D_MPI_THREAD_MULTIPLE']
         }
         self.build_system.cppflags = self.cppflags[self.required_thread]
-        self.prebuild_cmds = ['module list']
         self.time_limit = '1m'
         self.maintainers = ['JG', 'AJ']
         self.tags = {'production', 'craype'}
