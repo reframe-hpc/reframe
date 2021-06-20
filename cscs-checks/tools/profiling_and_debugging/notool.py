@@ -25,6 +25,7 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
             'PrgEnv-gnu',
             'PrgEnv-intel',
             'PrgEnv-pgi',
+            'PrgEnv-nvidia',
         ]
         self.prgenv_flags = {
             'PrgEnv-aocc': ['-O2', '-g', '-fopenmp'],
@@ -32,7 +33,8 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
                             '-homp' if self.lang == 'F90' else '-fopenmp'],
             'PrgEnv-gnu': ['-O2', '-g', '-fopenmp'],
             'PrgEnv-intel': ['-O2', '-g', '-qopenmp'],
-            'PrgEnv-pgi': ['-O2', '-g', '-mp']
+            'PrgEnv-pgi': ['-O2', '-g', '-mp'],
+            'PrgEnv-nvidia': ['-O2', '-g', '-mp']
         }
         self.sourcesdir = os.path.join('src', self.lang)
         self.build_system = 'Make'
@@ -122,7 +124,8 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
             },
             'PrgEnv-gnu': {'C++': 201511, 'F90': 201511},
             'PrgEnv-intel': {'C++': 201611, 'F90': 201611},
-            'PrgEnv-pgi': {'C++': 201307, 'F90': 201307}
+            'PrgEnv-pgi': {'C++': 201307, 'F90': 201307},
+            'PrgEnv-nvidia': {'C++': 201307, 'F90': 201307}
         }
         found_version = sn.extractsingle(r'OpenMP-\s*(\d+)', self.stdout, 1,
                                          int)

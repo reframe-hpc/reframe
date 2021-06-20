@@ -15,7 +15,7 @@ class mpit_check(rfm.RegressionTest):
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'daint:mc', 'dom:mc',
                               'eiger:mc', 'pilatus:mc']
         self.valid_prog_environs = ['PrgEnv-aocc', 'PrgEnv-cray', 'PrgEnv-gnu',
-                                    'PrgEnv-intel', 'PrgEnv-pgi']
+                                    'PrgEnv-intel', 'PrgEnv-pgi', 'PrgEnv-nvidia']
         self.build_system = 'SingleSource'
         self.sourcesdir = 'src/mpi_t'
         self.sourcepath = 'mpit_vars.c'
