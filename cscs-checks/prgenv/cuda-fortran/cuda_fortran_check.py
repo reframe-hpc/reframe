@@ -13,7 +13,6 @@ class CUDAFortranCheck(rfm.RegressionTest):
     valid_prog_environs = ['PrgEnv-pgi', 'PrgEnv-nvidia']
     sourcepath = 'vecAdd_cuda.cuf'
     build_system = 'SingleSource'
-    build_system.fflags = ['-ta=tesla:cc60']
     num_gpus_per_node = 1
     maintainers = ['TM', 'AJ']
     tags = {'production', 'craype'}
@@ -22,6 +21,12 @@ class CUDAFortranCheck(rfm.RegressionTest):
     def set_modules(self):
         if self.current_environ.name != 'PrgEnv-nvidia':
             self.modules = ['craype-accel-nvidia60']
+        else:
+            self.modules = ['cdt-cuda/21.05']
+
+    @run_before('compile')
+    def set_fflags(self):
+        self.build_system.fflags = ['-ta=tesla:cc60']
 
     # FIXME: PGI 20.x does not support CUDA 11, see case #275674
     @run_before('compile')
