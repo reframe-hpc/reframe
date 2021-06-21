@@ -74,8 +74,8 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         self.reference = {'*': {'elapsed_time': (0, None, None, 's')}}
 
     @run_before('compile')
-    def deal_with_prgEnv_nvidia(self):
-        # CRAY_MPICH_VERSION
+    def prgEnv_nvidia_workaround(self):
+        # {{{ CRAY_MPICH_VERSION
         # cdt/20.08 cray-mpich/7.7.15 cray, crayclang, gnu, intel, pgi
         # cdt/21.02 cray-mpich/7.7.16 cray, crayclang, gnu, intel, pgi
         # cdt/21.05 cray-mpich/7.7.17 crayclang, gnu, intel, pgi, *nvidia*
@@ -83,6 +83,7 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         # cpe/21.04 cray-mpich/8.1.4 AOCC, CRAY, CRAYCLANG, GNU, INTEL, NVIDIA
         # cpe/21.05 cray-mpich/8.1.5 AOCC, CRAY, CRAYCLANG, GNU, INTEL, NVIDIA
         # cpe/21.06 cray-mpich/8.1.6 AOCC, CRAY, CRAYCLANG, GNU, INTEL, NVIDIA
+        # }}}
         envname = self.current_environ.name
         self.cppflags = None
         if (self.current_system.name in ['dom', 'daint'] and
