@@ -46,13 +46,13 @@ class HDF5Test(rfm.RegressionTest):
                                         'PrgEnv-intel', 'PrgEnv-pgi',
                                         'PrgEnv-nvidia']
 
-    @run_after('setup')
+    @run_before('compile')
     def set_sourcepath(self):
         self.sourcepath = f'h5ex_d_chunk.{self.lang}'
 
-    @run_after('setup')
+    @run_before('compile')
     def set_ldflags(self):
-            self.build_system.ldflags = [f'-{self.linkage}']
+        self.build_system.ldflags = [f'-{self.linkage}']
 
     @run_before('sanity')
     def set_sanity(self):
