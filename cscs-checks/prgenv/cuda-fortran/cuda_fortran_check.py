@@ -44,4 +44,3 @@ class CUDAFortranCheck(rfm.RegressionTest):
         result = sn.extractsingle(r'final result:\s+(?P<result>\d+\.?\d*)',
                                   self.stdout, 'result', float)
         self.sanity_patterns = sn.assert_reference(result, 1., -1e-5, 1e-5)
-
