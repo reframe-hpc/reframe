@@ -168,6 +168,8 @@ class AmberCPUCheck(AmberBaseCheck):
     def set_perf_reference(self):
         if self.scale == 'small':
             self.reference = REFERENCE_CPU_PERFORMANCE_SMALL
+        else:
+            self.reference = REFERENCE_CPU_PERFORMANCE_LARGE
 
     @run_after('init')
     def set_num_tasks_cray_xc(self):
