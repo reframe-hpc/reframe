@@ -35,13 +35,13 @@ class MpiInitTest(rfm.RegressionTest):
     '''
     required_thread = parameter(['single', 'funneled', 'serialized',
                                  'multiple'])
+    valid_prog_environs = [
+        'PrgEnv-aocc', 'PrgEnv-cray', 'PrgEnv-gnu', 'PrgEnv-intel',
+        'PrgEnv-pgi', 'PrgEnv-nvidia']
 
     def __init__(self):
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                               'eiger:mc', 'pilatus:mc']
-        self.valid_prog_environs = [
-            'PrgEnv-aocc', 'PrgEnv-cray', 'PrgEnv-gnu', 'PrgEnv-intel',
-            'PrgEnv-pgi', 'PrgEnv-nvidia']
         self.build_system = 'SingleSource'
         self.sourcesdir = 'src/mpi_thread'
         self.sourcepath = 'mpi_init_thread.cpp'
