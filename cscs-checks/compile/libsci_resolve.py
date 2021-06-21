@@ -22,7 +22,7 @@ class LibSciResolveBaseTest(rfm.CompileOnlyRegressionTest):
 
 @rfm.simple_test
 class NvidiaResolveTest(LibSciResolveBaseTest):
-    accel_nvidia_version = parameter(['35', '60'])
+    accel_nvidia_version = parameter(['60'])
     valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
     build_system = 'SingleSource'
     compiler_version = '81'

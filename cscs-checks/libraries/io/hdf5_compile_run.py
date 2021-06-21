@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import reframe as rfm
+import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 
 
@@ -45,6 +46,20 @@ class HDF5Test(rfm.RegressionTest):
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                         'PrgEnv-intel', 'PrgEnv-pgi',
                                         'PrgEnv-nvidia']
+
+    @run_after('setup')
+    def cdt_2105_skip(self):
+        # cray-hdf5 is supported only on PrgEnv-nvidia for cdt >= 21.05
+        if self.current_environ.name == 'PrgEnv-nvidia':
+            self.skip_if(
+                osext.cray_cdt_version() < '21.05',
+                "cray-hdf5 is not supported for cdt < 21.05 on PrgEnv-nvidia"
+            )
+        elif self.current_environ.name == 'PrgEnv-pgi':
+            self.skip_if(
+                osext.cray_cdt_version() >= '21.05',
+                "cray-hdf5 is not supported for cdt >= 21.05 on PrgEnv-pgi"
+            )
 
     @run_before('compile')
     def set_sourcepath(self):
