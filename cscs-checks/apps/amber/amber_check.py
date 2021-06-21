@@ -148,7 +148,6 @@ class AmberCPUCheck(AmberBaseCheck):
     input_file = 'mdin.CPU'
     output_file = 'amber.out'
     tags = {'maintenance', 'production'}
-    reference = REFERENCE_CPU_PERFORMANCE_LARGE
 
     @run_after('init')
     def set_description(self):
