@@ -35,29 +35,30 @@ class MpiInitTest(rfm.RegressionTest):
     '''
     required_thread = parameter(['single', 'funneled', 'serialized',
                                  'multiple'])
-    valid_prog_environs = [
-        'PrgEnv-aocc', 'PrgEnv-cray', 'PrgEnv-gnu', 'PrgEnv-intel',
-        'PrgEnv-pgi', 'PrgEnv-nvidia']
+    valid_prog_environs = ['PrgEnv-aocc', 'PrgEnv-cray', 'PrgEnv-gnu',
+                           'PrgEnv-intel', 'PrgEnv-pgi', 'PrgEnv-nvidia']
+    valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc', 'eiger:mc',
+                     'pilatus:mc']
+    build_system = 'SingleSource'
+    sourcesdir = 'src/mpi_thread'
+    sourcepath = 'mpi_init_thread.cpp'
+    cppflags = variable(
+        dict, value={
+            'single': ['-D_MPI_THREAD_SINGLE'],
+            'funneled': ['-D_MPI_THREAD_FUNNELED'],
+            'serialized': ['-D_MPI_THREAD_SERIALIZED'],
+            'multiple': ['-D_MPI_THREAD_MULTIPLE']
+        }
+    )
+    prebuild_cmds += ['module list']
+    time_limit = '1m'
 
     def __init__(self):
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'eiger:mc', 'pilatus:mc']
-        self.build_system = 'SingleSource'
-        self.sourcesdir = 'src/mpi_thread'
-        self.sourcepath = 'mpi_init_thread.cpp'
         if self.current_system.name in ['pilatus', 'eiger']:
             # FIXME: workaround for C4KCUST-308
             self.modules = ['cray-mpich', 'cray-libsci']
 
-        self.prebuild_cmds += ['module list']
-        self.cppflags = {
-            'single':     ['-D_MPI_THREAD_SINGLE'],
-            'funneled':   ['-D_MPI_THREAD_FUNNELED'],
-            'serialized': ['-D_MPI_THREAD_SERIALIZED'],
-            'multiple':   ['-D_MPI_THREAD_MULTIPLE']
-        }
         self.build_system.cppflags = self.cppflags[self.required_thread]
-        self.time_limit = '1m'
         self.maintainers = ['JG', 'AJ']
         self.tags = {'production', 'craype'}
 
