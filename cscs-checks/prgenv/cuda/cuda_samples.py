@@ -54,7 +54,8 @@ class CudaSamplesTest(rfm.RegressionTest):
             f'SMS="{self.gpu_arch}"', f'CUDA_PATH=$CUDA_HOME'
         ]
         self.prebuild_cmds = [
-            f'git checkout v11.0', f'cd Samples/{self.sample}'
+            f'git checkout v11.3-6-g95b7cea',
+            f'cd Samples/{self.sample}'
         ]
 
     @run_before('run')
