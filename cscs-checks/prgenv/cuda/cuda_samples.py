@@ -53,8 +53,15 @@ class CudaSamplesTest(rfm.RegressionTest):
         self.build_system.options = [
             f'SMS="{self.gpu_arch}"', f'CUDA_PATH=$CUDA_HOME'
         ]
+        cs = self.current_system.name
+        ce = self.current_environ.name
+        if cs == 'dom' and ce == 'PrgEnv-nvidia':
+            cuda_ver = 'v11.3-6-g95b7cea'
+        else:
+            cuda_ver = 'v11.0'
+
         self.prebuild_cmds = [
-            f'git checkout v11.3-6-g95b7cea',
+            f'git checkout {cuda_ver}',
             f'cd Samples/{self.sample}'
         ]
 
