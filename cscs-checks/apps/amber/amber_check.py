@@ -7,6 +7,8 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
+#FIXME: Use tuples as dictionary keys as soon as
+# https://github.com/eth-cscs/reframe/issues/2022 is in
 daint_gpu_performance = {
         'Cellulose_production_NVE': (30.0, -0.05, None, 'ns/day'),
         'FactorIX_production_NVE': (134.0, -0.05, None, 'ns/day'),
