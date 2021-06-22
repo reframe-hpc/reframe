@@ -6,6 +6,7 @@
 import os
 
 import reframe as rfm
+import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 
 
@@ -51,6 +52,20 @@ class NetCDFTest(rfm.RegressionTest):
             self.modules = ['cray-hdf5', 'cray-netcdf']
         else:
             self.valid_prog_environs = []
+
+    @run_after('setup')
+    def cdt_2105_skip(self):
+        # cray-netcdf is supported only on PrgEnv-nvidia for cdt >= 21.05
+        if self.current_environ.name == 'PrgEnv-nvidia':
+            self.skip_if(
+                osext.cray_cdt_version() < '21.05',
+                "cray-netcdf is not supported for cdt < 21.05 on PrgEnv-nvidia"
+            )
+        elif self.current_environ.name == 'PrgEnv-pgi':
+            self.skip_if(
+                osext.cray_cdt_version() >= '21.05',
+                "cray-netcdf is not supported for cdt >= 21.05 on PrgEnv-pgi"
+            )
 
     @run_before('compile')
     def set_sources(self):
