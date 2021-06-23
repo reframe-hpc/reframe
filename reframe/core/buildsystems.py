@@ -866,7 +866,7 @@ class Spack(BuildSystem):
 
     def emit_build_commands(self, environ):
         self._prefix_save = os.getcwd()
-        if self.environment is _Undefined:
+        if isinstance(self.environment, _UndefinedType):
             raise BuildSystemError(f'no Spack environment is defined')
 
         ret = self._env_activate_cmds()
