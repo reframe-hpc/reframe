@@ -12,6 +12,7 @@ import reframe.utility.sanity as sn
 import reframe.utility.osext as osext
 from reframe.core.exceptions import SanityError
 
+
 def add_prgenv_nvidia(self):
     cs = self.current_system.name
     if cs in {'daint', 'dom'}:

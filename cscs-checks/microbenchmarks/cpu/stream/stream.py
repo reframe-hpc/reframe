@@ -21,12 +21,11 @@ class StreamTest(rfm.RegressionTest):
                               'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi',
-                                    'PrgEnv-cray_classic', 'PrgEnv-nvidia']
+                                    'PrgEnv-nvidia']
 
         self.use_multithreading = False
 
         self.prgenv_flags = {
-            'PrgEnv-cray_classic': ['-homp', '-O3'],
             'PrgEnv-cray': ['-fopenmp', '-O3'],
             'PrgEnv-gnu': ['-fopenmp', '-O3'],
             'PrgEnv-intel': ['-qopenmp', '-O3'],
@@ -65,12 +64,6 @@ class StreamTest(rfm.RegressionTest):
                                       self.stdout, 'triad', float)
         }
         self.stream_bw_reference = {
-            'PrgEnv-cray_classic': {
-                'daint:gpu': {'triad': (57000, -0.05, None, 'MB/s')},
-                'daint:mc': {'triad': (117000, -0.05, None, 'MB/s')},
-                'dom:gpu': {'triad': (57000, -0.05, None, 'MB/s')},
-                'dom:mc': {'triad': (117000, -0.05, None, 'MB/s')},
-            },
             'PrgEnv-cray': {
                 'daint:gpu': {'triad': (44000, -0.05, None, 'MB/s')},
                 'daint:mc': {'triad': (89000, -0.05, None, 'MB/s')},
