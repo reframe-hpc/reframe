@@ -14,6 +14,10 @@ from reframe.core.exceptions import BuildSystemError
 
 class _UndefinedType:
     '''Used as an initial value for undefined values instead of None.'''
+    __slots__ = ()
+
+    def __deepcopy__(self, memo):
+        return self
 
 
 _Undefined = _UndefinedType()
@@ -866,7 +870,7 @@ class Spack(BuildSystem):
 
     def emit_build_commands(self, environ):
         self._prefix_save = os.getcwd()
-        if isinstance(self.environment, _UndefinedType):
+        if self.environment is _Undefined:
             raise BuildSystemError(f'no Spack environment is defined')
 
         ret = self._env_activate_cmds()
