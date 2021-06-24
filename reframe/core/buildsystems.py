@@ -780,11 +780,12 @@ class Spack(BuildSystem):
     #: ReFrame looks for environments in the test's
     #: :attr:`~reframe.core.pipeline.RegressionTest.sourcesdir`.
     #:
-    #: This field is required.
+    #: If this field is `None`, the default, the environment name will
+    #: be automatically set to `rfm_spack_env`.
     #:
     #: :type: :class:`str` or :class:`None`
-    #: :default: :class:`required`
-    environment = variable(typ.Str[r'\S+'])
+    #: :default: ``None``
+    environment = variable(typ.Str[r'\S+'], type(None), value=None)
 
     #: A list of additional specs to build and install within the given
     #: environment.
@@ -816,9 +817,6 @@ class Spack(BuildSystem):
     install_opts = variable(typ.List[str], value=[])
 
     def emit_build_commands(self, environ):
-        if not hasattr(self, 'environment'):
-            raise BuildSystemError(f'no Spack environment is defined')
-
         ret = self._env_activate_cmds()
         if self.specs:
             specs_str = ' '.join(self.specs)
@@ -832,8 +830,15 @@ class Spack(BuildSystem):
         return ret
 
     def _env_activate_cmds(self):
-        return [f'. $SPACK_ROOT/share/spack/setup-env.sh',
-                f'spack env activate -V -d {self.environment}']
+        cmds = ['. $SPACK_ROOT/share/spack/setup-env.sh']
+        if self.environment:
+            environment = self.environment
+        else:
+            environment = 'rfm_spack_env'
+            cmds.append(f'spack env create -d {environment}')
+
+        cmds.append(f'spack env activate -V -d {environment}')
+        return cmds
 
     def prepare_cmds(self):
         cmds = self._env_activate_cmds()
