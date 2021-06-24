@@ -16,7 +16,7 @@ class UlimitCheck(rfm.RegressionTest):
 
         self.valid_prog_environs = ['PrgEnv-aocc', 'PrgEnv-cray',
                                     'PrgEnv-gnu', 'PrgEnv-intel',
-                                    'PrgEnv-pgi']
+                                    'PrgEnv-pgi', 'PrgEnv-nvidia']
         self.sourcesdir += '/ulimit'
         self.sourcepath = 'ulimit.c'
         self.sanity_patterns = sn.all([

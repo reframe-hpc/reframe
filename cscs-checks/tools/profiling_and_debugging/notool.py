@@ -85,7 +85,7 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         # cpe/21.06 cray-mpich/8.1.6 AOCC, CRAY, CRAYCLANG, GNU, INTEL, NVIDIA
         # }}}
         envname = self.current_environ.name
-        self.cppflags = None
+        self.cppflags = ''
         if (self.current_system.name in ['dom', 'daint'] and
            envname == 'PrgEnv-nvidia'):
             mpi_version = int(os.getenv('CRAY_MPICH_VERSION').replace('.', ''))
