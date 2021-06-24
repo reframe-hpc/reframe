@@ -12,6 +12,11 @@ import reframe.utility.sanity as sn
 import reframe.utility.osext as osext
 from reframe.core.exceptions import SanityError
 
+def add_prgenv_nvidia(self):
+    cs = self.current_system.name
+    if cs in {'daint', 'dom'}:
+        self.valid_prog_environs += ['PrgEnv-nvidia']
+
 
 @rfm.simple_test
 class CompileAffinityTool(rfm.CompileOnlyRegressionTest):
@@ -21,8 +26,7 @@ class CompileAffinityTool(rfm.CompileOnlyRegressionTest):
         'ault:amdv100'
     ]
     valid_prog_environs = [
-        'PrgEnv-gnu', 'PrgEnv-cray', 'PrgEnv-intel', 'PrgEnv-pgi',
-        'PrgEnv-nvidia'
+        'PrgEnv-gnu', 'PrgEnv-cray', 'PrgEnv-intel', 'PrgEnv-pgi'
     ]
     build_system = 'Make'
 
@@ -34,6 +38,8 @@ class CompileAffinityTool(rfm.CompileOnlyRegressionTest):
     postbuild_cmds = ['ls affinity']
     maintainers = ['RS', 'SK']
     tags = {'production', 'scs', 'maintenance', 'craype'}
+
+    run_after('init')(bind(add_prgenv_nvidia))
 
     @run_before('compile')
     def set_build_opts(self):
@@ -96,8 +102,7 @@ class AffinityTestBase(rfm.RunOnlyRegressionTest):
         'ault:amdv100'
     ]
     valid_prog_environs = [
-        'PrgEnv-gnu', 'PrgEnv-cray', 'PrgEnv-intel', 'PrgEnv-pgi',
-        'PrgEnv-nvidia'
+        'PrgEnv-gnu', 'PrgEnv-cray', 'PrgEnv-intel', 'PrgEnv-pgi'
     ]
 
     # Dict with the partition's topology - output of "lscpu -e"
@@ -116,6 +121,8 @@ class AffinityTestBase(rfm.RunOnlyRegressionTest):
 
     maintainers = ['RS', 'SK']
     tags = {'production', 'scs', 'maintenance', 'craype'}
+
+    run_after('init')(bind(add_prgenv_nvidia))
 
     @run_after('init')
     def set_deps(self):
