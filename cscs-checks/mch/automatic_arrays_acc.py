@@ -12,10 +12,9 @@ import reframe.utility.sanity as sn
 class AutomaticArraysCheck(rfm.RegressionTest):
     def __init__(self):
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn']
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-cce', 'PrgEnv-pgi']
-        if self.current_system.name in ['daint', 'dom']:
-            self.modules = ['craype-accel-nvidia60']
-        elif self.current_system.name in ['arolla', 'tsa']:
+        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-cce', 'PrgEnv-pgi',
+                                    'PrgEnv-nvidia']
+        if self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
 
         # This tets requires an MPI compiler, although it uses a single task
@@ -38,6 +37,10 @@ class AutomaticArraysCheck(rfm.RegressionTest):
             'PrgEnv-pgi': {
                 'daint:gpu': {'time': (7.5E-05, None, 0.15, 's')},
                 'dom:gpu': {'time': (7.5e-05, None, 0.15, 's')},
+            },
+            'PrgEnv-nvidia': {
+                'daint:gpu': {'time': (7.5E-05, None, 0.15, 's')},
+                'dom:gpu': {'time': (7.5e-05, None, 0.15, 's')},
             }
         }
 
@@ -46,6 +49,13 @@ class AutomaticArraysCheck(rfm.RegressionTest):
 
     @run_before('compile')
     def setflags(self):
+        if self.current_system.name in ['daint', 'dom']:
+            if (not self.current_environ.name.startswith('PrgEnv-nvidia')):
+                self.modules = ['craype-accel-nvidia60']
+            else:
+                self.build_system.fflags += ['-acc', '-ta=tesla,cc60',
+                                             '-Mnorpath']
+
         if self.current_environ.name.startswith('PrgEnv-cray'):
             envname = 'PrgEnv-cray'
             self.build_system.fflags += ['-hacc', '-hnoomp']
