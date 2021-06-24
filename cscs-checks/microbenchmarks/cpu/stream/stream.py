@@ -21,7 +21,7 @@ class StreamTest(rfm.RegressionTest):
                               'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi',
-                                    'PrgEnv-cray_classic']
+                                    'PrgEnv-cray_classic', 'PrgEnv-nvidia']
 
         self.use_multithreading = False
 
@@ -30,7 +30,8 @@ class StreamTest(rfm.RegressionTest):
             'PrgEnv-cray': ['-fopenmp', '-O3'],
             'PrgEnv-gnu': ['-fopenmp', '-O3'],
             'PrgEnv-intel': ['-qopenmp', '-O3'],
-            'PrgEnv-pgi': ['-mp', '-O3']
+            'PrgEnv-pgi': ['-mp', '-O3'],
+            'PrgEnv-nvidia': ['-mp', '-O3']
         }
 
         if self.current_system.name in ['arolla', 'tsa']:
