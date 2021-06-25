@@ -169,6 +169,13 @@ def test_required_var_not_present(OneVarTest):
     MyTest()
 
 
+def test_required_non_var():
+    msg = "'not_a_var' has not been declared as a variable"
+    with pytest.raises(ValueError, match=msg):
+        class Foo(rfm.RegressionTest):
+            not_a_var = required
+
+
 def test_invalid_field():
     class Foo:
         '''An invalid descriptor'''

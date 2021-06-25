@@ -493,6 +493,11 @@ class VarSpace(namespaces.Namespace):
             if key in self.vars:
                 self.vars[key].define(value)
                 _assigned_vars.add(key)
+            elif value is Undefined:
+                # Cannot be set as Undefined if not a variable
+                raise ValueError(
+                    f'{key!r} has not been declared as a variable'
+                )
 
         # Delete the vars from the class __dict__.
         for key in _assigned_vars:

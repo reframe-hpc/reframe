@@ -50,6 +50,7 @@ def test_directives(MyMeta):
         require_deps(ext)
         deferrable(ext)
         sanity_function(ext)
+        v = required
 
         def __init__(self):
             assert not hasattr(self, 'parameter')
@@ -60,6 +61,7 @@ def test_directives(MyMeta):
             assert not hasattr(self, 'require_deps')
             assert not hasattr(self, 'deferrable')
             assert not hasattr(self, 'sanity_function')
+            assert not hasattr(self, 'required')
 
     MyTest()
 
@@ -136,6 +138,17 @@ def test_sanity_function_decorator(MyMeta):
     with pytest.raises(ReframeSyntaxError):
         class MyWrongTest(Foo):
             def my_sanity(self):
+                pass
+
+    # Test error when double-declaring @sanity_function in the same class
+    with pytest.raises(ReframeSyntaxError):
+        class MyWrongTest(MyMeta):
+            @sanity_function
+            def sn_fn_a(self):
+                pass
+
+            @sanity_function
+            def sn_fn_b(self):
                 pass
 
 

@@ -14,6 +14,10 @@ from reframe.core.exceptions import BuildSystemError
 
 class _UndefinedType:
     '''Used as an initial value for undefined values instead of None.'''
+    __slots__ = ()
+
+    def __deepcopy__(self, memo):
+        return self
 
 
 _Undefined = _UndefinedType()

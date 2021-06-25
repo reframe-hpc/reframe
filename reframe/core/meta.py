@@ -259,7 +259,7 @@ class RegressionTestMeta(type):
 
         blacklist = [
             'parameter', 'variable', 'bind', 'run_before', 'run_after',
-            'require_deps', 'deferrable', 'sanity_function'
+            'require_deps', 'required', 'deferrable', 'sanity_function'
         ]
         for b in blacklist:
             namespace.pop(b, None)
@@ -271,9 +271,8 @@ class RegressionTestMeta(type):
 
         # Create a set with the attribute names already in use.
         cls._rfm_dir = set()
-        for b in bases:
-            if hasattr(b, '_rfm_dir'):
-                cls._rfm_dir.update(b._rfm_dir)
+        for base in [b for b in bases if hasattr(b, '_rfm_dir')]:
+            cls._rfm_dir.update(base._rfm_dir)
 
         used_attribute_names = set(cls._rfm_dir)
 
@@ -291,9 +290,8 @@ class RegressionTestMeta(type):
         # attribute; all dependencies will be resolved first in the post-setup
         # phase if not assigned elsewhere
         hook_reg = hooks.HookRegistry.create(namespace)
-        for b in bases:
-            if hasattr(b, '_rfm_pipeline_hooks'):
-                hook_reg.update(getattr(b, '_rfm_pipeline_hooks'))
+        for base in [b for b in bases if hasattr(b, '_rfm_pipeline_hooks')]:
+            hook_reg.update(getattr(base, '_rfm_pipeline_hooks'))
 
         cls._rfm_pipeline_hooks = hook_reg
 
@@ -312,20 +310,17 @@ class RegressionTestMeta(type):
             cls._rfm_sanity = local_sn_fn[0]
         else:
             # Search the bases if no local sanity functions exist.
-            for b in bases:
-                try:
-                    cls._rfm_sanity = getattr(b, '_rfm_sanity')
-                    if cls._rfm_sanity.__name__ in namespace:
-                        raise ReframeSyntaxError(
-                            f'{cls.__qualname__!r} overrides the candidate '
-                            f'sanity function '
-                            f'{cls._rfm_sanity.__qualname__!r} without '
-                            f'defining an alternative'
-                        )
+            for base in [b for b in bases if hasattr(b, '_rfm_sanity')]:
+                cls._rfm_sanity = getattr(base, '_rfm_sanity')
+                if cls._rfm_sanity.__name__ in namespace:
+                    raise ReframeSyntaxError(
+                        f'{cls.__qualname__!r} overrides the candidate '
+                        f'sanity function '
+                        f'{cls._rfm_sanity.__qualname__!r} without '
+                        f'defining an alternative'
+                    )
 
-                    break
-                except AttributeError:
-                    continue
+                break
 
         cls._final_methods = {v.__name__ for v in namespace.values()
                               if hasattr(v, '_rfm_final')}

@@ -37,7 +37,7 @@ class dgemm_gpu_check(DgemmGpu):
         }
     }
     maintainers = ['JO', 'SK']
-    tags = {'benchmark'}
+    tags = {'benchmark', 'health'}
 
     # Inject external hooks
     @run_after('setup')
