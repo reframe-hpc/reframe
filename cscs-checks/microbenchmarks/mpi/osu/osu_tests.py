@@ -38,6 +38,7 @@ class AlltoallTest(rfm.RegressionTest):
             'num_switches': 1
         }
     }
+
     @run_after('init')
     def set_tags(self):
         self.tags = {self.variant, 'benchmark', 'craype'}
@@ -45,7 +46,6 @@ class AlltoallTest(rfm.RegressionTest):
     @run_before('compile')
     def set_makefile(self):
         self.build_system.makefile = 'Makefile_alltoall'
-
 
     @run_before('run')
     def set_num_tasks(self):
@@ -68,23 +68,30 @@ class AlltoallTest(rfm.RegressionTest):
 
 @rfm.simple_test
 class FlexAlltoallTest(rfm.RegressionTest):
-    def __init__(self):
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn']
-        self.valid_prog_environs = ['PrgEnv-cray']
+    valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+                     'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn']
+    valid_prog_environs = ['PrgEnv-cray']
+    descr = 'Flexible Alltoall OSU test'
+    build_system = 'Make'
+    executable = './osu_alltoall'
+    maintainers = ['RS', 'AJ']
+    num_tasks_per_node = 1
+    num_tasks = 0
+    tags = {'diagnostic', 'ops', 'benchmark', 'craype'}
+
+    @run_after('init')
+    def add_prog_environ(self):
         if self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-pgi']
 
-        self.descr = 'Flexible Alltoall OSU test'
-        self.build_system = 'Make'
+    @run_before('compile')
+    def set_makefile(self):
         self.build_system.makefile = 'Makefile_alltoall'
-        self.executable = './osu_alltoall'
-        self.maintainers = ['RS', 'AJ']
-        self.num_tasks_per_node = 1
-        self.num_tasks = 0
+
+    @run_before('sanity')
+    def set_sanity(self):
         self.sanity_patterns = sn.assert_found(r'^1048576', self.stdout)
-        self.tags = {'diagnostic', 'ops', 'benchmark', 'craype'}
 
 
 @rfm.simple_test
