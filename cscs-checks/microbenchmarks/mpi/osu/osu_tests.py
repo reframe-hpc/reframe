@@ -21,7 +21,7 @@ class AlltoallTest(rfm.RegressionTest):
         # The -i option sets the number of iterations
         self.executable_opts = ['-m', '8', '-x', '1000', '-i', '20000']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
-                                    'PrgEnv-intel']
+                                    'PrgEnv-intel', 'PrgEnv-nvidia']
         self.maintainers = ['RS', 'AJ']
         self.sanity_patterns = sn.assert_found(r'^8', self.stdout)
         self.perf_patterns = {
@@ -87,7 +87,7 @@ class AllreduceTest(rfm.RegressionTest):
         # The -x option controls the number of warm-up iterations
         # The -i option controls the number of iterations
         self.executable_opts = ['-m', '8', '-x', '1000', '-i', '20000']
-        self.valid_prog_environs = ['PrgEnv-gnu']
+        self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-nvidia']
         self.maintainers = ['RS', 'AJ']
         self.sanity_patterns = sn.assert_found(r'^8', self.stdout)
         self.perf_patterns = {
@@ -142,7 +142,7 @@ class P2PBaseTest(rfm.RegressionTest):
             self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-pgi']
         else:
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
-                                        'PrgEnv-intel']
+                                        'PrgEnv-intel', 'PrgEnv-nvidia']
         self.maintainers = ['RS', 'AJ']
         self.tags = {'production', 'benchmark', 'craype'}
         self.sanity_patterns = sn.assert_found(r'^4194304', self.stdout)
@@ -256,16 +256,26 @@ class G2GBandwidthTest(P2PBaseTest):
             'bw': sn.extractsingle(r'^4194304\s+(?P<bw>\S+)',
                                    self.stdout, 'bw', float)
         }
+
+        self.build_system.cppflags = ['-D_ENABLE_CUDA_']
+
+    @rfm.run_before('compile')
+    def set_modules(self):
         if self.current_system.name in ['daint', 'dom']:
             self.num_gpus_per_node  = 1
-            self.modules = ['craype-accel-nvidia60']
             self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
+            if self.current_environ.name == 'PrgEnv-nvidia':
+                self.modules = ['cdt-cuda/21.05']
+                self.build_system.cppflags += ['-I$NVIDIA_PATH/cuda/include', '-w']
+                self.build_system.ldflags = ['-L${NVIDIA_PATH}/cuda/lib64',
+                                             '-L${NVIDIA_PATH}/cuda/lib64/stubs',
+                                             '-lcuda', '-lcudart']
+            else:
+                self.modules = ['craype-accel-nvidia60']
         elif self.current_system.name in ['arolla', 'tsa']:
             self.modules = ['cuda/10.1.243']
             self.build_system.ldflags = ['-L$EBROOTCUDA/lib64',
                                          '-lcudart', '-lcuda']
-
-        self.build_system.cppflags = ['-D_ENABLE_CUDA_']
 
 
 @rfm.simple_test
@@ -290,13 +300,23 @@ class G2GLatencyTest(P2PBaseTest):
             'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
                                         self.stdout, 'latency', float)
         }
+
+        self.build_system.cppflags = ['-D_ENABLE_CUDA_']
+
+    @rfm.run_before('compile')
+    def set_modules(self):
         if self.current_system.name in ['daint', 'dom']:
             self.num_gpus_per_node  = 1
-            self.modules = ['craype-accel-nvidia60']
             self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
+            if self.current_environ.name == 'PrgEnv-nvidia':
+                self.modules = ['cdt-cuda/21.05']
+                self.build_system.cppflags += ['-I$NVIDIA_PATH/cuda/include', '-w']
+                self.build_system.ldflags = ['-L${NVIDIA_PATH}/cuda/lib64',
+                                             '-L${NVIDIA_PATH}/cuda/lib64/stubs',
+                                             '-lcuda', '-lcudart']
+            else:
+                self.modules = ['craype-accel-nvidia60']
         elif self.current_system.name in ['arolla', 'tsa']:
             self.modules = ['cuda/10.1.243']
             self.build_system.ldflags = ['-L$EBROOTCUDA/lib64',
                                          '-lcudart', '-lcuda']
-
-        self.build_system.cppflags = ['-D_ENABLE_CUDA_']
