@@ -34,6 +34,7 @@ def test_directives(MyMeta):
         require_deps(ext)
         deferrable(ext)
         sanity_function(ext)
+        v = required
 
         def __init__(self):
             assert not hasattr(self, 'parameter')
@@ -44,6 +45,7 @@ def test_directives(MyMeta):
             assert not hasattr(self, 'require_deps')
             assert not hasattr(self, 'deferrable')
             assert not hasattr(self, 'sanity_function')
+            assert not hasattr(self, 'required')
 
     MyTest()
 
