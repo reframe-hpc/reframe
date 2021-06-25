@@ -3,51 +3,66 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+from reframe.core.decorators import run_after
 import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.parameterized_test(['production'])
+@rfm.simple_test
 class AlltoallTest(rfm.RegressionTest):
-    def __init__(self, variant):
-        self.strict_check = False
-        self.valid_systems = ['daint:gpu', 'dom:gpu']
-        self.descr = 'Alltoall OSU microbenchmark'
-        self.build_system = 'Make'
+    variant = parameter(['production'])
+    strict_check = False
+    valid_systems = ['daint:gpu', 'dom:gpu']
+    descr = 'Alltoall OSU microbenchmark'
+    build_system = 'Make'
+    executable = './osu_alltoall'
+    # The -m option sets the maximum message size
+    # The -x option sets the number of warm-up iterations
+    # The -i option sets the number of iterations
+    executable_opts = ['-m', '8', '-x', '1000', '-i', '20000']
+    valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
+                                'PrgEnv-intel', 'PrgEnv-nvidia']
+    maintainers = ['RS', 'AJ']
+    reference = {
+        'dom:gpu': {
+            'latency': (8.23, None, 0.1, 'us')
+        },
+        'daint:gpu': {
+            'latency': (20.73, None, 2.0, 'us')
+        }
+    }
+    num_tasks_per_node = 1
+    num_gpus_per_node  = 1
+    extra_resources = {
+        'switches': {
+            'num_switches': 1
+        }
+    }
+    @run_after('init')
+    def set_tags(self):
+        self.tags = {self.variant, 'benchmark', 'craype'}
+
+    @run_before('compile')
+    def set_makefile(self):
         self.build_system.makefile = 'Makefile_alltoall'
-        self.executable = './osu_alltoall'
-        # The -m option sets the maximum message size
-        # The -x option sets the number of warm-up iterations
-        # The -i option sets the number of iterations
-        self.executable_opts = ['-m', '8', '-x', '1000', '-i', '20000']
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
-                                    'PrgEnv-intel', 'PrgEnv-nvidia']
-        self.maintainers = ['RS', 'AJ']
-        self.sanity_patterns = sn.assert_found(r'^8', self.stdout)
-        self.perf_patterns = {
-            'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
-                                        self.stdout, 'latency', float)
-        }
-        self.tags = {variant, 'benchmark', 'craype'}
-        self.reference = {
-            'dom:gpu': {
-                'latency': (8.23, None, 0.1, 'us')
-            },
-            'daint:gpu': {
-                'latency': (20.73, None, 2.0, 'us')
-            }
-        }
-        self.num_tasks_per_node = 1
-        self.num_gpus_per_node  = 1
+
+
+    @run_before('run')
+    def set_num_tasks(self):
         if self.current_system.name == 'daint':
             self.num_tasks = 16
         else:
             self.num_tasks = 6
 
-        self.extra_resources = {
-            'switches': {
-                'num_switches': 1
-            }
+    @run_before('sanity')
+    def set_sanity(self):
+        self.sanity_patterns = sn.assert_found(r'^8', self.stdout)
+
+    @run_before('performance')
+    def set_performance_patterns(self):
+        self.perf_patterns = {
+            'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
+                                        self.stdout, 'latency', float)
         }
 
 
@@ -72,8 +87,10 @@ class FlexAlltoallTest(rfm.RegressionTest):
         self.tags = {'diagnostic', 'ops', 'benchmark', 'craype'}
 
 
-@rfm.parameterized_test(['small'], ['large'])
+@rfm.simple_test
 class AllreduceTest(rfm.RegressionTest):
+    variant = parameter(['small'], ['large'])
+
     def __init__(self, variant):
         self.strict_check = False
         self.valid_systems = ['daint:gpu', 'daint:mc']
@@ -259,7 +276,7 @@ class G2GBandwidthTest(P2PBaseTest):
 
         self.build_system.cppflags = ['-D_ENABLE_CUDA_']
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def set_modules(self):
         if self.current_system.name in ['daint', 'dom']:
             self.num_gpus_per_node  = 1
@@ -303,7 +320,7 @@ class G2GLatencyTest(P2PBaseTest):
 
         self.build_system.cppflags = ['-D_ENABLE_CUDA_']
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def set_modules(self):
         if self.current_system.name in ['daint', 'dom']:
             self.num_gpus_per_node  = 1
