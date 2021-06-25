@@ -24,9 +24,6 @@ def set_gpu_arch(self):
         else:
             self.modules = ['cdt-cuda/21.05']
 
-        if cs == 'dom':
-            self.modules += ['cudatoolkit/11.1.0_3.39-4.1__g484e319']
-
     elif cs in {'arola', 'tsa'}:
         self.gpu_arch = '70'
         self.modules = ['cuda/10.1.243']
