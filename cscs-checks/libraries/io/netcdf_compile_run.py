@@ -28,7 +28,8 @@ class NetCDFTest(rfm.RegressionTest):
 
         if self.current_system.name in ['daint', 'dom']:
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
-                                        'PrgEnv-intel', 'PrgEnv-pgi']
+                                        'PrgEnv-intel', 'PrgEnv-pgi',
+                                        'PrgEnv-nvidia']
             self.modules = ['cray-netcdf']
         elif self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
