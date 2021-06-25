@@ -50,7 +50,7 @@ class AutomaticArraysCheck(rfm.RegressionTest):
     @run_before('compile')
     def setflags(self):
         if self.current_system.name in ['daint', 'dom']:
-            if (not self.current_environ.name.startswith('PrgEnv-nvidia')):
+            if not self.current_environ.name.startswith('PrgEnv-nvidia'):
                 self.modules = ['craype-accel-nvidia60']
             else:
                 self.build_system.fflags += ['-acc', '-ta=tesla,cc60',
