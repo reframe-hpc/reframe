@@ -20,6 +20,7 @@ def test_directives():
         run_before('run')(ext)
         run_after('run')(ext)
         require_deps(ext)
+        v = required
 
         def __init__(self):
             assert not hasattr(self, 'parameter')
@@ -28,6 +29,7 @@ def test_directives():
             assert not hasattr(self, 'run_before')
             assert not hasattr(self, 'run_after')
             assert not hasattr(self, 'require_deps')
+            assert not hasattr(self, 'required')
 
     MyTest()
 
