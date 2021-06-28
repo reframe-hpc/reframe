@@ -116,7 +116,6 @@ class AllreduceTest(rfm.RegressionTest):
         }
     }
 
-    # def __init__(self, variant):
     @run_after('init')
     def add_valid_systems(self):
         if self.variant == 'small':
@@ -164,29 +163,36 @@ class AllreduceTest(rfm.RegressionTest):
 
 
 class P2PBaseTest(rfm.RegressionTest):
-    def __init__(self):
-        self.exclusive_access = True
-        self.strict_check = False
-        self.num_tasks = 2
-        self.num_tasks_per_node = 1
-        self.descr = 'P2P microbenchmark'
-        self.build_system = 'Make'
-        self.build_system.makefile = 'Makefile_p2p'
+    exclusive_access = True
+    strict_check = False
+    num_tasks = 2
+    num_tasks_per_node = 1
+    descr = 'P2P microbenchmark'
+    build_system = 'Make'
+    maintainers = ['RS', 'AJ']
+    tags = {'production', 'benchmark', 'craype'}
+    extra_resources = {
+        'switches': {
+            'num_switches': 1
+        }
+    }
+
+    @run_after('init')
+    def add_valid_systems(self):
         if self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-pgi']
         else:
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                         'PrgEnv-intel', 'PrgEnv-nvidia']
-        self.maintainers = ['RS', 'AJ']
-        self.tags = {'production', 'benchmark', 'craype'}
-        self.sanity_patterns = sn.assert_found(r'^4194304', self.stdout)
 
-        self.extra_resources = {
-            'switches': {
-                'num_switches': 1
-            }
-        }
+    @run_before('compile')
+    def set_makefile(self):
+        self.build_system.makefile = 'Makefile_p2p'
+
+    @run_before('sanity')
+    def set_sanity(self):
+        self.sanity_patterns = sn.assert_found(r'^4194304', self.stdout)
 
 
 @rfm.simple_test
