@@ -10,7 +10,7 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class CrayCPUTargetTest(rfm.RunOnlyRegressionTest):
     descr = 'Checks whether CRAY_CPU_TARGET is set'
-    valid_systems = ['daint:login', 'dom:login', 'pilatus:login']
+    valid_systems = ['daint:login', 'dom:login', 'eiger:login', 'pilatus:login']
     valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu', 'PrgEnv-intel',
                            'PrgEnv-pgi', 'PrgEnv-nvidia']
     sourcesdir = None
