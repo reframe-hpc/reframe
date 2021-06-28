@@ -684,7 +684,6 @@ site_configuration = {
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
-                        'PrgEnv-nvidia',
                         'cpeAMD',
                         'cpeCray',
                         'cpeGNU',
@@ -704,7 +703,6 @@ site_configuration = {
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
-                        'PrgEnv-nvidia',
                         'cpeAMD',
                         'cpeCray',
                         'cpeGNU',
@@ -747,7 +745,6 @@ site_configuration = {
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
-                        'PrgEnv-nvidia',
                         'cpeAMD',
                         'cpeCray',
                         'cpeGNU',
@@ -767,7 +764,6 @@ site_configuration = {
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
-                        'PrgEnv-nvidia',
                         'cpeAMD',
                         'cpeCray',
                         'cpeGNU',
@@ -1079,17 +1075,6 @@ site_configuration = {
             'name': 'PrgEnv-pgi',
             'modules': [
                 'PrgEnv-pgi'
-            ]
-        },
-        {
-            'name': 'PrgEnv-nvidia',
-            'target_systems': [
-                'pilatus', 'eiger'
-            ],
-            'modules': [
-                'PrgEnv-nvidia',
-                # FIXME: We should not be forcing a cdt version
-                'cpe/21.06'
             ]
         },
         {
