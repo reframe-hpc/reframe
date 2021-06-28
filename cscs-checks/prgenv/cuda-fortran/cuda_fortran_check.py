@@ -11,11 +11,10 @@ import reframe.utility.sanity as sn
 class CUDAFortranCheck(rfm.RegressionTest):
     def __init__(self):
         self.valid_systems = ['daint:gpu', 'dom:gpu']
-        self.valid_prog_environs = ['PrgEnv-pgi']
+        self.valid_prog_environs = ['PrgEnv-pgi', 'PrgEnv-nvidia']
         self.sourcepath = 'vecAdd_cuda.cuf'
-        self.modules = ['craype-accel-nvidia60']
         self.build_system = 'SingleSource'
-        self.build_system.fflags = ['-ta=tesla:cc60']
+        self.build_system.fflags = ['-ta=tesla:cc60', '-lcublas', '-lcusparse']
         self.num_gpus_per_node = 1
         result = sn.extractsingle(r'final result:\s+(?P<result>\d+\.?\d*)',
                                   self.stdout, 'result', float)
@@ -23,8 +22,13 @@ class CUDAFortranCheck(rfm.RegressionTest):
         self.maintainers = ['TM', 'AJ']
         self.tags = {'production', 'craype'}
 
-    # FIXME: PGI 20.x does not support CUDA 11, see case #275674
     @run_before('compile')
-    def cudatoolkit_pgi_20x_workaround(self):
-        cudatoolkit_version = '10.2.89_3.29-7.0.2.1_3.27__g67354b4'
-        self.modules += [f'cudatoolkit/{cudatoolkit_version}']
+    def pgi_20x_and_prgenv_nvidia_workaround(self):
+        if self.current_system.name in ['daint']:
+            self.modules += [f'cudatoolkit/{cudatoolkit_version}']
+            if self.current_environ.name.startswith('PrgEnv-nvidia'):
+                self.skip('PrgEnv-nvidia not supported on Daint')
+        elif self.current_system.name in ['dom']:
+            self.modules += [f'cdt-cuda/21.05']
+            if self.current_environ.name.startswith('PrgEnv-pgi'):
+                self.skip('PrgEnv-pgi not supported on Dom')
