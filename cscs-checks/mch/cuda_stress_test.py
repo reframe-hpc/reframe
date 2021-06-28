@@ -8,7 +8,7 @@ import reframe.utility.sanity as sn
 
 
 @rfm.simple_test
-class CudaStressTest(rfm.RegressionTest):
+class cuda_stress_test(rfm.RegressionTest):
     descr = 'MCH CUDA stress test'
     valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn']
     valid_prog_environs = ['*']
@@ -25,9 +25,14 @@ class CudaStressTest(rfm.RegressionTest):
             self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-gnu-nompi',
                                         'PrgEnv-pgi', 'PrgEnv-pgi-nompi']
-            self.modules = ['cuda/10.1.243']
         else:
-            self.valid_prog_environs = ['PrgEnv-gnu']
+            self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-nvidia']
+
+    @run_after('setup')
+    def set_modules(self):
+        if self.current_system.name in {'arolla', 'tsa'}:
+            self.modules = ['cuda/10.1.243']
+        elif self.current_environ.name != 'PrgEnv-nvidia':
             self.modules = ['craype-accel-nvidia60', 'cdt-cuda']
 
     @run_before('compile')
