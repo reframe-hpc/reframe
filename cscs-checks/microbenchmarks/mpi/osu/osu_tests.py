@@ -312,7 +312,7 @@ class G2GBandwidthTest(P2PBaseTest):
             self.num_gpus_per_node  = 1
             self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
             if self.current_environ.name == 'PrgEnv-nvidia':
-                self.modules = [ 'cudatoolkit/21.3_11.2']
+                self.modules = ['cudatoolkit/21.3_11.2']
             else:
                 self.modules = ['craype-accel-nvidia60']
         elif self.current_system.name in ['arolla', 'tsa']:
