@@ -30,7 +30,7 @@ class cuda_stress_test(rfm.RegressionTest):
 
     @run_after('setup')
     def set_modules(self):
-        if self.current_system.name in{'arolla', 'tsa'}:
+        if self.current_system.name in {'arolla', 'tsa'}:
             self.modules = ['cuda/10.1.243']
         elif self.current_environ.name != 'PrgEnv-nvidia':
             self.modules = ['craype-accel-nvidia60', 'cdt-cuda']
