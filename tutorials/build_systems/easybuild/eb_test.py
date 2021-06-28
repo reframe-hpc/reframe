@@ -16,11 +16,11 @@ class BZip2Check(rfm.RegressionTest):
         self.build_system.easyconfigs = ['bzip2-1.0.6.eb']
         self.build_system.options = ['-f']
 
+    @run_before('run')
+    def prepare_run(self):
+        self.modules = self.build_system.generated_modules
+
     @run_before('sanity')
     def set_sanity(self):
         self.sanity_patterns = sn.assert_found(r'Version 1.0.6',
                                                self.stderr)
-
-    @run_before('run')
-    def prepare_run(self):
-        self.modules = self.build_system.generated_modules
