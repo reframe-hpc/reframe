@@ -2,24 +2,25 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-class EasybuildMixin(rfm.RegressionTest):
-    @rfm.run_before('run')
-    def prepare_run(self):
-        self.modules = self.build_system.generated_modules
-
-
 @rfm.simple_test
-class BZip2Check(EasybuildMixin):
-    def __init__(self):
-        self.descr = 'This demonstrates the EasyBuild build system.'
-        self.valid_systems = ['daint:gpu']
-        self.valid_prog_environs = ['gnu']
-        self.modules = ['daint-gpu',
-                        'EasyBuild-custom']
+class BZip2Check(rfm.RegressionTest):
+    descr = 'This demonstrates the EasyBuild build system.'
+    valid_systems = ['daint:gpu']
+    valid_prog_environs = ['gnu']
+    executable = 'bzip2'
+    executable_opts = ['--help']
+
+    @run_before('compile')
+    def set_makefile(self):
         self.build_system = 'EasyBuild'
         self.build_system.easyconfigs = ['bzip2-1.0.6.eb']
         self.build_system.options = ['-f']
+
+    @run_before('sanity')
+    def set_sanity(self):
         self.sanity_patterns = sn.assert_found(r'Version 1.0.6',
                                                self.stderr)
-        self.executable = 'bzip2'
-        self.executable_opts = ['--help']
+
+    @run_before('run')
+    def prepare_run(self):
+        self.modules = self.build_system.generated_modules
