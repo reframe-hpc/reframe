@@ -97,30 +97,46 @@ class FlexAlltoallTest(rfm.RegressionTest):
 @rfm.simple_test
 class AllreduceTest(rfm.RegressionTest):
     variant = parameter(['small'], ['large'])
+    strict_check = False
+    valid_systems = ['daint:gpu', 'daint:mc']
+    descr = 'Allreduce OSU microbenchmark'
+    build_system = 'Make'
+    executable = './osu_allreduce'
+    # The -x option controls the number of warm-up iterations
+    # The -i option controls the number of iterations
+    executable_opts = ['-m', '8', '-x', '1000', '-i', '20000']
+    valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-nvidia']
+    maintainers = ['RS', 'AJ']
+    tags = {'production', 'benchmark', 'craype'}
+    num_tasks_per_node = 1
+    num_gpus_per_node  = 1
+    extra_resources = {
+        'switches': {
+            'num_switches': 1
+        }
+    }
 
-    def __init__(self, variant):
-        self.strict_check = False
-        self.valid_systems = ['daint:gpu', 'daint:mc']
-        if variant == 'small':
+    # def __init__(self, variant):
+    @run_after('init')
+    def add_valid_systems(self):
+        if self.variant == 'small':
             self.valid_systems += ['dom:gpu', 'dom:mc']
 
-        self.descr = 'Allreduce OSU microbenchmark'
-        self.build_system = 'Make'
+    @run_before('compile')
+    def set_makefile(self):
         self.build_system.makefile = 'Makefile_allreduce'
-        self.executable = './osu_allreduce'
-        # The -x option controls the number of warm-up iterations
-        # The -i option controls the number of iterations
-        self.executable_opts = ['-m', '8', '-x', '1000', '-i', '20000']
-        self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-nvidia']
-        self.maintainers = ['RS', 'AJ']
+
+    @run_before('run')
+    def set_num_tasks(self):
+        self.num_tasks = 6 if self.variant == 'small' else 16
+
+    @run_before('sanity')
+    def set_sanity(self):
         self.sanity_patterns = sn.assert_found(r'^8', self.stdout)
-        self.perf_patterns = {
-            'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
-                                        self.stdout, 'latency', float)
-        }
-        self.tags = {'production', 'benchmark', 'craype'}
-        if variant == 'small':
-            self.num_tasks = 6
+
+    @run_before('performance')
+    def set_performance_patterns(self):
+        if self.variant == 'small':
             self.reference = {
                 'dom:gpu': {
                     'latency': (5.67, None, 0.05, 'us')
@@ -133,7 +149,6 @@ class AllreduceTest(rfm.RegressionTest):
                 }
             }
         else:
-            self.num_tasks = 16
             self.reference = {
                 'daint:gpu': {
                     'latency': (13.62, None, 1.16, 'us')
@@ -142,13 +157,9 @@ class AllreduceTest(rfm.RegressionTest):
                     'latency': (19.07, None, 1.64, 'us')
                 }
             }
-
-        self.num_tasks_per_node = 1
-        self.num_gpus_per_node  = 1
-        self.extra_resources = {
-            'switches': {
-                'num_switches': 1
-            }
+        self.perf_patterns = {
+            'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
+                                        self.stdout, 'latency', float)
         }
 
 
