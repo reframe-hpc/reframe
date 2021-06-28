@@ -178,7 +178,7 @@ class P2PBaseTest(rfm.RegressionTest):
     }
 
     @run_after('init')
-    def add_valid_systems(self):
+    def add_valid_prog_environs(self):
         if self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-pgi']
@@ -197,36 +197,37 @@ class P2PBaseTest(rfm.RegressionTest):
 
 @rfm.simple_test
 class P2PCPUBandwidthTest(P2PBaseTest):
-    def __init__(self):
-        super().__init__()
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'arolla:cn', 'tsa:cn', 'eiger:mc', 'pilatus:mc']
-        self.executable = './p2p_osu_bw'
-        self.executable_opts = ['-x', '100', '-i', '1000']
-        self.reference = {
-            'daint:gpu': {
-                'bw': (9607.0, -0.10, None, 'MB/s')
-            },
-            'daint:mc': {
-                'bw': (9649.0, -0.10, None, 'MB/s')
-            },
-            'dom:gpu': {
-                'bw': (9476.3, -0.05, None, 'MB/s')
-            },
-            'dom:mc': {
-                'bw': (9528.0, -0.20, None, 'MB/s')
-            },
-            'eiger:mc': {
-                'bw': (12240.0, -0.10, None, 'MB/s')
-            },
-            'pilatus:mc': {
-                'bw': (12240.0, -0.10, None, 'MB/s')
-            },
-            # keeping as reference:
-            # 'monch:compute': {
-            #     'bw': (6317.84, -0.15, None, 'MB/s')
-            # },
-        }
+    valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+                     'arolla:cn', 'tsa:cn', 'eiger:mc', 'pilatus:mc']
+    executable = './p2p_osu_bw'
+    executable_opts = ['-x', '100', '-i', '1000']
+    reference = {
+        'daint:gpu': {
+            'bw': (9607.0, -0.10, None, 'MB/s')
+        },
+        'daint:mc': {
+            'bw': (9649.0, -0.10, None, 'MB/s')
+        },
+        'dom:gpu': {
+            'bw': (9476.3, -0.05, None, 'MB/s')
+        },
+        'dom:mc': {
+            'bw': (9528.0, -0.20, None, 'MB/s')
+        },
+        'eiger:mc': {
+            'bw': (12240.0, -0.10, None, 'MB/s')
+        },
+        'pilatus:mc': {
+            'bw': (12240.0, -0.10, None, 'MB/s')
+        },
+        # keeping as reference:
+        # 'monch:compute': {
+        #     'bw': (6317.84, -0.15, None, 'MB/s')
+        # },
+    }
+
+    @run_before('performance')
+    def set_performance_patterns(self):
         self.perf_patterns = {
             'bw': sn.extractsingle(r'^4194304\s+(?P<bw>\S+)',
                                    self.stdout, 'bw', float)
@@ -235,36 +236,37 @@ class P2PCPUBandwidthTest(P2PBaseTest):
 
 @rfm.simple_test
 class P2PCPULatencyTest(P2PBaseTest):
-    def __init__(self):
-        super().__init__()
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'arolla:cn', 'tsa:cn', 'eiger:mc', 'pilatus:mc']
-        self.executable_opts = ['-x', '100', '-i', '1000']
+    executable = './p2p_osu_latency'
+    reference = {
+        'daint:gpu': {
+            'latency': (1.30, None, 0.70, 'us')
+        },
+        'daint:mc': {
+            'latency': (1.61, None, 0.85, 'us')
+        },
+        'dom:gpu': {
+            'latency': (1.138, None, 0.10, 'us')
+        },
+        'dom:mc': {
+            'latency': (1.24, None, 0.15, 'us')
+        },
+        'eiger:mc': {
+            'latency': (2.33, None, 0.15, 'us')
+        },
+        'pilatus:mc': {
+            'latency': (2.33, None, 0.15, 'us')
+        },
+        # keeping as reference:
+        # 'monch:compute': {
+        #     'latency': (1.27, None, 0.1, 'us')
+        # },
+    }
 
-        self.executable = './p2p_osu_latency'
-        self.reference = {
-            'daint:gpu': {
-                'latency': (1.30, None, 0.70, 'us')
-            },
-            'daint:mc': {
-                'latency': (1.61, None, 0.85, 'us')
-            },
-            'dom:gpu': {
-                'latency': (1.138, None, 0.10, 'us')
-            },
-            'dom:mc': {
-                'latency': (1.24, None, 0.15, 'us')
-            },
-            'eiger:mc': {
-                'latency': (2.33, None, 0.15, 'us')
-            },
-            'pilatus:mc': {
-                'latency': (2.33, None, 0.15, 'us')
-            },
-            # keeping as reference:
-            # 'monch:compute': {
-            #     'latency': (1.27, None, 0.1, 'us')
-            # },
+    @run_before('performance')
+    def set_performance_patterns(self):
+        self.perf_patterns = {
+            'bw': sn.extractsingle(r'^4194304\s+(?P<bw>\S+)',
+                                   self.stdout, 'bw', float)
         }
         self.perf_patterns = {
             'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
@@ -274,30 +276,33 @@ class P2PCPULatencyTest(P2PBaseTest):
 
 @rfm.simple_test
 class G2GBandwidthTest(P2PBaseTest):
-    def __init__(self):
-        super().__init__()
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn']
-        self.num_gpus_per_node = 1
-        self.executable = './p2p_osu_bw'
-        self.executable_opts = ['-x', '100', '-i', '1000', '-d',
-                                'cuda', 'D', 'D']
+    valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn']
+    num_gpus_per_node = 1
+    executable = './p2p_osu_bw'
+    executable_opts = ['-x', '100', '-i', '1000', '-d',
+                       'cuda', 'D', 'D']
 
-        self.reference = {
-            'dom:gpu': {
-                'bw': (8813.09, -0.05, None, 'MB/s')
-            },
-            'daint:gpu': {
-                'bw': (8765.65, -0.1, None, 'MB/s')
-            },
-            '*': {
-                'bw': (0, None, None, 'MB/s')
-            }
+    reference = {
+        'dom:gpu': {
+            'bw': (8813.09, -0.05, None, 'MB/s')
+        },
+        'daint:gpu': {
+            'bw': (8765.65, -0.1, None, 'MB/s')
+        },
+        '*': {
+            'bw': (0, None, None, 'MB/s')
         }
+    }
+
+    @run_before('performance')
+    def set_performance_patterns(self):
         self.perf_patterns = {
             'bw': sn.extractsingle(r'^4194304\s+(?P<bw>\S+)',
                                    self.stdout, 'bw', float)
         }
 
+    @run_before('compile')
+    def set_cpp_flags(self):
         self.build_system.cppflags = ['-D_ENABLE_CUDA_']
 
     @run_before('compile')
@@ -321,27 +326,30 @@ class G2GBandwidthTest(P2PBaseTest):
 
 @rfm.simple_test
 class G2GLatencyTest(P2PBaseTest):
-    def __init__(self):
-        super().__init__()
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn']
-        self.num_gpus_per_node = 1
-        self.executable = './p2p_osu_latency'
-        self.executable_opts = ['-x', '100', '-i', '1000', '-d',
-                                'cuda', 'D', 'D']
+    valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn']
+    num_gpus_per_node = 1
+    executable = './p2p_osu_latency'
+    executable_opts = ['-x', '100', '-i', '1000', '-d',
+                            'cuda', 'D', 'D']
 
-        self.reference = {
-            'dom:gpu': {
-                'latency': (5.56, None, 0.1, 'us')
-            },
-            'daint:gpu': {
-                'latency': (6.8, None, 0.65, 'us')
-            },
-        }
+    reference = {
+        'dom:gpu': {
+            'latency': (5.56, None, 0.1, 'us')
+        },
+        'daint:gpu': {
+            'latency': (6.8, None, 0.65, 'us')
+        },
+    }
+
+    @run_before('performance')
+    def set_performance_patterns(self):
         self.perf_patterns = {
             'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
                                         self.stdout, 'latency', float)
         }
 
+    @run_before('compile')
+    def set_cpp_flags(self):
         self.build_system.cppflags = ['-D_ENABLE_CUDA_']
 
     @run_before('compile')
