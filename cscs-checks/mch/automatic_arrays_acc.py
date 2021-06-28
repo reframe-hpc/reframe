@@ -87,4 +87,3 @@ class AutomaticArraysCheck(rfm.RegressionTest):
             }
         }
         self.reference = self.arrays_reference[self.envname]
-
