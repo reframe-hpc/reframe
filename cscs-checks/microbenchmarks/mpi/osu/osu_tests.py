@@ -235,6 +235,8 @@ class P2PCPUBandwidthTest(P2PBaseTest):
 
 @rfm.simple_test
 class P2PCPULatencyTest(P2PBaseTest):
+    valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+                     'arolla:cn', 'tsa:cn', 'eiger:mc', 'pilatus:mc']
     executable = './p2p_osu_latency'
     reference = {
         'daint:gpu': {
@@ -310,14 +312,7 @@ class G2GBandwidthTest(P2PBaseTest):
             self.num_gpus_per_node  = 1
             self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
             if self.current_environ.name == 'PrgEnv-nvidia':
-                self.modules = ['cdt-cuda/21.05']
-                self.build_system.cppflags += ['-I$NVIDIA_PATH/cuda/include',
-                                               '-w']
-                self.build_system.ldflags = [
-                    '-L${NVIDIA_PATH}/cuda/lib64',
-                    '-L${NVIDIA_PATH}/cuda/lib64/stubs',
-                    '-lcuda', '-lcudart'
-                ]
+                self.modules = [ 'cudatoolkit/21.3_11.2']
             else:
                 self.modules = ['craype-accel-nvidia60']
         elif self.current_system.name in ['arolla', 'tsa']:
@@ -360,14 +355,7 @@ class G2GLatencyTest(P2PBaseTest):
             self.num_gpus_per_node  = 1
             self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
             if self.current_environ.name == 'PrgEnv-nvidia':
-                self.modules = ['cdt-cuda/21.05']
-                self.build_system.cppflags += ['-I$NVIDIA_PATH/cuda/include',
-                                               '-w']
-                self.build_system.ldflags = [
-                    '-L${NVIDIA_PATH}/cuda/lib64',
-                    '-L${NVIDIA_PATH}/cuda/lib64/stubs',
-                    '-lcuda', '-lcudart'
-                ]
+                self.modules = ['cudatoolkit/21.3_11.2']
             else:
                 self.modules = ['craype-accel-nvidia60']
         elif self.current_system.name in ['arolla', 'tsa']:
