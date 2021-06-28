@@ -14,7 +14,7 @@ class CUDAFortranCheck(rfm.RegressionTest):
         self.valid_prog_environs = ['PrgEnv-pgi', 'PrgEnv-nvidia']
         self.sourcepath = 'vecAdd_cuda.cuf'
         self.build_system = 'SingleSource'
-        self.build_system.fflags = ['-ta=tesla:cc60', '-lcublas', '-lcusparse']
+        self.build_system.fflags = ['-ta=tesla:cc60']
         self.num_gpus_per_node = 1
         result = sn.extractsingle(r'final result:\s+(?P<result>\d+\.?\d*)',
                                   self.stdout, 'result', float)
