@@ -543,7 +543,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:     .. versionchanged:: 3.0
     #:        The measurement unit is required. The user should explicitly
     #:        specify :class:`None` if no unit is available.
-    reference = variable(typ.Tuple[object, object, object, object],
+    reference = variable(typ.Tuple[object, object, object],
+                         typ.Tuple[object, object, object, object],
                          field=fields.ScopedDictField, value={})
     # FIXME: There is not way currently to express tuples of `float`s or
     # `None`s, so we just use the very generic `object`
@@ -587,8 +588,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:     </sanity_functions_reference>`) as values.
     #:     :class:`None` is also allowed.
     #: :default: :class:`None`
-    perf_patterns = variable(typ.Dict[str, _DeferredExpression],
-                             type(None), value=None)
+    perf_patterns = variable(typ.Dict[str, _DeferredExpression])
 
     #: List of modules to be loaded before running this test.
     #:
@@ -1562,7 +1562,18 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
               more details.
 
         '''
-        if self.perf_patterns is None:
+
+        if hasattr(self, '_rfm_perf'):
+            if hasattr(self, 'perf_patterns'):
+                raise ReframeSyntaxError(
+                    f"assigning a value to 'perf_patters' conflicts with ",
+                    f"using the 'performance_function' decorator (class ",
+                    f"{self.__class__.__qualname__})"
+                )
+
+            self.perf_patterns = self._rfm_perf()
+
+        if not hasattr(self, 'perf_patterns'):
             return
 
         self._setup_perf_logging()
