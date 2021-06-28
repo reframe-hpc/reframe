@@ -13,6 +13,12 @@ import reframe.utility.osext as osext
 from reframe.core.exceptions import SanityError
 
 
+def add_prgenv_nvidia(self):
+    cs = self.current_system.name
+    if cs in {'daint', 'dom'}:
+        self.valid_prog_environs += ['PrgEnv-nvidia']
+
+
 @rfm.simple_test
 class CompileAffinityTool(rfm.CompileOnlyRegressionTest):
     valid_systems = [
@@ -34,9 +40,20 @@ class CompileAffinityTool(rfm.CompileOnlyRegressionTest):
     maintainers = ['RS', 'SK']
     tags = {'production', 'scs', 'maintenance', 'craype'}
 
+    run_after('init')(bind(add_prgenv_nvidia))
+
     @run_before('compile')
     def set_build_opts(self):
         self.build_system.options = ['-C affinity', 'MPI=1']
+
+    @run_before('compile')
+    def prgenv_nvidia_workaround(self):
+        cs = self.current_system.name
+        ce = self.current_environ.name
+        if ce == 'PrgEnv-nvidia' and cs == 'dom':
+            self.build_system.cppflags = [
+                '-D__GCC_ATOMIC_TEST_AND_SET_TRUEVAL'
+            ]
 
     @run_before('sanity')
     def assert_exec_exists(self):
@@ -105,6 +122,8 @@ class AffinityTestBase(rfm.RunOnlyRegressionTest):
 
     maintainers = ['RS', 'SK']
     tags = {'production', 'scs', 'maintenance', 'craype'}
+
+    run_after('init')(bind(add_prgenv_nvidia))
 
     @run_after('init')
     def set_deps(self):

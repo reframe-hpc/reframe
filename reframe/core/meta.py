@@ -243,7 +243,7 @@ class RegressionTestMeta(type):
 
         blacklist = [
             'parameter', 'variable', 'bind', 'run_before', 'run_after',
-            'require_deps'
+            'require_deps', 'required'
         ]
         for b in blacklist:
             namespace.pop(b, None)
