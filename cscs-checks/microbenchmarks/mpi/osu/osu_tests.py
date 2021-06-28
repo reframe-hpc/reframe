@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-from reframe.core.decorators import run_after
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -21,7 +20,7 @@ class AlltoallTest(rfm.RegressionTest):
     # The -i option sets the number of iterations
     executable_opts = ['-m', '8', '-x', '1000', '-i', '20000']
     valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
-                                'PrgEnv-intel', 'PrgEnv-nvidia']
+                           'PrgEnv-intel', 'PrgEnv-nvidia']
     maintainers = ['RS', 'AJ']
     reference = {
         'dom:gpu': {
@@ -312,10 +311,13 @@ class G2GBandwidthTest(P2PBaseTest):
             self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
             if self.current_environ.name == 'PrgEnv-nvidia':
                 self.modules = ['cdt-cuda/21.05']
-                self.build_system.cppflags += ['-I$NVIDIA_PATH/cuda/include', '-w']
-                self.build_system.ldflags = ['-L${NVIDIA_PATH}/cuda/lib64',
-                                             '-L${NVIDIA_PATH}/cuda/lib64/stubs',
-                                             '-lcuda', '-lcudart']
+                self.build_system.cppflags += ['-I$NVIDIA_PATH/cuda/include',
+                                               '-w']
+                self.build_system.ldflags = [
+                    '-L${NVIDIA_PATH}/cuda/lib64',
+                    '-L${NVIDIA_PATH}/cuda/lib64/stubs',
+                    '-lcuda', '-lcudart'
+                ]
             else:
                 self.modules = ['craype-accel-nvidia60']
         elif self.current_system.name in ['arolla', 'tsa']:
@@ -330,7 +332,7 @@ class G2GLatencyTest(P2PBaseTest):
     num_gpus_per_node = 1
     executable = './p2p_osu_latency'
     executable_opts = ['-x', '100', '-i', '1000', '-d',
-                            'cuda', 'D', 'D']
+                       'cuda', 'D', 'D']
 
     reference = {
         'dom:gpu': {
@@ -359,10 +361,13 @@ class G2GLatencyTest(P2PBaseTest):
             self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
             if self.current_environ.name == 'PrgEnv-nvidia':
                 self.modules = ['cdt-cuda/21.05']
-                self.build_system.cppflags += ['-I$NVIDIA_PATH/cuda/include', '-w']
-                self.build_system.ldflags = ['-L${NVIDIA_PATH}/cuda/lib64',
-                                             '-L${NVIDIA_PATH}/cuda/lib64/stubs',
-                                             '-lcuda', '-lcudart']
+                self.build_system.cppflags += ['-I$NVIDIA_PATH/cuda/include',
+                                               '-w']
+                self.build_system.ldflags = [
+                    '-L${NVIDIA_PATH}/cuda/lib64',
+                    '-L${NVIDIA_PATH}/cuda/lib64/stubs',
+                    '-lcuda', '-lcudart'
+                ]
             else:
                 self.modules = ['craype-accel-nvidia60']
         elif self.current_system.name in ['arolla', 'tsa']:
