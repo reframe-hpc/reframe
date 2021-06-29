@@ -51,7 +51,7 @@ class MpiInitTest(rfm.RegressionTest):
         }
     )
     prebuild_cmds += ['module list']
-    time_limit = '1m'
+    time_limit = '2m'
 
     def __init__(self):
         if self.current_system.name in ['pilatus', 'eiger']:
@@ -113,33 +113,3 @@ class MpiInitTest(rfm.RegressionTest):
                                                [sn.evaluate(required_thread)],
                          msg='sanity_eq: {0} != {1}')
         ])
-
-
-@rfm.simple_test
-class MpiHelloTest(rfm.RegressionTest):
-    def __init__(self):
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn',
-                              'eiger:mc', 'pilatus:mc']
-        self.valid_prog_environs = ['PrgEnv-cray']
-        if self.current_system.name in ['arolla', 'tsa']:
-            self.exclusive_access = True
-            self.valid_prog_environs = ['PrgEnv-gnu']
-
-        self.descr = 'MPI Hello World'
-        self.sourcesdir = 'src/mpi'
-        self.sourcepath = 'mpi_helloworld.c'
-        self.maintainers = ['RS', 'AJ']
-        self.num_tasks_per_node = 1
-        self.num_tasks = 0
-        num_processes = sn.extractsingle(
-            r'Received correct messages from (?P<nprocs>\d+) processes',
-            self.stdout, 'nprocs', int)
-        self.sanity_patterns = sn.assert_eq(num_processes,
-                                            self.num_tasks_assigned-1)
-        self.tags = {'diagnostic', 'ops', 'craype'}
-
-    @property
-    @sn.sanity_function
-    def num_tasks_assigned(self):
-        return self.job.num_tasks
