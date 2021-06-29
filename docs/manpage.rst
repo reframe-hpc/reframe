@@ -583,7 +583,7 @@ Miscellaneous options
    Detect the local host processor topology, store it to ``FILE`` and exit.
    If no ``FILE`` is specified, the standard output will be used.
 
-   .. versionadded:: 3.6.2
+   .. versionadded:: 3.7.0
 
 
 .. option:: --failure-stats
@@ -716,7 +716,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       :align: left
 
       ================================== ==================
-      Associated command line option     n/a
+      Associated command line option     N/A
       Associated configuration parameter :js:attr:`detect_remote_system_topology` general configuration parameter
       ================================== ==================
 
@@ -943,7 +943,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       :align: left
 
       ================================== ==================
-      Associated command line option     n/a
+      Associated command line option     N/A
       Associated configuration parameter :js:attr:`resolve_module_conflicts` general configuration parameter
       ================================== ==================
 

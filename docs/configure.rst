@@ -405,13 +405,13 @@ Let's see some concrete examples:
 Auto-detecting processor information
 ------------------------------------
 
-.. versionadded:: 3.6.2
+.. versionadded:: 3.7.0
 
 .. |devices| replace:: :attr:`devices`
 .. _devices: config_reference.html#.systems[].partitions[].devices
 .. |processor| replace:: :attr:`processor`
 .. _processor: config_reference.html#.systems[].partitions[].processor
-.. |detect_remote_system_topology| replace:: :attr:`processor`
+.. |detect_remote_system_topology| replace:: :attr:`detect_remote_system_topology`
 .. _detect_remote_system_topology: config_reference.html#.general[].detect_remote_system_topology
 
 ReFrame is able to detect the processor topology of both local and remote partitions automatically.

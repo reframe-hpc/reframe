@@ -1210,7 +1210,7 @@ General Configuration
    This may slow down the initialization of the framework, since it involves submitting auto-detection jobs to the remote partitions.
    For more information on how ReFrame auto-detects processor information, you may refer to :ref:`proc-autodetection`.
 
-   .. versionadded:: 3.6.2
+   .. versionadded:: 3.7.0
 
 
 .. js:attribute:: .general[].ignore_check_conflicts

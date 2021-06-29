@@ -252,7 +252,7 @@ def _sysctl_topo():
     cpuinfo['num_cpus'] = num_cpus
     cpuinfo['num_cpus_per_socket'] = num_cpus_per_socket
     cpuinfo['num_cpus_per_core'] = num_cpus_per_core
-    cpuinfo['topology']['numa_nodes'] = _str_from_bits(range(num_cpus))
+    cpuinfo['topology']['numa_nodes'] = [_str_from_bits(range(num_cpus))]
     cpuinfo['topology']['sockets'] = [
         _str_from_bits(range(start, start+num_cpus_per_socket))
         for start in range(0, num_cpus, num_cpus_per_socket)

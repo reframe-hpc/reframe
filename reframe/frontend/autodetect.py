@@ -4,26 +4,54 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import json
+import jsonschema
 import os
 import tempfile
 
 import reframe as rfm
 import reframe.utility.osext as osext
+from reframe.core.exceptions import ConfigError
 from reframe.core.logging import getlogger
 from reframe.core.runtime import runtime
 from reframe.core.schedulers import Job
 from reframe.utility.cpuinfo import cpuinfo
 
 
-def _load_info(filename):
+_REFRAME_GH_REPO = 'https://github.com/eth-cscs/reframe.git'
+
+
+def _subschema(fragment):
+    '''Create a configuration subschema.'''
+
+    full_schema = runtime().site_config.schema
+    return {
+        '$schema': full_schema['$schema'],
+        'defs': full_schema['defs'],
+        '$ref': fragment
+    }
+
+
+def _validate_info(info, schema):
+    if schema is None:
+        return info
+
+    jsonschema.validate(info, schema)
+    return info
+
+
+def _load_info(filename, schema=None):
     try:
         with open(filename) as fp:
-            return json.load(fp)
+            return _validate_info(json.load(fp), schema)
     except OSError as e:
         getlogger().warning(
             f'could not load file: {filename!r}: {e}'
         )
         return {}
+    except jsonschema.ValidationError as e:
+        raise ConfigError(
+            f'could not validate meta-config file {filename!r}'
+        ) from e
 
 
 def _save_info(filename, topo_info):
@@ -46,6 +74,24 @@ def _is_part_local(part):
 
 
 def _remote_detect(part):
+    def _emit_script(job, fresh=False):
+        if fresh:
+            commands = [
+                f'_prefix=$(mktemp -d)',
+                f'cd $_prefix',
+                f'git clone {_REFRAME_GH_REPO} reframe',
+                f'cd reframe',
+                f'./bootstrap.sh'
+            ]
+        else:
+            commands = []
+
+        launcher_cmd = job.launcher.run_command(job)
+        commands += [
+            f'{launcher_cmd} {rfm_exec} --detect-host-topology=topo.json'
+        ]
+        job.prepare(commands, trap_errors=True)
+
     getlogger().info(
         f'Detecting topology of remote partition {part.fullname!r}'
     )
@@ -57,10 +103,7 @@ def _remote_detect(part):
                              name='rfm-detect-job',
                              sched_access=part.access)
             with osext.change_dir(dirname):
-                launcher_cmd = job.launcher.run_command(job)
-                job.prepare([f'{launcher_cmd} {rfm_exec} '
-                             f'--detect-host-topology=topo.json'],
-                            trap_errors=True)
+                _emit_script(job, fresh)
                 with open(job.script_filename) as fp:
                     getlogger().debug(
                         f'submitting remote job script:\n{fp.read()}'
@@ -70,7 +113,6 @@ def _remote_detect(part):
                 job.wait()
                 with open('topo.json') as fp:
                     topo_info = json.load(fp)
-
     except Exception as e:
         getlogger().warning(f'failed to retrieve remote processor info: {e}')
         topo_info = {}
@@ -89,8 +131,7 @@ def detect_topology():
             os.getenv('HOME'), '.reframe/topology'
         )
     else:
-        config_prefix = os.path.dirname(config_file)
-        config_prefix = os.path.join(config_prefix, '_meta')
+        config_prefix = os.path.join(os.path.dirname(config_file), '_meta')
 
     for part in rt.system.partitions:
         getlogger().debug(f'detecting topology info for {part.fullname}')
@@ -123,14 +164,15 @@ def detect_topology():
             getlogger().debug(
                 f'> found topology file {topo_file!r}; loading...'
             )
-            part.processor._info = _load_info(topo_file)
+            part.processor._info = _load_info(topo_file,
+                                              _subschema('#/defs/processor_info'))
             found_procinfo = True
 
         if not found_devinfo and os.path.exists(dev_file):
             getlogger().debug(
                 f'> found devices file {dev_file!r}; loading...'
             )
-            part._devices = _load_info(dev_file)
+            part._devices = _load_info(dev_file, _subschema('#/defs/devices'))
             found_devinfo = True
 
         if found_procinfo and found_devinfo:
