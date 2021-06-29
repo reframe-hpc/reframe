@@ -85,9 +85,9 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         # cpe/21.06 cray-mpich/8.1.6 AOCC, CRAY, CRAYCLANG, GNU, INTEL, NVIDIA
         # }}}
         envname = self.current_environ.name
+        sysname = self.current_system.name
         self.cppflags = ''
-        if (self.current_system.name in ['dom', 'daint'] and
-           envname == 'PrgEnv-nvidia'):
+        if (sysname in ['dom', 'daint'] and envname == 'PrgEnv-nvidia'):
             mpi_version = int(os.getenv('CRAY_MPICH_VERSION').replace('.', ''))
             self.skip_if(
                 mpi_version <= 7716,
@@ -100,6 +100,8 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
             }
             self.cppflags = ('`pkg-config --cflags mpich` '
                              '`pkg-config --libs mpich`')
+        elif sysname in ['pilatus', 'eiger']:
+            self.skip_if(self.current_environ.name == 'PrgEnv-nvidia', '')
 
     @run_before('compile')
     def set_flags(self):

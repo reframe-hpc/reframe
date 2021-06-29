@@ -62,6 +62,13 @@ class MpiInitTest(rfm.RegressionTest):
         self.maintainers = ['JG', 'AJ']
         self.tags = {'production', 'craype'}
 
+    @run_before('compile')
+    def skip_nvidia_cray_ex(self):
+        envname = self.current_environ.name
+        sysname = self.current_system.name
+        if self.current_system.name in ['pilatus', 'eiger']:
+            self.skip_if(self.current_environ.name == 'PrgEnv-nvidia', '')
+
     @run_before('sanity')
     def set_sanity(self):
         # {{{ 0/ MPICH version:
