@@ -298,16 +298,15 @@ class RegressionTestMeta(type):
         # Gather all the locally defined sanity functions based on the
         # _rfm_sanity_fn attribute.
 
-        sn_fn = (v for v in namespace.values() if hasattr(v, '_rfm_sanity_fn'))
-        for i, fn in enumerate(sn_fn):
-            if i > 0:
+        sn_fn = [v for v in namespace.values() if hasattr(v, '_rfm_sanity_fn')]
+        if sn_fn:
+            cls._rfm_sanity = sn_fn[0]
+            if len(sn_fn) > 1:
                 raise ReframeSyntaxError(
                     f'{cls.__qualname__!r} defines more than one sanity '
                     'function in the class body.'
                 )
 
-            cls._rfm_sanity = fn
-            break
         else:
             # Search the bases if no local sanity functions exist.
             for base in (b for b in bases if hasattr(b, '_rfm_sanity')):
