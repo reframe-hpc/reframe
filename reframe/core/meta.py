@@ -271,7 +271,7 @@ class RegressionTestMeta(type):
 
         # Create a set with the attribute names already in use.
         cls._rfm_dir = set()
-        for base in [b for b in bases if hasattr(b, '_rfm_dir')]:
+        for base in (b for b in bases if hasattr(b, '_rfm_dir')):
             cls._rfm_dir.update(base._rfm_dir)
 
         used_attribute_names = set(cls._rfm_dir)
@@ -290,27 +290,26 @@ class RegressionTestMeta(type):
         # attribute; all dependencies will be resolved first in the post-setup
         # phase if not assigned elsewhere
         hook_reg = hooks.HookRegistry.create(namespace)
-        for base in [b for b in bases if hasattr(b, '_rfm_pipeline_hooks')]:
+        for base in (b for b in bases if hasattr(b, '_rfm_pipeline_hooks')):
             hook_reg.update(getattr(base, '_rfm_pipeline_hooks'))
 
         cls._rfm_pipeline_hooks = hook_reg
 
         # Gather all the locally defined sanity functions based on the
         # _rfm_sanity_fn attribute.
-        local_sn_fn = [
-            v for v in namespace.values() if hasattr(v, '_rfm_sanity_fn')
-        ]
-        if local_sn_fn != []:
-            if len(local_sn_fn) > 1:
+
+        sn_fn = [v for v in namespace.values() if hasattr(v, '_rfm_sanity_fn')]
+        if sn_fn:
+            cls._rfm_sanity = sn_fn[0]
+            if len(sn_fn) > 1:
                 raise ReframeSyntaxError(
                     f'{cls.__qualname__!r} defines more than one sanity '
                     'function in the class body.'
                 )
 
-            cls._rfm_sanity = local_sn_fn[0]
         else:
             # Search the bases if no local sanity functions exist.
-            for base in [b for b in bases if hasattr(b, '_rfm_sanity')]:
+            for base in (b for b in bases if hasattr(b, '_rfm_sanity')):
                 cls._rfm_sanity = getattr(base, '_rfm_sanity')
                 if cls._rfm_sanity.__name__ in namespace:
                     raise ReframeSyntaxError(
