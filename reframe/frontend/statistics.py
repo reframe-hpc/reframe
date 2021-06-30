@@ -313,12 +313,15 @@ class TestStats:
             for key, ref in t.check.perfvalues.items():
                 var = key.split(':')[-1]
                 val = ref[0]
-                try:
-                    unit = ref[4]
-                except IndexError:
-                    unit = '(no unit specified)'
+                unit = ' ' + ref[4] if ref[4] else ''
+                ref_val = ref[1]
+                if ref_val:
+                    percent = round(val / ref_val * 100)
+                    details = f' ({percent}% of {ref_val}{unit})'
+                else:
+                    details = ''
 
-                report_body.append(f'      * {var}: {val} {unit}')
+                report_body.append(f'      * {var}: {val}{unit}{details}')
 
         if report_body:
             return '\n'.join([report_start, report_title, *report_body,
