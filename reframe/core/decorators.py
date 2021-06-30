@@ -91,6 +91,16 @@ def _validate_test(cls):
         raise ValueError(f'decorated test ({cls.__qualname__!r}) has one or '
                          f'more undefined parameters')
 
+    conditions = [VersionValidator(v) for v in cls._rfm_required_version]
+    if (cls._rfm_required_version and
+        not any(c.validate(osext.reframe_version()) for c in conditions)):
+
+        getlogger().info('skipping incompatible test defined'
+                         ' in class: %s' % cls.__name__)
+        return False
+
+    return True
+
 
 def simple_test(cls):
     '''Class decorator for registering tests with ReFrame.
@@ -101,10 +111,9 @@ def simple_test(cls):
 
     .. versionadded:: 2.13
     '''
-    _validate_test(cls)
-
-    for _ in cls.param_space:
-        _register_test(cls)
+    if _validate_test(cls):
+        for _ in cls.param_space:
+            _register_test(cls)
 
     return cls
 
@@ -139,14 +148,14 @@ def parameterized_test(*inst):
     )
 
     def _do_register(cls):
-        _validate_test(cls)
-        if not cls.param_space.is_empty():
-            raise ValueError(
-                f'{cls.__qualname__!r} is already a parameterized test'
-            )
+        if _validate_test(cls):
+            if not cls.param_space.is_empty():
+                raise ValueError(
+                    f'{cls.__qualname__!r} is already a parameterized test'
+                )
 
-        for args in inst:
-            _register_test(cls, args)
+            for args in inst:
+                _register_test(cls, args)
 
         return cls
 
@@ -187,6 +196,12 @@ def required_version(*versions):
        These should be written as ``3.5.0`` and ``3.5.0-dev.0``.
 
     '''
+    warn.user_deprecation_warning(
+        'the @required_version decorator is deprecated; '
+        'please set the required_version in the class arguments instead',
+        from_version='3.8.0'
+    )
+
     if not versions:
         raise ValueError('no versions specified')
 

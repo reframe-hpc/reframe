@@ -798,9 +798,15 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         return super().__getattribute__(name)
 
     @classmethod
-    def __init_subclass__(cls, *, special=False, pin_prefix=False, **kwargs):
+    def __init_subclass__(cls, *, special=False, pin_prefix=False,
+                          required_version=[], **kwargs):
         super().__init_subclass__(**kwargs)
         cls._rfm_special_test = special
+
+        if required_version:
+            cls._rfm_required_version = required_version
+        elif not hasattr(cls, '_rfm_required_version'):
+            cls._rfm_required_version = []
 
         # Insert the prefix to pin the test to if the test lives in a test
         # library with resources in it.
