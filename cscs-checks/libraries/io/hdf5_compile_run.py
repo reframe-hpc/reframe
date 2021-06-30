@@ -31,9 +31,10 @@ class HDF5Test(rfm.RegressionTest):
         self.descr = (self.lang_names[self.lang] + ' HDF5 ' +
                       self.linkage.capitalize())
         self.sourcepath = f'h5ex_d_chunk.{self.lang}'
+        self.build_system.ldflags = [f'-{self.linkage}']
         if self.linkage == 'dynamic':
             self.valid_systems += ['eiger:mc', 'pilatus:mc']
-        self.build_system.ldflags = [f'-{self.linkage}']
+
         if self.current_system.name in ['eiger', 'pilatus']:
             # no cray-hdf5 as of PE 21.02 with PrgEnv-intel on Eiger and
             # Pilatus
