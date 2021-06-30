@@ -57,6 +57,7 @@ class OpenaccCudaCpp(rfm.RegressionTest):
                 '-acc', '-ta:tesla:cc60', '-Mnorpath', '-lstdc++',
                 '-Mcuda'
             ]
+            self.modules = ['cudatoolkit/21.3_11.2']
 
         elif self.current_environ.name.startswith('PrgEnv-pgi'):
             self.build_system.fflags += ['-acc']
