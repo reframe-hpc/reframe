@@ -2,7 +2,7 @@
 Understanding the Mechanism of Deferrable Functions
 ===================================================
 
-This section describes the mechanism behind deferrable functions, which in ReFrame, they are mostly used for sanity and performance checking.
+This section describes the mechanism behind deferrable functions, which in ReFrame, they are used for sanity and performance checking.
 Generally, writing a new sanity function in a :class:`~reframe.core.pipeline.RegressionTest` is as straightforward as decorating a simple member function with the built-in :func:`~reframe.core.pipeline.RegressionMixin.sanity_function` decorator.
 Behind the scenes, this decorator will convert the Python function into a deferrable function and schedule its evaluation for the sanity stage of the test.
 However, when dealing with more complex scenarios such as a deferrable function taking as an argument the results from other deferrable functions, it is crucial to understand how a deferrable function differs from a regular Python function, and when is it actually evaluated.

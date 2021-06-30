@@ -13,6 +13,7 @@ from reframe.core.exceptions import ReframeSyntaxError
 
 @pytest.fixture
 def MyMeta():
+    '''Utility fixture just for convenience.'''
     class Foo(metaclass=meta.RegressionTestMeta):
         pass
 
