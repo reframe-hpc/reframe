@@ -245,6 +245,37 @@ class RegressionTestMeta(type):
 
         namespace['sanity_function'] = sanity_function
         namespace['deferrable'] = deferrable
+
+        # Machinery to add performance variables
+        def performance_function(units):
+            '''Decoreate a function to extract a performance variable.
+
+            The ``units`` argument indicates the units of the performance
+            variable to be extracted.
+            '''
+
+            if not isinstance(units, str):
+                raise TypeError('provided units are not in string format')
+
+            def _fn(fn):
+              _def_fn = deferrable(fn)
+              setattr(_def_fn, '_rfm_perf_unit', units)
+              return _def_fn
+
+            return _fn
+
+        namespace['performance_function'] = performance_function
+
+        def performance_report(fn):
+            '''Mark a function to generate the dict with the perf report.
+
+            It must return an object of type
+            ``typ.Dict[str, _DefferredExpression]``.
+            '''
+            setattr(fn, '_rfm_perf_report', True)
+            return fn
+
+        namespace['performance_report'] = performance_report
         return metacls.MetaNamespace(namespace)
 
     def __new__(metacls, name, bases, namespace, **kwargs):
@@ -259,7 +290,8 @@ class RegressionTestMeta(type):
 
         blacklist = [
             'parameter', 'variable', 'bind', 'run_before', 'run_after',
-            'require_deps', 'required', 'deferrable', 'sanity_function'
+            'require_deps', 'required', 'deferrable', 'sanity_function',
+            'performance_function', 'performance_report'
         ]
         for b in blacklist:
             namespace.pop(b, None)
@@ -291,13 +323,12 @@ class RegressionTestMeta(type):
         # phase if not assigned elsewhere
         hook_reg = hooks.HookRegistry.create(namespace)
         for base in (b for b in bases if hasattr(b, '_rfm_pipeline_hooks')):
-            hook_reg.update(getattr(base, '_rfm_pipeline_hooks'))
+            hook_reg.update(getattr(base, '_rfm_pipeline_hooks'), namespace)
 
         cls._rfm_pipeline_hooks = hook_reg
 
         # Gather all the locally defined sanity functions based on the
         # _rfm_sanity_fn attribute.
-
         sn_fn = [v for v in namespace.values() if hasattr(v, '_rfm_sanity_fn')]
         if sn_fn:
             cls._rfm_sanity = sn_fn[0]
@@ -320,6 +351,42 @@ class RegressionTestMeta(type):
                     )
 
                 break
+
+        # Gather all the locally defined performance report functions based on
+        # the _rfm_perf_report attribute.
+        perf_report_fn = [
+            v for v in namespace.values() if hasattr(v, '_rfm_perf_report')
+        ]
+        if perf_report_fn:
+            cls._rfm_perf_report = perf_report_fn[0]
+            if len(perf_report_fn) > 1:
+                raise ReframeSyntaxError(
+                    f'{cls.__qualname__!r} defines more than one performance '
+                    'report function in the class body.'
+                )
+
+        else:
+            # Search the bases if no local perf report functions exist.
+            for base in (b for b in bases if hasattr(b, '_rfm_perf_report')):
+                cls._rfm_perf_report = getattr(base, '_rfm_perf_report')
+                if cls._rfm_perf_report.__name__ in namespace:
+                    raise ReframeSyntaxError(
+                        f'{cls.__qualname__!r} overrides the candidate '
+                        f'performance report function '
+                        f'{cls._rfm_perf_report.__qualname__!r} without '
+                        f'defining an alternative'
+                    )
+
+                break
+
+        # Build a set with all the performance functions
+        cls._rfm_perf_fns = {
+            k for k,v in namespace.items() if hasattr(v, '_rfm_perf_unit')
+        }
+        for base in (b for b in bases if hasattr(b, '_rfm_perf_fns')):
+            cls._rfm_perf_fns = cls._rfm_perf_fns.union(
+                {f for f in getattr(b, '_rfm_perf_fns') if f not in namespace}
+            )
 
         cls._final_methods = {v.__name__ for v in namespace.values()
                               if hasattr(v, '_rfm_final')}

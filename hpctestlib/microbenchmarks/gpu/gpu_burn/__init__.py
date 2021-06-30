@@ -51,12 +51,6 @@ class GpuBurn(rfm.RegressionTest, pin_prefix=True):
     build_system = 'Make'
     executable = './gpu_burn.x'
     num_tasks_per_node = 1
-    reference = {
-        '*': {
-            'perf': (0, None, None, 'Gflop/s'),
-            'temp': (0, None, None, 'degC')
-        }
-    }
 
     @run_before('compile')
     def set_gpu_build(self):
@@ -103,17 +97,28 @@ class GpuBurn(rfm.RegressionTest, pin_prefix=True):
             r'^\s*\[[^\]]*\]\s*GPU\s*\d+\(OK\)', self.stdout)
         ), self.num_tasks_assigned)
 
-    @run_before('performance')
-    def set_perf_patterns(self):
-        '''Extract the minimum performance and maximum temperature recorded.
+    @deferrable
+    def extract_perf(self, what, nid=None):
+        '''Utility to extract performance metrics.'''
 
-        The performance and temperature data are reported in Gflops/s and
-        deg. Celsius respectively.
-        '''
+        if what not in {'perf', 'temp'}:
+            raise ValueError(
+                f"unsupported value in 'what' argument ({what}!r)"
+            )
 
-        patt = (r'^\s*\[[^\]]*\]\s*GPU\s+\d+\(\S*\):\s+(?P<perf>\S*)\s+GF\/s'
-                r'\s+(?P<temp>\S*)\s+Celsius')
-        self.perf_patterns = {
-            'perf': sn.min(sn.extractall(patt, self.stdout, 'perf', float)),
-            'temp': sn.max(sn.extractall(patt, self.stdout, 'temp', float)),
-        }
+        if nid is None:
+            nid = r'[^\]]*'
+
+        patt = (rf'^\s*\[{nid}\]\s*GPU\s+\d+\(\S*\):\s+(?P<perf>\S*)\s+GF\/s'
+                rf'\s+(?P<temp>\S*)\s+Celsius')
+        return sn.extractall(patt, self.stdout, what, float)),
+
+    @performance_function('Gflop/s')
+    def perf(self, nid=None):
+        '''Lowest performance recorded.'''
+        return sn.min(self.extract_perf('perf', nid))
+
+    @performance_function('degC')
+    def temp(self, nid=None):
+        '''Maximum temperature recorded.'''
+        return sn.max(self.extract_perf('temp', nid))
