@@ -8,6 +8,7 @@ import pytest
 
 import reframe as rfm
 from reframe.core.exceptions import NameConflictError, ReframeSyntaxError
+from reframe.core.warnings import ReframeDeprecationWarning
 from reframe.frontend.loader import RegressionCheckLoader
 
 
@@ -60,9 +61,10 @@ def test_load_error(loader):
 
 
 def test_load_bad_required_version(loader):
-    with pytest.raises(ValueError):
-        loader.load_from_file('unittests/resources/checks_unlisted/'
-                              'no_required_version.py')
+    with pytest.warns(ReframeDeprecationWarning):
+        with pytest.raises(ValueError):
+            loader.load_from_file('unittests/resources/checks_unlisted/'
+                                'no_required_version.py')
 
 
 def test_load_bad_init(loader):
