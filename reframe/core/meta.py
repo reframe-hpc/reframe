@@ -16,6 +16,7 @@ import reframe.core.variables as variables
 import reframe.core.hooks as hooks
 
 from reframe.core.exceptions import ReframeSyntaxError
+from reframe.core.deferrable import deferrable
 
 
 _USER_PIPELINE_STAGES = (
@@ -229,6 +230,21 @@ class RegressionTestMeta(type):
 
         namespace['run_after'] = run_after
         namespace['require_deps'] = hooks.require_deps
+
+        # Machinery to add a sanity function
+        def sanity_function(fn):
+            '''Mark a function as the test's sanity function.
+
+            Decorated functions must be unary and they will be converted into
+            deferred expressions.
+            '''
+
+            _def_fn = deferrable(fn)
+            setattr(_def_fn, '_rfm_sanity_fn', True)
+            return _def_fn
+
+        namespace['sanity_function'] = sanity_function
+        namespace['deferrable'] = deferrable
         return metacls.MetaNamespace(namespace)
 
     def __new__(metacls, name, bases, namespace, **kwargs):
@@ -243,7 +259,7 @@ class RegressionTestMeta(type):
 
         blacklist = [
             'parameter', 'variable', 'bind', 'run_before', 'run_after',
-            'require_deps', 'required'
+            'require_deps', 'required', 'deferrable', 'sanity_function'
         ]
         for b in blacklist:
             namespace.pop(b, None)
@@ -255,9 +271,8 @@ class RegressionTestMeta(type):
 
         # Create a set with the attribute names already in use.
         cls._rfm_dir = set()
-        for base in bases:
-            if hasattr(base, '_rfm_dir'):
-                cls._rfm_dir.update(base._rfm_dir)
+        for base in (b for b in bases if hasattr(b, '_rfm_dir')):
+            cls._rfm_dir.update(base._rfm_dir)
 
         used_attribute_names = set(cls._rfm_dir)
 
@@ -275,11 +290,37 @@ class RegressionTestMeta(type):
         # attribute; all dependencies will be resolved first in the post-setup
         # phase if not assigned elsewhere
         hook_reg = hooks.HookRegistry.create(namespace)
-        for b in bases:
-            if hasattr(b, '_rfm_pipeline_hooks'):
-                hook_reg.update(getattr(b, '_rfm_pipeline_hooks'))
+        for base in (b for b in bases if hasattr(b, '_rfm_pipeline_hooks')):
+            hook_reg.update(getattr(base, '_rfm_pipeline_hooks'))
 
         cls._rfm_pipeline_hooks = hook_reg
+
+        # Gather all the locally defined sanity functions based on the
+        # _rfm_sanity_fn attribute.
+
+        sn_fn = [v for v in namespace.values() if hasattr(v, '_rfm_sanity_fn')]
+        if sn_fn:
+            cls._rfm_sanity = sn_fn[0]
+            if len(sn_fn) > 1:
+                raise ReframeSyntaxError(
+                    f'{cls.__qualname__!r} defines more than one sanity '
+                    'function in the class body.'
+                )
+
+        else:
+            # Search the bases if no local sanity functions exist.
+            for base in (b for b in bases if hasattr(b, '_rfm_sanity')):
+                cls._rfm_sanity = getattr(base, '_rfm_sanity')
+                if cls._rfm_sanity.__name__ in namespace:
+                    raise ReframeSyntaxError(
+                        f'{cls.__qualname__!r} overrides the candidate '
+                        f'sanity function '
+                        f'{cls._rfm_sanity.__qualname__!r} without '
+                        f'defining an alternative'
+                    )
+
+                break
+
         cls._final_methods = {v.__name__ for v in namespace.values()
                               if hasattr(v, '_rfm_final')}
 
@@ -287,14 +328,12 @@ class RegressionTestMeta(type):
         cls._final_methods.update(*(b._final_methods for b in bases
                                     if hasattr(b, '_final_methods')))
 
-        if hasattr(cls, '_rfm_special_test') and cls._rfm_special_test:
+        if getattr(cls, '_rfm_special_test', None):
             return
 
+        bases_w_final = [b for b in bases if hasattr(b, '_final_methods')]
         for v in namespace.values():
-            for b in bases:
-                if not hasattr(b, '_final_methods'):
-                    continue
-
+            for b in bases_w_final:
                 if callable(v) and v.__name__ in b._final_methods:
                     msg = (f"'{cls.__qualname__}.{v.__name__}' attempts to "
                            f"override final method "
@@ -333,7 +372,6 @@ class RegressionTestMeta(type):
         method will perform an attribute lookup on these sub-namespaces if a
         call to the default :func:`__getattribute__` method fails to retrieve
         the requested class attribute.
-
         '''
 
         try:

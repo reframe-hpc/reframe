@@ -16,7 +16,8 @@ import unittests.utility as test_util
 
 from reframe.core.containers import _STAGEDIR_MOUNT
 from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
-                                     PerformanceError, SanityError)
+                                     PerformanceError, SanityError,
+                                     ReframeSyntaxError)
 
 
 def _run(test, partition, prgenv):
@@ -247,6 +248,29 @@ def test_run_only_set_sanity_in_a_hook(local_exec_ctx):
                 r'Hello, World\!', self.stdout)
 
     _run(MyTest(), *local_exec_ctx)
+
+
+def test_run_only_decorated_sanity(local_exec_ctx):
+    @test_util.custom_prefix('unittests/resources/checks')
+    class MyTest(rfm.RunOnlyRegressionTest):
+        executable = './hello.sh'
+        executable_opts = ['Hello, World!']
+        local = True
+        valid_prog_environs = ['*']
+        valid_systems = ['*']
+
+        @sanity_function
+        def set_sanity(self):
+            return sn.assert_found(r'Hello, World\!', self.stdout)
+
+    _run(MyTest(), *local_exec_ctx)
+
+    class MyOtherTest(MyTest):
+        '''Test both syntaxes are incompatible.'''
+        sanity_patterns = sn.assert_true(1)
+
+    with pytest.raises(ReframeSyntaxError):
+        _run(MyOtherTest(), *local_exec_ctx)
 
 
 def test_run_only_no_srcdir(local_exec_ctx):
