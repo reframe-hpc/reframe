@@ -288,12 +288,12 @@ class RegressionTestMeta(type):
         constructed.
         '''
 
-        blacklist = [
+        directives = [
             'parameter', 'variable', 'bind', 'run_before', 'run_after',
             'require_deps', 'required', 'deferrable', 'sanity_function',
             'performance_function', 'performance_report'
         ]
-        for b in blacklist:
+        for b in directives:
             namespace.pop(b, None)
 
         return super().__new__(metacls, name, bases, dict(namespace), **kwargs)
@@ -323,7 +323,8 @@ class RegressionTestMeta(type):
         # phase if not assigned elsewhere
         hook_reg = hooks.HookRegistry.create(namespace)
         for base in (b for b in bases if hasattr(b, '_rfm_pipeline_hooks')):
-            hook_reg.update(getattr(base, '_rfm_pipeline_hooks'), namespace)
+            hook_reg.update(getattr(base, '_rfm_pipeline_hooks'),
+                            denied_hooks=namespace)
 
         cls._rfm_pipeline_hooks = hook_reg
 
