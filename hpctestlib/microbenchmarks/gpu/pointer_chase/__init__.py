@@ -66,11 +66,11 @@ class BuildGpuPchase(rfm.CompileOnlyRegressionTest, pin_prefix=True):
         else:
             raise ValueError('unknown gpu_build option')
 
-    @run_before('sanity')
-    def set_sanity(self):
+    @sanity_function
+    def assert_exec_present(self):
         '''Assert that the executable is present.'''
 
-        self.sanity_patterns = sn.assert_found(r'pChase.x', self.stdout)
+        return sn.assert_found(r'pChase.x', self.stdout)
 
 
 class RunGpuPchaseBase(rfm.RunOnlyRegressionTest, pin_prefix=True):
@@ -124,12 +124,8 @@ class RunGpuPchaseBase(rfm.RunOnlyRegressionTest, pin_prefix=True):
             f'--num-jumps {self.num_node_jumps}'
         ]
 
-    @run_before('sanity')
-    def set_sanity(self):
-        self.sanity_patterns = self.do_sanity_check()
-
-    @sn.sanity_function
-    def do_sanity_check(self):
+    @sanity_function
+    def assert_correct_num_gpus_per_node(self):
         '''Check that every node has the right number of GPUs.'''
 
         my_nodes = set(sn.extractall(
@@ -173,7 +169,7 @@ class RunGpuPchaseD2D(RunGpuPchaseBase):
 
     executable_opts = ['--multi-gpu']
 
-    @sn.sanity_function
+    @deferrable
     def average_D2D_latency(self):
         '''Extract the average D2D latency.
 

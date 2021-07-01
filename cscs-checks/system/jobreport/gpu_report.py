@@ -34,7 +34,7 @@ class gpu_usage_report_check(GpuBurn):
     perf_floor = variable(float, value=-0.2)
     tags = {'production'}
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_launcher_opts(self):
         '''Make slurm's output unbuffered.
 
@@ -43,9 +43,9 @@ class gpu_usage_report_check(GpuBurn):
         '''
         self.job.launcher.options = ['-u']
 
-    @rfm.run_before('sanity')
+    @sanity_function
     def set_sanity_patterns(self):
-        '''Set sanity patterns and wait for the jobreport.
+        '''Extend sanity and wait for the jobreport.
 
         If a large number of nodes is used, the final jobreport output happens
         much later after job has already completed (this could be up to 25s).
@@ -54,16 +54,16 @@ class gpu_usage_report_check(GpuBurn):
         sanity function does not succeed.
         '''
 
-        super().set_sanity_patterns()
-        self.sanity_patterns = sn.all([
-            self.sanity_patterns, self.gpu_usage_sanity()
-        ])
         try:
             sn.evaluate(self.gpu_usage_sanity())
         except SanityError:
             time.sleep(25)
 
-    @sn.sanity_function
+        return sn.all([
+            self.count_successful_burns(), self.gpu_usage_sanity()
+        ])
+
+    @deferrable
     def gpu_usage_sanity(self):
         '''Verify that the jobreport output has sensible numbers.
 
@@ -93,7 +93,7 @@ class gpu_usage_report_check(GpuBurn):
             sn.assert_ge(sn.min(time_reported), self.burn_time)
         ])
 
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_perf_patterns(self):
         '''The number of reported nodes can be used as a perf metric.
 

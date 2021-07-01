@@ -93,21 +93,7 @@ class GpuKernelLatency(rfm.RegressionTest, pin_prefix=True):
         else:
             raise ValueError('unknown gpu_build option')
 
-    @run_before('sanity')
-    def set_sanity_patterns(self):
-        '''Set sanity function'''
-        self.sanity_patterns = self.assert_count_gpus()
-
-    @run_before('performance')
-    def set_perf_patterns(self):
-        '''Set performance patterns.'''
-        self.perf_patterns = {
-            'latency': sn.max(sn.extractall(
-                r'\[\S+\] \[gpu \d+\] Kernel launch latency: '
-                r'(?P<latency>\S+) us', self.stdout, 'latency', float))
-        }
-
-    @sn.sanity_function
+    @sanity_function
     def assert_count_gpus(self):
         '''Assert GPU count is consistent.'''
         return sn.all([
@@ -126,3 +112,12 @@ class GpuKernelLatency(rfm.RegressionTest, pin_prefix=True):
                 self.job.num_tasks * self.num_gpus_per_node
             )
         ])
+
+    @run_before('performance')
+    def set_perf_patterns(self):
+        '''Set performance patterns.'''
+        self.perf_patterns = {
+            'latency': sn.max(sn.extractall(
+                r'\[\S+\] \[gpu \d+\] Kernel launch latency: '
+                r'(?P<latency>\S+) us', self.stdout, 'latency', float))
+        }
