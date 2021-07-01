@@ -123,9 +123,10 @@ def _remote_detect(part):
                             more_tries.append({'fresh': True})
     except Exception as e:
         topo_info = {}
-
-    if not topo_info:
         getlogger().warning(f'failed to retrieve remote processor info: {e}')
+    else:
+        if not topo_info:
+            getlogger().warning('failed to retrieve remote processor info')
 
     return topo_info
 
