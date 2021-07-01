@@ -14,9 +14,8 @@ import reframe.utility.sanity as sn
 
 
 class FileSystemGlobal(rfm.RegressionMixin):
-    '''Handy class to store common test settings.
-    '''
-    scratch = parameter(variable(list, value=['SCRATCH']))
+    '''Handy class to store common test settings.'''
+    scratch = parameter(['SCRATCH'])
 
 
 class FileSystemCommandCheck(rfm.RunOnlyRegressionTest):
@@ -71,11 +70,9 @@ class fs_check_ls_dir(FileSystemCommandCheck, FileSystemGlobal):
 
 @rfm.simple_test
 class fs_check_du_dir(FileSystemCommandCheck, FileSystemGlobal):
-    directory = parameter(['PROJECT',
-                           'HOME',
-                           'SCRATCH'])
+    directory = parameter(['PROJECT', 'HOME', 'SCRATCH'])
     # TODO: system is not always relevant
-    reference = {
+    fs_reference = {
         'PROJECT': {
             'size': (1000, None, 0.1, 'MB'),
             'real_time': (5.0, None, 0.1, 's')
@@ -98,6 +95,7 @@ class fs_check_du_dir(FileSystemCommandCheck, FileSystemGlobal):
 
     @rfm.run_before('sanity')
     def set_sanity_and_perf(self):
+        self.reference = self.fs_reference[self.directory]
         self.sanity_patterns = sn.assert_found(self.path,
                                                self.stdout)
         self.perf_patterns = {
@@ -160,12 +158,13 @@ class fs_check_find_dir(FileSystemCommandCheck):
 
     @rfm.run_before('run')
     def set_executable_ops(self):
-        self.skip_if(getpass.getuser() !=
-                     'jenscscs', 'test is valid only for jenscscs user')
+        self.skip_if(getpass.getuser() != 'jenscscs',
+                     'test is valid only for jenscscs user')
         if self.directory is 'HOME':
             self.path = osext.expandvars(f'${self.directory}')
         else:
             self.path = self.directory
+
         self.executable_opts = ['find', self.path,
                                 ' -maxdepth 1 | head -2000 > /dev/null']
 
