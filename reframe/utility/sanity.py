@@ -13,6 +13,7 @@ import re
 import sys
 
 import reframe.utility as util
+import reframe.core.warnings as warn
 from reframe.core.deferrable import deferrable, _DeferredExpression
 from reframe.core.exceptions import SanityError
 
@@ -40,7 +41,13 @@ def _open(filename, *args, **kwargs):
 
 
 # Create an alias decorator
-sanity_function = deferrable
+def sanity_function(func):
+    warn.user_deprecation_warning(
+        'using the @sn.sanity_function decorator from the sn module is '
+        'deprecated; please use the built-in decorator @deferrable instead.',
+        from_version='3.8.0'
+    )
+    return deferrable(func)
 
 
 # Deferrable versions of selected builtins

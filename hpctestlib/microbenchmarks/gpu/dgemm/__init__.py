@@ -74,10 +74,13 @@ class DgemmGpu(rfm.RegressionTest, pin_prefix=True):
         else:
             raise ValueError('unknown gpu_build option')
 
-    @run_before('sanity')
-    def set_sanity_patterns(self):
-        '''Set the sanity patterns.'''
-        self.sanity_patterns = self.assert_num_gpus()
+    @sanity_function
+    def assert_num_gpus(self):
+        '''Assert that that all tasks passed.'''
+
+        return sn.assert_eq(
+            sn.count(sn.findall(r'^\s*\[[^\]]*\]\s*Test passed', self.stdout)),
+            sn.getattr(self.job, 'num_tasks'))
 
     @run_before('performance')
     def set_perf_patterns(self):
@@ -88,11 +91,3 @@ class DgemmGpu(rfm.RegressionTest, pin_prefix=True):
                 r'^\s*\[[^\]]*\]\s*GPU\s*\d+: (?P<fp>\S+) TF/s',
                 self.stdout, 'fp', float))
         }
-
-    @sn.sanity_function
-    def assert_num_gpus(self):
-        '''Assert that that all tasks passed.'''
-
-        return sn.assert_eq(
-            sn.count(sn.findall(r'^\s*\[[^\]]*\]\s*Test passed', self.stdout)),
-            sn.getattr(self.job, 'num_tasks'))
