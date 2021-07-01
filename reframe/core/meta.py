@@ -386,7 +386,8 @@ class RegressionTestMeta(type):
         }
         for base in (b for b in bases if hasattr(b, '_rfm_perf_fns')):
             cls._rfm_perf_fns = cls._rfm_perf_fns.union(
-                {f for f in getattr(b, '_rfm_perf_fns') if f not in namespace}
+                {f for f in getattr(base, '_rfm_perf_fns')
+                 if f not in namespace}
             )
 
         cls._final_methods = {v.__name__ for v in namespace.values()

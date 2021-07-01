@@ -1563,15 +1563,29 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         '''
 
-        if hasattr(self, '_rfm_perf'):
+        if hasattr(self, '_rfm_perf_report') or self._rfm_perf_fns:
             if hasattr(self, 'perf_patterns'):
                 raise ReframeSyntaxError(
                     f"assigning a value to 'perf_patters' conflicts with ",
-                    f"using the 'performance_function' decorator (class ",
+                    f"using the 'performance_report' decorator (class ",
                     f"{self.__class__.__qualname__})"
                 )
 
-            self.perf_patterns = self._rfm_perf()
+            if not hasattr(self, '_rfm_perf_report'):
+                self.perf_patterns = {}
+                for fn in self._rfm_perf_fns:
+                    self.perf_patterns[fn.__name__] = fn
+
+            else:
+                self.perf_patterns = self._rfm_perf_report()
+
+            self._setup_perf_logging()
+            with osext.change_dir(self._stagedir):
+                '''New perf check here.'''
+                print(self.perf_patterns)
+
+            return
+
 
         if not hasattr(self, 'perf_patterns'):
             return

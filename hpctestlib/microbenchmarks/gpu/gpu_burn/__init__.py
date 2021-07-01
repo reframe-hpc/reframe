@@ -77,7 +77,6 @@ class GpuBurn(rfm.RegressionTest, pin_prefix=True):
             raise ValueError('unknown gpu_build option')
 
     @property
-    @deferrable
     def num_tasks_assigned(self):
         '''Total number of times the gpu burn will run.
 
@@ -111,7 +110,7 @@ class GpuBurn(rfm.RegressionTest, pin_prefix=True):
 
         patt = (rf'^\s*\[{nid}\]\s*GPU\s+\d+\(\S*\):\s+(?P<perf>\S*)\s+GF\/s'
                 rf'\s+(?P<temp>\S*)\s+Celsius')
-        return sn.extractall(patt, self.stdout, what, float)),
+        return sn.extractall(patt, self.stdout, what, float)
 
     @performance_function('Gflop/s')
     def perf(self, nid=None):
