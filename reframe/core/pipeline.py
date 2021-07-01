@@ -556,7 +556,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: other sanity checking functions already exist.
     #:
     #: :type: A deferrable expression (i.e., the result of a :doc:`sanity
-    #:     function </sanity_functions_reference>`)
+    #:     function </deferrable_functions_reference>`)
     #: :default: :class:`required`
     #:
     #: .. note::
@@ -584,7 +584,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: A dictionary with keys of type :class:`str` and deferrable
     #:     expressions (i.e., the result of a :doc:`sanity function
-    #:     </sanity_functions_reference>`) as values.
+    #:     </deferrable_functions_reference>`) as values.
     #:     :class:`None` is also allowed.
     #: :default: :class:`None`
     perf_patterns = variable(typ.Dict[str, _DeferredExpression],
