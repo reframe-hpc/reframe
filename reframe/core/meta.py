@@ -291,7 +291,8 @@ class RegressionTestMeta(type):
         # phase if not assigned elsewhere
         hook_reg = hooks.HookRegistry.create(namespace)
         for base in (b for b in bases if hasattr(b, '_rfm_pipeline_hooks')):
-            hook_reg.update(getattr(base, '_rfm_pipeline_hooks'))
+            hook_reg.update(getattr(base, '_rfm_pipeline_hooks'),
+                            denied_hooks=namespace)
 
         cls._rfm_pipeline_hooks = hook_reg
 
