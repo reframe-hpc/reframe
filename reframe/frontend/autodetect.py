@@ -88,7 +88,7 @@ def _remote_detect(part):
 
         launcher_cmd = job.launcher.run_command(job)
         commands += [
-            f'{launcher_cmd} {rfm_exec} --detect-host-topology=topo.json'
+            f'{launcher_cmd} {rfm_exec} --detect-host-topology'
         ]
         job.prepare(commands, trap_errors=True)
 
@@ -103,19 +103,29 @@ def _remote_detect(part):
                              name='rfm-detect-job',
                              sched_access=part.access)
             with osext.change_dir(dirname):
-                _emit_script(job, fresh)
-                with open(job.script_filename) as fp:
-                    getlogger().debug(
-                        f'submitting remote job script:\n{fp.read()}'
-                    )
+                more_tries = [{'fresh': False}]
+                while more_tries:
+                    args = more_tries.pop()
 
-                job.submit()
-                job.wait()
-                with open('topo.json') as fp:
-                    topo_info = json.load(fp)
+                    _emit_script(job, **args)
+                    with open(job.script_filename) as fp:
+                        getlogger().debug(
+                            f'submitting remote job script:\n{fp.read()}'
+                        )
+
+                    job.submit()
+                    job.wait()
+                    with open(job.stdout) as fp:
+                        try:
+                            topo_info = json.load(fp)
+                        except json.JSONDecodeError:
+                            getlogger().debug(f'not a JSON file:\n{fp.read()}')
+                            more_tries.append({'fresh': True})
     except Exception as e:
-        getlogger().warning(f'failed to retrieve remote processor info: {e}')
         topo_info = {}
+
+    if not topo_info:
+        getlogger().warning(f'failed to retrieve remote processor info: {e}')
 
     return topo_info
 
