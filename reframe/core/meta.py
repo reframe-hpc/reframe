@@ -257,11 +257,11 @@ class RegressionTestMeta(type):
         constructed.
         '''
 
-        blacklist = [
+        directives = [
             'parameter', 'variable', 'bind', 'run_before', 'run_after',
             'require_deps', 'required', 'deferrable', 'sanity_function'
         ]
-        for b in blacklist:
+        for b in directives:
             namespace.pop(b, None)
 
         return super().__new__(metacls, name, bases, dict(namespace), **kwargs)
