@@ -262,13 +262,36 @@ The framework will then continue with other activities and it will execute the p
 Built-in functions
 ------------------
 
+.. py:decorator:: RegressionMixin.sanity_function(func)
+
+  Decorate a member function as the sanity function of the test.
+
+  This decorator will convert the decorated method into a :func:`~RegressionMixin.deferrable` and mark it to be executed during the test's sanity stage.
+  When this decorator is used, manually assigning a value to :attr:`~RegressionTest.sanity_patterns` in the test is not allowed.
+
+  Decorated functions may be overridden by derived classes, and derived classes may also decorate a different method as the test's sanity function.
+  Decorating multiple member functions in the same class is not allowed.
+  However, a :class:`RegressionTest` may inherit from multiple :class:`RegressionMixin` classes with their own sanity functions.
+  In this case, the derived class will follow Python's `MRO <https://docs.python.org/3/library/stdtypes.html#class.__mro__>`_ to find a suitable sanity function.
+
+  .. versionadded:: 3.7.0
+
+.. py:decorator:: RegressionMixin.deferrable(func)
+
+  Converts the decorated method into a deferrable function.
+
+  See :ref:`deferrable-functions` for further information on deferrable functions.
+
+  .. versionadded:: 3.7.0
+
 .. py:function:: RegressionMixin.bind(func, name=None)
 
   Bind a free function to a regression test.
+
   By default, the function is bound with the same name as the free function.
   However, the function can be bound using a different name with the ``name`` argument.
 
-  :param fn: external function to be bound to a class.
+  :param func: external function to be bound to a class.
   :param name: bind the function under a different name.
 
   .. versionadded:: 3.6.2
