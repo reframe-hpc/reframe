@@ -20,6 +20,22 @@ def MyMeta():
     yield Foo
 
 
+def test_class_attr_access():
+    '''Catch access to sub-namespaces when they do not exist.'''
+    def my_test(key):
+        class MyMeta(meta.RegressionTestMeta):
+            def __init__(cls, name, bases, namespace, **kwargs):
+                getattr(cls, f'{key}')
+
+        msg = f'has no attribute {key!r}'
+        with pytest.raises(AttributeError, match=msg):
+            class Foo(metaclass=MyMeta):
+                pass
+
+    my_test('_rfm_var_space')
+    my_test('_rfm_param_space')
+
+
 def test_directives(MyMeta):
     '''Test that directives are not available as instance attributes.'''
 
