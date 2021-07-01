@@ -65,8 +65,8 @@ class gpu_kernel_latency_check(GpuKernelLatency):
     def set_valid_prog_environs(self):
         cs = self.current_system.name
         if cs in {'dom', 'daint'}:
-            self.valid_prog_environs = ['PrgEnv-cray',
-                                        'PrgEnv-pgi', 'PrgEnv-gnu']
+            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi',
+                                        'PrgEnv-gnu', 'PrgEnv-nvidia']
         elif cs in {'arolla', 'tsa'}:
             self.valid_prog_environs = ['PrgEnv-pgi']
         elif cs in {'ault'}:
