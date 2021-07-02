@@ -20,6 +20,20 @@ from reframe.utility.cpuinfo import cpuinfo
 _REFRAME_GH_REPO = 'https://github.com/eth-cscs/reframe.git'
 
 
+def _contents(filename):
+    '''Return the contents of a file.'''
+
+    with open(filename) as fp:
+        return fp.read()
+
+
+def _log_contents(filename):
+    filename = os.path.abspath(filename)
+    getlogger().debug(f'--- {filename} ---\n'
+                      f'{_contents(filename)}\n'
+                      f'--- {filename} ---')
+
+
 def _subschema(fragment):
     '''Create a configuration subschema.'''
 
@@ -96,33 +110,30 @@ def _remote_detect(part):
         f'Detecting topology of remote partition {part.fullname!r}'
     )
     rfm_exec = os.path.join(rfm.INSTALL_PREFIX, 'bin/reframe')
+    topo_info = {}
     try:
         with tempfile.TemporaryDirectory(dir='.') as dirname:
-            job = Job.create(part.scheduler,
-                             part.launcher_type(),
-                             name='rfm-detect-job',
-                             sched_access=part.access)
             with osext.change_dir(dirname):
-                more_tries = [{'fresh': False}]
-                while more_tries:
-                    args = more_tries.pop()
-
+                methods = [{'fresh': False}, {'fresh': True}]
+                for args in methods:
+                    job = Job.create(part.scheduler,
+                                     part.launcher_type(),
+                                     name='rfm-detect-job',
+                                     sched_access=part.access)
                     _emit_script(job, **args)
-                    with open(job.script_filename) as fp:
-                        getlogger().debug(
-                            f'submitting remote job script:\n{fp.read()}'
-                        )
-
+                    getlogger().debug('submitting detection script')
+                    _log_contents(job.script_filename)
                     job.submit()
                     job.wait()
-                    with open(job.stdout) as fp:
-                        try:
-                            topo_info = json.load(fp)
-                        except json.JSONDecodeError:
-                            getlogger().debug(f'not a JSON file:\n{fp.read()}')
-                            more_tries.append({'fresh': True})
+                    getlogger().debug('job finished')
+                    _log_contents(job.stdout)
+                    _log_contents(job.stderr)
+                    try:
+                        topo_info = json.loads(_contents(job.stdout))
+                        break
+                    except json.JSONDecodeError:
+                        getlogger().debug('stdout not a JSON file')
     except Exception as e:
-        topo_info = {}
         getlogger().warning(f'failed to retrieve remote processor info: {e}')
     else:
         if not topo_info:
@@ -199,7 +210,8 @@ def detect_topology():
                 _save_info(topo_file, part.processor.info)
             elif detect_remote_systems:
                 part.processor._info = _remote_detect(part)
-                _save_info(topo_file, part.processor.info)
+                if part.processor.info:
+                    _save_info(topo_file, part.processor.info)
 
             getlogger().debug(f'> saved topology in {topo_file!r}')
 
