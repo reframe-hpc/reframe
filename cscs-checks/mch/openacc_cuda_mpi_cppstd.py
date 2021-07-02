@@ -45,8 +45,9 @@ class OpenaccCudaCpp(rfm.RegressionTest):
 
     @run_before('compile')
     def setflags(self):
-        if (not self.current_environ.name.startswith('PrgEnv-nvidia')):
-            self.modules = ['craype-accel-nvidia60']
+        if self.current_system.name in ['daint', 'dom']:
+            if (not self.current_environ.name.startswith('PrgEnv-nvidia')):
+                self.modules = ['craype-accel-nvidia60']
         if self.current_environ.name.startswith('PrgEnv-cray'):
             self.build_system.fflags += ['-hacc', '-hnoomp']
 
