@@ -175,8 +175,9 @@ def detect_topology():
             getlogger().debug(
                 f'> found topology file {topo_file!r}; loading...'
             )
-            part.processor._info = _load_info(topo_file,
-                                              _subschema('#/defs/processor_info'))
+            part.processor._info = _load_info(
+                topo_file, _subschema('#/defs/processor_info')
+            )
             found_procinfo = True
 
         if not found_devinfo and os.path.exists(dev_file):
