@@ -583,3 +583,34 @@ The following figure shows one part of the automatically generated pipeline for 
 .. note::
 
    The ReFrame executable must be available in the Gitlab runner that will run the CI jobs.
+
+
+Skip tests based on the version of ReFrame
+------------------------------------------
+
+.. versionadded:: 3.7.0
+
+When writing a test you can specify the versions of ReFrame that are compatible with it like this:
+
+.. code-block:: python
+
+   class BaseFoo(rfm.RegressionTest, required_version=['x.x.x', '>y.y.y']):
+     ...
+
+   @rfm.simple_test
+   class Foo(BaseFoo):
+     ...
+
+
+``required_version`` is a list of ReFrame version specifications that this test is allowed to run.
+A version specification string can have one of the following formats:
+
+1. ``VERSION``: Specifies a single version.
+2. ``{OP}VERSION``, where ``{OP}`` can be any of ``>``, ``>=``, ``<``, ``<=``, ``==`` and ``!=``. For example, the version specification string ``'>=3.5.0'`` will allow the following test to be loaded only by ReFrame 3.5.0 and higher. The ``==VERSION`` specification is the equivalent of ``VERSION``.
+3. ``V1..V2``: Specifies a range of versions.
+
+The test will be selected if *any* of the versions is satisfied, even if the versions specifications are conflicting.
+
+.. note::
+   Even though this feature was available already through a class decorator, now you can set it as a class argument.
+   This will allow all child classes to inherit the ``required_version``, unless you specify it again.
