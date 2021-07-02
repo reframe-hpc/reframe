@@ -95,8 +95,9 @@ def _validate_test(cls):
     if (cls._rfm_required_version and
         not any(c.validate(osext.reframe_version()) for c in conditions)):
 
-        getlogger().info('skipping incompatible test defined'
-                         ' in class: %s' % cls.__name__)
+        getlogger().info(f"skipping test '{cls.__name__}' because it is "
+                         f"incompatible with the current ReFrame version "
+                         f"({osext.reframe_version().split('-')[0]})")
         return False
 
     return True
@@ -213,8 +214,9 @@ def required_version(*versions):
             mod.__rfm_skip_tests = set()
 
         if not any(c.validate(osext.reframe_version()) for c in conditions):
-            getlogger().info('skipping incompatible test defined'
-                             ' in class: %s' % cls.__name__)
+            getlogger().info(f"skipping test '{cls.__name__}' because it is "
+                             f"incompatible with the current ReFrame version "
+                             f"({osext.reframe_version().split('-')[0]})")
             mod.__rfm_skip_tests.add(cls)
 
         return cls
