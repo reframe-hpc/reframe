@@ -91,6 +91,7 @@ def _is_part_local(part):
 def _remote_detect(part):
     def _emit_script(job, fresh=False):
         if fresh:
+            rfm_exec = './bin/reframe'
             commands = [
                 f'_prefix=$(mktemp -d)',
                 f'cd $_prefix',
@@ -99,6 +100,7 @@ def _remote_detect(part):
                 f'./bootstrap.sh'
             ]
         else:
+            rfm_exec = os.path.join(rfm.INSTALL_PREFIX, 'bin/reframe')
             commands = []
 
         launcher_cmd = job.launcher.run_command(job)
@@ -110,7 +112,6 @@ def _remote_detect(part):
     getlogger().info(
         f'Detecting topology of remote partition {part.fullname!r}'
     )
-    rfm_exec = os.path.join(rfm.INSTALL_PREFIX, 'bin/reframe')
     topo_info = {}
     try:
         with tempfile.TemporaryDirectory(dir='.') as dirname:
