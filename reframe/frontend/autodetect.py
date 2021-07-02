@@ -17,7 +17,8 @@ from reframe.core.schedulers import Job
 from reframe.utility.cpuinfo import cpuinfo
 
 
-_REFRAME_GH_REPO = 'https://github.com/eth-cscs/reframe.git'
+_GH_REPO = 'https://github.com/vkarak/reframe.git'
+_GH_BRANCH = 'feat/cpu-autodetect'
 
 
 def _contents(filename):
@@ -93,7 +94,7 @@ def _remote_detect(part):
             commands = [
                 f'_prefix=$(mktemp -d)',
                 f'cd $_prefix',
-                f'git clone {_REFRAME_GH_REPO} reframe',
+                f'git clone -b {_GH_BRANCH} {_GH_REPO} reframe',
                 f'cd reframe',
                 f'./bootstrap.sh'
             ]
