@@ -69,7 +69,7 @@ class fs_check_ls_dir(FileSystemCommandCheck, FileSystemGlobal):
 
 
 @rfm.simple_test
-class fs_check_du_dir(FileSystemCommandCheck, FileSystemGlobal):
+class fs_check_du_dir(FileSystemCommandCheck):
     directory = parameter(['PROJECT', 'HOME', 'SCRATCH'])
     # TODO: system is not always relevant
     fs_reference = {
@@ -95,7 +95,7 @@ class fs_check_du_dir(FileSystemCommandCheck, FileSystemGlobal):
 
     @rfm.run_before('sanity')
     def set_sanity_and_perf(self):
-        self.reference = self.fs_reference[self.directory]
+        self.reference = {self.directory: self.fs_reference[self.directory]}
         self.sanity_patterns = sn.assert_found(self.path,
                                                self.stdout)
         self.perf_patterns = {
