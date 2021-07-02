@@ -7,6 +7,7 @@ import os
 
 import reframe as rfm
 import reframe.utility.sanity as sn
+from reframe.core.exceptions import SanityError
 
 from hpctestlib.microbenchmarks.gpu.gpu_burn import GpuBurn
 import cscstests.microbenchmarks.gpu.hooks as hooks
@@ -72,7 +73,7 @@ class gpu_burn_check(GpuBurn):
         }
 
         # Only report the nodes that don't meet the perf reference
-        key = f'{self.current_partition.fullname}:perf'
+        key = f'{self.current_partition.fullname}:min_perf'
         if key in self.reference:
             regex = r'\[(\S+)\] GPU\s+\d\(OK\): (\d+) GF/s'
             nids = set(sn.extractall(regex, self.stdout, 1))
@@ -83,7 +84,8 @@ class gpu_burn_check(GpuBurn):
             # Flag the slow nodes
             for nid in nids:
                 try:
-                    sn.assert_reference(self.perf(nid), ref, lt, ut)
+                    val = self.perf(nid).evaluate()[0]
+                    sn.assert_reference(val, ref, lt, ut).evaluate()
                 except SanityError:
                     perf_report[nid] = self.perf(nid)
 

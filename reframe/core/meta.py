@@ -258,9 +258,17 @@ class RegressionTestMeta(type):
                 raise TypeError('provided units are not in string format')
 
             def _fn(fn):
-              _def_fn = deferrable(fn)
-              setattr(_def_fn, '_rfm_perf_unit', units)
-              return _def_fn
+                @deferrable
+                @functools.wraps(fn)
+                def _perf_fn(*args, **kwargs):
+                    try:
+                        return fn(*args, **kwargs).evaluate(), units
+                    except AttributeError:
+                        return fn(*args, **kwargs), units
+
+                setattr(_perf_fn, '_rfm_perf_fn', units)
+
+                return _perf_fn
 
             return _fn
 
@@ -382,12 +390,12 @@ class RegressionTestMeta(type):
 
         # Build a set with all the performance functions
         cls._rfm_perf_fns = {
-            k for k,v in namespace.items() if hasattr(v, '_rfm_perf_unit')
+            v for k,v in namespace.items() if hasattr(v, '_rfm_perf_fn')
         }
         for base in (b for b in bases if hasattr(b, '_rfm_perf_fns')):
             cls._rfm_perf_fns = cls._rfm_perf_fns.union(
                 {f for f in getattr(base, '_rfm_perf_fns')
-                 if f not in namespace}
+                 if f.__name__ not in namespace}
             )
 
         cls._final_methods = {v.__name__ for v in namespace.values()

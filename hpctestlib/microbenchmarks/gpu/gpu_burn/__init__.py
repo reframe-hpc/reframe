@@ -96,7 +96,6 @@ class GpuBurn(rfm.RegressionTest, pin_prefix=True):
             r'^\s*\[[^\]]*\]\s*GPU\s*\d+\(OK\)', self.stdout)
         ), self.num_tasks_assigned)
 
-    @deferrable
     def extract_perf(self, what, nid=None):
         '''Utility to extract performance metrics.'''
 
@@ -110,7 +109,7 @@ class GpuBurn(rfm.RegressionTest, pin_prefix=True):
 
         patt = (rf'^\s*\[{nid}\]\s*GPU\s+\d+\(\S*\):\s+(?P<perf>\S*)\s+GF\/s'
                 rf'\s+(?P<temp>\S*)\s+Celsius')
-        return sn.extractall(patt, self.stdout, what, float)
+        return sn.extractall(patt, self.stdout, what, float).evaluate()
 
     @performance_function('Gflop/s')
     def perf(self, nid=None):

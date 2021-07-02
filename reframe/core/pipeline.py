@@ -1484,7 +1484,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     @final
     def performance(self):
         try:
-            self.check_performance()
+            with osext.change_dir(self._stagedir):
+                self.check_performance()
         except PerformanceError:
             if self.strict_check:
                 raise
@@ -1571,27 +1572,38 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                     f"{self.__class__.__qualname__})"
                 )
 
+            # Build the performance dict
             if not hasattr(self, '_rfm_perf_report'):
                 self.perf_patterns = {}
                 for fn in self._rfm_perf_fns:
-                    self.perf_patterns[fn.__name__] = fn
+                    self.perf_patterns[fn.__name__] = fn(self)
 
             else:
                 self.perf_patterns = self._rfm_perf_report()
 
+            # Log the performance variables
             self._setup_perf_logging()
-            with osext.change_dir(self._stagedir):
-                '''New perf check here.'''
-                print(self.perf_patterns)
+            for tag, expr in self.perf_patterns.items():
+                value, unit = sn.evaluate(expr)
+                key = '%s:%s' % (self._current_partition.fullname, tag)
+                try:
+                    ref = self.reference[key]
+                    if len(ref) > 3:
+                        raise ReframeSyntaxError(
+                            'reference tuple has more than three elements'
+                        )
 
+                except KeyError:
+                    ref = (0, None, None)
+
+                self._perfvalues[key] = (value, *ref, unit)
+                self._perf_logger.log_performance(logging.INFO, tag, value,
+                                                  *ref, unit)
+
+        elif not hasattr(self, 'perf_patterns'):
             return
-
-
-        if not hasattr(self, 'perf_patterns'):
-            return
-
-        self._setup_perf_logging()
-        with osext.change_dir(self._stagedir):
+        else:
+            self._setup_perf_logging()
             # Check if default reference perf values are provided and
             # store all the variables tested in the performance check
             has_default = False
@@ -1633,26 +1645,27 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 self._perf_logger.log_performance(logging.INFO, tag, value,
                                                   *self.reference[key])
 
-            for key, values in self._perfvalues.items():
-                val, ref, low_thres, high_thres, *_ = values
+        # Check the performace variables against their references.
+        for key, values in self._perfvalues.items():
+            val, ref, low_thres, high_thres, *_ = values
 
-                # Verify that val is a number
-                if not isinstance(val, numbers.Number):
-                    raise SanityError(
-                        "the value extracted for performance variable '%s' "
-                        "is not a number: %s" % (key, val)
-                    )
+            # Verify that val is a number
+            if not isinstance(val, numbers.Number):
+                raise SanityError(
+                    "the value extracted for performance variable '%s' "
+                    "is not a number: %s" % (key, val)
+                )
 
-                tag = key.split(':')[-1]
-                try:
-                    sn.evaluate(
-                        sn.assert_reference(
-                            val, ref, low_thres, high_thres,
-                            msg=('failed to meet reference: %s={0}, '
-                                 'expected {1} (l={2}, u={3})' % tag))
-                    )
-                except SanityError as e:
-                    raise PerformanceError(e)
+            tag = key.split(':')[-1]
+            try:
+                sn.evaluate(
+                    sn.assert_reference(
+                        val, ref, low_thres, high_thres,
+                        msg=('failed to meet reference: %s={0}, '
+                             'expected {1} (l={2}, u={3})' % tag))
+                )
+            except SanityError as e:
+                raise PerformanceError(e)
 
     def _copy_job_files(self, job, dst):
         if job is None:
