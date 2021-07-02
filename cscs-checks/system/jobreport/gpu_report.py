@@ -93,7 +93,11 @@ class gpu_usage_report_check(GpuBurn):
             sn.assert_ge(sn.min(time_reported), self.burn_time)
         ])
 
-    @run_before('performance')
+    @performance_function('nodes')
+    def total_nodes_reported(self):
+        return sn.count(self.nodes_reported)
+
+    @performance_report
     def set_perf_patterns(self):
         '''The number of reported nodes can be used as a perf metric.
 
@@ -103,9 +107,9 @@ class gpu_usage_report_check(GpuBurn):
 
         self.reference = {
             '*': {
-                'nodes_reported': (self.num_tasks, self.perf_floor, 0, 'nodes')
+                'nodes_reported': (self.num_tasks, self.perf_floor, 0)
             },
         }
-        self.perf_patterns = {
-            'nodes_reported': sn.count(self.nodes_reported)
+        return {
+            'nodes_reported': self.total_nodes_reported()
         }
