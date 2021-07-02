@@ -35,6 +35,7 @@ usage()
     echo "  -h       Print this help message and exit"
     echo "  +docs    Build also the documentation"
     echo "  +pygelf  Install also the pygelf Python package"
+    echo "  +nodeps  Ignore incompatible Python package dependencies"
 }
 
 
@@ -55,6 +56,7 @@ while [ -n "$1" ]; do
     case "$1" in
         "+docs") MAKEDOCS="true" && shift ;;
         "+pygelf") PYGELF="true" && shift ;;
+        "+nodeps") NODEPS="--no-deps" && shift ;;
         *) usage && exit 1 ;;
     esac
 done
@@ -94,12 +96,12 @@ CMD $python -m pip install --no-cache-dir -q --upgrade pip --target=external/
 if [ -n "$PYGELF" ]; then
     tmp_requirements=$(mktemp)
     sed -e 's/^#+pygelf%//g' requirements.txt > $tmp_requirements
-    CMD_M +pygelf $python -m pip install --no-cache-dir -q -r $tmp_requirements --target=external/ --upgrade && rm $tmp_requirements
+    CMD_M +pygelf $python -m pip install --no-cache-dir -q -r $tmp_requirements --target=external/ --upgrade $NODEPS && rm $tmp_requirements
 else
-    CMD $python -m pip install --no-cache-dir -q -r requirements.txt --target=external/ --upgrade
+    CMD $python -m pip install --no-cache-dir -q -r requirements.txt --target=external/ --upgrade $NODEPS
 fi
 
 if [ -n "$MAKEDOCS" ]; then
-    CMD_M +docs $python -m pip install --no-cache-dir -q -r docs/requirements.txt --target=external/ --upgrade
+    CMD_M +docs $python -m pip install --no-cache-dir -q -r docs/requirements.txt --target=external/ --upgrade $NODEPS
     make -C docs PYTHON=$python
 fi
