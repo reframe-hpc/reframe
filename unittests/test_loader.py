@@ -64,7 +64,7 @@ def test_load_bad_required_version(loader):
     with pytest.warns(ReframeDeprecationWarning):
         with pytest.raises(ValueError):
             loader.load_from_file('unittests/resources/checks_unlisted/'
-                                'no_required_version.py')
+                                  'no_required_version.py')
 
 
 def test_load_bad_init(loader):
