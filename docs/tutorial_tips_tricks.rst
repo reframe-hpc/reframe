@@ -107,7 +107,7 @@ As suggested by the warning message, passing :option:`-v` will give you the stac
 Debugging deferred expressions
 ==============================
 
-Although deferred expression that are used in :attr:`sanity_patterns` and :attr:`perf_patterns` behave similarly to normal Python expressions, you need to understand their `implicit evaluation rules <sanity_functions_reference.html#implicit-evaluation-of-sanity-functions>`__.
+Although deferred expression that are used in :attr:`sanity_patterns` and :attr:`perf_patterns` behave similarly to normal Python expressions, you need to understand their `implicit evaluation rules <deferrable_functions_reference.html#implicit-evaluation-of-sanity-functions>`__.
 One of the rules is that :func:`str` triggers the implicit evaluation, so trying to use the standard :func:`print` function with a deferred expression, you might get unexpected results if that expression is not yet to be evaluated.
 For this reason, ReFrame offers a sanity function counterpart of :func:`print`, which allows you to safely print deferred expressions.
 

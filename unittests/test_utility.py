@@ -269,10 +269,10 @@ def test_git_repo_hash_no_git_repo(git_only, monkeypatch, tmp_path):
 
 def test_git_repo_exists(git_only):
     assert osext.git_repo_exists('https://github.com/eth-cscs/reframe.git',
-                                 timeout=3)
-    assert not osext.git_repo_exists('reframe.git', timeout=3)
+                                 timeout=10)
+    assert not osext.git_repo_exists('reframe.git', timeout=10)
     assert not osext.git_repo_exists('https://github.com/eth-cscs/xxx',
-                                     timeout=3)
+                                     timeout=10)
 
 
 def test_force_remove_file(tmp_path):

@@ -35,40 +35,47 @@ class MpiInitTest(rfm.RegressionTest):
     '''
     required_thread = parameter(['single', 'funneled', 'serialized',
                                  'multiple'])
+    valid_prog_environs = ['PrgEnv-aocc', 'PrgEnv-cray', 'PrgEnv-gnu',
+                           'PrgEnv-intel', 'PrgEnv-pgi', 'PrgEnv-nvidia']
+    valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc', 'eiger:mc',
+                     'pilatus:mc']
+    build_system = 'SingleSource'
+    sourcesdir = 'src/mpi_thread'
+    sourcepath = 'mpi_init_thread.cpp'
+    cppflags = variable(
+        dict, value={
+            'single': ['-D_MPI_THREAD_SINGLE'],
+            'funneled': ['-D_MPI_THREAD_FUNNELED'],
+            'serialized': ['-D_MPI_THREAD_SERIALIZED'],
+            'multiple': ['-D_MPI_THREAD_MULTIPLE']
+        }
+    )
+    prebuild_cmds += ['module list']
+    time_limit = '2m'
 
     def __init__(self):
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'eiger:mc', 'pilatus:mc']
-        self.valid_prog_environs = ['PrgEnv-aocc', 'PrgEnv-cray', 'PrgEnv-gnu',
-                                    'PrgEnv-intel', 'PrgEnv-pgi',
-                                    'cpeAMD', 'cpeCray', 'cpeGNU', 'cpeIntel']
-        self.build_system = 'SingleSource'
-        self.sourcesdir = 'src/mpi_thread'
-        self.sourcepath = 'mpi_init_thread.cpp'
-        # NOTE: occasionally, the wrapper fails to find the mpich dir, hence:
-        mpich_pkg_config_path = '$CRAY_MPICH_PREFIX/lib/pkgconfig'
-        self.variables = {
-            'PKG_CONFIG_PATH': f'$PKG_CONFIG_PATH:{mpich_pkg_config_path}'
-        }
-        cppflags = '`pkg-config --cflags mpich` `pkg-config --libs mpich`'
-        self.cppflags = {
-            'single':     [cppflags, '-D_MPI_THREAD_SINGLE'],
-            'funneled':   [cppflags, '-D_MPI_THREAD_FUNNELED'],
-            'serialized': [cppflags, '-D_MPI_THREAD_SERIALIZED'],
-            'multiple':   [cppflags, '-D_MPI_THREAD_MULTIPLE']
-        }
+        if self.current_system.name in ['pilatus', 'eiger']:
+            # FIXME: workaround for C4KCUST-308
+            self.modules = ['cray-mpich', 'cray-libsci']
+
         self.build_system.cppflags = self.cppflags[self.required_thread]
-        self.prebuild_cmds = ['module list']
-        self.time_limit = '1m'
         self.maintainers = ['JG', 'AJ']
         self.tags = {'production', 'craype'}
+
+    @run_before('compile')
+    def skip_nvidia_cray_ex(self):
+        envname = self.current_environ.name
+        sysname = self.current_system.name
+        if self.current_system.name in ['pilatus', 'eiger']:
+            self.skip_if(self.current_environ.name == 'PrgEnv-nvidia', '')
 
     @run_before('sanity')
     def set_sanity(self):
         # {{{ 0/ MPICH version:
         # MPI VERSION  : CRAY MPICH version 7.7.15 (ANL base 3.2)
         # MPI VERSION  : CRAY MPICH version 8.0.16.17 (ANL base 3.3)
-        # MPI VERSION    : CRAY MPICH version 8.1.4.31 (ANL base 3.4a2)
+        # MPI VERSION  : CRAY MPICH version 8.1.4.31 (ANL base 3.4a2)
+        # MPI VERSION  : CRAY MPICH version 8.1.5.32 (ANL base 3.4a2)
         regex = r'= MPI VERSION\s+: CRAY MPICH version \S+ \(ANL base (\S+)\)'
         stdout = os.path.join(self.stagedir, sn.evaluate(self.stdout))
         mpich_version = sn.extractsingle(regex, stdout, 1)
@@ -106,33 +113,3 @@ class MpiInitTest(rfm.RegressionTest):
                                                [sn.evaluate(required_thread)],
                          msg='sanity_eq: {0} != {1}')
         ])
-
-
-@rfm.simple_test
-class MpiHelloTest(rfm.RegressionTest):
-    def __init__(self):
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn',
-                              'eiger:mc', 'pilatus:mc']
-        self.valid_prog_environs = ['PrgEnv-cray']
-        if self.current_system.name in ['arolla', 'tsa']:
-            self.exclusive_access = True
-            self.valid_prog_environs = ['PrgEnv-gnu']
-
-        self.descr = 'MPI Hello World'
-        self.sourcesdir = 'src/mpi'
-        self.sourcepath = 'mpi_helloworld.c'
-        self.maintainers = ['RS', 'AJ']
-        self.num_tasks_per_node = 1
-        self.num_tasks = 0
-        num_processes = sn.extractsingle(
-            r'Received correct messages from (?P<nprocs>\d+) processes',
-            self.stdout, 'nprocs', int)
-        self.sanity_patterns = sn.assert_eq(num_processes,
-                                            self.num_tasks_assigned-1)
-        self.tags = {'diagnostic', 'ops', 'craype'}
-
-    @property
-    @sn.sanity_function
-    def num_tasks_assigned(self):
-        return self.job.num_tasks

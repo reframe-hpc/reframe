@@ -341,7 +341,8 @@ site_configuration = {
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
-                        'PrgEnv-pgi'
+                        'PrgEnv-pgi',
+                        'PrgEnv-nvidia'
                     ],
                     'descr': 'Login nodes',
                     'max_jobs': 4,
@@ -420,7 +421,8 @@ site_configuration = {
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
-                        'PrgEnv-pgi'
+                        'PrgEnv-pgi',
+                        'PrgEnv-nvidia'
                     ],
                     'descr': 'Multicore nodes (Broadwell)',
                     'max_jobs': 100,
@@ -695,6 +697,14 @@ site_configuration = {
                     'name': 'mc',
                     'descr': 'Multicore nodes (AMD EPYC 7742, 256|512GB/cn)',
                     'scheduler': 'slurm',
+                    'container_platforms': [
+                        {
+                            'type': 'Sarus',
+                        },
+                        {
+                            'type': 'Singularity',
+                        }
+                    ],
                     'environs': [
                         'builtin',
                         'PrgEnv-aocc',
@@ -743,6 +753,7 @@ site_configuration = {
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
+                        'PrgEnv-nvidia',
                         'cpeAMD',
                         'cpeCray',
                         'cpeGNU',
@@ -756,12 +767,21 @@ site_configuration = {
                     'name': 'mc',
                     'descr': 'Multicore nodes (AMD EPYC 7742, 256|512GB/cn)',
                     'scheduler': 'slurm',
+                    'container_platforms': [
+                        {
+                            'type': 'Sarus',
+                        },
+                        {
+                            'type': 'Singularity',
+                        }
+                    ],
                     'environs': [
                         'builtin',
                         'PrgEnv-aocc',
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
+                        'PrgEnv-nvidia',
                         'cpeAMD',
                         'cpeCray',
                         'cpeGNU',
@@ -1077,6 +1097,20 @@ site_configuration = {
         },
         {
             'name': 'PrgEnv-nvidia',
+            'target_systems': [
+                'pilatus'
+            ],
+            'modules': [
+                'PrgEnv-nvidia',
+                # FIXME: We should not be forcing a cdt version
+                'cpe/21.06'
+            ]
+        },
+        {
+            'name': 'PrgEnv-nvidia',
+            'target_systems': [
+                'dom', 'daint'
+            ],
             'modules': [
                 'PrgEnv-nvidia',
                 # FIXME: We should not be forcing a cdt version
