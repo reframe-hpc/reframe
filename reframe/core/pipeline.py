@@ -544,8 +544,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:        The measurement unit is required. The user should explicitly
     #:        specify :class:`None` if no unit is available.
     reference = variable(typ.Tuple[object, object, object],
-                         typ.Tuple[object, object, object, object],
-                         field=fields.ScopedDictField, value={})
+                         typ.Dict[str, typ.Dict[
+                             str, typ.Tuple[object, object, object, object]]
+                         ], field=fields.ScopedDictField, value={})
     # FIXME: There is not way currently to express tuples of `float`s or
     # `None`s, so we just use the very generic `object`
 
@@ -588,7 +589,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:     </deferrable_functions_reference>`) as values.
     #:     :class:`None` is also allowed.
     #: :default: :class:`None`
-    perf_patterns = variable(typ.Dict[str, _DeferredExpression])
+    perf_patterns = variable(typ.Dict[str, _DeferredExpression], type(None))
 
     #: List of modules to be loaded before running this test.
     #:
@@ -1484,8 +1485,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     @final
     def performance(self):
         try:
-            with osext.change_dir(self._stagedir):
-                self.check_performance()
+            self.check_performance()
         except PerformanceError:
             if self.strict_check:
                 raise
@@ -1564,108 +1564,109 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         '''
 
-        if hasattr(self, '_rfm_perf_report') or self._rfm_perf_fns:
-            if hasattr(self, 'perf_patterns'):
-                raise ReframeSyntaxError(
-                    f"assigning a value to 'perf_patters' conflicts with ",
-                    f"using the 'performance_report' decorator (class ",
-                    f"{self.__class__.__qualname__})"
-                )
+        with osext.change_dir(self._stagedir):
+            if hasattr(self, '_rfm_perf_report') or self._rfm_perf_fns:
+                if hasattr(self, 'perf_patterns'):
+                    raise ReframeSyntaxError(
+                        f"assigning a value to 'perf_patters' conflicts with ",
+                        f"using the 'performance_report' decorator (class ",
+                        f"{self.__class__.__qualname__})"
+                    )
 
-            # Build the performance dict
-            if not hasattr(self, '_rfm_perf_report'):
-                self.perf_patterns = {}
-                for fn in self._rfm_perf_fns:
-                    self.perf_patterns[fn.__name__] = fn(self)
+                # Build the performance dict
+                if not hasattr(self, '_rfm_perf_report'):
+                    self.perf_patterns = {}
+                    for fn in self._rfm_perf_fns:
+                        self.perf_patterns[fn.__name__] = fn(self)
 
+                else:
+                    self.perf_patterns = self._rfm_perf_report()
+
+                # Log the performance variables
+                self._setup_perf_logging()
+                for tag, expr in self.perf_patterns.items():
+                    value, unit = sn.evaluate(expr)
+                    key = '%s:%s' % (self._current_partition.fullname, tag)
+                    try:
+                        ref = self.reference[key]
+                        if len(ref) > 3:
+                            raise ReframeSyntaxError(
+                                'reference tuple has more than three elements'
+                            )
+
+                    except KeyError:
+                        ref = (0, None, None)
+
+                    self._perfvalues[key] = (value, *ref, unit)
+                    self._perf_logger.log_performance(logging.INFO, tag, value,
+                                                      *ref, unit)
+
+            elif not hasattr(self, 'perf_patterns'):
+                return
             else:
-                self.perf_patterns = self._rfm_perf_report()
+                self._setup_perf_logging()
+                # Check if default reference perf values are provided and
+                # store all the variables tested in the performance check
+                has_default = False
+                variables = set()
+                for key, ref in self.reference.items():
+                    keyparts = key.split(self.reference.scope_separator)
+                    system = keyparts[0]
+                    varname = keyparts[-1]
+                    unit = ref[3]
+                    variables.add((varname, unit))
+                    if system == '*':
+                        has_default = True
+                        break
 
-            # Log the performance variables
-            self._setup_perf_logging()
-            for tag, expr in self.perf_patterns.items():
-                value, unit = sn.evaluate(expr)
-                key = '%s:%s' % (self._current_partition.fullname, tag)
-                try:
-                    ref = self.reference[key]
-                    if len(ref) > 3:
-                        raise ReframeSyntaxError(
-                            'reference tuple has more than three elements'
-                        )
+                if not has_default:
+                    if not variables:
+                        # If empty, it means that self.reference was empty, so
+                        # try to infer their name from perf_patterns
+                        variables = {(name, None)
+                                     for name in self.perf_patterns.keys()}
 
-                except KeyError:
-                    ref = (0, None, None)
+                    for var in variables:
+                        name, unit = var
+                        ref_tuple = (0, None, None, unit)
+                        self.reference.update({'*': {name: ref_tuple}})
 
-                self._perfvalues[key] = (value, *ref, unit)
-                self._perf_logger.log_performance(logging.INFO, tag, value,
-                                                  *ref, unit)
+                # We first evaluate and log all performance values and then we
+                # check them against the reference. This way we always log them
+                # even if the don't meet the reference.
+                for tag, expr in self.perf_patterns.items():
+                    value = sn.evaluate(expr)
+                    key = '%s:%s' % (self._current_partition.fullname, tag)
+                    if key not in self.reference:
+                        raise SanityError(
+                            "tag `%s' not resolved in references for `%s'" %
+                            (tag, self._current_partition.fullname))
 
-        elif not hasattr(self, 'perf_patterns'):
-            return
-        else:
-            self._setup_perf_logging()
-            # Check if default reference perf values are provided and
-            # store all the variables tested in the performance check
-            has_default = False
-            variables = set()
-            for key, ref in self.reference.items():
-                keyparts = key.split(self.reference.scope_separator)
-                system = keyparts[0]
-                varname = keyparts[-1]
-                unit = ref[3]
-                variables.add((varname, unit))
-                if system == '*':
-                    has_default = True
-                    break
+                    self._perfvalues[key] = (value, *self.reference[key])
+                    self._perf_logger.log_performance(logging.INFO, tag, value,
+                                                      *self.reference[key])
 
-            if not has_default:
-                if not variables:
-                    # If empty, it means that self.reference was empty, so try
-                    # to infer their name from perf_patterns
-                    variables = {(name, None)
-                                 for name in self.perf_patterns.keys()}
+            # Check the performace variables against their references.
+            for key, values in self._perfvalues.items():
+                val, ref, low_thres, high_thres, *_ = values
 
-                for var in variables:
-                    name, unit = var
-                    ref_tuple = (0, None, None, unit)
-                    self.reference.update({'*': {name: ref_tuple}})
-
-            # We first evaluate and log all performance values and then we
-            # check them against the reference. This way we always log them
-            # even if the don't meet the reference.
-            for tag, expr in self.perf_patterns.items():
-                value = sn.evaluate(expr)
-                key = '%s:%s' % (self._current_partition.fullname, tag)
-                if key not in self.reference:
+                # Verify that val is a number
+                if not isinstance(val, numbers.Number):
                     raise SanityError(
-                        "tag `%s' not resolved in references for `%s'" %
-                        (tag, self._current_partition.fullname))
+                        "the value extracted for performance variable '%s' "
+                        "is not a number: %s" % (key, val)
+                    )
 
-                self._perfvalues[key] = (value, *self.reference[key])
-                self._perf_logger.log_performance(logging.INFO, tag, value,
-                                                  *self.reference[key])
-
-        # Check the performace variables against their references.
-        for key, values in self._perfvalues.items():
-            val, ref, low_thres, high_thres, *_ = values
-
-            # Verify that val is a number
-            if not isinstance(val, numbers.Number):
-                raise SanityError(
-                    "the value extracted for performance variable '%s' "
-                    "is not a number: %s" % (key, val)
-                )
-
-            tag = key.split(':')[-1]
-            try:
-                sn.evaluate(
-                    sn.assert_reference(
-                        val, ref, low_thres, high_thres,
-                        msg=('failed to meet reference: %s={0}, '
-                             'expected {1} (l={2}, u={3})' % tag))
-                )
-            except SanityError as e:
-                raise PerformanceError(e)
+                tag = key.split(':')[-1]
+                try:
+                    sn.evaluate(
+                        sn.assert_reference(
+                            val, ref, low_thres, high_thres,
+                            msg=('failed to meet reference: %s={0}, '
+                                 'expected {1} (l={2}, u={3})' % tag))
+                    )
+                except SanityError as e:
+                    raise PerformanceError(e)
 
     def _copy_job_files(self, job, dst):
         if job is None:
