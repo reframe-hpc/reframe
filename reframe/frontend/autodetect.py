@@ -17,10 +17,6 @@ from reframe.core.schedulers import Job
 from reframe.utility.cpuinfo import cpuinfo
 
 
-_GH_REPO = 'https://github.com/vkarak/reframe.git'
-_GH_BRANCH = 'feat/cpu-autodetect'
-
-
 def _contents(filename):
     '''Return the contents of a file.'''
 
@@ -33,6 +29,24 @@ def _log_contents(filename):
     getlogger().debug(f'--- {filename} ---\n'
                       f'{_contents(filename)}\n'
                       f'--- {filename} ---')
+
+
+class _copy_reframe:
+    def __init__(self, prefix):
+        self._prefix = prefix
+        self._prefix = runtime().get_option('general/0/remote_workdir')
+        self._workdir = None
+
+    def __enter__(self):
+        self._workdir = tempfile.mkdtemp(prefix='rfm.', dir=self._prefix)
+        paths = ['bin/', 'reframe/', 'bootstrap.sh', 'requirements.txt']
+        for p in paths:
+            osext.copytree(os.path.join(rfm.INSTALL_PREFIX, p), self._workdir)
+
+        return self._workdir
+
+    def __exit__(self):
+        osext.rmtree(self._workdir)
 
 
 def _subschema(fragment):
@@ -89,23 +103,11 @@ def _is_part_local(part):
 
 
 def _remote_detect(part):
-    def _emit_script(job, fresh=False):
-        if fresh:
-            rfm_exec = './bin/reframe'
-            commands = [
-                f'_prefix=$(mktemp -d)',
-                f'cd $_prefix',
-                f'git clone -b {_GH_BRANCH} {_GH_REPO} reframe',
-                f'cd reframe',
-                f'./bootstrap.sh'
-            ]
-        else:
-            rfm_exec = os.path.join(rfm.INSTALL_PREFIX, 'bin/reframe')
-            commands = []
-
+    def _emit_script(job):
         launcher_cmd = job.launcher.run_command(job)
         commands += [
-            f'{launcher_cmd} {rfm_exec} --detect-host-topology'
+            f'./bootstrap.sh'
+            f'{launcher_cmd} ./bin/reframe --detect-host-topology=topo.json'
         ]
         job.prepare(commands, trap_errors=True)
 
@@ -114,41 +116,32 @@ def _remote_detect(part):
     )
     topo_info = {}
     try:
-        with tempfile.TemporaryDirectory(dir='.') as dirname:
+        dest = runtime().get_option('general/0/remote_workdir')
+        with _copy_reframe(dest) as dirname:
             with osext.change_dir(dirname):
-                methods = [{'fresh': False}, {'fresh': True}]
-                for args in methods:
-                    job = Job.create(part.scheduler,
-                                     part.launcher_type(),
-                                     name='rfm-detect-job',
-                                     sched_access=part.access)
-                    _emit_script(job, **args)
-                    getlogger().debug('submitting detection script')
-                    _log_contents(job.script_filename)
-                    job.submit()
-                    job.wait()
-                    getlogger().debug('job finished')
-                    _log_contents(job.stdout)
-                    _log_contents(job.stderr)
-                    try:
-                        topo_info = json.loads(_contents(job.stdout))
-                        break
-                    except json.JSONDecodeError:
-                        getlogger().debug('stdout not a JSON file')
+                job = Job.create(part.scheduler,
+                                 part.launcher_type(),
+                                 name='rfm-detect-job',
+                                 sched_access=part.access)
+                _emit_script(job)
+
+                getlogger().debug('submitting detection script')
+                _log_contents(job.script_filename)
+                job.submit()
+                job.wait()
+                getlogger().debug('job finished')
+                _log_contents(job.stdout)
+                _log_contents(job.stderr)
+                topo_info = json.loads(_contents('topo.json'))
     except Exception as e:
         getlogger().warning(f'failed to retrieve remote processor info: {e}')
-    else:
-        if not topo_info:
-            getlogger().warning('failed to retrieve remote processor info')
 
     return topo_info
 
 
 def detect_topology():
     rt = runtime()
-    detect_remote_systems = rt.get_option(
-        'general/0/detect_remote_system_topology'
-    )
+    detect_remote_systems = rt.get_option('general/0/remote_detect')
     config_file = rt.site_config.filename
     if config_file == '<builtin>':
         config_prefix = os.path.join(

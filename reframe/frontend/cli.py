@@ -487,11 +487,18 @@ def main():
         help='URL of HTTP server accepting JSON logs'
     )
     argparser.add_argument(
-        dest='detect_remote_system_topology',
-        envvar='RFM_DETECT_REMOTE_SYSTEM_TOPOLOGY',
-        configvar='general/detect_remote_system_topology',
+        dest='remote_detect',
+        envvar='RFM_REMOTE_DETECT',
+        configvar='general/remote_detect',
         action='store_true',
         help='Detect remote system topology'
+    )
+    argparser.add_argument(
+        dest='remote_tmpdir',
+        envvar='RFM_REMOTE_WORKDIR',
+        configvar='general/remote_workdir',
+        action='store_true',
+        help='Working directory for launching ReFrame remotely'
     )
 
     # Parse command line
