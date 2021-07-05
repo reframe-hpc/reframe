@@ -52,9 +52,9 @@ class GpuDirectAccCheck(rfm.RegressionTest):
             self.modules = ['craype-accel-nvidia60']
             self.build_system.fflags = ['-hacc', '-hnoomp']
         elif self.current_environ.name.startswith('PrgEnv-pgi'):
-            self.modules = ['craype-accel-nvidia60']
             self.build_system.fflags = ['-acc']
             if self.current_system.name in ['daint', 'dom']:
+                self.modules = ['craype-accel-nvidia60']
                 self.build_system.fflags += ['-ta=tesla:cc60', '-Mnorpath']
             elif self.current_system.name in ['arolla', 'tsa']:
                 self.build_system.fflags += ['-ta=tesla:cc70']
