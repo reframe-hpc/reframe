@@ -35,7 +35,7 @@ usage()
     echo "  -h       Print this help message and exit"
     echo "  +docs    Build also the documentation"
     echo "  +pygelf  Install also the pygelf Python package"
-    echo "  +nodeps  Ignore incompatible Python package dependencies"
+    echo "  -nodeps  Ignore incompatible Python package dependencies"
 }
 
 
@@ -56,7 +56,7 @@ while [ -n "$1" ]; do
     case "$1" in
         "+docs") MAKEDOCS="true" && shift ;;
         "+pygelf") PYGELF="true" && shift ;;
-        "+nodeps") NODEPS="--no-deps" && shift ;;
+        "-nodeps") NODEPS="--no-deps" && shift ;;
         *) usage && exit 1 ;;
     esac
 done
