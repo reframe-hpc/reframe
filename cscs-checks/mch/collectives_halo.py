@@ -84,7 +84,6 @@ class CollectivesBaseTest(rfm.RegressionTest):
         }
 
         self.maintainers = ['AJ', 'MKr']
-        self.strict_check = False
         if self.current_system.name == 'tsa':
             self.tags = {'mch'}
         else:

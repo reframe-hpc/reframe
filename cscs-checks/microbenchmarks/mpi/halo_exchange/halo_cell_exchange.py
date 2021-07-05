@@ -135,6 +135,7 @@ class HaloCellExchangeTest(rfm.RegressionTest):
         }
 
         self.maintainers = ['AJ']
+        self.strict_check = False
         self.tags = {'benchmark'}
 
     @run_before('compile')
