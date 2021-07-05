@@ -7,32 +7,32 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-#FIXME: Use tuples as dictionary keys as soon as
+# FIXME: Use tuples as dictionary keys as soon as
 # https://github.com/eth-cscs/reframe/issues/2022 is in
 daint_gpu_performance = {
-        'Cellulose_production_NVE': (30.0, -0.05, None, 'ns/day'),
-        'FactorIX_production_NVE': (134.0, -0.05, None, 'ns/day'),
-        'JAC_production_NVE': (388.0, -0.05, None, 'ns/day'),
-        'JAC_production_NVE_4fs': (742, -0.05, None, 'ns/day'),
+    'Cellulose_production_NVE': (30.0, -0.05, None, 'ns/day'),
+    'FactorIX_production_NVE': (134.0, -0.05, None, 'ns/day'),
+    'JAC_production_NVE': (388.0, -0.05, None, 'ns/day'),
+    'JAC_production_NVE_4fs': (742, -0.05, None, 'ns/day'),
 }
 
 REFERENCE_GPU_PERFORMANCE = {
-    'daint:gpu' : daint_gpu_performance,
-    'dom:gpu' : daint_gpu_performance
+    'daint:gpu': daint_gpu_performance,
+    'dom:gpu': daint_gpu_performance
 }
 
 daint_mc_performance_small = {
-        'Cellulose_production_NVE': (8.0, -0.30, None, 'ns/day'),
-        'FactorIX_production_NVE': (34.0, -0.30, None, 'ns/day'),
-        'JAC_production_NVE': (90.0, -0.30, None, 'ns/day'),
-        'JAC_production_NVE_4fs': (150.0, -0.30, None, 'ns/day'),
+    'Cellulose_production_NVE': (8.0, -0.30, None, 'ns/day'),
+    'FactorIX_production_NVE': (34.0, -0.30, None, 'ns/day'),
+    'JAC_production_NVE': (90.0, -0.30, None, 'ns/day'),
+    'JAC_production_NVE_4fs': (150.0, -0.30, None, 'ns/day'),
 }
 
 eiger_mc_performance_small = {
-        'Cellulose_production_NVE': (3.2, -0.30, None, 'ns/day'),
-        'FactorIX_production_NVE': (7.0, -0.30, None, 'ns/day'),
-        'JAC_production_NVE': (30.0, -0.30, None, 'ns/day'),
-        'JAC_production_NVE_4fs': (45.0, -0.30, None, 'ns/day'),
+    'Cellulose_production_NVE': (3.2, -0.30, None, 'ns/day'),
+    'FactorIX_production_NVE': (7.0, -0.30, None, 'ns/day'),
+    'JAC_production_NVE': (30.0, -0.30, None, 'ns/day'),
+    'JAC_production_NVE_4fs': (45.0, -0.30, None, 'ns/day'),
 }
 
 REFERENCE_CPU_PERFORMANCE_SMALL = {
@@ -81,7 +81,8 @@ class AmberBaseCheck(rfm.RunOnlyRegressionTest):
     def download_files(self):
         self.prerun_cmds = [
             # cannot use wget because it is not installed on eiger
-            f'curl -LJO https://github.com/victorusu/amber_benchmark_suite/raw/main/amber_16_benchmark_suite/PME/{self.benchmark}.tar.bz2',
+            f'curl -LJO https://github.com/victorusu/amber_benchmark_suite'
+            f'/raw/main/amber_16_benchmark_suite/PME/{self.benchmark}.tar.bz2',
             f'tar xf {self.benchmark}.tar.bz2'
         ]
 
@@ -117,7 +118,9 @@ class AmberBaseCheck(rfm.RunOnlyRegressionTest):
 
     @run_after('setup')
     def set_generic_perf_references(self):
-        self.reference.update({'*': {self.benchmark: (0, None, None, 'ns/day')}})
+        self.reference.update({'*': {
+            self.benchmark: (0, None, None, 'ns/day')
+        }})
 
     @run_after('setup')
     def set_perf_patterns(self):
