@@ -192,10 +192,10 @@ def test_hook_attachments(MyMeta):
     class Bar(Foo):
         @run_before('sanity')
         def hook_a(self):
-            "Convert to a pre-sanity hook"
+            '''Convert to a pre-sanity hook'''
 
         def hook_b(self):
-            "No longer a hook"
+            '''No longer a hook'''
 
     assert not Bar.hook_in_stage('hook_a', 'post_setup')
     assert not Bar.hook_in_stage('hook_b', 'pre_compile')
