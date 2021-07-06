@@ -6,6 +6,7 @@
 import json
 import jsonschema
 import os
+import shutil
 import tempfile
 
 import reframe as rfm
@@ -38,15 +39,23 @@ class _copy_reframe:
         self._workdir = None
 
     def __enter__(self):
-        self._workdir = tempfile.mkdtemp(prefix='rfm.', dir=self._prefix)
+        self._workdir = os.path.abspath(
+            tempfile.mkdtemp(prefix='rfm.', dir=self._prefix)
+        )
         paths = ['bin/', 'reframe/', 'bootstrap.sh', 'requirements.txt']
         for p in paths:
-            osext.copytree(os.path.join(rfm.INSTALL_PREFIX, p), self._workdir)
+            src = os.path.join(rfm.INSTALL_PREFIX, p)
+            if os.path.isdir(src):
+                dst = os.path.join(self._workdir, p)
+                osext.copytree(src, dst, dirs_exist_ok=True)
+            else:
+                shutil.copy2(src, self._workdir)
 
         return self._workdir
 
-    def __exit__(self):
-        osext.rmtree(self._workdir)
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        # osext.rmtree(self._workdir)
+        pass
 
 
 def _subschema(fragment):
@@ -105,26 +114,27 @@ def _is_part_local(part):
 def _remote_detect(part):
     def _emit_script(job):
         launcher_cmd = job.launcher.run_command(job)
-        commands += [
-            f'./bootstrap.sh'
+        commands = [
+            f'./bootstrap.sh',
             f'{launcher_cmd} ./bin/reframe --detect-host-topology=topo.json'
         ]
         job.prepare(commands, trap_errors=True)
 
     getlogger().info(
-        f'Detecting topology of remote partition {part.fullname!r}'
+        f'Detecting topology of remote partition {part.fullname!r}: '
+        f'this may take some time...'
+
     )
     topo_info = {}
     try:
-        dest = runtime().get_option('general/0/remote_workdir')
-        with _copy_reframe(dest) as dirname:
+        prefix = runtime().get_option('general/0/remote_workdir')
+        with _copy_reframe(prefix) as dirname:
             with osext.change_dir(dirname):
                 job = Job.create(part.scheduler,
                                  part.launcher_type(),
                                  name='rfm-detect-job',
                                  sched_access=part.access)
                 _emit_script(job)
-
                 getlogger().debug('submitting detection script')
                 _log_contents(job.script_filename)
                 job.submit()

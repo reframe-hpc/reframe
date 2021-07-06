@@ -494,10 +494,10 @@ def main():
         help='Detect remote system topology'
     )
     argparser.add_argument(
-        dest='remote_tmpdir',
+        dest='remote_workdir',
         envvar='RFM_REMOTE_WORKDIR',
         configvar='general/remote_workdir',
-        action='store_true',
+        action='store',
         help='Working directory for launching ReFrame remotely'
     )
 
