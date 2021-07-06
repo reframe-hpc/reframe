@@ -776,8 +776,36 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                         os.path.dirname(inspect.getfile(cls))
                     )
 
+        # Initialize the test
+        obj.__deferred_rfm_init = obj.__rfm_init__(name, prefix)
+
         # Build pipeline hook registry
-        cls._rfm_pipeline_hooks = {}
+        cls._rfm_pipeline_hooks = cls._process_hook_registry()
+        cls._rfm_pipeline_hooks['pre___init__'] = [cls.__pre_init__]
+
+        # Attach the hooks to the pipeline stages
+        for stage in _PIPELINE_STAGES:
+            cls._add_hooks(stage)
+
+        return obj
+
+    def __pre_init__(self):
+        '''This is attached as a pre-init hook.'''
+        self.__deferred_rfm_init.evaluate()
+
+    def __init__(self):
+        pass
+
+    def _append_parameters_to_name(self):
+        if self._rfm_param_space.params:
+            return '_' + '_'.join([util.toalphanum(str(self.__dict__[key]))
+                                   for key in self._rfm_param_space.params])
+        else:
+            return ''
+
+    @classmethod
+    def _process_hook_registry(cls):
+        _pipeline_hooks = {}
         for stage, hooks in cls.pipeline_hooks().items():
             stage_name = '_'.join(stage.split('_')[1:])
             if stage_name not in _USER_PIPELINE_STAGES:
@@ -796,26 +824,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             elif stage == 'post_run':
                 stage = 'post_run_wait'
 
-            print(stage, hooks)
-            cls._rfm_pipeline_hooks[stage] = hooks
+            _pipeline_hooks[stage] = hooks
 
-        # Attach the hooks to the pipeline stages
-        for stage in _PIPELINE_STAGES:
-            cls._add_hooks(stage)
-
-        # Initialize the test
-        obj.__rfm_init__(name, prefix)
-        return obj
-
-    def __init__(self):
-        pass
-
-    def _append_parameters_to_name(self):
-        if self._rfm_param_space.params:
-            return '_' + '_'.join([util.toalphanum(str(self.__dict__[key]))
-                                   for key in self._rfm_param_space.params])
-        else:
-            return ''
+        return _pipeline_hooks
 
     @classmethod
     def _add_hooks(cls, stage):
@@ -842,6 +853,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 os.path.dirname(inspect.getfile(cls))
             )
 
+    @deferrable
     def __rfm_init__(self, name=None, prefix=None):
         if name is not None:
             self.name = name

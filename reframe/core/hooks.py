@@ -71,7 +71,7 @@ def attach_hooks(hooks):
                 return []
 
             return [h for h in hooks.get(phase, [])
-                    if h.__name__ not in obj._disabled_hooks]
+                    if h.__name__ not in getattr(obj, '_disabled_hooks', [])]
 
         @functools.wraps(func)
         def _fn(obj, *args, **kwargs):
