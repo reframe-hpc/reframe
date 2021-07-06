@@ -60,6 +60,7 @@ REFERENCE_CPU_PERFORMANCE_LARGE = {
 
 class AmberBaseCheck(rfm.RunOnlyRegressionTest):
     valid_prog_environs = ['builtin']
+    strict_check = False
     modules = ['Amber']
     extra_resources = {
         'switches': {
