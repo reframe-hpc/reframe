@@ -315,23 +315,25 @@ class RegressionTestMeta(type):
                     raise ReframeSyntaxError(msg)
 
     def __call__(cls, *args, **kwargs):
-        '''Intercept reframe-specific constructor arguments.
+        '''Inject parameter and variable spaces during object construction.
 
-        When registering a regression test using any supported decorator,
-        this decorator may pass additional arguments to the class constructor
-        to perform specific reframe-internal actions. This gives extra control
-        over the class instantiation process, allowing reframe to instantiate
-        the regression test class differently if this class was registered or
-        not (e.g. when deep-copying a regression test object). These internal
-        arguments must be intercepted before the object initialization, since
-        these would otherwise affect the __init__ method's signature, and these
-        internal mechanisms must be fully transparent to the user.
+        When a class is instantiated, this method intercepts the arguments
+        associated to the parameter and variable spaces. This prevents both
+        :func:`__new__` and :func:`__init__` methods from ever seing these
+        arguments.
+
+        The parameter and variable spaces are injected into the object after
+        construction and before initialization.
         '''
+
+        # Intercept constructor arguments
+        _rfm_use_params = kwargs.pop('_rfm_use_params', False)
 
         obj = cls.__new__(cls, *args, **kwargs)
 
-        # Intercept constructor arguments
-        kwargs.pop('_rfm_use_params', None)
+        # Insert the var & param spaces
+        cls._rfm_var_space.inject(obj, cls)
+        cls._rfm_param_space.inject(obj, cls, _rfm_use_params)
 
         obj.__init__(*args, **kwargs)
         return obj

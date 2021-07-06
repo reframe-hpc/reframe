@@ -744,23 +744,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: :type: boolean : :default: :class:`True`
     build_locally = variable(bool, value=True)
 
-    def __new__(cls, *args, _rfm_use_params=False, **kwargs):
+    def __new__(cls, *args, **kwargs):
         obj = super().__new__(cls)
-
-        # Insert the var & param spaces
-        cls._rfm_var_space.inject(obj, cls)
-        cls._rfm_param_space.inject(obj, cls, _rfm_use_params)
-
-        # Create a test name from the class name and the constructor's
-        # arguments
-        name = cls.__qualname__
-        name += obj._append_parameters_to_name()
-
-        # or alternatively, if the parameterized test was defined the old way.
-        if args or kwargs:
-            arg_names = map(lambda x: util.toalphanum(str(x)),
-                            itertools.chain(args, kwargs.values()))
-            name += '_' + '_'.join(arg_names)
 
         # Determine the prefix
         try:
@@ -776,10 +761,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                         os.path.dirname(inspect.getfile(cls))
                     )
 
-        # Initialize the test
-        obj.__deferred_rfm_init = obj.__rfm_init__(name, prefix)
+        # Prepare initialization of test defaults
+        obj.__deferred_rfm_init = obj.__rfm_init__(*args,
+                                                   name=cls.__qualname__,
+                                                   prefix=prefix, **kwargs)
 
-        # Build pipeline hook registry
+        # Build pipeline hook registry and add the pre-init hook
         cls._rfm_pipeline_hooks = cls._process_hook_registry()
         cls._rfm_pipeline_hooks['pre___init__'] = [cls.__pre_init__]
 
@@ -789,57 +776,13 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         return obj
 
+    @final
     def __pre_init__(self):
-        '''This is attached as a pre-init hook.'''
+        '''Initialize the test defaults from a pre-init hook.'''
         self.__deferred_rfm_init.evaluate()
 
     def __init__(self):
         pass
-
-    def _append_parameters_to_name(self):
-        if self._rfm_param_space.params:
-            return '_' + '_'.join([util.toalphanum(str(self.__dict__[key]))
-                                   for key in self._rfm_param_space.params])
-        else:
-            return ''
-
-    @classmethod
-    def _process_hook_registry(cls):
-        _pipeline_hooks = {}
-        for stage, hooks in cls.pipeline_hooks().items():
-            stage_name = '_'.join(stage.split('_')[1:])
-            if stage_name not in _USER_PIPELINE_STAGES:
-                raise ValueError(
-                    f'invalid pipeline stage ({stage_name!r}) in class '
-                    f'{cls.__qualname__!r}'
-                )
-            elif stage == 'pre_init':
-                raise ValueError(
-                    f'{stage} hooks are not allowed ({cls.__qualname__})'
-                )
-            elif stage == 'post_init':
-                stage = 'post___init__'
-            elif stage == 'post_compile':
-                stage = 'post_compile_wait'
-            elif stage == 'post_run':
-                stage = 'post_run_wait'
-
-            _pipeline_hooks[stage] = hooks
-
-        return _pipeline_hooks
-
-    @classmethod
-    def _add_hooks(cls, stage):
-        pipeline_hooks = cls._rfm_pipeline_hooks
-        fn = getattr(cls, stage)
-        new_fn = hooks.attach_hooks(pipeline_hooks)(fn)
-        setattr(cls, '_rfm_pipeline_fn_' + stage, new_fn)
-
-    def __getattribute__(self, name):
-        if name in _PIPELINE_STAGES:
-            name = f'_rfm_pipeline_fn_{name}'
-
-        return super().__getattribute__(name)
 
     @classmethod
     def __init_subclass__(cls, *, special=False, pin_prefix=False, **kwargs):
@@ -854,9 +797,18 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             )
 
     @deferrable
-    def __rfm_init__(self, name=None, prefix=None):
+    def __rfm_init__(self, *args, name=None, prefix=None, **kwargs):
         if name is not None:
             self.name = name
+
+            # Add the parameters to the name
+            self.name += self._append_parameters_to_name()
+
+            # or alternatively, if the parameterized test was defined the old way.
+            if args or kwargs:
+                arg_names = map(lambda x: util.toalphanum(str(x)),
+                                itertools.chain(args, kwargs.values()))
+                self.name += '_' + '_'.join(arg_names)
 
         # Pass if descr is a required variable.
         if not hasattr(self, 'descr'):
@@ -913,6 +865,55 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         # Disabled hooks
         self._disabled_hooks = set()
+
+    def _append_parameters_to_name(self):
+        if self._rfm_param_space.params:
+            return '_' + '_'.join([util.toalphanum(str(self.__dict__[key]))
+                                   for key in self._rfm_param_space.params])
+        else:
+            return ''
+
+    @classmethod
+    def _process_hook_registry(cls):
+        '''Process and validate the pipeline hooks.'''
+
+        _pipeline_hooks = {}
+        for stage, hooks in cls.pipeline_hooks().items():
+            stage_name = '_'.join(stage.split('_')[1:])
+            if stage_name not in _USER_PIPELINE_STAGES:
+                raise ValueError(
+                    f'invalid pipeline stage ({stage_name!r}) in class '
+                    f'{cls.__qualname__!r}'
+                )
+            elif stage == 'pre_init':
+                raise ValueError(
+                    f'{stage} hooks are not allowed ({cls.__qualname__})'
+                )
+            elif stage == 'post_init':
+                stage = 'post___init__'
+            elif stage == 'post_compile':
+                stage = 'post_compile_wait'
+            elif stage == 'post_run':
+                stage = 'post_run_wait'
+
+            _pipeline_hooks[stage] = hooks
+
+        return _pipeline_hooks
+
+    @classmethod
+    def _add_hooks(cls, stage):
+        '''Decorate the pipeline stages.'''
+
+        pipeline_hooks = cls._rfm_pipeline_hooks
+        fn = getattr(cls, stage)
+        new_fn = hooks.attach_hooks(pipeline_hooks)(fn)
+        setattr(cls, '_rfm_pipeline_fn_' + stage, new_fn)
+
+    def __getattribute__(self, name):
+        if name in _PIPELINE_STAGES:
+            name = f'_rfm_pipeline_fn_{name}'
+
+        return super().__getattribute__(name)
 
     # Export read-only views to interesting fields
 
