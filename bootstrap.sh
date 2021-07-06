@@ -31,17 +31,25 @@ usage()
 {
     echo "Usage: $0 [-h] [+docs] [+pygelf]"
     echo "Bootstrap ReFrame by pulling all its dependencies"
-    echo "  -P EXEC  Use EXEC as Python interpreter"
-    echo "  -h       Print this help message and exit"
-    echo "  +docs    Build also the documentation"
-    echo "  +pygelf  Install also the pygelf Python package"
+    echo "  -P EXEC     Use EXEC as Python interpreter"
+    echo "  -h          Print this help message and exit"
+    echo "  --pip-opts  Pass additional options to pip."
+    echo "  +docs       Build also the documentation"
+    echo "  +pygelf     Install also the pygelf Python package"
 }
 
 
-while getopts "hP:" opt; do
+while getopts "hP-:"  opt; do
     case $opt in
         "P") python=$OPTARG ;;
         "h") usage && exit 0 ;;
+	"-")
+	    case "${OPTARG}" in
+                pip-opts)
+	            PIPOPTS="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 )) ;;
+		pip-opts=*)
+                    PIPOPTS=${OPTARG#*=} ;;
+            esac;;
         "?") usage && exit 0 ;;
     esac
 done
@@ -94,12 +102,12 @@ CMD $python -m pip install --no-cache-dir -q --upgrade pip --target=external/
 if [ -n "$PYGELF" ]; then
     tmp_requirements=$(mktemp)
     sed -e 's/^#+pygelf%//g' requirements.txt > $tmp_requirements
-    CMD_M +pygelf $python -m pip install --no-cache-dir -q -r $tmp_requirements --target=external/ --upgrade && rm $tmp_requirements
+    CMD_M +pygelf $python -m pip install --no-cache-dir -q -r $tmp_requirements --target=external/ --upgrade $PIPOPTS && rm $tmp_requirements
 else
-    CMD $python -m pip install --no-cache-dir -q -r requirements.txt --target=external/ --upgrade
+    CMD $python -m pip install --no-cache-dir -q -r requirements.txt --target=external/ --upgrade $PIPOPTS
 fi
 
 if [ -n "$MAKEDOCS" ]; then
-    CMD_M +docs $python -m pip install --no-cache-dir -q -r docs/requirements.txt --target=external/ --upgrade
+    CMD_M +docs $python -m pip install --no-cache-dir -q -r docs/requirements.txt --target=external/ --upgrade $PIPOPTS
     make -C docs PYTHON=$python
 fi
