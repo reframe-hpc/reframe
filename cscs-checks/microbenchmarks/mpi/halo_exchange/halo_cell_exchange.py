@@ -145,3 +145,6 @@ class HaloCellExchangeTest(rfm.RegressionTest):
                 self.variables = {
                     'CUDA_HOME': '$CUDATOOLKIT_HOME',
                 }
+        if self.current_environ.name == 'PrgEnv-nvidia':
+            self.skip_if(self.current_system.name == 'eiger')
+            self.skip_if(self.current_system.name == 'pilatus')
