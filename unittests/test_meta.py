@@ -179,15 +179,18 @@ def test_hook_attachments(MyMeta):
         @classmethod
         def hook_in_stage(cls, hook, stage):
             '''Assert that a hook is in a given registry stage.'''
-            try:
-                return hook in {h.__name__
-                                for h in cls._rfm_pipeline_hooks[stage]}
-            except KeyError:
-                return False
+            for h in cls._rfm_hook_registry:
+                if h.__name__ == hook:
+                    if stage in h.stages:
+                        return True
+
+                    break
+
+            return False
 
     assert Foo.hook_in_stage('hook_a', 'post_setup')
     assert Foo.hook_in_stage('hook_b', 'pre_compile')
-    assert Foo.hook_in_stage('hook_c', 'post_run_wait')
+    assert Foo.hook_in_stage('hook_c', 'post_run')
 
     class Bar(Foo):
         @run_before('sanity')
@@ -199,5 +202,24 @@ def test_hook_attachments(MyMeta):
 
     assert not Bar.hook_in_stage('hook_a', 'post_setup')
     assert not Bar.hook_in_stage('hook_b', 'pre_compile')
-    assert Bar.hook_in_stage('hook_c', 'post_run_wait')
+    assert Bar.hook_in_stage('hook_c', 'post_run')
     assert Bar.hook_in_stage('hook_a', 'pre_sanity')
+
+    class Baz(MyMeta):
+        @run_before('setup')
+        @run_after('compile')
+        def hook_a(self):
+            pass
+
+        @run_before('run')
+        def hook_d(self):
+            pass
+
+    class MyTest(Bar, Baz):
+        '''Test multiple inheritance override.'''
+
+    assert MyTest.hook_in_stage('hook_a', 'pre_sanity')
+    assert not MyTest.hook_in_stage('hook_a', 'pre_setup')
+    assert not MyTest.hook_in_stage('hook_a', 'post_compile')
+    assert MyTest.hook_in_stage('hook_c', 'post_run')
+    assert MyTest.hook_in_stage('hook_d', 'pre_run')

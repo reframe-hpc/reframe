@@ -90,6 +90,12 @@ _PIPELINE_STAGES = (
 )
 
 
+_USER_PIPELINE_STAGES = (
+    'init', 'setup', 'compile', 'run', 'sanity', 'performance', 'cleanup'
+)
+
+
+
 def final(fn):
     fn._rfm_final = True
 
@@ -155,10 +161,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     @classmethod
     def pipeline_hooks(cls):
         ret = {}
-        for phase, hooks in cls._rfm_pipeline_hooks.items():
-            ret[phase] = []
-            for h in hooks:
-                ret[phase].append(h.fn)
+        for hook in cls._rfm_hook_registry:
+            for stage in hook.stages:
+                try:
+                    ret[stage].append(hook.fn)
+                except KeyError:
+                    ret[stage] = [hook.fn]
 
         return ret
 
@@ -767,6 +775,29 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                     prefix = os.path.abspath(
                         os.path.dirname(inspect.getfile(cls))
                     )
+
+        # Build pipeline hook registry
+        cls._rfm_pipeline_hooks = {}
+        for stage, hooks in cls.pipeline_hooks().items():
+            stage_name = '_'.join(stage.split('_')[1:])
+            if stage_name not in _USER_PIPELINE_STAGES:
+                raise ValueError(
+                    f'invalid pipeline stage ({stage_name!r}) in class '
+                    f'{cls.__qualname__!r}'
+                )
+            elif stage == 'pre_init':
+                raise ValueError(
+                    f'{stage} hooks are not allowed ({cls.__qualname__})'
+                )
+            elif stage == 'post_init':
+                stage = 'post___init__'
+            elif stage == 'post_compile':
+                stage = 'post_compile_wait'
+            elif stage == 'post_run':
+                stage = 'post_run_wait'
+
+            print(stage, hooks)
+            cls._rfm_pipeline_hooks[stage] = hooks
 
         # Attach the hooks to the pipeline stages
         for stage in _PIPELINE_STAGES:

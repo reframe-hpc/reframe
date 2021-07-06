@@ -19,11 +19,6 @@ from reframe.core.exceptions import ReframeSyntaxError
 from reframe.core.deferrable import deferrable
 
 
-_USER_PIPELINE_STAGES = (
-    'init', 'setup', 'compile', 'run', 'sanity', 'performance', 'cleanup'
-)
-
-
 class RegressionTestMeta(type):
 
     class MetaNamespace(namespaces.LocalNamespace):
@@ -190,42 +185,19 @@ class RegressionTestMeta(type):
 
         # Hook-related functionality
         def run_before(stage):
-            '''Decorator for attaching a test method to a pipeline stage.
+            '''Decorator for attaching a test method to a given stage.
 
             See online docs for more information.
             '''
-
-            if stage not in _USER_PIPELINE_STAGES:
-                raise ValueError(
-                    f'invalid pipeline stage specified: {stage!r}'
-                )
-
-            if stage == 'init':
-                raise ValueError('pre-init hooks are not allowed')
-
             return hooks.attach_to('pre_' + stage)
 
         namespace['run_before'] = run_before
 
         def run_after(stage):
-            '''Decorator for attaching a test method to a pipeline stage.
+            '''Decorator for attaching a test method to a given stage.
 
             See online docs for more information.
             '''
-
-            if stage not in _USER_PIPELINE_STAGES:
-                raise ValueError(
-                    f'invalid pipeline stage specified: {stage!r}'
-                )
-
-            # Map user stage names to the actual pipeline functions if needed
-            if stage == 'init':
-                stage = '__init__'
-            elif stage == 'compile':
-                stage = 'compile_wait'
-            elif stage == 'run':
-                stage = 'run_wait'
-
             return hooks.attach_to('post_' + stage)
 
         namespace['run_after'] = run_after
@@ -290,11 +262,11 @@ class RegressionTestMeta(type):
         # attribute; all dependencies will be resolved first in the post-setup
         # phase if not assigned elsewhere
         hook_reg = hooks.HookRegistry.create(namespace)
-        for base in (b for b in bases if hasattr(b, '_rfm_pipeline_hooks')):
-            hook_reg.update(getattr(base, '_rfm_pipeline_hooks'),
+        for base in (b for b in bases if hasattr(b, '_rfm_hook_registry')):
+            hook_reg.update(getattr(base, '_rfm_hook_registry'),
                             denied_hooks=namespace)
 
-        cls._rfm_pipeline_hooks = hook_reg
+        cls._rfm_hook_registry = hook_reg
 
         # Gather all the locally defined sanity functions based on the
         # _rfm_sanity_fn attribute.
