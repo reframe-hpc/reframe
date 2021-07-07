@@ -92,7 +92,7 @@ _PIPELINE_STAGES = (
 
 def final(fn):
     fn._rfm_final = True
-    warn.user_deprecation_warning(
+    user_deprecation_warning(
         'using the @rfm.final decorator from the rfm module is '
         'deprecated; please use the built-in decorator @final instead.',
         from_version='3.7.0'
@@ -1939,7 +1939,7 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
                 self._copy_to_stagedir(os.path.join(self._prefix,
                                                     self.sourcesdir))
 
-        super().run.__wrapped__(self)
+        super().run()
 
 
 class CompileOnlyRegressionTest(RegressionTest, special=True):
