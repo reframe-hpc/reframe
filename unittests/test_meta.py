@@ -160,3 +160,44 @@ def test_deferrable_decorator(MyMeta):
             pass
 
     assert type(MyTest.my_deferrable()) is deferrable._DeferredExpression
+
+
+def test_hook_attachments(MyMeta):
+    class Foo(MyMeta):
+        @run_after('setup')
+        def hook_a(self):
+            pass
+
+        @run_before('compile')
+        def hook_b(self):
+            pass
+
+        @run_after('run')
+        def hook_c(self):
+            pass
+
+        @classmethod
+        def hook_in_stage(cls, hook, stage):
+            '''Assert that a hook is in a given registry stage.'''
+            try:
+                return hook in {h.__name__
+                                for h in cls._rfm_pipeline_hooks[stage]}
+            except KeyError:
+                return False
+
+    assert Foo.hook_in_stage('hook_a', 'post_setup')
+    assert Foo.hook_in_stage('hook_b', 'pre_compile')
+    assert Foo.hook_in_stage('hook_c', 'post_run_wait')
+
+    class Bar(Foo):
+        @run_before('sanity')
+        def hook_a(self):
+            '''Convert to a pre-sanity hook'''
+
+        def hook_b(self):
+            '''No longer a hook'''
+
+    assert not Bar.hook_in_stage('hook_a', 'post_setup')
+    assert not Bar.hook_in_stage('hook_b', 'pre_compile')
+    assert Bar.hook_in_stage('hook_c', 'post_run_wait')
+    assert Bar.hook_in_stage('hook_a', 'pre_sanity')
