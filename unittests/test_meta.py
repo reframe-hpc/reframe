@@ -206,12 +206,19 @@ def test_hook_attachments(MyMeta):
 
 
 def test_final(MyMeta):
-    class MyBase(MyMeta):
+    class Base(MyMeta):
         @final
         def foo(self):
             pass
 
     with pytest.raises(ReframeSyntaxError):
-        class MyDerived(MyBase):
+        class Derived(Base):
             def foo(self):
-                '''Override attempt'''
+                '''Override attempt.'''
+
+    class AllowFinalOverride(Base):
+        '''Use flag to bypass the final override check.'''
+        _rfm_override_final = True
+
+        def foo(self):
+            '''Overriding foo is now allowed.'''
