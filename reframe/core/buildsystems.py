@@ -699,7 +699,7 @@ class EasyBuild(BuildSystem):
 
     ReFrame will use EasyBuild to build and install the code in the test's
     stage directory by default. ReFrame uses environment variables to
-    configure EasyBuild for running, so Users can pass additional options to
+    configure EasyBuild for running, so users can pass additional options to
     the ``eb`` command and modify the default behaviour.
 
     .. versionadded:: 3.5.0
