@@ -136,18 +136,3 @@ def test_special_test():
 
             def setup(self, partition, environ, **job_opts):
                 super().setup(partition, environ, **job_opts)
-
-    @rfm.simple_test
-    class TestFinal(rfm.RegressionTest):
-        def __init__(self):
-            pass
-
-        @rfm.final
-        def my_new_final(self):
-            pass
-
-    with pytest.raises(ReframeSyntaxError):
-        @rfm.simple_test
-        class TestFinalDerived(TestFinal):
-            def my_new_final(self, a, b):
-                pass

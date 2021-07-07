@@ -92,6 +92,11 @@ _PIPELINE_STAGES = (
 
 def final(fn):
     fn._rfm_final = True
+    warn.user_deprecation_warning(
+        'using the @rfm.final decorator from the rfm module is '
+        'deprecated; please use the built-in decorator @final instead.',
+        from_version='3.7.0'
+    )
 
     @functools.wraps(fn)
     def _wrapped(*args, **kwargs):
