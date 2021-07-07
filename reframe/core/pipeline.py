@@ -807,7 +807,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     @classmethod
     def __init_subclass__(cls, *, special=False, pin_prefix=False, **kwargs):
         super().__init_subclass__(**kwargs)
-        cls._rfm_special_test = special
+        cls._rfm_override_final = special
 
         # Insert the prefix to pin the test to if the test lives in a test
         # library with resources in it.

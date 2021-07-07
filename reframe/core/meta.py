@@ -337,7 +337,7 @@ class RegressionTestMeta(type):
         bases_w_final = [b for b in bases if hasattr(b, '_final_methods')]
         cls._final_methods.update(*(b._final_methods for b in bases_w_final))
 
-        if getattr(cls, '_rfm_special_test', None):
+        if getattr(cls, '_rfm_override_final', None):
             return
 
         for v in namespace.values():
