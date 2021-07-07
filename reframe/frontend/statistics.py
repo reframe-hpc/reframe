@@ -296,32 +296,43 @@ class TestStats:
         previous_name = ''
         previous_part = ''
         for t in self.tasks():
-            if t.check.perfvalues.keys():
-                if t.check.name != previous_name:
-                    report_body.append(line_width * '-')
-                    report_body.append(t.check.name)
-                    previous_name = t.check.name
+            if not t.check.perfvalues.keys():
+                continue
 
-                if t.check.current_partition.fullname != previous_part:
-                    report_body.append(
-                        f'- {t.check.current_partition.fullname}')
-                    previous_part = t.check.current_partition.fullname
+            rows = []
+            if t.check.name != previous_name:
+                report_body.append(line_width * '-')
+                report_body.append(t.check.name)
+                previous_name = t.check.name
 
-                report_body.append(f'   - {t.check.current_environ}')
-                report_body.append(f'      * num_tasks: {t.check.num_tasks}')
+            if t.check.current_partition.fullname != previous_part:
+                report_body.append(f'- {t.check.current_partition.fullname}')
+                previous_part = t.check.current_partition.fullname
+
+            report_body.append(f'   - {t.check.current_environ}')
+            report_body.append(f'      * num_tasks: {t.check.num_tasks}')
 
             for key, ref in t.check.perfvalues.items():
                 var = key.split(':')[-1]
                 val = ref[0]
                 unit = ' ' + ref[4] if ref[4] else ''
-                ref_val = ref[1]
-                if ref_val:
-                    percent = round(val / ref_val * 100)
-                    details = f' ({percent}% of {ref_val}{unit})'
-                else:
+                if ref[1:4] == (0, None, None):
+                    # No reference value present to compare with
                     details = ''
+                else:
+                    ref_val = ref[1]
+                    percent = (round(val / ref_val * 100) if ref_val != 0
+                               else 'N/A')
+                    details = f' ({percent:3}% of {ref_val}{unit})'
 
-                report_body.append(f'      * {var}: {val}{unit}{details}')
+                rows.append((f'{var}:', f'{val}{unit}', details))
+
+            var_width = max(map(lambda row: len(row[0]), rows))
+            val_width = max(map(lambda row: len(row[1]), rows))
+            for var, val, details in rows:
+                var_just = var.ljust(var_width)
+                val_just = val.ljust(val_width)
+                report_body.append(f'      * {var_just} {val_just}{details}')
 
         if report_body:
             return '\n'.join([report_start, report_title, *report_body,

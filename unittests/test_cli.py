@@ -377,7 +377,7 @@ def test_performance_report(run_reframe):
         more_options=['-t', 'PerformanceFailureCheck', '--performance-report']
     )
     assert r'PERFORMANCE REPORT' in stdout
-    assert r'perf: 10 Gflop/s (50% of 20 Gflop/s)' in stdout
+    assert r'perf: 10 Gflop/s ( 50% of 20 Gflop/s)' in stdout
 
 
 def test_skip_system_check_option(run_reframe):
