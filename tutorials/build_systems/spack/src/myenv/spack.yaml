@@ -1,6 +1,6 @@
 spack:
   specs:
-    - bzip2
+    - bzip2@1.0.6
   concretization: together
   config:
     install_tree: spack/opt/spack

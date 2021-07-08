@@ -832,7 +832,8 @@ class Spack(BuildSystem):
     #: :default: :class:`None`
     environment = fields.TypedField(typ.Str[r'\S+'], _UndefinedType)
 
-    #: The list of specs to build and install within the given environment.
+    #: A list of additional specs to build and install within the given
+    #: environment.
     #:
     #: ReFrame will add the specs to the active environment by emititing the
     #: following command:
