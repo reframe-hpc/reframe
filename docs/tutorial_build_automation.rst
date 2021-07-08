@@ -16,6 +16,9 @@ Finally, to avoid specifying the tutorial configuration file each time you run t
 Using EasyBuild to Build the Test Code
 --------------------------------------
 
+.. versionadded:: 3.5.0
+
+
 Let's consider a simple ReFrame test that installs ``bzip2-1.0.6`` given the easyconfig `bzip2-1.0.6.eb <https://github.com/eth-cscs/production/blob/master/easybuild/easyconfigs/b/bzip2/bzip2-1.0.6.eb>`__ and checks that the installed version is correct.
 The following code block shows the check, highlighting the lines specific to this tutorial:
 
@@ -92,6 +95,9 @@ To retain them after the test succeeds, :attr:`~reframe.core.pipeline.Regression
 
 Using Spack to Build the Test Code
 ----------------------------------
+
+
+.. versionadded:: 3.6.1
 
 
 This example is the equivalent to the previous one, except that it uses Spack to build ``bzip2``.
