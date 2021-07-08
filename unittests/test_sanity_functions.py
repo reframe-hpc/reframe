@@ -451,25 +451,25 @@ def test_assert_reference():
     # Check upper threshold values greater than 1
     assert sn.assert_reference(20.0, 10.0, None, 3.0)
     assert sn.assert_reference(-50.0, -20.0, -2.0, 0.5)
-    with pytest.raises(SanityError, match=r'0\.5 is beyond reference value 1 '
-                                          r'\(l=0\.8, u=1\.1\)'):
+    with pytest.raises(SanityError, match=r'0\.5 is lower than reference value'
+                                          r' 1 \(l=0\.8, u=1\.1\)'):
         sn.evaluate(sn.assert_reference(0.5, 1, -0.2, 0.1))
 
-    with pytest.raises(SanityError, match=r'0\.5 is beyond reference value 1 '
-                                          r'\(l=0\.8, u=inf\)'):
+    with pytest.raises(SanityError, match=r'0\.5 is lower than reference value'
+                                          r' 1 \(l=0\.8, u=inf\)'):
         sn.evaluate(sn.assert_reference(0.5, 1, -0.2))
 
-    with pytest.raises(SanityError, match=r'1\.5 is beyond reference value 1 '
-                                          r'\(l=0\.8, u=1\.1\)'):
+    with pytest.raises(SanityError, match=r'1\.5 is greater than reference '
+                                          r'value 1 \(l=0\.8, u=1\.1\)'):
         sn.evaluate(sn.assert_reference(1.5, 1, -0.2, 0.1))
 
-    with pytest.raises(SanityError, match=r'1\.5 is beyond reference value 1 '
-                                          r'\(l=-inf, u=1\.1\)'):
+    with pytest.raises(SanityError, match=r'1\.5 is greater than reference '
+                                          r'value 1 \(l=-inf, u=1\.1\)'):
         sn.evaluate(sn.assert_reference(1.5, 1, lower_thres=None,
                                         upper_thres=0.1))
 
     with pytest.raises(SanityError,
-                       match=r'-0\.8 is beyond reference value -1 '
+                       match=r'-0\.8 is greater than reference value -1 '
                              r'\(l=-1\.2, u=-0\.9\)'):
         sn.evaluate(sn.assert_reference(-0.8, -1, -0.2, 0.1))
 
