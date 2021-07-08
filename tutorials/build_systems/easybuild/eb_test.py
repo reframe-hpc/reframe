@@ -3,8 +3,8 @@ import reframe.utility.sanity as sn
 
 
 @rfm.simple_test
-class BZip2Check(rfm.RegressionTest):
-    descr = 'This demonstrates the EasyBuild build system.'
+class BZip2EBCheck(rfm.RegressionTest):
+    descr = 'Demo test using EasyBuild to build the test code'
     valid_systems = ['*']
     valid_prog_environs = ['builtin']
     executable = 'bzip2'
@@ -20,7 +20,6 @@ class BZip2Check(rfm.RegressionTest):
     def prepare_run(self):
         self.modules = self.build_system.generated_modules
 
-    @run_before('sanity')
-    def set_sanity(self):
-        self.sanity_patterns = sn.assert_found(r'Version 1.0.6',
-                                               self.stderr)
+    @sanity_function
+    def assert_version(self):
+        return sn.assert_found(r'Version 1.0.6', self.stderr)
