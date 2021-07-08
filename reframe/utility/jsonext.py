@@ -6,6 +6,7 @@
 import inspect
 import json
 import traceback
+from collections.abc import MutableMapping
 
 import reframe.utility as util
 
@@ -40,14 +41,35 @@ def encode(obj):
     return None
 
 
+def _make_json_friendly(obj):
+    '''Fallback type converter if json dump(s) raises a TypeError.'''
+
+    _valid_keys = {str, int, float, bool, type(None)}
+    if isinstance(obj, MutableMapping):
+        if not all((any(isinstance(k, t) for t in _valid_keys) for k in obj)):
+            newobj = type(obj)()
+            for k, v in obj.items():
+                newobj[util.toalphanum(str(k))] = v
+
+        return newobj
+
+    return None
+
+
 def dump(obj, fp, **kwargs):
     kwargs.setdefault('default', encode)
-    return json.dump(obj, fp, **kwargs)
+    try:
+        return json.dump(obj, fp, **kwargs)
+    except TypeError:
+        return json.dump(_make_json_friendly(obj), fp, **kwargs)
 
 
 def dumps(obj, **kwargs):
     kwargs.setdefault('default', encode)
-    return json.dumps(obj, **kwargs)
+    try:
+        return json.dumps(obj, **kwargs)
+    except TypeError:
+        return json.dumps(_make_json_friendly(obj), **kwargs)
 
 
 def _object_hook(json):
