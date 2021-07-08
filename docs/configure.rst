@@ -401,7 +401,6 @@ Let's see some concrete examples:
 
 .. _proc-autodetection:
 
-------------------------------------
 Auto-detecting processor information
 ------------------------------------
 
@@ -428,9 +427,13 @@ The processor information auto-detection works as follows:
 
 #. If the corresponding metadata files are not found, the processor information will be auto-detected.
    If the system partition is local (i.e., ``local`` scheduler + ``local`` launcher), the processor information is auto-detected unconditionally and stored in the corresponding metadata file for this partition.
-   If the partition is remote, ReFrame will not try to auto-detect it unless the :envvar:`RFM_DETECT_REMOTE_SYSTEM_TOPOLOGY` or the |detect_remote_system_topology|_ configuration option is set.
+   If the partition is remote, ReFrame will not try to auto-detect it unless the :envvar:`RFM_REMOTE_DETECT` or the |detect_remote_system_topology|_ configuration option is set.
+   In that case, the steps to auto-detect the remote processor information are the following:
 
-   For detecting remote processor information, ReFrame will generate a job script based on the partition information and launch itself on the remote system with ``{launcher} reframe --detect-host-topology=topo.json``.
-   The :option:`--detect-host-topology` option causes ReFrame to detect the topology of the current host.
+     a. ReFrame creates a fresh clone of itself in a temporary directory created under ``.`` by default.
+        This temporary directory prefix can be changed by setting the :envvar:`RFM_REMOTE_WORKDIR` environment variable.
+     b. ReFrame changes to that directory and launches a job that will first bootstrap the fresh clone and then run that clone with ``{launcher} ./bin/reframe --detect-host-topology=topo.json``.
+        The :option:`--detect-host-topology` option causes ReFrame to detect the topology of the current host,
+        which in this case would be the remote compute nodes.
 
    In case of errors during auto-detection, ReFrame will simply issue a warning and continue.

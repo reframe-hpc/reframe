@@ -708,7 +708,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
 
 
-.. envvar:: RFM_DETECT_REMOTE_SYSTEM_TOPOLOGY
+.. envvar:: RFM_REMOTE_DETECT
 
    Auto-detect processor information of remote partitions as well.
 
@@ -717,8 +717,25 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
       ================================== ==================
       Associated command line option     N/A
-      Associated configuration parameter :js:attr:`detect_remote_system_topology` general configuration parameter
+      Associated configuration parameter :js:attr:`remote_detect` general configuration parameter
       ================================== ==================
+
+.. versionadded:: 3.7.0
+
+
+.. envvar:: RFM_REMOTE_WORKDIR
+
+   The temporary directory prefix that will be used to create a fresh ReFrame clone, in order to auto-detect the processor information of a remote partition.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :js:attr:`remote_workdir` general configuration parameter
+      ================================== ==================
+
+.. versionadded:: 3.7.0
 
 
 .. envvar:: RFM_GRAYLOG_ADDRESS

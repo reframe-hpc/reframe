@@ -341,8 +341,12 @@ System Partition Configuration
    :default: ``{}``
 
    Processor information for this partition stored in a `processor info object <#processor-info>`__.
+   If not set, ReFrame will try to auto-detect this information (see :ref:`proc-autodetection` for more information).
 
    .. versionadded:: 3.5.0
+
+   .. versionchanged:: 3.7.0
+      ReFrame is now able to detect the processor information automatically.
 
 
 .. js:attribute:: .systems[].partitions[].devices
@@ -1201,7 +1205,7 @@ General Configuration
    The command-line option sets the configuration option to ``false``.
 
 
-.. js:attribute:: .general[].detect_remote_system_topology
+.. js:attribute:: .general[].remote_detect
 
    :required: No
    :default: ``false``
@@ -1209,6 +1213,16 @@ General Configuration
    Try to auto-detect processor information of remote partitions as well.
    This may slow down the initialization of the framework, since it involves submitting auto-detection jobs to the remote partitions.
    For more information on how ReFrame auto-detects processor information, you may refer to :ref:`proc-autodetection`.
+
+   .. versionadded:: 3.7.0
+
+
+.. js:attribute:: .general[].remote_workdir
+
+   :required: No
+   :default: ``"."``
+
+   The temporary directory prefix that will be used to create a fresh ReFrame clone, in order to auto-detect the processor information of a remote partition.
 
    .. versionadded:: 3.7.0
 
