@@ -1,23 +1,24 @@
-===============================================
-Understanding the Mechanism of Sanity Functions
-===============================================
+===================================================
+Understanding the Mechanism of Deferrable Functions
+===================================================
 
-This section describes the mechanism behind the sanity functions that are used for the sanity and performance checking.
-Generally, writing a new sanity function is as straightforward as decorating a simple Python function with the :func:`reframe.utility.sanity.sanity_function` decorator.
-However, it is important to understand how and when a deferrable function is evaluated, especially if your function takes as arguments the results of other deferrable functions.
+This section describes the mechanism behind deferrable functions, which in ReFrame, they are used for sanity and performance checking.
+Generally, writing a new sanity function in a :class:`~reframe.core.pipeline.RegressionTest` is as straightforward as decorating a simple member function with the built-in :func:`~reframe.core.pipeline.RegressionMixin.sanity_function` decorator.
+Behind the scenes, this decorator will convert the Python function into a deferrable function and schedule its evaluation for the sanity stage of the test.
+However, when dealing with more complex scenarios such as a deferrable function taking as an argument the results from other deferrable functions, it is crucial to understand how a deferrable function differs from a regular Python function, and when is it actually evaluated.
 
 What Is a Deferrable Function?
 ------------------------------
 
 A deferrable function is a function whose a evaluation is deferred to a later point in time.
-You can define any function as deferrable by wrapping it with the :func:`reframe.utility.sanity.sanity_function` decorator before its definition.
+You can define any function as deferrable by wrapping it with the :func:`~reframe.core.pipeline.RegressionMixin.deferrable` when decorating a member function of a class derived from :class:`~reframe.core.pipeline.RegressionMixin`, or alternatively, the :func:`reframe.utility.sanity.deferrable` decorator can be used for any other function.
 The example below demonstrates a simple scenario:
 
 .. code-block:: python
 
   import reframe.utility.sanity as sn
 
-  @sn.sanity_function
+  @sn.deferrable
   def foo():
       print('hello')
 
@@ -47,11 +48,11 @@ Deferrable functions may also be combined as we do with normal functions. Let's 
 
   import reframe.utility.sanity as sn
 
-  @sn.sanity_function
+  @sn.deferrable
   def foo(arg):
       print(arg)
 
-  @sn.sanity_function
+  @sn.deferrable
   def greetings():
       return 'hello'
 
@@ -85,7 +86,7 @@ To demonstrate more clearly how the deferred evaluation of a function works, let
 
 .. code-block:: python
 
-  @sn.sanity_function
+  @sn.deferrable
   def size3(iterable):
       return len(iterable) == 3
 
@@ -160,7 +161,7 @@ Here is why:
 
 .. code-block:: pycon
 
-  >>> @sn.sanity_function
+  >>> @sn.deferrable
   ... def size(iterable):
   ...     return len(iterable)
   ...
@@ -184,7 +185,7 @@ If you want to defer the execution of such operators, you should use the corresp
 
 In summary deferrable functions have the following characteristics:
 
-* You can make any function deferrable by wrapping it with the :func:`reframe.utility.sanity.sanity_function` decorator.
+* You can make any function deferrable by wrapping it with the :func:`~reframe.utility.sanity.deferrable` decorator.
 * When you call a deferrable function, its body is not executed but its arguments are *captured* and an object representing the deferred function is returned.
 * You can execute the body of a deferrable function at any later point by calling :func:`evaluate <reframe.utility.sanity.evaluate>` on the deferred expression object that it has been returned by the call to the deferred function.
 * Deferred functions can accept other deferred expressions as arguments and may also return a deferred expression.
@@ -194,7 +195,7 @@ In summary deferrable functions have the following characteristics:
 How a Deferred Expression Is Evaluated?
 ---------------------------------------
 
-As discussed before, you can create a new deferred expression by calling a function whose definition is decorated by the ``@sanity_function`` or ``@deferrable`` decorator or by including an already deferred expression in any sort of arithmetic operation.
+As discussed before, you can create a new deferred expression by calling a function whose definition is decorated by the ``@deferrable`` decorator or by including an already deferred expression in any sort of arithmetic operation.
 When you call :func:`evaluate <reframe.utility.sanity.evaluate>` on a deferred expression, you trigger the evaluation of the whole subexpression tree.
 Here is how the evaluation process evolves:
 
@@ -209,15 +210,15 @@ Here is an example where we define two deferrable variations of the builtins :fu
 
 .. code-block:: python
 
-  @sn.sanity_function
+  @sn.deferrable
   def dsum(iterable):
       return sum(iterable)
 
-  @sn.sanity_function
+  @sn.deferrable
   def dlen(iterable):
       return len(iterable)
 
-  @sn.sanity_function
+  @sn.deferrable
   def avg(iterable):
       return dsum(iterable) / dlen(iterable)
 
@@ -285,7 +286,7 @@ Although you can trigger the evaluation of a deferred expression at any time by 
 
   .. code-block:: pycon
 
-    >>> @sn.sanity_function
+    >>> @sn.deferrable
     ... def getlist(iterable):
     ...     ret = list(iterable)
     ...     ret += [1, 2, 3]
@@ -336,12 +337,12 @@ The following example demonstrates two different ways writing a deferrable funct
 
   import reframe.utility.sanity as sn
 
-  @sn.sanity_function
+  @sn.deferrable
   def check_avg_with_deferrables(iterable):
       avg = sn.sum(iterable) / sn.len(iterable)
       return -1 if avg > 2 else 1
 
-  @sn.sanity_function
+  @sn.deferrable
   def check_avg_without_deferrables(iterable):
       avg = sum(iterable) / len(iterable)
       return -1 if avg > 2 else 1
@@ -360,14 +361,14 @@ In the version with the deferrables, ``avg`` is a deferred expression but it is 
 
 Generally, inside a sanity function, it is a preferable to use the non-deferrable version of a function, if that exists, since you avoid the extra overhead and bookkeeping of the deferring mechanism.
 
-Deferrable Sanity Functions
----------------------------
+Ready to Go Deferrable Functions
+--------------------------------
 
-Normally, you will not have to implement your own sanity functions, since ReFrame provides already a variety of them.
-You can find the complete list of provided sanity functions `here <sanity_functions_reference.html>`__.
+Normally, you will not have to implement your own deferrable functions, since ReFrame provides already a variety of them.
+You can find the complete list of provided sanity functions in :ref:`deferrable-functions`.
 
-Similarities and Differences with Generators
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Deferrable functions vs Generators
+----------------------------------
 
 Python allows you to create functions that will be evaluated lazily.
 These are called `generator functions <https://wiki.python.org/moin/Generators>`__.
@@ -390,7 +391,7 @@ Differences
 
   .. code-block:: pycon
 
-    >>> @sn.sanity_function
+    >>> @sn.deferrable
     ... def dsize(iterable):
     ...     print(len(iterable))
     ...     return len(iterable)

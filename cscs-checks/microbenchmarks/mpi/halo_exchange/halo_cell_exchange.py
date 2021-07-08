@@ -15,7 +15,8 @@ class HaloCellExchangeTest(rfm.RegressionTest):
         self.build_system.cflags = ['-O2']
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'daint:mc', 'dom:mc',
                               'arolla:cn', 'tsa:cn', 'eiger:mc', 'pilatus:mc']
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu', 'PrgEnv-pgi']
+        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu', 'PrgEnv-pgi',
+                                    'PrgEnv-nvidia']
         self.num_tasks = 6
         self.num_tasks_per_node = 1
         self.num_gpus_per_node = 0
@@ -134,6 +135,7 @@ class HaloCellExchangeTest(rfm.RegressionTest):
         }
 
         self.maintainers = ['AJ']
+        self.strict_check = False
         self.tags = {'benchmark'}
 
     @run_before('compile')
@@ -143,3 +145,6 @@ class HaloCellExchangeTest(rfm.RegressionTest):
                 self.variables = {
                     'CUDA_HOME': '$CUDATOOLKIT_HOME',
                 }
+        if self.current_environ.name == 'PrgEnv-nvidia':
+            self.skip_if(self.current_system.name == 'eiger')
+            self.skip_if(self.current_system.name == 'pilatus')
