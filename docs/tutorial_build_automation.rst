@@ -20,7 +20,8 @@ Let's consider a simple ReFrame test that installs ``bzip2-1.0.6`` given the eas
 The following code block shows the check, highlighting the lines specific to this tutorial:
 
 .. literalinclude:: ../tutorials/build_systems/easybuild/eb_test.py
-   :emphasize-lines: 20-22,26
+   :lines: 6-
+   :emphasize-lines: 12,14-17,19-21
 
 The test looks pretty standard except for the highlighted blocks.
 Let's have a look first to the block in the :class:`BZip2Check` class.
@@ -98,15 +99,13 @@ Here is the test's code:
 
 .. literalinclude:: ../tutorials/build_systems/spack/spack_test.py
    :lines: 6-
-   :emphasize-lines: 13-16
+   :emphasize-lines: 12,14-16
 
 
 When :attr:`~reframe.core.pipeline.RegressionTest.build_system` is set to ``'Spack'``, ReFrame will leverage Spack environments in order to build the test code.
 For this reason, currently user must specify an environment.
 ReFrame treats Spack environments as *test resources* so it expects them under the test's :attr:`~reframe.core.pipeline.RegressionTest.sourcesdir`, which defaults to ``'src'``.
 Here is the directory structure for the test in this particular example that we show here:
-
-
 
 .. code:: console
 
@@ -174,5 +173,5 @@ From this point on, sanity and performance checking are exactly identical to any
 
 .. tip::
 
-   While developing a test using Spack or EasyBuild as a build system, it's good to run ReFrame with :option:`--keep-stage-files` and :option:`--dont-restage` options.
-   These options will not remove the test stage files upon successful completion of the test but, more importantly, ReFrame will not wipe out the stage directory every time you retry the test, which is quite useful for avoiding rebuilding the dependencies of the packages built by the test.
+   While developing a test using Spack or EasyBuild as a build system, it can be useful to run ReFrame with the :option:`--keep-stage-files` and :option:`--dont-restage` options to prevent ReFrame from removing the test's stage directory upon successful completion of the test.
+   For this particular type of test, these options will avoid having to rebuild the required package dependencies every time the test is retried.

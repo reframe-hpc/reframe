@@ -14,10 +14,10 @@ class BZip2SpackCheck(rfm.RegressionTest):
     valid_prog_environs = ['builtin']
     executable = 'bzip2'
     executable_opts = ['--help']
+    build_system = 'Spack'
 
     @run_before('compile')
     def setup_build_system(self):
-        self.build_system = 'Spack'
         self.build_system.environment = 'myenv'
 
     @sanity_function

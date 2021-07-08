@@ -14,10 +14,10 @@ class BZip2EBCheck(rfm.RegressionTest):
     valid_prog_environs = ['builtin']
     executable = 'bzip2'
     executable_opts = ['--help']
+    build_system = 'EasyBuild'
 
     @run_before('compile')
     def setup_build_system(self):
-        self.build_system = 'EasyBuild'
         self.build_system.easyconfigs = ['bzip2-1.0.6.eb']
         self.build_system.options = ['-f']
 
