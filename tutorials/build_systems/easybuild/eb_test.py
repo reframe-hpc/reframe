@@ -5,13 +5,13 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class BZip2Check(rfm.RegressionTest):
     descr = 'This demonstrates the EasyBuild build system.'
-    valid_systems = ['daint:gpu']
-    valid_prog_environs = ['gnu']
+    valid_systems = ['*']
+    valid_prog_environs = ['builtin']
     executable = 'bzip2'
     executable_opts = ['--help']
 
     @run_before('compile')
-    def set_makefile(self):
+    def setup_build_system(self):
         self.build_system = 'EasyBuild'
         self.build_system.easyconfigs = ['bzip2-1.0.6.eb']
         self.build_system.options = ['-f']
