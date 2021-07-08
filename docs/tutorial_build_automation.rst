@@ -20,7 +20,7 @@ Let's consider a simple ReFrame test that installs ``bzip2-1.0.6`` given the eas
 The following code block shows the check, highlighting the lines specific to this tutorial:
 
 .. literalinclude:: ../tutorials/build_systems/easybuild/eb_test.py
-   :emphasize-lines: 15-17,21
+   :emphasize-lines: 20-22,26
 
 The test looks pretty standard except for the highlighted blocks.
 Let's have a look first to the block in the :class:`BZip2Check` class.
@@ -118,6 +118,10 @@ Here is the directory structure for the test in this particular example that we 
 
 
 We could have placed ``spack.yaml`` directly under the ``src/`` directory, in which case we would need to specify ``'.'`` as an environment.
+For reference, here are the contents of ``spack.yaml``:
+
+.. literalinclude:: ../tutorials/build_systems/spack/src/myenv/spack.yaml
+
 
 As with every other test, ReFrame will copy the test's resources to its stage directory before building it.
 ReFrame will then activate the environment and install the associated specs as in this case.
