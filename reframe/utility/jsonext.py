@@ -18,10 +18,28 @@ class JSONSerializable:
             '__rfm_file__': inspect.getfile(type(self))
         }
         ret.update(self.__dict__)
-        return ret
+        encoded_ret = encode_dict(ret, recursive=True)
+        _ret = encoded_ret if encoded_ret else ret
+        return _ret
 
 
-def encode(obj):
+def encode_dict(obj, recursive=False):
+    '''Transform non-compatible dict keys into strings.'''
+    if isinstance(obj, MutableMapping):
+        _valid_keys = (str, int, float, bool, type(None))
+        if recursive or not all(isinstance(k, _valid_keys) for k in obj):
+            newobj = type(obj)()
+            for k, v in obj.items():
+                _key = str(k) if not isinstance(k, _valid_keys) else k
+                _v = encode_dict(v)
+                newobj[_key] = _v if _v else v
+
+            return newobj
+
+    return None
+
+
+def encode(obj, **kwargs):
     if hasattr(obj, '__rfm_json_encode__'):
         return obj.__rfm_json_encode__()
 
@@ -38,19 +56,8 @@ def encode(obj):
     if inspect.istraceback(obj):
         return traceback.format_tb(obj)
 
-    return None
-
-
-def _make_json_friendly(obj):
-    '''Fallback type converter if json dump(s) raises a TypeError.'''
-
-    _valid_keys = {str, int, float, bool, type(None)}
-    if isinstance(obj, MutableMapping):
-        if not all((any(isinstance(k, t) for t in _valid_keys) for k in obj)):
-            newobj = type(obj)()
-            for k, v in obj.items():
-                newobj[util.toalphanum(str(k))] = v
-
+    newobj = encode_dict(obj)
+    if newobj:
         return newobj
 
     return None
@@ -61,7 +68,7 @@ def dump(obj, fp, **kwargs):
     try:
         return json.dump(obj, fp, **kwargs)
     except TypeError:
-        return json.dump(_make_json_friendly(obj), fp, **kwargs)
+        return json.dump(encode(obj), fp, **kwargs)
 
 
 def dumps(obj, **kwargs):
@@ -69,7 +76,7 @@ def dumps(obj, **kwargs):
     try:
         return json.dumps(obj, **kwargs)
     except TypeError:
-        return json.dumps(_make_json_friendly(obj), **kwargs)
+        return json.dumps(encode(obj), **kwargs)
 
 
 def _object_hook(json):
