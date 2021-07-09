@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import fcntl
 import json
 import jsonschema
 import os
@@ -79,7 +80,8 @@ def _validate_info(info, schema):
 def _load_info(filename, schema=None):
     try:
         with open(filename) as fp:
-            return _validate_info(json.load(fp), schema)
+            with osext.lock_file(fp, fcntl.LOCK_SH):
+                return _validate_info(json.load(fp), schema)
     except OSError as e:
         getlogger().warning(
             f'could not load file: {filename!r}: {e}'
@@ -98,7 +100,8 @@ def _save_info(filename, topo_info):
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     try:
         with open(filename, 'w') as fp:
-            json.dump(topo_info, fp, indent=2)
+            with osext.lock_file(fp, fcntl.LOCK_EX):
+                json.dump(topo_info, fp, indent=2)
     except OSError as e:
         getlogger().warning(
             f'could not save topology file: {filename!r}: {e}'
