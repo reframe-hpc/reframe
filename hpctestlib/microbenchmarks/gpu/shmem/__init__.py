@@ -74,10 +74,14 @@ class GpuShmem(rfm.RegressionTest, pin_prefix=True):
         else:
             raise ValueError('unknown gpu_build option')
 
-    @run_before('sanity')
-    def set_sanity_patterns(self):
-        '''Set the ``sanity_patterns`` variable.'''
-        self.sanity_patterns = self.assert_count_gpus()
+    @sanity_function
+    def assert_count_gpus(self):
+        '''Count the number of GPUs testd is correct.'''
+
+        return sn.assert_eq(
+            sn.count(sn.findall(r'Bandwidth', self.stdout)),
+            self.job.num_tasks * 2 * self.num_gpus_per_node
+        )
 
     @run_before('performance')
     def set_perf_patterns(self):
@@ -90,12 +94,3 @@ class GpuShmem(rfm.RegressionTest, pin_prefix=True):
                 self.stdout, 'bw', float
             ))
         }
-
-    @sn.sanity_function
-    def assert_count_gpus(self):
-        '''Count the number of GPUs testd is correct.'''
-
-        return sn.assert_eq(
-            sn.count(sn.findall(r'Bandwidth', self.stdout)),
-            self.job.num_tasks * 2 * self.num_gpus_per_node
-        )

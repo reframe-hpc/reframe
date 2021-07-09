@@ -8,7 +8,6 @@ import pytest
 import math
 
 import reframe as rfm
-from reframe.core.fields import Field
 
 
 @pytest.fixture
@@ -33,10 +32,10 @@ def OneVarTest(NoVarsTest):
 
 def test_custom_variable(OneVarTest):
     assert hasattr(OneVarTest, 'foo')
-    assert not isinstance(OneVarTest.foo, Field)
+    assert OneVarTest.foo == 10
     inst = OneVarTest()
     assert hasattr(OneVarTest, 'foo')
-    assert isinstance(OneVarTest.foo, Field)
+    assert OneVarTest.foo == 10
     assert hasattr(inst, 'foo')
     assert inst.foo == 10
 
@@ -134,9 +133,9 @@ def test_set_var(OneVarTest):
 
     inst = MyTest()
     assert hasattr(OneVarTest, 'foo')
-    assert not isinstance(OneVarTest.foo, Field)
+    assert OneVarTest.foo == 10
     assert hasattr(MyTest, 'foo')
-    assert isinstance(MyTest.foo, Field)
+    assert MyTest.foo == 4
     assert hasattr(inst, 'foo')
     assert inst.foo == 4
 
@@ -168,6 +167,13 @@ def test_required_var_not_present(OneVarTest):
             pass
 
     MyTest()
+
+
+def test_required_non_var():
+    msg = "'not_a_var' has not been declared as a variable"
+    with pytest.raises(ValueError, match=msg):
+        class Foo(rfm.RegressionTest):
+            not_a_var = required
 
 
 def test_invalid_field():
