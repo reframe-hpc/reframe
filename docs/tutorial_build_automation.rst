@@ -110,7 +110,7 @@ Here is the test's code:
 
 When :attr:`~reframe.core.pipeline.RegressionTest.build_system` is set to ``'Spack'``, ReFrame will leverage Spack environments in order to build the test code.
 For this reason, currently user must specify an environment.
-ReFrame treats Spack environments as *test resources* so it expects them under the test's :attr:`~reframe.core.pipeline.RegressionTest.sourcesdir`, which defaults to ``'src'``.
+ReFrame treats Spack environments as *test resources* so it expects to find them under the test's :attr:`~reframe.core.pipeline.RegressionTest.sourcesdir`, which defaults to ``'src'``.
 Here is the directory structure for the test in this particular example that we show here:
 
 .. code:: console
@@ -142,7 +142,7 @@ Here is what ReFrame generates as a build script in this example:
 Any additional specs specified inside the ReFrame test will be added using the ``spack add`` command.
 As you might have noticed ReFrame expects that Spack is already installed on the system.
 The packages specified in the environment and the tests will be installed in the test's stage directory, where the environment is copied before building.
-Here is the the stage directory structure:
+Here is the stage directory structure:
 
 .. code:: console
 
