@@ -1540,7 +1540,7 @@ def test_jsonext_dumps():
     assert '{"foo":["bar"]}' == jsonext.dumps(
         {'foo': sn.defer(['bar']).evaluate()}, separators=(',', ':')
     )
-    assert '{"(1, 2, 3)": 1}' == jsonext.dumps({(1, 2, 3):1})
+    assert '{"(1, 2, 3)": 1}' == jsonext.dumps({(1, 2, 3): 1})
 
 # Classes to test JSON deserialization
 
