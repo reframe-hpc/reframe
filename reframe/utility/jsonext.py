@@ -23,18 +23,18 @@ class JSONSerializable:
         return _ret
 
 
-def encode_dict(obj, recursive=False):
-    '''Transform non-compatible dict keys into strings.
+def encode_dict(obj, *, recursive=False):
+    '''Transform tuple dict keys into strings.
 
     Use the recursive option to also check the keys in nested dicts.
     '''
+
     if isinstance(obj, MutableMapping):
-        _valid_keys = (str, int, float, bool, type(None))
-        if recursive or not all(isinstance(k, _valid_keys) for k in obj):
+        if recursive or any(isinstance(k, tuple) for k in obj):
             newobj = type(obj)()
             for k, v in obj.items():
-                _key = str(k) if not isinstance(k, _valid_keys) else k
-                _v = encode_dict(v)
+                _key = str(k) if isinstance(k, tuple) else k
+                _v = encode_dict(v, recursive=recursive)
                 newobj[_key] = _v if _v else v
 
             return newobj
@@ -59,7 +59,7 @@ def encode(obj, **kwargs):
     if inspect.istraceback(obj):
         return traceback.format_tb(obj)
 
-    newobj = encode_dict(obj, recursive=True)
+    newobj = encode_dict(obj)
     if newobj:
         return newobj
 
