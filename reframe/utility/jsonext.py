@@ -24,7 +24,10 @@ class JSONSerializable:
 
 
 def encode_dict(obj, recursive=False):
-    '''Transform non-compatible dict keys into strings.'''
+    '''Transform non-compatible dict keys into strings.
+
+    Use the recursive option to also check the keys in nested dicts.
+    '''
     if isinstance(obj, MutableMapping):
         _valid_keys = (str, int, float, bool, type(None))
         if recursive or not all(isinstance(k, _valid_keys) for k in obj):
@@ -56,7 +59,7 @@ def encode(obj, **kwargs):
     if inspect.istraceback(obj):
         return traceback.format_tb(obj)
 
-    newobj = encode_dict(obj)
+    newobj = encode_dict(obj, recursive=True)
     if newobj:
         return newobj
 
