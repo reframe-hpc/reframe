@@ -52,6 +52,7 @@ def test_directives(MyMeta):
         deferrable(ext)
         sanity_function(ext)
         v = required
+        final(ext)
 
         def __init__(self):
             assert not hasattr(self, 'parameter')
@@ -63,6 +64,7 @@ def test_directives(MyMeta):
             assert not hasattr(self, 'deferrable')
             assert not hasattr(self, 'sanity_function')
             assert not hasattr(self, 'required')
+            assert not hasattr(self, 'final')
 
     MyTest()
 
@@ -201,3 +203,22 @@ def test_hook_attachments(MyMeta):
     assert not Bar.hook_in_stage('hook_b', 'pre_compile')
     assert Bar.hook_in_stage('hook_c', 'post_run_wait')
     assert Bar.hook_in_stage('hook_a', 'pre_sanity')
+
+
+def test_final(MyMeta):
+    class Base(MyMeta):
+        @final
+        def foo(self):
+            pass
+
+    with pytest.raises(ReframeSyntaxError):
+        class Derived(Base):
+            def foo(self):
+                '''Override attempt.'''
+
+    class AllowFinalOverride(Base):
+        '''Use flag to bypass the final override check.'''
+        _rfm_override_final = True
+
+        def foo(self):
+            '''Overriding foo is now allowed.'''
