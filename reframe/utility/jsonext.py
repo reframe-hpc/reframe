@@ -19,8 +19,7 @@ class JSONSerializable:
         }
         ret.update(self.__dict__)
         encoded_ret = encode_dict(ret, recursive=True)
-        _ret = encoded_ret if encoded_ret else ret
-        return _ret
+        return encoded_ret if encoded_ret else ret
 
 
 def encode_dict(obj, *, recursive=False):
@@ -35,7 +34,7 @@ def encode_dict(obj, *, recursive=False):
             for k, v in obj.items():
                 _key = str(k) if isinstance(k, tuple) else k
                 _v = encode_dict(v, recursive=recursive)
-                newobj[_key] = _v if _v else v
+                newobj[_key] = _v if _v is not None else v
 
             return newobj
 
@@ -60,7 +59,7 @@ def encode(obj, **kwargs):
         return traceback.format_tb(obj)
 
     newobj = encode_dict(obj)
-    if newobj:
+    if newobj is not None:
         return newobj
 
     return None
