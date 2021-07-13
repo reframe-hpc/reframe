@@ -799,7 +799,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     @classmethod
     def __init_subclass__(cls, *, special=False, pin_prefix=False,
-                          required_version=[], **kwargs):
+                          required_version=None, **kwargs):
         super().__init_subclass__(**kwargs)
         cls._rfm_special_test = special
 
