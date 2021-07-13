@@ -132,7 +132,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     This class provides the implementation of the pipeline phases that the
     regression test goes through during its lifetime.
 
-    :param required_version: is a list of ReFrame version specifications that
+    :param require_version: is a list of ReFrame version specifications that
         this test is allowed to run.
         A version specification string can have one of the following formats:
 
@@ -818,12 +818,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     @classmethod
     def __init_subclass__(cls, *, special=False, pin_prefix=False,
-                          required_version=None, **kwargs):
+                          require_version=None, **kwargs):
         super().__init_subclass__(**kwargs)
         cls._rfm_special_test = special
 
-        if required_version:
-            cls._rfm_required_version = required_version
+        if require_version:
+            cls._rfm_required_version = require_version
         elif not hasattr(cls, '_rfm_required_version'):
             cls._rfm_required_version = []
 
