@@ -83,7 +83,7 @@ stage('Unittest') {
                 dir(reframeDir) {
                     checkout scm
                     sh("""${loginBash}
-                          bash ${reframeDir}/${bashScript} -f ${reframeDir} -i ''""")
+                          bash ${reframeDir}/${bashScript} -f ${reframeDir} -i '' -u""")
                 }
             }
         }

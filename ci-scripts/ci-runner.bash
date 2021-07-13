@@ -3,6 +3,7 @@
 scriptname=`basename $0`
 CI_FOLDER=""
 CI_GENERIC=0
+CI_USER_ONLY=0
 CI_TUTORIAL=0
 CI_EXITCODE=0
 TERM="${TERM:-xterm}"
@@ -25,6 +26,7 @@ Usage: $(tput setaf 1)$scriptname$(tput sgr0) $(tput setaf 3)[OPTIONS]$(tput sgr
     $(tput setaf 3)-l | --load-profile$(tput sgr0) $(tput setaf 1)ARGS$(tput sgr0) sources the given file before any execution of commands
     $(tput setaf 3)-m | --module-use$(tput sgr0) $(tput setaf 1)ARGS$(tput sgr0)   executes module use of the give folder before loading the regression
     $(tput setaf 3)-g | --generic-only$(tput sgr0)      executes unit tests using the generic configuration
+    $(tput setaf 3)-u | --user-only$(tput sgr0)         executes only the modified/new user tests
     $(tput setaf 3)-t | --tutorial-only$(tput sgr0)     executes only the modified/new tutorial tests
     $(tput setaf 3)-h | --help$(tput sgr0)              prints this help and exits
 
@@ -90,6 +92,9 @@ while [ $# -ne 0 ]; do
         -g | --generic-only)
             shift
             CI_GENERIC=1 ;;
+        -u | --user-only)
+            shift
+            CI_USER_ONLY=1 ;;
         -t | --tutorial-only)
             shift
             CI_TUTORIAL=1 ;;
@@ -165,29 +170,31 @@ elif [ $CI_TUTORIAL -eq 1 ]; then
         done
     fi
 else
-    # Run unit tests with the scheduler backends
-    tempdir=$(mktemp -d -p $SCRATCH)
-    echo "[INFO] Using temporary directory: $tempdir"
-    if [[ $(hostname) =~ dom ]]; then
-        PATH_save=$PATH
-        export PATH=/apps/dom/UES/karakasv/slurm-wrappers/bin:$PATH
-        for backend in slurm pbs torque; do
-            echo "[INFO] Running unit tests with ${backend}"
+    if [ $CI_USER_ONLY -eq 0 ]; then
+        # Run unit tests with the scheduler backends
+        tempdir=$(mktemp -d -p $SCRATCH)
+        echo "[INFO] Using temporary directory: $tempdir"
+        if [[ $(hostname) =~ dom ]]; then
+            PATH_save=$PATH
+            export PATH=/apps/dom/UES/karakasv/slurm-wrappers/bin:$PATH
+            for backend in slurm pbs torque; do
+                echo "[INFO] Running unit tests with ${backend}"
+                TMPDIR=$tempdir checked_exec ./test_reframe.py ${parallel_opts} \
+                             --rfm-user-config=config/cscs-ci.py \
+                             -W=error::reframe.core.warnings.ReframeDeprecationWarning \
+                             --rfm-user-system=dom:${backend} -ra
+            done
+            export PATH=$PATH_save
+        else
+            echo "[INFO] Running unit tests"
             TMPDIR=$tempdir checked_exec ./test_reframe.py ${parallel_opts} \
                          --rfm-user-config=config/cscs-ci.py \
-                         -W=error::reframe.core.warnings.ReframeDeprecationWarning \
-                         --rfm-user-system=dom:${backend} -ra
-        done
-        export PATH=$PATH_save
-    else
-        echo "[INFO] Running unit tests"
-        TMPDIR=$tempdir checked_exec ./test_reframe.py ${parallel_opts} \
-                     --rfm-user-config=config/cscs-ci.py \
-                     -W=error::reframe.core.warnings.ReframeDeprecationWarning -ra
-    fi
+                         -W=error::reframe.core.warnings.ReframeDeprecationWarning -ra
+        fi
 
-    if [ $CI_EXITCODE -eq 0 ]; then
-        /bin/rm -rf $tempdir
+        if [ $CI_EXITCODE -eq 0 ]; then
+            /bin/rm -rf $tempdir
+        fi
     fi
 
     # Find modified or added user checks
