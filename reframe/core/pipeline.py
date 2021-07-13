@@ -92,6 +92,11 @@ _PIPELINE_STAGES = (
 
 def final(fn):
     fn._rfm_final = True
+    user_deprecation_warning(
+        'using the @rfm.final decorator from the rfm module is '
+        'deprecated; please use the built-in decorator @final instead.',
+        from_version='3.7.0'
+    )
 
     @functools.wraps(fn)
     def _wrapped(*args, **kwargs):
@@ -802,7 +807,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     @classmethod
     def __init_subclass__(cls, *, special=False, pin_prefix=False, **kwargs):
         super().__init_subclass__(**kwargs)
-        cls._rfm_special_test = special
+        cls._rfm_override_final = special
 
         # Insert the prefix to pin the test to if the test lives in a test
         # library with resources in it.
@@ -1934,7 +1939,7 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
                 self._copy_to_stagedir(os.path.join(self._prefix,
                                                     self.sourcesdir))
 
-        super().run.__wrapped__(self)
+        super().run()
 
 
 class CompileOnlyRegressionTest(RegressionTest, special=True):
