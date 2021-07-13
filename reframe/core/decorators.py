@@ -198,8 +198,8 @@ def required_version(*versions):
 
     '''
     warn.user_deprecation_warning(
-        'the @required_version decorator is deprecated; '
-        'please set the require_version in the class arguments instead',
+        "the '@required_version' decorator is deprecated; please set "
+        "the 'require_version' parameter in the class definition instead",
         from_version='3.7.0'
     )
 

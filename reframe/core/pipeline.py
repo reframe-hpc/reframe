@@ -132,32 +132,48 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     This class provides the implementation of the pipeline phases that the
     regression test goes through during its lifetime.
 
-    :param require_version: is a list of ReFrame version specifications that
-        this test is allowed to run.
-        A version specification string can have one of the following formats:
+    This class accepts parameters at the *class definition*, i.e., the test
+    class can be defined as follows:
 
-        1. ``VERSION``: Specifies a single version.
-        2. ``{OP}VERSION``, where ``{OP}`` can be any of ``>``, ``>=``, ``<``,
-            ``<=``, ``==`` and ``!=``. For example, the version specification
-            string ``'>=3.5.0'`` will allow the following test to be loaded
-            only by ReFrame 3.5.0 and higher. The ``==VERSION`` specification
-            is the equivalent of ``VERSION``.
-        3. ``V1..V2``: Specifies a range of versions.
+    .. code-block:: python
+
+       class MyTest(RegressionTest, param='foo', ...):
+
+    where ``param`` is one of the following:
+
+    :param pin_prefix: the prefix to pin the test to if the test lives in a
+        test library with resources in it.
+
+    :param require_version: a list of ReFrame version specifications that this
+        test is allowed to run. A version specification string can have one of
+        the following formats:
+
+        - ``VERSION``: Specifies a single version.
+        - ``{OP}VERSION``, where ``{OP}`` can be any of ``>``, ``>=``, ``<``,
+          ``<=``, ``==`` and ``!=``. For example, the version specification
+          string ``'>=3.5.0'`` will allow the following test to be loaded
+          only by ReFrame 3.5.0 and higher. The ``==VERSION`` specification
+          is the equivalent of ``VERSION``.
+        - ``V1..V2``: Specifies a range of versions.
 
         The test will be selected if *any* of the versions is satisfied, even
         if the versions specifications are conflicting.
-    :param pin_prefix: insert the prefix to pin the test to if the test
-        lives in a test library with resources in it.
-    :param special: allows to override pipeline stage methods without issuing
-        a deprecation warning.
 
-    .. warning::
-        .. versionchanged:: 3.4.2
-           Multiple inheritance with a shared common ancestor is not allowed.
+    :param special: allow pipeline stage methods to be overriden in this class.
 
     .. note::
         .. versionchanged:: 2.19
            Base constructor takes no arguments.
+
+        .. versionadded:: 3.3
+           The ``pin_prefix`` class definition parameter is added.
+
+        .. versionadded:: 3.7.0
+           The ``require_verion`` class definition parameter is added.
+
+    .. warning::
+        .. versionchanged:: 3.4.2
+           Multiple inheritance with a shared common ancestor is not allowed.
 
     '''
 
