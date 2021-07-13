@@ -575,7 +575,7 @@ They will not be executed where they appear, but rather at the sanity checking p
 ReFrame provides lazily evaluated counterparts for most of the builtin Python functions, such the :func:`len` function here.
 Also whole expressions can be lazily evaluated if one of the operands is deferred, as is the case in this example with the assignment to ``num_messages``.
 This makes the sanity checking mechanism quite powerful and straightforward to reason about, without having to rely on complex pattern matching techniques.
-:doc:`sanity_functions_reference` provides a complete reference of the sanity functions provided by ReFrame, but users can also define their own, as described in :doc:`deferrables`.
+:doc:`deferrable_functions_reference` provides a complete reference of the sanity functions provided by ReFrame, but users can also define their own, as described in :doc:`deferrables`.
 
 
 Let's run this version of the test now and see if it fails:

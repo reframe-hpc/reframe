@@ -38,7 +38,8 @@ from reframe.core.containers import ContainerPlatformField
 from reframe.core.deferrable import _DeferredExpression
 from reframe.core.exceptions import (BuildError, DependencyError,
                                      PerformanceError, PipelineError,
-                                     SanityError, SkipTestError)
+                                     SanityError, SkipTestError,
+                                     ReframeSyntaxError)
 from reframe.core.meta import RegressionTestMeta
 from reframe.core.schedulers import Job
 from reframe.core.warnings import user_deprecation_warning
@@ -91,6 +92,11 @@ _PIPELINE_STAGES = (
 
 def final(fn):
     fn._rfm_final = True
+    user_deprecation_warning(
+        'using the @rfm.final decorator from the rfm module is '
+        'deprecated; please use the built-in decorator @final instead.',
+        from_version='3.7.0'
+    )
 
     @functools.wraps(fn)
     def _wrapped(*args, **kwargs):
@@ -586,10 +592,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: Refer to the :doc:`ReFrame Tutorials </tutorials>` for concrete usage
     #: examples.
     #:
-    #: If not set a sanity error will be raised during sanity checking.
+    #: If not set, a sanity error may be raised during sanity checking if no
+    #: other sanity checking functions already exist.
     #:
     #: :type: A deferrable expression (i.e., the result of a :doc:`sanity
-    #:     function </sanity_functions_reference>`)
+    #:     function </deferrable_functions_reference>`)
     #: :default: :class:`required`
     #:
     #: .. note::
@@ -617,7 +624,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: A dictionary with keys of type :class:`str` and deferrable
     #:     expressions (i.e., the result of a :doc:`sanity function
-    #:     </sanity_functions_reference>`) as values.
+    #:     </deferrable_functions_reference>`) as values.
     #:     :class:`None` is also allowed.
     #: :default: :class:`None`
     perf_patterns = variable(typ.Dict[str, _DeferredExpression],
@@ -836,7 +843,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     def __init_subclass__(cls, *, special=False, pin_prefix=False,
                           require_version=None, **kwargs):
         super().__init_subclass__(**kwargs)
-        cls._rfm_special_test = special
+        cls._rfm_override_final = special
 
         if require_version:
             cls._rfm_required_version = require_version
@@ -996,7 +1003,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         return self._outputdir
 
     @property
-    @sn.sanity_function
+    @deferrable
     def stdout(self):
         '''The name of the file containing the standard output of the test.
 
@@ -1011,7 +1018,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         return self.job.stdout if self.job else None
 
     @property
-    @sn.sanity_function
+    @deferrable
     def stderr(self):
         '''The name of the file containing the standard error of the test.
 
@@ -1030,12 +1037,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         return self._build_job
 
     @property
-    @sn.sanity_function
+    @deferrable
     def build_stdout(self):
         return self.build_job.stdout if self.build_job else None
 
     @property
-    @sn.sanity_function
+    @deferrable
     def build_stderr(self):
         return self.build_job.stderr if self.build_job else None
 
@@ -1533,6 +1540,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         '''The sanity checking phase of the regression test pipeline.
 
         :raises reframe.core.exceptions.SanityError: If the sanity check fails.
+        :raises reframe.core.exceptions.ReframeSyntaxError: If the sanity
+            function cannot be resolved due to ambiguous syntax.
 
         .. warning::
 
@@ -1548,6 +1557,19 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
               more details.
 
         '''
+
+        if hasattr(self, '_rfm_sanity'):
+            # Using more than one type of syntax to set the sanity patterns is
+            # not allowed.
+            if hasattr(self, 'sanity_patterns'):
+                raise ReframeSyntaxError(
+                    f"assigning a sanity function to the 'sanity_patterns' "
+                    f"variable conflicts with using the 'sanity_function' "
+                    f"decorator (class {self.__class__.__qualname__})"
+                )
+
+            self.sanity_patterns = self._rfm_sanity()
+
         if rt.runtime().get_option('general/0/trap_job_errors'):
             sanity_patterns = [
                 sn.assert_eq(self.job.exitcode, 0,
@@ -1958,7 +1980,7 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
                 self._copy_to_stagedir(os.path.join(self._prefix,
                                                     self.sourcesdir))
 
-        super().run.__wrapped__(self)
+        super().run()
 
 
 class CompileOnlyRegressionTest(RegressionTest, special=True):
@@ -1989,12 +2011,12 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
                                           **job_opts)
 
     @property
-    @sn.sanity_function
+    @deferrable
     def stdout(self):
         return self.build_job.stdout if self.build_job else None
 
     @property
-    @sn.sanity_function
+    @deferrable
     def stderr(self):
         return self.build_job.stderr if self.build_job else None
 

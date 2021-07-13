@@ -6,29 +6,41 @@
 import os
 
 import reframe as rfm
+import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 
 
-@rfm.parameterized_test(*([lang, linkage] for lang in ['cpp', 'c', 'f90']
-                          for linkage in ['dynamic', 'static']))
+@rfm.simple_test
 class NetCDFTest(rfm.RegressionTest):
-    def __init__(self, lang, linkage):
-        lang_names = {
+    lang = parameter(['cpp', 'c', 'f90'])
+    linkage = parameter(['dynamic', 'static'])
+    valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+                     'arolla:cn', 'tsa:cn']
+    build_system = 'SingleSource'
+    num_tasks = 1
+    num_tasks_per_node = 1
+    maintainers = ['AJ', 'SO']
+    tags = {'production', 'craype', 'external-resources', 'health'}
+    lang_names = {
             'c': 'C',
             'cpp': 'C++',
             'f90': 'Fortran 90'
-        }
-        self.lang = lang
-        self.linkage = linkage
-        self.descr = f'{lang_names[lang]} NetCDF {linkage.capitalize()}'
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'arolla:cn', 'tsa:cn']
-        if linkage == 'dynamic':
+    }
+
+    @run_after('init')
+    def set_description(self):
+        self.descr = (f'{self.lang_names[self.lang]} NetCDF '
+                      f'{self.linkage.capitalize()}')
+
+    @run_after('init')
+    def setup_prgenvs(self):
+        if self.linkage == 'dynamic':
             self.valid_systems += ['eiger:mc', 'pilatus:mc']
 
         if self.current_system.name in ['daint', 'dom']:
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
-                                        'PrgEnv-intel', 'PrgEnv-pgi']
+                                        'PrgEnv-intel', 'PrgEnv-pgi',
+                                        'PrgEnv-nvidia']
             self.modules = ['cray-netcdf']
         elif self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
@@ -41,15 +53,25 @@ class NetCDFTest(rfm.RegressionTest):
         else:
             self.valid_prog_environs = []
 
+    @run_after('setup')
+    def cdt_2105_skip(self):
+        # cray-netcdf is supported only on PrgEnv-nvidia for cdt >= 21.05
+        if self.current_environ.name == 'PrgEnv-nvidia':
+            self.skip_if(
+                osext.cray_cdt_version() < '21.05',
+                "cray-netcdf is not supported for cdt < 21.05 on PrgEnv-nvidia"
+            )
+        elif self.current_environ.name == 'PrgEnv-pgi':
+            self.skip_if(
+                osext.cray_cdt_version() >= '21.05',
+                "cray-netcdf is not supported for cdt >= 21.05 on PrgEnv-pgi"
+            )
+
+    @run_before('compile')
+    def set_sources(self):
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'netcdf')
-        self.build_system = 'SingleSource'
-        self.sourcepath = 'netcdf_read_write.' + lang
-        self.num_tasks = 1
-        self.num_tasks_per_node = 1
-        self.sanity_patterns = sn.assert_found(r'SUCCESS', self.stdout)
-        self.maintainers = ['AJ', 'SO']
-        self.tags = {'production', 'craype', 'external-resources', 'health'}
+        self.sourcepath = f'netcdf_read_write.{self.lang}'
 
     @run_before('compile')
     def setflags(self):
@@ -71,3 +93,7 @@ class NetCDFTest(rfm.RegressionTest):
             ]
         else:
             self.build_system.ldflags = [f'-{self.linkage}']
+
+    @run_before('sanity')
+    def set_sanity(self):
+        self.sanity_patterns = sn.assert_found(r'SUCCESS', self.stdout)
