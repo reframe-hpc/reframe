@@ -147,8 +147,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     where ``param`` is one of the following:
 
-    :param pin_prefix: the prefix to pin the test to if the test lives in a
-        test library with resources in it.
+    :param pin_prefix: lock the test prefix to the directory where the current
+        class lives.
 
     :param require_version: a list of ReFrame version specifications that this
         test is allowed to run. A version specification string can have one of
