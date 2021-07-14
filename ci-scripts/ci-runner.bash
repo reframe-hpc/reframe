@@ -125,10 +125,7 @@ if [ "X${MODULEUSE}" != "X" ]; then
     module use ${MODULEUSE}
 fi
 
-parallel_opts="--workers=auto --forked"
-if [[ $(hostname) =~ tsa|uan ]]; then
-    parallel_opts=""
-fi
+parallel_opts=""
 
 # Bootstrap ReFrame
 ./bootstrap.sh

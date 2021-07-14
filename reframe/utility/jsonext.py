@@ -6,6 +6,7 @@
 import inspect
 import json
 import traceback
+from collections.abc import MutableMapping
 
 import reframe.utility as util
 
@@ -17,10 +18,30 @@ class JSONSerializable:
             '__rfm_file__': inspect.getfile(type(self))
         }
         ret.update(self.__dict__)
-        return ret
+        encoded_ret = encode_dict(ret, recursive=True)
+        return encoded_ret if encoded_ret else ret
 
 
-def encode(obj):
+def encode_dict(obj, *, recursive=False):
+    '''Transform tuple dict keys into strings.
+
+    Use the recursive option to also check the keys in nested dicts.
+    '''
+    # FIXME: Need to add support for a decode_dict functionality
+    if isinstance(obj, MutableMapping):
+        if recursive or any(isinstance(k, tuple) for k in obj):
+            newobj = type(obj)()
+            for k, v in obj.items():
+                _key = str(k) if isinstance(k, tuple) else k
+                _v = encode_dict(v, recursive=recursive)
+                newobj[_key] = _v if _v is not None else v
+
+            return newobj
+
+    return None
+
+
+def encode(obj, **kwargs):
     if hasattr(obj, '__rfm_json_encode__'):
         return obj.__rfm_json_encode__()
 
@@ -37,17 +58,27 @@ def encode(obj):
     if inspect.istraceback(obj):
         return traceback.format_tb(obj)
 
+    newobj = encode_dict(obj)
+    if newobj is not None:
+        return newobj
+
     return None
 
 
 def dump(obj, fp, **kwargs):
     kwargs.setdefault('default', encode)
-    return json.dump(obj, fp, **kwargs)
+    try:
+        return json.dump(obj, fp, **kwargs)
+    except TypeError:
+        return json.dump(encode(obj), fp, **kwargs)
 
 
 def dumps(obj, **kwargs):
     kwargs.setdefault('default', encode)
-    return json.dumps(obj, **kwargs)
+    try:
+        return json.dumps(obj, **kwargs)
+    except TypeError:
+        return json.dumps(encode(obj), **kwargs)
 
 
 def _object_hook(json):
