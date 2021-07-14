@@ -857,8 +857,6 @@ def main():
             printer.debug(dependencies.format_deps(testgraph))
             if options.restore_session is not None:
                 testgraph, restored_cases = report.restore_dangling(testgraph)
-                print(dependencies.format_deps(testgraph))
-                print(restored_cases)
 
         testcases = dependencies.toposort(
             testgraph,
