@@ -21,6 +21,7 @@ import reframe.core.logging as logging
 import reframe.core.runtime as runtime
 import reframe.core.warnings as warnings
 import reframe.frontend.argparse as argparse
+import reframe.frontend.autodetect as autodetect
 import reframe.frontend.ci as ci
 import reframe.frontend.dependencies as dependencies
 import reframe.frontend.filters as filters
@@ -429,6 +430,10 @@ def main():
         envvar='RFM_SYSTEM'
     )
     misc_options.add_argument(
+        '--detect-host-topology', action='store', nargs='?', const='-',
+        help='Detect the local host topology and exit'
+    )
+    misc_options.add_argument(
         '--upgrade-config-file', action='store', metavar='OLD[:NEW]',
         help='Upgrade ReFrame 2.x configuration file to ReFrame 3.x syntax'
     )
@@ -480,6 +485,20 @@ def main():
         envvar='RFM_HTTPJSON_URL',
         configvar='logging/handlers_perflog/httpjson_url',
         help='URL of HTTP server accepting JSON logs'
+    )
+    argparser.add_argument(
+        dest='remote_detect',
+        envvar='RFM_REMOTE_DETECT',
+        configvar='general/remote_detect',
+        action='store_true',
+        help='Detect remote system topology'
+    )
+    argparser.add_argument(
+        dest='remote_workdir',
+        envvar='RFM_REMOTE_WORKDIR',
+        configvar='general/remote_workdir',
+        action='store',
+        help='Working directory for launching ReFrame remotely'
     )
 
     # Parse command line
@@ -582,6 +601,7 @@ def main():
         sys.exit(1)
 
     rt = runtime.runtime()
+    autodetect.detect_topology()
     try:
         if site_config.get('general/0/module_map_file'):
             rt.modules_system.load_mapping_from_file(
@@ -617,6 +637,26 @@ def main():
                 )
             else:
                 printer.info(json.dumps(value, indent=2))
+
+        sys.exit(0)
+
+    if options.detect_host_topology:
+        from reframe.utility.cpuinfo import cpuinfo
+
+        topofile = options.detect_host_topology
+        if topofile == '-':
+            json.dump(cpuinfo(), sys.stdout, indent=2)
+            sys.stdout.write('\n')
+        else:
+            try:
+                with open(topofile, 'w') as fp:
+                    json.dump(cpuinfo(), fp, indent=2)
+                    fp.write('\n')
+            except OSError as e:
+                getlogger().error(
+                    f'could not write topology file: {topofile!r}'
+                )
+                sys.exit(1)
 
         sys.exit(0)
 
@@ -817,8 +857,6 @@ def main():
             printer.debug(dependencies.format_deps(testgraph))
             if options.restore_session is not None:
                 testgraph, restored_cases = report.restore_dangling(testgraph)
-                print(dependencies.format_deps(testgraph))
-                print(restored_cases)
 
         testcases = dependencies.toposort(
             testgraph,

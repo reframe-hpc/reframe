@@ -14,6 +14,10 @@ from reframe.core.exceptions import BuildSystemError
 
 class _UndefinedType:
     '''Used as an initial value for undefined values instead of None.'''
+    __slots__ = ()
+
+    def __deepcopy__(self, memo):
+        return self
 
 
 _Undefined = _UndefinedType()
@@ -699,7 +703,7 @@ class EasyBuild(BuildSystem):
 
     ReFrame will use EasyBuild to build and install the code in the test's
     stage directory by default. ReFrame uses environment variables to
-    configure EasyBuild for running, so Users can pass additional options to
+    configure EasyBuild for running, so users can pass additional options to
     the ``eb`` command and modify the default behaviour.
 
     .. versionadded:: 3.5.0
@@ -828,7 +832,8 @@ class Spack(BuildSystem):
     #: :default: :class:`None`
     environment = fields.TypedField(typ.Str[r'\S+'], _UndefinedType)
 
-    #: The list of specs to build and install within the given environment.
+    #: A list of additional specs to build and install within the given
+    #: environment.
     #:
     #: ReFrame will add the specs to the active environment by emititing the
     #: following command:

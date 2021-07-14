@@ -170,11 +170,18 @@ class HookRegistry:
     def __getattr__(self, name):
         return getattr(self.__hooks, name)
 
-    def update(self, hooks):
+    def update(self, hooks, *, denied_hooks=None):
+        '''Update the hook registry with the hooks from another hook registry.
+
+        The optional ``denied_hooks`` argument takes a set of disallowed
+        hook names, preventing their inclusion into the current hook registry.
+        '''
+        denied_hooks = denied_hooks or set()
         for phase, hks in hooks.items():
             self.__hooks.setdefault(phase, util.OrderedSet())
             for h in hks:
-                self.__hooks[phase].add(h)
+                if h.__name__ not in denied_hooks:
+                    self.__hooks[phase].add(h)
 
     def __repr__(self):
         return repr(self.__hooks)

@@ -576,6 +576,16 @@ Miscellaneous options
 
    This option can also be set using the :envvar:`RFM_SYSTEM` environment variable.
 
+.. _--detect-host-topology:
+
+.. option:: --detect-host-topology[=FILE]
+
+   Detect the local host processor topology, store it to ``FILE`` and exit.
+   If no ``FILE`` is specified, the standard output will be used.
+
+   .. versionadded:: 3.7.0
+
+
 .. option:: --failure-stats
 
    Print failure statistics at the end of the run.
@@ -696,6 +706,36 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       Associated command line option     :option:`-C`
       Associated configuration parameter N/A
       ================================== ==================
+
+
+.. envvar:: RFM_REMOTE_DETECT
+
+   Auto-detect processor information of remote partitions as well.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :js:attr:`remote_detect` general configuration parameter
+      ================================== ==================
+
+.. versionadded:: 3.7.0
+
+
+.. envvar:: RFM_REMOTE_WORKDIR
+
+   The temporary directory prefix that will be used to create a fresh ReFrame clone, in order to auto-detect the processor information of a remote partition.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :js:attr:`remote_workdir` general configuration parameter
+      ================================== ==================
+
+.. versionadded:: 3.7.0
 
 
 .. envvar:: RFM_GRAYLOG_ADDRESS
@@ -920,7 +960,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       :align: left
 
       ================================== ==================
-      Associated command line option     n/a
+      Associated command line option     N/A
       Associated configuration parameter :js:attr:`resolve_module_conflicts` general configuration parameter
       ================================== ==================
 
