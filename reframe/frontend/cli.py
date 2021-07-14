@@ -133,7 +133,7 @@ def list_tags(testcases, printer):
 
 def logfiles_message():
     log_files = logging.log_files()
-    msg = 'Log file(s) saved in: '
+    msg = 'Log file(s) saved in '
     if not log_files:
         msg += '<no log file was generated>'
     else:
@@ -1054,6 +1054,8 @@ def main():
                 with open(report_file, 'w') as fp:
                     jsonext.dump(json_report, fp, indent=2)
                     fp.write('\n')
+
+                printer.info(f'Run report saved in {report_file!r}')
             except OSError as e:
                 printer.warning(
                     f'failed to generate report in {report_file!r}: {e}'
@@ -1068,6 +1070,7 @@ def main():
                 try:
                     with open(junit_report_file, 'w') as fp:
                         runreport.junit_dump(junit_xml, fp)
+
                 except OSError as e:
                     printer.warning(
                         f'failed to generate report in {junit_report_file!r}: '

@@ -281,17 +281,6 @@ class TestStats:
             for f in l[1:]:
                 stats_body.append(row_format.format('', '', str(f)))
 
-        for p, l in failures.items():
-            stats_body.append(stats_hline)
-            stats_body.append('Rerun the failed tests with:')
-            for f in l:
-                failed_list = f.split(',')
-                failed_name = failed_list[0][1:]
-                failed_env = failed_list[1].strip()
-                failed_system = failed_list[2][:-1].strip()
-                stats_body.append(f' -n {failed_name} -p {failed_env}'
-                                  f' --system {failed_system} -r')
-
         if stats_body:
             for line in (stats_start, stats_title, *stats_body, stats_end):
                 printer.info(line)
