@@ -1070,7 +1070,6 @@ def main():
                 try:
                     with open(junit_report_file, 'w') as fp:
                         runreport.junit_dump(junit_xml, fp)
-
                 except OSError as e:
                     printer.warning(
                         f'failed to generate report in {junit_report_file!r}: '
