@@ -22,15 +22,6 @@ class AmberBaseCheck(rfm.RunOnlyRegressionTest):
         'JAC_production_NVE',
     ])
 
-    @run_after('init')
-    def download_files(self):
-        self.prerun_cmds = [
-            # cannot use wget because it is not installed on eiger
-            f'curl -LJO https://github.com/victorusu/amber_benchmark_suite'
-            f'/raw/main/amber_16_benchmark_suite/PME/{self.benchmark}.tar.bz2',
-            f'tar xf {self.benchmark}.tar.bz2'
-        ]
-
     @run_after('setup')
     def set_executable_opts(self):
         self.executable_opts = ['-O',

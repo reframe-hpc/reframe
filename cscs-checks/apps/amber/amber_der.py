@@ -91,6 +91,15 @@ class AmberGPUCheck(amber_base.AmberBaseCheck):
         self.reference = REFERENCE_GPU_PERFORMANCE
 
 
+    @run_after('init')
+    def download_files(self):
+        self.prerun_cmds = [
+            # cannot use wget because it is not installed on eiger
+            f'curl -LJO https://github.com/victorusu/amber_benchmark_suite'
+            f'/raw/main/amber_16_benchmark_suite/PME/{self.benchmark}.tar.bz2',
+            f'tar xf {self.benchmark}.tar.bz2'
+        ]
+
 
 @rfm.simple_test
 class AmberCPUCheck(amber_base.AmberBaseCheck):
@@ -109,6 +118,16 @@ class AmberCPUCheck(amber_base.AmberBaseCheck):
     input_file = 'mdin.CPU'
     output_file = 'amber.out'
     ener_ref = REFERENCE_ENERGY
+
+
+    @run_after('init')
+    def download_files(self):
+        self.prerun_cmds = [
+            # cannot use wget because it is not installed on eiger
+            f'curl -LJO https://github.com/victorusu/amber_benchmark_suite'
+            f'/raw/main/amber_16_benchmark_suite/PME/{self.benchmark}.tar.bz2',
+            f'tar xf {self.benchmark}.tar.bz2'
+        ]
 
     @run_after('init')
     def set_description(self):
