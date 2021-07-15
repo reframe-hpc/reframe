@@ -717,6 +717,7 @@ site_configuration = {
                         'cpeIntel'
                     ],
                     'max_jobs': 100,
+                    'access': ['-Cmc', f'--account={osext.osgroup()}'],
                     'resources': [
                         {
                             'name': 'switches',
@@ -753,7 +754,6 @@ site_configuration = {
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
-                        'PrgEnv-nvidia',
                         'cpeAMD',
                         'cpeCray',
                         'cpeGNU',
@@ -781,7 +781,6 @@ site_configuration = {
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
-                        'PrgEnv-nvidia',
                         'cpeAMD',
                         'cpeCray',
                         'cpeGNU',

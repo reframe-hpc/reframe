@@ -207,6 +207,10 @@
                 "arch": {"type": "string"},
                 "num_devices": {"type": "number"}
             }
+        },
+        "devices": {
+            "type": "array",
+            "items": {"$ref": "#/defs/device_info"}
         }
     },
     "type": "object",
@@ -294,10 +298,7 @@
                                     "items": {"type": "string"}
                                  },
                                 "processor": {"$ref": "#/defs/processor_info"},
-                                "devices": {
-                                    "type": "array",
-                                    "items": {"$ref": "#/defs/device_info"}
-                                },
+                                "devices": {"$ref": "#/defs/devices"},
                                 "extras": {"type": "object"},
                                 "resources": {
                                     "type": "array",
@@ -460,6 +461,8 @@
                     },
                     "non_default_craype": {"type": "boolean"},
                     "purge_environment": {"type": "boolean"},
+                    "remote_detect": {"type": "boolean"},
+                    "remote_workdir": {"type": "string"},
                     "report_file": {"type": "string"},
                     "report_junit": {"type": ["string", "null"]},
                     "resolve_module_conflicts": {"type": "boolean"},
@@ -500,6 +503,8 @@
         "general/module_mappings": [],
         "general/non_default_craype": false,
         "general/purge_environment": false,
+        "general/remote_detect": false,
+        "general/remote_workdir": ".",
         "general/report_file": "${HOME}/.reframe/reports/run-report.json",
         "general/report_junit": null,
         "general/resolve_module_conflicts": true,

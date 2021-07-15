@@ -171,6 +171,7 @@ class RegressionTestMeta(type):
         namespace['variable'] = variables.TestVar
         namespace['required'] = variables.Undefined
 
+        # Utility decorators
         def bind(fn, name=None):
             '''Directive to bind a free function to a class.
 
@@ -181,7 +182,14 @@ class RegressionTestMeta(type):
             namespace[inst.__name__] = inst
             return inst
 
+        def final(fn):
+            '''Indicate that a function is final and cannot be overridden.'''
+
+            fn._rfm_final = True
+            return fn
+
         namespace['bind'] = bind
+        namespace['final'] = final
 
         # Hook-related functionality
         def run_before(stage):
@@ -191,8 +199,6 @@ class RegressionTestMeta(type):
             '''
             return hooks.attach_to('pre_' + stage)
 
-        namespace['run_before'] = run_before
-
         def run_after(stage):
             '''Decorator for attaching a test method to a given stage.
 
@@ -200,6 +206,7 @@ class RegressionTestMeta(type):
             '''
             return hooks.attach_to('post_' + stage)
 
+        namespace['run_before'] = run_before
         namespace['run_after'] = run_after
         namespace['require_deps'] = hooks.require_deps
 
@@ -231,7 +238,8 @@ class RegressionTestMeta(type):
 
         directives = [
             'parameter', 'variable', 'bind', 'run_before', 'run_after',
-            'require_deps', 'required', 'deferrable', 'sanity_function'
+            'require_deps', 'required', 'deferrable', 'sanity_function',
+            'final'
         ]
         for b in directives:
             namespace.pop(b, None)
@@ -298,13 +306,12 @@ class RegressionTestMeta(type):
                               if hasattr(v, '_rfm_final')}
 
         # Add the final functions from its parents
-        cls._final_methods.update(*(b._final_methods for b in bases
-                                    if hasattr(b, '_final_methods')))
+        bases_w_final = [b for b in bases if hasattr(b, '_final_methods')]
+        cls._final_methods.update(*(b._final_methods for b in bases_w_final))
 
-        if getattr(cls, '_rfm_special_test', None):
+        if getattr(cls, '_rfm_override_final', None):
             return
 
-        bases_w_final = [b for b in bases if hasattr(b, '_final_methods')]
         for v in namespace.values():
             for b in bases_w_final:
                 if callable(v) and v.__name__ in b._final_methods:
