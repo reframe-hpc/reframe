@@ -15,13 +15,12 @@ from reframe.utility.cpuinfo import cpuinfo
 
 
 @pytest.fixture
-def exec_ctx(make_exec_ctx_g, tmp_path):
-    # Copy the default settings to the temp dir
-    config_file = tmp_path / 'conf.py'
-    shutil.copy('reframe/core/settings.py', config_file)
+def exec_ctx(make_exec_ctx_g, tmp_path, monkeypatch):
+    # Monkey-patch HOME, since topology is always written there
+    monkeypatch.setenv('HOME', str(tmp_path))
 
     # Create a devices file manually, since it is not auto-generated
-    meta_prefix = tmp_path / '_meta' / 'generic-default'
+    meta_prefix = tmp_path / '.reframe' / 'topology' / 'generic-default'
     os.makedirs(meta_prefix)
     with open(meta_prefix / 'devices.json', 'w') as fp:
         json.dump([
@@ -32,7 +31,7 @@ def exec_ctx(make_exec_ctx_g, tmp_path):
             }
         ], fp)
 
-    yield from make_exec_ctx_g(config_file)
+    yield from make_exec_ctx_g()
 
 
 def test_autotect(exec_ctx):
