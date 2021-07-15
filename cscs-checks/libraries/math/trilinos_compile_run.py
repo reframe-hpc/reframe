@@ -8,47 +8,50 @@ import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 
 
-@rfm.parameterized_test(['static'], ['dynamic'])
+@rfm.simple_test
 class TrilinosTest(rfm.RegressionTest):
-    def __init__(self, linkage):
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
-        # NOTE: PrgEnv-cray in dynamic does not work because of CrayBug/809265
-        self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel']
-        # NOTE: PrgEnv-cray_classic does not support trilinos
-        if linkage == 'static':
-            self.valid_prog_environs += ['PrgEnv-cray']
-        self.linkage = linkage
-
-        self.build_system = 'SingleSource'
-        self.build_system.ldflags = [f'-{linkage}', f'-lparmetis']
-        self.build_system.cppflags = ['-DHAVE_MPI', '-DEPETRA_MPI']
-        self.prgenv_flags = {
-            'PrgEnv-cray': ['-fopenmp', '-O2', '-ffast-math', '-std=c++11',
-                            '-Wno-everything'],
-            'PrgEnv-cray_classic': ['-homp', '-hstd=c++11', '-hmsglevel_4'],
-            'PrgEnv-gnu': ['-fopenmp', '-std=c++11', '-w', '-fpermissive'],
-            'PrgEnv-intel': ['-qopenmp', '-w', '-std=c++11'],
-            'PrgEnv-pgi': ['-mp', '-w']
-        }
-        self.sourcepath = 'example_AmesosFactory_HB.cpp'
-        self.prerun_cmds = ['wget ftp://math.nist.gov/pub/MatrixMarket2/'
+    linkage = parameter(['static', 'dynamic'])
+    valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
+    valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel']
+    prgenv_flags = {
+        'PrgEnv-cray': ['-fopenmp', '-O2', '-ffast-math', '-std=c++11',
+                        '-Wno-everything'],
+        'PrgEnv-cray_classic': ['-homp', '-hstd=c++11', '-hmsglevel_4'],
+        'PrgEnv-gnu': ['-fopenmp', '-std=c++11', '-w', '-fpermissive'],
+        'PrgEnv-intel': ['-qopenmp', '-w', '-std=c++11'],
+        'PrgEnv-pgi': ['-mp', '-w']
+    }
+    sourcepath = 'example_AmesosFactory_HB.cpp'
+    prerun_cmds = ['wget ftp://math.nist.gov/pub/MatrixMarket2/'
                             'misc/hamm/add20.rua.gz', 'gunzip add20.rua.gz']
-        self.executable_opts = ['add20.rua']
-        self.modules = ['cray-mpich', 'cray-hdf5-parallel',
-                        'cray-tpsl', 'cray-trilinos']
-        self.num_tasks = 2
-        self.num_tasks_per_node = 2
-        self.variables = {'OMP_NUM_THREADS': '1'}
+    executable_opts = ['add20.rua']
+    modules = ['cray-mpich', 'cray-hdf5-parallel', 'cray-tpsl', 'cray-trilinos']
+    num_tasks = 2
+    num_tasks_per_node = 2
+    variables = {'OMP_NUM_THREADS': '1'}
+    maintainers = ['AJ', 'CB']
+    tags = {'production', 'craype'}
+
+    @run_after('init')
+    def extend_valid_prog_environments(self):
+    # NOTE: PrgEnv-cray in dynamic does not work because of CrayBug/809265
+    # NOTE: PrgEnv-cray_classic does not support trilinos
+        if self.linkage == 'static':
+            self.valid_prog_environs += ['PrgEnv-cray']
+
+    @run_after('init')
+    def set_sanity_patterns(self):
         self.sanity_patterns = sn.assert_found(r'After Amesos solution',
                                                self.stdout)
 
-        self.maintainers = ['AJ', 'CB']
-        self.tags = {'production', 'craype'}
-
     @run_before('compile')
-    def set_cxxflags(self):
+    def set_build_system_opts(self):
+        self.build_system = 'SingleSource'
+        self.build_system.ldflags = [f'-{self.linkage}', f'-lparmetis']
+        self.build_system.cppflags = ['-DHAVE_MPI', '-DEPETRA_MPI']
         flags = self.prgenv_flags[self.current_environ.name]
         self.build_system.cxxflags = flags
+
 
     @run_before('compile')
     def cdt2006_workaround_intel(self):
