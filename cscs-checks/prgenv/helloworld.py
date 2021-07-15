@@ -81,7 +81,8 @@ class HelloWorldBaseTest(rfm.RegressionTest):
                 sn.map(
                     lambda x: sn.assert_eq(num_ranks(x), num_tasks), result
                 ),
-            ))
+            )
+        )
 
     @run_after('init')
     def set_performance_patterns(self):
@@ -130,7 +131,7 @@ class HelloWorldTestSerial(HelloWorldBaseTest):
                                      'PrgEnv-gnu-nompi-nocuda',
                                      'PrgEnf-pgi-nompi-nocuda']
         if (self.current_system.name in ['arolla', 'tsa'] and
-            linking == 'dynamic'):
+            self.linking == 'dynamic'):
             self.valid_prog_environs += ['PrgEnv-pgi-nompi',
                                          'PrgEnv-pgi-nompi-nocuda',
                                          'PrgEnv-gnu-nompi',
@@ -166,7 +167,7 @@ class HelloWorldTestOpenMP(HelloWorldBaseTest):
     @run_after('init')
     def extend_valid_prog_environs(self):
         if (self.current_system.name in ['arolla', 'tsa'] and
-            linking == 'dynamic'):
+            self.linking == 'dynamic'):
             self.valid_prog_environs += ['PrgEnv-pgi-nompi',
                                          'PrgEnv-pgi-nompi-nocuda',
                                          'PrgEnv-gnu-nompi',
