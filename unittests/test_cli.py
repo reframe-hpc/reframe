@@ -10,7 +10,6 @@ import json
 import os
 import pytest
 import re
-import shutil
 import sys
 
 import reframe.core.environments as env

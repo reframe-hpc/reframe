@@ -6,7 +6,6 @@
 import json
 import os
 import pytest
-import shutil
 
 
 from reframe.core.runtime import runtime
