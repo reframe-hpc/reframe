@@ -45,7 +45,7 @@ class HelloWorldBaseTest(rfm.RegressionTest):
     def set_craylinktype_env_variable(self):
         self.variables['CRAYPE_LINK_TYPE'] = self.linking
 
-    @run_after('init')
+    @sanity_function
     def set_sanity_patterns(self):
         result = sn.findall(r'Hello, World from thread \s*(\d+) out '
                             r'of \s*(\d+) from process \s*(\d+) out of '
@@ -66,8 +66,7 @@ class HelloWorldBaseTest(rfm.RegressionTest):
         def num_ranks(match):
             return int(match.group(4))
 
-        self.sanity_patterns = sn.all(
-            sn.chain(
+        return sn.all(sn.chain(
                 [sn.assert_eq(sn.count(result), num_tasks*num_cpus_per_task)],
                 sn.map(lambda x: sn.assert_lt(tid(x), num_threads(x)), result),
                 sn.map(lambda x: sn.assert_lt(rank(x), num_ranks(x)), result),
@@ -82,8 +81,7 @@ class HelloWorldBaseTest(rfm.RegressionTest):
                 sn.map(
                     lambda x: sn.assert_eq(num_ranks(x), num_tasks), result
                 ),
-            )
-        )
+            ))
 
     @run_after('init')
     def set_performance_patterns(self):
