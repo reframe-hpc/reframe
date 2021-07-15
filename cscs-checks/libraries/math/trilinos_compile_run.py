@@ -23,9 +23,10 @@ class TrilinosTest(rfm.RegressionTest):
     }
     sourcepath = 'example_AmesosFactory_HB.cpp'
     prerun_cmds = ['wget ftp://math.nist.gov/pub/MatrixMarket2/'
-                            'misc/hamm/add20.rua.gz', 'gunzip add20.rua.gz']
+                   'misc/hamm/add20.rua.gz', 'gunzip add20.rua.gz']
     executable_opts = ['add20.rua']
-    modules = ['cray-mpich', 'cray-hdf5-parallel', 'cray-tpsl', 'cray-trilinos']
+    modules = ['cray-mpich', 'cray-hdf5-parallel', 'cray-tpsl',
+               'cray-trilinos']
     num_tasks = 2
     num_tasks_per_node = 2
     variables = {'OMP_NUM_THREADS': '1'}
@@ -34,8 +35,8 @@ class TrilinosTest(rfm.RegressionTest):
 
     @run_after('init')
     def extend_valid_prog_environments(self):
-    # NOTE: PrgEnv-cray in dynamic does not work because of CrayBug/809265
-    # NOTE: PrgEnv-cray_classic does not support trilinos
+        # NOTE: PrgEnv-cray in dynamic does not work because of CrayBug/809265
+        # NOTE: PrgEnv-cray_classic does not support trilinos
         if self.linkage == 'static':
             self.valid_prog_environs += ['PrgEnv-cray']
 
