@@ -11,34 +11,43 @@ import reframe.utility.sanity as sn
 
 
 class HelloWorldBaseTest(rfm.RegressionTest):
-    def __init__(self, variant, lang, linkage):
-        self.linkage = linkage
-        self.variables = {'CRAYPE_LINK_TYPE': linkage}
-        self.prgenv_flags = {}
-        self.lang_names = {
-            'c': 'C',
-            'cpp': 'C++',
-            'f90': 'Fortran 90'
-        }
-        self.descr = f'{self.lang_names[lang]} Hello World'
-        self.sourcepath = 'hello_world'
-        self.build_system = 'SingleSource'
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn']
-        if linkage == 'dynamic':
+    linking = parameter(['dynamic', 'static'])
+    lang = parameter(['c', 'cpp', 'f90'])
+    prgenv_flags = {}
+    lang_names = {
+        'c': 'C',
+        'cpp': 'C++',
+        'f90': 'Fortran 90'
+    }
+    sourcepath = 'hello_world'
+    build_system = 'SingleSource'
+    valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+                     'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn']
+    valid_prog_environs = ['PrgEnv-aocc', 'PrgEnv-cray',
+                           'PrgEnv-cray_classic', 'PrgEnv-gnu',
+                           'PrgEnv-intel', 'PrgEnv-pgi',
+                           'PrgEnv-gnu-nocuda', 'PrgEnv-pgi-nocuda']
+    exclusive_access = True
+    compilation_time_seconds = None
+    maintainers = ['VH', 'EK']
+    tags = {'production', 'craype'}
+
+    @run_after('init')
+    def set_description(self):
+        self.descr = f'{self.lang_names[self.lang]} Hello, World'
+
+    @run_after('init')
+    def add_dynamic_only_systems(self):
+        if self.linking == 'dynamic':
             self.valid_systems += ['eiger:mc', 'pilatus:mc']
 
-        self.valid_prog_environs = ['PrgEnv-aocc', 'PrgEnv-cray',
-                                    'PrgEnv-cray_classic', 'PrgEnv-gnu',
-                                    'PrgEnv-intel', 'PrgEnv-pgi',
-                                    'PrgEnv-gnu-nocuda', 'PrgEnv-pgi-nocuda']
+    @run_after('init')
+    def set_craylinktype_env_variable(self):
+        self.variables['CRAYPE_LINK_TYPE'] = self.linking
 
-        if self.current_system.name in ['arolla', 'tsa']:
-            self.exclusive_access = True
-
-        self.compilation_time_seconds = None
-
-        result = sn.findall(r'Hello World from thread \s*(\d+) out '
+    @run_after('init')
+    def set_sanity_patterns(self):
+        result = sn.findall(r'Hello, World from thread \s*(\d+) out '
                             r'of \s*(\d+) from process \s*(\d+) out of '
                             r'\s*(\d+)', self.stdout)
 
@@ -59,7 +68,7 @@ class HelloWorldBaseTest(rfm.RegressionTest):
 
         self.sanity_patterns = sn.all(
             sn.chain(
-                [sn.assert_eq(sn.count(result), num_tasks*num_cpus_per_task)],
+                [sn.assert_eq(sn.count(result), num_tasks * num_cpus_per_task)],
                 sn.map(lambda x: sn.assert_lt(tid(x), num_threads(x)), result),
                 sn.map(lambda x: sn.assert_lt(rank(x), num_ranks(x)), result),
                 sn.map(
@@ -75,6 +84,9 @@ class HelloWorldBaseTest(rfm.RegressionTest):
                 ),
             )
         )
+
+    @run_after('init')
+    def set_performance_patterns(self):
         self.perf_patterns = {
             'compilation_time': sn.getattr(self, 'compilation_time_seconds')
         }
@@ -84,14 +96,15 @@ class HelloWorldBaseTest(rfm.RegressionTest):
             }
         }
 
-        self.maintainers = ['VH', 'EK']
-        self.tags = {'production', 'craype'}
-
     @run_before('compile')
     def setflags(self):
         envname = re.sub(r'(PrgEnv-\w+).*', lambda m: m.group(1),
                          self.current_environ.name)
-        prgenv_flags = self.prgenv_flags[envname]
+        try:
+            prgenv_flags = self.prgenv_flags[envname]
+        except:
+            prgenv_flags = []
+
         self.build_system.cflags = prgenv_flags
         self.build_system.cxxflags = prgenv_flags
         self.build_system.fflags = prgenv_flags
@@ -106,123 +119,123 @@ class HelloWorldBaseTest(rfm.RegressionTest):
         self.compilation_time_seconds = elapsed.total_seconds()
 
 
-@rfm.parameterized_test(*([lang, linkage]
-                          for lang in ['cpp', 'c', 'f90']
-                          for linkage in ['dynamic', 'static']))
+@rfm.simple_test
 class HelloWorldTestSerial(HelloWorldBaseTest):
-    def __init__(self, lang, linkage):
-        super().__init__('serial', lang, linkage)
-        self.sourcesdir = 'src/serial'
+    sourcesdir = 'src/serial'
+    num_tasks = 1
+    num_tasks_per_node = 1
+    num_cpus_per_task = 1
+
+    @run_after('init')
+    def extend_valid_prog_environs(self):
         self.valid_prog_environs += ['PrgEnv-gnu-nompi', 'PrgEnv-pgi-nompi',
                                      'PrgEnv-gnu-nompi-nocuda',
                                      'PrgEnf-pgi-nompi-nocuda']
-        self.sourcepath += '_serial.' + lang
-        self.descr += ' Serial ' + linkage.capitalize()
-        self.prgenv_flags = {
-            'PrgEnv-aocc': [],
-            'PrgEnv-cray': [],
-            'PrgEnv-cray_classic': [],
-            'PrgEnv-gnu': [],
-            'PrgEnv-intel': [],
-            'PrgEnv-pgi': []
-        }
-
-        self.num_tasks = 1
-        self.num_tasks_per_node = 1
-        self.num_cpus_per_task = 1
         if (self.current_system.name in ['arolla', 'tsa'] and
-            linkage == 'dynamic'):
+            linking == 'dynamic'):
             self.valid_prog_environs += ['PrgEnv-pgi-nompi',
-                                         'PrgEnv-pgi-nompi-nocuda',
-                                         'PrgEnv-gnu-nompi',
-                                         'PrgEnv-gnu-nompi-nocuda']
+                                        'PrgEnv-pgi-nompi-nocuda',
+                                        'PrgEnv-gnu-nompi',
+                                        'PrgEnv-gnu-nompi-nocuda']
+
+    @run_after('init')
+    def update_description(self):
+        self.descr += ' Serial ' + self.linking.capitalize()
+
+    @run_after('init')
+    def update_sourcepath(self):
+        self.sourcepath += '_serial.' + self.lang
 
 
-@rfm.parameterized_test(*([lang, linkage]
-                          for lang in ['cpp', 'c', 'f90']
-                          for linkage in ['dynamic', 'static']))
+@rfm.simple_test
 class HelloWorldTestOpenMP(HelloWorldBaseTest):
-    def __init__(self, lang, linkage):
-        super().__init__('openmp', lang, linkage)
-        self.sourcesdir = 'src/openmp'
-        self.sourcepath += '_openmp.' + lang
-        self.descr += ' OpenMP ' + str.capitalize(linkage)
+    sourcesdir = 'src/openmp'
+    num_tasks = 1
+    num_tasks_per_node = 1
+    num_cpus_per_task = 4
+
+    @run_after('init')
+    def set_prgenv_compilation_flags_map(self):
         self.prgenv_flags = {
             'PrgEnv-aocc': ['-fopenmp'],
-            'PrgEnv-cray': ['-homp' if lang == 'F90' else '-fopenmp'],
+            'PrgEnv-cray': ['-homp' if self.lang == 'f90' else '-fopenmp'],
             'PrgEnv-cray_classic': ['-homp'],
             'PrgEnv-gnu': ['-fopenmp'],
             'PrgEnv-intel': ['-qopenmp'],
             'PrgEnv-pgi': ['-mp']
         }
 
-        self.num_tasks = 1
-        self.num_tasks_per_node = 1
-        self.num_cpus_per_task = 4
+    @run_after('init')
+    def extend_valid_prog_environs(self):
         if (self.current_system.name in ['arolla', 'tsa'] and
-            linkage == 'dynamic'):
+            linking == 'dynamic'):
             self.valid_prog_environs += ['PrgEnv-pgi-nompi',
                                          'PrgEnv-pgi-nompi-nocuda',
                                          'PrgEnv-gnu-nompi',
                                          'PrgEnv-gnu-nompi-nocuda']
 
+    @run_after('init')
+    def update_description(self):
+        self.descr += ' OpenMP ' + self.linking.capitalize()
+
+    @run_after('init')
+    def update_sourcepath(self):
+        self.sourcepath += '_openmp.' + self.lang
+
+    @run_after('init')
+    def set_omp_env_variable(self):
         # On SLURM there is no need to set OMP_NUM_THREADS if one defines
         # num_cpus_per_task, but adding for completeness and portability
-        self.variables = {
-            'OMP_NUM_THREADS': str(self.num_cpus_per_task)
-        }
+        self.variables['OMP_NUM_THREADS'] = str(self.num_cpus_per_task)
 
 
-@rfm.parameterized_test(*([lang, linkage]
-                          for lang in ['cpp', 'c', 'f90']
-                          for linkage in ['dynamic', 'static']))
+@rfm.simple_test
 class HelloWorldTestMPI(HelloWorldBaseTest):
-    def __init__(self, lang, linkage):
-        super().__init__('mpi', lang, linkage)
-        self.sourcesdir = 'src/mpi'
-        self.sourcepath += '_mpi.' + lang
-        self.descr += ' MPI ' + linkage.capitalize()
-        self.prgenv_flags = {
-            'PrgEnv-aocc': [],
-            'PrgEnv-cray': [],
-            'PrgEnv-cray_classic': [],
-            'PrgEnv-gnu': [],
-            'PrgEnv-intel': [],
-            'PrgEnv-pgi': []
-        }
+    sourcesdir = 'src/mpi'
+    # for the MPI test the self.num_tasks_per_node should always be one. If
+    # not, the test will fail for the total number of lines in the output
+    # file is different then self.num_tasks * self.num_tasks_per_node
+    num_tasks = 2
+    num_tasks_per_node = 1
+    num_cpus_per_task = 1
 
-        # for the MPI test the self.num_tasks_per_node should always be one. If
-        # not, the test will fail for the total number of lines in the output
-        # file is different then self.num_tasks * self.num_tasks_per_node
-        self.num_tasks = 2
-        self.num_tasks_per_node = 1
-        self.num_cpus_per_task = 1
+    @run_after('init')
+    def update_description(self):
+        self.descr += ' MPI ' + self.linking.capitalize()
+
+    @run_after('init')
+    def update_sourcepath(self):
+        self.sourcepath += '_mpi.' + self.lang
 
 
-@rfm.parameterized_test(*([lang, linkage]
-                          for lang in ['cpp', 'c', 'f90']
-                          for linkage in ['dynamic', 'static']))
+@rfm.simple_test
 class HelloWorldTestMPIOpenMP(HelloWorldBaseTest):
-    def __init__(self, lang, linkage):
-        super().__init__('mpi_openmp', lang, linkage)
-        self.sourcesdir = 'src/mpi_openmp'
-        self.sourcepath += '_mpi_openmp.' + lang
-        self.descr += ' MPI + OpenMP ' + linkage.capitalize()
+    sourcesdir = 'src/mpi_openmp'
+    num_tasks = 6
+    num_tasks_per_node = 3
+    num_cpus_per_task = 4
+
+    @run_after('init')
+    def set_prgenv_compilation_flags_map(self):
         self.prgenv_flags = {
             'PrgEnv-aocc': ['-fopenmp'],
-            'PrgEnv-cray': ['-homp' if lang == 'F90' else '-fopenmp'],
+            'PrgEnv-cray': ['-homp' if self.lang == 'f90' else '-fopenmp'],
             'PrgEnv-cray_classic': ['-homp'],
             'PrgEnv-gnu': ['-fopenmp'],
             'PrgEnv-intel': ['-qopenmp'],
             'PrgEnv-pgi': ['-mp']
         }
 
-        self.num_tasks = 6
-        self.num_tasks_per_node = 3
-        self.num_cpus_per_task = 4
+    @run_after('init')
+    def update_description(self):
+        self.descr += ' MPI + OpenMP ' + self.linking.capitalize()
 
+    @run_after('init')
+    def update_sourcepath(self):
+        self.sourcepath += '_mpi_openmp.' + self.lang
+
+    @run_after('init')
+    def set_omp_env_variable(self):
         # On SLURM there is no need to set OMP_NUM_THREADS if one defines
         # num_cpus_per_task, but adding for completeness and portability
-        self.variables = {
-            'OMP_NUM_THREADS': str(self.num_cpus_per_task)
-        }
+        self.variables['OMP_NUM_THREADS'] = str(self.num_cpus_per_task)
