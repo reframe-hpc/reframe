@@ -45,7 +45,7 @@ class BaseTest(rfm.RunOnlyRegressionTest):
         self.keep_files = ['out.txt']
 
     @property
-    @sn.sanity_function
+    @deferrable
     def count(self):
         return self._count
 
