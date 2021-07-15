@@ -68,7 +68,7 @@ class HelloWorldBaseTest(rfm.RegressionTest):
 
         self.sanity_patterns = sn.all(
             sn.chain(
-                [sn.assert_eq(sn.count(result), num_tasks * num_cpus_per_task)],
+                [sn.assert_eq(sn.count(result), num_tasks*num_cpus_per_task)],
                 sn.map(lambda x: sn.assert_lt(tid(x), num_threads(x)), result),
                 sn.map(lambda x: sn.assert_lt(rank(x), num_ranks(x)), result),
                 sn.map(
@@ -102,7 +102,7 @@ class HelloWorldBaseTest(rfm.RegressionTest):
                          self.current_environ.name)
         try:
             prgenv_flags = self.prgenv_flags[envname]
-        except:
+        except KeyError:
             prgenv_flags = []
 
         self.build_system.cflags = prgenv_flags
@@ -134,9 +134,9 @@ class HelloWorldTestSerial(HelloWorldBaseTest):
         if (self.current_system.name in ['arolla', 'tsa'] and
             linking == 'dynamic'):
             self.valid_prog_environs += ['PrgEnv-pgi-nompi',
-                                        'PrgEnv-pgi-nompi-nocuda',
-                                        'PrgEnv-gnu-nompi',
-                                        'PrgEnv-gnu-nompi-nocuda']
+                                         'PrgEnv-pgi-nompi-nocuda',
+                                         'PrgEnv-gnu-nompi',
+                                         'PrgEnv-gnu-nompi-nocuda']
 
     @run_after('init')
     def update_description(self):
