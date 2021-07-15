@@ -30,7 +30,7 @@ def fake_check():
     class _FakeCheck(rfm.RegressionTest):
         pass
 
-    @sn.sanity_function
+    @sn.deferrable
     def error():
         raise BaseException
 

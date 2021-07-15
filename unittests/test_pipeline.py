@@ -202,7 +202,7 @@ def test_hellocheck_build_remotely(hellotest, remote_exec_ctx):
 
 
 def test_hellocheck_local_prepost_run(hellotest, local_exec_ctx):
-    @sn.sanity_function
+    @sn.deferrable
     def stagedir(test):
         return test.stagedir
 
@@ -1209,7 +1209,7 @@ def test_performance_var_evaluation(dummytest, sanity_file,
     # `check_performance()`.
     logfile = 'perf.log'
 
-    @sn.sanity_function
+    @sn.deferrable
     def extract_perf(patt, tag):
         val = sn.evaluate(
             sn.extractsingle(patt, perf_file, tag, float)
