@@ -10,7 +10,6 @@ import json
 import os
 import pytest
 import re
-import shutil
 import sys
 
 import reframe.core.environments as env
@@ -54,13 +53,7 @@ def perflogdir(tmp_path):
 
 
 @pytest.fixture
-def rm_config_meta():
-    yield
-    shutil.rmtree('unittests/resources/_meta', ignore_errors=True)
-
-
-@pytest.fixture
-def run_reframe(tmp_path, perflogdir, rm_config_meta):
+def run_reframe(tmp_path, perflogdir, monkeypatch):
     def _run_reframe(system='generic:default',
                      checkpath=['unittests/resources/checks/hellocheck.py'],
                      environs=['builtin'],
@@ -113,6 +106,7 @@ def run_reframe(tmp_path, perflogdir, rm_config_meta):
 
         return run_command_inline(argv, cli.main)
 
+    monkeypatch.setenv('HOME', str(tmp_path))
     return _run_reframe
 
 

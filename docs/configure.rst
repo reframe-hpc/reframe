@@ -421,7 +421,7 @@ The processor information auto-detection works as follows:
 
 #. If the |processor|_ configuration is option is defined, then no auto-detection is attempted.
 
-#. If the |processor|_ configuration option is not defined, ReFrame will look for a processor configuration metadata file in ``{configdir}/_meta/{system}-{part}/processor.json`` or in ``~/.reframe/topology/{system}-{part}/processor.json`` in case of the builtin configuration file.
+#. If the |processor|_ configuration option is not defined, ReFrame will look for a processor configuration metadata file in ``~/.reframe/topology/{system}-{part}/processor.json``.
    If the file is found, the topology information is loaded from there.
    These files are generated automatically by ReFrame from previous runs.
 
