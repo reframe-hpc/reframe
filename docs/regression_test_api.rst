@@ -204,7 +204,8 @@ You can attach arbitrary functions to run before or after any pipeline stage, wh
 Multiple hooks can be attached before or after the same pipeline stage, in which case the order of execution will match the order in which the functions are defined in the class body of the test.
 A single hook can also be applied to multiple stages and it will be executed multiple times.
 All pipeline hooks of a test class are inherited by its subclasses.
-Subclasses may override a pipeline hook of their parents by redefining the hook function, where the overriding function may be reattached to any pipeline stage.
+Subclasses may override a pipeline hook of their parents by redefining the hook function.
+The overriding function will not be a pipeline hook unless explicitly decorated, and it may be reattached to any pipeline stage.
 There are seven pipeline stages where you can attach test methods: ``init``, ``setup``, ``compile``, ``run``, ``sanity``, ``performance`` and ``cleanup``.
 The ``init`` stage is not a real pipeline stage, but it refers to the test initialization.
 

@@ -9,6 +9,7 @@
 
 import collections.abc
 import errno
+import fcntl
 import getpass
 import grp
 import os
@@ -302,6 +303,28 @@ def rmtree(*args, max_retries=3, **kwargs):
                 pass
             else:
                 raise
+
+
+# FIXME: Need a proper unit test for this
+class lock_file:
+    def __init__(self, fp, mode):
+        '''Lock file pointed to by file pointer fp.
+
+        This call is blocking.
+        '''
+
+        self._mode = mode
+        if isinstance(fp, int):
+            # Treat fp as a file descriptor
+            self._fd = fp
+        else:
+            self._fd = fp.fileno()
+
+    def __enter__(self):
+        fcntl.flock(self._fd, self._mode)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        fcntl.flock(self._fd, fcntl.LOCK_UN)
 
 
 def inpath(entry, pathvar):

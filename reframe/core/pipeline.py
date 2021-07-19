@@ -92,6 +92,11 @@ _PIPELINE_STAGES = (
 
 def final(fn):
     fn._rfm_final = True
+    user_deprecation_warning(
+        'using the @rfm.final decorator from the rfm module is '
+        'deprecated; please use the built-in decorator @final instead.',
+        from_version='3.7.0'
+    )
 
     @functools.wraps(fn)
     def _wrapped(*args, **kwargs):
@@ -133,13 +138,48 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     This class provides the implementation of the pipeline phases that the
     regression test goes through during its lifetime.
 
-    .. warning::
-        .. versionchanged:: 3.4.2
-           Multiple inheritance with a shared common ancestor is not allowed.
+    This class accepts parameters at the *class definition*, i.e., the test
+    class can be defined as follows:
+
+    .. code-block:: python
+
+       class MyTest(RegressionTest, param='foo', ...):
+
+    where ``param`` is one of the following:
+
+    :param pin_prefix: lock the test prefix to the directory where the current
+        class lives.
+
+    :param require_version: a list of ReFrame version specifications that this
+        test is allowed to run. A version specification string can have one of
+        the following formats:
+
+        - ``VERSION``: Specifies a single version.
+        - ``{OP}VERSION``, where ``{OP}`` can be any of ``>``, ``>=``, ``<``,
+          ``<=``, ``==`` and ``!=``. For example, the version specification
+          string ``'>=3.5.0'`` will allow the following test to be loaded
+          only by ReFrame 3.5.0 and higher. The ``==VERSION`` specification
+          is the equivalent of ``VERSION``.
+        - ``V1..V2``: Specifies a range of versions.
+
+        The test will be selected if *any* of the versions is satisfied, even
+        if the versions specifications are conflicting.
+
+    :param special: allow pipeline stage methods to be overriden in this class.
 
     .. note::
         .. versionchanged:: 2.19
            Base constructor takes no arguments.
+
+        .. versionadded:: 3.3
+           The ``pin_prefix`` class definition parameter is added.
+
+        .. versionadded:: 3.7.0
+           The ``require_verion`` class definition parameter is added.
+
+    .. warning::
+        .. versionchanged:: 3.4.2
+           Multiple inheritance with a shared common ancestor is not allowed.
 
     '''
 
@@ -801,9 +841,15 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         return super().__getattribute__(name)
 
     @classmethod
-    def __init_subclass__(cls, *, special=False, pin_prefix=False, **kwargs):
+    def __init_subclass__(cls, *, special=False, pin_prefix=False,
+                          require_version=None, **kwargs):
         super().__init_subclass__(**kwargs)
-        cls._rfm_special_test = special
+        cls._rfm_override_final = special
+
+        if require_version:
+            cls._rfm_required_version = require_version
+        elif not hasattr(cls, '_rfm_required_version'):
+            cls._rfm_required_version = []
 
         # Insert the prefix to pin the test to if the test lives in a test
         # library with resources in it.
@@ -1973,7 +2019,7 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
                 self._copy_to_stagedir(os.path.join(self._prefix,
                                                     self.sourcesdir))
 
-        super().run.__wrapped__(self)
+        super().run()
 
 
 class CompileOnlyRegressionTest(RegressionTest, special=True):

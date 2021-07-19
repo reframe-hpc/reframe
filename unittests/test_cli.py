@@ -6,6 +6,7 @@
 import contextlib
 import io
 import itertools
+import json
 import os
 import pytest
 import re
@@ -52,7 +53,7 @@ def perflogdir(tmp_path):
 
 
 @pytest.fixture
-def run_reframe(tmp_path, perflogdir):
+def run_reframe(tmp_path, perflogdir, monkeypatch):
     def _run_reframe(system='generic:default',
                      checkpath=['unittests/resources/checks/hellocheck.py'],
                      environs=['builtin'],
@@ -105,6 +106,7 @@ def run_reframe(tmp_path, perflogdir):
 
         return run_command_inline(argv, cli.main)
 
+    monkeypatch.setenv('HOME', str(tmp_path))
     return _run_reframe
 
 
@@ -765,3 +767,29 @@ def test_maxfail_negative(run_reframe):
     assert 'Traceback' not in stderr
     assert "--maxfail should be a non-negative integer: '-2'" in stdout
     assert returncode == 1
+
+
+def test_detect_host_topology(run_reframe):
+    from reframe.utility.cpuinfo import cpuinfo
+
+    returncode, stdout, stderr = run_reframe(
+        more_options=['--detect-host-topology']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert returncode == 0
+    assert stdout == json.dumps(cpuinfo(), indent=2) + '\n'
+
+
+def test_detect_host_topology_file(run_reframe, tmp_path):
+    from reframe.utility.cpuinfo import cpuinfo
+
+    topo_file = tmp_path / 'topo.json'
+    returncode, stdout, stderr = run_reframe(
+        more_options=[f'--detect-host-topology={topo_file}']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert returncode == 0
+    with open(topo_file) as fp:
+        assert json.load(fp) == cpuinfo()

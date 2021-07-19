@@ -176,6 +176,7 @@ class RegressionTestMeta(type):
         namespace['variable'] = variables.TestVar
         namespace['required'] = variables.Undefined
 
+        # Utility decorators
         def bind(fn, name=None):
             '''Directive to bind a free function to a class.
 
@@ -186,7 +187,14 @@ class RegressionTestMeta(type):
             namespace[inst.__name__] = inst
             return inst
 
+        def final(fn):
+            '''Indicate that a function is final and cannot be overridden.'''
+
+            fn._rfm_final = True
+            return fn
+
         namespace['bind'] = bind
+        namespace['final'] = final
 
         # Hook-related functionality
         def run_before(stage):
@@ -204,8 +212,6 @@ class RegressionTestMeta(type):
                 raise ValueError('pre-init hooks are not allowed')
 
             return hooks.attach_to('pre_' + stage)
-
-        namespace['run_before'] = run_before
 
         def run_after(stage):
             '''Decorator for attaching a test method to a pipeline stage.
@@ -228,6 +234,7 @@ class RegressionTestMeta(type):
 
             return hooks.attach_to('post_' + stage)
 
+        namespace['run_before'] = run_before
         namespace['run_after'] = run_after
         namespace['require_deps'] = hooks.require_deps
 
@@ -247,11 +254,14 @@ class RegressionTestMeta(type):
         namespace['deferrable'] = deferrable
 
         # Machinery to add performance variables
-        def performance_function(units):
+        def performance_function(units, *, perf_key=None):
             '''Decoreate a function to extract a performance variable.
 
             The ``units`` argument indicates the units of the performance
             variable to be extracted.
+            The ``perf_key`` optional arg will be used as the name of the
+            performance variable. If not provided, the function name will
+            be used as the performance variable name.
             '''
 
             if not isinstance(units, str):
@@ -261,12 +271,15 @@ class RegressionTestMeta(type):
                 @deferrable
                 @functools.wraps(fn)
                 def _perf_fn(*args, **kwargs):
+                    ret = fn(*args, **kwargs)
                     try:
-                        return fn(*args, **kwargs).evaluate(), units
+                        return ret.evaluate(), units
                     except AttributeError:
-                        return fn(*args, **kwargs), units
+                        return ret, units
 
                 setattr(_perf_fn, '_rfm_perf_fn', units)
+                _key = perf_key if perf_key else _perf_fn.__name__
+                setattr(_perf_fn, '_rfm_perf_name', _key)
 
                 return _perf_fn
 
@@ -299,7 +312,7 @@ class RegressionTestMeta(type):
         directives = [
             'parameter', 'variable', 'bind', 'run_before', 'run_after',
             'require_deps', 'required', 'deferrable', 'sanity_function',
-            'performance_function', 'performance_report'
+            'final', 'performance_function', 'performance_report'
         ]
         for b in directives:
             namespace.pop(b, None)
@@ -402,13 +415,12 @@ class RegressionTestMeta(type):
                               if hasattr(v, '_rfm_final')}
 
         # Add the final functions from its parents
-        cls._final_methods.update(*(b._final_methods for b in bases
-                                    if hasattr(b, '_final_methods')))
+        bases_w_final = [b for b in bases if hasattr(b, '_final_methods')]
+        cls._final_methods.update(*(b._final_methods for b in bases_w_final))
 
-        if getattr(cls, '_rfm_special_test', None):
+        if getattr(cls, '_rfm_override_final', None):
             return
 
-        bases_w_final = [b for b in bases if hasattr(b, '_final_methods')]
         for v in namespace.values():
             for b in bases_w_final:
                 if callable(v) and v.__name__ in b._final_methods:
