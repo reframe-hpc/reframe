@@ -264,9 +264,19 @@ class RegressionTestMeta(type):
             be used as the performance variable name.
             '''
 
-            if not isinstance(units, str):
-                raise TypeError('provided units are not in string format')
+            class perf_units:
+                __slots__ = ('_rfm_perf_units')
 
+                def __init__(self, units):
+                    if not isinstance(units, str):
+                        raise TypeError(
+                            'performance units must be provided in string '
+                            'format'
+                        )
+
+                    self._rfm_perf_units = units
+
+            units = perf_units(units)
             def _fn(fn):
                 @deferrable
                 @functools.wraps(fn)

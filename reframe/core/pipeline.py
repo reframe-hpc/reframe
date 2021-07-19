@@ -1633,6 +1633,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 for tag, expr in self.perf_patterns.items():
                     try:
                         value, unit = sn.evaluate(expr)
+                        unit = getattr(unit, '_rfm_perf_units', None)
+                        if not unit:
+                            raise TypeError('Trigger the TypeError below')
+
                     except TypeError:
                         raise ReframeSyntaxError(
                             f'function assigned for performance variable '
