@@ -237,7 +237,8 @@ def main():
     )
     locate_options.add_argument(
         '--ignore-check-conflicts', action='store_true',
-        help='Skip checks with conflicting names',
+        help=('Skip checks with conflicting names '
+              '(this option is deprecated and has no effect)'),
         envvar='RFM_IGNORE_CHECK_CONFLICTS',
         configvar='general/ignore_check_conflicts'
     )
@@ -706,10 +707,7 @@ def main():
 
     loader = RegressionCheckLoader(
         load_path=check_search_path,
-        recurse=check_search_recursive,
-        ignore_conflicts=site_config.get(
-            'general/0/ignore_check_conflicts'
-        )
+        recurse=check_search_recursive
     )
 
     def print_infoline(param, value):
@@ -746,11 +744,8 @@ def main():
     printer.info('')
     try:
         # Locate and load checks
-        try:
-            checks_found = loader.load_all()
-            printer.verbose(f'Loaded {len(checks_found)} test(s)')
-        except OSError as e:
-            raise errors.ReframeError from e
+        checks_found = loader.load_all()
+        printer.verbose(f'Loaded {len(checks_found)} test(s)')
 
         # Generate all possible test cases first; we will need them for
         # resolving dependencies after filtering

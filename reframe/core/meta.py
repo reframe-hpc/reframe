@@ -55,7 +55,7 @@ class RegressionTestMeta(type):
                 self._namespace.pop(key, None)
 
             elif key in self['_rfm_local_param_space']:
-                raise ValueError(
+                raise ReframeSyntaxError(
                     f'cannot override parameter {key!r}'
                 )
             else:
@@ -81,7 +81,7 @@ class RegressionTestMeta(type):
                 except KeyError:
                     # Handle parameter access
                     if key in self['_rfm_local_param_space']:
-                        raise ValueError(
+                        raise ReframeSyntaxError(
                             'accessing a test parameter from the class '
                             'body is disallowed'
                         ) from None
@@ -204,12 +204,12 @@ class RegressionTestMeta(type):
             '''
 
             if stage not in _USER_PIPELINE_STAGES:
-                raise ValueError(
+                raise ReframeSyntaxError(
                     f'invalid pipeline stage specified: {stage!r}'
                 )
 
             if stage == 'init':
-                raise ValueError('pre-init hooks are not allowed')
+                raise ReframeSyntaxError('pre-init hooks are not allowed')
 
             return hooks.attach_to('pre_' + stage)
 
@@ -220,7 +220,7 @@ class RegressionTestMeta(type):
             '''
 
             if stage not in _USER_PIPELINE_STAGES:
-                raise ValueError(
+                raise ReframeSyntaxError(
                     f'invalid pipeline stage specified: {stage!r}'
                 )
 
@@ -452,7 +452,7 @@ class RegressionTestMeta(type):
                     return
                 elif not var_space[name].field is value:
                     desc = '.'.join([cls.__qualname__, name])
-                    raise ValueError(
+                    raise ReframeSyntaxError(
                         f'cannot override variable descriptor {desc!r}'
                     )
 
@@ -463,7 +463,7 @@ class RegressionTestMeta(type):
         try:
             param_space = super().__getattribute__('_rfm_param_space')
             if name in param_space.params:
-                raise ValueError(f'cannot override parameter {name!r}')
+                raise ReframeSyntaxError(f'cannot override parameter {name!r}')
 
         except AttributeError:
             pass

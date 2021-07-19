@@ -65,8 +65,7 @@ class timer:
 @pytest.fixture
 def make_loader():
     def _make_loader(check_search_path):
-        return RegressionCheckLoader(check_search_path,
-                                     ignore_conflicts=True)
+        return RegressionCheckLoader(check_search_path)
 
     return _make_loader
 

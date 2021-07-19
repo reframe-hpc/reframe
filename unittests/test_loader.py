@@ -14,14 +14,13 @@ from reframe.frontend.loader import RegressionCheckLoader
 
 @pytest.fixture
 def loader():
-    return RegressionCheckLoader(['.'], ignore_conflicts=True)
+    return RegressionCheckLoader(['.'])
 
 
 @pytest.fixture
 def loader_with_path():
     return RegressionCheckLoader(
-        ['unittests/resources/checks', 'unittests/foobar'],
-        ignore_conflicts=True
+        ['unittests/resources/checks', 'unittests/foobar']
     )
 
 
@@ -49,12 +48,6 @@ def test_load_all(loader_with_path):
     assert 12 == len(checks)
 
 
-def test_conflicted_checks(loader_with_path):
-    loader_with_path._ignore_conflicts = False
-    with pytest.raises(NameConflictError):
-        loader_with_path.load_all()
-
-
 def test_load_error(loader):
     with pytest.raises(OSError):
         loader.load_from_file('unittests/resources/checks/foo.py')
@@ -62,9 +55,8 @@ def test_load_error(loader):
 
 def test_load_bad_required_version(loader):
     with pytest.warns(ReframeDeprecationWarning):
-        with pytest.raises(ValueError):
-            loader.load_from_file('unittests/resources/checks_unlisted/'
-                                  'no_required_version.py')
+        loader.load_from_file('unittests/resources/checks_unlisted/'
+                              'no_required_version.py')
 
 
 def test_load_bad_init(loader):
