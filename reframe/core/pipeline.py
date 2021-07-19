@@ -586,7 +586,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     reference = variable(typ.Tuple[object, object, object],
                          typ.Dict[str, typ.Dict[
                              str, typ.Tuple[object, object, object, object]]
-                         ], field=fields.ScopedDictField, value={})
+    ], field=fields.ScopedDictField, value={})
     # FIXME: There is not way currently to express tuples of `float`s or
     # `None`s, so we just use the very generic `object`
 
