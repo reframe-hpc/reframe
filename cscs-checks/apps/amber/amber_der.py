@@ -4,9 +4,7 @@
 import reframe as rfm
 import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
-import sys
-sys.path.append('amber')
-import amber_base
+from reframe.base_check import AmberBaseCheck
 
 daint_gpu_performance = {
     'Cellulose_production_NVE': (30.0, -0.05, None, 'ns/day'),
@@ -58,31 +56,49 @@ REFERENCE_CPU_PERFORMANCE_LARGE = {
 
 REFERENCE_ENERGY = {
     # every system has a different reference energy and drift
-    'Cellulose_production_NVE': (-443246, 5.0E-05),
-    'FactorIX_production_NVE': (-234188, 1.0E-04),
-    'JAC_production_NVE_4fs': (-44810, 1.0E-03),
-    'JAC_production_NVE': (-58138, 5.0E-04),
+    'Cellulose_production_NVE': (-443246.0, 5.0E-05),
+    'FactorIX_production_NVE': (-234188.0, 1.0E-04),
+    'JAC_production_NVE_4fs': (-44810.0, 1.0E-03),
+    'JAC_production_NVE': (-58138.0, 5.0E-04),
 }
 
-
-@rfm.simple_test
-class AmberGPUCheck(amber_base.AmberBaseCheck):
+class AmberCheck(AmberBaseCheck):
+    benchmark = parameter([
+        # NVE simulations
+        'Cellulose_production_NVE',
+        'FactorIX_production_NVE',
+        'JAC_production_NVE_4fs',
+        'JAC_production_NVE',
+    ])
     strict_check = False
     extra_resources = {
             'switches': {
                 'num_switches': 1
             }
         }
-    input_file = 'mdin.GPU'
+    ener_ref = REFERENCE_ENERGY
     output_file = 'amber.out'
+    maintainers = ['VH', 'SO']
+
+    @run_after('init')
+    def source_install(self):
+        self.prerun_cmds = [
+            # cannot use wget because it is not installed on eiger
+            f'curl -LJO https://github.com/victorusu/amber_benchmark_suite'
+            f'/raw/main/amber_16_benchmark_suite/PME/{self.benchmark}.tar.bz2',
+            f'tar xf {self.benchmark}.tar.bz2'
+        ]
+
+
+@rfm.simple_test
+class AmberGPUCheck(AmberCheck):
+    input_file = 'mdin.GPU'
     valid_systems = ['daint:gpu', 'dom:gpu']
     valid_prog_environs = ['builtin']
-    maintainers = ['VH', 'SO']
     executable = 'pmemd.cuda.MPI'
     num_tasks = 1
     num_gpus_per_node = 1
     num_tasks_per_node = 1
-    ener_ref = REFERENCE_ENERGY
     descr = f'Amber GPU check'
     tags = {'maintenance', 'production', 'health'}
 
@@ -91,43 +107,14 @@ class AmberGPUCheck(amber_base.AmberBaseCheck):
         self.reference = REFERENCE_GPU_PERFORMANCE
 
 
-    @run_after('init')
-    def download_files(self):
-        self.prerun_cmds = [
-            # cannot use wget because it is not installed on eiger
-            f'curl -LJO https://github.com/victorusu/amber_benchmark_suite'
-            f'/raw/main/amber_16_benchmark_suite/PME/{self.benchmark}.tar.bz2',
-            f'tar xf {self.benchmark}.tar.bz2'
-        ]
-
-
 @rfm.simple_test
-class AmberCPUCheck(amber_base.AmberBaseCheck):
-    strict_check = False
-    extra_resources = {
-            'switches': {
-                'num_switches': 1
-           }
-        }
+class AmberCPUCheck(AmberCheck):
     tags = {'maintenance', 'production'}
     scale = parameter(['small', 'large'])
     valid_systems = ['daint:mc', 'eiger:mc']
-    maintainers = ['VH', 'SO']
     valid_prog_environs = ['builtin']
     executable = 'pmemd.MPI'
     input_file = 'mdin.CPU'
-    output_file = 'amber.out'
-    ener_ref = REFERENCE_ENERGY
-
-
-    @run_after('init')
-    def download_files(self):
-        self.prerun_cmds = [
-            # cannot use wget because it is not installed on eiger
-            f'curl -LJO https://github.com/victorusu/amber_benchmark_suite'
-            f'/raw/main/amber_16_benchmark_suite/PME/{self.benchmark}.tar.bz2',
-            f'tar xf {self.benchmark}.tar.bz2'
-        ]
 
     @run_after('init')
     def set_description(self):

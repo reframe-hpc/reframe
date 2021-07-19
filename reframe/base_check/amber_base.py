@@ -11,16 +11,10 @@ import reframe.utility.typecheck as typ
 class AmberBaseCheck(rfm.RunOnlyRegressionTest):
     modules = ['Amber']
     input_file = variable(str)
-    ouput_file = variable(str)
+    output_file = variable(str)
     num_tasks_per_node = required
-    ener_ref = variable(typ.Dict[str, typ.Tuple[int, float]])
-    benchmark = parameter([
-        # NVE simulations
-        'Cellulose_production_NVE',
-        'FactorIX_production_NVE',
-        'JAC_production_NVE_4fs',
-        'JAC_production_NVE',
-    ])
+    ener_ref = variable(typ.Dict[str, typ.Tuple[float, float]])
+    extract = variable(typ.Dict[str, str])
 
     @run_after('setup')
     def set_executable_opts(self):
@@ -29,18 +23,6 @@ class AmberBaseCheck(rfm.RunOnlyRegressionTest):
                                 '-o', self.output_file]
         self.keep_files = [self.output_file]
 
-    @run_after('setup')
-    def set_sanity_patterns(self):
-        energy = sn.extractsingle(r' Etot\s+=\s+(?P<energy>\S+)',
-                                  self.output_file, 'energy', float, item=-2)
-        energy_reference = self.ener_ref[self.benchmark][0]
-        energy_diff = sn.abs(energy - energy_reference)
-        ref_ener_diff = sn.abs(self.ener_ref[self.benchmark][0] *
-                               self.ener_ref[self.benchmark][1])
-        self.sanity_patterns = sn.all([
-            sn.assert_found(r'Final Performance Info:', self.output_file),
-            sn.assert_lt(energy_diff, ref_ener_diff)
-        ])
 
     @run_after('setup')
     def set_generic_perf_references(self):
@@ -55,3 +37,16 @@ class AmberBaseCheck(rfm.RunOnlyRegressionTest):
                                              self.output_file, 'perf',
                                              float, item=1)
         }
+
+    @sanity_function
+    def set_sanity_patterns(self):
+        energy = sn.extractsingle(r' Etot\s+=\s+(?P<energy>\S+)',
+                                  self.output_file, 'energy', float, item=-2)
+        energy_reference = self.ener_ref[self.benchmark][0]
+        energy_diff = sn.abs(energy - energy_reference)
+        ref_ener_diff = sn.abs(self.ener_ref[self.benchmark][0] *
+                               self.ener_ref[self.benchmark][1])
+        return sn.all([
+            sn.assert_found(r'Final Performance Info:', self.output_file),
+            sn.assert_lt(energy_diff, ref_ener_diff)
+        ])
