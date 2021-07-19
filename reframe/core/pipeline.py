@@ -1631,7 +1631,14 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 # Log the performance variables
                 self._setup_perf_logging()
                 for tag, expr in self.perf_patterns.items():
-                    value, unit = sn.evaluate(expr)
+                    try:
+                        value, unit = sn.evaluate(expr)
+                    except TypeError:
+                        raise ReframeSyntaxError(
+                            f'function assigned for performance variable '
+                            f'{tag!r} is not a performance function'
+                        )
+
                     key = '%s:%s' % (self._current_partition.fullname, tag)
                     try:
                         ref = self.reference[key]

@@ -16,7 +16,7 @@ import reframe.core.variables as variables
 import reframe.core.hooks as hooks
 
 from reframe.core.exceptions import ReframeSyntaxError
-from reframe.core.deferrable import deferrable
+from reframe.core.deferrable import deferrable, _DeferredExpression
 
 
 _USER_PIPELINE_STAGES = (
@@ -272,9 +272,9 @@ class RegressionTestMeta(type):
                 @functools.wraps(fn)
                 def _perf_fn(*args, **kwargs):
                     ret = fn(*args, **kwargs)
-                    try:
+                    if isinstance(ret, _DeferredExpression):
                         return ret.evaluate(), units
-                    except AttributeError:
+                    else:
                         return ret, units
 
                 setattr(_perf_fn, '_rfm_perf_fn', units)
@@ -285,17 +285,16 @@ class RegressionTestMeta(type):
 
             return _fn
 
-        namespace['performance_function'] = performance_function
-
         def performance_report(fn):
             '''Mark a function to generate the dict with the perf report.
 
             It must return an object of type
-            ``typ.Dict[str, _DefferredExpression]``.
+            ``typ.Dict[str, _DeferredExpression]``.
             '''
             setattr(fn, '_rfm_perf_report', True)
             return fn
 
+        namespace['performance_function'] = performance_function
         namespace['performance_report'] = performance_report
         return metacls.MetaNamespace(namespace)
 
@@ -308,6 +307,13 @@ class RegressionTestMeta(type):
         intercept those directives out of the namespace before the class is
         constructed.
         '''
+
+        perf_fn_deco = namespace['performance_function']
+        def make_performance_function(self, fn, unit, *args, **kwargs):
+            '''Wrapper to make a performance function inline.'''
+            return perf_fn_deco(unit)(fn)(self, *args, **kwargs)
+
+        namespace['make_performance_function'] = make_performance_function
 
         directives = [
             'parameter', 'variable', 'bind', 'run_before', 'run_after',
