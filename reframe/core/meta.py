@@ -9,6 +9,7 @@
 
 import functools
 import types
+import inspect
 
 import reframe.core.namespaces as namespaces
 import reframe.core.parameters as parameters
@@ -277,7 +278,20 @@ class RegressionTestMeta(type):
                     self._rfm_perf_units = units
 
             units = perf_units(units)
+
             def _fn(fn):
+                # Performance functions must only have a single positional arg
+                # without a default value
+                pos_args = len(
+                    [p for p in inspect.signature(fn).parameters.values()
+                     if p.default is p.empty]
+                )
+                if pos_args != 1:
+                    raise ReframeSyntaxError(
+                        f'performance function {fn.__name__} has more than '
+                        f'one argument without a default value'
+                    )
+
                 @deferrable
                 @functools.wraps(fn)
                 def _perf_fn(*args, **kwargs):
@@ -319,6 +333,7 @@ class RegressionTestMeta(type):
         '''
 
         perf_fn_deco = namespace['performance_function']
+
         def make_performance_function(self, fn, unit, *args, **kwargs):
             '''Wrapper to make a performance function inline.'''
             return perf_fn_deco(unit)(fn)(self, *args, **kwargs)
@@ -419,7 +434,7 @@ class RegressionTestMeta(type):
 
         # Build a set with all the performance functions
         cls._rfm_perf_fns = {
-            v for k,v in namespace.items() if hasattr(v, '_rfm_perf_fn')
+            v for k, v in namespace.items() if hasattr(v, '_rfm_perf_fn')
         }
         for base in (b for b in bases if hasattr(b, '_rfm_perf_fns')):
             cls._rfm_perf_fns = cls._rfm_perf_fns.union(
