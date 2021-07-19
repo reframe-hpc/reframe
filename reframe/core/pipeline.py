@@ -1623,7 +1623,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 if not hasattr(self, '_rfm_perf_report'):
                     self.perf_patterns = {}
                     for fn in self._rfm_perf_fns:
-                        self.perf_patterns[fn.__name__] = fn(self)
+                        self.perf_patterns[fn._rfm_perf_name] = fn(self)
 
                 else:
                     self.perf_patterns = self._rfm_perf_report()
