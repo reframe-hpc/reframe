@@ -7,8 +7,7 @@ import os
 
 import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.base_check import LAMMPSBaseCheck
-
+from hpctestlib.apps.lammps import LAMMPSBaseCheck
 
 REFERENCE_ENERGY = {
     # every system has a different reference energy and drift
@@ -112,7 +111,7 @@ class LAMMPSCheck(LAMMPSBaseCheck):
     @run_after('init')
     def set_tags(self):
         self.tags |= {'maintenance' if self.benchmark == 'maint'
-                        else 'production'}
+                    else 'production'}
 
 
 @rfm.simple_test
@@ -159,8 +158,8 @@ class LAMMPSCPUCheck(LAMMPSCheck):
             self.reference = REFERENCE_CPU_PERFORMANCE_SMALL
         else:
             self.reference = REFERENCE_CPU_PERFORMANCE_LARGE
-    @run_after('init')
 
+    @run_after('init')
     def set_num_tasks(self):
         if self.scale == 'small':
             self.valid_systems += ['dom:mc']
