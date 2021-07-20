@@ -12,8 +12,8 @@ from reframe.base_check import LAMMPSBaseCheck
 
 REFERENCE_ENERGY = {
     # every system has a different reference energy and drift
-    'prod': (-4.6195, 6.0E-04),
-    'maint': (-4.6195, 6.0E-04)
+    'maint': (-4.6195, 6.0E-04),
+    'prod': (-4.6195, 6.0E-04)
 }
 
 dom_gpu_small = {
@@ -40,28 +40,6 @@ daint_gpu_large = {
 REFERENCE_GPU_PERFORMANCE_LARGE = {
         'daint:gpu': daint_gpu_large,
 }
-'''
-REFERENCE_GPU_PERFORMANCE = {
-    'maint': {
-        'small': {
-            'dom:gpu': {'perf': (3457, -0.10, None, 'timesteps/s')},
-            'daint:gpu': {'perf': (2524, -0.10, None, 'timesteps/s')}
-        },
-        'large': {
-            'daint:gpu': {'perf': (3832, -0.05, None, 'timesteps/s')}
-        }
-    },
-    'prod': {
-        'small': {
-            'dom:gpu': {'perf': (3132, -0.05, None, 'timesteps/s')},
-            'daint:gpu': {'perf': (2400, -0.40, None, 'timesteps/s')}
-        },
-        'large': {
-            'daint:gpu': {'perf': (3260, -0.50, None, 'timesteps/s')}
-        }
-    },
-}
-'''
 
 dom_cpu_small = {
     'prod': (4394, -0.05, None, 'timesteps/s'),
@@ -105,24 +83,6 @@ REFERENCE_CPU_PERFORMANCE_LARGE = {
     'pilatus:mc': pilatus_cpu_large,
 
 }
-
-'''
-REFERENCE_CPU_PERFORMANCE = {
-    'prod': {
-        'small': {
-            'dom:mc': {'perf': (4394, -0.05, None, 'timesteps/s')},
-            'daint:mc': {'perf': (3824, -0.10, None, 'timesteps/s')},
-            'eiger:mc': {'perf': (4500, -0.10, None, 'timesteps/s')},
-            'pilatus:mc': {'perf': (5000, -0.10, None, 'timesteps/s')}
-        },
-        'large': {
-            'daint:mc': {'perf': (5310, -0.65, None, 'timesteps/s')},
-            'eiger:mc': {'perf': (6500, -0.10, None, 'timesteps/s')},
-            'pilatus:mc': {'perf': (7500, -0.10, None, 'timesteps/s')}
-        }
-    },
-}
-'''
 
 class LAMMPSCheck(LAMMPSBaseCheck):
         strict_check = False
