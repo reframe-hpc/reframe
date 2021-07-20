@@ -7,7 +7,7 @@ import os
 import pytest
 
 import reframe as rfm
-from reframe.core.exceptions import NameConflictError, ReframeSyntaxError
+from reframe.core.exceptions import ReframeSyntaxError
 from reframe.core.warnings import ReframeDeprecationWarning
 from reframe.frontend.loader import RegressionCheckLoader
 

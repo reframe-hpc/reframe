@@ -116,7 +116,8 @@ def test_class_attr_access():
         def __get__(self, obj, objtype=None):
             return 'dummy descriptor'
 
-    with pytest.raises(ReframeSyntaxError, match='cannot override variable descr'):
+    with pytest.raises(ReframeSyntaxError,
+                       match='cannot override variable descr'):
         MyTest.v0 = Descriptor()
 
 
