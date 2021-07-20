@@ -4,7 +4,6 @@
 import reframe as rfm
 import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
-#from reframe.base_check import AmberBaseCheck
 from hpctestlib.apps.amber import AmberBaseCheck
 
 daint_gpu_performance = {

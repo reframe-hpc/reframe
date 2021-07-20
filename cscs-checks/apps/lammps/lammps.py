@@ -111,7 +111,7 @@ class LAMMPSCheck(LAMMPSBaseCheck):
     @run_after('init')
     def set_tags(self):
         self.tags |= {'maintenance' if self.benchmark == 'maint'
-                    else 'production'}
+                      else 'production'}
 
 
 @rfm.simple_test
