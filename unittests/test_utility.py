@@ -1717,6 +1717,17 @@ def test_is_copyable():
     assert not util.is_copyable(foo())
 
 
+def test_is_trivially_callable():
+    def foo():
+        pass
+
+    def bar(x, y):
+        pass
+
+    assert util.is_trivially_callable(foo)
+    assert util.is_trivially_callable(bar, non_def_args=2)
+
+
 def test_nodelist_abbrev():
     nid_nodes = [f'nid{n:03}' for n in range(5, 20)]
     cid_nodes = [f'cid{n:03}' for n in range(20)]

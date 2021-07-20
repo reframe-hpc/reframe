@@ -304,6 +304,27 @@ def attrs(obj):
     return ret
 
 
+def is_trivially_callable(fn, *, non_def_args=0):
+    '''Assert that a callable object is trivially callable.
+
+    A trivially callable object is one that can be called without providing
+    any additional arguments to its call method. Member functions with a single
+    argument without a default value may be considered trivially callable,
+    since the ``self`` placeholder is automatically provided when invoked from
+    the instance. The number of allowed arguments without a default value for a
+    callable to be considered trivially callable may be controlled with the
+    ``non_def_args`` argument.
+    '''
+
+    if not callable(fn):
+        raise TypeError('argument is not a callable')
+
+    return len(
+        [p for p in inspect.signature(fn).parameters.values()
+         if p.default is p.empty]
+    ) == non_def_args
+
+
 def _is_builtin_type(cls):
     # NOTE: The set of types is copied from the copy.deepcopy() implementation
     builtin_types = (type(None), int, float, bool, complex, str, tuple,

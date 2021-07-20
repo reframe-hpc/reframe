@@ -15,6 +15,7 @@ import reframe.core.namespaces as namespaces
 import reframe.core.parameters as parameters
 import reframe.core.variables as variables
 import reframe.core.hooks as hooks
+import reframe.utility as utils
 
 from reframe.core.exceptions import ReframeSyntaxError
 from reframe.core.deferrable import deferrable, _DeferredExpression
@@ -282,11 +283,7 @@ class RegressionTestMeta(type):
             def _fn(fn):
                 # Performance functions must only have a single positional arg
                 # without a default value
-                pos_args = len(
-                    [p for p in inspect.signature(fn).parameters.values()
-                     if p.default is p.empty]
-                )
-                if pos_args != 1:
+                if not utils.is_trivially_callable(fn, non_def_args=1):
                     raise ReframeSyntaxError(
                         f'performance function {fn.__name__} has more than '
                         f'one argument without a default value'
