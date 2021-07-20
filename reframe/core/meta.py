@@ -9,7 +9,6 @@
 
 import functools
 import types
-import inspect
 
 import reframe.core.namespaces as namespaces
 import reframe.core.parameters as parameters
