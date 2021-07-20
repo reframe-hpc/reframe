@@ -141,7 +141,7 @@ stage('Cleanup') {
                 }
             }
         }
-        catchError(stageResult: 'FAILURE') {
+        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
             parallel builds
         }
     }
@@ -163,8 +163,7 @@ stage('Cleanup Stale') {
             }
         }
     }
-
-    catchError(stageResult: 'FAILURE') {
+    catchError(buildResult: 'SUCCESS',  stageResult: 'FAILURE') {
         parallel builds
     }
 }
