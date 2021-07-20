@@ -23,7 +23,6 @@ class AmberBaseCheck(rfm.RunOnlyRegressionTest):
                                 '-o', self.output_file]
         self.keep_files = [self.output_file]
 
-
     @run_after('setup')
     def set_generic_perf_references(self):
         self.reference.update({'*': {

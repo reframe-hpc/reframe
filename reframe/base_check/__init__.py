@@ -1,9 +1,9 @@
 from .amber_base import (
-  AmberBaseCheck
+     AmberBaseCheck
 )
 
 from .lammps_base import (
-  LAMMPSBaseCheck
+     LAMMPSBaseCheck
 )
 
 __all__ = ["AmberBaseCheck", "LammpsBaseCheck"]

@@ -62,6 +62,7 @@ REFERENCE_ENERGY = {
     'JAC_production_NVE': (-58138.0, 5.0E-04),
 }
 
+
 class AmberCheck(AmberBaseCheck):
     benchmark = parameter([
         # NVE simulations
@@ -72,10 +73,10 @@ class AmberCheck(AmberBaseCheck):
     ])
     strict_check = False
     extra_resources = {
-            'switches': {
-                'num_switches': 1
-            }
+        'switches': {
+            'num_switches': 1
         }
+    }
     ener_ref = REFERENCE_ENERGY
     output_file = 'amber.out'
     maintainers = ['VH', 'SO']

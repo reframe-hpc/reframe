@@ -27,8 +27,8 @@ daint_gpu_small = {
 }
 
 REFERENCE_GPU_PERFORMANCE_SMALL = {
-        'dom:gpu': dom_gpu_small,
-        'daint:gpu': daint_gpu_small,
+    'dom:gpu': dom_gpu_small,
+    'daint:gpu': daint_gpu_small,
 }
 
 
@@ -38,7 +38,7 @@ daint_gpu_large = {
 }
 
 REFERENCE_GPU_PERFORMANCE_LARGE = {
-        'daint:gpu': daint_gpu_large,
+    'daint:gpu': daint_gpu_large,
 }
 
 dom_cpu_small = {
@@ -84,99 +84,102 @@ REFERENCE_CPU_PERFORMANCE_LARGE = {
 
 }
 
+
 class LAMMPSCheck(LAMMPSBaseCheck):
-        strict_check = False
-        extra_resources = {
-            'switches': {
-                'num_switches': 1
-            }
+    strict_check = False
+    extra_resources = {
+        'switches': {
+            'num_switches': 1
         }
+    }
 
-        tags = {'scs', 'external-resources'}
-        maintainers = ['TR', 'VH']
+    tags = {'scs', 'external-resources'}
+    maintainers = ['TR', 'VH']
 
-        @run_after('init')
-        def source_install(self):
-            # Reset sources dir relative to the SCS apps prefix
-            self.sourcesdir = os.path.join(self.current_system.resourcesdir,
+    @run_after('init')
+    def source_install(self):
+        # Reset sources dir relative to the SCS apps prefix
+        self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'LAMMPS')
 
-        @run_after('init')
-        def env_define(self):
-                if self.current_system.name in ['eiger', 'pilatus']:
-                    self.valid_prog_environs = ['cpeGNU']
-                else:
-                    self.valid_prog_environs = ['builtin']
+    @run_after('init')
+    def env_define(self):
+        if self.current_system.name in ['eiger', 'pilatus']:
+            self.valid_prog_environs = ['cpeGNU']
+        else:
+            self.valid_prog_environs = ['builtin']
 
-        @run_after('init')
-        def set_tags(self):
-            self.tags |= {'maintenance' if self.benchmark == 'maint' else 'production'}
+    @run_after('init')
+    def set_tags(self):
+        self.tags |= {'maintenance' if self.benchmark == 'maint'
+                                    else 'production'}
 
 
 @rfm.simple_test
 class LAMMPSGPUCheck(LAMMPSCheck):
-        scale = parameter(['small', 'large'])
-        benchmark = parameter(['prod', 'maint'])
-        valid_systems = ['daint:gpu']
-        executable = 'lmp_mpi'
-        input_file = 'in.lj.gpu'
-        executable_opts = ['-sf gpu', '-pk gpu 1', '-in', input_file]
-        variables = {'CRAY_CUDA_MPS': '1'}
-        num_gpus_per_node = 1
-        ener_ref = REFERENCE_ENERGY
+    scale = parameter(['small', 'large'])
+    benchmark = parameter(['prod', 'maint'])
+    valid_systems = ['daint:gpu']
+    executable = 'lmp_mpi'
+    input_file = 'in.lj.gpu'
+    executable_opts = ['-sf gpu', '-pk gpu 1', '-in', input_file]
+    variables = {'CRAY_CUDA_MPS': '1'}
+    num_gpus_per_node = 1
+    ener_ref = REFERENCE_ENERGY
 
-        @run_after('init')
-        def set_reference(self):
-            if self.scale == 'small':
-                self.reference = REFERENCE_GPU_PERFORMANCE_SMALL
-            else:
-                self.reference = REFERENCE_GPU_PERFORMANCE_LARGE
+    @run_after('init')
+    def set_reference(self):
+        if self.scale == 'small':
+            self.reference = REFERENCE_GPU_PERFORMANCE_SMALL
+        else:
+            self.reference = REFERENCE_GPU_PERFORMANCE_LARGE
 
-        @run_after('init')
-        def set_num_tasks(self):
-                if self.scale == 'small':
-                    self.valid_systems += ['dom:gpu']
-                    self.num_tasks = 12
-                    self.num_tasks_per_node = 2
-                else:
-                    self.num_tasks = 32
-                    self.num_tasks_per_node = 2
+    @run_after('init')
+    def set_num_tasks(self):
+        if self.scale == 'small':
+            self.valid_systems += ['dom:gpu']
+            self.num_tasks = 12
+            self.num_tasks_per_node = 2
+        else:
+            self.num_tasks = 32
+            self.num_tasks_per_node = 2
+
 
 @rfm.simple_test
 class LAMMPSCPUCheck(LAMMPSCheck):
-        scale = parameter(['small', 'large'])
-        benchmark = parameter(['prod'])
-        valid_systems = ['daint:mc', 'eiger:mc', 'pilatus:mc']
-        input_file = 'in.lj.cpu'
-        ener_ref = REFERENCE_ENERGY
+    scale = parameter(['small', 'large'])
+    benchmark = parameter(['prod'])
+    valid_systems = ['daint:mc', 'eiger:mc', 'pilatus:mc']
+    input_file = 'in.lj.cpu'
+    ener_ref = REFERENCE_ENERGY
 
-        @run_after('init')
-        def set_reference(self):
-            if self.scale == 'small':
-                self.reference = REFERENCE_CPU_PERFORMANCE_SMALL
-            else:
-                self.reference = REFERENCE_CPU_PERFORMANCE_LARGE
+    @run_after('init')
+    def set_reference(self):
+        if self.scale == 'small':
+            self.reference = REFERENCE_CPU_PERFORMANCE_SMALL
+        else:
+            self.reference = REFERENCE_CPU_PERFORMANCE_LARGE
+    @run_after('init')
+    def set_num_tasks(self):
+        if self.scale == 'small':
+            self.valid_systems += ['dom:mc']
+            self.num_tasks = 216
+            self.num_tasks_per_node = 36
+        else:
+            self.num_tasks_per_node = 36
+            self.num_tasks = 576
 
-        @run_after('init')
-        def set_num_tasks(self):
-            if self.scale == 'small':
-                self.valid_systems += ['dom:mc']
-                self.num_tasks = 216
-                self.num_tasks_per_node = 36
-            else:
-                self.num_tasks_per_node = 36
-                self.num_tasks = 576
+        if self.current_system.name == 'eiger':
+            self.num_tasks_per_node = 128
+            self.num_tasks = 256 if self.benchmark == 'small' else 512
 
-            if self.current_system.name == 'eiger':
-                self.num_tasks_per_node = 128
-                self.num_tasks = 256 if self.benchmark == 'small' else 512
-
-
-        @run_after('init')
-        def set_hierarchical_prgenvs(self):
-            if self.current_system.name in ['eiger', 'pilatus']:
-                self.executable = 'lmp_mpi'
-                self.executable_opts = ['-in', self.input_file]
-            else:
-                self.executable = 'lmp_omp'
-                self.executable_opts = ['-sf omp', '-pk omp 1', '-in', self.input_file]
+    @run_after('init')
+    def set_hierarchical_prgenvs(self):
+        if self.current_system.name in ['eiger', 'pilatus']:
+            self.executable = 'lmp_mpi'
+            self.executable_opts = ['-in', self.input_file]
+        else:
+            self.executable = 'lmp_omp'
+            self.executable_opts = ['-sf omp',
+                                    '-pk omp 1',
+                                    '-in', self.input_file]
