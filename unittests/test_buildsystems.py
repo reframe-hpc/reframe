@@ -285,6 +285,7 @@ def test_spack_no_env(environ, tmp_path):
             f'. $SPACK_ROOT/share/spack/setup-env.sh',
             f'spack env create -d rfm_spack_env',
             f'spack env activate -V -d rfm_spack_env',
+            f'spack config add "config:install_tree:root:opt/spack"',
             f'spack install'
         ]
 

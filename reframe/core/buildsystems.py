@@ -787,6 +787,28 @@ class Spack(BuildSystem):
     #: :default: ``None``
     environment = variable(typ.Str[r'\S+'], type(None), value=None)
 
+    #: The directory where Spack will install the packages requested by this
+    #: test.
+    #:
+    #: After activating the Spack environment, ReFrame will set the
+    #: `install_tree` Spack configuration in the given environment with the
+    #: following command:
+    #:
+    #: .. code-block:: bash
+    #:
+    #:    spack config add "config:install_tree:root:<install tree>"
+    #:
+    #: Relative paths are resolved against the test's stage directory.  If this
+    #: field and the Spack environment are both `None`, the default, the
+    #: install directory will be automatically set to `opt/spack`.  If this
+    #: field `None` but the Spack environment is not, then `install_tree` will
+    #: not be set automatically and the install tree of the given environment
+    #: will not be overridden.
+    #:
+    #: :type: :class:`str` or :class:`None`
+    #: :default: ``None``
+    install_tree = variable(typ.Str[r'\S+'], type(None), value=None)
+
     #: A list of additional specs to build and install within the given
     #: environment.
     #:
@@ -818,6 +840,12 @@ class Spack(BuildSystem):
 
     def emit_build_commands(self, environ):
         ret = self._env_activate_cmds()
+
+        if not self.environment:
+            install_tree = self.install_tree or 'opt/spack'
+            ret.append(f'spack config add '
+                       f'"config:install_tree:root:{install_tree}"')
+
         if self.specs:
             specs_str = ' '.join(self.specs)
             ret.append(f'spack add {specs_str}')
