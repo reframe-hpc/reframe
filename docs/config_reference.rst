@@ -1234,6 +1234,10 @@ General Configuration
 
    Ignore test name conflicts when loading tests.
 
+   .. deprecated:: 3.8.0
+      This option will be removed in a future version.
+
+
 
 .. js:attribute:: .general[].trap_job_errors
 

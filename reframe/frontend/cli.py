@@ -601,6 +601,12 @@ def main():
         printer.error(logfiles_message())
         sys.exit(1)
 
+    if site_config.get('general/0/ignore_check_conflicts'):
+        logging.getlogger().warning(
+            "the 'ignore_check_conflicts' option is deprecated "
+            "and will be removed in the future"
+        )
+
     rt = runtime.runtime()
     autodetect.detect_topology()
     try:

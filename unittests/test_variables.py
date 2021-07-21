@@ -183,7 +183,7 @@ def test_invalid_field():
     class Foo:
         '''An invalid descriptor'''
 
-    with pytest.raises(ReframeSyntaxError):
+    with pytest.raises(TypeError):
         class MyTest(rfm.RegressionTest):
             a = variable(int, value=4, field=Foo)
 

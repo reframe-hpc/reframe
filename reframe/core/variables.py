@@ -48,7 +48,7 @@ class TestVar:
         self._default_value = kwargs.pop('value', Undefined)
 
         if not issubclass(field_type, fields.Field):
-            raise ReframeSyntaxError(
+            raise TypeError(
                 f'field {field_type!r} is not derived from '
                 f'{fields.Field.__qualname__}'
             )
