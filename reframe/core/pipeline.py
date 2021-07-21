@@ -1614,7 +1614,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             if hasattr(self, '_rfm_perf_report') or self._rfm_perf_fns:
                 if hasattr(self, 'perf_patterns'):
                     raise ReframeSyntaxError(
-                        f"assigning a value to 'perf_patters' conflicts with ",
+                        f"assigning a value to 'perf_pattenrs' conflicts with ",
                         f"using the 'performance_report' decorator (class ",
                         f"{self.__class__.__qualname__})"
                     )
@@ -1703,7 +1703,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                     self._perf_logger.log_performance(logging.INFO, tag, value,
                                                       *self.reference[key])
 
-            # Check the performace variables against their references.
+            # Check the performance variables against their references.
             for key, values in self._perfvalues.items():
                 val, ref, low_thres, high_thres, *_ = values
 

@@ -256,7 +256,7 @@ class RegressionTestMeta(type):
 
         # Machinery to add performance variables
         def performance_function(units, *, perf_key=None):
-            '''Decoreate a function to extract a performance variable.
+            '''Decorate a function to extract a performance variable.
 
             The ``units`` argument indicates the units of the performance
             variable to be extracted.
