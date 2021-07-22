@@ -19,7 +19,6 @@ class IorCheck(rfm.RegressionTest):
                           '/users'])
     username = getpass.getuser()
     time_limit = '5m'
-
     maintainers = ['SO', 'GLR']
     tags = {'ops', 'production', 'external-resources'}
 
@@ -28,7 +27,7 @@ class IorCheck(rfm.RegressionTest):
         self.descr = f'IOR check ({self.base_dir})'
 
     @run_after('init')
-    def extend_tags_based_on_fs(self):
+    def add_fs_tags(self):
         self.tags |= {self.base_dir}
 
     @run_after('init')
@@ -112,33 +111,29 @@ class IorCheck(rfm.RegressionTest):
 
         self.sourcesdir = os.path.join(self.current_system.resourcesdir, 'IOR')
 
-    @run_after('init')
-    def set_build_systems(self):
+    @run_before('compile')
+    def prepare_build(self):
         self.build_system = 'Make'
         self.build_system.options = ['posix', 'mpiio']
         self.build_system.max_concurrency = 1
         self.num_gpus_per_node = 0
 
     @run_before('run')
-    def set_prerun_cmds(self):
+    def prepare_run(self):
         # Default umask is 0022, which generates file permissions -rw-r--r--
         # we want -rw-rw-r-- so we set umask to 0002
         os.umask(2)
-        self.test_dir = os.path.join(self.base_dir, self.username, '.ior')
-        self.prerun_cmds = ['mkdir -p ' + self.test_dir]
-
-    @run_before('run')
-    def set_exec_opts(self):
+        test_dir = os.path.join(self.base_dir, self.username, '.ior')
+        test_file = os.path.join(test_dir, f'.{self.current_partition.name}')
+        self.prerun_cmds = [f'mkdir -p {test_dir}']
         self.executable = os.path.join('src', 'C', 'IOR')
-        self.test_file = os.path.join(self.test_dir, 'ior')
-        self.test_file += '.' + self.current_partition.name
+
         # executable options depends on the file system
-        self.ior_block_size = self.fs[self.base_dir]['ior_block_size']
-        self.ior_access_type = self.fs[self.base_dir]['ior_access_type']
+        block_size = self.fs[self.base_dir]['ior_block_size']
+        access_type = self.fs[self.base_dir]['ior_access_type']
         self.executable_opts = ['-B', '-F', '-C ', '-Q 1', '-t 4m', '-D 30',
-                                '-b', self.ior_block_size,
-                                '-a', self.ior_access_type,
-                                '-o', self.test_file]
+                                '-b', block_size, '-a', access_type,
+                                '-o', test_file]
 
 
 @rfm.simple_test
@@ -146,9 +141,12 @@ class IorWriteCheck(IorCheck):
     executable_opts += ['-w', '-k']
     tags |= {'write'}
 
+    @sanity_function
+    def assert_output(self):
+        return sn.assert_found(r'^Max Write: ', self.stdout)
+
     @run_after('init')
-    def set_sanity_perf_patterns(self):
-        self.sanity_patterns = sn.assert_found(r'^Max Write: ', self.stdout)
+    def set_perf_patterns(self):
         self.perf_patterns = {
             'write_bw': sn.extractsingle(
                 r'^Max Write:\s+(?P<write_bw>\S+) MiB/sec', self.stdout,
@@ -160,9 +158,12 @@ class IorReadCheck(IorCheck):
     executable_opts += ['-r']
     tags |= {'read'}
 
+    @sanity_function
+    def assert_output(self):
+        return sn.assert_found(r'^Max Read: ', self.stdout)
+
     @run_after('init')
-    def set_sanity_perf_patterns(self):
-        self.sanity_patterns = sn.assert_found(r'^Max Read: ', self.stdout)
+    def set_perf_patterns(self):
         self.perf_patterns = {
             'read_bw': sn.extractsingle(
                 r'^Max Read:\s+(?P<read_bw>\S+) MiB/sec', self.stdout,
