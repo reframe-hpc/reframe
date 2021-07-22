@@ -26,41 +26,11 @@ _run_strict = functools.partial(osext.run_command, check=True)
 
 @register_scheduler('sge')
 class SgeJobScheduler(PbsJobScheduler):
-    TASKS_OPT = ('-l select={num_nodes}:mpiprocs={num_tasks_per_node}'
-                 ':ncpus={num_cpus_per_node}')
-
     def __init__(self):
         self._prefix = '#$'
         self._submit_timeout = rt.runtime().get_option(
             f'schedulers/@{self.registered_name}/job_submit_timeout'
         )
-
-    def _emit_lselect_option(self, job):
-        num_tasks_per_node = job.num_tasks_per_node or 1
-        num_cpus_per_task = job.num_cpus_per_task or 1
-        num_nodes = job.num_tasks // num_tasks_per_node
-        num_cpus_per_node = num_tasks_per_node * num_cpus_per_task
-        select_opt = ''
-        self.TASKS_OPT.format(
-            num_nodes=num_nodes,
-            num_tasks_per_node=num_tasks_per_node,
-            num_cpus_per_node=num_cpus_per_node
-        )
-
-        # Options starting with `-` are emitted in separate lines
-        rem_opts = []
-        verb_opts = []
-        for opt in (*job.sched_access, *job.options, *job.cli_options):
-            if opt.startswith('-'):
-                rem_opts.append(opt)
-            elif opt.startswith('#'):
-                verb_opts.append(opt)
-            else:
-                select_opt += ':' + opt
-
-        return [self._format_option(select_opt),
-                *(self._format_option(opt) for opt in rem_opts),
-                *verb_opts]
 
     def emit_preamble(self, job):
         preamble = [
@@ -76,7 +46,13 @@ class SgeJobScheduler(PbsJobScheduler):
                 self._format_option(f'-l h_rt=%d:%d:%d' % (h, m, s))
             )
 
-        preamble += self._emit_lselect_option(job)
+        # Emit the rest of the options
+        options = job.options + job.cli_options
+        for opt in options:
+            if opt.startswith('#'):
+                preamble.append(opt)
+            else:
+                preamble.append(self._format_option(opt))
 
         return preamble
 

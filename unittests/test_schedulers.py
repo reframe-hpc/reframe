@@ -136,18 +136,15 @@ def _expected_sge_directives(job):
     num_nodes = job.num_tasks // job.num_tasks_per_node
     num_cpus_per_node = job.num_cpus_per_task * job.num_tasks_per_node
     return set([
-        '#$ -N "testjob"',
-        '#$ -l h_rt=0:5:0',
-        '#$ -o %s' % job.stdout,
-        '#$ -e %s' % job.stderr,
-        '#$ -l select=%s:mpiprocs=%s:ncpus=%s'
-        ':mem=100GB:cpu_type=haswell' % (num_nodes,
-                                         job.num_tasks_per_node,
-                                         num_cpus_per_node),
-        '#$ --account=spam',
-        '#$ --gres=gpu:4',
-        '#DW jobdw capacity=100GB',
-        '#DW stage_in source=/foo'
+        f'#$ -N "testjob"',
+        f'#$ -l h_rt=0:5:0',
+        f'#$ -o {job.stdout}',
+        f'#$ -e {job.stderr}',
+        f'#$ -wd {job.workdir}',
+        f'#$ --gres=gpu:4',
+        f'#$ --account=spam',
+        f'#DW jobdw capacity=100GB',
+        f'#DW stage_in source=/foo'
     ])
 
 
