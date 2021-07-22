@@ -68,19 +68,17 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
-      - name: Bootstrap ReFrame
-        run: |
-          ./bootstrap.sh
       - name: Generate Wheel
         run: |
           python -m pip install --upgrade pip setuptools build
-          PYTHONPATH=$PWD/external:$PYTHONPATH python -m build
+          python -m build
       - name: Install Wheel
         run: |
           python -m pip install dist/ReFrame_HPC*.whl
       - name: Test Installation
         run: |
           reframe -V
+          reframe -l
 
   docvalidation:
     runs-on: ubuntu-latest

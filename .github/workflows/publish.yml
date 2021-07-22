@@ -13,10 +13,6 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
-      - name: Bootstrap ReFrame
-        run: |
-          ./bootstrap.sh
-          echo "PYTHONPATH=$PWD/external:$PYTHONPATH" >> $GITHUB_ENV
       - name: Generate dist packages
         run: |
           python -m pip install --upgrade pip setuptools build
