@@ -124,7 +124,8 @@ class IorCheck(rfm.RegressionTest):
         # we want -rw-rw-r-- so we set umask to 0002
         os.umask(2)
         test_dir = os.path.join(self.base_dir, self.username, '.ior')
-        test_file = os.path.join(test_dir, f'.{self.current_partition.name}')
+        test_file = os.path.join(test_dir,
+                                 f'.ior.{self.current_partition.name}')
         self.prerun_cmds = [f'mkdir -p {test_dir}']
         self.executable = os.path.join('src', 'C', 'IOR')
 
@@ -154,6 +155,7 @@ class IorWriteCheck(IorCheck):
         }
 
 
+@rfm.simple_test
 class IorReadCheck(IorCheck):
     executable_opts += ['-r']
     tags |= {'read'}
