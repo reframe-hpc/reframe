@@ -19,8 +19,8 @@ jobs:
           echo "PYTHONPATH=$PWD/external:$PYTHONPATH" >> $GITHUB_ENV
       - name: Generate dist packages
         run: |
-          python -m pip install --upgrade pip setuptools wheel twine
-          python setup.py sdist bdist_wheel
+          python -m pip install --upgrade pip setuptools build
+          python -m build
       - name: Publish ReFrame to PyPI
         uses: pypa/gh-action-pypi-publish@master
         with:
