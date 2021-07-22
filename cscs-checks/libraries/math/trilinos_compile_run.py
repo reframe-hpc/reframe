@@ -29,7 +29,6 @@ class TrilinosTest(rfm.RegressionTest):
                'cray-trilinos']
     num_tasks = 2
     num_tasks_per_node = 2
-    variables = {'OMP_NUM_THREADS': '1'}
     maintainers = ['AJ', 'CB']
     tags = {'production', 'craype'}
 
@@ -40,10 +39,9 @@ class TrilinosTest(rfm.RegressionTest):
         if self.linkage == 'static':
             self.valid_prog_environs += ['PrgEnv-cray']
 
-    @run_after('init')
-    def set_sanity_patterns(self):
-        self.sanity_patterns = sn.assert_found(r'After Amesos solution',
-                                               self.stdout)
+    @sanity_function
+    def assert_solution(self):
+        return sn.assert_found(r'After Amesos solution', self.stdout)
 
     @run_before('compile')
     def set_build_system_opts(self):
@@ -52,7 +50,6 @@ class TrilinosTest(rfm.RegressionTest):
         self.build_system.cppflags = ['-DHAVE_MPI', '-DEPETRA_MPI']
         flags = self.prgenv_flags[self.current_environ.name]
         self.build_system.cxxflags = flags
-
 
     @run_before('compile')
     def cdt2006_workaround_intel(self):
@@ -78,3 +75,7 @@ class TrilinosTest(rfm.RegressionTest):
             # GCC >= 9 is required for the above option; our CUDA-friendly CDT
             # uses GCC 8 as default.
             self.modules += ['gcc/9.3.0']
+
+    @run_before('run')
+    def prepare_run(self):
+        self.variables = {'OMP_NUM_THREADS': '1'}
