@@ -4,9 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import pytest
-import reframe.core.warnings as warnings
 import reframe.utility.sanity as sn
-from reframe.core.warnings import ReframeDeprecationWarning
 
 
 def test_defer():

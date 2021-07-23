@@ -13,7 +13,6 @@ import re
 import sys
 
 import reframe.utility as util
-import reframe.core.warnings as warn
 from reframe.core.deferrable import deferrable, _DeferredExpression
 from reframe.core.exceptions import SanityError
 

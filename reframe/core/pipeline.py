@@ -13,7 +13,6 @@ __all__ = [
 ]
 
 
-import functools
 import glob
 import inspect
 import itertools
@@ -42,7 +41,6 @@ from reframe.core.exceptions import (BuildError, DependencyError,
                                      ReframeSyntaxError)
 from reframe.core.meta import RegressionTestMeta
 from reframe.core.schedulers import Job
-from reframe.core.warnings import user_deprecation_warning
 
 
 _PIPELINE_STAGES = (
