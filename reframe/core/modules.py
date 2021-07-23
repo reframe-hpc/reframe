@@ -1154,3 +1154,4 @@ class SpackImpl(ModulesSystemImpl):
 
     def emit_unload_instr(self, module):
         return [f'spack unload {module.fullname}']
+                                                                                                                            
