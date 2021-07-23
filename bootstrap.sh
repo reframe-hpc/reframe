@@ -39,7 +39,7 @@ usage()
 }
 
 
-while getopts "hP-:"  opt; do
+while getopts "hP:-:"  opt; do
     case $opt in
         "P") python=$OPTARG ;;
         "h") usage && exit 0 ;;
