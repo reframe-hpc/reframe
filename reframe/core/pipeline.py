@@ -20,7 +20,6 @@ import itertools
 import numbers
 import os
 import shutil
-import re
 
 import reframe.core.environments as env
 import reframe.core.fields as fields
@@ -928,7 +927,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         _pipeline_hooks = {}
         for stage, hooks in cls.pipeline_hooks().items():
             # Pop the stage pre_/post_ prefix
-            stage_name = re.match(r'p\w{2,3}_(\w+)', stage)[1]
+            stage_name = stage.split('_', maxsplit=1)[1]
 
             if stage_name not in _USER_PIPELINE_STAGES:
                 raise ValueError(
