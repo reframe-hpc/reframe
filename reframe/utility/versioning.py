@@ -7,8 +7,6 @@ import abc
 import re
 import semver
 
-from reframe.core.warnings import user_deprecation_warning
-
 
 parse = semver.VersionInfo.parse
 
