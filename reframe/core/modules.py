@@ -876,17 +876,20 @@ class TMod4Impl(TModImpl):
 
         return super().conflicted_modules(module)
 
+    def _load_instr_collections(self, module):
+        cmds = [f'module restore {module}']
+
+        # Here we append module searchpath removal/addition commands
+        # since 'restore' discards previous module path manipulations
+        for op, mp in self._extra_module_paths:
+            operation = 'use' if op == '+' else 'unuse'
+            cmds += [f'module {operation} {mp}']
+
+        return cmds
+
     def emit_load_instr(self, module):
         if module.collection:
-            cmds = [f'module restore {module}']
-
-            # Here we append module searchpath removal/addition commands
-            # since 'restore' discards previous module path manipulations
-            for op, mp in self._extra_module_paths:
-                operation = 'use' if op == '+' else 'unuse'
-                cmds += [f'module {operation} {mp}']
-
-            return cmds
+            return self._load_instr_collections(module)
 
         return super().emit_load_instr(module)
 
@@ -1003,6 +1006,18 @@ class LModImpl(TMod4Impl):
         # Currently, we don't take any provision for sticky modules in Lmod, so
         # we forcefully unload everything.
         self.execute('--force', 'purge')
+
+    def emit_load_instr(self, module):
+        if module.collection:
+            return self._load_instr_collections(module)
+
+        cmds = []
+        if module.path:
+            cmds.append(f'module use {module.path}')
+
+        cmds.append(f'module load {module.fullname}')
+
+        return cmds
 
 
 class NoModImpl(ModulesSystemImpl):
@@ -1154,4 +1169,3 @@ class SpackImpl(ModulesSystemImpl):
 
     def emit_unload_instr(self, module):
         return [f'spack unload {module.fullname}']
-                                                                                                                            
