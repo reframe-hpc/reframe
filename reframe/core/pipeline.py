@@ -96,7 +96,6 @@ _USER_PIPELINE_STAGES = (
 )
 
 
-
 def final(fn):
     fn._rfm_final = True
     user_deprecation_warning(
@@ -850,10 +849,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         if name is not None:
             self.name = name
 
-            # Add the parameters to the name
+            # Add the parameters to the name.
             self.name += self._append_parameters_to_name()
 
-            # or alternatively, if the parameterized test was defined the old way.
+            # Add the parameters from the parameterized_test decorator.
             if args or kwargs:
                 arg_names = map(lambda x: util.toalphanum(str(x)),
                                 itertools.chain(args, kwargs.values()))
@@ -929,7 +928,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         _pipeline_hooks = {}
         for stage, hooks in cls.pipeline_hooks().items():
             # Pop the stage pre_/post_ prefix
-            stage_name = re.match('p\w{2,3}_(\w+)', stage)[1]
+            stage_name = re.match(r'p\w{2,3}_(\w+)', stage)[1]
 
             if stage_name not in _USER_PIPELINE_STAGES:
                 raise ValueError(
