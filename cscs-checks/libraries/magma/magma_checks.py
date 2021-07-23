@@ -9,7 +9,8 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class MagmaCheck(rfm.RegressionTest):
-    subtest = parameter(['cblas_z', 'zgemm', 'zsymmetrize', 'ztranspose'])
+    subtest = parameter(['cblas_z', 'zgemm', 'zsymmetrize', 'ztranspose',
+                         'zunmbr'])
     valid_systems = ['daint:gpu', 'dom:gpu']
     valid_prog_environs = ['builtin']
     num_gpus_per_node = 1
@@ -18,23 +19,29 @@ class MagmaCheck(rfm.RegressionTest):
     maintainers = ['AJ', 'SK']
     tags = {'scs', 'production', 'maintenance'}
 
-    @run_after('init')
+    @run_before('compile')
     def set_build_system_opts(self):
         self.build_system = 'Make'
-        self.build_system.makefile = 'Makefile_%s' % self.subtest
-        # Compile with -O0 since with a higher level the compiler seems to
-        # optimise stuff away
-        self.build_system.cflags = ['-O0']
-        self.build_system.cxxflags = ['-O0', '-std=c++11']
+        self.build_system.makefile = f'Makefile_{self.subtest}'
+        self.build_system.cxxflags = ['-std=c++11']
         self.build_system.ldflags = ['-lcusparse', '-lcublas', '-lmagma',
                                      '-lmagma_sparse']
-        self.executable = './testing_' + self.subtest
+        self.executable = f'./testing_{self.subtest}'
+        #FIXME: Compile cblas_z  with -O0 since with a higher level a
+        # segmentation fault is thrown 
+        if self.subtest == 'cblas_z':
+            self.build_system.cxxflags += ['-O0']
 
-    @run_after('init')
-    def set_sanity_patterns(self):
-        self.sanity_patterns = sn.assert_found(r'Result = PASS', self.stdout)
+    @run_before('run')
+    def set_exec_opts(self):
+        if self.subtest == 'zgemm':
+            self.executable_opts = ['--range 1088:3136:1024']
 
-    @run_after('init')
+    @sanity_function
+    def assert_success(self):
+        return sn.assert_found(r'Result = PASS', self.stdout)
+
+    @run_before('performance')
     def set_performance_patterns(self):
         if self.subtest == 'cblas_z':
             self.perf_patterns = {
@@ -50,7 +57,6 @@ class MagmaCheck(rfm.RegressionTest):
                 },
             }
         elif self.subtest == 'zgemm':
-            self.executable_opts = ['--range 1088:3136:1024']
             self.perf_patterns = {
                 'magma': sn.extractsingle(
                     r'MAGMA GFlops: (?P<magma_gflops>\S+)',
@@ -100,7 +106,6 @@ class MagmaCheck(rfm.RegressionTest):
                 }
             }
         elif self.subtest == 'zunmbr':
-            # FIXME: update the test, because it fails to compile with Magma 2.4
             self.perf_patterns = {
                 'gpu_perf':
                     sn.extractsingle(
