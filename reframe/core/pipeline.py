@@ -1726,42 +1726,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     def user_deps(self):
         return util.SequenceView(self._userdeps)
 
-    def _depends_on_func(self, how, subdeps=None, *args, **kwargs):
-        if args or kwargs:
-            raise ValueError('invalid arguments passed')
-
-        user_deprecation_warning("passing 'how' as an integer or passing "
-                                 "'subdeps' is deprecated; please have a "
-                                 "look at the user documentation")
-
-        if (subdeps is not None and
-            not isinstance(subdeps, typ.Dict[str, typ.List[str]])):
-            raise TypeError("subdeps argument must be of type "
-                            "`Dict[str, List[str]]' or `None'")
-
-        # Now return a proper when function
-        def exact(src, dst):
-            if not subdeps:
-                return False
-
-            p0, e0 = src
-            p1, e1 = dst
-
-            # DEPEND_EXACT allows dependencies inside the same partition
-            return ((p0 == p1) and (e0 in subdeps) and (e1 in subdeps[e0]))
-
-        # Follow the old definitions
-        # DEPEND_BY_ENV used to mean same env and same partition
-        if how == DEPEND_BY_ENV:
-            return udeps.by_case
-        # DEPEND_BY_ENV used to mean same partition
-        elif how == DEPEND_FULLY:
-            return udeps.by_part
-        elif how == DEPEND_EXACT:
-            return exact
-        else:
-            raise ValueError(f"unknown value passed to 'how' argument: {how}")
-
     def depends_on(self, target, how=None, *args, **kwargs):
         '''Add a dependency to another test.
 
@@ -1821,14 +1785,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             Passing an integer to the ``how`` argument as well as using the
             ``subdeps`` argument is deprecated.
 
+        .. versionchanged:: 4.0.0
+           Passing an integer to the ``how`` argument is no more supported.
+
         '''
         if not isinstance(target, str):
             raise TypeError("target argument must be of type: `str'")
-
-        if (isinstance(how, int)):
-            # We are probably using the old syntax; try to get a
-            # proper how function
-            how = self._depends_on_func(how, *args, **kwargs)
 
         if how is None:
             how = udeps.by_case
