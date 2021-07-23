@@ -29,11 +29,11 @@ class SystemConfigCSCS(rfm.RegressionMixin):
     global_prog_environs = variable(typ.List[str], value=['PrgEnv-gnu'])
 
     # Inject external hooks
-    @rfm.run_after('setup')
+    @run_after('setup')
     def set_gpu_arch(self):
         hooks.set_gpu_arch(self)
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_num_gpus_per_node(self):
         hooks.set_num_gpus_per_node(self)
 
@@ -42,7 +42,7 @@ class SystemConfigCSCS(rfm.RegressionMixin):
 class build_gpu_pchase_check(BuildGpuPchase, SystemConfigCSCS):
     ''' Build the executable.'''
 
-    @rfm.run_after('init')
+    @run_after('init')
     def set_prgenvs(self):
         self.valid_systems = (
             self.single_device_systems + self.multi_device_systems
@@ -51,7 +51,7 @@ class build_gpu_pchase_check(BuildGpuPchase, SystemConfigCSCS):
 
 
 class RunPchaseBase(RunGpuPchase, SystemConfigCSCS):
-    @rfm.run_after('init')
+    @run_after('init')
     def set_deps_and_prgenvs(self):
         self.depends_on('build_gpu_pchase_check')
         self.valid_systems = (
@@ -60,7 +60,7 @@ class RunPchaseBase(RunGpuPchase, SystemConfigCSCS):
         self.valid_prog_environs = self.global_prog_environs
         self.exclusive_access = True
 
-    @rfm.require_deps
+    @require_deps
     def set_executable(self, build_gpu_pchase_check):
         self.executable = os.path.join(
             build_gpu_pchase_check().stagedir, 'pChase.x')
@@ -171,14 +171,14 @@ class gpu_latency_d2d_check(RunGpuPchaseD2D, SystemConfigCSCS):
 
     list_size = parameter([5000, 2000000])
 
-    @rfm.run_after('init')
+    @run_after('init')
     def set_deps_and_prgenvs(self):
         self.depends_on('build_gpu_pchase_check')
         self.valid_systems = self.multi_device_systems
         self.valid_prog_environs = self.global_prog_environs
         self.num_list_nodes = self.list_size
 
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_references(self):
         if self.list_size == 5000:
             self.reference = {
@@ -213,7 +213,7 @@ class gpu_latency_d2d_check(RunGpuPchaseD2D, SystemConfigCSCS):
                 },
             }
 
-    @rfm.require_deps
+    @require_deps
     def set_executable(self, build_gpu_pchase_check):
         self.executable = os.path.join(
             build_gpu_pchase_check().stagedir, 'pChase.x')

@@ -44,7 +44,7 @@ class DGEMMTest(rfm.RegressionTest):
         self.maintainers = ['AJ', 'VH']
         self.tags = {'benchmark', 'diagnostic', 'craype'}
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def setflags(self):
         if self.current_environ.name.startswith('PrgEnv-gnu'):
             self.build_system.cflags += ['-fopenmp']
@@ -63,7 +63,7 @@ class DGEMMTest(rfm.RegressionTest):
             self.build_system.ldflags = ['-L$EBROOTOPENBLAS/lib', '-lopenblas',
                                          '-lpthread', '-lgfortran']
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_tasks(self):
         if self.current_partition.fullname in ['daint:gpu', 'dom:gpu']:
             self.num_cpus_per_task = 12

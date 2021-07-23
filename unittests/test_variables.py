@@ -8,7 +8,6 @@ import pytest
 import math
 
 import reframe as rfm
-from reframe.core.fields import Field
 
 
 @pytest.fixture
@@ -33,10 +32,10 @@ def OneVarTest(NoVarsTest):
 
 def test_custom_variable(OneVarTest):
     assert hasattr(OneVarTest, 'foo')
-    assert not isinstance(OneVarTest.foo, Field)
+    assert OneVarTest.foo == 10
     inst = OneVarTest()
     assert hasattr(OneVarTest, 'foo')
-    assert isinstance(OneVarTest.foo, Field)
+    assert OneVarTest.foo == 10
     assert hasattr(inst, 'foo')
     assert inst.foo == 10
 
@@ -99,6 +98,26 @@ def test_double_declare():
             v0 = variable(float, value=0.5)
 
 
+def test_class_attr_access():
+    class MyTest(rfm.RegressionTest):
+        v0 = variable(int, value=1)
+
+    assert MyTest.v0 == 1
+    MyTest.v0 = 2
+    assert MyTest.v0 == 2
+    MyTest.v0 += 1
+    assert MyTest.v0 == 3
+    assert MyTest().v0 == 3
+
+    class Descriptor:
+        '''Dummy descriptor to attempt overriding the variable descriptor.'''
+        def __get__(self, obj, objtype=None):
+            return 'dummy descriptor'
+
+    with pytest.raises(ValueError, match='cannot override variable descr'):
+        MyTest.v0 = Descriptor()
+
+
 def test_double_action_on_variable():
     '''Modifying a variable in the class body is permitted.'''
     class MyTest(rfm.RegressionTest):
@@ -114,9 +133,9 @@ def test_set_var(OneVarTest):
 
     inst = MyTest()
     assert hasattr(OneVarTest, 'foo')
-    assert not isinstance(OneVarTest.foo, Field)
+    assert OneVarTest.foo == 10
     assert hasattr(MyTest, 'foo')
-    assert isinstance(MyTest.foo, Field)
+    assert MyTest.foo == 4
     assert hasattr(inst, 'foo')
     assert inst.foo == 4
 
@@ -148,6 +167,13 @@ def test_required_var_not_present(OneVarTest):
             pass
 
     MyTest()
+
+
+def test_required_non_var():
+    msg = "'not_a_var' has not been declared as a variable"
+    with pytest.raises(ValueError, match=msg):
+        class Foo(rfm.RegressionTest):
+            not_a_var = required
 
 
 def test_invalid_field():

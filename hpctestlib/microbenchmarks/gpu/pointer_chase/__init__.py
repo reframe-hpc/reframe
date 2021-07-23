@@ -42,7 +42,7 @@ class BuildGpuPchase(rfm.CompileOnlyRegressionTest, pin_prefix=True):
     maintainers = ['JO', 'SK']
     tags = {'benchmark'}
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def set_gpu_build(self):
         '''Set the build options [pre-compile hook].
 
@@ -66,11 +66,11 @@ class BuildGpuPchase(rfm.CompileOnlyRegressionTest, pin_prefix=True):
         else:
             raise ValueError('unknown gpu_build option')
 
-    @rfm.run_before('sanity')
-    def set_sanity(self):
+    @sanity_function
+    def assert_exec_present(self):
         '''Assert that the executable is present.'''
 
-        self.sanity_patterns = sn.assert_found(r'pChase.x', self.stdout)
+        return sn.assert_found(r'pChase.x', self.stdout)
 
 
 class RunGpuPchaseBase(rfm.RunOnlyRegressionTest, pin_prefix=True):
@@ -114,7 +114,7 @@ class RunGpuPchaseBase(rfm.RunOnlyRegressionTest, pin_prefix=True):
     maintainers = ['JO', 'SK']
     tags = {'benchmark'}
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_exec_opts(self):
         '''Set the list travesal options as executable args.'''
 
@@ -124,12 +124,8 @@ class RunGpuPchaseBase(rfm.RunOnlyRegressionTest, pin_prefix=True):
             f'--num-jumps {self.num_node_jumps}'
         ]
 
-    @rfm.run_before('sanity')
-    def set_sanity(self):
-        self.sanity_patterns = self.do_sanity_check()
-
-    @sn.sanity_function
-    def do_sanity_check(self):
+    @sanity_function
+    def assert_correct_num_gpus_per_node(self):
         '''Check that every node has the right number of GPUs.'''
 
         my_nodes = set(sn.extractall(
@@ -153,7 +149,7 @@ class RunGpuPchase(RunGpuPchaseBase):
     from :class:`BuildGpuPchase`.
     '''
 
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_performance_patterns(self):
         self.perf_patterns = {
             'average_latency': sn.max(sn.extractall(
@@ -173,7 +169,7 @@ class RunGpuPchaseD2D(RunGpuPchaseBase):
 
     executable_opts = ['--multi-gpu']
 
-    @sn.sanity_function
+    @deferrable
     def average_D2D_latency(self):
         '''Extract the average D2D latency.
 
@@ -186,7 +182,7 @@ class RunGpuPchaseD2D(RunGpuPchaseBase):
             self.stdout, 1, int
         ))
 
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_performance_patterns(self):
         self.perf_patterns = {
             'average_latency': self.average_D2D_latency(),

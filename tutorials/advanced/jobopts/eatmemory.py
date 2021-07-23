@@ -14,11 +14,11 @@ class MemoryLimitTest(rfm.RegressionTest):
     sourcepath = 'eatmemory.c'
     executable_opts = ['2000M']
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_memory_limit(self):
         self.job.options = ['--mem=1000']
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity_patterns(self):
         self.sanity_patterns = sn.assert_found(
             r'(exceeded memory limit)|(Out Of Memory)', self.stderr
@@ -35,7 +35,7 @@ class MemoryLimitWithResourcesTest(rfm.RegressionTest):
         'memory': {'size': '1000'}
     }
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity_patterns(self):
         self.sanity_patterns = sn.assert_found(
             r'(exceeded memory limit)|(Out Of Memory)', self.stderr

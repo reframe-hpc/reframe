@@ -12,16 +12,26 @@ import reframe.utility.sanity as sn
 
 
 class IorCheck(rfm.RegressionTest):
-    def __init__(self, base_dir):
-        self.descr = f'IOR check ({base_dir})'
-        self.tags = {'ops', base_dir}
-        self.base_dir = base_dir
-        self.username = getpass.getuser()
-        self.test_dir = os.path.join(self.base_dir,
-                                     self.username,
-                                     '.ior')
-        self.prerun_cmds = ['mkdir -p ' + self.test_dir]
-        self.test_file = os.path.join(self.test_dir, 'ior')
+    base_dir = parameter(['/scratch/e1000',
+                          '/scratch/snx3000tds',
+                          '/scratch/snx3000',
+                          '/scratch/shared/fulen',
+                          '/users'])
+    username = getpass.getuser()
+    time_limit = '5m'
+    maintainers = ['SO', 'GLR']
+    tags = {'ops', 'production', 'external-resources'}
+
+    @run_after('init')
+    def set_description(self):
+        self.descr = f'IOR check ({self.base_dir})'
+
+    @run_after('init')
+    def add_fs_tags(self):
+        self.tags |= {self.base_dir}
+
+    @run_after('init')
+    def set_fs_information(self):
         self.fs = {
             '/scratch/e1000': {
                 'valid_systems': ['eiger:mc', 'pilatus:mc'],
@@ -76,86 +86,92 @@ class IorCheck(rfm.RegressionTest):
             )
             data.setdefault('dummy', {})  # entry for unknown systems
 
+    @run_after('init')
+    def set_performance_reference(self):
+        # Converting the references from each fs to per system.
+        self.reference = {
+            '*': self.fs[self.base_dir]['reference']
+        }
+
+    @run_after('init')
+    def set_valid_systems(self):
+        self.valid_systems = self.fs[self.base_dir]['valid_systems']
+
         cur_sys = self.current_system.name
-        if cur_sys not in self.fs[base_dir]:
+        if cur_sys not in self.fs[self.base_dir]:
             cur_sys = 'dummy'
 
-        self.valid_systems = self.fs[base_dir]['valid_systems']
-        self.num_tasks = self.fs[base_dir][cur_sys].get('num_tasks', 1)
-        tpn = self.fs[base_dir][cur_sys].get('num_tasks_per_node', 1)
-        self.num_tasks_per_node = tpn
-
-        self.ior_block_size = self.fs[base_dir]['ior_block_size']
-        self.ior_access_type = self.fs[base_dir]['ior_access_type']
-        self.executable_opts = ['-B', '-F', '-C ', '-Q 1', '-t 4m', '-D 30',
-                                '-b', self.ior_block_size,
-                                '-a', self.ior_access_type]
-        self.sourcesdir = os.path.join(self.current_system.resourcesdir, 'IOR')
-        self.executable = os.path.join('src', 'C', 'IOR')
-        self.build_system = 'Make'
-
         vpe = 'valid_prog_environs'
-        penv = self.fs[base_dir][cur_sys].get(vpe, ['builtin'])
+        penv = self.fs[self.base_dir][cur_sys].get(vpe, ['builtin'])
         self.valid_prog_environs = penv
 
+        tpn = self.fs[self.base_dir][cur_sys].get('num_tasks_per_node', 1)
+        self.num_tasks = self.fs[self.base_dir][cur_sys].get('num_tasks', 1)
+        self.num_tasks_per_node = tpn
+
+        self.sourcesdir = os.path.join(self.current_system.resourcesdir, 'IOR')
+
+    @run_before('compile')
+    def prepare_build(self):
+        self.build_system = 'Make'
         self.build_system.options = ['posix', 'mpiio']
         self.build_system.max_concurrency = 1
         self.num_gpus_per_node = 0
 
+    @run_before('run')
+    def prepare_run(self):
         # Default umask is 0022, which generates file permissions -rw-r--r--
         # we want -rw-rw-r-- so we set umask to 0002
         os.umask(2)
-        self.time_limit = '5m'
-        # Our references are based on fs types but regression needs reference
-        # per system.
-        self.reference = {
-            '*': self.fs[base_dir]['reference']
-        }
+        test_dir = os.path.join(self.base_dir, self.username, '.ior')
+        test_file = os.path.join(test_dir,
+                                 f'.ior.{self.current_partition.name}')
+        self.prerun_cmds = [f'mkdir -p {test_dir}']
+        self.executable = os.path.join('src', 'C', 'IOR')
 
-        self.maintainers = ['SO', 'GLR']
-
-        systems_to_test = ['dom', 'daint', 'eiger', 'pilatus']
-        if self.current_system.name in systems_to_test:
-            self.tags |= {'production', 'external-resources'}
-
-    @rfm.run_before('run')
-    def set_exec_opts(self):
-        self.test_file += '.' + self.current_partition.name
-        self.executable_opts += ['-o', self.test_file]
+        # executable options depends on the file system
+        block_size = self.fs[self.base_dir]['ior_block_size']
+        access_type = self.fs[self.base_dir]['ior_access_type']
+        self.executable_opts = ['-B', '-F', '-C ', '-Q 1', '-t 4m', '-D 30',
+                                '-b', block_size, '-a', access_type,
+                                '-o', test_file]
 
 
-@rfm.parameterized_test(['/scratch/e1000'],
-                        ['/scratch/snx3000tds'],
-                        ['/scratch/snx3000'],
-                        ['/users'],
-                        ['/scratch/shared/fulen'])
+@rfm.simple_test
 class IorWriteCheck(IorCheck):
-    def __init__(self, base_dir):
-        super().__init__(base_dir)
-        self.executable_opts += ['-w', '-k']
-        self.sanity_patterns = sn.assert_found(r'^Max Write: ', self.stdout)
+    executable_opts += ['-w', '-k']
+    tags |= {'write'}
+
+    @sanity_function
+    def assert_output(self):
+        return sn.assert_found(r'^Max Write: ', self.stdout)
+
+    @run_after('init')
+    def set_perf_patterns(self):
         self.perf_patterns = {
             'write_bw': sn.extractsingle(
                 r'^Max Write:\s+(?P<write_bw>\S+) MiB/sec', self.stdout,
                 'write_bw', float)
         }
-        self.tags |= {'write'}
 
 
-@rfm.parameterized_test(['/scratch/e1000'],
-                        ['/scratch/snx3000tds'],
-                        ['/scratch/snx3000'],
-                        ['/users'],
-                        ['/scratch/shared/fulen'])
+@rfm.simple_test
 class IorReadCheck(IorCheck):
-    def __init__(self, base_dir):
-        super().__init__(base_dir)
-        self.executable_opts += ['-r']
-        self.sanity_patterns = sn.assert_found(r'^Max Read: ', self.stdout)
+    executable_opts += ['-r']
+    tags |= {'read'}
+
+    @sanity_function
+    def assert_output(self):
+        return sn.assert_found(r'^Max Read: ', self.stdout)
+
+    @run_after('init')
+    def set_perf_patterns(self):
         self.perf_patterns = {
             'read_bw': sn.extractsingle(
                 r'^Max Read:\s+(?P<read_bw>\S+) MiB/sec', self.stdout,
                 'read_bw', float)
         }
+
+    @run_after('init')
+    def set_dependency(self):
         self.depends_on(re.sub(r'IorReadCheck', 'IorWriteCheck', self.name))
-        self.tags |= {'read'}

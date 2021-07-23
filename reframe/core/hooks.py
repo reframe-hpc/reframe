@@ -5,8 +5,53 @@
 
 import contextlib
 import functools
+import inspect
 
 import reframe.utility as util
+
+
+def attach_to(phase):
+    '''Backend function to attach a hook to a given phase.
+
+    :meta private:
+    '''
+    def deco(func):
+        if hasattr(func, '_rfm_attach'):
+            func._rfm_attach.append(phase)
+        else:
+            func._rfm_attach = [phase]
+
+        try:
+            # no need to resolve dependencies independently; this function is
+            # already attached to a different phase
+            func._rfm_resolve_deps = False
+        except AttributeError:
+            pass
+
+        @functools.wraps(func)
+        def _fn(*args, **kwargs):
+            func(*args, **kwargs)
+
+        return _fn
+
+    return deco
+
+
+def require_deps(func):
+    '''Denote that the decorated test method will use the test dependencies.
+
+    See online docs for more information.
+    '''
+
+    tests = inspect.getfullargspec(func).args[1:]
+    func._rfm_resolve_deps = True
+
+    @functools.wraps(func)
+    def _fn(obj, *args):
+        newargs = [functools.partial(obj.getdep, t) for t in tests]
+        func(obj, *newargs)
+
+    return _fn
 
 
 def attach_hooks(hooks):
@@ -31,11 +76,11 @@ def attach_hooks(hooks):
         @functools.wraps(func)
         def _fn(obj, *args, **kwargs):
             for h in select_hooks(obj, 'pre_'):
-                h(obj)
+                getattr(obj, h.__name__)()
 
             func(obj, *args, **kwargs)
             for h in select_hooks(obj, 'post_'):
-                h(obj)
+                getattr(obj, h.__name__)()
 
         return _fn
 
@@ -125,11 +170,18 @@ class HookRegistry:
     def __getattr__(self, name):
         return getattr(self.__hooks, name)
 
-    def update(self, hooks):
+    def update(self, hooks, *, denied_hooks=None):
+        '''Update the hook registry with the hooks from another hook registry.
+
+        The optional ``denied_hooks`` argument takes a set of disallowed
+        hook names, preventing their inclusion into the current hook registry.
+        '''
+        denied_hooks = denied_hooks or set()
         for phase, hks in hooks.items():
             self.__hooks.setdefault(phase, util.OrderedSet())
             for h in hks:
-                self.__hooks[phase].add(h)
+                if h.__name__ not in denied_hooks:
+                    self.__hooks[phase].add(h)
 
     def __repr__(self):
         return repr(self.__hooks)

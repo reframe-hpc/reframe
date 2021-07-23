@@ -25,15 +25,8 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
             'PrgEnv-gnu',
             'PrgEnv-intel',
             'PrgEnv-pgi',
+            'PrgEnv-nvidia',
         ]
-        self.prgenv_flags = {
-            'PrgEnv-aocc': ['-O2', '-g', '-fopenmp'],
-            'PrgEnv-cray': ['-O2', '-g',
-                            '-homp' if self.lang == 'F90' else '-fopenmp'],
-            'PrgEnv-gnu': ['-O2', '-g', '-fopenmp'],
-            'PrgEnv-intel': ['-O2', '-g', '-qopenmp'],
-            'PrgEnv-pgi': ['-O2', '-g', '-mp']
-        }
         self.sourcesdir = os.path.join('src', self.lang)
         self.build_system = 'Make'
         self.executable = './jacobi'
@@ -75,16 +68,54 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
             f'echo GNU_VERSION=$GNU_VERSION',
             f'echo PGI_VERSION=$PGI_VERSION',
             f'echo INTEL_VERSION=$INTEL_VERSION',
+            f'echo INTEL_COMPILER_TYPE=$INTEL_COMPILER_TYPE',
             f'echo CRAY_AOCC_VERSION=$CRAY_AOCC_VERSION',
         ]
         self.reference = {'*': {'elapsed_time': (0, None, None, 's')}}
-        if self.lang == 'C++':
-            self.reference_lang = (0.38, -0.6, None, 's')
-        elif self.lang == 'F90':
-            self.reference_lang = (0.17, -0.6, None, 's')
 
-    @rfm.run_before('compile')
+    @run_before('compile')
+    def prgEnv_nvidia_workaround(self):
+        # {{{ CRAY_MPICH_VERSION
+        # cdt/20.08 cray-mpich/7.7.15 cray, crayclang, gnu, intel, pgi
+        # cdt/21.02 cray-mpich/7.7.16 cray, crayclang, gnu, intel, pgi
+        # cdt/21.05 cray-mpich/7.7.17 crayclang, gnu, intel, pgi, *nvidia*
+        #
+        # cpe/21.04 cray-mpich/8.1.4 AOCC, CRAY, CRAYCLANG, GNU, INTEL, NVIDIA
+        # cpe/21.05 cray-mpich/8.1.5 AOCC, CRAY, CRAYCLANG, GNU, INTEL, NVIDIA
+        # cpe/21.06 cray-mpich/8.1.6 AOCC, CRAY, CRAYCLANG, GNU, INTEL, NVIDIA
+        # }}}
+        envname = self.current_environ.name
+        sysname = self.current_system.name
+        self.cppflags = ''
+        if (sysname in ['dom', 'daint'] and envname == 'PrgEnv-nvidia'):
+            mpi_version = int(os.getenv('CRAY_MPICH_VERSION').replace('.', ''))
+            self.skip_if(
+                mpi_version <= 7716,
+                (f'PrgEnv-nvidia not supported with cray-mpich<=7.7.16 '
+                 f'(CRAY_MPICH_VERSION={mpi_version})'))
+            # NOTE: occasionally, the wrapper fails to find the mpich dir
+            mpich_pkg_config_path = '$CRAY_MPICH_PREFIX/lib/pkgconfig'
+            self.variables = {
+                'PKG_CONFIG_PATH': f'$PKG_CONFIG_PATH:{mpich_pkg_config_path}'
+            }
+            self.cppflags = ('`pkg-config --cflags mpich` '
+                             '`pkg-config --libs mpich`')
+        elif sysname in ['pilatus', 'eiger']:
+            self.skip_if(self.current_environ.name == 'PrgEnv-nvidia', '')
+
+    @run_before('compile')
     def set_flags(self):
+        # FIXME: workaround for C4KCUST-308
+        self.modules += ['cray-mpich']
+        self.prgenv_flags = {
+            'PrgEnv-aocc': ['-O2', '-g', '-fopenmp'],
+            'PrgEnv-cray': ['-O2', '-g',
+                            '-homp' if self.lang == 'F90' else '-fopenmp'],
+            'PrgEnv-gnu': ['-O2', '-g', '-fopenmp'],
+            'PrgEnv-intel': ['-O2', '-g', '-qopenmp'],
+            'PrgEnv-pgi': ['-O2', '-g', '-mp'],
+            'PrgEnv-nvidia': ['-O2', '-g', '-mp', self.cppflags]
+        }
         envname = self.current_environ.name
         # if generic, falls back to -g:
         prgenv_flags = self.prgenv_flags.get(envname, ['-g'])
@@ -93,25 +124,34 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         self.build_system.fflags = prgenv_flags
         self.build_system.ldflags = ['-lm']
 
-    @rfm.run_before('compile')
-    def set_cuda_cdt(self):
-        if self.current_partition.name == 'gpu':
-            self.modules += ['cdt-cuda']
-
-    @rfm.run_before('compile')
+    @run_before('compile')
     def alps_fix_aocc(self):
+        self.prebuild_cmds += ['module list']
         if self.current_partition.fullname in ['eiger:mc', 'pilatus:mc']:
             self.prebuild_cmds += ['module rm cray-libsci']
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity(self):
         envname = self.current_environ.name
         # CCE specific:
         cce_version = None
+        rptf = os.path.join(self.stagedir, sn.evaluate(self.stdout))
         if self.lang == 'C++' and envname == 'PrgEnv-cray':
-            rptf = os.path.join(self.stagedir, sn.evaluate(self.stdout))
             cce_version = sn.extractsingle(r'CRAY_CC_VERSION=(\d+)\.\S+', rptf,
                                            1, int)
+
+        intel_type = sn.extractsingle(r'INTEL_COMPILER_TYPE=(\S*)', rptf, 1)
+        # print(f'intel_type={intel_type}')
+        # intel/19.1.1.217        icpc openmp/201611
+        # intel/19.1.3.304        icpc openmp/201611
+        # intel/2021.2.0          icpc openmp/201611
+        # intel-classic/2021.2.0  icpc openmp/201611
+        # intel-oneapi/2021.2.0   icpc openmp/201611 = 4.5
+        # intel-oneapi/2021.2.0   icpx openmp/201811 = 5.0
+        # __INTEL_COMPILER
+        # INTEL_VERSION 2021.2.0 INTEL_COMPILER_TYPE ONEAPI      201811
+        # INTEL_VERSION 2021.2.0 INTEL_COMPILER_TYPE RECOMMENDED
+        # INTEL_VERSION 2021.2.0 INTEL_COMPILER_TYPE CLASSIC     201611
 
         # OpenMP support varies between compilers:
         self.openmp_versions = {
@@ -121,8 +161,12 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
                 'F90': 201511,
             },
             'PrgEnv-gnu': {'C++': 201511, 'F90': 201511},
-            'PrgEnv-intel': {'C++': 201611, 'F90': 201611},
-            'PrgEnv-pgi': {'C++': 201307, 'F90': 201307}
+            'PrgEnv-intel': {
+                'C++': 201811 if (intel_type == 'ONEAPI' or
+                                  intel_type == 'RECOMMENDED') else 201611,
+                'F90': 201611},
+            'PrgEnv-pgi': {'C++': 201307, 'F90': 201307},
+            'PrgEnv-nvidia': {'C++': 201307, 'F90': 201307}
         }
         found_version = sn.extractsingle(r'OpenMP-\s*(\d+)', self.stdout, 1,
                                          int)
@@ -133,8 +177,3 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
                              self.openmp_versions[envname][self.lang]),
             ]
         )
-
-    @rfm.run_before('sanity')
-    def set_reference(self):
-        if self.current_system.name in {'dom', 'daint'}:
-            self.reference['*:elapsed_time'] = self.reference_lang
