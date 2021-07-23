@@ -20,6 +20,7 @@ import itertools
 import numbers
 import os
 import shutil
+import re
 
 import reframe.core.environments as env
 import reframe.core.fields as fields
@@ -801,7 +802,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                         os.path.dirname(inspect.getfile(cls))
                     )
 
-        # Prepare initialization of test defaults
+        # Prepare initialization of test defaults (variables and parameters are
+        # injected after __new__ has returned, so we schedule this function
+        # call as a pre-init hook).
         obj.__deferred_rfm_init = obj.__rfm_init__(*args,
                                                    name=cls.__qualname__,
                                                    prefix=prefix, **kwargs)
@@ -925,7 +928,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         _pipeline_hooks = {}
         for stage, hooks in cls.pipeline_hooks().items():
-            stage_name = '_'.join(stage.split('_')[1:])
+            # Pop the stage pre_/post_ prefix
+            stage_name = re.match('p\w{2,3}_(\w+)', stage)[1]
+
             if stage_name not in _USER_PIPELINE_STAGES:
                 raise ValueError(
                     f'invalid pipeline stage ({stage_name!r}) in class '

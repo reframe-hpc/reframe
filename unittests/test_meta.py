@@ -166,6 +166,12 @@ def test_deferrable_decorator(MyMeta):
 
 def test_hook_attachments(MyMeta):
     class Foo(MyMeta):
+        '''Base class with three random hooks.
+
+        This class has the ``hook_in_stage`` method, which asserts that a given
+        hook is registered into a specified stage.
+        '''
+
         @run_after('setup')
         def hook_a(self):
             pass
@@ -195,6 +201,8 @@ def test_hook_attachments(MyMeta):
     assert Foo.hook_in_stage('hook_c', 'post_run')
 
     class Bar(Foo):
+        '''Derived class that overrides and invalidates hooks from Foo.'''
+
         @run_before('sanity')
         def hook_a(self):
             '''Convert to a pre-sanity hook'''
@@ -208,14 +216,16 @@ def test_hook_attachments(MyMeta):
     assert Bar.hook_in_stage('hook_a', 'pre_sanity')
 
     class Baz(MyMeta):
+        '''Class to test hook attachments with multiple inheritance.'''
+
         @run_before('setup')
         @run_after('compile')
         def hook_a(self):
-            pass
+            '''Force a name-clash with hook_a from Bar.'''
 
         @run_before('run')
         def hook_d(self):
-            pass
+            '''An extra hook to attach.'''
 
     class MyTest(Bar, Baz):
         '''Test multiple inheritance override.'''
