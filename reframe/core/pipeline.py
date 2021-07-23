@@ -1396,7 +1396,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         commands = [
             *prepare_cmds,
             *self.prerun_cmds,
-            ' '.join(exec_cmd),
+            ' '.join(exec_cmd).strip(),
             *self.postrun_cmds
         ]
         user_environ = env.Environment(type(self).__name__,
