@@ -40,16 +40,6 @@ def _open(filename, *args, **kwargs):
         raise SanityError(f'{filename}: {e.strerror}')
 
 
-# Create an alias decorator
-def sanity_function(func):
-    warn.user_deprecation_warning(
-        'using the @sn.sanity_function decorator from the sn module is '
-        'deprecated; please use the built-in decorator @deferrable instead.',
-        from_version='3.8.0'
-    )
-    return deferrable(func)
-
-
 # Deferrable versions of selected builtins
 
 @deferrable

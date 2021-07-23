@@ -21,8 +21,6 @@ Test Base Classes
 Test Decorators
 ---------------
 
-.. autodecorator:: reframe.core.decorators.required_version(*versions)
-
 .. autodecorator:: reframe.core.decorators.simple_test
 
 
@@ -219,6 +217,8 @@ The framework will then continue with other activities and it will execute the p
    .. versionchanged:: 3.7.0
       Declaring pipeline hooks using the same name functions from the :py:mod:`reframe` or :py:mod:`reframe.core.decorators` modules is now deprecated.
       You should use the built-in functions described in this section instead.
+   .. versionchanged:: 4.0.0
+      Pipeline hooks can only be defined through the built-in functions described in this section.
 
 .. py:decorator:: RegressionMixin.run_before(stage)
 
@@ -313,8 +313,8 @@ Built-in functions
      .. versionchanged:: 3.7.0
         Using this function from the :py:mod:`reframe` or :py:mod:`reframe.core.decorators` modules is now deprecated.
         You should use the built-in function described here.
-
-
+     .. versionchanged:: 4.0.0
+        This function can only be used as a built-in.
 
 
 
@@ -439,44 +439,6 @@ The :py:mod:`reframe` module offers direct access to the basic test classes, con
 .. py:class:: reframe.RunOnlyRegressionTest
 
    See :class:`reframe.core.pipeline.RunOnlyRegressionTest`.
-
-.. py:attribute:: reframe.DEPEND_BY_ENV
-
-   See :attr:`reframe.core.pipeline.DEPEND_BY_ENV`.
-
-
-.. py:attribute:: reframe.DEPEND_EXACT
-
-   See :attr:`reframe.core.pipeline.DEPEND_EXACT`.
-
-
-.. py:attribute:: reframe.DEPEND_FULLY
-
-   See :attr:`reframe.core.pipeline.DEPEND_FULLY`.
-
-
-.. py:decorator:: reframe.require_deps
-
-   .. deprecated:: 3.7.0
-      Please use the :func:`~reframe.core.pipeline.RegressionMixin.require_deps` built-in function
-
-
-.. py:decorator:: reframe.required_version
-
-   See :func:`@reframe.core.decorators.required_version <reframe.core.decorators.required_version>`.
-
-
-.. py:decorator:: reframe.run_after
-
-   .. deprecated:: 3.7.0
-      Please use the :func:`~reframe.core.pipeline.RegressionMixin.run_after` built-in function
-
-
-.. py:decorator:: reframe.run_before
-
-   .. deprecated:: 3.7.0
-      Please use the :func:`~reframe.core.pipeline.RegressionMixin.run_before` built-in function
-
 
 .. py:decorator:: reframe.simple_test
 

@@ -60,13 +60,6 @@ def test_load_error(loader):
         loader.load_from_file('unittests/resources/checks/foo.py')
 
 
-def test_load_bad_required_version(loader):
-    with pytest.warns(ReframeDeprecationWarning):
-        with pytest.raises(ValueError):
-            loader.load_from_file('unittests/resources/checks_unlisted/'
-                                  'no_required_version.py')
-
-
 def test_load_bad_init(loader):
     tests = loader.load_from_file(
         'unittests/resources/checks_unlisted/bad_init_check.py'
@@ -138,13 +131,3 @@ def test_special_test():
 
             def setup(self, partition, environ, **job_opts):
                 super().setup(partition, environ, **job_opts)
-
-    with pytest.warns(ReframeDeprecationWarning):
-        @rfm.simple_test
-        class TestFinal(rfm.RegressionTest):
-            def __init__(self):
-                pass
-
-            @rfm.final
-            def my_new_final(self):
-                pass

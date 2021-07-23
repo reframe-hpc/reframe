@@ -9,7 +9,7 @@
 
 __all__ = [
     'CompileOnlyRegressionTest', 'RegressionTest', 'RunOnlyRegressionTest',
-    'DEPEND_BY_ENV', 'DEPEND_EXACT', 'DEPEND_FULLY', 'final', 'RegressionMixin'
+    'RegressionMixin'
 ]
 
 
@@ -45,40 +45,6 @@ from reframe.core.schedulers import Job
 from reframe.core.warnings import user_deprecation_warning
 
 
-# Dependency kinds
-
-#: Constant to be passed as the ``how`` argument of the
-#: :func:`~RegressionTest.depends_on` method. It denotes that test case
-#: dependencies will be explicitly specified by the user.
-#:
-#:  This constant is directly available under the :mod:`reframe` module.
-#:
-#: .. deprecated:: 3.3
-#:    Please use a callable as the ``how`` argument.
-DEPEND_EXACT = 1
-
-#: Constant to be passed as the ``how`` argument of the
-#: :func:`RegressionTest.depends_on` method. It denotes that the test cases of
-#: the current test will depend only on the corresponding test cases of the
-#: target test that use the same programming environment.
-#:
-#:  This constant is directly available under the :mod:`reframe` module.
-#:
-#: .. deprecated:: 3.3
-#:    Please use a callable as the ``how`` argument.
-DEPEND_BY_ENV = 2
-
-#: Constant to be passed as the ``how`` argument of the
-#: :func:`RegressionTest.depends_on` method. It denotes that each test case of
-#: this test depends on all the test cases of the target test.
-#:
-#:  This constant is directly available under the :mod:`reframe` module.
-#:
-#: .. deprecated:: 3.3
-#:    Please use a callable as the ``how`` argument.
-DEPEND_FULLY = 3
-
-
 _PIPELINE_STAGES = (
     '__init__',
     'setup',
@@ -88,21 +54,6 @@ _PIPELINE_STAGES = (
     'performance',
     'cleanup'
 )
-
-
-def final(fn):
-    fn._rfm_final = True
-    user_deprecation_warning(
-        'using the @rfm.final decorator from the rfm module is '
-        'deprecated; please use the built-in decorator @final instead.',
-        from_version='3.7.0'
-    )
-
-    @functools.wraps(fn)
-    def _wrapped(*args, **kwargs):
-        return fn(*args, **kwargs)
-
-    return _wrapped
 
 
 class RegressionMixin(metaclass=RegressionTestMeta):

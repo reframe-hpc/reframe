@@ -23,14 +23,6 @@ def test_evaluate():
     assert 3 == sn.evaluate(3)
 
 
-def test_depr_warn(monkeypatch):
-    monkeypatch.setattr(warnings, '_RAISE_DEPRECATION_ALWAYS', True)
-    with pytest.warns(ReframeDeprecationWarning):
-        @sn.sanity_function
-        def foo():
-            pass
-
-
 def test_implicit_eval():
     # Call to bool() on a deferred expression triggers its immediate
     # evaluation.

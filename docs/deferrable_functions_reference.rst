@@ -67,13 +67,5 @@ The page ":doc:`deferrables`" explains in detail how deferrable functions work a
             do_sth()
 
 
-.. py:decorator:: reframe.utility.sanity.sanity_function(func)
-
-    Please use the :func:`reframe.core.pipeline.RegressionMixin.deferrable` decorator when possible. Alternatively, please use the :func:`reframe.utility.sanity.deferrable` decorator instead.
-
-    .. warning:: Not to be mistaken with :func:`~reframe.core.pipeline.RegressionMixin.sanity_function` built-in.
-    .. deprecated:: 3.8.0
-
-
 .. automodule:: reframe.utility.sanity
     :members:
