@@ -21,8 +21,6 @@ Test Base Classes
 Test Decorators
 ---------------
 
-.. autodecorator:: reframe.core.decorators.parameterized_test(*inst)
-
 .. autodecorator:: reframe.core.decorators.required_version(*versions)
 
 .. autodecorator:: reframe.core.decorators.simple_test
@@ -455,11 +453,6 @@ The :py:mod:`reframe` module offers direct access to the basic test classes, con
 .. py:attribute:: reframe.DEPEND_FULLY
 
    See :attr:`reframe.core.pipeline.DEPEND_FULLY`.
-
-
-.. py:decorator:: reframe.parameterized_test
-
-   See :func:`@reframe.core.decorators.parameterized_test <reframe.core.decorators.parameterized_test>`.
 
 
 .. py:decorator:: reframe.require_deps
