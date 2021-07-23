@@ -27,8 +27,8 @@ class MagmaCheck(rfm.RegressionTest):
         self.build_system.ldflags = ['-lcusparse', '-lcublas', '-lmagma',
                                      '-lmagma_sparse']
         self.executable = f'./testing_{self.subtest}'
-        #FIXME: Compile cblas_z  with -O0 since with a higher level a
-        # segmentation fault is thrown 
+        # FIXME: Compile cblas_z  with -O0 since with a higher level a
+        # segmentation fault is thrown
         if self.subtest == 'cblas_z':
             self.build_system.cxxflags += ['-O0']
 
