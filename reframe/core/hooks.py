@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import contextlib
 import functools
 import inspect
 
@@ -70,8 +69,8 @@ def attach_hooks(hooks):
             if phase not in hooks:
                 return []
 
-            return [h for h in hooks[phase]
-                    if h.__name__ not in obj._disabled_hooks]
+            return [h for h in hooks.get(phase, [])
+                    if h.__name__ not in getattr(obj, '_disabled_hooks', [])]
 
         @functools.wraps(func)
         def _fn(obj, *args, **kwargs):
@@ -96,6 +95,12 @@ class Hook:
 
     def __init__(self, fn):
         self.__fn = fn
+        if not hasattr(fn, '_rfm_attach'):
+            raise ValueError(f'{fn.__name__} is not a hook')
+
+    @property
+    def stages(self):
+        return self._rfm_attach
 
     def __getattr__(self, attr):
         return getattr(self.__fn, attr)
@@ -132,43 +137,29 @@ class HookRegistry:
         resolved first in the post-setup phase if not assigned elsewhere.
         '''
 
-        local_hooks = {}
-        fn_with_deps = []
+        local_hooks = util.OrderedSet()
         for v in namespace.values():
             if hasattr(v, '_rfm_attach'):
-                for phase in v._rfm_attach:
-                    try:
-                        local_hooks[phase].append(Hook(v))
-                    except KeyError:
-                        local_hooks[phase] = [Hook(v)]
-
-            with contextlib.suppress(AttributeError):
-                if v._rfm_resolve_deps:
-                    fn_with_deps.append(Hook(v))
-
-        if fn_with_deps:
-            local_hooks['post_setup'] = (
-                fn_with_deps + local_hooks.get('post_setup', [])
-            )
+                local_hooks.add(Hook(v))
+            elif hasattr(v, '_rfm_resolve_deps'):
+                v._rfm_attach = ['post_setup']
+                local_hooks.add(Hook(v))
 
         return cls(local_hooks)
 
     def __init__(self, hooks=None):
-        self.__hooks = {}
+        self.__hooks = util.OrderedSet()
         if hooks is not None:
             self.update(hooks)
-
-    def __getitem__(self, key):
-        return self.__hooks[key]
-
-    def __setitem__(self, key, name):
-        self.__hooks[key] = name
 
     def __contains__(self, key):
         return key in self.__hooks
 
     def __getattr__(self, name):
         return getattr(self.__hooks, name)
+
+    def __iter__(self):
+        return iter(self.__hooks)
 
     def update(self, hooks, *, denied_hooks=None):
         '''Update the hook registry with the hooks from another hook registry.
@@ -177,11 +168,9 @@ class HookRegistry:
         hook names, preventing their inclusion into the current hook registry.
         '''
         denied_hooks = denied_hooks or set()
-        for phase, hks in hooks.items():
-            self.__hooks.setdefault(phase, util.OrderedSet())
-            for h in hks:
-                if h.__name__ not in denied_hooks:
-                    self.__hooks[phase].add(h)
+        for h in hooks:
+            if h.__name__ not in denied_hooks:
+                self.__hooks.add(h)
 
     def __repr__(self):
         return repr(self.__hooks)
