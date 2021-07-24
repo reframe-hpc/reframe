@@ -1735,7 +1735,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             ``subdeps`` argument is deprecated.
 
         .. versionchanged:: 4.0.0
-           Passing an integer to the ``how`` argument is no more supported.
+           Passing an integer to the ``how`` argument is no longer supported.
 
         '''
         if not isinstance(target, str):
