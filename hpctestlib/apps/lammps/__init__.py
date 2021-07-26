@@ -9,6 +9,7 @@ import reframe.utility.typecheck as typ
 
 __all__ = ["LammpsBaseCheck"]
 
+
 class LAMMPSBaseCheck(rfm.RunOnlyRegressionTest):
     modules = ['LAMMPS']
     input_file = variable(str)

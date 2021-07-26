@@ -9,6 +9,7 @@ import reframe.utility.typecheck as typ
 
 __all__ = ["AmberBaseCheck"]
 
+
 class AmberBaseCheck(rfm.RunOnlyRegressionTest):
     modules = ['Amber']
     input_file = variable(str)
