@@ -30,7 +30,7 @@ class SparkCheck(rfm.RunOnlyRegressionTest):
         self.maintainers = ['TM', 'RS']
         self.tags = {'production'}
 
-    @rfm.run_before('run')
+    @run_before('run')
     def prepare_run(self):
         if self.current_partition.fullname in ['daint:gpu', 'dom:gpu']:
             num_workers = 12

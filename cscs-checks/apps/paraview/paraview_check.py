@@ -11,8 +11,13 @@ import reframe.utility.sanity as sn
 class ParaViewCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'eiger:mc']
-        self.valid_prog_environs = ['builtin']
+                              'eiger:mc', 'pilatus:mc']
+
+        if self.current_system.name in ['eiger', 'pilatus']:
+            self.valid_prog_environs = ['cpeCray']
+        else:
+            self.valid_prog_environs = ['builtin']
+
         self.num_tasks = 12
         self.num_tasks_per_node = 12
         self.modules = ['ParaView']
@@ -21,7 +26,7 @@ class ParaViewCheck(rfm.RunOnlyRegressionTest):
         self.maintainers = ['JF', 'TM']
         self.tags = {'scs', 'production'}
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity(self):
         if self.current_partition.name == 'mc':
             self.sanity_patterns = sn.all([

@@ -89,7 +89,7 @@ The following example will create a test for each ``GROMACS`` module found on th
    class MyTest(rfm.RegressionTest):
        module_info = parameter(util.find_modules('GROMACS'))
 
-       @rfm.run_after('init')
+       @run_after('init')
        def process_module_info(self):
            s, e, m = self.module_info
            self.valid_systems = [s]
@@ -569,7 +569,7 @@ This can be achieved with the following pipeline hook:
    class DebuggerTest(rfm.RunOnlyRegressionTest):
        ...
 
-       @rfm.run_before('run')
+       @run_before('run')
        def set_launcher(self):
            self.job.launcher = LauncherWrapper(self.job.launcher, 'ddt',
                                                ['--offline'])
@@ -596,7 +596,7 @@ The trick here is to replace the parallel launcher with the local one, which pra
        executable = 'custom_scheduler'
        executable_opts = [...]
 
-       @rfm.run_before('run')
+       @run_before('run')
        def replace_launcher(self):
            self.job.launcher = getlauncher('local')()
 

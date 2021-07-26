@@ -12,6 +12,17 @@ import reframe.utility.typecheck as typ
 from reframe.core.exceptions import BuildSystemError
 
 
+class _UndefinedType:
+    '''Used as an initial value for undefined values instead of None.'''
+    __slots__ = ()
+
+    def __deepcopy__(self, memo):
+        return self
+
+
+_Undefined = _UndefinedType()
+
+
 class BuildSystem(abc.ABC):
     '''The abstract base class of any build system.
 
@@ -156,6 +167,16 @@ class BuildSystem(abc.ABC):
         :meta private:
 
         '''
+
+    def prepare_cmds(self):
+        '''Callback function that the framework will call before run.
+
+        Build systems may use this information to add commands to the run
+        script before anything set by the user.
+
+        :meta private:
+        '''
+        return []
 
     def _resolve_flags(self, flags, environ):
         _flags = getattr(self, flags)
@@ -682,7 +703,7 @@ class EasyBuild(BuildSystem):
 
     ReFrame will use EasyBuild to build and install the code in the test's
     stage directory by default. ReFrame uses environment variables to
-    configure EasyBuild for running, so Users can pass additional options to
+    configure EasyBuild for running, so users can pass additional options to
     the ``eb`` command and modify the default behaviour.
 
     .. versionadded:: 3.5.0
@@ -780,6 +801,101 @@ class EasyBuild(BuildSystem):
     @property
     def generated_modules(self):
         return self._eb_modules
+
+
+class Spack(BuildSystem):
+    '''A build system for building test code using `Spack
+    <https://spack.io/>`__.
+
+    ReFrame will use a user-provided Spack environment in order to build and
+    test a set of specs.
+
+    .. versionadded:: 3.6.1
+
+    '''
+
+    #: The Spack environment to use for building this test.
+    #:
+    #: ReFrame will activate and install this environment.
+    #: This environment will also be used to run the test.
+    #:
+    #: .. code-block:: bash
+    #:
+    #:    spack env activate -V -d <environment directory>
+    #:
+    #: ReFrame looks for environments in the test's
+    #: :attr:`~reframe.core.pipeline.RegressionTest.sourcesdir`.
+    #:
+    #: This field is required.
+    #:
+    #: :type: :class:`str` or :class:`None`
+    #: :default: :class:`None`
+    environment = fields.TypedField(typ.Str[r'\S+'], _UndefinedType)
+
+    #: A list of additional specs to build and install within the given
+    #: environment.
+    #:
+    #: ReFrame will add the specs to the active environment by emititing the
+    #: following command:
+    #:
+    #: .. code-block:: bash
+    #:
+    #:    spack add spec1 spec2 ... specN
+    #:
+    #: If no spec is passed, ReFrame will simply install what is prescribed by
+    #: the environment.
+    #:
+    #: :type: :class:`List[str]`
+    #: :default: ``[]``
+    specs = fields.TypedField(typ.List[str])
+
+    #: Emit the necessary ``spack load`` commands before running the test.
+    #:
+    #: :type: :class:`bool`
+    #: :default: :obj:`True`
+    emit_load_cmds = fields.TypedField(bool)
+
+    #: Options to pass to ``spack install``
+    #:
+    #: :type: :class:`List[str]`
+    #: :default: ``[]``
+    install_opts = fields.TypedField(typ.List[str])
+
+    def __init__(self):
+        super().__init__()
+        self.specs = []
+        self.environment = _Undefined
+        self.emit_load_cmds = True
+        self.install_opts = []
+        self._prefix_save = None
+
+    def emit_build_commands(self, environ):
+        self._prefix_save = os.getcwd()
+        if self.environment is _Undefined:
+            raise BuildSystemError(f'no Spack environment is defined')
+
+        ret = self._env_activate_cmds()
+        if self.specs:
+            specs_str = ' '.join(self.specs)
+            ret.append(f'spack add {specs_str}')
+
+        install_cmd = 'spack install'
+        if self.install_opts:
+            install_cmd += ' ' + ' '.join(self.install_opts)
+
+        ret.append(install_cmd)
+        return ret
+
+    def _env_activate_cmds(self):
+        return [f'. $SPACK_ROOT/share/spack/setup-env.sh',
+                f'spack env activate -V -d {self.environment}']
+
+    def prepare_cmds(self):
+        cmds = self._env_activate_cmds()
+        if self.specs and self.emit_load_cmds:
+            cmds.append('spack load ' + ' '.join(s for s in self.specs))
+
+        return cmds
 
 
 class BuildSystemField(fields.TypedField):

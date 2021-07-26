@@ -5,12 +5,12 @@
 
 import json
 
-import reframe.utility as utility
+import reframe.utility as util
 import reframe.utility.jsonext as jsonext
 from reframe.core.backends import (getlauncher, getscheduler)
+from reframe.core.environments import (Environment, ProgEnvironment)
 from reframe.core.logging import getlogger
 from reframe.core.modules import ModulesSystem
-from reframe.core.environments import (Environment, ProgEnvironment)
 
 
 class ProcessorType(jsonext.JSONSerializable):
@@ -232,7 +232,7 @@ class SystemPartition(jsonext.JSONSerializable):
 
         :type: :class:`List[str]`
         '''
-        return utility.SequenceView(self._access)
+        return util.SequenceView(self._access)
 
     @property
     def descr(self):
@@ -249,7 +249,7 @@ class SystemPartition(jsonext.JSONSerializable):
         :type: :class:`List[ProgEnvironment]`
         '''
 
-        return utility.SequenceView(self._environs)
+        return util.SequenceView(self._environs)
 
     @property
     def container_environs(self):
@@ -258,7 +258,7 @@ class SystemPartition(jsonext.JSONSerializable):
         :type: :class:`Dict[str, Environment]`
         '''
 
-        return utility.MappingView(self._container_environs)
+        return util.MappingView(self._container_environs)
 
     @property
     def fullname(self):
@@ -315,7 +315,7 @@ class SystemPartition(jsonext.JSONSerializable):
 
         '''
 
-        return utility.MappingView(self._resources)
+        return util.MappingView(self._resources)
 
     @property
     def scheduler(self):
@@ -661,7 +661,7 @@ class System(jsonext.JSONSerializable):
 
         :type: :class:`List[SystemPartition]`
         '''
-        return utility.SequenceView(self._partitions)
+        return util.SequenceView(self._partitions)
 
     def __eq__(self, other):
         if not isinstance(other, type(self)):

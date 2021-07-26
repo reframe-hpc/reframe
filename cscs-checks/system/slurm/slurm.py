@@ -16,7 +16,8 @@ class SlurmSimpleBaseCheck(rfm.RunOnlyRegressionTest):
                               'dom:gpu', 'dom:mc',
                               'arolla:cn', 'arolla:pn',
                               'tsa:cn', 'tsa:pn',
-                              'daint:xfer', 'eiger:mc']
+                              'daint:xfer', 'eiger:mc',
+                              'pilatus:mc']
         self.valid_prog_environs = ['PrgEnv-cray']
         self.tags = {'slurm', 'maintenance', 'ops',
                      'production', 'single-node'}
@@ -59,9 +60,10 @@ class HostnameCheck(SlurmSimpleBaseCheck):
             'dom:gpu': r'^nid\d{5}$',
             'dom:mc': r'^nid\d{5}$',
             'eiger:mc': r'^nid\d{6}$',
+            'pilatus:mc': r'^nid\d{6}$'
         }
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity_patterns(self):
         partname = self.current_partition.fullname
         num_matches = sn.count(
@@ -79,7 +81,7 @@ class EnvironmentVariableCheck(SlurmSimpleBaseCheck):
                               'dom:gpu', 'dom:mc',
                               'arolla:cn', 'arolla:pn',
                               'tsa:cn', 'tsa:pn',
-                              'eiger:mc']
+                              'eiger:mc', 'pilatus:mc']
         self.executable = '/bin/echo'
         self.executable_opts = ['$MY_VAR']
         self.variables = {'MY_VAR': 'TEST123456!'}
@@ -112,7 +114,7 @@ class RequestLargeMemoryNodeCheck(SlurmSimpleBaseCheck):
                                         self.stdout, 'mem', float)
         self.sanity_patterns = sn.assert_bounded(mem_obtained, 122.0, 128.0)
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_memory_limit(self):
         self.job.options = ['--mem=120000']
 
@@ -169,7 +171,7 @@ class ConstraintRequestCabinetGrouping(SlurmSimpleBaseCheck):
         cabinet = self.cabinets.get(self.current_system.name, r'$^')
         self.sanity_patterns = sn.assert_found(fr'{cabinet}.*', self.stdout)
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_slurm_constraint(self):
         cabinet = self.cabinets.get(self.current_partition.fullname)
         if cabinet:
@@ -181,7 +183,7 @@ class MemoryOverconsumptionCheck(SlurmCompiledBaseCheck):
     def __init__(self):
         super().__init__()
         self.time_limit = '1m'
-        self.valid_systems += ['eiger:mc']
+        self.valid_systems += ['eiger:mc', 'pilatus:mc']
         self.sourcepath = 'eatmemory.c'
         self.tags.add('mem')
         self.executable_opts = ['4000M']
@@ -189,7 +191,7 @@ class MemoryOverconsumptionCheck(SlurmCompiledBaseCheck):
             r'(exceeded memory limit)|(Out Of Memory)', self.stderr
         )
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_memory_limit(self):
         self.job.options = ['--mem=2000']
 
@@ -228,7 +230,7 @@ class MemoryOverconsumptionMpiCheck(SlurmCompiledBaseCheck):
         # }}}
 
     # {{{ hooks
-    @rfm.run_before('run')
+    @run_before('run')
     def set_tasks(self):
         tasks_per_node = {
             'dom:mc': 36,
@@ -254,7 +256,7 @@ class MemoryOverconsumptionMpiCheck(SlurmCompiledBaseCheck):
             'daint:mc': 62,  # this will pass with 64 GB and above memory sizes
             # this will pass with 256 GB and above memory sizes:
             'eiger:mc': 250,
-            'pilatus:mc': 250,
+            'pilatus:mc': 250
         }
         return reference_meminfo[self.current_partition.fullname]
 
@@ -279,11 +281,11 @@ class slurm_response_check(rfm.RunOnlyRegressionTest):
     tags = {'diagnostic', 'health'}
     maintainers = ['CB', 'VH']
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_exec_opts(self):
         self.executable_opts = [self.command]
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity(self):
         self.sanity_patterns = sn.assert_eq(self.job.exitcode, 0)
         self.perf_patterns = {

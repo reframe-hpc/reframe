@@ -21,17 +21,17 @@ class StreamTest(rfm.RegressionTest):
         'OMP_PLACES': 'cores'
     }
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def set_compiler_flags(self):
         self.build_system.cppflags = ['-DSTREAM_ARRAY_SIZE=$((1 << 25))']
         self.build_system.cflags = ['-fopenmp', '-O3', '-Wall']
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity_patterns(self):
         self.sanity_patterns = sn.assert_found(r'Solution Validates',
                                                self.stdout)
 
-    @rfm.run_before('performance')
+    @run_before('performance')
     def set_perf_patterns(self):
         self.perf_patterns = {
             'Copy': sn.extractsingle(r'Copy:\s+(\S+)\s+.*',

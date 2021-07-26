@@ -53,7 +53,7 @@
             "properties": {
                 "type": {
                     "type": "string",
-                    "enum": ["file", "filelog", "graylog", "stream", "syslog"]
+                    "enum": ["file", "filelog", "graylog", "stream", "syslog", "httpjson"]
                 },
                 "level": {"$ref": "#/defs/loglevel"},
                 "format": {"type": "string"},
@@ -142,6 +142,18 @@
                 }
             ]
         },
+        "httpjson_handler": {
+            "allOf": [
+                {"$ref": "#/defs/handler_common"},
+                {
+                    "properties": {
+                        "url": {"type": "string"},
+                        "extras": {"type": "object"}
+                    },
+                    "required": ["url"]
+                }
+            ]
+        },
         "topology_info": {
             "type": "object",
             "properties": {
@@ -195,6 +207,10 @@
                 "arch": {"type": "string"},
                 "num_devices": {"type": "number"}
             }
+        },
+        "devices": {
+            "type": "array",
+            "items": {"$ref": "#/defs/device_info"}
         }
     },
     "type": "object",
@@ -282,10 +298,7 @@
                                     "items": {"type": "string"}
                                  },
                                 "processor": {"$ref": "#/defs/processor_info"},
-                                "devices": {
-                                    "type": "array",
-                                    "items": {"$ref": "#/defs/device_info"}
-                                },
+                                "devices": {"$ref": "#/defs/devices"},
                                 "extras": {"type": "object"},
                                 "resources": {
                                     "type": "array",
@@ -386,7 +399,8 @@
                                 {"$ref": "#/defs/filelog_handler"},
                                 {"$ref": "#/defs/graylog_handler"},
                                 {"$ref": "#/defs/stream_handler"},
-                                {"$ref": "#/defs/syslog_handler"}
+                                {"$ref": "#/defs/syslog_handler"},
+                                {"$ref": "#/defs/httpjson_handler"}
                             ]
                         },
                         "minItems": 1
@@ -447,7 +461,10 @@
                     },
                     "non_default_craype": {"type": "boolean"},
                     "purge_environment": {"type": "boolean"},
+                    "remote_detect": {"type": "boolean"},
+                    "remote_workdir": {"type": "string"},
                     "report_file": {"type": "string"},
+                    "report_junit": {"type": ["string", "null"]},
                     "resolve_module_conflicts": {"type": "boolean"},
                     "save_log_files": {"type": "boolean"},
                     "target_systems": {"$ref": "#/defs/system_ref"},
@@ -486,7 +503,10 @@
         "general/module_mappings": [],
         "general/non_default_craype": false,
         "general/purge_environment": false,
+        "general/remote_detect": false,
+        "general/remote_workdir": ".",
         "general/report_file": "${HOME}/.reframe/reports/run-report.json",
+        "general/report_junit": null,
         "general/resolve_module_conflicts": true,
         "general/save_log_files": false,
         "general/target_systems": ["*"],
@@ -506,6 +526,7 @@
         "logging/handlers*/filelog_append": true,
         "logging/handlers*/filelog_basedir": "./perflogs",
         "logging/handlers*/graylog_extras": {},
+        "logging/handlers*/httpjson_extras": {},
         "logging/handlers*/stream_name": "stdout",
         "logging/handlers*/syslog_socktype": "udp",
         "logging/handlers*/syslog_facility": "user",

@@ -58,7 +58,7 @@ class IPCMagicCheck(rfm.RunOnlyRegressionTest):
         self.maintainers = ['RS', 'TR']
         self.tags = {'production'}
 
-    @rfm.run_before('run')
+    @run_before('run')
     def prepare_run(self):
         # Change the job launcher since `ipython`
         # needs to be launched without `srun`.

@@ -15,14 +15,14 @@ class AffinityTest(rfm.RegressionTest):
     build_system = 'Make'
     executable = './affinity'
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def set_build_system_options(self):
         self.build_system.options = ['OPENMP=1']
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_cpu_binding(self):
         self.job.launcher.options = ['--cpu-bind=cores']
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity_patterns(self):
         self.sanity_patterns = sn.assert_found(r'CPU affinity', self.stdout)

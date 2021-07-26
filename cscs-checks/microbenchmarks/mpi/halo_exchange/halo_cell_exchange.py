@@ -14,9 +14,9 @@ class HaloCellExchangeTest(rfm.RegressionTest):
         self.build_system = 'SingleSource'
         self.build_system.cflags = ['-O2']
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'daint:mc', 'dom:mc',
-                              'arolla:cn', 'tsa:cn', 'eiger:mc']
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi',
-                                    'PrgEnv-gnu']
+                              'arolla:cn', 'tsa:cn', 'eiger:mc', 'pilatus:mc']
+        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu', 'PrgEnv-pgi',
+                                    'PrgEnv-nvidia']
         self.num_tasks = 6
         self.num_tasks_per_node = 1
         self.num_gpus_per_node = 0
@@ -121,15 +121,30 @@ class HaloCellExchangeTest(rfm.RegressionTest):
                 'time_6_10000': (1.04e-05, None, 0.50, 's'),
                 'time_6_1000000': (3.55e-04, None, 0.50, 's')
             },
+            'pilatus:mc': {
+                'time_2_10': (3.46e-06, None, 0.50, 's'),
+                'time_2_10000': (8.51e-06, None, 0.50, 's'),
+                'time_2_1000000': (2.07e-04, None, 0.50, 's'),
+                'time_4_10': (4.46e-06, None, 0.50, 's'),
+                'time_4_10000': (1.08e-05, None, 0.50, 's'),
+                'time_4_1000000': (3.55e-04, None, 0.50, 's'),
+                'time_6_10': (4.53e-06, None, 0.50, 's'),
+                'time_6_10000': (1.04e-05, None, 0.50, 's'),
+                'time_6_1000000': (3.55e-04, None, 0.50, 's')
+            },
         }
 
         self.maintainers = ['AJ']
+        self.strict_check = False
         self.tags = {'benchmark'}
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def pgi_workaround(self):
         if self.current_system.name in ['daint', 'dom']:
             if self.current_environ.name == 'PrgEnv-pgi':
                 self.variables = {
                     'CUDA_HOME': '$CUDATOOLKIT_HOME',
                 }
+        if self.current_environ.name == 'PrgEnv-nvidia':
+            self.skip_if(self.current_system.name == 'eiger')
+            self.skip_if(self.current_system.name == 'pilatus')

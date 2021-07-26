@@ -10,26 +10,31 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class OpenCLCheck(rfm.RegressionTest):
-    def __init__(self):
-        self.maintainers = ['TM', 'SK']
-        self.tags = {'production', 'craype'}
+    valid_systems = ['daint:gpu', 'dom:gpu']
+    valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi',
+                           'PrgEnv-nvidia']
+    build_system = 'Make'
+    sourcesdir = 'src/opencl'
+    num_gpus_per_node = 1
+    executable = 'vecAdd'
+    maintainers = ['TM', 'SK']
+    tags = {'production', 'craype'}
 
-        self.valid_systems = ['daint:gpu', 'dom:gpu']
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
-        self.modules = ['craype-accel-nvidia60']
-        self.build_system = 'Make'
-        self.sourcesdir = 'src/opencl'
-        self.num_gpus_per_node = 1
-        self.executable = 'vecAdd'
+    @run_after('setup')
+    def setup_nvidia(self):
+        if self.current_environ.name == 'PrgEnv-nvidia':
+            # This is used by the Makefile for the OpenCL headers
+            self.variables.update(
+                {'CUDATOOLKIT_HOME': '$CRAY_NVIDIA_PREFIX/cuda'})
+        else:
+            self.modules = ['craype-accel-nvidia60']
 
-        self.sanity_patterns = sn.assert_found('SUCCESS', self.stdout)
-
-    @rfm.run_before('compile')
+    @run_before('compile')
     def setflags(self):
         if self.current_environ.name == 'PrgEnv-pgi':
             self.build_system.cflags = ['-mmmx']
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def cdt2006_pgi_workaround(self):
         cdt = osext.cray_cdt_version()
         if not cdt:
@@ -37,3 +42,7 @@ class OpenCLCheck(rfm.RegressionTest):
 
         if (self.current_environ.name == 'PrgEnv-pgi' and cdt == '20.08'):
             self.variables.update({'CUDA_HOME': '$CUDATOOLKIT_HOME'})
+
+    @run_before('sanity')
+    def set_sanity(self):
+        self.sanity_patterns = sn.assert_found('SUCCESS', self.stdout)

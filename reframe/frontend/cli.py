@@ -21,6 +21,7 @@ import reframe.core.logging as logging
 import reframe.core.runtime as runtime
 import reframe.core.warnings as warnings
 import reframe.frontend.argparse as argparse
+import reframe.frontend.autodetect as autodetect
 import reframe.frontend.ci as ci
 import reframe.frontend.dependencies as dependencies
 import reframe.frontend.filters as filters
@@ -133,7 +134,7 @@ def list_tags(testcases, printer):
 
 def logfiles_message():
     log_files = logging.log_files()
-    msg = 'Log file(s) saved in: '
+    msg = 'Log file(s) saved in '
     if not log_files:
         msg += '<no log file was generated>'
     else:
@@ -214,6 +215,12 @@ def main():
         help="Store JSON run report in FILE",
         envvar='RFM_REPORT_FILE',
         configvar='general/report_file'
+    )
+    output_options.add_argument(
+        '--report-junit', action='store', metavar='FILE',
+        help="Store a JUnit report in FILE",
+        envvar='RFM_REPORT_JUNIT',
+        configvar='general/report_junit'
     )
 
     # Check discovery options
@@ -423,6 +430,10 @@ def main():
         envvar='RFM_SYSTEM'
     )
     misc_options.add_argument(
+        '--detect-host-topology', action='store', nargs='?', const='-',
+        help='Detect the local host topology and exit'
+    )
+    misc_options.add_argument(
         '--upgrade-config-file', action='store', metavar='OLD[:NEW]',
         help='Upgrade ReFrame 2.x configuration file to ReFrame 3.x syntax'
     )
@@ -468,6 +479,26 @@ def main():
         configvar='general/resolve_module_conflicts',
         action='store_true',
         help='Resolve module conflicts automatically'
+    )
+    argparser.add_argument(
+        dest='httpjson_url',
+        envvar='RFM_HTTPJSON_URL',
+        configvar='logging/handlers_perflog/httpjson_url',
+        help='URL of HTTP server accepting JSON logs'
+    )
+    argparser.add_argument(
+        dest='remote_detect',
+        envvar='RFM_REMOTE_DETECT',
+        configvar='general/remote_detect',
+        action='store_true',
+        help='Detect remote system topology'
+    )
+    argparser.add_argument(
+        dest='remote_workdir',
+        envvar='RFM_REMOTE_WORKDIR',
+        configvar='general/remote_workdir',
+        action='store',
+        help='Working directory for launching ReFrame remotely'
     )
 
     # Parse command line
@@ -570,6 +601,7 @@ def main():
         sys.exit(1)
 
     rt = runtime.runtime()
+    autodetect.detect_topology()
     try:
         if site_config.get('general/0/module_map_file'):
             rt.modules_system.load_mapping_from_file(
@@ -608,20 +640,40 @@ def main():
 
         sys.exit(0)
 
+    if options.detect_host_topology:
+        from reframe.utility.cpuinfo import cpuinfo
+
+        topofile = options.detect_host_topology
+        if topofile == '-':
+            json.dump(cpuinfo(), sys.stdout, indent=2)
+            sys.stdout.write('\n')
+        else:
+            try:
+                with open(topofile, 'w') as fp:
+                    json.dump(cpuinfo(), fp, indent=2)
+                    fp.write('\n')
+            except OSError as e:
+                getlogger().error(
+                    f'could not write topology file: {topofile!r}'
+                )
+                sys.exit(1)
+
+        sys.exit(0)
+
     printer.debug(format_env(options.env_vars))
 
     # Setup the check loader
     if options.restore_session is not None:
-        # We need to load the failed checks only from a report
+        # We need to load the failed checks only from a list of reports
         if options.restore_session:
-            filename = options.restore_session
+            filenames = options.restore_session.split(',')
         else:
-            filename = runreport.next_report_filename(
+            filenames = [runreport.next_report_filename(
                 osext.expandvars(site_config.get('general/0/report_file')),
                 new=False
-            )
+            )]
 
-        report = runreport.load_report(filename)
+        report = runreport.load_report(*filenames)
         check_search_path = list(report.slice('filename', unique=True))
         check_search_recursive = False
 
@@ -1040,10 +1092,27 @@ def main():
                 with open(report_file, 'w') as fp:
                     jsonext.dump(json_report, fp, indent=2)
                     fp.write('\n')
+
+                printer.info(f'Run report saved in {report_file!r}')
             except OSError as e:
                 printer.warning(
                     f'failed to generate report in {report_file!r}: {e}'
                 )
+
+            # Generate the junit xml report for this session
+            junit_report_file = rt.get_option('general/0/report_junit')
+            if junit_report_file:
+                # Expand variables in filename
+                junit_report_file = osext.expandvars(junit_report_file)
+                junit_xml = runreport.junit_xml_report(json_report)
+                try:
+                    with open(junit_report_file, 'w') as fp:
+                        runreport.junit_dump(junit_xml, fp)
+                except OSError as e:
+                    printer.warning(
+                        f'failed to generate report in {junit_report_file!r}: '
+                        f'{e}'
+                    )
 
         if not success:
             sys.exit(1)

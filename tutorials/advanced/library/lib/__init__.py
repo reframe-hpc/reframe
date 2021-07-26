@@ -21,13 +21,13 @@ class ContainerBase(rfm.RunOnlyRegressionTest, pin_prefix=True):
         '20.04': 'Focal Fossa',
     })
 
-    @rfm.run_after('setup')
+    @run_after('setup')
     def set_description(self):
         self.descr = (
             f'Run commands inside a container using ubuntu {self.dist}'
         )
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_container_platform(self):
         self.container_platform = self.platform
         self.container_platform.image = (
@@ -42,7 +42,7 @@ class ContainerBase(rfm.RunOnlyRegressionTest, pin_prefix=True):
         name = self.dist_name[self.dist]
         return rf'{self.dist}.\d+ LTS \({name}\)'
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity_patterns(self):
         self.sanity_patterns = sn.all([
             sn.assert_found(self.os_release_pattern, 'release.txt'),

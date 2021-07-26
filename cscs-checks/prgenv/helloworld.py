@@ -26,10 +26,11 @@ class HelloWorldBaseTest(rfm.RegressionTest):
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                               'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn']
         if linkage == 'dynamic':
-            self.valid_systems.append('eiger:mc')
+            self.valid_systems += ['eiger:mc', 'pilatus:mc']
 
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-cray_classic',
-                                    'PrgEnv-intel', 'PrgEnv-gnu', 'PrgEnv-pgi',
+        self.valid_prog_environs = ['PrgEnv-aocc', 'PrgEnv-cray',
+                                    'PrgEnv-cray_classic', 'PrgEnv-gnu',
+                                    'PrgEnv-intel', 'PrgEnv-pgi',
                                     'PrgEnv-gnu-nocuda', 'PrgEnv-pgi-nocuda']
 
         if self.current_system.name in ['arolla', 'tsa']:
@@ -86,7 +87,7 @@ class HelloWorldBaseTest(rfm.RegressionTest):
         self.maintainers = ['VH', 'EK']
         self.tags = {'production', 'craype'}
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def setflags(self):
         envname = re.sub(r'(PrgEnv-\w+).*', lambda m: m.group(1),
                          self.current_environ.name)
@@ -95,11 +96,11 @@ class HelloWorldBaseTest(rfm.RegressionTest):
         self.build_system.cxxflags = prgenv_flags
         self.build_system.fflags = prgenv_flags
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def compile_timer_start(self):
         self.compilation_time_seconds = datetime.now()
 
-    @rfm.run_after('compile')
+    @run_after('compile')
     def compile_timer_end(self):
         elapsed = datetime.now() - self.compilation_time_seconds
         self.compilation_time_seconds = elapsed.total_seconds()
@@ -118,6 +119,7 @@ class HelloWorldTestSerial(HelloWorldBaseTest):
         self.sourcepath += '_serial.' + lang
         self.descr += ' Serial ' + linkage.capitalize()
         self.prgenv_flags = {
+            'PrgEnv-aocc': [],
             'PrgEnv-cray': [],
             'PrgEnv-cray_classic': [],
             'PrgEnv-gnu': [],
@@ -146,6 +148,7 @@ class HelloWorldTestOpenMP(HelloWorldBaseTest):
         self.sourcepath += '_openmp.' + lang
         self.descr += ' OpenMP ' + str.capitalize(linkage)
         self.prgenv_flags = {
+            'PrgEnv-aocc': ['-fopenmp'],
             'PrgEnv-cray': ['-homp' if lang == 'F90' else '-fopenmp'],
             'PrgEnv-cray_classic': ['-homp'],
             'PrgEnv-gnu': ['-fopenmp'],
@@ -180,6 +183,7 @@ class HelloWorldTestMPI(HelloWorldBaseTest):
         self.sourcepath += '_mpi.' + lang
         self.descr += ' MPI ' + linkage.capitalize()
         self.prgenv_flags = {
+            'PrgEnv-aocc': [],
             'PrgEnv-cray': [],
             'PrgEnv-cray_classic': [],
             'PrgEnv-gnu': [],
@@ -205,6 +209,7 @@ class HelloWorldTestMPIOpenMP(HelloWorldBaseTest):
         self.sourcepath += '_mpi_openmp.' + lang
         self.descr += ' MPI + OpenMP ' + linkage.capitalize()
         self.prgenv_flags = {
+            'PrgEnv-aocc': ['-fopenmp'],
             'PrgEnv-cray': ['-homp' if lang == 'F90' else '-fopenmp'],
             'PrgEnv-cray_classic': ['-homp'],
             'PrgEnv-gnu': ['-fopenmp'],

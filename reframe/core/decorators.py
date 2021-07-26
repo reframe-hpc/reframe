@@ -14,13 +14,13 @@ __all__ = [
 
 
 import collections
-import functools
 import inspect
 import sys
 import traceback
 
 import reframe.utility.osext as osext
 import reframe.core.warnings as warn
+import reframe.core.hooks as hooks
 from reframe.core.exceptions import (ReframeSyntaxError,
                                      SkipTestError,
                                      user_frame)
@@ -91,6 +91,17 @@ def _validate_test(cls):
         raise ValueError(f'decorated test ({cls.__qualname__!r}) has one or '
                          f'more undefined parameters')
 
+    conditions = [VersionValidator(v) for v in cls._rfm_required_version]
+    if (cls._rfm_required_version and
+        not any(c.validate(osext.reframe_version()) for c in conditions)):
+
+        getlogger().warning(f"skipping incompatible test "
+                            f"'{cls.__qualname__}': not valid for ReFrame "
+                            f"version {osext.reframe_version().split('-')[0]}")
+        return False
+
+    return True
+
 
 def simple_test(cls):
     '''Class decorator for registering tests with ReFrame.
@@ -101,10 +112,9 @@ def simple_test(cls):
 
     .. versionadded:: 2.13
     '''
-    _validate_test(cls)
-
-    for _ in cls.param_space:
-        _register_test(cls)
+    if _validate_test(cls):
+        for _ in cls.param_space:
+            _register_test(cls)
 
     return cls
 
@@ -139,14 +149,14 @@ def parameterized_test(*inst):
     )
 
     def _do_register(cls):
-        _validate_test(cls)
-        if not cls.param_space.is_empty():
-            raise ValueError(
-                f'{cls.__qualname__!r} is already a parameterized test'
-            )
+        if _validate_test(cls):
+            if not cls.param_space.is_empty():
+                raise ValueError(
+                    f'{cls.__qualname__!r} is already a parameterized test'
+                )
 
-        for args in inst:
-            _register_test(cls, args)
+            for args in inst:
+                _register_test(cls, args)
 
         return cls
 
@@ -187,6 +197,12 @@ def required_version(*versions):
        These should be written as ``3.5.0`` and ``3.5.0-dev.0``.
 
     '''
+    warn.user_deprecation_warning(
+        "the '@required_version' decorator is deprecated; please set "
+        "the 'require_version' parameter in the class definition instead",
+        from_version='3.7.0'
+    )
+
     if not versions:
         raise ValueError('no versions specified')
 
@@ -198,36 +214,15 @@ def required_version(*versions):
             mod.__rfm_skip_tests = set()
 
         if not any(c.validate(osext.reframe_version()) for c in conditions):
-            getlogger().info('skipping incompatible test defined'
-                             ' in class: %s' % cls.__name__)
+            getlogger().warning(
+                f"skipping incompatible test '{cls.__qualname__}': not valid "
+                f"for ReFrame version {osext.reframe_version().split('-')[0]}"
+            )
             mod.__rfm_skip_tests.add(cls)
 
         return cls
 
     return _skip_tests
-
-
-def _runx(phase):
-    def deco(func):
-        if hasattr(func, '_rfm_attach'):
-            func._rfm_attach.append(phase)
-        else:
-            func._rfm_attach = [phase]
-
-        try:
-            # no need to resolve dependencies independently; this function is
-            # already attached to a different phase
-            func._rfm_resolve_deps = False
-        except AttributeError:
-            pass
-
-        @functools.wraps(func)
-        def _fn(*args, **kwargs):
-            func(*args, **kwargs)
-
-        return _fn
-
-    return deco
 
 
 # Valid pipeline stages that users can specify in the `run_before()` and
@@ -240,55 +235,38 @@ _USER_PIPELINE_STAGES = (
 def run_before(stage):
     '''Decorator for attaching a test method to a pipeline stage.
 
-    The method will run just before the specified pipeline stage and it should
-    not accept any arguments except ``self``.
-
-    This decorator can be stacked, in which case the function will be attached
-    to multiple pipeline stages.
-
-    The ``stage`` argument can be any of ``'setup'``, ``'compile'``,
-    ``'run'``, ``'sanity'``, ``'performance'`` or ``'cleanup'``.
+    .. deprecated:: 3.7.0
+       Please use the :func:`~reframe.core.pipeline.RegressionMixin.run_before`
+       built-in function.
 
     '''
+    warn.user_deprecation_warning(
+        'using the @rfm.run_before decorator from the rfm module is '
+        'deprecated; please use the built-in decorator @run_before instead.',
+        from_version='3.7.0'
+    )
     if stage not in _USER_PIPELINE_STAGES:
         raise ValueError(f'invalid pipeline stage specified: {stage!r}')
 
     if stage == 'init':
         raise ValueError('pre-init hooks are not allowed')
 
-    return _runx('pre_' + stage)
+    return hooks.attach_to('pre_' + stage)
 
 
 def run_after(stage):
     '''Decorator for attaching a test method to a pipeline stage.
 
-    This is analogous to the :py:attr:`~reframe.core.decorators.run_before`,
-    except that ``'init'`` can also be used as the ``stage`` argument. In this
-    case, the hook will execute right after the test is initialized (i.e.
-    after the :func:`__init__` method is called), before entering the test's
-    pipeline. In essence, a post-init hook is equivalent to defining
-    additional :func:`__init__` functions in the test. All the other
-    properties of pipeline hooks apply equally here. The following code
-
-    .. code-block:: python
-
-       @rfm.run_after('init')
-       def foo(self):
-           self.x = 1
-
-
-    is equivalent to
-
-    .. code-block:: python
-
-       def __init__(self):
-           self.x = 1
-
-    .. versionchanged:: 3.5.2
-       Add the ability to define post-init hooks in tests.
+    .. deprecated:: 3.7.0
+       Please use the :func:`~reframe.core.pipeline.RegressionMixin.run_after`
+       built-in function.
 
     '''
-
+    warn.user_deprecation_warning(
+        'using the @rfm.run_after decorator from the rfm module is '
+        'deprecated; please use the built-in decorator @run_after instead.',
+        from_version='3.7.0'
+    )
     if stage not in _USER_PIPELINE_STAGES:
         raise ValueError(f'invalid pipeline stage specified: {stage!r}')
 
@@ -300,39 +278,23 @@ def run_after(stage):
     elif stage == 'run':
         stage = 'run_wait'
 
-    return _runx('post_' + stage)
+    return hooks.attach_to('post_' + stage)
 
 
-def require_deps(func):
-    '''Denote that the decorated test method will use the test dependencies.
-
-    The arguments of the decorated function must be named after the
-    dependencies that the function intends to use. The decorator will bind the
-    arguments to a partial realization of the
-    :func:`reframe.core.pipeline.RegressionTest.getdep` function, such that
-    conceptually the new function arguments will be the following:
-
-    .. code-block:: python
-
-       new_arg = functools.partial(getdep, orig_arg_name)
-
-    The converted arguments are essentially functions accepting a single
-    argument, which is the target test's programming environment.
-
-    Additionally, this decorator will attach the function to run *after* the
-    test's setup phase, but *before* any other "post_setup" pipeline hook.
-
-    This decorator is also directly available under the :mod:`reframe` module.
+def require_deps(fn):
+    '''Decorator to denote that a function will use the test dependencies.
 
     .. versionadded:: 2.21
 
+    .. deprecated:: 3.7.0
+       Please use the
+       :func:`~reframe.core.pipeline.RegressionTest.require_deps` built-in
+       function.
+
     '''
-    tests = inspect.getfullargspec(func).args[1:]
-    func._rfm_resolve_deps = True
-
-    @functools.wraps(func)
-    def _fn(obj, *args):
-        newargs = [functools.partial(obj.getdep, t) for t in tests]
-        func(obj, *newargs)
-
-    return _fn
+    warn.user_deprecation_warning(
+        'using the @rfm.require_deps decorator from the rfm module is '
+        'deprecated; please use the built-in decorator @require_deps instead.',
+        from_version='3.7.0'
+    )
+    return hooks.require_deps(fn)

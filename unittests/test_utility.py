@@ -269,10 +269,10 @@ def test_git_repo_hash_no_git_repo(git_only, monkeypatch, tmp_path):
 
 def test_git_repo_exists(git_only):
     assert osext.git_repo_exists('https://github.com/eth-cscs/reframe.git',
-                                 timeout=3)
-    assert not osext.git_repo_exists('reframe.git', timeout=3)
+                                 timeout=10)
+    assert not osext.git_repo_exists('reframe.git', timeout=10)
     assert not osext.git_repo_exists('https://github.com/eth-cscs/xxx',
-                                     timeout=3)
+                                     timeout=10)
 
 
 def test_force_remove_file(tmp_path):
@@ -1540,7 +1540,7 @@ def test_jsonext_dumps():
     assert '{"foo":["bar"]}' == jsonext.dumps(
         {'foo': sn.defer(['bar']).evaluate()}, separators=(',', ':')
     )
-
+    assert '{"(1, 2, 3)": 1}' == jsonext.dumps({(1, 2, 3): 1})
 
 # Classes to test JSON deserialization
 
@@ -1566,6 +1566,9 @@ class _C(jsonext.JSONSerializable):
         self.y = y
         self.z = None
         self.w = {1, 2}
+
+        # Dump dict with tuples as keys
+        self.v = {(1, 2): 1}
 
     def __rfm_json_decode__(self, json):
         # Sets are converted to lists when encoding, we need to manually

@@ -4,52 +4,52 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import reframe as rfm
+import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 
 
 class LibSciResolveBaseTest(rfm.CompileOnlyRegressionTest):
-    def __init__(self):
-        self.sourcesdir = 'src/libsci_resolve'
-        self.sourcepath = 'libsci_resolve.f90'
-        self.valid_systems = ['daint:login', 'daint:gpu',
-                              'dom:login', 'dom:gpu']
-        self.modules = ['craype-haswell']
-        self.maintainers = ['AJ', 'LM']
-        self.tags = {'production', 'craype'}
+    sourcesdir = 'src/libsci_resolve'
+    sourcepath = 'libsci_resolve.f90'
+    valid_systems = ['daint:login', 'daint:gpu', 'dom:login', 'dom:gpu']
+    modules = ['craype-haswell']
+    maintainers = ['AJ', 'LM']
+    tags = {'production', 'craype'}
 
-
-@rfm.parameterized_test(['craype-accel-nvidia35'], ['craype-accel-nvidia60'])
-class NvidiaResolveTest(LibSciResolveBaseTest):
-    def __init__(self, module_name):
-        super().__init__()
-        self.descr = f'Module {module_name} resolves libsci_acc'
-        self.build_system = 'SingleSource'
-        self.tags.add('health')
-
-        self.module_name = module_name
-        self.module_version = {
-            'craype-accel-nvidia35': 'nv35',
-            'craype-accel-nvidia60': 'nv60'
-        }
-        self.compiler_version = '81'
-        self.modules = ['craype-haswell', module_name]
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
-        self.prgenv_names = {
-            'PrgEnv-cray': 'cray',
-            'PrgEnv-gnu':  'gnu'
-        }
+    @run_after('setup')
+    def set_postbuild_cmds(self):
         self.postbuild_cmds = [f'readelf -d {self.executable}']
 
-    @rfm.run_before('sanity')
+
+@rfm.simple_test
+class NvidiaResolveTest(LibSciResolveBaseTest):
+    accel_nvidia_version = parameter(['60'])
+    valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
+    build_system = 'SingleSource'
+    compiler_version = '81'
+
+    @run_after('init')
+    def set_description(self):
+        self.descr = (f'Module craype-accel-nvidia{self.accel_nvidia_version} '
+                      f'resolves libsci_acc')
+
+    @run_after('init')
+    def update_tags(self):
+        self.tags.add('health')
+
+    @run_after('setup')
+    def set_modules(self):
+        self.modules += [f'craype-accel-nvidia{self.accel_nvidia_version}']
+
+    @run_before('sanity')
     def set_sanity(self):
         # here lib_name is in the format: libsci_acc_gnu_48_nv35.so or
         #                                 libsci_acc_cray_nv35.so
         regex = (r'.*\(NEEDED\).*libsci_acc_(?P<prgenv>[A-Za-z]+)_'
                  r'((?P<cver>[A-Za-z0-9]+)_)?(?P<version>\S+)\.so')
-        prgenv = self.prgenv_names[self.current_environ.name]
+        prgenv = self.current_environ.name.split('-')[1]
         cver = self.compiler_version
-        mod_name = self.module_version[self.module_name]
-
+        mod_name = f'nv{self.accel_nvidia_version}'
         if self.current_environ.name == 'PrgEnv-cray':
             cver_sanity = sn.assert_found(regex, self.stdout)
         else:
@@ -67,14 +67,24 @@ class NvidiaResolveTest(LibSciResolveBaseTest):
 
 @rfm.simple_test
 class MKLResolveTest(LibSciResolveBaseTest):
-    def __init__(self):
-        super().__init__()
-        self.descr = '-mkl Resolves to MKL'
-        self.valid_prog_environs = ['PrgEnv-intel']
-        self.build_system = 'SingleSource'
+    descr = '-mkl Resolves to MKL'
+    valid_prog_environs = ['PrgEnv-intel']
+    build_system = 'SingleSource'
 
+    @run_before('compile')
+    def set_fflags(self):
         self.build_system.fflags = ['-mkl']
-        self.postbuild_cmds = [f'readelf -d {self.executable}']
+
+    @run_before('compile')
+    def cdt_2105_workaround(self):
+        # FIXME: The mkl libraries are not found in cdt 21.05, CASE #285117
+        if osext.cray_cdt_version() == '21.05':
+            self.build_system.ldflags += [
+                '-L/opt/intel/oneapi/mkl/latest/lib/intel64/'
+            ]
+
+    @run_before('sanity')
+    def set_sanity(self):
         regex = (r'.*\(NEEDED\).*libmkl_(?P<prgenv>[A-Za-z]+)_(?P<version>\S+)'
                  r'\.so')
         self.sanity_patterns = sn.all([
@@ -83,6 +93,3 @@ class MKLResolveTest(LibSciResolveBaseTest):
             sn.assert_eq(
                 sn.extractsingle(regex, self.stdout, 'version'), 'lp64')
         ])
-
-        self.maintainers = ['AJ', 'LM']
-        self.tags = {'production', 'craype'}

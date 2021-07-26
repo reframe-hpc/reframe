@@ -90,13 +90,13 @@ class GREASYCheck(rfm.RegressionTest):
         self.maintainers = ['VH', 'SK']
         self.tags = {'production'}
 
-    @rfm.run_before('run')
+    @run_before('run')
     def generate_tasks_file(self):
         with open(os.path.join(self.stagedir, self.tasks_file), 'w') as fp:
             for i in range(self.num_greasy_tasks):
                 fp.write(f'./{self.executable} output-{i}\n')
 
-    @rfm.run_before('run')
+    @run_before('run')
     def daint_dom_gpu_specific_workaround(self):
         if self.current_partition.fullname in ['daint:gpu', 'dom:gpu']:
             self.variables['CRAY_CUDA_MPS'] = '1'
@@ -121,13 +121,13 @@ class GREASYCheck(rfm.RegressionTest):
                     }
                 }
 
-    @rfm.run_before('run')
+    @run_before('run')
     def change_executable_name(self):
         # After compiling the code we can change the executable to be
         # the greasy one
         self.executable = 'greasy'
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_launcher(self):
         # The job launcher has to be changed to local since greasy
         # make calls to srun

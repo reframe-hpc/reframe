@@ -38,7 +38,8 @@ from reframe.core.containers import ContainerPlatformField
 from reframe.core.deferrable import _DeferredExpression
 from reframe.core.exceptions import (BuildError, DependencyError,
                                      PerformanceError, PipelineError,
-                                     SanityError, SkipTestError)
+                                     SanityError, SkipTestError,
+                                     ReframeSyntaxError)
 from reframe.core.meta import RegressionTestMeta
 from reframe.core.schedulers import Job
 from reframe.core.warnings import user_deprecation_warning
@@ -89,8 +90,18 @@ _PIPELINE_STAGES = (
 )
 
 
+_USER_PIPELINE_STAGES = (
+    'init', 'setup', 'compile', 'run', 'sanity', 'performance', 'cleanup'
+)
+
+
 def final(fn):
     fn._rfm_final = True
+    user_deprecation_warning(
+        'using the @rfm.final decorator from the rfm module is '
+        'deprecated; please use the built-in decorator @final instead.',
+        from_version='3.7.0'
+    )
 
     @functools.wraps(fn)
     def _wrapped(*args, **kwargs):
@@ -132,13 +143,48 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     This class provides the implementation of the pipeline phases that the
     regression test goes through during its lifetime.
 
-    .. warning::
-        .. versionchanged:: 3.4.2
-           Multiple inheritance with a shared common ancestor is not allowed.
+    This class accepts parameters at the *class definition*, i.e., the test
+    class can be defined as follows:
+
+    .. code-block:: python
+
+       class MyTest(RegressionTest, param='foo', ...):
+
+    where ``param`` is one of the following:
+
+    :param pin_prefix: lock the test prefix to the directory where the current
+        class lives.
+
+    :param require_version: a list of ReFrame version specifications that this
+        test is allowed to run. A version specification string can have one of
+        the following formats:
+
+        - ``VERSION``: Specifies a single version.
+        - ``{OP}VERSION``, where ``{OP}`` can be any of ``>``, ``>=``, ``<``,
+          ``<=``, ``==`` and ``!=``. For example, the version specification
+          string ``'>=3.5.0'`` will allow the following test to be loaded
+          only by ReFrame 3.5.0 and higher. The ``==VERSION`` specification
+          is the equivalent of ``VERSION``.
+        - ``V1..V2``: Specifies a range of versions.
+
+        The test will be selected if *any* of the versions is satisfied, even
+        if the versions specifications are conflicting.
+
+    :param special: allow pipeline stage methods to be overriden in this class.
 
     .. note::
         .. versionchanged:: 2.19
            Base constructor takes no arguments.
+
+        .. versionadded:: 3.3
+           The ``pin_prefix`` class definition parameter is added.
+
+        .. versionadded:: 3.7.0
+           The ``require_verion`` class definition parameter is added.
+
+    .. warning::
+        .. versionchanged:: 3.4.2
+           Multiple inheritance with a shared common ancestor is not allowed.
 
     '''
 
@@ -154,10 +200,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     @classmethod
     def pipeline_hooks(cls):
         ret = {}
-        for phase, hooks in cls._rfm_pipeline_hooks.items():
-            ret[phase] = []
-            for h in hooks:
-                ret[phase].append(h.fn)
+        for hook in cls._rfm_hook_registry:
+            for stage in hook.stages:
+                try:
+                    ret[stage].append(hook.fn)
+                except KeyError:
+                    ret[stage] = [hook.fn]
 
         return ret
 
@@ -551,10 +599,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: Refer to the :doc:`ReFrame Tutorials </tutorials>` for concrete usage
     #: examples.
     #:
-    #: If not set a sanity error will be raised during sanity checking.
+    #: If not set, a sanity error may be raised during sanity checking if no
+    #: other sanity checking functions already exist.
     #:
     #: :type: A deferrable expression (i.e., the result of a :doc:`sanity
-    #:     function </sanity_functions_reference>`)
+    #:     function </deferrable_functions_reference>`)
     #: :default: :class:`required`
     #:
     #: .. note::
@@ -582,7 +631,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: A dictionary with keys of type :class:`str` and deferrable
     #:     expressions (i.e., the result of a :doc:`sanity function
-    #:     </sanity_functions_reference>`) as values.
+    #:     </deferrable_functions_reference>`) as values.
     #:     :class:`None` is also allowed.
     #: :default: :class:`None`
     perf_patterns = variable(typ.Dict[str, _DeferredExpression],
@@ -734,23 +783,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: :type: boolean : :default: :class:`True`
     build_locally = variable(bool, value=True)
 
-    def __new__(cls, *args, _rfm_use_params=False, **kwargs):
+    def __new__(cls, *args, **kwargs):
         obj = super().__new__(cls)
-
-        # Insert the var & param spaces
-        cls._rfm_var_space.inject(obj, cls)
-        cls._rfm_param_space.inject(obj, cls, _rfm_use_params)
-
-        # Create a test name from the class name and the constructor's
-        # arguments
-        name = cls.__qualname__
-        name += obj._append_parameters_to_name()
-
-        # or alternatively, if the parameterized test was defined the old way.
-        if args or kwargs:
-            arg_names = map(lambda x: util.toalphanum(str(x)),
-                            itertools.chain(args, kwargs.values()))
-            name += '_' + '_'.join(arg_names)
 
         # Determine the prefix
         try:
@@ -766,41 +800,41 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                         os.path.dirname(inspect.getfile(cls))
                     )
 
+        # Prepare initialization of test defaults (variables and parameters are
+        # injected after __new__ has returned, so we schedule this function
+        # call as a pre-init hook).
+        obj.__deferred_rfm_init = obj.__rfm_init__(*args,
+                                                   name=cls.__qualname__,
+                                                   prefix=prefix, **kwargs)
+
+        # Build pipeline hook registry and add the pre-init hook
+        cls._rfm_pipeline_hooks = cls._process_hook_registry()
+        cls._rfm_pipeline_hooks['pre___init__'] = [cls.__pre_init__]
+
         # Attach the hooks to the pipeline stages
         for stage in _PIPELINE_STAGES:
             cls._add_hooks(stage)
 
-        # Initialize the test
-        obj.__rfm_init__(name, prefix)
         return obj
+
+    @final
+    def __pre_init__(self):
+        '''Initialize the test defaults from a pre-init hook.'''
+        self.__deferred_rfm_init.evaluate()
 
     def __init__(self):
         pass
 
-    def _append_parameters_to_name(self):
-        if self._rfm_param_space.params:
-            return '_' + '_'.join([util.toalphanum(str(self.__dict__[key]))
-                                   for key in self._rfm_param_space.params])
-        else:
-            return ''
-
     @classmethod
-    def _add_hooks(cls, stage):
-        pipeline_hooks = cls._rfm_pipeline_hooks
-        fn = getattr(cls, stage)
-        new_fn = hooks.attach_hooks(pipeline_hooks)(fn)
-        setattr(cls, '_rfm_pipeline_fn_' + stage, new_fn)
-
-    def __getattribute__(self, name):
-        if name in _PIPELINE_STAGES:
-            name = f'_rfm_pipeline_fn_{name}'
-
-        return super().__getattribute__(name)
-
-    @classmethod
-    def __init_subclass__(cls, *, special=False, pin_prefix=False, **kwargs):
+    def __init_subclass__(cls, *, special=False, pin_prefix=False,
+                          require_version=None, **kwargs):
         super().__init_subclass__(**kwargs)
-        cls._rfm_special_test = special
+        cls._rfm_override_final = special
+
+        if require_version:
+            cls._rfm_required_version = require_version
+        elif not hasattr(cls, '_rfm_required_version'):
+            cls._rfm_required_version = []
 
         # Insert the prefix to pin the test to if the test lives in a test
         # library with resources in it.
@@ -809,9 +843,19 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 os.path.dirname(inspect.getfile(cls))
             )
 
-    def __rfm_init__(self, name=None, prefix=None):
+    @deferrable
+    def __rfm_init__(self, *args, name=None, prefix=None, **kwargs):
         if name is not None:
             self.name = name
+
+            # Add the parameters to the name.
+            self.name += self._append_parameters_to_name()
+
+            # Add the parameters from the parameterized_test decorator.
+            if args or kwargs:
+                arg_names = map(lambda x: util.toalphanum(str(x)),
+                                itertools.chain(args, kwargs.values()))
+                self.name += '_' + '_'.join(arg_names)
 
         # Pass if descr is a required variable.
         if not hasattr(self, 'descr'):
@@ -868,6 +912,57 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         # Disabled hooks
         self._disabled_hooks = set()
+
+    def _append_parameters_to_name(self):
+        if self._rfm_param_space.params:
+            return '_' + '_'.join([util.toalphanum(str(self.__dict__[key]))
+                                   for key in self._rfm_param_space.params])
+        else:
+            return ''
+
+    @classmethod
+    def _process_hook_registry(cls):
+        '''Process and validate the pipeline hooks.'''
+
+        _pipeline_hooks = {}
+        for stage, hooks in cls.pipeline_hooks().items():
+            # Pop the stage pre_/post_ prefix
+            stage_name = stage.split('_', maxsplit=1)[1]
+
+            if stage_name not in _USER_PIPELINE_STAGES:
+                raise ValueError(
+                    f'invalid pipeline stage ({stage_name!r}) in class '
+                    f'{cls.__qualname__!r}'
+                )
+            elif stage == 'pre_init':
+                raise ValueError(
+                    f'{stage} hooks are not allowed ({cls.__qualname__})'
+                )
+            elif stage == 'post_init':
+                stage = 'post___init__'
+            elif stage == 'post_compile':
+                stage = 'post_compile_wait'
+            elif stage == 'post_run':
+                stage = 'post_run_wait'
+
+            _pipeline_hooks[stage] = hooks
+
+        return _pipeline_hooks
+
+    @classmethod
+    def _add_hooks(cls, stage):
+        '''Decorate the pipeline stages.'''
+
+        pipeline_hooks = cls._rfm_pipeline_hooks
+        fn = getattr(cls, stage)
+        new_fn = hooks.attach_hooks(pipeline_hooks)(fn)
+        setattr(cls, '_rfm_pipeline_fn_' + stage, new_fn)
+
+    def __getattribute__(self, name):
+        if name in _PIPELINE_STAGES:
+            name = f'_rfm_pipeline_fn_{name}'
+
+        return super().__getattribute__(name)
 
     # Export read-only views to interesting fields
 
@@ -955,7 +1050,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         return self._outputdir
 
     @property
-    @sn.sanity_function
+    @deferrable
     def stdout(self):
         '''The name of the file containing the standard output of the test.
 
@@ -970,7 +1065,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         return self.job.stdout if self.job else None
 
     @property
-    @sn.sanity_function
+    @deferrable
     def stderr(self):
         '''The name of the file containing the standard error of the test.
 
@@ -989,12 +1084,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         return self._build_job
 
     @property
-    @sn.sanity_function
+    @deferrable
     def build_stdout(self):
         return self.build_job.stdout if self.build_job else None
 
     @property
-    @sn.sanity_function
+    @deferrable
     def build_stderr(self):
         return self.build_job.stderr if self.build_job else None
 
@@ -1339,7 +1434,18 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         )
         exec_cmd = [self.job.launcher.run_command(self.job),
                     self.executable, *self.executable_opts]
-        commands = [*self.prerun_cmds, ' '.join(exec_cmd), *self.postrun_cmds]
+
+        if self.build_system:
+            prepare_cmds = self.build_system.prepare_cmds()
+        else:
+            prepare_cmds = []
+
+        commands = [
+            *prepare_cmds,
+            *self.prerun_cmds,
+            ' '.join(exec_cmd).strip(),
+            *self.postrun_cmds
+        ]
         user_environ = env.Environment(type(self).__name__,
                                        self.modules, self.variables.items())
         environs = [
@@ -1481,6 +1587,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         '''The sanity checking phase of the regression test pipeline.
 
         :raises reframe.core.exceptions.SanityError: If the sanity check fails.
+        :raises reframe.core.exceptions.ReframeSyntaxError: If the sanity
+            function cannot be resolved due to ambiguous syntax.
 
         .. warning::
 
@@ -1496,6 +1604,19 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
               more details.
 
         '''
+
+        if hasattr(self, '_rfm_sanity'):
+            # Using more than one type of syntax to set the sanity patterns is
+            # not allowed.
+            if hasattr(self, 'sanity_patterns'):
+                raise ReframeSyntaxError(
+                    f"assigning a sanity function to the 'sanity_patterns' "
+                    f"variable conflicts with using the 'sanity_function' "
+                    f"decorator (class {self.__class__.__qualname__})"
+                )
+
+            self.sanity_patterns = self._rfm_sanity()
+
         if rt.runtime().get_option('general/0/trap_job_errors'):
             sanity_patterns = [
                 sn.assert_eq(self.job.exitcode, 0,
@@ -1906,7 +2027,7 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
                 self._copy_to_stagedir(os.path.join(self._prefix,
                                                     self.sourcesdir))
 
-        super().run.__wrapped__(self)
+        super().run()
 
 
 class CompileOnlyRegressionTest(RegressionTest, special=True):
@@ -1937,12 +2058,12 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
                                           **job_opts)
 
     @property
-    @sn.sanity_function
+    @deferrable
     def stdout(self):
         return self.build_job.stdout if self.build_job else None
 
     @property
-    @sn.sanity_function
+    @deferrable
     def stderr(self):
         return self.build_job.stderr if self.build_job else None
 

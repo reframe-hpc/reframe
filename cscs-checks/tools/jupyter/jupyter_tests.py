@@ -10,7 +10,8 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class jupyterhub_submit_test(rfm.RunOnlyRegressionTest):
     valid_systems = ['daint:jupyter_gpu', 'daint:jupyter_mc',
-                     'dom:jupyter_gpu', 'dom:jupyter_mc']
+                     'dom:jupyter_gpu', 'dom:jupyter_mc',
+                     'eiger:jupyter_mc']
     valid_prog_environs = ['builtin']
     sourcesdir = None
     executable = 'hostname'
@@ -19,7 +20,7 @@ class jupyterhub_submit_test(rfm.RunOnlyRegressionTest):
     tags = {'production', 'post-maintenance', 'health'}
     maintainers = ['RS', 'TR']
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity_check(self):
         self.sanity_patterns = sn.assert_found(r'nid\d+', self.stdout)
 
@@ -28,7 +29,8 @@ class jupyterhub_submit_test(rfm.RunOnlyRegressionTest):
 class jupyterhub_api_test(rfm.RunOnlyRegressionTest):
     descr = 'Check JupyterHub server status and version'
     valid_systems = ['daint:jupyter_gpu', 'daint:jupyter_mc',
-                     'dom:jupyter_gpu', 'dom:jupyter_mc']
+                     'dom:jupyter_gpu', 'dom:jupyter_mc',
+                     'eiger:jupyter_mc']
     valid_prog_environs = ['builtin']
     sourcesdir = None
     executable = 'curl https://jupyter.cscs.ch/hub/api/'
@@ -36,7 +38,7 @@ class jupyterhub_api_test(rfm.RunOnlyRegressionTest):
     tags = {'health'}
     maintainers = ['CB', 'TR']
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity_check(self):
         self.sanity_patterns = sn.assert_found(r'{"version": "1.3.0"}',
                                                self.stdout)

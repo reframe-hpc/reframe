@@ -39,22 +39,20 @@ class TestVar:
     '''
 
     __slots__ = (
-        'field_type', '_default_value', 'name',
-        'args', 'kwargs', '__attrs__'
+        'field', '_default_value', 'name', '__attrs__'
     )
 
     def __init__(self, *args, **kwargs):
-        self.field_type = kwargs.pop('field', fields.TypedField)
+        field_type = kwargs.pop('field', fields.TypedField)
         self._default_value = kwargs.pop('value', Undefined)
 
-        if not issubclass(self.field_type, fields.Field):
+        if not issubclass(field_type, fields.Field):
             raise ValueError(
-                f'field {self.field_type!r} is not derived from '
+                f'field {field_type!r} is not derived from '
                 f'{fields.Field.__qualname__}'
             )
 
-        self.args = args
-        self.kwargs = kwargs
+        self.field = field_type(*args, **kwargs)
         self.__attrs__ = dict()
 
     def is_defined(self):
@@ -495,6 +493,11 @@ class VarSpace(namespaces.Namespace):
             if key in self.vars:
                 self.vars[key].define(value)
                 _assigned_vars.add(key)
+            elif value is Undefined:
+                # Cannot be set as Undefined if not a variable
+                raise ValueError(
+                    f'{key!r} has not been declared as a variable'
+                )
 
         # Delete the vars from the class __dict__.
         for key in _assigned_vars:
@@ -528,7 +531,7 @@ class VarSpace(namespaces.Namespace):
         '''
 
         for name, var in self.items():
-            setattr(cls, name, var.field_type(*var.args, **var.kwargs))
+            setattr(cls, name, var.field)
             getattr(cls, name).__set_name__(obj, name)
 
             # If the var is defined, set its value
@@ -546,3 +549,7 @@ class VarSpace(namespaces.Namespace):
     @property
     def vars(self):
         return self._namespace
+
+    @property
+    def injected_vars(self):
+        return self._injected_vars

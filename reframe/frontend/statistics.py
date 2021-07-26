@@ -5,6 +5,7 @@
 
 import inspect
 import traceback
+
 import reframe.core.runtime as rt
 import reframe.core.exceptions as errors
 import reframe.utility as util
@@ -205,7 +206,7 @@ class TestStats:
         run_report = self.json()[-1]
         last_run = run_report['runid']
         for r in run_report['testcases']:
-            if r['result'] == 'success' or r['result'] == 'aborted':
+            if r['result'] in {'success', 'aborted', 'skipped'}:
                 continue
 
             retry_info = (
@@ -266,8 +267,8 @@ class TestStats:
         stats_header = row_format.format('Phase', '#', 'Failing test cases')
         num_tests = len(self.tasks(current_run))
         num_failures = 0
-        for l in failures.values():
-            num_failures += len(l)
+        for fl in failures.values():
+            num_failures += len(fl)
 
         stats_body = ['']
         stats_body.append(f'Total number of test cases: {num_tests}')

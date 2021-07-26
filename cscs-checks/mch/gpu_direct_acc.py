@@ -13,9 +13,9 @@ class GpuDirectAccCheck(rfm.RegressionTest):
     def __init__(self):
         self.descr = 'tests gpu-direct for Fortran OpenACC'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn']
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
+        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi',
+                                    'PrgEnv-nvidia']
         if self.current_system.name in ['daint', 'dom']:
-            self.modules = ['craype-accel-nvidia60']
             self.variables = {
                 'MPICH_RDMA_ENABLED_CUDA': '1',
                 'CRAY_CUDA_MPS': '1',
@@ -46,18 +46,24 @@ class GpuDirectAccCheck(rfm.RegressionTest):
         self.maintainers = ['AJ', 'MKr']
         self.tags = {'production', 'mch', 'craype'}
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def setflags(self):
         if self.current_environ.name.startswith('PrgEnv-cray'):
+            self.modules = ['craype-accel-nvidia60']
             self.build_system.fflags = ['-hacc', '-hnoomp']
         elif self.current_environ.name.startswith('PrgEnv-pgi'):
             self.build_system.fflags = ['-acc']
             if self.current_system.name in ['daint', 'dom']:
+                self.modules = ['craype-accel-nvidia60']
                 self.build_system.fflags += ['-ta=tesla:cc60', '-Mnorpath']
             elif self.current_system.name in ['arolla', 'tsa']:
                 self.build_system.fflags += ['-ta=tesla:cc70']
+        elif self.current_environ.name.startswith('PrgEnv-nvidia'):
+            self.modules = ['cudatoolkit/21.3_11.2']
+            self.build_system.fflags = ['-acc', '-ta=tesla:cc60', '-Mnorpath',
+                                        '-Mcuda']
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def cdt2008_pgi_workaround(self):
         cdt = osext.cray_cdt_version()
         if not cdt:
