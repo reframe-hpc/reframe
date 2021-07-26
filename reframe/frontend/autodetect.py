@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import fcntl
 import json
 import jsonschema
 import os
@@ -80,8 +79,7 @@ def _validate_info(info, schema):
 def _load_info(filename, schema=None):
     try:
         with open(filename) as fp:
-            with osext.lock_file(fp, fcntl.LOCK_SH):
-                return _validate_info(json.load(fp), schema)
+            return _validate_info(json.load(fp), schema)
     except OSError as e:
         getlogger().warning(
             f'could not load file: {filename!r}: {e}'
@@ -100,8 +98,7 @@ def _save_info(filename, topo_info):
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     try:
         with open(filename, 'w') as fp:
-            with osext.lock_file(fp, fcntl.LOCK_EX):
-                json.dump(topo_info, fp, indent=2)
+            json.dump(topo_info, fp, indent=2)
     except OSError as e:
         getlogger().warning(
             f'could not save topology file: {filename!r}: {e}'
@@ -154,14 +151,7 @@ def _remote_detect(part):
 def detect_topology():
     rt = runtime()
     detect_remote_systems = rt.get_option('general/0/remote_detect')
-    config_file = rt.site_config.filename
-    if config_file == '<builtin>':
-        config_prefix = os.path.join(
-            os.getenv('HOME'), '.reframe/topology'
-        )
-    else:
-        config_prefix = os.path.join(os.path.dirname(config_file), '_meta')
-
+    topo_prefix = os.path.join(os.getenv('HOME'), '.reframe/topology')
     for part in rt.system.partitions:
         getlogger().debug(f'detecting topology info for {part.fullname}')
         found_procinfo = False
@@ -184,10 +174,10 @@ def detect_topology():
             continue
 
         topo_file = os.path.join(
-            config_prefix, f'{rt.system.name}-{part.name}', 'processor.json'
+            topo_prefix, f'{rt.system.name}-{part.name}', 'processor.json'
         )
         dev_file = os.path.join(
-            config_prefix, f'{rt.system.name}-{part.name}', 'devices.json'
+            topo_prefix, f'{rt.system.name}-{part.name}', 'devices.json'
         )
         if not found_procinfo and os.path.exists(topo_file):
             getlogger().debug(
