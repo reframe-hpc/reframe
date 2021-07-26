@@ -41,7 +41,7 @@ class HelloWorldBaseTest(rfm.RegressionTest):
         if self.linking == 'dynamic':
             self.valid_systems += ['eiger:mc', 'pilatus:mc']
 
-    @run_after('init')
+    @run_before('compile')
     def set_craylinktype_env_variable(self):
         self.variables['CRAYPE_LINK_TYPE'] = self.linking
 
@@ -84,7 +84,7 @@ class HelloWorldBaseTest(rfm.RegressionTest):
             )
         )
 
-    @run_after('init')
+    @run_before('performance')
     def set_performance_patterns(self):
         self.perf_patterns = {
             'compilation_time': sn.getattr(self, 'compilation_time_seconds')
@@ -141,7 +141,7 @@ class HelloWorldTestSerial(HelloWorldBaseTest):
     def update_description(self):
         self.descr += ' Serial ' + self.linking.capitalize()
 
-    @run_after('init')
+    @run_before('compile')
     def update_sourcepath(self):
         self.sourcepath += '_serial.' + self.lang
 
@@ -177,11 +177,11 @@ class HelloWorldTestOpenMP(HelloWorldBaseTest):
     def update_description(self):
         self.descr += ' OpenMP ' + self.linking.capitalize()
 
-    @run_after('init')
+    @run_before('compile')
     def update_sourcepath(self):
         self.sourcepath += '_openmp.' + self.lang
 
-    @run_after('init')
+    @run_before('run')
     def set_omp_env_variable(self):
         # On SLURM there is no need to set OMP_NUM_THREADS if one defines
         # num_cpus_per_task, but adding for completeness and portability
@@ -202,7 +202,7 @@ class HelloWorldTestMPI(HelloWorldBaseTest):
     def update_description(self):
         self.descr += ' MPI ' + self.linking.capitalize()
 
-    @run_after('init')
+    @run_before('compile')
     def update_sourcepath(self):
         self.sourcepath += '_mpi.' + self.lang
 
@@ -229,11 +229,11 @@ class HelloWorldTestMPIOpenMP(HelloWorldBaseTest):
     def update_description(self):
         self.descr += ' MPI + OpenMP ' + self.linking.capitalize()
 
-    @run_after('init')
+    @run_before('compile')
     def update_sourcepath(self):
         self.sourcepath += '_mpi_openmp.' + self.lang
 
-    @run_after('init')
+    @run_before('run')
     def set_omp_env_variable(self):
         # On SLURM there is no need to set OMP_NUM_THREADS if one defines
         # num_cpus_per_task, but adding for completeness and portability
