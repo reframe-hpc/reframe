@@ -2,6 +2,8 @@
 # https://github.com/eth-cscs/reframe/issues/2022 is in
 
 import reframe as rfm
+import reframe.utility.sanity as sn
+import hpctestlib.apps.utils as ut
 from hpctestlib.apps.amber import AmberBaseCheck
 
 daint_gpu_performance = {
@@ -62,6 +64,7 @@ REFERENCE_ENERGY = {
 
 
 class AmberCheck(AmberBaseCheck):
+    modules = ['Amber']
     benchmark = parameter([
         # NVE simulations
         'Cellulose_production_NVE',
@@ -75,9 +78,25 @@ class AmberCheck(AmberBaseCheck):
             'num_switches': 1
         }
     }
-    ener_ref = REFERENCE_ENERGY
+    references = REFERENCE_ENERGY
     output_file = 'amber.out'
     maintainers = ['VH', 'SO']
+
+    run_after('init')(bind(ut.define_reference))
+
+    @run_after('setup')
+    def set_generic_perf_references(self):
+        self.reference.update({'*': {
+            self.benchmark: (0, None, None, 'ns/day')
+        }})
+
+    @run_after('setup')
+    def set_perf_patterns(self):
+        self.perf_patterns = {
+            self.benchmark: sn.extractsingle(r'ns/day =\s+(?P<perf>\S+)',
+                                             self.output_file, 'perf',
+                                             float, item=1)
+        }
 
     @run_after('init')
     def download_files(self):

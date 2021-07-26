@@ -6,6 +6,7 @@
 import os
 
 import reframe as rfm
+import reframe.utility.sanity as sn
 from hpctestlib.apps.lammps import LAMMPSBaseCheck
 
 REFERENCE_ENERGY = {
@@ -84,6 +85,7 @@ REFERENCE_CPU_PERFORMANCE_LARGE = {
 
 
 class LAMMPSCheck(LAMMPSBaseCheck):
+    modules = ['LAMMPS']
     strict_check = False
     extra_resources = {
         'switches': {
@@ -93,6 +95,24 @@ class LAMMPSCheck(LAMMPSBaseCheck):
 
     tags = {'scs', 'external-resources'}
     maintainers = ['TR', 'VH']
+
+    @run_after('init')
+    def define_reference(self):
+        self.energy_reference = self.ener_ref[self.benchmark][0]
+        self.energy_difference = self.ener_ref[self.benchmark][1]
+
+    @run_after('setup')
+    def set_generic_perf_references(self):
+        self.reference.update({'*': {
+            self.benchmark: (0, None, None, 'timesteps/s')
+        }})
+
+    @run_after('setup')
+    def set_perf_patterns(self):
+        self.perf_patterns = {
+            self.benchmark: sn.extractsingle(r'\s+(?P<perf>\S+) timesteps/s',
+                                             self.stdout, 'perf', float)
+        }
 
     @run_after('init')
     def source_install(self):
