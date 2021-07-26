@@ -2,8 +2,6 @@
 # https://github.com/eth-cscs/reframe/issues/2022 is in
 
 import reframe as rfm
-import reframe.utility.sanity as sn
-import reframe.utility.typecheck as typ
 from hpctestlib.apps.amber import AmberBaseCheck
 
 daint_gpu_performance = {
@@ -82,7 +80,7 @@ class AmberCheck(AmberBaseCheck):
     maintainers = ['VH', 'SO']
 
     @run_after('init')
-    def source_install(self):
+    def download_files(self):
         self.prerun_cmds = [
             # cannot use wget because it is not installed on eiger
             f'curl -LJO https://github.com/victorusu/amber_benchmark_suite'
