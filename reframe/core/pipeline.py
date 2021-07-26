@@ -1693,10 +1693,20 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                     key = '%s:%s' % (self._current_partition.fullname, tag)
                     try:
                         ref = self.reference[key]
-                        if len(ref) > 3:
-                            raise ReframeSyntaxError(
-                                'reference tuple has more than three elements'
-                            )
+
+                        # If units are also provided in the reference, make
+                        # sure they match with the units provided by the
+                        # performance function.
+                        if len(ref) == 4:
+                            if ref[3] != unit:
+                                raise ReframeSyntaxError(
+                                    f'units for {tag!r} in the reference '
+                                    f'{key!r} do not match those specified in '
+                                    f'the performance function ({unit})'
+                                )
+
+                            # Pop the unit from the ref tuple (redundant)
+                            ref = ref[:3]
 
                     except KeyError:
                         ref = (0, None, None)
