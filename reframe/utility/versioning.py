@@ -7,42 +7,8 @@ import abc
 import re
 import semver
 
-from reframe.core.warnings import user_deprecation_warning
 
-
-def parse(version_str):
-    '''Compatibility function to normalize version strings from prior
-    ReFrame versions
-
-    :returns: a :class:`semver.VersionInfo` object.
-    '''
-
-    compat = False
-    old_style_stable = re.search(r'^(\d+)\.(\d+)$', version_str)
-    old_style_dev = re.search(r'(\d+)\.(\d+)((\d+))?-dev(\d+)$', version_str)
-    if old_style_stable:
-        compat = True
-        major = old_style_stable.group(1)
-        minor = old_style_stable.group(2)
-        ret = semver.VersionInfo(major, minor, 0)
-    elif old_style_dev:
-        compat = True
-        major = old_style_dev.group(1)
-        minor = old_style_dev.group(2)
-        patchlevel = old_style_dev.group(4) or 0
-        prerelease = old_style_dev.group(5)
-        ret = semver.VersionInfo(major, minor, patchlevel, f'dev.{prerelease}')
-    else:
-        ret = semver.VersionInfo.parse(version_str)
-
-    if compat:
-        user_deprecation_warning(
-            f"the version string {version_str!r} is deprecated; "
-            f"please use the conformant '{ret}'",
-            from_version='3.5.0'
-        )
-
-    return ret
+parse = semver.VersionInfo.parse
 
 
 class _ValidatorImpl(abc.ABC):

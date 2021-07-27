@@ -9,11 +9,10 @@
 
 __all__ = [
     'CompileOnlyRegressionTest', 'RegressionTest', 'RunOnlyRegressionTest',
-    'DEPEND_BY_ENV', 'DEPEND_EXACT', 'DEPEND_FULLY', 'final', 'RegressionMixin'
+    'RegressionMixin'
 ]
 
 
-import functools
 import glob
 import inspect
 import itertools
@@ -42,41 +41,6 @@ from reframe.core.exceptions import (BuildError, DependencyError,
                                      ReframeSyntaxError)
 from reframe.core.meta import RegressionTestMeta
 from reframe.core.schedulers import Job
-from reframe.core.warnings import user_deprecation_warning
-
-
-# Dependency kinds
-
-#: Constant to be passed as the ``how`` argument of the
-#: :func:`~RegressionTest.depends_on` method. It denotes that test case
-#: dependencies will be explicitly specified by the user.
-#:
-#:  This constant is directly available under the :mod:`reframe` module.
-#:
-#: .. deprecated:: 3.3
-#:    Please use a callable as the ``how`` argument.
-DEPEND_EXACT = 1
-
-#: Constant to be passed as the ``how`` argument of the
-#: :func:`RegressionTest.depends_on` method. It denotes that the test cases of
-#: the current test will depend only on the corresponding test cases of the
-#: target test that use the same programming environment.
-#:
-#:  This constant is directly available under the :mod:`reframe` module.
-#:
-#: .. deprecated:: 3.3
-#:    Please use a callable as the ``how`` argument.
-DEPEND_BY_ENV = 2
-
-#: Constant to be passed as the ``how`` argument of the
-#: :func:`RegressionTest.depends_on` method. It denotes that each test case of
-#: this test depends on all the test cases of the target test.
-#:
-#:  This constant is directly available under the :mod:`reframe` module.
-#:
-#: .. deprecated:: 3.3
-#:    Please use a callable as the ``how`` argument.
-DEPEND_FULLY = 3
 
 
 _PIPELINE_STAGES = (
@@ -88,21 +52,6 @@ _PIPELINE_STAGES = (
     'performance',
     'cleanup'
 )
-
-
-def final(fn):
-    fn._rfm_final = True
-    user_deprecation_warning(
-        'using the @rfm.final decorator from the rfm module is '
-        'deprecated; please use the built-in decorator @final instead.',
-        from_version='3.7.0'
-    )
-
-    @functools.wraps(fn)
-    def _wrapped(*args, **kwargs):
-        return fn(*args, **kwargs)
-
-    return _wrapped
 
 
 class RegressionMixin(metaclass=RegressionTestMeta):
@@ -1726,42 +1675,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     def user_deps(self):
         return util.SequenceView(self._userdeps)
 
-    def _depends_on_func(self, how, subdeps=None, *args, **kwargs):
-        if args or kwargs:
-            raise ValueError('invalid arguments passed')
-
-        user_deprecation_warning("passing 'how' as an integer or passing "
-                                 "'subdeps' is deprecated; please have a "
-                                 "look at the user documentation")
-
-        if (subdeps is not None and
-            not isinstance(subdeps, typ.Dict[str, typ.List[str]])):
-            raise TypeError("subdeps argument must be of type "
-                            "`Dict[str, List[str]]' or `None'")
-
-        # Now return a proper when function
-        def exact(src, dst):
-            if not subdeps:
-                return False
-
-            p0, e0 = src
-            p1, e1 = dst
-
-            # DEPEND_EXACT allows dependencies inside the same partition
-            return ((p0 == p1) and (e0 in subdeps) and (e1 in subdeps[e0]))
-
-        # Follow the old definitions
-        # DEPEND_BY_ENV used to mean same env and same partition
-        if how == DEPEND_BY_ENV:
-            return udeps.by_case
-        # DEPEND_BY_ENV used to mean same partition
-        elif how == DEPEND_FULLY:
-            return udeps.by_part
-        elif how == DEPEND_EXACT:
-            return exact
-        else:
-            raise ValueError(f"unknown value passed to 'how' argument: {how}")
-
     def depends_on(self, target, how=None, *args, **kwargs):
         '''Add a dependency to another test.
 
@@ -1821,14 +1734,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             Passing an integer to the ``how`` argument as well as using the
             ``subdeps`` argument is deprecated.
 
+        .. versionchanged:: 4.0.0
+           Passing an integer to the ``how`` argument is no longer supported.
+
         '''
         if not isinstance(target, str):
             raise TypeError("target argument must be of type: `str'")
-
-        if (isinstance(how, int)):
-            # We are probably using the old syntax; try to get a
-            # proper how function
-            how = self._depends_on_func(how, *args, **kwargs)
 
         if how is None:
             how = udeps.by_case

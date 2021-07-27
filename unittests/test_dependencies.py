@@ -11,12 +11,10 @@ import reframe as rfm
 import reframe.frontend.dependencies as dependencies
 import reframe.frontend.executors as executors
 import reframe.utility as util
-import reframe.utility.sanity as sn
 import reframe.utility.udeps as udeps
 
 from reframe.core.environments import Environment
 from reframe.core.exceptions import DependencyError
-from reframe.core.warnings import ReframeDeprecationWarning
 from reframe.frontend.loader import RegressionCheckLoader
 
 
@@ -316,62 +314,6 @@ def test_dependecies_how_functions_undoc():
         if (t0[0] == 'p0' and t1[1] == 'e1')
     }
     assert len(deps) == 9
-
-
-def test_build_deps_deprecated_syntax(loader, default_exec_ctx):
-    class Test0(rfm.RegressionTest):
-        def __init__(self):
-            self.valid_systems = ['sys0:p0', 'sys0:p1']
-            self.valid_prog_environs = ['e0', 'e1']
-            self.executable = 'echo'
-            self.executable_opts = [self.name]
-            self.sanity_patterns = sn.assert_found(self.name, self.stdout)
-
-    class Test1_deprecated(rfm.RunOnlyRegressionTest):
-        kind = parameter([rfm.DEPEND_FULLY,
-                          rfm.DEPEND_BY_ENV,
-                          rfm.DEPEND_EXACT])
-
-        def __init__(self):
-            self.valid_systems = ['sys0:p0', 'sys0:p1']
-            self.valid_prog_environs = ['e0', 'e1']
-            self.executable = 'echo'
-            self.executable_opts = [self.name]
-            if self.kind == rfm.DEPEND_EXACT:
-                self.depends_on('Test0', self.kind,
-                                {'e0': ['e0', 'e1'], 'e1': ['e1']})
-            else:
-                self.depends_on('Test0', self.kind)
-
-        # We will do our assertions in a post-init hook
-
-        @run_after('init')
-        def assert_deps(self):
-            if self.kind == rfm.DEPEND_FULLY:
-                assert self._userdeps == [('Test0', udeps.by_part)]
-            elif self.kind == rfm.DEPEND_BY_ENV:
-                assert self._userdeps == [('Test0', udeps.by_case)]
-            else:
-                how = self._userdeps[0][1]
-                t0_cases = [(p, e) for p in ['p0', 'p1']
-                            for e in ['e0', 'e1']]
-                t1_cases = [(p, e) for p in ['p0', 'p1']
-                            for e in ['e0', 'e1']]
-                deps = {(t0, t1) for t0 in t0_cases
-                        for t1 in t1_cases if how(t0, t1)}
-                assert deps == {
-                    (t0, t1) for t0 in t0_cases
-                    for t1 in t1_cases
-                    if ((t0[0] == t1[0] and t0[1] == 'e0') or
-                        (t0[0] == t1[0] and t0[1] == 'e1' and t1[1] == 'e1'))
-                }
-                assert len(deps) == 6
-
-    with pytest.warns(ReframeDeprecationWarning) as warnings:
-        for _ in Test1_deprecated.param_space:
-            Test1_deprecated(_rfm_use_params=True)
-
-    assert len(warnings) == 3
 
 
 def test_build_deps(loader, default_exec_ctx):

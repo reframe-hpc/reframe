@@ -8,7 +8,6 @@ import pytest
 
 import reframe as rfm
 from reframe.core.exceptions import NameConflictError, ReframeSyntaxError
-from reframe.core.warnings import ReframeDeprecationWarning
 from reframe.frontend.loader import RegressionCheckLoader
 
 
@@ -58,13 +57,6 @@ def test_conflicted_checks(loader_with_path):
 def test_load_error(loader):
     with pytest.raises(OSError):
         loader.load_from_file('unittests/resources/checks/foo.py')
-
-
-def test_load_bad_required_version(loader):
-    with pytest.warns(ReframeDeprecationWarning):
-        with pytest.raises(ValueError):
-            loader.load_from_file('unittests/resources/checks_unlisted/'
-                                  'no_required_version.py')
 
 
 def test_load_bad_init(loader):
@@ -138,13 +130,3 @@ def test_special_test():
 
             def setup(self, partition, environ, **job_opts):
                 super().setup(partition, environ, **job_opts)
-
-    with pytest.warns(ReframeDeprecationWarning):
-        @rfm.simple_test
-        class TestFinal(rfm.RegressionTest):
-            def __init__(self):
-                pass
-
-            @rfm.final
-            def my_new_final(self):
-                pass
