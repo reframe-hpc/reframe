@@ -236,12 +236,20 @@ def _emit_load_commands_tmod(modules_system):
     assert emit_cmds('m0') == ['module load m0']
 
 
-def _emit_load_commands_tmod4_lmod(modules_system, emit_cmds):
+def _emit_load_commands_tmod4(modules_system):
+    emit_cmds = modules_system.emit_load_commands
     assert emit_cmds('foo') == ['module load foo']
     assert emit_cmds('foo', collection=True) == [
         'module restore foo', f'module use {test_util.TEST_MODULES}'
     ]
     assert emit_cmds('foo/1.2') == ['module load foo/1.2']
+    if modules_system.name is 'lmod':
+        assert emit_cmds('foo', path='/path') == ['module use /path',
+                                                  'module load foo']
+    else:
+        assert emit_cmds('foo', path='/path') == ['module use /path',
+                                                  'module load foo',
+                                                  'module unuse /path']
 
     # Module mappings are not taking into account since v3.3
     assert emit_cmds('m0') == ['module load m0']
@@ -250,19 +258,8 @@ def _emit_load_commands_tmod4_lmod(modules_system, emit_cmds):
     ]
 
 
-def _emit_load_commands_tmod4(modules_system):
-    emit_cmds = modules_system.emit_load_commands
-    _emit_load_commands_tmod4_lmod(modules_system, emit_cmds)
-    assert emit_cmds('foo', path='/path') == ['module use /path',
-                                              'module load foo',
-                                              'module unuse /path']
-
-
 def _emit_load_commands_lmod(modules_system):
-    emit_cmds = modules_system.emit_load_commands
-    _emit_load_commands_tmod4_lmod(modules_system, emit_cmds)
-    assert emit_cmds('foo', path='/path') == ['module use /path',
-                                              'module load foo']
+    return _emit_load_commands_tmod4(modules_system)
 
 
 def _emit_load_commands_spack(modules_system):

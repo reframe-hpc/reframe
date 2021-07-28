@@ -876,7 +876,7 @@ class TMod4Impl(TModImpl):
 
         return super().conflicted_modules(module)
 
-    def _load_instr_collections(self, module):
+    def _emit_restore_instr(self, module):
         cmds = [f'module restore {module}']
 
         # Here we append module searchpath removal/addition commands
@@ -889,7 +889,7 @@ class TMod4Impl(TModImpl):
 
     def emit_load_instr(self, module):
         if module.collection:
-            return self._load_instr_collections(module)
+            return self._emit_restore_instr(module)
 
         return super().emit_load_instr(module)
 
@@ -1009,14 +1009,13 @@ class LModImpl(TMod4Impl):
 
     def emit_load_instr(self, module):
         if module.collection:
-            return self._load_instr_collections(module)
+            return self._emit_restore_instr(module)
 
         cmds = []
         if module.path:
             cmds.append(f'module use {module.path}')
 
         cmds.append(f'module load {module.fullname}')
-
         return cmds
 
 
