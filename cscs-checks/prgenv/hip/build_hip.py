@@ -21,6 +21,7 @@ class BuildHip(rfm.RegressionTest):
     valid_prog_environs = ['PrgEnv-gnu']
     sourcesdir = 'https://github.com/ROCm-Developer-Tools/HIP.git'
     build_system = 'CMake'
+    prebuild_cmds = ['git checkout main']
     postbuild_cmds = ['make install']
     executable = f'{hip_path}/bin/hipcc'
     executable_opts = ['--version']
