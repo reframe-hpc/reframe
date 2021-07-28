@@ -127,8 +127,8 @@ class QuantumESPRESSOCheck(QuantumESPRESSOBaseCheck):
     def set_perf_patterns(self):
         self.perf_patterns = {
             self.benchmark: sn.extractsingle(
-                        r'electrons.+\s(?P<wtime>\S+)s WALL',
-                        self.stdout, 'wtime', float)
+                r'electrons.+\s(?P<wtime>\S+)s WALL',
+                self.stdout, 'wtime', float)
         }
 
 @rfm.simple_test
