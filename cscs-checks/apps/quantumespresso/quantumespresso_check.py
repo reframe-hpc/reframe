@@ -10,7 +10,7 @@ from hpctestlib.apps.quantumespresso import QuantumESPRESSOBaseCheck
 
 REFERENCE_ENERGY_CPU_SMALL = {
     'prod': (-11427.09017218, 1E-06),
-    'maint':(-11427.09017218, 1E-06)
+    'maint': (-11427.09017218, 1E-06)
 }
 
 REFERENCE_ENERGY_CPU_LARGE = {
@@ -30,56 +30,58 @@ REFERENCE_ENERGY_GPU_LARGE = {
 }
 
 REFERENCE_CPU_PERFORMANCE_SMALL = {
-    'dom:mc':{
-        'maint':(115.0, None, 0.05, 's'),
-        'prod':(115.0, None, 0.05, 's')
+    'dom:mc': {
+        'maint': (115.0, None, 0.05, 's'),
+        'prod': (115.0, None, 0.05, 's')
     },
-    'daint:mc':{
-        'maint':(115.0, None, 0.10, 's'),
-        'prod':(115.0, None, 0.10, 's')
+    'daint:mc': {
+        'maint': (115.0, None, 0.10, 's'),
+        'prod': (115.0, None, 0.10, 's')
     },
-    'eiger:mc':{
-        'maint':(66.0, None, 0.10, 's'),
-        'prod':(66.0, None, 0.10, 's')
+    'eiger:mc': {
+        'maint': (66.0, None, 0.10, 's'),
+        'prod': (66.0, None, 0.10, 's')
     },
-    'pilatus:mc':{
-        'maint':(66.0, None, 0.10, 's'),
-        'prod':(66.0, None, 0.10, 's')
+    'pilatus:mc': {
+        'maint': (66.0, None, 0.10, 's'),
+        'prod': (66.0, None, 0.10, 's')
     },
 }
 
 REFERENCE_CPU_PERFORMANCE_LARGE = {
-    'daint:mc':{
-        'maint':(115.0, None, 0.10, 's'),
-        'prod':(115.0, None, 0.10, 's')
+    'daint:mc': {
+        'maint': (115.0, None, 0.10, 's'),
+        'prod': (115.0, None, 0.10, 's')
     },
-    'eiger:mc':{
-        'maint':(53.0, None, 0.10, 's'),
-        'prod':(53.0, None, 0.10, 's')
+    'eiger:mc': {
+        'maint': (53.0, None, 0.10, 's'),
+        'prod': (53.0, None, 0.10, 's')
     },
-    'pilatus:mc':{
-        'maint':(53.0, None, 0.10, 's'),
-        'prod':(53.0, None, 0.10, 's')
+    'pilatus:mc': {
+        'maint': (53.0, None, 0.10, 's'),
+        'prod': (53.0, None, 0.10, 's')
     },
 }
 
 REFERENCE_GPU_PERFORMANCE_SMALL = {
-    'dom:mc':{
-        'maint':(61.0, None, 0.05, 's'),
-        'prod':(61.0, None, 0.05, 's')
+    'dom:mc': {
+        'maint': (61.0, None, 0.05, 's'),
+        'prod': (61.0, None, 0.05, 's')
     },
-    'daint:mc':{
-        'maint':(61.0, None, 0.05, 's'),
-        'prod':(61.0, None, 0.05, 's')
+    'daint:mc': {
+        'maint': (61.0, None, 0.05, 's'),
+        'prod': (61.0, None, 0.05, 's')
     }
 }
 
 REFERENCE_GPU_PERFORMANCE_LARGE = {
-    'daint:mc':{
-        'maint':(54.0, None, 0.05, 's'),
-        'prod':(54.0, None, 0.05, 's')
+    'daint:mc': {
+        'maint': (54.0, None, 0.05, 's'),
+        'prod': (54.0, None, 0.05, 's')
     }
 }
+
+
 class QuantumESPRESSOCheck(QuantumESPRESSOBaseCheck):
     scale = parameter(['small', 'large'])
     benchmark = parameter(['maint', 'prod'])
@@ -125,8 +127,8 @@ class QuantumESPRESSOCheck(QuantumESPRESSOBaseCheck):
     def set_perf_patterns(self):
         self.perf_patterns = {
             self.benchmark: sn.extractsingle(
-                                r'electrons.+\s(?P<wtime>\S+)s WALL',
-                                self.stdout, 'wtime', float)
+                              r'electrons.+\s(?P<wtime>\S+)s WALL',
+                              self.stdout, 'wtime', float)
         }
 
 @rfm.simple_test
@@ -137,10 +139,10 @@ class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
     def set_reference(self):
         if self.scale == 'small':
             self.reference = REFERENCE_CPU_PERFORMANCE_SMALL
-            self.references =  REFERENCE_ENERGY_CPU_SMALL
+            self.references = REFERENCE_ENERGY_CPU_SMALL
         else:
             self.reference = REFERENCE_CPU_PERFORMANCE_LARGE
-            self.references =  REFERENCE_ENERGY_CPU_LARGE
+            self.references = REFERENCE_ENERGY_CPU_LARGE
 
     @run_after('init')
     def set_description(self):
@@ -201,10 +203,10 @@ class QuantumESPRESSOGpuCheck(QuantumESPRESSOCheck):
     def set_reference(self):
         if self.scale == 'small':
             self.reference = REFERENCE_GPU_PERFORMANCE_SMALL
-            self.references =  REFERENCE_ENERGY_GPU_SMALL
+            self.references = REFERENCE_ENERGY_GPU_SMALL
         else:
             self.reference = REFERENCE_GPU_PERFORMANCE_LARGE
-            self.references =  REFERENCE_ENERGY_GPU_LARGE
+            self.references = REFERENCE_ENERGY_GPU_LARGE
 
     @run_after('init')
     def set_description(self):

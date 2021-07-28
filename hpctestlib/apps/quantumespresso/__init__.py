@@ -37,7 +37,6 @@ class QuantumESPRESSOBaseCheck(rfm.RunOnlyRegressionTest):
         '''
         self.executable_opts = ['-in', self.input_file]
 
-
     @sanity_function
     def set_sanity_patterns(self):
         self.sanity_patterns = sn.all([
