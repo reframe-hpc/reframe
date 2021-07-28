@@ -7,6 +7,7 @@ import os
 
 import reframe as rfm
 import reframe.utility.sanity as sn
+import hpctestlib.apps.utils as ut
 from hpctestlib.apps.lammps import LAMMPSBaseCheck
 
 REFERENCE_ENERGY = {
@@ -95,11 +96,9 @@ class LAMMPSCheck(LAMMPSBaseCheck):
 
     tags = {'scs', 'external-resources'}
     maintainers = ['TR', 'VH']
+    references = REFERENCE_ENERGY
 
-    @run_after('init')
-    def define_reference(self):
-        self.energy_reference = self.ener_ref[self.benchmark][0]
-        self.energy_difference = self.ener_ref[self.benchmark][1]
+    run_after('init')(bind(ut.define_reference))
 
     @run_after('setup')
     def set_generic_perf_references(self):
@@ -143,7 +142,6 @@ class LAMMPSGPUCheck(LAMMPSCheck):
     executable_opts = ['-sf gpu', '-pk gpu 1', '-in', input_file]
     variables = {'CRAY_CUDA_MPS': '1'}
     num_gpus_per_node = 1
-    ener_ref = REFERENCE_ENERGY
 
     @run_after('init')
     def set_reference(self):
@@ -169,7 +167,6 @@ class LAMMPSCPUCheck(LAMMPSCheck):
     benchmark = parameter(['prod'])
     valid_systems = ['daint:mc', 'eiger:mc', 'pilatus:mc']
     input_file = 'in.lj.cpu'
-    ener_ref = REFERENCE_ENERGY
 
     @run_after('init')
     def set_reference(self):

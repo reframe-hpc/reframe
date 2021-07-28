@@ -7,11 +7,11 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
 
-__all__ = ["LammpsBaseCheck"]
+__all__ = ["QuantumESPRESSOBaseCheck"]
 
 
-class LAMMPSBaseCheck(rfm.RunOnlyRegressionTest, pin_prefix=True):
-    '''Base class for the LAMMPS Test. It is adapted to check the
+class QuantumESPRESSOBaseCheck(rfm.RunOnlyRegressionTest):
+    '''Base class for the Quantum ESPRESSO Test. It is adapted to check the
     correctness of the execution of a given script (in terms of
     energy received).
     '''
@@ -30,21 +30,26 @@ class LAMMPSBaseCheck(rfm.RunOnlyRegressionTest, pin_prefix=True):
     # that is acceptable. Required variable
     reference_difference = variable(float)
 
+    @run_after('setup')
+    def set_executable_opts(self):
+        '''Set the executable options for the Quantum ESPRESSO. Determine the
+        using of input file.
+        '''
+        self.executable_opts = ['-in', self.input_file]
+
+
     @sanity_function
     def set_sanity_patterns(self):
-        '''Standart sanity check for the LAMMPS. Compare the
-        reference value of energy with obtained from the executed
-        program.
-        '''
+        self.sanity_patterns = sn.all([
+            sn.assert_found(r'convergence has been achieved', self.stdout),
+        ])
 
-        energy = sn.extractsingle(
-            r'\s+500000(\s+\S+){3}\s+(?P<energy>\S+)\s+\S+\s\n',
-            self.stdout, 'energy', float)
-        energy_diff = sn.abs(energy - self.reference_value)
-        ref_ener_diff = sn.abs(self.reference_value *
-                               self.reference_difference)
+        energy = sn.extractsingle(r'!\s+total energy\s+=\s+(?P<energy>\S+) Ry',
+                                  self.stdout, 'energy', float)
 
+        energy_diff = sn.abs(energy-self.reference_value)
+        ref_ener_diff = sn.abs(self.reference_difference)
         return sn.all([
-            sn.assert_found(r'Total wall time:', self.stdout),
+            self.sanity_patterns,
             sn.assert_lt(energy_diff, ref_ener_diff)
         ])
