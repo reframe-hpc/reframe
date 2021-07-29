@@ -172,6 +172,8 @@ class RegressionCheckLoader:
                 util.import_module_from_file(filename, force)
             )
         except Exception:
+            from reframe.core.exceptions import is_user_error
+
             exc_info = sys.exc_info()
             if not is_severe(*exc_info):
                 # Simply skip the file in this case

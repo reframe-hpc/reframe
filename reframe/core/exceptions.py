@@ -347,7 +347,7 @@ def is_severe(exc_type, exc_value, tb):
         return False
 
     # User errors are treated as soft
-    return is_user_error(exc_type, exc_value, tb)
+    return not is_user_error(exc_type, exc_value, tb)
 
 
 def what(exc_type, exc_value, tb):

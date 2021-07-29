@@ -11,7 +11,8 @@ Debugging
 ---------
 
 ReFrame tests are Python classes inside Python source files, so the usual debugging techniques for Python apply, but the ReFrame frontend will filter some errors and stack traces by default in order to keep the output clean.
-ReFrame test files are imported, so any error that appears during import time will cause the test loading process to fail and print a stack trace pointing to the offending line.
+Generally, ReFrame will not print the full stack trace for user programming errors and will not block the test loading process.
+If a test has errors and cannot be loaded, an error message will be printed and the loading of the remaining tests will continue.
 In the following, we have inserted a small typo in the ``hello2.py`` tutorial example:
 
 .. code:: bash
@@ -20,41 +21,24 @@ In the following, we have inserted a small typo in the ``hello2.py`` tutorial ex
 
 .. code-block:: none
 
-   ./bin/reframe: name error: name 'rm' is not defined
-   ./bin/reframe: Traceback (most recent call last):
-     File "/Users/karakasv/Repositories/reframe/reframe/frontend/cli.py", line 668, in main
-       checks_found = loader.load_all()
-     File "/Users/karakasv/Repositories/reframe/reframe/frontend/loader.py", line 204, in load_all
-       checks.extend(self.load_from_dir(d, self._recurse))
-     File "/Users/karakasv/Repositories/reframe/reframe/frontend/loader.py", line 189, in load_from_dir
-       checks.extend(self.load_from_file(entry.path))
-     File "/Users/karakasv/Repositories/reframe/reframe/frontend/loader.py", line 174, in load_from_file
-       return self.load_from_module(util.import_module_from_file(filename))
-     File "/Users/karakasv/Repositories/reframe/reframe/utility/__init__.py", line 96, in import_module_from_file
-       return importlib.import_module(module_name)
-     File "/usr/local/Cellar/python/3.7.7/Frameworks/Python.framework/Versions/3.7/lib/python3.7/importlib/__init__.py", line 127, in import_module
-       return _bootstrap._gcd_import(name[level:], package, level)
-     File "<frozen importlib._bootstrap>", line 1006, in _gcd_import
-     File "<frozen importlib._bootstrap>", line 983, in _find_and_load
-     File "<frozen importlib._bootstrap>", line 967, in _find_and_load_unlocked
-     File "<frozen importlib._bootstrap>", line 677, in _load_unlocked
-     File "<frozen importlib._bootstrap_external>", line 728, in exec_module
-     File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed
-     File "/Users/karakasv/Repositories/reframe/tutorials/basics/hello/hello2.py", line 10, in <module>
-       @rm.parameterized_test(['c'], ['cpp'])
-   NameError: name 'rm' is not defined
+   ./bin/reframe: skipping test file '/Users/user/Repositories/reframe/tutorials/basics/hello/hello2.py': name error: tutorials/basics/hello/hello2.py:17: name 's' is not defined
+       sanity_patterns = s.assert_found(r'Hello, World\!', 'hello.out')
+    (rerun with '-v' for more information)
+   [List of matched checks]
+   - HelloTest (found in '/Users/user/Repositories/reframe/tutorials/basics/hello/hello1.py')
+   Found 1 check(s)
 
-
-However, if there is a Python error inside your test's constructor, ReFrame will issue a warning and keep on loading and initializing the rest of the tests.
+Notice how ReFrame prints also the source code line that caused the error.
+This is not always the case, however.
+ReFrame cannot always track a user error back to its source and this is particularly true for the ReFrame-specific syntactic elements, such as the class `builtins <regression_test_api.html#builtins>`__.
+In such cases, ReFrame will just print the error message but not the source code context.
+In the following example, we introduce a typo in the argument of the :obj:`@run_before` decorator:
 
 .. code-block:: none
 
-   ./bin/reframe: skipping test due to errors: HelloMultiLangTest: use `-v' for more information
-     FILE: /Users/karakasv/Repositories/reframe/tutorials/basics/hello/hello2.py:13
-   ./bin/reframe: skipping test due to errors: HelloMultiLangTest: use `-v' for more information
-     FILE: /Users/karakasv/Repositories/reframe/tutorials/basics/hello/hello2.py:13
+   ./bin/reframe: skipping test file '/Users/user/Repositories/reframe/tutorials/basics/hello/hello2.py': reframe syntax error: invalid pipeline stage specified: 'compil' (rerun with '-v' for more information)
    [List of matched checks]
-   - HelloTest (found in '/Users/karakasv/Repositories/reframe/tutorials/basics/hello/hello1.py')
+   - HelloTest (found in '/Users/user/Repositories/reframe/tutorials/basics/hello/hello1.py')
    Found 1 check(s)
 
 
@@ -66,27 +50,27 @@ As suggested by the warning message, passing :option:`-v` will give you the stac
 
 .. code-block:: none
 
-   ./bin/reframe: skipping test due to errors: HelloMultiLangTest: use `-v' for more information
-     FILE: /Users/karakasv/Repositories/reframe/tutorials/basics/hello/hello2.py:13
+   ./bin/reframe: skipping test file '/Users/user/Repositories/reframe/tutorials/basics/hello/hello2.py': name error: tutorials/basics/hello/hello2.py:17: name 's' is not defined
+       sanity_patterns = s.assert_found(r'Hello, World\!', 'hello.out')
+    (rerun with '-v' for more information)
    Traceback (most recent call last):
-     File "/Users/karakasv/Repositories/reframe/reframe/core/decorators.py", line 49, in _instantiate_all
-       ret.append(_instantiate(cls, args))
-     File "/Users/karakasv/Repositories/reframe/reframe/core/decorators.py", line 32, in _instantiate
-       return cls(*args)
-     File "/Users/karakasv/Repositories/reframe/tutorials/basics/hello/hello2.py", line 13, in __init__
-       foo
-   NameError: name 'foo' is not defined
-
-   ./bin/reframe: skipping test due to errors: HelloMultiLangTest: use `-v' for more information
-     FILE: /Users/karakasv/Repositories/reframe/tutorials/basics/hello/hello2.py:13
-   Traceback (most recent call last):
-     File "/Users/karakasv/Repositories/reframe/reframe/core/decorators.py", line 49, in _instantiate_all
-       ret.append(_instantiate(cls, args))
-     File "/Users/karakasv/Repositories/reframe/reframe/core/decorators.py", line 32, in _instantiate
-       return cls(*args)
-     File "/Users/karakasv/Repositories/reframe/tutorials/basics/hello/hello2.py", line 13, in __init__
-       foo
-   NameError: name 'foo' is not defined
+     File "/Users/user/Repositories/reframe/reframe/frontend/loader.py", line 172, in load_from_file
+       util.import_module_from_file(filename, force)
+     File "/Users/user/Repositories/reframe/reframe/utility/__init__.py", line 101, in import_module_from_file
+       return importlib.import_module(module_name)
+     File "/usr/local/Cellar/python@3.9/3.9.1_6/Frameworks/Python.framework/Versions/3.9/lib/python3.9/importlib/__init__.py", line 127, in import_module
+       return _bootstrap._gcd_import(name[level:], package, level)
+     File "<frozen importlib._bootstrap>", line 1030, in _gcd_import
+     File "<frozen importlib._bootstrap>", line 1007, in _find_and_load
+     File "<frozen importlib._bootstrap>", line 986, in _find_and_load_unlocked
+     File "<frozen importlib._bootstrap>", line 680, in _load_unlocked
+     File "<frozen importlib._bootstrap_external>", line 790, in exec_module
+     File "<frozen importlib._bootstrap>", line 228, in _call_with_frames_removed
+     File "/Users/user/Repositories/reframe/tutorials/basics/hello/hello2.py", line 11, in <module>
+       class HelloMultiLangTest(rfm.RegressionTest):
+     File "/Users/user/Repositories/reframe/tutorials/basics/hello/hello2.py", line 17, in HelloMultiLangTest
+       sanity_patterns = s.assert_found(r'Hello, World\!', 'hello.out')
+   NameError: name 's' is not defined
 
    Loaded 1 test(s)
    Generated 1 test case(s)
@@ -95,9 +79,8 @@ As suggested by the warning message, passing :option:`-v` will give you the stac
    Filtering test cases(s) by other attributes: 1 remaining
    Final number of test cases: 1
    [List of matched checks]
-   - HelloTest (found in '/Users/karakasv/Repositories/reframe/tutorials/basics/hello/hello1.py')
+   - HelloTest (found in '/Users/user/Repositories/reframe/tutorials/basics/hello/hello1.py')
    Found 1 check(s)
-   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-ckymcl44.log'
 
 
 .. tip::
