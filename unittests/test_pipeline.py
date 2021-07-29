@@ -547,7 +547,7 @@ def test_unkown_pre_hook():
         def prepare(self):
             self.x = 1
 
-    with pytest.raises(ReframeSyntaxError):
+    with pytest.raises(ValueError):
         MyTest()
 
 
@@ -557,7 +557,7 @@ def test_unkown_post_hook():
         def prepare(self):
             self.x = 1
 
-    with pytest.raises(ReframeSyntaxError):
+    with pytest.raises(ValueError):
         MyTest()
 
 
@@ -567,7 +567,7 @@ def test_pre_init_hook():
         def prepare(self):
             self.x = 1
 
-    with pytest.raises(ReframeSyntaxError):
+    with pytest.raises(ValueError):
         MyTest()
 
 

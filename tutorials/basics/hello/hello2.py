@@ -14,8 +14,8 @@ class HelloMultiLangTest(rfm.RegressionTest):
     valid_systems = ['*']
     valid_prog_environs = ['*']
     executable_opts = ['> hello.out']
-    sanity_patterns = s.assert_found(r'Hello, World\!', 'hello.out')
+    sanity_patterns = sn.assert_found(r'Hello, World\!', 'hello.out')
 
-    @run_before('compile')
+    @run_before('compil')
     def set_sourcepath(self):
         self.sourcepath = f'hello.{self.lang}'
