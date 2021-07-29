@@ -26,7 +26,7 @@ def launcher():
     return getlauncher('local')
 
 
-@pytest.fixture(params=['slurm', 'squeue', 'local', 'pbs', 'torque'])
+@pytest.fixture(params=['sge', 'slurm', 'squeue', 'local', 'pbs', 'torque'])
 def scheduler(request):
     return getscheduler(request.param)
 
@@ -132,6 +132,22 @@ def assert_job_script_sanity(job):
                 'echo postrun'] == matches
 
 
+def _expected_sge_directives(job):
+    num_nodes = job.num_tasks // job.num_tasks_per_node
+    num_cpus_per_node = job.num_cpus_per_task * job.num_tasks_per_node
+    return set([
+        f'#$ -N "testjob"',
+        f'#$ -l h_rt=0:5:0',
+        f'#$ -o {job.stdout}',
+        f'#$ -e {job.stderr}',
+        f'#$ -wd {job.workdir}',
+        f'#$ --gres=gpu:4',
+        f'#$ --account=spam',
+        f'#DW jobdw capacity=100GB',
+        f'#DW stage_in source=/foo'
+    ])
+
+
 def _expected_slurm_directives(job):
     return set([
         '#SBATCH --job-name="testjob"',
@@ -205,7 +221,7 @@ def test_prepare(fake_job):
 
     prepare_job(fake_job)
     with open(fake_job.script_filename) as fp:
-        found_directives = set(re.findall(r'^\#\w+ .*', fp.read(),
+        found_directives = set(re.findall(r'^\#\S+ .*', fp.read(),
                                           re.MULTILINE))
 
     expected_directives = globals()[f'_expected_{sched_name}_directives']
