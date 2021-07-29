@@ -123,6 +123,20 @@ def prepare_job(job, command='hostname',
         )
 
 
+def get_sleep_pid(job, attempts=3):
+    # Try reading the pid of spawned sleep, until a valid value is retrieved
+    for i in range(attempts):
+        try:
+            with open(job.stdout) as fp:
+                sleep_pid = int(fp.read())
+                return sleep_pid
+        except ValueError:
+            time.sleep(1)
+
+    pytest.fail(f'failed to retrieve the spawned sleep process pid after '
+                f'{attempts} attempts')
+
+
 def assert_job_script_sanity(job):
     '''Assert the sanity of the produced script file.'''
     with open(job.script_filename) as fp:
@@ -130,6 +144,20 @@ def assert_job_script_sanity(job):
                              fp.read())
         assert ['echo prepare', 'echo prerun', 'hostname',
                 'echo postrun'] == matches
+
+
+def get_sleep_pid(job, attempts=3):
+    # Try reading the pid of spawned sleep, until a valid value is retrieved
+    for i in range(attempts):
+        try:
+            with open(job.stdout) as fp:
+                sleep_pid = int(fp.read())
+                return sleep_pid
+        except ValueError:
+            time.sleep(1)
+
+    pytest.fail(f'failed to retrieve the spawned sleep process pid after '
+                f'{attempts} attempts')
 
 
 def _expected_sge_directives(job):
@@ -525,19 +553,7 @@ def test_cancel_with_grace(minimal_job, scheduler, local_only):
     # signal handler for SIGTERM
     time.sleep(1)
 
-    # Try reading the pid of spawned sleep, until a valid value is retrieved
-    for i in range(3):
-        try:
-            with open(minimal_job.stdout) as fp:
-                sleep_pid = int(fp.read())
-        except ValueError:
-            time.sleep(1)
-            continue
-        else:
-            break
-    else:
-        pytest.fail('failed to retrieve the spawned sleep process pid')
-
+    sleep_pid = get_sleep_pid(minimal_job)
     t_grace = time.time()
     minimal_job.cancel()
     time.sleep(0.1)
@@ -579,19 +595,7 @@ def test_cancel_term_ignore(minimal_job, scheduler, local_only):
     # signal handler for SIGTERM
     time.sleep(1)
 
-    # Try reading the pid of spawned sleep, until a valid value is retrieved
-    for i in range(3):
-        try:
-            with open(minimal_job.stdout) as fp:
-                sleep_pid = int(fp.read())
-        except ValueError:
-            time.sleep(1)
-            continue
-        else:
-            break
-    else:
-        pytest.fail('failed to retrieve the spawned sleep process pid')
-
+    sleep_pid = get_sleep_pid(minimal_job)
     t_grace = time.time()
     minimal_job.cancel()
     time.sleep(0.1)
