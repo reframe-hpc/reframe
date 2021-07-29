@@ -302,6 +302,13 @@ class RegressionTask:
 
         return done
 
+    def build_complete(self):
+        done = self._safe_call(self.check.run_complete)
+        if done:
+            self._notify_listeners('on_task_build_exit')
+
+        return done
+
     def run_wait(self):
         self._safe_call(self.check.run_wait)
         self.zombie = False
@@ -372,6 +379,10 @@ class TaskEventListener(abc.ABC):
     @abc.abstractmethod
     def on_task_exit(self, task):
         '''Called whenever a RegressionTask finishes.'''
+
+    @abc.abstractmethod
+    def on_task_build_exit(self, task):
+        '''Called whenever a RegressionTask build finishes.'''
 
     @abc.abstractmethod
     def on_task_skip(self, task):

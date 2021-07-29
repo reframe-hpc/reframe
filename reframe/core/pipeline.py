@@ -1501,6 +1501,35 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             self.num_tasks = self.job.num_tasks
 
     @final
+    def build_complete(self):
+        '''Check if the build phase has completed.
+
+        :returns: :class:`True` if the associated build job has finished,
+            :class:`False` otherwise.
+
+            If no job descriptor is yet associated with this test,
+            :class:`True` is returned.
+        :raises reframe.core.exceptions.ReframeError: In case of errors.
+
+        .. warning::
+           You may not override this method directly unless you are in
+           special test. See `here
+           <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+           more details.
+
+
+           .. versionchanged:: 3.4
+              Overriding this method directly in no longer allowed. See `here
+              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+              more details.
+
+        '''
+        if not self._build_job:
+            return True
+
+        return self._build_job.finished()
+
+    @final
     def run_complete(self):
         '''Check if the run phase has completed.
 
