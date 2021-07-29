@@ -161,6 +161,9 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def on_task_exit(self, task):
         pass
 
+    def on_task_build_exit(self, task):
+        pass
+
     def on_task_skip(self, task):
         msg = str(task.exc_info[1])
         self.printer.status('SKIP', msg, just='right')
@@ -261,6 +264,17 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             getlogger().debug2('Task was not running')
             pass
 
+    def _remove_from_building(self, task):
+        getlogger().debug2(
+            f'Removing task from the building list: {task.testcase}'
+        )
+        try:
+            partname = task.check.current_partition.fullname
+            self._building_tasks[partname].remove(task)
+        except (ValueError, AttributeError, KeyError):
+            getlogger().debug2('Task was not building')
+            pass
+
     # FIXME: The following functions are very similar and they are also reused
     # in the serial policy; we should refactor them
     def deps_failed(self, task):
@@ -339,6 +353,11 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._remove_from_running(task)
         self._completed_tasks.append(task)
 
+    def on_task_build_exit(self, task):
+        task.build_wait()
+        self._remove_from_building(task)
+        self._reschedule(task)
+
     def _setup_task(self, task):
         if self.deps_skipped(task):
             try:
@@ -394,20 +413,20 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
                 return
 
-            if len(self._running_tasks[partname]) >= partition.max_jobs:
-                # Make sure that we still exceeded the job limit
-                getlogger().debug2(
-                    f'Reached concurrency limit for partition {partname!r}: '
-                    f'{partition.max_jobs} job(s)'
-                )
-                self._poll_tasks()
+            # if len(self._running_tasks[partname]) >= partition.max_jobs:
+            #     # Make sure that we still exceeded the job limit
+            #     getlogger().debug2(
+            #         f'Reached concurrency limit for partition {partname!r}: '
+            #         f'{partition.max_jobs} job(s)'
+            #     )
+            #     self._poll_tasks()
 
-            if len(self._running_tasks[partname]) < partition.max_jobs:
-                # Task was put in _ready_tasks during setup
-                self._ready_tasks[partname].pop()
-                self._reschedule(task)
-            else:
-                self.printer.status('HOLD', task.check.info(), just='right')
+            # if len(self._running_tasks[partname]) < partition.max_jobs:
+            #     # Task was put in _ready_tasks during setup
+            #     self._ready_tasks[partname].pop()
+            #     self._reschedule(task)
+            # else:
+            #     self.printer.status('HOLD', task.check.info(), just='right')
         except TaskExit:
             if not task.failed and not task.skipped:
                 with contextlib.suppress(TaskExit):
@@ -424,12 +443,12 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def _poll_tasks(self):
         '''Update the counts of running checks per partition.'''
 
-        def split_jobs(tasks):
+        def split_jobs(tasks, build_split=False):
             '''Split jobs into forced local and normal ones.'''
             forced_local = []
             normal = []
             for t in tasks:
-                if t.check.local:
+                if t.check.local or (build_split and t.check.build_locally):
                     forced_local.append(t.check.job)
                 else:
                     normal.append(t.check.job)
@@ -439,7 +458,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         for part in self._partitions:
             partname = part.fullname
             num_tasks = len(self._running_tasks[partname])
-            getlogger().debug2(f'Polling {num_tasks} task(s) in {partname!r}')
+            getlogger().debug2(f'Polling {num_tasks} running task(s) in {partname!r}')
             forced_local_jobs, part_jobs = split_jobs(
                 self._running_tasks[partname]
             )
@@ -447,8 +466,20 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             self.local_scheduler.poll(*forced_local_jobs)
 
             # Trigger notifications for finished jobs
-            for t in self._running_tasks[partname]:
+            for t in self._running_tasks[partname][:]:
                 t.run_complete()
+
+            num_tasks = len(self._building_tasks[partname])
+            getlogger().debug2(f'Polling {num_tasks} building task(s) in {partname!r}')
+            forced_local_jobs, part_jobs = split_jobs(
+                self._building_tasks[partname], build_split=True
+            )
+            part.scheduler.poll(*part_jobs)
+            self.local_scheduler.poll(*forced_local_jobs)
+
+            # Trigger notifications for finished jobs
+            for t in self._building_tasks[partname][:]:
+                t.build_complete()
 
     def _setup_all(self):
         still_waiting = []
@@ -496,10 +527,12 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                                     self._completed_tasks):
             task.abort(cause)
 
-    def _reschedule(self, task):
+    def _reschedule_building(self, task):
         getlogger().debug2(f'Scheduling test case {task.testcase} for running')
         task.compile()
-        task.compile_wait()
+
+    def _reschedule(self, task):
+        getlogger().debug2(f'Scheduling test case {task.testcase} for running')
         task.run()
 
     def _reschedule_all(self):
