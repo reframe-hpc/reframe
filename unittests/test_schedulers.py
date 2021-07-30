@@ -147,20 +147,6 @@ def assert_job_script_sanity(job):
                 'echo postrun'] == matches
 
 
-def get_sleep_pid(job, attempts=3):
-    # Try reading the pid of spawned sleep, until a valid value is retrieved
-    for i in range(attempts):
-        try:
-            with open(job.stdout) as fp:
-                sleep_pid = int(fp.read())
-                return sleep_pid
-        except ValueError:
-            time.sleep(1)
-
-    pytest.fail(f'failed to retrieve the spawned sleep process pid after '
-                f'{attempts} attempts')
-
-
 def _expected_sge_directives(job):
     num_nodes = job.num_tasks // job.num_tasks_per_node
     num_cpus_per_node = job.num_cpus_per_task * job.num_tasks_per_node
