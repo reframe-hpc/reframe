@@ -97,7 +97,7 @@ class gpu_usage_report_check(GpuBurn):
     def total_nodes_reported(self):
         return sn.count(self.nodes_reported)
 
-    @performance_report
+    @performance_variables
     def set_perf_patterns(self):
         '''The number of reported nodes can be used as a perf metric.
 

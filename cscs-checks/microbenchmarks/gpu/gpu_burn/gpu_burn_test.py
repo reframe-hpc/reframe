@@ -61,7 +61,7 @@ class gpu_burn_check(GpuBurn):
     def set_num_gpus_per_node(self):
         hooks.set_num_gpus_per_node(self)
 
-    @performance_report
+    @performance_variables
     def report_slow_nodes(self):
         '''Report the base perf metrics and also all the slow nodes.'''
 
