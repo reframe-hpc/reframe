@@ -277,17 +277,17 @@ class RegressionTestMeta(type):
 
             return _fn
 
-        def performance_report(fn):
-            '''Mark a function to generate the dict with the perf report.
+        def performance_variables(fn):
+            '''Mark a function to generate the dict with all the perf vars.
 
             It must return an object of type
             ``typ.Dict[str, _DeferredExpression]``.
             '''
-            setattr(fn, '_rfm_perf_report', True)
+            setattr(fn, '_rfm_perf_vars', True)
             return fn
 
         namespace['performance_function'] = performance_function
-        namespace['performance_report'] = performance_report
+        namespace['performance_variables'] = performance_variables
         return metacls.MetaNamespace(namespace)
 
     def __new__(metacls, name, bases, namespace, **kwargs):
@@ -311,7 +311,7 @@ class RegressionTestMeta(type):
         directives = [
             'parameter', 'variable', 'bind', 'run_before', 'run_after',
             'require_deps', 'required', 'deferrable', 'sanity_function',
-            'final', 'performance_function', 'performance_report'
+            'final', 'performance_function', 'performance_variables'
         ]
         for b in directives:
             namespace.pop(b, None)
@@ -373,28 +373,28 @@ class RegressionTestMeta(type):
 
                 break
 
-        # Gather all the locally defined performance report functions based on
-        # the _rfm_perf_report attribute.
+        # Gather all the locally defined performance_variables functions based on
+        # the _rfm_perf_vars attribute.
         perf_report_fn = [
-            v for v in namespace.values() if hasattr(v, '_rfm_perf_report')
+            v for v in namespace.values() if hasattr(v, '_rfm_perf_vars')
         ]
         if perf_report_fn:
-            cls._rfm_perf_report = perf_report_fn[0]
+            cls._rfm_perf_vars = perf_report_fn[0]
             if len(perf_report_fn) > 1:
                 raise ReframeSyntaxError(
-                    f'{cls.__qualname__!r} defines more than one performance '
-                    'report function in the class body.'
+                    f'{cls.__qualname__!r} uses the performance_variables '
+                    f'decorator more than once in the class body.'
                 )
 
         else:
             # Search the bases if no local perf report functions exist.
-            for base in (b for b in bases if hasattr(b, '_rfm_perf_report')):
-                cls._rfm_perf_report = getattr(base, '_rfm_perf_report')
-                if cls._rfm_perf_report.__name__ in namespace:
+            for base in (b for b in bases if hasattr(b, '_rfm_perf_vars')):
+                cls._rfm_perf_vars = getattr(base, '_rfm_perf_vars')
+                if cls._rfm_perf_vars.__name__ in namespace:
                     raise ReframeSyntaxError(
                         f'{cls.__qualname__!r} overrides the candidate '
-                        f'performance report function '
-                        f'{cls._rfm_perf_report.__qualname__!r} without '
+                        f'performance variables function '
+                        f'{cls._rfm_perf_vars.__qualname__!r} without '
                         f'defining an alternative'
                     )
 
