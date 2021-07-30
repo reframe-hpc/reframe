@@ -236,6 +236,10 @@ def test_runall(make_runner, make_cases, common_exec_ctx, tmp_path):
     with open(report_file, 'w') as fp:
         jsonext.dump(report, fp)
 
+    # We explicitly set `time_total` to `None` in the last test case, in order
+    # to test the proper handling of `None`.`
+    report['runs'][0]['testcases'][-1]['time_total'] = None
+
     # Validate the junit report
     xml_report = runreport.junit_xml_report(report)
     _validate_junit_report(xml_report)
