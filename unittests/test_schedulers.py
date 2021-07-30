@@ -130,6 +130,7 @@ def get_sleep_pid(job, attempts=3):
             with open(job.stdout) as fp:
                 sleep_pid = int(fp.read())
                 return sleep_pid
+
         except ValueError:
             time.sleep(1)
 
