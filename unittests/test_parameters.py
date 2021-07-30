@@ -9,6 +9,7 @@ import inspect
 
 
 import reframe as rfm
+from reframe.core.exceptions import ReframeSyntaxError
 
 
 class NoParams(rfm.RunOnlyRegressionTest):
@@ -208,7 +209,7 @@ def test_namespace_clash():
 
 
 def test_double_declare():
-    with pytest.raises(ValueError):
+    with pytest.raises(ReframeSyntaxError):
         class MyTest(rfm.RegressionTest):
             P0 = parameter([1, 2, 3])
             P0 = parameter()
@@ -261,7 +262,7 @@ def test_param_space_read_only():
 
 
 def test_parameter_override():
-    with pytest.raises(ValueError):
+    with pytest.raises(ReframeSyntaxError):
         # Trigger the check from MetaNamespace
         class MyTest(rfm.RegressionTest):
             p = parameter([1, 2])
@@ -285,7 +286,7 @@ def test_override_regular_attribute():
 
 
 def test_override_parameter():
-    with pytest.raises(ValueError):
+    with pytest.raises(ReframeSyntaxError):
         class Foo(rfm.RegressionTest):
             p = parameter([1, 2])
             p = 1

@@ -8,6 +8,7 @@ import pytest
 import math
 
 import reframe as rfm
+from reframe.core.exceptions import ReframeSyntaxError
 
 
 @pytest.fixture
@@ -92,7 +93,7 @@ def test_var_space_clash():
 
 
 def test_double_declare():
-    with pytest.raises(ValueError):
+    with pytest.raises(ReframeSyntaxError):
         class MyTest(rfm.RegressionTest):
             v0 = variable(int, value=1)
             v0 = variable(float, value=0.5)

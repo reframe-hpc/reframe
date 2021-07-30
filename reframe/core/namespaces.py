@@ -59,7 +59,7 @@ class LocalNamespace:
 
     def _raise_namespace_clash(self, name):
         '''Raise an error if there is a namespace clash.'''
-        raise ValueError(
+        raise KeyError(
             f'{name!r} is already present in the current namespace'
         )
 
