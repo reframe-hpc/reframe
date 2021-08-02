@@ -542,27 +542,33 @@ def test_extra_resources(HelloTest, testsys_system):
 
 
 def test_unkown_pre_hook():
+    class MyTest(rfm.RunOnlyRegressionTest):
+        @run_before('foo')
+        def prepare(self):
+            self.x = 1
+
     with pytest.raises(ValueError):
-        class MyTest(rfm.RunOnlyRegressionTest):
-            @run_before('foo')
-            def prepare(self):
-                self.x = 1
+        MyTest()
 
 
 def test_unkown_post_hook():
+    class MyTest(rfm.RunOnlyRegressionTest):
+        @run_after('foo')
+        def prepare(self):
+            self.x = 1
+
     with pytest.raises(ValueError):
-        class MyTest(rfm.RunOnlyRegressionTest):
-            @run_after('foo')
-            def prepare(self):
-                self.x = 1
+        MyTest()
 
 
 def test_pre_init_hook():
+    class MyTest(rfm.RunOnlyRegressionTest):
+        @run_before('init')
+        def prepare(self):
+            self.x = 1
+
     with pytest.raises(ValueError):
-        class MyTest(rfm.RunOnlyRegressionTest):
-            @run_before('init')
-            def prepare(self):
-                self.x = 1
+        MyTest()
 
 
 def test_post_init_hook(local_exec_ctx):
@@ -710,7 +716,7 @@ def test_stacked_hooks(HelloTest, local_exec_ctx):
 
 
 def test_multiple_inheritance(HelloTest):
-    with pytest.raises(ValueError):
+    with pytest.raises(ReframeSyntaxError):
         class MyTest(rfm.RunOnlyRegressionTest, HelloTest):
             pass
 

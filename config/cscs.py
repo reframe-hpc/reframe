@@ -734,6 +734,21 @@ site_configuration = {
                     ],
                     'launcher': 'srun'
                 },
+                {
+                    'name': 'jupyter_mc',
+                    'scheduler': 'slurm',
+                    'environs': [
+                        'builtin'
+                    ],
+                    'access': [
+                        f'-Cmc',
+                        f'--reservation=interact',
+                        f'--account={osext.osgroup()}'
+                    ],
+                    'descr': 'JupyterHub GPU nodes',
+                    'max_jobs': 10,
+                    'launcher': 'srun'
+                },
             ]
         },
         {

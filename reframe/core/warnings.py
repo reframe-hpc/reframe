@@ -63,7 +63,7 @@ def user_deprecation_warning(message, from_version='0.0.0'):
 
     '''
 
-    # Unroll the stack and issue the warning from the first stack frame that is
+    # Unwind the stack and issue the warning from the first stack frame that is
     # outside the framework.
     stack_level = 1
     for s in inspect.stack():
@@ -74,7 +74,6 @@ def user_deprecation_warning(message, from_version='0.0.0'):
         stack_level += 1
 
     min_version = semver.VersionInfo.parse(from_version)
-
     version = semver.VersionInfo.parse(reframe.VERSION)
     if version.prerelease:
         # Promote prereleases, so that we issue the warning also in this case

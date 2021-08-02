@@ -212,11 +212,57 @@ System Partition Configuration
    - ``local``: Jobs will be launched locally without using any job scheduler.
    - ``pbs``: Jobs will be launched using the `PBS Pro <https://en.wikipedia.org/wiki/Portable_Batch_System>`__ scheduler.
    - ``torque``: Jobs will be launched using the `Torque <https://en.wikipedia.org/wiki/TORQUE>`__ scheduler.
+   - ``sge``: Jobs will be launched using the `Sun Grid Engine <https://arc.liv.ac.uk/SGE/htmlman/manuals.html>`__ scheduler.
    - ``slurm``: Jobs will be launched using the `Slurm <https://www.schedmd.com/>`__ scheduler.
      This backend requires job accounting to be enabled in the target system.
      If not, you should consider using the ``squeue`` backend below.
    - ``squeue``: Jobs will be launched using the `Slurm <https://www.schedmd.com/>`__ scheduler.
      This backend does not rely on job accounting to retrieve job statuses, but ReFrame does its best to query the job state as reliably as possible.
+
+   .. versionadded:: 3.7.2
+      Support for the SGE scheduler is added.
+
+   .. note::
+
+      The way that multiple node jobs are submitted using the SGE scheduler can be very site-specific.
+      For this reason, the ``sge`` scheduler backend does not try to interpret any related arguments, e.g., ``num_tasks``, ``num_tasks_per_node`` etc.
+      Users must specify how these resources are to be requested by setting the :js:attr:`resources` partition configuration parameter and then request them from inside a test using the :py:attr:`~reframe.core.pipeline.RegressionTest.extra_resources` test attribute.
+      Here is an example configuration for a system partition named ``foo`` that defines different ways for submitting MPI-only, OpenMP-only and MPI+OpenMP jobs:
+
+      .. code-block:: python
+
+         {
+             'name': 'foo',
+             'scheduler': 'sge',
+             'resources': [
+                 {
+                     'name': 'smp',
+                     'options': ['-pe smp {num_slots}']
+                 },
+                 {
+                     'name': 'mpi',
+                     'options': ['-pe mpi {num_slots}']
+                 },
+                 {
+                     'name': 'mpismp',
+                     'options': ['-pe mpismp {num_slots}']
+                 }
+             ]
+         }
+
+      Each test then can request the different type of slots as follows:
+
+      .. code-block:: python
+
+         self.extra_resouces = {
+             'smp': {'num_slots': self.num_cpus_per_task},
+             'mpi': {'num_slots': self.num_tasks},
+             'mpismp': {'num_slots': self.num_tasks*self.num_cpus_per_task}
+         }
+
+      Notice that defining :py:attr:`~reframe.core.pipeline.RegressionTest.extra_resources` does not make the test non-portable to other systems that have different schedulers;
+      the :py:attr:`extra_resources` will be simply ignored in this case and the scheduler backend will interpret the different test fields in the appropriate way.
+
 
 .. js:attribute:: .systems[].partitions[].launcher
 
@@ -1233,6 +1279,10 @@ General Configuration
    :default: ``false``
 
    Ignore test name conflicts when loading tests.
+
+   .. deprecated:: 3.8.0
+      This option will be removed in a future version.
+
 
 
 .. js:attribute:: .general[].trap_job_errors

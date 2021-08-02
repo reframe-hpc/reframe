@@ -21,9 +21,7 @@ import traceback
 import reframe.utility.osext as osext
 import reframe.core.warnings as warn
 import reframe.core.hooks as hooks
-from reframe.core.exceptions import (ReframeSyntaxError,
-                                     SkipTestError,
-                                     user_frame)
+from reframe.core.exceptions import ReframeSyntaxError, SkipTestError, what
 from reframe.core.logging import getlogger
 from reframe.core.pipeline import RegressionTest
 from reframe.utility.versioning import VersionValidator
@@ -51,22 +49,18 @@ def _register_test(cls, args=None):
             try:
                 if cls in mod.__rfm_skip_tests:
                     continue
-
             except AttributeError:
                 mod.__rfm_skip_tests = set()
 
             try:
                 ret.append(_instantiate(cls, args))
             except SkipTestError as e:
-                getlogger().warning(f'skipping test {cls.__name__!r}: {e}')
+                getlogger().warning(f'skipping test {cls.__qualname__!r}: {e}')
             except Exception:
-                frame = user_frame(*sys.exc_info())
-                filename = frame.filename if frame else 'n/a'
-                lineno = frame.lineno if frame else 'n/a'
+                exc_info = sys.exc_info()
                 getlogger().warning(
-                    f"skipping test {cls.__name__!r} due to errors: "
-                    f"use `-v' for more information\n"
-                    f"    FILE: {filename}:{lineno}"
+                    f"skipping test {cls.__qualname__!r}: {what(*exc_info)} "
+                    f"(rerun with '-v' for more information)"
                 )
                 getlogger().verbose(traceback.format_exc())
 
@@ -88,8 +82,11 @@ def _validate_test(cls):
                                  'subclass of RegressionTest')
 
     if (cls.is_abstract()):
-        raise ValueError(f'decorated test ({cls.__qualname__!r}) has one or '
-                         f'more undefined parameters')
+        getlogger().warning(
+            f'skipping test {cls.__qualname__!r}: '
+            f'test has one or more undefined parameters'
+        )
+        return False
 
     conditions = [VersionValidator(v) for v in cls._rfm_required_version]
     if (cls._rfm_required_version and
@@ -151,7 +148,7 @@ def parameterized_test(*inst):
     def _do_register(cls):
         if _validate_test(cls):
             if not cls.param_space.is_empty():
-                raise ValueError(
+                raise ReframeSyntaxError(
                     f'{cls.__qualname__!r} is already a parameterized test'
                 )
 
@@ -204,7 +201,7 @@ def required_version(*versions):
     )
 
     if not versions:
-        raise ValueError('no versions specified')
+        raise ReframeSyntaxError('no versions specified')
 
     conditions = [VersionValidator(v) for v in versions]
 
@@ -246,10 +243,11 @@ def run_before(stage):
         from_version='3.7.0'
     )
     if stage not in _USER_PIPELINE_STAGES:
-        raise ValueError(f'invalid pipeline stage specified: {stage!r}')
+        raise ReframeSyntaxError(
+            f'invalid pipeline stage specified: {stage!r}')
 
     if stage == 'init':
-        raise ValueError('pre-init hooks are not allowed')
+        raise ReframeSyntaxError('pre-init hooks are not allowed')
 
     return hooks.attach_to('pre_' + stage)
 
@@ -268,7 +266,8 @@ def run_after(stage):
         from_version='3.7.0'
     )
     if stage not in _USER_PIPELINE_STAGES:
-        raise ValueError(f'invalid pipeline stage specified: {stage!r}')
+        raise ReframeSyntaxError(
+            f'invalid pipeline stage specified: {stage!r}')
 
     # Map user stage names to the actual pipeline functions if needed
     if stage == 'init':
