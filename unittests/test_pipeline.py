@@ -716,7 +716,7 @@ def test_stacked_hooks(HelloTest, local_exec_ctx):
 
 
 def test_multiple_inheritance(HelloTest):
-    with pytest.raises(ValueError):
+    with pytest.raises(ReframeSyntaxError):
         class MyTest(rfm.RunOnlyRegressionTest, HelloTest):
             pass
 

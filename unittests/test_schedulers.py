@@ -500,6 +500,19 @@ def assert_process_died(pid):
         pass
 
 
+def _read_pid(job, attempts=3):
+    # Try reading the pid of spawned sleep, until a valid value is retrieved
+    for _ in range(attempts):
+        try:
+            with open(job.stdout) as fp:
+                return int(fp.read())
+        except ValueError:
+            time.sleep(1)
+
+    pytest.fail(f'failed to retrieve the spawned sleep process pid after '
+                f'{attempts} attempts')
+
+
 def test_cancel_with_grace(minimal_job, scheduler, local_only):
     # This test emulates a spawned process that ignores the SIGTERM signal
     # and also spawns another process:
@@ -525,15 +538,12 @@ def test_cancel_with_grace(minimal_job, scheduler, local_only):
     # signal handler for SIGTERM
     time.sleep(1)
 
+    sleep_pid = _read_pid(minimal_job)
     t_grace = time.time()
     minimal_job.cancel()
     time.sleep(0.1)
     minimal_job.wait()
     t_grace = time.time() - t_grace
-
-    # Read pid of spawned sleep
-    with open(minimal_job.stdout) as fp:
-        sleep_pid = int(fp.read())
 
     assert t_grace >= 2 and t_grace < 5
     assert minimal_job.state == 'FAILURE'
@@ -570,15 +580,12 @@ def test_cancel_term_ignore(minimal_job, scheduler, local_only):
     # signal handler for SIGTERM
     time.sleep(1)
 
+    sleep_pid = _read_pid(minimal_job)
     t_grace = time.time()
     minimal_job.cancel()
     time.sleep(0.1)
     minimal_job.wait()
     t_grace = time.time() - t_grace
-
-    # Read pid of spawned sleep
-    with open(minimal_job.stdout) as fp:
-        sleep_pid = int(fp.read())
 
     assert t_grace >= 2 and t_grace < 5
     assert minimal_job.state == 'FAILURE'
