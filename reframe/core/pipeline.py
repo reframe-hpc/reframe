@@ -349,7 +349,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: The name of the executable to be launched during the run phase.
     #:
     #: :type: :class:`str`
-    #: :default: ``os.path.join('.', self.name)``
+    #: :default: :class:`required`
+    #:
+    #: .. versionchanged:: 3.8
+    #:    If this variable is still undefined during the execution of the
+    #:    compilation stage, it will be set to
+    #:    ``os.path.join('.', self.name)``.
     executable = variable(str)
 
     #: List of options to be passed to the :attr:`executable`.
