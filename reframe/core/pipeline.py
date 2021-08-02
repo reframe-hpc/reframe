@@ -861,10 +861,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         if not hasattr(self, 'descr'):
             self.descr = self.name
 
-        # Pass if the executable is a required variable.
-        if not hasattr(self, 'executable'):
-            self.executable = os.path.join('.', self.name)
-
         self._perfvalues = {}
 
         # Static directories of the regression check
@@ -1319,6 +1315,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 self.build_system = 'SingleSource'
 
             self.build_system.srcfile = self.sourcepath
+
+            # Set executable (only if hasn't been provided)
+            if not hasattr(self, 'executable'):
+                self.executable = os.path.join('.', self.name)
+
             self.build_system.executable = self.executable
 
         user_environ = env.Environment(type(self).__name__,
