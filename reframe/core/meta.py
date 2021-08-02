@@ -427,12 +427,12 @@ class RegressionTestMeta(type):
         if getattr(cls, '_rfm_override_final', None):
             return
 
-        for v in namespace.values():
-            for b in cls._rfm_bases:
-                if callable(v) and v.__name__ in b._rfm_final_methods:
-                    msg = (f"'{cls.__qualname__}.{v.__name__}' attempts to "
+        for b in cls._rfm_bases:
+            for key in b._rfm_final_methods:
+                if key in namespace and callable(namespace[key]):
+                    msg = (f"'{cls.__qualname__}.{key}' attempts to "
                            f"override final method "
-                           f"'{b.__qualname__}.{v.__name__}'; "
+                           f"'{b.__qualname__}.{key}'; "
                            f"you should use the pipeline hooks instead")
                     raise ReframeSyntaxError(msg)
 
