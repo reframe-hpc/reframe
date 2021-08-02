@@ -65,8 +65,7 @@ class timer:
 @pytest.fixture
 def make_loader():
     def _make_loader(check_search_path):
-        return RegressionCheckLoader(check_search_path,
-                                     ignore_conflicts=True)
+        return RegressionCheckLoader(check_search_path)
 
     return _make_loader
 
@@ -236,6 +235,10 @@ def test_runall(make_runner, make_cases, common_exec_ctx, tmp_path):
     report_file = tmp_path / 'report.json'
     with open(report_file, 'w') as fp:
         jsonext.dump(report, fp)
+
+    # We explicitly set `time_total` to `None` in the last test case, in order
+    # to test the proper handling of `None`.`
+    report['runs'][0]['testcases'][-1]['time_total'] = None
 
     # Validate the junit report
     xml_report = runreport.junit_xml_report(report)
