@@ -1283,6 +1283,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 self._copy_to_stagedir(os.path.join(self._prefix,
                                                     self.sourcesdir))
 
+        # Set executable (only if hasn't been provided)
+        if not hasattr(self, 'executable'):
+            self.executable = os.path.join('.', self.name)
+
         # Verify the sourcepath and determine the sourcepath in the stagedir
         if (os.path.isabs(self.sourcepath) or
                 os.path.normpath(self.sourcepath).startswith('..')):
@@ -1315,11 +1319,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 self.build_system = 'SingleSource'
 
             self.build_system.srcfile = self.sourcepath
-
-            # Set executable (only if hasn't been provided)
-            if not hasattr(self, 'executable'):
-                self.executable = os.path.join('.', self.name)
-
             self.build_system.executable = self.executable
 
         user_environ = env.Environment(type(self).__name__,
