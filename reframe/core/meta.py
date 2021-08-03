@@ -14,6 +14,7 @@ import reframe.core.namespaces as namespaces
 import reframe.core.parameters as parameters
 import reframe.core.variables as variables
 import reframe.core.hooks as hooks
+import reframe.core.performance as perf
 import reframe.utility as utils
 
 from reframe.core.exceptions import ReframeSyntaxError
@@ -82,16 +83,7 @@ class RegressionTestMeta(type):
                         'once in the class body'
                     )
 
-            elif hasattr(value, '_rfm_perf_vars'):
-                try:
-                    super().__setitem__('_rfm_perf_vars', value)
-                except KeyError:
-                    raise ReframeSyntaxError(
-                        'the @performance_variables decorator can only be '
-                        'used once in the class body'
-                    )
-
-            elif hasattr(value, '_rfm_perf_fn'):
+            elif hasattr(value, '_rfm_perf_key'):
                 self['_rfm_perf_fns'].add(value)
 
             # Register the final methods
@@ -271,68 +263,8 @@ class RegressionTestMeta(type):
         namespace['sanity_function'] = sanity_function
         namespace['deferrable'] = deferrable
 
-        # Machinery to add performance variables
-        def performance_function(units, *, perf_key=None):
-            '''Decorate a function to extract a performance variable.
-
-            The ``units`` argument indicates the units of the performance
-            variable to be extracted.
-            The ``perf_key`` optional arg will be used as the name of the
-            performance variable. If not provided, the function name will
-            be used as the performance variable name.
-            '''
-
-            class perf_units:
-                __slots__ = ('_rfm_perf_units')
-
-                def __init__(self, units):
-                    if not isinstance(units, str):
-                        raise TypeError(
-                            'performance units must be provided in string '
-                            'format'
-                        )
-
-                    self._rfm_perf_units = units
-
-            units = perf_units(units)
-
-            def _fn(fn):
-                # Performance functions must only have a single positional arg
-                # without a default value
-                if not utils.is_trivially_callable(fn, non_def_args=1):
-                    raise ReframeSyntaxError(
-                        f'performance function {fn.__name__} has more than '
-                        f'one argument without a default value'
-                    )
-
-                @deferrable
-                @functools.wraps(fn)
-                def _perf_fn(*args, **kwargs):
-                    ret = fn(*args, **kwargs)
-                    if isinstance(ret, _DeferredExpression):
-                        return ret.evaluate(), units
-                    else:
-                        return ret, units
-
-                setattr(_perf_fn, '_rfm_perf_fn', units)
-                _key = perf_key if perf_key else _perf_fn.__name__
-                setattr(_perf_fn, '_rfm_perf_name', _key)
-
-                return _perf_fn
-
-            return _fn
-
-        def performance_variables(fn):
-            '''Mark a function to generate the dict with all the perf vars.
-
-            It must return an object of type
-            ``typ.Dict[str, _DeferredExpression]``.
-            '''
-            setattr(fn, '_rfm_perf_vars', True)
-            return fn
-
-        namespace['performance_function'] = performance_function
-        namespace['performance_variables'] = performance_variables
+        # Machinery to add performance functions
+        namespace['performance_function'] = perf.perf_deco
         namespace['_rfm_perf_fns'] = set()
         return metacls.MetaNamespace(namespace)
 
@@ -345,14 +277,6 @@ class RegressionTestMeta(type):
         intercept those directives out of the namespace before the class is
         constructed.
         '''
-
-        perf_fn_deco = namespace['performance_function']
-
-        def make_performance_function(self, fn, unit, *args, **kwargs):
-            '''Wrapper to make a performance function inline.'''
-            return perf_fn_deco(unit)(fn)(self, *args, **kwargs)
-
-        namespace['make_performance_function'] = make_performance_function
 
         directives = [
             'parameter', 'variable', 'bind', 'run_before', 'run_after',
@@ -403,13 +327,6 @@ class RegressionTestMeta(type):
                             f'defining an alternative'
                         )
 
-                    break
-
-        # Search the bases if no local fn used the deco @performance_variables.
-        if '_rfm_perf_vars' not in namespace:
-            for base in cls._rfm_bases:
-                if hasattr(base, '_rfm_perf_vars'):
-                    cls._rfm_perf_vars = getattr(base, '_rfm_perf_vars')
                     break
 
         # Update the performance function set with the bases.

@@ -56,17 +56,17 @@ class _DeferredExpression:
         fn_args = []
         for arg in self._args:
             fn_args.append(
-                arg.evaluate() if isinstance(arg, type(self)) else arg
+                arg.evaluate() if isinstance(arg, _DeferredExpression) else arg
             )
 
         fn_kwargs = {}
         for k, v in self._kwargs.items():
             fn_kwargs[k] = (
-                v.evaluate() if isinstance(v, type(self)) else v
+                v.evaluate() if isinstance(v, _DeferredExpression) else v
             )
 
         ret = self._fn(*fn_args, **fn_kwargs)
-        if isinstance(ret, type(self)):
+        while isinstance(ret, _DeferredExpression):
             ret = ret.evaluate()
 
         self._cached = (ret,)

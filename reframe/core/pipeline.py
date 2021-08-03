@@ -36,6 +36,7 @@ from reframe.core.backends import getlauncher, getscheduler
 from reframe.core.buildsystems import BuildSystemField
 from reframe.core.containers import ContainerPlatformField
 from reframe.core.deferrable import _DeferredExpression
+from reframe.core.performance import (DeferredPerformanceFunction, perf_deco)
 from reframe.core.exceptions import (BuildError, DependencyError,
                                      PerformanceError, PipelineError,
                                      SanityError, SkipTestError,
@@ -122,6 +123,24 @@ class RegressionMixin(metaclass=RegressionTestMeta):
 
     .. versionadded:: 3.4.2
     '''
+
+    @final
+    def make_performance_function(self, func, units, *args, **kwargs):
+        '''Wrapper to make a performance function inline.
+
+        If ``func`` is an instance of the :class:`_DeferredExpression` class,
+        the performance function will be built by extending this deferred
+        expression into a deferred performance function. Otherwise, a new
+        deferred performance function will be created from the function
+        :func:`func`.
+        '''
+        if isinstance(func, _DeferredExpression):
+            return DeferredPerformanceFunction.build_from_deferred_expr(
+                func, units
+            )
+        else:
+            return DeferredPerformanceFunction(func, units, self,
+                                               *args, **kwargs)
 
     def __getattr__(self, name):
         ''' Intercept the AttributeError if the name is a required variable.'''
@@ -637,6 +656,24 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:     :class:`None` is also allowed.
     #: :default: :class:`None`
     perf_patterns = variable(typ.Dict[str, _DeferredExpression], type(None))
+
+    #: Mapping with the performance variables of the test.
+    #:
+    #: Refer to the :doc:`ReFrame Tutorials </tutorials>` for concrete usage
+    #: examples.
+    #:
+    #: If no performance variables are explicitly provided, ReFrame will
+    #: populate this field with all the member functions decorated with the
+    #: :func:`performance_function` decorator. If no performance functions
+    #: are present in the class, no performance checking or reporting will
+    #: be carried out.
+    #:
+    #: :type: A dictionary with keys of type :class:`str` and values of type
+    #:     :class:`DeferredPerformanceFunction`. A
+    #:     :class:`DeferredPerformanceFunction` object is obtained when a
+    #:     function decorated with the :func:`performance_function` is called.
+    #: :default: :class:`required`
+    perf_variables = variable(typ.Dict[str, DeferredPerformanceFunction])
 
     #: List of modules to be loaded before running this test.
     #:
@@ -1658,7 +1695,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         '''
 
         with osext.change_dir(self._stagedir):
-            if hasattr(self, '_rfm_perf_vars') or self._rfm_perf_fns:
+            if hasattr(self, 'perf_variables') or self._rfm_perf_fns:
                 if hasattr(self, 'perf_patterns'):
                     raise ReframeSyntaxError(
                         f"assigning a value to 'perf_pattenrs' conflicts ",
@@ -1667,28 +1704,20 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                     )
 
                 # Build the performance dict
-                if not hasattr(self, '_rfm_perf_vars'):
-                    self.perf_patterns = {}
+                if not hasattr(self, 'perf_variables'):
+                    self.perf_variables = {}
                     for fn in self._rfm_perf_fns:
-                        self.perf_patterns[fn._rfm_perf_name] = fn(self)
-
-                else:
-                    self.perf_patterns = self._rfm_perf_vars()
+                        self.perf_variables[fn._rfm_perf_key] = fn(self)
 
                 # Log the performance variables
                 self._setup_perf_logging()
-                for tag, expr in self.perf_patterns.items():
+                for tag, expr in self.perf_variables.items():
                     try:
-                        value, unit = sn.evaluate(expr)
-                        unit = getattr(unit, '_rfm_perf_units', None)
-                        if not unit:
-                            raise TypeError('Trigger the TypeError below')
-
-                    except TypeError:
-                        raise ReframeSyntaxError(
-                            f'function assigned for performance variable '
-                            f'{tag!r} is not a performance function'
-                        )
+                        value = expr.evaluate()
+                        unit = expr.units
+                    except Exception as e:
+                        # Probably makes sense to raise a warning here instead
+                        raise e
 
                     key = '%s:%s' % (self._current_partition.fullname, tag)
                     try:
@@ -1709,11 +1738,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                             ref = ref[:3]
 
                     except KeyError:
-                        ref = (0, None, None)
+                        ref = (0, None, None, unit)
 
-                    self._perfvalues[key] = (value, *ref, unit)
+                    self._perfvalues[key] = (value, *ref)
                     self._perf_logger.log_performance(logging.INFO, tag, value,
-                                                      *ref, unit)
+                                                      *ref)
 
             elif not hasattr(self, 'perf_patterns'):
                 return
