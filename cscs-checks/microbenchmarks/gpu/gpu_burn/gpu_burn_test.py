@@ -61,7 +61,7 @@ class gpu_burn_check(GpuBurn):
     def set_num_gpus_per_node(self):
         hooks.set_num_gpus_per_node(self)
 
-    @performance_variables
+    @run_before('performance')
     def report_slow_nodes(self):
         '''Report the base perf metrics and also all the slow nodes.'''
 
@@ -88,4 +88,4 @@ class gpu_burn_check(GpuBurn):
                 except SanityError:
                     perf_report[nid] = self.perf(nid)
 
-        return perf_report
+        self.perf_variables = perf_report
