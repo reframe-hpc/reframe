@@ -42,19 +42,19 @@ def test_custom_variable(OneVarTest):
 
 
 def test_redeclare_builtin_var_clash(NoVarsTest):
-    with pytest.raises(ValueError):
+    with pytest.raises(ReframeSyntaxError):
         class MyTest(NoVarsTest):
             name = variable(str)
 
 
 def test_name_clash_builtin_property(NoVarsTest):
-    with pytest.raises(ValueError):
+    with pytest.raises(ReframeSyntaxError):
         class MyTest(NoVarsTest):
             current_environ = variable(str)
 
 
 def test_redeclare_var_clash(OneVarTest):
-    with pytest.raises(ValueError):
+    with pytest.raises(ReframeSyntaxError):
         class MyTest(OneVarTest):
             foo = variable(str)
 
@@ -63,7 +63,7 @@ def test_inheritance_clash(NoVarsTest):
     class MyMixin(rfm.RegressionMixin):
         name = variable(str)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ReframeSyntaxError):
         class MyTest(NoVarsTest, MyMixin):
             '''Trigger error from inheritance clash.'''
 
@@ -87,7 +87,7 @@ def test_var_space_clash():
     class Ham(rfm.RegressionMixin):
         v0 = variable(int, value=2)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ReframeSyntaxError):
         class Eggs(Spam, Ham):
             '''Trigger error from var name clashing.'''
 
@@ -112,10 +112,12 @@ def test_class_attr_access():
 
     class Descriptor:
         '''Dummy descriptor to attempt overriding the variable descriptor.'''
+
         def __get__(self, obj, objtype=None):
             return 'dummy descriptor'
 
-    with pytest.raises(ValueError, match='cannot override variable descr'):
+    with pytest.raises(ReframeSyntaxError,
+                       match='cannot override variable descr'):
         MyTest.v0 = Descriptor()
 
 
@@ -172,7 +174,7 @@ def test_required_var_not_present(OneVarTest):
 
 def test_required_non_var():
     msg = "'not_a_var' has not been declared as a variable"
-    with pytest.raises(ValueError, match=msg):
+    with pytest.raises(ReframeSyntaxError, match=msg):
         class Foo(rfm.RegressionTest):
             not_a_var = required
 
@@ -181,7 +183,7 @@ def test_invalid_field():
     class Foo:
         '''An invalid descriptor'''
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         class MyTest(rfm.RegressionTest):
             a = variable(int, value=4, field=Foo)
 
@@ -216,7 +218,7 @@ def test_variable_access():
         x = f'accessing {my_var!r} works because it has a default value.'
 
     assert 'bananas' in getattr(Foo, 'x')
-    with pytest.raises(ValueError):
+    with pytest.raises(ReframeSyntaxError):
         class Foo(rfm.RegressionMixin):
             my_var = variable(int)
             x = f'accessing {my_var!r} fails because its value is not set.'
@@ -226,7 +228,7 @@ def test_var_space_is_read_only():
     class Foo(rfm.RegressionMixin):
         pass
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ReframeSyntaxError):
         Foo._rfm_var_space['v'] = 0
 
 

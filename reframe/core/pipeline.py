@@ -1786,6 +1786,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                         raise SanityError(
                             f'tag {tag!r} not resolved in references for '
                             f'{self._current_partition.fullname}'
+                        )
 
                     self._perfvalues[key] = (value, *self.reference[key])
                     self._perf_logger.log_performance(logging.INFO, tag, value,

@@ -10,6 +10,8 @@
 
 import abc
 
+from reframe.core.exceptions import ReframeSyntaxError
+
 
 class LocalNamespace:
     '''Local namespace of a regression test.
@@ -165,7 +167,7 @@ class Namespace(LocalNamespace, metaclass=abc.ABCMeta):
 
         for key in self._namespace:
             if key in illegal_names:
-                raise ValueError(
+                raise ReframeSyntaxError(
                     f'{key!r} already defined in class '
                     f'{cls.__qualname__!r}'
                 )
@@ -177,6 +179,6 @@ class Namespace(LocalNamespace, metaclass=abc.ABCMeta):
         '''
 
     def __setitem__(self, key, value):
-        raise ValueError(
+        raise ReframeSyntaxError(
             f'cannot set item {key!r} into a {type(self).__qualname__} object'
         )

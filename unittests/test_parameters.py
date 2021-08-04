@@ -144,13 +144,6 @@ def test_consume_param_space():
         test = MyTest(_rfm_use_params=True)
 
 
-def test_register_abstract_test():
-    with pytest.raises(ValueError):
-        @rfm.simple_test
-        class MyTest(Abstract):
-            pass
-
-
 def test_simple_test_decorator():
     @rfm.simple_test
     class MyTest(ExtendParams):
@@ -169,7 +162,7 @@ def test_simple_test_decorator():
     'ignore::reframe.core.warnings.ReframeDeprecationWarning'
 )
 def test_parameterized_test_is_incompatible():
-    with pytest.raises(ValueError):
+    with pytest.raises(ReframeSyntaxError):
         @rfm.parameterized_test(['var'])
         class MyTest(TwoParams):
             def __init__(self, var):
@@ -183,7 +176,7 @@ def test_param_space_clash():
     class Ham(rfm.RegressionMixin):
         P0 = parameter([2])
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ReframeSyntaxError):
         class Eggs(Spam, Ham):
             '''Trigger error from param name clashing.'''
 
@@ -203,7 +196,7 @@ def test_namespace_clash():
     class Spam(rfm.RegressionTest):
         foo = variable(int)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ReframeSyntaxError):
         class Ham(Spam):
             foo = parameter([1])
 
@@ -216,7 +209,7 @@ def test_double_declare():
 
 
 def test_overwrite_param():
-    with pytest.raises(ValueError):
+    with pytest.raises(ReframeSyntaxError):
         class MyTest(TwoParams):
             P0 = [1, 2, 3]
 
@@ -247,7 +240,7 @@ def test_param_deepcopy():
 
 
 def test_param_access():
-    with pytest.raises(ValueError):
+    with pytest.raises(ReframeSyntaxError):
         class Foo(rfm.RegressionTest):
             p = parameter([1, 2, 3])
             x = f'accessing {p!r} in the class body is disallowed.'
@@ -257,7 +250,7 @@ def test_param_space_read_only():
     class Foo(rfm.RegressionMixin):
         pass
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ReframeSyntaxError):
         Foo.param_space['a'] = (1, 2, 3)
 
 
@@ -272,7 +265,7 @@ def test_parameter_override():
     class Foo(rfm.RegressionTest):
         p = parameter([1, 2])
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ReframeSyntaxError):
         class Bar(Foo):
             p = 0
 
@@ -291,7 +284,7 @@ def test_override_parameter():
             p = parameter([1, 2])
             p = 1
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ReframeSyntaxError):
         class Foo(rfm.RegressionTest):
             p = parameter([1, 2])
             p += 1
@@ -309,5 +302,5 @@ def test_class_attr_access():
         p = parameter([1, 2, 3])
 
     assert MyTest.p == (1, 2, 3,)
-    with pytest.raises(ValueError, match='cannot override parameter'):
+    with pytest.raises(ReframeSyntaxError, match='cannot override parameter'):
         MyTest.p = (4, 5,)
