@@ -96,12 +96,12 @@ class GpuBurn(rfm.RegressionTest, pin_prefix=True):
             r'^\s*\[[^\]]*\]\s*GPU\s*\d+\(OK\)', self.stdout)
         ), self.num_tasks_assigned)
 
-    def extract_perf(self, what, nid=None):
+    def _extract_perf_metric(self, metric, nid=None):
         '''Utility to extract performance metrics.'''
 
-        if what not in {'perf', 'temp'}:
+        if metric not in {'perf', 'temp'}:
             raise ValueError(
-                f"unsupported value in 'what' argument ({what}!r)"
+                f"unsupported value in 'metric' argument ({metric}!r)"
             )
 
         if nid is None:
@@ -109,14 +109,14 @@ class GpuBurn(rfm.RegressionTest, pin_prefix=True):
 
         patt = (rf'^\s*\[{nid}\]\s*GPU\s+\d+\(\S*\):\s+(?P<perf>\S*)\s+GF\/s'
                 rf'\s+(?P<temp>\S*)\s+Celsius')
-        return sn.extractall(patt, self.stdout, what, float).evaluate()
+        return sn.extractall(patt, self.stdout, metric, float)
 
     @performance_function('Gflop/s')
-    def perf(self, nid=None):
+    def min_perf(self, nid=None):
         '''Lowest performance recorded.'''
-        return sn.min(self.extract_perf('perf', nid))
+        return sn.min(self._extract_perf_metric('perf', nid))
 
     @performance_function('degC')
-    def temp(self, nid=None):
+    def max_temp(self, nid=None):
         '''Maximum temperature recorded.'''
-        return sn.max(self.extract_perf('temp', nid))
+        return sn.max(self._extract_perf_metric('temp', nid))

@@ -43,8 +43,8 @@ class RegressionTestMeta(type):
                     value.__set_name__(self, key)
                 except KeyError:
                     raise ReframeSyntaxError(
-                        f'variable {key} is already declared'
-                    )
+                        f'variable {key!r} is already declared'
+                    ) from None
 
                 # Override the regular class attribute (if present) and return
                 self._namespace.pop(key, None)
@@ -56,8 +56,8 @@ class RegressionTestMeta(type):
                     self['_rfm_local_param_space'][key] = value
                 except KeyError:
                     raise ReframeSyntaxError(
-                        f'parameter {key} is already declared in this class'
-                    )
+                        f'parameter {key!r} is already declared in this class'
+                    ) from None
 
                 # Override the regular class attribute (if present) and return
                 self._namespace.pop(key, None)
@@ -81,8 +81,7 @@ class RegressionTestMeta(type):
                     raise ReframeSyntaxError(
                         'the @sanity_function decorator can only be used '
                         'once in the class body'
-                    )
-
+                    ) from None
             elif hasattr(value, '_rfm_perf_key'):
                 self['_rfm_perf_fns'].add(value)
 
@@ -274,11 +273,6 @@ class RegressionTestMeta(type):
             be used as the performance variable name.
             '''
 
-            if not isinstance(units, str):
-                raise TypeError(
-                    'performance units must be provided in string format'
-                )
-
             if perf_key and not isinstance(perf_key, str):
                 raise TypeError("'perf_key' must be a string")
 
@@ -295,10 +289,8 @@ class RegressionTestMeta(type):
                         func, units, *args, **kwargs
                     )
 
-                # Set the perf_key
                 _perf_key = perf_key if perf_key else func.__name__
                 setattr(_perf_fn, '_rfm_perf_key', _perf_key)
-
                 return _perf_fn
 
             return _deco_wrapper
@@ -370,10 +362,8 @@ class RegressionTestMeta(type):
 
         # Update the performance function set with the bases.
         for base in cls._rfm_bases:
-            cls._rfm_perf_fns = cls._rfm_perf_fns.union(
-                {f for f in getattr(base, '_rfm_perf_fns')
-                 if f.__name__ not in namespace}
-            )
+            cls._rfm_perf_fns |= {f for f in getattr(base, '_rfm_perf_fns')
+                                  if f.__name__ not in namespace}
 
         # Add the final functions from its parents
         cls._rfm_final_methods.update(

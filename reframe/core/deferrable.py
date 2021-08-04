@@ -369,6 +369,12 @@ class _DeferredPerformanceExpression(_DeferredExpression):
 
     def __init__(self, fn, unit, *args, **kwargs):
         super().__init__(fn, *args, **kwargs)
+
+        if not isinstance(unit, str):
+            raise TypeError(
+                'performance units must be a string'
+            )
+
         self._unit = unit
 
     @classmethod

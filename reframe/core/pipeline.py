@@ -1722,32 +1722,30 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                             f'{tag!r} in test {self.name!r}: {e}'
                         )
 
-                    key = '%s:%s' % (self._current_partition.fullname, tag)
+                    key = f'{self._current_partition.fullname}:{tag}'
                     try:
                         ref = self.reference[key]
 
-                        # If units are also provided in the reference, make
-                        # sure they match with the units provided by the
-                        # performance function.
+                        # If units are also provided in the reference, raise
+                        # a warning if they match with the units provided by
+                        # the performance function.
                         if len(ref) == 4:
                             if ref[3] != unit:
                                 logging.getlogger().warning(
-                                    f'unit for the performance variable '
-                                    f'{tag!r} in the reference {key!r} '
+                                    f'reference unit ({key!r}) for the '
+                                    f'performance variable {tag!r} '
                                     f'does not match the unit specified '
                                     f'in the performance function ({unit!r})'
                                 )
 
                             # Pop the unit from the ref tuple (redundant)
                             ref = ref[:3]
-
                     except KeyError:
                         ref = (0, None, None)
 
                     self._perfvalues[key] = (value, *ref, unit)
                     self._perf_logger.log_performance(logging.INFO, tag, value,
                                                       *ref, unit)
-
             elif not hasattr(self, 'perf_patterns'):
                 return
             else:
@@ -1783,11 +1781,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 # even if the don't meet the reference.
                 for tag, expr in self.perf_patterns.items():
                     value = sn.evaluate(expr)
-                    key = '%s:%s' % (self._current_partition.fullname, tag)
+                    key = f'{self._current_partition.fullname}:{tag}'
                     if key not in self.reference:
                         raise SanityError(
-                            "tag `%s' not resolved in references for `%s'" %
-                            (tag, self._current_partition.fullname))
+                            f'tag {tag!r} not resolved in references for '
+                            f'{self._current_partition.fullname}'
 
                     self._perfvalues[key] = (value, *self.reference[key])
                     self._perf_logger.log_performance(logging.INFO, tag, value,
@@ -1800,8 +1798,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 # Verify that val is a number
                 if not isinstance(val, numbers.Number):
                     raise SanityError(
-                        "the value extracted for performance variable '%s' "
-                        "is not a number: %s" % (key, val)
+                        f'the value extracted for performance variable '
+                        f'{key!r} is not a number: {val}'
                     )
 
                 tag = key.split(':')[-1]

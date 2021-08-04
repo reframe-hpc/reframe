@@ -319,10 +319,9 @@ def is_trivially_callable(fn, *, non_def_args=0):
     if not callable(fn):
         raise TypeError('argument is not a callable')
 
-    return len(
-        [p for p in inspect.signature(fn).parameters.values()
-         if p.default is p.empty]
-    ) == non_def_args
+    explicit_args = [p for p in inspect.signature(fn).parameters.values()
+                     if p.default is p.empty]
+    return len(explicit_args) == non_def_args
 
 
 def _is_builtin_type(cls):
