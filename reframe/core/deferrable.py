@@ -6,6 +6,8 @@
 import builtins
 import functools
 
+import reframe.utility as utils
+
 
 def deferrable(func):
     '''Function decorator for converting a function to a deferred
@@ -355,3 +357,28 @@ class _DeferredExpression:
     @deferrable
     def __invert__(a):
         return ~a
+
+
+class _DeferredPerformanceExpression(_DeferredExpression):
+    '''Represents a performance function whose evaluation has been deferred.
+
+    It extends the :class:`_DeferredExpression` class by adding the ``unit``
+    attribute. This attribute represents the unit of the performance
+    metric to be extracted by the performance function.
+    '''
+
+    def __init__(self, fn, unit, *args, **kwargs):
+        super().__init__(fn, *args, **kwargs)
+        self._unit = unit
+
+    @classmethod
+    def construct_from_deferred_expr(cls, expr, unit):
+        if not isinstance(expr, _DeferredExpression):
+            raise TypeError("'expr' argument is not an instance of the "
+                            "_DeferredExpression class")
+
+        return cls(expr._fn, unit, *(expr._args), **(expr._kwargs))
+
+    @property
+    def unit(self):
+        return self._unit

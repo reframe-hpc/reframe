@@ -35,8 +35,8 @@ import reframe.utility.udeps as udeps
 from reframe.core.backends import getlauncher, getscheduler
 from reframe.core.buildsystems import BuildSystemField
 from reframe.core.containers import ContainerPlatformField
-from reframe.core.deferrable import _DeferredExpression
-from reframe.core.performance import (DeferredPerformanceFunction, perf_deco)
+from reframe.core.deferrable import (_DeferredExpression,
+                                     _DeferredPerformanceExpression)
 from reframe.core.exceptions import (BuildError, DependencyError,
                                      PerformanceError, PipelineError,
                                      SanityError, SkipTestError,
@@ -125,7 +125,7 @@ class RegressionMixin(metaclass=RegressionTestMeta):
     '''
 
     @final
-    def make_performance_function(self, func, units, *args, **kwargs):
+    def make_performance_function(self, func, unit, *args, **kwargs):
         '''Wrapper to make a performance function inline.
 
         If ``func`` is an instance of the :class:`_DeferredExpression` class,
@@ -135,12 +135,12 @@ class RegressionMixin(metaclass=RegressionTestMeta):
         :func:`func`.
         '''
         if isinstance(func, _DeferredExpression):
-            return DeferredPerformanceFunction.build_from_deferred_expr(
-                func, units
+            return _DeferredPerformanceExpression.construct_from_deferred_expr(
+                func, unit
             )
         else:
-            return DeferredPerformanceFunction(func, units, self,
-                                               *args, **kwargs)
+            return _DeferredPerformanceExpression(func, unit, self,
+                                                  *args, **kwargs)
 
     def __getattr__(self, name):
         ''' Intercept the AttributeError if the name is a required variable.'''
@@ -663,17 +663,18 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: examples.
     #:
     #: If no performance variables are explicitly provided, ReFrame will
-    #: populate this field with all the member functions decorated with the
-    #: :func:`performance_function` decorator. If no performance functions
-    #: are present in the class, no performance checking or reporting will
-    #: be carried out.
+    #: populate this field during the test's instantiation with all the member
+    #: functions decorated with the :func:`performance_function` decorator. If
+    #: no performance functions are present in the class, no performance
+    #: checking or reporting will be carried out.
     #:
     #: :type: A dictionary with keys of type :class:`str` and values of type
-    #:     :class:`DeferredPerformanceFunction`. A
-    #:     :class:`DeferredPerformanceFunction` object is obtained when a
+    #:     :class:`_DeferredPerformanceExpression`. A
+    #:     :class:`_DeferredPerformanceExpression` object is obtained when a
     #:     function decorated with the :func:`performance_function` is called.
-    #: :default: :class:`required`
-    perf_variables = variable(typ.Dict[str, DeferredPerformanceFunction])
+    #: :default: ``{}``
+    perf_variables = variable(typ.Dict[str, _DeferredPerformanceExpression],
+                              value={})
 
     #: List of modules to be loaded before running this test.
     #:
@@ -681,8 +682,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    modules = variable(
-        typ.List[str], typ.List[typ.Dict[str, object]], value=[])
+    modules = variable(typ.List[str], typ.List[typ.Dict[str, object]],
+                       value=[])
 
     #: Environment variables to be set before running this test.
     #:
@@ -847,7 +848,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         # Build pipeline hook registry and add the pre-init hook
         cls._rfm_pipeline_hooks = cls._process_hook_registry()
-        cls._rfm_pipeline_hooks['pre___init__'] = [cls.__pre_init__]
+        cls._rfm_pipeline_hooks['pre___init__'] = [obj.__pre_init__]
 
         # Attach the hooks to the pipeline stages
         for stage in _PIPELINE_STAGES:
@@ -859,6 +860,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     def __pre_init__(self):
         '''Initialize the test defaults from a pre-init hook.'''
         self.__deferred_rfm_init.evaluate()
+
+        # Build the default performance dict
+        if not self.perf_variables:
+            for fn in self._rfm_perf_fns:
+                self.perf_variables[fn._rfm_perf_key] = fn(self)
 
     def __init__(self):
         pass
@@ -1695,26 +1701,21 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         '''
 
         with osext.change_dir(self._stagedir):
-            if hasattr(self, 'perf_variables') or self._rfm_perf_fns:
+            if self.perf_variables or self._rfm_perf_fns:
                 if hasattr(self, 'perf_patterns'):
                     raise ReframeSyntaxError(
                         f"assigning a value to 'perf_pattenrs' conflicts ",
-                        f"with using the 'performance_variables' decorator ",
+                        f"with using the 'performance_function' decorator ",
+                        f"or setting a value to 'perf_variables' "
                         f"(class {self.__class__.__qualname__})"
                     )
-
-                # Build the performance dict
-                if not hasattr(self, 'perf_variables'):
-                    self.perf_variables = {}
-                    for fn in self._rfm_perf_fns:
-                        self.perf_variables[fn._rfm_perf_key] = fn(self)
 
                 # Log the performance variables
                 self._setup_perf_logging()
                 for tag, expr in self.perf_variables.items():
                     try:
                         value = expr.evaluate()
-                        unit = expr.units
+                        unit = expr.unit
                     except Exception as e:
                         # Probably makes sense to raise a warning here instead
                         raise e
@@ -1729,7 +1730,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                         if len(ref) == 4:
                             if ref[3] != unit:
                                 raise ReframeSyntaxError(
-                                    f'units for {tag!r} in the reference '
+                                    f'unit for {tag!r} in the reference '
                                     f'{key!r} do not match those specified in '
                                     f'the performance function ({unit})'
                                 )
@@ -1738,11 +1739,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                             ref = ref[:3]
 
                     except KeyError:
-                        ref = (0, None, None, unit)
+                        ref = (0, None, None)
 
-                    self._perfvalues[key] = (value, *ref)
+                    self._perfvalues[key] = (value, *ref, unit)
                     self._perf_logger.log_performance(logging.INFO, tag, value,
-                                                      *ref)
+                                                      *ref, unit)
 
             elif not hasattr(self, 'perf_patterns'):
                 return

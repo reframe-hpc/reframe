@@ -14,11 +14,11 @@ import reframe.core.namespaces as namespaces
 import reframe.core.parameters as parameters
 import reframe.core.variables as variables
 import reframe.core.hooks as hooks
-import reframe.core.performance as perf
 import reframe.utility as utils
 
 from reframe.core.exceptions import ReframeSyntaxError
-from reframe.core.deferrable import deferrable, _DeferredExpression
+from reframe.core.deferrable import (deferrable, _DeferredExpression,
+                                     _DeferredPerformanceExpression)
 
 
 class RegressionTestMeta(type):
@@ -264,7 +264,46 @@ class RegressionTestMeta(type):
         namespace['deferrable'] = deferrable
 
         # Machinery to add performance functions
-        namespace['performance_function'] = perf.perf_deco
+        def performance_function(units, *, perf_key=None):
+            '''Decorate a function to extract a performance variable.
+
+            The ``units`` argument indicates the units of the performance
+            variable to be extracted.
+            The ``perf_key`` optional arg will be used as the name of the
+            performance variable. If not provided, the function name will
+            be used as the performance variable name.
+            '''
+
+            if not isinstance(units, str):
+                raise TypeError(
+                    'performance units must be provided in string format'
+                )
+
+            if perf_key and not isinstance(perf_key, str):
+                raise TypeError("'perf_key' must be a string")
+
+            def _deco_wrapper(func):
+                if not utils.is_trivially_callable(func, non_def_args=1):
+                    raise ReframeSyntaxError(
+                        f'performance function {fn.__name__!r} has more than '
+                        f'one argument without a default value'
+                    )
+
+                @functools.wraps(func)
+                def _perf_fn(*args, **kwargs):
+                    return _DeferredPerformanceExpression(
+                        func, units, *args, **kwargs
+                    )
+
+                # Set the perf_key
+                _perf_key = perf_key if perf_key else func.__name__
+                setattr(_perf_fn, '_rfm_perf_key', _perf_key)
+
+                return _perf_fn
+
+            return _deco_wrapper
+
+        namespace['performance_function'] = performance_function
         namespace['_rfm_perf_fns'] = set()
         return metacls.MetaNamespace(namespace)
 
@@ -281,7 +320,7 @@ class RegressionTestMeta(type):
         directives = [
             'parameter', 'variable', 'bind', 'run_before', 'run_after',
             'require_deps', 'required', 'deferrable', 'sanity_function',
-            'final', 'performance_function', 'performance_variables'
+            'final', 'performance_function'
         ]
         for b in directives:
             namespace.pop(b, None)
