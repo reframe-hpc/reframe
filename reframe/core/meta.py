@@ -17,8 +17,7 @@ import reframe.core.hooks as hooks
 import reframe.utility as utils
 
 from reframe.core.exceptions import ReframeSyntaxError
-from reframe.core.deferrable import (deferrable, _DeferredExpression,
-                                     _DeferredPerformanceExpression)
+from reframe.core.deferrable import deferrable, _DeferredPerformanceExpression
 
 
 class RegressionTestMeta(type):

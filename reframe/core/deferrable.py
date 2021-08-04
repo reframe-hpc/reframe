@@ -6,8 +6,6 @@
 import builtins
 import functools
 
-import reframe.utility as utils
-
 
 def deferrable(func):
     '''Function decorator for converting a function to a deferred
