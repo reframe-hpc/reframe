@@ -1717,8 +1717,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                         value = expr.evaluate()
                         unit = expr.unit
                     except Exception as e:
-                        # Probably makes sense to raise a warning here instead
-                        raise e
+                        logging.getlogger().warning(
+                            f'skipping evaluation of performance variable '
+                            f'{tag!r} in test {self.name!r}: {e}'
+                        )
 
                     key = '%s:%s' % (self._current_partition.fullname, tag)
                     try:
@@ -1729,10 +1731,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                         # performance function.
                         if len(ref) == 4:
                             if ref[3] != unit:
-                                raise ReframeSyntaxError(
-                                    f'unit for {tag!r} in the reference '
-                                    f'{key!r} do not match those specified in '
-                                    f'the performance function ({unit})'
+                                logging.getlogger().warning(
+                                    f'unit for the performance variable '
+                                    f'{tag!r} in the reference {key!r} '
+                                    f'does not match the unit specified '
+                                    f'in the performance function ({unit!r})'
                                 )
 
                             # Pop the unit from the ref tuple (redundant)
