@@ -40,7 +40,7 @@ class Cpmd(rfm.RunOnlyRegressionTest):
     #: be saved.
     #:
     #: :default: : 'stdout.txt'
-    output_file = variable(str, value = 'stdout.txt')
+    output_file = variable(str, value='stdout.txt')
 
     #: Reference value of energy, that is used for the comparison
     #: with the execution ouput on the sanity step. Final value of
