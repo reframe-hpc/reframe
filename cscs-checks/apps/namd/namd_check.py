@@ -28,14 +28,15 @@ class NamdCheck(rfm.RunOnlyRegressionTest):
         }
     }
 
-    @rfm.run_after('init')
-    def set_description(self):
+    @run_after('init')
+    def adapt_description(self):
         self.descr = f'NAMD check ({self.arch}, {self.variant})'
-        self.tags |= {'maintenance' if self.variant == 'maint'
-                      else 'production'}
+        self.tags |= {
+            'maintenance' if self.variant == 'maint' else 'production'
+        }
 
-    @rfm.run_after('init')
-    def set_valid_systems(self):
+    @run_after('init')
+    def adapt_valid_systems(self):
         if self.arch == 'gpu':
             self.valid_systems = ['daint:gpu']
             if self.scale == 'small':
@@ -45,8 +46,15 @@ class NamdCheck(rfm.RunOnlyRegressionTest):
             if self.scale == 'small':
                 self.valid_systems += ['dom:mc']
 
-    @rfm.run_after('init')
-    def set_job_configuration(self):
+    @run_after('init')
+    def adapt_valid_prog_environs(self):
+        if self.current_system.name == 'pilatus':
+            self.valid_prog_environs.remove('builtin')
+        else:
+            self.valid_prog_environs.remove('cpeIntel')
+
+    @run_after('init')
+    def setup_parallel_run(self):
         if self.arch == 'gpu':
             self.executable_opts = ['+idlepoll', '+ppn 23', 'stmv.namd']
             self.num_cpus_per_task = 24
@@ -74,33 +82,29 @@ class NamdCheck(rfm.RunOnlyRegressionTest):
                 self.num_tasks = 16
                 self.num_tasks_per_node = 1
 
-    @rfm.run_after('init')
-    def set_valid_prgenv(self):
-        if self.current_system.name == 'pilatus':
-            self.valid_prog_environs.remove('builtin')
-        else:
-            self.valid_prog_environs.remove('cpeIntel')
-
-    @rfm.run_before('compile')
-    def set_sources_dir(self):
+    @run_before('compile')
+    def prepare_build(self):
         # Reset sources dir relative to the SCS apps prefix
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'NAMD', 'prod')
 
-    @rfm.run_before('sanity')
-    def set_sanity_perf(self):
+    @sanity_function
+    def validate_energy(self):
         energy = sn.avg(sn.extractall(
             r'ENERGY:([ \t]+\S+){10}[ \t]+(?P<energy>\S+)',
             self.stdout, 'energy', float)
         )
         energy_reference = -2451359.5
         energy_diff = sn.abs(energy - energy_reference)
-        self.sanity_patterns = sn.all([
+        return sn.all([
             sn.assert_eq(sn.count(sn.extractall(
                          r'TIMING: (?P<step_num>\S+)  CPU:',
                          self.stdout, 'step_num')), 50),
             sn.assert_lt(energy_diff, 2720)
         ])
+
+    @run_before('performance')
+    def setup_perf_vars(self):
         self.perf_patterns = {
             'days_ns': sn.avg(sn.extractall(
                 r'Info: Benchmark time: \S+ CPUs \S+ '
