@@ -19,11 +19,6 @@ from reframe.core.exceptions import ReframeSyntaxError
 from reframe.core.deferrable import deferrable
 
 
-_USER_PIPELINE_STAGES = (
-    'init', 'setup', 'compile', 'run', 'sanity', 'performance', 'cleanup'
-)
-
-
 class RegressionTestMeta(type):
 
     class MetaNamespace(namespaces.LocalNamespace):
@@ -55,7 +50,7 @@ class RegressionTestMeta(type):
                 self._namespace.pop(key, None)
 
             elif key in self['_rfm_local_param_space']:
-                raise ValueError(
+                raise ReframeSyntaxError(
                     f'cannot override parameter {key!r}'
                 )
             else:
@@ -81,7 +76,7 @@ class RegressionTestMeta(type):
                 except KeyError:
                     # Handle parameter access
                     if key in self['_rfm_local_param_space']:
-                        raise ValueError(
+                        raise ReframeSyntaxError(
                             'accessing a test parameter from the class '
                             'body is disallowed'
                         ) from None
@@ -176,6 +171,7 @@ class RegressionTestMeta(type):
         namespace['variable'] = variables.TestVar
         namespace['required'] = variables.Undefined
 
+        # Utility decorators
         def bind(fn, name=None):
             '''Directive to bind a free function to a class.
 
@@ -186,48 +182,31 @@ class RegressionTestMeta(type):
             namespace[inst.__name__] = inst
             return inst
 
+        def final(fn):
+            '''Indicate that a function is final and cannot be overridden.'''
+
+            fn._rfm_final = True
+            return fn
+
         namespace['bind'] = bind
+        namespace['final'] = final
 
         # Hook-related functionality
         def run_before(stage):
-            '''Decorator for attaching a test method to a pipeline stage.
+            '''Decorator for attaching a test method to a given stage.
 
             See online docs for more information.
             '''
-
-            if stage not in _USER_PIPELINE_STAGES:
-                raise ValueError(
-                    f'invalid pipeline stage specified: {stage!r}'
-                )
-
-            if stage == 'init':
-                raise ValueError('pre-init hooks are not allowed')
-
             return hooks.attach_to('pre_' + stage)
 
-        namespace['run_before'] = run_before
-
         def run_after(stage):
-            '''Decorator for attaching a test method to a pipeline stage.
+            '''Decorator for attaching a test method to a given stage.
 
             See online docs for more information.
             '''
-
-            if stage not in _USER_PIPELINE_STAGES:
-                raise ValueError(
-                    f'invalid pipeline stage specified: {stage!r}'
-                )
-
-            # Map user stage names to the actual pipeline functions if needed
-            if stage == 'init':
-                stage = '__init__'
-            elif stage == 'compile':
-                stage = 'compile_wait'
-            elif stage == 'run':
-                stage = 'run_wait'
-
             return hooks.attach_to('post_' + stage)
 
+        namespace['run_before'] = run_before
         namespace['run_after'] = run_after
         namespace['require_deps'] = hooks.require_deps
 
@@ -257,11 +236,12 @@ class RegressionTestMeta(type):
         constructed.
         '''
 
-        blacklist = [
+        directives = [
             'parameter', 'variable', 'bind', 'run_before', 'run_after',
-            'require_deps', 'required', 'deferrable', 'sanity_function'
+            'require_deps', 'required', 'deferrable', 'sanity_function',
+            'final'
         ]
-        for b in blacklist:
+        for b in directives:
             namespace.pop(b, None)
 
         return super().__new__(metacls, name, bases, dict(namespace), **kwargs)
@@ -290,10 +270,11 @@ class RegressionTestMeta(type):
         # attribute; all dependencies will be resolved first in the post-setup
         # phase if not assigned elsewhere
         hook_reg = hooks.HookRegistry.create(namespace)
-        for base in (b for b in bases if hasattr(b, '_rfm_pipeline_hooks')):
-            hook_reg.update(getattr(base, '_rfm_pipeline_hooks'))
+        for base in (b for b in bases if hasattr(b, '_rfm_hook_registry')):
+            hook_reg.update(getattr(base, '_rfm_hook_registry'),
+                            denied_hooks=namespace)
 
-        cls._rfm_pipeline_hooks = hook_reg
+        cls._rfm_hook_registry = hook_reg
 
         # Gather all the locally defined sanity functions based on the
         # _rfm_sanity_fn attribute.
@@ -325,13 +306,12 @@ class RegressionTestMeta(type):
                               if hasattr(v, '_rfm_final')}
 
         # Add the final functions from its parents
-        cls._final_methods.update(*(b._final_methods for b in bases
-                                    if hasattr(b, '_final_methods')))
+        bases_w_final = [b for b in bases if hasattr(b, '_final_methods')]
+        cls._final_methods.update(*(b._final_methods for b in bases_w_final))
 
-        if getattr(cls, '_rfm_special_test', None):
+        if getattr(cls, '_rfm_override_final', None):
             return
 
-        bases_w_final = [b for b in bases if hasattr(b, '_final_methods')]
         for v in namespace.values():
             for b in bases_w_final:
                 if callable(v) and v.__name__ in b._final_methods:
@@ -342,23 +322,25 @@ class RegressionTestMeta(type):
                     raise ReframeSyntaxError(msg)
 
     def __call__(cls, *args, **kwargs):
-        '''Intercept reframe-specific constructor arguments.
+        '''Inject parameter and variable spaces during object construction.
 
-        When registering a regression test using any supported decorator,
-        this decorator may pass additional arguments to the class constructor
-        to perform specific reframe-internal actions. This gives extra control
-        over the class instantiation process, allowing reframe to instantiate
-        the regression test class differently if this class was registered or
-        not (e.g. when deep-copying a regression test object). These internal
-        arguments must be intercepted before the object initialization, since
-        these would otherwise affect the __init__ method's signature, and these
-        internal mechanisms must be fully transparent to the user.
+        When a class is instantiated, this method intercepts the arguments
+        associated to the parameter and variable spaces. This prevents both
+        :func:`__new__` and :func:`__init__` methods from ever seing these
+        arguments.
+
+        The parameter and variable spaces are injected into the object after
+        construction and before initialization.
         '''
+
+        # Intercept constructor arguments
+        _rfm_use_params = kwargs.pop('_rfm_use_params', False)
 
         obj = cls.__new__(cls, *args, **kwargs)
 
-        # Intercept constructor arguments
-        kwargs.pop('_rfm_use_params', None)
+        # Insert the var & param spaces
+        cls._rfm_var_space.inject(obj, cls)
+        cls._rfm_param_space.inject(obj, cls, _rfm_use_params)
 
         obj.__init__(*args, **kwargs)
         return obj
@@ -444,7 +426,7 @@ class RegressionTestMeta(type):
                     return
                 elif not var_space[name].field is value:
                     desc = '.'.join([cls.__qualname__, name])
-                    raise ValueError(
+                    raise ReframeSyntaxError(
                         f'cannot override variable descriptor {desc!r}'
                     )
 
@@ -455,7 +437,7 @@ class RegressionTestMeta(type):
         try:
             param_space = super().__getattribute__('_rfm_param_space')
             if name in param_space.params:
-                raise ValueError(f'cannot override parameter {name!r}')
+                raise ReframeSyntaxError(f'cannot override parameter {name!r}')
 
         except AttributeError:
             pass

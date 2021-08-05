@@ -697,6 +697,14 @@ site_configuration = {
                     'name': 'mc',
                     'descr': 'Multicore nodes (AMD EPYC 7742, 256|512GB/cn)',
                     'scheduler': 'slurm',
+                    'container_platforms': [
+                        {
+                            'type': 'Sarus',
+                        },
+                        {
+                            'type': 'Singularity',
+                        }
+                    ],
                     'environs': [
                         'builtin',
                         'PrgEnv-aocc',
@@ -709,6 +717,7 @@ site_configuration = {
                         'cpeIntel'
                     ],
                     'max_jobs': 100,
+                    'access': ['-Cmc', f'--account={osext.osgroup()}'],
                     'resources': [
                         {
                             'name': 'switches',
@@ -723,6 +732,21 @@ site_configuration = {
                             ]
                         },
                     ],
+                    'launcher': 'srun'
+                },
+                {
+                    'name': 'jupyter_mc',
+                    'scheduler': 'slurm',
+                    'environs': [
+                        'builtin'
+                    ],
+                    'access': [
+                        f'-Cmc',
+                        f'--reservation=interact',
+                        f'--account={osext.osgroup()}'
+                    ],
+                    'descr': 'JupyterHub GPU nodes',
+                    'max_jobs': 10,
                     'launcher': 'srun'
                 },
             ]
@@ -745,7 +769,6 @@ site_configuration = {
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
-                        'PrgEnv-nvidia',
                         'cpeAMD',
                         'cpeCray',
                         'cpeGNU',
@@ -759,13 +782,20 @@ site_configuration = {
                     'name': 'mc',
                     'descr': 'Multicore nodes (AMD EPYC 7742, 256|512GB/cn)',
                     'scheduler': 'slurm',
+                    'container_platforms': [
+                        {
+                            'type': 'Sarus',
+                        },
+                        {
+                            'type': 'Singularity',
+                        }
+                    ],
                     'environs': [
                         'builtin',
                         'PrgEnv-aocc',
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
-                        'PrgEnv-nvidia',
                         'cpeAMD',
                         'cpeCray',
                         'cpeGNU',

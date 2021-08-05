@@ -1,7 +1,6 @@
 all: testing_cblas_z
 
 testing_cblas_z: testing_cblas_z.o magma_util.o
-#	CC testing_cblas_z.o magma_util.o -lcusparse -lcublas /apps/daint/UES/jenkins/5.2.UP04/easybuild/software/magma/2.0.0-CrayGNU-2016.03/lib/libmagma.a /apps/daint/UES/jenkins/5.2.UP04/easybuild/software/magma/2.0.0-CrayGNU-2016.03/lib/libmagma_sparse.a -o testing_cblas_z
 	$(CXX) $(LDFLAGS) testing_cblas_z.o magma_util.o -o testing_cblas_z
 
 testing_cblas_z.o: testing_cblas_z.cpp

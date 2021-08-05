@@ -53,6 +53,9 @@ This is something that writers of regression tests should bear in mind.
 
    This option can also be set using the :envvar:`RFM_IGNORE_CHECK_CONFLICTS` environment variable or the :js:attr:`ignore_check_conflicts` general configuration parameter.
 
+   .. deprecated:: 3.8.0
+      This option will be removed in a future version.
+
 
 --------------
 Test filtering
@@ -576,6 +579,16 @@ Miscellaneous options
 
    This option can also be set using the :envvar:`RFM_SYSTEM` environment variable.
 
+.. _--detect-host-topology:
+
+.. option:: --detect-host-topology[=FILE]
+
+   Detect the local host processor topology, store it to ``FILE`` and exit.
+   If no ``FILE`` is specified, the standard output will be used.
+
+   .. versionadded:: 3.7.0
+
+
 .. option:: --failure-stats
 
    Print failure statistics at the end of the run.
@@ -698,6 +711,36 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
 
 
+.. envvar:: RFM_REMOTE_DETECT
+
+   Auto-detect processor information of remote partitions as well.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :js:attr:`remote_detect` general configuration parameter
+      ================================== ==================
+
+.. versionadded:: 3.7.0
+
+
+.. envvar:: RFM_REMOTE_WORKDIR
+
+   The temporary directory prefix that will be used to create a fresh ReFrame clone, in order to auto-detect the processor information of a remote partition.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :js:attr:`remote_workdir` general configuration parameter
+      ================================== ==================
+
+.. versionadded:: 3.7.0
+
+
 .. envvar:: RFM_GRAYLOG_ADDRESS
 
    The address of the Graylog server to send performance logs.
@@ -749,6 +792,9 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       Associated command line option     :option:`--ignore-check-conflicts`
       Associated configuration parameter :js:attr:`ignore_check_conflicts` general configuration parameter
       ================================== ==================
+
+   .. deprecated:: 3.8.0
+      This environment variable will be removed in a future version.
 
 
 .. envvar:: RFM_TRAP_JOB_ERRORS
@@ -920,7 +966,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       :align: left
 
       ================================== ==================
-      Associated command line option     n/a
+      Associated command line option     N/A
       Associated configuration parameter :js:attr:`resolve_module_conflicts` general configuration parameter
       ================================== ==================
 

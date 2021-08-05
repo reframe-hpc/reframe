@@ -21,6 +21,7 @@ import reframe.core.logging as logging
 import reframe.core.runtime as runtime
 import reframe.core.warnings as warnings
 import reframe.frontend.argparse as argparse
+import reframe.frontend.autodetect as autodetect
 import reframe.frontend.ci as ci
 import reframe.frontend.dependencies as dependencies
 import reframe.frontend.filters as filters
@@ -133,7 +134,7 @@ def list_tags(testcases, printer):
 
 def logfiles_message():
     log_files = logging.log_files()
-    msg = 'Log file(s) saved in: '
+    msg = 'Log file(s) saved in '
     if not log_files:
         msg += '<no log file was generated>'
     else:
@@ -236,7 +237,8 @@ def main():
     )
     locate_options.add_argument(
         '--ignore-check-conflicts', action='store_true',
-        help='Skip checks with conflicting names',
+        help=('Skip checks with conflicting names '
+              '(this option is deprecated and has no effect)'),
         envvar='RFM_IGNORE_CHECK_CONFLICTS',
         configvar='general/ignore_check_conflicts'
     )
@@ -429,6 +431,10 @@ def main():
         envvar='RFM_SYSTEM'
     )
     misc_options.add_argument(
+        '--detect-host-topology', action='store', nargs='?', const='-',
+        help='Detect the local host topology and exit'
+    )
+    misc_options.add_argument(
         '--upgrade-config-file', action='store', metavar='OLD[:NEW]',
         help='Upgrade ReFrame 2.x configuration file to ReFrame 3.x syntax'
     )
@@ -480,6 +486,20 @@ def main():
         envvar='RFM_HTTPJSON_URL',
         configvar='logging/handlers_perflog/httpjson_url',
         help='URL of HTTP server accepting JSON logs'
+    )
+    argparser.add_argument(
+        dest='remote_detect',
+        envvar='RFM_REMOTE_DETECT',
+        configvar='general/remote_detect',
+        action='store_true',
+        help='Detect remote system topology'
+    )
+    argparser.add_argument(
+        dest='remote_workdir',
+        envvar='RFM_REMOTE_WORKDIR',
+        configvar='general/remote_workdir',
+        action='store',
+        help='Working directory for launching ReFrame remotely'
     )
 
     # Parse command line
@@ -581,7 +601,14 @@ def main():
         printer.error(logfiles_message())
         sys.exit(1)
 
+    if site_config.get('general/0/ignore_check_conflicts'):
+        logging.getlogger().warning(
+            "the 'ignore_check_conflicts' option is deprecated "
+            "and will be removed in the future"
+        )
+
     rt = runtime.runtime()
+    autodetect.detect_topology()
     try:
         if site_config.get('general/0/module_map_file'):
             rt.modules_system.load_mapping_from_file(
@@ -617,6 +644,26 @@ def main():
                 )
             else:
                 printer.info(json.dumps(value, indent=2))
+
+        sys.exit(0)
+
+    if options.detect_host_topology:
+        from reframe.utility.cpuinfo import cpuinfo
+
+        topofile = options.detect_host_topology
+        if topofile == '-':
+            json.dump(cpuinfo(), sys.stdout, indent=2)
+            sys.stdout.write('\n')
+        else:
+            try:
+                with open(topofile, 'w') as fp:
+                    json.dump(cpuinfo(), fp, indent=2)
+                    fp.write('\n')
+            except OSError as e:
+                getlogger().error(
+                    f'could not write topology file: {topofile!r}'
+                )
+                sys.exit(1)
 
         sys.exit(0)
 
@@ -666,10 +713,7 @@ def main():
 
     loader = RegressionCheckLoader(
         load_path=check_search_path,
-        recurse=check_search_recursive,
-        ignore_conflicts=site_config.get(
-            'general/0/ignore_check_conflicts'
-        )
+        recurse=check_search_recursive
     )
 
     def print_infoline(param, value):
@@ -706,11 +750,8 @@ def main():
     printer.info('')
     try:
         # Locate and load checks
-        try:
-            checks_found = loader.load_all()
-            printer.verbose(f'Loaded {len(checks_found)} test(s)')
-        except OSError as e:
-            raise errors.ReframeError from e
+        checks_found = loader.load_all()
+        printer.verbose(f'Loaded {len(checks_found)} test(s)')
 
         # Generate all possible test cases first; we will need them for
         # resolving dependencies after filtering
@@ -817,8 +858,6 @@ def main():
             printer.debug(dependencies.format_deps(testgraph))
             if options.restore_session is not None:
                 testgraph, restored_cases = report.restore_dangling(testgraph)
-                print(dependencies.format_deps(testgraph))
-                print(restored_cases)
 
         testcases = dependencies.toposort(
             testgraph,
@@ -1054,6 +1093,8 @@ def main():
                 with open(report_file, 'w') as fp:
                     jsonext.dump(json_report, fp, indent=2)
                     fp.write('\n')
+
+                printer.info(f'Run report saved in {report_file!r}')
             except OSError as e:
                 printer.warning(
                     f'failed to generate report in {report_file!r}: {e}'
