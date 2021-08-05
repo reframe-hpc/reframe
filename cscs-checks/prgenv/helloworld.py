@@ -29,9 +29,9 @@ class HelloWorldBaseTest(rfm.RegressionTest):
     @run_after('init')
     def set_description(self):
         lang_names = {
-                'c': 'C',
-                'cpp': 'C++',
-                'f90': 'Fortran 90'
+            'c': 'C',
+            'cpp': 'C++',
+            'f90': 'Fortran 90'
         }
         self.descr = f'{lang_names[self.lang]} Hello, World'
 
