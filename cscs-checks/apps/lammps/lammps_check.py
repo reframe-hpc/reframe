@@ -7,14 +7,7 @@ import os
 
 import reframe as rfm
 import reframe.utility.sanity as sn
-import hpctestlib.apps.utils as ut
-from hpctestlib.apps.lammps import LAMMPSBaseCheck
-
-REFERENCE_ENERGY = {
-    # every system has a different reference energy and drift
-    'maint': (-4.6195, 6.0E-04),
-    'prod': (-4.6195, 6.0E-04)
-}
+from hpctestlib.apps.lammps import LAMMPS
 
 dom_gpu_small = {
     'maint': (3457, -0.10, None, 'timesteps/s'),
@@ -85,7 +78,7 @@ REFERENCE_CPU_PERFORMANCE_LARGE = {
 }
 
 
-class LAMMPSCheck(LAMMPSBaseCheck):
+class LAMMPSCheck(LAMMPS):
     modules = ['LAMMPS']
     strict_check = False
     extra_resources = {
@@ -96,9 +89,8 @@ class LAMMPSCheck(LAMMPSBaseCheck):
 
     tags = {'scs', 'external-resources'}
     maintainers = ['TR', 'VH']
-    references = REFERENCE_ENERGY
-
-    run_after('init')(bind(ut.define_reference))
+    energy_value = -4.6195
+    energy_tolerance = 6.0E-04
 
     @run_after('setup')
     def set_generic_perf_references(self):

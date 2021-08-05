@@ -5,29 +5,8 @@
 
 import reframe as rfm
 import reframe.utility.sanity as sn
-import hpctestlib.apps.utils as ut
-from hpctestlib.apps.quantumespresso import QuantumESPRESSOBaseCheck
+from hpctestlib.apps.quantumespresso import QuantumESPRESSO
 
-REFERENCE_ENERGY_CPU_SMALL = {
-    'prod': (-11427.09017218, 1E-06),
-    'maint': (-11427.09017218, 1E-06)
-}
-
-REFERENCE_ENERGY_CPU_LARGE = {
-    'prod': (-11427.09017152, 1E-06),
-    'maint': (-11427.09017152, 1E-06)
-}
-
-
-REFERENCE_ENERGY_GPU_SMALL = {
-    'prod': (-11427.09017168, 1E-07),
-    'maint': (-11427.09017168, 1E-07)
-}
-
-REFERENCE_ENERGY_GPU_LARGE = {
-    'prod': (-11427.09017179, 1E-07),
-    'maint': (-11427.09017179, 1E-07)
-}
 
 REFERENCE_CPU_PERFORMANCE_SMALL = {
     'dom:mc': {
@@ -82,7 +61,7 @@ REFERENCE_GPU_PERFORMANCE_LARGE = {
 }
 
 
-class QuantumESPRESSOCheck(QuantumESPRESSOBaseCheck):
+class QuantumESPRESSOCheck(QuantumESPRESSO):
     scale = parameter(['small', 'large'])
     benchmark = parameter(['maint', 'prod'])
 
@@ -104,8 +83,6 @@ class QuantumESPRESSOCheck(QuantumESPRESSOBaseCheck):
             self.valid_prog_environs = ['cpeIntel']
         else:
             self.valid_prog_environs = ['builtin']
-
-    run_after('init')(bind(ut.define_reference))
 
     @run_after('init')
     def set_reference(self):
@@ -139,10 +116,12 @@ class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
     def set_reference(self):
         if self.scale == 'small':
             self.reference = REFERENCE_CPU_PERFORMANCE_SMALL
-            self.references = REFERENCE_ENERGY_CPU_SMALL
+            self.energy_value = -11427.09017168
+            self.energy_tolerance = 1E-06
         else:
             self.reference = REFERENCE_CPU_PERFORMANCE_LARGE
-            self.references = REFERENCE_ENERGY_CPU_LARGE
+            self.energy_value = -11427.09017152
+            self.energy_tolerance = 1E-06
 
     @run_after('init')
     def set_description(self):
@@ -203,10 +182,12 @@ class QuantumESPRESSOGpuCheck(QuantumESPRESSOCheck):
     def set_reference(self):
         if self.scale == 'small':
             self.reference = REFERENCE_GPU_PERFORMANCE_SMALL
-            self.references = REFERENCE_ENERGY_GPU_SMALL
+            self.energy_value = -11427.09017168
+            self.energy_tolerance = 1E-07
         else:
             self.reference = REFERENCE_GPU_PERFORMANCE_LARGE
-            self.references = REFERENCE_ENERGY_GPU_LARGE
+            self.energy_value = -11427.09017179
+            self.energy_tolerance = 1E-07
 
     @run_after('init')
     def set_description(self):

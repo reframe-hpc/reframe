@@ -5,14 +5,7 @@
 
 import reframe as rfm
 import reframe.utility.sanity as sn
-import hpctestlib.apps.utils as ut
-from hpctestlib.apps.vasp import VASPBaseCheck
-
-REFERENCE_FORCE = {
-    # every system has a different reference energy and drift
-    'maint': (-.85026214E+03, 1e-5),
-    'prod': (-.85026214E+03, 1e-5)
-}
+from hpctestlib.apps.vasp import VASP
 
 dom_cpu = {
     'maint': (148.7, None, 0.05, 's'),
@@ -59,7 +52,7 @@ REFERENCE_GPU_PERFORMANCE = {
 }
 
 
-class VASPCheck(VASPBaseCheck):
+class VASPCheck(VASP):
     modules = ['VASP']
     maintainers = ['LM']
     tags = {'scs'}
@@ -69,9 +62,8 @@ class VASPCheck(VASPBaseCheck):
             'num_switches': 1
         }
     }
-    references = REFERENCE_FORCE
-
-    run_after('init')(bind(ut.define_reference))
+    force_value = -.85026214E+03
+    force_tolerance = 1e-5
 
     @run_after('setup')
     def set_generic_perf_references(self):
@@ -147,7 +139,7 @@ class VASPCpuCheck(VASPCheck):
 class VASPGpuCheck(VASPCheck):
     valid_systems = ['daint:gpu', 'dom:gpu']
     executable = 'vasp_gpu'
-    reference = REFERENCE_CPU_PERFORMANCE
+    reference = REFERENCE_GPU_PERFORMANCE
     benchmark = parameter(['prod', 'maint'])
     variables = {'CRAY_CUDA_MPS': '1'}
     num_gpus_per_node = 1
