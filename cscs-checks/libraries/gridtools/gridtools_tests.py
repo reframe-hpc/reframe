@@ -22,14 +22,15 @@ class GridToolsBuildCheck(rfm.CompileOnlyRegressionTest):
     tags = {'scs', 'benchmark'}
     maintainers = ['CB']
 
-    @rfm.run_after('init')
-    def set_valid_systems_and_description(self):
+    @run_after('init')
+    def adapt_valid_systems_and_descr(self):
         if self.target == 'cpu':
             self.valid_systems += ['daint:mc', 'dom:mc']
+
         self.descr = f'GridTools {self.target} build test'
 
-    @rfm.run_before('compile')
-    def set_build_options(self):
+    @run_before('compile')
+    def prepare_build(self):
         self.build_system.config_opts = [
             '-DCMAKE_BUILD_TYPE=Debug',
             '-DCMAKE_CXX_FLAGS=-std=c++14',
@@ -53,16 +54,12 @@ class GridToolsBuildCheck(rfm.CompileOnlyRegressionTest):
         self.build_system.flags_from_environ = False
         self.build_system.make_opts = ['perftests']
         self.build_system.max_concurrency = 8
-
-    @rfm.run_before('compile')
-    def set_env(self):
         if self.target == 'gpu':
             self.modules.append('cudatoolkit')
 
-    @rfm.run_before('sanity')
-    def set_sanity_patterns(self):
-        self.sanity_patterns = sn.assert_found(r'perftest',
-                                               self.stdout)
+    @sanity_function
+    def assert_sanity(self):
+        return sn.assert_found(r'perftest', self.stdout)
 
 
 class GridToolsRunCheck(rfm.RunOnlyRegressionTest):
@@ -71,9 +68,12 @@ class GridToolsRunCheck(rfm.RunOnlyRegressionTest):
     valid_systems = ['daint:gpu', 'dom:gpu']
     num_tasks = 1
 
-    @rfm.run_before('sanity')
-    def set_sanity_patterns(self):
-        self.sanity_patterns = sn.assert_found(r'PASSED', self.stdout)
+    @sanity_function
+    def validate_run(self):
+        return sn.assert_found(r'PASSED', self.stdout)
+
+    @run_before('performance')
+    def setup_perf_vars(self):
         literal_eval = sn.sanity_function(ast.literal_eval)
         self.perf_patterns = {
             'wall_time': sn.avg(literal_eval(
@@ -85,7 +85,7 @@ class GridToolsRunCheck(rfm.RunOnlyRegressionTest):
 @rfm.simple_test
 class GridToolsCPURunCheck(GridToolsRunCheck):
     variant = parameter(['horizontal_diffusion/cpu_kfirst_double',
-                        'horizontal_diffusion/cpu_ifirst_double'])
+                         'horizontal_diffusion/cpu_ifirst_double'])
     descr = 'GridTools CPU run test'
     num_gpus_per_node = 0
     variant_data = {
@@ -132,20 +132,20 @@ class GridToolsCPURunCheck(GridToolsRunCheck):
             'tests', 'regression', 'perftests'
         )
 
-    @rfm.run_after('init')
-    def add_valid_systems(self):
+    @run_after('init')
+    def adapt_valid_systems(self):
         self.valid_systems += ['daint:mc', 'dom:mc']
 
-    @rfm.run_after('init')
+    @run_after('init')
     def set_dependencies(self):
         self.depends_on('GridToolsBuildCheck_cpu')
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_executable_opts(self):
         self.executable_opts = ['256', '256', '80', '3',
                                 f'--gtest_filter={self.variant}*']
 
-    @rfm.run_before('sanity')
+    @run_before('performance')
     def set_performance_reference(self):
         self.reference = self.variant_data[self.variant]['reference']
 
@@ -178,6 +178,7 @@ class GridToolsGPURunCheck(GridToolsRunCheck):
             }
         }
     }
+    modules += ['cudatoolkit']
     tags = {'scs', 'benchmark'}
     maintainers = ['CB']
 
@@ -185,21 +186,18 @@ class GridToolsGPURunCheck(GridToolsRunCheck):
     def set_executable(self, GridToolsBuildCheck_gpu):
         self.executable = os.path.join(
             GridToolsBuildCheck_gpu().stagedir,
-            'tests', 'regression', 'perftests')
+            'tests', 'regression', 'perftests'
+        )
 
-    @rfm.run_after('init')
+    @run_after('init')
     def set_dependencies(self):
         self.depends_on('GridToolsBuildCheck_gpu')
 
-    @rfm.run_before('compile')
-    def modules_update(self):
-        self.modules.append('cudatoolkit')
-
-    @rfm.run_before('run')
+    @run_before('run')
     def set_executable_opts(self):
         self.executable_opts = ['512', '512', '160', '3',
                                 f'--gtest_filter={self.variant}*']
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_performance_reference(self):
         self.reference = self.variant_data[self.variant]['reference']
