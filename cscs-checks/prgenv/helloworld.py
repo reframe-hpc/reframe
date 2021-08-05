@@ -14,11 +14,6 @@ class HelloWorldBaseTest(rfm.RegressionTest):
     linking = parameter(['dynamic', 'static'])
     lang = parameter(['c', 'cpp', 'f90'])
     prgenv_flags = {}
-    lang_names = {
-        'c': 'C',
-        'cpp': 'C++',
-        'f90': 'Fortran 90'
-    }
     sourcepath = 'hello_world'
     build_system = 'SingleSource'
     valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
@@ -28,25 +23,39 @@ class HelloWorldBaseTest(rfm.RegressionTest):
                            'PrgEnv-intel', 'PrgEnv-pgi',
                            'PrgEnv-gnu-nocuda', 'PrgEnv-pgi-nocuda']
     exclusive_access = True
-    compilation_time_seconds = None
     maintainers = ['VH', 'EK']
     tags = {'production', 'craype'}
 
     @run_after('init')
     def set_description(self):
-        self.descr = f'{self.lang_names[self.lang]} Hello, World'
+        lang_names = {
+                'c': 'C',
+                'cpp': 'C++',
+                'f90': 'Fortran 90'
+        }
+        self.descr = f'{lang_names[self.lang]} Hello, World'
 
     @run_after('init')
-    def add_dynamic_only_systems(self):
+    def adapt_valid_systems(self):
         if self.linking == 'dynamic':
             self.valid_systems += ['eiger:mc', 'pilatus:mc']
 
     @run_before('compile')
-    def set_craylinktype_env_variable(self):
+    def prepare_build(self):
         self.variables['CRAYPE_LINK_TYPE'] = self.linking
+        envname = re.sub(r'(PrgEnv-\w+).*', lambda m: m.group(1),
+                         self.current_environ.name)
+        try:
+            prgenv_flags = self.prgenv_flags[envname]
+        except KeyError:
+            prgenv_flags = []
+
+        self.build_system.cflags = prgenv_flags
+        self.build_system.cxxflags = prgenv_flags
+        self.build_system.fflags = prgenv_flags
 
     @sanity_function
-    def set_sanity_patterns(self):
+    def assert_hello_world(self):
         result = sn.findall(r'Hello, World from thread \s*(\d+) out '
                             r'of \s*(\d+) from process \s*(\d+) out of '
                             r'\s*(\d+)', self.stdout)
@@ -85,7 +94,7 @@ class HelloWorldBaseTest(rfm.RegressionTest):
         )
 
     @run_before('performance')
-    def set_performance_patterns(self):
+    def capture_build_time(self):
         self.perf_patterns = {
             'compilation_time': sn.getattr(self, 'compilation_time_seconds')
         }
@@ -94,19 +103,6 @@ class HelloWorldBaseTest(rfm.RegressionTest):
                 'compilation_time': (60, None, 0.1, 's')
             }
         }
-
-    @run_before('compile')
-    def setflags(self):
-        envname = re.sub(r'(PrgEnv-\w+).*', lambda m: m.group(1),
-                         self.current_environ.name)
-        try:
-            prgenv_flags = self.prgenv_flags[envname]
-        except KeyError:
-            prgenv_flags = []
-
-        self.build_system.cflags = prgenv_flags
-        self.build_system.cxxflags = prgenv_flags
-        self.build_system.fflags = prgenv_flags
 
     @run_before('compile')
     def compile_timer_start(self):
@@ -143,7 +139,7 @@ class HelloWorldTestSerial(HelloWorldBaseTest):
 
     @run_before('compile')
     def update_sourcepath(self):
-        self.sourcepath += '_serial.' + self.lang
+        self.sourcepath += f'_serial.{self.lang}'
 
 
 @rfm.simple_test
