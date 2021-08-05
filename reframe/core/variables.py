@@ -10,8 +10,9 @@
 import math
 import copy
 
-import reframe.core.namespaces as namespaces
 import reframe.core.fields as fields
+import reframe.core.namespaces as namespaces
+from reframe.core.exceptions import ReframeSyntaxError
 
 
 class _UndefinedType:
@@ -47,7 +48,7 @@ class TestVar:
         self._default_value = kwargs.pop('value', Undefined)
 
         if not issubclass(field_type, fields.Field):
-            raise ValueError(
+            raise TypeError(
                 f'field {field_type!r} is not derived from '
                 f'{fields.Field.__qualname__}'
             )
@@ -99,7 +100,7 @@ class TestVar:
 
     def _check_is_defined(self):
         if not self.is_defined():
-            raise ValueError(
+            raise ReframeSyntaxError(
                 f'variable {self.name} is not assigned a value'
             )
 
@@ -451,7 +452,7 @@ class VarSpace(namespaces.Namespace):
             # Make doubly declared vars illegal. Note that this will be
             # triggered when inheriting from multiple RegressionTest classes.
             if key in self.vars:
-                raise ValueError(
+                raise ReframeSyntaxError(
                     f'variable {key!r} is declared in more than one of the '
                     f'parent classes of class {cls.__qualname__!r}'
                 )
@@ -478,7 +479,7 @@ class VarSpace(namespaces.Namespace):
             if isinstance(var, TestVar):
                 # Disable redeclaring a variable
                 if key in self.vars:
-                    raise ValueError(
+                    raise ReframeSyntaxError(
                         f'cannot redeclare the variable {key!r}'
                     )
 
@@ -495,7 +496,7 @@ class VarSpace(namespaces.Namespace):
                 _assigned_vars.add(key)
             elif value is Undefined:
                 # Cannot be set as Undefined if not a variable
-                raise ValueError(
+                raise ReframeSyntaxError(
                     f'{key!r} has not been declared as a variable'
                 )
 
@@ -518,7 +519,7 @@ class VarSpace(namespaces.Namespace):
 
         for key in self._namespace:
             if key in illegal_names and key not in self._injected_vars:
-                raise ValueError(
+                raise ReframeSyntaxError(
                     f'{key!r} already defined in class '
                     f'{cls.__qualname__!r}'
                 )

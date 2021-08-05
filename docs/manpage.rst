@@ -53,6 +53,9 @@ This is something that writers of regression tests should bear in mind.
 
    This option can also be set using the :envvar:`RFM_IGNORE_CHECK_CONFLICTS` environment variable or the :js:attr:`ignore_check_conflicts` general configuration parameter.
 
+   .. deprecated:: 3.8.0
+      This option will be removed in a future version.
+
 
 --------------
 Test filtering
@@ -789,6 +792,9 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       Associated command line option     :option:`--ignore-check-conflicts`
       Associated configuration parameter :js:attr:`ignore_check_conflicts` general configuration parameter
       ================================== ==================
+
+   .. deprecated:: 3.8.0
+      This environment variable will be removed in a future version.
 
 
 .. envvar:: RFM_TRAP_JOB_ERRORS
