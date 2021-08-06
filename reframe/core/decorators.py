@@ -27,25 +27,25 @@ from reframe.core.pipeline import RegressionTest
 from reframe.utility.versioning import VersionValidator
 
 
-def _register_test(cls, args=None):
+def _register_test(cls, inst_args=None, *args, **kwargs):
     '''Register the test.
 
     Register the test with _rfm_use_params=True. This additional argument flags
     this case to consume the parameter space. Otherwise, the regression test
     parameters would simply be initialized to None.
     '''
-    def _instantiate(cls, args):
-        if isinstance(args, collections.abc.Sequence):
-            return cls(*args, _rfm_use_params=True)
-        elif isinstance(args, collections.abc.Mapping):
-            args['_rfm_use_params'] = True
-            return cls(**args)
-        elif args is None:
-            return cls(_rfm_use_params=True)
+    def _instantiate(cls, inst_args, *args, **kwargs):
+        kwargs['_rfm_use_params'] = True
+        if isinstance(inst_args, collections.abc.Sequence):
+            args += inst_args
+        elif isinstance(inst_args, collections.abc.Mapping):
+            kwargs.update(args)
 
-    def _instantiate_all():
+        return cls(*args, **kwargs)
+
+    def _instantiate_all(*args, **kwargs):
         ret = []
-        for cls, args in mod.__rfm_test_registry:
+        for cls, inst_args in mod.__rfm_test_registry:
             try:
                 if cls in mod.__rfm_skip_tests:
                     continue
@@ -53,7 +53,7 @@ def _register_test(cls, args=None):
                 mod.__rfm_skip_tests = set()
 
             try:
-                ret.append(_instantiate(cls, args))
+                ret.append(_instantiate(cls, inst_args, *args, **kwargs))
             except SkipTestError as e:
                 getlogger().warning(f'skipping test {cls.__qualname__!r}: {e}')
             except Exception:

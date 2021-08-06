@@ -451,3 +451,40 @@ def test_other_numerical_operators():
         assert math.trunc(npi) == -3
         assert math.floor(npi) == -4
         assert math.ceil(npi) == -3
+
+
+@pytest.fixture
+def ConvTest():
+    class _X(rfm.RegressionTest):
+        x = variable(int)
+        y = variable(float, value=3.141592)
+        z = variable(int, type(None))
+        w = variable(int, value=3, conv=lambda x: 1)
+
+    yield _X
+
+
+def test_define_from_string(ConvTest):
+    x = ConvTest(
+        _rfm_external_vals={'x': '3', 'y': '3.14', 'z': 'None', 'w': '2'}
+    )
+    assert x.x == 3
+    assert x.y == 3.14
+    assert x.z is None
+    assert x.w == 1
+
+
+def test_define_from_string_partial(ConvTest):
+    x = ConvTest(_rfm_external_vals={'x': '3', 'z': 'None'})
+    assert x.x == 3
+    assert x.y == 3.141592
+    assert x.z is None
+    assert x.w == 3
+
+
+def test_define_from_string_errors(ConvTest):
+    with pytest.raises(TypeError):
+        ConvTest(_rfm_external_vals={'x': 'None'})
+
+    with pytest.raises(TypeError):
+        ConvTest(_rfm_external_vals={'z': '3.14'})

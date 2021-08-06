@@ -46,6 +46,10 @@ class TypedField(Field):
             raise TypeError('{0} is not a sequence of types'.
                             format(self._types))
 
+    @property
+    def valid_types(self):
+        return self._types
+
     def _check_type(self, value):
         if not any(isinstance(value, t) for t in self._types):
             typedescr = '|'.join(t.__name__ for t in self._types)

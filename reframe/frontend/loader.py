@@ -115,7 +115,7 @@ class RegressionCheckLoader:
     def recurse(self):
         return self._recurse
 
-    def load_from_module(self, module):
+    def load_from_module(self, module, *args, **kwargs):
         '''Load user checks from module.
 
         This method tries to call the `_rfm_gettests()` method of the user
@@ -133,7 +133,7 @@ class RegressionCheckLoader:
             getlogger().debug('No tests registered')
             return []
 
-        candidates = module._rfm_gettests()
+        candidates = module._rfm_gettests(*args, **kwargs)
         if not isinstance(candidates, collections.abc.Sequence):
             getlogger().warning(
                 f'Tests not registered correctly in {module.__name__!r}'
@@ -163,13 +163,13 @@ class RegressionCheckLoader:
         getlogger().debug(f'  > Loaded {len(ret)} test(s)')
         return ret
 
-    def load_from_file(self, filename, force=False):
+    def load_from_file(self, filename, force=False, *args, **kwargs):
         if not self._validate_source(filename):
             return []
 
         try:
             return self.load_from_module(
-                util.import_module_from_file(filename, force)
+                util.import_module_from_file(filename, force), *args, **kwargs
             )
         except Exception:
             exc_info = sys.exc_info()
@@ -184,12 +184,14 @@ class RegressionCheckLoader:
             else:
                 raise
 
-    def load_from_dir(self, dirname, recurse=False, force=False):
+    def load_from_dir(self, dirname, recurse=False,
+                      force=False, *args, **kwargs):
         checks = []
         for entry in os.scandir(dirname):
             if recurse and entry.is_dir():
                 checks.extend(
-                    self.load_from_dir(entry.path, recurse, force)
+                    self.load_from_dir(entry.path, recurse,
+                                       force, *args, **kwargs)
                 )
 
             if (entry.name.startswith('.') or
@@ -197,11 +199,11 @@ class RegressionCheckLoader:
                 not entry.is_file()):
                 continue
 
-            checks += self.load_from_file(entry.path, force)
+            checks += self.load_from_file(entry.path, force, *args, **kwargs)
 
         return checks
 
-    def load_all(self, force=False):
+    def load_all(self, force=False, *args, **kwargs):
         '''Load all checks in self._load_path.
 
         If a prefix exists, it will be prepended to each path.
@@ -217,8 +219,9 @@ class RegressionCheckLoader:
                 continue
 
             if os.path.isdir(d):
-                checks += self.load_from_dir(d, self._recurse, force)
+                checks += self.load_from_dir(d, self._recurse, force,
+                                             *args, **kwargs)
             else:
-                checks += self.load_from_file(d, force)
+                checks += self.load_from_file(d, force, *args, **kwargs)
 
         return checks

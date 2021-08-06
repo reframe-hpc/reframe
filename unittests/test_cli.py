@@ -777,3 +777,13 @@ def test_detect_host_topology_file(run_reframe, tmp_path):
     assert returncode == 0
     with open(topo_file) as fp:
         assert json.load(fp) == cpuinfo()
+
+
+def test_external_vars(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        checkpath=['unittests/resources/checks_unlisted/externalvars.py'],
+        more_options=['-S', 'foo=3']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert returncode == 0
