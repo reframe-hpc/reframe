@@ -355,7 +355,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: :type: :class:`str`
     #: :default: :class:`required`
     #:
-    #: .. versionchanged:: 3.8
+    #: .. versionchanged:: 3.7.3
     #:    Default value changed from ``os.path.join('.', self.name)`` to
     #:    :class:`required`.
     executable = variable(str)
