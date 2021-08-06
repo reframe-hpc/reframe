@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
   {
     int nthreads = omp_get_num_threads();
     tid = omp_get_thread_num();
-    printf("Hello World from thread %d out of %d from process %d out of %d\n",
+    printf("Hello, World from thread %d out of %d from process %d out of %d\n",
            tid, nthreads, rank, size);
   }
 

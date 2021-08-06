@@ -1,6 +1,6 @@
 /* requires console i/o on all mpi processes, so might fail, twr */
-#include <stdio.h>  
-#include <mpi.h>   
+#include <stdio.h>
+#include <mpi.h>
 
 int main(int argc, char *argv[]) {
   int rank, size;
@@ -11,7 +11,7 @@ int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
-  printf("Hello World from thread %d out of %d from process %d out of %d\n",
+  printf("Hello, World from thread %d out of %d from process %d out of %d\n",
        0, 1, rank, size);
 
   MPI_Get_version( &mpiversion, &mpisubversion );
