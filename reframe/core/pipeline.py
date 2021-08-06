@@ -348,8 +348,16 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     #: The name of the executable to be launched during the run phase.
     #:
+    #: If this variable is undefined when entering the compile pipeline
+    #: stage, it will be set to ``os.path.join('.', self.name)``. Classes
+    #: that override the compile stage may leave this variable undefined.
+    #:
     #: :type: :class:`str`
-    #: :default: ``os.path.join('.', self.name)``
+    #: :default: :class:`required`
+    #:
+    #: .. versionchanged:: 3.7.3
+    #:    Default value changed from ``os.path.join('.', self.name)`` to
+    #:    :class:`required`.
     executable = variable(str)
 
     #: List of options to be passed to the :attr:`executable`.
@@ -861,10 +869,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         if not hasattr(self, 'descr'):
             self.descr = self.name
 
-        # Pass if the executable is a required variable.
-        if not hasattr(self, 'executable'):
-            self.executable = os.path.join('.', self.name)
-
         self._perfvalues = {}
 
         # Static directories of the regression check
@@ -1286,6 +1290,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             else:
                 self._copy_to_stagedir(os.path.join(self._prefix,
                                                     self.sourcesdir))
+
+        # Set executable (only if hasn't been provided)
+        if not hasattr(self, 'executable'):
+            self.executable = os.path.join('.', self.name)
 
         # Verify the sourcepath and determine the sourcepath in the stagedir
         if (os.path.isabs(self.sourcepath) or

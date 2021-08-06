@@ -261,7 +261,8 @@ Here is the full regression test:
    :lines: 6-
    :emphasize-lines: 6
 
-There is nothing special for this test compared to those presented so far except that it derives from the :class:`~reframe.core.pipeline.RunOnlyRegressionTest`.
+There is nothing special for this test compared to those presented so far except that it derives from the :class:`~reframe.core.pipeline.RunOnlyRegressionTest` class.
+Note that setting the :attr:`~reframe.core.pipeline.RegressionTest.executable` in this type of test is always required.
 Run-only regression tests may also have resources, as for instance a pre-compiled executable or some input data.
 These resources may reside under the ``src/`` directory or under any directory specified in the :attr:`~reframe.core.pipeline.RegressionTest.sourcesdir` attribute.
 These resources will be copied to the stage directory at the beginning of the run phase.
