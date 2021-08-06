@@ -271,15 +271,17 @@ class RegressionTestMeta(type):
             performance variable. If not provided, the function name will
             be used as the performance variable name.
             '''
+            if not isinstance(units, str):
+                raise ReframeSyntaxError('performance units must be a string')
 
             if perf_key and not isinstance(perf_key, str):
-                raise TypeError("'perf_key' must be a string")
+                raise ReframeSyntaxError("'perf_key' must be a string")
 
             def _deco_wrapper(func):
                 if not utils.is_trivially_callable(func, non_def_args=1):
                     raise ReframeSyntaxError(
-                        f'performance function {fn.__name__!r} has more than '
-                        f'one argument without a default value'
+                        f'performance function {func.__name__!r} has more '
+                        f'than one argument without a default value'
                     )
 
                 @functools.wraps(func)

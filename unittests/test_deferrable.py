@@ -16,11 +16,42 @@ def test_defer():
     assert isinstance(a, _DeferredExpression)
 
 
+def test_deferrable_perf():
+    from reframe.core.deferrable import _DeferredPerformanceExpression as dpe
+
+    a = sn.defer(3)
+    b = dpe.construct_from_deferred_expr(a, 'some_unit')
+    assert b.unit == 'some_unit'
+
+    # Test wrong unit type
+    with pytest.raises(TypeError):
+        dpe(lambda x: x, 3)
+
+    # Test not from deferred expr
+    with pytest.raises(TypeError):
+        dpe.construct_from_deferred_expr(lambda x: x, 'some_unit')
+
+
 def test_evaluate():
     a = sn.defer(3)
     assert 3 == a.evaluate()
     assert 3 == sn.evaluate(a)
     assert 3 == sn.evaluate(3)
+
+
+def test_recursive_evaluate():
+    @sn.deferrable
+    def c():
+        @sn.deferrable
+        def b():
+            @sn.deferrable
+            def a():
+                return sn.defer(3)
+
+            return a()
+        return b()
+
+    assert 3 == c().evaluate()
 
 
 def test_depr_warn(monkeypatch):

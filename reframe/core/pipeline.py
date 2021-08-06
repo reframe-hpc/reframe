@@ -1721,6 +1721,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                             f'skipping evaluation of performance variable '
                             f'{tag!r} in test {self.name!r}: {e}'
                         )
+                        continue
 
                     key = f'{self._current_partition.fullname}:{tag}'
                     try:

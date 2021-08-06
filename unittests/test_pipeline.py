@@ -1201,7 +1201,7 @@ def test_performance_invalid_value(dummytest, sanity_file,
         _run_sanity(dummytest, *dummy_gpu_exec_ctx)
 
 
-def test_performance_var_evaluation(dummytest, sanity_file,
+def test_perf_patterns_evaluation(dummytest, sanity_file,
                                     perf_file, dummy_gpu_exec_ctx):
     # All performance values must be evaluated, despite the first one
     # failing To test this, we need an extract function that will have a
@@ -1239,6 +1239,136 @@ def test_performance_var_evaluation(dummytest, sanity_file,
     assert 'v2' in log_output
     assert 'v3' in log_output
 
+
+@pytest.fixture
+def perftest(testsys_system, perf_file, sanity_file):
+    class MyTest(rfm.RunOnlyRegressionTest):
+        sourcesdir = None
+
+        @sanity_function
+        def dummy_sanity(self):
+            return sn.assert_found(r'success', sanity_file)
+
+        @performance_function('unit')
+        def value1(self):
+            pass
+
+        @performance_function('unit')
+        def value2(self):
+            pass
+
+        @performance_function('unit', perf_key='value3')
+        def value_3(self):
+            pass
+
+    yield MyTest()
+
+
+def test_validate_default_perf_variables(perftest):
+    assert len(perftest.perf_variables) == 3
+    assert 'value1' in perftest.perf_variables
+    assert 'value2' in perftest.perf_variables
+    assert 'value3' in perftest.perf_variables
+
+
+def test_perf_vars_without_reference(perftest, sanity_file,
+                                     perf_file, dummy_gpu_exec_ctx):
+    logfile = 'perf.log'
+
+    @sn.deferrable
+    def extract_perf(patt, tag):
+        val = sn.evaluate(
+            sn.extractsingle(patt, perf_file, tag, float)
+        )
+        with open(logfile, 'a') as fp:
+            fp.write(f'{tag}={val}')
+
+        return val
+
+    def wrapped_extract_perf(x, *args):
+        return extract_perf(*args)
+
+    sanity_file.write_text('result = success\n')
+    perf_file.write_text('perf1 = 1.0\n'
+                         'perf3 = 3.3\n')
+    perftest.perf_variables = {
+        'value1': perftest.make_performance_function(
+            extract_perf(r'perf1 = (?P<v1>\S+)', 'v1'), 'unit'
+        ),
+        'value3': perftest.make_performance_function(
+            wrapped_extract_perf, 'unit', r'perf3 = (?P<v3>\S+)', 'v3'
+        )
+    }
+    _run_sanity(perftest, *dummy_gpu_exec_ctx)
+
+    logfile = os.path.join(perftest.stagedir, logfile)
+    with open(logfile) as fp:
+        log_output = fp.read()
+
+    assert 'v1' in log_output
+    assert 'v3' in log_output
+
+
+def test_perf_vars_with_reference(perftest, sanity_file,
+                                        perf_file, dummy_gpu_exec_ctx):
+    logfile = 'perf.log'
+
+    @sn.deferrable
+    def extract_perf(patt, tag):
+        val = sn.evaluate(
+            sn.extractsingle(patt, perf_file, tag, float)
+        )
+        with open(logfile, 'a') as fp:
+            fp.write(f'{tag}={val}')
+
+        return val
+
+    sanity_file.write_text('result = success\n')
+    perf_file.write_text('perf1 = 1.0\n')
+
+    # Make the unit in the reference different from the performance function
+    perftest.reference = {
+        '*': {
+            'value1': (0, None, None, 'unit_')
+        }
+    }
+    perftest.perf_variables = {
+        'value1': perftest.make_performance_function(
+            extract_perf(r'perf1 = (?P<v1>\S+)', 'v1'), 'unit'
+        ),
+    }
+    _run_sanity(perftest, *dummy_gpu_exec_ctx)
+
+    logfile = os.path.join(perftest.stagedir, logfile)
+    with open(logfile) as fp:
+        log_output = fp.read()
+
+    assert 'v1' in log_output
+
+
+def test_incompat_perf_syntax(perftest, sanity_file,
+                              perf_file, dummy_gpu_exec_ctx):
+    sanity_file.write_text('result = success\n')
+    perf_file.write_text('perf1 = 1.0\n')
+    perftest.perf_patterns = {}
+    with pytest.raises(ReframeSyntaxError):
+        _run_sanity(perftest, *dummy_gpu_exec_ctx)
+
+
+def test_perf_function_raises_exception(perftest, sanity_file,
+                                        perf_file, dummy_gpu_exec_ctx):
+    # The lambda takes a single arg, and the make_performance_function
+    # will inject the self argument too. This triggers an exception
+    # when the performance function is evaluated and here we test that
+    # it is caught properly.
+
+    sanity_file.write_text('result = success\n')
+    perftest.perf_variables = {
+        'value': perftest.make_performance_function(
+            lambda x: x, 'unit', 'random_arg'
+        )
+    }
+    _run_sanity(perftest, *dummy_gpu_exec_ctx)
 
 @pytest.fixture
 def container_test(tmp_path):

@@ -53,6 +53,7 @@ def test_directives(MyMeta):
         sanity_function(ext)
         v = required
         final(ext)
+        performance_function('some_units')(ext)
 
         def __init__(self):
             assert not hasattr(self, 'parameter')
@@ -65,6 +66,7 @@ def test_directives(MyMeta):
             assert not hasattr(self, 'sanity_function')
             assert not hasattr(self, 'required')
             assert not hasattr(self, 'final')
+            assert not hasattr(self, 'performance_function')
 
     MyTest()
 
@@ -254,3 +256,91 @@ def test_final(MyMeta):
 
         def foo(self):
             '''Overriding foo is now allowed.'''
+
+
+def test_callable_attributes(MyMeta):
+    '''Test issue #2113.
+
+    Setting a callable without the __name__ attribute would crash the
+    metaclass.
+    '''
+
+    class Callable:
+        def __call__(self):
+            pass
+
+    class Base(MyMeta):
+        f = Callable()
+
+
+def test_performance_function(MyMeta):
+    assert hasattr(MyMeta, '_rfm_perf_fns')
+
+    class Base(MyMeta):
+        @performance_function('units')
+        def perf_a(self):
+            pass
+
+        @performance_function('units')
+        def perf_b(self):
+            pass
+
+        def assert_perf_fn_return(self):
+            assert isinstance(
+                self.perf_a(), deferrable._DeferredPerformanceExpression
+            )
+
+    # Test the return type of the performance functions
+    Base().assert_perf_fn_return()
+
+    # Test the performance function set has been built correctly
+    assert len(Base._rfm_perf_fns) == 2
+    perf_fns = {'perf_a', 'perf_b'}
+    for fn in Base._rfm_perf_fns:
+        assert fn._rfm_perf_key in perf_fns
+        perf_fns.remove(fn._rfm_perf_key)
+
+    assert not perf_fns
+
+    class Derived(Base):
+        '''Test perf fn inheritance and perf_key argument.'''
+
+        def perf_a(self):
+            '''Override perf fn with a non perf fn.'''
+
+        @performance_function('units')
+        def perf_c(self):
+            '''Add a new perf fn.'''
+
+        @performance_function('units', perf_key='my_perf_fn')
+        def perf_d(self):
+            '''Perf function with custom key.'''
+
+    # Test the performance function set is correct with class inheritance
+    assert len(Derived._rfm_perf_fns) == 3
+    perf_fns = {'perf_b', 'perf_c', 'my_perf_fn'}
+    for fn in Derived._rfm_perf_fns:
+        assert fn._rfm_perf_key in perf_fns
+        perf_fns.remove(fn._rfm_perf_key)
+
+    assert not perf_fns
+
+
+def test_performance_function_errors(MyMeta):
+    with pytest.raises(ReframeSyntaxError):
+        class wrong_perf_key_type(MyMeta):
+            @performance_function('units', perf_key=3)
+            def perf_fn(self):
+                pass
+
+    with pytest.raises(ReframeSyntaxError):
+        class wrong_function_signature(MyMeta):
+            @performance_function('units')
+            def perf_fn(self, extra_arg):
+                pass
+
+    with pytest.raises(ReframeSyntaxError):
+        class wrong_units(MyMeta):
+            @performance_function(5)
+            def perf_fn(self):
+                pass
