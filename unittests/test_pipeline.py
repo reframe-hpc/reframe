@@ -1202,7 +1202,7 @@ def test_performance_invalid_value(dummytest, sanity_file,
 
 
 def test_perf_patterns_evaluation(dummytest, sanity_file,
-                                    perf_file, dummy_gpu_exec_ctx):
+                                  perf_file, dummy_gpu_exec_ctx):
     # All performance values must be evaluated, despite the first one
     # failing To test this, we need an extract function that will have a
     # side effect when evaluated, whose result we will check after calling
@@ -1310,7 +1310,7 @@ def test_perf_vars_without_reference(perftest, sanity_file,
 
 
 def test_perf_vars_with_reference(perftest, sanity_file,
-                                        perf_file, dummy_gpu_exec_ctx):
+                                  perf_file, dummy_gpu_exec_ctx):
     logfile = 'perf.log'
 
     @sn.deferrable
@@ -1369,6 +1369,7 @@ def test_perf_function_raises_exception(perftest, sanity_file,
         )
     }
     _run_sanity(perftest, *dummy_gpu_exec_ctx)
+
 
 @pytest.fixture
 def container_test(tmp_path):
