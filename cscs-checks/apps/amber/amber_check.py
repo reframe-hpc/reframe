@@ -94,12 +94,6 @@ class AmberCheck(Amber):
         ]
 
     @run_after('setup')
-    def set_generic_perf_references(self):
-        self.reference.update({'*': {
-            self.benchmark: (0, None, None, 'ns/day')
-        }})
-
-    @run_after('setup')
     def set_perf_patterns(self):
         self.perf_patterns = {
             self.benchmark: sn.extractsingle(r'ns/day =\s+(?P<perf>\S+)',
@@ -107,9 +101,15 @@ class AmberCheck(Amber):
                                              float, item=1)
         }
 
+    @run_before('performance')
+    def set_generic_perf_references(self):
+        self.reference.update({'*': {
+            self.benchmark: (0, None, None, 'ns/day')
+        }})
+
 
 @rfm.simple_test
-class AmberGPUCheck(AmberCheck):
+class amber_gpu_check(AmberCheck):
     input_file = 'mdin.GPU'
     valid_systems = ['daint:gpu', 'dom:gpu']
     executable = 'pmemd.cuda.MPI'
@@ -122,7 +122,7 @@ class AmberGPUCheck(AmberCheck):
 
 
 @rfm.simple_test
-class AmberCPUCheck(AmberCheck):
+class amber_cpu_check(AmberCheck):
     tags = {'maintenance', 'production'}
     scale = parameter(['small', 'large'])
     valid_systems = ['daint:mc', 'eiger:mc']
