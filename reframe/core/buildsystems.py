@@ -785,6 +785,11 @@ class Spack(BuildSystem):
     #:
     #: :type: :class:`str` or :class:`None`
     #: :default: ``None``
+    #:
+    #: .. note::
+    #:     .. versionchanged:: 3.7.3
+    #:        The field is no longer required and the Spack environment will be
+    #:        automatically created if not provided
     environment = variable(typ.Str[r'\S+'], type(None), value=None)
 
     #: The directory where Spack will install the packages requested by this
@@ -807,6 +812,8 @@ class Spack(BuildSystem):
     #:
     #: :type: :class:`str` or :class:`None`
     #: :default: ``None``
+    #:
+    #: .. versionadded:: 3.7.3
     install_tree = variable(typ.Str[r'\S+'], type(None), value=None)
 
     #: A list of additional specs to build and install within the given
