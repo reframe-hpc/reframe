@@ -11,6 +11,7 @@ import reframe.utility.sanity as sn
 class LibSciResolveBaseTest(rfm.CompileOnlyRegressionTest):
     sourcesdir = 'src/libsci_resolve'
     sourcepath = 'libsci_resolve.f90'
+    executable = 'libsciresolve.x'
     valid_systems = ['daint:login', 'daint:gpu', 'dom:login', 'dom:gpu']
     modules = ['craype-haswell']
     maintainers = ['AJ', 'LM']
@@ -41,8 +42,8 @@ class NvidiaResolveTest(LibSciResolveBaseTest):
     def set_modules(self):
         self.modules += [f'craype-accel-nvidia{self.accel_nvidia_version}']
 
-    @run_before('sanity')
-    def set_sanity(self):
+    @sanity_function
+    def libsci_acc_resolve(self):
         # here lib_name is in the format: libsci_acc_gnu_48_nv35.so or
         #                                 libsci_acc_cray_nv35.so
         regex = (r'.*\(NEEDED\).*libsci_acc_(?P<prgenv>[A-Za-z]+)_'
@@ -56,7 +57,7 @@ class NvidiaResolveTest(LibSciResolveBaseTest):
             cver_sanity = sn.assert_eq(
                 sn.extractsingle(regex, self.stdout, 'cver'), cver)
 
-        self.sanity_patterns = sn.all([
+        return sn.all([
             sn.assert_eq(
                 sn.extractsingle(regex, self.stdout, 'prgenv'), prgenv),
             cver_sanity,
@@ -83,11 +84,11 @@ class MKLResolveTest(LibSciResolveBaseTest):
                 '-L/opt/intel/oneapi/mkl/latest/lib/intel64/'
             ]
 
-    @run_before('sanity')
-    def set_sanity(self):
+    @sanity_function
+    def libmkl_resolve(self):
         regex = (r'.*\(NEEDED\).*libmkl_(?P<prgenv>[A-Za-z]+)_(?P<version>\S+)'
                  r'\.so')
-        self.sanity_patterns = sn.all([
+        return sn.all([
             sn.assert_eq(
                 sn.extractsingle(regex, self.stdout, 'prgenv'), 'intel'),
             sn.assert_eq(
