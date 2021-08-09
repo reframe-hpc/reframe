@@ -61,7 +61,6 @@ class Amber(rfm.RunOnlyRegressionTest, pin_prefix=True):
     def set_keep_files(self):
         self.keep_files = [self.output_file]
 
-
     @run_after('setup')
     def set_perf_patterns(self):
         self.perf_patterns = {
