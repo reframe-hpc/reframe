@@ -13,7 +13,63 @@ import reframe.utility.osext as osext
 from reframe.core.exceptions import SanityError
 
 
-class AffinityTestBase(rfm.RegressionTest):
+def add_prgenv_nvidia(self):
+    cs = self.current_system.name
+    if cs in {'daint', 'dom'}:
+        self.valid_prog_environs += ['PrgEnv-nvidia']
+
+
+@rfm.simple_test
+class CompileAffinityTool(rfm.CompileOnlyRegressionTest):
+    valid_systems = [
+        'daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+        'eiger:mc', 'pilatus:mc',
+        'ault:amdv100'
+    ]
+    valid_prog_environs = [
+        'PrgEnv-gnu', 'PrgEnv-cray', 'PrgEnv-intel', 'PrgEnv-pgi'
+    ]
+    build_system = 'Make'
+
+    # The github URL can not be specifid as `self.sourcedir` as that
+    # would prevent the src folder from being copied to stage which is
+    # necessary since these tests need files from it.
+    sourcesdir = os.path.join('src/affinity_ref')
+    prebuild_cmds = ['git clone https://github.com/vkarak/affinity']
+    postbuild_cmds = ['ls affinity']
+    maintainers = ['RS', 'SK']
+    tags = {'production', 'scs', 'maintenance', 'craype'}
+
+    run_after('init')(bind(add_prgenv_nvidia))
+
+    @run_before('compile')
+    def set_build_opts(self):
+        self.build_system.options = ['-C affinity', 'MPI=1']
+
+    @run_before('compile')
+    def prgenv_nvidia_workaround(self):
+        cs = self.current_system.name
+        ce = self.current_environ.name
+        if ce == 'PrgEnv-nvidia' and cs == 'dom':
+            self.build_system.cppflags = [
+                '-D__GCC_ATOMIC_TEST_AND_SET_TRUEVAL'
+            ]
+
+    @run_before('sanity')
+    def assert_exec_exists(self):
+        self.sanity_patterns = sn.assert_found(r'affinity', self.stdout)
+
+
+@rfm.simple_test
+class CompileAffinityToolNoOmp(CompileAffinityTool):
+    valid_systems = ['eiger:mc', 'pilatus:mc']
+
+    @run_before('compile')
+    def set_build_opts(self):
+        self.build_system.options = ['-C affinity', 'MPI=1', 'OPENMP=0']
+
+
+class AffinityTestBase(rfm.RunOnlyRegressionTest):
     '''Base class for the affinity checks.
 
     It reads a reference file for each valid system, which allows this base
@@ -49,13 +105,6 @@ class AffinityTestBase(rfm.RegressionTest):
     valid_prog_environs = [
         'PrgEnv-gnu', 'PrgEnv-cray', 'PrgEnv-intel', 'PrgEnv-pgi'
     ]
-    build_system = 'Make'
-
-    # The github URL can not be specifid as `self.sourcedir` as that
-    # would prevent the src folder from being copied to stage which is
-    # necessary since these tests need files from it.
-    sourcesdir = os.path.join('src/affinity_ref')
-    prebuild_cmds = ['git clone https://github.com/vkarak/affinity']
 
     # Dict with the partition's topology - output of "lscpu -e"
     topology = variable(dict, value={
@@ -74,27 +123,32 @@ class AffinityTestBase(rfm.RegressionTest):
     maintainers = ['RS', 'SK']
     tags = {'production', 'scs', 'maintenance', 'craype'}
 
-    def __init__(self):
-        # FIXME: These two right now cannot be set in the class body.
-        self.executable = './affinity/affinity'
-        self.build_system.options = ['-C affinity', 'MPI=1']
+    run_after('init')(bind(add_prgenv_nvidia))
 
-    @rfm.run_before('sanity')
-    def set_sanity(self):
-        self.sanity_patterns = self.assert_consumed_cpu_set()
+    @run_after('init')
+    def set_deps(self):
+        self.depends_on('CompileAffinityTool')
 
-    @rfm.run_before('compile')
-    def set_topo_file(self):
+    @require_deps
+    def set_executable(self, CompileAffinityTool):
+        self.executable = os.path.join(
+            CompileAffinityTool().stagedir, 'affinity/affinity'
+        )
+
+    @require_deps
+    def set_topo_file(self, CompileAffinityTool):
         '''Set the topo_file variable.
 
         If not present in the topology dict, leave it as required.
         '''
         cp = self.current_partition.fullname
         if cp in self.topology:
-            self.topo_file = self.topology[cp]
+            self.topo_file = os.path.join(
+                CompileAffinityTool().stagedir, self.topology[cp]
+            )
 
     # FIXME: Update the hook below once the PR #1773 is merged.
-    @rfm.run_after('compile')
+    @run_after('compile')
     def read_proc_topo(self):
         '''Import the processor's topology from the reference file.
 
@@ -118,7 +172,7 @@ class AffinityTestBase(rfm.RegressionTest):
 
         cp = self.current_partition.fullname
         with osext.change_dir(self.stagedir):
-            with open(self.topology[cp], 'r') as topo:
+            with open(self.topo_file, 'r') as topo:
                 lscpu = json.load(topo)['cpus']
 
         # Build the cpu set
@@ -183,7 +237,7 @@ class AffinityTestBase(rfm.RegressionTest):
         '''
         return sn.assert_eq(self.cpu_set, set())
 
-    @rfm.run_after('run')
+    @run_after('run')
     def parse_output(self):
         '''Extract the data from the affinity tool.'''
 
@@ -197,7 +251,7 @@ class AffinityTestBase(rfm.RegressionTest):
                 re_aff_cpus, self.stdout, 'cpus', parse_cpus
             ).evaluate()
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_multithreading(self):
         '''Hook to control multithreading settings for each system.'''
 
@@ -209,7 +263,7 @@ class AffinityTestBase(rfm.RegressionTest):
         if mthread:
             self.use_multithreading = mthread
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_launcher(self):
         '''Hook to control hints and cpu-bind for each system.'''
 
@@ -223,6 +277,10 @@ class AffinityTestBase(rfm.RegressionTest):
         hint = self.system.get(cp, {}).get('hint', None) or self.hint
         if hint:
             self.job.launcher.options += [f'--hint={hint}']
+
+    @run_before('sanity')
+    def set_sanity(self):
+        self.sanity_patterns = self.assert_consumed_cpu_set()
 
 
 class AffinityOpenMPBase(AffinityTestBase):
@@ -244,11 +302,11 @@ class AffinityOpenMPBase(AffinityTestBase):
         '''We use this property to set the hook below and keep exec order.'''
         return self.num_cpus
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_num_cpus_per_task(self):
         self.num_cpus_per_task = self.ncpus_per_task
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_omp_vars(self):
         self.variables = {
             'OMP_NUM_THREADS': str(self.num_omp_threads),
@@ -256,7 +314,7 @@ class AffinityOpenMPBase(AffinityTestBase):
             'OMP_PROC_BIND': self.omp_proc_bind,
         }
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def consume_cpu_set(self):
         raise NotImplementedError('this function must be overridden')
 
@@ -273,7 +331,7 @@ class OneThreadPerLogicalCoreOpenMP(AffinityOpenMPBase):
         # One OMP thread per logical core
         return self.num_cpus
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def consume_cpu_set(self):
         '''Threads are bound to cpus.'''
         for affinity_set in self.aff_cpus:
@@ -299,7 +357,7 @@ class OneThreadPerPhysicalCoreOpenMP(AffinityOpenMPBase):
         # One OMP thread per core
         return int(self.num_cpus/self.num_cpus_per_core)
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def consume_cpu_set(self):
         '''Threads are bound to cores.'''
         for affinity_set in self.aff_cpus:
@@ -327,7 +385,7 @@ class OneThreadPerPhysicalCoreOpenMPnomt(OneThreadPerPhysicalCoreOpenMP):
     def ncpus_per_task(self):
         return self.num_omp_threads
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def assert_aff_set_length(self):
         '''Only 1 CPU pinned per thread.'''
         if not all(len(aff_set) == 1 for aff_set in self.aff_cpus):
@@ -346,7 +404,7 @@ class OneThreadPerSocketOpenMP(AffinityOpenMPBase):
         # One OMP thread per core
         return self.num_sockets
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def consume_cpu_set(self):
         '''Threads are bound to sockets.'''
         for affinity_set in self.aff_cpus:
@@ -381,11 +439,11 @@ class OneTaskPerSocketOpenMPnomt(AffinityOpenMPBase):
     def ncpus_per_task(self):
         return self.num_omp_threads
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_num_tasks(self):
         self.num_tasks = self.num_sockets
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def consume_cpu_set(self):
 
         threads_in_socket = [0]*self.num_sockets
@@ -443,12 +501,12 @@ class ConsecutiveSocketFilling(AffinityTestBase):
     cpu_bind = 'rank'
     use_multithreading = False
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_tasks(self):
         self.num_tasks = int(self.num_cpus/self.num_cpus_per_core)
         self.num_cpus_per_task = 1
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def consume_cpu_set(self):
         '''Check that all physical cores have been used in the right order.'''
         task_count = 0
@@ -498,13 +556,13 @@ class AlternateSocketFilling(AffinityTestBase):
 
     use_multithreading = False
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_tasks(self):
         self.num_tasks = int(self.num_cpus/self.num_cpus_per_core)
         self.num_cpus_per_task = 1
         self.num_tasks_per_socket = int(self.num_tasks/self.num_sockets)
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def consume_cpu_set(self):
         '''Check that consecutive tasks are round-robin pinned to sockets.'''
 
@@ -553,17 +611,35 @@ class OneTaskPerNumaNode(AffinityTestBase):
     use_multithreading = False
     num_cpus_per_task = required
 
-    @rfm.run_before('compile')
-    def build_settings(self):
-        self.build_system.options += ['OPENMP=0']
+    @run_after('init')
+    def set_deps(self):
+        self.depends_on('CompileAffinityToolNoOmp')
 
-    @rfm.run_before('run')
+    @require_deps
+    def set_executable(self, CompileAffinityToolNoOmp):
+        self.executable = os.path.join(
+            CompileAffinityToolNoOmp().stagedir, 'affinity/affinity'
+        )
+
+    @require_deps
+    def set_topo_file(self, CompileAffinityToolNoOmp):
+        '''Set the topo_file variable.
+
+        If not present in the topology dict, leave it as required.
+        '''
+        cp = self.current_partition.fullname
+        if cp in self.topology:
+            self.topo_file = os.path.join(
+                CompileAffinityToolNoOmp().stagedir, self.topology[cp]
+            )
+
+    @run_before('run')
     def set_tasks(self):
         self.num_tasks = self.num_numa_nodes
         if self.current_partition.fullname in {'eiger:mc', 'pilatus:mc'}:
             self.num_cpus_per_task = 16
 
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def consume_cpu_set(self):
         '''Check that each task lives in a different NUMA node.'''
 

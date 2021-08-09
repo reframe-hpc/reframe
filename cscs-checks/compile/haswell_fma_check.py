@@ -13,7 +13,8 @@ class HaswellFmaCheck(rfm.CompileOnlyRegressionTest):
         self.descr = 'check for avx2 instructions'
         self.valid_systems = ['dom:login', 'daint:login']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
-                                    'PrgEnv-intel', 'PrgEnv-pgi']
+                                    'PrgEnv-intel', 'PrgEnv-pgi',
+                                    'PrgEnv-nvidia']
         self.modules = ['craype-haswell']
 
         self.sourcesdir = 'src/haswell_fma'
@@ -31,7 +32,7 @@ class HaswellFmaCheck(rfm.CompileOnlyRegressionTest):
         self.maintainers = ['AJ', 'CB']
         self.tags = {'production', 'craype'}
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def setflags(self):
         if self.current_environ.name == 'PrgEnv-cray':
             self.build_system.cflags = ['-Ofast', '-S']

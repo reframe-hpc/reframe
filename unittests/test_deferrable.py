@@ -4,7 +4,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import pytest
+import reframe.core.warnings as warnings
 import reframe.utility.sanity as sn
+from reframe.core.warnings import ReframeDeprecationWarning
 
 
 def test_defer():
@@ -19,6 +21,14 @@ def test_evaluate():
     assert 3 == a.evaluate()
     assert 3 == sn.evaluate(a)
     assert 3 == sn.evaluate(3)
+
+
+def test_depr_warn(monkeypatch):
+    monkeypatch.setattr(warnings, '_RAISE_DEPRECATION_ALWAYS', True)
+    with pytest.warns(ReframeDeprecationWarning):
+        @sn.sanity_function
+        def foo():
+            pass
 
 
 def test_implicit_eval():
@@ -40,7 +50,7 @@ def test_iter():
         assert i == e
 
 
-@sn.sanity_function
+@sn.deferrable
 def _add(a, b):
     return a + b
 
@@ -57,7 +67,7 @@ def value_wrapper():
             self._value = 0
 
         @property
-        @sn.sanity_function
+        @sn.deferrable
         def value(self):
             return self._value
 

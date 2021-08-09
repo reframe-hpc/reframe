@@ -14,12 +14,11 @@ class OpenaccCudaCpp(rfm.RegressionTest):
         self.descr = 'test for OpenACC, CUDA, MPI, and C++'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn']
         self.valid_prog_environs = ['PrgEnv-cce', 'PrgEnv-cray',
-                                    'PrgEnv-pgi']
+                                    'PrgEnv-pgi', 'PrgEnv-nvidia']
         self.build_system = 'Make'
         self.build_system.fflags = ['-O2']
 
         if self.current_system.name in ['daint', 'dom']:
-            self.modules = ['craype-accel-nvidia60']
             self.num_tasks = 12
             self.num_tasks_per_node = 12
             self.num_gpus_per_node = 1
@@ -44,10 +43,22 @@ class OpenaccCudaCpp(rfm.RegressionTest):
         self.maintainers = ['AJ', 'MKr']
         self.tags = {'production', 'mch', 'craype'}
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def setflags(self):
+        if self.current_system.name in ['daint', 'dom']:
+            if (not self.current_environ.name.startswith('PrgEnv-nvidia')):
+                self.modules = ['craype-accel-nvidia60']
         if self.current_environ.name.startswith('PrgEnv-cray'):
             self.build_system.fflags += ['-hacc', '-hnoomp']
+
+        elif self.current_environ.name.startswith('PrgEnv-nvidia'):
+            self.build_system.fflags += ['-acc']
+            self.build_system.fflags += ['-ta:tesla:cc60']
+            self.build_system.ldflags = [
+                '-acc', '-ta:tesla:cc60', '-Mnorpath', '-lstdc++',
+                '-Mcuda'
+            ]
+            self.modules = ['cudatoolkit/21.3_11.2']
 
         elif self.current_environ.name.startswith('PrgEnv-pgi'):
             self.build_system.fflags += ['-acc']
@@ -69,7 +80,7 @@ class OpenaccCudaCpp(rfm.RegressionTest):
                     '-L$EBROOTCUDA/lib64', '-lcublas', '-lcudart'
                 ]
 
-    @rfm.run_before('compile')
+    @run_before('compile')
     def cdt2006_pgi_workaround(self):
         cdt = osext.cray_cdt_version()
         if not cdt:

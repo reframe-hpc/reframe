@@ -12,7 +12,7 @@ class StridedBase(rfm.RegressionTest):
         self.sourcepath = 'strides.cpp'
         self.build_system = 'SingleSource'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'daint:mc', 'dom:mc',
-                              'eiger:mc']
+                              'eiger:mc', 'pilatus:mc']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.num_tasks = 1
         self.num_tasks_per_node = 1
@@ -33,6 +33,7 @@ class StridedBase(rfm.RegressionTest):
             'dom:mc':  72,
             'dom:gpu': 24,
             'eiger:mc': 128,
+            'pilatus:mc': 128
         }
 
         self.maintainers = ['SK']
@@ -65,9 +66,12 @@ class StridedBandwidthTest(StridedBase):
             'eiger:mc': {
                 'bandwidth': (270, -0.1, 0.1, 'GB/s')
             },
+            'pilatus:mc': {
+                'bandwidth': (270, -0.1, 0.1, 'GB/s')
+            }
         }
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_exec_opts(self):
         self.num_cpus = self.system_num_cpus[self.current_partition.fullname]
 
@@ -96,9 +100,12 @@ class StridedBandwidthTest64(StridedBase):
             'eiger:mc': {
                 'bandwidth': (33, -0.1, 0.2, 'GB/s')
             },
+            'pilatus:mc': {
+                'bandwidth': (33, -0.1, 0.2, 'GB/s')
+            }
         }
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_exec_opts(self):
         self.num_cpus = self.system_num_cpus[self.current_partition.fullname]
 
@@ -129,7 +136,7 @@ class StridedBandwidthTest128(StridedBase):
             },
         }
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_exec_opts(self):
         self.num_cpus = self.system_num_cpus[self.current_partition.fullname]
 

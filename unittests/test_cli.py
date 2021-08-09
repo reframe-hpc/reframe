@@ -6,6 +6,7 @@
 import contextlib
 import io
 import itertools
+import json
 import os
 import pytest
 import re
@@ -52,7 +53,7 @@ def perflogdir(tmp_path):
 
 
 @pytest.fixture
-def run_reframe(tmp_path, perflogdir):
+def run_reframe(tmp_path, perflogdir, monkeypatch):
     def _run_reframe(system='generic:default',
                      checkpath=['unittests/resources/checks/hellocheck.py'],
                      environs=['builtin'],
@@ -61,7 +62,6 @@ def run_reframe(tmp_path, perflogdir):
                      more_options=None,
                      mode=None,
                      config_file='unittests/resources/settings.py',
-                     ignore_check_conflicts=True,
                      perflogdir=str(perflogdir)):
         import reframe.frontend.cli as cli
 
@@ -89,11 +89,10 @@ def run_reframe(tmp_path, perflogdir):
             argv += ['-l']
         elif action == 'list_detailed':
             argv += ['-L']
+        elif action == 'list_tags':
+            argv += ['--list-tags']
         elif action == 'help':
             argv += ['-h']
-
-        if ignore_check_conflicts:
-            argv += ['--ignore-check-conflicts']
 
         if perflogdir:
             argv += ['--perflogdir', perflogdir]
@@ -103,6 +102,7 @@ def run_reframe(tmp_path, perflogdir):
 
         return run_command_inline(argv, cli.main)
 
+    monkeypatch.setenv('HOME', str(tmp_path))
     return _run_reframe
 
 
@@ -473,27 +473,16 @@ def test_execution_modes(run_reframe):
     assert 'Ran 2/2 test case' in stdout
 
 
-def test_no_ignore_check_conflicts(run_reframe):
-    returncode, *_ = run_reframe(
-        checkpath=['unittests/resources/checks'],
-        more_options=['-R'],
-        ignore_check_conflicts=False,
-        action='list'
-    )
-    assert returncode != 0
-
-
 def test_timestamp_option(run_reframe):
     from datetime import datetime
 
     timefmt = datetime.now().strftime('xxx_%F')
     returncode, stdout, _ = run_reframe(
         checkpath=['unittests/resources/checks'],
-        ignore_check_conflicts=False,
         action='list',
         more_options=['-R', '--timestamp=xxx_%F']
     )
-    assert returncode != 0
+    assert returncode == 0
     assert timefmt in stdout
 
 
@@ -540,12 +529,24 @@ def test_list_with_details(run_reframe):
     assert returncode == 0
 
 
+def test_list_tags(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        checkpath=['unittests/resources/checks/hellocheck.py',
+                   'unittests/resources/checks/hellocheck_make.py'],
+        action='list_tags'
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert 'Found 2 tag(s)' in stdout
+    assert "'bar', 'foo'" in stdout
+    assert returncode == 0
+
+
 def test_filtering_multiple_criteria(run_reframe):
     returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks'],
         action='list',
-        more_options=['-t', 'foo', '-n', 'hellocheck',
-                      '--ignore-check-conflicts']
+        more_options=['-t', 'foo', '-n', 'hellocheck']
     )
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
@@ -750,3 +751,29 @@ def test_maxfail_negative(run_reframe):
     assert 'Traceback' not in stderr
     assert "--maxfail should be a non-negative integer: '-2'" in stdout
     assert returncode == 1
+
+
+def test_detect_host_topology(run_reframe):
+    from reframe.utility.cpuinfo import cpuinfo
+
+    returncode, stdout, stderr = run_reframe(
+        more_options=['--detect-host-topology']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert returncode == 0
+    assert stdout == json.dumps(cpuinfo(), indent=2) + '\n'
+
+
+def test_detect_host_topology_file(run_reframe, tmp_path):
+    from reframe.utility.cpuinfo import cpuinfo
+
+    topo_file = tmp_path / 'topo.json'
+    returncode, stdout, stderr = run_reframe(
+        more_options=[f'--detect-host-topology={topo_file}']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert returncode == 0
+    with open(topo_file) as fp:
+        assert json.load(fp) == cpuinfo()

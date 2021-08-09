@@ -13,18 +13,18 @@ This can be expressed inside :class:`T1` using the :func:`depends_on` method:
 
    @rfm.simple_test
    class T0(rfm.RegressionTest):
-       def __init__(self):
-           ...
-           self.valid_systems = ['P0', 'P1']
-           self.valid_prog_environs = ['E0', 'E1']
+       ...
+       valid_systems = ['P0', 'P1']
+       valid_prog_environs = ['E0', 'E1']
 
 
    @rfm.simple_test
    class T1(rfm.RegressionTest):
+       ...
+       valid_systems = ['P0', 'P1']
+       valid_prog_environs = ['E0', 'E1']
+
        def __init__(self):
-           ...
-           self.valid_systems = ['P0', 'P1']
-           self.valid_prog_environs = ['E0', 'E1']
            self.depends_on('T0')
 
 Conceptually, this dependency can be viewed at the test level as follows:
@@ -211,7 +211,7 @@ In fact, you can rewrite :func:`set_executable` function as follows:
 
 .. code:: python
 
-   @rfm.run_after('setup')
+   @run_after('setup')
    def set_executable(self):
        target = self.getdep('OSUBuildTest')
        self.executable = os.path.join(

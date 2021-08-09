@@ -13,7 +13,7 @@ class ContainerTest(lib.ContainerBase):
     valid_systems = ['daint:gpu']
     valid_prog_environs = ['builtin']
 
-    @rfm.run_after('setup')
+    @run_after('setup')
     def set_image_prefix(self):
         if self.platform == 'Singularity':
             self.image_prefix = 'docker://'

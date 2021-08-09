@@ -212,11 +212,57 @@ System Partition Configuration
    - ``local``: Jobs will be launched locally without using any job scheduler.
    - ``pbs``: Jobs will be launched using the `PBS Pro <https://en.wikipedia.org/wiki/Portable_Batch_System>`__ scheduler.
    - ``torque``: Jobs will be launched using the `Torque <https://en.wikipedia.org/wiki/TORQUE>`__ scheduler.
+   - ``sge``: Jobs will be launched using the `Sun Grid Engine <https://arc.liv.ac.uk/SGE/htmlman/manuals.html>`__ scheduler.
    - ``slurm``: Jobs will be launched using the `Slurm <https://www.schedmd.com/>`__ scheduler.
      This backend requires job accounting to be enabled in the target system.
      If not, you should consider using the ``squeue`` backend below.
    - ``squeue``: Jobs will be launched using the `Slurm <https://www.schedmd.com/>`__ scheduler.
      This backend does not rely on job accounting to retrieve job statuses, but ReFrame does its best to query the job state as reliably as possible.
+
+   .. versionadded:: 3.7.2
+      Support for the SGE scheduler is added.
+
+   .. note::
+
+      The way that multiple node jobs are submitted using the SGE scheduler can be very site-specific.
+      For this reason, the ``sge`` scheduler backend does not try to interpret any related arguments, e.g., ``num_tasks``, ``num_tasks_per_node`` etc.
+      Users must specify how these resources are to be requested by setting the :js:attr:`resources` partition configuration parameter and then request them from inside a test using the :py:attr:`~reframe.core.pipeline.RegressionTest.extra_resources` test attribute.
+      Here is an example configuration for a system partition named ``foo`` that defines different ways for submitting MPI-only, OpenMP-only and MPI+OpenMP jobs:
+
+      .. code-block:: python
+
+         {
+             'name': 'foo',
+             'scheduler': 'sge',
+             'resources': [
+                 {
+                     'name': 'smp',
+                     'options': ['-pe smp {num_slots}']
+                 },
+                 {
+                     'name': 'mpi',
+                     'options': ['-pe mpi {num_slots}']
+                 },
+                 {
+                     'name': 'mpismp',
+                     'options': ['-pe mpismp {num_slots}']
+                 }
+             ]
+         }
+
+      Each test then can request the different type of slots as follows:
+
+      .. code-block:: python
+
+         self.extra_resouces = {
+             'smp': {'num_slots': self.num_cpus_per_task},
+             'mpi': {'num_slots': self.num_tasks},
+             'mpismp': {'num_slots': self.num_tasks*self.num_cpus_per_task}
+         }
+
+      Notice that defining :py:attr:`~reframe.core.pipeline.RegressionTest.extra_resources` does not make the test non-portable to other systems that have different schedulers;
+      the :py:attr:`extra_resources` will be simply ignored in this case and the scheduler backend will interpret the different test fields in the appropriate way.
+
 
 .. js:attribute:: .systems[].partitions[].launcher
 
@@ -341,8 +387,12 @@ System Partition Configuration
    :default: ``{}``
 
    Processor information for this partition stored in a `processor info object <#processor-info>`__.
+   If not set, ReFrame will try to auto-detect this information (see :ref:`proc-autodetection` for more information).
 
    .. versionadded:: 3.5.0
+
+   .. versionchanged:: 3.7.0
+      ReFrame is now able to detect the processor information automatically.
 
 
 .. js:attribute:: .systems[].partitions[].devices
@@ -706,6 +756,8 @@ All logging handlers share the following set of common attributes:
      See `here <#the-stream-log-handler>`__ for more details.
    - ``syslog``: This handler sends log records to a Syslog facility.
      See `here <#the-syslog-log-handler>`__ for more details.
+   - ``httpjson``: This handler sends log records in JSON format using HTTP post requests.
+     See `here <#the-httpjson-log-handler>`__ for more details.
 
 
 .. js:attribute:: .logging[].handlers[].level
@@ -1000,6 +1052,53 @@ The additional properties for the ``syslog`` handler are the following:
    This can either be of the form ``<host>:<port>`` or simply a path that refers to a Unix domain socket.
 
 
+----------------------------
+The ``httpjson`` log handler
+----------------------------
+
+This handler sends log records in JSON format to a server using HTTP POST requests.
+The additional properties for the ``httpjson`` handler are the following:
+
+.. js:attribute:: .logging[].handlers[].url
+
+.. object:: .logging[].handlers_perflog[].url
+
+   :required: Yes
+
+   The URL to be used in the HTTP(S) request server.
+
+
+.. js:attribute:: .logging[].handlers[].extras
+   :noindex:
+
+.. object:: .logging[].handlers_perflog[].extras
+
+   :required: No
+   :default: ``{}``
+
+   A set of optional key/value pairs to be passed with each log record to the server.
+   These may depend on the server configuration.
+
+
+The ``httpjson`` handler sends log messages in JSON format using an HTTP POST request to the specified URL.
+
+An example configuration of this handler for performance logging is shown here:
+
+.. code:: python
+
+   {
+       'type': 'httpjson',
+       'address': 'http://httpjson-server:12345/rfm',
+       'level': 'info',
+       'extras': {
+           'facility': 'reframe',
+           'data-version': '1.0'
+       }
+   }
+
+
+This handler transmits the whole log record, meaning that all the information will be available and indexable at the remote end.
+
 
 Scheduler Configuration
 -----------------------
@@ -1152,12 +1251,38 @@ General Configuration
    The command-line option sets the configuration option to ``false``.
 
 
+.. js:attribute:: .general[].remote_detect
+
+   :required: No
+   :default: ``false``
+
+   Try to auto-detect processor information of remote partitions as well.
+   This may slow down the initialization of the framework, since it involves submitting auto-detection jobs to the remote partitions.
+   For more information on how ReFrame auto-detects processor information, you may refer to :ref:`proc-autodetection`.
+
+   .. versionadded:: 3.7.0
+
+
+.. js:attribute:: .general[].remote_workdir
+
+   :required: No
+   :default: ``"."``
+
+   The temporary directory prefix that will be used to create a fresh ReFrame clone, in order to auto-detect the processor information of a remote partition.
+
+   .. versionadded:: 3.7.0
+
+
 .. js:attribute:: .general[].ignore_check_conflicts
 
    :required: No
    :default: ``false``
 
    Ignore test name conflicts when loading tests.
+
+   .. deprecated:: 3.8.0
+      This option will be removed in a future version.
+
 
 
 .. js:attribute:: .general[].trap_job_errors
@@ -1222,6 +1347,35 @@ General Configuration
    .. versionadded:: 3.1
    .. versionchanged:: 3.2
       Default value has changed to avoid generating a report file per session.
+
+
+.. js:attribute:: .general[].report_junit
+
+   :required: No
+   :default: ``null``
+
+   The file where ReFrame will store its report in JUnit format.
+   The report adheres to the XSD schema `here <https://github.com/windyroad/JUnit-Schema/blob/master/JUnit.xsd>`__.
+
+   .. versionadded:: 3.6.0
+
+
+.. js:attribute:: .general[].resolve_module_conflicts
+
+   :required: No
+   :default: ``true``
+
+   ReFrame by default resolves any module conflicts and emits the right sequence of ``module unload`` and ``module load`` commands, in order to load the requested modules.
+   This option disables this behavior if set to ``false``.
+
+   You should avoid using this option for modules system that cannot handle module conflicts automatically, such as early Tmod verions.
+
+   Disabling the automatic module conflict resolution, however, can be useful when modules in a remote system partition are not present on the host where ReFrame runs.
+   In order to resolve any module conflicts and generate the right load sequence of modules, ReFrame loads temporarily the requested modules and tracks any conflicts along the way.
+   By disabling this option, ReFrame will simply emit the requested ``module load`` commands without attempting to load any module.
+
+
+   .. versionadded:: 3.6.0
 
 
 .. js:attribute:: .general[].save_log_files

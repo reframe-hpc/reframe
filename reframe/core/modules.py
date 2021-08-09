@@ -637,7 +637,7 @@ class TModImpl(ModulesSystemImpl):
     def _execute(self, cmd, *args):
         modulecmd = self.modulecmd(cmd, *args)
         completed = osext.run_command(modulecmd)
-        if re.search(r'ERROR', completed.stderr) is not None:
+        if re.search(r'\bERROR\b', completed.stderr) is not None:
             raise SpawnedProcessError(modulecmd,
                                       completed.stdout,
                                       completed.stderr,
@@ -769,7 +769,7 @@ class TMod31Impl(TModImpl):
     def _execute(self, cmd, *args):
         modulecmd = self.modulecmd(cmd, *args)
         completed = osext.run_command(modulecmd)
-        if re.search(r'ERROR', completed.stderr) is not None:
+        if re.search(r'\bERROR\b', completed.stderr) is not None:
             raise SpawnedProcessError(modulecmd,
                                       completed.stdout,
                                       completed.stderr,
@@ -876,17 +876,20 @@ class TMod4Impl(TModImpl):
 
         return super().conflicted_modules(module)
 
+    def _emit_restore_instr(self, module):
+        cmds = [f'module restore {module}']
+
+        # Here we append module searchpath removal/addition commands
+        # since 'restore' discards previous module path manipulations
+        for op, mp in self._extra_module_paths:
+            operation = 'use' if op == '+' else 'unuse'
+            cmds += [f'module {operation} {mp}']
+
+        return cmds
+
     def emit_load_instr(self, module):
         if module.collection:
-            cmds = [f'module restore {module}']
-
-            # Here we append module searchpath removal/addition commands
-            # since 'restore' discards previous module path manipulations
-            for op, mp in self._extra_module_paths:
-                operation = 'use' if op == '+' else 'unuse'
-                cmds += [f'module {operation} {mp}']
-
-            return cmds
+            return self._emit_restore_instr(module)
 
         return super().emit_load_instr(module)
 
@@ -1004,9 +1007,28 @@ class LModImpl(TMod4Impl):
         # we forcefully unload everything.
         self.execute('--force', 'purge')
 
+    def emit_load_instr(self, module):
+        if module.collection:
+            return self._emit_restore_instr(module)
+
+        cmds = []
+        if module.path:
+            cmds.append(f'module use {module.path}')
+
+        cmds.append(f'module load {module.fullname}')
+        return cmds
+
 
 class NoModImpl(ModulesSystemImpl):
     '''A convenience class that implements a no-op a modules system.'''
+
+    def _warn(self, msg):
+        getlogger().warning(
+            f"no modules system is set: {msg}: "
+            f"check the 'modules_system' configuration "
+            f"parameter for your system",
+            cache=True
+        )
 
     def available_modules(self, substr):
         return []
@@ -1021,10 +1043,10 @@ class NoModImpl(ModulesSystemImpl):
         return ''
 
     def load_module(self, module):
-        pass
+        self._warn(f'module {module.name!r} will not be loaded')
 
     def unload_module(self, module):
-        pass
+        self._warn(f'module {module.name!r} will not be unloaded')
 
     def is_module_loaded(self, module):
         #
@@ -1043,21 +1065,23 @@ class NoModImpl(ModulesSystemImpl):
         return ''
 
     def unload_all(self):
-        pass
+        self._warn('no module will be purged')
 
     def searchpath(self):
         return []
 
     def searchpath_add(self, *dirs):
-        pass
+        self._warn('MODULEPATH will not be modified')
 
     def searchpath_remove(self, *dirs):
-        pass
+        self._warn('MODULEPATH will not be modified')
 
     def emit_load_instr(self, module):
+        self._warn(f'module {module.name!r} will not be loaded')
         return []
 
     def emit_unload_instr(self, module):
+        self._warn(f'module {module.name!r} will not be unloaded')
         return []
 
 

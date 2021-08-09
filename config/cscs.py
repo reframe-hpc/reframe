@@ -341,7 +341,8 @@ site_configuration = {
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
-                        'PrgEnv-pgi'
+                        'PrgEnv-pgi',
+                        'PrgEnv-nvidia'
                     ],
                     'descr': 'Login nodes',
                     'max_jobs': 4,
@@ -377,7 +378,8 @@ site_configuration = {
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
-                        'PrgEnv-pgi'
+                        'PrgEnv-pgi',
+                        'PrgEnv-nvidia'
                     ],
                     'descr': 'Hybrid nodes (Haswell/P100)',
                     'max_jobs': 100,
@@ -419,7 +421,8 @@ site_configuration = {
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
-                        'PrgEnv-pgi'
+                        'PrgEnv-pgi',
+                        'PrgEnv-nvidia'
                     ],
                     'descr': 'Multicore nodes (Broadwell)',
                     'max_jobs': 100,
@@ -677,9 +680,14 @@ site_configuration = {
                     'scheduler': 'local',
                     'environs': [
                         'builtin',
+                        'PrgEnv-aocc',
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
-                        'PrgEnv-aocc'
+                        'PrgEnv-intel',
+                        'cpeAMD',
+                        'cpeCray',
+                        'cpeGNU',
+                        'cpeIntel'
                     ],
                     'descr': 'Login nodes',
                     'max_jobs': 4,
@@ -689,13 +697,27 @@ site_configuration = {
                     'name': 'mc',
                     'descr': 'Multicore nodes (AMD EPYC 7742, 256|512GB/cn)',
                     'scheduler': 'slurm',
+                    'container_platforms': [
+                        {
+                            'type': 'Sarus',
+                        },
+                        {
+                            'type': 'Singularity',
+                        }
+                    ],
                     'environs': [
                         'builtin',
+                        'PrgEnv-aocc',
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
-                        'PrgEnv-aocc'
+                        'PrgEnv-intel',
+                        'cpeAMD',
+                        'cpeCray',
+                        'cpeGNU',
+                        'cpeIntel'
                     ],
                     'max_jobs': 100,
+                    'access': ['-Cmc', f'--account={osext.osgroup()}'],
                     'resources': [
                         {
                             'name': 'switches',
@@ -710,6 +732,21 @@ site_configuration = {
                             ]
                         },
                     ],
+                    'launcher': 'srun'
+                },
+                {
+                    'name': 'jupyter_mc',
+                    'scheduler': 'slurm',
+                    'environs': [
+                        'builtin'
+                    ],
+                    'access': [
+                        f'-Cmc',
+                        f'--reservation=interact',
+                        f'--account={osext.osgroup()}'
+                    ],
+                    'descr': 'JupyterHub GPU nodes',
+                    'max_jobs': 10,
                     'launcher': 'srun'
                 },
             ]
@@ -745,6 +782,14 @@ site_configuration = {
                     'name': 'mc',
                     'descr': 'Multicore nodes (AMD EPYC 7742, 256|512GB/cn)',
                     'scheduler': 'slurm',
+                    'container_platforms': [
+                        {
+                            'type': 'Sarus',
+                        },
+                        {
+                            'type': 'Singularity',
+                        }
+                    ],
                     'environs': [
                         'builtin',
                         'PrgEnv-aocc',
@@ -757,6 +802,7 @@ site_configuration = {
                         'cpeIntel'
                     ],
                     'max_jobs': 100,
+                    'access': ['-Cmc', f'--account={osext.osgroup()}'],
                     'resources': [
                         {
                             'name': 'switches',
@@ -973,7 +1019,7 @@ site_configuration = {
                 'eiger', 'pilatus'
             ],
             'modules': [
-                {'name': 'PrgEnv-aocc', 'collection': True}
+                'PrgEnv-aocc'
             ]
         },
         {
@@ -982,7 +1028,7 @@ site_configuration = {
                 'eiger', 'pilatus'
             ],
             'modules': [
-                {'name': 'PrgEnv-cray', 'collection': True}
+                'PrgEnv-cray'
             ]
         },
         {
@@ -991,16 +1037,16 @@ site_configuration = {
                 'eiger', 'pilatus'
             ],
             'modules': [
-                {'name': 'PrgEnv-gnu', 'collection': True}
+                'PrgEnv-gnu'
             ]
         },
         {
             'name': 'PrgEnv-intel',
             'target_systems': [
-                'pilatus'
+                'eiger', 'pilatus'
             ],
             'modules': [
-                {'name': 'PrgEnv-intel', 'collection': True}
+                'PrgEnv-intel'
             ]
         },
         {
@@ -1033,7 +1079,7 @@ site_configuration = {
         {
             'name': 'cpeIntel',
             'target_systems': [
-                'pilatus'
+                'eiger', 'pilatus'
             ],
             'modules': [
                 'cpeIntel'
@@ -1061,6 +1107,28 @@ site_configuration = {
             'name': 'PrgEnv-pgi',
             'modules': [
                 'PrgEnv-pgi'
+            ]
+        },
+        {
+            'name': 'PrgEnv-nvidia',
+            'target_systems': [
+                'pilatus'
+            ],
+            'modules': [
+                'PrgEnv-nvidia',
+                # FIXME: We should not be forcing a cdt version
+                'cpe/21.06'
+            ]
+        },
+        {
+            'name': 'PrgEnv-nvidia',
+            'target_systems': [
+                'dom', 'daint'
+            ],
+            'modules': [
+                'PrgEnv-nvidia',
+                # FIXME: We should not be forcing a cdt version
+                'cdt/21.05'
             ]
         },
         {
@@ -1110,10 +1178,9 @@ site_configuration = {
                     'append': True
                 },
                 {
-                    'type': 'graylog',
-                    'address': 'graylog-server:12345',
+                    'type': 'httpjson',
+                    'url': 'http://httpjson-server:12345/rfm',
                     'level': 'info',
-                    'format': '%(message)s',
                     'extras': {
                         'facility': 'reframe',
                         'data-version': '1.0',

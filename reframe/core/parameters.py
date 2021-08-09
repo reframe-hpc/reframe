@@ -12,6 +12,7 @@ import functools
 import itertools
 
 import reframe.core.namespaces as namespaces
+from reframe.core.exceptions import ReframeSyntaxError
 
 
 class TestParam:
@@ -108,7 +109,7 @@ class ParamSpace(namespaces.Namespace):
                 self.params[key] != () and
                 other.params[key] != ()):
 
-                raise ValueError(
+                raise ReframeSyntaxError(
                     f'parameter space conflict: '
                     f'parameter {key!r} is defined in more than '
                     f'one base class of class {cls.__qualname__!r}'
@@ -133,7 +134,7 @@ class ParamSpace(namespaces.Namespace):
         # changed using the `x = parameter([...])` syntax.
         for key, values in cls.__dict__.items():
             if key in self.params:
-                raise ValueError(
+                raise ReframeSyntaxError(
                     f'parameter {key!r} must be modified through the built-in '
                     f'parameter type'
                 )

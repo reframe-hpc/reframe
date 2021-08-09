@@ -7,20 +7,20 @@ import os
 import pytest
 
 import reframe as rfm
-from reframe.core.exceptions import NameConflictError, ReframeSyntaxError
+from reframe.core.exceptions import ReframeSyntaxError
+from reframe.core.warnings import ReframeDeprecationWarning
 from reframe.frontend.loader import RegressionCheckLoader
 
 
 @pytest.fixture
 def loader():
-    return RegressionCheckLoader(['.'], ignore_conflicts=True)
+    return RegressionCheckLoader(['.'])
 
 
 @pytest.fixture
 def loader_with_path():
     return RegressionCheckLoader(
-        ['unittests/resources/checks', 'unittests/foobar'],
-        ignore_conflicts=True
+        ['unittests/resources/checks', 'unittests/foobar']
     )
 
 
@@ -48,26 +48,13 @@ def test_load_all(loader_with_path):
     assert 12 == len(checks)
 
 
-def test_load_new_syntax(loader):
-    checks = loader.load_from_file(
-        'unittests/resources/checks_unlisted/good.py'
-    )
-    assert 13 == len(checks)
-
-
-def test_conflicted_checks(loader_with_path):
-    loader_with_path._ignore_conflicts = False
-    with pytest.raises(NameConflictError):
-        loader_with_path.load_all()
-
-
 def test_load_error(loader):
     with pytest.raises(OSError):
         loader.load_from_file('unittests/resources/checks/foo.py')
 
 
 def test_load_bad_required_version(loader):
-    with pytest.raises(ValueError):
+    with pytest.warns(ReframeDeprecationWarning):
         loader.load_from_file('unittests/resources/checks_unlisted/'
                               'no_required_version.py')
 
@@ -144,17 +131,12 @@ def test_special_test():
             def setup(self, partition, environ, **job_opts):
                 super().setup(partition, environ, **job_opts)
 
-    @rfm.simple_test
-    class TestFinal(rfm.RegressionTest):
-        def __init__(self):
-            pass
-
-        @rfm.final
-        def my_new_final(self):
-            pass
-
-    with pytest.raises(ReframeSyntaxError):
+    with pytest.warns(ReframeDeprecationWarning):
         @rfm.simple_test
-        class TestFinalDerived(TestFinal):
-            def my_new_final(self, a, b):
+        class TestFinal(rfm.RegressionTest):
+            def __init__(self):
+                pass
+
+            @rfm.final
+            def my_new_final(self):
                 pass

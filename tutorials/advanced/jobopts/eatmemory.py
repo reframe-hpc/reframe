@@ -9,30 +9,34 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class MemoryLimitTest(rfm.RegressionTest):
-    def __init__(self):
-        self.valid_systems = ['daint:gpu', 'daint:mc']
-        self.valid_prog_environs = ['gnu']
-        self.sourcepath = 'eatmemory.c'
-        self.executable_opts = ['2000M']
+    valid_systems = ['daint:gpu', 'daint:mc']
+    valid_prog_environs = ['gnu']
+    sourcepath = 'eatmemory.c'
+    executable_opts = ['2000M']
+
+    @run_before('run')
+    def set_memory_limit(self):
+        self.job.options = ['--mem=1000']
+
+    @run_before('sanity')
+    def set_sanity_patterns(self):
         self.sanity_patterns = sn.assert_found(
             r'(exceeded memory limit)|(Out Of Memory)', self.stderr
         )
-
-    @rfm.run_before('run')
-    def set_memory_limit(self):
-        self.job.options = ['--mem=1000']
 
 
 @rfm.simple_test
 class MemoryLimitWithResourcesTest(rfm.RegressionTest):
-    def __init__(self):
-        self.valid_systems = ['daint:gpu', 'daint:mc']
-        self.valid_prog_environs = ['gnu']
-        self.sourcepath = 'eatmemory.c'
-        self.executable_opts = ['2000M']
+    valid_systems = ['daint:gpu', 'daint:mc']
+    valid_prog_environs = ['gnu']
+    sourcepath = 'eatmemory.c'
+    executable_opts = ['2000M']
+    extra_resources = {
+        'memory': {'size': '1000'}
+    }
+
+    @run_before('sanity')
+    def set_sanity_patterns(self):
         self.sanity_patterns = sn.assert_found(
             r'(exceeded memory limit)|(Out Of Memory)', self.stderr
         )
-        self.extra_resources = {
-            'memory': {'size': '1000'}
-        }

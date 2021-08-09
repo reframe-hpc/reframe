@@ -10,58 +10,75 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class StreamMultiSysTest(rfm.RegressionTest):
     num_bytes = parameter(1 << pow for pow in range(19, 30))
+    array_size = variable(int)
+    ntimes = variable(int)
 
-    def __init__(self):
-        array_size = (self.num_bytes >> 3) // 3
-        ntimes = 100*1024*1024 // array_size
-        self.descr = f'STREAM test (array size: {array_size}, ntimes: {ntimes})'    # noqa: E501
-        self.valid_systems = ['*']
-        self.valid_prog_environs = ['cray', 'gnu', 'intel', 'pgi']
-        self.prebuild_cmds = [
-            'wget http://www.cs.virginia.edu/stream/FTP/Code/stream.c',
-        ]
-        self.sourcepath = 'stream.c'
-        self.build_system = 'SingleSource'
-        self.build_system.cppflags = [f'-DSTREAM_ARRAY_SIZE={array_size}',
-                                      f'-DNTIMES={ntimes}']
-        self.sanity_patterns = sn.assert_found(r'Solution Validates',
-                                               self.stdout)
-        self.perf_patterns = {
-            'Triad': sn.extractsingle(r'Triad:\s+(\S+)\s+.*',
-                                      self.stdout, 1, float),
+    valid_systems = ['*']
+    valid_prog_environs = ['cray', 'gnu', 'intel', 'pgi']
+    prebuild_cmds = [
+        'wget http://www.cs.virginia.edu/stream/FTP/Code/stream.c',
+    ]
+    build_system = 'SingleSource'
+    sourcepath = 'stream.c'
+    variables = {
+        'OMP_NUM_THREADS': '4',
+        'OMP_PLACES': 'cores'
+    }
+    reference = {
+        '*': {
+            'Triad': (0, None, None, 'MB/s'),
         }
+    }
 
-        # Flags per programming environment
-        self.flags = {
-            'cray':  ['-fopenmp', '-O3', '-Wall'],
-            'gnu':   ['-fopenmp', '-O3', '-Wall'],
-            'intel': ['-qopenmp', '-O3', '-Wall'],
-            'pgi':   ['-mp', '-O3']
-        }
+    # Flags per programming environment
+    flags = variable(dict, value={
+        'cray':  ['-fopenmp', '-O3', '-Wall'],
+        'gnu':   ['-fopenmp', '-O3', '-Wall'],
+        'intel': ['-qopenmp', '-O3', '-Wall'],
+        'pgi':   ['-mp', '-O3']
+    })
 
-        # Number of cores for each system
-        self.cores = {
-            'catalina:default': 4,
-            'daint:gpu': 12,
-            'daint:mc': 36,
-            'daint:login': 10
-        }
-        self.reference = {
-            '*': {
-                'Triad': (0, None, None, 'MB/s'),
-            }
-        }
+    # Number of cores for each system
+    cores = variable(dict, value={
+        'catalina:default': 4,
+        'daint:gpu': 12,
+        'daint:mc': 36,
+        'daint:login': 10
+    })
 
-    @rfm.run_before('compile')
-    def setflags(self):
+    @run_after('init')
+    def set_variables(self):
+        self.array_size = (self.num_bytes >> 3) // 3
+        self.ntimes = 100*1024*1024 // self.array_size
+        self.descr = (
+            f'STREAM test (array size: {self.array_size}, '
+            f'ntimes: {self.ntimes})'
+        )
+
+    @run_before('compile')
+    def set_compiler_flags(self):
+        self.build_system.cppflags = [f'-DSTREAM_ARRAY_SIZE={self.array_size}',
+                                      f'-DNTIMES={self.ntimes}']
         environ = self.current_environ.name
         self.build_system.cflags = self.flags.get(environ, [])
 
-    @rfm.run_before('run')
+    @run_before('run')
     def set_num_threads(self):
         num_threads = self.cores.get(self.current_partition.fullname, 1)
         self.num_cpus_per_task = num_threads
         self.variables = {
             'OMP_NUM_THREADS': str(num_threads),
             'OMP_PLACES': 'cores'
+        }
+
+    @run_before('sanity')
+    def set_sanity_patterns(self):
+        self.sanity_patterns = sn.assert_found(r'Solution Validates',
+                                               self.stdout)
+
+    @run_before('performance')
+    def set_perf_patterns(self):
+        self.perf_patterns = {
+            'Triad': sn.extractsingle(r'Triad:\s+(\S+)\s+.*',
+                                      self.stdout, 1, float),
         }

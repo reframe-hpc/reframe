@@ -24,7 +24,7 @@ def user_obj():
             self._b = 1
 
         @property
-        @sn.sanity_function
+        @sn.deferrable
         def a(self):
             return self._a
 

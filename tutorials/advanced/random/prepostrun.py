@@ -9,13 +9,15 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class PrepostRunTest(rfm.RunOnlyRegressionTest):
-    def __init__(self):
-        self.descr = 'Pre- and post-run demo test'
-        self.valid_systems = ['*']
-        self.valid_prog_environs = ['*']
-        self.prerun_cmds = ['source limits.sh']
-        self.postrun_cmds = ['echo FINISHED']
-        self.executable = './random_numbers.sh'
+    descr = 'Pre- and post-run demo test'
+    valid_systems = ['*']
+    valid_prog_environs = ['*']
+    prerun_cmds = ['source limits.sh']
+    postrun_cmds = ['echo FINISHED']
+    executable = './random_numbers.sh'
+
+    @run_before('sanity')
+    def set_sanity_patterns(self):
         numbers = sn.extractall(
             r'Random: (?P<number>\S+)', self.stdout, 'number', float
         )

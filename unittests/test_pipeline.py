@@ -14,8 +14,10 @@ import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 import unittests.utility as test_util
 
+from reframe.core.containers import _STAGEDIR_MOUNT
 from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
-                                     PerformanceError, SanityError)
+                                     PerformanceError, SanityError,
+                                     ReframeSyntaxError)
 
 
 def _run(test, partition, prgenv):
@@ -200,7 +202,7 @@ def test_hellocheck_build_remotely(hellotest, remote_exec_ctx):
 
 
 def test_hellocheck_local_prepost_run(hellotest, local_exec_ctx):
-    @sn.sanity_function
+    @sn.deferrable
     def stagedir(test):
         return test.stagedir
 
@@ -240,12 +242,35 @@ def test_run_only_set_sanity_in_a_hook(local_exec_ctx):
         valid_prog_environs = ['*']
         valid_systems = ['*']
 
-        @rfm.run_after('run')
+        @run_after('run')
         def set_sanity(self):
             self.sanity_patterns = sn.assert_found(
                 r'Hello, World\!', self.stdout)
 
     _run(MyTest(), *local_exec_ctx)
+
+
+def test_run_only_decorated_sanity(local_exec_ctx):
+    @test_util.custom_prefix('unittests/resources/checks')
+    class MyTest(rfm.RunOnlyRegressionTest):
+        executable = './hello.sh'
+        executable_opts = ['Hello, World!']
+        local = True
+        valid_prog_environs = ['*']
+        valid_systems = ['*']
+
+        @sanity_function
+        def set_sanity(self):
+            return sn.assert_found(r'Hello, World\!', self.stdout)
+
+    _run(MyTest(), *local_exec_ctx)
+
+    class MyOtherTest(MyTest):
+        '''Test both syntaxes are incompatible.'''
+        sanity_patterns = sn.assert_true(1)
+
+    with pytest.raises(ReframeSyntaxError):
+        _run(MyOtherTest(), *local_exec_ctx)
 
 
 def test_run_only_no_srcdir(local_exec_ctx):
@@ -277,6 +302,15 @@ def test_run_only_srcdir_set_to_none(local_exec_ctx):
     _run(test, *local_exec_ctx)
 
 
+def test_executable_is_required(local_exec_ctx):
+    class MyTest(rfm.RunOnlyRegressionTest):
+        valid_prog_environs = ['*']
+        valid_systems = ['*']
+
+    with pytest.raises(AttributeError, match="'executable' has not been set"):
+        _run(MyTest(), *local_exec_ctx)
+
+
 def test_compile_only_failure(local_exec_ctx):
     @test_util.custom_prefix('unittests/resources/checks')
     class MyTest(rfm.CompileOnlyRegressionTest):
@@ -294,7 +328,7 @@ def test_compile_only_failure(local_exec_ctx):
 
 def test_compile_only_warning(local_exec_ctx):
     @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.RunOnlyRegressionTest):
+    class MyTest(rfm.CompileOnlyRegressionTest):
         def __init__(self):
             self.build_system = 'SingleSource'
             self.build_system.srcfile = 'compiler_warning.c'
@@ -496,7 +530,7 @@ def test_extra_resources(HelloTest, testsys_system):
             self.executable = os.path.join('.', self.name)
             self.local = True
 
-        @rfm.run_after('setup')
+        @run_after('setup')
         def set_resources(self):
             test.extra_resources = {
                 'gpu': {'num_gpus_per_node': 2},
@@ -517,27 +551,33 @@ def test_extra_resources(HelloTest, testsys_system):
 
 
 def test_unkown_pre_hook():
+    class MyTest(rfm.RunOnlyRegressionTest):
+        @run_before('foo')
+        def prepare(self):
+            self.x = 1
+
     with pytest.raises(ValueError):
-        class MyTest(rfm.RunOnlyRegressionTest):
-            @rfm.run_before('foo')
-            def prepare(self):
-                self.x = 1
+        MyTest()
 
 
 def test_unkown_post_hook():
+    class MyTest(rfm.RunOnlyRegressionTest):
+        @run_after('foo')
+        def prepare(self):
+            self.x = 1
+
     with pytest.raises(ValueError):
-        class MyTest(rfm.RunOnlyRegressionTest):
-            @rfm.run_after('foo')
-            def prepare(self):
-                self.x = 1
+        MyTest()
 
 
 def test_pre_init_hook():
+    class MyTest(rfm.RunOnlyRegressionTest):
+        @run_before('init')
+        def prepare(self):
+            self.x = 1
+
     with pytest.raises(ValueError):
-        class MyTest(rfm.RunOnlyRegressionTest):
-            @rfm.run_before('init')
-            def prepare(self):
-                self.x = 1
+        MyTest()
 
 
 def test_post_init_hook(local_exec_ctx):
@@ -548,7 +588,7 @@ def test_post_init_hook(local_exec_ctx):
         def __init__(self):
             self.x = 'x'
 
-        @rfm.run_after('init')
+        @run_after('init')
         def prepare(self):
             self.y += 'y'
 
@@ -576,12 +616,12 @@ def test_setup_hooks(HelloTest, local_exec_ctx):
             self.executable = os.path.join('.', self.name)
             self.count = 0
 
-        @rfm.run_before('setup')
+        @run_before('setup')
         def prefoo(self):
             assert self.current_environ is None
             self.count += 1
 
-        @rfm.run_after('setup')
+        @run_after('setup')
         def postfoo(self):
             assert self.current_environ is not None
             self.count += 1
@@ -600,11 +640,11 @@ def test_compile_hooks(HelloTest, local_exec_ctx):
             self.executable = os.path.join('.', self.name)
             self.count = 0
 
-        @rfm.run_before('compile')
+        @run_before('compile')
         def setflags(self):
             self.count += 1
 
-        @rfm.run_after('compile')
+        @run_after('compile')
         def check_executable(self):
             exec_file = os.path.join(self.stagedir, self.executable)
 
@@ -624,11 +664,11 @@ def test_run_hooks(HelloTest, local_exec_ctx):
             self.name = type(self).__name__
             self.executable = os.path.join('.', self.name)
 
-        @rfm.run_before('run')
+        @run_before('run')
         def setflags(self):
             self.postrun_cmds = ['echo hello > greetings.txt']
 
-        @rfm.run_after('run')
+        @run_after('run')
         def check_executable(self):
             outfile = os.path.join(self.stagedir, 'greetings.txt')
 
@@ -647,15 +687,15 @@ def test_multiple_hooks(HelloTest, local_exec_ctx):
             self.executable = os.path.join('.', self.name)
             self.var = 0
 
-        @rfm.run_after('setup')
+        @run_after('setup')
         def x(self):
             self.var += 1
 
-        @rfm.run_after('setup')
+        @run_after('setup')
         def y(self):
             self.var += 1
 
-        @rfm.run_after('setup')
+        @run_after('setup')
         def z(self):
             self.var += 1
 
@@ -673,9 +713,9 @@ def test_stacked_hooks(HelloTest, local_exec_ctx):
             self.executable = os.path.join('.', self.name)
             self.var = 0
 
-        @rfm.run_before('setup')
-        @rfm.run_after('setup')
-        @rfm.run_after('compile')
+        @run_before('setup')
+        @run_after('setup')
+        @run_after('compile')
         def x(self):
             self.var += 1
 
@@ -685,7 +725,7 @@ def test_stacked_hooks(HelloTest, local_exec_ctx):
 
 
 def test_multiple_inheritance(HelloTest):
-    with pytest.raises(ValueError):
+    with pytest.raises(ReframeSyntaxError):
         class MyTest(rfm.RunOnlyRegressionTest, HelloTest):
             pass
 
@@ -699,17 +739,17 @@ def test_inherited_hooks(HelloTest, local_exec_ctx):
             self.executable = os.path.join('.', self.name)
             self.var = 0
 
-        @rfm.run_after('setup')
+        @run_after('setup')
         def x(self):
             self.var += 1
 
     class C(rfm.RegressionMixin):
-        @rfm.run_before('run')
+        @run_before('run')
         def y(self):
             self.foo = 1
 
     class DerivedTest(BaseTest, C):
-        @rfm.run_after('setup')
+        @run_after('setup')
         def z(self):
             self.var += 1
 
@@ -735,12 +775,12 @@ def test_inherited_hooks_from_instantiated_tests(HelloTest, local_exec_ctx):
             self.executable = os.path.join('.', self.name)
             self.var = 0
 
-        @rfm.run_after('setup')
+        @run_after('setup')
         def x(self):
             self.var += 1
 
     class T1(T0):
-        @rfm.run_before('run')
+        @run_before('run')
         def y(self):
             self.foo = 1
 
@@ -765,21 +805,21 @@ def test_overriden_hooks(HelloTest, local_exec_ctx):
             self.var = 0
             self.foo = 0
 
-        @rfm.run_after('setup')
+        @run_after('setup')
         def x(self):
             self.var += 1
 
-        @rfm.run_before('setup')
+        @run_before('setup')
         def y(self):
             self.foo += 1
 
     class DerivedTest(BaseTest):
-        @rfm.run_after('setup')
+        @run_after('setup')
         def x(self):
             self.var += 5
 
     class MyTest(DerivedTest):
-        @rfm.run_before('setup')
+        @run_before('setup')
         def y(self):
             self.foo += 10
 
@@ -799,16 +839,16 @@ def test_disabled_hooks(HelloTest, local_exec_ctx):
             self.var = 0
             self.foo = 0
 
-        @rfm.run_after('setup')
+        @run_after('setup')
         def x(self):
             self.var += 1
 
-        @rfm.run_before('setup')
+        @run_before('setup')
         def y(self):
             self.foo += 1
 
     class MyTest(BaseTest):
-        @rfm.run_after('setup')
+        @run_after('setup')
         def x(self):
             self.var += 5
 
@@ -839,12 +879,12 @@ def test_require_deps(HelloTest, local_exec_ctx):
             self.executable = os.path.join('.', self.name)
             self.depends_on('T0')
 
-        @rfm.require_deps
+        @require_deps
         def sety(self, T0):
             self.y = T0().x + 1
 
-        @rfm.run_before('run')
-        @rfm.require_deps
+        @run_before('run')
+        @require_deps
         def setz(self, T0):
             self.z = T0().x + 2
 
@@ -925,26 +965,6 @@ def test_name_compileonly_test():
     test = MyTest(1, 2)
     assert os.path.abspath(os.path.dirname(__file__)) == test.prefix
     assert 'test_name_compileonly_test.<locals>.MyTest_1_2' == test.name
-
-
-def test_registration_of_tests():
-    import unittests.resources.checks_unlisted.good as mod
-
-    checks = mod._rfm_gettests()
-    assert 13 == len(checks)
-    assert [mod.MyBaseTest(0, 0),
-            mod.MyBaseTest(0, 1),
-            mod.MyBaseTest(1, 0),
-            mod.MyBaseTest(1, 1),
-            mod.MyBaseTest(2, 0),
-            mod.MyBaseTest(2, 1),
-            mod.AnotherBaseTest(0, 0),
-            mod.AnotherBaseTest(0, 1),
-            mod.AnotherBaseTest(1, 0),
-            mod.AnotherBaseTest(1, 1),
-            mod.AnotherBaseTest(2, 0),
-            mod.AnotherBaseTest(2, 1),
-            mod.MyBaseTest(10, 20)] == checks
 
 
 def test_trap_job_errors_without_sanity_patterns(local_exec_ctx):
@@ -1198,7 +1218,7 @@ def test_performance_var_evaluation(dummytest, sanity_file,
     # `check_performance()`.
     logfile = 'perf.log'
 
-    @sn.sanity_function
+    @sn.deferrable
     def extract_perf(patt, tag):
         val = sn.evaluate(
             sn.extractsingle(patt, perf_file, tag, float)
@@ -1241,11 +1261,12 @@ def container_test(tmp_path):
                 self.container_platform = platform
                 self.container_platform.image = image
                 self.container_platform.command = (
-                    "bash -c 'cd /rfm_workdir; pwd; ls; cat /etc/os-release'"
+                    f"bash -c 'cd {_STAGEDIR_MOUNT}; pwd; ls; "
+                    f"cat /etc/os-release'"
                 )
                 self.prerun_cmds = ['touch foo']
                 self.sanity_patterns = sn.all([
-                    sn.assert_found(r'^/rfm_workdir', self.stdout),
+                    sn.assert_found(rf'^{_STAGEDIR_MOUNT}', self.stdout),
                     sn.assert_found(r'^foo', self.stdout),
                     sn.assert_found(
                         r'18\.04\.\d+ LTS \(Bionic Beaver\)', self.stdout),

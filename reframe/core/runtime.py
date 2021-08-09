@@ -207,22 +207,29 @@ def loadenv(*environs):
     :rtype: Tuple[_EnvironmentSnapshot, List[str]]
 
     '''
+
+    def _load_cmds_tracked(**module):
+        commands = []
+        load_seq = modules_system.load_module(**module, force=True)
+        for m, conflicted in load_seq:
+            for c in conflicted:
+                commands += modules_system.emit_unload_commands(c)
+
+            commands += modules_system.emit_load_commands(
+                m, module.get('collection', False), module.get('path', None)
+            )
+
+        return commands
+
     modules_system = runtime().modules_system
     env_snapshot = snapshot()
     commands = []
     for env in environs:
         for mod in env.modules_detailed:
-            load_seq = modules_system.load_module(**mod, force=True)
-            for m, conflicted in load_seq:
-                for c in conflicted:
-                    commands += modules_system.emit_unload_commands(c)
-
-                if 'path' not in mod.keys():
-                    mod['path'] = None
-
-                commands += modules_system.emit_load_commands(
-                    m, mod['collection'], mod['path'],
-                )
+            if runtime().get_option('general/0/resolve_module_conflicts'):
+                commands += _load_cmds_tracked(**mod)
+            else:
+                commands += modules_system.emit_load_commands(**mod)
 
         for k, v in env.variables.items():
             os.environ[k] = osext.expandvars(v)

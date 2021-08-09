@@ -16,7 +16,8 @@ class IPCMagicCheck(rfm.RunOnlyRegressionTest):
         self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.modules = [
-            f'ipcmagic',
+            # FIXME: Use the default ipcmagic version when fixed
+            f'ipcmagic/0.1-CrayGNU-{osext.cray_cdt_version()}',
             f'Horovod/0.21.0-CrayGNU-{osext.cray_cdt_version()}-tf-2.4.0'
         ]
         self.num_tasks = 2
@@ -57,7 +58,7 @@ class IPCMagicCheck(rfm.RunOnlyRegressionTest):
         self.maintainers = ['RS', 'TR']
         self.tags = {'production'}
 
-    @rfm.run_before('run')
+    @run_before('run')
     def prepare_run(self):
         # Change the job launcher since `ipython`
         # needs to be launched without `srun`.

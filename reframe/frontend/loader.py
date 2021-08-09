@@ -11,10 +11,12 @@ import ast
 import collections.abc
 import inspect
 import os
+import sys
+import traceback
 
 import reframe.utility as util
 import reframe.utility.osext as osext
-from reframe.core.exceptions import NameConflictError
+from reframe.core.exceptions import NameConflictError, is_severe, what
 from reframe.core.logging import getlogger
 
 
@@ -38,12 +40,11 @@ class RegressionCheckValidator(ast.NodeVisitor):
 
 
 class RegressionCheckLoader:
-    def __init__(self, load_path, recurse=False, ignore_conflicts=False):
+    def __init__(self, load_path, recurse=False):
         # Expand any environment variables and symlinks
         load_path = [os.path.realpath(osext.expandvars(p)) for p in load_path]
         self._load_path = osext.unique_abs_paths(load_path, recurse)
         self._recurse = recurse
-        self._ignore_conflicts = ignore_conflicts
 
         # Loaded tests by name; maps test names to the file that were defined
         self._loaded = {}
@@ -85,8 +86,7 @@ class RegressionCheckLoader:
         for attr in required_attrs:
             if not hasattr(check, attr):
                 getlogger().warning(
-                    f'{checkfile}: {attr!r} not defined for test {name!r}; '
-                    f'skipping...'
+                    f'skipping test {name!r}: {attr!r} not defined'
                 )
                 return False
 
@@ -126,8 +126,7 @@ class RegressionCheckLoader:
         if hasattr(module, '_get_checks'):
             getlogger().warning(
                 f'{module.__file__}: _get_checks() is no more supported '
-                f'in test files: please use @reframe.simple_test or '
-                f'@reframe.parameterized_test decorators'
+                f'in test files: please use @reframe.simple_test decorator'
             )
 
         if not hasattr(module, '_rfm_gettests'):
@@ -156,29 +155,41 @@ class RegressionCheckLoader:
                 self._loaded[c.name] = testfile
                 ret.append(c)
             else:
-                msg = (f'{testfile}: test {c.name!r} '
-                       f'already defined in {conflicted!r}')
-
-                if self._ignore_conflicts:
-                    getlogger().warning(f'{msg}; skipping...')
-                else:
-                    raise NameConflictError(msg)
+                raise NameConflictError(
+                    f'test {c.name!r} from {testfile!r} '
+                    f'is already defined in {conflicted!r}'
+                )
 
         getlogger().debug(f'  > Loaded {len(ret)} test(s)')
         return ret
 
-    def load_from_file(self, filename, **check_args):
+    def load_from_file(self, filename, force=False):
         if not self._validate_source(filename):
             return []
 
-        return self.load_from_module(util.import_module_from_file(filename))
+        try:
+            return self.load_from_module(
+                util.import_module_from_file(filename, force)
+            )
+        except Exception:
+            exc_info = sys.exc_info()
+            if not is_severe(*exc_info):
+                # Simply skip the file in this case
+                getlogger().warning(
+                    f"skipping test file {filename!r}: {what(*exc_info)} "
+                    f"(rerun with '-v' for more information)"
+                )
+                getlogger().verbose(traceback.format_exc())
+                return []
+            else:
+                raise
 
-    def load_from_dir(self, dirname, recurse=False):
+    def load_from_dir(self, dirname, recurse=False, force=False):
         checks = []
         for entry in os.scandir(dirname):
             if recurse and entry.is_dir():
                 checks.extend(
-                    self.load_from_dir(entry.path, recurse)
+                    self.load_from_dir(entry.path, recurse, force)
                 )
 
             if (entry.name.startswith('.') or
@@ -186,23 +197,28 @@ class RegressionCheckLoader:
                 not entry.is_file()):
                 continue
 
-            checks.extend(self.load_from_file(entry.path))
+            checks += self.load_from_file(entry.path, force)
 
         return checks
 
-    def load_all(self):
+    def load_all(self, force=False):
         '''Load all checks in self._load_path.
 
-        If a prefix exists, it will be prepended to each path.'''
+        If a prefix exists, it will be prepended to each path.
+
+        :arg force: Force reloading of test files.
+        :returns: The list of loaded tests.
+        '''
         checks = []
         for d in self._load_path:
             getlogger().debug(f'Looking for tests in {d!r}')
             if not os.path.exists(d):
+                getlogger().warning(f'check path {d!r} does not exist')
                 continue
 
             if os.path.isdir(d):
-                checks.extend(self.load_from_dir(d, self._recurse))
+                checks += self.load_from_dir(d, self._recurse, force)
             else:
-                checks.extend(self.load_from_file(d))
+                checks += self.load_from_file(d, force)
 
         return checks

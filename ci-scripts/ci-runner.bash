@@ -41,8 +41,8 @@ checked_exec()
 
 run_tutorial_checks()
 {
-    cmd="./bin/reframe -C tutorials/config/settings.py -J account=jenscscs \
---save-log-files --flex-alloc-nodes=2 -r -x HelloThreadedExtendedTest $@"
+    cmd="./bin/reframe -vv -C tutorials/config/settings.py -J account=jenscscs \
+--save-log-files --flex-alloc-nodes=2 -r -x HelloThreadedExtendedTest|BZip2.*Check $@"
     echo "[INFO] Running tutorial checks with \`$cmd'"
     checked_exec $cmd
 }
@@ -125,10 +125,7 @@ if [ "X${MODULEUSE}" != "X" ]; then
     module use ${MODULEUSE}
 fi
 
-parallel_opts="--workers=auto --forked"
-if [[ $(hostname) =~ tsa|uan ]]; then
-    parallel_opts=""
-fi
+parallel_opts=""
 
 # Bootstrap ReFrame
 ./bootstrap.sh

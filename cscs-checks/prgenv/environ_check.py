@@ -10,69 +10,57 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class DefaultPrgEnvCheck(rfm.RunOnlyRegressionTest):
-    def __init__(self):
-        self.descr = 'Ensure PrgEnv-cray is loaded by default'
-        self.valid_prog_environs = ['builtin']
-        self.valid_systems = ['daint:login', 'dom:login', 'eiger:login']
-        self.executable = 'module'
-        self.maintainers = ['TM', 'CB']
-        self.tags = {'production', 'craype'}
+    descr = 'Ensure PrgEnv-cray is loaded by default'
+    valid_prog_environs = ['builtin']
+    valid_systems = ['daint:login', 'dom:login',
+                     'eiger:login', 'pilatus:login']
+    executable = 'module'
+    executable_opts = ['--terse', 'list']
+    maintainers = ['TM', 'CB']
+    tags = {'production', 'craype'}
+
+    @run_before('sanity')
+    def set_sanity(self):
         self.sanity_patterns = sn.assert_found(r'^PrgEnv-cray', self.stderr)
-
-        if self.current_system.name == 'eiger':
-            self.executable_opts = ['list']
-            prgenv_patt = r'1\) cpe-cray'
-        else:
-            self.executable_opts = ['list', '-t']
-            prgenv_patt = r'^PrgEnv-cray'
-
-        self.sanity_patterns = sn.assert_found(prgenv_patt, self.stderr)
 
 
 @rfm.simple_test
 class EnvironmentCheck(rfm.RunOnlyRegressionTest):
-    def __init__(self):
-        self.descr = 'Ensure programming environment is loaded correctly'
-        self.valid_systems = ['daint:login', 'dom:login', 'eiger:login']
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu', 'PrgEnv-pgi',
-                                    'PrgEnv-intel', 'PrgEnv-aocc']
-        self.executable = 'module'
-        if self.current_system.name == 'eiger':
-            self.executable_opts = ['list']
-        else:
-            self.executable_opts = ['list', '-t']
+    descr = 'Ensure programming environment is loaded correctly'
+    valid_systems = ['daint:login', 'dom:login',
+                     'eiger:login', 'pilatus:login']
+    valid_prog_environs = ['PrgEnv-aocc', 'PrgEnv-cray', 'PrgEnv-gnu',
+                           'PrgEnv-intel', 'PrgEnv-pgi', 'PrgEnv-nvidia']
+    executable = 'module'
+    executable_opts = ['--terse', 'list']
+    maintainers = ['TM', 'CB']
+    tags = {'production', 'craype'}
 
-        self.maintainers = ['TM', 'CB']
-        self.tags = {'production', 'craype'}
-
-    @rfm.run_before('sanity')
+    @run_before('sanity')
     def set_sanity(self):
-        # NOTE: On eiger, the first module of each programming environment,
-        # follows the 'cpe-<name>' pattern where <name> corresponds to the
-        # 'PrgEnv-<name>' used.
-        if self.current_system.name == 'eiger':
-            module_patt = rf'1\) cpe-{self.current_environ.name[7:]}'
-        else:
-            module_patt = rf'^{self.current_environ.name}'
-
+        module_patt = rf'^{self.current_environ.name}'
         self.sanity_patterns = sn.assert_found(module_patt, self.stderr)
 
 
 class CrayVariablesCheck(rfm.RunOnlyRegressionTest):
     cray_module = parameter()
+    descr = 'Check for standard Cray variables'
+    valid_prog_environs = ['builtin']
+    executable = 'module'
+    tags = {'production', 'craype'}
+    maintainers = ['EK', 'TM']
 
-    def __init__(self):
-        self.descr = 'Check for standard Cray variables'
-        self.valid_prog_environs = ['builtin']
-        self.executable = 'module'
+    @run_before('run')
+    def set_exec_opts(self):
         self.executable_opts = ['show', self.cray_module]
+
+    @run_before('sanity')
+    def set_sanity(self):
         envvar_prefix = self.cray_module.upper().replace('-', '_')
         self.sanity_patterns = sn.all([
             sn.assert_found(f'{envvar_prefix}_PREFIX', self.stderr),
             sn.assert_found(f'{envvar_prefix}_VERSION', self.stderr)
         ])
-        self.tags = {'production', 'craype'}
-        self.maintainers = ['EK', 'TM']
 
 
 @rfm.simple_test
@@ -83,11 +71,10 @@ class CrayVariablesCheckDaint(CrayVariablesCheck):
         'cray-petsc-complex-64', 'cray-python', 'cray-R', 'cray-tpsl',
         'cray-tpsl-64', 'cudatoolkit', 'gcc', 'papi', 'pmi'
     ])
+    valid_systems = ['daint:login', 'dom:login']
 
-    def __init__(self):
-        super().__init__()
-        self.valid_systems = ['daint:login', 'dom:login']
-
+    @run_after('init')
+    def skip_modules(self):
         # FIXME: These modules should be fixed in later releases
         cdt = osext.cray_cdt_version()
         if ((cdt and cdt <= '20.11' and
@@ -104,12 +91,10 @@ class CrayVariablesCheckEiger(CrayVariablesCheck):
         'cray-mpich', 'cray-openshmemx', 'cray-parallel-netcdf', 'cray-pmi',
         'cray-python', 'cray-R', 'gcc', 'papi'
     ])
+    valid_systems = ['eiger:login']
 
-    def __init__(self):
-        super().__init__()
-        self.valid_systems = ['eiger:login']
-
+    @run_after('init')
+    def skip_modules(self):
         # FIXME: These modules should be fixed in later releases
-
         if self.cray_module in {'cray-fftw', 'cray-python', 'cray-mpich'}:
             self.valid_systems = []

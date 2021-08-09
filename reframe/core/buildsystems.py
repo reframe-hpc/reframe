@@ -10,9 +10,14 @@ import re
 import reframe.core.fields as fields
 import reframe.utility.typecheck as typ
 from reframe.core.exceptions import BuildSystemError
+from reframe.core.meta import RegressionTestMeta
 
 
-class BuildSystem(abc.ABC):
+class BuildSystemMeta(RegressionTestMeta, abc.ABCMeta):
+    '''Build systems metaclass.'''
+
+
+class BuildSystem(metaclass=BuildSystemMeta):
     '''The abstract base class of any build system.
 
     Concrete build systems inherit from this class and must override the
@@ -26,7 +31,7 @@ class BuildSystem(abc.ABC):
     #:
     #: :type: :class:`str`
     #: :default: ``''``
-    cc  = fields.TypedField(str)
+    cc  = variable(str, value='')
 
     #: The C++ compiler to be used.
     #: If empty and :attr:`flags_from_environ` is :class:`True`,
@@ -35,7 +40,7 @@ class BuildSystem(abc.ABC):
     #:
     #: :type: :class:`str`
     #: :default: ``''``
-    cxx = fields.TypedField(str)
+    cxx = variable(str, value='')
 
     #: The Fortran compiler to be used.
     #: If empty and :attr:`flags_from_environ` is :class:`True`,
@@ -44,7 +49,7 @@ class BuildSystem(abc.ABC):
     #:
     #: :type: :class:`str`
     #: :default: ``''``
-    ftn = fields.TypedField(str)
+    ftn = variable(str, value='')
 
     #: The CUDA compiler to be used.
     #: If empty and :attr:`flags_from_environ` is :class:`True`,
@@ -53,7 +58,7 @@ class BuildSystem(abc.ABC):
     #:
     #: :type: :class:`str`
     #: :default: ``''``
-    nvcc = fields.TypedField(str)
+    nvcc = variable(str, value='')
 
     #: The C compiler flags to be used.
     #: If empty and :attr:`flags_from_environ` is :class:`True`,
@@ -62,7 +67,7 @@ class BuildSystem(abc.ABC):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    cflags = fields.TypedField(typ.List[str])
+    cflags = variable(typ.List[str], value=[])
 
     #: The preprocessor flags to be used.
     #: If empty and :attr:`flags_from_environ` is :class:`True`,
@@ -71,7 +76,7 @@ class BuildSystem(abc.ABC):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    cppflags = fields.TypedField(typ.List[str])
+    cppflags = variable(typ.List[str], value=[])
 
     #: The C++ compiler flags to be used.
     #: If empty and :attr:`flags_from_environ` is :class:`True`,
@@ -80,7 +85,7 @@ class BuildSystem(abc.ABC):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    cxxflags = fields.TypedField(typ.List[str])
+    cxxflags = variable(typ.List[str], value=[])
 
     #: The Fortran compiler flags to be used.
     #: If empty and :attr:`flags_from_environ` is :class:`True`,
@@ -89,7 +94,7 @@ class BuildSystem(abc.ABC):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    fflags  = fields.TypedField(typ.List[str])
+    fflags  = variable(typ.List[str], value=[])
 
     #: The linker flags to be used.
     #: If empty and :attr:`flags_from_environ` is :class:`True`,
@@ -98,26 +103,14 @@ class BuildSystem(abc.ABC):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    ldflags = fields.TypedField(typ.List[str])
+    ldflags = variable(typ.List[str], value=[])
 
     #: Set compiler and compiler flags from the current programming environment
     #: if not specified otherwise.
     #:
     #: :type: :class:`bool`
     #: :default: :class:`True`
-    flags_from_environ = fields.TypedField(bool)
-
-    def __init__(self):
-        self.cc  = ''
-        self.cxx = ''
-        self.ftn = ''
-        self.nvcc = ''
-        self.cflags = []
-        self.cxxflags = []
-        self.cppflags = []
-        self.fflags  = []
-        self.ldflags = []
-        self.flags_from_environ = True
+    flags_from_environ = variable(bool, value=True)
 
     @abc.abstractmethod
     def emit_build_commands(self, environ):
@@ -156,6 +149,16 @@ class BuildSystem(abc.ABC):
         :meta private:
 
         '''
+
+    def prepare_cmds(self):
+        '''Callback function that the framework will call before run.
+
+        Build systems may use this information to add commands to the run
+        script before anything set by the user.
+
+        :meta private:
+        '''
+        return []
 
     def _resolve_flags(self, flags, environ):
         _flags = getattr(self, flags)
@@ -226,14 +229,14 @@ class Make(BuildSystem):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    options = fields.TypedField(typ.List[str])
+    options = variable(typ.List[str], value=[])
 
     #: Instruct build system to use this Makefile.
     #: This option is useful when having non-standard Makefile names.
     #:
     #: :type: :class:`str`
     #: :default: :class:`None`
-    makefile = fields.TypedField(str, type(None))
+    makefile = variable(str, type(None), value=None)
 
     #: The top-level directory of the code.
     #:
@@ -242,7 +245,7 @@ class Make(BuildSystem):
     #:
     #: :type: :class:`str`
     #: :default: :class:`None`
-    srcdir = fields.TypedField(str, type(None))
+    srcdir = variable(str, type(None), value=None)
 
     #: Limit concurrency for ``make`` jobs.
     #: This attribute controls the ``-j`` option passed to ``make``.
@@ -256,14 +259,7 @@ class Make(BuildSystem):
     #: .. note::
     #:     .. versionchanged:: 2.19
     #:        The default value is now ``1``
-    max_concurrency = fields.TypedField(int, type(None))
-
-    def __init__(self):
-        super().__init__()
-        self.options = []
-        self.makefile = None
-        self.srcdir = None
-        self.max_concurrency = 1
+    max_concurrency = variable(int, type(None), value=1)
 
     def emit_build_commands(self, environ):
         cmd_parts = ['make']
@@ -353,7 +349,7 @@ class SingleSource(BuildSystem):
     #: :attr:`reframe.core.pipeline.RegressionTest.sourcepath` attribute.
     #:
     #: :type: :class:`str` or :class:`None`
-    srcfile = fields.TypedField(str, type(None))
+    srcfile = variable(str, type(None), value=None)
 
     #: The executable file to be generated.
     #:
@@ -361,7 +357,7 @@ class SingleSource(BuildSystem):
     #: :attr:`reframe.core.pipeline.RegressionTest.executable` attribute.
     #:
     #: :type: :class:`str` or :class:`None`
-    executable = fields.TypedField(str, type(None))
+    executable = variable(str, type(None), value=None)
 
     #: The include path to be used for this compilation.
     #:
@@ -371,7 +367,7 @@ class SingleSource(BuildSystem):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    include_path = fields.TypedField(typ.List[str])
+    include_path = variable(typ.List[str], value=[])
 
     #: The programming language of the file that needs to be compiled.
     #: If not specified, the build system will try to figure it out
@@ -385,14 +381,7 @@ class SingleSource(BuildSystem):
     #:   - CUDA: `.cu`.
     #:
     #: :type: :class:`str` or :class:`None`
-    lang = fields.TypedField(str, type(None))
-
-    def __init__(self):
-        super().__init__()
-        self.srcfile = None
-        self.executable = None
-        self.include_path = []
-        self.lang = None
+    lang = variable(str, type(None), value=None)
 
     def _auto_exec_name(self):
         return '%s.x' % os.path.splitext(self.srcfile)[0]
@@ -486,39 +475,31 @@ class ConfigureBasedBuildSystem(BuildSystem):
     #:
     #: :type: :class:`str`
     #: :default: :class:`None`
-    srcdir = fields.TypedField(str, type(None))
+    srcdir = variable(str, type(None), value=None)
 
     #: The CMake build directory, where all the generated files will be placed.
     #:
     #: :type: :class:`str`
     #: :default: :class:`None`
-    builddir = fields.TypedField(str, type(None))
+    builddir = variable(str, type(None), value=None)
 
     #: Additional configuration options to be passed to the CMake invocation.
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    config_opts = fields.TypedField(typ.List[str])
+    config_opts = variable(typ.List[str], value=[])
 
     #: Options to be passed to the subsequent ``make`` invocation.
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    make_opts = fields.TypedField(typ.List[str])
+    make_opts = variable(typ.List[str], value=[])
 
     #: Same as for the :attr:`Make` build system.
     #:
     #: :type: integer
     #: :default: ``1``
-    max_concurrency = fields.TypedField(int, type(None))
-
-    def __init__(self):
-        super().__init__()
-        self.srcdir = None
-        self.builddir = None
-        self.config_opts = []
-        self.make_opts = []
-        self.max_concurrency = 1
+    max_concurrency = variable(int, type(None), value=1)
 
 
 class CMake(ConfigureBasedBuildSystem):
@@ -682,7 +663,7 @@ class EasyBuild(BuildSystem):
 
     ReFrame will use EasyBuild to build and install the code in the test's
     stage directory by default. ReFrame uses environment variables to
-    configure EasyBuild for running, so Users can pass additional options to
+    configure EasyBuild for running, so users can pass additional options to
     the ``eb`` command and modify the default behaviour.
 
     .. versionadded:: 3.5.0
@@ -694,20 +675,20 @@ class EasyBuild(BuildSystem):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    easyconfigs = fields.TypedField(typ.List[str])
+    easyconfigs = variable(typ.List[str], value=[])
 
     #: Options to pass to the ``eb`` command.
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    options = fields.TypedField(typ.List[str])
+    options = variable(typ.List[str], value=[])
 
     #: Instruct EasyBuild to emit a package for the built software.
     #: This will essentially pass the ``--package`` option to ``eb``.
     #:
     #: :type: :class:`bool`
-    #: :default: ``[]``
-    emit_package = fields.TypedField(bool)
+    #: :default: ``False``
+    emit_package = variable(bool, value=False)
 
     #: Options controlling the package creation from EasyBuild.
     #: For each key/value pair of this dictionary, ReFrame will pass
@@ -715,7 +696,7 @@ class EasyBuild(BuildSystem):
     #:
     #: :type: :class:`Dict[str, str]`
     #: :default: ``{}``
-    package_opts = fields.TypedField(typ.Dict[str, str])
+    package_opts = variable(typ.Dict[str, str], value={})
 
     #: Default prefix for the EasyBuild installation.
     #:
@@ -735,15 +716,9 @@ class EasyBuild(BuildSystem):
     #:
     #: :type: :class:`str`
     #: :default: ``easybuild``
-    prefix = fields.TypedField(str)
+    prefix = variable(str, value='easybuild')
 
     def __init__(self):
-        super().__init__()
-        self.easyconfigs = []
-        self.options = []
-        self.emit_package = False
-        self.package_opts = {}
-        self.prefix = 'easybuild'
         self._eb_modules = []
 
     def emit_build_commands(self, environ):
@@ -780,6 +755,92 @@ class EasyBuild(BuildSystem):
     @property
     def generated_modules(self):
         return self._eb_modules
+
+
+class Spack(BuildSystem):
+    '''A build system for building test code using `Spack
+    <https://spack.io/>`__.
+
+    ReFrame will use a user-provided Spack environment in order to build and
+    test a set of specs.
+
+    .. versionadded:: 3.6.1
+
+    '''
+
+    #: The Spack environment to use for building this test.
+    #:
+    #: ReFrame will activate and install this environment.
+    #: This environment will also be used to run the test.
+    #:
+    #: .. code-block:: bash
+    #:
+    #:    spack env activate -V -d <environment directory>
+    #:
+    #: ReFrame looks for environments in the test's
+    #: :attr:`~reframe.core.pipeline.RegressionTest.sourcesdir`.
+    #:
+    #: This field is required.
+    #:
+    #: :type: :class:`str` or :class:`None`
+    #: :default: :class:`required`
+    environment = variable(typ.Str[r'\S+'])
+
+    #: A list of additional specs to build and install within the given
+    #: environment.
+    #:
+    #: ReFrame will add the specs to the active environment by emititing the
+    #: following command:
+    #:
+    #: .. code-block:: bash
+    #:
+    #:    spack add spec1 spec2 ... specN
+    #:
+    #: If no spec is passed, ReFrame will simply install what is prescribed by
+    #: the environment.
+    #:
+    #: :type: :class:`List[str]`
+    #: :default: ``[]``
+    specs = variable(typ.List[str], value=[])
+
+    #: Emit the necessary ``spack load`` commands before running the test.
+    #:
+    #: :type: :class:`bool`
+    #: :default: :obj:`True`
+    emit_load_cmds = variable(bool, value=True)
+
+    #: Options to pass to ``spack install``
+    #:
+    #: :type: :class:`List[str]`
+    #: :default: ``[]``
+    install_opts = variable(typ.List[str], value=[])
+
+    def emit_build_commands(self, environ):
+        if not hasattr(self, 'environment'):
+            raise BuildSystemError(f'no Spack environment is defined')
+
+        ret = self._env_activate_cmds()
+        if self.specs:
+            specs_str = ' '.join(self.specs)
+            ret.append(f'spack add {specs_str}')
+
+        install_cmd = 'spack install'
+        if self.install_opts:
+            install_cmd += ' ' + ' '.join(self.install_opts)
+
+        ret.append(install_cmd)
+        return ret
+
+    def _env_activate_cmds(self):
+        return [f'. $SPACK_ROOT/share/spack/setup-env.sh',
+                f'spack env activate -V -d {self.environment}']
+
+    def prepare_cmds(self):
+        cmds = self._env_activate_cmds()
+        if self.specs and self.emit_load_cmds:
+            cmds.append('spack load ' + ' '.join(s for s in self.specs))
+
+        return cmds
 
 
 class BuildSystemField(fields.TypedField):

@@ -67,10 +67,11 @@ def _do_import_module_from_file(filename, module_name=None):
     return module
 
 
-def import_module_from_file(filename):
+def import_module_from_file(filename, force=False):
     '''Import module from file.
 
     :arg filename: The path to the filename of a Python module.
+    :arg force: Force reload of module in case it is already loaded.
     :returns: The loaded Python module.
     '''
 
@@ -93,6 +94,9 @@ def import_module_from_file(filename):
     match = site_packages.search(filename)
     if match:
         module_name = _get_module_name(match['rel_filename'])
+
+    if force:
+        sys.modules.pop(module_name, None)
 
     return importlib.import_module(module_name)
 
@@ -569,7 +573,8 @@ def find_modules(substr, environ_mapping=None):
        class MyTest(rfm.RegressionTest):
            module_info = parameter(find_modules('netcdf'))
 
-           def __init__(self):
+           @rfm.run_after('init')
+           def apply_module_info(self):
                s, e, m = self.module_info
                self.valid_systems = [s]
                self.valid_prog_environs = [e]
@@ -594,7 +599,8 @@ def find_modules(substr, environ_mapping=None):
        class MyTest(rfm.RegressionTest):
            module_info = parameter(my_find_modules('GROMACS'))
 
-           def __init__(self):
+           @rfm.run_after('init')
+           def apply_module_info(self):
                s, e, m = self.module_info
                self.valid_systems = [s]
                self.valid_prog_environs = [e]
@@ -624,8 +630,8 @@ def find_modules(substr, environ_mapping=None):
         if environ_mapping is None:
             return True
 
-        for patt, environs in environ_mapping.items():
-            if re.match(patt, m) and e in environs:
+        for patt, env in environ_mapping.items():
+            if re.match(patt, m) and e == env:
                 return True
 
         return False
@@ -641,6 +647,243 @@ def find_modules(substr, environ_mapping=None):
             for m in modules:
                 if _is_valid_for_env(m, e.name):
                     yield (p.fullname, e.name, m)
+
+
+def _delta_encode(seq):
+    '''Delta-encode sequence.
+
+    The input list must be at least of size 1.
+
+    Example of delta encoding:
+
+    - Input list:
+       1 2 5 6 7 8 9 125
+
+    - Output list:
+       1 1 3 1 1 1 1 106
+       ^
+       |
+     First element
+     of the original list.
+
+    :returns: the encoded list. The first element of the encoded sequence is
+        the first element of the original sequence.
+
+    '''
+
+    assert len(seq) >= 1
+
+    ret = [seq[0]]
+    for i in range(1, len(seq)):
+        ret.append(seq[i] - seq[i-1])
+
+    return ret
+
+
+def _rl_encode(seq):
+    '''Run-length encode a delta-encoded sequence.
+
+    The input list must be at least of size 1.
+
+    Example of run-length encoding:
+
+    - Original list:
+       1 2 5 6 7 8 9 125
+
+    - Delta-encoded list:
+       1 1 3 1 1 1 1 106
+
+    - Run-length-encoded list:
+
+       (1,1,2), (5,1,5), (125,1,1)
+
+    For convenience, in each RLE unit we use the first element of the original
+    unit and not the delta value from the previous unit.
+
+    :returns: the encoded list. Each element of the list is a three-tuple
+        containing the first element of the unit, the delta value of the unit
+        and its length.
+
+    '''
+    assert len(seq) >= 1
+
+    encoded = []
+    curr_unit = [seq[0], 1, 1]     # current RLE unit
+    for delta in seq[1:]:
+        uelem, udelta, ulen = curr_unit
+        if udelta is None:
+            curr_unit[1] = delta
+            curr_unit[2] += 1
+        elif udelta != delta:
+            # New unit; we don't set the delta of the new unit here, because
+            # `delta` is just the jump for the previous unit. The length of
+            # the unit is initialized to one, because the last processed
+            # element *is* part of the new unit.
+            encoded.append(tuple(curr_unit))
+            curr_unit = [uelem + udelta*(ulen-1) + delta, None, 1]
+        else:
+            # Increase unit
+            curr_unit[2] += 1
+
+    # Fix last unit and add it to the encoded list
+    if curr_unit[1] is None:
+        # Conveniently set delta to 1
+        curr_unit[1] = 1
+
+    encoded.append(tuple(curr_unit))
+    return encoded
+
+
+def _parse_node(nodename):
+    m = re.search(r'(^\D+)(\d+)', nodename)
+    if m is None:
+        basename = nodename
+        width = 0
+        nodeid = None
+    else:
+        basename = m.group(1)
+        _id = m.group(2).lstrip('0')
+        if _id == '':
+            # This is to cover nodes with id=0, e.g., x000
+            _id = '0'
+
+        nodeid = int(_id)
+        width = len(m.group(2))
+
+    return basename, width, nodeid
+
+
+def _count_digits(n):
+    '''Count digits of a decimal number.'''
+
+    num_digits = 1
+    while n > 10:
+        n /= 10
+        num_digits += 1
+
+    return num_digits
+
+
+def _common_prefix(s1, s2):
+    pos = 0
+    for i in range(min(len(s1), len(s2))):
+        if s1[i] != s2[i]:
+            break
+
+        pos += 1
+
+    return s1[:pos], s1[pos:], s2[pos:]
+
+
+class _NodeGroup:
+    def __init__(self, name, width):
+        self.__name = name
+        self.__width = width
+        self.__nodes = []
+
+    @property
+    def name(self):
+        return self.__name
+
+    @property
+    def width(self):
+        return self.__width
+
+    @property
+    def nodes(self):
+        return self.__nodes
+
+    def add(self, nid):
+        self.__nodes.append(nid)
+
+    def __str__(self):
+        abbrev = []
+        encoded = _rl_encode(_delta_encode(self.nodes))
+        for unit in encoded:
+            start, delta, size = unit
+            if size == 1:
+                s_start = str(start).zfill(self.width)
+                abbrev.append(f'{self.name}{s_start}')
+            elif delta != 1:
+                # We simply unpack node lists with delta != 1
+                for i in range(size):
+                    s_start = str(start + i*delta).zfill(self.width)
+                    abbrev.append(f'{self.name}{s_start}')
+            else:
+                last = start + delta*(size-1)
+                digits_last = _count_digits(last)
+                pad = self.width - digits_last
+                nd_range = self.name
+                if pad > 0:
+                    for _ in range(pad):
+                        nd_range += '0'
+
+                s_first = str(start).zfill(digits_last)
+                s_last  = str(last)
+                prefix, s_first, s_last = _common_prefix(s_first, s_last)
+                nd_range += f'{prefix}[{s_first}-{s_last}]'
+                abbrev.append(nd_range)
+
+        return ','.join(abbrev)
+
+    def __hash__(self):
+        return hash(self.name) ^ hash(self.width)
+
+    def __eq__(self, other):
+        if not isinstance(other, _NodeGroup):
+            return NotImplemented
+
+        return self.name == other.name and self.width == other.width
+
+
+def nodelist_abbrev(nodes):
+    '''Create an abbreviated string representation of the node list.
+
+    For example, the node list
+
+    .. code-block:: python
+
+       ['nid001', 'nid002', 'nid010', 'nid011', 'nid012', 'nid510', 'nid511']
+
+    will be abbreviated as follows:
+
+    .. code-block:: none
+
+       nid00[1-2],nid0[10-12],nid51[0-1]
+
+
+    .. versionadded:: 3.5.3
+
+    :arg nodes: The node list to abbreviate.
+    :returns: The abbreviated list representation.
+
+    '''
+
+    # The algorithm used for abbreviating the list is a standard index
+    # compression algorithm, the run-length encoding. We first delta encode
+    # the nodes based on their id, which we retrieve from their name, and then
+    # run-length encode the list of deltas. The resulting run-length-encoded
+    # units are then used to generate the abbreviated representation using
+    # some formatting sugar. The abbreviation is handled in the `__str__()`
+    # function of the `_NodeGroup`. The purpose of the `_NodeGroup` is to
+    # group nodes in the list that belong to the same family, namely have the
+    # same prefix. We then apply the run-length encoding to each group
+    # independently.
+
+    if isinstance(nodes, str):
+        raise TypeError('nodes argument cannot be a string')
+
+    if not isinstance(nodes, collections.abc.Sequence):
+        raise TypeError('nodes argument must be a Sequence')
+
+    node_groups = {}
+    for n in sorted(nodes):
+        basename, width, nid = _parse_node(n)
+        ng = _NodeGroup(basename, width)
+        node_groups.setdefault(ng, ng)
+        node_groups[ng].add(nid)
+
+    return ','.join(str(ng) for ng in node_groups)
 
 
 class ScopedDict(UserDict):

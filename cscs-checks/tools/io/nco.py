@@ -27,15 +27,19 @@ class NCOBaseTest(rfm.RunOnlyRegressionTest):
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'CDO-NCO')
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu',
-                              'dom:mc', 'arolla:pn', 'tsa:pn', 'eiger:mc']
+                              'dom:mc', 'arolla:pn', 'tsa:pn',
+                              'eiger:mc', 'pilatus:mc']
         if self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-gnu-nompi',
                                         'PrgEnv-gnu-nompi-nocuda']
             self.modules = ['nco']
-        else:
+        elif self.current_system.name in ['eiger', 'pilatus']:
+            self.valid_prog_environs = ['cpeGNU']
             self.modules = ['NCO']
+        else:
             self.valid_prog_environs = ['builtin']
+            self.modules = ['NCO']
 
         self.maintainers = ['SO', 'CB']
         self.tags = {'production', 'mch', 'external-resources'}

@@ -11,8 +11,11 @@ import reframe.utility.sanity as sn
 class HelloMultiLangTest(rfm.RegressionTest):
     lang = parameter(['c', 'cpp'])
 
-    def __init__(self):
-        self.valid_systems = ['*']
-        self.valid_prog_environs = ['*']
+    valid_systems = ['*']
+    valid_prog_environs = ['*']
+    executable_opts = ['> hello.out']
+    sanity_patterns = sn.assert_found(r'Hello, World\!', 'hello.out')
+
+    @run_before('compile')
+    def set_sourcepath(self):
         self.sourcepath = f'hello.{self.lang}'
-        self.sanity_patterns = sn.assert_found(r'Hello, World\!', self.stdout)

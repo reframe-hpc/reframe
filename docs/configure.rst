@@ -68,7 +68,7 @@ Each system is a different object inside the ``systems`` section.
 In our example we define three systems, a Mac laptop, Piz Daint and a generic fallback system:
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 11-89
+   :lines: 11-94
 
 Each system is associated with a set of properties, which in this case are the following:
 
@@ -76,9 +76,9 @@ Each system is associated with a set of properties, which in this case are the f
   This should be an alphanumeric string (dashes ``-`` are allowed) and it will be used to refer to this system in other contexts.
 * ``descr``: A detailed description of the system.
 * ``hostnames``: This is a list of hostname patterns following the `Python Regular Expression Syntax <https://docs.python.org/3/library/re.html#regular-expression-syntax>`__, which will be used by ReFrame when it tries to automatically select a configuration entry for the current system.
-* ``modules_system``: In our example, this is only defined for Piz Daint and refers to the environment modules system that should be used for loading environment modules on this system.
-  In this case, the classic Tcl implementation of the `environment modules <https://sourceforge.net/projects/modules/files/Modules/modules-3.2.10/>`__.
-  For a complete list of the supported modules systems, see `here <config_reference.html#.systems[].modules_system>`__.
+* ``modules_system``: This refers to the modules management backend which should be used for loading environment modules on this system.
+  Multiple backends are supported, as well as the special ``nomod`` backend which implements the different modules system operations as no-ops.
+  For the complete list of the supported modules systems, see `here <config_reference.html#.systems[].modules_system>`__.
 * ``partitions``: The list of partitions that are defined for this system.
   Each partition is defined as a separate object.
   We devote the rest of this section in system partitions, since they are an essential part of ReFrame's configuration.
@@ -90,7 +90,7 @@ The ``login`` partition refers to the login nodes of the system, whereas the ``g
 Let's pick the ``gpu`` partition and look into it in more detail:
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 38-58
+   :lines: 39-63
 
 The basic properties of a partition are the following:
 
@@ -132,7 +132,7 @@ In our example, we define environments for all the basic compilers as well as a 
 In certain contexts, it is useful to see a ReFrame environment as a wrapper of a programming toolchain (MPI + compiler combination):
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 90-148
+   :lines: 95-153
 
 Each environment is associated with a name.
 This name will be used to reference this environment in different contexts, as for example in the ``environs`` property of the system partitions.
@@ -154,7 +154,7 @@ Additionally, it allows for logging performance data from performance tests into
 Let's see how logging is defined in our example configuration, which also represents a typical one for logging:
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 149-184
+   :lines: 154-189
 
 Logging is configured under the ``logging`` section of the configuration, which is a list of logger objects.
 Unless you want to configure logging differently for different systems, a single logger object is enough.
@@ -397,3 +397,43 @@ Let's see some concrete examples:
      "CC"
 
   If you explicitly query a configuration value which is not defined in the configuration file, ReFrame will print its default value.
+
+
+.. _proc-autodetection:
+
+Auto-detecting processor information
+------------------------------------
+
+.. versionadded:: 3.7.0
+
+.. |devices| replace:: :attr:`devices`
+.. _devices: config_reference.html#.systems[].partitions[].devices
+.. |processor| replace:: :attr:`processor`
+.. _processor: config_reference.html#.systems[].partitions[].processor
+.. |detect_remote_system_topology| replace:: :attr:`detect_remote_system_topology`
+.. _detect_remote_system_topology: config_reference.html#.general[].detect_remote_system_topology
+
+ReFrame is able to detect the processor topology of both local and remote partitions automatically.
+The processor and device information are made available to the tests through the corresponding attributes of the :attr:`~reframe.core.pipeline.RegressionTest.current_partition` allowing a test to modify its behavior accordingly.
+Currently, ReFrame supports auto-detection of the local or remote processor information only.
+It does not support auto-detection of devices, in which cases users should explicitly specify this information using the |devices|_ configuration option.
+The processor information auto-detection works as follows:
+
+#. If the |processor|_ configuration is option is defined, then no auto-detection is attempted.
+
+#. If the |processor|_ configuration option is not defined, ReFrame will look for a processor configuration metadata file in ``~/.reframe/topology/{system}-{part}/processor.json``.
+   If the file is found, the topology information is loaded from there.
+   These files are generated automatically by ReFrame from previous runs.
+
+#. If the corresponding metadata files are not found, the processor information will be auto-detected.
+   If the system partition is local (i.e., ``local`` scheduler + ``local`` launcher), the processor information is auto-detected unconditionally and stored in the corresponding metadata file for this partition.
+   If the partition is remote, ReFrame will not try to auto-detect it unless the :envvar:`RFM_REMOTE_DETECT` or the |detect_remote_system_topology|_ configuration option is set.
+   In that case, the steps to auto-detect the remote processor information are the following:
+
+     a. ReFrame creates a fresh clone of itself in a temporary directory created under ``.`` by default.
+        This temporary directory prefix can be changed by setting the :envvar:`RFM_REMOTE_WORKDIR` environment variable.
+     b. ReFrame changes to that directory and launches a job that will first bootstrap the fresh clone and then run that clone with ``{launcher} ./bin/reframe --detect-host-topology=topo.json``.
+        The :option:`--detect-host-topology` option causes ReFrame to detect the topology of the current host,
+        which in this case would be the remote compute nodes.
+
+   In case of errors during auto-detection, ReFrame will simply issue a warning and continue.
