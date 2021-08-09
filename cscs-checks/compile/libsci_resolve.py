@@ -11,6 +11,7 @@ import reframe.utility.sanity as sn
 class LibSciResolveBaseTest(rfm.CompileOnlyRegressionTest):
     sourcesdir = 'src/libsci_resolve'
     sourcepath = 'libsci_resolve.f90'
+    executable = 'libsciresolve.x'
     valid_systems = ['daint:login', 'daint:gpu', 'dom:login', 'dom:gpu']
     modules = ['craype-haswell']
     maintainers = ['AJ', 'LM']
@@ -18,7 +19,7 @@ class LibSciResolveBaseTest(rfm.CompileOnlyRegressionTest):
 
     @run_after('setup')
     def set_postbuild_cmds(self):
-        self.postbuild_cmds = [f'readelf -d {self.name}']
+        self.postbuild_cmds = [f'readelf -d {self.executable}']
 
 
 @rfm.simple_test
