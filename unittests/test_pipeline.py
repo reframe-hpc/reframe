@@ -1285,18 +1285,15 @@ def test_perf_vars_without_reference(perftest, sanity_file,
 
         return val
 
-    def wrapped_extract_perf(x, *args):
-        return extract_perf(*args)
-
     sanity_file.write_text('result = success\n')
     perf_file.write_text('perf1 = 1.0\n'
                          'perf3 = 3.3\n')
     perftest.perf_variables = {
-        'value1': perftest.make_performance_function(
+        'value1': sn.make_performance_function(
             extract_perf(r'perf1 = (?P<v1>\S+)', 'v1'), 'unit'
         ),
-        'value3': perftest.make_performance_function(
-            wrapped_extract_perf, 'unit', r'perf3 = (?P<v3>\S+)', 'v3'
+        'value3': sn.make_performance_function(
+            extract_perf, 'unit', r'perf3 = (?P<v3>\S+)', 'v3'
         )
     }
     _run_sanity(perftest, *dummy_gpu_exec_ctx)
@@ -1333,7 +1330,7 @@ def test_perf_vars_with_reference(perftest, sanity_file,
         }
     }
     perftest.perf_variables = {
-        'value1': perftest.make_performance_function(
+        'value1': sn.make_performance_function(
             extract_perf(r'perf1 = (?P<v1>\S+)', 'v1'), 'unit'
         ),
     }
@@ -1364,8 +1361,8 @@ def test_perf_function_raises_exception(perftest, sanity_file,
 
     sanity_file.write_text('result = success\n')
     perftest.perf_variables = {
-        'value': perftest.make_performance_function(
-            lambda x: x, 'unit', 'random_arg'
+        'value': sn.make_performance_function(
+            lambda x: x, 'unit', perftest, 'random_arg'
         )
     }
     _run_sanity(perftest, *dummy_gpu_exec_ctx)

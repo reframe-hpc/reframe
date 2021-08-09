@@ -14,7 +14,8 @@ import sys
 
 import reframe.utility as util
 import reframe.core.warnings as warn
-from reframe.core.deferrable import deferrable, _DeferredExpression
+from reframe.core.deferrable import (deferrable, _DeferredExpression,
+                                     _DeferredPerformanceExpression)
 from reframe.core.exceptions import SanityError
 
 
@@ -38,6 +39,23 @@ def _open(filename, *args, **kwargs):
     except OSError as e:
         # Re-raise it as sanity error
         raise SanityError(f'{filename}: {e.strerror}')
+
+
+def make_performance_function(func, unit, *args, **kwargs):
+    '''Transform a callable or deferred expr. into a performance function.
+
+    If ``func`` is an instance of the :class:`_DeferredExpression` class,
+    the performance function will be built by extending this deferred
+    expression into a deferred performance function. Otherwise, a new
+    deferred performance function will be created from the function
+    :func:`func`.
+    '''
+    if isinstance(func, _DeferredExpression):
+        return _DeferredPerformanceExpression.construct_from_deferred_expr(
+            func, unit
+        )
+    else:
+        return _DeferredPerformanceExpression(func, unit, *args, **kwargs)
 
 
 # Create an alias decorator

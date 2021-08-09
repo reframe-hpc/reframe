@@ -124,24 +124,6 @@ class RegressionMixin(metaclass=RegressionTestMeta):
     .. versionadded:: 3.4.2
     '''
 
-    @final
-    def make_performance_function(self, func, unit, *args, **kwargs):
-        '''Wrapper to make a performance function inline.
-
-        If ``func`` is an instance of the :class:`_DeferredExpression` class,
-        the performance function will be built by extending this deferred
-        expression into a deferred performance function. Otherwise, a new
-        deferred performance function will be created from the function
-        :func:`func`.
-        '''
-        if isinstance(func, _DeferredExpression):
-            return _DeferredPerformanceExpression.construct_from_deferred_expr(
-                func, unit
-            )
-        else:
-            return _DeferredPerformanceExpression(func, unit, self,
-                                                  *args, **kwargs)
-
     def __getattr__(self, name):
         ''' Intercept the AttributeError if the name is a required variable.'''
         if (name in self._rfm_var_space and
