@@ -302,6 +302,15 @@ def test_run_only_srcdir_set_to_none(local_exec_ctx):
     _run(test, *local_exec_ctx)
 
 
+def test_executable_is_required(local_exec_ctx):
+    class MyTest(rfm.RunOnlyRegressionTest):
+        valid_prog_environs = ['*']
+        valid_systems = ['*']
+
+    with pytest.raises(AttributeError, match="'executable' has not been set"):
+        _run(MyTest(), *local_exec_ctx)
+
+
 def test_compile_only_failure(local_exec_ctx):
     @test_util.custom_prefix('unittests/resources/checks')
     class MyTest(rfm.CompileOnlyRegressionTest):
@@ -319,7 +328,7 @@ def test_compile_only_failure(local_exec_ctx):
 
 def test_compile_only_warning(local_exec_ctx):
     @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.RunOnlyRegressionTest):
+    class MyTest(rfm.CompileOnlyRegressionTest):
         def __init__(self):
             self.build_system = 'SingleSource'
             self.build_system.srcfile = 'compiler_warning.c'
