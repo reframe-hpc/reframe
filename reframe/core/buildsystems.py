@@ -784,12 +784,12 @@ class Spack(BuildSystem):
     #: be automatically set to `rfm_spack_env`.
     #:
     #: :type: :class:`str` or :class:`None`
-    #: :default: ``None``
+    #: :default: :class:`None`
     #:
     #: .. note::
     #:     .. versionchanged:: 3.7.3
     #:        The field is no longer required and the Spack environment will be
-    #:        automatically created if not provided
+    #:        automatically created if not provided.
     environment = variable(typ.Str[r'\S+'], type(None), value=None)
 
     #: The directory where Spack will install the packages requested by this
@@ -811,7 +811,7 @@ class Spack(BuildSystem):
     #: will not be overridden.
     #:
     #: :type: :class:`str` or :class:`None`
-    #: :default: ``None``
+    #: :default: :class:`None`
     #:
     #: .. versionadded:: 3.7.3
     install_tree = variable(typ.Str[r'\S+'], type(None), value=None)
