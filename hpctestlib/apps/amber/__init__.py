@@ -30,25 +30,51 @@ class Amber(rfm.RunOnlyRegressionTest, pin_prefix=True):
     #: :default: : 'amber.out'
     output_file = variable(str, value='amber.out')
 
-    #: Reference value of energy, that is used for the comparison
-    #: with the execution ouput on the sanity step. Final value of
-    #: energy should be approximately the same
-    #:
-    #: :default: :class:`required`
-    energy_value = variable(float)
+    modules = ['Amber']
 
-    #: Maximum deviation from the reference value of energy,
-    #: that is acceptable.
-    #:
-    #: :default: :class:`required`
-    energy_tolerance = variable(float)
+    # NVE simulations
+    variant = parameter([
+        ('Cellulose_production_NVE', -443246.0, 5.0E-05),
+        ('FactorIX_production_NVE', -234188.0, 1.0E-04),
+        ('JAC_production_NVE_4fs', -44810.0, 1.0E-03),
+        ('JAC_production_NVE', -58138.0, 5.0E-04)
+    ])
 
     num_tasks_per_node = required
     executable = required
 
+    @run_after('init')
+    def unpack_variant_parameter(self):
+        (self.benchmark, self.energy_value,
+            self.energy_tolerance) = self.variant
+
+    @run_after('init')
+    def download_files(self):
+        self.prerun_cmds = [
+            # cannot use wget because it is not installed on eiger
+            f'curl -LJO https://github.com/victorusu/amber_benchmark_suite'
+            f'/raw/main/amber_16_benchmark_suite/PME/{self.benchmark}.tar.bz2',
+            f'tar xf {self.benchmark}.tar.bz2'
+        ]
+
     @run_after('setup')
     def set_keep_files(self):
         self.keep_files = [self.output_file]
+
+
+    @run_after('setup')
+    def set_perf_patterns(self):
+        self.perf_patterns = {
+            self.benchmark: sn.extractsingle(r'ns/day =\s+(?P<perf>\S+)',
+                                             self.output_file, 'perf',
+                                             float, item=1)
+        }
+
+    @run_before('performance')
+    def set_generic_perf_references(self):
+        self.reference.update({'*': {
+            self.benchmark: (0, None, None, 'ns/day')
+        }})
 
     @run_before('run')
     def set_executable_opts(self):

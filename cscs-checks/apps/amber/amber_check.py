@@ -60,17 +60,7 @@ REFERENCE_CPU_PERFORMANCE_LARGE = {
 
 
 class AmberCheck(Amber):
-    modules = ['Amber']
     valid_prog_environs = ['builtin']
-
-    # NVE simulations
-    variant = parameter([
-        ('Cellulose_production_NVE', -443246.0, 5.0E-05),
-        ('FactorIX_production_NVE', -234188.0, 1.0E-04),
-        ('JAC_production_NVE_4fs', -44810.0, 1.0E-03),
-        ('JAC_production_NVE', -58138.0, 5.0E-04)
-    ])
-
     strict_check = False
     extra_resources = {
         'switches': {
@@ -79,37 +69,9 @@ class AmberCheck(Amber):
     }
     maintainers = ['VH', 'SO']
 
-    @run_after('init')
-    def unpack_variant_parameter(self):
-        (self.benchmark, self.energy_value,
-            self.energy_tolerance) = self.variant
-
-    @run_after('init')
-    def download_files(self):
-        self.prerun_cmds = [
-            # cannot use wget because it is not installed on eiger
-            f'curl -LJO https://github.com/victorusu/amber_benchmark_suite'
-            f'/raw/main/amber_16_benchmark_suite/PME/{self.benchmark}.tar.bz2',
-            f'tar xf {self.benchmark}.tar.bz2'
-        ]
-
-    @run_after('setup')
-    def set_generic_perf_references(self):
-        self.reference.update({'*': {
-            self.benchmark: (0, None, None, 'ns/day')
-        }})
-
-    @run_after('setup')
-    def set_perf_patterns(self):
-        self.perf_patterns = {
-            self.benchmark: sn.extractsingle(r'ns/day =\s+(?P<perf>\S+)',
-                                             self.output_file, 'perf',
-                                             float, item=1)
-        }
-
 
 @rfm.simple_test
-class AmberGPUCheck(AmberCheck):
+class amber_gpu_check(AmberCheck):
     input_file = 'mdin.GPU'
     valid_systems = ['daint:gpu', 'dom:gpu']
     executable = 'pmemd.cuda.MPI'
@@ -122,7 +84,7 @@ class AmberGPUCheck(AmberCheck):
 
 
 @rfm.simple_test
-class AmberCPUCheck(AmberCheck):
+class amber_cpu_check(AmberCheck):
     tags = {'maintenance', 'production'}
     scale = parameter(['small', 'large'])
     valid_systems = ['daint:mc', 'eiger:mc']
