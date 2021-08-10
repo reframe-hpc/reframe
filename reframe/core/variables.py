@@ -62,7 +62,7 @@ class TestVar:
                 raise TypeError(errmsg)
 
             for typ in self.field.valid_types:
-                if typ is type(None) and s == 'None':
+                if issubclass(typ, type(None)) and s == 'None':
                     # Treat `None` specially
                     return None
 
