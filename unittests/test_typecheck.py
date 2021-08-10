@@ -35,6 +35,16 @@ def test_list_type():
     with pytest.raises(TypeError):
         types.List[int, float]
 
+    # Test type conversions
+    assert types.List[int]('1,2') == [1, 2]
+    assert types.List[int]('1') == [1]
+
+    with pytest.raises(ValueError):
+        types.List[int]('foo')
+
+    with pytest.raises(TypeError):
+        types.List[int](1)
+
 
 def test_set_type():
     s = {1, 2}
@@ -53,6 +63,15 @@ def test_set_type():
 
     with pytest.raises(TypeError):
         types.Set[int, float]
+
+    assert types.Set[int]('1,2') == {1, 2}
+    assert types.Set[int]('1') == {1}
+
+    with pytest.raises(ValueError):
+        types.Set[int]('foo')
+
+    with pytest.raises(TypeError):
+        types.Set[int](1)
 
 
 def test_uniform_tuple_type():
@@ -74,6 +93,15 @@ def test_uniform_tuple_type():
     with pytest.raises(TypeError):
         types.Set[3]
 
+    assert types.Tuple[int]('1,2') == (1, 2)
+    assert types.Tuple[int]('1') == (1,)
+
+    with pytest.raises(ValueError):
+        types.Tuple[int]('foo')
+
+    with pytest.raises(TypeError):
+        types.Tuple[int](1)
+
 
 def test_non_uniform_tuple_type():
     t = (1, 2.3, '4', ['a', 'b'])
@@ -85,6 +113,14 @@ def test_non_uniform_tuple_type():
     # Test invalid arguments
     with pytest.raises(TypeError):
         types.Set[int, 3]
+
+    assert types.Tuple[int, str]('1,2') == (1, '2')
+
+    with pytest.raises(TypeError):
+        types.Tuple[int, str]('1')
+
+    with pytest.raises(TypeError):
+        types.Tuple[int, str](1)
 
 
 def test_mapping_type():
@@ -106,6 +142,12 @@ def test_mapping_type():
     with pytest.raises(TypeError):
         types.Dict[int, 3]
 
+    # Test conversions
+    assert types.Dict[str, int]('a:1,b:2') == {'a': 1, 'b': 2}
+
+    with pytest.raises(TypeError):
+        types.Dict[str, int]('a:1,b')
+
 
 def test_str_type():
     s = '123'
@@ -120,6 +162,13 @@ def test_str_type():
     # Test invalid arguments
     with pytest.raises(TypeError):
         types.Str[int]
+
+    # Test conversion
+    typ = types.Str[r'\d+']
+    assert typ('10') == '10'
+
+    with pytest.raises(TypeError):
+        types.Str[r'\d+'](1)
 
 
 def test_type_names():

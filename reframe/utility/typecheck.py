@@ -94,9 +94,12 @@ import re
 
 
 class _TypeFactory(abc.ABCMeta):
-    def register_subtypes(cls):
-        for t in cls._subtypes:
-            cls.register(t)
+    def register_wrapped_type(cls):
+        cls.register(cls._type)
+
+    def _check_conv_type(cls, s):
+        if not isinstance(s, str):
+            raise TypeError('cannot convert from non-string types')
 
 
 # Metaclasses that implement the isinstance logic for the different aggregate
@@ -110,7 +113,7 @@ class _ContainerType(_TypeFactory):
         cls._elem_type = None
         cls._bases = bases
         cls._namespace = namespace
-        cls.register_subtypes()
+        cls.register_wrapped_type()
 
     def __instancecheck__(cls, inst):
         if not issubclass(type(inst), cls):
@@ -132,9 +135,15 @@ class _ContainerType(_TypeFactory):
         ret = _ContainerType('%s[%s]' % (cls.__name__, elem_type.__name__),
                              cls._bases, cls._namespace)
         ret._elem_type = elem_type
-        ret.register_subtypes()
+        ret.register_wrapped_type()
         cls.register(ret)
         return ret
+
+    def __call__(cls, s):
+        cls._check_conv_type(s)
+        container_type = cls._type
+        elem_type = cls._elem_type
+        return container_type(elem_type(e) for e in s.split(','))
 
 
 class _TupleType(_ContainerType):
@@ -174,9 +183,24 @@ class _TupleType(_ContainerType):
         )
         ret = _TupleType(cls_name, cls._bases, cls._namespace)
         ret._elem_type = elem_types
-        ret.register_subtypes()
+        ret.register_wrapped_type()
         cls.register(ret)
         return ret
+
+    def __call__(cls, s):
+        cls._check_conv_type(s)
+        container_type = cls._type
+        elem_types = cls._elem_type
+        elems = s.split(',')
+        if len(elem_types) == 1:
+            elem_t = elem_types[0]
+            return container_type(elem_t(e) for e in elems)
+        elif len(elem_types) != len(elems):
+            raise TypeError(f'cannot convert string {s!r} to {cls.__name__!r}')
+        else:
+            return container_type(
+                elem_t(e) for elem_t, e in zip(elem_types, elems)
+            )
 
 
 class _MappingType(_TypeFactory):
@@ -188,7 +212,7 @@ class _MappingType(_TypeFactory):
         cls._value_type = None
         cls._bases = bases
         cls._namespace = namespace
-        cls.register_subtypes()
+        cls.register_wrapped_type()
 
     def __instancecheck__(cls, inst):
         if not issubclass(type(inst), cls):
@@ -221,9 +245,28 @@ class _MappingType(_TypeFactory):
         ret = _MappingType(cls_name, cls._bases, cls._namespace)
         ret._key_type = key_type
         ret._value_type = value_type
-        ret.register_subtypes()
+        ret.register_wrapped_type()
         cls.register(ret)
         return ret
+
+    def __call__(cls, s):
+        cls._check_conv_type(s)
+        mappping_type = cls._type
+        key_type = cls._key_type
+        value_type = cls._value_type
+        seq = []
+        for key_datum in s.split(','):
+            try:
+                k, v = key_datum.split(':')
+            except ValueError:
+                # Re-raise as TypeError
+                raise TypeError(
+                    f'cannot convert string {s!r} to {cls.__name__!r}'
+                ) from None
+
+            seq.append((key_type(k), value_type(v)))
+
+        return mappping_type(seq)
 
 
 class _StrType(_ContainerType):
@@ -247,26 +290,30 @@ class _StrType(_ContainerType):
         ret = _StrType("%s[r'%s']" % (cls.__name__, patt),
                        cls._bases, cls._namespace)
         ret._elem_type = patt
-        ret.register_subtypes()
+        ret.register_wrapped_type()
         cls.register(ret)
         return ret
 
+    def __call__(cls, s):
+        cls._check_conv_type(s)
+        return s
+
 
 class Dict(metaclass=_MappingType):
-    _subtypes = (dict,)
+    _type = dict
 
 
 class List(metaclass=_ContainerType):
-    _subtypes = (list,)
+    _type = list
 
 
 class Set(metaclass=_ContainerType):
-    _subtypes = (set,)
+    _type = set
 
 
 class Str(metaclass=_StrType):
-    _subtypes = (str,)
+    _type = str
 
 
 class Tuple(metaclass=_TupleType):
-    _subtypes = (tuple,)
+    _type = tuple
