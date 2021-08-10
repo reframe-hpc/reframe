@@ -12,7 +12,6 @@ import copy
 
 import reframe.core.fields as fields
 import reframe.core.namespaces as namespaces
-import reframe.utility as util
 from reframe.core.exceptions import ReframeSyntaxError
 
 
@@ -58,7 +57,7 @@ class TestVar:
         self._attrs = dict()
 
         def _default_conv(s):
-            errmsg = f'cannot convert {s!r} for setting variable {self.name}'
+            errmsg = f'cannot convert {s!r} for setting variable {self.name!r}'
             if not isinstance(self.field, fields.TypedField):
                 raise TypeError(errmsg)
 

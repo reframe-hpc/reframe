@@ -761,7 +761,7 @@ def main():
                 lhs, rhs = expr.split('=', maxsplit=1)
             except ValueError:
                 printer.warning(
-                    f'invalid test variable assignment: {expr}; skipping'
+                    f'invalid test variable assignment: {expr!r}; skipping'
                 )
             else:
                 external_vals[lhs] = rhs

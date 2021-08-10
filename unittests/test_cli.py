@@ -787,3 +787,13 @@ def test_external_vars(run_reframe):
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert returncode == 0
+
+
+def test_external_vars_invalid_expr(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        more_options=['-S', 'foo']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert 'invalid test variable assignment' in stdout
+    assert returncode == 0
