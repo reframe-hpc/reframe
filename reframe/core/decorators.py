@@ -27,7 +27,71 @@ from reframe.core.pipeline import RegressionTest
 from reframe.utility.versioning import VersionValidator
 
 
-def _register_test(cls, args=None):
+class TestRegistry:
+    def __init__(self):
+        self._tests = []
+        self._skip_tests = set()
+
+    @classmethod
+    def create(cls, test, *args, **kwargs):
+        obj = cls()
+        obj.add(test, *args, **kwargs)
+        return obj
+
+    def add(self, test, *args, **kwargs):
+        self._tests.append((test, args, kwargs))
+
+    # FIXME: To drop with the required_version decorator
+    def skip(self, test):
+        self._skip_tests.add(test)
+
+    def instantiate_all(self):
+        '''Instantiate all the registered tests.'''
+        ret = []
+        for test, args, kwargs in self._tests:
+            if test in self._skip_tests:
+                continue
+
+            try:
+                ret.append(test(*args, **kwargs))
+            except SkipTestError as e:
+                getlogger().warning(
+                    f'skipping test {test.__qualname__!r}: {e}'
+                )
+            except Exception:
+                exc_info = sys.exc_info()
+                getlogger().warning(
+                    f"skipping test {test.__qualname__!r}: {what(*exc_info)} "
+                    f"(rerun with '-v' for more information)"
+                )
+                getlogger().verbose(traceback.format_exc())
+
+        return ret
+
+    def __iter__(self):
+        '''Iterate over all the registered tests.'''
+        return (test[0] for test in self._tests)
+
+    # FIXME: To drop with the required_version decorator
+    def __contains__(self, test):
+        for t in self:
+            if test is t:
+                return True
+
+        return False
+
+
+def _register_test(cls, *args, **kwargs):
+    '''Register a test and its construction arguments into the registry.'''
+
+    mod = inspect.getmodule(cls)
+    if not hasattr(mod, '_rfm_test_registry'):
+        mod._rfm_test_registry = TestRegistry.create(cls, *args, **kwargs)
+    else:
+        mod._rfm_test_registry.add(cls, *args, **kwargs)
+
+
+def _register_parameterized_test(cls, args=None):
     '''Register the test.
 
     Register the test with _rfm_use_params=True. This additional argument flags
@@ -111,7 +175,7 @@ def simple_test(cls):
     '''
     if _validate_test(cls):
         for _ in cls.param_space:
-            _register_test(cls)
+            _register_test(cls, _rfm_use_params=True)
 
     return cls
 
@@ -153,7 +217,7 @@ def parameterized_test(*inst):
                 )
 
             for args in inst:
-                _register_test(cls, args)
+                _register_parameterized_test(cls, args)
 
         return cls
 
@@ -215,7 +279,10 @@ def required_version(*versions):
                 f"skipping incompatible test '{cls.__qualname__}': not valid "
                 f"for ReFrame version {osext.reframe_version().split('-')[0]}"
             )
-            mod.__rfm_skip_tests.add(cls)
+            if cls in mod._rfm_test_registry:
+                mod._rfm_test_registry.skip(cls)
+            else:
+                mod.__rfm_skip_tests.add(cls)
 
         return cls
 
