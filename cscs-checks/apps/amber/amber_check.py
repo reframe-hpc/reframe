@@ -5,7 +5,7 @@
 
 import reframe as rfm
 import reframe.utility.sanity as sn
-from hpctestlib.apps.amber import Amber
+from hpctestlib.apps.amber import Amber_NVE
 
 
 # FIXME: Use tuples as dictionary keys as soon as
@@ -59,7 +59,21 @@ REFERENCE_CPU_PERFORMANCE_LARGE = {
 }
 
 
-class AmberCheck(Amber):
+def my_param_filter(inherited_params, match):
+    '''Filter out variants by inspecting the parameter's first element.'''
+    filtered_params = []
+    for p in inherited_params:
+        if match in p[0]:
+            filtered_params.append(p)
+    return tuple(filtered_params)
+
+
+def inherit_cpu_only(p): return my_param_filter(p, 'cpu')
+def inherit_gpu_only(p): return my_param_filter(p, 'gpu')
+
+
+class AmberCheck(Amber_NVE):
+    modules = ['Amber']
     valid_prog_environs = ['builtin']
     strict_check = False
     extra_resources = {
@@ -72,15 +86,15 @@ class AmberCheck(Amber):
 
 @rfm.simple_test
 class amber_gpu_check(AmberCheck):
-    input_file = 'mdin.GPU'
     valid_systems = ['daint:gpu', 'dom:gpu']
-    executable = 'pmemd.cuda.MPI'
     num_tasks = 1
     num_gpus_per_node = 1
     num_tasks_per_node = 1
     descr = f'Amber GPU check'
     tags = {'maintenance', 'production', 'health'}
     reference = REFERENCE_GPU_PERFORMANCE
+    executable_files = parameter(inherit_params=True,
+                        filter_params=inherit_gpu_only)
 
 
 @rfm.simple_test
@@ -88,8 +102,8 @@ class amber_cpu_check(AmberCheck):
     tags = {'maintenance', 'production'}
     scale = parameter(['small', 'large'])
     valid_systems = ['daint:mc', 'eiger:mc']
-    executable = 'pmemd.MPI'
-    input_file = 'mdin.CPU'
+    executable_files = parameter(inherit_params=True,
+                        filter_params=inherit_cpu_only)
 
     @run_after('init')
     def set_description(self):
