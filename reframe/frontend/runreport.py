@@ -213,7 +213,7 @@ def junit_xml_report(json_report):
                     # XSD schema does not like the exponential format and since
                     # we do not want to impose a fixed width, we pass it to
                     # `Decimal` to format it automatically.
-                    'time': str(decimal.Decimal(tc['time_total'])),
+                    'time': str(decimal.Decimal(tc['time_total'] or 0)),
                 }
             )
             if tc['result'] == 'failure':
