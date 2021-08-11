@@ -39,6 +39,7 @@ class TestRegistry:
     tests to be skipped. The machinery related to this should be dropped with
     the ``required_version`` decorator.
     '''
+
     def __init__(self):
         self._tests = dict()
         self._skip_tests = set()
@@ -68,20 +69,20 @@ class TestRegistry:
                 continue
 
             for args, kwargs in variants:
-               try:
-                   ret.append(test(*args, **kwargs))
-               except SkipTestError as e:
-                   getlogger().warning(
-                       f'skipping test {test.__qualname__!r}: {e}'
-                   )
-               except Exception:
-                   exc_info = sys.exc_info()
-                   getlogger().warning(
-                       f"skipping test {test.__qualname__!r}: "
-                       f"{what(*exc_info)} "
-                       f"(rerun with '-v' for more information)"
-                   )
-                   getlogger().verbose(traceback.format_exc())
+                try:
+                    ret.append(test(*args, **kwargs))
+                except SkipTestError as e:
+                    getlogger().warning(
+                        f'skipping test {test.__qualname__!r}: {e}'
+                    )
+                except Exception:
+                    exc_info = sys.exc_info()
+                    getlogger().warning(
+                        f"skipping test {test.__qualname__!r}: "
+                        f"{what(*exc_info)} "
+                        f"(rerun with '-v' for more information)"
+                    )
+                    getlogger().verbose(traceback.format_exc())
 
         return ret
 
