@@ -28,8 +28,19 @@ from reframe.utility.versioning import VersionValidator
 
 
 class TestRegistry:
+    '''Regression test registry.
+
+    The tests are stored in a dictionary where the test class is the key
+    and the constructor arguments for the different instantiations of the
+    test are stored as the dictionary value as a list of (args, kwargs)
+    tuples.
+
+    For backward compatibility reasons, the registry also contains a set of
+    tests to be skipped. The machinery related to this should be dropped with
+    the ``required_version`` decorator.
+    '''
     def __init__(self):
-        self._tests = []
+        self._tests = dict()
         self._skip_tests = set()
 
     @classmethod
@@ -39,46 +50,47 @@ class TestRegistry:
         return obj
 
     def add(self, test, *args, **kwargs):
-        self._tests.append((test, args, kwargs))
+        if test in self._tests:
+            self._tests[test].append((args, kwargs))
+        else:
+            self._tests[test] = [(args, kwargs)]
 
     # FIXME: To drop with the required_version decorator
     def skip(self, test):
+        '''Add a test to the skip set.'''
         self._skip_tests.add(test)
 
     def instantiate_all(self):
         '''Instantiate all the registered tests.'''
         ret = []
-        for test, args, kwargs in self._tests:
+        for test, variants in self._tests.items():
             if test in self._skip_tests:
                 continue
 
-            try:
-                ret.append(test(*args, **kwargs))
-            except SkipTestError as e:
-                getlogger().warning(
-                    f'skipping test {test.__qualname__!r}: {e}'
-                )
-            except Exception:
-                exc_info = sys.exc_info()
-                getlogger().warning(
-                    f"skipping test {test.__qualname__!r}: {what(*exc_info)} "
-                    f"(rerun with '-v' for more information)"
-                )
-                getlogger().verbose(traceback.format_exc())
+            for args, kwargs in variants:
+               try:
+                   ret.append(test(*args, **kwargs))
+               except SkipTestError as e:
+                   getlogger().warning(
+                       f'skipping test {test.__qualname__!r}: {e}'
+                   )
+               except Exception:
+                   exc_info = sys.exc_info()
+                   getlogger().warning(
+                       f"skipping test {test.__qualname__!r}: "
+                       f"{what(*exc_info)} "
+                       f"(rerun with '-v' for more information)"
+                   )
+                   getlogger().verbose(traceback.format_exc())
 
         return ret
 
     def __iter__(self):
-        '''Iterate over all the registered tests.'''
-        return (test[0] for test in self._tests)
+        '''Iterate over the registered test classes.'''
+        return iter(self._tests.keys())
 
-    # FIXME: To drop with the required_version decorator
     def __contains__(self, test):
-        for t in self:
-            if test is t:
-                return True
-
-        return False
+        return test in self._tests
 
 
 def _register_test(cls, *args, **kwargs):
@@ -273,6 +285,9 @@ def required_version(*versions):
         mod = inspect.getmodule(cls)
         if not hasattr(mod, '__rfm_skip_tests'):
             mod.__rfm_skip_tests = set()
+
+        if not hasattr(mod, '_rfm_test_registry'):
+            mod._rfm_test_registry = TestRegistry()
 
         if not any(c.validate(osext.reframe_version()) for c in conditions):
             getlogger().warning(
