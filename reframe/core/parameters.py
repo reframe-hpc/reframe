@@ -125,7 +125,7 @@ class ParamSpace(namespaces.Namespace):
         local_param_space = getattr(cls, self.local_namespace_name)
         for name, p in local_param_space.items():
             self.params[name] = (
-                p.filter_params(self.params.get(name, ())) + p.values
+                tuple(p.filter_params(self.params.get(name, ()))) + p.values
             )
 
         # If any previously declared parameter was defined in the class body
