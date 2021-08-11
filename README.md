@@ -1,5 +1,5 @@
 <a href="http://github.com/eth-cscs/reframe">
-  <img src="docs/_static/img/reframe_logo-full.png" width=400>
+  <img src="https://github.com/eth-cscs/reframe/blob/master/docs/_static/img/reframe_logo-full.png" width=400>
 </a>
 
 [![Build Status](https://github.com/eth-cscs/reframe/workflows/ReFrame%20CI/badge.svg)](https://github.com/eth-cscs/reframe/actions?query=workflow%3A%22ReFrame+CI%22)
