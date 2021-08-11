@@ -68,8 +68,11 @@ def my_param_filter(inherited_params, match):
     return tuple(filtered_params)
 
 
-def inherit_cpu_only(p): return my_param_filter(p, 'cpu')
-def inherit_gpu_only(p): return my_param_filter(p, 'gpu')
+def inherit_cpu_only(p):
+    return my_param_filter(p, 'cpu')
+
+def inherit_gpu_only(p):
+    return my_param_filter(p, 'gpu')
 
 
 class AmberCheck(Amber_NVE):
@@ -94,7 +97,7 @@ class amber_gpu_check(AmberCheck):
     tags = {'maintenance', 'production', 'health'}
     reference = REFERENCE_GPU_PERFORMANCE
     executable_files = parameter(inherit_params=True,
-                        filter_params=inherit_gpu_only)
+                                    filter_params=inherit_gpu_only)
 
 
 @rfm.simple_test
@@ -103,7 +106,7 @@ class amber_cpu_check(AmberCheck):
     scale = parameter(['small', 'large'])
     valid_systems = ['daint:mc', 'eiger:mc']
     executable_files = parameter(inherit_params=True,
-                        filter_params=inherit_cpu_only)
+                                    filter_params=inherit_cpu_only)
 
     @run_after('init')
     def set_description(self):
