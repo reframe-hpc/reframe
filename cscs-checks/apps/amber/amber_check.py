@@ -5,7 +5,7 @@
 
 import reframe as rfm
 import reframe.utility.sanity as sn
-from hpctestlib.apps.amber import Amber_NVE
+from hpctestlib.apps.amber.nve import Amber_NVE
 
 
 # FIXME: Use tuples as dictionary keys as soon as
@@ -97,7 +97,7 @@ class amber_gpu_check(AmberCheck):
     descr = f'Amber GPU check'
     tags = {'maintenance', 'production', 'health'}
     reference = REFERENCE_GPU_PERFORMANCE
-    executable_files = parameter(inherit_params=True,
+    platform = parameter(inherit_params=True,
                                  filter_params=inherit_gpu_only)
 
 
@@ -106,7 +106,7 @@ class amber_cpu_check(AmberCheck):
     tags = {'maintenance', 'production'}
     scale = parameter(['small', 'large'])
     valid_systems = ['daint:mc', 'eiger:mc']
-    executable_files = parameter(inherit_params=True,
+    platform = parameter(inherit_params=True,
                                  filter_params=inherit_cpu_only)
 
     @run_after('init')

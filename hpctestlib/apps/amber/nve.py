@@ -5,11 +5,11 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
 
-__all__ = ["Amber_NVE"]
+#__all__ = ["Amber_NVE"]
 
 
 class Amber_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
-    '''Base class for the Amber Test.
+    '''Base class for the Amber NVE Test.
 
     Amber is a suite of biomolecular simulation programs. It
     began in the late 1970's, and is maintained by an active
@@ -30,9 +30,10 @@ class Amber_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
     #: :default: : 'amber.out'
     output_file = variable(str, value='amber.out')
 
-    #: Amber input file.
+    #: Amber input file. This file is set by the post-init hook
+    #: :func:`unpack_platform_parameter`.
     #:
-    #: :default: : 'amber.out'
+    #: :default: :class:`required`
     input_file = variable(str)
 
     #: Reference value of energy, that is used for the comparison
@@ -48,12 +49,15 @@ class Amber_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
     #: :default: :class:`required`
     energy_tolerance = variable(float)
 
-    executable_files = parameter([
+    # Parameter pack containing the platform ID, input file and
+    # executable.
+    platform = parameter([
         ('cpu', 'mdin.CPU', 'pmemd.MPI'),
         ('gpu', 'mdin.GPU', 'pmemd.cuda.MPI')
     ])
 
-    # NVE simulations
+    # NVE simulation parameter pack with the benchmark name,
+    # energy reference and energy tolerance for each case.
     variant = parameter([
         ('Cellulose_production_NVE', -443246.0, 5.0E-05),
         ('FactorIX_production_NVE', -234188.0, 1.0E-04),
@@ -66,10 +70,16 @@ class Amber_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
 
     @run_after('init')
     def unpack_platform_parameter(self):
-        self.platform, self.input_file, self.executable = self.executable_files
+        '''Set the executable and input file.'''
+
+        self.platform_name, self.input_file, self.executable = self.platform
 
     @run_after('init')
     def unpack_variant_parameter(self):
+        '''Set the value of energy and energy tolerance for a
+        specific program.
+        '''
+
         (self.benchmark, self.energy_value,
             self.energy_tolerance) = self.variant
 
@@ -87,12 +97,16 @@ class Amber_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
 
     @run_before('performance')
     def set_generic_perf_references(self):
+        '''Define perfomance pattern for the general case'''
+
         self.reference.update({'*': {
             self.benchmark: (0, None, None, 'ns/day')
         }})
 
     @run_before('run')
     def download_files(self):
+        '''Download program files, which used in test'''
+
         self.prerun_cmds = [
             # cannot use wget because it is not installed on eiger
             f'curl -LJO https://github.com/victorusu/amber_benchmark_suite'
@@ -105,6 +119,7 @@ class Amber_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
         '''Set the executable options for the Amber. Determine the
         using of input and ouput files.
         '''
+
         self.executable_opts = ['-O',
                                 '-i', self.input_file,
                                 '-o', self.output_file]
