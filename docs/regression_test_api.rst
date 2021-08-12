@@ -89,7 +89,7 @@ Built-in types
      This only has an effect if used with ``inherit_params=True``.
 
 
-.. py:function:: RegressionMixin.variable(*types, value=None)
+.. py:function:: RegressionMixin.variable(*types, value=None, field=None, **kwargs)
 
   Inserts a new regression test variable.
   Declaring a test variable through the :func:`variable` built-in allows for a more robust test implementation than if the variables were just defined as regular test attributes (e.g. ``self.a = 10``).
@@ -178,6 +178,7 @@ Built-in types
   Similarly to a variable with a value already assigned to it, the value of a required variable may be set either directly in the class body, on the :func:`__init__` method, or in any other hook before it is referenced.
   Otherwise an error will be raised indicating that a required variable has not been set.
   Conversely, a variable with a default value already assigned to it can be made required by assigning it the ``required`` keyword.
+  However, this ``required`` keyword is only available in the class body.
 
   .. code:: python
 
@@ -187,35 +188,49 @@ Built-in types
 
   Running the above test will cause the :func:`set_exec_and_sanity` hook from :class:`EchoBaseTest` to throw an error indicating that the variable ``what`` has not been set.
 
-  :param types: the supported types for the variable.
+  :param `*types`: the supported types for the variable.
   :param value: the default value assigned to the variable. If no value is provided, the variable is set as ``required``.
   :param field: the field validator to be used for this variable.
-      If no field argument is provided, it defaults to
-      :class:`reframe.core.fields.TypedField`.
-      Note that the field validator provided by this argument must derive from
-      :class:`reframe.core.fields.Field`.
+      If no field argument is provided, it defaults to :attr:`reframe.core.fields.TypedField`.
+      The provided field validator by this argument must derive from :attr:`reframe.core.fields.Field`.
+  :param `**kwargs`: *kwargs* to be forwarded to the constructor of the field validator.
 
 
 Pipeline Hooks
 --------------
 
-Pipeline hooks is a type of built-in functions that provide an easy way to perform operations while the test traverses the execution pipeline.
-You can attach arbitrary functions to run before or after any pipeline stage, which are called *pipeline hooks*.
-Multiple hooks can be attached before or after the same pipeline stage, in which case the order of execution will match the order in which the functions are defined in the class body of the test.
-A single hook can also be applied to multiple stages and it will be executed multiple times.
-All pipeline hooks of a test class are inherited by its subclasses.
-Subclasses may override a pipeline hook of their parents by redefining the hook function.
-The overriding function will not be a pipeline hook unless explicitly decorated, and it may be reattached to any pipeline stage.
-There are seven pipeline stages where you can attach test methods: ``init``, ``setup``, ``compile``, ``run``, ``sanity``, ``performance`` and ``cleanup``.
-The ``init`` stage is not a real pipeline stage, but it refers to the test initialization.
+ReFrame provides built-in functions that allow attaching arbitrary functions to run before and/or after a given stage of the execution pipeline.
+Once attached to a given stage, these functions are referred to as *pipeline hooks*.
+A hook may be attached to multiple pipeline stages and multiple hooks may also be attached to the same pipeline stage.
+Pipeline hooks attached to multiple stages will be executed on each pipeline stage the hook was attached to.
+Pipeline stages with multiple hooks attached will execute these hooks in the order in which they were attached to the given pipeline stage.
+A derived class will inherit all the pipeline hooks defined in its bases, except for those whose hook function is overridden by the derived class.
+A function that overrides a pipeline hook from any of the base classes will not be a pipeline hook unless the overriding function is explicitly reattached to any pipeline stage.
+In the event of a name clash arising from multiple inheritance, the inherited pipeline hook will be chosen following Python's `MRO <https://docs.python.org/3/library/stdtypes.html#class.__mro__>`_.
 
-Hooks attached to any stage will run exactly before or after this stage executes.
+A function may be attached to any of the following stages (listed in order of execution): ``init``, ``setup``, ``compile``, ``run``, ``sanity``, ``performance`` and ``cleanup``.
+The ``init`` stage refers to the test's instantiation and it runs before entering the execution pipeline.
+Therefore, a test function cannot be attached to run before the ``init`` stage.
+Hooks attached to any other stage will run exactly before or after this stage executes.
 So although a "post-init" and a "pre-setup" hook will both run *after* a test has been initialized and *before* the test goes through the first pipeline stage, they will execute in different times:
 the post-init hook will execute *right after* the test is initialized.
 The framework will then continue with other activities and it will execute the pre-setup hook *just before* it schedules the test for executing its setup stage.
 
 .. note::
-   Pipeline hooks were introduced in 2.20 but since 3.6.2 can be declared using the regression test built-in function described in this section.
+   Pipeline hooks do not execute in the test's stage directory.
+   However, a test's :attr:`~reframe.core.pipeline.RegressionTest.stagedir` can be accessed by explicitly changing the working directory from the hook function itself (see the :class:`~reframe.utility.osext.change_dir` utility for further details):
+
+   .. code:: python
+
+     import reframe.utility.osext as osext
+
+     class MyTest(rfm.RegressionTest):
+         ...
+         @run_after('run')
+         def my_post_run_hook(self):
+             # Access the stage directory
+             with osext.change_dir(self.stagedir):
+                 ...
 
 .. warning::
    .. versionchanged:: 3.7.0
@@ -224,21 +239,20 @@ The framework will then continue with other activities and it will execute the p
 
 .. py:decorator:: RegressionMixin.run_before(stage)
 
-  Decorator for attaching a test method to a pipeline stage.
+  Decorator for attaching a function to a given pipeline stage.
 
-  The method will run just before the specified pipeline stage and it should not accept any arguments except ``self``.
+  The function will run just before the specified pipeline stage and it cannot accept any arguments except ``self``.
   This decorator can be stacked, in which case the function will be attached to multiple pipeline stages.
-  The ``stage`` argument can be any of ``'setup'``, ``'compile'``, ``'run'``, ``'sanity'``, ``'performance'`` or ``'cleanup'``.
+  See above for the valid ``stage`` argument values.
 
 
 .. py:decorator:: RegressionMixin.run_after(stage)
 
-  Decorator for attaching a test method to a pipeline stage.
+  Decorator for attaching a function to a given pipeline stage.
 
-  This is analogous to :func:`~RegressionTest.run_before`, except that ``'init'`` can also be used as the ``stage`` argument.
-  In this case, the hook will execute right after the test is initialized (i.e. after the :func:`__init__` method is called), before entering the test's pipeline.
+  This is analogous to :func:`~RegressionMixin.run_before`, except that the hook will execute right after the stage it was attached to.
+  This decorator also supports ``'init'`` as a valid ``stage`` argument, where in this case, the hook will execute right after the test is initialized (i.e. after the :func:`__init__` method is called) and before entering the test's pipeline.
   In essence, a post-init hook is equivalent to defining additional :func:`__init__` functions in the test.
-  All the other properties of pipeline hooks apply equally here.
   The following code
 
   .. code-block:: python
@@ -257,7 +271,7 @@ The framework will then continue with other activities and it will execute the p
          self.x = 1
 
   .. versionchanged:: 3.5.2
-     Add the ability to define post-init hooks in tests.
+     Add support for post-init hooks.
 
 
 Built-in functions
@@ -267,7 +281,7 @@ Built-in functions
 
   Decorate a member function as the sanity function of the test.
 
-  This decorator will convert the decorated method into a :func:`~RegressionMixin.deferrable` and mark it to be executed during the test's sanity stage.
+  This decorator will convert the given function into a :func:`~RegressionMixin.deferrable` and mark it to be executed during the test's sanity stage.
   When this decorator is used, manually assigning a value to :attr:`~RegressionTest.sanity_patterns` in the test is not allowed.
 
   Decorated functions may be overridden by derived classes, and derived classes may also decorate a different method as the test's sanity function.
