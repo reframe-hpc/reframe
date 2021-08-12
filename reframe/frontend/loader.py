@@ -144,12 +144,6 @@ class RegressionCheckLoader:
 
         candidates = registry.instantiate_all() if registry else []
         legacy_candidates = legacy_registry() if legacy_registry else []
-        for c in (candidates, legacy_candidates):
-            if not isinstance(c, collections.abc.Sequence):
-                getlogger().warning(
-                    f'Tests not registered correctly in {module.__name__!r}'
-                )
-                return []
 
         # Merge registries
         candidates += legacy_candidates

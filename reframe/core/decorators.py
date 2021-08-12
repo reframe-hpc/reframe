@@ -51,10 +51,8 @@ class TestRegistry:
         return obj
 
     def add(self, test, *args, **kwargs):
-        if test in self._tests:
-            self._tests[test].append((args, kwargs))
-        else:
-            self._tests[test] = [(args, kwargs)]
+        self._tests.setdefault(test, [])
+        self._tests[test].append((args, kwargs))
 
     # FIXME: To drop with the required_version decorator
     def skip(self, test):
