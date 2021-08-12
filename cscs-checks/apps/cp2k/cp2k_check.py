@@ -5,7 +5,7 @@
 
 import reframe as rfm
 import reframe.utility.sanity as sn
-from hpctestlib.apps.cp2k import Cp2k
+from hpctestlib.apps.cp2k.nve import Cp2k_NVE
 
 
 REFERENCE_CPU_PERFORMANCE_SMALL = {
@@ -61,10 +61,9 @@ REFERENCE_GPU_PERFORMANCE_LARGE = {
 }
 
 
-class Cp2kCheck(Cp2k):
+@rfm.simple_test
+class cp2k_check(Cp2k_NVE):
     modules = ['CP2K']
-    executable = 'cp2k.psmp'
-    executable_opts = ['H2O-256.inp']
     maintainers = ['LM']
     tags = {'scs'}
     strict_check = False
@@ -74,9 +73,7 @@ class Cp2kCheck(Cp2k):
         }
     }
     scale = parameter(['small', 'large'])
-    benchmark = parameter(['prod', 'maint'])
-    energy_value = -4404.2323
-    energy_tolerance = 1E-04
+    mode = parameter(['prod', 'maint'])
 
     @run_after('init')
     def env_define(self):
@@ -85,116 +82,98 @@ class Cp2kCheck(Cp2k):
         else:
             self.valid_prog_environs = ['builtin']
 
-    @run_after('setup')
-    def set_generic_perf_references(self):
-        self.reference.update({'*': {
-            self.benchmark: (0, None, None, 'timesteps/s')
-        }})
-
-    @run_after('setup')
-    def set_perf_patterns(self):
-        self.perf_patterns = {
-            self.benchmark: sn.extractsingle(
-                r'^ CP2K(\s+[\d\.]+){4}\s+(?P<perf>\S+)',
-                self.stdout, 'perf', float)
-        }
-
     @run_after('init')
     def set_tags(self):
-        self.tags |= {'maintenance' if self.benchmark == 'maint'
+        self.tags |= {'maintenance' if self.mode == 'maint'
                       else 'production'}
 
-
-@rfm.simple_test
-class Cp2kCpuCheck(Cp2kCheck):
-    valid_systems = ['daint:mc', 'eiger:mc', 'pilatus:mc']
+    @run_after('init')
+    def set_valid_systems(self):
+        if self.platform_name == 'cpu':
+            self.valid_systems = ['daint:mc', 'eiger:mc', 'pilatus:mc']
+        else:
+            self.valid_systems = ['daint:gpu']
 
     @run_after('init')
     def set_description(self):
-        self.descr = (f'CP2K CPU check (version: {self.scale}, '
-                      f'{self.benchmark})')
-
-    @run_after('init')
-    def set_reference(self):
-        if self.scale == 'small':
-            self.reference = REFERENCE_CPU_PERFORMANCE_SMALL
+        if self.platform_name == 'cpu':
+            self.descr = (f'CP2K CPU check (version: {self.scale}, '
+                          f'{self.mode})')
         else:
-            self.reference = REFERENCE_CPU_PERFORMANCE_LARGE
+            self.descr = (f'CP2K GPU check (version: {self.scale}, '
+                          f'{self.mode})')
 
     @run_after('init')
     def set_num_tasks(self):
-        if self.scale == 'small':
-            self.valid_systems += ['dom:mc']
-            if self.current_system.name in ['daint', 'dom']:
-                self.num_tasks = 216
-                self.num_tasks_per_node = 36
-            elif self.current_system.name in ['eiger', 'pilatus']:
-                self.num_tasks = 96
-                self.num_tasks_per_node = 16
-                self.num_cpus_per_task = 16
-                self.num_tasks_per_core = 1
-                self.use_multithreading = False
-                self.variables = {
-                    'MPICH_OFI_STARTUP_CONNECT': '1',
-                    'OMP_NUM_THREADS': '8',
-                    'OMP_PLACES': 'cores',
-                    'OMP_PROC_BIND': 'close'
-                }
+        if self.platform_name == 'cpu':
+            if self.scale == 'small':
+                self.valid_systems += ['dom:mc']
+                if self.current_system.name in ['daint', 'dom']:
+                    self.num_tasks = 216
+                    self.num_tasks_per_node = 36
+                elif self.current_system.name in ['eiger', 'pilatus']:
+                    self.num_tasks = 96
+                    self.num_tasks_per_node = 16
+                    self.num_cpus_per_task = 16
+                    self.num_tasks_per_core = 1
+                    self.use_multithreading = False
+                    self.variables = {
+                        'MPICH_OFI_STARTUP_CONNECT': '1',
+                        'OMP_NUM_THREADS': '8',
+                        'OMP_PLACES': 'cores',
+                        'OMP_PROC_BIND': 'close'
+                    }
 
+            else:
+                if self.current_system.name in ['daint', 'dom']:
+                    self.num_tasks = 576
+                    self.num_tasks_per_node = 36
+                elif self.current_system.name in ['eiger', 'pilatus']:
+                    self.num_tasks = 256
+                    self.num_tasks_per_node = 16
+                    self.num_cpus_per_task = 16
+                    self.num_tasks_per_core = 1
+                    self.use_multithreading = False
+                    self.variables = {
+                        'MPICH_OFI_STARTUP_CONNECT': '1',
+                        'OMP_NUM_THREADS': '8',
+                        'OMP_PLACES': 'cores',
+                        'OMP_PROC_BIND': 'close'
+                    }
         else:
-            if self.current_system.name in ['daint', 'dom']:
-                self.num_tasks = 576
-                self.num_tasks_per_node = 36
-            elif self.current_system.name in ['eiger', 'pilatus']:
-                self.num_tasks = 256
-                self.num_tasks_per_node = 16
-                self.num_cpus_per_task = 16
-                self.num_tasks_per_core = 1
-                self.use_multithreading = False
-                self.variables = {
-                    'MPICH_OFI_STARTUP_CONNECT': '1',
-                    'OMP_NUM_THREADS': '8',
-                    'OMP_PLACES': 'cores',
-                    'OMP_PROC_BIND': 'close'
-                }
+            self.num_gpus_per_node = 1
+            self.num_tasks_per_node = 6
+            self.num_cpus_per_task = 2
+            if self.scale == 'small':
+                self.valid_systems += ['dom:gpu']
+                self.num_tasks = 36
+            else:
+                self.num_tasks = 96
+
+            self.variables = {
+                'CRAY_CUDA_MPS': '1',
+                'OMP_NUM_THREADS': str(self.num_cpus_per_task)
+            }
+
+    @run_after('setup')
+    def set_reference(self):
+        if self.platform_name == 'cpu':
+            if self.scale == 'small':
+                self.reference = REFERENCE_CPU_PERFORMANCE_SMALL
+            else:
+                self.reference = REFERENCE_CPU_PERFORMANCE_LARGE
+        else:
+            if self.scale == 'small':
+                self.reference = REFERENCE_GPU_PERFORMANCE_SMALL
+            else:
+                self.reference = REFERENCE_GPU_PERFORMANCE_LARGE
 
     @run_before('run')
     def set_task_distribution(self):
-        self.job.options = ['--distribution=block:block']
+        if self.platform_name == 'cpu':
+            self.job.options = ['--distribution=block:block']
 
     @run_before('run')
     def set_cpu_binding(self):
-        self.job.launcher.options = ['--cpu-bind=cores']
-
-
-@rfm.simple_test
-class Cp2kGpuCheck(Cp2kCheck):
-    valid_systems = ['daint:gpu']
-    num_gpus_per_node = 1
-    num_tasks_per_node = 6
-    num_cpus_per_task = 2
-
-    @run_after('init')
-    def set_description(self):
-        self.descr = (f'CP2K GPU check (version: {self.scale}, '
-                      f'{self.benchmark})')
-
-    @run_after('init')
-    def set_reference(self):
-        if self.scale == 'small':
-            self.reference = REFERENCE_GPU_PERFORMANCE_SMALL
-        else:
-            self.reference = REFERENCE_GPU_PERFORMANCE_LARGE
-
-    @run_after('init')
-    def set_num_tasks(self):
-        if self.scale == 'small':
-            self.valid_systems += ['dom:gpu']
-            self.num_tasks = 36
-        else:
-            self.num_tasks = 96
-
-        self.variables = {
-            'CRAY_CUDA_MPS': '1',
-            'OMP_NUM_THREADS': str(self.num_cpus_per_task)
-        }
+        if self.platform_name == 'cpu':
+            self.job.launcher.options = ['--cpu-bind=cores']

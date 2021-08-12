@@ -7,11 +7,9 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
 
-__all__ = ["Cpmd"]
 
-
-class Cpmd(rfm.RunOnlyRegressionTest):
-    '''Base class for the CPMD Test.
+class Cpmd_NVE(rfm.RunOnlyRegressionTest):
+    '''Base class for the CPMD NVE Test.
 
     The CPMD code is a plane wave/pseudopotential implementation
     of Density Functional Theory, particularly designed
@@ -31,13 +29,14 @@ class Cpmd(rfm.RunOnlyRegressionTest):
     CPMD is already installed on the device under test.
     '''
 
-    #: CPMD input file.
+    #: CPMD input file. This file is set by the post-init hook
+    #: :func:`set_executable_opts`.
     #:
     #: :default: :class:`required`
     input_file = variable(str)
 
-    #: Name of file, where the result of program execution will
-    #: be saved.
+    #: CPMD output file. This file is set by the post-init hook
+    #: :func:`set_executable_opts`.
     #:
     #: :default: : 'stdout.txt'
     output_file = variable(str, value='stdout.txt')
@@ -45,18 +44,35 @@ class Cpmd(rfm.RunOnlyRegressionTest):
     #: Reference value of energy, that is used for the comparison
     #: with the execution ouput on the sanity step. Final value of
     #: energy should be approximately the same
-    #:
-    #: :default: :class:`required`
-    energy_value = variable(float)
+    energy_value = 25.81
 
     #: Maximum deviation from the reference value of energy,
     #: that is acceptable.
     #:
     #: :default: :class:`required`
-    energy_tolerance = variable(float)
+    energy_tolerance = 0.26
 
     num_tasks_per_node = required
     executable = required
+
+    executable = 'cpmd.x'
+    input_file = 'ana_c4h6.in'
+    readonly_files = ['ana_c4h6.in', 'C_MT_BLYP', 'H_MT_BLYP']
+
+    @run_after('setup')
+    def set_generic_perf_references(self):
+        self.reference.update({'*': {
+            self.mode: (0, None, None, 's')
+        }})
+
+    @run_after('setup')
+    def set_perf_patterns(self):
+        self.perf_patterns = {
+            self.mode: sn.extractsingle(
+                r'^ cpmd(\s+[\d\.]+){3}\s+(?P<perf>\S+)',
+                'stdout.txt', 'perf', float)
+        }
+
 
     @run_after('setup')
     def set_executable_opts(self):

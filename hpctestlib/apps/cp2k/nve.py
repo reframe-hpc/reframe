@@ -7,11 +7,9 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
 
-__all__ = ["Cp2k"]
 
-
-class Cp2k(rfm.RunOnlyRegressionTest):
-    '''Base class for the CP2K Test.
+class Cp2k_NVE(rfm.RunOnlyRegressionTest):
+    '''Base class for the CP2K NVE Test.
 
     CP2K is a quantum chemistry and solid state physics software
     package that can perform atomistic simulations of solid state,
@@ -29,21 +27,37 @@ class Cp2k(rfm.RunOnlyRegressionTest):
     is that CP2K is already installed on the device under test.
     '''
 
+    # Parameter pack containing the platform ID
+    platform_name = parameter(['cpu', 'gpu'])
+
     #: Reference value of energy, that is used for the comparison
     #: with the execution ouput on the sanity step. Final value of
     #: energy should be approximately the same
-    #:
-    #: :default: :class:`required`
-    energy_value = variable(float)
+    energy_value = -4404.2323
 
     #: Maximum deviation from the reference value of energy,
     #: that is acceptable.
-    #:
-    #: :default: :class:`required`
-    energy_tolerance = variable(float)
+    energy_tolerance = 1E-04
 
     # Required variable
     num_tasks_per_node = required
+
+    executable = 'cp2k.psmp'
+    executable_opts = ['H2O-256.inp']
+
+    @run_after('setup')
+    def set_generic_perf_references(self):
+        self.reference.update({'*': {
+            self.mode: (0, None, None, 'timesteps/s')
+        }})
+
+    @run_after('setup')
+    def set_perf_patterns(self):
+        self.perf_patterns = {
+            self.mode: sn.extractsingle(
+                r'^ CP2K(\s+[\d\.]+){4}\s+(?P<perf>\S+)',
+                self.stdout, 'perf', float)
+        }
 
     @sanity_function
     def set_sanity_patterns(self):

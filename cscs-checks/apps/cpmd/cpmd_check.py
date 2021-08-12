@@ -5,7 +5,7 @@
 
 import reframe as rfm
 import reframe.utility.sanity as sn
-from hpctestlib.apps.cpmd import Cpmd
+from hpctestlib.apps.cpmd.nve import Cpmd_NVE
 
 REFERENCE_PERFORMANCE_SMALL = {
     'dom:mc': {
@@ -24,7 +24,7 @@ REFERENCE_PERFORMANCE_LARGE = {
 
 
 @rfm.simple_test
-class CPMDCheck(Cpmd):
+class cpmd_check(Cpmd_NVE):
     scale = parameter(['small', 'large'])
     maintainers = ['AJ', 'LM']
     tags = {'production'}
@@ -33,10 +33,7 @@ class CPMDCheck(Cpmd):
     num_tasks_per_node = 1
     valid_prog_environs = ['builtin']
     modules = ['CPMD']
-    executable = 'cpmd.x'
-    input_file = 'ana_c4h6.in'
-    readonly_files = ['ana_c4h6.in', 'C_MT_BLYP', 'H_MT_BLYP']
-    benchmark = parameter(['prod'])
+    mode = parameter(['prod'])
     use_multithreading = True
     strict_check = False
     extra_resources = {
@@ -44,15 +41,6 @@ class CPMDCheck(Cpmd):
             'num_switches': 1
         }
     }
-    energy_value = 25.81
-    energy_tolerance = 0.26
-
-    @run_after('init')
-    def set_reference(self):
-        if self.scale == 'small':
-            self.reference = REFERENCE_PERFORMANCE_SMALL
-        else:
-            self.reference = REFERENCE_PERFORMANCE_LARGE
 
     @run_after('init')
     def set_num_tasks(self):
@@ -65,15 +53,8 @@ class CPMDCheck(Cpmd):
         #  self.variables = { 'OMP_NUM_THREADS' : '8' }
 
     @run_after('setup')
-    def set_generic_perf_references(self):
-        self.reference.update({'*': {
-            self.benchmark: (0, None, None, 's')
-        }})
-
-    @run_after('setup')
-    def set_perf_patterns(self):
-        self.perf_patterns = {
-            self.benchmark: sn.extractsingle(
-                r'^ cpmd(\s+[\d\.]+){3}\s+(?P<perf>\S+)',
-                'stdout.txt', 'perf', float)
-        }
+    def set_reference(self):
+        if self.scale == 'small':
+            self.reference = REFERENCE_PERFORMANCE_SMALL
+        else:
+            self.reference = REFERENCE_PERFORMANCE_LARGE
