@@ -1,4 +1,4 @@
-[![ReFrame Logo](https://github.com/eth-cscs/reframe/blob/master/docs/_static/img/reframe_logo-width400p.png")](https://github.com/eth-cscs/reframe)
+[![ReFrame Logo](https://github.com/eth-cscs/reframe/blob/master/docs/_static/img/reframe_logo-width400p.png)](https://github.com/eth-cscs/reframe)<br/>
 [![Build Status](https://github.com/eth-cscs/reframe/workflows/ReFrame%20CI/badge.svg)](https://github.com/eth-cscs/reframe/actions?query=workflow%3A%22ReFrame+CI%22)
 [![Documentation Status](https://readthedocs.org/projects/reframe-hpc/badge/?version=latest)](https://reframe-hpc.readthedocs.io/en/latest/?badge=latest)
 [![codecov.io](https://codecov.io/gh/eth-cscs/reframe/branch/master/graph/badge.svg)](https://codecov.io/github/eth-cscs/reframe)<br/>
