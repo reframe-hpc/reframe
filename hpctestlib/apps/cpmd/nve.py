@@ -73,7 +73,6 @@ class Cpmd_NVE(rfm.RunOnlyRegressionTest):
                 'stdout.txt', 'perf', float)
         }
 
-
     @run_after('setup')
     def set_executable_opts(self):
         '''Set the executable options for the CPMD. Determine the
