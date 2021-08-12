@@ -93,19 +93,27 @@ import abc
 import re
 
 
-class _TypeFactory(abc.ABCMeta):
-    def register_wrapped_type(cls):
+class Type(abc.ABCMeta):
+    def __call__(cls, *args, **kwargs):
+        if (len(args) == 1 and
+            not kwargs and isinstance(args[0], str) and
+            hasattr(cls, '__rfm_cast__')):
+            return cls.__rfm_cast__(*args)
+        else:
+            obj = cls.__new__(cls, *args, **kwargs)
+            obj.__init__(*args, **kwargs)
+            return obj
+
+
+# Metaclasses that implement the isinstance logic for the different builtin
+# container types
+
+class _ContainerType(Type):
+    def register_container_type(cls):
         cls.register(cls._type)
 
-    def _check_conv_type(cls, s):
-        if not isinstance(s, str):
-            raise TypeError('cannot convert from non-string types')
 
-
-# Metaclasses that implement the isinstance logic for the different aggregate
-# types
-
-class _ContainerType(_TypeFactory):
+class _SequenceType(_ContainerType):
     '''A metaclass for containers with uniformly typed elements.'''
 
     def __init__(cls, name, bases, namespace):
@@ -113,7 +121,7 @@ class _ContainerType(_TypeFactory):
         cls._elem_type = None
         cls._bases = bases
         cls._namespace = namespace
-        cls.register_wrapped_type()
+        cls.register_container_type()
 
     def __instancecheck__(cls, inst):
         if not issubclass(type(inst), cls):
@@ -132,21 +140,20 @@ class _ContainerType(_TypeFactory):
             raise TypeError('invalid type specification for container type: '
                             'expected ContainerType[elem_type]')
 
-        ret = _ContainerType('%s[%s]' % (cls.__name__, elem_type.__name__),
-                             cls._bases, cls._namespace)
+        ret = _SequenceType('%s[%s]' % (cls.__name__, elem_type.__name__),
+                            cls._bases, cls._namespace)
         ret._elem_type = elem_type
-        ret.register_wrapped_type()
+        ret.register_container_type()
         cls.register(ret)
         return ret
 
-    def __call__(cls, s):
-        cls._check_conv_type(s)
+    def __rfm_cast__(cls, s):
         container_type = cls._type
         elem_type = cls._elem_type
         return container_type(elem_type(e) for e in s.split(','))
 
 
-class _TupleType(_ContainerType):
+class _TupleType(_SequenceType):
     '''A metaclass for tuples.
 
     Tuples may contain uniformly-typed elements or non-uniformly typed ones.
@@ -183,12 +190,11 @@ class _TupleType(_ContainerType):
         )
         ret = _TupleType(cls_name, cls._bases, cls._namespace)
         ret._elem_type = elem_types
-        ret.register_wrapped_type()
+        ret.register_container_type()
         cls.register(ret)
         return ret
 
-    def __call__(cls, s):
-        cls._check_conv_type(s)
+    def __rfm_cast__(cls, s):
         container_type = cls._type
         elem_types = cls._elem_type
         elems = s.split(',')
@@ -203,7 +209,7 @@ class _TupleType(_ContainerType):
             )
 
 
-class _MappingType(_TypeFactory):
+class _MappingType(_ContainerType):
     '''A metaclass for type checking mapping types.'''
 
     def __init__(cls, name, bases, namespace):
@@ -212,7 +218,7 @@ class _MappingType(_TypeFactory):
         cls._value_type = None
         cls._bases = bases
         cls._namespace = namespace
-        cls.register_wrapped_type()
+        cls.register_container_type()
 
     def __instancecheck__(cls, inst):
         if not issubclass(type(inst), cls):
@@ -245,12 +251,11 @@ class _MappingType(_TypeFactory):
         ret = _MappingType(cls_name, cls._bases, cls._namespace)
         ret._key_type = key_type
         ret._value_type = value_type
-        ret.register_wrapped_type()
+        ret.register_container_type()
         cls.register(ret)
         return ret
 
-    def __call__(cls, s):
-        cls._check_conv_type(s)
+    def __rfm_cast__(cls, s):
         mappping_type = cls._type
         key_type = cls._key_type
         value_type = cls._value_type
@@ -269,7 +274,7 @@ class _MappingType(_TypeFactory):
         return mappping_type(seq)
 
 
-class _StrType(_ContainerType):
+class _StrType(_SequenceType):
     '''A metaclass for type checking string types.'''
 
     def __instancecheck__(cls, inst):
@@ -290,12 +295,11 @@ class _StrType(_ContainerType):
         ret = _StrType("%s[r'%s']" % (cls.__name__, patt),
                        cls._bases, cls._namespace)
         ret._elem_type = patt
-        ret.register_wrapped_type()
+        ret.register_container_type()
         cls.register(ret)
         return ret
 
-    def __call__(cls, s):
-        cls._check_conv_type(s)
+    def __rfm_cast__(cls, s):
         return s
 
 
@@ -303,11 +307,11 @@ class Dict(metaclass=_MappingType):
     _type = dict
 
 
-class List(metaclass=_ContainerType):
+class List(metaclass=_SequenceType):
     _type = list
 
 
-class Set(metaclass=_ContainerType):
+class Set(metaclass=_SequenceType):
     _type = set
 
 

@@ -197,3 +197,34 @@ def test_custom_types():
     assert isinstance(d, types.Dict[int, C])
     assert isinstance(cd, types.Dict[C, int])
     assert isinstance(t, types.Tuple[int, C, str])
+
+
+def test_custom_types_conversion():
+    class X(metaclass=types.Type):
+        def __init__(self, x):
+            self.x = x
+
+        @classmethod
+        def __rfm_cast__(cls, s):
+            return X(int(s))
+
+    class Y:
+        def __init__(self, s):
+            self.y = int(s)
+
+    class Z:
+        def __init__(self, x, y):
+            self.z = x + y
+
+    assert X('3').x == 3
+    assert X(3).x   == 3
+    assert X(x='foo').x == 'foo'
+
+    with pytest.raises(TypeError):
+        X(3, 4)
+
+    with pytest.raises(TypeError):
+        X(s=3)
+
+    assert Y('1').y == 1
+    assert Z(5, 3).z  == 8
