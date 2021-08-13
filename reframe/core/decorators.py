@@ -19,6 +19,7 @@ import sys
 import traceback
 
 import reframe.utility.osext as osext
+import reframe.core.fields as fields
 import reframe.core.warnings as warn
 import reframe.core.hooks as hooks
 from reframe.core.exceptions import ReframeSyntaxError, SkipTestError, what
@@ -59,12 +60,16 @@ class TestRegistry:
         '''Add a test to the skip set.'''
         self._skip_tests.add(test)
 
-    def instantiate_all(self):
+    def instantiate_all(self, extvars=None):
         '''Instantiate all the registered tests.'''
         ret = []
         for test, variants in self._tests.items():
             if test in self._skip_tests:
                 continue
+
+            extvars = extvars or {}
+            for name, value in extvars.items():
+                setattr(test, name, fields.make_convertible(value))
 
             for args, kwargs in variants:
                 try:
@@ -109,18 +114,18 @@ def _register_parameterized_test(cls, args=None):
     this case to consume the parameter space. Otherwise, the regression test
     parameters would simply be initialized to None.
     '''
-    def _instantiate(cls, inst_args, *args, **kwargs):
-        kwargs['_rfm_use_params'] = True
-        if isinstance(inst_args, collections.abc.Sequence):
-            args += inst_args
-        elif isinstance(inst_args, collections.abc.Mapping):
-            kwargs.update(args)
+    def _instantiate(cls, args):
+        if isinstance(args, collections.abc.Sequence):
+            return cls(*args, _rfm_use_params=True)
+        elif isinstance(args, collections.abc.Mapping):
+            args['_rfm_use_params'] = True
+            return cls(**args)
+        elif args is None:
+            return cls(_rfm_use_params=True)
 
-        return cls(*args, **kwargs)
-
-    def _instantiate_all(*args, **kwargs):
+    def _instantiate_all():
         ret = []
-        for cls, inst_args in mod.__rfm_test_registry:
+        for cls, args in mod.__rfm_test_registry:
             try:
                 if cls in mod.__rfm_skip_tests:
                     continue
@@ -128,7 +133,7 @@ def _register_parameterized_test(cls, args=None):
                 mod.__rfm_skip_tests = set()
 
             try:
-                ret.append(_instantiate(cls, inst_args, *args, **kwargs))
+                ret.append(_instantiate(cls, args))
             except SkipTestError as e:
                 getlogger().warning(f'skipping test {cls.__qualname__!r}: {e}')
             except Exception:

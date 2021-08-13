@@ -39,7 +39,7 @@ class RegressionCheckValidator(ast.NodeVisitor):
 
 
 class RegressionCheckLoader:
-    def __init__(self, load_path, recurse=False):
+    def __init__(self, load_path, recurse=False, external_vars=None):
         # Expand any environment variables and symlinks
         load_path = [os.path.realpath(osext.expandvars(p)) for p in load_path]
         self._load_path = osext.unique_abs_paths(load_path, recurse)
@@ -47,6 +47,9 @@ class RegressionCheckLoader:
 
         # Loaded tests by name; maps test names to the file that were defined
         self._loaded = {}
+
+        # Variables set in the command line
+        self._external_vars = external_vars or {}
 
     def _module_name(self, filename):
         '''Figure out a module name from filename.
@@ -114,7 +117,7 @@ class RegressionCheckLoader:
     def recurse(self):
         return self._recurse
 
-    def load_from_module(self, module, *args, **kwargs):
+    def load_from_module(self, module):
         '''Load user checks from module.
 
         This method tries to load the test registry from a given module and
@@ -127,13 +130,6 @@ class RegressionCheckLoader:
         '''
         from reframe.core.pipeline import RegressionTest
 
-        # Warn in case of old syntax
-        if hasattr(module, '_get_checks'):
-            getlogger().warning(
-                f'{module.__file__}: _get_checks() is no more supported '
-                f'in test files: please use @reframe.simple_test decorator'
-            )
-
         # FIXME: Remove the legacy_registry after dropping parameterized_test
         registry = getattr(module, '_rfm_test_registry', None)
         legacy_registry = getattr(module, '_rfm_gettests', None)
@@ -141,13 +137,19 @@ class RegressionCheckLoader:
             getlogger().debug('No tests registered')
             return []
 
-        candidates = registry.instantiate_all() if registry else []
+        extvars = self._external_vars
+        candidates = registry.instantiate_all(extvars) if registry else []
         legacy_candidates = legacy_registry() if legacy_registry else []
+        if extvars and legacy_candidates:
+            getlogger().warning(
+                "variables of tests using the deprecated "
+                "'@parameterized_test' decorator cannot be set externally; "
+                "please use the 'parameter' builtin in your tests"
+            )
 
         # Merge registries
         candidates += legacy_candidates
-
-        ret = []
+        tests = []
         for c in candidates:
             if not isinstance(c, RegressionTest):
                 continue
@@ -160,23 +162,23 @@ class RegressionCheckLoader:
                 conflicted = self._loaded[c.name]
             except KeyError:
                 self._loaded[c.name] = testfile
-                ret.append(c)
+                tests.append(c)
             else:
                 raise NameConflictError(
                     f'test {c.name!r} from {testfile!r} '
                     f'is already defined in {conflicted!r}'
                 )
 
-        getlogger().debug(f'  > Loaded {len(ret)} test(s)')
-        return ret
+        getlogger().debug(f'  > Loaded {len(tests)} test(s)')
+        return tests
 
-    def load_from_file(self, filename, force=False, *args, **kwargs):
+    def load_from_file(self, filename, force=False):
         if not self._validate_source(filename):
             return []
 
         try:
             return self.load_from_module(
-                util.import_module_from_file(filename, force), *args, **kwargs
+                util.import_module_from_file(filename, force)
             )
         except Exception:
             exc_info = sys.exc_info()
@@ -191,26 +193,22 @@ class RegressionCheckLoader:
             else:
                 raise
 
-    def load_from_dir(self, dirname, recurse=False,
-                      force=False, *args, **kwargs):
+    def load_from_dir(self, dirname, recurse=False, force=False):
         checks = []
         for entry in os.scandir(dirname):
             if recurse and entry.is_dir():
-                checks.extend(
-                    self.load_from_dir(entry.path, recurse,
-                                       force, *args, **kwargs)
-                )
+                checks += self.load_from_dir(entry.path, recurse, force)
 
             if (entry.name.startswith('.') or
                 not entry.name.endswith('.py') or
                 not entry.is_file()):
                 continue
 
-            checks += self.load_from_file(entry.path, force, *args, **kwargs)
+            checks += self.load_from_file(entry.path, force)
 
         return checks
 
-    def load_all(self, force=False, *args, **kwargs):
+    def load_all(self, force=False):
         '''Load all checks in self._load_path.
 
         If a prefix exists, it will be prepended to each path.
@@ -226,9 +224,8 @@ class RegressionCheckLoader:
                 continue
 
             if os.path.isdir(d):
-                checks += self.load_from_dir(d, self._recurse, force,
-                                             *args, **kwargs)
+                checks += self.load_from_dir(d, self._recurse, force)
             else:
-                checks += self.load_from_file(d, force, *args, **kwargs)
+                checks += self.load_from_file(d, force)
 
         return checks

@@ -716,10 +716,21 @@ def main():
         )
         check_search_path = site_config.get('general/0/check_search_path')
 
-    loader = RegressionCheckLoader(
-        load_path=check_search_path,
-        recurse=check_search_recursive
-    )
+    # Collect any variables set from the command line
+    external_vars = {}
+    for expr in options.vars:
+        try:
+            lhs, rhs = expr.split('=', maxsplit=1)
+        except ValueError:
+            printer.warning(
+                f'invalid test variable assignment: {expr!r}; skipping'
+            )
+        else:
+            external_vars[lhs] = rhs
+
+    loader = RegressionCheckLoader(check_search_path,
+                                   check_search_recursive,
+                                   external_vars)
 
     def print_infoline(param, value):
         param = param + ':'
@@ -754,20 +765,8 @@ def main():
     print_infoline('output directory', repr(session_info['prefix_output']))
     printer.info('')
     try:
-        # Collect any variables set from the command line
-        external_vals = {}
-        for expr in options.vars:
-            try:
-                lhs, rhs = expr.split('=', maxsplit=1)
-            except ValueError:
-                printer.warning(
-                    f'invalid test variable assignment: {expr!r}; skipping'
-                )
-            else:
-                external_vals[lhs] = rhs
-
         # Locate and load checks
-        checks_found = loader.load_all(_rfm_external_vals=external_vals)
+        checks_found = loader.load_all()
         printer.verbose(f'Loaded {len(checks_found)} test(s)')
 
         # Generate all possible test cases first; we will need them for

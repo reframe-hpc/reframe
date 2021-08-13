@@ -34,47 +34,27 @@ class TestVar:
     during class instantiation.
 
     To support injecting attributes into the variable, this class implements a
-    separate dict `_attrs` where these will be stored.
+    separate dict `__attrs__` where these will be stored.
 
     :meta private:
     '''
 
     __slots__ = (
-        '_attrs', '_conv_fn', '_default_value', 'field', 'name'
+        'field', '_default_value', 'name', '__attrs__'
     )
 
     def __init__(self, *args, **kwargs):
         field_type = kwargs.pop('field', fields.TypedField)
         self._default_value = kwargs.pop('value', Undefined)
+
         if not issubclass(field_type, fields.Field):
             raise TypeError(
                 f'field {field_type!r} is not derived from '
                 f'{fields.Field.__qualname__}'
             )
 
-        conv_fn = kwargs.pop('conv', None)
         self.field = field_type(*args, **kwargs)
-        self._attrs = dict()
-
-        def _default_conv(s):
-            errmsg = f'cannot convert {s!r} for setting variable {self.name!r}'
-            if not isinstance(self.field, fields.TypedField):
-                raise TypeError(errmsg)
-
-            for typ in self.field.valid_types:
-                if issubclass(typ, type(None)) and s == 'None':
-                    # Treat `None` specially
-                    return None
-
-                try:
-                    return typ(s)
-                except Exception:
-                    continue
-
-            raise TypeError(errmsg)
-
-        # Set the conversion function
-        self._conv_fn = conv_fn or _default_conv
+        self.__attrs__ = dict()
 
     def is_defined(self):
         return self._default_value is not Undefined
@@ -84,9 +64,6 @@ class TestVar:
 
     def define(self, value):
         self._default_value = value
-
-    def define_from_string(self, value):
-        self.define(self._conv_fn(value))
 
     @property
     def default_value(self):
@@ -98,21 +75,21 @@ class TestVar:
     @property
     def attrs(self):
         # Variable attributes must also be returned by-value.
-        return copy.deepcopy(self._attrs)
+        return copy.deepcopy(self.__attrs__)
 
     def __set_name__(self, owner, name):
         self.name = name
 
     def __setattr__(self, name, value):
-        '''Set any additional variable attribute into _attrs.'''
+        '''Set any additional variable attribute into __attrs__.'''
         if name in self.__slots__:
             super().__setattr__(name, value)
         else:
-            self._attrs[name] = value
+            self.__attrs__[name] = value
 
     def __getattr__(self, name):
-        '''Attribute lookup into _attrs.'''
-        attrs = self.__getattribute__('_attrs')
+        '''Attribute lookup into __attrs__.'''
+        attrs = self.__getattribute__('__attrs__')
         try:
             return attrs[name]
         except KeyError:
@@ -547,23 +524,12 @@ class VarSpace(namespaces.Namespace):
                     f'{cls.__qualname__!r}'
                 )
 
-    def inject(self, obj, cls, external_vals=None):
+    def inject(self, obj, cls):
         '''Insert the vars in the regression test.
 
         :param obj: The test object.
         :param cls: The test class.
-        :param external_vals: A dictionary of variables and their values as
-            set by external sources (i.e., command-line)
         '''
-
-        if external_vals:
-            for name, val in external_vals.items():
-                try:
-                    var = self[name]
-                except KeyError:
-                    continue
-                else:
-                    var.define_from_string(val)
 
         for name, var in self.items():
             setattr(cls, name, var.field)

@@ -335,12 +335,13 @@ class RegressionTestMeta(type):
 
         # Intercept constructor arguments
         _rfm_use_params = kwargs.pop('_rfm_use_params', False)
-        _rfm_external_vals = kwargs.pop('_rfm_external_vals', {})
+
         obj = cls.__new__(cls, *args, **kwargs)
 
         # Insert the var & param spaces
-        cls._rfm_var_space.inject(obj, cls, _rfm_external_vals)
+        cls._rfm_var_space.inject(obj, cls)
         cls._rfm_param_space.inject(obj, cls, _rfm_use_params)
+
         obj.__init__(*args, **kwargs)
         return obj
 
