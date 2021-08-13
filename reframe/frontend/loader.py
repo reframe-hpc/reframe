@@ -8,7 +8,6 @@
 #
 
 import ast
-import collections.abc
 import inspect
 import os
 import sys
@@ -118,8 +117,14 @@ class RegressionCheckLoader:
     def load_from_module(self, module, *args, **kwargs):
         '''Load user checks from module.
 
-        This method tries to call the `_rfm_gettests()` method of the user
-        check and validates its return value.'''
+        This method tries to load the test registry from a given module and
+        instantiates all the tests in the registry. The instantiated checks
+        are validated before return.
+
+        For legacy reasons, a module might have the additional legacy registry
+        `_rfm_gettests`, which is a method that instantiates all the tests
+        registered with the deprecated `parameterized_test` decorator.
+        '''
         from reframe.core.pipeline import RegressionTest
 
         # Warn in case of old syntax
@@ -129,16 +134,18 @@ class RegressionCheckLoader:
                 f'in test files: please use @reframe.simple_test decorator'
             )
 
-        if not hasattr(module, '_rfm_gettests'):
+        # FIXME: Remove the legacy_registry after dropping parameterized_test
+        registry = getattr(module, '_rfm_test_registry', None)
+        legacy_registry = getattr(module, '_rfm_gettests', None)
+        if not any((registry, legacy_registry)):
             getlogger().debug('No tests registered')
             return []
 
-        candidates = module._rfm_gettests(*args, **kwargs)
-        if not isinstance(candidates, collections.abc.Sequence):
-            getlogger().warning(
-                f'Tests not registered correctly in {module.__name__!r}'
-            )
-            return []
+        candidates = registry.instantiate_all() if registry else []
+        legacy_candidates = legacy_registry() if legacy_registry else []
+
+        # Merge registries
+        candidates += legacy_candidates
 
         ret = []
         for c in candidates:
