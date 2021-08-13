@@ -780,11 +780,41 @@ class Spack(BuildSystem):
     #: ReFrame looks for environments in the test's
     #: :attr:`~reframe.core.pipeline.RegressionTest.sourcesdir`.
     #:
-    #: This field is required.
+    #: If this field is `None`, the default, the environment name will
+    #: be automatically set to `rfm_spack_env`.
     #:
     #: :type: :class:`str` or :class:`None`
-    #: :default: :class:`required`
-    environment = variable(typ.Str[r'\S+'])
+    #: :default: :class:`None`
+    #:
+    #: .. note::
+    #:     .. versionchanged:: 3.7.3
+    #:        The field is no longer required and the Spack environment will be
+    #:        automatically created if not provided.
+    environment = variable(typ.Str[r'\S+'], type(None), value=None)
+
+    #: The directory where Spack will install the packages requested by this
+    #: test.
+    #:
+    #: After activating the Spack environment, ReFrame will set the
+    #: `install_tree` Spack configuration in the given environment with the
+    #: following command:
+    #:
+    #: .. code-block:: bash
+    #:
+    #:    spack config add "config:install_tree:root:<install tree>"
+    #:
+    #: Relative paths are resolved against the test's stage directory.  If this
+    #: field and the Spack environment are both `None`, the default, the
+    #: install directory will be automatically set to `opt/spack`.  If this
+    #: field `None` but the Spack environment is not, then `install_tree` will
+    #: not be set automatically and the install tree of the given environment
+    #: will not be overridden.
+    #:
+    #: :type: :class:`str` or :class:`None`
+    #: :default: :class:`None`
+    #:
+    #: .. versionadded:: 3.7.3
+    install_tree = variable(typ.Str[r'\S+'], type(None), value=None)
 
     #: A list of additional specs to build and install within the given
     #: environment.
@@ -816,10 +846,13 @@ class Spack(BuildSystem):
     install_opts = variable(typ.List[str], value=[])
 
     def emit_build_commands(self, environ):
-        if not hasattr(self, 'environment'):
-            raise BuildSystemError(f'no Spack environment is defined')
-
         ret = self._env_activate_cmds()
+
+        if not self.environment:
+            install_tree = self.install_tree or 'opt/spack'
+            ret.append(f'spack config add '
+                       f'"config:install_tree:root:{install_tree}"')
+
         if self.specs:
             specs_str = ' '.join(self.specs)
             ret.append(f'spack add {specs_str}')
@@ -832,8 +865,15 @@ class Spack(BuildSystem):
         return ret
 
     def _env_activate_cmds(self):
-        return [f'. $SPACK_ROOT/share/spack/setup-env.sh',
-                f'spack env activate -V -d {self.environment}']
+        cmds = ['. $SPACK_ROOT/share/spack/setup-env.sh']
+        if self.environment:
+            environment = self.environment
+        else:
+            environment = 'rfm_spack_env'
+            cmds.append(f'spack env create -d {environment}')
+
+        cmds.append(f'spack env activate -V -d {environment}')
+        return cmds
 
     def prepare_cmds(self):
         cmds = self._env_activate_cmds()

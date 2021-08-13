@@ -27,8 +27,88 @@ from reframe.core.pipeline import RegressionTest
 from reframe.utility.versioning import VersionValidator
 
 
-def _register_test(cls, args=None):
-    '''Register the test.'''
+class TestRegistry:
+    '''Regression test registry.
+
+    The tests are stored in a dictionary where the test class is the key
+    and the constructor arguments for the different instantiations of the
+    test are stored as the dictionary value as a list of (args, kwargs)
+    tuples.
+
+    For backward compatibility reasons, the registry also contains a set of
+    tests to be skipped. The machinery related to this should be dropped with
+    the ``required_version`` decorator.
+    '''
+
+    def __init__(self):
+        self._tests = dict()
+        self._skip_tests = set()
+
+    @classmethod
+    def create(cls, test, *args, **kwargs):
+        obj = cls()
+        obj.add(test, *args, **kwargs)
+        return obj
+
+    def add(self, test, *args, **kwargs):
+        self._tests.setdefault(test, [])
+        self._tests[test].append((args, kwargs))
+
+    # FIXME: To drop with the required_version decorator
+    def skip(self, test):
+        '''Add a test to the skip set.'''
+        self._skip_tests.add(test)
+
+    def instantiate_all(self):
+        '''Instantiate all the registered tests.'''
+        ret = []
+        for test, variants in self._tests.items():
+            if test in self._skip_tests:
+                continue
+
+            for args, kwargs in variants:
+                try:
+                    ret.append(test(*args, **kwargs))
+                except SkipTestError as e:
+                    getlogger().warning(
+                        f'skipping test {test.__qualname__!r}: {e}'
+                    )
+                except Exception:
+                    exc_info = sys.exc_info()
+                    getlogger().warning(
+                        f"skipping test {test.__qualname__!r}: "
+                        f"{what(*exc_info)} "
+                        f"(rerun with '-v' for more information)"
+                    )
+                    getlogger().verbose(traceback.format_exc())
+
+        return ret
+
+    def __iter__(self):
+        '''Iterate over the registered test classes.'''
+        return iter(self._tests.keys())
+
+    def __contains__(self, test):
+        return test in self._tests
+
+
+def _register_test(cls, *args, **kwargs):
+    '''Register a test and its construction arguments into the registry.'''
+
+    mod = inspect.getmodule(cls)
+    if not hasattr(mod, '_rfm_test_registry'):
+        mod._rfm_test_registry = TestRegistry.create(cls, *args, **kwargs)
+    else:
+        mod._rfm_test_registry.add(cls, *args, **kwargs)
+
+
+def _register_parameterized_test(cls, args=None):
+    '''Register the test.
+
+    Register the test with _rfm_use_params=True. This additional argument flags
+    this case to consume the parameter space. Otherwise, the regression test
+    parameters would simply be initialized to None.
+    '''
     def _instantiate(cls, args):
         if isinstance(args, collections.abc.Sequence):
             return cls(*args)
@@ -104,8 +184,8 @@ def simple_test(cls):
     .. versionadded:: 2.13
     '''
     if _validate_test(cls):
-        for _ in cls.param_space:
-            _register_test(cls, args={'_rfm_test_id':test_id})
+        for test_id in cls:
+            _register_test(cls, _rfm_test_id=test_id})
 
     return cls
 
@@ -147,7 +227,7 @@ def parameterized_test(*inst):
                 )
 
             for args in inst:
-                _register_test(cls, args)
+                _register_parameterized_test(cls, args)
 
         return cls
 
@@ -204,12 +284,18 @@ def required_version(*versions):
         if not hasattr(mod, '__rfm_skip_tests'):
             mod.__rfm_skip_tests = set()
 
+        if not hasattr(mod, '_rfm_test_registry'):
+            mod._rfm_test_registry = TestRegistry()
+
         if not any(c.validate(osext.reframe_version()) for c in conditions):
             getlogger().warning(
                 f"skipping incompatible test '{cls.__qualname__}': not valid "
                 f"for ReFrame version {osext.reframe_version().split('-')[0]}"
             )
-            mod.__rfm_skip_tests.add(cls)
+            if cls in mod._rfm_test_registry:
+                mod._rfm_test_registry.skip(cls)
+            else:
+                mod.__rfm_skip_tests.add(cls)
 
         return cls
 
