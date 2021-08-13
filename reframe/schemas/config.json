@@ -247,7 +247,7 @@
                                 "scheduler": {
                                     "type": "string",
                                     "enum": [
-                                        "local", "pbs", "slurm",
+                                        "local", "oar", "pbs", "slurm",
                                         "sge", "squeue", "torque"
                                     ]
                                 },
@@ -370,7 +370,7 @@
                 "properties": {
                     "name": {
                         "type": "string",
-                        "enum": ["local", "pbs", "sge", "slurm", "squeue", "torque"]
+                        "enum": ["local", "oar", "pbs", "sge", "slurm", "squeue", "torque"]
                     },
                     "ignore_reqnodenotavail": {"type": "boolean"},
                     "resubmit_on_errors": {
