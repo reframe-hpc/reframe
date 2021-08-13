@@ -150,7 +150,7 @@ def test_simple_test_decorator():
         pass
 
     mod = inspect.getmodule(MyTest)
-    tests = mod._rfm_gettests()
+    tests = mod._rfm_test_registry.instantiate_all()
     assert len(tests) == 8
     for test in tests:
         assert test.P0 is not None
