@@ -858,7 +858,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
             # Add the parameters to the name.
             self.name += self._append_parameters_to_name()
-            name += self._append_fixture_id(self.fixture_id)
+            self.name += self._append_fixture_id(self.fixture_id)
 
             # Add the parameters from the parameterized_test decorator.
             if args or kwargs:

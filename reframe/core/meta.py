@@ -56,6 +56,7 @@ class RegressionTestMeta(type):
 
                 # Override the regular class attribute (if present)
                 self._namespace.pop(key, None)
+                return
 
             elif key in self['_rfm_local_param_space']:
                 raise ReframeSyntaxError(
@@ -266,7 +267,7 @@ class RegressionTestMeta(type):
             'final', 'fixture'
         ]
         for b in directives:
-            namespace.pop(b, None)
+            namespace.pop(b)
 
         return super().__new__(metacls, name, bases, dict(namespace), **kwargs)
 
@@ -375,10 +376,10 @@ class RegressionTestMeta(type):
         cls._rfm_fixture_space.inject(obj, cls, fixt_variant)
 
         # Inject the variant indices (if any present)
-        if param_variant:
+        if param_variant is not None:
             obj._rfm_param_id = param_variant
 
-        if fixt_variant:
+        if fixt_variant is not None:
             obj._rfm_fixt_id = fixt_variant
 
         obj.__init__(*args, **kwargs)
@@ -495,13 +496,9 @@ class RegressionTestMeta(type):
         super().__setattr__(name, value)
 
     @property
-    def _rfm_num_variants(cls):
+    def num_variants(cls):
         '''Number unique tests that can be instantiated from this class.'''
         return len(cls._rfm_param_space)*len(cls._rfm_fixture_space)
-
-    def __iter__(cls):
-        '''Iterator that walks through the test IDs from this class.'''
-        yield from range(cls._rfm_num_variants)
 
     def _map_test_id(cls, variant):
         '''Map a test ID into its respective parameter and fixture variant IDs.

@@ -11,6 +11,7 @@ import copy
 import itertools
 
 import reframe.core.namespaces as namespaces
+from reframe.core.exceptions import ReframeSyntaxError
 
 class TestFixture:
     '''Regression test fixture class.
@@ -20,7 +21,7 @@ class TestFixture:
 
     def __init__(self, cls, scope='test'):
         # Can't use isinstance here because of circular deps.
-        if not hasattr(cls, '_rfm_num_variants'):
+        if not hasattr(cls, 'num_variants'):
             raise ValueError(
                 f'{cls.__qualname__!r} must be a derived class from '
                 f'{"RegressionTest"!r}'
@@ -53,8 +54,8 @@ class FixtureSpace(namespaces.Namespace):
         :param cls: the target class.
         '''
         for key, value in other.fixtures.items():
-            if (key in self.fixtures):
-                raise ValueError(
+            if key in self.fixtures:
+                raise ReframeSyntaxError(
                     f'fixture space conflict: '
                     f'fixture {key!r} is defined in more than '
                     f'one base class of class {cls.__qualname__!r}'
@@ -64,7 +65,7 @@ class FixtureSpace(namespaces.Namespace):
 
     def extend(self, cls):
         local_fixture_space = getattr(cls, self.local_namespace_name)
-        while(local_fixture_space):
+        while local_fixture_space:
             name, fixture = local_fixture_space.popitem()
             self.fixtures[name] = fixture
 
@@ -73,7 +74,7 @@ class FixtureSpace(namespaces.Namespace):
         # changed using the `x = fixture(...)` syntax.
         for key, values in cls.__dict__.items():
             if key in self.fixtures:
-                raise ValueError(
+                raise ReframeSyntaxError(
                     f'fixture {key!r} must be modified through the built-in '
                     f'fixture type'
                 )
@@ -88,14 +89,14 @@ class FixtureSpace(namespaces.Namespace):
     def __iter__(self):
         '''Walk through all index combinations for all fixtures.'''
         yield from itertools.product(
-            *(list(range(f.cls._rfm_num_variants)
+            *(list(range(f.cls.num_variants)
             for f in self.fixtures.values()))
         )
 
     def __len__(self):
         l = 1
         for f in self.fixtures.values():
-            l *= f.cls._rfm_num_variants
+            l *= f.cls.num_variants
 
         return l
 
