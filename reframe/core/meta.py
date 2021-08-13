@@ -15,6 +15,7 @@ import reframe.core.parameters as parameters
 import reframe.core.variables as variables
 import reframe.core.fixtures as fixtures
 import reframe.core.hooks as hooks
+import reframe.utility as util
 
 from reframe.core.exceptions import ReframeSyntaxError
 from reframe.core.deferrable import deferrable
@@ -364,18 +365,17 @@ class RegressionTestMeta(type):
 
         # Intercept constructor arguments and map the test variant to the
         # IDs in the parameter and fixture spaces.
-        param_variant, fixt_variant = cls._map_test_id(
-            kwargs.pop('_rfm_test_id', None)
-        )
+        test_id = kwargs.pop('_rfm_test_id', None)
+        param_variant, fixt_variant = cls._map_test_id(test_id)
 
         obj = cls.__new__(cls, *args, **kwargs)
 
-        # Insert the var, param and fixture spaces
+        # Insert the var and param spaces
         cls._rfm_var_space.inject(obj, cls)
         cls._rfm_param_space.inject(obj, cls, param_variant)
-        cls._rfm_fixture_space.inject(obj, cls, fixt_variant)
 
         # Inject the variant indices (if any present)
+        obj._rfm_test_id = test_id
         if param_variant is not None:
             obj._rfm_param_id = param_variant
 
@@ -383,6 +383,9 @@ class RegressionTestMeta(type):
             obj._rfm_fixt_id = fixt_variant
 
         obj.__init__(*args, **kwargs)
+
+        # Register the fixtures
+        cls._rfm_fixture_space.inject(obj, cls, fixt_variant)
         return obj
 
     def __getattribute__(cls, name):
@@ -517,6 +520,11 @@ class RegressionTestMeta(type):
         ''' Make the parameter space available as read-only.'''
         return cls._rfm_param_space
 
+    @property
+    def fixture_space(cls):
+        '''Expose the fixture space.'''
+        return cls._rfm_fixture_space
+
     def is_abstract(cls):
         '''Check if the class is an abstract test.
 
@@ -528,3 +536,21 @@ class RegressionTestMeta(type):
         :meta private:
         '''
         return len(cls.param_space) == 0
+
+    def fullname(cls, test_id):
+        '''Return the full name of a test for a given variant ID.'''
+
+        pid, fid = cls._map_test_id(test_id)
+        name = cls.__qualname__
+
+        # Append the parameters to the name
+        if cls.param_space.params:
+            name += '_' + '_'.join(
+                util.toalphanum(str(v)) for v in cls.param_space[pid]
+            )
+
+        # Append the fixtures to the mix
+        if cls.fixture_space.fixtures:
+            name += f'_v{fid}'
+
+        return name

@@ -852,19 +852,14 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             )
 
     @deferrable
-    def __rfm_init__(self, *args, name=None, prefix=None, **kwargs):
-        if name is not None:
-            self.name = name
+    def __rfm_init__(self, *args, prefix=None, **kwargs):
+        self.name = type(self).fullname(self.test_id)
 
-            # Add the parameters to the name.
-            self.name += self._append_parameters_to_name()
-            self.name += self._append_fixture_id(self.fixture_id)
-
-            # Add the parameters from the parameterized_test decorator.
-            if args or kwargs:
-                arg_names = map(lambda x: util.toalphanum(str(x)),
-                                itertools.chain(args, kwargs.values()))
-                self.name += '_' + '_'.join(arg_names)
+        # Add the parameters from the parameterized_test decorator.
+        if args or kwargs:
+            arg_names = map(lambda x: util.toalphanum(str(x)),
+                            itertools.chain(args, kwargs.values()))
+            self.name += '_' + '_'.join(arg_names)
 
         # Pass if descr is a required variable.
         if not hasattr(self, 'descr'):
@@ -917,19 +912,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         # Disabled hooks
         self._disabled_hooks = set()
-
-    def _append_parameters_to_name(self):
-        if self._rfm_param_space.params:
-            return '_' + '_'.join([util.toalphanum(str(self.__dict__[key]))
-                                   for key in self._rfm_param_space.params])
-        else:
-            return ''
-
-    def _append_fixture_id(self, fixt_id):
-        if self._rfm_fixture_space.fixtures and not fixt_id is None:
-            return f'_v{fixt_id}'
-        else:
-            return ''
 
     @classmethod
     def _process_hook_registry(cls):
@@ -1007,6 +989,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         :type: :class:`reframe.core.systems.System`.
         '''
         return rt.runtime().system
+
+    @property
+    def test_id(self):
+        return getattr(self, '_rfm_test_id', None)
 
     @property
     def param_id(self):

@@ -216,6 +216,15 @@ class ParamSpace(namespaces.Namespace):
         )
 
     def __getitem__(self, key):
+        '''Access an element in the parameter space.
+
+        If the key is an integer, this function will retrieve a given point in
+        the parameter space. If the key is a parameter name, it will instead
+        all the values assigned to that parameter.
+        '''
+        if isinstance(key, int):
+            return self.random_access_iter[key]
+
         return self.params.get(key, ())
 
     def is_empty(self):

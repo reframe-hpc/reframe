@@ -85,6 +85,8 @@ class FixtureSpace(namespaces.Namespace):
                 f'fixture index out of range for '
                 f'{obj.__class__.__qualname__}'
             )
+        print(self.__random_access_iter[fixture_index], '**********')
+        print(self.keys(), '$$$$$$$$$$$$$$$$$$$$$')
 
     def __iter__(self):
         '''Walk through all index combinations for all fixtures.'''

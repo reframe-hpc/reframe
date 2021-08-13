@@ -129,7 +129,7 @@ def test_consume_param_space():
     class MyTest(ExtendParams):
         pass
 
-    for i in MyTest:
+    for i in range(MyTest.num_variants):
         test = MyTest(_rfm_test_id=i)
         assert test.P0 is not None
         assert test.P1 is not None
