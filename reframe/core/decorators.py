@@ -185,7 +185,7 @@ def simple_test(cls):
     '''
     if _validate_test(cls):
         for test_id in cls:
-            _register_test(cls, _rfm_test_id=test_id})
+            _register_test(cls, _rfm_test_id=test_id)
 
     return cls
 

@@ -368,8 +368,8 @@ def test_build_deps_deprecated_syntax(loader, default_exec_ctx):
                 assert len(deps) == 6
 
     with pytest.warns(ReframeDeprecationWarning) as warnings:
-        for _ in Test1_deprecated.param_space:
-            Test1_deprecated(_rfm_use_params=True)
+        for _id in Test1_deprecated:
+            Test1_deprecated(_rfm_test_id=_id)
 
     assert len(warnings) == 3
 

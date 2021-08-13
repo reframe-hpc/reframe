@@ -367,12 +367,19 @@ class RegressionTestMeta(type):
             kwargs.pop('_rfm_test_id', None)
         )
 
-        obj = cls.__new__(cls, *args, _rfm_fixt_v=fixt_variant, **kwargs)
+        obj = cls.__new__(cls, *args, **kwargs)
 
         # Insert the var, param and fixture spaces
         cls._rfm_var_space.inject(obj, cls)
         cls._rfm_param_space.inject(obj, cls, param_variant)
         cls._rfm_fixture_space.inject(obj, cls, fixt_variant)
+
+        # Inject the variant indices (if any present)
+        if param_variant:
+            obj._rfm_param_id = param_variant
+
+        if fixt_variant:
+            obj._rfm_fixt_id = fixt_variant
 
         obj.__init__(*args, **kwargs)
         return obj

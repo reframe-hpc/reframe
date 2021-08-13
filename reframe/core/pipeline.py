@@ -858,7 +858,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
             # Add the parameters to the name.
             self.name += self._append_parameters_to_name()
-            name += obj._append_fixture_id(kwargs.pop('_rfm_fixt_v', None))
+            name += self._append_fixture_id(self.fixture_id)
 
             # Add the parameters from the parameterized_test decorator.
             if args or kwargs:
@@ -1007,6 +1007,16 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         :type: :class:`reframe.core.systems.System`.
         '''
         return rt.runtime().system
+
+    @property
+    def param_id(self):
+        '''Index in the parameter space.'''
+        return getattr(self, '_rfm_param_id', None)
+
+    @property
+    def fixture_id(self):
+        '''Index in the fixture space.'''
+        return getattr(self, '_rfm_fixt_id', None)
 
     @property
     def perfvalues(self):
