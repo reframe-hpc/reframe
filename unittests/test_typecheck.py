@@ -200,12 +200,12 @@ def test_custom_types():
 
 
 def test_custom_types_conversion():
-    class X(metaclass=types.Type):
+    class X(metaclass=types.ConvertibleType):
         def __init__(self, x):
             self.x = x
 
         @classmethod
-        def __rfm_cast__(cls, s):
+        def __rfm_cast_str__(cls, s):
             return X(int(s))
 
     class Y:

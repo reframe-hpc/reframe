@@ -93,23 +93,24 @@ import abc
 import re
 
 
-class Type(abc.ABCMeta):
+class ConvertibleType(abc.ABCMeta):
     def __call__(cls, *args, **kwargs):
-        if (len(args) == 1 and
-            not kwargs and isinstance(args[0], str) and
-            hasattr(cls, '__rfm_cast__')):
-            return cls.__rfm_cast__(*args)
-        else:
-            obj = cls.__new__(cls, *args, **kwargs)
-            obj.__init__(*args, **kwargs)
-            return obj
+        if len(args) == 1:
+            cast_fn_name = f'__rfm_cast_{type(args[0]).__name__}__'
+            if hasattr(cls, cast_fn_name):
+                cast_fn = getattr(cls, cast_fn_name)
+                return cast_fn(args[0])
+
+        return super().__call__(*args, **kwargs)
 
 
 # Metaclasses that implement the isinstance logic for the different builtin
 # container types
 
-class _ContainerType(Type):
+class _ContainerType(ConvertibleType):
     def register_container_type(cls):
+        # Make sure that the class defines `_type`
+        assert hasattr(cls, '_type')
         cls.register(cls._type)
 
 
@@ -143,11 +144,10 @@ class _SequenceType(_ContainerType):
         ret = _SequenceType('%s[%s]' % (cls.__name__, elem_type.__name__),
                             cls._bases, cls._namespace)
         ret._elem_type = elem_type
-        ret.register_container_type()
         cls.register(ret)
         return ret
 
-    def __rfm_cast__(cls, s):
+    def __rfm_cast_str__(cls, s):
         container_type = cls._type
         elem_type = cls._elem_type
         return container_type(elem_type(e) for e in s.split(','))
@@ -190,11 +190,10 @@ class _TupleType(_SequenceType):
         )
         ret = _TupleType(cls_name, cls._bases, cls._namespace)
         ret._elem_type = elem_types
-        ret.register_container_type()
         cls.register(ret)
         return ret
 
-    def __rfm_cast__(cls, s):
+    def __rfm_cast_str__(cls, s):
         container_type = cls._type
         elem_types = cls._elem_type
         elems = s.split(',')
@@ -251,11 +250,10 @@ class _MappingType(_ContainerType):
         ret = _MappingType(cls_name, cls._bases, cls._namespace)
         ret._key_type = key_type
         ret._value_type = value_type
-        ret.register_container_type()
         cls.register(ret)
         return ret
 
-    def __rfm_cast__(cls, s):
+    def __rfm_cast_str__(cls, s):
         mappping_type = cls._type
         key_type = cls._key_type
         value_type = cls._value_type
@@ -295,11 +293,10 @@ class _StrType(_SequenceType):
         ret = _StrType("%s[r'%s']" % (cls.__name__, patt),
                        cls._bases, cls._namespace)
         ret._elem_type = patt
-        ret.register_container_type()
         cls.register(ret)
         return ret
 
-    def __rfm_cast__(cls, s):
+    def __rfm_cast_str__(cls, s):
         return s
 
 

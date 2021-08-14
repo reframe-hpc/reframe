@@ -10,7 +10,6 @@ import warnings
 
 import reframe
 import reframe.core.fields as fields
-import reframe.utility.typecheck as typ
 from reframe.core.warnings import ReframeDeprecationWarning
 from reframe.utility import ScopedDict
 
