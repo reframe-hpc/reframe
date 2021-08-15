@@ -124,10 +124,6 @@ class OarJobScheduler(PbsJobScheduler):
         job._submit_time = time.time()
 
     def cancel(self, job):
-        time_from_submit = time.time() - job.submit_time
-        if time_from_submit < OAR_CANCEL_DELAY:
-            time.sleep(OAR_CANCEL_DELAY - time_from_submit)
-
         _run_strict(f'oardel {job.jobid}', timeout=self._submit_timeout)
         job._cancelled = True
 
