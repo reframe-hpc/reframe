@@ -1,3 +1,5 @@
+# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
@@ -13,7 +15,7 @@ class Amber_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
     began in the late 1970's, and is maintained by an active
     development community (see ambermd.org).
 
-    The presented abstract run-only class checks the work of amber.
+    The presented abstract run-only class checks the amber perfomance.
     To do this, it is necessary to define in tests the name
     of the running script (input file), the output file,
     as well as set the reference values of energy and possible
@@ -35,9 +37,11 @@ class Amber_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
     input_file = variable(str)
 
     #: Reference value of energy, that is used for the comparison
-    #: with the execution ouput on the sanity step. Final value of
-    #: energy should be approximately the same
+    #: with the execution ouput on the sanity step. The absolute
+    #: difference between final energy value and reference value
+    #: should be smaller than energy_tolerance
     #:
+    #: :type: str
     #: :default: :class:`required`
     energy_value = variable(float)
 
@@ -47,15 +51,15 @@ class Amber_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
     #: :default: :class:`required`
     energy_tolerance = variable(float)
 
-    # Parameter pack containing the platform ID, input file and
-    # executable.
-    platform = parameter([
+    #: Parameter pack containing the platform ID, input file and
+    #: executable.
+    platform_info = parameter([
         ('cpu', 'mdin.CPU', 'pmemd.MPI'),
         ('gpu', 'mdin.GPU', 'pmemd.cuda.MPI')
     ])
 
-    # NVE simulation parameter pack with the benchmark name,
-    # energy reference and energy tolerance for each case.
+    #: NVE simulation parameter pack with the benchmark name,
+    #: energy reference and energy tolerance for each case.
     variant = parameter([
         ('Cellulose_production_NVE', -443246.0, 5.0E-05),
         ('FactorIX_production_NVE', -234188.0, 1.0E-04),
@@ -63,14 +67,19 @@ class Amber_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
         ('JAC_production_NVE', -58138.0, 5.0E-04)
     ])
 
+    #: :default: :class:`required`
     num_tasks_per_node = required
+
+    #: :default: :class:`required`
     executable = required
+
+    tags = {'sciapp', 'chemistry'}
 
     @run_after('init')
     def unpack_platform_parameter(self):
         '''Set the executable and input file.'''
 
-        self.platform_name, self.input_file, self.executable = self.platform
+        self.platform, self.input_file, self.executable = self.platform_info
 
     @run_after('init')
     def unpack_variant_parameter(self):
@@ -78,28 +87,27 @@ class Amber_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
         specific program.
         '''
 
-        (self.benchmark, self.energy_value,
-            self.energy_tolerance) = self.variant
+        self.benchmark, self.energy_value, self.energy_tolerance = self.variant
 
-    @run_after('setup')
+    @run_after('init')
     def set_keep_files(self):
         self.keep_files = [self.output_file]
 
-    @run_after('setup')
-    def set_perf_patterns(self):
-        self.perf_patterns = {
-            self.benchmark: sn.extractsingle(r'ns/day =\s+(?P<perf>\S+)',
-                                             self.output_file, 'perf',
-                                             float, item=1)
-        }
-
     @run_before('performance')
-    def set_generic_perf_references(self):
-        '''Define perfomance pattern for the general case'''
-
+    def set_perf_patterns(self):
         self.reference.update({'*': {
             self.benchmark: (0, None, None, 'ns/day')
         }})
+
+        self.perf_patterns = {
+             self.benchmark: sn.extractsingle(r'ns/day =\s+(?P<perf>\S+)',
+                                              self.output_file, 'perf',
+                                              float, item=1)
+         }
+    #@run_before('performance')
+    #def set_generic_perf_references(self):
+    #    '''Define perfomance pattern for the general case'''
+
 
     @run_before('run')
     def download_files(self):
@@ -123,7 +131,7 @@ class Amber_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
                                 '-o', self.output_file]
 
     @sanity_function
-    def set_sanity_patterns(self):
+    def assert_energy_readout(self):
         '''Assert the obtained energy meets the specified tolerances.'''
 
         energy = sn.extractsingle(r' Etot\s+=\s+(?P<energy>\S+)',

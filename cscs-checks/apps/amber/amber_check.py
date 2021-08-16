@@ -59,24 +59,15 @@ REFERENCE_CPU_PERFORMANCE_LARGE = {
 }
 
 
-def my_param_filter(inherited_params, match):
-    '''Filter out variants by inspecting the parameter's first element.'''
-    filtered_params = []
-    for p in inherited_params:
-        if match in p[0]:
-            filtered_params.append(p)
-    return tuple(filtered_params)
+def inherit_cpu_only(params):
+    return tuple(filter(lambda p: p[0] == 'cpu', params))
 
 
-def inherit_cpu_only(p):
-    return my_param_filter(p, 'cpu')
+def inherit_gpu_only(params):
+    return tuple(filter(lambda p: p[0] == 'gpu', params))
 
 
-def inherit_gpu_only(p):
-    return my_param_filter(p, 'gpu')
-
-
-class AmberCheck(Amber_NVE):
+class AmberCheckCSCS(Amber_NVE):
     modules = ['Amber']
     valid_prog_environs = ['builtin']
     strict_check = False
@@ -89,25 +80,29 @@ class AmberCheck(Amber_NVE):
 
 
 @rfm.simple_test
-class amber_gpu_check(AmberCheck):
+class amber_gpu_check(AmberCheckCSCS):
     valid_systems = ['daint:gpu', 'dom:gpu']
     num_tasks = 1
     num_gpus_per_node = 1
     num_tasks_per_node = 1
     descr = f'Amber GPU check'
-    tags = {'maintenance', 'production', 'health'}
+    tags.update({'maintenance', 'production', 'health'})
     reference = REFERENCE_GPU_PERFORMANCE
-    platform = parameter(inherit_params=True,
-                         filter_params=inherit_gpu_only)
+    platform_info = parameter(
+        inherit_params=True,
+        filter_params = inherit_gpu_only
+        )
 
 
 @rfm.simple_test
-class amber_cpu_check(AmberCheck):
-    tags = {'maintenance', 'production'}
+class amber_cpu_check(AmberCheckCSCS):
+    tags.update({'maintenance', 'production'})
     scale = parameter(['small', 'large'])
     valid_systems = ['daint:mc', 'eiger:mc']
-    platform = parameter(inherit_params=True,
-                         filter_params=inherit_cpu_only)
+    platform_info = parameter(
+        inherit_params=True,
+        filter_params=inherit_cpu_only
+        )
 
     @run_after('init')
     def set_description(self):
