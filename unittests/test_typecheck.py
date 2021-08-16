@@ -235,7 +235,7 @@ def test_none_type():
     assert isinstance(types.Null, type)
     assert issubclass(type(None), types.Null)
     assert isinstance(None, types.Null)
-    assert types.Null('null') == None
+    assert types.Null('null') is None
 
     with pytest.raises(TypeError):
         types.Null('foo')

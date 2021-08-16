@@ -19,7 +19,6 @@ import sys
 import traceback
 
 import reframe.utility.osext as osext
-import reframe.core.fields as fields
 import reframe.core.warnings as warn
 import reframe.core.hooks as hooks
 from reframe.core.exceptions import ReframeSyntaxError, SkipTestError, what
