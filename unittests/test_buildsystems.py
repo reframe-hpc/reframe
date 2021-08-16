@@ -280,9 +280,14 @@ def test_spack_with_spec(environ, tmp_path):
 
 def test_spack_no_env(environ, tmp_path):
     build_system = bs.Spack()
-    with pytest.raises(BuildSystemError):
-        build_system.emit_build_commands(environ)
-
+    with osext.change_dir(tmp_path):
+        assert build_system.emit_build_commands(environ) == [
+            f'. $SPACK_ROOT/share/spack/setup-env.sh',
+            f'spack env create -d rfm_spack_env',
+            f'spack env activate -V -d rfm_spack_env',
+            f'spack config add "config:install_tree:root:opt/spack"',
+            f'spack install'
+        ]
 
 def test_easybuild(environ, tmp_path):
     build_system = bs.EasyBuild()

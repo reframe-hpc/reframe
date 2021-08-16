@@ -21,6 +21,7 @@ class BuildHip(rfm.RegressionTest):
     valid_prog_environs = ['PrgEnv-gnu']
     sourcesdir = 'https://github.com/ROCm-Developer-Tools/HIP.git'
     build_system = 'CMake'
+    prebuild_cmds = ['git checkout main']
     postbuild_cmds = ['make install']
     executable = f'{hip_path}/bin/hipcc'
     executable_opts = ['--version']
@@ -38,9 +39,9 @@ class BuildHip(rfm.RegressionTest):
             f'-DHIP_PLATFORM={self.hip_platform}',
         ]
 
-    @run_before('sanity')
+    @sanity_function
     def set_sanity_patterns(self):
-        self.sanity_patterns = sn.assert_found(r'nvcc:\s+NVIDIA', self.stdout)
+        return sn.assert_found(r'nvcc:\s+NVIDIA', self.stdout)
 
 
 @rfm.simple_test
@@ -75,6 +76,6 @@ class HelloHip(rfm.RegressionTest):
         self.variables = {'HIP_PATH': f'{self.hip_path}'}
         self.build_system.cxx = os.path.join(self.hip_path, 'bin', 'hipcc')
 
-    @run_before('sanity')
+    @sanity_function
     def set_sanity(self):
-        self.sanity_patterns = sn.assert_found(r'HelloWorld', self.stdout)
+        return sn.assert_found(r'HelloWorld', self.stdout)
