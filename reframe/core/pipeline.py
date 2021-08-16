@@ -812,7 +812,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         # injected after __new__ has returned, so we schedule this function
         # call as a pre-init hook).
         obj.__deferred_rfm_init = obj.__rfm_init__(*args,
-                                                   name=cls.__qualname__,
                                                    prefix=prefix, **kwargs)
 
         # Build pipeline hook registry and add the pre-init hook

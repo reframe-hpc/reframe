@@ -375,11 +375,9 @@ class RegressionTestMeta(type):
         cls._rfm_param_space.inject(obj, cls, param_variant)
 
         # Inject the variant indices (if any present)
-        obj._rfm_test_id = test_id
-        if param_variant is not None:
+        if test_id is not None:
+            obj._rfm_test_id = test_id
             obj._rfm_param_id = param_variant
-
-        if fixt_variant is not None:
             obj._rfm_fixt_id = fixt_variant
 
         obj.__init__(*args, **kwargs)
@@ -496,6 +494,15 @@ class RegressionTestMeta(type):
         except AttributeError:
             pass
 
+        # Catch attempts to override a test fixture
+        try:
+            fixture_space = super().__getattribute__('_rfm_fixture_space')
+            if name in fixture_space.fixtures:
+                raise ReframeSyntaxError(f'cannot override fixture {name!r}')
+
+        except AttributeError:
+            pass
+
         super().__setattr__(name, value)
 
     @property
@@ -540,17 +547,23 @@ class RegressionTestMeta(type):
     def fullname(cls, test_id):
         '''Return the full name of a test for a given variant ID.'''
 
-        pid, fid = cls._map_test_id(test_id)
         name = cls.__qualname__
+        if test_id is None:
+            return name
+
+        pid, fid = cls._map_test_id(test_id)
 
         # Append the parameters to the name
         if cls.param_space.params:
             name += '_' + '_'.join(
-                util.toalphanum(str(v)) for v in cls.param_space[pid]
+                util.toalphanum(str(v)) for v in cls.param_space[pid].values()
             )
 
         # Append the fixtures to the mix
         if cls.fixture_space.fixtures:
-            name += f'_v{fid}'
+            fs = cls.fixture_space
+            name += '_' + '_'.join(
+                fs[k].cls.fullname(v) for k,v in fs[fid].items()
+            )
 
         return name

@@ -70,7 +70,7 @@ class FixtureSpace(namespaces.Namespace):
             self.fixtures[name] = fixture
 
         # If any previously declared fixture was defined in the class body
-        # by directly assigning it a value, raise an error. Fixxtures must be
+        # by directly assigning it a value, raise an error. Fixtures must be
         # changed using the `x = fixture(...)` syntax.
         for key, values in cls.__dict__.items():
             if key in self.fixtures:
@@ -85,8 +85,34 @@ class FixtureSpace(namespaces.Namespace):
                 f'fixture index out of range for '
                 f'{obj.__class__.__qualname__}'
             )
-        print(self.__random_access_iter[fixture_index], '**********')
-        print(self.keys(), '$$$$$$$$$$$$$$$$$$$$$')
+
+        try:
+            sys = obj.valid_systems
+        except AttributeError:
+            raise ReframeSyntaxError(
+                f'valid_systems is undefined in test {obj.name}'
+            )
+
+        try:
+            pe = obj.valid_prog_environs
+        except AttributeError:
+            raise ReframeSyntaxError(
+                f'valid_prog_environs is undefined in test {obj.name}'
+            )
+
+        # Get the fixture indices
+        fixture_idx = self[fixture_index]
+
+        # Register the fixtures
+        for name, fixture in self.fixtures.items():
+            print(fixture.cls.fullname(fixture_idx[name]))
+
+        # The fixtures MUST be registered in the OBJECT.
+        # Extend the loop above to set the sys and pe for each of the
+        # fixtures in the fixture registry. This registry must contain
+        # an attribute with the full fixture depth, so that fixtures
+        # with the 'test' scope can use that as the unique ID.
+
 
     def __iter__(self):
         '''Walk through all index combinations for all fixtures.'''
@@ -101,6 +127,17 @@ class FixtureSpace(namespaces.Namespace):
             l *= f.cls.num_variants
 
         return l
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            ret = dict()
+            f_ids = self.__random_access_iter[key]
+            for i,f in enumerate(self.fixtures):
+                ret[f] = f_ids[i]
+
+            return ret
+
+        return self.fixtures[key]
 
     @property
     def fixtures(self):

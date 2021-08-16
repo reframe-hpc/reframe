@@ -223,7 +223,12 @@ class ParamSpace(namespaces.Namespace):
         all the values assigned to that parameter.
         '''
         if isinstance(key, int):
-            return self.random_access_iter[key]
+            ret = dict()
+            val = self.random_access_iter[key]
+            for i, key in enumerate(self.params):
+                ret[key] = val[i]
+
+            return ret
 
         return self.params.get(key, ())
 
