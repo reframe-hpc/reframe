@@ -107,14 +107,14 @@ class ConvertibleType(abc.ABCMeta):
 # Metaclasses that implement the isinstance logic for the different builtin
 # container types
 
-class _ContainerType(ConvertibleType):
-    def register_container_type(cls):
+class _BuiltinType(ConvertibleType):
+    def __init__(cls, name, bases, namespace):
         # Make sure that the class defines `_type`
         assert hasattr(cls, '_type')
         cls.register(cls._type)
 
 
-class _SequenceType(_ContainerType):
+class _SequenceType(_BuiltinType):
     '''A metaclass for containers with uniformly typed elements.'''
 
     def __init__(cls, name, bases, namespace):
@@ -122,7 +122,6 @@ class _SequenceType(_ContainerType):
         cls._elem_type = None
         cls._bases = bases
         cls._namespace = namespace
-        cls.register_container_type()
 
     def __instancecheck__(cls, inst):
         if not issubclass(type(inst), cls):
@@ -208,7 +207,7 @@ class _TupleType(_SequenceType):
             )
 
 
-class _MappingType(_ContainerType):
+class _MappingType(_BuiltinType):
     '''A metaclass for type checking mapping types.'''
 
     def __init__(cls, name, bases, namespace):
@@ -217,7 +216,6 @@ class _MappingType(_ContainerType):
         cls._value_type = None
         cls._bases = bases
         cls._namespace = namespace
-        cls.register_container_type()
 
     def __instancecheck__(cls, inst):
         if not issubclass(type(inst), cls):
@@ -300,6 +298,14 @@ class _StrType(_SequenceType):
         return s
 
 
+class _NoneType(_BuiltinType):
+    def __rfm_cast_str__(cls, s):
+        if s == 'null':
+            return None
+
+        raise TypeError(f"cannot convert string {s!r} to 'None'")
+
+
 class Dict(metaclass=_MappingType):
     _type = dict
 
@@ -318,3 +324,7 @@ class Str(metaclass=_StrType):
 
 class Tuple(metaclass=_TupleType):
     _type = tuple
+
+
+class Null(metaclass=_NoneType):
+    _type = type(None)

@@ -9,6 +9,7 @@ import reframe.utility.typecheck as types
 
 
 def assert_type_hierarchy(builtin_type, ctype):
+    assert isinstance(ctype, type)
     assert issubclass(builtin_type, ctype)
     assert issubclass(ctype[int], ctype)
     assert issubclass(ctype[ctype[int]], ctype)
@@ -228,3 +229,13 @@ def test_custom_types_conversion():
 
     assert Y('1').y == 1
     assert Z(5, 3).z  == 8
+
+
+def test_none_type():
+    assert isinstance(types.Null, type)
+    assert issubclass(type(None), types.Null)
+    assert isinstance(None, types.Null)
+    assert types.Null('null') == None
+
+    with pytest.raises(TypeError):
+        types.Null('foo')
