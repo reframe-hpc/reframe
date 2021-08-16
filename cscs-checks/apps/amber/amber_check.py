@@ -90,8 +90,7 @@ class amber_gpu_check(AmberCheckCSCS):
     reference = REFERENCE_GPU_PERFORMANCE
     platform_info = parameter(
         inherit_params=True,
-        filter_params = inherit_gpu_only
-        )
+        filter_params=inherit_gpu_only)
 
 
 @rfm.simple_test
@@ -101,8 +100,7 @@ class amber_cpu_check(AmberCheckCSCS):
     valid_systems = ['daint:mc', 'eiger:mc']
     platform_info = parameter(
         inherit_params=True,
-        filter_params=inherit_cpu_only
-        )
+        filter_params=inherit_cpu_only)
 
     @run_after('init')
     def set_description(self):

@@ -100,14 +100,10 @@ class Amber_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
         }})
 
         self.perf_patterns = {
-             self.benchmark: sn.extractsingle(r'ns/day =\s+(?P<perf>\S+)',
+            self.benchmark: sn.extractsingle(r'ns/day =\s+(?P<perf>\S+)',
                                               self.output_file, 'perf',
                                               float, item=1)
-         }
-    #@run_before('performance')
-    #def set_generic_perf_references(self):
-    #    '''Define perfomance pattern for the general case'''
-
+        }
 
     @run_before('run')
     def download_files(self):
