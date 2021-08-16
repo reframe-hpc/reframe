@@ -782,7 +782,8 @@ def test_detect_host_topology_file(run_reframe, tmp_path):
 def test_external_vars(run_reframe):
     returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks_unlisted/externalvars.py'],
-        more_options=['-S', 'foo=3', '-S', 'foolist=3,4']
+        more_options=['-S', 'external_x.foo=3', '-S', 'external_y.foo=2',
+                      '-S', 'foolist=3,4']
     )
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr

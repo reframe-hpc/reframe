@@ -60,16 +60,12 @@ class TestRegistry:
         '''Add a test to the skip set.'''
         self._skip_tests.add(test)
 
-    def instantiate_all(self, extvars=None):
+    def instantiate_all(self):
         '''Instantiate all the registered tests.'''
         ret = []
         for test, variants in self._tests.items():
             if test in self._skip_tests:
                 continue
-
-            extvars = extvars or {}
-            for name, value in extvars.items():
-                setattr(test, name, fields.make_convertible(value))
 
             for args, kwargs in variants:
                 try:

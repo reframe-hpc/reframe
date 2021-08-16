@@ -13,6 +13,7 @@ import os
 import sys
 import traceback
 
+import reframe.core.fields as fields
 import reframe.utility as util
 import reframe.utility.osext as osext
 from reframe.core.exceptions import NameConflictError, is_severe, what
@@ -117,6 +118,17 @@ class RegressionCheckLoader:
     def recurse(self):
         return self._recurse
 
+    def _set_defaults(self, test_registry):
+        for test in test_registry:
+            for name, val in self._external_vars.items():
+                if '.' in name:
+                    testname, varname = name.split('.', maxsplit=1)
+                else:
+                    testname, varname = test.__name__, name
+
+                if testname == test.__name__:
+                    setattr(test, varname, fields.make_convertible(val))
+
     def load_from_module(self, module):
         '''Load user checks from module.
 
@@ -137,10 +149,10 @@ class RegressionCheckLoader:
             getlogger().debug('No tests registered')
             return []
 
-        extvars = self._external_vars
-        candidates = registry.instantiate_all(extvars) if registry else []
+        self._set_defaults(registry)
+        candidates = registry.instantiate_all() if registry else []
         legacy_candidates = legacy_registry() if legacy_registry else []
-        if extvars and legacy_candidates:
+        if self._external_vars and legacy_candidates:
             getlogger().warning(
                 "variables of tests using the deprecated "
                 "'@parameterized_test' decorator cannot be set externally; "
