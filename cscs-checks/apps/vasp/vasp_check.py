@@ -51,6 +51,7 @@ REFERENCE_GPU_PERFORMANCE = {
     'daint:gpu': daint_gpu,
 }
 
+
 @rfm.simple_test
 class VASPCheckCSCS(VASP):
     modules = ['VASP']

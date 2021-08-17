@@ -39,24 +39,23 @@ class LAMMPS_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
     #: :default: :class:`required`
     input_file = variable(str)
 
-     #: Reference value of energy, that is used for the comparison
-     #: with the execution ouput on the sanity step. The absolute
-     #: difference between final energy value and reference value
-     #: should be smaller than energy_tolerance
-     #:
-     #: :type: str
-     #: :default: :class:`required`
+    #: Reference value of energy, that is used for the comparison
+    #: with the execution ouput on the sanity step. The absolute
+    #: difference between final energy value and reference value
+    #: should be smaller than energy_tolerance
+    #:
+    #: :type: str
+    #: :default: :class:`required`
     energy_value = -4.6195
 
-     #: Maximum deviation from the reference value of energy,
-     #: that is acceptable.
-     #:
-     #: :default: :class:`required`
+    #: Maximum deviation from the reference value of energy,
+    #: that is acceptable.
+    #:
+    #: :default: :class:`required`
     energy_tolerance = 6.0E-04
 
     #: :default: :class:`required`
     num_tasks_per_node = required
-
 
     #: Parameter pack containing the platform ID and input file
     platform = parameter([
@@ -86,7 +85,7 @@ class LAMMPS_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
     def set_perf_patterns(self):
         self.perf_patterns = {
             self.mode: sn.extractsingle(r'\s+(?P<perf>\S+) timesteps/s',
-                                             self.stdout, 'perf', float)
+                                        self.stdout, 'perf', float)
         }
 
     @sanity_function
