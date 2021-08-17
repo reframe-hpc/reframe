@@ -72,8 +72,8 @@ class VASP(rfm.RunOnlyRegressionTest):
     def set_perf_patterns(self):
         self.perf_patterns = {
             self.mode: sn.extractsingle(r'Total CPU time used \(sec\):'
-                                             r'\s+(?P<time>\S+)', 'OUTCAR',
-                                             'time', float)
+                                        r'\s+(?P<time>\S+)', 'OUTCAR',
+                                        'time', float)
         }
 
     @sanity_function
