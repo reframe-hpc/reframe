@@ -5,7 +5,7 @@
 
 import reframe as rfm
 import reframe.utility.sanity as sn
-from hpctestlib.apps.quantumespresso import QuantumESPRESSO
+from hpctestlib.apps.quantumespresso.nve import QuantumESPRESSO_NVE
 
 
 REFERENCE_CPU_PERFORMANCE_SMALL = {
@@ -61,13 +61,12 @@ REFERENCE_GPU_PERFORMANCE_LARGE = {
 }
 
 
-class QuantumESPRESSOCheck(QuantumESPRESSO):
+@rfm.simple_test
+class quantum_espresso_check_cscs(QuantumESPRESSO_NVE):
     scale = parameter(['small', 'large'])
     benchmark = parameter(['maint', 'prod'])
-
+    platform_name = parameter(['gpu', 'cpu'])
     modules = ['QuantumESPRESSO']
-    executable = 'pw.x'
-    input_file = 'ausurf.in'
     maintainers = ['LM']
     tags = {'scs'}
     strict_check = False
@@ -78,6 +77,13 @@ class QuantumESPRESSOCheck(QuantumESPRESSO):
     }
 
     @run_after('init')
+    def set_valid_systems(self):
+        if self.platform_name == 'cpu':
+            self.valid_systems = ['daint:mc', 'eiger:mc', 'pilatus:mc']
+        else:
+            self.valid_systems = ['daint:gpu']
+
+    @run_after('init')
     def env_define(self):
         if self.current_system.name in ['eiger', 'pilatus']:
             self.valid_prog_environs = ['cpeIntel']
@@ -85,119 +91,87 @@ class QuantumESPRESSOCheck(QuantumESPRESSO):
             self.valid_prog_environs = ['builtin']
 
     @run_after('init')
-    def set_reference(self):
-        self.reference = references[self.benchmark]
-
-    @run_after('init')
     def set_tags(self):
         self.tags |= {
             'maintenance' if self.benchmark == 'maint' else 'production'
         }
 
-    @run_after('setup')
-    def set_generic_perf_references(self):
-        self.reference.update({'*': {
-            self.benchmark: (0, None, None, 's')
-        }})
-
-    @run_after('setup')
-    def set_perf_patterns(self):
-        self.perf_patterns = {
-            self.benchmark: sn.extractsingle(
-                r'electrons.+\s(?P<wtime>\S+)s WALL',
-                self.stdout, 'wtime', float)
-        }
-
-@rfm.simple_test
-class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
-    valid_systems = ['daint:mc', 'eiger:mc', 'pilatus:mc']
-
     @run_after('init')
     def set_reference(self):
-        if self.scale == 'small':
-            self.reference = REFERENCE_CPU_PERFORMANCE_SMALL
-            self.energy_value = -11427.09017168
-            self.energy_tolerance = 1E-06
+        if self.platform_name == 'cpu':
+            if self.scale == 'small':
+                self.reference = REFERENCE_CPU_PERFORMANCE_SMALL
+                self.energy_value = -11427.09017168
+                self.energy_tolerance = 1E-06
+            else:
+                self.reference = REFERENCE_CPU_PERFORMANCE_LARGE
+                self.energy_value = -11427.09017152
+                self.energy_tolerance = 1E-06
         else:
-            self.reference = REFERENCE_CPU_PERFORMANCE_LARGE
-            self.energy_value = -11427.09017152
-            self.energy_tolerance = 1E-06
-
-    @run_after('init')
-    def set_description(self):
-        self.descr = (f'QuantumESPRESSO CPU check (version: {self.scale}, '
-                      f'{self.benchmark})')
+            if self.scale == 'small':
+                self.reference = REFERENCE_GPU_PERFORMANCE_SMALL
+                self.energy_value = -11427.09017168
+                self.energy_tolerance = 1E-07
+            else:
+                self.reference = REFERENCE_GPU_PERFORMANCE_LARGE
+                self.energy_value = -11427.09017179
+                self.energy_tolerance = 1E-07
 
     @run_after('init')
     def set_num_tasks(self):
-        if self.scale == 'small':
-            self.valid_systems += ['dom:mc']
-            if self.current_system.name in ['daint', 'dom']:
-                self.num_tasks = 216
-                self.num_tasks_per_node = 36
-            elif self.current_system.name in ['eiger', 'pilatus']:
-                self.num_tasks = 96
-                self.num_tasks_per_node = 16
-                self.num_cpus_per_task = 16
-                self.num_tasks_per_core = 1
-                self.variables = {
-                    'MPICH_OFI_STARTUP_CONNECT': '1',
-                    'OMP_NUM_THREADS': '8',
-                    'OMP_PLACES': 'cores',
-                    'OMP_PROC_BIND': 'close'
-                }
+        if self.platform_name == 'cpu':
+            if self.scale == 'small':
+                self.valid_systems += ['dom:mc']
+                if self.current_system.name in ['daint', 'dom']:
+                    self.num_tasks = 216
+                    self.num_tasks_per_node = 36
+                elif self.current_system.name in ['eiger', 'pilatus']:
+                    self.num_tasks = 96
+                    self.num_tasks_per_node = 16
+                    self.num_cpus_per_task = 16
+                    self.num_tasks_per_core = 1
+                    self.variables = {
+                        'MPICH_OFI_STARTUP_CONNECT': '1',
+                        'OMP_NUM_THREADS': '8',
+                        'OMP_PLACES': 'cores',
+                        'OMP_PROC_BIND': 'close'
+                    }
+            else:
+                if self.current_system.name in ['daint']:
+                    self.num_tasks = 576
+                    self.num_tasks_per_node = 36
+                elif self.current_system.name in ['eiger', 'pilatus']:
+                    self.num_tasks = 256
+                    self.num_tasks_per_node = 16
+                    self.num_cpus_per_task = 16
+                    self.num_tasks_per_core = 1
+                    self.variables = {
+                        'MPICH_OFI_STARTUP_CONNECT': '1',
+                        'OMP_NUM_THREADS': '8',
+                        'OMP_PLACES': 'cores',
+                        'OMP_PROC_BIND': 'close'
+                    }
         else:
-            if self.current_system.name in ['daint']:
-                self.num_tasks = 576
-                self.num_tasks_per_node = 36
-            elif self.current_system.name in ['eiger', 'pilatus']:
-                self.num_tasks = 256
-                self.num_tasks_per_node = 16
-                self.num_cpus_per_task = 16
-                self.num_tasks_per_core = 1
-                self.variables = {
-                    'MPICH_OFI_STARTUP_CONNECT': '1',
-                    'OMP_NUM_THREADS': '8',
-                    'OMP_PLACES': 'cores',
-                    'OMP_PROC_BIND': 'close'
-                }
+            self.num_gpus_per_node = 1
+            self.num_tasks_per_node = 1
+            self.num_cpus_per_task = 12
+            if self.scale == 'small':
+                self.valid_systems += ['dom:gpu']
+                self.num_tasks = 6
+            else:
+                self.num_tasks = 16
+
+    @run_after('init')
+    def set_description(self):
+        self.descr = (f'QuantumESPRESSO {self.platform_name}'
+                      f'check (version: {self.scale}, {self.benchmark})')
 
     @run_before('run')
     def set_task_distribution(self):
-        self.job.options = ['--distribution=block:block']
+        if self.platform_name == 'cpu':
+            self.job.options = ['--distribution=block:block']
 
     @run_before('run')
     def set_cpu_binding(self):
-        self.job.launcher.options = ['--cpu-bind=cores']
-
-
-@rfm.simple_test
-class QuantumESPRESSOGpuCheck(QuantumESPRESSOCheck):
-    valid_systems = ['daint:gpu']
-    num_gpus_per_node = 1
-    num_tasks_per_node = 1
-    num_cpus_per_task = 12
-
-    @run_after('init')
-    def set_reference(self):
-        if self.scale == 'small':
-            self.reference = REFERENCE_GPU_PERFORMANCE_SMALL
-            self.energy_value = -11427.09017168
-            self.energy_tolerance = 1E-07
-        else:
-            self.reference = REFERENCE_GPU_PERFORMANCE_LARGE
-            self.energy_value = -11427.09017179
-            self.energy_tolerance = 1E-07
-
-    @run_after('init')
-    def set_description(self):
-        self.descr = (f'QuantumESPRESSO GPU check (version: {self.scale}, '
-                      f'{self.benchmark})')
-
-    @run_after('init')
-    def set_num_tasks(self):
-        if self.scale == 'small':
-            self.valid_systems += ['dom:gpu']
-            self.num_tasks = 6
-        else:
-            self.num_tasks = 16
+        if self.platform_name == 'cpu':
+            self.job.launcher.options = ['--cpu-bind=cores']

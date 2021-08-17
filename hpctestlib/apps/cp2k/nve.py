@@ -18,7 +18,7 @@ class Cp2k_NVE(rfm.RunOnlyRegressionTest):
     methods such as DFT using the mixed Gaussian and plane waves
     approaches GPW and GAPW.  (see cp2k.org).
 
-    The presented abstract run-only class checks the work of cp2k.
+    The presented abstract run-only class checks the perfomance of cp2k.
     To do this, it is necessary to define in tests  the reference
     values of energy and possible deviations from this value.
     This data is used to check if the task is being executed
@@ -31,16 +31,25 @@ class Cp2k_NVE(rfm.RunOnlyRegressionTest):
     platform_name = parameter(['cpu', 'gpu'])
 
     #: Reference value of energy, that is used for the comparison
-    #: with the execution ouput on the sanity step. Final value of
-    #: energy should be approximately the same
+    #: with the execution ouput on the sanity step. The absolute
+    #: difference between final energy value and reference value
+    #: should be smaller than energy_tolerance
+    #:
+    #: :type: str
+    #: :default: :class:`required`
     energy_value = -4404.2323
 
     #: Maximum deviation from the reference value of energy,
     #: that is acceptable.
+    #:
+    #: :default: :class:`required`
     energy_tolerance = 1E-04
 
-    #: Required variable
+    #: :default: :class:`required`
     num_tasks_per_node = required
+
+    #: :default: :class:`required`
+    executable = required
 
     executable = 'cp2k.psmp'
     executable_opts = ['H2O-256.inp']

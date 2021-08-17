@@ -18,7 +18,7 @@ class Cpmd_NVE(rfm.RunOnlyRegressionTest):
     Laboratory starting from the original Car-Parrinello
     codes.
 
-    The presented abstract run-only class checks the work of CPMD.
+    The presented abstract run-only class checks the perfomance of CPMD.
     To do this, it is necessary to define in tests the name
     of executable file (executable), the running script
     (input file), the output file, as well as set the reference
@@ -42,8 +42,12 @@ class Cpmd_NVE(rfm.RunOnlyRegressionTest):
     output_file = variable(str, value='stdout.txt')
 
     #: Reference value of energy, that is used for the comparison
-    #: with the execution ouput on the sanity step. Final value of
-    #: energy should be approximately the same
+    #: with the execution ouput on the sanity step. The absolute
+    #: difference between final energy value and reference value
+    #: should be smaller than energy_tolerance
+    #:
+    #: :type: str
+    #: :default: :class:`required`
     energy_value = 25.81
 
     #: Maximum deviation from the reference value of energy,

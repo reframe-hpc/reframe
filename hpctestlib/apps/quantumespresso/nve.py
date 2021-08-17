@@ -7,10 +7,8 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
 
-__all__ = ["QuantumESPRESSO"]
 
-
-class QuantumESPRESSO(rfm.RunOnlyRegressionTest):
+class QuantumESPRESSO_NVE(rfm.RunOnlyRegressionTest):
     '''Base class for the Quantum Espresso Test.
 
     Quantum ESPRESSO is an integrated suite of Open-Source computer
@@ -19,10 +17,10 @@ class QuantumESPRESSO(rfm.RunOnlyRegressionTest):
     theory, plane waves, and pseudopotentials.
     (see quantum-espresso.org)
 
-    The presented abstract run-only class checks the work of Quantum
-    ESPRESSO. To do this, it is necessary to define in tests the name
-    of the running script (input file), as well as set the reference
-    values of energy and possible deviations from this value.
+    The presented abstract run-only class checks the perfomance of
+    Quantum ESPRESSO. To do this, it is necessary to define in tests
+    the name of the running script (input file), as well as set the
+    reference values of energy and possible deviations from this value.
     This data is used to check if the task is being executed
     correctly, that is, the final energy is correct (approximately
     the reference). The default assumption is that Quantum ESPRESSO
@@ -35,9 +33,11 @@ class QuantumESPRESSO(rfm.RunOnlyRegressionTest):
     input_file = variable(str)
 
     #: Reference value of energy, that is used for the comparison
-    #: with the execution ouput on the sanity step. Final value of
-    #: energy should be approximately the same
+    #: with the execution ouput on the sanity step. The absolute
+    #: difference between final energy value and reference value
+    #: should be smaller than energy_tolerance
     #:
+    #: :type: str
     #: :default: :class:`required`
     energy_value = variable(float)
 
@@ -47,7 +47,14 @@ class QuantumESPRESSO(rfm.RunOnlyRegressionTest):
     #: :default: :class:`required`
     energy_tolerance = variable(float)
 
+    #: :default: :class:`required`
     num_tasks_per_node = required
+
+    #: :default: :class:`required`
+    executable = required
+
+    executable = 'pw.x'
+    input_file = 'ausurf.in'
 
     @run_after('setup')
     def set_executable_opts(self):
@@ -55,6 +62,18 @@ class QuantumESPRESSO(rfm.RunOnlyRegressionTest):
         using of input file.
         '''
         self.executable_opts = ['-in', self.input_file]
+
+    @run_before('performance')
+    def set_perf_patterns(self):
+        self.reference.update({'*': {
+            self.benchmark: (0, None, None, 's')
+        }})
+
+        self.perf_patterns = {
+            self.benchmark: sn.extractsingle(
+                r'electrons.+\s(?P<wtime>\S+)s WALL',
+                self.stdout, 'wtime', float)
+        }
 
     @sanity_function
     def set_sanity_patterns(self):
