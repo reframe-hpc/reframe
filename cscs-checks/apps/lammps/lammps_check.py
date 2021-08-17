@@ -105,8 +105,9 @@ class LAMMPSCheckCSCS(LAMMPS_NVE):
 
     @run_after('init')
     def set_tags(self):
-        self.tags |= {'maintenance' if self.mode== 'maint'
+        self.tags |= {'maintenance' if self.mode == 'maint'
                       else 'production'}
+
 
 @rfm.simple_test
 class lammps_gpu_check(LAMMPSCheckCSCS):
@@ -116,9 +117,6 @@ class lammps_gpu_check(LAMMPSCheckCSCS):
     mode = parameter(['prod', 'maint'])
     valid_systems = ['daint:gpu']
     num_gpus_per_node = 1
-
-    #@run_after('init')
-    #def set_num_tasks(self):
 
     @run_after('init')
     def set_reference(self):
@@ -164,7 +162,6 @@ class lammps_cpu_check(LAMMPSCheckCSCS):
         if self.current_system.name == 'eiger':
             self.num_tasks_per_node = 128
             self.num_tasks = 256 if self.benchmark == 'small' else 512
-
 
     @run_after('init')
     def set_reference(self):
