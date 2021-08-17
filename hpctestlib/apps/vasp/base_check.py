@@ -7,8 +7,6 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
 
-__all__ = ["VAPS"]
-
 
 class VASP(rfm.RunOnlyRegressionTest):
     '''Base class for the VASP Test.
@@ -18,7 +16,7 @@ class VASP(rfm.RunOnlyRegressionTest):
     structure calculations and quantum-mechanical molecular
     dynamics, from first principles. (see vasp.at)
 
-    The presented abstract run-only class checks the work of VASP.
+    The presented abstract run-only class checks the perfomance of VASP.
     To do this, it is necessary to define in tests the reference
     values of force and possible deviations from this value.
     This data is used to check if the task is being executed
@@ -28,22 +26,55 @@ class VASP(rfm.RunOnlyRegressionTest):
     '''
 
     #: Reference value of force, that is used for the comparison
-    #: with the execution ouput on the sanity step. Final value of
-    #: force should be approximately the same
+    #: with the execution ouput on the sanity step. The absolute
+    #: difference between final force value and reference value
+    #: should be smaller than force_tolerance
     #:
+    #: :type: float
     #: :default: :class:`required`
     force_value = variable(float)
 
     #: Maximum deviation from the reference value of force,
     #: that is acceptable.
     #:
+    #: :type: float
     #: :default: :class:`required`
     force_tolerance = variable(float)
 
-    # Name of the keep files for the case of VASP is standart
+    #: Name of the keep files for the case of VASP is standart
     keep_files = ['OUTCAR']
 
+    #: :default: :class:`required`
     num_tasks_per_node = required
+
+    force_value = -.85026214E+03
+    force_tolerance = 1e-5
+
+    #: Parameter pack containing the platform name and executable.
+    platform_info = parameter([
+        ('cpu', 'vasp_std'),
+        ('gpu', 'vasp_gpu')
+    ])
+
+    @run_after('init')
+    def unpack_platform_parameter(self):
+        '''Set the executable and input file.'''
+
+        self.platform, self.executable = self.platform_info
+
+    @run_after('setup')
+    def set_generic_perf_references(self):
+        self.reference.update({'*': {
+            self.mode: (0, None, None, 's')
+        }})
+
+    @run_after('setup')
+    def set_perf_patterns(self):
+        self.perf_patterns = {
+            self.mode: sn.extractsingle(r'Total CPU time used \(sec\):'
+                                             r'\s+(?P<time>\S+)', 'OUTCAR',
+                                             'time', float)
+        }
 
     @sanity_function
     def set_sanity_patterns(self):

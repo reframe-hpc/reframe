@@ -5,7 +5,7 @@
 
 import reframe as rfm
 import reframe.utility.sanity as sn
-from hpctestlib.apps.quantumespresso.nve import QuantumESPRESSO_NVE
+from hpctestlib.apps.quantumespresso.base_check import QuantumESPRESSO
 
 
 REFERENCE_CPU_PERFORMANCE_SMALL = {
@@ -62,10 +62,10 @@ REFERENCE_GPU_PERFORMANCE_LARGE = {
 
 
 @rfm.simple_test
-class quantum_espresso_check_cscs(QuantumESPRESSO_NVE):
+class quantum_espresso_check_cscs(QuantumESPRESSO):
     scale = parameter(['small', 'large'])
-    benchmark = parameter(['maint', 'prod'])
-    platform_name = parameter(['gpu', 'cpu'])
+    mode = parameter(['maint', 'prod'])
+    platform = parameter(['gpu', 'cpu'])
     modules = ['QuantumESPRESSO']
     maintainers = ['LM']
     tags = {'scs'}
@@ -78,7 +78,7 @@ class quantum_espresso_check_cscs(QuantumESPRESSO_NVE):
 
     @run_after('init')
     def set_valid_systems(self):
-        if self.platform_name == 'cpu':
+        if self.platform == 'cpu':
             self.valid_systems = ['daint:mc', 'eiger:mc', 'pilatus:mc']
         else:
             self.valid_systems = ['daint:gpu']
@@ -93,12 +93,12 @@ class quantum_espresso_check_cscs(QuantumESPRESSO_NVE):
     @run_after('init')
     def set_tags(self):
         self.tags |= {
-            'maintenance' if self.benchmark == 'maint' else 'production'
+            'maintenance' if self.mode == 'maint' else 'production'
         }
 
     @run_after('init')
     def set_reference(self):
-        if self.platform_name == 'cpu':
+        if self.platform == 'cpu':
             if self.scale == 'small':
                 self.reference = REFERENCE_CPU_PERFORMANCE_SMALL
                 self.energy_value = -11427.09017168
@@ -119,7 +119,7 @@ class quantum_espresso_check_cscs(QuantumESPRESSO_NVE):
 
     @run_after('init')
     def set_num_tasks(self):
-        if self.platform_name == 'cpu':
+        if self.platform == 'cpu':
             if self.scale == 'small':
                 self.valid_systems += ['dom:mc']
                 if self.current_system.name in ['daint', 'dom']:
@@ -163,15 +163,15 @@ class quantum_espresso_check_cscs(QuantumESPRESSO_NVE):
 
     @run_after('init')
     def set_description(self):
-        self.descr = (f'QuantumESPRESSO {self.platform_name}'
-                      f'check (version: {self.scale}, {self.benchmark})')
+        self.descr = (f'QuantumESPRESSO {self.platform}'
+                      f'check (version: {self.scale}, {self.mode})')
 
     @run_before('run')
     def set_task_distribution(self):
-        if self.platform_name == 'cpu':
+        if self.platform == 'cpu':
             self.job.options = ['--distribution=block:block']
 
     @run_before('run')
     def set_cpu_binding(self):
-        if self.platform_name == 'cpu':
+        if self.platform == 'cpu':
             self.job.launcher.options = ['--cpu-bind=cores']

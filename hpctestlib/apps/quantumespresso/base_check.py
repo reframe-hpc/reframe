@@ -8,7 +8,7 @@ import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
 
 
-class QuantumESPRESSO_NVE(rfm.RunOnlyRegressionTest):
+class QuantumESPRESSO(rfm.RunOnlyRegressionTest):
     '''Base class for the Quantum Espresso Test.
 
     Quantum ESPRESSO is an integrated suite of Open-Source computer
@@ -37,13 +37,14 @@ class QuantumESPRESSO_NVE(rfm.RunOnlyRegressionTest):
     #: difference between final energy value and reference value
     #: should be smaller than energy_tolerance
     #:
-    #: :type: str
+    #: :type: float
     #: :default: :class:`required`
     energy_value = variable(float)
 
     #: Maximum deviation from the reference value of energy,
     #: that is acceptable.
     #:
+    #: :type: float
     #: :default: :class:`required`
     energy_tolerance = variable(float)
 
@@ -66,11 +67,11 @@ class QuantumESPRESSO_NVE(rfm.RunOnlyRegressionTest):
     @run_before('performance')
     def set_perf_patterns(self):
         self.reference.update({'*': {
-            self.benchmark: (0, None, None, 's')
+            self.mode: (0, None, None, 's')
         }})
 
         self.perf_patterns = {
-            self.benchmark: sn.extractsingle(
+            self.mode: sn.extractsingle(
                 r'electrons.+\s(?P<wtime>\S+)s WALL',
                 self.stdout, 'wtime', float)
         }

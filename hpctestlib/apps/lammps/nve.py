@@ -3,139 +3,107 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import os
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
 
 
-class Amber_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
-    '''Base class for the Amber NVE Test.
+class LAMMPS_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
+    '''Base class for the LAMMPS NVE Test.
 
-    Amber is a suite of biomolecular simulation programs. It
-    began in the late 1970's, and is maintained by an active
-    development community (see ambermd.org).
+    LAMMPS is a classical molecular dynamics code with a focus
+    on materials modeling. It's an acronym for Large-scale
+    Atomic/Molecular Massively Parallel Simulator.
 
-    The presented abstract run-only class checks the amber perfomance.
+    LAMMPS has potentials for solid-state materials (metals,
+    semiconductors) and soft matter (biomolecules, polymers)
+    and coarse-grained or mesoscopic systems. It can be used
+    to model atoms or, more generically, as a parallel particle
+    simulator at the atomic, meso, or continuum scale.
+    (see lammps.org)
+
+    The presented abstract run-only class checks the LAMMPS perfomance.
     To do this, it is necessary to define in tests the name
-    of the running script (input file), the output file,
-    as well as set the reference values of energy and possible
-    deviations from this value. This data is used to check if
-    the task is being executed correctly, that is, the final energy
-    is correct (approximately the reference). The default assumption
-    is that Amber is already installed on the device under test.
+    of the running script (input file), as well as set the
+    reference values of energy and possible deviations from this
+    value. This data is used to check if the task is being
+    executed correctly, that is, the final energy is correct
+    (approximately the reference). The default assumption is that
+    LAMMPS is already installed on the device under test.
     '''
 
-    #: Amber output file.
-    #:
-    #: :default: : 'amber.out'
-    output_file = variable(str, value='amber.out')
-
-    #: Amber input file. This file is set by the post-init hook
-    #: :func:`unpack_platform_parameter`.
+    #: Name of executed script
     #:
     #: :default: :class:`required`
     input_file = variable(str)
 
-    #: Reference value of energy, that is used for the comparison
-    #: with the execution ouput on the sanity step. The absolute
-    #: difference between final energy value and reference value
-    #: should be smaller than energy_tolerance
-    #:
-    #: :type: str
-    #: :default: :class:`required`
-    energy_value = variable(float)
+     #: Reference value of energy, that is used for the comparison
+     #: with the execution ouput on the sanity step. The absolute
+     #: difference between final energy value and reference value
+     #: should be smaller than energy_tolerance
+     #:
+     #: :type: str
+     #: :default: :class:`required`
+    energy_value = -4.6195
 
-    #: Maximum deviation from the reference value of energy,
-    #: that is acceptable.
-    #:
-    #: :default: :class:`required`
-    energy_tolerance = variable(float)
-
-    #: Parameter pack containing the platform ID, input file and
-    #: executable.
-    platform_info = parameter([
-        ('cpu', 'mdin.CPU', 'pmemd.MPI'),
-        ('gpu', 'mdin.GPU', 'pmemd.cuda.MPI')
-    ])
-
-    #: NVE simulation parameter pack with the benchmark name,
-    #: energy reference and energy tolerance for each case.
-    variant = parameter([
-        ('Cellulose_production_NVE', -443246.0, 5.0E-05),
-        ('FactorIX_production_NVE', -234188.0, 1.0E-04),
-        ('JAC_production_NVE_4fs', -44810.0, 1.0E-03),
-        ('JAC_production_NVE', -58138.0, 5.0E-04)
-    ])
+     #: Maximum deviation from the reference value of energy,
+     #: that is acceptable.
+     #:
+     #: :default: :class:`required`
+    energy_tolerance = 6.0E-04
 
     #: :default: :class:`required`
     num_tasks_per_node = required
 
-    #: :default: :class:`required`
-    executable = required
 
-    tags = {'sciapp', 'chemistry'}
+    #: Parameter pack containing the platform ID and input file
+    platform = parameter([
+        ('cpu', 'in.lj.cpu'),
+        ('gpu', 'in.lj.gpu')
+    ])
 
     @run_after('init')
     def unpack_platform_parameter(self):
         '''Set the executable and input file.'''
 
-        self.platform, self.input_file, self.executable = self.platform_info
+        self.platform_name, self.input_file = self.platform
 
     @run_after('init')
-    def unpack_variant_parameter(self):
-        '''Set the value of energy and energy tolerance for a
-        specific program.
-        '''
+    def source_install(self):
+        # Reset sources dir relative to the SCS apps prefix
+        self.sourcesdir = os.path.join(self.current_system.resourcesdir,
+                                       'LAMMPS')
 
-        self.benchmark, self.energy_value, self.energy_tolerance = self.variant
-
-    @run_after('init')
-    def set_keep_files(self):
-        self.keep_files = [self.output_file]
-
-    @run_before('performance')
-    def set_perf_patterns(self):
+    @run_after('setup')
+    def set_generic_perf_references(self):
         self.reference.update({'*': {
-            self.benchmark: (0, None, None, 'ns/day')
+            self.mode: (0, None, None, 'timesteps/s')
         }})
 
+    @run_after('setup')
+    def set_perf_patterns(self):
         self.perf_patterns = {
-            self.benchmark: sn.extractsingle(r'ns/day =\s+(?P<perf>\S+)',
-                                             self.output_file, 'perf',
-                                             float, item=1)
+            self.mode: sn.extractsingle(r'\s+(?P<perf>\S+) timesteps/s',
+                                             self.stdout, 'perf', float)
         }
 
-    @run_before('run')
-    def download_files(self):
-        '''Download program files, which used in test'''
-
-        self.prerun_cmds = [
-            # cannot use wget because it is not installed on eiger
-            f'curl -LJO https://github.com/victorusu/amber_benchmark_suite'
-            f'/raw/main/amber_16_benchmark_suite/PME/{self.benchmark}.tar.bz2',
-            f'tar xf {self.benchmark}.tar.bz2'
-        ]
-
-    @run_before('run')
-    def set_executable_opts(self):
-        '''Set the executable options for the Amber. Determine the
-        using of input and ouput files.
+    @sanity_function
+    def set_sanity_patterns(self):
+        '''Standart sanity check for the LAMMPS. Compare the
+        reference value of energy with obtained from the executed
+        program.
         '''
 
-        self.executable_opts = ['-O',
-                                '-i', self.input_file,
-                                '-o', self.output_file]
-
-    @sanity_function
-    def assert_energy_readout(self):
-        '''Assert the obtained energy meets the specified tolerances.'''
-
-        energy = sn.extractsingle(r' Etot\s+=\s+(?P<energy>\S+)',
-                                  self.output_file, 'energy', float, item=-2)
+        energy = sn.extractsingle(
+            r'\s+500000(\s+\S+){3}\s+(?P<energy>\S+)\s+\S+\s\n',
+            self.stdout, 'energy', float)
         energy_diff = sn.abs(energy - self.energy_value)
         ref_ener_diff = sn.abs(self.energy_value *
                                self.energy_tolerance)
+
         return sn.all([
-            sn.assert_found(r'Final Performance Info:', self.output_file),
+            sn.assert_found(r'Total wall time:', self.stdout),
             sn.assert_lt(energy_diff, ref_ener_diff)
         ])
