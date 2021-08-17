@@ -39,7 +39,7 @@ class Cp2k_NVE(rfm.RunOnlyRegressionTest):
     #: that is acceptable.
     energy_tolerance = 1E-04
 
-    # Required variable
+    #: Required variable
     num_tasks_per_node = required
 
     executable = 'cp2k.psmp'

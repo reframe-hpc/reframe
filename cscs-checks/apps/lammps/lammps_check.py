@@ -3,11 +3,9 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import os
-
 import reframe as rfm
 import reframe.utility.sanity as sn
-from hpctestlib.apps.lammps import LAMMPS
+from hpctestlib.apps.lammps.nve import LAMMPS_NVE
 
 dom_gpu_small = {
     'maint': (3457, -0.10, None, 'timesteps/s'),
@@ -78,7 +76,15 @@ REFERENCE_CPU_PERFORMANCE_LARGE = {
 }
 
 
-class LAMMPSCheck(LAMMPS):
+def inherit_cpu_only(params):
+    return tuple(filter(lambda p: p[0] == 'cpu', params))
+
+
+def inherit_gpu_only(params):
+    return tuple(filter(lambda p: p[0] == 'gpu', params))
+
+
+class LAMMPSCheckCSCS(LAMMPS_NVE):
     modules = ['LAMMPS']
     strict_check = False
     extra_resources = {
@@ -89,27 +95,6 @@ class LAMMPSCheck(LAMMPS):
 
     tags = {'scs', 'external-resources'}
     maintainers = ['TR', 'VH']
-    energy_value = -4.6195
-    energy_tolerance = 6.0E-04
-
-    @run_after('setup')
-    def set_generic_perf_references(self):
-        self.reference.update({'*': {
-            self.benchmark: (0, None, None, 'timesteps/s')
-        }})
-
-    @run_after('setup')
-    def set_perf_patterns(self):
-        self.perf_patterns = {
-            self.benchmark: sn.extractsingle(r'\s+(?P<perf>\S+) timesteps/s',
-                                             self.stdout, 'perf', float)
-        }
-
-    @run_after('init')
-    def source_install(self):
-        # Reset sources dir relative to the SCS apps prefix
-        self.sourcesdir = os.path.join(self.current_system.resourcesdir,
-                                       'LAMMPS')
 
     @run_after('init')
     def env_define(self):
@@ -120,20 +105,20 @@ class LAMMPSCheck(LAMMPS):
 
     @run_after('init')
     def set_tags(self):
-        self.tags |= {'maintenance' if self.benchmark == 'maint'
+        self.tags |= {'maintenance' if self.mode== 'maint'
                       else 'production'}
 
-
 @rfm.simple_test
-class LAMMPSGPUCheck(LAMMPSCheck):
+class lammps_gpu_check(LAMMPSCheckCSCS):
+    platform = parameter(inherit_params=True,
+                         filter_params=inherit_gpu_only)
     scale = parameter(['small', 'large'])
-    benchmark = parameter(['prod', 'maint'])
+    mode = parameter(['prod', 'maint'])
     valid_systems = ['daint:gpu']
-    executable = 'lmp_mpi'
-    input_file = 'in.lj.gpu'
-    executable_opts = ['-sf gpu', '-pk gpu 1', '-in', input_file]
-    variables = {'CRAY_CUDA_MPS': '1'}
     num_gpus_per_node = 1
+
+    #@run_after('init')
+    #def set_num_tasks(self):
 
     @run_after('init')
     def set_reference(self):
@@ -142,8 +127,13 @@ class LAMMPSGPUCheck(LAMMPSCheck):
         else:
             self.reference = REFERENCE_GPU_PERFORMANCE_LARGE
 
-    @run_after('init')
-    def set_num_tasks(self):
+    @run_before('run')
+    def set_executable_opts(self):
+        self.executable = 'lmp_mpi'
+        self.executable_opts = ['-sf gpu',
+                                '-pk gpu 1',
+                                '-in', self.input_file]
+        self.variables = {'CRAY_CUDA_MPS': '1'}
         if self.scale == 'small':
             self.valid_systems += ['dom:gpu']
             self.num_tasks = 12
@@ -154,18 +144,12 @@ class LAMMPSGPUCheck(LAMMPSCheck):
 
 
 @rfm.simple_test
-class LAMMPSCPUCheck(LAMMPSCheck):
+class lammps_cpu_check(LAMMPSCheckCSCS):
+    platform = parameter(inherit_params=True,
+                         filter_params=inherit_cpu_only)
     scale = parameter(['small', 'large'])
-    benchmark = parameter(['prod'])
+    mode = parameter(['prod'])
     valid_systems = ['daint:mc', 'eiger:mc', 'pilatus:mc']
-    input_file = 'in.lj.cpu'
-
-    @run_after('init')
-    def set_reference(self):
-        if self.scale == 'small':
-            self.reference = REFERENCE_CPU_PERFORMANCE_SMALL
-        else:
-            self.reference = REFERENCE_CPU_PERFORMANCE_LARGE
 
     @run_after('init')
     def set_num_tasks(self):
@@ -181,7 +165,15 @@ class LAMMPSCPUCheck(LAMMPSCheck):
             self.num_tasks_per_node = 128
             self.num_tasks = 256 if self.benchmark == 'small' else 512
 
+
     @run_after('init')
+    def set_reference(self):
+        if self.scale == 'small':
+            self.reference = REFERENCE_CPU_PERFORMANCE_SMALL
+        else:
+            self.reference = REFERENCE_CPU_PERFORMANCE_LARGE
+
+    @run_before('run')
     def set_hierarchical_prgenvs(self):
         if self.current_system.name in ['eiger', 'pilatus']:
             self.executable = 'lmp_mpi'

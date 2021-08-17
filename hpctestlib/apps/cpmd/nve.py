@@ -52,7 +52,10 @@ class Cpmd_NVE(rfm.RunOnlyRegressionTest):
     #: :default: :class:`required`
     energy_tolerance = 0.26
 
+    #: :default: :class:`required`
     num_tasks_per_node = required
+
+    #: :default: :class:`required`
     executable = required
 
     executable = 'cpmd.x'
