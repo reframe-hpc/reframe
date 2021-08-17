@@ -8,6 +8,10 @@ FROM reframehpc/rfm-ci-base:lmod
 ENV _SPACK_VER=0.16
 ENV _EB_VER=4.4.1
 
+# Required utilities
+RUN apt-get -y update && \
+    apt-get -y install curl
+
 # ReFrame user
 RUN useradd -ms /bin/bash rfmuser
 
