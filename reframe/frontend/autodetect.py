@@ -198,7 +198,9 @@ def detect_topology():
                 f'> found devices file {dev_file!r}; loading...'
             )
             try:
-                part._devices = _load_info(dev_file, _subschema('#/defs/devices'))
+                part._devices = _load_info(
+                    dev_file, _subschema('#/defs/devices')
+                )
                 found_devinfo = True
             except json.decoder.JSONDecodeError:
                 getlogger().debug(
