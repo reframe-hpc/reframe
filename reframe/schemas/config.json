@@ -256,7 +256,7 @@
                                     "enum": [
                                         "alps",  "ibrun", "local", "mpirun",
                                         "mpiexec", "srun", "srunalloc", "ssh",
-                                        "upcrun", "upcxx-run"
+                                        "upcrun", "upcxx-run", "lrun", "lrun-gpu"
                                     ]
                                 },
                                 "access": {
