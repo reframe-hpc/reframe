@@ -401,6 +401,22 @@ class RegressionTestMeta(type):
             f'class {cls.__qualname__!r} has no attribute {name!r}'
         ) from None
 
+    def setvar(cls, name, value):
+        '''Set the value of a variable (unless the value is a descriptor).'''
+
+        var_space = super().__getattribute__('_rfm_var_space')
+        if name in var_space:
+            if not hasattr(value, '__get__'):
+                var_space[name].define(value)
+                return
+            elif not var_space[name].field is value:
+                desc = '.'.join([cls.__qualname__, name])
+                raise ReframeSyntaxError(
+                    f'cannot override variable descriptor {desc!r}'
+                )
+        else:
+            raise AttributeError(f'{cls.__name__!r} has no variable {name!r}')
+
     def __setattr__(cls, name, value):
         '''Handle the special treatment required for variables and parameters.
 
@@ -417,19 +433,8 @@ class RegressionTestMeta(type):
         is not allowed. This would break the parameter space internals.
         '''
 
-        # Set the value of a variable (except when the value is a descriptor).
         try:
-            var_space = super().__getattribute__('_rfm_var_space')
-            if name in var_space:
-                if not hasattr(value, '__get__'):
-                    var_space[name].define(value)
-                    return
-                elif not var_space[name].field is value:
-                    desc = '.'.join([cls.__qualname__, name])
-                    raise ReframeSyntaxError(
-                        f'cannot override variable descriptor {desc!r}'
-                    )
-
+            cls.setvar(name, value)
         except AttributeError:
             pass
 
@@ -438,7 +443,6 @@ class RegressionTestMeta(type):
             param_space = super().__getattribute__('_rfm_param_space')
             if name in param_space.params:
                 raise ReframeSyntaxError(f'cannot override parameter {name!r}')
-
         except AttributeError:
             pass
 

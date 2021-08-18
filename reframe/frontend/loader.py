@@ -8,6 +8,7 @@
 #
 
 import ast
+import contextlib
 import inspect
 import os
 import sys
@@ -127,7 +128,8 @@ class RegressionCheckLoader:
                     testname, varname = test.__name__, name
 
                 if testname == test.__name__:
-                    setattr(test, varname, fields.make_convertible(val))
+                    with contextlib.suppress(AttributeError):
+                        test.setvar(varname, fields.make_convertible(val))
 
     def load_from_module(self, module):
         '''Load user checks from module.
