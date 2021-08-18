@@ -218,7 +218,7 @@ The framework will then continue with other activities and it will execute the p
 
 .. note::
    Pipeline hooks do not execute in the test's stage directory.
-   However, a test's :attr:`~reframe.core.pipeline.RegressionTest.stagedir` can be accessed by explicitly changing the working directory from the hook function itself (see the :class:`~reframe.utility.osext.change_dir` utility for further details):
+   However, the test's :attr:`~reframe.core.pipeline.RegressionTest.stagedir` can be accessed by explicitly changing the working directory from within the hook function itself (see the :class:`~reframe.utility.osext.change_dir` utility for further details):
 
    .. code:: python
 
