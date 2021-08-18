@@ -18,7 +18,6 @@ import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
 from reframe.core.exceptions import JobSchedulerError
 from reframe.core.schedulers.pbs import PbsJobScheduler
-from reframe.utility import seconds_to_hms
 
 _run_strict = functools.partial(osext.run_command, check=True)
 
@@ -64,7 +63,8 @@ class LsfJobScheduler(PbsJobScheduler):
     def submit(self, job):
         cmd = f'bsub {job.script_filename}'
         completed = _run_strict(cmd, timeout=self._submit_timeout)
-        jobid_match = re.search(r'^Job <(?P<jobid>\S+)> is submitted', completed.stdout)
+        jobid_match = re.search(r'^Job <(?P<jobid>\S+)> is submitted',
+                                completed.stdout)
         if not jobid_match:
             raise JobSchedulerError('could not retrieve the job id '
                                     'of the submitted job')
@@ -80,7 +80,8 @@ class LsfJobScheduler(PbsJobScheduler):
         if not jobs:
             return
 
-        completed = osext.run_command(f'bjobs -noheader {" ".join(job.jobid for job in jobs)}')
+        completed = osext.run_command(
+            f'bjobs -noheader {" ".join(job.jobid for job in jobs)}')
         if completed.returncode != 0:
             raise JobSchedulerError(
                 f'bjobs failed with exit code {completed.returncode} '
@@ -91,13 +92,17 @@ class LsfJobScheduler(PbsJobScheduler):
         job_status_lines = completed.stdout.split('\n')
 
         for line in job_status_lines:
-            job_match = re.search(r'(?P<jobid>\d+)\s+(?P<user>\S+)\s+(?P<status>\S+)\s+(?P<queue>\S+)', line)
+            job_regex = (r'(?P<jobid>\d+)\s+'
+                         r'(?P<user>\S+)\s+'
+                         r'(?P<status>\S+)\s+'
+                         r'(?P<queue>\S+)')
+            job_match = re.search(job_regex, line)
             if job_match:
                 job_status[job_match['jobid']] = job_match['status']
 
         for job in jobs:
             # job id not found
-            if not job.jobid in job_status:
+            if job.jobid not in job_status:
                 self.log(f'Job {job.jobid} not known to scheduler, '
                          f'assuming job completed')
                 job._state = 'COMPLETED'
@@ -110,15 +115,15 @@ class LsfJobScheduler(PbsJobScheduler):
 
             # job running
             elif job_status[job.jobid] == 'RUN':
-                job._state =  'RUNNING'
-            
+                job._state = 'RUNNING'
+
             # job pending
             elif job_status[job.jobid] == 'PEND':
-                job._state =  'PENDING'
-            
+                job._state = 'PENDING'
+
             # job suspended
             elif job_status[job.jobid] in ['PSUSP', 'SSUSP', 'USUSP']:
-                job._state =  'SUSPENDED'
+                job._state = 'SUSPENDED'
 
             # job status unknown
             else:
