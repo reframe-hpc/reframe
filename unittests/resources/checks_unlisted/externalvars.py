@@ -18,10 +18,12 @@ class external_x(rfm.RunOnlyRegressionTest):
 @rfm.simple_test
 class external_y(external_x):
     foolist = variable(typ.List[int])
+    bar = variable(type(None), str)
 
     @sanity_function
     def assert_foolist(self):
         return sn.all([
             sn.assert_eq(self.foo, 2),
-            sn.assert_eq(self.foolist, [3, 4])
+            sn.assert_eq(self.foolist, [3, 4]),
+            sn.assert_eq(self.bar, None)
         ])

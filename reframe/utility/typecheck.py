@@ -76,6 +76,10 @@ the rest of the types):
 
 .. code-block:: none
 
+          type
+            |
+            |
+            |
           List
         /   |
        /    |
@@ -298,14 +302,6 @@ class _StrType(_SequenceType):
         return s
 
 
-class _NoneType(_BuiltinType):
-    def __rfm_cast_str__(cls, s):
-        if s == 'null':
-            return None
-
-        raise TypeError(f"cannot convert string {s!r} to 'None'")
-
-
 class Dict(metaclass=_MappingType):
     _type = dict
 
@@ -324,7 +320,3 @@ class Str(metaclass=_StrType):
 
 class Tuple(metaclass=_TupleType):
     _type = tuple
-
-
-class Null(metaclass=_NoneType):
-    _type = type(None)

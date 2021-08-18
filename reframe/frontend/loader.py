@@ -128,8 +128,14 @@ class RegressionCheckLoader:
                     testname, varname = test.__name__, name
 
                 if testname == test.__name__:
+                    # Treat special values
+                    if val == '@none':
+                        val = None
+                    else:
+                        val = fields.make_convertible(val)
+
                     with contextlib.suppress(AttributeError):
-                        test.setvar(varname, fields.make_convertible(val))
+                        test.setvar(varname, val)
 
     def load_from_module(self, module):
         '''Load user checks from module.

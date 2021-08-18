@@ -229,13 +229,3 @@ def test_custom_types_conversion():
 
     assert Y('1').y == 1
     assert Z(5, 3).z  == 8
-
-
-def test_none_type():
-    assert isinstance(types.Null, type)
-    assert issubclass(type(None), types.Null)
-    assert isinstance(None, types.Null)
-    assert types.Null('null') is None
-
-    with pytest.raises(TypeError):
-        types.Null('foo')
