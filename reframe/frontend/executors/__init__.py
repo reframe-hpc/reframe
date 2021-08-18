@@ -286,6 +286,7 @@ class RegressionTask:
 
     def compile(self):
         self._safe_call(self.check.compile)
+        self._notify_listeners('on_task_build')
 
     def compile_wait(self):
         self._safe_call(self.check.compile_wait)
@@ -302,8 +303,8 @@ class RegressionTask:
 
         return done
 
-    def build_complete(self):
-        done = self._safe_call(self.check.run_complete)
+    def compile_complete(self):
+        done = self._safe_call(self.check.compile_complete)
         if done:
             self._notify_listeners('on_task_build_exit')
 
@@ -375,6 +376,10 @@ class TaskEventListener(abc.ABC):
     @abc.abstractmethod
     def on_task_run(self, task):
         '''Called whenever the run() method of a RegressionTask is called.'''
+
+    @abc.abstractmethod
+    def on_task_build(self, task):
+        '''Called whenever the build() method of a RegressionTask is called.'''
 
     @abc.abstractmethod
     def on_task_exit(self, task):

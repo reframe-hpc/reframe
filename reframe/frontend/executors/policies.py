@@ -158,6 +158,9 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def on_task_run(self, task):
         pass
 
+    def on_task_build(self, task):
+        pass
+
     def on_task_exit(self, task):
         pass
 
@@ -230,6 +233,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         # Index tasks by test cases
         self._task_index = {}
 
+        # All currently building tasks per partition
+        self._building_tasks = {}
+
         # All currently running tasks per partition
         self._running_tasks = {}
 
@@ -300,6 +306,10 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         partname = task.check.current_partition.fullname
         self._running_tasks[partname].append(task)
 
+    def on_task_build(self, task):
+        partname = task.check.current_partition.fullname
+        self._building_tasks[partname].append(task)
+
     def on_task_skip(self, task):
         # Remove the task from the running list if it was skipped after the
         # run phase
@@ -354,9 +364,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._completed_tasks.append(task)
 
     def on_task_build_exit(self, task):
-        task.build_wait()
+        task.compile_wait()
         self._remove_from_building(task)
-        self._reschedule(task)
+        self._reschedule_run(task)
 
     def _setup_task(self, task):
         if self.deps_skipped(task):
@@ -390,6 +400,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
         # Set partition-based counters, if not set already
         self._running_tasks.setdefault(partition.fullname, [])
+        self._building_tasks.setdefault(partition.fullname, [])
         self._ready_tasks.setdefault(partition.fullname, [])
         self._max_jobs.setdefault(partition.fullname, partition.max_jobs)
 
@@ -479,7 +490,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
             # Trigger notifications for finished jobs
             for t in self._building_tasks[partname][:]:
-                t.build_complete()
+                # print(f'There is a task: {t}')
+                t.compile_complete()
+                # print(f'Checked task: {t}')
 
     def _setup_all(self):
         still_waiting = []
@@ -527,11 +540,11 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                                     self._completed_tasks):
             task.abort(cause)
 
-    def _reschedule_building(self, task):
+    def _reschedule(self, task):
         getlogger().debug2(f'Scheduling test case {task.testcase} for running')
         task.compile()
 
-    def _reschedule(self, task):
+    def _reschedule_run(self, task):
         getlogger().debug2(f'Scheduling test case {task.testcase} for running')
         task.run()
 
@@ -558,7 +571,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self.printer.separator('short single line',
                                'waiting for spawned checks to finish')
         while (countall(self._running_tasks) or self._waiting_tasks or
-               self._completed_tasks or countall(self._ready_tasks)):
+               self._completed_tasks or countall(self._ready_tasks) or
+               countall(self._building_tasks)):
             getlogger().debug2(f'Running tasks: '
                                f'{countall(self._running_tasks)}')
             try:

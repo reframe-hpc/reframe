@@ -1501,7 +1501,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             self.num_tasks = self.job.num_tasks
 
     @final
-    def build_complete(self):
+    def compile_complete(self):
         '''Check if the build phase has completed.
 
         :returns: :class:`True` if the associated build job has finished,
@@ -1525,9 +1525,14 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         '''
         if not self._build_job:
+            print('no build job????\n\n\n')
             return True
 
-        return self._build_job.finished()
+        t = self._build_job.finished()
+        if t:
+
+            print(f'Finished? {t}')
+        return t
 
     @final
     def run_complete(self):
