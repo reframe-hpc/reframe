@@ -124,9 +124,18 @@ class ParamSpace(namespaces.Namespace):
 
         local_param_space = getattr(cls, self.local_namespace_name)
         for name, p in local_param_space.items():
-            self.params[name] = (
-                p.filter_params(self.params.get(name, ())) + p.values
-            )
+            try:
+                filt_vals = p.filter_params(self.params.get(name, ()))
+            except Exception:
+                raise
+            else:
+                try:
+                    self.params[name] = (tuple(filt_vals) + p.values)
+                except TypeError:
+                    raise ReframeSyntaxError(
+                        f"'filter_param' must return an iterable "
+                        f"(parameter {name!r})"
+                    ) from None
 
         # If any previously declared parameter was defined in the class body
         # by directly assigning it a value, raise an error. Parameters must be
