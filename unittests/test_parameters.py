@@ -83,13 +83,16 @@ def test_filter_params():
 
 
 def test_wrong_filter():
+    def bad_filter(x):
+        raise RuntimeError('bad filter')
+
+    with pytest.raises(RuntimeError):
+        class Foo(ExtendParams):
+            P1 = parameter(inherit_params=True, filter_params=bad_filter)
+
     with pytest.raises(ReframeSyntaxError):
         class Foo(ExtendParams):
             P1 = parameter(inherit_params=True, filter_params=lambda x: 1)
-
-    with pytest.raises(ReframeSyntaxError):
-        class Bar(ExtendParams):
-            P1 = parameter(inherit_params=True, filter_params=lambda x, y: [])
 
 
 def test_is_abstract_test():

@@ -85,11 +85,11 @@ Built-in types
   .. code:: python
 
     class ExtendVariant(Bar):
-        # Extend the variant parameter values to ['A', 'B', 'C']
+        # Extend the full set of inherited variant parameter values to ['A', 'B', 'C']
         variant = parameter(['C'], inherit_params=True)
 
     class PartiallyExtendVariant(Bar):
-        # Extend the variant parameter values to ['A', 'D']
+        # Extend a subset of the inherited variant parameter values to ['A', 'D']
         variant = parameter(['D'], inherit_params=True,
                             filter_params=lambda x: x[:1])
 
@@ -98,15 +98,26 @@ Built-in types
         variant = parameter(inherit_params=True,
                             filter_params=lambda x: map(lambda y: y+'A', x))
 
+  A parameter with no values is referred to as an *abstract parameter* (i.e. a parameter that is declared but not defined).
+  Therefore, classes with at least one abstract parameter are considered abstract classes.
+
+  .. code:: python
+
+    class AbstractA(Bar):
+        variant = parameter()
+
+    class AbstractB(Bar):
+        variant = parameter(inherit_params=True, filter_params=lambda x: [])
+
 
   :param values: An iterable containing the parameter values.
-     If no values are provided when creating a new parameter, the parameter is considered as *declared* but not *defined* (i.e. an abstract parameter).
-     On the other hand, if the parameter was defined in any of the base classes, the parameter may inherit the values provided in the parent class, and any values provided in the current class may effectively extend the values for this parameter.
-  :param inherit_params: If :obj:`True`, any parameter values defined in any base class will be inherited.
-     However, if this argument is set as :obj:`True` and the parameter does not exist in any of the parent parameter spaces, it has the same effect as setting this option to :obj:`False`.
+  :param inherit_params: If :obj:`True`, the parameter values defined in any base class will be inherited.
+     In this case, the parameter values provided in the current class will extend the set of inherited parameter values.
+     If the parameter does not exist in any of the parent parameter spaces, this option has no effect.
   :param filter_params: Function to filter/modify the inherited parameter values that may have been provided in any of the parent parameter spaces.
-     This function must accept a single argument, which will be passed as an iterable containing the inherited parameter values.
-     This function must also return an iterable, and it will only have an effect if used with ``inherit_params=True``.
+     This function must accept a single iterable argument and return an iterable.
+     It will be called with the inherited parameter values and it must return the filtered set of parameter values.
+     This function will only have an effect if used with ``inherit_params=True``.
 
 
 .. py:function:: RegressionMixin.variable(*types, value=None)
