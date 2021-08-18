@@ -47,6 +47,7 @@ Built-in types
 .. py:function:: RegressionMixin.parameter(values=None, inherit_params=False, filter_params=None)
 
   Inserts or modifies a regression test parameter.
+  At the class level, these parameters are stored in a separate namespace referred to as the *parameter space*.
   If a parameter with a matching name is already present in the parameter space of a parent class, the existing parameter values will be combined with those provided by this method following the inheritance behavior set by the arguments ``inherit_params`` and ``filter_params``.
   Instead, if no parameter with a matching name exists in any of the parent parameter spaces, a new regression test parameter is created.
   A regression test can be parameterized as follows:
@@ -79,14 +80,44 @@ Built-in types
             else:
                 override_other()
 
+  Moreover, a derived class may extend, partially extend and/or modify the parameter values provided in the base class as shown below.
 
-  :param values: A list containing the parameter values.
-     If no values are passed when creating a new parameter, the parameter is considered as *declared* but not *defined* (i.e. an abstract parameter).
-     Instead, for an existing parameter, this depends on the parameter's inheritance behaviour and on whether any values where provided in any of the parent parameter spaces.
-  :param inherit_params: If :obj:`False`, no parameter values that may have been defined in any of the parent parameter spaces will be inherited.
+  .. code:: python
+
+    class ExtendVariant(Bar):
+        # Extend the full set of inherited variant parameter values to ['A', 'B', 'C']
+        variant = parameter(['C'], inherit_params=True)
+
+    class PartiallyExtendVariant(Bar):
+        # Extend a subset of the inherited variant parameter values to ['A', 'D']
+        variant = parameter(['D'], inherit_params=True,
+                            filter_params=lambda x: x[:1])
+
+    class ModifyVariant(Bar):
+        # Modify the variant parameter values to ['AA', 'BA']
+        variant = parameter(inherit_params=True,
+                            filter_params=lambda x: map(lambda y: y+'A', x))
+
+  A parameter with no values is referred to as an *abstract parameter* (i.e. a parameter that is declared but not defined).
+  Therefore, classes with at least one abstract parameter are considered abstract classes.
+
+  .. code:: python
+
+    class AbstractA(Bar):
+        variant = parameter()
+
+    class AbstractB(Bar):
+        variant = parameter(inherit_params=True, filter_params=lambda x: [])
+
+
+  :param values: An iterable containing the parameter values.
+  :param inherit_params: If :obj:`True`, the parameter values defined in any base class will be inherited.
+     In this case, the parameter values provided in the current class will extend the set of inherited parameter values.
+     If the parameter does not exist in any of the parent parameter spaces, this option has no effect.
   :param filter_params: Function to filter/modify the inherited parameter values that may have been provided in any of the parent parameter spaces.
-     This function must accept a single argument, which will be passed as an iterable containing the inherited parameter values.
-     This only has an effect if used with ``inherit_params=True``.
+     This function must accept a single iterable argument and return an iterable.
+     It will be called with the inherited parameter values and it must return the filtered set of parameter values.
+     This function will only have an effect if used with ``inherit_params=True``.
 
 
 .. py:function:: RegressionMixin.variable(*types, value=None, field=None, **kwargs)
