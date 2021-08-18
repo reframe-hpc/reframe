@@ -31,7 +31,6 @@ class LsfJobScheduler(PbsJobScheduler):
         )
 
     def emit_preamble(self, job):
-        
         num_tasks = job.num_tasks or 1
         num_tasks_per_node = job.num_tasks_per_node or 1
         num_nodes = int(num_tasks // num_tasks_per_node)

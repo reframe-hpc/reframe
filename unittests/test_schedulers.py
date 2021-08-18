@@ -26,7 +26,8 @@ def launcher():
     return getlauncher('local')
 
 
-@pytest.fixture(params=['sge', 'slurm', 'squeue', 'local', 'pbs', 'torque', 'lsf'])
+@pytest.fixture(params=['sge', 'slurm', 'squeue', 'local',
+                        'pbs', 'torque', 'lsf'])
 def scheduler(request):
     return getscheduler(request.param)
 
@@ -131,6 +132,7 @@ def assert_job_script_sanity(job):
         assert ['echo prepare', 'echo prerun', 'hostname',
                 'echo postrun'] == matches
 
+
 def _expected_lsf_directives(job):
     num_tasks = job.num_tasks or 1
     num_tasks_per_node = job.num_tasks_per_node or 1
@@ -146,6 +148,7 @@ def _expected_lsf_directives(job):
         f'#DW jobdw capacity=100GB',
         f'#DW stage_in source=/foo',
     ])
+
 
 def _expected_sge_directives(job):
     num_nodes = job.num_tasks // job.num_tasks_per_node
