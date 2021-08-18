@@ -31,8 +31,10 @@ class LsfJobScheduler(PbsJobScheduler):
         )
 
     def emit_preamble(self, job):
-
-        num_nodes = int(job.num_tasks // job.num_tasks_per_node)
+        
+        num_tasks = job.num_tasks or 1
+        num_tasks_per_node = job.num_tasks_per_node or 1
+        num_nodes = int(num_tasks // num_tasks_per_node)
 
         preamble = [
             self._format_option(f'-J {job.name}'),
@@ -50,7 +52,7 @@ class LsfJobScheduler(PbsJobScheduler):
         # emit the rest of the options
         options = job.options + job.cli_options
         for opt in options:
-            if opt.startswith('#BSUB'):
+            if opt.startswith('#'):
                 preamble.append(opt)
             else:
                 preamble.append(self._format_option(opt))
