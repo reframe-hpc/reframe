@@ -126,8 +126,8 @@ class ParamSpace(namespaces.Namespace):
         for name, p in local_param_space.items():
             try:
                 filt_vals = p.filter_params(self.params.get(name, ()))
-            except Exception as err:
-                raise err
+            except Exception:
+                raise
             else:
                 try:
                     self.params[name] = (tuple(filt_vals) + p.values)
@@ -135,7 +135,7 @@ class ParamSpace(namespaces.Namespace):
                     raise ReframeSyntaxError(
                         f"'filter_param' must return an iterable "
                         f"(parameter {name!r})"
-                    )
+                    ) from None
 
         # If any previously declared parameter was defined in the class body
         # by directly assigning it a value, raise an error. Parameters must be
