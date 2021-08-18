@@ -303,7 +303,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:     .. versionchanged:: 3.0
     #:        Default value is now conditionally set to either ``'src'`` or
     #:        :class:`None`.
-    sourcesdir = variable(str, type(None), value='src')
+    sourcesdir = variable(type(None), str, value='src')
 
     #: .. versionadded:: 2.14
     #:

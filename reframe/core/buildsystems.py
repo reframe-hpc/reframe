@@ -236,7 +236,7 @@ class Make(BuildSystem):
     #:
     #: :type: :class:`str`
     #: :default: :class:`None`
-    makefile = variable(str, type(None), value=None)
+    makefile = variable(type(None), str, value=None)
 
     #: The top-level directory of the code.
     #:
@@ -245,7 +245,7 @@ class Make(BuildSystem):
     #:
     #: :type: :class:`str`
     #: :default: :class:`None`
-    srcdir = variable(str, type(None), value=None)
+    srcdir = variable(type(None), str, value=None)
 
     #: Limit concurrency for ``make`` jobs.
     #: This attribute controls the ``-j`` option passed to ``make``.
@@ -349,7 +349,7 @@ class SingleSource(BuildSystem):
     #: :attr:`reframe.core.pipeline.RegressionTest.sourcepath` attribute.
     #:
     #: :type: :class:`str` or :class:`None`
-    srcfile = variable(str, type(None), value=None)
+    srcfile = variable(type(None), str, value=None)
 
     #: The executable file to be generated.
     #:
@@ -357,7 +357,7 @@ class SingleSource(BuildSystem):
     #: :attr:`reframe.core.pipeline.RegressionTest.executable` attribute.
     #:
     #: :type: :class:`str` or :class:`None`
-    executable = variable(str, type(None), value=None)
+    executable = variable(type(None), str, value=None)
 
     #: The include path to be used for this compilation.
     #:
@@ -381,7 +381,7 @@ class SingleSource(BuildSystem):
     #:   - CUDA: `.cu`.
     #:
     #: :type: :class:`str` or :class:`None`
-    lang = variable(str, type(None), value=None)
+    lang = variable(type(None), str, value=None)
 
     def _auto_exec_name(self):
         return '%s.x' % os.path.splitext(self.srcfile)[0]
@@ -475,13 +475,13 @@ class ConfigureBasedBuildSystem(BuildSystem):
     #:
     #: :type: :class:`str`
     #: :default: :class:`None`
-    srcdir = variable(str, type(None), value=None)
+    srcdir = variable(type(None), str, value=None)
 
     #: The CMake build directory, where all the generated files will be placed.
     #:
     #: :type: :class:`str`
     #: :default: :class:`None`
-    builddir = variable(str, type(None), value=None)
+    builddir = variable(type(None), str, value=None)
 
     #: Additional configuration options to be passed to the CMake invocation.
     #:
@@ -790,7 +790,7 @@ class Spack(BuildSystem):
     #:     .. versionchanged:: 3.7.3
     #:        The field is no longer required and the Spack environment will be
     #:        automatically created if not provided.
-    environment = variable(typ.Str[r'\S+'], type(None), value=None)
+    environment = variable(type(None), typ.Str[r'\S+'], value=None)
 
     #: The directory where Spack will install the packages requested by this
     #: test.
@@ -814,7 +814,7 @@ class Spack(BuildSystem):
     #: :default: :class:`None`
     #:
     #: .. versionadded:: 3.7.3
-    install_tree = variable(typ.Str[r'\S+'], type(None), value=None)
+    install_tree = variable(type(None), typ.Str[r'\S+'], value=None)
 
     #: A list of additional specs to build and install within the given
     #: environment.
