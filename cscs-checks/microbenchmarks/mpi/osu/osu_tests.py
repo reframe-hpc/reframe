@@ -53,9 +53,9 @@ class AlltoallTest(rfm.RegressionTest):
         else:
             self.num_tasks = 6
 
-    @run_before('sanity')
-    def set_sanity(self):
-        self.sanity_patterns = sn.assert_found(r'^8', self.stdout)
+    @sanity_function
+    def assert_found_8MB_latency(self):
+        return sn.assert_found(r'^8', self.stdout)
 
     @run_before('performance')
     def set_performance_patterns(self):
@@ -88,9 +88,9 @@ class FlexAlltoallTest(rfm.RegressionTest):
     def set_makefile(self):
         self.build_system.makefile = 'Makefile_alltoall'
 
-    @run_before('sanity')
-    def set_sanity(self):
-        self.sanity_patterns = sn.assert_found(r'^1048576', self.stdout)
+    @sanity_function
+    def assert_found_1KB_bw(self):
+        return sn.assert_found(r'^1048576', self.stdout)
 
 
 @rfm.simple_test
@@ -128,9 +128,9 @@ class AllreduceTest(rfm.RegressionTest):
     def set_num_tasks(self):
         self.num_tasks = 6 if self.variant == 'small' else 16
 
-    @run_before('sanity')
-    def set_sanity(self):
-        self.sanity_patterns = sn.assert_found(r'^8', self.stdout)
+    @sanity_function
+    def assert_found_8MB_latency(self):
+        return sn.assert_found(r'^8', self.stdout)
 
     @run_before('performance')
     def set_performance_patterns(self):
@@ -189,9 +189,9 @@ class P2PBaseTest(rfm.RegressionTest):
     def set_makefile(self):
         self.build_system.makefile = 'Makefile_p2p'
 
-    @run_before('sanity')
-    def set_sanity(self):
-        self.sanity_patterns = sn.assert_found(r'^4194304', self.stdout)
+    @sanity_function
+    def assert_found_4KB_bw(self):
+        return sn.assert_found(r'^4194304', self.stdout)
 
 
 @rfm.simple_test
@@ -249,7 +249,7 @@ class P2PCPULatencyTest(P2PBaseTest):
             'latency': (1.138, None, 0.10, 'us')
         },
         'dom:mc': {
-            'latency': (1.24, None, 0.15, 'us')
+            'latency': (1.47, None, 0.10, 'us')
         },
         'eiger:mc': {
             'latency': (2.33, None, 0.15, 'us')
