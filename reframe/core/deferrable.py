@@ -44,15 +44,16 @@ class _DeferredExpression:
 
         # We cache the value of the last evaluation inside a tuple.
         # We don't cache the value directly, because it can be any.
-
-        # NOTE: The cache for the moment is only used by
-        # `__rfm_json_encode__`. Enabling caching in the evaluation is a
-        # reasonable optimization, but might break compatibility, so it needs
-        # to be thought thoroughly and communicated properly in the
-        # documentation.
         self._cached = ()
+        self._return_cached = False
 
-    def evaluate(self):
+    def evaluate(self, cache=False):
+        # Return the cached value (if any)
+        if self._return_cached and not cache:
+            return self._cached[0]
+        elif cache:
+            self._return_cached = cache
+
         fn_args = []
         for arg in self._args:
             fn_args.append(
@@ -66,10 +67,15 @@ class _DeferredExpression:
             )
 
         ret = self._fn(*fn_args, **fn_kwargs)
+
+        # Evaluate the return for as long as a deferred expression returns
+        # another deferred expression.
         while isinstance(ret, _DeferredExpression):
             ret = ret.evaluate()
 
+        # Cache the results for any subsequent evaluate calls.
         self._cached = (ret,)
+
         return ret
 
     def __bool__(self):

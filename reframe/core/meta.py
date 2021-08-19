@@ -82,7 +82,13 @@ class RegressionTestMeta(type):
                         'once in the class body'
                     ) from None
             elif hasattr(value, '_rfm_perf_key'):
-                self['_rfm_perf_fns'].add(value)
+                try:
+                    self['_rfm_perf_fns'][key] = value
+                except KeyError:
+                    raise ReframeSyntaxError(
+                        f'the performance function {key} has already been '
+                        f'defined in this class'
+                    ) from None
 
             # Register the final methods
             if hasattr(value, '_rfm_final'):
@@ -272,14 +278,14 @@ class RegressionTestMeta(type):
             be used as the performance variable name.
             '''
             if not isinstance(units, str):
-                raise ReframeSyntaxError('performance units must be a string')
+                raise TypeError('performance units must be a string')
 
             if perf_key and not isinstance(perf_key, str):
-                raise ReframeSyntaxError("'perf_key' must be a string")
+                raise TypeError("'perf_key' must be a string")
 
             def _deco_wrapper(func):
                 if not utils.is_trivially_callable(func, non_def_args=1):
-                    raise ReframeSyntaxError(
+                    raise TypeError(
                         f'performance function {func.__name__!r} has more '
                         f'than one argument without a default value'
                     )
@@ -297,7 +303,7 @@ class RegressionTestMeta(type):
             return _deco_wrapper
 
         namespace['performance_function'] = performance_function
-        namespace['_rfm_perf_fns'] = set()
+        namespace['_rfm_perf_fns'] = namespaces.LocalNamespace()
         return metacls.MetaNamespace(namespace)
 
     def __new__(metacls, name, bases, namespace, **kwargs):
@@ -361,10 +367,14 @@ class RegressionTestMeta(type):
 
                     break
 
-        # Update the performance function set with the bases.
+        # Update the performance function dict with the bases.
         for base in cls._rfm_bases:
-            cls._rfm_perf_fns |= {f for f in getattr(base, '_rfm_perf_fns')
-                                  if f.__name__ not in namespace}
+            for k, v in base._rfm_perf_fns.items():
+                if k not in namespace:
+                    try:
+                        cls._rfm_perf_fns[k] = v
+                    except KeyError:
+                        '''Performance function overridden by other class'''
 
         # Add the final functions from its parents
         cls._rfm_final_methods.update(

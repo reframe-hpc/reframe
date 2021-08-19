@@ -11,6 +11,8 @@ Explicit evaluation of deferrable functions
 -------------------------------------------
 
 Deferrable functions may be evaluated at any time by calling :func:`evaluate` on their return value or by passing the deferred function itself to the :func:`~reframe.utility.sanity.evaluate()` free function.
+These :func:`evaluate` functions take an optional :class:`bool` argument ``cache``, which can be use to cache the evaluation of the deferrable function.
+Hence, if caching is enabled on a given deferrable function, any subsequent calls to :func:`evaluate` will simply return the previously cached results.
 
 Implicit evaluation of deferrable functions
 -------------------------------------------
@@ -47,6 +49,18 @@ Currently ReFrame provides three broad categories of deferrable functions:
 3. Utility functions.
    They include, but are not limited to, functions to iterate over regex matches in a file, extracting and converting values from regex matches, computing statistical information on series of data etc.
 
+
+Deferrable performance functions
+--------------------------------
+
+Deferrable performance functions are a special type of deferrable functions which are intended for measuring a given quantity.
+Therefore, this kind of deferrable functions have an associated unit that can be used to interpret the return values from these functions.
+The unit of a deferrable performance function can be accessed through the public member :attr:`unit`.
+Regular deferrable functions can be promoted to deferrable performance functions using the :func:`~reframe.utility.sanity.make_performance_function` utility.
+Also, this utility allows to create performance functions directly from any callable.
+
+Deferrable function utilities
+-----------------------------
 
 Users can write their own deferrable functions as well.
 The page ":doc:`deferrables`" explains in detail how deferrable functions work and how users can write their own.

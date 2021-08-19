@@ -42,13 +42,14 @@ def _open(filename, *args, **kwargs):
 
 
 def make_performance_function(func, unit, *args, **kwargs):
-    '''Transform a callable or deferred expr. into a performance function.
+    '''Convert a callable or deferred expression into a performance function.
 
-    If ``func`` is an instance of the :class:`_DeferredExpression` class,
-    the performance function will be built by extending this deferred
-    expression into a deferred performance function. Otherwise, a new
-    deferred performance function will be created from the function
-    :func:`func`.
+    If ``func`` is a deferred expression, the performance function will be
+    built by extending this deferred expression into a deferred performance
+    expression. Otherwise, a new deferred performance expression will be
+    created from the function :func:`func`.
+
+    ..versionadded:: 3.8.0
     '''
     if isinstance(func, _DeferredExpression):
         return _DeferredPerformanceExpression.construct_from_deferred_expr(
@@ -904,15 +905,22 @@ def defer(x):
     return x
 
 
-def evaluate(expr):
+def evaluate(expr, cache=False):
     '''Evaluate a deferred expression.
 
     If ``expr`` is not a deferred expression, it will be returned as is.
+    If ``expr`` is a deferred expression and ``cache`` is ``True``, the
+    results of the deferred expression will be cached and subsequent calls
+    to ``evaluate`` on this deferred expression will simply return the
+    previously cached result.
 
     .. versionadded:: 2.21
+
+    .. versionchanged:: 3.4
+       Added support for evaluation caching.
     '''
     if isinstance(expr, _DeferredExpression):
-        return expr.evaluate()
+        return expr.evaluate(cache=cache)
     else:
         return expr
 

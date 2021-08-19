@@ -647,22 +647,36 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: :default: :class:`None`
     perf_patterns = variable(typ.Dict[str, _DeferredExpression], type(None))
 
-    #: Mapping with the performance variables of the test.
+    #: The performance variables associated with the test.
+    #:
+    #: In this context, a performance variable is a key-value pair, where the
+    #: key is the desired variable name and the value is the deferred
+    #: performance expression (i.e. the result of a :doc:`deferrable
+    #: performance function</deferrable_functions_reference>`) that computes
+    #: or extracts the performance variable's value.
+    #:
+    #: By default, ReFrame will populate this field during the test's
+    #: instantiation with all the member functions decorated with the
+    #: :func:`performance_function` decorator. If no performance functions
+    #: are present in the class, no performance checking or reporting will be
+    #: carried out.
+    #:
+    #: This mapping may be extended or replaced by other performance variables
+    #: that may be defined in any pipeline hook executing before the
+    #: performance stage. To this end, deferred performance functions can be
+    #: created inline using the utility
+    #: :func:`~reframe.utils.sanity.make_performance_function`.
     #:
     #: Refer to the :doc:`ReFrame Tutorials </tutorials>` for concrete usage
     #: examples.
     #:
-    #: If no performance variables are explicitly provided, ReFrame will
-    #: populate this field during the test's instantiation with all the member
-    #: functions decorated with the :func:`performance_function` decorator. If
-    #: no performance functions are present in the class, no performance
-    #: checking or reporting will be carried out.
-    #:
-    #: :type: A dictionary with keys of type :class:`str` and values of type
-    #:     :class:`_DeferredPerformanceExpression`. A
-    #:     :class:`_DeferredPerformanceExpression` object is obtained when a
-    #:     function decorated with the :func:`performance_function` is called.
-    #: :default: ``{}``
+    #: :type: A dictionary with keys of type :class:`str` and deferred
+    #:     performance expressions (i.e., the result of a
+    #:     :doc:`deferrable performance function
+    #:     </deferrable_functions_reference>`) as values.
+    #: :default: collection of performance variables associated to each of
+    #:     the member functions decorated with the
+    #:     :func:`performance_function` decorator.
     perf_variables = variable(typ.Dict[str, _DeferredPerformanceExpression],
                               value={})
 
@@ -853,7 +867,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         # Build the default performance dict
         if not self.perf_variables:
-            for fn in self._rfm_perf_fns:
+            for fn in self._rfm_perf_fns.values():
                 self.perf_variables[fn._rfm_perf_key] = fn(self)
 
     def __init__(self):
@@ -1696,8 +1710,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                     raise ReframeSyntaxError(
                         f"assigning a value to 'perf_pattenrs' conflicts ",
                         f"with using the 'performance_function' decorator ",
-                        f"or setting a value to 'perf_variables' "
-                        f"(class {self.__class__.__qualname__})"
+                        f"or setting a value to 'perf_variables'"
                     )
 
                 # Log the performance variables
@@ -1709,7 +1722,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                     except Exception as e:
                         logging.getlogger().warning(
                             f'skipping evaluation of performance variable '
-                            f'{tag!r} in test {self.name!r}: {e}'
+                            f'{tag!r}: {e}'
                         )
                         continue
 
@@ -1726,7 +1739,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                                     f'reference unit ({key!r}) for the '
                                     f'performance variable {tag!r} '
                                     f'does not match the unit specified '
-                                    f'in the performance function ({unit!r})'
+                                    f'in the performance function ({unit!r}): '
+                                    f'{unit!r} will be used'
                                 )
 
                             # Pop the unit from the ref tuple (redundant)

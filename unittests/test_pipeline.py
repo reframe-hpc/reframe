@@ -1317,6 +1317,9 @@ def test_perf_vars_without_reference(perftest, sanity_file,
 
 def test_perf_vars_with_reference(perftest, sanity_file,
                                   perf_file, dummy_gpu_exec_ctx):
+    # This test also checks that a performance function that raises an
+    # exception is simply skipped.
+
     logfile = 'perf.log'
 
     @sn.deferrable
@@ -1328,6 +1331,14 @@ def test_perf_vars_with_reference(perftest, sanity_file,
             fp.write(f'{tag}={val}')
 
         return val
+
+    def dummy_perf(x):
+        # Dummy function to check that a performance variable is simply
+        # skipped when the wrong number of arguments are passed to it.
+        with open(logfile, 'a') as fp:
+            fp.write('v2')
+
+        return 1
 
     sanity_file.write_text('result = success\n')
     perf_file.write_text('perf1 = 1.0\n')
@@ -1342,6 +1353,9 @@ def test_perf_vars_with_reference(perftest, sanity_file,
         'value1': sn.make_performance_function(
             extract_perf(r'perf1 = (?P<v1>\S+)', 'v1'), 'unit'
         ),
+        'value2':sn.make_performance_function(
+            dummy_perf, 'other_units', perftest, 'extra_arg'
+        ),
     }
     _run_sanity(perftest, *dummy_gpu_exec_ctx)
 
@@ -1350,7 +1364,7 @@ def test_perf_vars_with_reference(perftest, sanity_file,
         log_output = fp.read()
 
     assert 'v1' in log_output
-
+    assert 'v2' not in log_output
 
 def test_incompat_perf_syntax(perftest, sanity_file,
                               perf_file, dummy_gpu_exec_ctx):
@@ -1359,22 +1373,6 @@ def test_incompat_perf_syntax(perftest, sanity_file,
     perftest.perf_patterns = {}
     with pytest.raises(ReframeSyntaxError):
         _run_sanity(perftest, *dummy_gpu_exec_ctx)
-
-
-def test_perf_function_raises_exception(perftest, sanity_file,
-                                        perf_file, dummy_gpu_exec_ctx):
-    # The lambda takes a single arg, and the make_performance_function
-    # will inject the self argument too. This triggers an exception
-    # when the performance function is evaluated and here we test that
-    # it is caught properly.
-
-    sanity_file.write_text('result = success\n')
-    perftest.perf_variables = {
-        'value': sn.make_performance_function(
-            lambda x: x, 'unit', perftest, 'random_arg'
-        )
-    }
-    _run_sanity(perftest, *dummy_gpu_exec_ctx)
 
 
 @pytest.fixture

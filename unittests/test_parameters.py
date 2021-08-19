@@ -79,6 +79,16 @@ def test_filter_params():
     assert MyTest.param_space['P2'] == ('f', 'g',)
 
 
+def test_wrong_filter():
+    with pytest.raises(TypeError):
+        class MyTest(ExtendParams):
+            P1 = parameter(inherit_params=True, filter_params='not callable')
+
+    with pytest.raises(TypeError):
+        class MyTest(ExtendParams):
+            P1 = parameter(inherit_params=True, filter_params=lambda x, y: [])
+
+
 def test_is_abstract_test():
     class MyTest(Abstract):
         pass

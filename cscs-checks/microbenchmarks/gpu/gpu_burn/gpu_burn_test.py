@@ -79,8 +79,9 @@ class gpu_burn_check(GpuBurn):
                 # Flag the slow nodes
                 for nid in nids:
                     try:
-                        val = self.min_perf(nid)
+                        node_perf = self.min_perf(nid)
+                        val = node_perf.evaluate(cache=True)
                         sn.assert_reference(val, ref, lt, ut).evaluate()
                     except SanityError:
-                        self.perf_variables[nid] = val
+                        self.perf_variables[nid] = node_perf
 

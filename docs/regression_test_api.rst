@@ -277,6 +277,21 @@ Built-in functions
 
   .. versionadded:: 3.7.0
 
+.. py:decorator:: RegressionMixin.performance_function(unit, *, perf_key=None)
+
+   Decorate a member function as a performance function of the test.
+
+   This decorator converts the decorated method into a performance deferrable function (see :ref:`deferrable-functions`) whose evaluation is deferred to the performance stage of the regression test.
+   The decorated function must take a single argument without a default value (i.e. ``self``) and any number of arguments with default values.
+   A test may decorate multiple member functions as performance functions, where each of the decorated functions must be provided with the units of the performance quantitites to be extracted from the test.
+   These performance units must be of type :class:`str`.
+   Any performance function may be overridden in a derived class and multiple bases may define their own performance functions.
+   In the event of a name conflict, the derived class will follow Python's `MRO <https://docs.python.org/3/library/stdtypes.html#class.__mro__>`_ to choose the appropriate performance function.
+   However, defining more than one performance function with the same name in the same class is disallowed.
+
+   The full set of performance functions of a regression test is stored under :attr:`~reframe.core.pipeline.RegerssionTest.perf_variables` as key-value pairs, where, by default, the key is the name of the decorated member function, and the value is the deferred performance function itself.
+   Optionally, the key under which a performance function is stored in :attr:`~reframe.core.pipeline.RegressionTest.perf_variables` can be customised by passing the desired key as the ``perf_key`` argument to this decorator.
+
 .. py:decorator:: RegressionMixin.deferrable(func)
 
   Converts the decorated method into a deferrable function.

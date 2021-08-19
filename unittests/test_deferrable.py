@@ -54,6 +54,27 @@ def test_recursive_evaluate():
     assert 3 == c().evaluate()
 
 
+def test_evaluate_cached():
+    # A dummy mutable
+    my_list = [1]
+
+    @sn.deferrable
+    def my_expr():
+        return my_list[0]
+
+    expr = my_expr()
+    assert expr.evaluate() == 1
+    my_list = [2]
+    assert expr.evaluate(cache=True) == 2
+    my_list = [3]
+    assert expr.evaluate() == 2
+
+    # Test that using cache=True updates the previously cached result
+    assert expr.evaluate(cache=True) == 3
+    my_list = [4]
+    assert expr.evaluate() == 3
+
+
 def test_depr_warn(monkeypatch):
     monkeypatch.setattr(warnings, '_RAISE_DEPRECATION_ALWAYS', True)
     with pytest.warns(ReframeDeprecationWarning):

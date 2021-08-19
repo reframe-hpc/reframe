@@ -293,14 +293,9 @@ def test_performance_function(MyMeta):
     # Test the return type of the performance functions
     Base().assert_perf_fn_return()
 
-    # Test the performance function set has been built correctly
-    assert len(Base._rfm_perf_fns) == 2
-    perf_fns = {'perf_a', 'perf_b'}
-    for fn in Base._rfm_perf_fns:
-        assert fn._rfm_perf_key in perf_fns
-        perf_fns.remove(fn._rfm_perf_key)
-
-    assert not perf_fns
+    # Test the performance function dict has been built correctly
+    perf_dict = {fn for fn in Base._rfm_perf_fns}
+    assert perf_dict == {'perf_a', 'perf_b'}
 
     class Derived(Base):
         '''Test perf fn inheritance and perf_key argument.'''
@@ -317,29 +312,53 @@ def test_performance_function(MyMeta):
             '''Perf function with custom key.'''
 
     # Test the performance function set is correct with class inheritance
-    assert len(Derived._rfm_perf_fns) == 3
-    perf_fns = {'perf_b', 'perf_c', 'my_perf_fn'}
-    for fn in Derived._rfm_perf_fns:
-        assert fn._rfm_perf_key in perf_fns
-        perf_fns.remove(fn._rfm_perf_key)
+    perf_dict = {fn._rfm_perf_key for fn in Derived._rfm_perf_fns.values()}
+    assert perf_dict == {'perf_b', 'perf_c', 'my_perf_fn'}
 
-    assert not perf_fns
+    # Test multiple inheritance and name conflict resolution
+    class ClashingBase(MyMeta):
+        @performance_function('units', perf_key='clash')
+        def perf_a(self):
+            return 'A'
+
+    class Join(ClashingBase, Base):
+        '''Test that we follow MRO's order.'''
+
+    class JoinAndOverride(ClashingBase, Base):
+        @performance_function('units')
+        def perf_a(self):
+            return 'B'
+
+    assert Join._rfm_perf_fns['perf_a']('self').evaluate() == 'A'
+    assert JoinAndOverride._rfm_perf_fns['perf_a']('self').evaluate() == 'B'
+
+
+def test_double_define_performance_function(MyMeta):
+    with pytest.raises(ReframeSyntaxError):
+        class Foo(MyMeta):
+            @performance_function('unit')
+            def foo(self):
+                pass
+
+            @performance_function('unit')
+            def foo(self):
+                '''This doesn't make sense, so we raise an error'''
 
 
 def test_performance_function_errors(MyMeta):
-    with pytest.raises(ReframeSyntaxError):
+    with pytest.raises(TypeError):
         class wrong_perf_key_type(MyMeta):
             @performance_function('units', perf_key=3)
             def perf_fn(self):
                 pass
 
-    with pytest.raises(ReframeSyntaxError):
+    with pytest.raises(TypeError):
         class wrong_function_signature(MyMeta):
             @performance_function('units')
             def perf_fn(self, extra_arg):
                 pass
 
-    with pytest.raises(ReframeSyntaxError):
+    with pytest.raises(TypeError):
         class wrong_units(MyMeta):
             @performance_function(5)
             def perf_fn(self):
