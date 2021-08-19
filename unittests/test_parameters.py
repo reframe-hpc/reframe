@@ -72,7 +72,10 @@ def test_param_inheritance():
 
 def test_filter_params():
     class MyTest(ExtendParams):
-        P1 = parameter(inherit_params=True, filter_params=lambda x: x[2:])
+        # We make the return type of the filtering function a list to ensure
+        # that other iterables different to tuples are also valid.
+        P1 = parameter(inherit_params=True,
+                       filter_params=lambda x: list(x[2:]))
 
     assert MyTest.param_space['P0'] == ('a',)
     assert MyTest.param_space['P1'] == ('d', 'e',)
@@ -82,11 +85,26 @@ def test_filter_params():
 def test_wrong_filter():
     with pytest.raises(TypeError):
         class MyTest(ExtendParams):
+            '''Filter function is not a function'''
             P1 = parameter(inherit_params=True, filter_params='not callable')
 
     with pytest.raises(TypeError):
         class MyTest(ExtendParams):
+            '''Filter function takes more than 1 argument'''
             P1 = parameter(inherit_params=True, filter_params=lambda x, y: [])
+
+    def bad_filter(x):
+        raise RuntimeError('bad filter')
+
+    with pytest.raises(RuntimeError):
+        class Foo(ExtendParams):
+            '''Filter function raises'''
+            P1 = parameter(inherit_params=True, filter_params=bad_filter)
+
+    with pytest.raises(ReframeSyntaxError):
+        class Foo(ExtendParams):
+            '''Wrong filter return type'''
+            P1 = parameter(inherit_params=True, filter_params=lambda x: 1)
 
 
 def test_is_abstract_test():
@@ -160,7 +178,7 @@ def test_simple_test_decorator():
         pass
 
     mod = inspect.getmodule(MyTest)
-    tests = mod._rfm_gettests()
+    tests = mod._rfm_test_registry.instantiate_all()
     assert len(tests) == 8
     for test in tests:
         assert test.P0 is not None
