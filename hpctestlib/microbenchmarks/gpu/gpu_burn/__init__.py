@@ -101,7 +101,7 @@ class GpuBurn(rfm.RegressionTest, pin_prefix=True):
 
         if metric not in {'perf', 'temp'}:
             raise ValueError(
-                    f"unsupported value in 'metric' argument: {metric!r}"
+                f"unsupported value in 'metric' argument: {metric!r}"
             )
 
         if nid is None:

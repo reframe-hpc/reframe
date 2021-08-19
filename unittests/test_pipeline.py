@@ -1353,7 +1353,7 @@ def test_perf_vars_with_reference(perftest, sanity_file,
         'value1': sn.make_performance_function(
             extract_perf(r'perf1 = (?P<v1>\S+)', 'v1'), 'unit'
         ),
-        'value2':sn.make_performance_function(
+        'value2': sn.make_performance_function(
             dummy_perf, 'other_units', perftest, 'extra_arg'
         ),
     }
@@ -1365,6 +1365,7 @@ def test_perf_vars_with_reference(perftest, sanity_file,
 
     assert 'v1' in log_output
     assert 'v2' not in log_output
+
 
 def test_incompat_perf_syntax(perftest, sanity_file,
                               perf_file, dummy_gpu_exec_ctx):
