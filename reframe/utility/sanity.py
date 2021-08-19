@@ -47,9 +47,14 @@ def make_performance_function(func, unit, *args, **kwargs):
     If ``func`` is a deferred expression, the performance function will be
     built by extending this deferred expression into a deferred performance
     expression. Otherwise, a new deferred performance expression will be
-    created from the function :func:`func`.
+    created from the function :func:`func`. The argument ``unit`` is the unit
+    associated with the deferrable performance expression, and ``*args`` and
+    ``**kwargs`` are the arguments to be captured by this deferred expression.
+    See
+    :doc:`deferrable functions reference </deferrable_functions_reference>`
+    for further information on deferrable functions.
 
-    ..versionadded:: 3.8.0
+    .. versionadded:: 3.8.0
     '''
     if isinstance(func, _DeferredExpression):
         return _DeferredPerformanceExpression.construct_from_deferred_expr(

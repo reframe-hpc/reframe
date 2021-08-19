@@ -665,7 +665,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: that may be defined in any pipeline hook executing before the
     #: performance stage. To this end, deferred performance functions can be
     #: created inline using the utility
-    #: :func:`~reframe.utils.sanity.make_performance_function`.
+    #: :func:`~reframe.utility.sanity.make_performance_function`.
     #:
     #: Refer to the :doc:`ReFrame Tutorials </tutorials>` for concrete usage
     #: examples.
@@ -674,7 +674,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:     performance expressions (i.e., the result of a
     #:     :doc:`deferrable performance function
     #:     </deferrable_functions_reference>`) as values.
-    #: :default: collection of performance variables associated to each of
+    #: :default: Collection of performance variables associated to each of
     #:     the member functions decorated with the
     #:     :func:`performance_function` decorator.
     perf_variables = variable(typ.Dict[str, _DeferredPerformanceExpression],

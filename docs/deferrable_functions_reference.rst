@@ -11,7 +11,7 @@ Explicit evaluation of deferrable functions
 -------------------------------------------
 
 Deferrable functions may be evaluated at any time by calling :func:`evaluate` on their return value or by passing the deferred function itself to the :func:`~reframe.utility.sanity.evaluate()` free function.
-These :func:`evaluate` functions take an optional :class:`bool` argument ``cache``, which can be use to cache the evaluation of the deferrable function.
+These :func:`evaluate` functions take an optional :class:`bool` argument ``cache``, which can be used to cache the evaluation of the deferrable function.
 Hence, if caching is enabled on a given deferrable function, any subsequent calls to :func:`evaluate` will simply return the previously cached results.
 
 Implicit evaluation of deferrable functions
