@@ -60,11 +60,11 @@ REFERENCE_CPU_PERFORMANCE_LARGE = {
 
 
 def inherit_cpu_only(params):
-    return tuple(filter(lambda p: p[0] == 'cpu', params))
+    return tuple(filter(lambda p: 'cpu' in p[0], params))
 
 
 def inherit_gpu_only(params):
-    return tuple(filter(lambda p: p[0] == 'gpu', params))
+    return tuple(filter(lambda p: 'gpu' in p[0], params))
 
 
 class AmberCheckCSCS(Amber_NVE):

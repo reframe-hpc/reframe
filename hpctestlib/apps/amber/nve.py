@@ -41,13 +41,14 @@ class Amber_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
     #: difference between final energy value and reference value
     #: should be smaller than energy_tolerance
     #:
-    #: :type: str
+    #: :type: float
     #: :default: :class:`required`
     energy_value = variable(float)
 
     #: Maximum deviation from the reference value of energy,
     #: that is acceptable.
     #:
+    #: :type: float
     #: :default: :class:`required`
     energy_tolerance = variable(float)
 
