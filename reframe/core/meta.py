@@ -409,11 +409,15 @@ class RegressionTestMeta(type):
             if not hasattr(value, '__get__'):
                 var_space[name].define(value)
                 return
-            elif not var_space[name].field is value:
+            elif var_space[name].field is not value:
                 desc = '.'.join([cls.__qualname__, name])
                 raise ReframeSyntaxError(
                     f'cannot override variable descriptor {desc!r}'
                 )
+            else:
+                # We are injecting the underlying descriptor of the variable,
+                # so set it as a normal class attribute
+                super(cls).__setattr__(name, value)
         else:
             raise AttributeError(f'{cls.__name__!r} has no variable {name!r}')
 
@@ -433,10 +437,12 @@ class RegressionTestMeta(type):
         is not allowed. This would break the parameter space internals.
         '''
 
+        # Try to treat `name` as variable
         try:
             cls.setvar(name, value)
-        except AttributeError:
-            pass
+            return
+        except AttributeError as e:
+            '''`name` is not a variable'''
 
         # Catch attempts to override a test parameter
         try:
@@ -444,8 +450,9 @@ class RegressionTestMeta(type):
             if name in param_space.params:
                 raise ReframeSyntaxError(f'cannot override parameter {name!r}')
         except AttributeError:
-            pass
+            '''Test is not parametrized'''
 
+        # Treat `name` as normal class attribute
         super().__setattr__(name, value)
 
     @property
