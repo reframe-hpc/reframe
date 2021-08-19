@@ -111,18 +111,17 @@ def _is_part_local(part):
 
 
 def _remote_detect(part):
-    def _emit_script(job):
+    def _emit_script(job, env):
         launcher_cmd = job.launcher.run_command(job)
         commands = [
             f'./bootstrap.sh',
             f'{launcher_cmd} ./bin/reframe --detect-host-topology=topo.json'
         ]
-        job.prepare(commands, trap_errors=True)
+        job.prepare(commands, env, trap_errors=True)
 
     getlogger().info(
         f'Detecting topology of remote partition {part.fullname!r}: '
         f'this may take some time...'
-
     )
     topo_info = {}
     try:
@@ -133,7 +132,7 @@ def _remote_detect(part):
                                  part.launcher_type(),
                                  name='rfm-detect-job',
                                  sched_access=part.access)
-                _emit_script(job)
+                _emit_script(job, [part.local_env])
                 getlogger().debug('submitting detection script')
                 _log_contents(job.script_filename)
                 job.submit()
