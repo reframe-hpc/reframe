@@ -188,7 +188,10 @@ def detect_topology():
                     topo_file, _subschema('#/defs/processor_info')
                 )
                 found_procinfo = True
-            except json.decoder.JSONDecodeError:
+            except json.decoder.JSONDecodeError as e:
+                getlogger().debug(
+                    f'> error while loading the file: {e}'
+                )
                 getlogger().debug(
                     f'> could not load {topo_file!r}; ignoring...'
                 )
@@ -202,7 +205,10 @@ def detect_topology():
                     dev_file, _subschema('#/defs/devices')
                 )
                 found_devinfo = True
-            except json.decoder.JSONDecodeError:
+            except json.decoder.JSONDecodeError as e:
+                getlogger().debug(
+                    f'> error while loading the file: {e}'
+                )
                 getlogger().debug(
                     f'> could not load {dev_file!r}; ignoring...'
                 )
