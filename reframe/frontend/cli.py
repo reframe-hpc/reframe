@@ -330,9 +330,10 @@ def main():
         help='Skip programming environment check'
     )
     run_options.add_argument(
-        '-S', '--setvar', action='append', metavar='VAR=VAL',
+        '-S', '--setvar', action='append', metavar='[TEST.]VAR=VAL',
         dest='vars', default=[],
-        help='Set test variable VAR to VAL in all selected tests'
+        help=('Set test variable VAR to VAL in all tests '
+              'or optionally in TEST only')
     )
     run_options.add_argument(
         '--exec-policy', metavar='POLICY', action='store',
