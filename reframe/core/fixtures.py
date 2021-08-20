@@ -211,14 +211,14 @@ class FixtureSpace(namespaces.Namespace):
                 )
 
     def inject(self, obj, cls=None, fixture_index=None):
-        if fixture_index is None or fixture_index >= len(self):
+        if fixture_index is not None and fixture_index >= len(self):
             raise RuntimeError(
                 f'fixture index out of range for '
                 f'{obj.__class__.__qualname__}'
             )
 
         # Nothing to do if the fixture space is empty
-        if not self.fixtures:
+        if not self.fixtures or fixture_index is None:
             return
 
         # Create the fixture registry
@@ -272,14 +272,6 @@ class FixtureSpace(namespaces.Namespace):
             # Inject the dependency
             for name in dep_names:
                 obj.depends_on(name, dep_mode)
-
-
-        # The fixtures MUST be registered in the OBJECT.
-        # Extend the loop above to set the sys and pe for each of the
-        # fixtures in the fixture registry. This registry must contain
-        # an attribute with the full fixture depth, so that fixtures
-        # with the 'test' scope can use that as the unique ID.
-
 
     def __iter__(self):
         '''Walk through all index combinations for all fixtures.'''
