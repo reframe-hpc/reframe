@@ -134,8 +134,7 @@ class RegressionCheckLoader:
                     else:
                         val = fields.make_convertible(val)
 
-                    with contextlib.suppress(AttributeError):
-                        test.setvar(varname, val)
+                    test.setvar(varname, val)
 
     def load_from_module(self, module):
         '''Load user checks from module.
