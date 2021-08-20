@@ -1162,6 +1162,31 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         return self.local or self._current_partition.scheduler.is_local
 
+    @final
+    @run_after('setup')
+    def _resolve_fixtures(self):
+        fixtures = type(self)._rfm_fixture_space.fixtures
+        registry = getattr(self, '_rfm_fixture_registry', None)
+        for fname, f in fixtures.items():
+            if f.scope == 'session':
+                part = 'any'
+                environ = 'any'
+            elif f.scope == 'partition':
+                part = None
+                environ = 'any'
+            else:
+                part = None
+                environ = None
+
+            deps = []
+            for fixture_instance in registry[f.test]:
+                deps.append(self.getdep(fixture_instance, environ, part))
+
+            if len(deps) == 1:
+                deps = deps[0]
+
+            setattr(self, fname, deps)
+
     def _setup_paths(self):
         '''Setup the check's dynamic paths.'''
         self.logger.debug('Setting up test paths')
@@ -1935,6 +1960,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         .. versionadded:: 2.21
 
+        .. versionchanged:: 3.8.0
+           Setting ``environ`` and ``part`` to ``'any'`` will skip the match
+           check on the environment and partition, respectively.
+
         '''
         if self.current_environ is None:
             raise DependencyError(
@@ -1950,11 +1979,26 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         if self._case is None or self._case() is None:
             raise DependencyError('no test case is associated with this test')
 
-        for d in self._case().deps:
-            if (d.check.name == target and
-                d.environ.name == environ and
-                d.partition.name == part):
-                return d.check
+        if environ != 'any' and part != 'any':
+            for d in self._case().deps:
+                if (d.check.name == target and
+                    d.environ.name == environ and
+                    d.partition.name == part):
+                    return d.check
+        elif environ == 'any' and part != 'any':
+            for d in self._case().deps:
+                if (d.check.name == target and
+                    d.partition.name == part):
+                    return d.check
+        elif environ != 'any' and part == 'any':
+            for d in self._case().deps:
+                if (d.check.name == target and
+                    d.environ.name == environ):
+                    return d.check
+        elif environ == 'any' and part == 'any':
+            for d in self._case().deps:
+                if d.check.name == target:
+                    return d.check
 
         raise DependencyError(f'could not resolve dependency to ({target!r}, '
                               f'{part!r}, {environ!r})')

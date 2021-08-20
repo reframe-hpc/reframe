@@ -88,11 +88,6 @@ class FixtureRegistry:
         return ret
 
     def instantiate_all(self):
-        '''
-        This MUST set the full path in each object (self.branch) and also the valid_systems
-        and valid_prog_environs.
-        This is needed for the tests with the test scope to get a unique name.
-        '''
         ret = []
         for test, variants in self._reg.items():
             for name, args in variants.items():
@@ -117,8 +112,14 @@ class FixtureRegistry:
         if not isinstance(other, FixtureRegistry):
             raise TypeError('argument is not a FixtureRegistry')
 
-    def __repr__(self):
-        return repr(self._reg)
+    def __getitem__(self, test):
+        if test not in self:
+            raise KeyError(f'{test.__qualname__} is not a registered fixture')
+        else:
+            return self._reg[test].keys()
+
+    def __contains__(self, test):
+        return test in self._reg
 
 
 class TestFixture:

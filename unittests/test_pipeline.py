@@ -739,7 +739,7 @@ def test_inherited_hooks(HelloTest, local_exec_ctx):
             self.executable = os.path.join('.', self.name)
             self.var = 0
 
-        @run_after('setup')
+        @run_after('compile')
         def x(self):
             self.var += 1
 
@@ -749,7 +749,7 @@ def test_inherited_hooks(HelloTest, local_exec_ctx):
             self.foo = 1
 
     class DerivedTest(BaseTest, C):
-        @run_after('setup')
+        @run_after('compile')
         def z(self):
             self.var += 1
 
@@ -760,10 +760,8 @@ def test_inherited_hooks(HelloTest, local_exec_ctx):
     _run(test, *local_exec_ctx)
     assert test.var == 2
     assert test.foo == 1
-    assert test.pipeline_hooks() == {
-        'post_setup': [DerivedTest.z, BaseTest.x],
-        'pre_run': [C.y],
-    }
+    assert test.pipeline_hooks()['post_compile'] == [DerivedTest.z, BaseTest.x]
+    assert test.pipeline_hooks()['pre_run'] == [C.y]
 
 
 def test_inherited_hooks_from_instantiated_tests(HelloTest, local_exec_ctx):
