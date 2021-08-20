@@ -270,8 +270,8 @@ class FixtureSpace(namespaces.Namespace):
                 dep_mode = udeps.by_case
 
             # Inject the dependency
-#            for name in dep_names:
-#                obj.depends_on(name, dep_mode)
+            for name in dep_names:
+                obj.depends_on(name, dep_mode)
 
 
         # The fixtures MUST be registered in the OBJECT.
