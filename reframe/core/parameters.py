@@ -88,7 +88,7 @@ class ParamSpace(namespaces.Namespace):
         super().__init__(target_cls, target_namespace)
 
         # Store all param combinations to allow random access.
-        self.__random_access_iter = [x for x in iter(self)]
+        self.__random_access_iter = tuple(x for x in iter(self))
 
     def join(self, other, cls):
         '''Join other parameter space into the current one.
@@ -220,7 +220,7 @@ class ParamSpace(namespaces.Namespace):
 
         If the key is an integer, this function will retrieve a given point in
         the parameter space. If the key is a parameter name, it will instead
-        all the values assigned to that parameter.
+        return all the values assigned to that parameter.
         '''
         if isinstance(key, int):
             ret = dict()

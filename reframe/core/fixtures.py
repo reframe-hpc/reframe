@@ -14,58 +14,78 @@ import reframe.core.namespaces as namespaces
 import reframe.core.runtime as runtime
 import reframe.utility.udeps as udeps
 from reframe.core.exceptions import ReframeSyntaxError
+from reframe.core.variables import Undefined
 
 
 class FixtureRegistry:
     '''Fixture registry.
 
-    This is composed of individual sub-registries for each fixture scope:
-     - session: only one pe+sys combination per fixture.
-     - partition: up to one pe per partition.
-     - environment: union of all valid pes per partition.
-     - test: steals the pe+sys from the root.
+    The fixture classes are stored as the keys in the dictionary, where
+    the values are dictionaries holding all the variants for the given
+    fixture class. These sub-dictionaries use the fixture's name keys and
+    a tuple with the fixture variant index, the list of PEs and valid sys.
+
+    :meta private:
     '''
     def __init__(self):
         self._reg = dict()
 
-    def add(self, fixture, fid, root, partitions, prog_envs):
+    def add(self, fixture, fid, branch, partitions, prog_envs):
         '''Add a fixture to the registry.
 
-        The classes are the keys and the set with the variant IDs are the values.
-        The question is, when do we decide on the sys and pe?
+        This function handles the naming convention to avoid the clash when
+        multiple tests use the same fixtures with the different scope levels.
+        Fixtures steal the ``valid_systems`` and ``valid_prog_environs`` from
+        the root test. How many of this get stolen from the root test depends
+        on the fixture's scope level:
+         - session: Only one PE+sys combination per fixture.
+         - partition: Only one environment per partition.
+         - environment: One test per available par-env combination.
+         - test: Use the ``valid_systems`` and ``valid_prog_environs`` from the
+           root test without any modification. Fixtures with this scope are not
+           shared with any other tests, so their name contains the full tree
+           branch leading up to the fixture.
+
+        :param fixture: An instance of :class:`TestFixture`.
+        :param fid: The variant index to instantiate the fixture with.
+        :param branch: The branch the fixture belongs to.
+        :param partitions: The system partitions supported by the root test.
+        :param prog_envs: The valid programming environments from the root.
         '''
 
         test = fixture.test
         scope = fixture.scope
         fname = fixture.get_name(fid)
         reg_names = []
-
-        # Need to validate that the partitions and PEs are not empty.
-
         self._reg.setdefault(test, dict())
         if scope == 'session':
+            # The name is just the class name
             name = fname
             self._reg[test][name] = (fid, [prog_envs[0]], [partitions[0]])
             reg_names.append(name)
         elif scope == 'partition':
             for p in partitions:
+                # The name contains the full partition name
                 name = '_'.join([fname, p])
                 self._reg[test][name] = (fid, [prog_envs[0]], [p])
                 reg_names.append(name)
         elif scope == 'environment':
             for p in partitions:
                 for env in prog_envs:
+                    # The name contains the full part and env names
                     name = '_'.join([fname, p, env])
                     self._reg[test][name] = (fid, [env], [p])
                     reg_names.append(name)
         elif scope == 'test':
-            name = '_'.join([fname, root.name])
+            # The name contains the full tree branch.
+            name = '_'.join([fname, branch])
             self._reg[test][name] = (fid, list(prog_envs), list(partitions))
             reg_names.append(name)
 
         return reg_names
 
     def update(self, other):
+        '''Join another registry into this one.'''
         self._is_registry(other)
         for test, variants in other._reg.items():
             self._reg.setdefault(test, dict())
@@ -73,6 +93,7 @@ class FixtureRegistry:
                 self._reg[test][name] = args
 
     def difference(self, other):
+        '''Build a new registry with the elements from self not in other.'''
         self._is_registry(other)
         ret = FixtureRegistry()
         for test, variants in self._reg.items():
@@ -88,12 +109,13 @@ class FixtureRegistry:
         return ret
 
     def instantiate_all(self):
+        '''Instantiate all the fixtures in the registry.'''
         ret = []
         for test, variants in self._reg.items():
             for name, args in variants.items():
                 test_id, penv, part = args
 
-                # Set the default values from the root test
+                # Set the fixture name and stolen env and part from the parent
                 test.name = name
                 test.valid_prog_environs = penv
                 test.valid_systems = part
@@ -102,9 +124,9 @@ class FixtureRegistry:
                 obj = test(_rfm_test_id=test_id)
 
                 # Reset test defaults and append instance
-                test.clearvar('name')
-                test.clearvar('valid_prog_environs')
-                test.clearvar('valid_systems')
+                test.name = Undefined
+                test.valid_prog_environs = Undefined
+                test.valid_systems = Undefined
                 ret.append(obj)
         return ret
 
@@ -113,6 +135,7 @@ class FixtureRegistry:
             raise TypeError('argument is not a FixtureRegistry')
 
     def __getitem__(self, test):
+        '''Return all the fixture names registered from a given class.'''
         if test not in self:
             raise KeyError(f'{test.__qualname__} is not a registered fixture')
         else:
@@ -177,7 +200,7 @@ class FixtureSpace(namespaces.Namespace):
     def __init__(self, target_cls=None, target_namespace=None):
         super().__init__(target_cls, target_namespace)
 
-        self.__random_access_iter = [x for x in iter(self)]
+        self.__random_access_iter = tuple(x for x in iter(self))
 
     def join(self, other, cls):
         '''Join other fixture spaces into the current one.
@@ -257,7 +280,7 @@ class FixtureSpace(namespaces.Namespace):
         # Register the fixtures
         for name, fixture in self.fixtures.items():
             fid = fixture_idx[name]
-            dep_names = obj._rfm_fixture_registry.add(fixture, fid, obj,
+            dep_names = obj._rfm_fixture_registry.add(fixture, fid, obj.name,
                                                       part, prog_envs)
 
             # Add dependencies
@@ -289,6 +312,13 @@ class FixtureSpace(namespaces.Namespace):
         return l
 
     def __getitem__(self, key):
+        '''Access an element in the fixture space.
+
+        If the key is an integer, this function will retrieve a given
+        combination of variant IDs for the fixtures present in this space.
+        If the key is just a fixture name, this function will return the
+        underlying fixture object with that name.
+        '''
         if isinstance(key, int):
             ret = dict()
             f_ids = self.__random_access_iter[key]
