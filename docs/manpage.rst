@@ -428,7 +428,13 @@ Options controlling ReFrame execution
 
      - Doing ``-S valid_systems='*'`` and ``-S valid_prog_environs='*'`` is the equivalent of passing the :option:`--skip-system-check` and :option:`--skip-prgenv-check` options.
      - Users could alter the behavior of tests based on tag values that they pass from the command line, by changing the behavior of a test in a post-init hook based on the value of the :attr:`~reframe.core.pipeline.RegressionTest.tags` attribute.
+     - Users could force a test with required variables to run if they set these variables from the command line.
+       For example, the following test could only be run if invoked with ``-S num_tasks=<NUM>``:
 
+     .. code-block:: python
+
+        class my_test(rfm.RegressionTest):
+            num_tasks = required
 
    .. versionadded:: 3.8.0
 

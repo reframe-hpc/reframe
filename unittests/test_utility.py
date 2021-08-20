@@ -1544,7 +1544,6 @@ def test_jsonext_dumps():
 
 # Classes to test JSON deserialization
 
-
 class _D(jsonext.JSONSerializable):
     def __init__(self):
         self.a = 2
