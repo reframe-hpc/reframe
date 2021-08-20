@@ -17,6 +17,7 @@ import reframe.utility as util
 import reframe.utility.osext as osext
 from reframe.core.exceptions import NameConflictError, is_severe, what
 from reframe.core.logging import getlogger
+from reframe.core.fixtures import FixtureRegistry
 
 
 class RegressionCheckValidator(ast.NodeVisitor):
@@ -148,11 +149,24 @@ class RegressionCheckLoader:
         candidates += legacy_candidates
 
         # Unwind the fixture registries
-        for c in candidates:
-            print(getattr(c, '_rfm_fixture_registry', None))
+        candidate_tests = []
+        fixture_registry = FixtureRegistry()
+        while candidates:
+            tmp_registry = FixtureRegistry()
+            while candidates:
+                c = candidates.pop()
+                print(c.name, c.valid_systems, c.valid_prog_environs)
+                reg = getattr(c, '_rfm_fixture_registry', None)
+                candidate_tests.append(c)
+                if reg:
+                    tmp_registry.update(reg)
+
+            new_fixtures = tmp_registry.difference(fixture_registry)
+            candidates = new_fixtures.instantiate_all()
+            fixture_registry.update(new_fixtures)
 
         ret = []
-        for c in candidates:
+        for c in candidate_tests:
             if not isinstance(c, RegressionTest):
                 continue
 

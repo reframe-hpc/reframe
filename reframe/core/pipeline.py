@@ -856,13 +856,14 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     @deferrable
     def __rfm_init__(self, *args, prefix=None, **kwargs):
-        self.name = type(self).fullname(self.test_id)
+        if not hasattr(self, 'name'):
+            self.name = type(self).fullname(self.test_id)
 
-        # Add the parameters from the parameterized_test decorator.
-        if args or kwargs:
-            arg_names = map(lambda x: util.toalphanum(str(x)),
-                            itertools.chain(args, kwargs.values()))
-            self.name += '_' + '_'.join(arg_names)
+            # Add the parameters from the parameterized_test decorator.
+            if args or kwargs:
+                arg_names = map(lambda x: util.toalphanum(str(x)),
+                                itertools.chain(args, kwargs.values()))
+                self.name += '_' + '_'.join(arg_names)
 
         # Pass if descr is a required variable.
         if not hasattr(self, 'descr'):

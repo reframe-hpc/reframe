@@ -25,60 +25,10 @@ class FixtureRegistry:
      - environment: union of all valid pes per partition.
      - test: steals the pe+sys from the root.
     '''
-    def __init__(self, root):
-        # Get the full branch path
-        branch = getattr(root, '_rfm_fixture_branch', '')
-        self.branch = branch + type(root).fullname(root.test_id)
+    def __init__(self):
+        self._reg = dict()
 
-        # Fire up the sub-registries
-        self._registry = dict()
-        for scope in {'session', 'partition', 'environment', 'test'}:
-            self._registry.setdefault(scope, dict())
-
-        # Get valid systems and partitions from the root test
-        try:
-            part = tuple(root.valid_systems)
-        except AttributeError:
-            raise ReframeSyntaxError(
-                f'valid_systems is undefined in test {root.name}'
-            )
-        else:
-            rt = runtime.runtime()
-            if '*' in part or rt.system.name in part:
-                part = tuple(p.fullname for p in rt.system.partitions)
-        finally:
-            self._partitions = part
-
-        try:
-            self._pes = tuple(root.valid_prog_environs)
-        except AttributeError:
-            raise ReframeSyntaxError(
-                f'valid_prog_environs is undefined in test {root.name}'
-            )
-
-        # Setup the partition sub-registry
-        for p in self._partitions:
-            self._registry['partition'].setdefault(p, dict())
-
-        # Setup the environment sub-registry
-        rt = runtime.runtime()
-        all_pes = set()
-        for p in rt.system.partitions:
-            pname = p.fullname
-            self._registry['environment'].setdefault(pname, dict())
-            for e in p.environs:
-                ename = e.name
-                self._registry['environment'][pname].setdefault(ename, dict())
-                all_pes.add(ename)
-
-        # Setup the test sub-registry.
-        self._registry['test'].setdefault(self.branch, dict())
-
-        #Finish setup for the valid PEs
-        if '*' in self._pes:
-            self._pes = list(all_pes)
-
-    def add(self, fixture, fid):
+    def add(self, fixture, fid, root, partitions, prog_envs):
         '''Add a fixture to the registry.
 
         The classes are the keys and the set with the variant IDs are the values.
@@ -89,33 +39,53 @@ class FixtureRegistry:
         scope = fixture.scope
         fname = fixture.get_name(fid)
         reg_names = []
-        reg = self._registry[scope]
+
+        # Need to validate that the partitions and PEs are not empty.
+
+        self._reg.setdefault(test, dict())
         if scope == 'session':
             name = fname
-            reg.setdefault(test, dict())
-            reg[test][fid] = name
+            self._reg[test][name] = (fid, [prog_envs[0]], [partitions[0]])
             reg_names.append(name)
         elif scope == 'partition':
-            for p in self._partitions:
+            for p in partitions:
                 name = '_'.join([fname, p])
-                reg[p].setdefault(test, dict())
-                reg[p][test][fid] = name
+                self._reg[test][name] = (fid, [prog_envs[0]], [p])
                 reg_names.append(name)
         elif scope == 'environment':
-            for p in self._partitions:
-                for env in self._pes:
-                    if env in reg[p]:
-                        name = '_'.join([fname, p, env])
-                        reg[p][env].setdefault(test, dict())
-                        reg[p][env][test][fid] = name
-                        reg_names.append(name)
+            for p in partitions:
+                for env in prog_envs:
+                    name = '_'.join([fname, p, env])
+                    self._reg[test][name] = (fid, [env], [p])
+                    reg_names.append(name)
         elif scope == 'test':
-            name = '_'.join([fname, self.branch])
-            reg[self.branch].setdefault(test, dict())
-            reg[self.branch][test][fid] = name
+            name = '_'.join([fname, root.name])
+            self._reg[test][name] = (fid, list(prog_envs), list(partitions))
             reg_names.append(name)
 
         return reg_names
+
+    def update(self, other):
+        self._is_registry(other)
+        for test, variants in other._reg.items():
+            self._reg.setdefault(test, dict())
+            for name, args in variants.items():
+                self._reg[test][name] = args
+
+    def difference(self, other):
+        self._is_registry(other)
+        ret = FixtureRegistry()
+        for test, variants in self._reg.items():
+            if test in other._reg:
+                other_variants = other._reg[test]
+                for name, args in variants.items():
+                    if name not in other_variants:
+                        ret._reg.setdefault(test, dict())
+                        ret._reg[test][name] = args
+            else:
+                ret._reg[test] = copy.deepcopy(variants)
+
+        return ret
 
     def instantiate_all(self):
         '''
@@ -123,10 +93,32 @@ class FixtureRegistry:
         and valid_prog_environs.
         This is needed for the tests with the test scope to get a unique name.
         '''
-        return []
+        ret = []
+        for test, variants in self._reg.items():
+            for name, args in variants.items():
+                test_id, penv, part = args
+
+                # Set the default values from the root test
+                test.name = name
+                test.valid_prog_environs = penv
+                test.valid_systems = part
+
+                # Instantiate the fixture
+                obj = test(_rfm_test_id=test_id)
+
+                # Reset test defaults and append instance
+                test.clearvar('name')
+                test.clearvar('valid_prog_environs')
+                test.clearvar('valid_systems')
+                ret.append(obj)
+        return ret
+
+    def _is_registry(self, other):
+        if not isinstance(other, FixtureRegistry):
+            raise TypeError('argument is not a FixtureRegistry')
 
     def __repr__(self):
-        return repr(self._registry)
+        return repr(self._reg)
 
 
 class TestFixture:
@@ -230,10 +222,33 @@ class FixtureSpace(namespaces.Namespace):
             return
 
         # Create the fixture registry
-        # The instantiate_all method from this registry should
-        # inject an attribute in the object with the full path
-        # of the host class' object.
-        obj._rfm_fixture_registry = FixtureRegistry(obj)
+        obj._rfm_fixture_registry = FixtureRegistry()
+
+        # Prepare the partitions and prog_envs
+        try:
+            part = tuple(obj.valid_systems)
+        except AttributeError:
+            raise ReframeSyntaxError(
+                f'valid_systems is undefined in test {obj.name}'
+            )
+        else:
+            rt = runtime.runtime()
+            if '*' in part or rt.system.name in part:
+                part = tuple(p.fullname for p in rt.system.partitions)
+
+        try:
+            prog_envs = tuple(obj.valid_prog_environs)
+        except AttributeError:
+            raise ReframeSyntaxError(
+                f'valid_prog_environs is undefined in test {obj.name}'
+            )
+        else:
+            if '*' in prog_envs:
+                all_pes = set()
+                for p in runtime.runtime().system.partitions:
+                    for e in p.environs:
+                        all_pes.add(e.name)
+                prog_envs = tuple(all_pes)
 
         # Get the fixture indices
         fixture_idx = self[fixture_index]
@@ -241,9 +256,8 @@ class FixtureSpace(namespaces.Namespace):
         # Register the fixtures
         for name, fixture in self.fixtures.items():
             fid = fixture_idx[name]
-            print(fixture.get_name(fid))
-
-            dep_names = obj._rfm_fixture_registry.add(fixture, fid)
+            dep_names = obj._rfm_fixture_registry.add(fixture, fid, obj,
+                                                      part, prog_envs)
 
             # Add dependencies
             if fixture.scope == 'session':

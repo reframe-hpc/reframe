@@ -505,6 +505,23 @@ class RegressionTestMeta(type):
 
         super().__setattr__(name, value)
 
+    def clearvar(cls, name):
+        '''Undefine a given variable.
+
+        This function returns :class:`True` if the variable was successfully
+        undefined. Otherwise, :class:`False` is returned.
+        '''
+        try:
+            var_space = super().__getattribute__('_rfm_var_space')
+            if name in var_space:
+                var_space[name].undefine()
+                return True
+
+        except AttributeError:
+            '''Catch early access attempt to the variable space.'''
+
+        return False
+
     @property
     def num_variants(cls):
         '''Number unique tests that can be instantiated from this class.'''
