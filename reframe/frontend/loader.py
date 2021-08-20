@@ -8,7 +8,6 @@
 #
 
 import ast
-import contextlib
 import inspect
 import os
 import sys
