@@ -123,6 +123,8 @@ class RegressionMixin(metaclass=RegressionTestMeta):
     .. versionadded:: 3.4.2
     '''
 
+    _rfm_regression_class_kind = 0
+
     def __getattr__(self, name):
         ''' Intercept the AttributeError if the name is a required variable.'''
         if (name in self._rfm_var_space and
@@ -187,6 +189,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
            Multiple inheritance with a shared common ancestor is not allowed.
 
     '''
+
+    _rfm_regression_class_kind = 3
 
     def disable_hook(self, hook_name):
         '''Disable pipeline hook by name.
@@ -1999,6 +2003,8 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
     module.
     '''
 
+    _rfm_regression_class_kind = 2
+
     def setup(self, partition, environ, **job_opts):
         '''The setup stage of the regression test pipeline.
 
@@ -2052,6 +2058,8 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
     This class is also directly available under the top-level :mod:`reframe`
     module.
     '''
+
+    _rfm_regression_class_kind = 1
 
     def setup(self, partition, environ, **job_opts):
         '''The setup stage of the regression test pipeline.

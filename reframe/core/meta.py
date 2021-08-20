@@ -563,7 +563,7 @@ class RegressionTestMeta(type):
         if cls.fixture_space.fixtures:
             fs = cls.fixture_space
             name += '_' + '_'.join(
-                fs[k].cls.fullname(v) for k,v in fs[fid].items()
+                fs[k].test.fullname(v) for k,v in fs[fid].items()
             )
 
         return name

@@ -147,6 +147,10 @@ class RegressionCheckLoader:
         # Merge registries
         candidates += legacy_candidates
 
+        # Unwind the fixture registries
+        for c in candidates:
+            print(getattr(c, '_rfm_fixture_registry', None))
+
         ret = []
         for c in candidates:
             if not isinstance(c, RegressionTest):
