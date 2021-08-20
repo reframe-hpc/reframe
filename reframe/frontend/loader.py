@@ -119,6 +119,10 @@ class RegressionCheckLoader:
         return self._recurse
 
     def _set_defaults(self, test_registry):
+        if not test_registry:
+            return
+
+        unset_vars = {}
         for test in test_registry:
             for name, val in self._external_vars.items():
                 if '.' in name:
@@ -133,7 +137,17 @@ class RegressionCheckLoader:
                     else:
                         val = fields.make_convertible(val)
 
-                    test.setvar(varname, val)
+                    if not test.setvar(varname, val):
+                        unset_vars.setdefault(test.__name__, [])
+                        unset_vars[test.__name__].append(varname)
+
+        # Warn for all unset variables
+        for testname, varlist in unset_vars.items():
+            varlist = ', '.join(f'{v!r}' for v in varlist)
+            getlogger().warning(
+                f'test {testname!r}: '
+                f'the following variables were not set: {varlist}'
+            )
 
     def load_from_module(self, module):
         '''Load user checks from module.
