@@ -404,7 +404,7 @@ Options controlling ReFrame execution
    - Mapping types: ``-S mapvar=a:1,b:2,c:3``
 
    Conversions to arbitrary objects are also supported.
-   See :doc:`blah-blah` for more details.
+   See :class:`~reframe.utility.typecheck.ConvertibleType` for more details.
 
 
    The optional ``TEST.`` prefix refers to the test class name (*not* the test name).
@@ -417,6 +417,7 @@ Options controlling ReFrame execution
 
    .. code-block:: python
 
+      @rfm.simple_test
       class my_test(rfm.RegressionTest):
           foo = variable(int, value=1)
           num_tasks = foo
@@ -433,6 +434,7 @@ Options controlling ReFrame execution
 
      .. code-block:: python
 
+        @rfm.simple_test
         class my_test(rfm.RegressionTest):
             num_tasks = required
 

@@ -98,6 +98,46 @@ import re
 
 
 class ConvertibleType(abc.ABCMeta):
+    '''A type that support conversions from other types.
+
+    This is a metaclass that allows classes that use it to support arbitrary
+    conversions from other types using a cast-like syntax without having to
+    change their constructor:
+
+    .. code-block:: python
+
+       new_obj = convertible_type(another_type)
+
+    For example, a class whose constructor accepts and :class:`int` may need
+    to support a cast-from-string conversion. This is particular useful if you
+    want a custom-typed test
+    :attr:`~reframe.core.pipeline.RegressionMixin.variable` to be able to be
+    set from the command line using the :option:`-S` option.
+
+    In order to support such conversions, a class must use this metaclass and
+    define a class method, named as :obj:`__rfm_cast_<type>__`, for each of
+    the type conversion that needs to support .
+
+    The following is an example of a class :class:`X` that its normal
+    constructor accepts two arguments but it also allows conversions from
+    string:
+
+    .. code-block:: python
+
+       class X(metaclass=ConvertibleType):
+           def __init__(self, x, y):
+               self.data = (x, y)
+
+           @classmethod
+           def __rfm_cast_str__(cls, s):
+               return X(*(int(x) for x in s.split(',', maxsplit=1)))
+
+        assert X(2, 3).data == X('2,3').data
+
+    .. versionadded:: 3.8.0
+
+    '''
+
     def __call__(cls, *args, **kwargs):
         if len(args) == 1:
             cast_fn_name = f'__rfm_cast_{type(args[0]).__name__}__'
