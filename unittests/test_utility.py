@@ -1081,6 +1081,10 @@ def test_sequence_view():
     assert [1, 2, 2, 3, 4] == l
     assert isinstance(l, util.SequenceView)
 
+    n = m + l
+    assert [1, 2, 2, 1, 2, 2, 3, 4] == n
+    assert isinstance(n, util.SequenceView)
+
     with pytest.raises(TypeError):
         l[1] = 3
 
