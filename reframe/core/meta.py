@@ -86,7 +86,7 @@ class RegressionTestMeta(type):
                     self['_rfm_perf_fns'][key] = value
                 except KeyError:
                     raise ReframeSyntaxError(
-                        f'the performance function {key} has already been '
+                        f'the performance function {key!r} has already been '
                         f'defined in this class'
                     ) from None
 

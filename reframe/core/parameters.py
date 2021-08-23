@@ -51,7 +51,9 @@ class TestParam:
         try:
             valid = utils.is_trivially_callable(filter_params, non_def_args=1)
         except TypeError:
-            raise TypeError('the provided parameter filter is not a callable')
+            raise TypeError(
+                'the provided parameter filter is not a callable'
+                ) from None
         else:
             if not valid:
                 raise TypeError('filter function must take a single argument')

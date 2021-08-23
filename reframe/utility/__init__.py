@@ -307,13 +307,21 @@ def attrs(obj):
 def is_trivially_callable(fn, *, non_def_args=0):
     '''Assert that a callable object is trivially callable.
 
-    A trivially callable object is one that can be called without providing
-    any additional arguments to its call method. Member functions with a single
-    argument without a default value may be considered trivially callable,
-    since the ``self`` placeholder is automatically provided when invoked from
-    the instance. The number of allowed arguments without a default value for a
-    callable to be considered trivially callable may be controlled with the
-    ``non_def_args`` argument.
+    An object is trivially callable when it can be invoked by providing just
+    an expected number of non-default arguments to its call method. For
+    example, (non-static) member functions expect a single argument without a
+    default value, which will passed as ``cls`` or ``self`` during invocation
+    depending on whether the function is a classmethod or not, respectively.
+    On the other hand, member functions that are static methods are not passed
+    any values by default when invoked. Therefore, these functions can only be
+    trivially callable when their call method expects no arguments by default.
+
+    :param fn: A callable to be tested if its trivially callable.
+    :param non_def_args: The number of non-default arguments the callable
+      ``fn`` expects when invoked.
+    :return: This function returns ``True`` if the expected number of
+      arguments matches the value of ``non_def_args``. Otherwise, it returns
+      ``False``.
     '''
 
     if not callable(fn):

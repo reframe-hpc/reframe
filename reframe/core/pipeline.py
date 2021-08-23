@@ -651,8 +651,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: In this context, a performance variable is a key-value pair, where the
     #: key is the desired variable name and the value is the deferred
-    #: performance expression (i.e. the result of a :doc:`deferrable
-    #: performance function</deferrable_functions_reference>`) that computes
+    #: performance expression (i.e. the result of a :ref:`deferrable
+    #: performance <deferrable-performance-functions>`) that computes
     #: or extracts the performance variable's value.
     #:
     #: By default, ReFrame will populate this field during the test's
@@ -675,8 +675,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:     :doc:`deferrable performance function
     #:     </deferrable_functions_reference>`) as values.
     #: :default: Collection of performance variables associated to each of
-    #:     the member functions decorated with the
-    #:     :func:`performance_function` decorator.
+    #:     the member functions decorated with the :func:`@performance_function
+    #:     <reframe.core.pipeline.RegressionMixin.performance_function>`
+    #:     decorator.
     perf_variables = variable(typ.Dict[str, _DeferredPerformanceExpression],
                               value={})
 

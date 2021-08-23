@@ -916,13 +916,19 @@ def evaluate(expr, cache=False):
     If ``expr`` is not a deferred expression, it will be returned as is.
     If ``expr`` is a deferred expression and ``cache`` is ``True``, the
     results of the deferred expression will be cached and subsequent calls
-    to ``evaluate`` on this deferred expression will simply return the
-    previously cached result.
+    to :func:`evaluate` on this deferred expression (when ``cache=False``)
+    will simply return the previously cached result.
+
+    .. note::
+       When the ``cache`` argument is passed as ``True``, a deferred
+       expression will always be evaluated and its results will be re-cached.
+       This may replace any other results that may have been cached in
+       previous evaluations.
 
     .. versionadded:: 2.21
 
-    .. versionchanged:: 3.4
-       Added support for evaluation caching.
+    .. versionchanged:: 3.8.0
+       Add support for evaluation caching.
     '''
     if isinstance(expr, _DeferredExpression):
         return expr.evaluate(cache=cache)

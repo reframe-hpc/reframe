@@ -7,12 +7,18 @@ Deferrable Functions Reference
 *Deferrable functions* are the functions whose execution may be postponed to a later time after they are called.
 The key characteristic of these functions is that they store their arguments when they are called, and the execution itself does not occur until the function is evaluated either explicitly or implicitly.
 
+ReFrame provides an ample set of deferrable utilities and it also allows users to write their own deferrable functions when needed.
+Please refer to ":doc:`deferrables`" for a hands-on explanation on how deferrable functions work and how to create custom deferrable functions.
+
 Explicit evaluation of deferrable functions
 -------------------------------------------
 
 Deferrable functions may be evaluated at any time by calling :func:`evaluate` on their return value or by passing the deferred function itself to the :func:`~reframe.utility.sanity.evaluate()` free function.
 These :func:`evaluate` functions take an optional :class:`bool` argument ``cache``, which can be used to cache the evaluation of the deferrable function.
 Hence, if caching is enabled on a given deferrable function, any subsequent calls to :func:`evaluate` will simply return the previously cached results.
+
+.. versionchanged:: 3.8.0
+   Support cached evaluation.
 
 Implicit evaluation of deferrable functions
 -------------------------------------------
@@ -50,8 +56,10 @@ Currently ReFrame provides three broad categories of deferrable functions:
    They include, but are not limited to, functions to iterate over regex matches in a file, extracting and converting values from regex matches, computing statistical information on series of data etc.
 
 
+ .. _deferrable-performance-functions:
+
 Deferrable performance functions
---------------------------------
+................................
 
 Deferrable performance functions are a special type of deferrable functions which are intended for measuring a given quantity.
 Therefore, this kind of deferrable functions have an associated unit that can be used to interpret the return values from these functions.
@@ -59,12 +67,10 @@ The unit of a deferrable performance function can be accessed through the public
 Regular deferrable functions can be promoted to deferrable performance functions using the :func:`~reframe.utility.sanity.make_performance_function` utility.
 Also, this utility allows to create performance functions directly from any callable.
 
-Deferrable function utilities
------------------------------
+.. versionadded:: 3.8.0
 
-Users can write their own deferrable functions as well.
-The page ":doc:`deferrables`" explains in detail how deferrable functions work and how users can write their own.
-
+List of deferrable functions and utilities
+------------------------------------------
 
 .. py:decorator:: reframe.utility.sanity.deferrable(func)
 

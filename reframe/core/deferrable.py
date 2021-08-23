@@ -75,7 +75,6 @@ class _DeferredExpression:
 
         # Cache the results for any subsequent evaluate calls.
         self._cached = (ret,)
-
         return ret
 
     def __bool__(self):
