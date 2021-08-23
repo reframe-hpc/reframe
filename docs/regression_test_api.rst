@@ -326,7 +326,7 @@ Built-in functions
 
    Decorate a member function as a performance function of the test.
 
-   This decorator converts the decorated method into a performance deferrable function (see :ref:`deferrable-performance-functions`) whose evaluation is deferred to the performance stage of the regression test.
+   This decorator converts the decorated method into a performance deferrable function (see ":ref:`deferrable-performance-functions`" for more details) whose evaluation is deferred to the performance stage of the regression test.
    The decorated function must take a single argument without a default value (i.e. ``self``) and any number of arguments with default values.
    A test may decorate multiple member functions as performance functions, where each of the decorated functions must be provided with the units of the performance quantitites to be extracted from the test.
    These performance units must be of type :class:`str`.

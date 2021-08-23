@@ -10,6 +10,7 @@ The key characteristic of these functions is that they store their arguments whe
 ReFrame provides an ample set of deferrable utilities and it also allows users to write their own deferrable functions when needed.
 Please refer to ":doc:`deferrables`" for a hands-on explanation on how deferrable functions work and how to create custom deferrable functions.
 
+
 Explicit evaluation of deferrable functions
 -------------------------------------------
 
@@ -18,7 +19,8 @@ These :func:`evaluate` functions take an optional :class:`bool` argument ``cache
 Hence, if caching is enabled on a given deferrable function, any subsequent calls to :func:`evaluate` will simply return the previously cached results.
 
 .. versionchanged:: 3.8.0
-   Support cached evaluation.
+   Support of cached evaluation is added.
+
 
 Implicit evaluation of deferrable functions
 -------------------------------------------
@@ -58,8 +60,12 @@ Currently ReFrame provides three broad categories of deferrable functions:
 
  .. _deferrable-performance-functions:
 
+
+--------------------------------
 Deferrable performance functions
-................................
+--------------------------------
+
+.. versionadded:: 3.8.0
 
 Deferrable performance functions are a special type of deferrable functions which are intended for measuring a given quantity.
 Therefore, this kind of deferrable functions have an associated unit that can be used to interpret the return values from these functions.
@@ -67,7 +73,6 @@ The unit of a deferrable performance function can be accessed through the public
 Regular deferrable functions can be promoted to deferrable performance functions using the :func:`~reframe.utility.sanity.make_performance_function` utility.
 Also, this utility allows to create performance functions directly from any callable.
 
-.. versionadded:: 3.8.0
 
 List of deferrable functions and utilities
 ------------------------------------------

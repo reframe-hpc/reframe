@@ -305,7 +305,7 @@ def attrs(obj):
 
 
 def is_trivially_callable(fn, *, non_def_args=0):
-    '''Assert that a callable object is trivially callable.
+    '''Check that a callable object is trivially callable.
 
     An object is trivially callable when it can be invoked by providing just
     an expected number of non-default arguments to its call method. For
@@ -319,9 +319,9 @@ def is_trivially_callable(fn, *, non_def_args=0):
     :param fn: A callable to be tested if its trivially callable.
     :param non_def_args: The number of non-default arguments the callable
       ``fn`` expects when invoked.
-    :return: This function returns ``True`` if the expected number of
+    :return: This function returns :obj:`True` if the expected number of
       arguments matches the value of ``non_def_args``. Otherwise, it returns
-      ``False``.
+      :obj:`False`.
     '''
 
     if not callable(fn):

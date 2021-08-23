@@ -919,6 +919,9 @@ def evaluate(expr, cache=False):
     to :func:`evaluate` on this deferred expression (when ``cache=False``)
     will simply return the previously cached result.
 
+    :param expr: The expression to be evaluated.
+    :param cache: Cache the result of this evaluation.
+
     .. note::
        When the ``cache`` argument is passed as ``True``, a deferred
        expression will always be evaluated and its results will be re-cached.
@@ -928,8 +931,9 @@ def evaluate(expr, cache=False):
     .. versionadded:: 2.21
 
     .. versionchanged:: 3.8.0
-       Add support for evaluation caching.
+       The ``cache`` argument is added.
     '''
+
     if isinstance(expr, _DeferredExpression):
         return expr.evaluate(cache=cache)
     else:

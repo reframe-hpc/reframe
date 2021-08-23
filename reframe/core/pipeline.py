@@ -657,9 +657,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: By default, ReFrame will populate this field during the test's
     #: instantiation with all the member functions decorated with the
-    #: :func:`performance_function` decorator. If no performance functions
-    #: are present in the class, no performance checking or reporting will be
-    #: carried out.
+    #: :func:`@performance_function
+    #: <reframe.core.pipeline.RegressionMixin.performance_function>` decorator.
+    #: If no performance functions are present in the class, no performance
+    #: checking or reporting will be carried out.
     #:
     #: This mapping may be extended or replaced by other performance variables
     #: that may be defined in any pipeline hook executing before the
@@ -677,6 +678,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:     the member functions decorated with the :func:`@performance_function
     #:     <reframe.core.pipeline.RegressionMixin.performance_function>`
     #:     decorator.
+    #:
+    #: .. versionadded:: 3.8.0
     perf_variables = variable(typ.Dict[str, _DeferredPerformanceExpression],
                               value={})
 
