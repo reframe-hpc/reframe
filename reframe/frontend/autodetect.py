@@ -183,17 +183,29 @@ def detect_topology():
             getlogger().debug(
                 f'> found topology file {topo_file!r}; loading...'
             )
-            part.processor._info = _load_info(
-                topo_file, _subschema('#/defs/processor_info')
-            )
-            found_procinfo = True
+            try:
+                part.processor._info = _load_info(
+                    topo_file, _subschema('#/defs/processor_info')
+                )
+                found_procinfo = True
+            except json.decoder.JSONDecodeError as e:
+                getlogger().debug(
+                    f'> could not load {topo_file!r}: {e}: ignoring...'
+                )
 
         if not found_devinfo and os.path.exists(dev_file):
             getlogger().debug(
                 f'> found devices file {dev_file!r}; loading...'
             )
-            part._devices = _load_info(dev_file, _subschema('#/defs/devices'))
-            found_devinfo = True
+            try:
+                part._devices = _load_info(
+                    dev_file, _subschema('#/defs/devices')
+                )
+                found_devinfo = True
+            except json.decoder.JSONDecodeError as e:
+                getlogger().debug(
+                    f'> could not load {dev_file!r}: {e}: ignoring...'
+                )
 
         if found_procinfo and found_devinfo:
             continue
