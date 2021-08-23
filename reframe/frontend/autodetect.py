@@ -190,10 +190,7 @@ def detect_topology():
                 found_procinfo = True
             except json.decoder.JSONDecodeError as e:
                 getlogger().debug(
-                    f'> error while loading the file: {e}'
-                )
-                getlogger().debug(
-                    f'> could not load {topo_file!r}; ignoring...'
+                    f'> could not load {topo_file!r}: {e}: ignoring...'
                 )
 
         if not found_devinfo and os.path.exists(dev_file):
@@ -207,10 +204,7 @@ def detect_topology():
                 found_devinfo = True
             except json.decoder.JSONDecodeError as e:
                 getlogger().debug(
-                    f'> error while loading the file: {e}'
-                )
-                getlogger().debug(
-                    f'> could not load {dev_file!r}; ignoring...'
+                    f'> could not load {dev_file!r}: {e}: ignoring...'
                 )
 
         if found_procinfo and found_devinfo:

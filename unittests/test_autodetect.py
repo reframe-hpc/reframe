@@ -34,7 +34,7 @@ def exec_ctx(make_exec_ctx_g, tmp_path, monkeypatch):
 
 
 @pytest.fixture
-def invalid_topology_exec_ctx(make_exec_ctx_g, tmp_path, monkeypatch):
+def invalid_topo_exec_ctx(make_exec_ctx_g, tmp_path, monkeypatch):
     # Monkey-patch HOME, since topology is always written there
     monkeypatch.setenv('HOME', str(tmp_path))
 
@@ -57,7 +57,7 @@ def test_autotect(exec_ctx):
     assert part.devices == [{'type': 'gpu', 'arch': 'a100', 'num_devices': 8}]
 
 
-def test_autotect_with_invalid_files(invalid_topology_exec_ctx):
+def test_autotect_with_invalid_files(invalid_topo_exec_ctx):
     detect_topology()
     part = runtime().system.partitions[0]
     assert part.processor.info == cpuinfo()
