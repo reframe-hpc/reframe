@@ -10,10 +10,10 @@ import shutil
 import tempfile
 
 import reframe as rfm
+import reframe.core.runtime as runtime
 import reframe.utility.osext as osext
 from reframe.core.exceptions import ConfigError
 from reframe.core.logging import getlogger
-from reframe.core.runtime import runtime
 from reframe.core.schedulers import Job
 from reframe.utility.cpuinfo import cpuinfo
 
@@ -60,7 +60,7 @@ class _copy_reframe:
 def _subschema(fragment):
     '''Create a configuration subschema.'''
 
-    full_schema = runtime().site_config.schema
+    full_schema = runtime.runtime().site_config.schema
     return {
         '$schema': full_schema['$schema'],
         'defs': full_schema['defs'],
@@ -125,7 +125,7 @@ def _remote_detect(part):
     )
     topo_info = {}
     try:
-        prefix = runtime().get_option('general/0/remote_workdir')
+        prefix = runtime.runtime().get_option('general/0/remote_workdir')
         with _copy_reframe(prefix) as dirname:
             with osext.change_dir(dirname):
                 job = Job.create(part.scheduler,
@@ -148,7 +148,7 @@ def _remote_detect(part):
 
 
 def detect_topology():
-    rt = runtime()
+    rt = runtime.runtime()
     detect_remote_systems = rt.get_option('general/0/remote_detect')
     topo_prefix = os.path.join(os.getenv('HOME'), '.reframe/topology')
     for part in rt.system.partitions:
@@ -200,12 +200,18 @@ def detect_topology():
         if not found_procinfo:
             # No topology found, try to auto-detect it
             getlogger().debug(f'> no topology file found; auto-detecting...')
+            temp_modules = rt.system.preload_environ.modules
             if _is_part_local(part):
+                temp_modules += part.local_env.modules
                 # Unconditionally detect the system for fully local partitions
-                part.processor._info = cpuinfo()
+                with runtime.temp_environment(modules=temp_modules):
+                    part.processor._info = cpuinfo()
+
                 _save_info(topo_file, part.processor.info)
             elif detect_remote_systems:
-                part.processor._info = _remote_detect(part)
+                with runtime.temp_environment(modules=temp_modules):
+                    part.processor._info = _remote_detect(part)
+
                 if part.processor.info:
                     _save_info(topo_file, part.processor.info)
 

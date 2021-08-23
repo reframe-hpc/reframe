@@ -1391,7 +1391,10 @@ class SequenceView(collections.abc.Sequence):
         if not isinstance(other, collections.abc.Sequence):
             return NotImplemented
 
-        return SequenceView(self.__container + other)
+        if isinstance(other, SequenceView):
+            return SequenceView(self.__container + other.__container)
+        else:
+            return SequenceView(self.__container + other)
 
     def __iadd__(self, other):
         return NotImplemented
