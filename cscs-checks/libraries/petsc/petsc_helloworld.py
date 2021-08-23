@@ -26,12 +26,12 @@ class PetscPoisson2DCheck(rfm.RegressionTest):
         self.descr = (f'Compile/run PETSc 2D Poisson example with cray-petsc '
                       f'({self.linkage} linking)')
 
-    @run_after('setup')
+    @run_before('compile')
     def set_variables(self):
         self.variables = {'CRAYPE_LINK_TYPE': self.linkage}
 
     @run_before('compile')
-    def prg_intel_workaround(self):
+    def intel_workaround(self):
         # FIXME: static compilation yields a link error in case of
         # PrgEnv-intel (Cray Bug #255701) workaround use C++ compiler
         if self.linkage == 'static':
