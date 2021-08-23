@@ -26,17 +26,23 @@ class GREASYCheck(rfm.RegressionTest):
                                ('mpi', 'mc',  72, 12, 3, 1),
                                ('mpi+openmp', 'gpu', 24,  3, 2, 2),
                                ('mpi+openmp', 'mc',  72,  6, 3, 2)])
+    variant = variable(str)
+    partition = variable(str)
+    num_greasy_tasks = variable(int)
+    workers_per_node = variable(int)
+    ranks_per_worker = variable(int)
+    cpus_per_worker = variable(int)
     valid_prog_environs = ['PrgEnv-gnu']
     sourcepath = 'tasks_mpi_openmp.c'
     build_system = 'SingleSource'
     executable = 'tasks_mpi_openmp.x'
-    tasks_file = 'tasks.txt'
-    greasy_logfile = 'greasy.log'
-    nnodes = 2
+    tasks_file = variable(str, value='tasks.txt')
+    greasy_logfile = variable(str, value='greasy.log')
+    nnodes = variable(int, value=2)
 
     # sleep enough time to distinguish if the files are running in parallel
     # or not
-    sleep_time = 60
+    sleep_time = variable(int, value=60)
     use_multithreading = False
     modules = ['GREASY']
     maintainers = ['VH', 'SK']
@@ -72,7 +78,7 @@ class GREASYCheck(rfm.RegressionTest):
         self.num_cpus_per_task = self.cpus_per_worker
 
     @run_before('run')
-    def set_variables(self):
+    def set_environment_variables(self):
         # On SLURM there is no need to set OMP_NUM_THREADS if one defines
         # num_cpus_per_task, but adding for completeness and portability
         self.variables = {
@@ -105,7 +111,7 @@ class GREASYCheck(rfm.RegressionTest):
                 }
             }
         elif self.current_partition.fullname in ['daint:mc']:
-            if self.configuration.variant != 'serial':
+            if 'serial' not in self.variant:
                 self.extra_resources = {
                     'gres': {
                         'gres': 'craynetwork:72'
