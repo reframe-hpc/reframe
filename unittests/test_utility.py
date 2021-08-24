@@ -1137,6 +1137,8 @@ def test_mapping_view():
     assert d == util.MappingView({'b': 2, 'a': 1})
     assert str(d) == str({'a': 1, 'b': 2})
     assert {'a': 1, 'b': 2, 'c': 3} != d
+    e = util.MappingView({'c': 3})
+    assert {'a': 1, 'b': 2, 'c': 3} == d + e
 
     # Assert immutability
     with pytest.raises(TypeError):
