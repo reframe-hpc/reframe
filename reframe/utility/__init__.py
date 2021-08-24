@@ -1473,3 +1473,11 @@ class MappingView(collections.abc.Mapping):
 
     def __str__(self):
         return str(self.__mapping)
+
+    def __add__(self, other):
+        if not isinstance(other, type(self)):
+            return NotImplemented
+
+        new_mapping = self.__mapping.copy()
+        new_mapping.update(other.__mapping)
+        return MappingView(new_mapping)
