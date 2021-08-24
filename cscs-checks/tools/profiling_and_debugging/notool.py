@@ -12,6 +12,7 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class JacobiNoToolHybrid(rfm.RegressionTest):
     lang = parameter(['C++', 'F90'])
+    time_limit = '10m'
 
     def __init__(self):
         super().__init__()
@@ -83,6 +84,7 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         # cpe/21.04 cray-mpich/8.1.4 AOCC, CRAY, CRAYCLANG, GNU, INTEL, NVIDIA
         # cpe/21.05 cray-mpich/8.1.5 AOCC, CRAY, CRAYCLANG, GNU, INTEL, NVIDIA
         # cpe/21.06 cray-mpich/8.1.6 AOCC, CRAY, CRAYCLANG, GNU, INTEL, NVIDIA
+        # cpe/21.08 cray-mpich/8.1.8 AOCC, CRAY, CRAYCLANG, GNU, INTEL, NVIDIA
         # }}}
         envname = self.current_environ.name
         sysname = self.current_system.name
@@ -133,12 +135,21 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
     @run_before('sanity')
     def set_sanity(self):
         envname = self.current_environ.name
-        # CCE specific:
+        # {{{ extract CCE version to manage compiler versions:
         cce_version = None
         rptf = os.path.join(self.stagedir, sn.evaluate(self.stdout))
         if self.lang == 'C++' and envname == 'PrgEnv-cray':
             cce_version = sn.extractsingle(r'CRAY_CC_VERSION=(\d+)\.\S+', rptf,
                                            1, int)
+        # }}}
+
+        # {{{ extract AOCC version to manage compiler versions:
+        aocc_version = None
+        rptf = os.path.join(self.stagedir, sn.evaluate(self.stdout))
+        if self.lang == 'C++' and envname == 'PrgEnv-aocc':
+            aocc_version = sn.extractsingle(
+                r'CRAY_AOCC_VERSION=(\d+)\.\S+', rptf, 1, int)
+        # }}}
 
         intel_type = sn.extractsingle(r'INTEL_COMPILER_TYPE=(\S*)', rptf, 1)
         # print(f'intel_type={intel_type}')
@@ -155,7 +166,11 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
 
         # OpenMP support varies between compilers:
         self.openmp_versions = {
-            'PrgEnv-aocc': {'C++': 201511, 'F90': 201307},
+            # 'PrgEnv-aocc': {'C++': 201511, 'F90': 201307},
+            'PrgEnv-aocc': {
+                'C++': 201511 if aocc_version == 2 else 201811,
+                'F90': 201307,
+            },
             'PrgEnv-cray': {
                 'C++': 201511 if cce_version == 10 else 201811,
                 'F90': 201511,
