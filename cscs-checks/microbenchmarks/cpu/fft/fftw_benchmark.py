@@ -7,28 +7,41 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.parameterized_test(['nompi'], ['mpi'])
+@rfm.simple_test
 class FFTWTest(rfm.RegressionTest):
-    def __init__(self, exec_mode):
-        self.sourcepath = 'fftw_benchmark.c'
-        self.build_system = 'SingleSource'
-        self.valid_systems = ['daint:gpu', 'dom:gpu']
+    exec_mode = parameter(['nompi', 'mpi'])
+    sourcepath = 'fftw_benchmark.c'
+    build_system = 'SingleSource'
+    valid_systems = ['daint:gpu', 'dom:gpu']
+    # Cray FFTW library is not officially supported for the PGI
+    valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
+    modules = ['cray-fftw']
+    num_tasks_per_node = 12
+    num_gpus_per_node = 0
+    maintainers = ['AJ']
+    tags = {'benchmark', 'scs', 'craype'}
 
-        # Cray FFTW library is not officially supported for the PGI
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
-        self.modules = ['cray-fftw']
-        self.num_tasks_per_node = 12
-        self.num_gpus_per_node = 0
-        self.sanity_patterns = sn.assert_eq(
-            sn.count(sn.findall(r'execution time', self.stdout)), 1)
-        self.build_system.cflags = ['-O2']
+    @run_before('performance')
+    def set_performance(self):
         self.perf_patterns = {
             'fftw_exec_time': sn.extractsingle(
                 r'execution time:\s+(?P<exec_time>\S+)', self.stdout,
                 'exec_time', float),
         }
 
-        if exec_mode == 'nompi':
+    @sanity_function
+    def found_execution_time(self):
+        return sn.assert_eq(
+            sn.count(sn.findall(r'execution time', self.stdout)), 1
+        )
+
+    @run_before('compile')
+    def set_cflags(self):
+        self.build_system.cflags = ['-O2']
+
+    @run_after('init')
+    def configure_mode(self):
+        if self.exec_mode == 'nompi':
             self.num_tasks = 12
             self.executable_opts = ['72 12 1000 0']
             self.reference = {
@@ -51,5 +64,3 @@ class FFTWTest(rfm.RegressionTest):
                 },
             }
 
-        self.maintainers = ['AJ']
-        self.tags = {'benchmark', 'scs', 'craype'}
