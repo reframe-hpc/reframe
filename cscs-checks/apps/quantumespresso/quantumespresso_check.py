@@ -19,7 +19,8 @@ class QuantumESPRESSOCheck(rfm.RunOnlyRegressionTest):
 
         self.modules = ['QuantumESPRESSO']
         self.executable = 'pw.x'
-        self.executable_opts = ['-in', 'ausurf.in']
+        self.executable_opts = ['-in', 'ausurf.in',
+                                '-pd', '.true.']
 
         self.sanity_patterns = sn.all([
             sn.assert_found(r'convergence has been achieved', self.stdout),
