@@ -14,9 +14,10 @@ import reframe.core.namespaces as namespaces
 import reframe.core.parameters as parameters
 import reframe.core.variables as variables
 import reframe.core.hooks as hooks
+import reframe.utility as utils
 
 from reframe.core.exceptions import ReframeSyntaxError
-from reframe.core.deferrable import deferrable
+from reframe.core.deferrable import deferrable, _DeferredPerformanceExpression
 
 
 class RegressionTestMeta(type):
@@ -30,24 +31,36 @@ class RegressionTestMeta(type):
         same class body. Overriding a variable with a parameter or the other
         way around has an undefined behavior. A variable's value may be
         updated multiple times within the same class body. A parameter's
-        value may not be updated more than once within the same class body.
+        value cannot be updated more than once within the same class body.
         '''
 
         def __setitem__(self, key, value):
             if isinstance(value, variables.TestVar):
                 # Insert the attribute in the variable namespace
-                self['_rfm_local_var_space'][key] = value
-                value.__set_name__(self, key)
+                try:
+                    self['_rfm_local_var_space'][key] = value
+                    value.__set_name__(self, key)
+                except KeyError:
+                    raise ReframeSyntaxError(
+                        f'variable {key!r} is already declared'
+                    ) from None
 
-                # Override the regular class attribute (if present)
+                # Override the regular class attribute (if present) and return
                 self._namespace.pop(key, None)
+                return
 
             elif isinstance(value, parameters.TestParam):
                 # Insert the attribute in the parameter namespace
-                self['_rfm_local_param_space'][key] = value
+                try:
+                    self['_rfm_local_param_space'][key] = value
+                except KeyError:
+                    raise ReframeSyntaxError(
+                        f'parameter {key!r} is already declared in this class'
+                    ) from None
 
-                # Override the regular class attribute (if present)
+                # Override the regular class attribute (if present) and return
                 self._namespace.pop(key, None)
+                return
 
             elif key in self['_rfm_local_param_space']:
                 raise ReframeSyntaxError(
@@ -57,6 +70,33 @@ class RegressionTestMeta(type):
                 # Insert the items manually to overide the namespace clash
                 # check from the base namespace.
                 self._namespace[key] = value
+
+            # Register functions decorated with either @sanity_function or
+            # @performance_variables or @performance_function decorators.
+            if hasattr(value, '_rfm_sanity_fn'):
+                try:
+                    super().__setitem__('_rfm_sanity', value)
+                except KeyError:
+                    raise ReframeSyntaxError(
+                        'the @sanity_function decorator can only be used '
+                        'once in the class body'
+                    ) from None
+            elif hasattr(value, '_rfm_perf_key'):
+                try:
+                    self['_rfm_perf_fns'][key] = value
+                except KeyError:
+                    raise ReframeSyntaxError(
+                        f'the performance function {key!r} has already been '
+                        f'defined in this class'
+                    ) from None
+
+            # Register the final methods
+            if hasattr(value, '_rfm_final'):
+                self['_rfm_final_methods'].add(key)
+
+            # Register the hooks - if a value does not meet the conditions
+            # it will be simply ignored
+            self['_rfm_hook_registry'].add(value)
 
         def __getitem__(self, key):
             '''Expose and control access to the local namespaces.
@@ -190,6 +230,7 @@ class RegressionTestMeta(type):
 
         namespace['bind'] = bind
         namespace['final'] = final
+        namespace['_rfm_final_methods'] = set()
 
         # Hook-related functionality
         def run_before(stage):
@@ -209,6 +250,7 @@ class RegressionTestMeta(type):
         namespace['run_before'] = run_before
         namespace['run_after'] = run_after
         namespace['require_deps'] = hooks.require_deps
+        namespace['_rfm_hook_registry'] = hooks.HookRegistry()
 
         # Machinery to add a sanity function
         def sanity_function(fn):
@@ -224,6 +266,44 @@ class RegressionTestMeta(type):
 
         namespace['sanity_function'] = sanity_function
         namespace['deferrable'] = deferrable
+
+        # Machinery to add performance functions
+        def performance_function(units, *, perf_key=None):
+            '''Decorate a function to extract a performance variable.
+
+            The ``units`` argument indicates the units of the performance
+            variable to be extracted.
+            The ``perf_key`` optional arg will be used as the name of the
+            performance variable. If not provided, the function name will
+            be used as the performance variable name.
+            '''
+            if not isinstance(units, str):
+                raise TypeError('performance units must be a string')
+
+            if perf_key and not isinstance(perf_key, str):
+                raise TypeError("'perf_key' must be a string")
+
+            def _deco_wrapper(func):
+                if not utils.is_trivially_callable(func, non_def_args=1):
+                    raise TypeError(
+                        f'performance function {func.__name__!r} has more '
+                        f'than one argument without a default value'
+                    )
+
+                @functools.wraps(func)
+                def _perf_fn(*args, **kwargs):
+                    return _DeferredPerformanceExpression(
+                        func, units, *args, **kwargs
+                    )
+
+                _perf_key = perf_key if perf_key else func.__name__
+                setattr(_perf_fn, '_rfm_perf_key', _perf_key)
+                return _perf_fn
+
+            return _deco_wrapper
+
+        namespace['performance_function'] = performance_function
+        namespace['_rfm_perf_fns'] = namespaces.LocalNamespace()
         return metacls.MetaNamespace(namespace)
 
     def __new__(metacls, name, bases, namespace, **kwargs):
@@ -239,7 +319,7 @@ class RegressionTestMeta(type):
         directives = [
             'parameter', 'variable', 'bind', 'run_before', 'run_after',
             'require_deps', 'required', 'deferrable', 'sanity_function',
-            'final'
+            'final', 'performance_function'
         ]
         for b in directives:
             namespace.pop(b, None)
@@ -266,58 +346,50 @@ class RegressionTestMeta(type):
         # Update used names set with the local __dict__
         cls._rfm_dir.update(cls.__dict__)
 
-        # Set up the hooks for the pipeline stages based on the _rfm_attach
-        # attribute; all dependencies will be resolved first in the post-setup
-        # phase if not assigned elsewhere
-        hook_reg = hooks.HookRegistry.create(namespace)
-        for base in (b for b in bases if hasattr(b, '_rfm_hook_registry')):
-            hook_reg.update(getattr(base, '_rfm_hook_registry'),
-                            denied_hooks=namespace)
+        # Update the hook registry with the bases
+        for base in cls._rfm_bases:
+            cls._rfm_hook_registry.update(
+                base._rfm_hook_registry, denied_hooks=namespace
+            )
 
-        cls._rfm_hook_registry = hook_reg
+        # Search the bases if no local sanity functions exist.
+        if '_rfm_sanity' not in namespace:
+            for base in cls._rfm_bases:
+                if hasattr(base, '_rfm_sanity'):
+                    cls._rfm_sanity = getattr(base, '_rfm_sanity')
+                    if cls._rfm_sanity.__name__ in namespace:
+                        raise ReframeSyntaxError(
+                            f'{cls.__qualname__!r} overrides the candidate '
+                            f'sanity function '
+                            f'{cls._rfm_sanity.__qualname__!r} without '
+                            f'defining an alternative'
+                        )
 
-        # Gather all the locally defined sanity functions based on the
-        # _rfm_sanity_fn attribute.
+                    break
 
-        sn_fn = [v for v in namespace.values() if hasattr(v, '_rfm_sanity_fn')]
-        if sn_fn:
-            cls._rfm_sanity = sn_fn[0]
-            if len(sn_fn) > 1:
-                raise ReframeSyntaxError(
-                    f'{cls.__qualname__!r} defines more than one sanity '
-                    'function in the class body.'
-                )
-
-        else:
-            # Search the bases if no local sanity functions exist.
-            for base in (b for b in bases if hasattr(b, '_rfm_sanity')):
-                cls._rfm_sanity = getattr(base, '_rfm_sanity')
-                if cls._rfm_sanity.__name__ in namespace:
-                    raise ReframeSyntaxError(
-                        f'{cls.__qualname__!r} overrides the candidate '
-                        f'sanity function '
-                        f'{cls._rfm_sanity.__qualname__!r} without '
-                        f'defining an alternative'
-                    )
-
-                break
-
-        cls._final_methods = {v.__name__ for v in namespace.values()
-                              if hasattr(v, '_rfm_final')}
+        # Update the performance function dict with the bases.
+        for base in cls._rfm_bases:
+            for k, v in base._rfm_perf_fns.items():
+                if k not in namespace:
+                    try:
+                        cls._rfm_perf_fns[k] = v
+                    except KeyError:
+                        '''Performance function overridden by other class'''
 
         # Add the final functions from its parents
-        bases_w_final = [b for b in bases if hasattr(b, '_final_methods')]
-        cls._final_methods.update(*(b._final_methods for b in bases_w_final))
+        cls._rfm_final_methods.update(
+            *(b._rfm_final_methods for b in cls._rfm_bases)
+        )
 
         if getattr(cls, '_rfm_override_final', None):
             return
 
-        for v in namespace.values():
-            for b in bases_w_final:
-                if callable(v) and v.__name__ in b._final_methods:
-                    msg = (f"'{cls.__qualname__}.{v.__name__}' attempts to "
+        for b in cls._rfm_bases:
+            for key in b._rfm_final_methods:
+                if key in namespace and callable(namespace[key]):
+                    msg = (f"'{cls.__qualname__}.{key}' attempts to "
                            f"override final method "
-                           f"'{b.__qualname__}.{v.__name__}'; "
+                           f"'{b.__qualname__}.{key}'; "
                            f"you should use the pipeline hooks instead")
                     raise ReframeSyntaxError(msg)
 

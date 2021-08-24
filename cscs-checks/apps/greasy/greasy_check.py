@@ -16,79 +16,76 @@ def to_seconds(str):
             datetime.strptime('00:00:00', '%H:%M:%S')).total_seconds()
 
 
-@rfm.parameterized_test(
-    ['serial',     'gpu', 24, 12, 1, 1],
-    ['serial',     'mc',  72, 36, 1, 1],
-    ['openmp',     'gpu', 24,  3, 1, 4],
-    ['openmp',     'mc',  72,  9, 1, 4],
-    ['mpi',        'gpu', 24,  4, 3, 1],
-    ['mpi',        'mc',  72, 12, 3, 1],
-    ['mpi+openmp', 'gpu', 24,  3, 2, 2],
-    ['mpi+openmp', 'mc',  72,  6, 3, 2]
-)
+@rfm.simple_test
 class GREASYCheck(rfm.RegressionTest):
-    def __init__(self, variant, partition, num_greasy_tasks, nworkes_per_node,
-                 nranks_per_worker, ncpus_per_worker):
-        self.valid_systems = ['daint:' + partition, 'dom:' + partition]
+    configuration = parameter([('serial', 'gpu', 24, 12, 1, 1),
+                               ('serial', 'mc',  72, 36, 1, 1),
+                               ('openmp', 'gpu', 24,  3, 1, 4),
+                               ('openmp', 'mc',  72,  9, 1, 4),
+                               ('mpi', 'gpu', 24,  4, 3, 1),
+                               ('mpi', 'mc',  72, 12, 3, 1),
+                               ('mpi+openmp', 'gpu', 24,  3, 2, 2),
+                               ('mpi+openmp', 'mc',  72,  6, 3, 2)])
+    variant = variable(str)
+    partition = variable(str)
+    num_greasy_tasks = variable(int)
+    workers_per_node = variable(int)
+    ranks_per_worker = variable(int)
+    cpus_per_worker = variable(int)
+    valid_prog_environs = ['PrgEnv-gnu']
+    sourcepath = 'tasks_mpi_openmp.c'
+    build_system = 'SingleSource'
+    executable = 'tasks_mpi_openmp.x'
+    tasks_file = variable(str, value='tasks.txt')
+    greasy_logfile = variable(str, value='greasy.log')
+    nnodes = variable(int, value=2)
 
-        self.valid_prog_environs = ['PrgEnv-gnu']
-        self.sourcepath = 'tasks_mpi_openmp.c'
-        self.build_system = 'SingleSource'
+    # sleep enough time to distinguish if the files are running in parallel
+    # or not
+    sleep_time = variable(int, value=60)
+    use_multithreading = False
+    modules = ['GREASY']
+    maintainers = ['VH', 'SK']
+    tags = {'production'}
 
-        # sleep enough time to distinguish if the files are running in parallel
-        # or not
-        self.sleep_time = 60
+    @run_after('init')
+    def unpack_configuration_parameter(self):
+        self.variant, self.partition = self.configuration[0:2]
+        self.num_greasy_tasks, self.workers_per_node = self.configuration[2:4]
+        self.ranks_per_worker, self.cpus_per_worker = self.configuration[4:6]
+
+    @run_after('init')
+    def set_valid_systems(self):
+        self.valid_systems = [f'daint:{self.partition}',
+                              f'dom:{self.partition}']
+
+    @run_before('compile')
+    def setup_build_system(self):
         self.build_system.cflags = [f'-DSLEEP_TIME={self.sleep_time:d}']
-        self.variant = variant
-        if variant == 'openmp':
+        if self.variant == 'openmp':
             self.build_system.cflags += ['-fopenmp']
-        elif variant == 'mpi':
+        elif self.variant == 'mpi':
             self.build_system.cflags += ['-D_MPI']
-        elif variant == 'mpi+openmp':
+        elif self.variant == 'mpi+openmp':
             self.build_system.cflags += ['-fopenmp', '-D_MPI']
 
-        self.executable = 'tasks_mpi_openmp.x'
-        self.tasks_file = 'tasks.txt'
+    @run_before('run')
+    def setup_greasy_run(self):
         self.executable_opts = [self.tasks_file]
-        self.greasy_logfile = 'greasy.log'
         self.keep_files = [self.tasks_file, self.greasy_logfile]
-        nnodes = 2
-        self.use_multithreading = False
-        self.num_greasy_tasks = num_greasy_tasks
-        self.nworkes_per_node = nworkes_per_node
-        self.nranks_per_worker = nranks_per_worker
-        self.num_tasks_per_node = nranks_per_worker * nworkes_per_node
-        self.num_tasks = self.num_tasks_per_node * nnodes
-        self.num_cpus_per_task = ncpus_per_worker
-        self.sanity_patterns = self.eval_sanity()
+        self.num_tasks_per_node = self.ranks_per_worker * self.workers_per_node
+        self.num_tasks = self.num_tasks_per_node * self.nnodes
+        self.num_cpus_per_task = self.cpus_per_worker
 
-        # Reference value is system agnostic
-        # Adding 10 secs of slowdown per greasy tasks
-        # this is to compensate for whenever the systems are full and srun gets
-        # slightly slower
-        refperf = (
-            (self.sleep_time+10)*num_greasy_tasks / nworkes_per_node / nnodes
-        )
-        self.reference = {
-            '*': {
-                'time': (refperf, None, 0.5, 's')
-            }
-        }
-        self.perf_patterns = {
-            'time': sn.extractsingle(r'Total time: (?P<perf>\S+)',
-                                     self.greasy_logfile,
-                                     'perf', to_seconds)
-        }
+    @run_before('run')
+    def set_environment_variables(self):
         # On SLURM there is no need to set OMP_NUM_THREADS if one defines
         # num_cpus_per_task, but adding for completeness and portability
         self.variables = {
             'OMP_NUM_THREADS': str(self.num_cpus_per_task),
-            'GREASY_NWORKERS_PER_NODE': str(nworkes_per_node),
+            'GREASY_NWORKERS_PER_NODE': str(self.workers_per_node),
             'GREASY_LOGFILE': self.greasy_logfile
         }
-        self.modules = ['GREASY']
-        self.maintainers = ['VH', 'SK']
-        self.tags = {'production'}
 
     @run_before('run')
     def generate_tasks_file(self):
@@ -114,7 +111,7 @@ class GREASYCheck(rfm.RegressionTest):
                 }
             }
         elif self.current_partition.fullname in ['daint:mc']:
-            if self.variant != 'serial':
+            if 'serial' not in self.variant:
                 self.extra_resources = {
                     'gres': {
                         'gres': 'craynetwork:72'
@@ -133,17 +130,19 @@ class GREASYCheck(rfm.RegressionTest):
         # make calls to srun
         self.job.launcher = getlauncher('local')()
 
-    @sn.sanity_function
-    def eval_sanity(self):
+    @sanity_function
+    def assert_success(self):
         output_files = []
         output_files = [file for file in os.listdir(self.stagedir)
                         if file.startswith('output-')]
         num_greasy_tasks = len(output_files)
         failure_msg = (f'Requested {self.num_greasy_tasks} task(s), but '
                        f'executed only {num_greasy_tasks} tasks(s)')
-        sn.evaluate(sn.assert_eq(num_greasy_tasks, self.num_greasy_tasks,
-                                 msg=failure_msg))
-        num_tasks = sn.getattr(self, 'nranks_per_worker')
+        sn.evaluate(
+            sn.assert_eq(num_greasy_tasks, self.num_greasy_tasks,
+                         msg=failure_msg)
+        )
+        num_tasks = sn.getattr(self, 'ranks_per_worker')
         num_cpus_per_task = sn.getattr(self, 'num_cpus_per_task')
 
         def tid(match):
@@ -184,7 +183,7 @@ class GREASYCheck(rfm.RegressionTest):
                         lambda x: sn.assert_lt(
                             rank(x), num_ranks(x),
                             msg=(f'Rank id {rank(x)} is not lower than the '
-                                 f'number of ranks {self.nranks_per_worker} '
+                                 f'number of ranks {self.ranks_per_worker} '
                                  f'in output file')
                         ), result
                     ),
@@ -217,7 +216,7 @@ class GREASYCheck(rfm.RegressionTest):
                         lambda x: sn.assert_eq(
                             num_ranks(x), num_tasks,
                             msg=(f'Number of ranks {num_ranks(x)} is not '
-                                 f'equal to {self.nranks_per_worker} in '
+                                 f'equal to {self.ranks_per_worker} in '
                                  f'output file {output_file}')
                         ), result
                     )
@@ -234,3 +233,24 @@ class GREASYCheck(rfm.RegressionTest):
         ))
 
         return True
+
+    @run_before('performance')
+    def set_reference(self):
+        # Reference value is system agnostic
+        # Adding 10 secs of slowdown per greasy tasks
+        # this is to compensate for whenever the systems are full and srun gets
+        # slightly slower
+        refperf = (
+            (self.sleep_time + 10) * self.num_greasy_tasks /
+            self.workers_per_node / self.nnodes
+        )
+        self.reference = {
+            '*': {
+                'time': (refperf, None, 0.5, 's')
+            }
+        }
+
+    @performance_function('s')
+    def time(self):
+        return sn.extractsingle(r'Total time: (?P<perf>\S+)',
+                                self.greasy_logfile, 'perf', to_seconds)

@@ -135,7 +135,7 @@ Here is what ReFrame generates as a build script in this example:
 
 .. code:: bash
 
-   . $SPACK_ROOT/share/spack/setup-env.sh
+   . "$(spack location --spack-root)/share/spack/setup-env.sh"
    spack env activate -V -d myenv
    spack install
 
@@ -171,7 +171,7 @@ Finally, here is the generated run script that ReFrame uses to run the test, onc
 .. code-block:: bash
 
    #!/bin/bash
-   . $SPACK_ROOT/share/spack/setup-env.sh
+   . "$(spack location --spack-root)/share/spack/setup-env.sh"
    spack env activate -V -d myenv
    bzip2 --help
 
