@@ -857,7 +857,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     @deferrable
     def __rfm_init__(self, *args, prefix=None, **kwargs):
         if not hasattr(self, 'name'):
-            self.name = type(self).fullname(self.test_id)
+            self.name = type(self).fullname(self.variant_num)
 
             # Add the parameters from the parameterized_test decorator.
             if args or kwargs:
@@ -995,18 +995,18 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         return rt.runtime().system
 
     @property
-    def test_id(self):
-        return getattr(self, '_rfm_test_id', None)
+    def variant_num(self):
+        return getattr(self, '_rfm_variant_num', None)
 
     @property
-    def param_id(self):
-        '''Index in the parameter space.'''
-        return getattr(self, '_rfm_param_id', None)
+    def param_num(self):
+        '''Maybe unused'''
+        return getattr(self, '_rfm_param_num', None)
 
     @property
-    def fixture_id(self):
-        '''Index in the fixture space.'''
-        return getattr(self, '_rfm_fixt_id', None)
+    def fixture_num(self):
+        '''Maybe unused'''
+        return getattr(self, '_rfm_fixt_num', None)
 
     @property
     def perfvalues(self):
@@ -1165,7 +1165,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     @final
     @run_after('setup')
     def _resolve_fixtures(self):
-        fixtures = type(self)._rfm_fixture_space.fixtures
+        '''Resolve the fixture dependencies and insert the attributes.'''
+        fixtures = type(self)._rfm_fixture_space
         registry = getattr(self, '_rfm_fixture_registry', None)
         for fname, f in fixtures.items():
             if f.scope == 'session':
@@ -1179,7 +1180,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 environ = None
 
             deps = []
-            for fixture_instance in registry[f.test]:
+            for fixture_instance in registry[f.cls]:
                 deps.append(self.getdep(fixture_instance, environ, part))
 
             if len(deps) == 1:

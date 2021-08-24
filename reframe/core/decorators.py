@@ -184,8 +184,8 @@ def simple_test(cls):
     .. versionadded:: 2.13
     '''
     if _validate_test(cls):
-        for test_id in range(cls.num_variants):
-            _register_test(cls, _rfm_test_id=test_id)
+        for n in range(cls.num_variants):
+            _register_test(cls, variant_num=n)
 
     return cls
 

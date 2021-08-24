@@ -352,21 +352,28 @@ class RegressionTestMeta(type):
                     raise ReframeSyntaxError(msg)
 
     def __call__(cls, *args, **kwargs):
-        '''Inject parameter and variable spaces during object construction.
+        '''Inject test builtins during object construction.
 
         When a class is instantiated, this method intercepts the arguments
-        associated to the parameter and variable spaces. This prevents both
+        associated to the builtin  namespaces. This prevents both
         :func:`__new__` and :func:`__init__` methods from ever seing these
         arguments.
 
         The parameter and variable spaces are injected into the object after
         construction and before initialization.
+
+        Fixtures must be injected after initialization. These are registered
+        in the object (not the class) and they require certain attributes in
+        the root test to be set before the fixture can be registered.
+
+        :param variant_num: The test variant number. This must be an integer
+          in the range of [0, cls.num_variants).
         '''
 
-        # Intercept constructor arguments and map the test variant to the
-        # IDs in the parameter and fixture spaces.
-        test_id = kwargs.pop('_rfm_test_id', None)
-        param_variant, fixt_variant = cls._map_test_id(test_id)
+        # Intercept the requested variant number (if any) and map it to the
+        # respective points in the parameter and fixture spaces.
+        variant_num = kwargs.pop('variant_num', None)
+        param_variant, fixt_variant = cls._map_variant_num(variant_num)
 
         obj = cls.__new__(cls, *args, **kwargs)
 
@@ -374,11 +381,11 @@ class RegressionTestMeta(type):
         cls._rfm_var_space.inject(obj, cls)
         cls._rfm_param_space.inject(obj, cls, param_variant)
 
-        # Inject the variant indices (if any present)
-        if test_id is not None:
-            obj._rfm_test_id = test_id
-            obj._rfm_param_id = param_variant
-            obj._rfm_fixt_id = fixt_variant
+        # Inject the variant numbers (if any present)
+        if variant_num is not None:
+            obj._rfm_variant_num = variant_num
+            obj._rfm_param_num = param_variant
+            obj._rfm_fixt_num = fixt_variant
 
         obj.__init__(*args, **kwargs)
 
@@ -507,20 +514,28 @@ class RegressionTestMeta(type):
 
     @property
     def num_variants(cls):
-        '''Number unique tests that can be instantiated from this class.'''
+        '''Number of unique tests that can be instantiated from this class.'''
         return len(cls._rfm_param_space)*len(cls._rfm_fixture_space)
 
-    def _map_test_id(cls, variant):
-        '''Map a test ID into its respective parameter and fixture variant IDs.
+    def _map_variant_num(cls, variant_num=None):
+        '''Map the global variant number into its sub-components.
 
+        These are the coordinates for the parameter and fixture spaces.
         The parameter space index is the fast running one.
         '''
 
-        if variant is None:
+        if variant_num is None:
             return (None,)*2
 
+        # Bounds-check the variant number
+        if variant_num >= cls.num_variants or variant_num < 0:
+            raise ValueError(
+                f'the provided variant number {variant_num} is out of bounds '
+                f'[0, {cls.num_variants})'
+            )
+
         p_space_len = len(cls._rfm_param_space)
-        return variant%p_space_len, variant//p_space_len
+        return variant_num%p_space_len, variant_num//p_space_len
 
     @property
     def param_space(cls):
@@ -538,20 +553,30 @@ class RegressionTestMeta(type):
         This is the case when some parameters are undefined, which results in
         the length of the parameter space being 0.
 
-        :return: bool indicating whether the test has undefined parameters.
+        :return: bool indicating whether the test or any of its fixtures has
+          undefined parameters.
 
         :meta private:
         '''
-        return len(cls.param_space) == 0
+        return cls.num_variants == 0
 
-    def fullname(cls, test_id):
-        '''Return the full name of a test for a given variant ID.'''
+    def fullname(cls, variant_num=None):
+        '''Return the full name of a test for a given test variant number.
+
+        This function returns a unique name for each of the provided variant
+        numbers. If no ``variant_num`` is provided, this function returns the
+        qualified class name.
+
+        :param variant_num: An integer in the range of [0, cls.num_variants).
+
+        :meta private:
+        '''
 
         name = cls.__qualname__
-        if test_id is None:
+        if variant_num is None:
             return name
 
-        pid, fid = cls._map_test_id(test_id)
+        pid, fid = cls._map_variant_num(variant_num)
 
         # Append the parameters to the name
         if cls.param_space.params:
@@ -559,11 +584,11 @@ class RegressionTestMeta(type):
                 util.toalphanum(str(v)) for v in cls.param_space[pid].values()
             )
 
-        # Append the fixtures to the mix
+        # Append all the full fixture names to the test name.
         if cls.fixture_space.fixtures:
             fs = cls.fixture_space
             name += '_' + '_'.join(
-                fs[k].test.fullname(v) for k,v in fs[fid].items()
+                fs[k].cls.fullname(v) for k,v in fs[fid].items()
             )
 
         return name
