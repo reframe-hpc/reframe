@@ -386,6 +386,60 @@ Options controlling ReFrame execution
    .. versionchanged:: 3.6.1
       Multiple report files are now accepted.
 
+.. option:: -S, --setvar=[TEST.]VAR=VAL
+
+   Set variable ``VAR`` in all tests or optionally only in test ``TEST`` to ``VAL``.
+
+   Multiple variables can be set at the same time by passing this option multiple times.
+   This option *cannot* change arbitrary test attributes, but only test variables declared with the :attr:`~reframe.core.pipeline.RegressionMixin.variable` built-in.
+   If an attempt is made to change an inexistent variable or a test parameter, a warning will be issued.
+
+   ReFrame will try to convert ``VAL`` to the type of the variable.
+   If it does not succeed, a warning will be issued and the variable will not be set.
+   ``VAL`` can take the special value ``@none`` to denote that the variable must be set to :obj:`None`.
+
+   Sequence and mapping types can also be set from the command line by using the following syntax:
+
+   - Sequence types: ``-S seqvar=1,2,3,4``
+   - Mapping types: ``-S mapvar=a:1,b:2,c:3``
+
+   Conversions to arbitrary objects are also supported.
+   See :class:`~reframe.utility.typecheck.ConvertibleType` for more details.
+
+
+   The optional ``TEST.`` prefix refers to the test class name, *not* the test name.
+
+   Variable assignments passed from the command line happen *before* the test is instantiated and is the exact equivalent of assigning a new value to the variable *at the end* of the test class body.
+   This has a number of implications that users of this feature should be aware of:
+
+   - In the following test, :attr:`num_tasks` will have always the value ``1`` regardless of any command-line assignment of the variable :attr:`foo`:
+
+   .. code-block:: python
+
+      @rfm.simple_test
+      class my_test(rfm.RegressionTest):
+          foo = variable(int, value=1)
+          num_tasks = foo
+
+   - If the variable is set in any pipeline hook, the command line assignment will have an effect until the variable assignment in the pipeline hook is reached.
+     The variable will be then overwritten.
+   - The `test filtering <#test-filtering>`__ happens *after* a test is instantiated, so the only way to scope a variable assignment is to prefix it with the test class name.
+     However, this has some positive side effects:
+
+     - Passing ``-S valid_systems='*'`` and ``-S valid_prog_environs='*'`` is the equivalent of passing the :option:`--skip-system-check` and :option:`--skip-prgenv-check` options.
+     - Users could alter the behavior of tests based on tag values that they pass from the command line, by changing the behavior of a test in a post-init hook based on the value of the :attr:`~reframe.core.pipeline.RegressionTest.tags` attribute.
+     - Users could force a test with required variables to run if they set these variables from the command line.
+       For example, the following test could only be run if invoked with ``-S num_tasks=<NUM>``:
+
+     .. code-block:: python
+
+        @rfm.simple_test
+        class my_test(rfm.RegressionTest):
+            num_tasks = required
+
+   .. versionadded:: 3.8.0
+
+
 ----------------------------------
 Options controlling job submission
 ----------------------------------

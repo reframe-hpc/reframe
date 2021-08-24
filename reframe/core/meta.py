@@ -499,6 +499,41 @@ class RegressionTestMeta(type):
             f'class {cls.__qualname__!r} has no attribute {name!r}'
         ) from None
 
+    def setvar(cls, name, value):
+        '''Set the value of a variable.
+
+        :param name: The name of the variable.
+        :param value: The value of the variable.
+
+        :returns: :class:`True` if the variable was set.
+            A variable will *not* be set, if it does not exist or when an
+            attempt is made to set it with its underlying descriptor.
+            This happens during the variable injection time and it should be
+            delegated to the class' :func:`__setattr__` method.
+
+        :raises ReframeSyntaxError: If an attempt is made to override a
+            variable with a descriptor other than its underlying one.
+
+        '''
+
+        try:
+            var_space = super().__getattribute__('_rfm_var_space')
+            if name in var_space:
+                if not hasattr(value, '__get__'):
+                    var_space[name].define(value)
+                    return True
+                elif var_space[name].field is not value:
+                    desc = '.'.join([cls.__qualname__, name])
+                    raise ReframeSyntaxError(
+                        f'cannot override variable descriptor {desc!r}'
+                    )
+                else:
+                    # Variable is being injected
+                    return False
+        except AttributeError:
+            '''Catch early access attempt to the variable space.'''
+            return False
+
     def __setattr__(cls, name, value):
         '''Handle the special treatment required for variables and parameters.
 
@@ -515,31 +550,20 @@ class RegressionTestMeta(type):
         is not allowed. This would break the parameter space internals.
         '''
 
-        # Set the value of a variable (except when the value is a descriptor).
-        try:
-            var_space = super().__getattribute__('_rfm_var_space')
-            if name in var_space:
-                if not hasattr(value, '__get__'):
-                    var_space[name].define(value)
-                    return
-                elif not var_space[name].field is value:
-                    desc = '.'.join([cls.__qualname__, name])
-                    raise ReframeSyntaxError(
-                        f'cannot override variable descriptor {desc!r}'
-                    )
+        # Try to treat `name` as variable
+        if cls.setvar(name, value):
+            return
 
-        except AttributeError:
-            pass
-
-        # Catch attempts to override a test parameter
+        # Try to treat `name` as a parameter
         try:
+            # Catch attempts to override a test parameter
             param_space = super().__getattribute__('_rfm_param_space')
             if name in param_space.params:
                 raise ReframeSyntaxError(f'cannot override parameter {name!r}')
-
         except AttributeError:
-            pass
+            '''Catch early access attempt to the parameter space.'''
 
+        # Treat `name` as normal class attribute
         super().__setattr__(name, value)
 
     @property
