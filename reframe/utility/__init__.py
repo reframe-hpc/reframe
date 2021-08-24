@@ -304,6 +304,34 @@ def attrs(obj):
     return ret
 
 
+def is_trivially_callable(fn, *, non_def_args=0):
+    '''Check that a callable object is trivially callable.
+
+    An object is trivially callable when it can be invoked by providing just
+    an expected number of non-default arguments to its call method. For
+    example, (non-static) member functions expect a single argument without a
+    default value, which will passed as ``cls`` or ``self`` during invocation
+    depending on whether the function is a classmethod or not, respectively.
+    On the other hand, member functions that are static methods are not passed
+    any values by default when invoked. Therefore, these functions can only be
+    trivially callable when their call method expects no arguments by default.
+
+    :param fn: A callable to be tested if its trivially callable.
+    :param non_def_args: The number of non-default arguments the callable
+      ``fn`` expects when invoked.
+    :return: This function returns :obj:`True` if the expected number of
+      arguments matches the value of ``non_def_args``. Otherwise, it returns
+      :obj:`False`.
+    '''
+
+    if not callable(fn):
+        raise TypeError('argument is not a callable')
+
+    explicit_args = [p for p in inspect.signature(fn).parameters.values()
+                     if p.default is p.empty]
+    return len(explicit_args) == non_def_args
+
+
 def _is_builtin_type(cls):
     # NOTE: The set of types is copied from the copy.deepcopy() implementation
     builtin_types = (type(None), int, float, bool, complex, str, tuple,
