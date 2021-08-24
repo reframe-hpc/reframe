@@ -40,7 +40,7 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
 
     @run_before('compile')
     def restrict_f90_concurrency(self):
-         # NOTE: Restrict concurrency to allow creation of Fortran modules
+        # NOTE: Restrict concurrency to allow creation of Fortran modules
         if self.lang == 'F90':
             self.build_system.max_concurrency = 1
 
