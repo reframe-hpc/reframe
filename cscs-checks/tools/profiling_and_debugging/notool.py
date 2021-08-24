@@ -59,18 +59,17 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
             # get general info about the environment:
             self.prerun_cmds += ['module list']
             self.prerun_cmds += [
-                # only cray compiler version is really needed but this
-                # won't hurt:
+                # cray/aocc compilers version are needed but others won't hurt:
                 f'echo CRAY_CC_VERSION=$CRAY_CC_VERSION',
+                f'echo CRAY_AOCC_VERSION=$CRAY_AOCC_VERSION',
                 f'echo GNU_VERSION=$GNU_VERSION',
                 f'echo PGI_VERSION=$PGI_VERSION',
                 f'echo INTEL_VERSION=$INTEL_VERSION',
                 f'echo INTEL_COMPILER_TYPE=$INTEL_COMPILER_TYPE',
-                f'echo CRAY_AOCC_VERSION=$CRAY_AOCC_VERSION',
             ]
 
     @run_before('run')
-    def set_posrun_cmds(self):
+    def set_postrun_cmds(self):
         readme_str = (
             rf'More debug and performance tools ReFrame checks are '
             rf'available at {self.url}'
