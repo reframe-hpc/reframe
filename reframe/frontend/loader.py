@@ -119,7 +119,7 @@ class RegressionCheckLoader:
         return self._recurse
 
     def _set_defaults(self, test_registry):
-        if not test_registry:
+        if test_registry is None:
             return
 
         unset_vars = {}

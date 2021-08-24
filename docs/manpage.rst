@@ -407,8 +407,7 @@ Options controlling ReFrame execution
    See :class:`~reframe.utility.typecheck.ConvertibleType` for more details.
 
 
-   The optional ``TEST.`` prefix refers to the test class name (*not* the test name).
-   If the test name is not explicitly set through the :attr:`~reframe.core.pipeline.RegressionTest.name` attribute or if the test is not parametrised, then the class name is also the test name.
+   The optional ``TEST.`` prefix refers to the test class name, *not* the test name.
 
    Variable assignments passed from the command line happen *before* the test is instantiated and is the exact equivalent of assigning a new value to the variable *at the end* of the test class body.
    This has a number of implications that users of this feature should be aware of:
@@ -427,7 +426,7 @@ Options controlling ReFrame execution
    - The `test filtering <#test-filtering>`__ happens *after* a test is instantiated, so the only way to scope a variable assignment is to prefix it with the test class name.
      However, this has some positive side effects:
 
-     - Doing ``-S valid_systems='*'`` and ``-S valid_prog_environs='*'`` is the equivalent of passing the :option:`--skip-system-check` and :option:`--skip-prgenv-check` options.
+     - Passing ``-S valid_systems='*'`` and ``-S valid_prog_environs='*'`` is the equivalent of passing the :option:`--skip-system-check` and :option:`--skip-prgenv-check` options.
      - Users could alter the behavior of tests based on tag values that they pass from the command line, by changing the behavior of a test in a post-init hook based on the value of the :attr:`~reframe.core.pipeline.RegressionTest.tags` attribute.
      - Users could force a test with required variables to run if they set these variables from the command line.
        For example, the following test could only be run if invoked with ``-S num_tasks=<NUM>``:
