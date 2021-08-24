@@ -136,6 +136,10 @@ class RegressionTestMeta(type):
                         # raise the exception from the base __getitem__.
                         raise err from None
 
+        def reset(self, key):
+            '''Reset an item to rerun it through the __setitem__ logic.'''
+            self[key] = self[key]
+
     class WrappedFunction:
         '''Descriptor to wrap a free function as a bound-method.
 
@@ -212,14 +216,32 @@ class RegressionTestMeta(type):
         namespace['required'] = variables.Undefined
 
         # Utility decorators
+        namespace['_rfm_ext_bound'] = set()
+
         def bind(fn, name=None):
             '''Directive to bind a free function to a class.
 
             See online docs for more information.
+
+            .. note::
+               Functions bound using this directive must be re-inspected after
+               the class body execution has completed. This directive attaches
+               the external method into the class namespace and returns the
+               associated instance of the :class:`WrappedFunction`. However,
+               this instance may be further modified by other ReFrame builtins
+               such as :func:`run_before`, :func:`run_after`, :func:`final` and
+               so on after it was added to the namespace, which would bypass
+               the logic implemented in the :func:`__setitem__` method from the
+               :class:`MetaNamespace` class. Hence, we track the items set by
+               this directive in the ``_rfm_ext_bound`` set, so they can be
+               later re-inspected.
             '''
 
             inst = metacls.WrappedFunction(fn, name)
             namespace[inst.__name__] = inst
+
+            # Track the imported external functions
+            namespace['_rfm_ext_bound'].add(inst.__name__)
             return inst
 
         def final(fn):
@@ -323,6 +345,10 @@ class RegressionTestMeta(type):
         ]
         for b in directives:
             namespace.pop(b, None)
+
+        # Reset the external functions imported through the bind directive.
+        for item in namespace.pop('_rfm_ext_bound'):
+            namespace.reset(item)
 
         return super().__new__(metacls, name, bases, dict(namespace), **kwargs)
 
