@@ -235,7 +235,7 @@ class GREASYCheck(rfm.RegressionTest):
         return True
 
     @run_before('performance')
-    def set_perf_patterns(self):
+    def set_reference(self):
         # Reference value is system agnostic
         # Adding 10 secs of slowdown per greasy tasks
         # this is to compensate for whenever the systems are full and srun gets
@@ -249,8 +249,8 @@ class GREASYCheck(rfm.RegressionTest):
                 'time': (refperf, None, 0.5, 's')
             }
         }
-        self.perf_patterns = {
-            'time': sn.extractsingle(r'Total time: (?P<perf>\S+)',
-                                     self.greasy_logfile,
-                                     'perf', to_seconds)
-        }
+
+    @performance_function('s')
+    def time(self):
+        return sn.extractsingle(r'Total time: (?P<perf>\S+)',
+                                self.greasy_logfile, 'perf', to_seconds)
