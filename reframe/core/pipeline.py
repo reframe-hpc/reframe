@@ -35,7 +35,8 @@ import reframe.utility.udeps as udeps
 from reframe.core.backends import getlauncher, getscheduler
 from reframe.core.buildsystems import BuildSystemField
 from reframe.core.containers import ContainerPlatformField
-from reframe.core.deferrable import _DeferredExpression
+from reframe.core.deferrable import (_DeferredExpression,
+                                     _DeferredPerformanceExpression)
 from reframe.core.exceptions import (BuildError, DependencyError,
                                      PerformanceError, PipelineError,
                                      SanityError, SkipTestError,
@@ -212,6 +213,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: The name of the test.
     #:
     #: :type: string that can contain any character except ``/``
+    #: :default: For non-parameterised tests, the default name is the test
+    #:   class name. For parameterised tests, the default name is constructed
+    #:   by concatenating the test class name and the string representations
+    #:   of every test parameter: ``TestClassName_<param1>_<param2>``.
+    #:   Any non-alphanumeric value in a parameter's representation is
+    #:   converted to ``_``.
     name = variable(typ.Str[r'[^\/]+'])
 
     #: List of programming environments supported by this test.
@@ -348,8 +355,16 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     #: The name of the executable to be launched during the run phase.
     #:
+    #: If this variable is undefined when entering the compile pipeline
+    #: stage, it will be set to ``os.path.join('.', self.name)``. Classes
+    #: that override the compile stage may leave this variable undefined.
+    #:
     #: :type: :class:`str`
-    #: :default: ``os.path.join('.', self.name)``
+    #: :default: :class:`required`
+    #:
+    #: .. versionchanged:: 3.7.3
+    #:    Default value changed from ``os.path.join('.', self.name)`` to
+    #:    :class:`required`.
     executable = variable(str)
 
     #: List of options to be passed to the :attr:`executable`.
@@ -590,8 +605,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:     .. versionchanged:: 3.0
     #:        The measurement unit is required. The user should explicitly
     #:        specify :class:`None` if no unit is available.
-    reference = variable(typ.Tuple[object, object, object, object],
-                         field=fields.ScopedDictField, value={})
+    reference = variable(typ.Tuple[object, object, object],
+                         typ.Dict[str, typ.Dict[
+                             str, typ.Tuple[object, object, object, object]]
+    ], field=fields.ScopedDictField, value={})
     # FIXME: There is not way currently to express tuples of `float`s or
     # `None`s, so we just use the very generic `object`
 
@@ -634,8 +651,43 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:     </deferrable_functions_reference>`) as values.
     #:     :class:`None` is also allowed.
     #: :default: :class:`None`
-    perf_patterns = variable(typ.Dict[str, _DeferredExpression],
-                             type(None), value=None)
+    perf_patterns = variable(typ.Dict[str, _DeferredExpression], type(None))
+
+    #: The performance variables associated with the test.
+    #:
+    #: In this context, a performance variable is a key-value pair, where the
+    #: key is the desired variable name and the value is the deferred
+    #: performance expression (i.e. the result of a :ref:`deferrable
+    #: performance function<deferrable-performance-functions>`) that computes
+    #: or extracts the performance variable's value.
+    #:
+    #: By default, ReFrame will populate this field during the test's
+    #: instantiation with all the member functions decorated with the
+    #: :func:`@performance_function
+    #: <reframe.core.pipeline.RegressionMixin.performance_function>` decorator.
+    #: If no performance functions are present in the class, no performance
+    #: checking or reporting will be carried out.
+    #:
+    #: This mapping may be extended or replaced by other performance variables
+    #: that may be defined in any pipeline hook executing before the
+    #: performance stage. To this end, deferred performance functions can be
+    #: created inline using the utility
+    #: :func:`~reframe.utility.sanity.make_performance_function`.
+    #:
+    #: Refer to the :doc:`ReFrame Tutorials </tutorials>` for concrete usage
+    #: examples.
+    #:
+    #: :type: A dictionary with keys of type :class:`str` and deferred
+    #:     performance expressions as values (see
+    #:     :ref:`deferrable-performance-functions`).
+    #: :default: Collection of performance variables associated to each of
+    #:     the member functions decorated with the :func:`@performance_function
+    #:     <reframe.core.pipeline.RegressionMixin.performance_function>`
+    #:     decorator.
+    #:
+    #: .. versionadded:: 3.8.0
+    perf_variables = variable(typ.Dict[str, _DeferredPerformanceExpression],
+                              value={})
 
     #: List of modules to be loaded before running this test.
     #:
@@ -643,8 +695,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    modules = variable(
-        typ.List[str], typ.List[typ.Dict[str, object]], value=[])
+    modules = variable(typ.List[str], typ.List[typ.Dict[str, object]],
+                       value=[])
 
     #: Environment variables to be set before running this test.
     #:
@@ -809,7 +861,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         # Build pipeline hook registry and add the pre-init hook
         cls._rfm_pipeline_hooks = cls._process_hook_registry()
-        cls._rfm_pipeline_hooks['pre___init__'] = [cls.__pre_init__]
+        cls._rfm_pipeline_hooks['pre___init__'] = [obj.__pre_init__]
 
         # Attach the hooks to the pipeline stages
         for stage in _PIPELINE_STAGES:
@@ -821,6 +873,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     def __pre_init__(self):
         '''Initialize the test defaults from a pre-init hook.'''
         self.__deferred_rfm_init.evaluate()
+
+        # Build the default performance dict
+        if not self.perf_variables:
+            for fn in self._rfm_perf_fns.values():
+                self.perf_variables[fn._rfm_perf_key] = fn(self)
 
     def __init__(self):
         pass
@@ -860,10 +917,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         # Pass if descr is a required variable.
         if not hasattr(self, 'descr'):
             self.descr = self.name
-
-        # Pass if the executable is a required variable.
-        if not hasattr(self, 'executable'):
-            self.executable = os.path.join('.', self.name)
 
         self._perfvalues = {}
 
@@ -1287,6 +1340,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 self._copy_to_stagedir(os.path.join(self._prefix,
                                                     self.sourcesdir))
 
+        # Set executable (only if hasn't been provided)
+        if not hasattr(self, 'executable'):
+            self.executable = os.path.join('.', self.name)
+
         # Verify the sourcepath and determine the sourcepath in the stagedir
         if (os.path.isabs(self.sourcepath) or
                 os.path.normpath(self.sourcepath).startswith('..')):
@@ -1655,60 +1712,109 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
               more details.
 
         '''
-        if self.perf_patterns is None:
-            return
 
-        self._setup_perf_logging()
         with osext.change_dir(self._stagedir):
-            # Check if default reference perf values are provided and
-            # store all the variables tested in the performance check
-            has_default = False
-            variables = set()
-            for key, ref in self.reference.items():
-                keyparts = key.split(self.reference.scope_separator)
-                system = keyparts[0]
-                varname = keyparts[-1]
-                unit = ref[3]
-                variables.add((varname, unit))
-                if system == '*':
-                    has_default = True
-                    break
+            if self.perf_variables or self._rfm_perf_fns:
+                if hasattr(self, 'perf_patterns'):
+                    raise ReframeSyntaxError(
+                        f"assigning a value to 'perf_pattenrs' conflicts ",
+                        f"with using the 'performance_function' decorator ",
+                        f"or setting a value to 'perf_variables'"
+                    )
 
-            if not has_default:
-                if not variables:
-                    # If empty, it means that self.reference was empty, so try
-                    # to infer their name from perf_patterns
-                    variables = {(name, None)
-                                 for name in self.perf_patterns.keys()}
+                # Log the performance variables
+                self._setup_perf_logging()
+                for tag, expr in self.perf_variables.items():
+                    try:
+                        value = expr.evaluate()
+                        unit = expr.unit
+                    except Exception as e:
+                        logging.getlogger().warning(
+                            f'skipping evaluation of performance variable '
+                            f'{tag!r}: {e}'
+                        )
+                        continue
 
-                for var in variables:
-                    name, unit = var
-                    ref_tuple = (0, None, None, unit)
-                    self.reference.update({'*': {name: ref_tuple}})
+                    key = f'{self._current_partition.fullname}:{tag}'
+                    try:
+                        ref = self.reference[key]
 
-            # We first evaluate and log all performance values and then we
-            # check them against the reference. This way we always log them
-            # even if the don't meet the reference.
-            for tag, expr in self.perf_patterns.items():
-                value = sn.evaluate(expr)
-                key = '%s:%s' % (self._current_partition.fullname, tag)
-                if key not in self.reference:
-                    raise SanityError(
-                        "tag `%s' not resolved in references for `%s'" %
-                        (tag, self._current_partition.fullname))
+                        # If units are also provided in the reference, raise
+                        # a warning if they match with the units provided by
+                        # the performance function.
+                        if len(ref) == 4:
+                            if ref[3] != unit:
+                                logging.getlogger().warning(
+                                    f'reference unit ({key!r}) for the '
+                                    f'performance variable {tag!r} '
+                                    f'does not match the unit specified '
+                                    f'in the performance function ({unit!r}): '
+                                    f'{unit!r} will be used'
+                                )
 
-                self._perfvalues[key] = (value, *self.reference[key])
-                self._perf_logger.log_performance(logging.INFO, tag, value,
-                                                  *self.reference[key])
+                            # Pop the unit from the ref tuple (redundant)
+                            ref = ref[:3]
+                    except KeyError:
+                        ref = (0, None, None)
 
+                    self._perfvalues[key] = (value, *ref, unit)
+                    self._perf_logger.log_performance(logging.INFO, tag, value,
+                                                      *ref, unit)
+            elif not hasattr(self, 'perf_patterns'):
+                return
+            else:
+                self._setup_perf_logging()
+                # Check if default reference perf values are provided and
+                # store all the variables tested in the performance check
+                has_default = False
+                variables = set()
+                for key, ref in self.reference.items():
+                    keyparts = key.split(self.reference.scope_separator)
+                    system = keyparts[0]
+                    varname = keyparts[-1]
+                    unit = ref[3]
+                    variables.add((varname, unit))
+                    if system == '*':
+                        has_default = True
+                        break
+
+                if not has_default:
+                    if not variables:
+                        # If empty, it means that self.reference was empty, so
+                        # try to infer their name from perf_patterns
+                        variables = {(name, None)
+                                     for name in self.perf_patterns.keys()}
+
+                    for var in variables:
+                        name, unit = var
+                        ref_tuple = (0, None, None, unit)
+                        self.reference.update({'*': {name: ref_tuple}})
+
+                # We first evaluate and log all performance values and then we
+                # check them against the reference. This way we always log them
+                # even if the don't meet the reference.
+                for tag, expr in self.perf_patterns.items():
+                    value = sn.evaluate(expr)
+                    key = f'{self._current_partition.fullname}:{tag}'
+                    if key not in self.reference:
+                        raise SanityError(
+                            f'tag {tag!r} not resolved in references for '
+                            f'{self._current_partition.fullname}'
+                        )
+
+                    self._perfvalues[key] = (value, *self.reference[key])
+                    self._perf_logger.log_performance(logging.INFO, tag, value,
+                                                      *self.reference[key])
+
+            # Check the performance variables against their references.
             for key, values in self._perfvalues.items():
                 val, ref, low_thres, high_thres, *_ = values
 
                 # Verify that val is a number
                 if not isinstance(val, numbers.Number):
                     raise SanityError(
-                        "the value extracted for performance variable '%s' "
-                        "is not a number: %s" % (key, val)
+                        f'the value extracted for performance variable '
+                        f'{key!r} is not a number: {val}'
                     )
 
                 tag = key.split(':')[-1]

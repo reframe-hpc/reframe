@@ -249,12 +249,12 @@ def test_spack(environ, tmp_path):
     build_system.install_opts = ['-j 10']
     with osext.change_dir(tmp_path):
         assert build_system.emit_build_commands(environ) == [
-            f'. $SPACK_ROOT/share/spack/setup-env.sh',
+            f'. "$(spack location --spack-root)/share/spack/setup-env.sh"',
             f'spack env activate -V -d {build_system.environment}',
             f'spack install -j 10'
         ]
         assert build_system.prepare_cmds() == [
-            f'. $SPACK_ROOT/share/spack/setup-env.sh',
+            f'. "$(spack location --spack-root)/share/spack/setup-env.sh"',
             f'spack env activate -V -d {build_system.environment}',
         ]
 
@@ -266,13 +266,13 @@ def test_spack_with_spec(environ, tmp_path):
     specs_str = ' '.join(build_system.specs)
     with osext.change_dir(tmp_path):
         assert build_system.emit_build_commands(environ) == [
-            f'. $SPACK_ROOT/share/spack/setup-env.sh',
+            f'. "$(spack location --spack-root)/share/spack/setup-env.sh"',
             f'spack env activate -V -d {build_system.environment}',
             f'spack add {specs_str}',
             f'spack install'
         ]
         assert build_system.prepare_cmds() == [
-            f'. $SPACK_ROOT/share/spack/setup-env.sh',
+            f'. "$(spack location --spack-root)/share/spack/setup-env.sh"',
             f'spack env activate -V -d {build_system.environment}',
             f'spack load {specs_str}',
         ]
@@ -280,9 +280,14 @@ def test_spack_with_spec(environ, tmp_path):
 
 def test_spack_no_env(environ, tmp_path):
     build_system = bs.Spack()
-    with pytest.raises(BuildSystemError):
-        build_system.emit_build_commands(environ)
-
+    with osext.change_dir(tmp_path):
+        assert build_system.emit_build_commands(environ) == [
+            f'. "$(spack location --spack-root)/share/spack/setup-env.sh"',
+            f'spack env create -d rfm_spack_env',
+            f'spack env activate -V -d rfm_spack_env',
+            f'spack config add "config:install_tree:root:opt/spack"',
+            f'spack install'
+        ]
 
 def test_easybuild(environ, tmp_path):
     build_system = bs.EasyBuild()

@@ -139,6 +139,7 @@ def make_cases_for_skipping(request):
         class _T1(rfm.RunOnlyRegressionTest):
             valid_systems = ['*']
             valid_prog_environs = ['*']
+            executable = 'echo'
             sanity_patterns = sn.assert_true(1)
 
             def __init__(self):
