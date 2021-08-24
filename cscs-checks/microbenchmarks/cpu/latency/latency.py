@@ -9,28 +9,37 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class CPULatencyTest(rfm.RegressionTest):
-    def __init__(self):
-        self.sourcepath = 'latency.cpp'
-        self.build_system = 'SingleSource'
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'ault:intel', 'ault:amdvega', 'tave:compute']
-        self.valid_prog_environs = ['PrgEnv-gnu']
-        self.num_tasks = 0
-        self.num_tasks_per_node = 1
+    sourcepath = 'latency.cpp'
+    build_system = 'SingleSource'
+    valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+                        'ault:intel', 'ault:amdvega', 'tave:compute']
+    valid_prog_environs = ['PrgEnv-gnu']
+    num_tasks = 0
+    num_tasks_per_node = 1
+    executable_opts = ['16000', '128000', '8000000', '500000000']
+    maintainers = ['SK']
+    tags = {'benchmark', 'diagnostic'}
 
-        self.build_system.cxxflags = ['-O3']
-
-        self.executable_opts = ['16000', '128000', '8000000', '500000000']
-
+    @run_after('init')
+    def set_modules(self):
         if self.current_system.name in {'daint', 'dom'}:
             self.modules = ['craype-hugepages1G']
         if self.current_system.name in {'tave'}:
             self.modules = ['craype-hugepages512M']
 
-        self.sanity_patterns = sn.assert_eq(
-            sn.count(sn.findall(r'latency', self.stdout)),
-            self.num_tasks_assigned * len(self.executable_opts))
+    @run_before('compile')
+    def set_flags(self):
+        self.build_system.cxxflags = ['-O3']
 
+    @sanity_function
+    def assert_success(self):
+        return sn.assert_eq(
+            sn.count(sn.findall(r'latency', self.stdout)),
+            self.num_tasks_assigned * len(self.executable_opts)
+        )
+
+    @run_before('performance')
+    def set_performance(self):
         def lat_pattern(index):
             return sn.extractsingle(
                 r'latency \(ns\) for input size %s: (?P<bw>\S+) clocks' %
@@ -88,10 +97,7 @@ class CPULatencyTest(rfm.RegressionTest):
             },
         }
 
-        self.maintainers = ['SK']
-        self.tags = {'benchmark', 'diagnostic'}
-
     @property
-    @sn.sanity_function
+    @sn.deferrable
     def num_tasks_assigned(self):
         return self.job.num_tasks
