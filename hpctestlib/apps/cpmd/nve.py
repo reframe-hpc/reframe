@@ -8,7 +8,7 @@ import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
 
 
-class Cpmd_NVE(rfm.RunOnlyRegressionTest):
+class Cpmd_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
     '''Base class for the CPMD NVE Test.
 
     The CPMD code is a plane wave/pseudopotential implementation

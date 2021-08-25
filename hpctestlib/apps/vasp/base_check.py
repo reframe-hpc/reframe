@@ -8,7 +8,7 @@ import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
 
 
-class VASP(rfm.RunOnlyRegressionTest):
+class VASP(rfm.RunOnlyRegressionTest, pin_prefix=True):
     '''Base class for the VASP Test.
 
     The Vienna Ab initio Simulation Package (VASP) is a computer

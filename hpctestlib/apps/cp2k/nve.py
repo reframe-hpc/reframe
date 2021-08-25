@@ -8,7 +8,7 @@ import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
 
 
-class Cp2k_NVE(rfm.RunOnlyRegressionTest):
+class Cp2k_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
     '''Base class for the CP2K NVE Test.
 
     CP2K is a quantum chemistry and solid state physics software

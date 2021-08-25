@@ -8,7 +8,7 @@ import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
 
 
-class QuantumESPRESSO(rfm.RunOnlyRegressionTest):
+class QuantumESPRESSO(rfm.RunOnlyRegressionTest, pin_prefix=True):
     '''Base class for the Quantum Espresso Test.
 
     Quantum ESPRESSO is an integrated suite of Open-Source computer
