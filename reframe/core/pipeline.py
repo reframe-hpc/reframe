@@ -213,6 +213,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: The name of the test.
     #:
     #: :type: string that can contain any character except ``/``
+    #: :default: For non-parameterised tests, the default name is the test
+    #:   class name. For parameterised tests, the default name is constructed
+    #:   by concatenating the test class name and the string representations
+    #:   of every test parameter: ``TestClassName_<param1>_<param2>``.
+    #:   Any non-alphanumeric value in a parameter's representation is
+    #:   converted to ``_``.
     name = variable(typ.Str[r'[^\/]+'])
 
     #: List of programming environments supported by this test.
@@ -1711,7 +1717,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             if self.perf_variables or self._rfm_perf_fns:
                 if hasattr(self, 'perf_patterns'):
                     raise ReframeSyntaxError(
-                        f"assigning a value to 'perf_pattenrs' conflicts ",
+                        f"assigning a value to 'perf_patterns' conflicts ",
                         f"with using the 'performance_function' decorator ",
                         f"or setting a value to 'perf_variables'"
                     )
