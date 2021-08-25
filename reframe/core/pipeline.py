@@ -1717,7 +1717,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             if self.perf_variables or self._rfm_perf_fns:
                 if hasattr(self, 'perf_patterns'):
                     raise ReframeSyntaxError(
-                        f"assigning a value to 'perf_pattenrs' conflicts ",
+                        f"assigning a value to 'perf_patterns' conflicts ",
                         f"with using the 'performance_function' decorator ",
                         f"or setting a value to 'perf_variables'"
                     )
