@@ -130,7 +130,7 @@ def test_consume_param_space():
         pass
 
     for i in range(MyTest.num_variants):
-        test = MyTest(_rfm_test_id=i)
+        test = MyTest(variant_num=i)
         assert test.P0 is not None
         assert test.P1 is not None
         assert test.P2 is not None
@@ -141,7 +141,7 @@ def test_consume_param_space():
     assert test.P2 is None
 
     with pytest.raises(RuntimeError):
-        test = MyTest(_rfm_test_id=i+1)
+        test = MyTest(variant_num=i+1)
 
 
 def test_simple_test_decorator():
@@ -233,10 +233,10 @@ def test_param_deepcopy():
     class Bar(Base):
         pass
 
-    assert Foo(_rfm_test_id=0).p0.val == -20
-    assert Foo(_rfm_test_id=1).p0.val == -20
-    assert Bar(_rfm_test_id=0).p0.val == 1
-    assert Bar(_rfm_test_id=1).p0.val == 2
+    assert Foo(variant_num=0).p0.val == -20
+    assert Foo(variant_num=1).p0.val == -20
+    assert Bar(variant_num=0).p0.val == 1
+    assert Bar(variant_num=1).p0.val == 2
 
 
 def test_param_access():

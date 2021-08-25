@@ -369,7 +369,7 @@ def test_build_deps_deprecated_syntax(loader, default_exec_ctx):
 
     with pytest.warns(ReframeDeprecationWarning) as warnings:
         for _id in range(Test1_deprecated.num_variants):
-            Test1_deprecated(_rfm_test_id=_id)
+            Test1_deprecated(variant_num=_id)
 
     assert len(warnings) == 3
 
