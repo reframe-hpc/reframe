@@ -400,7 +400,10 @@
                     },
                     "artifacts": {
                         "type": "array",
-                        "items": {"type": "string"}
+                        "items": {
+                          "type": "string",
+                          "enum": ["perflogs", "output", "stage"]
+                        }
                     },
                     "target_systems": {"$ref": "#/defs/system_ref"},
                     "artifacts_expiry": {"type": "string"}

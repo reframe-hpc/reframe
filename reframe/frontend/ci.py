@@ -30,7 +30,8 @@ def _emit_gitlab_pipeline(testcases):
 
     # Need to append prefix to artifacts
     if artifacts:
-        artifacts = [os.path.join(prefix, a) for a in artifacts]
+        artifacts = [os.path.join(prefix, a) if a in [
+            'stage', 'output'] else a for a in artifacts]
     else:
         artifacts = []
 
@@ -60,6 +61,8 @@ def _emit_gitlab_pipeline(testcases):
         ])
 
     max_level = 0   # We need the maximum level to generate the stages section
+    art_folder = 'rfm-artifacts'  # Folder where we place all artifacts
+
     json = {
         'cache': {
             'key': '${CI_COMMIT_REF_SLUG}',
@@ -95,12 +98,14 @@ def _emit_gitlab_pipeline(testcases):
     # Add a last job that gathers all artifacts from precedent jobs
     json['GatherArtifacts'] = {
         'stage': f'rfm-stage-{max_level + 1}',
-        'script': 'echo "Gathering artifacts from all jobs..."',
+        'script': [f'echo \"Gathering artifacts from all jobs into '
+                   f'{art_folder} folder\"',
+                   f'mkdir -p {art_folder}',
+                   f'cp -r {" ".join(a for a in artifacts)} *.json *.xml '
+                   f'{art_folder}'],
         'needs': [tc.check.name for tc in testcases],
         'artifacts': {
-            'paths': [f'{tc.check.name}-report.json' for tc in testcases] +
-            [f'{tc.check.name}-report.xml' for tc in testcases] +
-            artifacts,
+            'paths': [art_folder],
             'expire_in': artifacts_expiry,
         },
     }
