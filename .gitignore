@@ -23,6 +23,7 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+external/
 
 # Ignore Mac DS_Store files
 .DS_Store

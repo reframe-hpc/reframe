@@ -247,7 +247,7 @@
                                 "scheduler": {
                                     "type": "string",
                                     "enum": [
-                                        "local", "pbs", "slurm",
+                                        "local", "oar", "pbs", "slurm",
                                         "sge", "squeue", "torque"
                                     ]
                                 },
@@ -370,7 +370,7 @@
                 "properties": {
                     "name": {
                         "type": "string",
-                        "enum": ["local", "pbs", "sge", "slurm", "squeue", "torque"]
+                        "enum": ["local", "oar", "pbs", "sge", "slurm", "squeue", "torque"]
                     },
                     "ignore_reqnodenotavail": {"type": "boolean"},
                     "resubmit_on_errors": {
@@ -382,6 +382,29 @@
                     "use_nodes_option": {"type": "boolean"}
                 },
                 "required": ["name"],
+                "additionalProperties": false
+            }
+        },
+        "generate-ci": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "before_script": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "after_script": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "artifacts": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "target_systems": {"$ref": "#/defs/system_ref"},
+                    "artifacts_expiry": {"type": "string"}
+                },
                 "additionalProperties": false
             }
         },
@@ -481,6 +504,10 @@
     "required": ["systems", "environments", "logging"],
     "additionalProperties": false,
     "defaults": {
+        "generate-ci/after_script": ["echo 'noop'"],
+        "generate-ci/before_script": ["echo 'noop'"],
+        "generate-ci/artifacts_expiry": "30 days",
+        "generate-ci/target_systems": ["*"],
         "environments/modules": [],
         "environments/variables": [],
         "environments/cc": "cc",
