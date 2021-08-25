@@ -865,7 +865,7 @@ class Spack(BuildSystem):
         return ret
 
     def _env_activate_cmds(self):
-        cmds = ['. $SPACK_ROOT/share/spack/setup-env.sh']
+        cmds = ['. "$(spack location --spack-root)/share/spack/setup-env.sh"']
         if self.environment:
             environment = self.environment
         else:

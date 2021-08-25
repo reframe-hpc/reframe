@@ -128,25 +128,6 @@ class Hook:
 class HookRegistry:
     '''Global hook registry.'''
 
-    @classmethod
-    def create(cls, namespace):
-        '''Create a hook registry from a class namespace.
-
-        Hook functions have an `_rfm_attach` attribute that specify the stages
-        of the pipeline where they must be attached. Dependencies will be
-        resolved first in the post-setup phase if not assigned elsewhere.
-        '''
-
-        local_hooks = util.OrderedSet()
-        for v in namespace.values():
-            if hasattr(v, '_rfm_attach'):
-                local_hooks.add(Hook(v))
-            elif hasattr(v, '_rfm_resolve_deps'):
-                v._rfm_attach = ['post_setup']
-                local_hooks.add(Hook(v))
-
-        return cls(local_hooks)
-
     def __init__(self, hooks=None):
         self.__hooks = util.OrderedSet()
         if hooks is not None:
@@ -160,6 +141,20 @@ class HookRegistry:
 
     def __iter__(self):
         return iter(self.__hooks)
+
+    def add(self, v):
+        '''Add value to the hook registry if it meets the conditions.
+
+        Hook functions have an `_rfm_attach` attribute that specify the stages
+        of the pipeline where they must be attached. Dependencies will be
+        resolved first in the post-setup phase if not assigned elsewhere.
+        '''
+
+        if hasattr(v, '_rfm_attach'):
+            self.__hooks.add(Hook(v))
+        elif hasattr(v, '_rfm_resolve_deps'):
+            v._rfm_attach = ['post_setup']
+            self.__hooks.add(Hook(v))
 
     def update(self, hooks, *, denied_hooks=None):
         '''Update the hook registry with the hooks from another hook registry.

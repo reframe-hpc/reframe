@@ -171,7 +171,7 @@ class TestStats:
                     entry['result'] = 'success'
                     entry['outputdir'] = check.outputdir
 
-                if check.perf_patterns:
+                if hasattr(check, 'perf_patterns'):
                     # Record performance variables
                     entry['perfvars'] = []
                     for key, ref in check.perfvalues.items():

@@ -51,12 +51,6 @@ class GpuBurn(rfm.RegressionTest, pin_prefix=True):
     build_system = 'Make'
     executable = './gpu_burn.x'
     num_tasks_per_node = 1
-    reference = {
-        '*': {
-            'perf': (0, None, None, 'Gflop/s'),
-            'temp': (0, None, None, 'degC')
-        }
-    }
 
     @run_before('compile')
     def set_gpu_build(self):
@@ -83,7 +77,6 @@ class GpuBurn(rfm.RegressionTest, pin_prefix=True):
             raise ValueError('unknown gpu_build option')
 
     @property
-    @deferrable
     def num_tasks_assigned(self):
         '''Total number of times the gpu burn will run.
 
@@ -103,17 +96,27 @@ class GpuBurn(rfm.RegressionTest, pin_prefix=True):
             r'^\s*\[[^\]]*\]\s*GPU\s*\d+\(OK\)', self.stdout)
         ), self.num_tasks_assigned)
 
-    @run_before('performance')
-    def set_perf_patterns(self):
-        '''Extract the minimum performance and maximum temperature recorded.
+    def _extract_perf_metric(self, metric, nid=None):
+        '''Utility to extract performance metrics.'''
 
-        The performance and temperature data are reported in Gflops/s and
-        deg. Celsius respectively.
-        '''
+        if metric not in {'perf', 'temp'}:
+            raise ValueError(
+                f"unsupported value in 'metric' argument: {metric!r}"
+            )
 
-        patt = (r'^\s*\[[^\]]*\]\s*GPU\s+\d+\(\S*\):\s+(?P<perf>\S*)\s+GF\/s'
-                r'\s+(?P<temp>\S*)\s+Celsius')
-        self.perf_patterns = {
-            'perf': sn.min(sn.extractall(patt, self.stdout, 'perf', float)),
-            'temp': sn.max(sn.extractall(patt, self.stdout, 'temp', float)),
-        }
+        if nid is None:
+            nid = r'[^\]]*'
+
+        patt = (rf'^\s*\[{nid}\]\s*GPU\s+\d+\(\S*\):\s+(?P<perf>\S*)\s+GF\/s'
+                rf'\s+(?P<temp>\S*)\s+Celsius')
+        return sn.extractall(patt, self.stdout, metric, float)
+
+    @performance_function('Gflop/s')
+    def min_perf(self, nid=None):
+        '''Lowest performance recorded.'''
+        return sn.min(self._extract_perf_metric('perf', nid))
+
+    @performance_function('degC')
+    def max_temp(self, nid=None):
+        '''Maximum temperature recorded.'''
+        return sn.max(self._extract_perf_metric('temp', nid))
