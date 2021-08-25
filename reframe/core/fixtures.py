@@ -18,14 +18,23 @@ from reframe.core.variables import Undefined
 
 
 class FixtureRegistry:
-    '''Mapping that stores variants of multiple fixtures as key-value pairs.
+    '''Registry to store multiple fixture variants from multiple classes.
 
+    A given regression test class might lead to multiple fixtures. Hence,
+    this registry stores the fixtures in key-value mappings, where the
+    key is the class deriving from the
+    :class:`reframe.pipeline.core.RegressionTest` class and the values are
+    sub-mappings for all the different fixture variants arising from each
+    class. These sub-mappings use the unique fixture ID (i.e. the ``name``)
+    as keys, and a tuple with the fixture variant, valid systems and valid
+    programming environments as values.
 
+    This registry defines the naming convention to generate the unique IDs
+    for each fixture variants and give support for the different scopes.
+    This is resolved by the ``add`` method below.
 
-    The fixture classes are stored as the keys in the dictionary, where
-    the values are dictionaries holding all the variants for the given
-    fixture class. These sub-dictionaries use the fixture's name keys and
-    a tuple with the fixture variant index, the list of PEs and valid sys.
+    A test that modifies the ``name`` attribute will result into undefined
+    behavior.
 
     :meta private:
     '''
@@ -38,15 +47,19 @@ class FixtureRegistry:
         This function handles the naming convention to avoid the clash when
         multiple tests use the same fixtures with the different scope levels.
         Fixtures steal the ``valid_systems`` and ``valid_prog_environs`` from
-        the root test. How many of this get stolen from the root test depends
-        on the fixture's scope level:
-         - session: Only one PE+sys combination per fixture.
+        the parent test. The nummber of env+partition combinations that get
+        stolen from the parent test depends on the fixture's scope level:
+         - session: Only one env+part combination per fixture.
          - partition: Only one environment per partition.
-         - environment: One test per available par-env combination.
+         - environment: One test per available part-env combination.
          - test: Use the ``valid_systems`` and ``valid_prog_environs`` from the
            root test without any modification. Fixtures with this scope are not
            shared with any other tests, so their name contains the full tree
-           branch leading up to the fixture.
+           branch leading up to the fixture (this is to avoid collisions with
+           any other branches).
+
+        This method returns a list with the names of the newly registered
+        fixtures.
 
         :param fixture: An instance of :class:`TestFixture`.
         :param variant_num: The variant index to instantiate the fixture with.
@@ -130,13 +143,12 @@ class FixtureRegistry:
                 cls.valid_systems = part
 
                 # Instantiate the fixture
-                obj = cls(variant_num=varnum)
+                ret.append(cls(variant_num=varnum))
 
                 # Reset cls defaults and append instance
                 cls.name = Undefined
                 cls.valid_prog_environs = Undefined
                 cls.valid_systems = Undefined
-                ret.append(obj)
         return ret
 
     def _is_registry(self, other):

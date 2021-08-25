@@ -384,8 +384,8 @@ class RegressionTestMeta(type):
         # Inject the variant numbers (if any present)
         if variant_num is not None:
             obj._rfm_variant_num = variant_num
-            obj._rfm_param_num = param_variant
-            obj._rfm_fixt_num = fixt_variant
+            obj._rfm_param_variant = param_variant
+            obj._rfm_fixt_variant = fixt_variant
 
         obj.__init__(*args, **kwargs)
 

@@ -125,18 +125,6 @@ class RegressionMixin(metaclass=RegressionTestMeta):
 
     _rfm_regression_class_kind = 0
 
-    def __getattr__(self, name):
-        ''' Intercept the AttributeError if the name is a required variable.'''
-        if (name in self._rfm_var_space and
-            not self._rfm_var_space[name].is_defined()):
-            raise AttributeError(
-                f'required variable {name!r} has not been set'
-            ) from None
-        else:
-            raise AttributeError(
-                f'{type(self).__qualname__} object has no attribute {name!r}'
-            )
-
 
 class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     '''Base class for regression tests.
@@ -961,6 +949,24 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         return super().__getattribute__(name)
 
+    def __getattr__(self, name):
+        ''' Intercept the special builtin-related AttributeError.'''
+        if (name in self._rfm_var_space and
+            not self._rfm_var_space[name].is_defined()):
+            raise AttributeError(
+                f'required variable {name!r} has not been set'
+            ) from None
+
+        elif name in self._rfm_fixture_space:
+            raise AttributeError(
+                f'fixture {name!r} has not yet been resolved: '
+                f'fixtures are injected during the setup stage'
+            )
+        else:
+            raise AttributeError(
+                f'{type(self).__qualname__} object has no attribute {name!r}'
+            )
+
     # Export read-only views to interesting fields
 
     @property
@@ -996,17 +1002,38 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     @property
     def variant_num(self):
+        '''The variant number the test was constructed with.
+
+        In essence, this is an index representing a unique point in the
+        parameter and fixture spaces.
+
+        :type: :class:`int`
+        '''
         return getattr(self, '_rfm_variant_num', None)
 
     @property
-    def param_num(self):
-        '''Maybe unused'''
-        return getattr(self, '_rfm_param_num', None)
+    def param_variant(self):
+        '''The point in the parameter space for the test.
+
+        This can be seen as an index to the paraemter space representing a
+        unique combination of the parameter values. This number is directly
+        mapped from ``variant_num``.
+
+        :type: :class:`int`
+        '''
+        return getattr(self, '_rfm_param_variant', None)
 
     @property
-    def fixture_num(self):
-        '''Maybe unused'''
-        return getattr(self, '_rfm_fixt_num', None)
+    def fixture_variant(self):
+        '''The point in the fixture space for the test.
+
+        This can be seen as an index to the fixture space representing a
+        unique combination of the fixture variants. This number is directly
+        mapped from ``variant_num``.
+
+        :type: :class:`int`
+        '''
+        return getattr(self, '_rfm_fixt_variant', None)
 
     @property
     def perfvalues(self):
@@ -1162,8 +1189,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         return self.local or self._current_partition.scheduler.is_local
 
-    @final
-    @run_after('setup')
     def _resolve_fixtures(self):
         '''Resolve the fixture dependencies and insert the attributes.'''
         fixtures = type(self)._rfm_fixture_space
@@ -1265,6 +1290,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self._build_job = self._setup_job(f'rfm_{self.name}_build',
                                           self.local or self.build_locally,
                                           **job_opts)
+        self._resolve_fixtures()
 
     def _copy_to_stagedir(self, path):
         self.logger.debug(f'Copying {path} to stage directory')
@@ -2063,6 +2089,7 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
         self._job = self._setup_job(f'rfm_{self.name}_job',
                                     self.local,
                                     **job_opts)
+        self._resolve_fixtures()
 
     def compile(self):
         '''The compilation phase of the regression test pipeline.
@@ -2120,6 +2147,7 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
         self._build_job = self._setup_job(f'rfm_{self.name}_build',
                                           self.local or self.build_locally,
                                           **job_opts)
+        self._resolve_fixtures()
 
     @property
     @deferrable

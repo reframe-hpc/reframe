@@ -148,7 +148,7 @@ class RegressionCheckLoader:
         # Merge registries
         candidates += legacy_candidates
 
-        # Unwind the fixture registries
+        # Unwind the fixture registries doing a level-order traversal
         candidate_tests = []
         fixture_registry = FixtureRegistry()
         while candidates:
