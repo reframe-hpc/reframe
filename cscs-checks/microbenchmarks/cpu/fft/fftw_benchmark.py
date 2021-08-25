@@ -21,13 +21,12 @@ class FFTWTest(rfm.RegressionTest):
     maintainers = ['AJ']
     tags = {'benchmark', 'scs', 'craype'}
 
-    @run_before('performance')
-    def set_performance(self):
-        self.perf_patterns = {
-            'fftw_exec_time': sn.extractsingle(
-                r'execution time:\s+(?P<exec_time>\S+)', self.stdout,
-                'exec_time', float),
-        }
+    @performance_function('s')
+    def fftw_exec_time(self):
+        return sn.extractsingle(
+            r'execution time:\s+(?P<exec_time>\S+)', self.stdout,
+            'exec_time', float
+        )
 
     @sanity_function
     def found_execution_time(self):
