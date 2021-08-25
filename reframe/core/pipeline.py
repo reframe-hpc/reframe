@@ -1208,7 +1208,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             for fixture_instance in registry[f.cls]:
                 deps.append(self.getdep(fixture_instance, environ, part))
 
-            if len(deps) == 1:
+            if len(deps) == 1 and f.mode == 'expand':
                 deps = deps[0]
 
             setattr(self, fname, deps)

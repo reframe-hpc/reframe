@@ -204,28 +204,38 @@ class TestFixture:
     :meta private:
     '''
 
-    def __init__(self, cls, *, scope='test'):
+    def __init__(self, cls, *, scope='test', mode='expand', variants='all'):
         # Can't use isinstance here because of circular deps.
         rfm_kind = getattr(cls, '_rfm_regression_class_kind', 0)
         if rfm_kind==0:
-            raise ReframeSyntaxError(
+            raise ValueError(
                 f"{cls.__qualname__!r} must be a derived class from "
                 f"'RegressionTest'"
             )
         elif rfm_kind & 1:
             if scope in {'session', 'partition'}:
-                raise ReframeSyntaxError(
+                raise ValueError(
                     f'incompatible scope for fixture {cls.__qualname__}; '
                     f'scope {scope!r} only supports run-only fixtures.'
                 )
 
         if scope not in {'session', 'partition', 'environment', 'test'}:
-            raise ReframeSyntaxError(
+            raise ValueError(
                 f'invalid scope for fixture {cls.__qualname__} ({scope!r})'
+            )
+
+        if mode not in {'expand', 'reduce'}:
+            raise ValueError(
+                f'invalid mode value for fixture {cls.__qualname__} (mode!r)'
             )
 
         self._cls = cls
         self._scope = scope
+        self._mode = mode
+        if variants == 'all':
+            self._variants = tuple(range(cls.num_variants))
+        else:
+            self._variants = tuple(variants)
 
     @property
     def cls(self):
@@ -237,6 +247,22 @@ class TestFixture:
 
     def get_name(self, variant_num=None):
         return self.cls.fullname(variant_num)
+
+    @property
+    def variants(self):
+        return self._variants
+
+    @property
+    def fixture_variants(self):
+        '''If the fixture is a reduction fixture, all its variants are stored
+        under the same fixture and the number of variants visible to the
+        fixture space is only 1. We set this as a negative value to denote this
+        special behavior.
+        '''
+        if self._mode == 'reduce':
+            return [-1]
+        else:
+            return self.variants
 
 
 class FixtureSpace(namespaces.Namespace):
@@ -293,8 +319,8 @@ class FixtureSpace(namespaces.Namespace):
         # If any previously declared fixture was defined in the class body
         # by directly assigning it a value, raise an error. Fixtures must be
         # changed using the `x = fixture(...)` syntax.
-        for key in cls.__dict__:
-            if key in self.fixtures:
+        for key in self.fixtures:
+            if key in cls.__dict__:
                 raise ReframeSyntaxError(
                     f'fixture {key!r} must be modified through the built-in '
                     f'fixture type'
@@ -336,9 +362,18 @@ class FixtureSpace(namespaces.Namespace):
         for name, fixture in self.fixtures.items():
             var_num = fixture_variant_num_map[name]
 
-            # The fixture registry returns the fixture names added to the registry
-            dep_names = obj._rfm_fixture_registry.add(fixture, var_num, obj.name,
-                                                      part, prog_envs)
+            if var_num < 0:
+                var_num = fixture.variants
+            else:
+                var_num = [var_num]
+
+            dep_names = []
+            for variant in var_num:
+                # The fixture registry returns the fixture names added to the
+                # registry
+                dep_names += obj._rfm_fixture_registry.add(fixture, variant,
+                                                           obj.name, part,
+                                                           prog_envs)
 
             # Add dependencies
             if fixture.scope == 'session':
@@ -351,8 +386,8 @@ class FixtureSpace(namespaces.Namespace):
                 dep_mode = udeps.by_case
 
             # Inject the dependency
-            for name in dep_names:
-                obj.depends_on(name, dep_mode)
+            for dep_name in dep_names:
+                obj.depends_on(dep_name, dep_mode)
 
     def _get_partitions_and_prog_envs(self, obj):
         '''Process the partitions and programming environs of the parent.'''
@@ -385,8 +420,7 @@ class FixtureSpace(namespaces.Namespace):
     def __iter__(self):
         '''Walk through all index combinations for all fixtures.'''
         yield from itertools.product(
-            *(list(range(f.cls.num_variants)
-            for f in self.fixtures.values()))
+            *(list(f.fixture_variants for f in self.fixtures.values()))
         )
 
     def __len__(self):
