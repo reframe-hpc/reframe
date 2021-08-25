@@ -29,7 +29,7 @@ class FFTWTest(rfm.RegressionTest):
         )
 
     @sanity_function
-    def found_execution_time(self):
+    def assert_finished(self):
         return sn.assert_eq(
             sn.count(sn.findall(r'execution time', self.stdout)), 1
         )
@@ -39,7 +39,7 @@ class FFTWTest(rfm.RegressionTest):
         self.build_system.cflags = ['-O2']
 
     @run_before('run')
-    def configure_mode(self):
+    def configure_exec_mode(self):
         if self.exec_mode == 'nompi':
             self.num_tasks = 12
             self.executable_opts = ['72 12 1000 0']
@@ -62,4 +62,3 @@ class FFTWTest(rfm.RegressionTest):
                     'fftw_exec_time': (0.47, None, 0.50, 's'),
                 },
             }
-
