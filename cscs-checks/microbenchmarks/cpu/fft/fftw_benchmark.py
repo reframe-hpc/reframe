@@ -38,7 +38,7 @@ class FFTWTest(rfm.RegressionTest):
     def set_cflags(self):
         self.build_system.cflags = ['-O2']
 
-    @run_after('init')
+    @run_before('run')
     def configure_mode(self):
         if self.exec_mode == 'nompi':
             self.num_tasks = 12
