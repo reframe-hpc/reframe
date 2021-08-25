@@ -72,13 +72,13 @@ class GridToolsRunCheck(rfm.RunOnlyRegressionTest):
     def validate_run(self):
         return sn.assert_found(r'PASSED', self.stdout)
 
+    @deferrable
     @run_before('performance')
     def setup_perf_vars(self):
-        literal_eval = sn.sanity_function(ast.literal_eval)
         self.perf_patterns = {
-            'wall_time': sn.avg(literal_eval(
+            'wall_time': sn.avg(
                 sn.extractsingle(r'"series" : \[(?P<wall_times>.+)\]',
-                                 self.stdout, 'wall_times')))
+                                 self.stdout, 'wall_times'))
         }
 
 
