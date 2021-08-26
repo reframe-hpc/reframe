@@ -51,6 +51,11 @@ REFERENCE_GPU_PERFORMANCE = {
     'daint:gpu': daint_gpu,
 }
 
+REFERENCE_PERFORMANCE = {
+    'gpu': REFERENCE_GPU_PERFORMANCE,
+    'cpu': REFERENCE_CPU_PERFORMANCE,
+}
+
 
 @rfm.simple_test
 class VASPCheckCSCS(VASP):
@@ -122,10 +127,7 @@ class VASPCheckCSCS(VASP):
 
     @run_after('setup')
     def set_perf_reference(self):
-        if self.platform == 'cpu':
-            self.reference = REFERENCE_CPU_PERFORMANCE
-        else:
-            self.reference = REFERENCE_GPU_PERFORMANCE
+            self.reference = REFERENCE_PERFORMANCE[self.platform]
 
     @run_after('setup')
     def set_description(self):

@@ -75,18 +75,18 @@ class LAMMPS_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'LAMMPS')
 
-    @run_after('setup')
-    def set_generic_perf_references(self):
-        self.reference.update({'*': {
-            self.mode: (0, None, None, 'timesteps/s')
-        }})
-
-    @run_after('setup')
+    @performance_function('timesteps/s', perf_key = 'nve')
     def set_perf_patterns(self):
-        self.perf_patterns = {
-            self.mode: sn.extractsingle(r'\s+(?P<perf>\S+) timesteps/s',
-                                        self.stdout, 'perf', float)
-        }
+        return  sn.extractsingle(r'\s+(?P<perf>\S+) timesteps/s',
+                                 self.stdout, 'perf', float)
+
+    @run_before('performance')
+    def set_the_performance_dict(self):
+        self.perf_variables = {self.mode:
+                                sn.make_performance_function(
+                                sn.extractsingle(
+                                   r'\s+(?P<perf>\S+) timesteps/s',
+                                   self.stdout, 'perf', float), 'timesteps/s')}
 
     @sanity_function
     def set_sanity_patterns(self):

@@ -22,6 +22,10 @@ REFERENCE_PERFORMANCE_LARGE = {
     },
 }
 
+REFERENCE_PERFORMANCE = {
+    'small': REFERENCE_PERFORMANCE_SMALL,
+    'large': REFERENCE_PERFORMANCE_LARGE,
+}
 
 @rfm.simple_test
 class cpmd_check(Cpmd_NVE):
@@ -54,7 +58,4 @@ class cpmd_check(Cpmd_NVE):
 
     @run_after('setup')
     def set_reference(self):
-        if self.scale == 'small':
-            self.reference = REFERENCE_PERFORMANCE_SMALL
-        else:
-            self.reference = REFERENCE_PERFORMANCE_LARGE
+        self.reference = REFERENCE_PERFORMANCE[self.scale]

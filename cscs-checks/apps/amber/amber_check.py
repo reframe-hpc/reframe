@@ -58,6 +58,11 @@ REFERENCE_CPU_PERFORMANCE_LARGE = {
     },
 }
 
+REFERENCE_CPU_PERFORMANCE = {
+    'small': REFERENCE_CPU_PERFORMANCE_SMALL,
+    'large': REFERENCE_CPU_PERFORMANCE_LARGE,
+}
+
 
 def inherit_cpu_only(params):
     return tuple(filter(lambda p: 'cpu' in p[0], params))
@@ -70,7 +75,7 @@ def inherit_gpu_only(params):
 class AmberCheckCSCS(Amber_NVE):
     modules = ['Amber']
     valid_prog_environs = ['builtin']
-    strict_check = False
+    strict_check = True
     extra_resources = {
         'switches': {
             'num_switches': 1
@@ -140,7 +145,4 @@ class amber_cpu_check(AmberCheckCSCS):
 
     @run_after('setup')
     def set_perf_reference(self):
-        if self.scale == 'small':
-            self.reference = REFERENCE_CPU_PERFORMANCE_SMALL
-        else:
-            self.reference = REFERENCE_CPU_PERFORMANCE_LARGE
+        self.reference = REFERENCE_CPU_PERFORMANCE[self.scale]

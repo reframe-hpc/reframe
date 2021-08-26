@@ -42,6 +42,11 @@ REFERENCE_CPU_PERFORMANCE_LARGE = {
     },
 }
 
+REFERENCE_CPU_PERFORMANCE = {
+    'small': REFERENCE_CPU_PERFORMANCE_SMALL,
+    'large': REFERENCE_CPU_PERFORMANCE_LARGE,
+}
+
 REFERENCE_GPU_PERFORMANCE_SMALL = {
     'dom:mc': {
         'maint': (251.8, None, 0.15, 's'),
@@ -60,6 +65,15 @@ REFERENCE_GPU_PERFORMANCE_LARGE = {
     }
 }
 
+REFERENCE_GPU_PERFORMANCE = {
+    'small': REFERENCE_GPU_PERFORMANCE_SMALL,
+    'large': REFERENCE_GPU_PERFORMANCE_LARGE,
+}
+
+REFERENCE_PERFORMANCE = {
+    'cpu': REFERENCE_CPU_PERFORMANCE,
+    'gpu': REFERENCE_GPU_PERFORMANCE,
+}
 
 @rfm.simple_test
 class cp2k_check(Cp2k_NVE):
@@ -157,16 +171,7 @@ class cp2k_check(Cp2k_NVE):
 
     @run_after('setup')
     def set_reference(self):
-        if self.platform_name == 'cpu':
-            if self.scale == 'small':
-                self.reference = REFERENCE_CPU_PERFORMANCE_SMALL
-            else:
-                self.reference = REFERENCE_CPU_PERFORMANCE_LARGE
-        else:
-            if self.scale == 'small':
-                self.reference = REFERENCE_GPU_PERFORMANCE_SMALL
-            else:
-                self.reference = REFERENCE_GPU_PERFORMANCE_LARGE
+        self.reference = REFERENCE_PERFORMANCE[self.platform_name][self.scale]
 
     @run_before('run')
     def set_task_distribution(self):

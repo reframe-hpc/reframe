@@ -66,19 +66,18 @@ class Cpmd_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
     input_file = 'ana_c4h6.in'
     readonly_files = ['ana_c4h6.in', 'C_MT_BLYP', 'H_MT_BLYP']
 
-    @run_after('setup')
-    def set_generic_perf_references(self):
-        self.reference.update({'*': {
-            self.mode: (0, None, None, 's')
-        }})
-
-    @run_after('setup')
+    @performance_function('s', perf_key = 'time')
     def set_perf_patterns(self):
-        self.perf_patterns = {
-            self.mode: sn.extractsingle(
-                r'^ cpmd(\s+[\d\.]+){3}\s+(?P<perf>\S+)',
-                'stdout.txt', 'perf', float)
-        }
+        return  sn.extractsingle(r'^ cpmd(\s+[\d\.]+){3}\s+(?P<perf>\S+)',
+                                 'stdout.txt', 'perf', float)
+
+    @run_before('performance')
+    def set_the_performance_dict(self):
+        self.perf_variables = {self.mode:
+                                sn.make_performance_function(
+                                sn.extractsingle(
+                                    r'^ cpmd(\s+[\d\.]+){3}\s+(?P<perf>\S+)',
+                                    'stdout.txt', 'perf', float), 's')}
 
     @run_after('setup')
     def set_executable_opts(self):

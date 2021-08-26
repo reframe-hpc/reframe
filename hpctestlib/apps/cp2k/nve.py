@@ -54,19 +54,18 @@ class Cp2k_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
     executable = 'cp2k.psmp'
     executable_opts = ['H2O-256.inp']
 
-    @run_after('setup')
-    def set_generic_perf_references(self):
-        self.reference.update({'*': {
-            self.mode: (0, None, None, 'timesteps/s')
-        }})
-
-    @run_after('setup')
+    @performance_function('s', perf_key = 'time')
     def set_perf_patterns(self):
-        self.perf_patterns = {
-            self.mode: sn.extractsingle(
-                r'^ CP2K(\s+[\d\.]+){4}\s+(?P<perf>\S+)',
-                self.stdout, 'perf', float)
-        }
+        return  sn.extractsingle(r'^ CP2K(\s+[\d\.]+){4}\s+(?P<perf>\S+)',
+                                 self.stdout, 'perf', float)
+
+    @run_before('performance')
+    def set_the_performance_dict(self):
+        self.perf_variables = {self.mode:
+                                sn.make_performance_function(
+                                sn.extractsingle(
+                                    r'^ CP2K(\s+[\d\.]+){4}\s+(?P<perf>\S+)',
+                                    self.stdout, 'perf',float), 's')}
 
     @sanity_function
     def set_sanity_patterns(self):

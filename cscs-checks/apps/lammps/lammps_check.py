@@ -75,6 +75,16 @@ REFERENCE_CPU_PERFORMANCE_LARGE = {
 
 }
 
+REFERENCE_PERFORMANCE = {
+    'gpu': {
+        'small': REFERENCE_GPU_PERFORMANCE_SMALL,
+        'large': REFERENCE_GPU_PERFORMANCE_LARGE,
+    },
+    'cpu': {
+        'small': REFERENCE_CPU_PERFORMANCE_SMALL,
+        'large': REFERENCE_CPU_PERFORMANCE_LARGE,
+    },
+}
 
 def inherit_cpu_only(params):
     return tuple(filter(lambda p: p[0] == 'cpu', params))
@@ -85,6 +95,7 @@ def inherit_gpu_only(params):
 
 
 class LAMMPSCheckCSCS(LAMMPS_NVE):
+    scale = parameter(['small', 'large'])
     modules = ['LAMMPS']
     strict_check = False
     extra_resources = {
@@ -108,22 +119,18 @@ class LAMMPSCheckCSCS(LAMMPS_NVE):
         self.tags |= {'maintenance' if self.mode == 'maint'
                       else 'production'}
 
+    @run_before('performance')
+    def set_reference(self):
+        self.reference = REFERENCE_PERFORMANCE[self.platform_name][self.scale]
+
 
 @rfm.simple_test
 class lammps_gpu_check(LAMMPSCheckCSCS):
     platform = parameter(inherit_params=True,
                          filter_params=inherit_gpu_only)
-    scale = parameter(['small', 'large'])
     mode = parameter(['prod', 'maint'])
     valid_systems = ['daint:gpu']
     num_gpus_per_node = 1
-
-    @run_after('init')
-    def set_reference(self):
-        if self.scale == 'small':
-            self.reference = REFERENCE_GPU_PERFORMANCE_SMALL
-        else:
-            self.reference = REFERENCE_GPU_PERFORMANCE_LARGE
 
     @run_before('run')
     def set_executable_opts(self):
@@ -145,7 +152,6 @@ class lammps_gpu_check(LAMMPSCheckCSCS):
 class lammps_cpu_check(LAMMPSCheckCSCS):
     platform = parameter(inherit_params=True,
                          filter_params=inherit_cpu_only)
-    scale = parameter(['small', 'large'])
     mode = parameter(['prod'])
     valid_systems = ['daint:mc', 'eiger:mc', 'pilatus:mc']
 
@@ -162,13 +168,6 @@ class lammps_cpu_check(LAMMPSCheckCSCS):
         if self.current_system.name == 'eiger':
             self.num_tasks_per_node = 128
             self.num_tasks = 256 if self.benchmark == 'small' else 512
-
-    @run_after('init')
-    def set_reference(self):
-        if self.scale == 'small':
-            self.reference = REFERENCE_CPU_PERFORMANCE_SMALL
-        else:
-            self.reference = REFERENCE_CPU_PERFORMANCE_LARGE
 
     @run_before('run')
     def set_hierarchical_prgenvs(self):

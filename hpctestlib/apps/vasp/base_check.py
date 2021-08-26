@@ -62,19 +62,20 @@ class VASP(rfm.RunOnlyRegressionTest, pin_prefix=True):
 
         self.platform, self.executable = self.platform_info
 
-    @run_after('setup')
-    def set_generic_perf_references(self):
-        self.reference.update({'*': {
-            self.mode: (0, None, None, 's')
-        }})
-
-    @run_after('setup')
+    @performance_function('s', perf_key = 'time')
     def set_perf_patterns(self):
-        self.perf_patterns = {
-            self.mode: sn.extractsingle(r'Total CPU time used \(sec\):'
-                                        r'\s+(?P<time>\S+)', 'OUTCAR',
-                                        'time', float)
-        }
+        return  sn.extractsingle(r'Total CPU time used \(sec\):'
+                                 r'\s+(?P<time>\S+)', 'OUTCAR',
+                                 'time', float)
+
+    @run_before('performance')
+    def set_the_performance_dict(self):
+        self.perf_variables = {self.mode:
+                                sn.make_performance_function(
+                                sn.extractsingle(
+                                   r'Total CPU time used \(sec\):'
+                                   r'\s+(?P<time>\S+)', 'OUTCAR',
+                                   'time', float), 's')}
 
     @sanity_function
     def set_sanity_patterns(self):

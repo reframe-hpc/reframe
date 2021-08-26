@@ -60,6 +60,27 @@ REFERENCE_GPU_PERFORMANCE_LARGE = {
     }
 }
 
+REFERENCE_PERFORMANCE = {
+    'gpu': {
+        'small': REFERENCE_GPU_PERFORMANCE_SMALL,
+        'large': REFERENCE_GPU_PERFORMANCE_LARGE,
+    },
+    'cpu': {
+        'small': REFERENCE_CPU_PERFORMANCE_SMALL,
+        'large': REFERENCE_CPU_PERFORMANCE_LARGE,
+    },
+}
+
+REFERENCE_ENERGY = {
+    'gpu': {
+        'small': (-11427.09017168, 1E-07),
+        'large': (-11427.09017179,1E-07),
+    },
+    'cpu': {
+        'small': (-11427.09017168, 1E-06),
+        'large': (-11427.09017152, 1E-06),
+    },
+}
 
 @rfm.simple_test
 class quantum_espresso_check_cscs(QuantumESPRESSO):
@@ -95,27 +116,6 @@ class quantum_espresso_check_cscs(QuantumESPRESSO):
         self.tags |= {
             'maintenance' if self.mode == 'maint' else 'production'
         }
-
-    @run_after('init')
-    def set_reference(self):
-        if self.platform == 'cpu':
-            if self.scale == 'small':
-                self.reference = REFERENCE_CPU_PERFORMANCE_SMALL
-                self.energy_value = -11427.09017168
-                self.energy_tolerance = 1E-06
-            else:
-                self.reference = REFERENCE_CPU_PERFORMANCE_LARGE
-                self.energy_value = -11427.09017152
-                self.energy_tolerance = 1E-06
-        else:
-            if self.scale == 'small':
-                self.reference = REFERENCE_GPU_PERFORMANCE_SMALL
-                self.energy_value = -11427.09017168
-                self.energy_tolerance = 1E-07
-            else:
-                self.reference = REFERENCE_GPU_PERFORMANCE_LARGE
-                self.energy_value = -11427.09017179
-                self.energy_tolerance = 1E-07
 
     @run_after('init')
     def set_num_tasks(self):
@@ -165,6 +165,12 @@ class quantum_espresso_check_cscs(QuantumESPRESSO):
     def set_description(self):
         self.descr = (f'QuantumESPRESSO {self.platform}'
                       f'check (version: {self.scale}, {self.mode})')
+
+    @run_after('init')
+    def set_reference(self):
+        self.reference = REFERENCE_PERFORMANCE[self.platform][self.scale]
+        self.energy_value = REFERENCE_ENERGY[self.platform][self.scale][0]
+        self.energy_tolerance = REFERENCE_ENERGY[self.platform][self.scale][1]
 
     @run_before('run')
     def set_task_distribution(self):

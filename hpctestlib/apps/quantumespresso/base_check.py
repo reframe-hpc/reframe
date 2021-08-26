@@ -64,17 +64,18 @@ class QuantumESPRESSO(rfm.RunOnlyRegressionTest, pin_prefix=True):
         '''
         self.executable_opts = ['-in', self.input_file]
 
-    @run_before('performance')
+    @performance_function('s', perf_key = 'time')
     def set_perf_patterns(self):
-        self.reference.update({'*': {
-            self.mode: (0, None, None, 's')
-        }})
+        return  sn.extractsingle(r'electrons.+\s(?P<wtime>\S+)s WALL',
+                                 self.stdout, 'wtime', float)
 
-        self.perf_patterns = {
-            self.mode: sn.extractsingle(
-                r'electrons.+\s(?P<wtime>\S+)s WALL',
-                self.stdout, 'wtime', float)
-        }
+    @run_before('performance')
+    def set_the_performance_dict(self):
+        self.perf_variables = {self.mode:
+                                sn.make_performance_function(
+                                sn.extractsingle(
+                                   r'electrons.+\s(?P<wtime>\S+)s WALL',
+                                   self.stdout, 'wtime', float), 's')}
 
     @sanity_function
     def set_sanity_patterns(self):
