@@ -94,17 +94,17 @@ class Amber_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
     def set_keep_files(self):
         self.keep_files = [self.output_file]
 
-    @performance_function('ns/day', perf_key = 'nve')
+    @performance_function('ns/day', perf_key='nve')
     def set_perf_patterns(self):
-        return  sn.extractsingle(r'ns/day =\s+(?P<perf>\S+)',
-                                             self.output_file, 'perf',
-                                             float, item=1)
+        return sn.extractsingle(r'ns/day =\s+(?P<perf>\S+)',
+                                self.output_file, 'perf',
+                                float, item=1)
 
     @run_before('performance')
     def set_the_performance_dict(self):
         self.perf_variables = {self.benchmark:
-                                sn.make_performance_function(
-                                sn.extractsingle(r'ns/day =\s+(?P<perf>\S+)',
+                               sn.make_performance_function(
+                               sn.extractsingle(r'ns/day =\s+(?P<perf>\S+)',
                                                  self.output_file, 'perf',
                                                  float, item=1), 'ns/day')}
 
