@@ -64,9 +64,9 @@ class Cp2k_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
         self.perf_variables = {self.mode:
                                sn.make_performance_function(
                                    sn.extractsingle(
-                                       r'^ CP2K(\s+[\d\.]+){4}\s+(?P<perf>'+
+                                       r'^ CP2K(\s+[\d\.]+){4}\s+(?P<perf>' +
                                        r'\S+)', self.stdout, 'perf', float),
-                                       's')}
+                                                's')}
 
     @sanity_function
     def set_sanity_patterns(self):
