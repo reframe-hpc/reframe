@@ -104,7 +104,7 @@ class Amber_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
     def set_the_performance_dict(self):
         self.perf_variables = {self.benchmark:
                                sn.make_performance_function(
-                                sn.extractsingle(r'ns/day =\s+(?P<perf>\S+)',
+                                    sn.extractsingle(r'ns/day =\s+(?P<perf>\S+)',
                                                  self.output_file, 'perf',
                                                  float, item=1), 'ns/day')}
 
