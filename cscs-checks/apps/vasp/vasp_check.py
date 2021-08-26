@@ -127,7 +127,7 @@ class VASPCheckCSCS(VASP):
 
     @run_after('setup')
     def set_perf_reference(self):
-            self.reference = REFERENCE_PERFORMANCE[self.platform]
+        self.reference = REFERENCE_PERFORMANCE[self.platform]
 
     @run_after('setup')
     def set_description(self):

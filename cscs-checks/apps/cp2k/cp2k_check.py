@@ -75,6 +75,7 @@ REFERENCE_PERFORMANCE = {
     'gpu': REFERENCE_GPU_PERFORMANCE,
 }
 
+
 @rfm.simple_test
 class cp2k_check(Cp2k_NVE):
     modules = ['CP2K']

@@ -74,13 +74,14 @@ REFERENCE_PERFORMANCE = {
 REFERENCE_ENERGY = {
     'gpu': {
         'small': (-11427.09017168, 1E-07),
-        'large': (-11427.09017179,1E-07),
+        'large': (-11427.09017179, 1E-07),
     },
     'cpu': {
         'small': (-11427.09017168, 1E-06),
         'large': (-11427.09017152, 1E-06),
     },
 }
+
 
 @rfm.simple_test
 class quantum_espresso_check_cscs(QuantumESPRESSO):
