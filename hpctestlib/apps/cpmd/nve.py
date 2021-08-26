@@ -76,8 +76,9 @@ class Cpmd_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
         self.perf_variables = {self.mode:
                                sn.make_performance_function(
                                    sn.extractsingle(
-                                       r'^ cpmd(\s+[\d\.]+){3}\s+(?P<perf>\S+)',
-                                       'stdout.txt', 'perf', float), 's')}
+                                       r'^ cpmd(\s+[\d\.]+){3}\s+(?P<perf>' +
+                                       r'\S+)', 'stdout.txt', 'perf',
+                                       float), 's')}
 
     @run_after('setup')
     def set_executable_opts(self):
