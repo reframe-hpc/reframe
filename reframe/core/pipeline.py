@@ -845,7 +845,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     @deferrable
     def __rfm_init__(self, *args, prefix=None, **kwargs):
         if not hasattr(self, 'name'):
-            self.name = type(self).fullname(self.variant_num)
+            try:
+                self.name = type(self).fullname(self.variant_num)
+            except ValueError as err:
+                raise ReframeSyntaxError(err) from None
 
             # Add the parameters from the parameterized_test decorator.
             if args or kwargs:
@@ -1190,7 +1193,13 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         return self.local or self._current_partition.scheduler.is_local
 
     def _resolve_fixtures(self):
-        '''Resolve the fixture dependencies and insert the attributes.'''
+        '''Resolve the fixture dependencies and inject the fixture handle.
+
+        The fixture handle will point directly to the fixture object when the
+        associated fixture uses a 'fork' action. However, when a fixture uses
+        the 'join' action, the injected handle will point to a list with all
+        the available fixture variants.
+        '''
         fixtures = type(self)._rfm_fixture_space
         registry = getattr(self, '_rfm_fixture_registry', None)
         for fname, f in fixtures.items():
@@ -1208,7 +1217,14 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             for fixture_instance in registry[f.cls]:
                 deps.append(self.getdep(fixture_instance, environ, part))
 
-            if len(deps) == 1 and f.mode == 'expand':
+            if f.action == 'fork':
+                # When using the fork action, a fixture handle can only have
+                # a single fixture instance attached.
+                if len(deps) < 1:
+                    raise RuntimeError(
+                        f'fixture {fname} has more than one instances'
+                    )
+
                 deps = deps[0]
 
             setattr(self, fname, deps)

@@ -204,7 +204,7 @@ class TestFixture:
     :meta private:
     '''
 
-    def __init__(self, cls, *, scope='test', mode='expand', variants='all'):
+    def __init__(self, cls, *, scope='test', action='fork', variants='all'):
         # Can't use isinstance here because of circular deps.
         rfm_kind = getattr(cls, '_rfm_regression_class_kind', 0)
         if rfm_kind==0:
@@ -224,14 +224,14 @@ class TestFixture:
                 f'invalid scope for fixture {cls.__qualname__} ({scope!r})'
             )
 
-        if mode not in {'expand', 'reduce'}:
+        if action not in {'fork', 'join'}:
             raise ValueError(
-                f'invalid mode value for fixture {cls.__qualname__} (mode!r)'
+                f'invalid action for fixture {cls.__qualname__} (action!r)'
             )
 
         self._cls = cls
         self._scope = scope
-        self._mode = mode
+        self._action = action
         if variants == 'all':
             self._variants = tuple(range(cls.num_variants))
         else:
@@ -249,6 +249,10 @@ class TestFixture:
         return self.cls.fullname(variant_num)
 
     @property
+    def action(self):
+        return self._action
+
+    @property
     def variants(self):
         return self._variants
 
@@ -259,8 +263,8 @@ class TestFixture:
         fixture space is only 1. We set this as a negative value to denote this
         special behavior.
         '''
-        if self._mode == 'reduce':
-            return [-1]
+        if self._action == 'join':
+            return [None]
         else:
             return self.variants
 
@@ -362,7 +366,10 @@ class FixtureSpace(namespaces.Namespace):
         for name, fixture in self.fixtures.items():
             var_num = fixture_variant_num_map[name]
 
-            if var_num < 0:
+            # Handle the 'fork' and 'join' actions:
+            # var_num is None when the fixture has a 'join' action. Otherwise
+            # var_num is a positive integer.
+            if var_num is None:
                 var_num = fixture.variants
             else:
                 var_num = [var_num]

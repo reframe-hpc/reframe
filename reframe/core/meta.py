@@ -568,14 +568,12 @@ class RegressionTestMeta(type):
         qualified class name.
 
         :param variant_num: An integer in the range of [0, cls.num_variants).
-          The framework may internally pass a negative value to this function,
-          in which case it just returns the qualified class name.
 
         :meta private:
         '''
 
         name = cls.__qualname__
-        if variant_num is None or variant_num < 0:
+        if variant_num is None:
             return name
 
         pid, fid = cls._map_variant_num(variant_num)

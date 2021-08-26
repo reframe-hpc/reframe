@@ -140,7 +140,7 @@ def test_consume_param_space():
     assert test.P1 is None
     assert test.P2 is None
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         test = MyTest(variant_num=i+1)
 
 
