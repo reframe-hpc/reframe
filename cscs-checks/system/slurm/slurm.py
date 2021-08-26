@@ -214,14 +214,6 @@ class MemoryOverconsumptionMpiCheck(SlurmCompiledBaseCheck):
 
     @run_before('performance')
     def set_perf_patterns(self):
-        regex = (r'^Eating \d+ MB\/mpi \*\d+mpi = -\d+ MB memory from \/proc\/'
-                 r'meminfo: total: \d+ GB, free: \d+ GB, avail: \d+ GB, using:'
-                 r' (\d+) GB')
-        self.perf_patterns = {
-            'max_cn_memory': sn.getattr(self, 'reference_meminfo'),
-            'max_allocated_memory': sn.max(sn.extractall(regex, self.stdout,
-                                                         1, int)),
-        }
         no_limit = (0, None, None, 'GB')
         self.reference = {
             '*': {
@@ -231,6 +223,17 @@ class MemoryOverconsumptionMpiCheck(SlurmCompiledBaseCheck):
                 ),
             }
         }
+
+    @performance_function('GB')
+    def max_cn_memory(self):
+        return sn.getattr(self, 'reference_meminfo')
+
+    @performance_function('GB')
+    def max_allocated_memory(self):
+        regex = (r'^Eating \d+ MB\/mpi \*\d+mpi = -\d+ MB memory from \/proc\/'
+                 r'meminfo: total: \d+ GB, free: \d+ GB, avail: \d+ GB, using:'
+                 r' (\d+) GB')
+        return sn.max(sn.extractall(regex, self.stdout, 1, int))
 
     @run_before('run')
     def set_tasks(self):
@@ -290,9 +293,7 @@ class slurm_response_check(rfm.RunOnlyRegressionTest):
     def assert_exitcode_zero(self):
         return sn.assert_eq(self.job.exitcode, 0)
 
-    @run_before('performance')
-    def set_perf_patterns(self):
-        self.perf_patterns = {
-            'real_time': sn.extractsingle(r'real (?P<real_time>\S+)',
-                                          self.stderr, 'real_time', float)
-        }
+    @performance_function('s')
+    def real_time(self):
+        return sn.extractsingle(r'real (?P<real_time>\S+)', self.stderr,
+                                'real_time', float)
