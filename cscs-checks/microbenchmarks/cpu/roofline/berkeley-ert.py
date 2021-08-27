@@ -238,14 +238,6 @@ class PlotErt_Base(rfm.RunOnlyRegressionTest):
 
 # {{{ Intel Haswell
 # {{{ HWL_RunErt
-# @rfm.parameterized_test(
-#     *[
-#         [ert_precision, ert_flop, ert_mpi_task]
-#         for ert_precision in ert_precisions
-#         for ert_flop in ert_flops
-#         for ert_mpi_task in cpu_specs['HWL']['mpi_tasks']
-#     ]
-# )
 @rfm.simple_test
 class HWL_RunErt(RunErt_Base):
     ert_precision = parameter(ert_precisions)
@@ -350,15 +342,6 @@ class HWL_PlotErt(PlotErt_Base):
 
 
 # {{{ Intel Broadwell
-# {{{ BWL_RunErt
-# @rfm.parameterized_test(
-#     *[
-#         [ert_precision, ert_flop, ert_mpi_task]
-#         for ert_precision in ert_precisions
-#         for ert_flop in ert_flops
-#         for ert_mpi_task in cpu_specs['BWL']['mpi_tasks']
-#     ]
-# )
 @rfm.simple_test
 class BWL_RunErt(RunErt_Base):
     ert_precision = parameter(ert_precisions)
