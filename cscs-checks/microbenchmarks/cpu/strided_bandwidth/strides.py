@@ -8,68 +8,64 @@ import reframe.utility.sanity as sn
 
 
 class StridedBase(rfm.RegressionTest):
-    def __init__(self):
-        self.sourcepath = 'strides.cpp'
-        self.build_system = 'SingleSource'
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'daint:mc', 'dom:mc',
-                              'eiger:mc', 'pilatus:mc']
-        self.valid_prog_environs = ['PrgEnv-gnu']
-        self.num_tasks = 1
-        self.num_tasks_per_node = 1
+    sourcepath = 'strides.cpp'
+    build_system = 'SingleSource'
+    valid_systems = ['daint:gpu', 'dom:gpu', 'daint:mc', 'dom:mc',
+                     'eiger:mc', 'pilatus:mc']
+    valid_prog_environs = ['PrgEnv-gnu']
+    num_tasks = 1
+    num_tasks_per_node = 1
 
-        self.sanity_patterns = sn.assert_eq(
-            sn.count(sn.findall(r'bandwidth', self.stdout)),
-            self.num_tasks_assigned)
+    system_num_cpus = {
+        'daint:mc':  72,
+        'daint:gpu': 24,
+        'dom:mc':  72,
+        'dom:gpu': 24,
+        'eiger:mc': 128,
+        'pilatus:mc': 128
+    }
 
-        self.perf_patterns = {
-            'bandwidth': sn.extractsingle(
-                r'bandwidth: (?P<bw>\S+) GB/s',
-                self.stdout, 'bw', float)
-        }
+    maintainers = ['SK']
+    tags = {'benchmark', 'diagnostic'}
 
-        self.system_num_cpus = {
-            'daint:mc':  72,
-            'daint:gpu': 24,
-            'dom:mc':  72,
-            'dom:gpu': 24,
-            'eiger:mc': 128,
-            'pilatus:mc': 128
-        }
+    @sanity_function
+    def assert_num_tasks(self):
+        return sn.assert_eq(sn.count(sn.findall(r'bandwidth', self.stdout)),
+                            self.num_tasks_assigned)
 
-        self.maintainers = ['SK']
-        self.tags = {'benchmark', 'diagnostic'}
+    @performance_function('GB/s')
+    def bandwidth(self):
+        return sn.extractsingle(r'bandwidth: (?P<bw>\S+) GB/s',
+                                self.stdout, 'bw', float)
 
     @property
-    @sn.sanity_function
+    @deferrable
     def num_tasks_assigned(self):
         return self.job.num_tasks
 
 
 @rfm.simple_test
 class StridedBandwidthTest(StridedBase):
-    def __init__(self):
-        super().__init__()
-
-        self.reference = {
-            'dom:gpu': {
-                'bandwidth': (50, -0.1, 0.1, 'GB/s')
-            },
-            'dom:mc': {
-                'bandwidth': (100, -0.1, 0.1, 'GB/s')
-            },
-            'daint:gpu': {
-                'bandwidth': (50, -0.1, 0.1, 'GB/s')
-            },
-            'daint:mc': {
-                'bandwidth': (100, -0.1, 0.1, 'GB/s')
-            },
-            'eiger:mc': {
-                'bandwidth': (270, -0.1, 0.1, 'GB/s')
-            },
-            'pilatus:mc': {
-                'bandwidth': (270, -0.1, 0.1, 'GB/s')
-            }
+    reference = {
+        'dom:gpu': {
+            'bandwidth': (50, -0.1, 0.1, 'GB/s')
+        },
+        'dom:mc': {
+            'bandwidth': (100, -0.1, 0.1, 'GB/s')
+        },
+        'daint:gpu': {
+            'bandwidth': (50, -0.1, 0.1, 'GB/s')
+        },
+        'daint:mc': {
+            'bandwidth': (100, -0.1, 0.1, 'GB/s')
+        },
+        'eiger:mc': {
+            'bandwidth': (270, -0.1, 0.1, 'GB/s')
+        },
+        'pilatus:mc': {
+            'bandwidth': (270, -0.1, 0.1, 'GB/s')
         }
+    }
 
     @run_before('run')
     def set_exec_opts(self):
@@ -81,29 +77,26 @@ class StridedBandwidthTest(StridedBase):
 
 @rfm.simple_test
 class StridedBandwidthTest64(StridedBase):
-    def __init__(self):
-        super().__init__()
-
-        self.reference = {
-            'dom:gpu': {
-                'bandwidth': (6, -0.1, 0.2, 'GB/s')
-            },
-            'dom:mc': {
-                'bandwidth': (12.5, -0.1, 0.2, 'GB/s')
-            },
-            'daint:gpu': {
-                'bandwidth': (6, -0.05, 0.2, 'GB/s')
-            },
-            'daint:mc': {
-                'bandwidth': (12.5, -0.1, 0.2, 'GB/s')
-            },
-            'eiger:mc': {
-                'bandwidth': (33, -0.1, 0.2, 'GB/s')
-            },
-            'pilatus:mc': {
-                'bandwidth': (33, -0.1, 0.2, 'GB/s')
-            }
+    reference = {
+        'dom:gpu': {
+            'bandwidth': (6, -0.1, 0.2, 'GB/s')
+        },
+        'dom:mc': {
+            'bandwidth': (12.5, -0.1, 0.2, 'GB/s')
+        },
+        'daint:gpu': {
+            'bandwidth': (6, -0.05, 0.2, 'GB/s')
+        },
+        'daint:mc': {
+            'bandwidth': (12.5, -0.1, 0.2, 'GB/s')
+        },
+        'eiger:mc': {
+            'bandwidth': (33, -0.1, 0.2, 'GB/s')
+        },
+        'pilatus:mc': {
+            'bandwidth': (33, -0.1, 0.2, 'GB/s')
         }
+    }
 
     @run_before('run')
     def set_exec_opts(self):
@@ -115,26 +108,23 @@ class StridedBandwidthTest64(StridedBase):
 
 @rfm.simple_test
 class StridedBandwidthTest128(StridedBase):
-    def __init__(self):
-        super().__init__()
-
-        self.reference = {
-            'dom:gpu': {
-                'bandwidth': (4.5, -0.1, 0.2, 'GB/s')
-            },
-            'dom:mc': {
-                'bandwidth': (9.1, -0.1, 0.2, 'GB/s')
-            },
-            'daint:gpu': {
-                'bandwidth': (4.5, -0.1, 0.2, 'GB/s')
-            },
-            'daint:mc': {
-                'bandwidth': (9.1, -0.1, 0.2, 'GB/s')
-            },
-            'eiger:mc': {
-                'bandwidth': (33, -0.1, 0.2, 'GB/s')
-            },
-        }
+    reference = {
+        'dom:gpu': {
+            'bandwidth': (4.5, -0.1, 0.2, 'GB/s')
+        },
+        'dom:mc': {
+            'bandwidth': (9.1, -0.1, 0.2, 'GB/s')
+        },
+        'daint:gpu': {
+            'bandwidth': (4.5, -0.1, 0.2, 'GB/s')
+        },
+        'daint:mc': {
+            'bandwidth': (9.1, -0.1, 0.2, 'GB/s')
+        },
+        'eiger:mc': {
+            'bandwidth': (33, -0.1, 0.2, 'GB/s')
+        },
+    }
 
     @run_before('run')
     def set_exec_opts(self):
