@@ -191,12 +191,9 @@ class PlotErt_Base(rfm.RunOnlyRegressionTest):
 # {{{ P100_RunErt
 @rfm.simple_test
 class P100_RunErt(RunErt_Base):
-    ert_precision = parameter([
-        ert_precision for ert_precision in ert_precisions])
-    ert_flop = parameter([
-        ert_flop for ert_flop in ert_flops])
-    ert_gpu_threads = parameter([
-        ert_gpu_threads for ert_gpu_threads in [int(2 ** (log(32, 2)))]])
+    ert_precision = parameter(ert_precisions)
+    ert_flop = parameter(ert_flops)
+    ert_gpu_threads = parameter([int(2 ** (log(32, 2)))])
     # {{{ pe
     gpu = 'V100'
     descr = f'Collect ERT data from NVIDIA {gpu}'
@@ -307,12 +304,9 @@ class P100_PlotErt(PlotErt_Base):
 # {{{ V100_RunErt
 @rfm.simple_test
 class V100_RunErt(RunErt_Base):
-    ert_precision = parameter([
-        ert_precision for ert_precision in ert_precisions])
-    ert_flop = parameter([
-        ert_flop for ert_flop in ert_flops])
-    ert_gpu_threads = parameter([
-        ert_gpu_threads for ert_gpu_threads in [32]])
+    ert_precision = parameter(ert_precisions)
+    ert_flop = parameter(ert_flops)
+    ert_gpu_threads = parameter([32])
     # {{{ pe
     gpu = 'V100'
     descr = f'Collect ERT data from NVIDIA {gpu}'
