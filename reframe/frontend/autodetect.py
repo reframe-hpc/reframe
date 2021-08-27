@@ -10,10 +10,10 @@ import shutil
 import tempfile
 
 import reframe as rfm
+import reframe.core.runtime as runtime
 import reframe.utility.osext as osext
 from reframe.core.exceptions import ConfigError
 from reframe.core.logging import getlogger
-from reframe.core.runtime import runtime
 from reframe.core.schedulers import Job
 from reframe.utility.cpuinfo import cpuinfo
 
@@ -60,7 +60,7 @@ class _copy_reframe:
 def _subschema(fragment):
     '''Create a configuration subschema.'''
 
-    full_schema = runtime().site_config.schema
+    full_schema = runtime.runtime().site_config.schema
     return {
         '$schema': full_schema['$schema'],
         'defs': full_schema['defs'],
@@ -111,29 +111,28 @@ def _is_part_local(part):
 
 
 def _remote_detect(part):
-    def _emit_script(job):
+    def _emit_script(job, env):
         launcher_cmd = job.launcher.run_command(job)
         commands = [
             f'./bootstrap.sh',
             f'{launcher_cmd} ./bin/reframe --detect-host-topology=topo.json'
         ]
-        job.prepare(commands, trap_errors=True)
+        job.prepare(commands, env, trap_errors=True)
 
     getlogger().info(
         f'Detecting topology of remote partition {part.fullname!r}: '
         f'this may take some time...'
-
     )
     topo_info = {}
     try:
-        prefix = runtime().get_option('general/0/remote_workdir')
+        prefix = runtime.runtime().get_option('general/0/remote_workdir')
         with _copy_reframe(prefix) as dirname:
             with osext.change_dir(dirname):
                 job = Job.create(part.scheduler,
                                  part.launcher_type(),
                                  name='rfm-detect-job',
                                  sched_access=part.access)
-                _emit_script(job)
+                _emit_script(job, [part.local_env])
                 getlogger().debug('submitting detection script')
                 _log_contents(job.script_filename)
                 job.submit()
@@ -149,7 +148,7 @@ def _remote_detect(part):
 
 
 def detect_topology():
-    rt = runtime()
+    rt = runtime.runtime()
     detect_remote_systems = rt.get_option('general/0/remote_detect')
     topo_prefix = os.path.join(os.getenv('HOME'), '.reframe/topology')
     for part in rt.system.partitions:
@@ -183,17 +182,29 @@ def detect_topology():
             getlogger().debug(
                 f'> found topology file {topo_file!r}; loading...'
             )
-            part.processor._info = _load_info(
-                topo_file, _subschema('#/defs/processor_info')
-            )
-            found_procinfo = True
+            try:
+                part.processor._info = _load_info(
+                    topo_file, _subschema('#/defs/processor_info')
+                )
+                found_procinfo = True
+            except json.decoder.JSONDecodeError as e:
+                getlogger().debug(
+                    f'> could not load {topo_file!r}: {e}: ignoring...'
+                )
 
         if not found_devinfo and os.path.exists(dev_file):
             getlogger().debug(
                 f'> found devices file {dev_file!r}; loading...'
             )
-            part._devices = _load_info(dev_file, _subschema('#/defs/devices'))
-            found_devinfo = True
+            try:
+                part._devices = _load_info(
+                    dev_file, _subschema('#/defs/devices')
+                )
+                found_devinfo = True
+            except json.decoder.JSONDecodeError as e:
+                getlogger().debug(
+                    f'> could not load {dev_file!r}: {e}: ignoring...'
+                )
 
         if found_procinfo and found_devinfo:
             continue
@@ -201,12 +212,22 @@ def detect_topology():
         if not found_procinfo:
             # No topology found, try to auto-detect it
             getlogger().debug(f'> no topology file found; auto-detecting...')
+            modules = list(rt.system.preload_environ.modules)
+            vars = dict(rt.system.preload_environ.variables.items())
             if _is_part_local(part):
+                modules += part.local_env.modules
+                vars.update(part.local_env.variables)
+
                 # Unconditionally detect the system for fully local partitions
-                part.processor._info = cpuinfo()
+                with runtime.temp_environment(modules=modules, variables=vars):
+                    part.processor._info = cpuinfo()
+
                 _save_info(topo_file, part.processor.info)
             elif detect_remote_systems:
-                part.processor._info = _remote_detect(part)
+                with runtime.temp_environment(modules=temp_modules,
+                                              variables=temp_vars):
+                    part.processor._info = _remote_detect(part)
+
                 if part.processor.info:
                     _save_info(topo_file, part.processor.info)
 

@@ -11,6 +11,7 @@ import copy
 import itertools
 
 import reframe.core.namespaces as namespaces
+import reframe.utility as utils
 from reframe.core.exceptions import ReframeSyntaxError
 
 
@@ -44,6 +45,18 @@ class TestParam:
                 return x
 
         self.values = tuple(values)
+
+        # Validate the filter_param argument
+        try:
+            valid = utils.is_trivially_callable(filter_params, non_def_args=1)
+        except TypeError:
+            raise TypeError(
+                'the provided parameter filter is not a callable'
+                ) from None
+        else:
+            if not valid:
+                raise TypeError('filter function must take a single argument')
+
         self.filter_params = filter_params
 
 
@@ -126,11 +139,20 @@ class ParamSpace(namespaces.Namespace):
         '''Extend the parameter space with the local parameter space.'''
 
         local_param_space = getattr(cls, self.local_namespace_name)
-        while(local_param_space):
+        while local_param_space:
             name, p = local_param_space.popitem()
-            self.params[name] = (
-                p.filter_params(self.params.get(name, ())) + p.values
-            )
+            try:
+                filt_vals = p.filter_params(self.params.get(name, ()))
+            except Exception:
+                raise
+            else:
+                try:
+                    self.params[name] = (tuple(filt_vals) + p.values)
+                except TypeError:
+                    raise ReframeSyntaxError(
+                        f"'filter_param' must return an iterable "
+                        f"(parameter {name!r})"
+                    ) from None
 
         # If any previously declared parameter was defined in the class body
         # by directly assigning it a value, raise an error. Parameters must be

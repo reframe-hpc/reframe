@@ -44,31 +44,36 @@ class _DeferredExpression:
 
         # We cache the value of the last evaluation inside a tuple.
         # We don't cache the value directly, because it can be any.
-
-        # NOTE: The cache for the moment is only used by
-        # `__rfm_json_encode__`. Enabling caching in the evaluation is a
-        # reasonable optimization, but might break compatibility, so it needs
-        # to be thought thoroughly and communicated properly in the
-        # documentation.
         self._cached = ()
+        self._return_cached = False
 
-    def evaluate(self):
+    def evaluate(self, cache=False):
+        # Return the cached value (if any)
+        if self._return_cached and not cache:
+            return self._cached[0]
+        elif cache:
+            self._return_cached = cache
+
         fn_args = []
         for arg in self._args:
             fn_args.append(
-                arg.evaluate() if isinstance(arg, type(self)) else arg
+                arg.evaluate() if isinstance(arg, _DeferredExpression) else arg
             )
 
         fn_kwargs = {}
         for k, v in self._kwargs.items():
             fn_kwargs[k] = (
-                v.evaluate() if isinstance(v, type(self)) else v
+                v.evaluate() if isinstance(v, _DeferredExpression) else v
             )
 
         ret = self._fn(*fn_args, **fn_kwargs)
-        if isinstance(ret, type(self)):
+
+        # Evaluate the return for as long as a deferred expression returns
+        # another deferred expression.
+        while isinstance(ret, _DeferredExpression):
             ret = ret.evaluate()
 
+        # Cache the results for any subsequent evaluate calls.
         self._cached = (ret,)
         return ret
 
@@ -355,3 +360,34 @@ class _DeferredExpression:
     @deferrable
     def __invert__(a):
         return ~a
+
+
+class _DeferredPerformanceExpression(_DeferredExpression):
+    '''Represents a performance function whose evaluation has been deferred.
+
+    It extends the :class:`_DeferredExpression` class by adding the ``unit``
+    attribute. This attribute represents the unit of the performance
+    metric to be extracted by the performance function.
+    '''
+
+    def __init__(self, fn, unit, *args, **kwargs):
+        super().__init__(fn, *args, **kwargs)
+
+        if not isinstance(unit, str):
+            raise TypeError(
+                'performance units must be a string'
+            )
+
+        self._unit = unit
+
+    @classmethod
+    def construct_from_deferred_expr(cls, expr, unit):
+        if not isinstance(expr, _DeferredExpression):
+            raise TypeError("'expr' argument is not an instance of the "
+                            "_DeferredExpression class")
+
+        return cls(expr._fn, unit, *(expr._args), **(expr._kwargs))
+
+    @property
+    def unit(self):
+        return self._unit

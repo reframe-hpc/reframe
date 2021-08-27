@@ -448,7 +448,6 @@ class VarSpace(namespaces.Namespace):
         :param cls: the target class.
         '''
         for key, var in other.items():
-
             # Make doubly declared vars illegal. Note that this will be
             # triggered when inheriting from multiple RegressionTest classes.
             if key in self.vars:
@@ -475,7 +474,7 @@ class VarSpace(namespaces.Namespace):
         is disallowed.
         '''
         local_varspace = getattr(cls, self.local_namespace_name)
-        while(local_varspace):
+        while local_varspace:
             key, var = local_varspace.popitem()
             if isinstance(var, TestVar):
                 # Disable redeclaring a variable
