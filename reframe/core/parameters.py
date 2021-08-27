@@ -260,6 +260,18 @@ class ParamSpace(namespaces.Namespace):
         candidates = range(len(self.__random_access_iter))
         if not conditions:
             return list(candidates)
+        else:
+            # Validate conditions
+            for k, v in conditions.items():
+                if k not in self:
+                    raise ValueError(
+                        f'{k!r} is not present in the parameter space'
+                    )
+                elif not utils.is_trivially_callable(v, non_def_args=1):
+                    raise ValueError(
+                        f'condition on {k!r} must only accept a single'
+                        f'argument'
+                    )
 
         pos_map = {k: v for v, k in enumerate(self.keys())}
         def _get_param_value(name, variant):

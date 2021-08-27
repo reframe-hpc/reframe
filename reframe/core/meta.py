@@ -685,8 +685,13 @@ class RegressionTestMeta(type):
 
     @property
     def param_space(cls):
-        ''' Make the parameter space available as read-only.'''
+        '''Make the parameter space available as read-only.'''
         return cls._rfm_param_space
+
+    @property
+    def var_space(cls):
+        '''Expose the variable space.'''
+        return cls._rfm_var_space
 
     @property
     def fixture_space(cls):

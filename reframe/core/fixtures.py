@@ -7,15 +7,18 @@
 # Functionality to use fixtures in ReFrame tests.
 #
 
+import sys
 import copy
 import itertools
+import traceback
 from collections.abc import Iterable, Mapping
 
 import reframe.core.namespaces as namespaces
 import reframe.core.runtime as runtime
 import reframe.utility.udeps as udeps
-from reframe.core.exceptions import ReframeSyntaxError
+from reframe.core.exceptions import ReframeSyntaxError, what
 from reframe.core.variables import Undefined
+from reframe.core.logging import getlogger
 
 
 class FixtureRegistry:
@@ -72,30 +75,41 @@ class FixtureRegistry:
         cls = fixture.cls
         scope = fixture.scope
         fname = fixture.get_name(variant_num)
+        variables = fixture.variables
+        fname += ''.join((f'_{k}_{v}' for k,v in variables.items()))
         reg_names = []
         self._reg.setdefault(cls, dict())
         if scope == 'session':
             # The name is just the class name
             name = fname
-            self._reg[cls][name] = (variant_num, [prog_envs[0]], [partitions[0]])
+            self._reg[cls][name] = (
+                variant_num, [prog_envs[0]], [partitions[0]], variables
+            )
             reg_names.append(name)
         elif scope == 'partition':
             for p in partitions:
                 # The name contains the full partition name
                 name = '_'.join([fname, p])
-                self._reg[cls][name] = (variant_num, [prog_envs[0]], [p])
+                self._reg[cls][name] = (
+                    variant_num, [prog_envs[0]], [p], variables
+                )
                 reg_names.append(name)
         elif scope == 'environment':
             for p in partitions:
                 for env in prog_envs:
                     # The name contains the full part and env names
                     name = '_'.join([fname, p, env])
-                    self._reg[cls][name] = (variant_num, [env], [p])
+                    self._reg[cls][name] = (
+                        variant_num, [env], [p], variables
+                    )
                     reg_names.append(name)
         elif scope == 'test':
             # The name contains the full tree branch.
             name = '_'.join([fname, branch])
-            self._reg[cls][name] = (variant_num, list(prog_envs), list(partitions))
+            self._reg[cls][name] = (
+                variant_num, list(prog_envs), list(partitions),
+                variables
+            )
             reg_names.append(name)
 
         return reg_names
@@ -136,20 +150,46 @@ class FixtureRegistry:
         ret = []
         for cls, variants in self._reg.items():
             for name, args in variants.items():
-                varnum, penv, part = args
+                varnum, penv, part, variables = args
 
                 # Set the fixture name and stolen env and part from the parent
                 cls.name = name
                 cls.valid_prog_environs = penv
                 cls.valid_systems = part
 
-                # Instantiate the fixture
-                ret.append(cls(variant_num=varnum))
+                # Retrieve the variable defautls
+                var_def = dict()
+                for key, value in variables.items():
+                    if key in cls.var_space:
+                        try:
+                            var_def[key] = getattr(cls, key).default_value
+                        except ValueError:
+                            var_def[key] = Undefined
+                        finally:
+                            cls.setvar(key, value)
+
+                try:
+                    # Instantiate the fixture
+                    inst = cls(variant_num=varnum)
+                except Exception:
+                    exc_info = sys.exc_info()
+                    getlogger().warning(
+                        f"skipping fixture {name!r}: "
+                        f"{what(*exc_info)} "
+                        f"(rerun with '-v' for more information)"
+                    )
+                    getlogger().verbose(traceback.format_exc())
+                else:
+                    ret.append(inst)
 
                 # Reset cls defaults and append instance
                 cls.name = Undefined
                 cls.valid_prog_environs = Undefined
                 cls.valid_systems = Undefined
+
+                # Reinstate the deault values
+                for k,v in var_def.items():
+                    cls.setvar(k, v)
         return ret
 
     def _is_registry(self, other):
@@ -212,7 +252,8 @@ class TestFixture:
     :meta private:
     '''
 
-    def __init__(self, cls, *, scope='test', action='fork', variants='all'):
+    def __init__(self, cls, *, scope='test', action='fork', variants='all',
+                 variables=None):
         # Validate the fixture class: We can't use isinstance here because of
         # circular imports.
         rfm_kind = getattr(cls, '_rfm_regression_class_kind', 0)
@@ -263,6 +304,15 @@ class TestFixture:
                 f'invalid specified variants for fixture {cls.__qualname__}'
             )
 
+        if variables and not isinstance(variables, Mapping):
+            raise ValueError(
+                "the argument 'variables' must be a mapping."
+            )
+        elif variables is None:
+            variables = {}
+
+        self._variables = variables
+
     @property
     def cls(self):
         '''The underlying RegressionTest class.'''
@@ -305,6 +355,10 @@ class TestFixture:
         else:
             return self.variants
 
+    @property
+    def variables(self):
+        '''Variables to be set in the test.'''
+        return self._variables
 
 class FixtureSpace(namespaces.Namespace):
     ''' Regression test fixture space.

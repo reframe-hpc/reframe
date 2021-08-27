@@ -100,7 +100,7 @@ class TestVar:
 
     def _check_is_defined(self):
         if not self.is_defined():
-            raise ReframeSyntaxError(
+            raise ValueError(
                 f'variable {self.name} is not assigned a value'
             )
 
