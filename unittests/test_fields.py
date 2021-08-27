@@ -71,6 +71,22 @@ def test_typed_field():
         tester.field_any = 3
 
 
+def test_typed_field_convertible():
+    class FieldTester:
+        fieldA = fields.TypedField(int, str)
+        fieldB = fields.TypedField(str, int)
+        fieldC = fields.TypedField(int)
+
+    tester = FieldTester()
+    tester.fieldA = fields.make_convertible('10')
+    tester.fieldB = fields.make_convertible('10')
+    assert tester.fieldA == 10
+    assert tester.fieldB == '10'
+
+    with pytest.raises(TypeError):
+        tester.fieldC = fields.make_convertible(None)
+
+
 def test_timer_field():
     class FieldTester:
         field = fields.TimerField()
