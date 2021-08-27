@@ -191,19 +191,12 @@ class PlotErt_Base(rfm.RunOnlyRegressionTest):
 # {{{ P100_RunErt
 @rfm.simple_test
 class P100_RunErt(RunErt_Base):
-    config = parameter([
-        [ert_precision, ert_flop, ert_gpu_threads]
-        for ert_precision in ert_precisions
-        for ert_flop in ert_flops
-        for ert_gpu_threads in [int(2 ** (log(32, 2)))]  # = 32
-        # uncomment for full search:
-        # for ert_gpu_threads in [2 ** x for x in range(
-        #     int(log(gpu_specs['P100']['warp_size'], 2)),
-        #     int(log(gpu_specs['P100']['maximum_number_of_threads_per_block'],
-        #             2) + 1),
-        #     )
-        # ]
-    ])
+    ert_precision = parameter([
+        ert_precision for ert_precision in ert_precisions])
+    ert_flop = parameter([
+        ert_flop for ert_flop in ert_flops])
+    ert_gpu_threads = parameter([
+        ert_gpu_threads for ert_gpu_threads in [int(2 ** (log(32, 2)))]])
     # {{{ pe
     gpu = 'V100'
     descr = f'Collect ERT data from NVIDIA {gpu}'
@@ -215,8 +208,6 @@ class P100_RunErt(RunErt_Base):
     # {{{ build
     cap = gpu_specs[gpu]['capability']
     ert_trials_min = 1
-    ert_precision = variable(str)
-    ert_flop = variable(int)
     # }}}
 
     # {{{ run
@@ -226,15 +217,10 @@ class P100_RunErt(RunErt_Base):
     exclusive = True
     time_limit = '10m'
     # set blocks and threads per block:
-    ert_gpu_threads = variable(int)
     maximum_number_of_threads = (
         gpu_specs[gpu]['multiprocessors'] *
         gpu_specs[gpu]['maximum_number_of_threads_per_multiprocessor']
     )
-
-    @run_after('init')
-    def unpack_params(self):
-        self.ert_precision, self.ert_flop, self.ert_gpu_threads = self.config
 
     @run_after('init')
     def set_gpu_blocks(self):
@@ -287,7 +273,7 @@ class P100_PlotErt(PlotErt_Base):
         for ii in ert_precisions:
             for jj in ert_flops:
                 for kk in self.ert_gpu_threads:
-                    self.depends_on(f'{self.dep_name}___{ii}___{jj}__{kk}_',
+                    self.depends_on(f'{self.dep_name}_{ii}_{jj}_{kk}',
                                     udeps.by_env)
 
     # {{{ hooks
@@ -301,7 +287,7 @@ class P100_PlotErt(PlotErt_Base):
             for jj in ert_flops:
                 for kk in self.ert_gpu_threads:
                     dir_fullpath = self.getdep(
-                        f'{self.dep_name}___{ii}___{jj}__{kk}_', part='gpu'
+                        f'{self.dep_name}_{ii}_{jj}_{kk}', part='gpu'
                     ).stagedir
                     dir_basename = dir_fullpath.split('/')[-1]
                     self.prerun_cmds.append(
@@ -321,19 +307,12 @@ class P100_PlotErt(PlotErt_Base):
 # {{{ V100_RunErt
 @rfm.simple_test
 class V100_RunErt(RunErt_Base):
-    config = parameter([
-        [ert_precision, ert_flop, ert_gpu_threads]
-        for ert_precision in ert_precisions
-        for ert_flop in ert_flops
-        for ert_gpu_threads in [32]
-        # uncomment for full search:
-        # for ert_gpu_threads in [2 ** x for x in range(
-        #     int(log(gpu_specs['V100']['warp_size'], 2)),
-        #     int(log(gpu_specs['V100']['maximum_number_of_threads_per_block'],
-        #             2) + 1),
-        #     )
-        # ]
-    ])
+    ert_precision = parameter([
+        ert_precision for ert_precision in ert_precisions])
+    ert_flop = parameter([
+        ert_flop for ert_flop in ert_flops])
+    ert_gpu_threads = parameter([
+        ert_gpu_threads for ert_gpu_threads in [32]])
     # {{{ pe
     gpu = 'V100'
     descr = f'Collect ERT data from NVIDIA {gpu}'
@@ -344,8 +323,6 @@ class V100_RunErt(RunErt_Base):
     # {{{ build
     cap = gpu_specs[gpu]['capability']
     ert_trials_min = 1
-    ert_precision = variable(str)
-    ert_flop = variable(int)
     # }}}
 
     # {{{ run
@@ -358,10 +335,6 @@ class V100_RunErt(RunErt_Base):
         gpu_specs[gpu]['maximum_number_of_threads_per_multiprocessor']
     )
     time_limit = '5m'
-
-    @run_after('init')
-    def unpack_params(self):
-        self.ert_precision, self.ert_flop, self.ert_gpu_threads = self.config
 
     @run_after('init')
     def set_gpu_blocks(self):
@@ -414,7 +387,7 @@ class V100_PlotErt(PlotErt_Base):
         for ii in ert_precisions:
             for jj in ert_flops:
                 for kk in self.ert_gpu_threads:
-                    self.depends_on(f'{self.dep_name}___{ii}___{jj}__{kk}_',
+                    self.depends_on(f'{self.dep_name}_{ii}_{jj}_{kk}',
                                     udeps.by_env)
 
     # {{{ hooks
@@ -428,7 +401,7 @@ class V100_PlotErt(PlotErt_Base):
             for jj in ert_flops:
                 for kk in self.ert_gpu_threads:
                     dir_fullpath = self.getdep(
-                        f'{self.dep_name}___{ii}___{jj}__{kk}_', part='cn'
+                        f'{self.dep_name}_{ii}_{jj}_{kk}', part='cn'
                     ).stagedir
                     dir_basename = dir_fullpath.split('/')[-1]
                     self.prerun_cmds.append(
