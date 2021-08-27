@@ -8,7 +8,6 @@
 #
 
 import copy
-import functools
 import itertools
 
 import reframe.core.namespaces as namespaces
