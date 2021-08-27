@@ -139,25 +139,25 @@ class ParamSpace(namespaces.Namespace):
                     f'parameter type'
                 )
 
-    def inject(self, obj, cls=None, params_index=None):
+    def inject(self, obj, cls=None, params_variant=None):
         '''Insert the params in the regression test.
 
         Create and initialize the regression test parameters as object
         attributes. The values assigned to these parameters exclusively depend
-        on the value of params_index. This argument is simply an index to a
-        a given parametere combination. If params_index is left with its
+        on the value of params_variant. This argument is simply an index to a
+        a given parametere combination. If params_variant is left with its
         default value, the regression test parameters are initialized as
         None.
 
         :param obj: The test object.
         :param cls: The test class.
-        :param param_index: index to a point in the parameter space.
+        :param params_variant: index to a point in the parameter space.
         '''
         # Set the values of the test parameters (if any)
-        if self.params and not params_index is None:
+        if self.params and not params_variant is None:
             try:
                 # Consume the parameter space iterator
-                param_values = self.random_access_iter[params_index]
+                param_values = self.random_access_iter[params_variant]
                 for index, key in enumerate(self.params):
                     setattr(obj, key, param_values[index])
 
@@ -234,3 +234,32 @@ class ParamSpace(namespaces.Namespace):
 
     def is_empty(self):
         return self.params == {}
+
+    def get_variant_nums(self, **conditions):
+        '''Filter the paramter indices with a given set of conditions.
+
+        The conditions are passed as key-value pairs, where the keys are the
+        parameter names to apply the filtering on and the values are functions
+        that expect the parameter's value as the sole argument.
+        '''
+        candidates = range(len(self.random_access_iter))
+        if not conditions:
+            return list(candidates)
+
+        pos_map = {k: v for v, k in enumerate(self.keys())}
+        def _get_param_value(name, variant):
+            try:
+                return self.random_access_iter[variant][pos_map[name]]
+            except KeyError:
+                raise KeyError(f'{name} is not present in the parameter space')
+
+        for p, cond in conditions.items():
+            val = lambda v: _get_param_value(p, v)
+            candidates = list(filter(lambda v: cond(val(v)), candidates))
+
+        return candidates
+
+
+
+
+

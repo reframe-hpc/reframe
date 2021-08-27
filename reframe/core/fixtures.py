@@ -9,6 +9,7 @@
 
 import copy
 import itertools
+from collections.abc import Iterable, Mapping
 
 import reframe.core.namespaces as namespaces
 import reframe.core.runtime as runtime
@@ -234,6 +235,16 @@ class TestFixture:
         self._action = action
         if variants == 'all':
             self._variants = tuple(range(cls.num_variants))
+        elif not variants:
+            raise ValueError(
+                'variants cannot be empty'
+            )
+        elif not isinstance(variants, Iterable):
+            raise ValueError(
+                'variants argument is not an iterable'
+            )
+        elif isinstance(variants, Mapping):
+            self._variants = tuple(cls.get_variant_nums(**variants))
         else:
             self._variants = tuple(variants)
 

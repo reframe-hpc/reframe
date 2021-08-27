@@ -537,6 +537,31 @@ class RegressionTestMeta(type):
         p_space_len = len(cls._rfm_param_space)
         return variant_num%p_space_len, variant_num//p_space_len
 
+    def get_variant_nums(cls, **conditions):
+        '''Get the variant numbers that meet the specified conditions.
+
+        The given conditions enable filtering the parameter space of the test.
+        These can be specified by passing key-value pairs with the parameter
+        name to filter and an associated callable that returns ``True`` when
+        the fiiltering condition is met. Multiple conditions are supported.
+        However, filtering the fixture space is not allowed.
+
+        .. code-block:: python
+
+           # Filter out the test variants where my_param is larger than 3
+           cls.get_variant_nums(my_param=lambda x: x < 4)
+        '''
+        if not conditions:
+            return list(range(cls.num_variants))
+
+        inner_variants = cls.param_space.get_variant_nums(**conditions)
+        outer_variants = []
+        param_space_len = len(cls.param_space)
+        for i in range(cls.num_variants//param_space_len):
+            outer_variants += map(lambda x: x+param_space_len*i, inner_variants)
+
+        return outer_variants
+
     @property
     def param_space(cls):
         ''' Make the parameter space available as read-only.'''
