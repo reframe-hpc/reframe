@@ -200,13 +200,21 @@ class TestFixture:
     number of test variants of a test will depend on the test parameters and
     the parameters of each of the fixtures that compose the parent test. Each
     possible parameter-fixture combination has a unique ``variant_num``, which
-    is an index in the range from ``[0, cls.num_variants)``.
+    is an index in the range from ``[0, cls.num_variants)``. This is for a
+    ``'fork'`` action. When a ``'join'`` action is specified, the parent test
+    will reduce all the fixture variants from a single root test instance.
+
+    The variants from a given fixture to be used by the parent test can be
+    filtered out through the variants optional argument. This can either be
+    a list of the variant numbers to be used, or it can be a dictionary with
+    conditions on the parameter space of the fixture.
 
     :meta private:
     '''
 
     def __init__(self, cls, *, scope='test', action='fork', variants='all'):
-        # Can't use isinstance here because of circular deps.
+        # Validate the fixture class: We can't use isinstance here because of
+        # circular imports.
         rfm_kind = getattr(cls, '_rfm_regression_class_kind', 0)
         if rfm_kind==0:
             raise ValueError(
@@ -216,63 +224,81 @@ class TestFixture:
         elif rfm_kind & 1:
             if scope in {'session', 'partition'}:
                 raise ValueError(
-                    f'incompatible scope for fixture {cls.__qualname__}; '
+                    f'incompatible scope for fixture {cls.__qualname__!r}; '
                     f'scope {scope!r} only supports run-only fixtures.'
                 )
 
-        if scope not in {'session', 'partition', 'environment', 'test'}:
+        # Check that the fixture class is not an abstract test.
+        if cls.is_abstract():
             raise ValueError(
-                f'invalid scope for fixture {cls.__qualname__} ({scope!r})'
+                f'class {cls.__qualname__!r} is has undefined parameters'
             )
 
+        # Validate the scope
+        if scope not in {'session', 'partition', 'environment', 'test'}:
+            raise ValueError(
+                f'invalid scope for fixture {cls.__qualname__!r} ({scope!r})'
+            )
+
+        # Validate the action
         if action not in {'fork', 'join'}:
             raise ValueError(
-                f'invalid action for fixture {cls.__qualname__} (action!r)'
+                f'invalid action for fixture {cls.__qualname__!r} (action!r)'
             )
 
         self._cls = cls
         self._scope = scope
         self._action = action
-        if variants == 'all':
-            self._variants = tuple(range(cls.num_variants))
-        elif not variants:
-            raise ValueError(
-                'variants cannot be empty'
-            )
-        elif not isinstance(variants, Iterable):
-            raise ValueError(
-                'variants argument is not an iterable'
-            )
-        elif isinstance(variants, Mapping):
+        if isinstance(variants, Mapping):
+            # If the variants are passed as a mapping, this argument is
+            # expected to contain conditions to filter the fixture's
+            # parameter space.
             self._variants = tuple(cls.get_variant_nums(**variants))
-        else:
+        elif isinstance(variants, Iterable) and not isinstance(variants, str):
             self._variants = tuple(variants)
+        elif variants == 'all':
+            self._variants = tuple(range(cls.num_variants))
+        else:
+            raise ValueError(
+                f'invalid specified variants for fixture {cls.__qualname__}'
+            )
 
     @property
     def cls(self):
+        '''The underlying RegressionTest class.'''
         return self._cls
 
     @property
     def scope(self):
+        '''The fixture scope.'''
         return self._scope
 
     def get_name(self, variant_num=None):
+        '''Utility to retrieve the full name of a given fixture variant.'''
         return self.cls.fullname(variant_num)
 
     @property
     def action(self):
+        '''Action specified on this fixture.'''
         return self._action
 
     @property
     def variants(self):
+        '''The specified variants for this fixture.'''
         return self._variants
 
     @property
-    def fixture_variants(self):
-        '''If the fixture is a reduction fixture, all its variants are stored
-        under the same fixture and the number of variants visible to the
-        fixture space is only 1. We set this as a negative value to denote this
-        special behavior.
+    def fork_variants(self):
+        '''The list of fixture variants that will fork the parent test.
+
+        If the fixture action was set to ``'fork'``, the fork variants match
+        the fixture variants. Thus, parameterizing a fixture is effectively
+        a parameterisation of the root test. On the other hand, if the fixture
+        was specified a ``'join'`` action, the fixture variants will not
+        translate into more variants (forks) of the root test, and this root
+        test will instead gather all the fixture variants under the same
+        instance. To achieve this special behavior, the list of fork variants
+        is set to ``[None]``.
         '''
         if self._action == 'join':
             return [None]
@@ -306,7 +332,11 @@ class FixtureSpace(namespaces.Namespace):
     def __init__(self, target_cls=None, target_namespace=None):
         super().__init__(target_cls, target_namespace)
 
-        self.__random_access_iter = tuple(x for x in iter(self))
+        self.__random_access_iter = tuple(
+            itertools.product(
+                *(list(f.fork_variants for f in self.fixtures.values()))
+            )
+        )
 
     def join(self, other, cls):
         '''Join other fixture spaces into the current one.
@@ -379,7 +409,7 @@ class FixtureSpace(namespaces.Namespace):
 
             # Handle the 'fork' and 'join' actions:
             # var_num is None when the fixture has a 'join' action. Otherwise
-            # var_num is a positive integer.
+            # var_num is a nonnegative integer.
             if var_num is None:
                 var_num = fixture.variants
             else:
@@ -387,25 +417,24 @@ class FixtureSpace(namespaces.Namespace):
 
             dep_names = []
             for variant in var_num:
-                # The fixture registry returns the fixture names added to the
-                # registry
+                # The fixture registry returns the newly added fixture names
                 dep_names += obj._rfm_fixture_registry.add(fixture, variant,
                                                            obj.name, part,
                                                            prog_envs)
 
             # Add dependencies
             if fixture.scope == 'session':
-                dep_mode = udeps.fully
+                dep_kind = udeps.fully
             elif fixture.scope == 'partition':
-                dep_mode = udeps.by_part
+                dep_kind = udeps.by_part
             elif fixture.scope == 'environment':
-                dep_mode = udeps.by_env
+                dep_kind = udeps.by_env
             else:
-                dep_mode = udeps.by_case
+                dep_kind = udeps.by_case
 
             # Inject the dependency
             for dep_name in dep_names:
-                obj.depends_on(dep_name, dep_mode)
+                obj.depends_on(dep_name, dep_kind)
 
     def _get_partitions_and_prog_envs(self, obj):
         '''Process the partitions and programming environs of the parent.'''
@@ -437,12 +466,10 @@ class FixtureSpace(namespaces.Namespace):
 
     def __iter__(self):
         '''Walk through all index combinations for all fixtures.'''
-        yield from itertools.product(
-            *(list(f.fixture_variants for f in self.fixtures.values()))
-        )
+        yield from self.__random_access_iter
 
     def __len__(self):
-        if not self.__random_access_iter:
+        if not self.fixtures:
             return 1
 
         return len(self.__random_access_iter)

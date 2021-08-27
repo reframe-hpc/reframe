@@ -88,7 +88,11 @@ class ParamSpace(namespaces.Namespace):
         super().__init__(target_cls, target_namespace)
 
         # Store all param combinations to allow random access.
-        self.__random_access_iter = tuple(x for x in iter(self))
+        self.__random_access_iter = tuple(
+            itertools.product(*(copy.deepcopy(p)
+                              for p in self.params.values())
+            )
+        )
 
     def join(self, other, cls):
         '''Join other parameter space into the current one.
@@ -157,7 +161,7 @@ class ParamSpace(namespaces.Namespace):
         if self.params and not params_variant is None:
             try:
                 # Consume the parameter space iterator
-                param_values = self.random_access_iter[params_variant]
+                param_values = self.__random_access_iter[params_variant]
                 for index, key in enumerate(self.params):
                     setattr(obj, key, param_values[index])
 
@@ -180,18 +184,11 @@ class ParamSpace(namespaces.Namespace):
 
         :return: generator object to iterate over the parameter space.
         '''
-        yield from itertools.product(
-            *(copy.deepcopy(p) for p in self.params.values())
-        )
+        yield from self.__random_access_iter
 
     @property
     def params(self):
         return self._namespace
-
-    @property
-    def random_access_iter(self):
-        '''Expose the internal random access iterator as read-only'''
-        return self.__random_access_iter
 
     def __len__(self):
         '''Returns the number of all possible parameter combinations.
@@ -210,10 +207,7 @@ class ParamSpace(namespaces.Namespace):
         if not self.params:
             return 1
 
-        return functools.reduce(
-            lambda x, y: x*y,
-            (len(p) for p in self.params.values())
-        )
+        return len(self.__random_access_iter)
 
     def __getitem__(self, key):
         '''Access an element in the parameter space.
@@ -224,7 +218,7 @@ class ParamSpace(namespaces.Namespace):
         '''
         if isinstance(key, int):
             ret = dict()
-            val = self.random_access_iter[key]
+            val = self.__random_access_iter[key]
             for i, key in enumerate(self.params):
                 ret[key] = val[i]
 
@@ -242,14 +236,14 @@ class ParamSpace(namespaces.Namespace):
         parameter names to apply the filtering on and the values are functions
         that expect the parameter's value as the sole argument.
         '''
-        candidates = range(len(self.random_access_iter))
+        candidates = range(len(self.__random_access_iter))
         if not conditions:
             return list(candidates)
 
         pos_map = {k: v for v, k in enumerate(self.keys())}
         def _get_param_value(name, variant):
             try:
-                return self.random_access_iter[variant][pos_map[name]]
+                return self.__random_access_iter[variant][pos_map[name]]
             except KeyError:
                 raise KeyError(f'{name} is not present in the parameter space')
 
