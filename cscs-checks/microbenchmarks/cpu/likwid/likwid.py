@@ -52,9 +52,10 @@ class MemBandwidthTest(rfm.RunOnlyRegressionTest):
         return self.bw_pattern
 
 
+@rfm.simple_test
 class CPUBandwidth(MemBandwidthTest):
-    config = parameter([[[l, k] for l in ['L1', 'L2', 'L3']
-                         for k in ['load_avx', 'store_avx']],
+    config = parameter([*[[l, k] for l in ['L1', 'L2', 'L3']
+                          for k in ['load_avx', 'store_avx']],
                         ['memory', 'load_avx'],
                         ['memory', 'store_mem_avx']])
     valid_systems = ['daint:mc', 'daint:gpu', 'dom:gpu', 'dom:mc']
@@ -80,8 +81,8 @@ class CPUBandwidth(MemBandwidthTest):
     def set_(self):
         self.mem_level, self.kernel_name = self.config
         self.descr = f'CPU <- {self.mem_level} {self.kernel_name} benchmark'
-        ref_proxy = {part: refs[part][self.kernel_name][self.mem_level]
-                     for part in refs.keys()}
+        ref_proxy = {part: self.refs[part][self.kernel_name][self.mem_level]
+                     for part in self.refs.keys()}
         self.reference = {
             'daint:gpu': {
                 'bandwidth': (ref_proxy['gpu'], -0.1, None, 'MB/s')
