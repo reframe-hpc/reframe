@@ -72,13 +72,12 @@ class RunErt_Base(rfm.RegressionTest):
            etc...
     """
     # }}}
-    def __init__(self):
-        self.descr = f'Empirical Roofline Toolkit (Base for building/running)'
-        # pe step
-        # build step
-        # run step
-        # postprocess step
-        # sanity step
+    descr = f'Empirical Roofline Toolkit (Base for building/running)'
+    # pe step
+    # build step
+    # run step
+    # postprocess step
+    # sanity step
 
     # {{{ hooks
     @run_before('compile')
@@ -174,46 +173,48 @@ class RunErt_Base(rfm.RegressionTest):
 
 # {{{ class PlotErt_Base
 class PlotErt_Base(rfm.RunOnlyRegressionTest):
-    def __init__(self):
-        self.descr = f'Empirical Roofline Toolkit (Base for plotting)'
-        self.roofline_script1_fname = 'roofline.py'
-        self.roofline_script1 = f'./Scripts/{self.roofline_script1_fname}'
-        self.roofline_script2 = './ert_cscs.py'
-        self.roofline_out_script1 = 'o.roofline'
-        self.roofline_summary = 'sum'
-        self.executable = f'cat'
-        self.executable_opts = [
-            r'*.sum',
-            r'|',
-            'python3',
-            self.roofline_script1_fname,
-            '&> ',
-            self.roofline_out_script1,
-        ]
+    descr = f'Empirical Roofline Toolkit (Base for plotting)'
+    roofline_script1_fname = 'roofline.py'
+    roofline_script1 = f'./Scripts/{roofline_script1_fname}'
+    roofline_script2 = './ert_cscs.py'
+    roofline_out_script1 = 'o.roofline'
+    roofline_summary = 'sum'
+    executable = f'cat'
+    executable_opts = [
+        r'*.sum',
+        r'|',
+        'python3',
+        roofline_script1_fname,
+        '&> ',
+        roofline_out_script1,
+    ]
 
-        # {{{ sanity_patterns
-        self.sanity_patterns = sn.all(
+    # {{{ sanity_patterns
+    @sanity_function
+    def assert_stringss_found(self):
+        return sn.all(
             [
                 sn.assert_found(r'GFLOPs EMP', self.roofline_out_script1),
                 sn.assert_found(r'DRAM EMP', self.roofline_out_script1),
                 sn.assert_found('Empirical roofline graph:', self.stdout),
             ]
         )
-        # }}}
+    # }}}
 
-        # {{{ performance
+    # {{{ performance
+    @performance_function('GF/s')
+    def gflops(self):
         regex_gflops = r'(\S+)\sFP64 GFLOPs EMP'
         regex_L1bw = r'(\S+)\sL1 EMP'
+        return sn.extractsingle(regex_gflops, self.roofline_out_script1, 1,
+                                float)
+
+    @performance_function('GB/s')
+    def DRAMbw(self):
         regex_DRAMbw = r'(\S+)\sDRAM EMP'
-        gflops = sn.extractsingle(regex_gflops, self.roofline_out_script1, 1,
-                                  float)
-        DRAMbw = sn.extractsingle(regex_DRAMbw, self.roofline_out_script1, 1,
-                                  float)
-        self.perf_patterns = {
-            'gflops': gflops,
-            'DRAMbw': DRAMbw,
-        }
-        # }}}
+        return sn.extractsingle(regex_DRAMbw, self.roofline_out_script1, 1,
+                                float)
+    # }}}
 
     # {{{ hooks
     @run_before('run')
@@ -237,39 +238,42 @@ class PlotErt_Base(rfm.RunOnlyRegressionTest):
 
 # {{{ Intel Haswell
 # {{{ HWL_RunErt
-@rfm.parameterized_test(
-    *[
-        [ert_precision, ert_flop, ert_mpi_task]
-        for ert_precision in ert_precisions
-        for ert_flop in ert_flops
-        for ert_mpi_task in cpu_specs['HWL']['mpi_tasks']
-    ]
-)
+# @rfm.parameterized_test(
+#     *[
+#         [ert_precision, ert_flop, ert_mpi_task]
+#         for ert_precision in ert_precisions
+#         for ert_flop in ert_flops
+#         for ert_mpi_task in cpu_specs['HWL']['mpi_tasks']
+#     ]
+# )
+@rfm.simple_test
 class HWL_RunErt(RunErt_Base):
-    def __init__(self, ert_precision, ert_flop, ert_mpi_task):
-        # {{{ pe
-        cpu = 'HWL'
-        self.descr = f'Collect ERT data from INTEL {cpu}'
-        self.valid_systems = ['dom:gpu']
-        self.valid_prog_environs = ['PrgEnv-gnu']
-        # }}}
+    ert_precision = parameter(ert_precisions)
+    ert_flop = parameter(ert_flops)
+    ert_mpi_task = parameter(cpu_specs['HWL']['mpi_tasks'])
+    # {{{ pe
+    cpu = 'HWL'
+    descr = f'Collect ERT data from INTEL {cpu}'
+    valid_systems = ['dom:gpu']
+    valid_prog_environs = ['PrgEnv-gnu']
+    # }}}
 
-        # {{{ build
-        self.ert_trials_min = 1
-        self.ert_precision = ert_precision
-        self.ert_flop = ert_flop
-        # }}}
+    # {{{ build
+    ert_trials_min = 1
+    # }}}
 
+    @run_after('init')
+    def setup_run(self):
         # {{{ run
-        self.num_tasks = ert_mpi_task
-        self.num_tasks_per_node = ert_mpi_task
-        self.num_cpus_per_task = 12 // ert_mpi_task
+        self.num_tasks = self.ert_mpi_task
+        self.num_tasks_per_node = self.ert_mpi_task
+        self.num_cpus_per_task = 12 // self.ert_mpi_task
         # NOTE: mpi*openmp -> [1 12| 2 6| 3 4| 4 3| 6 2| 12 1]
         self.num_tasks_per_core = 1
         self.use_multithreading = False
         self.exclusive = True
         # Assuming ert_repeat=2, time can be adjusted as:
-        if ert_flop >= 512:
+        if self.ert_flop >= 512:
             self.time_limit = '20m'
         else:
             self.time_limit = '10m'
@@ -288,32 +292,32 @@ class HWL_PlotErt(PlotErt_Base):
     It can be run with: -n HWL_PlotErt -r
     """
 
-    def __init__(self):
-        super().__init__()
-        cpu = 'HWL'
-        self.descr = f'Plot ERT data on the Roofline chart (INTEL {cpu})'
-        self.valid_systems = ['dom:login']
-        self.valid_prog_environs = ['PrgEnv-gnu']
-        self.maintainers = ['JG']
-        self.tags = {'cpu'}
-        self.sourcesdir = None
-        # gnuplot already installed as rpm on dom but keeping as reminder
-        # self.modules = ['gnuplot']
-        self.dep_name = f'{cpu}_RunErt'
+    cpu = 'HWL'
+    descr = f'Plot ERT data on the Roofline chart (INTEL {cpu})'
+    valid_systems = ['dom:login']
+    valid_prog_environs = ['PrgEnv-gnu']
+    maintainers = ['JG']
+    tags = {'cpu'}
+    sourcesdir = None
+    # gnuplot already installed as rpm on dom but keeping as reminder
+    # self.modules = ['gnuplot']
+    # {{{ performance
+    reference = {
+        '*': {
+            'gflops': (cpu_specs[cpu]['ref_GFLOPs'], None, None, 'GF/s'),
+            'DRAMbw': (cpu_specs[cpu]['ref_DRAMbw'], None, None, 'GB/s'),
+        }
+    }
+    # }}}
+
+    @run_after('init')
+    def set_dependencies(self):
+        self.dep_name = f'{self.cpu}_RunErt'
         for ii in ert_precisions:
             for jj in ert_flops:
-                for kk in cpu_specs[cpu]['mpi_tasks']:
+                for kk in cpu_specs[self.cpu]['mpi_tasks']:
                     self.depends_on(f'{self.dep_name}_{ii}_{jj}_{kk}',
                                     udeps.by_env)
-
-        # {{{ performance
-        self.reference = {
-            '*': {
-                'gflops': (cpu_specs[cpu]['ref_GFLOPs'], None, None, 'GF/s'),
-                'DRAMbw': (cpu_specs[cpu]['ref_DRAMbw'], None, None, 'GB/s'),
-            }
-        }
-        # }}}
 
     # {{{ hooks
     @require_deps
@@ -347,39 +351,42 @@ class HWL_PlotErt(PlotErt_Base):
 
 # {{{ Intel Broadwell
 # {{{ BWL_RunErt
-@rfm.parameterized_test(
-    *[
-        [ert_precision, ert_flop, ert_mpi_task]
-        for ert_precision in ert_precisions
-        for ert_flop in ert_flops
-        for ert_mpi_task in cpu_specs['BWL']['mpi_tasks']
-    ]
-)
+# @rfm.parameterized_test(
+#     *[
+#         [ert_precision, ert_flop, ert_mpi_task]
+#         for ert_precision in ert_precisions
+#         for ert_flop in ert_flops
+#         for ert_mpi_task in cpu_specs['BWL']['mpi_tasks']
+#     ]
+# )
+@rfm.simple_test
 class BWL_RunErt(RunErt_Base):
-    def __init__(self, ert_precision, ert_flop, ert_mpi_task):
-        # {{{ pe
-        cpu = 'BWL'
-        self.descr = f'Collect ERT data from INTEL {cpu}'
-        self.valid_systems = ['dom:mc']
-        self.valid_prog_environs = ['PrgEnv-gnu']
-        # }}}
+    ert_precision = parameter(ert_precisions)
+    ert_flop = parameter(ert_flops)
+    ert_mpi_task = parameter(cpu_specs['BWL']['mpi_tasks'])
+    # {{{ pe
+    cpu = 'BWL'
+    descr = f'Collect ERT data from INTEL {cpu}'
+    valid_systems = ['dom:mc']
+    valid_prog_environs = ['PrgEnv-gnu']
+    # }}}
 
-        # {{{ build
-        self.ert_trials_min = 1
-        self.ert_precision = ert_precision
-        self.ert_flop = ert_flop
-        # }}}
+    # {{{ build
+    ert_trials_min = 1
+    # }}}
 
+    @run_after('init')
+    def setup_run(self):
         # {{{ run
-        self.num_tasks = ert_mpi_task
-        self.num_tasks_per_node = ert_mpi_task
-        self.num_cpus_per_task = 36 // ert_mpi_task
+        self.num_tasks = self.ert_mpi_task
+        self.num_tasks_per_node = self.ert_mpi_task
+        self.num_cpus_per_task = 36 // self.ert_mpi_task
         # NOTE: mpi*openmp: [1 36| 2 18| 3 12| 4 9| 6 6| 9 4| 12 3| 18 2| 36 1]
         self.num_tasks_per_core = 1
         self.use_multithreading = False
         self.exclusive = True
         # Assuming ert_repeat=2, time can be adjusted as:
-        if ert_flop >= 64 or ert_mpi_task >= 12:
+        if self.ert_flop >= 64 or self.ert_mpi_task >= 12:
             self.time_limit = '20m'
         else:
             self.time_limit = '10m'
@@ -398,32 +405,32 @@ class BWL_PlotErt(PlotErt_Base):
     It can be run with: -n BWL_PlotErt -r
     """
 
-    def __init__(self):
-        super().__init__()
-        cpu = 'BWL'
-        self.descr = f'Plot ERT data on the Roofline chart (INTEL {cpu})'
-        self.valid_systems = ['dom:login']
-        self.valid_prog_environs = ['PrgEnv-gnu']
-        self.maintainers = ['JG']
-        self.tags = {'cpu'}
-        self.sourcesdir = None
-        # gnuplot already installed as rpm on dom but keeping as reminder
-        # self.modules = ['gnuplot']
-        self.dep_name = f'{cpu}_RunErt'
+    cpu = 'BWL'
+    descr = f'Plot ERT data on the Roofline chart (INTEL {cpu})'
+    valid_systems = ['dom:login']
+    valid_prog_environs = ['PrgEnv-gnu']
+    maintainers = ['JG']
+    tags = {'cpu'}
+    sourcesdir = None
+    # gnuplot already installed as rpm on dom but keeping as reminder
+    # self.modules = ['gnuplot']
+    # {{{ performance
+    reference = {
+        '*': {
+            'gflops': (cpu_specs[cpu]['ref_GFLOPs'], None, None, 'GF/s'),
+            'DRAMbw': (cpu_specs[cpu]['ref_DRAMbw'], None, None, 'GB/s'),
+        }
+    }
+    # }}}
+
+    @run_after('init')
+    def set_dependencies(self):
+        self.dep_name = f'{self.cpu}_RunErt'
         for ii in ert_precisions:
             for jj in ert_flops:
-                for kk in cpu_specs[cpu]['mpi_tasks']:
+                for kk in cpu_specs[self.cpu]['mpi_tasks']:
                     self.depends_on(f'{self.dep_name}_{ii}_{jj}_{kk}',
                                     udeps.by_env)
-
-        # {{{ performance
-        self.reference = {
-            '*': {
-                'gflops': (cpu_specs[cpu]['ref_GFLOPs'], None, None, 'GF/s'),
-                'DRAMbw': (cpu_specs[cpu]['ref_DRAMbw'], None, None, 'GB/s'),
-            }
-        }
-        # }}}
 
     # {{{ hooks
     @require_deps
