@@ -29,7 +29,7 @@ class AllocSpeedTest(rfm.RegressionTest):
             self.valid_systems += ['arolla:cn', 'arolla:pn',
                                    'tsa:cn', 'tsa:pn']
 
-    @run_after('setup')
+    @run_after('init')
     def set_modules(self):
         if self.hugepages != 'no':
             self.modules = [f'craype-hugepages{self.hugepages}']
