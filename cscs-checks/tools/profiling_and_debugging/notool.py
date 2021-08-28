@@ -12,66 +12,71 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class JacobiNoToolHybrid(rfm.RegressionTest):
     lang = parameter(['C++', 'F90'])
+    time_limit = '10m'
+    valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+                     'eiger:mc', 'pilatus:mc']
+    valid_prog_environs = ['PrgEnv-aocc', 'PrgEnv-cray', 'PrgEnv-gnu',
+                           'PrgEnv-intel', 'PrgEnv-pgi', 'PrgEnv-nvidia']
+    build_system = 'Make'
+    executable = './jacobi'
+    num_tasks = 3
+    num_tasks_per_node = 3
+    num_cpus_per_task = 4
+    num_tasks_per_core = 1
+    use_multithreading = False
+    num_iterations = variable(int, value=100)
+    url = variable(str, value='http://github.com/eth-cscs/hpctools')
+    maintainers = ['JG', 'MKr']
+    tags = {'production'}
 
-    def __init__(self):
-        super().__init__()
+    @run_after('init')
+    def set_descr_name(self):
         self.descr = f'Jacobi (without tool) {self.lang} check'
         self.name = f'{type(self).__name__}_{self.lang.replace("+", "p")}'
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'eiger:mc', 'pilatus:mc']
-        self.valid_prog_environs = [
-            'PrgEnv-aocc',
-            'PrgEnv-cray',
-            'PrgEnv-gnu',
-            'PrgEnv-intel',
-            'PrgEnv-pgi',
-            'PrgEnv-nvidia',
-        ]
+
+    @run_before('compile')
+    def set_sources_dir(self):
         self.sourcesdir = os.path.join('src', self.lang)
-        self.build_system = 'Make'
-        self.executable = './jacobi'
+
+    @run_before('compile')
+    def restrict_f90_concurrency(self):
         # NOTE: Restrict concurrency to allow creation of Fortran modules
         if self.lang == 'F90':
             self.build_system.max_concurrency = 1
 
-        self.num_tasks = 3
-        self.num_tasks_per_node = 3
-        self.num_cpus_per_task = 4
-        self.num_tasks_per_core = 1
-        self.use_multithreading = False
-        self.num_iterations = 100
+    @run_before('compile')
+    def set_env_variables(self):
         self.variables = {
             'OMP_NUM_THREADS': str(self.num_cpus_per_task),
             'ITERATIONS': str(self.num_iterations),
             'OMP_PROC_BIND': 'true',
             'CRAYPE_LINK_TYPE': 'dynamic',
         }
-        self.maintainers = ['JG', 'MKr']
-        self.tags = {'production'}
-        url = 'http://github.com/eth-cscs/hpctools'
-        readme_str = (
-            rf'More debug and performance tools ReFrame checks are'
-            rf' available at {url}'
-        )
-        self.postrun_cmds += [f'echo "{readme_str}"']
+
+    @run_before('run')
+    def set_prerun_cmds(self):
         if self.current_system.name in {'dom', 'daint', 'eiger', 'pilatus'}:
             # get general info about the environment:
             self.prerun_cmds += ['module list']
-        self.perf_patterns = {
-            'elapsed_time': sn.extractsingle(
-                r'Elapsed Time\s*:\s+(\S+)', self.stdout, 1, float
-            )
-        }
-        self.prerun_cmds += [
-            # only cray compiler version is really needed but this won't hurt:
-            f'echo CRAY_CC_VERSION=$CRAY_CC_VERSION',
-            f'echo GNU_VERSION=$GNU_VERSION',
-            f'echo PGI_VERSION=$PGI_VERSION',
-            f'echo INTEL_VERSION=$INTEL_VERSION',
-            f'echo INTEL_COMPILER_TYPE=$INTEL_COMPILER_TYPE',
-            f'echo CRAY_AOCC_VERSION=$CRAY_AOCC_VERSION',
-        ]
-        self.reference = {'*': {'elapsed_time': (0, None, None, 's')}}
+            self.prerun_cmds += [
+                # cray/aocc compilers version are needed but others won't hurt:
+                f'echo CRAY_CC_VERSION=$CRAY_CC_VERSION',
+                f'echo CRAY_AOCC_VERSION=$CRAY_AOCC_VERSION',
+                f'echo GNU_VERSION=$GNU_VERSION',
+                f'echo PGI_VERSION=$PGI_VERSION',
+                f'echo INTEL_VERSION=$INTEL_VERSION',
+                f'echo INTEL_COMPILER_TYPE=$INTEL_COMPILER_TYPE',
+            ]
+
+    @run_before('run')
+    def set_postrun_cmds(self):
+        readme_str = (
+            rf'More debug and performance tools ReFrame checks are '
+            rf'available at {self.url}'
+        )
+        self.postrun_cmds += [f'echo "{readme_str}"']
+
+
 
     @run_before('compile')
     def prgEnv_nvidia_workaround(self):
@@ -83,6 +88,7 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         # cpe/21.04 cray-mpich/8.1.4 AOCC, CRAY, CRAYCLANG, GNU, INTEL, NVIDIA
         # cpe/21.05 cray-mpich/8.1.5 AOCC, CRAY, CRAYCLANG, GNU, INTEL, NVIDIA
         # cpe/21.06 cray-mpich/8.1.6 AOCC, CRAY, CRAYCLANG, GNU, INTEL, NVIDIA
+        # cpe/21.08 cray-mpich/8.1.8 AOCC, CRAY, CRAYCLANG, GNU, INTEL, NVIDIA
         # }}}
         envname = self.current_environ.name
         sysname = self.current_system.name
@@ -130,15 +136,24 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         if self.current_partition.fullname in ['eiger:mc', 'pilatus:mc']:
             self.prebuild_cmds += ['module rm cray-libsci']
 
-    @run_before('sanity')
-    def set_sanity(self):
+    @sanity_function
+    def assert_success(self):
         envname = self.current_environ.name
-        # CCE specific:
+        # {{{ extract CCE version to manage compiler versions:
         cce_version = None
         rptf = os.path.join(self.stagedir, sn.evaluate(self.stdout))
         if self.lang == 'C++' and envname == 'PrgEnv-cray':
             cce_version = sn.extractsingle(r'CRAY_CC_VERSION=(\d+)\.\S+', rptf,
                                            1, int)
+        # }}}
+
+        # {{{ extract AOCC version to manage compiler versions:
+        aocc_version = None
+        rptf = os.path.join(self.stagedir, sn.evaluate(self.stdout))
+        if self.lang == 'C++' and envname == 'PrgEnv-aocc':
+            aocc_version = sn.extractsingle(
+                r'CRAY_AOCC_VERSION=(\d+)\.\S+', rptf, 1, int)
+        # }}}
 
         intel_type = sn.extractsingle(r'INTEL_COMPILER_TYPE=(\S*)', rptf, 1)
         # print(f'intel_type={intel_type}')
@@ -154,8 +169,12 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         # INTEL_VERSION 2021.2.0 INTEL_COMPILER_TYPE CLASSIC     201611
 
         # OpenMP support varies between compilers:
-        self.openmp_versions = {
-            'PrgEnv-aocc': {'C++': 201511, 'F90': 201307},
+        openmp_versions = {
+            # 'PrgEnv-aocc': {'C++': 201511, 'F90': 201307},
+            'PrgEnv-aocc': {
+                'C++': 201511 if aocc_version == 2 else 201811,
+                'F90': 201307,
+            },
             'PrgEnv-cray': {
                 'C++': 201511 if cce_version == 10 else 201811,
                 'F90': 201511,
@@ -170,10 +189,12 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         }
         found_version = sn.extractsingle(r'OpenMP-\s*(\d+)', self.stdout, 1,
                                          int)
-        self.sanity_patterns = sn.all(
-            [
-                sn.assert_found('SUCCESS', self.stdout),
-                sn.assert_eq(found_version,
-                             self.openmp_versions[envname][self.lang]),
-            ]
-        )
+        return sn.all([
+            sn.assert_found('SUCCESS', self.stdout),
+            sn.assert_eq(found_version, openmp_versions[envname][self.lang])
+        ])
+
+    @performance_function('s')
+    def elapsed_time(self):
+        return sn.extractsingle(
+            r'Elapsed Time\s*:\s+(\S+)', self.stdout, 1, float)
