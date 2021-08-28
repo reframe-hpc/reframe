@@ -448,7 +448,6 @@ class VarSpace(namespaces.Namespace):
         :param cls: the target class.
         '''
         for key, var in other.items():
-
             # Make doubly declared vars illegal. Note that this will be
             # triggered when inheriting from multiple RegressionTest classes.
             if key in self.vars:
