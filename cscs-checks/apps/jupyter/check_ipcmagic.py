@@ -67,7 +67,7 @@ class IPCMagicCheck(rfm.RunOnlyRegressionTest):
                                 self.stdout, 'time', float)
 
     @run_before('run')
-    def set_local_launcher(self):
+    def reset_launcher(self):
         # Change the job launcher since `ipython`
         # needs to be launched without `srun`.
         self.job.launcher = getlauncher('local')()
