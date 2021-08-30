@@ -60,20 +60,23 @@ class StreamMultiSysTest(rfm.RegressionTest):
             'OMP_PLACES': 'cores'
         }
 
-    @run_before('sanity')
-    def set_sanity_patterns(self):
-        self.sanity_patterns = sn.assert_found(r'Solution Validates',
-                                               self.stdout)
+    @sanity_function
+    def validate_solution(self):
+        return sn.assert_found(r'Solution Validates', self.stdout)
+
+    @performance_function('MB/s')
+    def extract_bw(self, kind='Copy'):
+        if kind not in {'Copy', 'Scale', 'Add', 'Triad'}:
+            raise ValueError(f'illegal value in argument kind ({kind!r})')
+
+        return sn.extractsingle(rf'{kind}:\s+(\S+)\s+.*',
+                                self.stdout, 1, float)
 
     @run_before('performance')
-    def set_perf_patterns(self):
-        self.perf_patterns = {
-            'Copy': sn.extractsingle(r'Copy:\s+(\S+)\s+.*',
-                                     self.stdout, 1, float),
-            'Scale': sn.extractsingle(r'Scale:\s+(\S+)\s+.*',
-                                      self.stdout, 1, float),
-            'Add': sn.extractsingle(r'Add:\s+(\S+)\s+.*',
-                                    self.stdout, 1, float),
-            'Triad': sn.extractsingle(r'Triad:\s+(\S+)\s+.*',
-                                      self.stdout, 1, float)
+    def set_perf_variables(self):
+        self.perf_variables = {
+            'Copy': self.extract_bw(),
+            'Scale': self.extract_bw('Scale'),
+            'Add': self.extract_bw('Add'),
+            'Triad': self.extract_bw('Triad'),
         }

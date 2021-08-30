@@ -67,12 +67,10 @@ In this particular test we set both these attributes to ``['*']``, essentially a
 A ReFrame test must either define an executable to execute or a source file (or source code) to be compiled.
 In this example, it is enough to define the source file of our hello program.
 ReFrame knows the executable that was produced and will use that to run the test.
-In this example, we redirect the executable's output into a file by defining the optional variable :attr:`~reframe.core.pipeline.RegressionTest.executable_opts`.
-This output redirection is not strictly necessary and it is just done here to keep this first example as intuitive as possible.
 
-Finally, each regression test must always define the :attr:`~reframe.core.pipeline.RegressionTest.sanity_patterns` attribute.
-This is a `lazily evaluated <deferrables.html>`__ expression that asserts the sanity of the test.
-In this particular case, we ask ReFrame to check that the executable has produced the desired phrase into the output file ``hello.out``.
+Finally, every regression test must always decorate a member function as the test's :func:`@sanity_function<reframe.core.pipeline.RegressionMixin.sanity_function>`.
+This decorated function is converted into a `lazily evaluated <deferrables.html>`__ expression that asserts the sanity of the test.
+In this particular case, the specified sanity function checks that the executable has produced the desired phrase into the test's standard output :attr:`~reframe.core.pipeline.RegressionTest.stdout`.
 Note that ReFrame does not determine the success of a test by its exit code.
 Instead, the assessment of success is responsibility of the test itself.
 
@@ -233,7 +231,7 @@ ReFrame allows you to avoid this in several ways but the most compact is to defi
    :lines: 6-
 
 
-This test extends the ``hello1.py`` test by defining the ``lang`` parameter with the :py:func:`~reframe.core.pipeline.RegressionTest.parameter` built-in.
+This test extends the ``hello1.py`` test by defining the ``lang`` parameter with the :py:func:`~reframe.core.pipeline.RegressionMixin.parameter` built-in.
 This parameter will cause as many instantiations as parameter values available, each one setting the :attr:`lang` attribute to one single value.
 Hence, this example will create two test instances, one with ``lang='c'`` and another with ``lang='cpp'``.
 The parameter is available as an attribute of the test instance and, in this example, we use it to set the extension of the source file.
@@ -254,7 +252,7 @@ This is exactly what we want to do here, and we know that the test sources are n
 Hence, we move the ``sourcepath`` assignment into a pre-compile hook.
 
 .. literalinclude:: ../tutorials/basics/hello/hello2.py
-   :lines: 19-
+   :lines: 17-19
 
 The use of hooks is covered in more detail later on, but for now, let's just think of them as a way to defer the execution of a function to a given stage of the test's pipeline.
 By using hooks, any user could now derive from this class and attach other hooks (for example, adding some compiler flags) without having to worry about overriding the base method that sets the ``sourcepath`` variable.
@@ -469,15 +467,8 @@ In this case, we set the :func:`set_compile_flags` hook to run before the ReFram
    The pipeline hooks, as well as the regression test pipeline itself, are covered in more detail later on in the tutorial.
 
 
-In this example, the generated executable takes a single argument which sets the number of threads that will be used.
-As seen in the previous examples, executable options are defined with the :attr:`executable_opts <reframe.core.pipeline.RegressionTest.executable_opts>` variable, and here is set to ``'16'``.
-Also, the reader may notice that this example no longer redirects the standard output of the executable into a file as the previous examples did.
-Instead, just with the purpose of keeping the :attr:`executable_opts <reframe.core.pipeline.RegressionTest.executable_opts>` simple, we use ReFrame's internal mechanism to process the standard output of the executable.
-Similarly to the parameters and the compiler settings, the output of a test is private to each of the instances of the :class:`HelloThreadedTest` class.
-So, instead of inspecting an external file to evaluate the sanity of the test, we can just set our sanity function to inspect this attribute that contains the test's standard output.
-This output is stored under :attr:`self.stdout` and is populated only after the executable has run.
-Therefore, we can set the :attr:`~reframe.core.pipeline.RegressionTest.sanity_patterns` with the :func:`set_sanity_patterns` pipeline hook that is scheduled to run before the ``sanity`` pipeline stage.
-Again, pipeline stages will be covered detail further on, so for now, just think of this ``sanity`` stage as a step that occurs after the test's executable is run.
+In this example, the generated executable takes a single argument which sets the number of threads to be used.
+The options passed to the test's executable can be set throught the :attr:`executable_opts <reframe.core.pipeline.RegressionTest.executable_opts>` variable, which in this case is set to ``'16'``.
 
 Let's run the test now:
 
@@ -552,12 +543,10 @@ In the following we write a more robust sanity check that can catch this havoc.
 More advanced sanity checking
 -----------------------------
 
-Sanity checking of a test's outcome is quite powerful in ReFrame.
-So far, we have seen only a ``grep``-like search for a string in the output, but ReFrame's ``sanity_patterns`` are much more capable than this.
-In fact, you can practically do almost any operation in the output and process it as you would like before assessing the test's sanity.
-The syntax feels also quite natural since it is fully integrated in Python.
-
-In the following we extend the sanity checking of the multithreaded "Hello, World!", such that not only the output pattern we are looking for is more restrictive, but also we check that all the threads produce a greetings line. See the highlighted lines in the modified version of the ``set_sanity_patterns`` pipeline hook.
+So far, we have seen only a ``grep``-like search for a string in the test's :attr:`~reframe.core.pipeline.RegressionTest.stdout`, but ReFrame's :attr:`@sanity_function<reframe.core.pipeline.RegressionMixin.sanity_function>` are much more capable than this.
+In fact, one could practically do almost any operation in the output and process it as you would like before assessing the test's sanity.
+In the following, we extend the sanity checking of the above multithreaded "Hello, World!" to assert that all the threads produce a greetings line.
+See the highlighted lines below in the modified version of the :attr:`@sanity_function<reframe.core.pipeline.RegressionMixin.sanity_function>`.
 
 .. code-block:: console
 
@@ -568,15 +557,11 @@ In the following we extend the sanity checking of the multithreaded "Hello, Worl
    :lines: 6-
    :emphasize-lines: 22-24
 
-The sanity checking is straightforward.
-We find all the matches of the required pattern, we count them and finally we check their number.
-Both statements here are lazily evaluated.
-They will not be executed where they appear, but rather at the sanity checking phase.
-ReFrame provides lazily evaluated counterparts for most of the builtin Python functions, such the :func:`len` function here.
-Also whole expressions can be lazily evaluated if one of the operands is deferred, as is the case in this example with the assignment to ``num_messages``.
-This makes the sanity checking mechanism quite powerful and straightforward to reason about, without having to rely on complex pattern matching techniques.
-:doc:`deferrable_functions_reference` provides a complete reference of the sanity functions provided by ReFrame, but users can also define their own, as described in :doc:`deferrables`.
-
+This new :attr:`@sanity_function<reframe.core.pipeline.RegressionMixin.sanity_function>` counts all the pattern matches in the tests's :attr:`~reframe.core.pipeline.RegressionTest.stdout` and checks that this count matches the expected value.
+The execution of the function :func:`assert_num_messages` is deferred to the ``sanity`` stage in the test's pipeline, after the executable has run and the :attr:`~reframe.core.pipeline.RegressionTest.stdout` file has been populated.
+In this example, we have used the :func:`~reframe.utility.sanity.findall` utility function from the :mod:`~reframe.utility.sanity` module to conveniently extract the pattern matches.
+This module provides a broad range of utility functions that can be used to compose more complex sanity checks.
+However, note that the utility functions in this module are lazily evaluated expressions or `deferred expressions` which must be evaluated either implicitly or explicitly (see :doc:`deferrable_functions_reference`).
 
 Let's run this version of the test now and see if it fails:
 
@@ -659,7 +644,7 @@ Writing A Performance Test
 --------------------------
 
 An important aspect of regression testing is checking for performance regressions.
-In this example, we will write a test that downloads the `STREAM <http://www.cs.virginia.edu/stream/ref.html>`__ benchmark, compiles it, runs it and records its performance.
+In this example, we write a test that downloads the `STREAM <http://www.cs.virginia.edu/stream/ref.html>`__ benchmark, compiles it, runs it and records its performance.
 In the test below, we highlight the lines that introduce new concepts.
 
 .. code-block:: console
@@ -669,7 +654,7 @@ In the test below, we highlight the lines that introduce new concepts.
 
 .. literalinclude:: ../tutorials/basics/stream/stream1.py
    :lines: 6-
-   :emphasize-lines: 9-11,14-17,29-40
+   :emphasize-lines: 9-11,14-17,28-
 
 First of all, notice that we restrict the programming environments to ``gnu`` only, since this test requires OpenMP, which our installation of Clang does not have.
 The next thing to notice is the :attr:`~reframe.core.pipeline.RegressionTest.prebuild_cmds` attribute, which provides a list of commands to be executed before the build step.
@@ -678,9 +663,13 @@ In this case, we just fetch the source code of the benchmark.
 For running the benchmark, we need to set the OpenMP number of threads and pin them to the right CPUs through the ``OMP_NUM_THREADS`` and ``OMP_PLACES`` environment variables.
 You can set environment variables in a ReFrame test through the :attr:`~reframe.core.pipeline.RegressionTest.variables` dictionary.
 
-What makes a ReFrame test a performance test is the definition of the :attr:`~reframe.core.pipeline.RegressionTest.perf_patterns` attribute.
-This is a dictionary where the keys are *performance variables* and the values are lazily evaluated expressions for extracting the performance variable values from the test's output.
-In this example, we extract four performance variables, namely the memory bandwidth values for each of the "Copy", "Scale", "Add" and "Triad" sub-benchmarks of STREAM and we do so by using the :func:`~reframe.utility.sanity.extractsingle` sanity function.
+What makes a ReFrame test a performance test is the definition of at least one :ref:`performance function<deferrable-performance-functions>`.
+Similarly to a test's :func:`@sanity_function<reframe.core.pipeline.RegressionMixin.sanity_function>`, a performance function is simply a member function decorated with the :attr:`@performance_function<reframe.core.pipeline.RegressionMixin.performance_function>` decorator, which is responsible for extracting a specified performance quantity from a regression test.
+The :attr:`@performance_function<reframe.core.pipeline.RegressionMixin.performance_function>` decorator must be passed the units of the quantity to be extracted, and it also takes the optional argument ``perf_key`` to customize the name of the extracted performance variable.
+If ``perf_key`` is not provided, the performance variable will take the name of the decorated performance function.
+
+ReFrame identifies all member functions that use the :attr:`@performance_function<reframe.core.pipeline.RegressionMixin.performance_function>` decorator, and will automatically schedule them for execution during the ``performance`` pipeline stage of the test.
+In this example, we extract four performance variables, namely the memory bandwidth values for each of the "Copy", "Scale", "Add" and "Triad" sub-benchmarks of STREAM, where each of the performance functions use the :func:`~reframe.utility.sanity.extractsingle` utility function.
 For each of the sub-benchmarks we extract the "Best Rate MB/s" column of the output (see below) and we convert that to a float.
 
 .. code-block:: none
@@ -734,10 +723,10 @@ The :option:`--performance-report` will generate a short report at the end for e
    - catalina:default
       - gnu
          * num_tasks: 1
-         * Copy: 24326.7 None
-         * Scale: 16664.2 None
-         * Add: 18398.7 None
-         * Triad: 18930.6 None
+         * Copy: 24326.7 MB/s
+         * Scale: 16664.2 MB/s
+         * Add: 18398.7 MB/s
+         * Triad: 18930.6 MB/s
    ------------------------------------------------------------------------------
    Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-gczplnic.log'
 
@@ -746,8 +735,9 @@ The :option:`--performance-report` will generate a short report at the end for e
 Adding reference values
 -----------------------
 
-A performance test would not be so meaningful, if we couldn't test the obtained performance against a reference value.
-ReFrame offers the possibility to set references for each of the performance variables defined in a test and also set different references for different systems.
+On its current state, the above STREAM performance test will simply extract and report the performance variables regardless of the actual performance values.
+However, in some situations, it might be useful to check that the extracted performance values are within an expected range, and report a failure whenever a test performs below expectations.
+To this end, ReFrame tests include the :attr:`~reframe.core.pipeline.RegressionTest.reference` variable, which enables setting references for each of the performance variables defined in a test and also set different references for different systems.
 In the following example, we set the reference values for all the STREAM sub-benchmarks for the system we are currently running on.
 
 .. note::
@@ -789,6 +779,28 @@ If any obtained performance value is beyond its respective thresholds, the test 
      * Rerun with '-n StreamWithRefTest -p gnu --system catalina:default'
      * Reason: performance error: failed to meet reference: Copy=24586.5, expected 55200 (l=52440.0, u=57960.0)
 
+Also, note how the performance syntax for this example is far more compact in comparison to our first iteration of the STREAM test.
+In that first STREAM example, all four performance functions were almost identical, except for a small part of the regex pattern, which led to a lot of code repetition.
+Hence, this example collapses all four performance functions into a single performance function, which now takes an optional argument to select the quantity to extract.
+Then, the performance variables of the test can be defined by setting the respective entries in the :attr:`~reframe.core.pipeline.RegressionTest.perf_variables` dictionary.
+
+.. literalinclude:: ../tutorials/basics/stream/stream2.py
+   :lines: 41-
+
+.. note::
+   Performance functions may also be generated inline using the :func:`~reframe.utility.sanity.make_performance_function` utility as shown below.
+
+   .. code-block:: python
+
+      @run_before('performance')
+      def set_perf_vars(self):
+          self.perf_variables = {
+              'Copy': sn.make_performance_function(
+                  sn.extractsingle(r'Copy:\s+(\S+)\s+.*',
+                                   self.stdout, 1, float),
+                  'MB/s'
+               )
+          }
 
 
 ------------------------------
