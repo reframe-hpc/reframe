@@ -15,6 +15,7 @@ import reframe.utility.osext as osext
 from reframe.core.exceptions import ConfigError
 from reframe.core.logging import getlogger
 from reframe.core.schedulers import Job
+from reframe.core.systems import ProcessorType
 from reframe.utility.cpuinfo import cpuinfo
 
 
@@ -183,8 +184,8 @@ def detect_topology():
                 f'> found topology file {topo_file!r}; loading...'
             )
             try:
-                part.processor._info = _load_info(
-                    topo_file, _subschema('#/defs/processor_info')
+                part._processor = ProcessorType(
+                    _load_info(topo_file, _subschema('#/defs/processor_info'))
                 )
                 found_procinfo = True
             except json.decoder.JSONDecodeError as e:
@@ -220,13 +221,13 @@ def detect_topology():
 
                 # Unconditionally detect the system for fully local partitions
                 with runtime.temp_environment(modules=modules, variables=vars):
-                    part.processor._info = cpuinfo()
+                    part._processor = ProcessorType(cpuinfo())
 
                 _save_info(topo_file, part.processor.info)
             elif detect_remote_systems:
                 with runtime.temp_environment(modules=temp_modules,
                                               variables=temp_vars):
-                    part.processor._info = _remote_detect(part)
+                    part._processor = ProcessorType(_remote_detect(part))
 
                 if part.processor.info:
                     _save_info(topo_file, part.processor.info)
