@@ -57,7 +57,11 @@ def test_autotect(exec_ctx):
     if part.processor.info:
         assert part.processor.num_cpus == part.processor.info['num_cpus']
     assert len(part.devices) == 1
-    assert part.devices[0].info == {'type': 'gpu', 'arch': 'a100', 'num_devices': 8}
+    assert part.devices[0].info == {
+        'type': 'gpu',
+        'arch': 'a100',
+        'num_devices': 8
+    }
     assert part.devices[0].device_type == 'gpu'
 
 
