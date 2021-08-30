@@ -24,15 +24,15 @@ class IPCMagicCheck(rfm.RunOnlyRegressionTest):
     executable_opts = ['tf-hvd-sgd-ipc-tf2.py']
     reference = {
         'daint:gpu': {
-            'slope': (2.0, -0.1, 0.1, None),
-            'offset': (0.0, -0.1, 0.1, None),
-            'retries': (0, None, None, None),
+            'slope': (2.0, -0.1, 0.1, 'N/A'),
+            'offset': (0.0, -0.1, 0.1, 'N/A'),
+            'retries': (0, None, None, 'N/A'),
             'time': (10, None, None, 's'),
         },
         'dom:gpu': {
-            'slope': (2.0, -0.1, 0.1, None),
-            'offset': (0.0, -0.1, 0.1, None),
-            'retries': (0, None, None, None),
+            'slope': (2.0, -0.1, 0.1, 'N/A'),
+            'offset': (0.0, -0.1, 0.1, 'N/A'),
+            'retries': (0, None, None, 'N/A'),
             'time': (10, None, None, 's'),
         }
     }
@@ -40,22 +40,38 @@ class IPCMagicCheck(rfm.RunOnlyRegressionTest):
     maintainers = ['RS', 'TR']
     tags = {'production'}
 
-    @sanity_function
-    def assert_nids(self):
-        nids = sn.extractall(r'nid(?P<nid>\d+)', self.stdout, 'nid', str)
-        return sn.all([sn.assert_ne(nids, []), sn.assert_ne(nids[0], nids[1])])
+    @run_after('setup')
+    def daint_module_workaround(self):
+        if self.current_system.name == 'daint':
+            # FIXME: Use the default modules once Dom/Daint are aligned
+            self.modules = [
+                f'ipcmagic/1.0.1-CrayGNU-{osext.cray_cdt_version()}',
+                f'Horovod/0.21.0-CrayGNU-{osext.cray_cdt_version()}-tf-2.4.0'
+            ]
+            # FIXME: Enforce loading of jupyterlab module since
+            # `module show jupyterlab` throws a Tcl error on Daint
+            self.prerun_cmds = ['module load jupyterlab']
 
-    @performance_function('')
+    @sanity_function
+    def assert_successful_execution(self):
+        nids = sn.extractall(r'nid(?P<nid>\d+)', self.stdout, 'nid', str)
+        return sn.all([
+            sn.assert_ne(nids, []), sn.assert_ne(nids[0], nids[1]),
+            sn.assert_found(r'IPCluster is ready\!\s+', self.stdout),
+            sn.assert_found(r'slope=\S+', self.stdout)
+        ])
+
+    @performance_function('N/A')
     def slope(self):
         return sn.extractsingle(r'slope=(?P<slope>\S+)', self.stdout,
                                 'slope', float)
 
-    @performance_function('')
+    @performance_function('N/A')
     def offset(self):
         return sn.extractsingle(r'offset=(?P<offset>\S+)', self.stdout,
                                 'offset', float)
 
-    @performance_function('')
+    @performance_function('N/A')
     def retries(self):
         return 4 - sn.count(sn.findall(r'IPCluster is already running',
                                        self.stdout))
