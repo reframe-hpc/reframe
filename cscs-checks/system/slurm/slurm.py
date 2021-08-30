@@ -138,8 +138,7 @@ class DefaultRequestGPUSetsGRES(SlurmSimpleBaseCheck):
 
     @sanity_function
     def assert_found_resources(self):
-        return sn.assert_found(
-            r'.*(TresPerNode|Gres)=.*gpu:1.*', self.stdout)
+        return sn.assert_found(r'.*(TresPerNode|Gres)=.*gpu:1.*', self.stdout)
 
 
 @rfm.simple_test
@@ -213,20 +212,20 @@ class MemoryOverconsumptionMpiCheck(SlurmCompiledBaseCheck):
                                self.stderr)
 
     @run_before('performance')
-    def set_perf_patterns(self):
+    def set_references(self):
         no_limit = (0, None, None, 'GB')
         self.reference = {
             '*': {
                 'max_cn_memory': no_limit,
                 'max_allocated_memory': (
-                    sn.getattr(self, 'reference_meminfo'), -0.05, None, 'GB'
+                    self.reference_meminfo(), -0.05, None, 'GB'
                 ),
             }
         }
 
     @performance_function('GB')
     def max_cn_memory(self):
-        return sn.getattr(self, 'reference_meminfo')
+        return self.reference_meminfo()
 
     @performance_function('GB')
     def max_allocated_memory(self):
@@ -250,8 +249,6 @@ class MemoryOverconsumptionMpiCheck(SlurmCompiledBaseCheck):
         self.num_tasks = self.num_tasks_per_node
         self.job.launcher.options = ['-u']
 
-    @property
-    @deferrable
     def reference_meminfo(self):
         reference_meminfo = {
             'dom:gpu': 62,
