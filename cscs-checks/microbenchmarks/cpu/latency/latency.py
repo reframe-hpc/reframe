@@ -79,7 +79,7 @@ class CPULatencyTest(rfm.RegressionTest):
     def assert_success(self):
         return sn.assert_eq(
             sn.count(sn.findall(r'latency', self.stdout)),
-            self.num_tasks_assigned * len(self.executable_opts)
+            self.num_tasks * len(self.executable_opts)
         )
 
     def lat_pattern(self, index):
@@ -102,8 +102,3 @@ class CPULatencyTest(rfm.RegressionTest):
     @performance_function('ns')
     def latencyMem(self):
         return self.lat_pattern(3)
-
-    @property
-    @sn.deferrable
-    def num_tasks_assigned(self):
-        return self.job.num_tasks
