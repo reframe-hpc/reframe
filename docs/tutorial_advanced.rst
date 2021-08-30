@@ -135,8 +135,8 @@ Let's have a look at the test itself:
 
 
 .. literalinclude:: ../tutorials/advanced/makefiles/maketest.py
-   :lines: 6-29
-   :emphasize-lines: 18,22-24
+   :lines: 6-27
+   :emphasize-lines: 18,22
 
 First, if you're using any build system other than ``SingleSource``, you must set the :attr:`executable` attribute of the test, because ReFrame cannot know what is the actual executable to be run.
 We then set the build system to :class:`~reframe.core.buildsystems.Make` and set the preprocessor flags as we would do with the :class:`SingleSource` build system.
@@ -281,7 +281,7 @@ The following test is a compile-only version of the :class:`MakefileTest` presen
 
 
 .. literalinclude:: ../tutorials/advanced/makefiles/maketest.py
-   :lines: 32-
+   :lines: 30-
    :emphasize-lines: 2
 
 What is worth noting here is that the standard output and standard error of the test, which are accessible through the :attr:`~reframe.core.pipeline.RegressionTest.stdout` and :attr:`~reframe.core.pipeline.RegressionTest.stderr` attributes, correspond now to the standard output and error of the compilation command.
@@ -337,7 +337,7 @@ Notice how the parameters are expanded in each of the individual tests:
 Applying a Sanity Function Iteratively
 --------------------------------------
 
-It is often the case that a common sanity pattern has to be applied many times.
+It is often the case that a common sanity function has to be applied many times.
 The following script prints 100 random integers between the limits given by the environment variables ``LOWER`` and ``UPPER``.
 
 .. code-block:: console
@@ -372,7 +372,7 @@ There is still a small complication that needs to be addressed.
 As a direct replacement of the built-in :py:func:`all` function, ReFrame's :func:`~reframe.utility.sanity.all` sanity function returns :class:`True` for empty iterables, which is not what we want.
 So we must make sure that all 100 numbers are generated.
 This is achieved by the ``sn.assert_eq(sn.count(numbers), 100)`` statement, which uses the :func:`~reframe.utility.sanity.count` sanity function for counting the generated numbers.
-Finally, we need to combine these two conditions to a single deferred expression that will be assigned to the test's :attr:`sanity_patterns`.
+Finally, we need to combine these two conditions to a single deferred expression that will be returned by the test's :attr:`@sanity_function<reframe.core.pipeline.RegressionMixin.sanity_function>`.
 We accomplish this by using the :func:`~reframe.utility.sanity.all` sanity function.
 
 For more information about how exactly sanity functions work and how their execution is deferred, please refer to :doc:`deferrables`.
@@ -458,7 +458,7 @@ Here is the test:
 
 
 .. literalinclude:: ../tutorials/advanced/jobopts/eatmemory.py
-   :lines: 6-23
+   :lines: 6-25
    :emphasize-lines: 12-14
 
 Each ReFrame test has an associated `run job descriptor <regression_test_api.html#reframe.core.pipeline.RegressionTest.job>`__ which represents the scheduler job that will be used to run this test.
@@ -625,7 +625,7 @@ It resembles a scaling test, except that all happens inside a single ReFrame tes
 
 .. literalinclude:: ../tutorials/advanced/multilaunch/multilaunch.py
    :lines: 6-
-   :emphasize-lines: 12-19
+   :emphasize-lines: 13-19
 
 The additional parallel launch commands are inserted in either the :attr:`prerun_cmds` or :attr:`postrun_cmds` lists.
 To retrieve the actual parallel launch command for the current partition that the test is running on, you can use the :func:`~reframe.core.launchers.Launcher.run_command` method of the launcher object.
@@ -680,13 +680,9 @@ The test will verify that all the nodes print the expected host name:
    :lines: 6-
    :emphasize-lines: 10-
 
-The first thing to notice in this test is that :attr:`~reframe.core.pipeline.RegressionTest.num_tasks` is set to zero.
-This is a requirement for flexible tests.
-The sanity check of this test simply counts the host names printed and verifies that they are as many as expected.
-Notice, however, that the sanity check does not use :attr:`num_tasks` directly, but rather access the attribute through the :func:`~reframe.utility.sanity.getattr` sanity function, which is a replacement for the :func:`getattr` builtin.
-The reason for that is that at the time the sanity check expression is created, :attr:`num_tasks` is ``0`` and it will only be set to its actual value during the run phase.
-Consequently, we need to defer the attribute retrieval, thus we use the :func:`~reframe.utility.sanity.getattr` sanity function instead of accessing it directly
-
+The first thing to notice in this test is that :attr:`~reframe.core.pipeline.RegressionTest.num_tasks` is set to zero as default, which is a requirement for flexible tests.
+However, this value is set to the actual number of tasks during the ``run`` pipeline stage.
+Lastly, the sanity check of this test counts the host names printed and verifies that the total count equals :attr:`~reframe.core.pipeline.RegressionTest.num_tasks`.
 
 .. |--flex-alloc-nodes| replace:: :attr:`--flex-alloc-nodes`
 .. _--flex-alloc-nodes: manpage.html#cmdoption-flex-alloc-nodes
@@ -723,7 +719,7 @@ The following parameterized test, will create two tests, one for each of the sup
 
 .. literalinclude:: ../tutorials/advanced/containers/container_test.py
    :lines: 6-
-   :emphasize-lines: 16-22
+   :emphasize-lines: 11-19
 
 A container-based test can be written as :class:`~reframe.core.pipeline.RunOnlyRegressionTest` that sets the :attr:`~reframe.core.pipeline.RegressionTest.container_platform` attribute.
 This attribute accepts a string that corresponds to the name of the container platform that will be used to run the container for this test.
@@ -780,7 +776,7 @@ and ``/rfm_workdir`` corresponds to the stage directory on the host system.
 Therefore, the ``release.txt`` file can now be used in the subsequent sanity checks:
 
 .. literalinclude:: ../tutorials/advanced/containers/container_test.py
-   :lines: 15-17
+   :lines: 26-29
 
 
 For a complete list of the available attributes of a specific container platform, please have a look at the :ref:`container-platforms` section of the :doc:`regression_test_api` guide.
@@ -793,8 +789,8 @@ Writing reusable tests
 .. versionadded:: 3.5.0
 
 So far, all the examples shown above were tight to a particular system or configuration, which makes reusing these tests in other systems not straightforward.
-However, the introduction of the :py:func:`~reframe.core.pipeline.RegressionTest.parameter` and :py:func:`~reframe.core.pipeline.RegressionTest.variable` ReFrame built-ins solves this problem, eliminating the need to specify any of the test variables in the :func:`__init__` method and simplifying code reuse.
-Hence, readers who are not familiar with these built-in functions are encouraged to read their basic use examples (see :py:func:`~reframe.core.pipeline.RegressionTest.parameter` and :py:func:`~reframe.core.pipeline.RegressionTest.variable`) before delving any deeper into this tutorial.
+However, the introduction of the :py:func:`~reframe.core.pipeline.RegressionMixin.parameter` and :py:func:`~reframe.core.pipeline.RegressionMixin.variable` ReFrame built-ins solves this problem, eliminating the need to specify any of the test variables in the :func:`__init__` method and simplifying code reuse.
+Hence, readers who are not familiar with these built-in functions are encouraged to read their basic use examples (see :py:func:`~reframe.core.pipeline.RegressionMixin.parameter` and :py:func:`~reframe.core.pipeline.RegressionMixin.variable`) before delving any deeper into this tutorial.
 
 In essence, parameters and variables can be treated as simple class attributes, which allows us to leverage Python's class inheritance and write more modular tests.
 For simplicity, we illustrate this concept with the above :class:`ContainerTest` example, where the goal here is to re-write this test as a library that users can simply import from and derive their tests without having to rewrite the bulk of the test.
