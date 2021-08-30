@@ -57,7 +57,6 @@ class Cpmd_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
     #: :default: :class:`required`
     energy_tolerance = variable(float)
 
-
     #: :default: :class:`required`
     num_tasks_per_node = required
 

@@ -27,6 +27,7 @@ REFERENCE_PERFORMANCE = {
     'large': REFERENCE_PERFORMANCE_LARGE,
 }
 
+
 @rfm.simple_test
 class cpmd_check(Cpmd_NVE):
     scale = parameter(['small', 'large'])
