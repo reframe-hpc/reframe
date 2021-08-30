@@ -9,24 +9,64 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-class NamdBaseCheck(rfm.RunOnlyRegressionTest):
-    def __init__(self, arch, scale, variant):
-        self.descr = f'NAMD check ({arch}, {variant})'
-        if self.current_system.name in ['eiger', 'pilatus']:
-            self.valid_prog_environs = ['cpeGNU']
+@rfm.simple_test
+class NamdCheck(rfm.RunOnlyRegressionTest):
+    scale = parameter(['small', 'large'])
+    variant = parameter(['maint', 'prod'])
+    arch = parameter(['gpu', 'cpu'])
+
+    valid_prog_environs = ['builtin', 'cpeIntel']
+    modules = ['NAMD']
+    executable = 'namd2'
+    use_multithreading = True
+    num_tasks_per_core = 2
+    maintainers = ['CB', 'LM']
+    tags = {'scs', 'external-resources'}
+    extra_resources = {
+        'switches': {
+            'num_switches': 1
+        }
+    }
+
+    @run_after('init')
+    def adapt_description(self):
+        self.descr = f'NAMD check ({self.arch}, {self.variant})'
+        self.tags |= {
+            'maintenance' if self.variant == 'maint' else 'production'
+        }
+
+    @run_after('init')
+    def adapt_valid_systems(self):
+        if self.arch == 'gpu':
+            self.valid_systems = ['daint:gpu']
+            if self.scale == 'small':
+                self.valid_systems += ['dom:gpu']
         else:
-            self.valid_prog_environs = ['builtin']
+            self.valid_systems = ['daint:mc', 'eiger:mc', 'pilatus:mc']
+            if self.scale == 'small':
+                self.valid_systems += ['dom:mc']
 
-        self.modules = ['NAMD']
+    @run_after('init')
+    def adapt_valid_prog_environs(self):
+        if self.current_system.name == 'pilatus':
+            self.valid_prog_environs.remove('builtin')
+        else:
+            self.valid_prog_environs.remove('cpeIntel')
 
-        # Reset sources dir relative to the SCS apps prefix
-        self.sourcesdir = os.path.join(self.current_system.resourcesdir,
-                                       'NAMD', 'prod')
-        self.executable = 'namd2'
-        self.use_multithreading = True
-        self.num_tasks_per_core = 2
-
-        if scale == 'small':
+    @run_after('init')
+    def setup_parallel_run(self):
+        if self.arch == 'gpu':
+            self.executable_opts = ['+idlepoll', '+ppn 23', 'stmv.namd']
+            self.num_cpus_per_task = 24
+            self.num_gpus_per_node = 1
+        else:
+            # On Eiger a no-smp NAMD version is the default
+            if self.current_system.name in ['eiger', 'pilatus']:
+                self.executable_opts = ['+idlepoll', 'stmv.namd']
+            else:
+                self.executable_opts = ['+idlepoll', '+ppn 71', 'stmv.namd']
+                self.num_cpus_per_task = 72
+        if self.scale == 'small':
             # On Eiger a no-smp NAMD version is the default
             if self.current_system.name in ['eiger', 'pilatus']:
                 self.num_tasks = 768
@@ -42,85 +82,56 @@ class NamdBaseCheck(rfm.RunOnlyRegressionTest):
                 self.num_tasks = 16
                 self.num_tasks_per_node = 1
 
+    @run_before('compile')
+    def prepare_build(self):
+        # Reset sources dir relative to the SCS apps prefix
+        self.sourcesdir = os.path.join(self.current_system.resourcesdir,
+                                       'NAMD', 'prod')
+
+    @sanity_function
+    def validate_energy(self):
         energy = sn.avg(sn.extractall(
             r'ENERGY:([ \t]+\S+){10}[ \t]+(?P<energy>\S+)',
             self.stdout, 'energy', float)
         )
         energy_reference = -2451359.5
         energy_diff = sn.abs(energy - energy_reference)
-        self.sanity_patterns = sn.all([
+        return sn.all([
             sn.assert_eq(sn.count(sn.extractall(
                          r'TIMING: (?P<step_num>\S+)  CPU:',
                          self.stdout, 'step_num')), 50),
             sn.assert_lt(energy_diff, 2720)
         ])
 
+    @run_before('performance')
+    def setup_perf_vars(self):
         self.perf_patterns = {
             'days_ns': sn.avg(sn.extractall(
                 r'Info: Benchmark time: \S+ CPUs \S+ '
                 r's/step (?P<days_ns>\S+) days/ns \S+ MB memory',
                 self.stdout, 'days_ns', float))
         }
-
-        self.maintainers = ['CB', 'LM']
-        self.tags = {'scs', 'external-resources'}
-        self.extra_resources = {
-            'switches': {
-                'num_switches': 1
-            }
-        }
-
-
-@rfm.parameterized_test(*([s, v]
-                          for s in ['small', 'large']
-                          for v in ['maint', 'prod']))
-class NamdGPUCheck(NamdBaseCheck):
-    def __init__(self, scale, variant):
-        super().__init__('gpu', scale, variant)
-        self.valid_systems = ['daint:gpu']
-        self.executable_opts = ['+idlepoll', '+ppn 23', 'stmv.namd']
-        self.num_cpus_per_task = 24
-        self.num_gpus_per_node = 1
-        self.tags |= {'maintenance' if variant == 'maint' else 'production'}
-        if scale == 'small':
-            self.valid_systems += ['dom:gpu']
-            self.reference = {
-                'dom:gpu': {'days_ns': (0.15, None, 0.05, 'days/ns')},
-                'daint:gpu': {'days_ns': (0.15, None, 0.05, 'days/ns')}
-            }
+        if self.arch == 'gpu':
+            if self.scale == 'small':
+                self.reference = {
+                    'dom:gpu': {'days_ns': (0.15, None, 0.05, 'days/ns')},
+                    'daint:gpu': {'days_ns': (0.15, None, 0.05, 'days/ns')}
+                }
+            else:
+                self.reference = {
+                    'daint:gpu': {'days_ns': (0.07, None, 0.05, 'days/ns')}
+                }
         else:
-            self.reference = {
-                'daint:gpu': {'days_ns': (0.07, None, 0.05, 'days/ns')}
-            }
-
-
-@rfm.parameterized_test(*([s, v]
-                          for s in ['small', 'large']
-                          for v in ['maint', 'prod']))
-class NamdCPUCheck(NamdBaseCheck):
-    def __init__(self, scale, variant):
-        super().__init__('cpu', scale, variant)
-        self.valid_systems = ['daint:mc', 'eiger:mc', 'pilatus:mc']
-        # On Eiger a no-smp NAMD version is the default
-        if self.current_system.name in ['eiger', 'pilatus']:
-            self.executable_opts = ['+idlepoll', 'stmv.namd']
-            self.num_tasks_per_core = 2
-        else:
-            self.executable_opts = ['+idlepoll', '+ppn 71', 'stmv.namd']
-            self.num_cpus_per_task = 72
-        if scale == 'small':
-            self.valid_systems += ['dom:mc']
-            self.reference = {
-                'dom:mc': {'days_ns': (0.51, None, 0.05, 'days/ns')},
-                'daint:mc': {'days_ns': (0.51, None, 0.05, 'days/ns')},
-                'eiger:mc': {'days_ns': (0.12, None, 0.05, 'days/ns')},
-                'pilatus:mc': {'days_ns': (0.12, None, 0.05, 'days/ns')},
-            }
-        else:
-            self.reference = {
-                'daint:mc': {'days_ns': (0.28, None, 0.05, 'days/ns')},
-                'eiger:mc': {'days_ns': (0.05, None, 0.05, 'days/ns')},
-                'pilatus:mc': {'days_ns': (0.05, None, 0.05, 'days/ns')}
-            }
-
-        self.tags |= {'maintenance' if variant == 'maint' else 'production'}
+            if self.scale == 'small':
+                self.reference = {
+                    'dom:mc': {'days_ns': (0.51, None, 0.05, 'days/ns')},
+                    'daint:mc': {'days_ns': (0.51, None, 0.05, 'days/ns')},
+                    'eiger:mc': {'days_ns': (0.12, None, 0.05, 'days/ns')},
+                    'pilatus:mc': {'days_ns': (0.12, None, 0.05, 'days/ns')},
+                }
+            else:
+                self.reference = {
+                    'daint:mc': {'days_ns': (0.28, None, 0.05, 'days/ns')},
+                    'eiger:mc': {'days_ns': (0.05, None, 0.05, 'days/ns')},
+                    'pilatus:mc': {'days_ns': (0.05, None, 0.05, 'days/ns')}
+                }
