@@ -15,7 +15,7 @@ import reframe.utility.osext as osext
 from reframe.core.exceptions import ConfigError
 from reframe.core.logging import getlogger
 from reframe.core.schedulers import Job
-from reframe.core.systems import ProcessorType
+from reframe.core.systems import DeviceType, ProcessorType
 from reframe.utility.cpuinfo import cpuinfo
 
 
@@ -198,9 +198,10 @@ def detect_topology():
                 f'> found devices file {dev_file!r}; loading...'
             )
             try:
-                part._devices = _load_info(
+                devices_info = _load_info(
                     dev_file, _subschema('#/defs/devices')
                 )
+                part._devices = [DeviceType(d) for d in devices_info]
                 found_devinfo = True
             except json.decoder.JSONDecodeError as e:
                 getlogger().debug(
