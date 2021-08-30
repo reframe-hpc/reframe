@@ -27,7 +27,7 @@ class Cp2k_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
     is that CP2K is already installed on the device under test.
     '''
 
-    # Parameter pack containing the platform ID
+    #: Parameter pack containing the platform ID
     platform_name = parameter(['cpu', 'gpu'])
 
     #: Reference value of energy, that is used for the comparison
@@ -42,8 +42,9 @@ class Cp2k_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
     #: Maximum deviation from the reference value of energy,
     #: that is acceptable.
     #:
+    #: :type: float
     #: :default: :class:`required`
-    energy_tolerance = 1E-04
+    energy_tolerance = variable(float)
 
     #: :default: :class:`required`
     num_tasks_per_node = required
@@ -51,6 +52,7 @@ class Cp2k_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
     #: :default: :class:`required`
     executable = required
 
+    energy_tolerance = 1E-04
     executable = 'cp2k.psmp'
     executable_opts = ['H2O-256.inp']
 

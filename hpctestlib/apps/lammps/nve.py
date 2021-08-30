@@ -44,15 +44,16 @@ class LAMMPS_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
     #: difference between final energy value and reference value
     #: should be smaller than energy_tolerance
     #:
-    #: :type: str
+    #: :type: float
     #: :default: :class:`required`
-    energy_value = -4.6195
+    energy_value = variable(float)
 
     #: Maximum deviation from the reference value of energy,
     #: that is acceptable.
     #:
+    #: :type: float
     #: :default: :class:`required`
-    energy_tolerance = 6.0E-04
+    energy_tolerance = variable(float)
 
     #: :default: :class:`required`
     num_tasks_per_node = required
@@ -62,6 +63,9 @@ class LAMMPS_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
         ('cpu', 'in.lj.cpu'),
         ('gpu', 'in.lj.gpu')
     ])
+
+    energy_value = -4.6195
+    energy_tolerance = 6.0E-04
 
     @run_after('init')
     def unpack_platform_parameter(self):

@@ -46,15 +46,17 @@ class Cpmd_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
     #: difference between final energy value and reference value
     #: should be smaller than energy_tolerance
     #:
-    #: :type: str
+    #: :type: float
     #: :default: :class:`required`
-    energy_value = 25.81
+    energy_value = variable(float)
 
     #: Maximum deviation from the reference value of energy,
     #: that is acceptable.
     #:
+    #: :type: float
     #: :default: :class:`required`
-    energy_tolerance = 0.26
+    energy_tolerance = variable(float)
+
 
     #: :default: :class:`required`
     num_tasks_per_node = required
@@ -64,6 +66,8 @@ class Cpmd_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
 
     executable = 'cpmd.x'
     input_file = 'ana_c4h6.in'
+    energy_value = 25.81
+    energy_tolerance = 0.26
     readonly_files = ['ana_c4h6.in', 'C_MT_BLYP', 'H_MT_BLYP']
 
     @performance_function('s', perf_key='time')

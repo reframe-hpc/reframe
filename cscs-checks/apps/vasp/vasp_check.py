@@ -59,6 +59,7 @@ REFERENCE_PERFORMANCE = {
 
 @rfm.simple_test
 class VASPCheckCSCS(VASP):
+    mode = parameter(['prod', 'maint'])
     modules = ['VASP']
     maintainers = ['LM']
     tags = {'scs'}
@@ -68,7 +69,6 @@ class VASPCheckCSCS(VASP):
             'num_switches': 1
         }
     }
-    mode = parameter(['prod', 'maint'])
 
     @run_after('init')
     def env_define(self):
@@ -127,7 +127,7 @@ class VASPCheckCSCS(VASP):
 
     @run_after('setup')
     def set_perf_reference(self):
-        self.reference = REFERENCE_PERFORMANCE[self.platform]
+            self.reference = REFERENCE_PERFORMANCE[self.platform]
 
     @run_after('setup')
     def set_description(self):

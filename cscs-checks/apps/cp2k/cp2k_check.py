@@ -75,7 +75,6 @@ REFERENCE_PERFORMANCE = {
     'gpu': REFERENCE_GPU_PERFORMANCE,
 }
 
-
 @rfm.simple_test
 class cp2k_check(Cp2k_NVE):
     modules = ['CP2K']
@@ -112,11 +111,8 @@ class cp2k_check(Cp2k_NVE):
     @run_after('init')
     def set_description(self):
         if self.platform_name == 'cpu':
-            self.descr = (f'CP2K CPU check (version: {self.scale}, '
-                          f'{self.mode})')
-        else:
-            self.descr = (f'CP2K GPU check (version: {self.scale}, '
-                          f'{self.mode})')
+            self.descr = (f'CP2K {self.platform_name} check'
+                          f'(version: {self.scale}, {self.mode})')
 
     @run_after('init')
     def set_num_tasks(self):

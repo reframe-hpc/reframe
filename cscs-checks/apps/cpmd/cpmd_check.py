@@ -27,20 +27,19 @@ REFERENCE_PERFORMANCE = {
     'large': REFERENCE_PERFORMANCE_LARGE,
 }
 
-
 @rfm.simple_test
 class cpmd_check(Cpmd_NVE):
     scale = parameter(['small', 'large'])
+    mode = parameter(['prod'])
+    valid_systems = ['daint:gpu']
+    modules = ['CPMD']
+    valid_prog_environs = ['builtin']
+    num_tasks_per_node = 1
     maintainers = ['AJ', 'LM']
     tags = {'production'}
-    valid_systems = ['daint:gpu']
-    descr = 'CPMD check (C4H6 metadynamics)'
-    num_tasks_per_node = 1
-    valid_prog_environs = ['builtin']
-    modules = ['CPMD']
-    mode = parameter(['prod'])
     use_multithreading = True
     strict_check = False
+    descr = 'CPMD check (C4H6 metadynamics)'
     extra_resources = {
         'switches': {
             'num_switches': 1
