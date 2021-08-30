@@ -292,7 +292,7 @@ class SlurmJobScheduler(sched.JobScheduler):
         # Collect options that restrict node selection, but we need to first
         # create a mutable list out of the immutable SequenceView that
         # sched_access is
-        options = list(job.sched_access + job.options + job.cli_options)
+        options = job.sched_access + job.options + job.cli_options
         option_parser = ArgumentParser()
         option_parser.add_argument('--reservation')
         option_parser.add_argument('-p', '--partition')
