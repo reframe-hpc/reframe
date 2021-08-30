@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import ast
 import os
 import reframe as rfm
 import reframe.utility.sanity as sn
@@ -71,14 +72,13 @@ class GridToolsRunCheck(rfm.RunOnlyRegressionTest):
     def validate_run(self):
         return sn.assert_found(r'PASSED', self.stdout)
 
-    @deferrable
-    @run_before('performance')
-    def setup_perf_vars(self):
-        self.perf_patterns = {
-            'wall_time': sn.avg(
-                sn.extractsingle(r'"series" : \[(?P<wall_times>.+)\]',
-                                 self.stdout, 'wall_times'))
-        }
+    @performance_function('s')
+    def wall_time(self):
+        literal_eval = sn.deferrable(ast.literal_eval)
+        return sn.avg(
+            literal_eval(sn.extractsingle(r'"series" : \[(?P<wall_times>.+)\]',
+                                          self.stdout, 'wall_times'))
+        )
 
 
 @rfm.simple_test
