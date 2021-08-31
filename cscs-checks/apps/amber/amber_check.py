@@ -10,37 +10,29 @@ from hpctestlib.apps.amber.nve import Amber_NVE
 
 # FIXME: Use tuples as dictionary keys as soon as
 # https://github.com/eth-cscs/reframe/issues/2022 is in
-daint_gpu_performance = {
-    'Cellulose_production_NVE': (30.0, -0.05, None, 'ns/day'),
-    'FactorIX_production_NVE': (134.0, -0.05, None, 'ns/day'),
-    'JAC_production_NVE': (388.0, -0.05, None, 'ns/day'),
-    'JAC_production_NVE_4fs': (742, -0.05, None, 'ns/day'),
-}
 
 REFERENCE_GPU_PERFORMANCE = {
-    'daint:gpu': daint_gpu_performance,
-    'dom:gpu': daint_gpu_performance
-}
-
-daint_mc_performance_small = {
-    'Cellulose_production_NVE': (8.0, -0.30, None, 'ns/day'),
-    'FactorIX_production_NVE': (34.0, -0.30, None, 'ns/day'),
-    'JAC_production_NVE': (90.0, -0.30, None, 'ns/day'),
-    'JAC_production_NVE_4fs': (150.0, -0.30, None, 'ns/day'),
-}
-
-eiger_mc_performance_small = {
-    'Cellulose_production_NVE': (3.2, -0.30, None, 'ns/day'),
-    'FactorIX_production_NVE': (7.0, -0.30, None, 'ns/day'),
-    'JAC_production_NVE': (30.0, -0.30, None, 'ns/day'),
-    'JAC_production_NVE_4fs': (45.0, -0.30, None, 'ns/day'),
+    ('daint:gpu', 'dom:gpu'): {
+        'Cellulose_production_NVE': (30.0, -0.05, None, 'ns/day'),
+        'FactorIX_production_NVE': (134.0, -0.05, None, 'ns/day'),
+        'JAC_production_NVE': (388.0, -0.05, None, 'ns/day'),
+        'JAC_production_NVE_4fs': (742, -0.05, None, 'ns/day'),
+    },
 }
 
 REFERENCE_CPU_PERFORMANCE_SMALL = {
-    'daint:mc': daint_mc_performance_small,
-    'dom:mc': daint_mc_performance_small,
-    'eiger:mc': eiger_mc_performance_small,
-    'pilatus:mc': eiger_mc_performance_small,
+    ('daint:mc', 'dom:mc'): {
+        'Cellulose_production_NVE': (8.0, -0.30, None, 'ns/day'),
+        'FactorIX_production_NVE': (34.0, -0.30, None, 'ns/day'),
+        'JAC_production_NVE': (90.0, -0.30, None, 'ns/day'),
+        'JAC_production_NVE_4fs': (150.0, -0.30, None, 'ns/day'),
+    },
+    ('eiger:mc', 'pilatus:mc'): {
+        'Cellulose_production_NVE': (3.2, -0.30, None, 'ns/day'),
+        'FactorIX_production_NVE': (7.0, -0.30, None, 'ns/day'),
+        'JAC_production_NVE': (30.0, -0.30, None, 'ns/day'),
+        'JAC_production_NVE_4fs': (45.0, -0.30, None, 'ns/day'),
+    },
 }
 
 REFERENCE_CPU_PERFORMANCE_LARGE = {
@@ -83,6 +75,13 @@ class AmberCheckCSCS(Amber_NVE):
     }
     maintainers = ['VH', 'SO']
 
+    @run_before('run')
+    def set_perf_reference(self):
+        for key in list(self.REFERENCE_DICT):
+            if self.current_partition.fullname in key:
+                d = {self.current_partition.fullname:
+                     self.REFERENCE_DICT[key]}
+                self.reference = d
 
 @rfm.simple_test
 class amber_gpu_check(AmberCheckCSCS):
@@ -92,7 +91,7 @@ class amber_gpu_check(AmberCheckCSCS):
     num_tasks_per_node = 1
     descr = f'Amber GPU check'
     tags.update({'maintenance', 'production', 'health'})
-    reference = REFERENCE_GPU_PERFORMANCE
+    REFERENCE_DICT = REFERENCE_GPU_PERFORMANCE
     platform_info = parameter(
         inherit_params=True,
         filter_params=inherit_gpu_only)
@@ -144,5 +143,5 @@ class amber_cpu_check(AmberCheckCSCS):
             self.num_tasks = self.num_nodes * self.num_tasks_per_node
 
     @run_after('setup')
-    def set_perf_reference(self):
-        self.reference = REFERENCE_CPU_PERFORMANCE[self.scale]
+    def set_reference_dict(self):
+        self.REFERENCE_DICT = REFERENCE_CPU_PERFORMANCE[self.scale]
