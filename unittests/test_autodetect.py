@@ -56,6 +56,7 @@ def test_autotect(exec_ctx):
     assert part.processor.info == cpuinfo()
     if part.processor.info:
         assert part.processor.num_cpus == part.processor.info['num_cpus']
+
     assert len(part.devices) == 1
     assert part.devices[0].info == {
         'type': 'gpu',
