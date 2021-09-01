@@ -15,7 +15,7 @@ class NamdCheck(rfm.RunOnlyRegressionTest):
     variant = parameter(['maint', 'prod'])
     arch = parameter(['gpu', 'cpu'])
 
-    valid_prog_environs = ['builtin', 'cpeIntel']
+    valid_prog_environs = ['builtin', 'cpeGNU']
     modules = ['NAMD']
     executable = 'namd2'
     use_multithreading = True
@@ -48,10 +48,8 @@ class NamdCheck(rfm.RunOnlyRegressionTest):
 
     @run_after('init')
     def adapt_valid_prog_environs(self):
-        if self.current_system.name == 'pilatus':
+        if self.current_system.name in ['eiger', 'pilatus']:
             self.valid_prog_environs.remove('builtin')
-        else:
-            self.valid_prog_environs.remove('cpeIntel')
 
     @run_after('init')
     def setup_parallel_run(self):
