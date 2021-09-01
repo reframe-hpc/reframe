@@ -809,7 +809,7 @@ Examining the performance logs
 
 ReFrame has a powerful mechanism for logging its activities as well as performance data.
 It supports different types of log channels and it can send data simultaneously in any number of them.
-For example, performance data might be logged in files and the same time being sent to Syslog or to a centralized log management server.
+For example, performance data might be logged in files and at the same time being sent to Syslog or to a centralized log management server.
 By default (i.e., starting off from the builtin configuration file), ReFrame sends performance data to files per test under the ``perflogs/`` directory:
 
 .. code-block:: none
