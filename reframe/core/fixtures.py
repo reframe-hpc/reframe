@@ -16,6 +16,7 @@ from collections.abc import Iterable, Mapping
 import reframe.core.namespaces as namespaces
 import reframe.core.runtime as runtime
 import reframe.utility.udeps as udeps
+import reframe.utility as utils
 from reframe.core.exceptions import ReframeSyntaxError, what
 from reframe.core.variables import Undefined
 from reframe.core.logging import getlogger
@@ -76,7 +77,7 @@ class FixtureRegistry:
         scope = fixture.scope
         fname = fixture.get_name(variant_num)
         variables = fixture.variables
-        fname += ''.join((f'_{k}_{v}' for k,v in variables.items()))
+        fname += ''.join((f'_{k}_{utils.toalphanum(str(v))}' for k,v in variables.items()))
         reg_names = []
         self._reg.setdefault(cls, dict())
         if scope == 'session':
@@ -199,7 +200,7 @@ class FixtureRegistry:
     def __getitem__(self, cls):
         '''Return the names of all registered fixtures from a given class.'''
         try:
-            return self._reg[cls].keys()
+            return self._reg[cls]
         except KeyError:
             return []
 

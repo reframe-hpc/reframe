@@ -1263,7 +1263,14 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 environ = None
 
             deps = []
-            for fixture_instance in registry[f.cls]:
+            for fixture_instance, data in registry[f.cls].items():
+                if f.scope == 'partition':
+                    if data[2][0] != self.current_partition.fullname:
+                        continue
+                elif f.scope == 'environment':
+                    if data[1][0] != self.current_environ.name:
+                        continue
+
                 deps.append(self.getdep(fixture_instance, environ, part))
 
             if f.action == 'fork':
