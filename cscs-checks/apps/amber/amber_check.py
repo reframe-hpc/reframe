@@ -12,11 +12,13 @@ from hpctestlib.apps.amber.nve import Amber_NVE
 # https://github.com/eth-cscs/reframe/issues/2022 is in
 
 REFERENCE_GPU_PERFORMANCE = {
-    ('daint:gpu', 'dom:gpu'): {
-        'Cellulose_production_NVE': (30.0, -0.05, None, 'ns/day'),
-        'FactorIX_production_NVE': (134.0, -0.05, None, 'ns/day'),
-        'JAC_production_NVE': (388.0, -0.05, None, 'ns/day'),
-        'JAC_production_NVE_4fs': (742, -0.05, None, 'ns/day'),
+    'normal':{
+        ('daint:gpu', 'dom:gpu'): {
+            'Cellulose_production_NVE': (30.0, -0.05, None, 'ns/day'),
+            'FactorIX_production_NVE': (134.0, -0.05, None, 'ns/day'),
+            'JAC_production_NVE': (388.0, -0.05, None, 'ns/day'),
+            'JAC_production_NVE_4fs': (742, -0.05, None, 'ns/day'),
+        },
     },
 }
 
@@ -36,13 +38,13 @@ REFERENCE_CPU_PERFORMANCE_SMALL = {
 }
 
 REFERENCE_CPU_PERFORMANCE_LARGE = {
-    'daint:mc': {
+    ('daint:mc'): {
         'Cellulose_production_NVE': (10.0, -0.30, None, 'ns/day'),
         'FactorIX_production_NVE': (36.0, -0.30, None, 'ns/day'),
         'JAC_production_NVE': (78.0, -0.30, None, 'ns/day'),
         'JAC_production_NVE_4fs': (135.0, -0.30, None, 'ns/day'),
     },
-    'eiger:mc': {
+    ('eiger:mc'): {
         'Cellulose_production_NVE': (1.3, -0.30, None, 'ns/day'),
         'FactorIX_production_NVE': (3.5, -0.30, None, 'ns/day'),
         'JAC_production_NVE': (17.0, -0.30, None, 'ns/day'),
@@ -55,6 +57,10 @@ REFERENCE_CPU_PERFORMANCE = {
     'large': REFERENCE_CPU_PERFORMANCE_LARGE,
 }
 
+REFERENCE_PERFORMANCE = {
+    'gpu': REFERENCE_GPU_PERFORMANCE,
+    'cpu': REFERENCE_CPU_PERFORMANCE,
+}
 
 def inherit_cpu_only(params):
     return tuple(filter(lambda p: 'cpu' in p[0], params))
@@ -75,23 +81,27 @@ class AmberCheckCSCS(Amber_NVE):
     }
     maintainers = ['VH', 'SO']
 
-    @run_before('run')
+    @run_before('performance')
     def set_perf_reference(self):
-        for key in list(self.REFERENCE_DICT):
+        for key, val in REFERENCE_PERFORMANCE[self.platform][self.scale].items():
             if self.current_partition.fullname in key:
-                d = {self.current_partition.fullname:
-                     self.REFERENCE_DICT[key]}
-                self.reference = d
+                self.reference = {'*': val}
+                break
+        else:
+            raise ValueError(
+                f'could not find a reference for the current '
+                f'partition {self.current_partition.fullname!r}'
+            )
 
 @rfm.simple_test
 class amber_gpu_check(AmberCheckCSCS):
     valid_systems = ['daint:gpu', 'dom:gpu']
+    scale = 'normal'
     num_tasks = 1
     num_gpus_per_node = 1
     num_tasks_per_node = 1
     descr = f'Amber GPU check'
     tags.update({'maintenance', 'production', 'health'})
-    REFERENCE_DICT = REFERENCE_GPU_PERFORMANCE
     platform_info = parameter(
         inherit_params=True,
         filter_params=inherit_gpu_only)
@@ -141,7 +151,3 @@ class amber_cpu_check(AmberCheckCSCS):
                 # need to decrease to just 8 nodes
                 self.num_nodes = 8
             self.num_tasks = self.num_nodes * self.num_tasks_per_node
-
-    @run_after('setup')
-    def set_reference_dict(self):
-        self.REFERENCE_DICT = REFERENCE_CPU_PERFORMANCE[self.scale]
