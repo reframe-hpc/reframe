@@ -146,7 +146,7 @@ If we run the test, we can see that the correct standard output filename will be
 
 Debugging sanity and performance patterns
 =========================================
-When creating a new test that requires a complex output parsing for either the ``sanity`` or ``performance`` pipeline stages, tunning the functions decorated by :attr:`@sanity_function<reframe.core.pipeline.RegressionMixin.sanity_function>` or :attr:`@performance_function<reframe.core.pipeline.RegressionMixin.performance_function>` may involve some trial and error to debug the complex regular expressions required.
+When creating a new test that requires a complex output parsing for either the ``sanity`` or ``performance`` pipeline stages, tuning the functions decorated by :attr:`@sanity_function<reframe.core.pipeline.RegressionMixin.sanity_function>` or :attr:`@performance_function<reframe.core.pipeline.RegressionMixin.performance_function>` may involve some trial and error to debug the complex regular expressions required.
 For lightweight tests which execute in a few seconds, this trial and error may not be an issue at all.
 However, when dealing with tests which take longer to run, this method can quickly become tedious and inefficient.
 

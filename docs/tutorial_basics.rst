@@ -352,13 +352,13 @@ Here is how the new configuration file looks like with the needed additions high
 
 Here we define a system named ``catalina`` that has one partition named ``default``.
 This partition makes no use of any `workload manager <config_reference.html#.systems[].partitions[].scheduler>`__, but instead launches any jobs locally as OS processes.
-Two programming environments are relevant for that partition, namely ``gnu`` and ``clang``, which are defined in the section :js:attr:`environments` of the configuration file.
+Two programming environments are relevant for that partition, namely ``gnu`` and ``clang``, which are defined in the section :js:attr:`environments` of the `configuration file <config_reference.html#.environments>`__.
 The ``gnu`` programming environment provides GCC 9, whereas the ``clang`` one provides the Clang compiler from the system.
 Notice, how you can define the actual commands for invoking the C, C++ and Fortran compilers in each programming environment.
 As soon as a programming environment defines the different compilers, ReFrame will automatically pick the right compiler based on the source file extension.
 In addition to C, C++ and Fortran programs, ReFrame will recognize the ``.cu`` extension as well and will try to invoke the ``nvcc`` compiler for CUDA programs.
 
-Finally, the new system that we defined may be identified by the hostname ``tresa`` (see the :js:attr:`hostnames` configuration parameter) and it will not use any environment modules system (see the :js:attr:`modules_system` configuration parameter).
+Finally, the new system that we defined may be identified by the hostname ``tresa`` (see the :js:attr:`hostnames` `configuration parameter <config_reference.html#.systems[].hostnames>`__) and it will not use any environment modules system (see the :js:attr:`modules_system` `configuration parameter <config_reference.html#.systems[].modules_system>`__).
 The :js:attr:`hostnames` attribute will help ReFrame to automatically pick the right configuration when running on it.
 Notice, how the ``generic`` system matches any hostname, so that it acts as a fallback system.
 
@@ -468,7 +468,7 @@ In this case, we set the :func:`set_compile_flags` hook to run before the ReFram
 
 
 In this example, the generated executable takes a single argument which sets the number of threads to be used.
-The options passed to the test's executable can be set throught the :attr:`executable_opts <reframe.core.pipeline.RegressionTest.executable_opts>` variable, which in this case is set to ``'16'``.
+The options passed to the test's executable can be set through the :attr:`executable_opts <reframe.core.pipeline.RegressionTest.executable_opts>` variable, which in this case is set to ``'16'``.
 
 Let's run the test now:
 

@@ -249,7 +249,7 @@ Writing a Run-Only Regression Test
 ----------------------------------
 
 There are cases when it is desirable to perform regression testing for an already built executable.
-In the following test we use simply the ``echo`` Bash shell command to print a random integer between specific lower and upper bounds:
+In the following test we use simply the ``echo`` Bash shell command to print a random integer between specific lower and upper bounds.
 Here is the full regression test:
 
 .. code-block:: console
@@ -492,7 +492,7 @@ Let's run the test and inspect the generated job script:
 The job options specified inside a ReFrame test are always the last to be emitted in the job script preamble and do not affect the options that are passed implicitly through other test attributes or configuration options.
 
 There is a small problem with this test though.
-What if we change the job scheduler in that partition or what if we want to port the test to a different system that does not use Slurm and and another option is needed to achieve the same result.
+What if we change the job scheduler in that partition or what if we want to port the test to a different system that does not use Slurm and another option is needed to achieve the same result.
 The obvious answer is to adapt the test, but is there a more portable way?
 The answer is yes and this can be achieved through so-called *extra resources*.
 ReFrame gives you the possibility to associate scheduler options to a "resource" managed by the partition scheduler.
@@ -817,7 +817,7 @@ In fact, writing the test in this way permits having hooks that depend on undefi
 This is the case with the :func:`set_container_platform` hook, which depends on the undefined parameter ``platform``.
 Hence, the derived test **must** define all the required parameters and variables; otherwise ReFrame will notice that the test is not well defined and will raise an error accordingly.
 
-Before moving onwards to the derived test, note that the :class:`ContainerBase` class takes the additional argument ``pin_prefix=True``, which locks the prefix of all derived tests to this base test.
+Before moving ahead with the derived test, note that the :class:`ContainerBase` class takes the additional argument ``pin_prefix=True``, which locks the prefix of all derived tests to this base test.
 This will allow the retrieval of the sources located in the library by any derived test, regardless of what their containing directory is.
 
 .. code-block:: console
