@@ -47,6 +47,10 @@ class FixtureRegistry:
     def __init__(self):
         self._reg = dict()
 
+        # Build an index map to access the system partitions
+        sys_part = runtime.runtime().system.partitions
+        self._part_map = {p.fullname: i for i, p in enumerate(sys_part)}
+
     def add(self, fixture, variant_num, branch, partitions, prog_envs):
         '''Add a fixture to the registry.
 
@@ -84,35 +88,40 @@ class FixtureRegistry:
         )
         reg_names = []
         self._reg.setdefault(cls, dict())
+
+        # Register the fixture
         if scope == 'session':
             # The name is just the class name
             name = fname
+
+            # Select an environment supported by the partition
+            valid_envs = self._filter_valid_environs(partitions[0], prog_envs)
+
+            # Register the fixture
             self._reg[cls][name] = (
-                variant_num, [prog_envs[0]], [partitions[0]], variables
+                variant_num, [valid_envs[0]], [partitions[0]], variables
             )
             reg_names.append(name)
         elif scope == 'partition':
             for p in partitions:
                 # The name contains the full partition name
                 name = '_'.join([fname, p])
+
+                # Select an environment supported by the partition
+                valid_envs = self._filter_valid_environs(p, prog_envs)
+
+                # Register the fixture
                 self._reg[cls][name] = (
-                    variant_num, [prog_envs[0]], [p], variables
+                    variant_num, [valid_envs[0]], [p], variables
                 )
                 reg_names.append(name)
         elif scope == 'environment':
-            sys_part = runtime.runtime().system.partitions
-            partition_map = {p.fullname: i for i, p in enumerate(sys_part)}
             for p in partitions:
-                valid_envs = {
-                    env.name for env in sys_part[partition_map[p]].environs
-                }
-                for env in prog_envs:
-                    # Skip the environment if the partition does not support it
-                    if env not in valid_envs:
-                        continue
-
+                for env in self._filter_valid_environs(p, prog_envs):
                     # The name contains the full part and env names
                     name = '_'.join([fname, p, env])
+
+                    # Register the fixture
                     self._reg[cls][name] = (
                         variant_num, [env], [p], variables
                     )
@@ -120,6 +129,8 @@ class FixtureRegistry:
         elif scope == 'test':
             # The name contains the full tree branch.
             name = '_'.join([fname, branch])
+
+            # Register the fixture
             self._reg[cls][name] = (
                 variant_num, list(prog_envs), list(partitions),
                 variables
@@ -205,6 +216,23 @@ class FixtureRegistry:
                 for k, v in var_def.items():
                     cls.setvar(k, v)
         return ret
+
+    def _filter_valid_environs(self, part, candidate_environs):
+        sys_part = runtime.runtime().system.partitions
+        supported_envs = {
+            env.name for env
+            in sys_part[self._part_map[part]].environs
+        }
+        valid_envs = []
+        for env in candidate_environs:
+            if env in supported_envs:
+                valid_envs.append(env)
+
+        if len(valid_envs) == 0:
+            raise RuntimeError(
+                f'could not find a valid environment for partition {part}'
+            )
+        return valid_envs
 
     def _is_registry(self, other):
         if not isinstance(other, FixtureRegistry):

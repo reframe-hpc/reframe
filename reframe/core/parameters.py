@@ -282,7 +282,8 @@ class ParamSpace(namespaces.Namespace):
                 raise KeyError(f'{name} is not present in the parameter space')
 
         for p, cond in conditions.items():
-            def val(v): return _get_param_value(p, v)
+            def val(v):
+                return _get_param_value(p, v)
             candidates = list(filter(lambda v: cond(val(v)), candidates))
 
         return candidates
