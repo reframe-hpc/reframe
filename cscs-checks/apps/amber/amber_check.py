@@ -11,7 +11,7 @@ from hpctestlib.apps.amber.nve import Amber_NVE
 # https://github.com/eth-cscs/reframe/issues/2022 is in
 
 REFERENCE_GPU_PERFORMANCE = {
-    'normal':{
+    'normal': {
         ('daint:gpu', 'dom:gpu'): {
             'Cellulose_production_NVE': (30.0, -0.05, None, 'ns/day'),
             'FactorIX_production_NVE': (134.0, -0.05, None, 'ns/day'),
@@ -56,10 +56,11 @@ REFERENCE_CPU_PERFORMANCE = {
     'large': REFERENCE_CPU_PERFORMANCE_LARGE,
 }
 
-REFERENCE_PERFORMANCE = {
+REFERENCE_PERF = {
     'gpu': REFERENCE_GPU_PERFORMANCE,
     'cpu': REFERENCE_CPU_PERFORMANCE,
 }
+
 
 def inherit_cpu_only(params):
     return tuple(filter(lambda p: 'cpu' in p[0], params))
@@ -82,7 +83,7 @@ class AmberCheckCSCS(Amber_NVE):
 
     @run_before('performance')
     def set_perf_reference(self):
-        for key, val in REFERENCE_PERFORMANCE[self.platform][self.scale].items():
+        for key, val in REFERENCE_PERF[self.platform][self.scale].items():
             if self.current_partition.fullname in key:
                 self.reference = {'*': val}
                 break
