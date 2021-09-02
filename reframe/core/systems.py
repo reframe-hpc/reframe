@@ -23,20 +23,33 @@ class ProcessorType(jsonext.JSONSerializable):
 
     '''
 
+    __slots__ = (
+        '__info', 'arch', 'num_cpus', 'num_cpus_per_core',
+        'num_cpus_per_socket', 'num_sockets', 'topology'
+    )
+
+    def __deepcopy__(self, memo):
+        # This is a read-only object; simply return ourself
+        return self
+
     def __init__(self, processor_info):
-        self._arch = None
-        self._num_cpus = None
-        self._num_cpus_per_core = None
-        self._num_cpus_per_socket = None
-        self._num_sockets = None
-        self._topology = None
-        self._info = processor_info
+        self.__info = processor_info
 
-        if not processor_info:
-            return
+    def __getattr__(self, name):
+        if name in self.__slots__:
+            return self.__info.get(name, None)
+        else:
+            raise AttributeError(
+                f'{type(self).__qualname__!r} object has no attribute {name!r}'
+            )
 
-        for key, val in processor_info.items():
-            setattr(self, f'_{key}', val)
+    def __setattr__(self, name, value):
+        if name in self.__slots__:
+            raise AttributeError(
+                f'attribute {name!r} is not writeable'
+            )
+        else:
+            super().__setattr__(name, value)
 
     @property
     def info(self):
@@ -44,55 +57,7 @@ class ProcessorType(jsonext.JSONSerializable):
 
         :type: :class:`dict`
         '''
-        return self._info
-
-    @property
-    def arch(self):
-        '''The microarchitecture of the processor.
-
-        :type: :class:`str` or :class:`None`
-        '''
-        return self._arch
-
-    @property
-    def num_cpus(self):
-        '''Number of logical CPUs.
-
-        :type: integral or :class:`None`
-        '''
-        return self._num_cpus
-
-    @property
-    def num_cpus_per_core(self):
-        '''Number of logical CPUs per core.
-
-        :type: integral or :class:`None`
-        '''
-        return self._num_cpus_per_core
-
-    @property
-    def num_cpus_per_socket(self):
-        '''Number of logical CPUs per socket.
-
-        :type: integral or :class:`None`
-        '''
-        return self._num_cpus_per_socket
-
-    @property
-    def num_sockets(self):
-        '''Number of sockets.
-
-        :type: integral or :class:`None`
-        '''
-        return self._num_sockets
-
-    @property
-    def topology(self):
-        '''Processor topology.
-
-        :type: :class:`Dict[str, obj]` or :class:`None`
-        '''
-        return self._topology
+        return self.__info
 
     @property
     def num_cores(self):
@@ -100,8 +65,8 @@ class ProcessorType(jsonext.JSONSerializable):
 
         :type: integral or :class:`None`
         '''
-        if self._num_cpus and self._num_cpus_per_core:
-            return self._num_cpus // self._num_cpus_per_core
+        if self.num_cpus and self.num_cpus_per_core:
+            return self.num_cpus // self.num_cpus_per_core
         else:
             return None
 
@@ -111,8 +76,8 @@ class ProcessorType(jsonext.JSONSerializable):
 
         :type: integral or :class:`None`
         '''
-        if self.num_cores and self._num_sockets:
-            return self.num_cores // self._num_sockets
+        if self.num_cores and self.num_sockets:
+            return self.num_cores // self.num_sockets
         else:
             return None
 
@@ -122,8 +87,8 @@ class ProcessorType(jsonext.JSONSerializable):
 
         :type: integral or :class:`None`
         '''
-        if self._topology and 'numa_nodes' in self._topology:
-            return len(self._topology['numa_nodes'])
+        if self.topology and 'numa_nodes' in self.topology:
+            return len(self.topology['numa_nodes'])
         else:
             return None
 
