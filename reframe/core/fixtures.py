@@ -96,8 +96,15 @@ class FixtureRegistry:
                 )
                 reg_names.append(name)
         elif scope == 'environment':
+            sys_part = runtime.runtime().system.partitions
+            partition_map = {p.fullname:i for i,p in enumerate(sys_part)}
             for p in partitions:
+                valid_envs = {env.name for env in sys_part[partition_map[p]].environs}
                 for env in prog_envs:
+                    # Skip the environment if the partition does not support it
+                    if env not in valid_envs:
+                        continue
+
                     # The name contains the full part and env names
                     name = '_'.join([fname, p, env])
                     self._reg[cls][name] = (
@@ -482,8 +489,6 @@ class FixtureSpace(namespaces.Namespace):
                 dep_kind = udeps.fully
             elif fixture.scope == 'partition':
                 dep_kind = udeps.by_part
-            elif fixture.scope == 'environment':
-                dep_kind = udeps.by_env
             else:
                 dep_kind = udeps.by_case
 
