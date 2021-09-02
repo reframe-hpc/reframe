@@ -41,7 +41,7 @@ if (rank .eq. 0) then
     do i = 1, size
        do j = 1, nthreads
          k = (nthreads * (i - 1)) +j
-         write (*,'(A23,1X,I3,1X,A6,1X,I3,1X,A12,1X,I3,1X,A6,I3)') 'Hello World from thread', output(k), &
+         write (*,'(A24,1X,I3,1X,A6,1X,I3,1X,A12,1X,I3,1X,A6,I3)') 'Hello, World from thread', output(k), &
                   'out of', nthreads, 'from process', i-1, 'out of', size
        enddo
     enddo

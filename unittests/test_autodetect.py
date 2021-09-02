@@ -33,8 +33,32 @@ def exec_ctx(make_exec_ctx_g, tmp_path, monkeypatch):
     yield from make_exec_ctx_g()
 
 
+@pytest.fixture
+def invalid_topo_exec_ctx(make_exec_ctx_g, tmp_path, monkeypatch):
+    # Monkey-patch HOME, since topology is always written there
+    monkeypatch.setenv('HOME', str(tmp_path))
+
+    # Create invalid processor and devices files
+    meta_prefix = tmp_path / '.reframe' / 'topology' / 'generic-default'
+    os.makedirs(meta_prefix)
+    with open(meta_prefix / 'processor.json', 'w') as fp:
+        fp.write('{')
+
+    with open(meta_prefix / 'devices.json', 'w') as fp:
+        fp.write('{')
+
+    yield from make_exec_ctx_g()
+
+
 def test_autotect(exec_ctx):
     detect_topology()
     part = runtime().system.partitions[0]
     assert part.processor.info == cpuinfo()
     assert part.devices == [{'type': 'gpu', 'arch': 'a100', 'num_devices': 8}]
+
+
+def test_autotect_with_invalid_files(invalid_topo_exec_ctx):
+    detect_topology()
+    part = runtime().system.partitions[0]
+    assert part.processor.info == cpuinfo()
+    assert part.devices == []

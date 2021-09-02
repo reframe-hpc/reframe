@@ -42,13 +42,12 @@ gpu_specs = {
 
 # {{{ class RunErt_Base
 class RunErt_Base(rfm.RegressionTest):
-    def __init__(self):
-        self.descr = f'Empirical Roofline Toolkit (Base for building/running)'
-        # pe step
-        # build step
-        # run step
-        # postprocess step
-        # sanity step
+    descr = f'Empirical Roofline Toolkit (Base for building/running)'
+    # pe step
+    # build step
+    # run step
+    # postprocess step
+    # sanity step
 
     # {{{ hooks
     @run_before('compile')
@@ -115,9 +114,9 @@ class RunErt_Base(rfm.RegressionTest):
             './Scripts/summary.py < max > sum',
         ]
 
-    @run_before('sanity')
+    @sanity_function
     def set_sanity(self):
-        self.sanity_patterns = sn.all(
+        return sn.all(
             [
                 sn.assert_found(r'^fp64', 'try.001'),
                 sn.assert_found(r'^fp64', 'max'),
@@ -131,46 +130,43 @@ class RunErt_Base(rfm.RegressionTest):
 
 # {{{ class PlotErt_Base
 class PlotErt_Base(rfm.RunOnlyRegressionTest):
-    def __init__(self):
-        self.descr = f'Empirical Roofline Toolkit (Base for plotting)'
-        self.roofline_script1_fname = 'roofline.py'
-        self.roofline_script1 = f'./Scripts/{self.roofline_script1_fname}'
-        self.roofline_script2 = './ert_cscs.py'
-        self.roofline_out_script1 = 'o.roofline'
-        self.roofline_summary = 'sum'
-        self.executable = f'cat'
-        self.executable_opts = [
-            r'*.sum',
-            r'|',
-            'python3',
-            self.roofline_script1_fname,
-            '&> ',
-            self.roofline_out_script1,
-        ]
+    descr = f'Empirical Roofline Toolkit (Base for plotting)'
+    roofline_script1_fname = 'roofline.py'
+    roofline_script1 = f'./Scripts/{roofline_script1_fname}'
+    roofline_script2 = './ert_cscs.py'
+    roofline_out_script1 = 'o.roofline'
+    roofline_summary = 'sum'
+    executable = f'cat'
+    executable_opts = [
+        r'*.sum',
+        r'|',
+        'python3',
+        roofline_script1_fname,
+        '&> ',
+        roofline_out_script1,
+    ]
 
-        # {{{ sanity_patterns
-        self.sanity_patterns = sn.all(
+    @sanity_function
+    def set_sanity(self):
+        return sn.all(
             [
                 sn.assert_found(r'GFLOPs EMP', self.roofline_out_script1),
                 sn.assert_found(r'DRAM EMP', self.roofline_out_script1),
                 sn.assert_found('Empirical roofline graph:', self.stdout),
             ]
         )
-        # }}}
 
-        # {{{ performance
+    @performance_function('GF/s')
+    def gflops(self):
         regex_gflops = r'(\S+)\sFP64 GFLOPs EMP'
-        regex_L1bw = r'(\S+)\sL1 EMP'
+        return sn.extractsingle(regex_gflops, self.roofline_out_script1, 1,
+                                float)
+
+    @performance_function('GB/s')
+    def DRAMbw(self):
         regex_DRAMbw = r'(\S+)\sDRAM EMP'
-        gflops = sn.extractsingle(regex_gflops, self.roofline_out_script1, 1,
-                                  float)
-        DRAMbw = sn.extractsingle(regex_DRAMbw, self.roofline_out_script1, 1,
-                                  float)
-        self.perf_patterns = {
-            'gflops': gflops,
-            'DRAMbw': DRAMbw,
-        }
-        # }}}
+        return sn.extractsingle(regex_DRAMbw, self.roofline_out_script1, 1,
+                                float)
 
     # {{{ hooks
     @run_before('run')
@@ -193,51 +189,41 @@ class PlotErt_Base(rfm.RunOnlyRegressionTest):
 
 
 # {{{ P100_RunErt
-@rfm.parameterized_test(
-    *[
-        [ert_precision, ert_flop, ert_gpu_threads]
-        for ert_precision in ert_precisions
-        for ert_flop in ert_flops
-        for ert_gpu_threads in [int(2 ** (log(32, 2)))]  # = 32
-        # uncomment for full search:
-        # for ert_gpu_threads in [2 ** x for x in range(
-        #     int(log(gpu_specs['P100']['warp_size'], 2)),
-        #     int(log(gpu_specs['P100']['maximum_number_of_threads_per_block'],
-        #             2) + 1),
-        #     )
-        # ]
-    ]
-)
+@rfm.simple_test
 class P100_RunErt(RunErt_Base):
-    def __init__(self, ert_precision, ert_flop, ert_gpu_threads):
-        # {{{ pe
-        gpu = 'V100'
-        self.descr = f'Collect ERT data from NVIDIA {gpu}'
-        self.valid_systems = ['dom:gpu']
-        self.valid_prog_environs = ['PrgEnv-gnu']
-        self.modules = ['craype-accel-nvidia60', 'cdt-cuda']
-        # }}}
+    ert_precision = parameter(ert_precisions)
+    ert_flop = parameter(ert_flops)
+    ert_gpu_threads = parameter([int(2 ** (log(32, 2)))])
+    # {{{ pe
+    gpu = 'V100'
+    descr = f'Collect ERT data from NVIDIA {gpu}'
+    valid_systems = ['dom:gpu']
+    valid_prog_environs = ['PrgEnv-gnu']
+    modules = ['craype-accel-nvidia60', 'cdt-cuda']
+    # }}}
 
-        # {{{ build
-        self.cap = gpu_specs[gpu]['capability']
-        self.ert_trials_min = 1
-        self.ert_precision = ert_precision
-        self.ert_flop = ert_flop
-        # }}}
+    # {{{ build
+    cap = gpu_specs[gpu]['capability']
+    ert_trials_min = 1
+    # }}}
 
-        # {{{ run
-        self.num_tasks = 1
-        self.num_tasks_per_node = 1
-        self.num_cpus_per_task = 1
-        self.exclusive = True
-        self.time_limit = '10m'
-        # set blocks and threads per block:
-        self.ert_gpu_threads = ert_gpu_threads
-        maximum_number_of_threads = (
-            gpu_specs[gpu]['multiprocessors'] *
-            gpu_specs[gpu]['maximum_number_of_threads_per_multiprocessor']
+    # {{{ run
+    num_tasks = 1
+    num_tasks_per_node = 1
+    num_cpus_per_task = 1
+    exclusive = True
+    time_limit = '10m'
+    # set blocks and threads per block:
+    maximum_number_of_threads = (
+        gpu_specs[gpu]['multiprocessors'] *
+        gpu_specs[gpu]['maximum_number_of_threads_per_multiprocessor']
+    )
+
+    @run_after('init')
+    def set_gpu_blocks(self):
+        self.ert_gpu_blocks = int(
+            self.maximum_number_of_threads / self.ert_gpu_threads
         )
-        self.ert_gpu_blocks = int(maximum_number_of_threads / ert_gpu_threads)
         # The other steps are in the base class
 # }}}
 # }}}
@@ -252,43 +238,40 @@ class P100_PlotErt(PlotErt_Base):
     This class depends on the HWL_Ert_BaseCheck class.
     """
 
-    def __init__(self):
-        super().__init__()
-        gpu = 'P100'
-        self.descr = f'Plot ERT data on the Roofline chart (NVIDIA {gpu})'
-        self.valid_systems = ['dom:login']
-        self.valid_prog_environs = ['PrgEnv-gnu']
-        self.maintainers = ['JG']
-        self.tags = {'gpu'}
-        self.sourcesdir = None
-        # gnuplot already installed as rpm on dom but keeping as reminder
-        # self.modules = ['gnuplot']
-        self.ert_gpu_threads = [32]
-        # uncomment for full search:
-        # self.ert_gpu_threads = [2 ** x for x in range(
-        #     int(log(gpu_specs[gpu]['warp_size'], 2)),
-        #     int(log(gpu_specs[gpu]['maximum_number_of_threads_per_block'],
-        #             2) + 1),
-        #     )
-        # ]
-        self.dep_name = f'{gpu}_RunErt'
+    gpu = 'P100'
+    descr = f'Plot ERT data on the Roofline chart (NVIDIA {gpu})'
+    valid_systems = ['dom:login']
+    valid_prog_environs = ['PrgEnv-gnu']
+    maintainers = ['JG']
+    tags = {'gpu'}
+    sourcesdir = None
+    # gnuplot already installed as rpm on dom but keeping as reminder
+    # self.modules = ['gnuplot']
+    ert_gpu_threads = [32]
+    # uncomment for full search:
+    # self.ert_gpu_threads = [2 ** x for x in range(
+    #     int(log(gpu_specs[gpu]['warp_size'], 2)),
+    #     int(log(gpu_specs[gpu]['maximum_number_of_threads_per_block'],
+    #             2) + 1),
+    #     )
+    # ]
+    ref_GFLOPs = 330.0
+    ref_DRAMbw = 53.0
+    reference = {
+        '*': {
+            'gflops': (ref_GFLOPs, None, None, 'GF/s'),
+            'DRAMbw': (ref_DRAMbw, None, None, 'GB/s'),
+        }
+    }
+
+    @run_after('init')
+    def set_dependencies(self):
+        self.dep_name = f'{self.gpu}_RunErt'
         for ii in ert_precisions:
             for jj in ert_flops:
                 for kk in self.ert_gpu_threads:
                     self.depends_on(f'{self.dep_name}_{ii}_{jj}_{kk}',
                                     udeps.by_env)
-
-        # {{{ performance
-        # Reference roofline boundaries for NVIDIA P100
-        ref_GFLOPs = 330.0
-        ref_DRAMbw = 53.0
-        self.reference = {
-            '*': {
-                'gflops': (ref_GFLOPs, None, None, 'GF/s'),
-                'DRAMbw': (ref_DRAMbw, None, None, 'GB/s'),
-            }
-        }
-        # }}}
 
     # {{{ hooks
     @require_deps
@@ -319,53 +302,43 @@ class P100_PlotErt(PlotErt_Base):
 
 
 # {{{ V100_RunErt
-@rfm.parameterized_test(
-    *[
-        [ert_precision, ert_flop, ert_gpu_threads]
-        for ert_precision in ert_precisions
-        for ert_flop in ert_flops
-        for ert_gpu_threads in [32]
-        # uncomment for full search:
-        # for ert_gpu_threads in [2 ** x for x in range(
-        #     int(log(gpu_specs['V100']['warp_size'], 2)),
-        #     int(log(gpu_specs['V100']['maximum_number_of_threads_per_block'],
-        #             2) + 1),
-        #     )
-        # ]
-    ]
-)
+@rfm.simple_test
 class V100_RunErt(RunErt_Base):
-    def __init__(self, ert_precision, ert_flop, ert_gpu_threads):
-        # {{{ pe
-        gpu = 'V100'
-        self.descr = f'Collect ERT data from NVIDIA {gpu}'
-        self.valid_systems = ['tsa:cn']
-        self.valid_prog_environs = ['PrgEnv-gnu']
-        # }}}
+    ert_precision = parameter(ert_precisions)
+    ert_flop = parameter(ert_flops)
+    ert_gpu_threads = parameter([32])
+    # {{{ pe
+    gpu = 'V100'
+    descr = f'Collect ERT data from NVIDIA {gpu}'
+    valid_systems = ['tsa:cn']
+    valid_prog_environs = ['PrgEnv-gnu']
+    # }}}
 
-        # {{{ build
-        self.cap = gpu_specs[gpu]['capability']
-        self.ert_trials_min = 1
-        self.ert_precision = ert_precision
-        self.ert_flop = ert_flop
-        # }}}
+    # {{{ build
+    cap = gpu_specs[gpu]['capability']
+    ert_trials_min = 1
+    # }}}
 
-        # {{{ run
-        self.num_tasks = 1
-        self.num_tasks_per_node = 1
-        self.num_cpus_per_task = 1
-        self.exclusive = True
-        self.time_limit = '5m'
+    # {{{ run
+    num_tasks = 1
+    num_tasks_per_node = 1
+    num_cpus_per_task = 1
+    exclusive = True
+    maximum_number_of_threads = (
+        gpu_specs[gpu]['multiprocessors'] *
+        gpu_specs[gpu]['maximum_number_of_threads_per_multiprocessor']
+    )
+    time_limit = '5m'
+
+    @run_after('init')
+    def set_gpu_blocks(self):
         # set blocks and threads per block:
-        self.ert_gpu_threads = ert_gpu_threads
-        maximum_number_of_threads = (
-            gpu_specs[gpu]['multiprocessors'] *
-            gpu_specs[gpu]['maximum_number_of_threads_per_multiprocessor']
+        self.ert_gpu_blocks = int(
+            self.maximum_number_of_threads / self.ert_gpu_threads
         )
-        self.ert_gpu_blocks = int(maximum_number_of_threads / ert_gpu_threads)
         # The other steps are in the base class
-# }}}
-# }}}
+    # }}}
+    # }}}
 
 
 # {{{ V100_PlotErt
@@ -377,42 +350,39 @@ class V100_PlotErt(PlotErt_Base):
     This class depends on the HWL_Ert_BaseCheck class.
     """
 
-    def __init__(self):
-        super().__init__()
-        gpu = 'V100'
-        self.descr = f'Plot ERT data on the Roofline chart (NVIDIA {gpu})'
-        self.valid_systems = ['tsa:login']
-        self.valid_prog_environs = ['PrgEnv-gnu']
-        self.maintainers = ['JG']
-        self.tags = {'gpu'}
-        self.sourcesdir = None
-        self.modules = ['gnuplot']
-        self.ert_gpu_threads = [32]
-        # uncomment for full search:
-        # self.ert_gpu_threads = [2 ** x for x in range(
-        #     int(log(gpu_specs[gpu]['warp_size'], 2)),
-        #     int(log(gpu_specs[gpu]['maximum_number_of_threads_per_block'],
-        #             2) + 1),
-        #     )
-        # ]
-        self.dep_name = f'{gpu}_RunErt'
+    gpu = 'V100'
+    descr = f'Plot ERT data on the Roofline chart (NVIDIA {gpu})'
+    valid_systems = ['tsa:login']
+    valid_prog_environs = ['PrgEnv-gnu']
+    maintainers = ['JG']
+    tags = {'gpu'}
+    sourcesdir = None
+    modules = ['gnuplot']
+    ert_gpu_threads = [32]
+    # uncomment for full search:
+    # self.ert_gpu_threads = [2 ** x for x in range(
+    #     int(log(gpu_specs[gpu]['warp_size'], 2)),
+    #     int(log(gpu_specs[gpu]['maximum_number_of_threads_per_block'],
+    #             2) + 1),
+    #     )
+    # ]
+    ref_GFLOPs = 330.0
+    ref_DRAMbw = 53.0
+    reference = {
+        '*': {
+            'gflops': (ref_GFLOPs, None, None, 'GF/s'),
+            'DRAMbw': (ref_DRAMbw, None, None, 'GB/s'),
+        }
+    }
+
+    @run_after('init')
+    def set_dependencies(self):
+        self.dep_name = f'{self.gpu}_RunErt'
         for ii in ert_precisions:
             for jj in ert_flops:
                 for kk in self.ert_gpu_threads:
                     self.depends_on(f'{self.dep_name}_{ii}_{jj}_{kk}',
                                     udeps.by_env)
-
-        # {{{ performance
-        # Reference roofline boundaries for NVIDIA P100
-        ref_GFLOPs = 330.0
-        ref_DRAMbw = 53.0
-        self.reference = {
-            '*': {
-                'gflops': (ref_GFLOPs, None, None, 'GF/s'),
-                'DRAMbw': (ref_DRAMbw, None, None, 'GB/s'),
-            }
-        }
-        # }}}
 
     # {{{ hooks
     @require_deps

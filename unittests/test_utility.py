@@ -1072,14 +1072,18 @@ def test_sequence_view():
     # Assert immutability
     m = l + [3, 4]
     assert [1, 2, 2, 3, 4] == m
-    assert isinstance(m, util.SequenceView)
+    assert isinstance(m, list)
 
-    m = l
-    l += [3, 4]
-    assert m is not l
-    assert [1, 2, 2] == m
-    assert [1, 2, 2, 3, 4] == l
-    assert isinstance(l, util.SequenceView)
+    m_orig = m = util.SequenceView([1])
+    m += [3, 4]
+    assert m is not m_orig
+    assert [1] == m_orig
+    assert [1, 3, 4] == m
+    assert isinstance(m, list)
+
+    n = m + l
+    assert [1, 3, 4, 1, 2, 2] == n
+    assert isinstance(n, list)
 
     with pytest.raises(TypeError):
         l[1] = 3
@@ -1542,6 +1546,7 @@ def test_jsonext_dumps():
     )
     assert '{"(1, 2, 3)": 1}' == jsonext.dumps({(1, 2, 3): 1})
 
+
 # Classes to test JSON deserialization
 
 class _D(jsonext.JSONSerializable):
@@ -1715,6 +1720,19 @@ def test_is_copyable():
     assert util.is_copyable(len)
     assert util.is_copyable(int)
     assert not util.is_copyable(foo())
+
+
+def test_is_trivially_callable():
+    def foo():
+        pass
+
+    def bar(x, y):
+        pass
+
+    assert util.is_trivially_callable(foo)
+    assert util.is_trivially_callable(bar, non_def_args=2)
+    with pytest.raises(TypeError):
+        util.is_trivially_callable(1)
 
 
 def test_nodelist_abbrev():

@@ -55,9 +55,9 @@ class CompileAffinityTool(rfm.CompileOnlyRegressionTest):
                 '-D__GCC_ATOMIC_TEST_AND_SET_TRUEVAL'
             ]
 
-    @run_before('sanity')
+    @sanity_function
     def assert_exec_exists(self):
-        self.sanity_patterns = sn.assert_found(r'affinity', self.stdout)
+        return sn.assert_found(r'affinity', self.stdout)
 
 
 @rfm.simple_test
@@ -228,7 +228,7 @@ class AffinityTestBase(rfm.RunOnlyRegressionTest):
             ]
         }
 
-    @sn.sanity_function
+    @sanity_function
     def assert_consumed_cpu_set(self):
         '''Check that all the resources have been consumed.
 
@@ -277,10 +277,6 @@ class AffinityTestBase(rfm.RunOnlyRegressionTest):
         hint = self.system.get(cp, {}).get('hint', None) or self.hint
         if hint:
             self.job.launcher.options += [f'--hint={hint}']
-
-    @run_before('sanity')
-    def set_sanity(self):
-        self.sanity_patterns = self.assert_consumed_cpu_set()
 
 
 class AffinityOpenMPBase(AffinityTestBase):

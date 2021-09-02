@@ -76,6 +76,10 @@ the rest of the types):
 
 .. code-block:: none
 
+          type
+            |
+            |
+            |
           List
         /   |
        /    |
@@ -93,16 +97,68 @@ import abc
 import re
 
 
-class _TypeFactory(abc.ABCMeta):
-    def register_subtypes(cls):
-        for t in cls._subtypes:
-            cls.register(t)
+class ConvertibleType(abc.ABCMeta):
+    '''A type that support conversions from other types.
+
+    This is a metaclass that allows classes that use it to support arbitrary
+    conversions from other types using a cast-like syntax without having to
+    change their constructor:
+
+    .. code-block:: python
+
+       new_obj = convertible_type(another_type)
+
+    For example, a class whose constructor accepts and :class:`int` may need
+    to support a cast-from-string conversion. This is particular useful if you
+    want a custom-typed test
+    :attr:`~reframe.core.pipeline.RegressionMixin.variable` to be able to be
+    set from the command line using the :option:`-S` option.
+
+    In order to support such conversions, a class must use this metaclass and
+    define a class method, named as :obj:`__rfm_cast_<type>__`, for each of
+    the type conversion that needs to support .
+
+    The following is an example of a class :class:`X` that its normal
+    constructor accepts two arguments but it also allows conversions from
+    string:
+
+    .. code-block:: python
+
+       class X(metaclass=ConvertibleType):
+           def __init__(self, x, y):
+               self.data = (x, y)
+
+           @classmethod
+           def __rfm_cast_str__(cls, s):
+               return X(*(int(x) for x in s.split(',', maxsplit=1)))
+
+        assert X(2, 3).data == X('2,3').data
+
+    .. versionadded:: 3.8.0
+
+    '''
+
+    def __call__(cls, *args, **kwargs):
+        if len(args) == 1:
+            cast_fn_name = f'__rfm_cast_{type(args[0]).__name__}__'
+            if hasattr(cls, cast_fn_name):
+                cast_fn = getattr(cls, cast_fn_name)
+                return cast_fn(args[0])
+
+        return super().__call__(*args, **kwargs)
 
 
-# Metaclasses that implement the isinstance logic for the different aggregate
-# types
+# Metaclasses that implement the isinstance logic for the different builtin
+# container types
 
-class _ContainerType(_TypeFactory):
+class _BuiltinType(ConvertibleType):
+    def __init__(cls, name, bases, namespace):
+        # Make sure that the class defines `_type`
+        assert hasattr(cls, '_type')
+        cls.register(cls._type)
+
+
+class _SequenceType(_BuiltinType):
     '''A metaclass for containers with uniformly typed elements.'''
 
     def __init__(cls, name, bases, namespace):
@@ -110,7 +166,6 @@ class _ContainerType(_TypeFactory):
         cls._elem_type = None
         cls._bases = bases
         cls._namespace = namespace
-        cls.register_subtypes()
 
     def __instancecheck__(cls, inst):
         if not issubclass(type(inst), cls):
@@ -129,15 +184,19 @@ class _ContainerType(_TypeFactory):
             raise TypeError('invalid type specification for container type: '
                             'expected ContainerType[elem_type]')
 
-        ret = _ContainerType('%s[%s]' % (cls.__name__, elem_type.__name__),
-                             cls._bases, cls._namespace)
+        ret = _SequenceType('%s[%s]' % (cls.__name__, elem_type.__name__),
+                            cls._bases, cls._namespace)
         ret._elem_type = elem_type
-        ret.register_subtypes()
         cls.register(ret)
         return ret
 
+    def __rfm_cast_str__(cls, s):
+        container_type = cls._type
+        elem_type = cls._elem_type
+        return container_type(elem_type(e) for e in s.split(','))
 
-class _TupleType(_ContainerType):
+
+class _TupleType(_SequenceType):
     '''A metaclass for tuples.
 
     Tuples may contain uniformly-typed elements or non-uniformly typed ones.
@@ -174,12 +233,25 @@ class _TupleType(_ContainerType):
         )
         ret = _TupleType(cls_name, cls._bases, cls._namespace)
         ret._elem_type = elem_types
-        ret.register_subtypes()
         cls.register(ret)
         return ret
 
+    def __rfm_cast_str__(cls, s):
+        container_type = cls._type
+        elem_types = cls._elem_type
+        elems = s.split(',')
+        if len(elem_types) == 1:
+            elem_t = elem_types[0]
+            return container_type(elem_t(e) for e in elems)
+        elif len(elem_types) != len(elems):
+            raise TypeError(f'cannot convert string {s!r} to {cls.__name__!r}')
+        else:
+            return container_type(
+                elem_t(e) for elem_t, e in zip(elem_types, elems)
+            )
 
-class _MappingType(_TypeFactory):
+
+class _MappingType(_BuiltinType):
     '''A metaclass for type checking mapping types.'''
 
     def __init__(cls, name, bases, namespace):
@@ -188,7 +260,6 @@ class _MappingType(_TypeFactory):
         cls._value_type = None
         cls._bases = bases
         cls._namespace = namespace
-        cls.register_subtypes()
 
     def __instancecheck__(cls, inst):
         if not issubclass(type(inst), cls):
@@ -221,12 +292,29 @@ class _MappingType(_TypeFactory):
         ret = _MappingType(cls_name, cls._bases, cls._namespace)
         ret._key_type = key_type
         ret._value_type = value_type
-        ret.register_subtypes()
         cls.register(ret)
         return ret
 
+    def __rfm_cast_str__(cls, s):
+        mappping_type = cls._type
+        key_type = cls._key_type
+        value_type = cls._value_type
+        seq = []
+        for key_datum in s.split(','):
+            try:
+                k, v = key_datum.split(':')
+            except ValueError:
+                # Re-raise as TypeError
+                raise TypeError(
+                    f'cannot convert string {s!r} to {cls.__name__!r}'
+                ) from None
 
-class _StrType(_ContainerType):
+            seq.append((key_type(k), value_type(v)))
+
+        return mappping_type(seq)
+
+
+class _StrType(_SequenceType):
     '''A metaclass for type checking string types.'''
 
     def __instancecheck__(cls, inst):
@@ -247,26 +335,28 @@ class _StrType(_ContainerType):
         ret = _StrType("%s[r'%s']" % (cls.__name__, patt),
                        cls._bases, cls._namespace)
         ret._elem_type = patt
-        ret.register_subtypes()
         cls.register(ret)
         return ret
 
+    def __rfm_cast_str__(cls, s):
+        return s
+
 
 class Dict(metaclass=_MappingType):
-    _subtypes = (dict,)
+    _type = dict
 
 
-class List(metaclass=_ContainerType):
-    _subtypes = (list,)
+class List(metaclass=_SequenceType):
+    _type = list
 
 
-class Set(metaclass=_ContainerType):
-    _subtypes = (set,)
+class Set(metaclass=_SequenceType):
+    _type = set
 
 
 class Str(metaclass=_StrType):
-    _subtypes = (str,)
+    _type = str
 
 
 class Tuple(metaclass=_TupleType):
-    _subtypes = (tuple,)
+    _type = tuple
