@@ -49,6 +49,7 @@ class ProcessorType(jsonext.JSONSerializable):
                 f'attribute {name!r} is not writeable'
             )
         else:
+            # Let Python data model raise the AttributeError here
             super().__setattr__(name, value)
 
     @property
