@@ -43,6 +43,7 @@ class FixtureRegistry:
 
     :meta private:
     '''
+
     def __init__(self):
         self._reg = dict()
 
@@ -77,7 +78,10 @@ class FixtureRegistry:
         scope = fixture.scope
         fname = fixture.get_name(variant_num)
         variables = fixture.variables
-        fname += ''.join((f'_{k}_{utils.toalphanum(str(v))}' for k,v in variables.items()))
+        fname += ''.join(
+            (f'_{k}_{utils.toalphanum(str(v))}' for k, v
+             in variables.items())
+        )
         reg_names = []
         self._reg.setdefault(cls, dict())
         if scope == 'session':
@@ -97,9 +101,11 @@ class FixtureRegistry:
                 reg_names.append(name)
         elif scope == 'environment':
             sys_part = runtime.runtime().system.partitions
-            partition_map = {p.fullname:i for i,p in enumerate(sys_part)}
+            partition_map = {p.fullname: i for i, p in enumerate(sys_part)}
             for p in partitions:
-                valid_envs = {env.name for env in sys_part[partition_map[p]].environs}
+                valid_envs = {
+                    env.name for env in sys_part[partition_map[p]].environs
+                }
                 for env in prog_envs:
                     # Skip the environment if the partition does not support it
                     if env not in valid_envs:
@@ -196,7 +202,7 @@ class FixtureRegistry:
                 cls.valid_systems = Undefined
 
                 # Reinstate the deault values
-                for k,v in var_def.items():
+                for k, v in var_def.items():
                     cls.setvar(k, v)
         return ret
 
@@ -265,7 +271,7 @@ class TestFixture:
         # Validate the fixture class: We can't use isinstance here because of
         # circular imports.
         rfm_kind = getattr(cls, '_rfm_regression_class_kind', 0)
-        if rfm_kind==0:
+        if rfm_kind == 0:
             raise ValueError(
                 f"{cls.__qualname__!r} must be a derived class from "
                 f"'RegressionTest'"
@@ -368,6 +374,7 @@ class TestFixture:
         '''Variables to be set in the test.'''
         return self._variables
 
+
 class FixtureSpace(namespaces.Namespace):
     ''' Regression test fixture space.
 
@@ -434,7 +441,7 @@ class FixtureSpace(namespaces.Namespace):
                 )
 
     def inject(self, obj, cls=None, fixture_variant=None):
-        '''Build a fixture registry and inject it in the parent's test instance.
+        '''Build fixture registry and inject it in the parent's test instance.
 
         A fixture steals the valid_systems and valid_prog_environments from the
         parent tests, and these attributes could be set during the parent
@@ -444,7 +451,8 @@ class FixtureSpace(namespaces.Namespace):
 
         :param obj: Parent test's instance.
         :param cls: Parent test's class.
-        :param fixture_variant: Index representing a point in the fixture space.
+        :param fixture_variant: Index representing a point in the fixture
+            space.
 
         .. note::
            This function is aware of the implementation of the
@@ -547,7 +555,7 @@ class FixtureSpace(namespaces.Namespace):
         if isinstance(key, int):
             ret = dict()
             f_ids = self.__random_access_iter[key]
-            for i,f in enumerate(self.fixtures):
+            for i, f in enumerate(self.fixtures):
                 ret[f] = f_ids[i]
 
             return ret

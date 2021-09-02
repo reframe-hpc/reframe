@@ -656,7 +656,7 @@ class RegressionTestMeta(type):
             )
 
         p_space_len = len(cls._rfm_param_space)
-        return variant_num%p_space_len, variant_num//p_space_len
+        return variant_num % p_space_len, variant_num // p_space_len
 
     def get_variant_nums(cls, **conditions):
         '''Get the variant numbers that meet the specified conditions.
@@ -679,7 +679,8 @@ class RegressionTestMeta(type):
         outer_variants = []
         param_space_len = len(cls.param_space)
         for i in range(cls.num_variants//param_space_len):
-            outer_variants += map(lambda x: x+param_space_len*i, inner_variants)
+            outer_variants += map(lambda x: x + param_space_len*i,
+                                  inner_variants)
 
         return outer_variants
 
@@ -739,7 +740,7 @@ class RegressionTestMeta(type):
         if cls.fixture_space.fixtures:
             fs = cls.fixture_space
             name += '_' + '_'.join(
-                fs[k].cls.fullname(v) for k,v in fs[fid].items()
+                fs[k].cls.fullname(v) for k, v in fs[fid].items()
             )
 
         return name

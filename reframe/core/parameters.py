@@ -52,7 +52,7 @@ class TestParam:
         except TypeError:
             raise TypeError(
                 'the provided parameter filter is not a callable'
-                ) from None
+            ) from None
         else:
             if not valid:
                 raise TypeError('filter function must take a single argument')
@@ -103,7 +103,7 @@ class ParamSpace(namespaces.Namespace):
         self.__random_access_iter = tuple(
             itertools.product(*(copy.deepcopy(p)
                               for p in self.params.values())
-            )
+                              )
         )
 
     def join(self, other, cls):
@@ -179,7 +179,7 @@ class ParamSpace(namespaces.Namespace):
         :param params_variant: index to a point in the parameter space.
         '''
         # Set the values of the test parameters (if any)
-        if self.params and not params_variant is None:
+        if self.params and params_variant is not None:
             try:
                 # Consume the parameter space iterator
                 param_values = self.__random_access_iter[params_variant]
@@ -274,6 +274,7 @@ class ParamSpace(namespaces.Namespace):
                     )
 
         pos_map = {k: v for v, k in enumerate(self.keys())}
+
         def _get_param_value(name, variant):
             try:
                 return self.__random_access_iter[variant][pos_map[name]]
@@ -281,12 +282,7 @@ class ParamSpace(namespaces.Namespace):
                 raise KeyError(f'{name} is not present in the parameter space')
 
         for p, cond in conditions.items():
-            val = lambda v: _get_param_value(p, v)
+            def val(v): return _get_param_value(p, v)
             candidates = list(filter(lambda v: cond(val(v)), candidates))
 
         return candidates
-
-
-
-
-
