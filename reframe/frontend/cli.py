@@ -7,7 +7,6 @@ import inspect
 import itertools
 import json
 import os
-import re
 import shlex
 import socket
 import sys
