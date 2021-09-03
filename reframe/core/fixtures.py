@@ -89,21 +89,25 @@ class FixtureRegistry:
         reg_names = []
         self._reg.setdefault(cls, dict())
 
+        # Select only the valid partitions
+        valid_partitions = self._filter_valid_partitions(partitions)
+
         # Register the fixture
         if scope == 'session':
             # The name is just the class name
             name = fname
 
             # Select an environment supported by the partition
-            valid_envs = self._filter_valid_environs(partitions[0], prog_envs)
+            valid_envs = self._filter_valid_environs(valid_partitions[0],
+                                                     prog_envs)
 
             # Register the fixture
             self._reg[cls][name] = (
-                variant_num, [valid_envs[0]], [partitions[0]], variables
+                variant_num, [valid_envs[0]], [valid_partitions[0]], variables
             )
             reg_names.append(name)
         elif scope == 'partition':
-            for p in partitions:
+            for p in valid_partitions:
                 # The name contains the full partition name
                 name = '_'.join([fname, p])
 
@@ -116,7 +120,7 @@ class FixtureRegistry:
                 )
                 reg_names.append(name)
         elif scope == 'environment':
-            for p in partitions:
+            for p in valid_partitions:
                 for env in self._filter_valid_environs(p, prog_envs):
                     # The name contains the full part and env names
                     name = '_'.join([fname, p, env])
@@ -217,6 +221,9 @@ class FixtureRegistry:
                     cls.setvar(k, v)
         return ret
 
+    def _filter_valid_partitions(self, candidate_parts):
+        return [p for p in candidate_parts if p in self._part_map]
+
     def _filter_valid_environs(self, part, candidate_environs):
         sys_part = runtime.runtime().system.partitions
         supported_envs = {
@@ -228,10 +235,6 @@ class FixtureRegistry:
             if env in supported_envs:
                 valid_envs.append(env)
 
-        if len(valid_envs) == 0:
-            raise RuntimeError(
-                f'could not find a valid environment for partition {part}'
-            )
         return valid_envs
 
     def _is_registry(self, other):
@@ -515,10 +518,20 @@ class FixtureSpace(namespaces.Namespace):
 
             dep_names = []
             for variant in var_num:
-                # The fixture registry returns the newly added fixture names
-                dep_names += obj._rfm_fixture_registry.add(fixture, variant,
-                                                           obj.name, part,
-                                                           prog_envs)
+                try:
+                    # Register all the variants and track the fixture names
+                    dep_names += obj._rfm_fixture_registry.add(fixture,
+                                                               variant,
+                                                               obj.name, part,
+                                                               prog_envs)
+                except Exception:
+                    exc_info = sys.exc_info()
+                    getlogger().warning(
+                        f"skipping fixture {fixture.cls.__qualname__!r}: "
+                        f"{what(*exc_info)} "
+                        f"(rerun with '-v' for more information)"
+                    )
+                    getlogger().verbose(traceback.format_exc())
 
             # Add dependencies
             if fixture.scope == 'session':

@@ -260,6 +260,7 @@ def main():
     )
     select_options.add_argument(
         '-p', '--prgenv', action='append', default=[r'.*'],  metavar='PATTERN',
+        configvar='general/valid_env_names',
         help=('Select checks with at least one '
               'programming environment matching PATTERN')
     )
@@ -772,17 +773,9 @@ def main():
 
         # Generate all possible test cases first; we will need them for
         # resolving dependencies after filtering
-
-        # Determine the allowed programming environments
-        allowed_environs = {e.name
-                            for env_patt in options.prgenv
-                            for p in rt.system.partitions
-                            for e in p.environs if re.match(env_patt, e.name)}
-
         testcases_all = generate_testcases(checks_found,
                                            options.skip_system_check,
-                                           options.skip_prgenv_check,
-                                           allowed_environs)
+                                           options.skip_prgenv_check)
         testcases = testcases_all
         printer.verbose(f'Generated {len(testcases)} test case(s)')
 
