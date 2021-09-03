@@ -243,7 +243,7 @@ def _emit_load_commands_tmod4(modules_system):
         'module restore foo', f'module use {test_util.TEST_MODULES}'
     ]
     assert emit_cmds('foo/1.2') == ['module load foo/1.2']
-    if modules_system.name is 'lmod':
+    if modules_system.name == 'lmod':
         assert emit_cmds('foo', path='/path') == ['module use /path',
                                                   'module load foo']
     else:
