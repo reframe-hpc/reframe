@@ -13,30 +13,15 @@ from reframe.core.logging import getlogger
 from reframe.core.modules import ModulesSystem
 
 
-class ProcessorType(jsonext.JSONSerializable):
-    '''A representation of a processor inside ReFrame.
+class _ReadOnlyInfo(jsonext.JSONSerializable):
 
-    You can access all the keys of the `processor configuration object
-    <config_reference.html#processor-info>`__.
-
-    .. versionadded:: 3.5.0
-
-    .. warning::
-       Users may not create :class:`ProcessorType` objects directly.
-
-    '''
-
-    __slots__ = (
-        '__info', 'arch', 'num_cpus', 'num_cpus_per_core',
-        'num_cpus_per_socket', 'num_sockets', 'topology'
-    )
+    def __init__(self, info):
+        self.__info = info
 
     def __deepcopy__(self, memo):
         # This is a read-only object; simply return ourself
         return self
 
-    def __init__(self, processor_info):
-        self.__info = processor_info
 
     def __getattr__(self, name):
         if name in self.__slots__:
@@ -62,6 +47,24 @@ class ProcessorType(jsonext.JSONSerializable):
         :type: :class:`dict`
         '''
         return self.__info
+
+class ProcessorInfo(_ReadOnlyInfo):
+    '''A representation of a processor inside ReFrame.
+
+    You can access all the keys of the `processor configuration object
+    <config_reference.html#processor-info>`__.
+
+    .. versionadded:: 3.5.0
+
+    .. warning::
+       Users may not create :class:`ProcessorInfo` objects directly.
+
+    '''
+
+    __slots__ = (
+        '__info', 'arch', 'num_cpus', 'num_cpus_per_core',
+        'num_cpus_per_socket', 'num_sockets', 'topology'
+    )
 
     @property
     def num_cores(self):
@@ -109,7 +112,7 @@ class ProcessorType(jsonext.JSONSerializable):
             return None
 
 
-class DeviceType(jsonext.JSONSerializable):
+class DeviceInfo(_ReadOnlyInfo):
     '''A representation of a device inside ReFrame.
 
     You can access all the keys of the `device configuration object
@@ -118,35 +121,11 @@ class DeviceType(jsonext.JSONSerializable):
     .. versionadded:: 3.5.0
 
     .. warning::
-       Users may not create :class:`DeviceType` objects directly.
+       Users may not create :class:`DeviceInfo` objects directly.
 
     '''
 
     __slots__ = ('__info', 'type', 'arch')
-
-    def __deepcopy__(self, memo):
-        # This is a read-only object; simply return ourself
-        return self
-
-    def __init__(self, device_info):
-        self.__info = device_info
-
-    def __getattr__(self, name):
-        if name in self.__slots__:
-            return self.__info.get(name, None)
-        else:
-            raise AttributeError(
-                f'{type(self).__qualname__!r} object has no attribute {name!r}'
-            )
-
-    def __setattr__(self, name, value):
-        if name in self.__slots__:
-            raise AttributeError(
-                f'attribute {name!r} is not writeable'
-            )
-        else:
-            # Let Python data model raise the AttributeError here
-            super().__setattr__(name, value)
 
     @property
     def num_devices(self):
@@ -157,14 +136,6 @@ class DeviceType(jsonext.JSONSerializable):
         :type: integral
         '''
         return self.__info.get('num_devices', 1)
-
-    @property
-    def info(self):
-        '''All the available information from the configuration.
-
-        :type: :class:`dict`
-        '''
-        return self.__info
 
     @property
     def device_type(self):
@@ -200,8 +171,8 @@ class SystemPartition(jsonext.JSONSerializable):
         self._max_jobs = max_jobs
         self._prepare_cmds = prepare_cmds
         self._resources = {r['name']: r['options'] for r in resources}
-        self._processor = ProcessorType(processor)
-        self._devices = [DeviceType(d) for d in devices]
+        self._processor = ProcessorInfo(processor)
+        self._devices = [DeviceInfo(d) for d in devices]
         self._extras = extras
 
     @property
@@ -368,7 +339,7 @@ class SystemPartition(jsonext.JSONSerializable):
 
         .. versionadded:: 3.5.0
 
-        :type: :class:`reframe.core.systems.ProcessorType`
+        :type: :class:`reframe.core.systems.ProcessorInfo`
         '''
         return self._processor
 
@@ -378,7 +349,7 @@ class SystemPartition(jsonext.JSONSerializable):
 
         .. versionadded:: 3.5.0
 
-        :type: :class:`List[reframe.core.systems.DeviceType]`
+        :type: :class:`List[reframe.core.systems.DeviceInfo]`
         '''
         return self._devices
 
