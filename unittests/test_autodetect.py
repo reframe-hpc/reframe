@@ -65,6 +65,13 @@ def test_autotect(exec_ctx):
     }
     assert part.devices[0].device_type == 'gpu'
 
+    # Test immutability of ProcessorType and DeviceType
+    with pytest.raises(AttributeError):
+        part.processor.info = {}
+
+    with pytest.raises(AttributeError):
+        part.devices[0].info = {}
+
 
 def test_autotect_with_invalid_files(invalid_topo_exec_ctx):
     detect_topology()
