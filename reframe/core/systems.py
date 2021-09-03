@@ -48,6 +48,7 @@ class _ReadOnlyInfo(jsonext.JSONSerializable):
         '''
         return self.__info
 
+
 class ProcessorInfo(_ReadOnlyInfo):
     '''A representation of a processor inside ReFrame.
 
