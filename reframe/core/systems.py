@@ -15,9 +15,9 @@ from reframe.core.modules import ModulesSystem
 
 class ProcessorType(jsonext.JSONSerializable):
     '''A representation of a processor inside ReFrame.
-    You can access all the keys of the processor dictionary in configuration
-    as direct properties. You can see a full list
-    `here <config_reference.html#processor-info>`__.
+
+    You can access all the keys of the `processor configuration object
+    <config_reference.html#processor-info>`__.
 
     .. versionadded:: 3.5.0
 
@@ -111,9 +111,9 @@ class ProcessorType(jsonext.JSONSerializable):
 
 class DeviceType(jsonext.JSONSerializable):
     '''A representation of a device inside ReFrame.
-    You can access all the keys of the device dictionary in configuration
-    as direct properties. You can see a full list
-    `here <config_reference.html#device-info>`__.
+
+    You can access all the keys of the `device configuration object
+    <config_reference.html#device-info>`__.
 
     .. versionadded:: 3.5.0
 
