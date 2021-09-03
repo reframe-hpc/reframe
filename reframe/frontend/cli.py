@@ -237,7 +237,8 @@ def main():
     )
     locate_options.add_argument(
         '--ignore-check-conflicts', action='store_true',
-        help='Skip checks with conflicting names',
+        help=('Skip checks with conflicting names '
+              '(this option is deprecated and has no effect)'),
         envvar='RFM_IGNORE_CHECK_CONFLICTS',
         configvar='general/ignore_check_conflicts'
     )
@@ -327,6 +328,12 @@ def main():
     run_options.add_argument(
         '--skip-prgenv-check', action='store_true',
         help='Skip programming environment check'
+    )
+    run_options.add_argument(
+        '-S', '--setvar', action='append', metavar='[TEST.]VAR=VAL',
+        dest='vars', default=[],
+        help=('Set test variable VAR to VAL in all tests '
+              'or optionally in TEST only')
     )
     run_options.add_argument(
         '--exec-policy', metavar='POLICY', action='store',
@@ -600,6 +607,12 @@ def main():
         printer.error(logfiles_message())
         sys.exit(1)
 
+    if site_config.get('general/0/ignore_check_conflicts'):
+        logging.getlogger().warning(
+            "the 'ignore_check_conflicts' option is deprecated "
+            "and will be removed in the future"
+        )
+
     rt = runtime.runtime()
     autodetect.detect_topology()
     try:
@@ -704,13 +717,21 @@ def main():
         )
         check_search_path = site_config.get('general/0/check_search_path')
 
-    loader = RegressionCheckLoader(
-        load_path=check_search_path,
-        recurse=check_search_recursive,
-        ignore_conflicts=site_config.get(
-            'general/0/ignore_check_conflicts'
-        )
-    )
+    # Collect any variables set from the command line
+    external_vars = {}
+    for expr in options.vars:
+        try:
+            lhs, rhs = expr.split('=', maxsplit=1)
+        except ValueError:
+            printer.warning(
+                f'invalid test variable assignment: {expr!r}; skipping'
+            )
+        else:
+            external_vars[lhs] = rhs
+
+    loader = RegressionCheckLoader(check_search_path,
+                                   check_search_recursive,
+                                   external_vars)
 
     def print_infoline(param, value):
         param = param + ':'
@@ -746,11 +767,8 @@ def main():
     printer.info('')
     try:
         # Locate and load checks
-        try:
-            checks_found = loader.load_all()
-            printer.verbose(f'Loaded {len(checks_found)} test(s)')
-        except OSError as e:
-            raise errors.ReframeError from e
+        checks_found = loader.load_all()
+        printer.verbose(f'Loaded {len(checks_found)} test(s)')
 
         # Generate all possible test cases first; we will need them for
         # resolving dependencies after filtering

@@ -12,6 +12,8 @@ import functools
 import itertools
 
 import reframe.core.namespaces as namespaces
+import reframe.utility as utils
+from reframe.core.exceptions import ReframeSyntaxError
 
 
 class TestParam:
@@ -44,6 +46,18 @@ class TestParam:
                 return x
 
         self.values = tuple(values)
+
+        # Validate the filter_param argument
+        try:
+            valid = utils.is_trivially_callable(filter_params, non_def_args=1)
+        except TypeError:
+            raise TypeError(
+                'the provided parameter filter is not a callable'
+                ) from None
+        else:
+            if not valid:
+                raise TypeError('filter function must take a single argument')
+
         self.filter_params = filter_params
 
 
@@ -108,7 +122,7 @@ class ParamSpace(namespaces.Namespace):
                 self.params[key] != () and
                 other.params[key] != ()):
 
-                raise ValueError(
+                raise ReframeSyntaxError(
                     f'parameter space conflict: '
                     f'parameter {key!r} is defined in more than '
                     f'one base class of class {cls.__qualname__!r}'
@@ -123,16 +137,25 @@ class ParamSpace(namespaces.Namespace):
 
         local_param_space = getattr(cls, self.local_namespace_name)
         for name, p in local_param_space.items():
-            self.params[name] = (
-                p.filter_params(self.params.get(name, ())) + p.values
-            )
+            try:
+                filt_vals = p.filter_params(self.params.get(name, ()))
+            except Exception:
+                raise
+            else:
+                try:
+                    self.params[name] = (tuple(filt_vals) + p.values)
+                except TypeError:
+                    raise ReframeSyntaxError(
+                        f"'filter_param' must return an iterable "
+                        f"(parameter {name!r})"
+                    ) from None
 
         # If any previously declared parameter was defined in the class body
         # by directly assigning it a value, raise an error. Parameters must be
         # changed using the `x = parameter([...])` syntax.
         for key, values in cls.__dict__.items():
             if key in self.params:
-                raise ValueError(
+                raise ReframeSyntaxError(
                     f'parameter {key!r} must be modified through the built-in '
                     f'parameter type'
                 )

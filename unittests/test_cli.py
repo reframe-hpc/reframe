@@ -62,7 +62,6 @@ def run_reframe(tmp_path, perflogdir, monkeypatch):
                      more_options=None,
                      mode=None,
                      config_file='unittests/resources/settings.py',
-                     ignore_check_conflicts=True,
                      perflogdir=str(perflogdir)):
         import reframe.frontend.cli as cli
 
@@ -94,9 +93,6 @@ def run_reframe(tmp_path, perflogdir, monkeypatch):
             argv += ['--list-tags']
         elif action == 'help':
             argv += ['-h']
-
-        if ignore_check_conflicts:
-            argv += ['--ignore-check-conflicts']
 
         if perflogdir:
             argv += ['--perflogdir', perflogdir]
@@ -477,27 +473,16 @@ def test_execution_modes(run_reframe):
     assert 'Ran 2/2 test case' in stdout
 
 
-def test_no_ignore_check_conflicts(run_reframe):
-    returncode, *_ = run_reframe(
-        checkpath=['unittests/resources/checks'],
-        more_options=['-R'],
-        ignore_check_conflicts=False,
-        action='list'
-    )
-    assert returncode != 0
-
-
 def test_timestamp_option(run_reframe):
     from datetime import datetime
 
     timefmt = datetime.now().strftime('xxx_%F')
     returncode, stdout, _ = run_reframe(
         checkpath=['unittests/resources/checks'],
-        ignore_check_conflicts=False,
         action='list',
         more_options=['-R', '--timestamp=xxx_%F']
     )
-    assert returncode != 0
+    assert returncode == 0
     assert timefmt in stdout
 
 
@@ -561,8 +546,7 @@ def test_filtering_multiple_criteria(run_reframe):
     returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks'],
         action='list',
-        more_options=['-t', 'foo', '-n', 'hellocheck',
-                      '--ignore-check-conflicts']
+        more_options=['-t', 'foo', '-n', 'hellocheck']
     )
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
@@ -793,3 +777,24 @@ def test_detect_host_topology_file(run_reframe, tmp_path):
     assert returncode == 0
     with open(topo_file) as fp:
         assert json.load(fp) == cpuinfo()
+
+
+def test_external_vars(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        checkpath=['unittests/resources/checks_unlisted/externalvars.py'],
+        more_options=['-S', 'external_x.foo=3', '-S', 'external_y.foo=2',
+                      '-S', 'foolist=3,4', '-S', 'bar=@none']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert returncode == 0
+
+
+def test_external_vars_invalid_expr(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        more_options=['-S', 'foo']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert 'invalid test variable assignment' in stdout
+    assert returncode == 0

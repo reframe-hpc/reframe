@@ -8,13 +8,15 @@
 #
 
 import ast
-import collections.abc
 import inspect
 import os
+import sys
+import traceback
 
+import reframe.core.fields as fields
 import reframe.utility as util
 import reframe.utility.osext as osext
-from reframe.core.exceptions import NameConflictError
+from reframe.core.exceptions import NameConflictError, is_severe, what
 from reframe.core.logging import getlogger
 
 
@@ -38,15 +40,17 @@ class RegressionCheckValidator(ast.NodeVisitor):
 
 
 class RegressionCheckLoader:
-    def __init__(self, load_path, recurse=False, ignore_conflicts=False):
+    def __init__(self, load_path, recurse=False, external_vars=None):
         # Expand any environment variables and symlinks
         load_path = [os.path.realpath(osext.expandvars(p)) for p in load_path]
         self._load_path = osext.unique_abs_paths(load_path, recurse)
         self._recurse = recurse
-        self._ignore_conflicts = ignore_conflicts
 
         # Loaded tests by name; maps test names to the file that were defined
         self._loaded = {}
+
+        # Variables set in the command line
+        self._external_vars = external_vars or {}
 
     def _module_name(self, filename):
         '''Figure out a module name from filename.
@@ -85,8 +89,7 @@ class RegressionCheckLoader:
         for attr in required_attrs:
             if not hasattr(check, attr):
                 getlogger().warning(
-                    f'{checkfile}: {attr!r} not defined for test {name!r}; '
-                    f'skipping...'
+                    f'skipping test {name!r}: {attr!r} not defined'
                 )
                 return False
 
@@ -115,32 +118,70 @@ class RegressionCheckLoader:
     def recurse(self):
         return self._recurse
 
+    def _set_defaults(self, test_registry):
+        if test_registry is None:
+            return
+
+        unset_vars = {}
+        for test in test_registry:
+            for name, val in self._external_vars.items():
+                if '.' in name:
+                    testname, varname = name.split('.', maxsplit=1)
+                else:
+                    testname, varname = test.__name__, name
+
+                if testname == test.__name__:
+                    # Treat special values
+                    if val == '@none':
+                        val = None
+                    else:
+                        val = fields.make_convertible(val)
+
+                    if not test.setvar(varname, val):
+                        unset_vars.setdefault(test.__name__, [])
+                        unset_vars[test.__name__].append(varname)
+
+        # Warn for all unset variables
+        for testname, varlist in unset_vars.items():
+            varlist = ', '.join(f'{v!r}' for v in varlist)
+            getlogger().warning(
+                f'test {testname!r}: '
+                f'the following variables were not set: {varlist}'
+            )
+
     def load_from_module(self, module):
         '''Load user checks from module.
 
-        This method tries to call the `_rfm_gettests()` method of the user
-        check and validates its return value.'''
+        This method tries to load the test registry from a given module and
+        instantiates all the tests in the registry. The instantiated checks
+        are validated before return.
+
+        For legacy reasons, a module might have the additional legacy registry
+        `_rfm_gettests`, which is a method that instantiates all the tests
+        registered with the deprecated `parameterized_test` decorator.
+        '''
         from reframe.core.pipeline import RegressionTest
 
-        # Warn in case of old syntax
-        if hasattr(module, '_get_checks'):
-            getlogger().warning(
-                f'{module.__file__}: _get_checks() is no more supported '
-                f'in test files: please use @reframe.simple_test decorator'
-            )
-
-        if not hasattr(module, '_rfm_gettests'):
+        # FIXME: Remove the legacy_registry after dropping parameterized_test
+        registry = getattr(module, '_rfm_test_registry', None)
+        legacy_registry = getattr(module, '_rfm_gettests', None)
+        if not any((registry, legacy_registry)):
             getlogger().debug('No tests registered')
             return []
 
-        candidates = module._rfm_gettests()
-        if not isinstance(candidates, collections.abc.Sequence):
+        self._set_defaults(registry)
+        candidates = registry.instantiate_all() if registry else []
+        legacy_candidates = legacy_registry() if legacy_registry else []
+        if self._external_vars and legacy_candidates:
             getlogger().warning(
-                f'Tests not registered correctly in {module.__name__!r}'
+                "variables of tests using the deprecated "
+                "'@parameterized_test' decorator cannot be set externally; "
+                "please use the 'parameter' builtin in your tests"
             )
-            return []
 
-        ret = []
+        # Merge registries
+        candidates += legacy_candidates
+        tests = []
         for c in candidates:
             if not isinstance(c, RegressionTest):
                 continue
@@ -153,34 +194,42 @@ class RegressionCheckLoader:
                 conflicted = self._loaded[c.name]
             except KeyError:
                 self._loaded[c.name] = testfile
-                ret.append(c)
+                tests.append(c)
             else:
-                msg = (f'{testfile}: test {c.name!r} '
-                       f'already defined in {conflicted!r}')
+                raise NameConflictError(
+                    f'test {c.name!r} from {testfile!r} '
+                    f'is already defined in {conflicted!r}'
+                )
 
-                if self._ignore_conflicts:
-                    getlogger().warning(f'{msg}; skipping...')
-                else:
-                    raise NameConflictError(msg)
-
-        getlogger().debug(f'  > Loaded {len(ret)} test(s)')
-        return ret
+        getlogger().debug(f'  > Loaded {len(tests)} test(s)')
+        return tests
 
     def load_from_file(self, filename, force=False):
         if not self._validate_source(filename):
             return []
 
-        return self.load_from_module(
-            util.import_module_from_file(filename, force)
-        )
+        try:
+            return self.load_from_module(
+                util.import_module_from_file(filename, force)
+            )
+        except Exception:
+            exc_info = sys.exc_info()
+            if not is_severe(*exc_info):
+                # Simply skip the file in this case
+                getlogger().warning(
+                    f"skipping test file {filename!r}: {what(*exc_info)} "
+                    f"(rerun with '-v' for more information)"
+                )
+                getlogger().verbose(traceback.format_exc())
+                return []
+            else:
+                raise
 
     def load_from_dir(self, dirname, recurse=False, force=False):
         checks = []
         for entry in os.scandir(dirname):
             if recurse and entry.is_dir():
-                checks.extend(
-                    self.load_from_dir(entry.path, recurse, force)
-                )
+                checks += self.load_from_dir(entry.path, recurse, force)
 
             if (entry.name.startswith('.') or
                 not entry.name.endswith('.py') or

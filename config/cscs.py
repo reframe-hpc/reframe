@@ -194,7 +194,7 @@ site_configuration = {
                         {
                             'type': 'Singularity',
                             'modules': [
-                                'singularity'
+                                'singularity/3.6.4-daint'
                             ]
                         }
                     ],
@@ -242,7 +242,7 @@ site_configuration = {
                         {
                             'type': 'Singularity',
                             'modules': [
-                                'singularity'
+                                'singularity/3.6.4-daint'
                             ]
                         }
                     ],
@@ -362,7 +362,7 @@ site_configuration = {
                         {
                             'type': 'Singularity',
                             'modules': [
-                                'singularity/3.5.3'
+                                'singularity/3.6.4-daint'
                             ]
                         }
                     ],
@@ -405,7 +405,7 @@ site_configuration = {
                         {
                             'type': 'Singularity',
                             'modules': [
-                                'singularity/3.5.3'
+                                'singularity/3.6.4-daint'
                             ]
                         }
                     ],
@@ -703,6 +703,9 @@ site_configuration = {
                         },
                         {
                             'type': 'Singularity',
+                            'modules': [
+                                'singularity/3.5.3-eiger'
+                            ]
                         }
                     ],
                     'environs': [
@@ -788,6 +791,9 @@ site_configuration = {
                         },
                         {
                             'type': 'Singularity',
+                            'modules': [
+                                'singularity/3.5.3-eiger'
+                            ]
                         }
                     ],
                     'environs': [

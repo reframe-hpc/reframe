@@ -3,10 +3,11 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import os
 
 import reframe as rfm
 import reframe.utility.sanity as sn
+import reframe.utility.osext as osext
+from reframe.core.exceptions import SanityError
 
 from hpctestlib.microbenchmarks.gpu.gpu_burn import GpuBurn
 import cscstests.microbenchmarks.gpu.hooks as hooks
@@ -24,30 +25,29 @@ class gpu_burn_check(GpuBurn):
     num_tasks = 0
     reference = {
         'dom:gpu': {
-            'perf': (4115, -0.10, None, 'Gflop/s'),
+            'min_perf': (4115, -0.10, None, 'Gflop/s'),
         },
         'daint:gpu': {
-            'perf': (4115, -0.10, None, 'Gflop/s'),
+            'min_perf': (4115, -0.10, None, 'Gflop/s'),
         },
         'arolla:cn': {
-            'perf': (5861, -0.10, None, 'Gflop/s'),
+            'min_perf': (5861, -0.10, None, 'Gflop/s'),
         },
         'tsa:cn': {
-            'perf': (5861, -0.10, None, 'Gflop/s'),
+            'min_perf': (5861, -0.10, None, 'Gflop/s'),
         },
         'ault:amda100': {
-            'perf': (15000, -0.10, None, 'Gflop/s'),
+            'min_perf': (15000, -0.10, None, 'Gflop/s'),
         },
         'ault:amdv100': {
-            'perf': (5500, -0.10, None, 'Gflop/s'),
+            'min_perf': (5500, -0.10, None, 'Gflop/s'),
         },
         'ault:intelv100': {
-            'perf': (5500, -0.10, None, 'Gflop/s'),
+            'min_perf': (5500, -0.10, None, 'Gflop/s'),
         },
         'ault:amdvega': {
-            'perf': (3450, -0.10, None, 'Gflop/s'),
+            'min_perf': (3450, -0.10, None, 'Gflop/s'),
         },
-        '*': {'temp': (0, None, None, 'degC')}
     }
 
     maintainers = ['AJ', 'TM']
@@ -63,16 +63,25 @@ class gpu_burn_check(GpuBurn):
         hooks.set_num_gpus_per_node(self)
 
     @run_before('performance')
-    def report_nid_with_smallest_flops(self):
-        regex = r'\[(\S+)\] GPU\s+\d\(OK\): (\d+) GF/s'
-        rptf = os.path.join(self.stagedir, sn.evaluate(self.stdout))
-        self.nids = sn.extractall(regex, rptf, 1)
-        self.flops = sn.extractall(regex, rptf, 2, float)
+    def report_slow_nodes(self):
+        '''Report the base perf metrics and also all the slow nodes.'''
 
-        # Find index of smallest flops and update reference dictionary to
-        # include our patched units
-        index = self.flops.evaluate().index(min(self.flops))
-        unit = f'GF/s ({self.nids[index]})'
-        for key, ref in self.reference.items():
-            if not key.endswith(':temp'):
-                self.reference[key] = (*ref[:3], unit)
+        # Only report the nodes that don't meet the perf reference
+        with osext.change_dir(self.stagedir):
+            key = f'{self.current_partition.fullname}:min_perf'
+            if key in self.reference:
+                regex = r'\[(\S+)\] GPU\s+\d\(OK\): (\d+) GF/s'
+                nids = set(sn.extractall(regex, self.stdout, 1))
+
+                # Get the references
+                ref, lt, ut, *_ = self.reference[key]
+
+                # Flag the slow nodes
+                for nid in nids:
+                    try:
+                        node_perf = self.min_perf(nid)
+                        val = node_perf.evaluate(cache=True)
+                        sn.assert_reference(val, ref, lt, ut).evaluate()
+                    except SanityError:
+                        self.perf_variables[nid] = node_perf
+
