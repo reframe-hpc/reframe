@@ -18,7 +18,6 @@ class BZip2SpackCheck(rfm.RegressionTest):
 
     @run_before('compile')
     def setup_build_system(self):
-        self.build_system.environment = 'myenv'
         self.build_system.specs = ['bzip2@1.0.6']
 
     @sanity_function
