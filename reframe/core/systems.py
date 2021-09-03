@@ -116,17 +116,31 @@ class DeviceType(jsonext.JSONSerializable):
 
     '''
 
+    __slots__ = ('__info', 'type', 'arch')
+
+    def __deepcopy__(self, memo):
+        # This is a read-only object; simply return ourself
+        return self
+
     def __init__(self, device_info):
-        self._type = None
-        self._arch = None
-        self._num_devices = 1
-        self._info = device_info
+        self.__info = device_info
 
-        if not device_info:
-            return
+    def __getattr__(self, name):
+        if name in self.__slots__:
+            return self.__info.get(name, None)
+        else:
+            raise AttributeError(
+                f'{type(self).__qualname__!r} object has no attribute {name!r}'
+            )
 
-        for key, val in device_info.items():
-            setattr(self, f'_{key}', val)
+    def __setattr__(self, name, value):
+        if name in self.__slots__:
+            raise AttributeError(
+                f'attribute {name!r} is not writeable'
+            )
+        else:
+            # Let Python data model raise the AttributeError here
+            super().__setattr__(name, value)
 
     @property
     def num_devices(self):
@@ -136,7 +150,7 @@ class DeviceType(jsonext.JSONSerializable):
 
         :type: integral
         '''
-        return self._num_devices
+        return self.__info.get('num_devices', 1)
 
     @property
     def info(self):
@@ -144,15 +158,7 @@ class DeviceType(jsonext.JSONSerializable):
 
         :type: :class:`dict`
         '''
-        return self._info
-
-    @property
-    def arch(self):
-        '''The architecture of the device.
-
-        :type: :class:`str` or :class:`None`
-        '''
-        return self._arch
+        return self.__info
 
     @property
     def device_type(self):
@@ -160,7 +166,7 @@ class DeviceType(jsonext.JSONSerializable):
 
         :type: :class:`str` or :class:`None`
         '''
-        return self._type
+        return self.type
 
 
 class SystemPartition(jsonext.JSONSerializable):
