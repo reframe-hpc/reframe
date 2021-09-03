@@ -98,8 +98,11 @@ def _object_hook(json):
     mod = util.import_module_from_file(filename)
     cls = getattr(mod, typename)
     obj = cls.__new__(cls)
-    for attr, value in json.items():
-        setattr(obj, attr, value)
+    if hasattr(obj, '__dict__'):
+        obj.__dict__.update(json)
+    else:
+        for attr, value in json.items():
+            setattr(obj, attr, value)
 
     if hasattr(obj, '__rfm_json_decode__'):
         obj.__rfm_json_decode__(json)
