@@ -83,7 +83,7 @@ class FixtureRegistry:
         fname = fixture.get_name(variant_num)
         variables = fixture.variables
         fname += ''.join(
-            (f'_{k}_{utils.toalphanum(str(v))}' for k, v
+            (f'%{k}={utils.toalphanum(str(v))}' for k, v
              in variables.items())
         )
         reg_names = []
@@ -109,7 +109,7 @@ class FixtureRegistry:
         elif scope == 'partition':
             for p in valid_partitions:
                 # The name contains the full partition name
-                name = '_'.join([fname, p])
+                name = '~'.join([fname, p])
 
                 # Select an environment supported by the partition
                 valid_envs = self._filter_valid_environs(p, prog_envs)
@@ -123,7 +123,7 @@ class FixtureRegistry:
             for p in valid_partitions:
                 for env in self._filter_valid_environs(p, prog_envs):
                     # The name contains the full part and env names
-                    name = '_'.join([fname, p, env])
+                    name = '~'.join([fname, '+'.join([p, env])])
 
                     # Register the fixture
                     self._reg[cls][name] = (
@@ -132,7 +132,7 @@ class FixtureRegistry:
                     reg_names.append(name)
         elif scope == 'test':
             # The name contains the full tree branch.
-            name = '_'.join([fname, branch])
+            name = '~'.join([fname, branch])
 
             # Register the fixture
             self._reg[cls][name] = (

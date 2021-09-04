@@ -712,7 +712,7 @@ class RegressionTestMeta(type):
         '''
         return cls.num_variants == 0
 
-    def fullname(cls, variant_num=None):
+    def fullname(cls, variant_num=None, *, compress_params=False):
         '''Return the full name of a test for a given test variant number.
 
         This function returns a unique name for each of the provided variant
@@ -732,15 +732,16 @@ class RegressionTestMeta(type):
 
         # Append the parameters to the name
         if cls.param_space.params:
-            name += '_' + '_'.join(
-                utils.toalphanum(str(v)) for v in cls.param_space[pid].values()
-            )
+            if compress_params:
+                name += f'@{pid}'
+            else:
+                name += '_' + '_'.join(utils.toalphanum(str(v))
+                                       for v in cls.param_space[pid].values())
 
         # Append all the full fixture names to the test name.
         if cls.fixture_space.fixtures:
             fs = cls.fixture_space
-            name += '_' + '_'.join(
-                fs[k].cls.fullname(v) for k, v in fs[fid].items()
-            )
+            name += '^' + '+'.join(fs[k].cls.fullname(v, compress_params=True)
+                                   for k, v in fs[fid].items()) + '^'
 
         return name
