@@ -13,43 +13,33 @@ from reframe.core.logging import getlogger
 from reframe.core.modules import ModulesSystem
 
 
-class _ReadOnlyInfo(jsonext.JSONSerializable):
+class _ReadOnlyInfo:
+    __slots__ = ('_info',)
+    _known_attrs = ()
 
     def __init__(self, info):
-        self.__info = info
+        self._info = info
 
     def __deepcopy__(self, memo):
         # This is a read-only object; simply return ourself
         return self
 
-
     def __getattr__(self, name):
-        if name in self.__slots__:
-            return self.__info.get(name, None)
+        if name in self._known_attrs:
+            return self._info.get(name, None)
         else:
             raise AttributeError(
                 f'{type(self).__qualname__!r} object has no attribute {name!r}'
             )
 
     def __setattr__(self, name, value):
-        if name in self.__slots__:
-            raise AttributeError(
-                f'attribute {name!r} is not writeable'
-            )
+        if name in self._known_attrs:
+            raise AttributeError(f'attribute {name!r} is not writeable')
         else:
-            # Let Python data model raise the AttributeError here
             super().__setattr__(name, value)
 
-    @property
-    def info(self):
-        '''All the available information from the configuration.
 
-        :type: :class:`dict`
-        '''
-        return self.__info
-
-
-class ProcessorInfo(_ReadOnlyInfo):
+class ProcessorInfo(_ReadOnlyInfo, jsonext.JSONSerializable):
     '''A representation of a processor inside ReFrame.
 
     You can access all the keys of the `processor configuration object
@@ -62,10 +52,19 @@ class ProcessorInfo(_ReadOnlyInfo):
 
     '''
 
-    __slots__ = (
-        '__info', 'arch', 'num_cpus', 'num_cpus_per_core',
+    __slots__ = ()
+    _known_attrs = (
+        'arch', 'num_cpus', 'num_cpus_per_core',
         'num_cpus_per_socket', 'num_sockets', 'topology'
     )
+
+    @property
+    def info(self):
+        '''All the available information from the configuration.
+
+        :type: :class:`dict`
+        '''
+        return self._info
 
     @property
     def num_cores(self):
@@ -113,7 +112,7 @@ class ProcessorInfo(_ReadOnlyInfo):
             return None
 
 
-class DeviceInfo(_ReadOnlyInfo):
+class DeviceInfo(_ReadOnlyInfo, jsonext.JSONSerializable):
     '''A representation of a device inside ReFrame.
 
     You can access all the keys of the `device configuration object
@@ -126,7 +125,16 @@ class DeviceInfo(_ReadOnlyInfo):
 
     '''
 
-    __slots__ = ('__info', 'type', 'arch')
+    __slots__ = ()
+    _known_attrs = ('type', 'arch')
+
+    @property
+    def info(self):
+        '''All the available information from the configuration.
+
+        :type: :class:`dict`
+        '''
+        return self._info
 
     @property
     def num_devices(self):
@@ -136,7 +144,7 @@ class DeviceInfo(_ReadOnlyInfo):
 
         :type: integral
         '''
-        return self.__info.get('num_devices', 1)
+        return self._info.get('num_devices', 1)
 
     @property
     def device_type(self):
