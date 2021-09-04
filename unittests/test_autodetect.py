@@ -54,7 +54,29 @@ def test_autotect(exec_ctx):
     detect_topology()
     part = runtime().system.partitions[0]
     assert part.processor.info == cpuinfo()
-    assert part.devices == [{'type': 'gpu', 'arch': 'a100', 'num_devices': 8}]
+    if part.processor.info:
+        assert part.processor.num_cpus == part.processor.info['num_cpus']
+
+    assert len(part.devices) == 1
+    assert part.devices[0].info == {
+        'type': 'gpu',
+        'arch': 'a100',
+        'num_devices': 8
+    }
+    assert part.devices[0].device_type == 'gpu'
+
+    # Test immutability of ProcessorInfo and DeviceInfo
+    with pytest.raises(AttributeError):
+        part.processor.num_cpus = 3
+
+    with pytest.raises(AttributeError):
+        part.processor.foo = 10
+
+    with pytest.raises(AttributeError):
+        part.devices[0].arch = 'foo'
+
+    with pytest.raises(AttributeError):
+        part.devices[0].foo = 10
 
 
 def test_autotect_with_invalid_files(invalid_topo_exec_ctx):
