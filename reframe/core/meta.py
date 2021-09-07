@@ -684,9 +684,45 @@ class RegressionTestMeta(type):
 
         return outer_variants
 
+    def get_variant_info(cls, variant_num, recurse=False, depth=0, **kwargs):
+        '''Get the information from a given variant.
+
+        This function returns a dictionary with the variant data on
+        the different subspaces, such as the parameter values and the
+        fixture variants.
+
+        The parameter sub-dictionary contains the values for each parameter
+        associated to the given variant number.
+
+        The fixture sub-dictionary, by default, will return the variant number
+        associated to each of the fixtures. However, if ``recurse`` is set to
+        ``True``, each fixture entry will contain the full variant information
+        for the given variant number. By default, the recursion will traverse
+        the full fixture tree, but this recursion depth can be limited with the
+        depth argument.
+        '''
+
+        pid, fid = cls._map_variant_num(variant_num)
+        ret = dict()
+        ret['params'] = cls.param_space[pid]
+        ret['fixtures'] = cls.fixture_space[fid]
+
+        # Get current recursion level
+        rdepth = kwargs.get('_current_depth', 0)
+
+        if recurse and (depth == 0 or rdepth < depth):
+            for fix, variant in ret['fixtures'].items():
+                fcls = cls.fixture_space[fix].cls
+                ret['fixtures'][fix] = fcls.get_variant_info(
+                    variant, recurse=recurse, depth=depth,
+                    _current_depth=rdepth+1
+                )
+
+        return ret
+
     @property
     def param_space(cls):
-        '''Make the parameter space available as read-only.'''
+        '''Expose the parameter space.'''
         return cls._rfm_param_space
 
     @property

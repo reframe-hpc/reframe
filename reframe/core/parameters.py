@@ -106,6 +106,10 @@ class ParamSpace(namespaces.Namespace):
                               )
         )
 
+        # Map the parameter names to the position they are stored in the
+        # parameter space
+        self._pos_map = {name: idx for idx, name in enumerate(self.params)}
+
     def join(self, other, cls):
         '''Join other parameter space into the current one.
 
@@ -260,30 +264,33 @@ class ParamSpace(namespaces.Namespace):
         candidates = range(len(self.__random_access_iter))
         if not conditions:
             return list(candidates)
-        else:
-            # Validate conditions
-            for k, v in conditions.items():
-                if k not in self:
-                    raise ValueError(
-                        f'{k!r} is not present in the parameter space'
-                    )
-                elif not utils.is_trivially_callable(v, non_def_args=1):
-                    raise ValueError(
-                        f'condition on {k!r} must only accept a single'
-                        f'argument'
-                    )
 
-        pos_map = {k: v for v, k in enumerate(self.keys())}
+        # Validate conditions
+        for param, cond in conditions.items():
+            if param not in self:
+                raise ValueError(
+                    f'{param!r} is not present in the parameter space'
+                )
+            elif not utils.is_trivially_callable(cond, non_def_args=1):
+                raise ValueError(
+                    f'condition on {param!r} must only accept a single'
+                    f'argument'
+                )
 
-        def _get_param_value(name, variant):
-            try:
-                return self.__random_access_iter[variant][pos_map[name]]
-            except KeyError:
-                raise KeyError(f'{name} is not present in the parameter space')
+            def param_val(variant):
+                return self._get_param_value(param, variant)
 
-        for p, cond in conditions.items():
-            def val(v):
-                return _get_param_value(p, v)
-            candidates = list(filter(lambda v: cond(val(v)), candidates))
+            # Filter the given condition
+            candidates = list(filter(lambda v: cond(param_val(v)), candidates))
 
         return candidates
+
+    def _get_param_value(name, variant):
+        '''Get the a parameter's value for a given variant.
+
+        In this context, a variant is a point in the parameter space.
+        The name argument is simply the parameter name
+        '''
+        return self.__random_access_iter[variant][self._pos_map[name]]
+
+

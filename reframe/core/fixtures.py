@@ -346,7 +346,7 @@ class TestFixture:
             self._variants = tuple(range(cls.num_variants))
         else:
             raise ValueError(
-                f'invalid specified variants for fixture {cls.__qualname__}'
+                f'invalid variants specified for fixture {cls.__qualname__}'
             )
 
         if variables and not isinstance(variables, Mapping):
