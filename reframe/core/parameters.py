@@ -292,5 +292,3 @@ class ParamSpace(namespaces.Namespace):
         The name argument is simply the parameter name
         '''
         return self.__random_access_iter[variant][self._pos_map[name]]
-
-

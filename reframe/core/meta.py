@@ -684,7 +684,8 @@ class RegressionTestMeta(type):
 
         return outer_variants
 
-    def get_variant_info(cls, variant_num, recurse=False, depth=0, **kwargs):
+    def get_variant_info(cls, variant_num, *, recurse=False, max_depth=None,
+                         **kwargs):
         '''Get the information from a given variant.
 
         This function returns a dictionary with the variant data on
@@ -699,7 +700,7 @@ class RegressionTestMeta(type):
         ``True``, each fixture entry will contain the full variant information
         for the given variant number. By default, the recursion will traverse
         the full fixture tree, but this recursion depth can be limited with the
-        depth argument.
+        ``max_depth`` argument.
         '''
 
         pid, fid = cls._map_variant_num(variant_num)
@@ -710,11 +711,11 @@ class RegressionTestMeta(type):
         # Get current recursion level
         rdepth = kwargs.get('_current_depth', 0)
 
-        if recurse and (depth == 0 or rdepth < depth):
+        if recurse and (max_depth is None or rdepth < max_depth):
             for fix, variant in ret['fixtures'].items():
                 fcls = cls.fixture_space[fix].cls
                 ret['fixtures'][fix] = fcls.get_variant_info(
-                    variant, recurse=recurse, depth=depth,
+                    variant, recurse=recurse, max_depth=max_depth,
                     _current_depth=rdepth+1
                 )
 
