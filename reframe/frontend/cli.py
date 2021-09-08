@@ -168,16 +168,6 @@ def main():
 
     # Output directory options
     output_options.add_argument(
-        '-o', '--output', action='store', metavar='DIR',
-        help='Set output directory prefix to DIR',
-        envvar='RFM_OUTPUT_DIR', configvar='systems/outputdir'
-    )
-    output_options.add_argument(
-        '-s', '--stage', action='store', metavar='DIR',
-        help='Set stage directory prefix to DIR',
-        envvar='RFM_STAGE_DIR', configvar='systems/stagedir'
-    )
-    output_options.add_argument(
         '--dont-restage', action='store_false', dest='clean_stagedir',
         help='Reuse the test stage directory',
         envvar='RFM_CLEAN_STAGEDIR', configvar='general/clean_stagedir'
@@ -186,6 +176,11 @@ def main():
         '--keep-stage-files', action='store_true',
         help='Keep stage directories even for successful checks',
         envvar='RFM_KEEP_STAGE_FILES', configvar='general/keep_stage_files'
+    )
+    output_options.add_argument(
+        '-o', '--output', action='store', metavar='DIR',
+        help='Set output directory prefix to DIR',
+        envvar='RFM_OUTPUT_DIR', configvar='systems/outputdir'
     )
     output_options.add_argument(
         '--perflogdir', action='store', metavar='DIR',
@@ -212,6 +207,11 @@ def main():
         configvar='general/report_junit'
     )
     output_options.add_argument(
+        '-s', '--stage', action='store', metavar='DIR',
+        help='Set stage directory prefix to DIR',
+        envvar='RFM_STAGE_DIR', configvar='systems/stagedir'
+    )
+    output_options.add_argument(
         '--save-log-files', action='store_true', default=False,
         help='Save ReFrame log files to the output directory',
         envvar='RFM_SAVE_LOG_FILES', configvar='general/save_log_files'
@@ -230,20 +230,32 @@ def main():
         envvar='RFM_CHECK_SEARCH_PATH :', configvar='general/check_search_path'
     )
     locate_options.add_argument(
-        '-R', '--recursive', action='store_true',
-        help='Search for checks in the search path recursively',
-        envvar='RFM_CHECK_SEARCH_RECURSIVE',
-        configvar='general/check_search_recursive'
-    )
-    locate_options.add_argument(
         '--ignore-check-conflicts', action='store_true',
         help=('Skip checks with conflicting names '
               '(this option is deprecated and has no effect)'),
         envvar='RFM_IGNORE_CHECK_CONFLICTS',
         configvar='general/ignore_check_conflicts'
     )
+    locate_options.add_argument(
+        '-R', '--recursive', action='store_true',
+        help='Search for checks in the search path recursively',
+        envvar='RFM_CHECK_SEARCH_RECURSIVE',
+        configvar='general/check_search_recursive'
+    )
 
     # Select options
+    select_options.add_argument(
+        '--cpu-only', action='store_true',
+        help='Select only CPU checks'
+    )
+    select_options.add_argument(
+        '--failed', action='store_true',
+        help="Select failed test cases (only when '--restore-session' is used)"
+    )
+    select_options.add_argument(
+        '--gpu-only', action='store_true',
+        help='Select only GPU checks'
+    )
     select_options.add_argument(
         '-n', '--name', action='append', dest='names', default=[],
         metavar='PATTERN', help='Select checks whose name matches PATTERN'
@@ -263,20 +275,13 @@ def main():
         metavar='PATTERN', default=[],
         help='Exclude checks whose name matches PATTERN'
     )
-    select_options.add_argument(
-        '--cpu-only', action='store_true',
-        help='Select only CPU checks'
-    )
-    select_options.add_argument(
-        '--failed', action='store_true',
-        help="Select failed test cases (only when '--restore-session' is used)"
-    )
-    select_options.add_argument(
-        '--gpu-only', action='store_true',
-        help='Select only GPU checks'
-    )
 
     # Action options
+    action_options.add_argument(
+        '--ci-generate', action='store', metavar='FILE',
+        help=('Generate into FILE a Gitlab CI pipeline '
+              'for the selected tests and exit'),
+    )
     action_options.add_argument(
         '-L', '--list-detailed', action='store_true',
         help='List the selected checks providing details for each test'
@@ -286,31 +291,15 @@ def main():
         help='List the selected checks'
     )
     action_options.add_argument(
-        '-r', '--run', action='store_true',
-        help='Run the selected checks'
-    )
-    action_options.add_argument(
-        '--ci-generate', action='store', metavar='FILE',
-        help=('Generate into FILE a Gitlab CI pipeline '
-              'for the selected tests and exit'),
-    )
-    action_options.add_argument(
         '--list-tags', action='store_true',
         help='List the unique tags found in the selected tests and exit'
     )
+    action_options.add_argument(
+        '-r', '--run', action='store_true',
+        help='Run the selected checks'
+    )
 
     # Run options
-    run_options.add_argument(
-        '-J', '--job-option', action='append', metavar='OPT',
-        dest='job_options', default=[],
-        help='Pass option OPT to job scheduler'
-    )
-    run_options.add_argument(
-        '-S', '--setvar', action='append', metavar='[TEST.]VAR=VAL',
-        dest='vars', default=[],
-        help=('Set test variable VAR to VAL in all tests '
-              'or optionally in TEST only')
-    )
     run_options.add_argument(
         '--disable-hook', action='append', metavar='NAME', dest='hooks',
         default=[], help='Disable a pipeline hook for this run'
@@ -330,6 +319,11 @@ def main():
         help='Force local execution of checks'
     )
     run_options.add_argument(
+        '-J', '--job-option', action='append', metavar='OPT',
+        dest='job_options', default=[],
+        help='Pass option OPT to job scheduler'
+    )
+    run_options.add_argument(
         '--max-retries', metavar='NUM', action='store', default=0,
         help='Set the maximum number of times a failed regression test '
              'may be retried (default: 0)'
@@ -345,6 +339,12 @@ def main():
         '--restore-session', action='store', nargs='?', const='',
         metavar='REPORT',
         help='Restore a testing session from REPORT file'
+    )
+    run_options.add_argument(
+        '-S', '--setvar', action='append', metavar='[TEST.]VAR=VAL',
+        dest='vars', default=[],
+        help=('Set test variable VAR to VAL in all tests '
+              'or optionally in TEST only')
     )
     run_options.add_argument(
         '--skip-performance-check', action='store_true',
@@ -369,22 +369,16 @@ def main():
 
     # Environment options
     env_options.add_argument(
-        '-m', '--module', action='append', default=[],
-        metavar='MOD', dest='user_modules',
-        help='Load module MOD before running any regression check',
-        envvar='RFM_USER_MODULES ,', configvar='general/user_modules'
-    )
-    env_options.add_argument(
         '-M', '--map-module', action='append', metavar='MAPPING',
         dest='module_mappings', default=[],
         help='Add a module mapping',
         envvar='RFM_MODULE_MAPPINGS ,', configvar='general/module_mappings'
     )
     env_options.add_argument(
-        '-u', '--unload-module', action='append', metavar='MOD',
-        dest='unload_modules', default=[],
-        help='Unload module MOD before running any regression check',
-        envvar='RFM_UNLOAD_MODULES ,', configvar='general/unload_modules'
+        '-m', '--module', action='append', default=[],
+        metavar='MOD', dest='user_modules',
+        help='Load module MOD before running any regression check',
+        envvar='RFM_USER_MODULES ,', configvar='general/user_modules'
     )
     env_options.add_argument(
         '--module-mappings', action='store', metavar='FILE',
@@ -406,6 +400,12 @@ def main():
         '--purge-env', action='store_true', dest='purge_env', default=False,
         help='Unload all modules before running any regression check',
         envvar='RFM_PURGE_ENVIRONMENT', configvar='general/purge_environment'
+    )
+    env_options.add_argument(
+        '-u', '--unload-module', action='append', metavar='MOD',
+        dest='unload_modules', default=[],
+        help='Unload module MOD before running any regression check',
+        envvar='RFM_UNLOAD_MODULES ,', configvar='general/unload_modules'
     )
 
     # Miscellaneous options
@@ -461,10 +461,10 @@ def main():
         help='Graylog server address'
     )
     argparser.add_argument(
-        dest='syslog_address',
-        envvar='RFM_SYSLOG_ADDRESS',
-        configvar='logging/handlers_perflog/syslog_address',
-        help='Syslog server address'
+        dest='httpjson_url',
+        envvar='RFM_HTTPJSON_URL',
+        configvar='logging/handlers_perflog/httpjson_url',
+        help='URL of HTTP server accepting JSON logs'
     )
     argparser.add_argument(
         dest='ignore_reqnodenotavail',
@@ -472,26 +472,6 @@ def main():
         configvar='schedulers/ignore_reqnodenotavail',
         action='store_true',
         help='Graylog server address'
-    )
-    argparser.add_argument(
-        dest='use_login_shell',
-        envvar='RFM_USE_LOGIN_SHELL',
-        configvar='general/use_login_shell',
-        action='store_true',
-        help='Use a login shell for job scripts'
-    )
-    argparser.add_argument(
-        dest='resolve_module_conflicts',
-        envvar='RFM_RESOLVE_MODULE_CONFLICTS',
-        configvar='general/resolve_module_conflicts',
-        action='store_true',
-        help='Resolve module conflicts automatically'
-    )
-    argparser.add_argument(
-        dest='httpjson_url',
-        envvar='RFM_HTTPJSON_URL',
-        configvar='logging/handlers_perflog/httpjson_url',
-        help='URL of HTTP server accepting JSON logs'
     )
     argparser.add_argument(
         dest='remote_detect',
@@ -506,6 +486,26 @@ def main():
         configvar='general/remote_workdir',
         action='store',
         help='Working directory for launching ReFrame remotely'
+    )
+    argparser.add_argument(
+        dest='resolve_module_conflicts',
+        envvar='RFM_RESOLVE_MODULE_CONFLICTS',
+        configvar='general/resolve_module_conflicts',
+        action='store_true',
+        help='Resolve module conflicts automatically'
+    )
+    argparser.add_argument(
+        dest='syslog_address',
+        envvar='RFM_SYSLOG_ADDRESS',
+        configvar='logging/handlers_perflog/syslog_address',
+        help='Syslog server address'
+    )
+    argparser.add_argument(
+        dest='use_login_shell',
+        envvar='RFM_USE_LOGIN_SHELL',
+        configvar='general/use_login_shell',
+        action='store_true',
+        help='Use a login shell for job scripts'
     )
 
     # Parse command line
