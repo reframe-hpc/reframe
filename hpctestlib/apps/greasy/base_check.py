@@ -16,7 +16,7 @@ def to_seconds(str):
             datetime.strptime('00:00:00', '%H:%M:%S')).total_seconds()
 
 
-class GREASY_BaseCheck(rfm.RegressionTest, pin_prefix = True):
+class GREASY_BaseCheck(rfm.RegressionTest, pin_prefix=True):
     '''Base class for the GREASY Test.
 
     CSCS provides the GREASY meta scheduler to manage high
@@ -53,7 +53,6 @@ class GREASY_BaseCheck(rfm.RegressionTest, pin_prefix = True):
     @run_after('init')
     def set_keep_files(self):
         self.keep_files = [self.tasks_file, self.greasy_logfile]
-
 
     @run_after('init')
     def set_sanity_pattern(self):

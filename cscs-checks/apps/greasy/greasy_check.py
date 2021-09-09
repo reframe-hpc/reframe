@@ -22,14 +22,14 @@ class GREASYCheckCSCS(GREASY_BaseCheck):
     nnodes = 2
     mode = parameter(
         [['serial',     'gpu', 24, 12, 1, 1],
-        ['serial',     'mc',  72, 36, 1, 1],
-        ['openmp',     'gpu', 24,  3, 1, 4],
-        ['openmp',     'mc',  72,  9, 1, 4],
-        ['mpi',        'gpu', 24,  4, 3, 1],
-        ['mpi',        'mc',  72, 12, 3, 1],
-        ['mpi+openmp', 'gpu', 24,  3, 2, 2],
-        ['mpi+openmp', 'mc',  72,  6, 3, 2],
-    ])
+         ['serial',     'mc',  72, 36, 1, 1],
+         ['openmp',     'gpu', 24,  3, 1, 4],
+         ['openmp',     'mc',  72,  9, 1, 4],
+         ['mpi',        'gpu', 24,  4, 3, 1],
+         ['mpi',        'mc',  72, 12, 3, 1],
+         ['mpi+openmp', 'gpu', 24,  3, 2, 2],
+         ['mpi+openmp', 'mc',  72,  6, 3, 2],
+        ])
 
     @run_after('init')
     def parameters_unpacking(self):
@@ -39,11 +39,13 @@ class GREASYCheckCSCS(GREASY_BaseCheck):
 
     @run_after('init')
     def add_valid_systems(self):
-        self.valid_systems = ['daint:' + self.partition, 'dom:' + self.partition]
+        self.valid_systems = ['daint:' + self.partition,
+                              'dom:' + self.partition]
 
     @run_after('init')
     def set_num_tasks(self):
-        self.num_tasks_per_node = self.nranks_per_worker * self.nworkes_per_node
+        self.num_tasks_per_node = (self.nranks_per_worker *
+                                   self.nworkes_per_node)
         self.num_tasks = self.num_tasks_per_node * self.nnodes
         self.num_cpus_per_task = self.ncpus_per_worker
 
