@@ -5,7 +5,6 @@
 
 import reframe as rfm
 import reframe.utility.sanity as sn
-import reframe.utility.typecheck as typ
 
 
 class Cp2k_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
