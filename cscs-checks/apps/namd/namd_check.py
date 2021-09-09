@@ -37,6 +37,7 @@ REFERENCE_CPU_PERFORMANCE = {
     },
 }
 
+
 @rfm.simple_test
 class NamdCheckCSCS(Namd_BaseCheck):
     maintainers = ['CB', 'LM']
@@ -71,7 +72,7 @@ class NamdCheckCSCS(Namd_BaseCheck):
 
     @run_after('init')
     def set_valid_systems(self):
-        if self.platform_name =='gpu':
+        if self.platform_name == 'gpu':
             self.valid_systems = ['daint:gpu']
         else:
             self.valid_systems = ['daint:mc',
@@ -98,7 +99,7 @@ class NamdCheckCSCS(Namd_BaseCheck):
 
     @run_after('setup')
     def set_executable_opts(self):
-        if self.platform_name =='gpu':
+        if self.platform_name == 'gpu':
             self.executable_opts = ['+idlepoll', '+ppn 23', 'stmv.namd']
             self.num_cpus_per_task = 24
             self.num_gpus_per_node = 1
@@ -113,7 +114,7 @@ class NamdCheckCSCS(Namd_BaseCheck):
 
     @run_after('setup')
     def set_reference(self):
-        if self.platform_name =='gpu':
+        if self.platform_name == 'gpu':
             self.reference = REFERENCE_GPU_PERFORMANCE
             if self.scale == 'small':
                 self.valid_systems += ['dom:gpu']
