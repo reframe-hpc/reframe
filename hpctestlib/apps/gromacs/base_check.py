@@ -60,7 +60,6 @@ class Gromacs_BaseCheck(rfm.RunOnlyRegressionTest):
     energy_tolerance = 0.001
 
 
-
     @run_after('init')
     def source_install(self):
         # Reset sources dir relative to the SCS apps prefix
@@ -96,7 +95,7 @@ class Gromacs_BaseCheck(rfm.RunOnlyRegressionTest):
         ref_ener_diff = sn.abs(self.energy_value *
                                self.energy_tolerance)
 
-        return  sn.all([
+        return sn.all([
             sn.assert_found('Finished mdrun', self.output_file),
             sn.assert_lt(self.energy_tolerance, ref_ener_diff)
         ])
