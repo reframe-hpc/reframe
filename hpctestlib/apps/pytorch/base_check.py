@@ -7,7 +7,6 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-
 class PytorchHorovod_BaseTest(rfm.RunOnlyRegressionTest):
     '''Base class for the Pytorch Horovod Test.
 
@@ -76,14 +75,14 @@ class PytorchHorovod_BaseTest(rfm.RunOnlyRegressionTest):
     @performance_function('images/s', perf_key='throughput_per_gpu')
     def set_perf_per_gpu(self):
         return sn.extractsingle(
-                   r'Img/sec per GPU: (?P<throughput_per_gpu>\S+) \S+',
-                   self.stdout, 'throughput_per_gpu', float)
+            r'Img/sec per GPU: (?P<throughput_per_gpu>\S+) \S+',
+            self.stdout, 'throughput_per_gpu', float)
 
     @performance_function('images/s', perf_key='throughput_per_job')
     def set_perf_per_job(self):
         return sn.extractsingle(
-                   r'Total img/sec on \d+ GPU\(s\): (?P<throughput>\S+) \S+',
-                   self.stdout, 'throughput', float)
+            r'Total img/sec on \d+ GPU\(s\): (?P<throughput>\S+) \S+',
+            self.stdout, 'throughput', float)
 
     @sanity_function
     def assert_energy_readout(self):
