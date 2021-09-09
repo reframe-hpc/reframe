@@ -585,16 +585,16 @@ Miscellaneous options
 
    Print a short help message and exit.
 
-.. option:: --performance-report
-
-   Print a performance report for all the performance tests that have been run.
-   The report shows the performance values retrieved for the different performance variables defined in the tests.
-
 .. option:: --nocolor
 
    Disable output coloring.
 
    This option can also be set using the :envvar:`RFM_COLORIZE` environment variable or the :js:attr:`colorize` general configuration parameter.
+
+.. option:: --performance-report
+
+   Print a performance report for all the performance tests that have been run.
+   The report shows the performance values retrieved for the different performance variables defined in the tests.
 
 .. option:: --show-config [PARAM]
 
