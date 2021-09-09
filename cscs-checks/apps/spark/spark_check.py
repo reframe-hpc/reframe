@@ -8,27 +8,17 @@ import math
 import reframe as rfm
 import reframe.utility.sanity as sn
 from reframe.core.backends import getlauncher
-
+from hpctestlib.apps.spark.base_check import Spark_BaseCheck
 
 @rfm.simple_test
-class SparkCheck(rfm.RunOnlyRegressionTest):
-    variant = parameter(['spark', 'pyspark'])
-
-    def __init__(self):
-        self.descr = f'Simple calculation of pi with {self.variant}'
-        self.valid_systems = ['daint:gpu', 'daint:mc',
-                              'dom:gpu', 'dom:mc']
-        self.valid_prog_environs = ['builtin']
-        self.modules = ['Spark']
-        self.prerun_cmds = ['start-all.sh']
-        self.postrun_cmds = ['stop-all.sh']
-        self.num_tasks = 3
-        self.num_tasks_per_node = 1
-        pi_value = sn.extractsingle(r'Pi is roughly\s+(?P<pi>\S+)',
-                                    self.stdout, 'pi', float)
-        self.sanity_patterns = sn.assert_lt(sn.abs(pi_value - math.pi), 0.01)
-        self.maintainers = ['TM', 'RS']
-        self.tags = {'production'}
+class SparkCheck(Spark_BaseCheck):
+    valid_systems = ['daint:gpu', 'daint:mc','dom:gpu', 'dom:mc']
+    valid_prog_environs = ['builtin']
+    modules = ['Spark']
+    num_tasks = 3
+    num_tasks_per_node = 1
+    maintainers = ['TM', 'RS']
+    tags = {'production'}
 
     @run_before('run')
     def prepare_run(self):
@@ -43,7 +33,6 @@ class SparkCheck(rfm.RunOnlyRegressionTest):
             'SPARK_WORKER_CORES': str(num_workers),
             'SPARK_LOCAL_DIRS': '"/tmp"',
         }
-        self.executable = 'spark-submit'
         self.executable_opts = [
             f'--conf spark.default.parallelism={num_workers}',
             f'--conf spark.executor.cores={exec_cores}',
@@ -55,9 +44,9 @@ class SparkCheck(rfm.RunOnlyRegressionTest):
                 '--class org.apache.spark.examples.SparkPi',
                 '$EBROOTSPARK/examples/jars/spark-examples*.jar 10000'
             ]
-        else:
-            self.executable_opts.append('spark_pi.py')
 
+    @run_before('run')
+    def set_job_launcher(self):
         # The job launcher has to be changed since the `spark-submit`
         # script is not used with srun.
         self.job.launcher = getlauncher('local')()
