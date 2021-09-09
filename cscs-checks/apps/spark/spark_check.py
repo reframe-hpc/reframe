@@ -12,7 +12,7 @@ from hpctestlib.apps.spark.base_check import Spark_BaseCheck
 
 @rfm.simple_test
 class SparkCheck(Spark_BaseCheck):
-    valid_systems = ['daint:gpu', 'daint:mc','dom:gpu', 'dom:mc']
+    valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
     valid_prog_environs = ['builtin']
     modules = ['Spark']
     num_tasks = 3

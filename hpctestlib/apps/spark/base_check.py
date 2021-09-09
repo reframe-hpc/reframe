@@ -40,7 +40,6 @@ class Spark_BaseCheck(rfm.RunOnlyRegressionTest, pin_prefix=True):
     #: :default: 0.01
     tolerance = variable(float, value=0.01)
 
-
     @run_after('init')
     def set_description(self):
         self.mydescr = f'Simple calculation of pi with {self.variant}'
@@ -52,9 +51,9 @@ class Spark_BaseCheck(rfm.RunOnlyRegressionTest, pin_prefix=True):
 
     @run_before('run')
     def set_executable_opts(self):
-            self.executable = 'spark-submit'
-            if self.variant == 'pyspark':
-                self.executable_opts.append('spark_pi.py')
+        self.executable = 'spark-submit'
+        if self.variant == 'pyspark':
+            self.executable_opts.append('spark_pi.py')
 
     @sanity_function
     def assert_pi_readout(self):
