@@ -59,7 +59,6 @@ class Gromacs_BaseCheck(rfm.RunOnlyRegressionTest):
     energy_value = -3270799.9
     energy_tolerance = 0.001
 
-
     @run_after('init')
     def source_install(self):
         # Reset sources dir relative to the SCS apps prefix
