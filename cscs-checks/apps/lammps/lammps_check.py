@@ -86,6 +86,7 @@ REFERENCE_PERFORMANCE = {
     },
 }
 
+
 def inherit_cpu_only(params):
     return tuple(filter(lambda p: p[0] == 'cpu', params))
 
