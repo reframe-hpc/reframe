@@ -5,36 +5,26 @@
 
 import reframe as rfm
 import reframe.utility.sanity as sn
+from hpctestlib.apps.paraview.base_check import ParaView_BaseCheck
 
 
 @rfm.simple_test
-class ParaViewCheck(rfm.RunOnlyRegressionTest):
-    def __init__(self):
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'eiger:mc', 'pilatus:mc']
+class ParaViewCheckCSCS(ParaView_BaseCheck):
+    valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+                     'eiger:mc', 'pilatus:mc']
+    num_tasks = 12
+    num_tasks_per_node = 12
+    modules = ['ParaView']
+    maintainers = ['JF', 'TM']
+    tags = {'scs', 'production'}
+    mc_vendor = 'VMware, Inc.'
+    mc_renderer = 'llvmpipe'
+    gpu_vendor = 'NVIDIA Corporation'
+    gpu_renderer = 'Tesla P100'
 
+    @run_after('init')
+    def set_hierarchical_prgenvs(self):
         if self.current_system.name in ['eiger', 'pilatus']:
             self.valid_prog_environs = ['cpeCray']
         else:
             self.valid_prog_environs = ['builtin']
-
-        self.num_tasks = 12
-        self.num_tasks_per_node = 12
-        self.modules = ['ParaView']
-        self.executable = 'pvbatch'
-        self.executable_opts = ['coloredSphere.py']
-        self.maintainers = ['JF', 'TM']
-        self.tags = {'scs', 'production'}
-
-    @run_before('sanity')
-    def set_sanity(self):
-        if self.current_partition.name == 'mc':
-            self.sanity_patterns = sn.all([
-                sn.assert_found('Vendor:   VMware, Inc.', self.stdout),
-                sn.assert_found('Renderer: llvmpipe', self.stdout)
-            ])
-        elif self.current_partition.name == 'gpu':
-            self.sanity_patterns = sn.all([
-                sn.assert_found('Vendor:   NVIDIA Corporation', self.stdout),
-                sn.assert_found('Renderer: Tesla P100', self.stdout)
-            ])
