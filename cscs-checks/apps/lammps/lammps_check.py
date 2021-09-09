@@ -3,59 +3,143 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import os
-
 import reframe as rfm
 import reframe.utility.sanity as sn
+from hpctestlib.apps.lammps.nve import LAMMPS_NVE
+
+dom_gpu_small = {
+    'maint': (3457, -0.10, None, 'timesteps/s'),
+    'prod': (3132, -0.05, None, 'timesteps/s'),
+}
+
+daint_gpu_small = {
+    'maint': (2524, -0.10, None, 'timesteps/s'),
+    'prod': (2400, -0.40, None, 'timesteps/s'),
+}
+
+REFERENCE_GPU_PERFORMANCE_SMALL = {
+    'dom:gpu': dom_gpu_small,
+    'daint:gpu': daint_gpu_small,
+}
 
 
-class LAMMPSBaseCheck(rfm.RunOnlyRegressionTest):
-    def __init__(self):
+daint_gpu_large = {
+    'maint': (3832, -0.05, None, 'timesteps/s'),
+    'prod': (3260, -0.50, None, 'timesteps/s'),
+}
+
+REFERENCE_GPU_PERFORMANCE_LARGE = {
+    'daint:gpu': daint_gpu_large,
+}
+
+dom_cpu_small = {
+    'prod': (4394, -0.05, None, 'timesteps/s'),
+}
+
+daint_cpu_small = {
+    'prod': (3824, -0.10, None, 'timesteps/s'),
+}
+
+eiger_cpu_small = {
+    'prod': (4500, -0.10, None, 'timesteps/s'),
+}
+
+pilatus_cpu_small = {
+    'prod': (5000, -0.10, None, 'timesteps/s'),
+}
+
+REFERENCE_CPU_PERFORMANCE_SMALL = {
+    'dom:mc': dom_cpu_small,
+    'daint:mc': daint_cpu_small,
+    'eiger:mc': eiger_cpu_small,
+    'pilatus:mc': pilatus_cpu_small
+
+}
+
+daint_cpu_large = {
+    'prod': (5310, -0.65, None, 'timesteps/s'),
+}
+
+eiger_cpu_large = {
+    'prod': (6500, -0.10, None, 'timesteps/s'),
+}
+
+pilatus_cpu_large = {
+    'prod': (7500, -0.10, None, 'timesteps/s'),
+}
+
+REFERENCE_CPU_PERFORMANCE_LARGE = {
+    'daint:mc': daint_cpu_large,
+    'eiger:mc': eiger_cpu_large,
+    'pilatus:mc': pilatus_cpu_large,
+
+}
+
+REFERENCE_PERFORMANCE = {
+    'gpu': {
+        'small': REFERENCE_GPU_PERFORMANCE_SMALL,
+        'large': REFERENCE_GPU_PERFORMANCE_LARGE,
+    },
+    'cpu': {
+        'small': REFERENCE_CPU_PERFORMANCE_SMALL,
+        'large': REFERENCE_CPU_PERFORMANCE_LARGE,
+    },
+}
+
+def inherit_cpu_only(params):
+    return tuple(filter(lambda p: p[0] == 'cpu', params))
+
+
+def inherit_gpu_only(params):
+    return tuple(filter(lambda p: p[0] == 'gpu', params))
+
+
+class LAMMPSCheckCSCS(LAMMPS_NVE):
+    scale = parameter(['small', 'large'])
+    modules = ['LAMMPS']
+    strict_check = False
+    extra_resources = {
+        'switches': {
+            'num_switches': 1
+        }
+    }
+
+    tags = {'scs', 'external-resources'}
+    maintainers = ['TR', 'VH']
+
+    @run_after('init')
+    def env_define(self):
         if self.current_system.name in ['eiger', 'pilatus']:
             self.valid_prog_environs = ['cpeGNU']
         else:
             self.valid_prog_environs = ['builtin']
-        self.modules = ['LAMMPS']
 
-        # Reset sources dir relative to the SCS apps prefix
-        self.sourcesdir = os.path.join(self.current_system.resourcesdir,
-                                       'LAMMPS')
-        energy_reference = -4.6195
-        energy = sn.extractsingle(
-            r'\s+500000(\s+\S+){3}\s+(?P<energy>\S+)\s+\S+\s\n',
-            self.stdout, 'energy', float)
-        self.perf_patterns = {
-            'perf': sn.extractsingle(r'\s+(?P<perf>\S+) timesteps/s',
-                                     self.stdout, 'perf', float),
-        }
-        energy_diff = sn.abs(energy-energy_reference)
-        self.sanity_patterns = sn.all([
-            sn.assert_found(r'Total wall time:', self.stdout),
-            sn.assert_lt(energy_diff, 6e-4)
-        ])
-        self.strict_check = False
-        self.extra_resources = {
-            'switches': {
-                'num_switches': 1
-            }
-        }
+    @run_after('init')
+    def set_tags(self):
+        self.tags |= {'maintenance' if self.mode == 'maint'
+                      else 'production'}
 
-        self.tags = {'scs', 'external-resources'}
-        self.maintainers = ['TR', 'VH']
+    @run_before('performance')
+    def set_reference(self):
+        self.reference = REFERENCE_PERFORMANCE[self.platform_name][self.scale]
 
 
-@rfm.parameterized_test(*([s, v]
-                          for s in ['small', 'large']
-                          for v in ['prod', 'maint']))
-class LAMMPSGPUCheck(LAMMPSBaseCheck):
-    def __init__(self, scale, variant):
-        super().__init__()
-        self.valid_systems = ['daint:gpu']
+@rfm.simple_test
+class lammps_gpu_check(LAMMPSCheckCSCS):
+    platform = parameter(inherit_params=True,
+                         filter_params=inherit_gpu_only)
+    mode = parameter(['prod', 'maint'])
+    valid_systems = ['daint:gpu']
+    num_gpus_per_node = 1
+
+    @run_before('run')
+    def set_executable_opts(self):
         self.executable = 'lmp_mpi'
-        self.executable_opts = ['-sf gpu', '-pk gpu 1', '-in in.lj.gpu']
+        self.executable_opts = ['-sf gpu',
+                                '-pk gpu 1',
+                                '-in', self.input_file]
         self.variables = {'CRAY_CUDA_MPS': '1'}
-        self.num_gpus_per_node = 1
-        if scale == 'small':
+        if self.scale == 'small':
             self.valid_systems += ['dom:gpu']
             self.num_tasks = 12
             self.num_tasks_per_node = 2
@@ -63,46 +147,17 @@ class LAMMPSGPUCheck(LAMMPSBaseCheck):
             self.num_tasks = 32
             self.num_tasks_per_node = 2
 
-        references = {
-            'maint': {
-                'small': {
-                    'dom:gpu': {'perf': (3457, -0.10, None, 'timesteps/s')},
-                    'daint:gpu': {'perf': (2524, -0.10, None, 'timesteps/s')}
-                },
-                'large': {
-                    'daint:gpu': {'perf': (3832, -0.05, None, 'timesteps/s')}
-                }
-            },
-            'prod': {
-                'small': {
-                    'dom:gpu': {'perf': (3132, -0.05, None, 'timesteps/s')},
-                    'daint:gpu': {'perf': (2400, -0.40, None, 'timesteps/s')}
-                },
-                'large': {
-                    'daint:gpu': {'perf': (3260, -0.50, None, 'timesteps/s')}
-                }
-            },
-        }
-        self.reference = references[variant][scale]
-        self.tags |= {'maintenance' if variant == 'maint' else 'production'}
 
+@rfm.simple_test
+class lammps_cpu_check(LAMMPSCheckCSCS):
+    platform = parameter(inherit_params=True,
+                         filter_params=inherit_cpu_only)
+    mode = parameter(['prod'])
+    valid_systems = ['daint:mc', 'eiger:mc', 'pilatus:mc']
 
-@rfm.parameterized_test(*([s, v]
-                          for s in ['small', 'large']
-                          for v in ['prod']))
-class LAMMPSCPUCheck(LAMMPSBaseCheck):
-    def __init__(self, scale, variant):
-        super().__init__()
-        self.valid_systems = ['daint:mc', 'eiger:mc', 'pilatus:mc']
-        if self.current_system.name in ['eiger', 'pilatus']:
-            self.executable = 'lmp_mpi'
-            self.executable_opts = ['-in in.lj.cpu']
-        else:
-            self.executable = 'lmp_omp'
-            self.executable_opts = ['-sf omp', '-pk omp 1', '-in in.lj.cpu']
-
-        self.scale = scale
-        if scale == 'small':
+    @run_after('init')
+    def set_num_tasks(self):
+        if self.scale == 'small':
             self.valid_systems += ['dom:mc']
             self.num_tasks = 216
             self.num_tasks_per_node = 36
@@ -112,22 +167,15 @@ class LAMMPSCPUCheck(LAMMPSBaseCheck):
 
         if self.current_system.name == 'eiger':
             self.num_tasks_per_node = 128
-            self.num_tasks = 256 if self.scale == 'small' else 512
+            self.num_tasks = 256 if self.benchmark == 'small' else 512
 
-        references = {
-            'prod': {
-                'small': {
-                    'dom:mc': {'perf': (4394, -0.05, None, 'timesteps/s')},
-                    'daint:mc': {'perf': (3824, -0.10, None, 'timesteps/s')},
-                    'eiger:mc': {'perf': (4500, -0.10, None, 'timesteps/s')},
-                    'pilatus:mc': {'perf': (5000, -0.10, None, 'timesteps/s')}
-                },
-                'large': {
-                    'daint:mc': {'perf': (5310, -0.65, None, 'timesteps/s')},
-                    'eiger:mc': {'perf': (6500, -0.10, None, 'timesteps/s')},
-                    'pilatus:mc': {'perf': (7500, -0.10, None, 'timesteps/s')}
-                }
-            },
-        }
-        self.reference = references[variant][scale]
-        self.tags |= {'maintenance' if variant == 'maint' else 'production'}
+    @run_before('run')
+    def set_hierarchical_prgenvs(self):
+        if self.current_system.name in ['eiger', 'pilatus']:
+            self.executable = 'lmp_mpi'
+            self.executable_opts = ['-in', self.input_file]
+        else:
+            self.executable = 'lmp_omp'
+            self.executable_opts = ['-sf omp',
+                                    '-pk omp 1',
+                                    '-in', self.input_file]
