@@ -61,18 +61,18 @@ class Namd_BaseCheck(rfm.RunOnlyRegressionTest):
     def set_the_performance_dict(self):
         self.perf_variables = {self.scale:
                                sn.make_performance_function(
-                                  sn.avg(
-                                     sn.extractall(
-                                        r'Info: Benchmark time: \S+ CPUs'
-                                        r' \S+ s/step (?P<days_ns>\S+) '
-                                        r'days/ns \S+ MB memory',
-                                        self.stdout, 'days_ns', float)),
-                                     'days/ns')}
+                                   sn.avg(
+                                       sn.extractall(
+                                           r'Info: Benchmark time: \S+ CPUs'
+                                           r' \S+ s/step (?P<days_ns>\S+) '
+                                           r'days/ns \S+ MB memory',
+                                           self.stdout, 'days_ns', float)),
+                                           'days/ns')}
 
     @performance_function('days/ns', perf_key='perf')
     def set_perf_patterns(self):
         return sn.avg(
-                  sn.extractall(
+                 sn.extractall(
                      r'Info: Benchmark time: \S+ CPUs \S+ '
                      r's/step (?P<days_ns>\S+) days/ns \S+ MB memory',
                      self.stdout, 'days_ns', float))
