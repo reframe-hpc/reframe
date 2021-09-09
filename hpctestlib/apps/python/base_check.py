@@ -41,34 +41,34 @@ class Numpy_BaseCheck(rfm.RunOnlyRegressionTest, pin_prefix=True):
     @performance_function('seconds', perf_key='dot')
     def set_perf_dot(self):
         return sn.extractsingle(
-                   r'^Dotted two 4096x4096 matrices in\s+(?P<dot>\S+)\s+s',
-                   self.stdout, 'dot', float)
+            r'^Dotted two 4096x4096 matrices in\s+(?P<dot>\S+)\s+s',
+            self.stdout, 'dot', float)
 
     @performance_function('seconds', perf_key='svd')
     def set_perf_svd(self):
         return sn.extractsingle(
-                   r'^SVD of a 2048x1024 matrix in\s+(?P<svd>\S+)\s+s',
-                   self.stdout, 'svd', float)
+            r'^SVD of a 2048x1024 matrix in\s+(?P<svd>\S+)\s+s',
+            self.stdout, 'svd', float)
 
     @performance_function('seconds', perf_key='cholesky')
     def set_perf_cholesky(self):
         return sn.extractsingle(
-                   r'^Cholesky decomposition of a 2048x2048 matrix in'
-                   r'\s+(?P<cholesky>\S+)\s+s',
-                   self.stdout, 'cholesky', float)
+            r'^Cholesky decomposition of a 2048x2048 matrix in'
+            r'\s+(?P<cholesky>\S+)\s+s',
+            self.stdout, 'cholesky', float)
 
     @performance_function('seconds', perf_key='eigendec')
     def set_perf_eigendec(self):
         return sn.extractsingle(
-                   r'^Eigendecomposition of a 2048x2048 matrix in'
-                   r'\s+(?P<eigendec>\S+)\s+s',
-                   self.stdout, 'eigendec', float)
+            r'^Eigendecomposition of a 2048x2048 matrix in'
+            r'\s+(?P<eigendec>\S+)\s+s',
+            self.stdout, 'eigendec', float)
 
     @performance_function('seconds', perf_key='inv')
     def set_perf_inv(self):
         return sn.extractsingle(
-                   r'^Inversion of a 2048x2048 matrix in\s+(?P<inv>\S+)\s+s',
-                   self.stdout, 'inv', float)
+            r'^Inversion of a 2048x2048 matrix in\s+(?P<inv>\S+)\s+s',
+            self.stdout, 'inv', float)
 
     @sanity_function
     def assert_energy_readout(self):
