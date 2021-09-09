@@ -29,7 +29,7 @@ class GREASYCheckCSCS(GREASY_BaseCheck):
          ['mpi',        'mc',  72, 12, 3, 1],
          ['mpi+openmp', 'gpu', 24,  3, 2, 2],
          ['mpi+openmp', 'mc',  72,  6, 3, 2],
-        ])
+         ])
 
     @run_after('init')
     def parameters_unpacking(self):
