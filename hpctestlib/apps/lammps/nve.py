@@ -7,7 +7,6 @@ import os
 
 import reframe as rfm
 import reframe.utility.sanity as sn
-import reframe.utility.typecheck as typ
 
 
 class LAMMPS_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
