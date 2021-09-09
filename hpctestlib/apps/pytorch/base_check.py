@@ -86,7 +86,7 @@ class PytorchHorovod_BaseTest(rfm.RunOnlyRegressionTest):
 
     @sanity_function
     def assert_energy_readout(self):
-        return  sn.all([
+        return sn.all([
             sn.assert_found(rf'Model: {self.model}', self.stdout),
             sn.assert_found(rf'Batch size: {self.batch_size}', self.stdout)
         ])
