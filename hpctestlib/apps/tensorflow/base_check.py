@@ -63,8 +63,8 @@ class TensorFlow2Horovod_BaseTest(rfm.RunOnlyRegressionTest):
     @performance_function('images/s', perf_key='throughput_per_gpu')
     def set_perf_per_gpu(self):
         return sn.extractsingle(
-               r'Img/sec per GPU: (?P<throughput_per_gpu>\S+) \S+',
-               self.stdout, 'throughput_per_gpu', float)
+            r'Img/sec per GPU: (?P<throughput_per_gpu>\S+) \S+',
+            self.stdout, 'throughput_per_gpu', float)
 
     @performance_function('images/s', perf_key='throughput')
     def set_perf(self):
