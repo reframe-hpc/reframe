@@ -775,10 +775,12 @@ class RegressionTestMeta(type):
                 name += '_' + '_'.join(utils.toalphanum(str(v))
                                        for v in cls.param_space[pid].values())
 
-        # Append all the full fixture names to the test name.
-        if cls.fixture_space.fixtures:
+        # Append all the full fixture names to the test name if the fixtures
+        # have more than 1 variant (i.e. parameterized fixture).
+        if cls.fixture_space.fixtures and len(cls.fixture_space) > 1:
             fs = cls.fixture_space
             name += '^' + '+'.join(fs[k].cls.fullname(v, compress_params=True)
-                                   for k, v in fs[fid].items()) + '^'
+                                   for k, v in fs[fid].items()
+                                   if fs[k].cls.num_variants > 1) + '^'
 
         return name
