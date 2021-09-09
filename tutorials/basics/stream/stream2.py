@@ -20,14 +20,6 @@ class StreamWithRefTest(rfm.RegressionTest):
         'OMP_NUM_THREADS': '4',
         'OMP_PLACES': 'cores'
     }
-    reference = {
-        'catalina': {
-            'Copy':  (25200, -0.05, 0.05, 'MB/s'),
-            'Scale': (16800, -0.05, 0.05, 'MB/s'),
-            'Add':   (18500, -0.05, 0.05, 'MB/s'),
-            'Triad': (18800, -0.05, 0.05, 'MB/s')
-        }
-    }
 
     @run_before('compile')
     def set_compiler_flags(self):
@@ -41,7 +33,8 @@ class StreamWithRefTest(rfm.RegressionTest):
     @performance_function('MB/s')
     def extract_bw(self, kind='Copy'):
         '''Generic performance extraction function.'''
-        if kind not in {'Copy', 'Scale', 'Add', 'Triad'}:
+
+        if kind not in ('Copy', 'Scale', 'Add', 'Triad'):
             raise ValueError(f'illegal value in argument kind ({kind!r})')
 
         return sn.extractsingle(rf'{kind}:\s+(\S+)\s+.*',
@@ -50,6 +43,7 @@ class StreamWithRefTest(rfm.RegressionTest):
     @run_before('performance')
     def set_perf_variables(self):
         '''Build the dictionary with all the performance variables.'''
+
         self.perf_variables = {
             'Copy': self.extract_bw(),
             'Scale': self.extract_bw('Scale'),

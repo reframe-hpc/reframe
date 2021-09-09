@@ -24,6 +24,6 @@ class HelloThreadedExtendedTest(rfm.RegressionTest):
 
     @sanity_function
     def assert_num_messages(self):
-        num_messages = len(sn.findall(r'\[\s?\d+\] Hello, World\!',
-                                      self.stdout).evaluate())
-        return num_messages == 16
+        num_messages = sn.len(sn.findall(r'\[\s?\d+\] Hello, World\!',
+                                         self.stdout))
+        return sn.assert_eq(num_messages, 16)

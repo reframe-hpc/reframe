@@ -664,11 +664,13 @@ For running the benchmark, we need to set the OpenMP number of threads and pin t
 You can set environment variables in a ReFrame test through the :attr:`~reframe.core.pipeline.RegressionTest.variables` dictionary.
 
 What makes a ReFrame test a performance test is the definition of at least one :ref:`performance function<deferrable-performance-functions>`.
-Similarly to a test's :func:`@sanity_function<reframe.core.pipeline.RegressionMixin.sanity_function>`, a performance function is simply a member function decorated with the :attr:`@performance_function<reframe.core.pipeline.RegressionMixin.performance_function>` decorator, which is responsible for extracting a specified performance quantity from a regression test.
-The :attr:`@performance_function<reframe.core.pipeline.RegressionMixin.performance_function>` decorator must be passed the units of the quantity to be extracted, and it also takes the optional argument ``perf_key`` to customize the name of the extracted performance variable.
-If ``perf_key`` is not provided, the performance variable will take the name of the decorated performance function.
+Similarly to a test's :func:`@sanity_function<reframe.core.pipeline.RegressionMixin.sanity_function>`, a performance function is a member function decorated with the :attr:`@performance_function<reframe.core.pipeline.RegressionMixin.performance_function>` decorator, which binds the decorated function to a given unit.
+These functions can be used by the regression test to extract, measure or compute a given quantity of interest; where in this context, the values returned by a performance function are referred to as performance variables.
+Alternatively, performance functions can also be thought as `tools` available to the regression test for extracting performance variables.
+By default, ReFrame will attempt to execute all the available performance functions during the test's ``performance`` stage, producing a single performance variable out of each of the available performance functions.
+These default-generated performance variables are defined in the regression test's attribute :attr:`~reframe.core.pipeline.RegressionTest.perf_variables` during class instantiation, and their default name matches the name of their associated performance function.
+However, one could customize the default-generated performance variable's name by passing the ``perf-key`` argument to the :attr:`@performance_function<reframe.core.pipeline.RegressionMixin.performance_function>` decorator of the associated performance function.
 
-ReFrame identifies all member functions that use the :attr:`@performance_function<reframe.core.pipeline.RegressionMixin.performance_function>` decorator, and will automatically schedule them for execution during the ``performance`` pipeline stage of the test.
 In this example, we extract four performance variables, namely the memory bandwidth values for each of the "Copy", "Scale", "Add" and "Triad" sub-benchmarks of STREAM, where each of the performance functions use the :func:`~reframe.utility.sanity.extractsingle` utility function.
 For each of the sub-benchmarks we extract the "Best Rate MB/s" column of the output (see below) and we convert that to a float.
 
@@ -731,6 +733,45 @@ The :option:`--performance-report` will generate a short report at the end for e
    Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-gczplnic.log'
 
 
+---------------------------------------------------
+Setting explicitly the test's performance variables
+---------------------------------------------------
+
+In the above STREAM example, all four performance functions were almost identical except for a small part of the regex pattern, which led to some code repetition.
+Even though the performance functions were rather simple and the code repetition was not much in that case, this is still not a good practice and it is certainly an approach that would not scale when using more complex performance functions.
+Hence, in this example, we show how to collapse all these four performance functions into a single function and how to reuse this single performance function to create multiple performance variables.
+
+.. code-block:: console
+
+   cat tutorials/basics/stream/stream2.py
+
+.. literalinclude:: ../tutorials/basics/stream/stream2.py
+   :lines: 6-
+   :emphasize-lines: 28-
+
+As shown in the highlighted lines, this example collapses the four performance functions from the previous example into the :func:`extract_bw` function, which is also decorated with the :attr:`@performance_function<reframe.core.pipeline.RegressionMixin.performance_function>` decorator with the units set to ``'MB/s'``.
+However, the :func:`extract_bw` function now takes the optional argument ``kind`` which selects the STREAM benchmark to extract.
+By default, this argument is set to ``'Copy'`` because functions decorated with :attr:`@performance_function<reframe.core.pipeline.RegressionMixin.performance_function>` are only allowed to have ``self`` as a non-default argument.
+Thus, from this performance function definition, ReFrame will default-generate a single performance variable during the test instantiation under the name ``extract_bw``, where this variable will report the performance results from the ``Copy`` benchmark.
+With no further action from our side, ReFrame would just report the performance of the test based on this default-generated performance variable, but that is not what we are after here.
+Therefore, we must modify these default performance variables so that this version of the STREAM test produces the same results as in the previous example.
+As mentioned before, the performance variables (also the default-generated ones) are stored in the :attr:`~reframe.core.pipeline.RegressionTest.perf_variables` dictionary, so all we need to do is to redefine this mapping with our desired performance variables as done in the pre-performance pipeline hook :func:`set_perf_variables`.
+
+.. tip::
+   Performance functions may also be generated inline using the :func:`~reframe.utility.sanity.make_performance_function` utility as shown below.
+
+   .. code-block:: python
+
+      @run_before('performance')
+      def set_perf_vars(self):
+          self.perf_variables = {
+              'Copy': sn.make_performance_function(
+                  sn.extractsingle(r'Copy:\s+(\S+)\s+.*',
+                                   self.stdout, 1, float),
+                  'MB/s'
+               )
+          }
+
 -----------------------
 Adding reference values
 -----------------------
@@ -747,22 +788,23 @@ In the following example, we set the reference values for all the STREAM sub-ben
 
 .. code-block:: console
 
-   cat tutorials/basics/stream/stream2.py
+   cat tutorials/basics/stream/stream3.py
 
 
-.. literalinclude:: ../tutorials/basics/stream/stream2.py
+.. literalinclude:: ../tutorials/basics/stream/stream3.py
    :lines: 6-
    :emphasize-lines: 18-25
 
 
 The performance reference tuple consists of the reference value, the lower and upper thresholds expressed as fractional numbers relative to the reference value, and the unit of measurement.
 If any of the thresholds is not relevant, :class:`None` may be used instead.
+Also, the units in this :attr:`~reframe.core.pipeline.RegressionTest.reference` variable are entirely optional, since they were already provided through the :attr:`@performance_function<reframe.core.pipeline.RegressionMixin.performance_function>` decorator.
 
 If any obtained performance value is beyond its respective thresholds, the test will fail with a summary as shown below:
 
 .. code-block:: console
 
-   ./bin/reframe -c tutorials/basics/stream/stream2.py -r --performance-report
+   ./bin/reframe -c tutorials/basics/stream/stream3.py -r --performance-report
 
 
 .. code-block:: none
@@ -778,30 +820,6 @@ If any obtained performance value is beyond its respective thresholds, the test 
      * Failing phase: performance
      * Rerun with '-n StreamWithRefTest -p gnu --system catalina:default'
      * Reason: performance error: failed to meet reference: Copy=24586.5, expected 55200 (l=52440.0, u=57960.0)
-
-Also, note how the performance syntax for this example is far more compact in comparison to our first iteration of the STREAM test.
-In that first STREAM example, all four performance functions were almost identical, except for a small part of the regex pattern, which led to a lot of code repetition.
-Hence, this example collapses all four performance functions into a single performance function, which now takes an optional argument to select the quantity to extract.
-Then, the performance variables of the test can be defined by setting the respective entries in the :attr:`~reframe.core.pipeline.RegressionTest.perf_variables` dictionary.
-
-.. literalinclude:: ../tutorials/basics/stream/stream2.py
-   :lines: 41-
-
-.. note::
-   Performance functions may also be generated inline using the :func:`~reframe.utility.sanity.make_performance_function` utility as shown below.
-
-   .. code-block:: python
-
-      @run_before('performance')
-      def set_perf_vars(self):
-          self.perf_variables = {
-              'Copy': sn.make_performance_function(
-                  sn.extractsingle(r'Copy:\s+(\S+)\s+.*',
-                                   self.stdout, 1, float),
-                  'MB/s'
-               )
-          }
-
 
 ------------------------------
 Examining the performance logs
@@ -1122,9 +1140,9 @@ Let's see and comment the changes:
 
 .. code-block:: console
 
-   cat tutorials/basics/stream/stream3.py
+   cat tutorials/basics/stream/stream4.py
 
-.. literalinclude:: ../tutorials/basics/stream/stream3.py
+.. literalinclude:: ../tutorials/basics/stream/stream4.py
    :lines: 6-
    :emphasize-lines: 8, 27-41, 46-56
 
@@ -1155,18 +1173,18 @@ Let's run our adapted test now:
 
 .. code-block:: console
 
-   ./bin/reframe -c tutorials/basics/stream/stream3.py -r --performance-report
+   ./bin/reframe -c tutorials/basics/stream/stream4.py -r --performance-report
 
 
 .. code-block:: none
 
    [ReFrame Setup]
      version:           3.3-dev0 (rev: cb974c13)
-     command:           './bin/reframe -C tutorials/config/settings.py -c tutorials/basics/stream/stream3.py -r --performance-report'
+     command:           './bin/reframe -C tutorials/config/settings.py -c tutorials/basics/stream/stream4.py -r --performance-report'
      launched by:       user@dom101
      working directory: '/users/user/Devel/reframe'
      settings file:     'tutorials/config/settings.py'
-     check search path: '/users/user/Devel/reframe/tutorials/basics/stream/stream3.py'
+     check search path: '/users/user/Devel/reframe/tutorials/basics/stream/stream4.py'
      stage directory:   '/users/user/Devel/reframe/stage'
      output directory:  '/users/user/Devel/reframe/output'
 

@@ -8,9 +8,9 @@ import reframe.utility.sanity as sn
 
 
 @rfm.simple_test
-class StreamMultiSysTest(rfm.RegressionTest):
+class StreamWithRefTest(rfm.RegressionTest):
     valid_systems = ['*']
-    valid_prog_environs = ['cray', 'gnu', 'intel', 'pgi']
+    valid_prog_environs = ['gnu']
     prebuild_cmds = [
         'wget http://www.cs.virginia.edu/stream/FTP/Code/stream.c',
     ]
@@ -29,36 +29,10 @@ class StreamMultiSysTest(rfm.RegressionTest):
         }
     }
 
-    # Flags per programming environment
-    flags = variable(dict, value={
-        'cray':  ['-fopenmp', '-O3', '-Wall'],
-        'gnu':   ['-fopenmp', '-O3', '-Wall'],
-        'intel': ['-qopenmp', '-O3', '-Wall'],
-        'pgi':   ['-mp', '-O3']
-    })
-
-    # Number of cores for each system
-    cores = variable(dict, value={
-        'catalina:default': 4,
-        'daint:gpu': 12,
-        'daint:mc': 36,
-        'daint:login': 10
-    })
-
     @run_before('compile')
     def set_compiler_flags(self):
         self.build_system.cppflags = ['-DSTREAM_ARRAY_SIZE=$((1 << 25))']
-        environ = self.current_environ.name
-        self.build_system.cflags = self.flags.get(environ, [])
-
-    @run_before('run')
-    def set_num_threads(self):
-        num_threads = self.cores.get(self.current_partition.fullname, 1)
-        self.num_cpus_per_task = num_threads
-        self.variables = {
-            'OMP_NUM_THREADS': str(num_threads),
-            'OMP_PLACES': 'cores'
-        }
+        self.build_system.cflags = ['-fopenmp', '-O3', '-Wall']
 
     @sanity_function
     def validate_solution(self):
@@ -66,7 +40,9 @@ class StreamMultiSysTest(rfm.RegressionTest):
 
     @performance_function('MB/s')
     def extract_bw(self, kind='Copy'):
-        if kind not in {'Copy', 'Scale', 'Add', 'Triad'}:
+        '''Generic performance extraction function.'''
+
+        if kind not in ('Copy', 'Scale', 'Add', 'Triad'):
             raise ValueError(f'illegal value in argument kind ({kind!r})')
 
         return sn.extractsingle(rf'{kind}:\s+(\S+)\s+.*',
@@ -74,6 +50,8 @@ class StreamMultiSysTest(rfm.RegressionTest):
 
     @run_before('performance')
     def set_perf_variables(self):
+        '''Build the dictionary with all the performance variables.'''
+
         self.perf_variables = {
             'Copy': self.extract_bw(),
             'Scale': self.extract_bw('Scale'),
