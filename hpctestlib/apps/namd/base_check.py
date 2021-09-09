@@ -72,9 +72,9 @@ class Namd_BaseCheck(rfm.RunOnlyRegressionTest):
     @performance_function('days/ns', perf_key='perf')
     def set_perf_patterns(self):
         return sn.avg(sn.extractall(
-                          r'Info: Benchmark time: \S+ CPUs \S+ '
-                          r's/step (?P<days_ns>\S+) days/ns \S+ MB memory',
-                          self.stdout, 'days_ns', float))
+                        r'Info: Benchmark time: \S+ CPUs \S+ '
+                        r's/step (?P<days_ns>\S+) days/ns \S+ MB memory',
+                        self.stdout, 'days_ns', float))
 
     @sanity_function
     def assert_energy_readout(self):
