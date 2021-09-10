@@ -42,8 +42,8 @@ def _emit_gitlab_pipeline(testcases):
             f'-R' if recurse else '',
             f'--report-file={report_file}',
             f'--restore-session={restore_files}' if restore_files else '',
-            '-n', testcase.check.name, '-r',
-            f'{"".join("-" + verbosity)}' if verbosity else ''
+            f'{"".join("-" + verbosity)}' if verbosity else '',
+            '-n', f"'^{testcase.check.name}$'", '-r'
         ])
 
     max_level = 0   # We need the maximum level to generate the stages section
