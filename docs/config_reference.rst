@@ -218,6 +218,7 @@ System Partition Configuration
      If not, you should consider using the ``squeue`` backend below.
    - ``squeue``: Jobs will be launched using the `Slurm <https://www.schedmd.com/>`__ scheduler.
      This backend does not rely on job accounting to retrieve job statuses, but ReFrame does its best to query the job state as reliably as possible.
+   - ``lsf``: Jobs will be launched using the `LSF <https://www.ibm.com/docs/en/spectrum-lsf/>`__ scheduler.
 
    .. versionadded:: 3.7.2
       Support for the SGE scheduler is added.
@@ -281,6 +282,8 @@ System Partition Configuration
    - ``srun``: Parallel programs will be launched using `Slurm <https://slurm.schedmd.com/srun.html>`__'s ``srun`` command.
    - ``srunalloc``: Parallel programs will be launched using `Slurm <https://slurm.schedmd.com/srun.html>`__'s ``srun`` command, but job allocation options will also be emitted.
      This can be useful when combined with the ``local`` job scheduler.
+   - ``lrun``: Parallel programs will be launched using `LC Launcher  <https://hpc.llnl.gov/training/tutorials/using-lcs-sierra-system#lrun>`__'s ``lrun`` command.
+   - ``lrun-gpu``: Parallel programs will be launched using `LC Launcher <https://hpc.llnl.gov/training/tutorials/using-lcs-sierra-system#lrun>`__'s ``lrun -M "-gpu"`` command.
    - ``ssh``: Parallel programs will be launched using SSH.
      This launcher uses the partition’s |access|_ property in order to determine the remote host and any additional options to be passed to the SSH client.
      The ssh command will be launched in "batch mode," meaning that password-less access to the remote host must be configured.
