@@ -31,9 +31,8 @@ class LsfJobScheduler(PbsJobScheduler):
         )
 
     def emit_preamble(self, job):
-        num_tasks = job.num_tasks or 1
         num_tasks_per_node = job.num_tasks_per_node or 1
-        num_nodes = int(num_tasks // num_tasks_per_node)
+        num_nodes = job.num_tasks // num_tasks_per_node
 
         preamble = [
             self._format_option(f'-J {job.name}'),
@@ -81,14 +80,8 @@ class LsfJobScheduler(PbsJobScheduler):
         if not jobs:
             return
 
-        completed = osext.run_command(
+        completed = _run_strict(
             f'bjobs -noheader {" ".join(job.jobid for job in jobs)}')
-        if completed.returncode != 0:
-            raise JobSchedulerError(
-                f'bjobs failed with exit code {completed.returncode} '
-                f'(standard error follows):\n{completed.stderr}'
-            )
-
         job_status = {}
         job_status_lines = completed.stdout.split('\n')
 
@@ -102,32 +95,32 @@ class LsfJobScheduler(PbsJobScheduler):
                 job_status[job_match['jobid']] = job_match['status']
 
         for job in jobs:
-            # job id not found
             if job.jobid not in job_status:
+                # job id not found
                 self.log(f'Job {job.jobid} not known to scheduler, '
                          f'assuming job completed')
                 job._state = 'COMPLETED'
                 job._completed = True
 
-            # job done
-            elif job_status[job.jobid] in ['DONE', 'EXIT']:
+            elif job_status[job.jobid] in ('DONE', 'EXIT'):
+                # job done
                 job._state = 'COMPLETED'
                 job._completed = True
 
-            # job running
             elif job_status[job.jobid] == 'RUN':
+                # job running
                 job._state = 'RUNNING'
 
-            # job pending
             elif job_status[job.jobid] == 'PEND':
+                # job pending
                 job._state = 'PENDING'
 
-            # job suspended
             elif job_status[job.jobid] in ['PSUSP', 'SSUSP', 'USUSP']:
+                # job suspended
                 job._state = 'SUSPENDED'
 
-            # job status unknown
             else:
+                # job status unknown
                 self.log(f'Job {job_status[job.jobid]} not known, '
                          f'assuming job completed')
                 job._state = 'COMPLETED'

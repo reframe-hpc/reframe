@@ -142,7 +142,7 @@ def test_run_command(job):
     elif launcher_name == 'lrun':
         assert command == 'lrun -N 2 -T 2 --foo'
     elif launcher_name == 'lrun-gpu':
-        assert command == 'lrun -M "-gpu" -N 2 -T 2 --foo'
+        assert command == 'lrun -N 2 -T 2 -M "-gpu" --foo'
 
 
 def test_run_command_minimal(minimal_job):
@@ -176,4 +176,4 @@ def test_run_command_minimal(minimal_job):
     elif launcher_name == 'lrun':
         assert command == 'lrun -N 1 -T 1 --foo'
     elif launcher_name == 'lrun-gpu':
-        assert command == 'lrun -M "-gpu" -N 1 -T 1 --foo'
+        assert command == 'lrun -N 1 -T 1 -M "-gpu" --foo'
