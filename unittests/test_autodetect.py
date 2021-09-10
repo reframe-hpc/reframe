@@ -33,8 +33,54 @@ def exec_ctx(make_exec_ctx_g, tmp_path, monkeypatch):
     yield from make_exec_ctx_g()
 
 
+@pytest.fixture
+def invalid_topo_exec_ctx(make_exec_ctx_g, tmp_path, monkeypatch):
+    # Monkey-patch HOME, since topology is always written there
+    monkeypatch.setenv('HOME', str(tmp_path))
+
+    # Create invalid processor and devices files
+    meta_prefix = tmp_path / '.reframe' / 'topology' / 'generic-default'
+    os.makedirs(meta_prefix)
+    with open(meta_prefix / 'processor.json', 'w') as fp:
+        fp.write('{')
+
+    with open(meta_prefix / 'devices.json', 'w') as fp:
+        fp.write('{')
+
+    yield from make_exec_ctx_g()
+
+
 def test_autotect(exec_ctx):
     detect_topology()
     part = runtime().system.partitions[0]
     assert part.processor.info == cpuinfo()
-    assert part.devices == [{'type': 'gpu', 'arch': 'a100', 'num_devices': 8}]
+    if part.processor.info:
+        assert part.processor.num_cpus == part.processor.info['num_cpus']
+
+    assert len(part.devices) == 1
+    assert part.devices[0].info == {
+        'type': 'gpu',
+        'arch': 'a100',
+        'num_devices': 8
+    }
+    assert part.devices[0].device_type == 'gpu'
+
+    # Test immutability of ProcessorInfo and DeviceInfo
+    with pytest.raises(AttributeError):
+        part.processor.num_cpus = 3
+
+    with pytest.raises(AttributeError):
+        part.processor.foo = 10
+
+    with pytest.raises(AttributeError):
+        part.devices[0].arch = 'foo'
+
+    with pytest.raises(AttributeError):
+        part.devices[0].foo = 10
+
+
+def test_autotect_with_invalid_files(invalid_topo_exec_ctx):
+    detect_topology()
+    part = runtime().system.partitions[0]
+    assert part.processor.info == cpuinfo()
+    assert part.devices == []

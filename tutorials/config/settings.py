@@ -24,6 +24,20 @@ site_configuration = {
             ]
         },
         {
+            'name': 'tutorials-docker',
+            'descr': 'Container for running the build system tutorials',
+            'hostnames': ['docker'],
+            'modules_system': 'lmod',
+            'partitions': [
+                {
+                    'name': 'default',
+                    'scheduler': 'local',
+                    'launcher': 'local',
+                    'environs': ['builtin'],
+                }
+            ]
+        },
+        {
             'name': 'daint',
             'descr': 'Piz Daint Supercomputer',
             'hostnames': ['daint'],

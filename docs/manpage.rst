@@ -38,12 +38,6 @@ This is something that writers of regression tests should bear in mind.
 
    The check search path can also be set using the :envvar:`RFM_CHECK_SEARCH_PATH` environment variable or the :js:attr:`check_search_path` general configuration parameter.
 
-.. option:: -R, --recursive
-
-   Search for test files recursively in directories found in the check search path.
-
-   This option can also be set using the :envvar:`RFM_CHECK_SEARCH_RECURSIVE` environment variable or the :js:attr:`check_search_recursive` general configuration parameter.
-
 .. option:: --ignore-check-conflicts
 
    Ignore tests with conflicting names when loading.
@@ -55,6 +49,12 @@ This is something that writers of regression tests should bear in mind.
 
    .. deprecated:: 3.8.0
       This option will be removed in a future version.
+
+.. option:: -R, --recursive
+
+   Search for test files recursively in directories found in the check search path.
+
+   This option can also be set using the :envvar:`RFM_CHECK_SEARCH_RECURSIVE` environment variable or the :js:attr:`check_search_recursive` general configuration parameter.
 
 
 --------------
@@ -68,47 +68,6 @@ Tests can be filtered by different attributes and there are specific command lin
 A common characteristic of all test filtering options is that if a test is selected, then all its dependencies will be selected, too, regardless if they match the filtering criteria or not.
 This happens recursively so that if test ``T1`` depends on ``T2`` and ``T2`` depends on ``T3``, then selecting ``T1`` would also select ``T2`` and ``T3``.
 
-.. option:: -t, --tag=TAG
-
-   Filter tests by tag.
-   ``TAG`` is interpreted as a `Python Regular Expression <https://docs.python.org/3/library/re.html>`__; all tests that have at least a matching tag will be selected.
-   ``TAG`` being a regular expression has the implication that ``-t 'foo'`` will select also tests that define ``'foobar'`` as a tag.
-   To restrict the selection to tests defining only ``'foo'``, you should use ``-t 'foo$'``.
-
-   This option may be specified multiple times, in which case only tests defining or matching *all* tags will be selected.
-
-.. option:: -n, --name=NAME
-
-   Filter tests by name.
-   ``NAME`` is interpreted as a `Python Regular Expression <https://docs.python.org/3/library/re.html>`__;
-   any test whose name matches ``NAME`` will be selected.
-
-   This option may be specified multiple times, in which case tests with *any* of the specified names will be selected:
-   ``-n NAME1 -n NAME2`` is therefore equivalent to ``-n 'NAME1|NAME2'``.
-
-.. option:: -x, --exclude=NAME
-
-   Exclude tests by name.
-   ``NAME`` is interpreted as a `Python Regular Expression <https://docs.python.org/3/library/re.html>`__;
-   any test whose name matches ``NAME`` will be excluded.
-
-   This option may be specified multiple times, in which case tests with *any* of the specified names will be excluded:
-   ``-x NAME1 -x NAME2`` is therefore equivalent to ``-x 'NAME1|NAME2'``.
-
-.. option:: -p, --prgenv=NAME
-
-   Filter tests by programming environment.
-   ``NAME`` is interpreted as a `Python Regular Expression <https://docs.python.org/3/library/re.html>`__;
-   any test for which at least one valid programming environment is matching ``NAME`` will be selected.
-
-   This option may be specified multiple times, in which case only tests matching all of the specified programming environments will be selected.
-
-.. option:: --gpu-only
-
-   Select tests that can run on GPUs.
-   These are all tests with :attr:`num_gpus_per_node` greater than zero.
-   This option and :option:`--cpu-only` are mutually exclusive.
-
 .. option:: --cpu-only
 
    Select tests that do not target GPUs.
@@ -119,7 +78,6 @@ This happens recursively so that if test ``T1`` depends on ``T2`` and ``T2`` dep
    The value of this attribute is not required to be non-zero for GPU tests.
    Tests may or may not make use of it.
 
-
 .. option:: --failed
 
    Select only the failed test cases for a previous run.
@@ -128,17 +86,57 @@ This happens recursively so that if test ``T1`` depends on ``T2`` and ``T2`` dep
 
    .. versionadded:: 3.4
 
+.. option:: --gpu-only
 
-.. option:: --skip-system-check
+   Select tests that can run on GPUs.
+   These are all tests with :attr:`num_gpus_per_node` greater than zero.
+   This option and :option:`--cpu-only` are mutually exclusive.
 
-   Do not filter tests against the selected system.
+.. option:: -n, --name=NAME
 
+   Filter tests by name.
+   ``NAME`` is interpreted as a `Python Regular Expression <https://docs.python.org/3/library/re.html>`__;
+   any test whose name matches ``NAME`` will be selected.
+
+   This option may be specified multiple times, in which case tests with *any* of the specified names will be selected:
+   ``-n NAME1 -n NAME2`` is therefore equivalent to ``-n 'NAME1|NAME2'``.
+
+.. option:: -p, --prgenv=NAME
+
+   Filter tests by programming environment.
+   ``NAME`` is interpreted as a `Python Regular Expression <https://docs.python.org/3/library/re.html>`__;
+   any test for which at least one valid programming environment is matching ``NAME`` will be selected.
+
+   This option may be specified multiple times, in which case only tests matching all of the specified programming environments will be selected.
 
 .. option:: --skip-prgenv-check
 
    Do not filter tests against programming environments.
    Even if the :option:`-p` option is not specified, ReFrame will filter tests based on the programming environments defined for the currently selected system.
    This option disables that filter completely.
+
+
+.. option:: --skip-system-check
+
+   Do not filter tests against the selected system.
+
+.. option:: -t, --tag=TAG
+
+   Filter tests by tag.
+   ``TAG`` is interpreted as a `Python Regular Expression <https://docs.python.org/3/library/re.html>`__; all tests that have at least a matching tag will be selected.
+   ``TAG`` being a regular expression has the implication that ``-t 'foo'`` will select also tests that define ``'foobar'`` as a tag.
+   To restrict the selection to tests defining only ``'foo'``, you should use ``-t 'foo$'``.
+
+   This option may be specified multiple times, in which case only tests defining or matching *all* tags will be selected.
+
+.. option:: -x, --exclude=NAME
+
+   Exclude tests by name.
+   ``NAME`` is interpreted as a `Python Regular Expression <https://docs.python.org/3/library/re.html>`__;
+   any test whose name matches ``NAME`` will be excluded.
+
+   This option may be specified multiple times, in which case tests with *any* of the specified names will be excluded:
+   ``-x NAME1 -x NAME2`` is therefore equivalent to ``-x 'NAME1|NAME2'``.
 
 
 ------------
@@ -158,16 +156,14 @@ An action must always be specified.
 
    .. versionadded:: 3.4.1
 
-.. option:: -l, --list
-
-   List selected tests.
-   A single line per test is printed.
-
-
 .. option:: -L, --list-detailed
 
    List selected tests providing detailed information per test.
 
+.. option:: -l, --list
+
+   List selected tests.
+   A single line per test is printed.
 
 .. option:: --list-tags
 
@@ -176,11 +172,9 @@ An action must always be specified.
 
    .. versionadded:: 3.6.0
 
-
 .. option:: -r, --run
 
    Execute the selected tests.
-
 
 If more than one action options are specified, :option:`-l` precedes :option:`-L`, which in turn precedes :option:`-r`.
 
@@ -189,12 +183,21 @@ If more than one action options are specified, :option:`-l` precedes :option:`-L
 Options controlling ReFrame output
 ----------------------------------
 
-.. option:: --prefix=DIR
+.. option:: --dont-restage
 
-   General directory prefix for ReFrame-generated directories.
-   The base stage and output directories (see below) will be specified relative to this prefix if not specified explicitly.
+   Do not restage a test if its stage directory exists.
+   Normally, if the stage directory of a test exists, ReFrame will remove it and recreate it.
+   This option disables this behavior.
 
-   This option can also be set using the :envvar:`RFM_PREFIX` environment variable or the :js:attr:`prefix` system configuration parameter.
+   This option can also be set using the :envvar:`RFM_CLEAN_STAGEDIR` environment variable or the :js:attr:`clean_stagedir` general configuration parameter.
+
+   .. versionadded:: 3.1
+
+.. option:: --keep-stage-files
+
+   Keep test stage directories even for tests that finish successfully.
+
+   This option can also be set using the :envvar:`RFM_KEEP_STAGE_FILES` environment variable or the :js:attr:`keep_stage_files` general configuration parameter.
 
 .. option:: -o, --output=DIR
 
@@ -212,28 +215,6 @@ Options controlling ReFrame output
 
    This option can also be set using the :envvar:`RFM_OUTPUT_DIR` environment variable or the :js:attr:`outputdir` system configuration parameter.
 
-
-.. option:: -s, --stage=DIR
-
-   Directory prefix for staging test resources.
-   ReFrame does not execute tests from their original source directory.
-   Instead it creates a test-specific stage directory and copies all test resources there.
-   It then changes to that directory and executes the test.
-   This test-specific directory is of the form ``{stage_prefix}/{system}/{partition}/{environment}/{test_name}``,
-   where ``stage_prefix`` is set by this option.
-   If a test finishes successfully, its stage directory will be removed.
-
-   This option can also be set using the :envvar:`RFM_STAGE_DIR` environment variable or the :js:attr:`stagedir` system configuration parameter.
-
-.. option:: --timestamp [TIMEFMT]
-
-   Append a timestamp to the output and stage directory prefixes.
-   ``TIMEFMT`` can be any valid :manpage:`strftime(3)` time format.
-   If not specified, ``TIMEFMT`` is set to ``%FT%T``.
-
-   This option can also be set using the :envvar:`RFM_TIMESTAMP_DIRS` environment variable or the :js:attr:`timestamp_dirs` general configuration parameter.
-
-
 .. option:: --perflogdir=DIR
 
    Directory prefix for logging performance data.
@@ -241,31 +222,12 @@ Options controlling ReFrame output
 
    This option can also be set using the :envvar:`RFM_PERFLOG_DIR` environment variable or the :js:attr:`basedir` logging handler configuration parameter.
 
+.. option:: --prefix=DIR
 
-.. option:: --keep-stage-files
+   General directory prefix for ReFrame-generated directories.
+   The base stage and output directories (see below) will be specified relative to this prefix if not specified explicitly.
 
-   Keep test stage directories even for tests that finish successfully.
-
-   This option can also be set using the :envvar:`RFM_KEEP_STAGE_FILES` environment variable or the :js:attr:`keep_stage_files` general configuration parameter.
-
-.. option:: --dont-restage
-
-   Do not restage a test if its stage directory exists.
-   Normally, if the stage directory of a test exists, ReFrame will remove it and recreate it.
-   This option disables this behavior.
-
-   This option can also be set using the :envvar:`RFM_CLEAN_STAGEDIR` environment variable or the :js:attr:`clean_stagedir` general configuration parameter.
-
-   .. versionadded:: 3.1
-
-.. option:: --save-log-files
-
-   Save ReFrame log files in the output directory before exiting.
-   Only log files generated by ``file`` `log handlers <config_reference.html#the-file-log-handler>`__ will be copied.
-
-
-   This option can also be set using the :envvar:`RFM_SAVE_LOG_FILES` environment variable or the :js:attr:`save_log_files` general configuration parameter.
-
+   This option can also be set using the :envvar:`RFM_PREFIX` environment variable or the :js:attr:`prefix` system configuration parameter.
 
 .. option:: --report-file=FILE
 
@@ -275,7 +237,6 @@ Options controlling ReFrame output
    This option can also be set using the :envvar:`RFM_REPORT_FILE` environment variable or the :js:attr:`report_file` general configuration parameter.
 
    .. versionadded:: 3.1
-
 
 .. option:: --report-junit=FILE
 
@@ -289,30 +250,45 @@ Options controlling ReFrame output
    .. versionchanged:: 3.6.1
       Added support for retries in the JUnit XML report.
 
+.. option:: -s, --stage=DIR
+
+   Directory prefix for staging test resources.
+   ReFrame does not execute tests from their original source directory.
+   Instead it creates a test-specific stage directory and copies all test resources there.
+   It then changes to that directory and executes the test.
+   This test-specific directory is of the form ``{stage_prefix}/{system}/{partition}/{environment}/{test_name}``,
+   where ``stage_prefix`` is set by this option.
+   If a test finishes successfully, its stage directory will be removed.
+
+   This option can also be set using the :envvar:`RFM_STAGE_DIR` environment variable or the :js:attr:`stagedir` system configuration parameter.
+
+.. option:: --save-log-files
+
+   Save ReFrame log files in the output directory before exiting.
+   Only log files generated by ``file`` `log handlers <config_reference.html#the-file-log-handler>`__ will be copied.
+
+   This option can also be set using the :envvar:`RFM_SAVE_LOG_FILES` environment variable or the :js:attr:`save_log_files` general configuration parameter.
+
+.. option:: --timestamp [TIMEFMT]
+
+   Append a timestamp to the output and stage directory prefixes.
+   ``TIMEFMT`` can be any valid :manpage:`strftime(3)` time format.
+   If not specified, ``TIMEFMT`` is set to ``%FT%T``.
+
+   This option can also be set using the :envvar:`RFM_TIMESTAMP_DIRS` environment variable or the :js:attr:`timestamp_dirs` general configuration parameter.
+
 
 -------------------------------------
 Options controlling ReFrame execution
 -------------------------------------
 
-.. option:: --force-local
+.. option:: --disable-hook=HOOK
 
-   Force local execution of tests.
-   Execute tests as if all partitions of the currently selected system had a ``local`` scheduler.
+   Disable the pipeline hook named ``HOOK`` from all the tests that will run.
+   This feature is useful when you have implemented test workarounds as pipeline hooks, in which case you can quickly disable them from the command line.
+   This option may be specified multiple times in order to disable multiple hooks at the same time.
 
-.. option:: --skip-sanity-check
-
-   Skip sanity checking phase.
-
-
-.. option:: --skip-performance-check
-
-   Skip performance checking phase.
-   The phase is completely skipped, meaning that performance data will *not* be logged.
-
-.. option:: --strict
-
-   Enforce strict performance checking, even if a performance test is marked as not performance critical by having set its :attr:`strict_check` attribute to :class:`False`.
-
+   .. versionadded:: 3.2
 
 .. option:: --exec-policy=POLICY
 
@@ -332,18 +308,15 @@ Options controlling ReFrame execution
      If there are tests that have finished their run phase, ReFrame will keep pushing tests for execution until the concurrency limit is reached again.
      If no execution slots are available, ReFrame will throttle job submission.
 
+.. option:: --force-local
 
-.. option:: --mode=MODE
-
-   ReFrame execution mode to use.
-   An execution mode is simply a predefined invocation of ReFrame that is set with the :js:attr:`modes` configuration parameter.
-   If an option is specified both in an execution mode and in the command-line, then command-line takes precedence.
+   Force local execution of tests.
+   Execute tests as if all partitions of the currently selected system had a ``local`` scheduler.
 
 .. option:: --max-retries=NUM
 
    The maximum number of times a failing test can be retried.
    The test stage and output directories will receive a ``_retry<N>`` suffix every time the test is retried.
-
 
 .. option:: --maxfail=NUM
 
@@ -351,15 +324,11 @@ Options controlling ReFrame execution
    After ``NUM`` failed test cases the rest of the test cases will be aborted.
    The counter of the failed test cases is reset to 0 in every retry.
 
+.. option:: --mode=MODE
 
-.. option:: --disable-hook=HOOK
-
-   Disable the pipeline hook named ``HOOK`` from all the tests that will run.
-   This feature is useful when you have implemented test workarounds as pipeline hooks, in which case you can quickly disable them from the command line.
-   This option may be specified multiple times in order to disable multiple hooks at the same time.
-
-   .. versionadded:: 3.2
-
+   ReFrame execution mode to use.
+   An execution mode is simply a predefined invocation of ReFrame that is set with the :js:attr:`modes` configuration parameter.
+   If an option is specified both in an execution mode and in the command-line, then command-line takes precedence.
 
 .. option:: --restore-session [REPORT1[,REPORT2,...]]
 
@@ -385,6 +354,73 @@ Options controlling ReFrame execution
 
    .. versionchanged:: 3.6.1
       Multiple report files are now accepted.
+
+.. option:: -S, --setvar=[TEST.]VAR=VAL
+
+   Set variable ``VAR`` in all tests or optionally only in test ``TEST`` to ``VAL``.
+
+   Multiple variables can be set at the same time by passing this option multiple times.
+   This option *cannot* change arbitrary test attributes, but only test variables declared with the :attr:`~reframe.core.pipeline.RegressionMixin.variable` built-in.
+   If an attempt is made to change an inexistent variable or a test parameter, a warning will be issued.
+
+   ReFrame will try to convert ``VAL`` to the type of the variable.
+   If it does not succeed, a warning will be issued and the variable will not be set.
+   ``VAL`` can take the special value ``@none`` to denote that the variable must be set to :obj:`None`.
+
+   Sequence and mapping types can also be set from the command line by using the following syntax:
+
+   - Sequence types: ``-S seqvar=1,2,3,4``
+   - Mapping types: ``-S mapvar=a:1,b:2,c:3``
+
+   Conversions to arbitrary objects are also supported.
+   See :class:`~reframe.utility.typecheck.ConvertibleType` for more details.
+
+
+   The optional ``TEST.`` prefix refers to the test class name, *not* the test name.
+
+   Variable assignments passed from the command line happen *before* the test is instantiated and is the exact equivalent of assigning a new value to the variable *at the end* of the test class body.
+   This has a number of implications that users of this feature should be aware of:
+
+   - In the following test, :attr:`num_tasks` will have always the value ``1`` regardless of any command-line assignment of the variable :attr:`foo`:
+
+   .. code-block:: python
+
+      @rfm.simple_test
+      class my_test(rfm.RegressionTest):
+          foo = variable(int, value=1)
+          num_tasks = foo
+
+   - If the variable is set in any pipeline hook, the command line assignment will have an effect until the variable assignment in the pipeline hook is reached.
+     The variable will be then overwritten.
+   - The `test filtering <#test-filtering>`__ happens *after* a test is instantiated, so the only way to scope a variable assignment is to prefix it with the test class name.
+     However, this has some positive side effects:
+
+     - Passing ``-S valid_systems='*'`` and ``-S valid_prog_environs='*'`` is the equivalent of passing the :option:`--skip-system-check` and :option:`--skip-prgenv-check` options.
+     - Users could alter the behavior of tests based on tag values that they pass from the command line, by changing the behavior of a test in a post-init hook based on the value of the :attr:`~reframe.core.pipeline.RegressionTest.tags` attribute.
+     - Users could force a test with required variables to run if they set these variables from the command line.
+       For example, the following test could only be run if invoked with ``-S num_tasks=<NUM>``:
+
+     .. code-block:: python
+
+        @rfm.simple_test
+        class my_test(rfm.RegressionTest):
+            num_tasks = required
+
+   .. versionadded:: 3.8.0
+
+.. option:: --skip-performance-check
+
+   Skip performance checking phase.
+   The phase is completely skipped, meaning that performance data will *not* be logged.
+
+.. option:: --skip-sanity-check
+
+   Skip sanity checking phase.
+
+.. option:: --strict
+
+   Enforce strict performance checking, even if a performance test is marked as not performance critical by having set its :attr:`strict_check` attribute to :class:`False`.
+
 
 ----------------------------------
 Options controlling job submission
@@ -444,6 +480,25 @@ Options controlling ReFrame environment
 ReFrame offers the ability to dynamically change its environment as well as the environment of tests.
 It does so by leveraging the selected system's environment modules system.
 
+.. option:: -M, --map-module=MAPPING
+
+   Apply a module mapping.
+   ReFrame allows manipulating test modules on-the-fly using module mappings.
+   A module mapping has the form ``old_module: module1 [module2]...`` and will cause ReFrame to replace a module with another list of modules upon load time.
+   For example, the mapping ``foo: foo/1.2`` will load module ``foo/1.2`` whenever module ``foo`` needs to be loaded.
+   A mapping may also be self-referring, e.g., ``gnu: gnu gcc/10.1``, however cyclic dependencies in module mappings are not allowed and ReFrame will issue an error if it detects one.
+   This option is especially useful for running tests using a newer version of a software or library.
+
+   This option may be specified multiple times, in which case multiple mappings will be applied.
+
+   This option can also be set using the :envvar:`RFM_MODULE_MAPPINGS` environment variable or the :js:attr:`module_mappings` general configuration parameter.
+
+   .. versionchanged:: 3.3
+      If the mapping replaces a module collection, all new names must refer to module collections, too.
+
+   .. seealso::
+      Module collections with `Environment Modules <https://modules.readthedocs.io/en/latest/MIGRATING.html#module-collection>`__ and `Lmod <https://lmod.readthedocs.io/en/latest/010_user.html#user-collections>`__.
+
 .. option:: -m, --module=NAME
 
    Load environment module ``NAME`` before acting on any tests.
@@ -452,14 +507,13 @@ It does so by leveraging the selected system's environment modules system.
 
    This option can also be set using the :envvar:`RFM_USER_MODULES` environment variable or the :js:attr:`user_modules` general configuration parameter.
 
+.. option:: --module-mappings=FILE
 
-.. option:: -u, --unload-module=NAME
+   A file containing module mappings.
+   Each line of the file contains a module mapping in the form described in the :option:`-M` option.
+   This option may be combined with the :option:`-M` option, in which case module mappings specified will be applied additionally.
 
-   Unload environment module ``NAME`` before acting on any tests.
-   This option may be specified multiple times, in which case all specified modules will be unloaded in order.
-
-   This option can also be set using the :envvar:`RFM_UNLOAD_MODULES` environment variable or the :js:attr:`unload_modules` general configuration parameter.
-
+   This option can also be set using the :envvar:`RFM_MODULE_MAP_FILE` environment variable or the :js:attr:`module_map_file` general configuration parameter.
 
 .. option:: --module-path=PATH
 
@@ -469,15 +523,6 @@ It does so by leveraging the selected system's environment modules system.
    This option may be specified multiple times, in which case all the paths specified will be added or removed in order.
 
    .. versionadded:: 3.3
-
-
-.. option:: --purge-env
-
-   Unload all environment modules before acting on any tests.
-   This will unload also sticky Lmod modules.
-
-   This option can also be set using the :envvar:`RFM_PURGE_ENVIRONMENT` environment variable or the :js:attr:`purge_environment` general configuration parameter.
-
 
 .. option:: --non-default-craype
 
@@ -498,33 +543,19 @@ It does so by leveraging the selected system's environment modules system.
 
    This option can also be set using the :envvar:`RFM_NON_DEFAULT_CRAYPE` environment variable or the :js:attr:`non_default_craype` general configuration parameter.
 
-.. option:: -M, --map-module=MAPPING
+.. option:: --purge-env
 
-   Apply a module mapping.
-   ReFrame allows manipulating test modules on-the-fly using module mappings.
-   A module mapping has the form ``old_module: module1 [module2]...`` and will cause ReFrame to replace a module with another list of modules upon load time.
-   For example, the mapping ``foo: foo/1.2`` will load module ``foo/1.2`` whenever module ``foo`` needs to be loaded.
-   A mapping may also be self-referring, e.g., ``gnu: gnu gcc/10.1``, however cyclic dependencies in module mappings are not allowed and ReFrame will issue an error if it detects one.
-   This option is especially useful for running tests using a newer version of a software or library.
+   Unload all environment modules before acting on any tests.
+   This will unload also sticky Lmod modules.
 
-   This option may be specified multiple times, in which case multiple mappings will be applied.
+   This option can also be set using the :envvar:`RFM_PURGE_ENVIRONMENT` environment variable or the :js:attr:`purge_environment` general configuration parameter.
 
-   This option can also be set using the :envvar:`RFM_MODULE_MAPPINGS` environment variable or the :js:attr:`module_mappings` general configuration parameter.
+.. option:: -u, --unload-module=NAME
 
-   .. versionchanged:: 3.3
-      If the mapping replaces a module collection, all new names must refer to module collections, too.
+   Unload environment module ``NAME`` before acting on any tests.
+   This option may be specified multiple times, in which case all specified modules will be unloaded in order.
 
-   .. seealso::
-      Module collections with `Environment Modules <https://modules.readthedocs.io/en/latest/MIGRATING.html#module-collection>`__ and `Lmod <https://lmod.readthedocs.io/en/latest/010_user.html#user-collections>`__.
-
-
-.. option:: --module-mappings=FILE
-
-   A file containing module mappings.
-   Each line of the file contains a module mapping in the form described in the :option:`-M` option.
-   This option may be combined with the :option:`-M` option, in which case module mappings specified will be applied additionally.
-
-   This option can also be set using the :envvar:`RFM_MODULE_MAP_FILE` environment variable or the :js:attr:`module_map_file` general configuration parameter.
+   This option can also be set using the :envvar:`RFM_UNLOAD_MODULES` environment variable or the :js:attr:`unload_modules` general configuration parameter.
 
 
 ---------------------
@@ -536,6 +567,34 @@ Miscellaneous options
    Use ``FILE`` as configuration file for ReFrame.
 
    This option can also be set using the :envvar:`RFM_CONFIG_FILE` environment variable.
+
+.. _--detect-host-topology:
+
+.. option:: --detect-host-topology[=FILE]
+
+   Detect the local host processor topology, store it to ``FILE`` and exit.
+   If no ``FILE`` is specified, the standard output will be used.
+
+   .. versionadded:: 3.7.0
+
+.. option:: --failure-stats
+
+   Print failure statistics at the end of the run.
+
+.. option:: -h, --help
+
+   Print a short help message and exit.
+
+.. option:: --nocolor
+
+   Disable output coloring.
+
+   This option can also be set using the :envvar:`RFM_COLORIZE` environment variable or the :js:attr:`colorize` general configuration parameter.
+
+.. option:: --performance-report
+
+   Print a performance report for all the performance tests that have been run.
+   The report shows the performance values retrieved for the different performance variables defined in the tests.
 
 .. option:: --show-config [PARAM]
 
@@ -565,7 +624,6 @@ Miscellaneous options
 
         reframe --system=foo --show-config=general/0/check_search_path
 
-
 .. option:: --system=NAME
 
    Load the configuration for system ``NAME``.
@@ -579,37 +637,14 @@ Miscellaneous options
 
    This option can also be set using the :envvar:`RFM_SYSTEM` environment variable.
 
-.. _--detect-host-topology:
-
-.. option:: --detect-host-topology[=FILE]
-
-   Detect the local host processor topology, store it to ``FILE`` and exit.
-   If no ``FILE`` is specified, the standard output will be used.
-
-   .. versionadded:: 3.7.0
-
-
-.. option:: --failure-stats
-
-   Print failure statistics at the end of the run.
-
-
-.. option:: --performance-report
-
-   Print a performance report for all the performance tests that have been run.
-   The report shows the performance values retrieved for the different performance variables defined in the tests.
-
-
-.. option:: --nocolor
-
-   Disable output coloring.
-
-   This option can also be set using the :envvar:`RFM_COLORIZE` environment variable or the :js:attr:`colorize` general configuration parameter.
-
 .. option:: --upgrade-config-file=OLD[:NEW]
 
    Convert the old-style configuration file ``OLD``, place it into the new file ``NEW`` and exit.
    If a new file is not given, a file in the system temporary directory will be created.
+
+.. option:: -V, --version
+
+   Print version and exit.
 
 .. option:: -v, --verbose
 
@@ -621,16 +656,6 @@ Miscellaneous options
    The base verbosity level of the output is defined by the :js:attr:`level` `stream logging handler <config_reference.html#common-logging-handler-properties>`__ configuration parameter.
 
    This option can also be set using the :envvar:`RFM_VERBOSE` environment variable or the :js:attr:`verbose` general configuration parameter.
-
-
-.. option:: -V, --version
-
-   Print version and exit.
-
-
-.. option:: -h, --help
-
-   Print a short help message and exit.
 
 
 Environment
@@ -711,36 +736,6 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
 
 
-.. envvar:: RFM_REMOTE_DETECT
-
-   Auto-detect processor information of remote partitions as well.
-
-   .. table::
-      :align: left
-
-      ================================== ==================
-      Associated command line option     N/A
-      Associated configuration parameter :js:attr:`remote_detect` general configuration parameter
-      ================================== ==================
-
-.. versionadded:: 3.7.0
-
-
-.. envvar:: RFM_REMOTE_WORKDIR
-
-   The temporary directory prefix that will be used to create a fresh ReFrame clone, in order to auto-detect the processor information of a remote partition.
-
-   .. table::
-      :align: left
-
-      ================================== ==================
-      Associated command line option     N/A
-      Associated configuration parameter :js:attr:`remote_workdir` general configuration parameter
-      ================================== ==================
-
-.. versionadded:: 3.7.0
-
-
 .. envvar:: RFM_GRAYLOG_ADDRESS
 
    The address of the Graylog server to send performance logs.
@@ -755,7 +750,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
 
 
-.. versionadded:: 3.1
+   .. versionadded:: 3.1
 
 
 .. envvar:: RFM_GRAYLOG_SERVER
@@ -795,18 +790,6 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
    .. deprecated:: 3.8.0
       This environment variable will be removed in a future version.
-
-
-.. envvar:: RFM_TRAP_JOB_ERRORS
-
-   Ignore job exit code
-
-   .. table::
-      :align: left
-
-      ================================== ==================
-      Associated configuration parameter :js:attr:`trap_job_errors` general configuration parameter
-      ================================== ==================
 
 
 .. envvar:: RFM_IGNORE_REQNODENOTAVAIL
@@ -926,6 +909,36 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
 
 
+.. envvar:: RFM_REMOTE_DETECT
+
+   Auto-detect processor information of remote partitions as well.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :js:attr:`remote_detect` general configuration parameter
+      ================================== ==================
+
+   .. versionadded:: 3.7.0
+
+
+.. envvar:: RFM_REMOTE_WORKDIR
+
+   The temporary directory prefix that will be used to create a fresh ReFrame clone, in order to auto-detect the processor information of a remote partition.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :js:attr:`remote_workdir` general configuration parameter
+      ================================== ==================
+
+   .. versionadded:: 3.7.0
+
+
 .. envvar:: RFM_REPORT_FILE
 
    The file where ReFrame will store its report.
@@ -1042,6 +1055,18 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 .. |--timestamp| replace:: :attr:`--timestamp`
 .. _--timestamp: #cmdoption-timestamp
 
+
+
+.. envvar:: RFM_TRAP_JOB_ERRORS
+
+   Ignore job exit code
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated configuration parameter :js:attr:`trap_job_errors` general configuration parameter
+      ================================== ==================
 
 
 .. envvar:: RFM_UNLOAD_MODULES
