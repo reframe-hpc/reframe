@@ -19,7 +19,7 @@ def _emit_gitlab_pipeline(testcases):
     prefix = 'rfm-stage/${CI_COMMIT_SHORT_SHA}'
     checkpath = config.get('general/0/check_search_path')
     recurse = config.get('general/0/check_search_recursive')
-    verbosity = 'v' * int(config.get('general/0/verbose'))
+    verbosity = 'v' * config.get('general/0/verbose')
 
     def rfm_command(testcase):
         if config.filename != '<builtin>':
@@ -59,10 +59,7 @@ def _emit_gitlab_pipeline(testcases):
     # image keyword on the top of CI script, this variable does not exist
     image_name = os.getenv('CI_JOB_IMAGE')
     if image_name:
-        json = {
-            'image': image_name,
-            **json,
-        }
+        json['image'] = image_name
 
     for tc in testcases:
         json[f'{tc.check.name}'] = {
