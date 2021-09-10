@@ -7,7 +7,7 @@ import json
 import os
 import pytest
 
-
+import unittests.utility as test_util
 from reframe.core.runtime import runtime
 from reframe.frontend.autodetect import detect_topology
 from reframe.utility.cpuinfo import cpuinfo
@@ -84,3 +84,30 @@ def test_autotect_with_invalid_files(invalid_topo_exec_ctx):
     part = runtime().system.partitions[0]
     assert part.processor.info == cpuinfo()
     assert part.devices == []
+
+
+# FIXME: We should consider making these framework-wide fixtures
+
+@pytest.fixture
+def user_exec_ctx(make_exec_ctx_g):
+    if test_util.USER_CONFIG_FILE is None:
+        pytest.skip('no user configuration file supplied')
+
+    yield from make_exec_ctx_g(test_util.USER_CONFIG_FILE,
+                               test_util.USER_SYSTEM)
+
+
+@pytest.fixture
+def remote_exec_ctx(user_exec_ctx):
+    partition = test_util.partition_by_scheduler()
+    if not partition:
+        pytest.skip('job submission not supported')
+
+    return partition, partition.environs[0]
+
+
+def test_remote_autodetect(remote_exec_ctx):
+    # All we can do with this test is to trigger the remote auto-detection
+    # path; since we don't know what the remote user system is, we cannot test
+    # if the topology is right.
+    detect_topology()
