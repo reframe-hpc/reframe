@@ -1366,6 +1366,12 @@ class SequenceView(collections.abc.Sequence):
     :raises TypeError: If the container does not fulfill the
         :py:class:`collections.abc.Sequence` interface.
 
+    .. note::
+
+       You can concatenate a :class:`SequenceView` with a container of the
+       same type as the underlying container of the view, in which case a new
+       container with the concatenated elements will be returned.
+
     '''
 
     def __init__(self, container):
@@ -1416,13 +1422,16 @@ class SequenceView(collections.abc.Sequence):
         return self.__container.__reversed__()
 
     def __add__(self, other):
-        if not isinstance(other, collections.abc.Sequence):
+        if not isinstance(other, type(self.__container)):
             return NotImplemented
 
-        return SequenceView(self.__container + other)
+        return self.__container + other
 
-    def __iadd__(self, other):
-        return NotImplemented
+    def __radd__(self, other):
+        if not isinstance(other, type(self.__container)):
+            return NotImplemented
+
+        return other + self.__container
 
     def __eq__(self, other):
         if isinstance(other, SequenceView):

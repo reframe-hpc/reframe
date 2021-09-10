@@ -9,6 +9,7 @@ import reframe.utility.typecheck as types
 
 
 def assert_type_hierarchy(builtin_type, ctype):
+    assert isinstance(ctype, type)
     assert issubclass(builtin_type, ctype)
     assert issubclass(ctype[int], ctype)
     assert issubclass(ctype[ctype[int]], ctype)
@@ -35,6 +36,16 @@ def test_list_type():
     with pytest.raises(TypeError):
         types.List[int, float]
 
+    # Test type conversions
+    assert types.List[int]('1,2') == [1, 2]
+    assert types.List[int]('1') == [1]
+
+    with pytest.raises(ValueError):
+        types.List[int]('foo')
+
+    with pytest.raises(TypeError):
+        types.List[int](1)
+
 
 def test_set_type():
     s = {1, 2}
@@ -53,6 +64,15 @@ def test_set_type():
 
     with pytest.raises(TypeError):
         types.Set[int, float]
+
+    assert types.Set[int]('1,2') == {1, 2}
+    assert types.Set[int]('1') == {1}
+
+    with pytest.raises(ValueError):
+        types.Set[int]('foo')
+
+    with pytest.raises(TypeError):
+        types.Set[int](1)
 
 
 def test_uniform_tuple_type():
@@ -74,6 +94,15 @@ def test_uniform_tuple_type():
     with pytest.raises(TypeError):
         types.Set[3]
 
+    assert types.Tuple[int]('1,2') == (1, 2)
+    assert types.Tuple[int]('1') == (1,)
+
+    with pytest.raises(ValueError):
+        types.Tuple[int]('foo')
+
+    with pytest.raises(TypeError):
+        types.Tuple[int](1)
+
 
 def test_non_uniform_tuple_type():
     t = (1, 2.3, '4', ['a', 'b'])
@@ -85,6 +114,14 @@ def test_non_uniform_tuple_type():
     # Test invalid arguments
     with pytest.raises(TypeError):
         types.Set[int, 3]
+
+    assert types.Tuple[int, str]('1,2') == (1, '2')
+
+    with pytest.raises(TypeError):
+        types.Tuple[int, str]('1')
+
+    with pytest.raises(TypeError):
+        types.Tuple[int, str](1)
 
 
 def test_mapping_type():
@@ -106,6 +143,12 @@ def test_mapping_type():
     with pytest.raises(TypeError):
         types.Dict[int, 3]
 
+    # Test conversions
+    assert types.Dict[str, int]('a:1,b:2') == {'a': 1, 'b': 2}
+
+    with pytest.raises(TypeError):
+        types.Dict[str, int]('a:1,b')
+
 
 def test_str_type():
     s = '123'
@@ -120,6 +163,13 @@ def test_str_type():
     # Test invalid arguments
     with pytest.raises(TypeError):
         types.Str[int]
+
+    # Test conversion
+    typ = types.Str[r'\d+']
+    assert typ('10') == '10'
+
+    with pytest.raises(TypeError):
+        types.Str[r'\d+'](1)
 
 
 def test_type_names():
@@ -148,3 +198,34 @@ def test_custom_types():
     assert isinstance(d, types.Dict[int, C])
     assert isinstance(cd, types.Dict[C, int])
     assert isinstance(t, types.Tuple[int, C, str])
+
+
+def test_custom_types_conversion():
+    class X(metaclass=types.ConvertibleType):
+        def __init__(self, x):
+            self.x = x
+
+        @classmethod
+        def __rfm_cast_str__(cls, s):
+            return X(int(s))
+
+    class Y:
+        def __init__(self, s):
+            self.y = int(s)
+
+    class Z:
+        def __init__(self, x, y):
+            self.z = x + y
+
+    assert X('3').x == 3
+    assert X(3).x   == 3
+    assert X(x='foo').x == 'foo'
+
+    with pytest.raises(TypeError):
+        X(3, 4)
+
+    with pytest.raises(TypeError):
+        X(s=3)
+
+    assert Y('1').y == 1
+    assert Z(5, 3).z  == 8

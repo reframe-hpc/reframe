@@ -136,6 +136,10 @@ class RegressionTestMeta(type):
                         # raise the exception from the base __getitem__.
                         raise err from None
 
+        def reset(self, key):
+            '''Reset an item to rerun it through the __setitem__ logic.'''
+            self[key] = self[key]
+
     class WrappedFunction:
         '''Descriptor to wrap a free function as a bound-method.
 
@@ -212,14 +216,32 @@ class RegressionTestMeta(type):
         namespace['required'] = variables.Undefined
 
         # Utility decorators
+        namespace['_rfm_ext_bound'] = set()
+
         def bind(fn, name=None):
             '''Directive to bind a free function to a class.
 
             See online docs for more information.
+
+            .. note::
+               Functions bound using this directive must be re-inspected after
+               the class body execution has completed. This directive attaches
+               the external method into the class namespace and returns the
+               associated instance of the :class:`WrappedFunction`. However,
+               this instance may be further modified by other ReFrame builtins
+               such as :func:`run_before`, :func:`run_after`, :func:`final` and
+               so on after it was added to the namespace, which would bypass
+               the logic implemented in the :func:`__setitem__` method from the
+               :class:`MetaNamespace` class. Hence, we track the items set by
+               this directive in the ``_rfm_ext_bound`` set, so they can be
+               later re-inspected.
             '''
 
             inst = metacls.WrappedFunction(fn, name)
             namespace[inst.__name__] = inst
+
+            # Track the imported external functions
+            namespace['_rfm_ext_bound'].add(inst.__name__)
             return inst
 
         def final(fn):
@@ -323,6 +345,10 @@ class RegressionTestMeta(type):
         ]
         for b in directives:
             namespace.pop(b, None)
+
+        # Reset the external functions imported through the bind directive.
+        for item in namespace.pop('_rfm_ext_bound'):
+            namespace.reset(item)
 
         return super().__new__(metacls, name, bases, dict(namespace), **kwargs)
 
@@ -473,6 +499,41 @@ class RegressionTestMeta(type):
             f'class {cls.__qualname__!r} has no attribute {name!r}'
         ) from None
 
+    def setvar(cls, name, value):
+        '''Set the value of a variable.
+
+        :param name: The name of the variable.
+        :param value: The value of the variable.
+
+        :returns: :class:`True` if the variable was set.
+            A variable will *not* be set, if it does not exist or when an
+            attempt is made to set it with its underlying descriptor.
+            This happens during the variable injection time and it should be
+            delegated to the class' :func:`__setattr__` method.
+
+        :raises ReframeSyntaxError: If an attempt is made to override a
+            variable with a descriptor other than its underlying one.
+
+        '''
+
+        try:
+            var_space = super().__getattribute__('_rfm_var_space')
+            if name in var_space:
+                if not hasattr(value, '__get__'):
+                    var_space[name].define(value)
+                    return True
+                elif var_space[name].field is not value:
+                    desc = '.'.join([cls.__qualname__, name])
+                    raise ReframeSyntaxError(
+                        f'cannot override variable descriptor {desc!r}'
+                    )
+                else:
+                    # Variable is being injected
+                    return False
+        except AttributeError:
+            '''Catch early access attempt to the variable space.'''
+            return False
+
     def __setattr__(cls, name, value):
         '''Handle the special treatment required for variables and parameters.
 
@@ -489,31 +550,20 @@ class RegressionTestMeta(type):
         is not allowed. This would break the parameter space internals.
         '''
 
-        # Set the value of a variable (except when the value is a descriptor).
-        try:
-            var_space = super().__getattribute__('_rfm_var_space')
-            if name in var_space:
-                if not hasattr(value, '__get__'):
-                    var_space[name].define(value)
-                    return
-                elif not var_space[name].field is value:
-                    desc = '.'.join([cls.__qualname__, name])
-                    raise ReframeSyntaxError(
-                        f'cannot override variable descriptor {desc!r}'
-                    )
+        # Try to treat `name` as variable
+        if cls.setvar(name, value):
+            return
 
-        except AttributeError:
-            pass
-
-        # Catch attempts to override a test parameter
+        # Try to treat `name` as a parameter
         try:
+            # Catch attempts to override a test parameter
             param_space = super().__getattribute__('_rfm_param_space')
             if name in param_space.params:
                 raise ReframeSyntaxError(f'cannot override parameter {name!r}')
-
         except AttributeError:
-            pass
+            '''Catch early access attempt to the parameter space.'''
 
+        # Treat `name` as normal class attribute
         super().__setattr__(name, value)
 
     @property
