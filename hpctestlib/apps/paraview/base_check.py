@@ -60,15 +60,15 @@ class ParaView_BaseCheck(rfm.RunOnlyRegressionTest, pin_prefix=True):
     #: :default: : 'None'
     gpu_renderer = variable(str, value='None')
 
-    @run_before('sanity')
+    @sanity_function
     def set_sanity(self):
         if self.current_partition.name == 'mc':
-            self.sanity_patterns = sn.all([
+            return sn.all([
                 sn.assert_found(f'Vendor:   {self.mc_vendor}', self.stdout),
                 sn.assert_found(f'Renderer: {self.mc_renderer}', self.stdout)
             ])
         elif self.current_partition.name == 'gpu':
-            self.sanity_patterns = sn.all([
+            return sn.all([
                 sn.assert_found(f'Vendor:   {self.gpu_vendor}', self.stdout),
                 sn.assert_found(f'Renderer: {self.gpu_renderer}', self.stdout)
             ])
