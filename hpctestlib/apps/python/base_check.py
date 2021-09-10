@@ -25,10 +25,6 @@ class Numpy_BaseCheck(rfm.RunOnlyRegressionTest, pin_prefix=True):
     NumPy is already installed on the device under test.
     '''
 
-    #: :default: :class:`required`
-    executable = required
-
-    #: :default: :class:`required`
     num_tasks_per_node = required
 
     executable = 'python'
@@ -72,5 +68,4 @@ class Numpy_BaseCheck(rfm.RunOnlyRegressionTest, pin_prefix=True):
 
     @sanity_function
     def assert_energy_readout(self):
-        return sn.assert_found(r'Numpy version:\s+\S+',
-                               self.stdout)
+        return sn.assert_found(r'Numpy version:\s+\S+', self.stdout)

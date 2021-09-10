@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import reframe as rfm
+
 from hpctestlib.apps.python.base_check import Numpy_BaseCheck
 
 
