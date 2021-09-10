@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import reframe as rfm
-import reframe.utility.sanity as sn
 from hpctestlib.apps.vasp.base_check import VASP
 
 dom_cpu = {

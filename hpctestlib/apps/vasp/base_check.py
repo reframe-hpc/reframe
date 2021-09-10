@@ -5,7 +5,6 @@
 
 import reframe as rfm
 import reframe.utility.sanity as sn
-import reframe.utility.typecheck as typ
 
 
 class VASP(rfm.RunOnlyRegressionTest, pin_prefix=True):
