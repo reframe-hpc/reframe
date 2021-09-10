@@ -81,7 +81,8 @@ class LsfJobScheduler(PbsJobScheduler):
             return
 
         completed = _run_strict(
-            f'bjobs -noheader {" ".join(job.jobid for job in jobs)}')
+            f'bjobs -noheader {" ".join(job.jobid for job in jobs)}'
+        )
         job_status = {}
         job_status_lines = completed.stdout.split('\n')
 
@@ -101,24 +102,19 @@ class LsfJobScheduler(PbsJobScheduler):
                          f'assuming job completed')
                 job._state = 'COMPLETED'
                 job._completed = True
-
             elif job_status[job.jobid] in ('DONE', 'EXIT'):
                 # job done
                 job._state = 'COMPLETED'
                 job._completed = True
-
             elif job_status[job.jobid] == 'RUN':
                 # job running
                 job._state = 'RUNNING'
-
             elif job_status[job.jobid] == 'PEND':
                 # job pending
                 job._state = 'PENDING'
-
             elif job_status[job.jobid] in ['PSUSP', 'SSUSP', 'USUSP']:
                 # job suspended
                 job._state = 'SUSPENDED'
-
             else:
                 # job status unknown
                 self.log(f'Job {job_status[job.jobid]} not known, '
