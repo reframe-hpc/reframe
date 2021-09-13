@@ -8,7 +8,7 @@ import reframe.utility.sanity as sn
 
 
 @rfm.simple_test
-class StreamWithRefTest(rfm.RegressionTest):
+class StreamAltTest(rfm.RegressionTest):
     valid_systems = ['*']
     valid_prog_environs = ['gnu']
     prebuild_cmds = [
