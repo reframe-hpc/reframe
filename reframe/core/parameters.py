@@ -12,6 +12,7 @@ import functools
 import itertools
 
 import reframe.core.namespaces as namespaces
+import reframe.utility as utils
 from reframe.core.exceptions import ReframeSyntaxError
 
 
@@ -45,6 +46,18 @@ class TestParam:
                 return x
 
         self.values = tuple(values)
+
+        # Validate the filter_param argument
+        try:
+            valid = utils.is_trivially_callable(filter_params, non_def_args=1)
+        except TypeError:
+            raise TypeError(
+                'the provided parameter filter is not a callable'
+                ) from None
+        else:
+            if not valid:
+                raise TypeError('filter function must take a single argument')
+
         self.filter_params = filter_params
 
 

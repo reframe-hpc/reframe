@@ -7,138 +7,66 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-class StridedBase(rfm.RegressionTest):
-    def __init__(self):
-        self.sourcepath = 'strides.cpp'
-        self.build_system = 'SingleSource'
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'daint:mc', 'dom:mc',
-                              'eiger:mc', 'pilatus:mc']
-        self.valid_prog_environs = ['PrgEnv-gnu']
-        self.num_tasks = 1
-        self.num_tasks_per_node = 1
-
-        self.sanity_patterns = sn.assert_eq(
-            sn.count(sn.findall(r'bandwidth', self.stdout)),
-            self.num_tasks_assigned)
-
-        self.perf_patterns = {
-            'bandwidth': sn.extractsingle(
-                r'bandwidth: (?P<bw>\S+) GB/s',
-                self.stdout, 'bw', float)
-        }
-
-        self.system_num_cpus = {
-            'daint:mc':  72,
-            'daint:gpu': 24,
-            'dom:mc':  72,
-            'dom:gpu': 24,
-            'eiger:mc': 128,
-            'pilatus:mc': 128
-        }
-
-        self.maintainers = ['SK']
-        self.tags = {'benchmark', 'diagnostic'}
-
-    @property
-    @sn.sanity_function
-    def num_tasks_assigned(self):
-        return self.job.num_tasks
-
-
 @rfm.simple_test
-class StridedBandwidthTest(StridedBase):
-    def __init__(self):
-        super().__init__()
+class StridedBandwidthTest(rfm.RegressionTest):
+    sourcepath = 'strides.cpp'
+    build_system = 'SingleSource'
+    valid_systems = ['daint:gpu', 'dom:gpu', 'daint:mc', 'dom:mc',
+                     'eiger:mc', 'pilatus:mc']
+    valid_prog_environs = ['PrgEnv-gnu']
+    num_tasks = 1
+    num_tasks_per_node = 1
+    maintainers = ['SK']
+    tags = {'benchmark', 'diagnostic'}
+    stride_bytes = parameter([8, 64, 128])
+    reference_bw = {
+        8: {
+            'haswell': (50, -0.1, 0.1, 'GB/s'),
+            'broadwell': (100, -0.1, 0.1, 'GB/s'),
+            'zen2': (270, -0.1, 0.1, 'GB/s')
+        },
+        64: {
+            'haswell': (6, -0.1, 0.2, 'GB/s'),
+            'broadwell': (12.5, -0.1, 0.2, 'GB/s'),
+            'zen2': (33, -0.1, 0.2, 'GB/s')
+        },
+        128: {
+            'haswell': (4.5, -0.1, 0.2, 'GB/s'),
+            'broadwell': (9.1, -0.1, 0.2, 'GB/s'),
+            'zen2': (33, -0.1, 0.2, 'GB/s')
+        },
+    }
 
-        self.reference = {
-            'dom:gpu': {
-                'bandwidth': (50, -0.1, 0.1, 'GB/s')
-            },
-            'dom:mc': {
-                'bandwidth': (100, -0.1, 0.1, 'GB/s')
-            },
-            'daint:gpu': {
-                'bandwidth': (50, -0.1, 0.1, 'GB/s')
-            },
-            'daint:mc': {
-                'bandwidth': (100, -0.1, 0.1, 'GB/s')
-            },
-            'eiger:mc': {
-                'bandwidth': (270, -0.1, 0.1, 'GB/s')
-            },
-            'pilatus:mc': {
-                'bandwidth': (270, -0.1, 0.1, 'GB/s')
-            }
-        }
+    @run_after('setup')
+    def skip_if_no_topo(self):
+        proc = self.current_partition.processor
+        pname = self.current_partition.fullname
+        if not proc.info:
+            self.skip(f'no topology information found for partition {pname!r}')
+
+    @sanity_function
+    def assert_num_tasks(self):
+        return sn.assert_eq(sn.count(sn.findall(r'bandwidth', self.stdout)),
+                            self.num_tasks)
+
+    @performance_function('GB/s')
+    def bandwidth(self):
+        return sn.extractsingle(r'bandwidth: (?P<bw>\S+) GB/s',
+                                self.stdout, 'bw', float)
 
     @run_before('run')
     def set_exec_opts(self):
-        self.num_cpus = self.system_num_cpus[self.current_partition.fullname]
+        proc = self.current_partition.processor
+        self.executable_opts = [
+            '100000000', str(self.stride_bytes // 8), f'{proc.num_cpus}'
+        ]
 
-        # 8-byte stride, using the full cacheline
-        self.executable_opts = ['100000000', '1', f'{self.num_cpus}']
-
-
-@rfm.simple_test
-class StridedBandwidthTest64(StridedBase):
-    def __init__(self):
-        super().__init__()
-
-        self.reference = {
-            'dom:gpu': {
-                'bandwidth': (6, -0.1, 0.2, 'GB/s')
-            },
-            'dom:mc': {
-                'bandwidth': (12.5, -0.1, 0.2, 'GB/s')
-            },
-            'daint:gpu': {
-                'bandwidth': (6, -0.05, 0.2, 'GB/s')
-            },
-            'daint:mc': {
-                'bandwidth': (12.5, -0.1, 0.2, 'GB/s')
-            },
-            'eiger:mc': {
-                'bandwidth': (33, -0.1, 0.2, 'GB/s')
-            },
-            'pilatus:mc': {
-                'bandwidth': (33, -0.1, 0.2, 'GB/s')
-            }
-        }
-
-    @run_before('run')
-    def set_exec_opts(self):
-        self.num_cpus = self.system_num_cpus[self.current_partition.fullname]
-
-        # 64-byte stride, using 1/8 of the cacheline
-        self.executable_opts = ['100000000', '8', '%s' % self.num_cpus]
-
-
-@rfm.simple_test
-class StridedBandwidthTest128(StridedBase):
-    def __init__(self):
-        super().__init__()
-
-        self.reference = {
-            'dom:gpu': {
-                'bandwidth': (4.5, -0.1, 0.2, 'GB/s')
-            },
-            'dom:mc': {
-                'bandwidth': (9.1, -0.1, 0.2, 'GB/s')
-            },
-            'daint:gpu': {
-                'bandwidth': (4.5, -0.1, 0.2, 'GB/s')
-            },
-            'daint:mc': {
-                'bandwidth': (9.1, -0.1, 0.2, 'GB/s')
-            },
-            'eiger:mc': {
-                'bandwidth': (33, -0.1, 0.2, 'GB/s')
-            },
-        }
-
-    @run_before('run')
-    def set_exec_opts(self):
-        self.num_cpus = self.system_num_cpus[self.current_partition.fullname]
-
-        # 128-byte stride, using 1/8 of every 2nd cacheline
-        self.executable_opts = ['100000000', '16', '%s' % self.num_cpus]
+    @run_before('performance')
+    def set_reference(self):
+        proc = self.current_partition.processor
+        try:
+            ref = self.reference_bw[self.stride_bytes][proc.arch]
+        except KeyError:
+            return
+        else:
+            self.reference = {'*': {'bandwidth': ref}}
