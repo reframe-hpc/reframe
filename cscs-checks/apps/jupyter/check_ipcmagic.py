@@ -5,8 +5,8 @@
 
 import reframe as rfm
 import reframe.utility.osext as osext
-import reframe.utility.sanity as sn
 from reframe.core.backends import getlauncher
+
 from hpctestlib.apps.jupyter.base_check import IPCMagic_BaseCheck
 
 REFERENCE_PERFORMANCE = {
@@ -28,13 +28,22 @@ REFERENCE_PERFORMANCE = {
 class IPCMagicCheck(IPCMagic_BaseCheck):
     valid_systems = ['daint:gpu', 'dom:gpu']
     valid_prog_environs = ['PrgEnv-gnu']
-    modules = [
-        # FIXME: Use the default ipcmagic version when fixed
-        f'ipcmagic/0.1-CrayGNU-{osext.cray_cdt_version()}',
-        f'Horovod/0.21.0-CrayGNU-{osext.cray_cdt_version()}-tf-2.4.0'
-    ]
+    modules.append(
+            f'Horovod/0.21.0-CrayGNU-{osext.cray_cdt_version()}-tf-2.4.0')
     num_tasks = 2
     num_tasks_per_node = 1
     maintainers = ['RS', 'TR']
     tags = {'production'}
     reference = REFERENCE_PERFORMANCE
+
+    @run_after('setup')
+    def daint_module_workaround(self):
+        if self.current_system.name == 'daint':
+            # FIXME: Use the default modules once Dom/Daint are aligned
+            self.modules = [
+                f'ipcmagic/1.0.1-CrayGNU-{osext.cray_cdt_version()}',
+                f'Horovod/0.21.0-CrayGNU-{osext.cray_cdt_version()}-tf-2.4.0'
+            ]
+            # FIXME: Enforce loading of jupyterlab module since
+            # `module show jupyterlab` throws a Tcl error on Daint
+            self.prerun_cmds = ['module load jupyterlab']
