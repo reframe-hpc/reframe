@@ -15,18 +15,6 @@ class MemBandwidthTest(rfm.RunOnlyRegressionTest):
     num_tasks = 1
     num_tasks_per_node = 1
     num_tasks_per_core = 2
-    system_num_cpus = {
-        'daint:mc':  72,
-        'daint:gpu': 24,
-        'dom:mc':  72,
-        'dom:gpu': 24,
-    }
-    system_numa_domains = {
-        'daint:mc':  ['S0', 'S1'],
-        'daint:gpu': ['S0'],
-        'dom:mc':  ['S0', 'S1'],
-        'dom:gpu': ['S0'],
-    }
     # Test each level at half capacity times nthreads per domain
     system_cache_sizes = {
         'daint:mc':  {'L1': '288kB', 'L2': '2304kB', 'L3': '23MB',
@@ -50,6 +38,15 @@ class MemBandwidthTest(rfm.RunOnlyRegressionTest):
     @performance_function('MB/s')
     def bandwidth(self):
         return self.bw_pattern
+
+    def set_processor_properties(self):
+        self.num_cpus_per_task = self.current_partition.processor.num_cpus
+        numa_nodes = self.current_partition.processor.topology['numa_nodes']
+        self.numa_domains = [f'S{i}' for i, _ in enumerate(numa_nodes)]
+        self.num_cpu_domain = (
+            self.num_cpus_per_task // (len(self.numa_domains) *
+                                       self.num_tasks_per_core)
+        )
 
 
 @rfm.simple_test
@@ -100,17 +97,14 @@ class CPUBandwidth(MemBandwidthTest):
 
     @run_before('run')
     def set_exec_opts(self):
+        self.set_processor_properties()
         partname = self.current_partition.fullname
-        self.data_size = self.system_cache_sizes[partname][self.mem_level]
-        self.num_cpus_per_task = self.system_num_cpus[partname]
-        numa_domains = self.system_numa_domains[partname]
-        num_cpu_domain = self.num_cpus_per_task // (len(numa_domains) *
-                                                    self.num_tasks_per_core)
+        data_size = self.system_cache_sizes[partname][self.mem_level]
         # result for daint:mc: '-w S0:100MB:18:1:2 -w S1:100MB:18:1:2'
         # format: -w domain:data_size:nthreads:chunk_size:stride
         # chunk_size and stride affect which cpus from <domain> are selected
-        workgroups = [f'-w {dom}:{self.data_size}:{num_cpu_domain:d}:1:2'
-                      for dom in numa_domains]
+        workgroups = [f'-w {dom}:{data_size}:{self.num_cpu_domain:d}:1:2'
+                      for dom in self.numa_domains]
         self.executable_opts = [f'-t {self.kernel_name}'] + workgroups
 
 
@@ -131,19 +125,14 @@ class CPUBandwidthCrossSocket(MemBandwidthTest):
 
     @run_before('run')
     def set_exec_opts(self):
-        partname = self.current_partition.fullname
-        self.num_cpus_per_task = self.system_num_cpus[partname]
-        numa_domains = self.system_numa_domains[partname]
-
-        num_cpu_domain = (self.num_cpus_per_task //
-                          (len(numa_domains) * self.num_tasks_per_core))
-
+        self.set_processor_properties()
         # daint:mc: '-w S0:100MB:18:1:2-0:S1 -w S1:100MB:18:1:2-0:S0'
         # format:
         # -w domain:data_size:nthreads:chunk_size:stride-stream_nr:mem_domain
         # chunk_size and stride affect which cpus from <domain> are selected
-        workgroups = [f'-w {dom_cpu}:100MB:{num_cpu_domain:d}:1:2-0:{dom_mem}'
-                      for dom_cpu, dom_mem in
-                      zip(numa_domains[:2], reversed(numa_domains[:2]))]
-
+        workgroups = [
+            f'-w {dom_cpu}:100MB:{self.num_cpu_domain:d}:1:2-0:{dom_mem}'
+            for dom_cpu, dom_mem in
+            zip(self.numa_domains[:2], reversed(self.numa_domains[:2]))
+        ]
         self.executable_opts = ['-t %s' % self.kernel_name] + workgroups
