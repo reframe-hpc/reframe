@@ -29,7 +29,7 @@ class IPCMagicCheck(IPCMagic_BaseCheck):
     valid_systems = ['daint:gpu', 'dom:gpu']
     valid_prog_environs = ['PrgEnv-gnu']
     modules.append(
-            f'Horovod/0.21.0-CrayGNU-{osext.cray_cdt_version()}-tf-2.4.0')
+        f'Horovod/0.21.0-CrayGNU-{osext.cray_cdt_version()}-tf-2.4.0')
     num_tasks = 2
     num_tasks_per_node = 1
     maintainers = ['RS', 'TR']

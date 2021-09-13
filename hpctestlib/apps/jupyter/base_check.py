@@ -49,17 +49,17 @@ class IPCMagic_BaseCheck(rfm.RunOnlyRegressionTest, pin_prefix=True):
     @performance_function('N/A', perf_key='slope')
     def set_perf_slope(self):
         return sn.extractsingle(r'slope=(?P<slope>\S+)',
-                                  self.stdout, 'slope', float)
+                                self.stdout, 'slope', float)
 
     @performance_function('N/A', perf_key='offset')
     def set_perf_offset(self):
         return sn.extractsingle(r'offset=(?P<offset>\S+)',
-                                   self.stdout, 'offset', float)
+                                self.stdout, 'offset', float)
 
     @performance_function('N/A', perf_key='retries')
     def set_perf_retries(self):
         return 4 - sn.count(sn.findall(r'IPCluster is already running',
-                                           self.stdout))
+                                       self.stdout))
 
     @performance_function('s', perf_key='time')
     def set_perf_time(self):
