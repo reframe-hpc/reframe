@@ -81,6 +81,9 @@ def test_bind_directive(MyMeta):
         bind(ext_fn)
         bind(ext_fn, name='ext')
 
+        # Catch bug #2146
+        final(bind(ext_fn, name='my_final'))
+
         # Bound as different objects
         assert ext_fn is not ext
 
@@ -99,6 +102,9 @@ def test_bind_directive(MyMeta):
         def __init__(self):
             assert self.ext_fn() is self
             assert self.ext() is self
+
+    # Catch bug #2146
+    assert 'my_final' in MyTest._rfm_final_methods
 
     # Test __get__
     MyTest()
