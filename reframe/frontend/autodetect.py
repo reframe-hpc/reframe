@@ -8,6 +8,7 @@ import jsonschema
 import os
 import shutil
 import tempfile
+import traceback
 
 import reframe as rfm
 import reframe.core.runtime as runtime
@@ -17,6 +18,10 @@ from reframe.core.logging import getlogger
 from reframe.core.schedulers import Job
 from reframe.core.systems import DeviceInfo, ProcessorInfo
 from reframe.utility.cpuinfo import cpuinfo
+
+
+# This is meant to be used by the unit tests
+_TREAT_WARNINGS_AS_ERRORS = False
 
 
 def _contents(filename):
@@ -36,7 +41,6 @@ def _log_contents(filename):
 class _copy_reframe:
     def __init__(self, prefix):
         self._prefix = prefix
-        self._prefix = runtime().get_option('general/0/remote_workdir')
         self._workdir = None
 
     def __enter__(self):
@@ -82,6 +86,9 @@ def _load_info(filename, schema=None):
         with open(filename) as fp:
             return _validate_info(json.load(fp), schema)
     except OSError as e:
+        if _TREAT_WARNINGS_AS_ERRORS:
+            raise
+
         getlogger().warning(
             f'could not load file: {filename!r}: {e}'
         )
@@ -101,9 +108,14 @@ def _save_info(filename, topo_info):
         with open(filename, 'w') as fp:
             json.dump(topo_info, fp, indent=2)
     except OSError as e:
+        if _TREAT_WARNINGS_AS_ERRORS:
+            raise
+
         getlogger().warning(
             f'could not save topology file: {filename!r}: {e}'
         )
+    else:
+        getlogger().debug(f'> saved topology in {filename!r}')
 
 
 def _is_part_local(part):
@@ -143,7 +155,11 @@ def _remote_detect(part):
                 _log_contents(job.stderr)
                 topo_info = json.loads(_contents('topo.json'))
     except Exception as e:
+        if _TREAT_WARNINGS_AS_ERRORS:
+            raise
+
         getlogger().warning(f'failed to retrieve remote processor info: {e}')
+        getlogger().debug(traceback.format_exc())
 
     return topo_info
 
@@ -226,14 +242,11 @@ def detect_topology():
 
                 _save_info(topo_file, part.processor.info)
             elif detect_remote_systems:
-                with runtime.temp_environment(modules=temp_modules,
-                                              variables=temp_vars):
+                with runtime.temp_environment(modules=modules, variables=vars):
                     part._processor = ProcessorInfo(_remote_detect(part))
 
                 if part.processor.info:
                     _save_info(topo_file, part.processor.info)
-
-            getlogger().debug(f'> saved topology in {topo_file!r}')
 
         if not found_devinfo:
             getlogger().debug(f'> device auto-detection is not supported')
