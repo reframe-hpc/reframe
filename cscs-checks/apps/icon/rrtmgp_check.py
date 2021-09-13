@@ -6,40 +6,21 @@
 import os
 
 import reframe as rfm
-import reframe.utility.sanity as sn
 
+from hpctestlib.apps.icon.base_check import RRTMGPTest_Base
 
 @rfm.simple_test
-class RRTMGPTest(rfm.RegressionTest):
-    '''This is an outdated PoC test for ICON-RRTMGP.'''
+class RRTMGPTest(RRTMGPTest_Base):
+    maintainers = ['WS', 'RS']
+    valid_systems = ['dom:gpu', 'daint:gpu']
+    valid_prog_environs = ['PrgEnv-pgi']
+    modules = ['craype-accel-nvidia60', 'cray-netcdf']
 
-    def __init__(self):
-        self.valid_systems = ['dom:gpu', 'daint:gpu']
-        self.valid_prog_environs = ['PrgEnv-pgi']
+    @run_after('init')
+    def set_soursedir(self):
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'RRTMGP')
-        self.tags = {'external-resources'}
+
+    @run_after('init')
+    def set_prebuild_commands(self):
         self.prebuild_cmds = ['cp build/Makefile.conf.dom build/Makefile.conf']
-        self.executable = 'python'
-        self.executable_opts = [
-            'util/scripts/run_tests.py',
-            '--verbose', '--rel_diff_cut 1e-13',
-            '--root ..', '--test ${INIFILE}_ncol-${NCOL}.ini'
-        ]
-        self.prerun_cmds = [
-            'pwd',
-            'module load netcdf-python/1.4.1-CrayGNU-19.06-python2',
-            'cd test'
-        ]
-        self.modules = ['craype-accel-nvidia60', 'cray-netcdf']
-        self.variables = {
-            'NCOL': '500',
-            'INIFILE': 'openacc-solvers-lw'
-        }
-        values = sn.extractall(r'.*\[\S+, (\S+)\]', self.stdout, 1, float)
-        self.sanity_patterns = sn.all(
-            sn.chain(
-                [sn.assert_gt(sn.count(values), 0, msg='regex not matched')],
-                sn.map(lambda x: sn.assert_lt(x, 1e-5), values))
-        )
-        self.maintainers = ['WS', 'RS']
