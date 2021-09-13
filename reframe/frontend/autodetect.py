@@ -40,8 +40,7 @@ def _log_contents(filename):
 
 class _copy_reframe:
     def __init__(self, prefix):
-        rt = runtime.runtime()
-        self._prefix = rt.get_option('general/0/remote_workdir')
+        self._prefix = prefix
         self._workdir = None
 
     def __enter__(self):
