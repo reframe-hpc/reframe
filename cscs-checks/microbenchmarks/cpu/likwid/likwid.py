@@ -39,6 +39,13 @@ class MemBandwidthTest(rfm.RunOnlyRegressionTest):
     def bandwidth(self):
         return self.bw_pattern
 
+    @run_after('setup')
+    def skip_if_no_topo(self):
+        proc = self.current_partition.processor
+        pname = self.current_partition.fullname
+        if not proc.info:
+            self.skip(f'no topology information found for partition {pname!r}')
+
     def set_processor_properties(self):
         self.num_cpus_per_task = self.current_partition.processor.num_cpus
         numa_nodes = self.current_partition.processor.topology['numa_nodes']
