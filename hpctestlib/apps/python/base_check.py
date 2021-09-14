@@ -25,8 +25,6 @@ class Numpy_BaseCheck(rfm.RunOnlyRegressionTest, pin_prefix=True):
     NumPy is already installed on the device under test.
     '''
 
-    num_tasks_per_node = required
-
     executable = 'python'
     executable_opts = ['np_ops.py']
 
