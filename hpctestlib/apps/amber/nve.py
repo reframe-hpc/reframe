@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import contextlib
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -53,18 +54,15 @@ class Amber_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
 
     #: Parameter pack containing the platform ID, input file and
     #: executable.
-    platform_info = parameter([
-        ('cpu', 'mdin.CPU', 'pmemd.MPI'),
-        ('gpu', 'mdin.GPU', 'pmemd.cuda.MPI')
-    ])
+    platform = parameter(['cpu', 'gpu'])
 
     #: NVE simulation parameter pack with the benchmark name,
     #: energy reference and energy tolerance for each case.
-    variant = parameter([
-        ('Cellulose_production_NVE', -443246.0, 5.0E-05),
-        ('FactorIX_production_NVE', -234188.0, 1.0E-04),
-        ('JAC_production_NVE_4fs', -44810.0, 1.0E-03),
-        ('JAC_production_NVE', -58138.0, 5.0E-04)
+    benchmark = parameter([
+        'Cellulose_production_NVE',
+        'FactorIX_production_NVE',
+        'JAC_production_NVE_4fs',
+        'JAC_production_NVE'
     ])
 
     #: :default: :class:`required`
@@ -76,55 +74,43 @@ class Amber_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
     tags = {'sciapp', 'chemistry'}
 
     @run_after('init')
-    def unpack_platform_parameter(self):
-        '''Set the executable and input file.'''
+    def prepare_test(self):
+        params = {
+            'cpu': ('mdin.CPU', 'pmemd.MPI'),
+            'gpu': ('mdin.GPU', 'pmemd.cuda.MPI')
+        }
+        with contextlib.suppress(KeyError):
+            self.input_file, self.executable = params[self.platform]
 
-        self.platform, self.input_file, self.executable = self.platform_info
+        energies = {
+            'Cellulose_production_NVE': (-443246.0, 5.0E-05),
+            'FactorIX_production_NVE': (-234188.0, 1.0E-04),
+            'JAC_production_NVE_4fs': (-44810.0, 1.0E-03),
+            'JAC_production_NVE': (-58138.0, 5.0E-04)
+        }
+        with contextlib.suppress(KeyError):
+            self.energy_value, self.energy_tolerance = energies[self.benchmark]
 
-    @run_after('init')
-    def unpack_variant_parameter(self):
-        '''Set the value of energy and energy tolerance for a
-        specific program.
-        '''
-
-        self.benchmark, self.energy_value, self.energy_tolerance = self.variant
-
-    @run_after('init')
-    def set_keep_files(self):
         self.keep_files = [self.output_file]
 
-    @performance_function('ns/day', perf_key='nve')
-    def set_perf_patterns(self):
-        return sn.extractsingle(r'ns/day =\s+(?P<perf>\S+)',
-                                self.output_file, 'perf',
-                                float, item=1)
-
     @run_before('performance')
-    def set_the_performance_dict(self):
-        self.perf_variables = {self.benchmark:
-                               sn.make_performance_function(
-                                   sn.extractsingle(
-                                       r'ns/day =\s+(?P<perf>\S+)',
-                                       self.output_file, 'perf',
-                                       float, item=1), 'ns/day')}
+    def set_perf_vars(self):
+        self.perf_variables = {
+            self.benchmark: sn.make_performance_function(
+                sn.extractsingle(r'ns/day =\s+(?P<perf>\S+)',
+                                 self.output_file, 'perf',
+                                 float, item=1), 'ns/day'
+            )
+        }
 
     @run_before('run')
-    def download_files(self):
-        '''Download program files, which used in test'''
-
+    def prepare_run(self):
         self.prerun_cmds = [
             # cannot use wget because it is not installed on eiger
             f'curl -LJO https://github.com/victorusu/amber_benchmark_suite'
             f'/raw/main/amber_16_benchmark_suite/PME/{self.benchmark}.tar.bz2',
             f'tar xf {self.benchmark}.tar.bz2'
         ]
-
-    @run_before('run')
-    def set_executable_opts(self):
-        '''Set the executable options for the Amber. Determine the
-        using of input and ouput files.
-        '''
-
         self.executable_opts = ['-O',
                                 '-i', self.input_file,
                                 '-o', self.output_file]
