@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import os
 import sys
 import yaml
 
@@ -18,6 +19,7 @@ def _emit_gitlab_pipeline(testcases):
     prefix = 'rfm-stage/${CI_COMMIT_SHORT_SHA}'
     checkpath = config.get('general/0/check_search_path')
     recurse = config.get('general/0/check_search_recursive')
+    verbosity = 'v' * config.get('general/0/verbose')
 
     def rfm_command(testcase):
         if config.filename != '<builtin>':
@@ -40,6 +42,7 @@ def _emit_gitlab_pipeline(testcases):
             f'-R' if recurse else '',
             f'--report-file={report_file}',
             f'--restore-session={restore_files}' if restore_files else '',
+            f'{"".join("-" + verbosity)}' if verbosity else '',
             '-n', f"'^{testcase.check.name}$'", '-r'
         ])
 
@@ -51,6 +54,13 @@ def _emit_gitlab_pipeline(testcases):
         },
         'stages': []
     }
+
+    # Name of the image used for CI. If user does not explicitly provide
+    # image keyword on the top of CI script, this variable does not exist
+    image_name = os.getenv('CI_JOB_IMAGE')
+    if image_name:
+        json['image'] = image_name
+
     for tc in testcases:
         json[f'{tc.check.name}'] = {
             'stage': f'rfm-stage-{tc.level}',
