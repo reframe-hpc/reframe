@@ -64,13 +64,6 @@ class Amber_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
         'JAC_production_NVE_4fs',
         'JAC_production_NVE'
     ])
-
-    #: :default: :class:`required`
-    num_tasks_per_node = required
-
-    #: :default: :class:`required`
-    executable = required
-
     tags = {'sciapp', 'chemistry'}
 
     @run_after('init')
@@ -91,20 +84,6 @@ class Amber_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
         with contextlib.suppress(KeyError):
             self.energy_value, self.energy_tolerance = energies[self.benchmark]
 
-        self.keep_files = [self.output_file]
-
-    @run_before('performance')
-    def set_perf_vars(self):
-        self.perf_variables = {
-            self.benchmark: sn.make_performance_function(
-                sn.extractsingle(r'ns/day =\s+(?P<perf>\S+)',
-                                 self.output_file, 'perf',
-                                 float, item=1), 'ns/day'
-            )
-        }
-
-    @run_before('run')
-    def prepare_run(self):
         self.prerun_cmds = [
             # cannot use wget because it is not installed on eiger
             f'curl -LJO https://github.com/victorusu/amber_benchmark_suite'
@@ -114,6 +93,12 @@ class Amber_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
         self.executable_opts = ['-O',
                                 '-i', self.input_file,
                                 '-o', self.output_file]
+        self.keep_files = [self.output_file]
+
+    @performance_function('ns/day')
+    def perf(self):
+        return sn.extractsingle(r'ns/day =\s+(?P<perf>\S+)',
+                                self.output_file, 'perf', float, item=1)
 
     @sanity_function
     def assert_energy_readout(self):
