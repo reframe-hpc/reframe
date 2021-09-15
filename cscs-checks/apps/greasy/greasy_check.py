@@ -3,12 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import os
-from datetime import datetime
-
 import reframe as rfm
-import reframe.utility.sanity as sn
-from reframe.core.backends import getlauncher
 from hpctestlib.apps.greasy.base_check import GREASY_BaseCheck
 
 @rfm.simple_test
