@@ -1565,12 +1565,23 @@ class _Z(_D):
     pass
 
 
+class _T(jsonext.JSONSerializable):
+    __slots__ = ('t',)
+
+    def __eq__(self, other):
+        if not isinstance(other, _T):
+            return NotImplemented
+
+        return self.t == other.t
+
+
 class _C(jsonext.JSONSerializable):
     def __init__(self, x, y):
         self.x = x
         self.y = y
         self.z = None
         self.w = {1, 2}
+        self.t = None
 
         # Dump dict with tuples as keys
         self.v = {(1, 2): 1}
@@ -1587,7 +1598,8 @@ class _C(jsonext.JSONSerializable):
         return (self.x == other.x and
                 self.y == other.y and
                 self.z == other.z and
-                self.w == other.w)
+                self.w == other.w and
+                self.t == other.t)
 
 
 def test_jsonext_load(tmp_path):
@@ -1597,10 +1609,15 @@ def test_jsonext_load(tmp_path):
     c.z = _Z()
     c.z.a += 1
     c.z.b = 'barfoo'
+    c.t = _T()
+    c.t.t = 5
 
     json_dump = tmp_path / 'test.json'
     with open(json_dump, 'w') as fp:
         jsonext.dump(c, fp, indent=2)
+
+    with open(json_dump, 'r') as fp:
+        print(fp.read())
 
     with open(json_dump, 'r') as fp:
         c_restored = jsonext.load(fp)
