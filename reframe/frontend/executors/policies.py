@@ -318,6 +318,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             if task.failed_stage in ('run_complete', 'run_wait'):
                 self._running_tasks[partname].remove(task)
 
+            if task.failed_stage in ('compile_complete', 'compile_wait'):
+                self._building_tasks[partname].remove(task)
+
         msg = str(task.exc_info[1])
         self.printer.status('SKIP', msg, just='right')
 
