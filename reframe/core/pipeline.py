@@ -1582,13 +1582,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         '''
         if not self._build_job:
-            print('no build job????\n\n\n')
             return True
 
         t = self._build_job.finished()
-        if t:
-
-            print(f'Finished? {t}')
         return t
 
     @final
