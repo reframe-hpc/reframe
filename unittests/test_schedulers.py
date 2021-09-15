@@ -213,15 +213,14 @@ def _expected_oar_directives(job):
     num_nodes = job.num_tasks // job.num_tasks_per_node
     num_tasks_per_node = job.num_tasks_per_node
     return set([
-        '#OAR -n "testjob"',
-        '#OAR -O %s' % job.stdout,
-        '#OAR -E %s' % job.stderr,
-        '#OAR -l /host=%s/core=%s,walltime=0:5:0' % (num_nodes,
-                                                     num_tasks_per_node),
-        '#OAR --account=spam',
-        '#OAR --gres=gpu:4',
-        '#DW jobdw capacity=100GB',
-        '#DW stage_in source=/foo'
+        f'#OAR -n "testjob"',
+        f'#OAR -O {job.stdout}',
+        f'#OAR -E {job.stderr}',
+        f'#OAR -l /host={num_nodes}/core={num_tasks_per_node},walltime=0:5:0'
+        f'#OAR --account=spam',
+        f'#OAR --gres=gpu:4',
+        f'#DW jobdw capacity=100GB',
+        f'#DW stage_in source=/foo'
     ])
 
 

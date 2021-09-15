@@ -218,6 +218,7 @@ System Partition Configuration
      If not, you should consider using the ``squeue`` backend below.
    - ``squeue``: Jobs will be launched using the `Slurm <https://www.schedmd.com/>`__ scheduler.
      This backend does not rely on job accounting to retrieve job statuses, but ReFrame does its best to query the job state as reliably as possible.
+   - ``oar``: Jobs will be launched using the `OAR <https://oar.imag.fr/>`__ scheduler.
 
    .. versionadded:: 3.7.2
       Support for the SGE scheduler is added.

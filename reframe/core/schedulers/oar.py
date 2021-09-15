@@ -72,11 +72,9 @@ class OarJobScheduler(PbsJobScheduler):
         # Same reason as oarsub, we give full path to output and error files to
         # avoid writing them in the working dir
         preamble = [
-            self._format_option('-n "%s"' % job.name),
-            self._format_option('-O %s' %
-                                os.path.join(job.workdir, job.stdout)),
-            self._format_option('-E %s' %
-                                os.path.join(job.workdir, job.stderr)),
+            self._format_option(f'-n "{job.name}"'),
+            self._format_option(f'-O {os.path.join(job.workdir, job.stdout)}'),
+            self._format_option(f'-E {os.path.join(job.workdir, job.stderr)}'),
         ]
 
         if job.time_limit is not None:
@@ -102,7 +100,7 @@ class OarJobScheduler(PbsJobScheduler):
                 preamble.append(self._format_option(opt))
 
         # OAR starts the job in the home directory by default
-        preamble.append('cd %s' % job.workdir)
+        preamble.append(f'cd {job.workdir}')
         return preamble
 
     def submit(self, job):
@@ -136,15 +134,9 @@ class OarJobScheduler(PbsJobScheduler):
             return
 
         for job in jobs:
-            completed = osext.run_command(
+            completed = _run_strict(
                 f'oarstat -fj {job.jobid}'
             )
-
-            if completed.returncode != 0:
-                raise JobSchedulerError(
-                    f'oarstat failed with exit code {completed.returncode} '
-                    f'(standard error follows):\n{completed.stderr}'
-                )
 
             # Store information for each job separately
             jobinfo = {}
