@@ -18,6 +18,7 @@ class amber_check(Amber_NVE):
             'num_switches': 1
         }
     }
+    tags |= {'maintenance', 'production'}
     maintainers = ['VH', 'SO']
     num_nodes = parameter([1, 4, 6, 8, 16])
     allref = {
