@@ -454,15 +454,21 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def _poll_tasks(self):
         '''Update the counts of running checks per partition.'''
 
-        def split_jobs(tasks, build_split=False):
+        def split_jobs(tasks, build_split=False, build_jobs=False):
             '''Split jobs into forced local and normal ones.'''
             forced_local = []
             normal = []
             for t in tasks:
                 if t.check.local or (build_split and t.check.build_locally):
-                    forced_local.append(t.check.job)
+                    if build_jobs:
+                        forced_local.append(t.check.build_job)
+                    else:
+                        forced_local.append(t.check.job)
                 else:
-                    normal.append(t.check.job)
+                    if build_jobs:
+                        normal.append(t.check.build_job)
+                    else:
+                        normal.append(t.check.job)
 
             return forced_local, normal
 
@@ -483,16 +489,14 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             num_tasks = len(self._building_tasks[partname])
             getlogger().debug2(f'Polling {num_tasks} building task(s) in {partname!r}')
             forced_local_jobs, part_jobs = split_jobs(
-                self._building_tasks[partname], build_split=True
+                self._building_tasks[partname], build_split=True, build_jobs=True
             )
             part.scheduler.poll(*part_jobs)
             self.local_scheduler.poll(*forced_local_jobs)
 
             # Trigger notifications for finished jobs
             for t in self._building_tasks[partname][:]:
-                # print(f'There is a task: {t}')
                 t.compile_complete()
-                # print(f'Checked task: {t}')
 
     def _setup_all(self):
         still_waiting = []
