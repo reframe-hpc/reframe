@@ -13,9 +13,6 @@ class ContainerTest(rfm.RunOnlyRegressionTest):
     valid_systems = ['daint:gpu']
     valid_prog_environs = ['builtin']
 
-    os_release_pattern = r'18.04.\d+ LTS \(Bionic Beaver\)'
-    sanity_patterns = sn.assert_found(os_release_pattern, 'release.txt')
-
     @run_before('run')
     def set_container_variables(self):
         self.descr = f'Run commands inside a container using {self.platform}'
@@ -25,3 +22,8 @@ class ContainerTest(rfm.RunOnlyRegressionTest):
         self.container_platform.command = (
             "bash -c 'cat /etc/os-release | tee /rfm_workdir/release.txt'"
         )
+
+    @sanity_function
+    def assert_release(self):
+        os_release_pattern = r'18.04.\d+ LTS \(Bionic Beaver\)'
+        return sn.assert_found(os_release_pattern, 'release.txt')
