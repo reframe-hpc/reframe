@@ -216,7 +216,7 @@ def _expected_oar_directives(job):
         f'#OAR -n "testjob"',
         f'#OAR -O {job.stdout}',
         f'#OAR -E {job.stderr}',
-        f'#OAR -l /host={num_nodes}/core={num_tasks_per_node},walltime=0:5:0'
+        f'#OAR -l /host={num_nodes}/core={num_tasks_per_node},walltime=0:5:0',
         f'#OAR --account=spam',
         f'#OAR --gres=gpu:4',
         f'#DW jobdw capacity=100GB',

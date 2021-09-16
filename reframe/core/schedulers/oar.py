@@ -92,7 +92,6 @@ class OarJobScheduler(PbsJobScheduler):
 
         # Emit the rest of the options
         options += job.sched_access + job.options + job.cli_options
-
         for opt in options:
             if opt.startswith('#'):
                 preamble.append(opt)
@@ -167,7 +166,6 @@ class OarJobScheduler(PbsJobScheduler):
                 continue
 
             job._state = state_match.group('state')
-
             if oar_state_completed(job.state):
                 exitcode_match = re.search(
                     r'^\s*exit_code = (?P<code>\d+)',
@@ -185,7 +183,6 @@ class OarJobScheduler(PbsJobScheduler):
                 done = job.cancelled or out_ready
                 if done:
                     job._completed = True
-
             elif oar_state_pending(job.state) and job.max_pending_time:
                 if time.time() - job.submit_time >= job.max_pending_time:
                     self.cancel(job)
