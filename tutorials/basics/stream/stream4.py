@@ -9,10 +9,6 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class StreamMultiSysTest(rfm.RegressionTest):
-    num_bytes = parameter(1 << pow for pow in range(19, 30))
-    array_size = variable(int)
-    ntimes = variable(int)
-
     valid_systems = ['*']
     valid_prog_environs = ['cray', 'gnu', 'intel', 'pgi']
     prebuild_cmds = [
@@ -25,8 +21,11 @@ class StreamMultiSysTest(rfm.RegressionTest):
         'OMP_PLACES': 'cores'
     }
     reference = {
-        '*': {
-            'Triad': (0, None, None, 'MB/s'),
+        'catalina': {
+            'Copy':  (25200, -0.05, 0.05, 'MB/s'),
+            'Scale': (16800, -0.05, 0.05, 'MB/s'),
+            'Add':   (18500, -0.05, 0.05, 'MB/s'),
+            'Triad': (18800, -0.05, 0.05, 'MB/s')
         }
     }
 
@@ -46,19 +45,9 @@ class StreamMultiSysTest(rfm.RegressionTest):
         'daint:login': 10
     })
 
-    @run_after('init')
-    def set_variables(self):
-        self.array_size = (self.num_bytes >> 3) // 3
-        self.ntimes = 100*1024*1024 // self.array_size
-        self.descr = (
-            f'STREAM test (array size: {self.array_size}, '
-            f'ntimes: {self.ntimes})'
-        )
-
     @run_before('compile')
     def set_compiler_flags(self):
-        self.build_system.cppflags = [f'-DSTREAM_ARRAY_SIZE={self.array_size}',
-                                      f'-DNTIMES={self.ntimes}']
+        self.build_system.cppflags = ['-DSTREAM_ARRAY_SIZE=$((1 << 25))']
         environ = self.current_environ.name
         self.build_system.cflags = self.flags.get(environ, [])
 
@@ -75,6 +64,19 @@ class StreamMultiSysTest(rfm.RegressionTest):
     def validate_solution(self):
         return sn.assert_found(r'Solution Validates', self.stdout)
 
-    @performance_function('MB/s', perf_key='Triad')
-    def extract_triad_bw(self):
-        return sn.extractsingle(r'Triad:\s+(\S+)\s+.*', self.stdout, 1, float)
+    @performance_function('MB/s')
+    def extract_bw(self, kind='Copy'):
+        if kind not in {'Copy', 'Scale', 'Add', 'Triad'}:
+            raise ValueError(f'illegal value in argument kind ({kind!r})')
+
+        return sn.extractsingle(rf'{kind}:\s+(\S+)\s+.*',
+                                self.stdout, 1, float)
+
+    @run_before('performance')
+    def set_perf_variables(self):
+        self.perf_variables = {
+            'Copy': self.extract_bw(),
+            'Scale': self.extract_bw('Scale'),
+            'Add': self.extract_bw('Add'),
+            'Triad': self.extract_bw('Triad'),
+        }
