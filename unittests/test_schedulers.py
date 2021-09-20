@@ -26,8 +26,8 @@ def launcher():
     return getlauncher('local')
 
 
-@pytest.fixture(params=['sge', 'slurm', 'squeue', 'local',
-                        'pbs', 'torque', 'lsf'])
+@pytest.fixture(params=['local', 'lsf', 'oar', 'pbs',
+                        'sge', 'slurm', 'squeue', 'torque'])
 def scheduler(request):
     return getscheduler(request.param)
 
@@ -223,6 +223,21 @@ def _expected_torque_directives(job):
         '#PBS --gres=gpu:4',
         '#DW jobdw capacity=100GB',
         '#DW stage_in source=/foo'
+    ])
+
+
+def _expected_oar_directives(job):
+    num_nodes = job.num_tasks // job.num_tasks_per_node
+    num_tasks_per_node = job.num_tasks_per_node
+    return set([
+        f'#OAR -n "testjob"',
+        f'#OAR -O {job.stdout}',
+        f'#OAR -E {job.stderr}',
+        f'#OAR -l /host={num_nodes}/core={num_tasks_per_node},walltime=0:5:0',
+        f'#OAR --account=spam',
+        f'#OAR --gres=gpu:4',
+        f'#DW jobdw capacity=100GB',
+        f'#DW stage_in source=/foo'
     ])
 
 

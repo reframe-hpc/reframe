@@ -552,8 +552,10 @@ The following is an example of ``.gitlab-ci.yml`` file that does exactly that:
 It defines two stages.
 The first one, called ``generate``, will call ReFrame to generate the pipeline specification for the desired tests.
 All the usual `test selection options <manpage.html#test-filtering>`__ can be used to select specific tests.
-ReFrame will process them as usual, but instead of running the selected tests, it will generate the correct steps for running each test individually as a Gitlab job.
-We then pass the generated CI pipeline file to second phase as an artifact and we are done!
+ReFrame will process them as usual, but instead of running the selected tests, it will generate the correct steps
+for running each test individually as a Gitlab job. We then pass the generated CI pipeline file to second phase as
+an artifact and we are done! If ``image`` keyword is defined in ``.gitlab-ci.yml``, the emitted pipeline will use
+the same image as the one defined in the parent pipeline.
 
 The following figure shows one part of the automatically generated pipeline for the test graph depicted `above <#fig-deps-complex>`__.
 
