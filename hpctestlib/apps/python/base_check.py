@@ -65,5 +65,5 @@ class Numpy_BaseCheck(rfm.RunOnlyRegressionTest, pin_prefix=True):
             self.stdout, 'inv', float)
 
     @sanity_function
-    def assert_energy_readout(self):
+    def assert_numpy_version(self):
         return sn.assert_found(r'Numpy version:\s+\S+', self.stdout)
