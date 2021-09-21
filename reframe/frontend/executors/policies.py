@@ -334,6 +334,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             self.printer.status('ERROR', msg, just='right')
         else:
             self._remove_from_running(task)
+            self._remove_from_building(task)
             self.printer.status('FAIL', msg, just='right')
 
         stagedir = task.check.stagedir
