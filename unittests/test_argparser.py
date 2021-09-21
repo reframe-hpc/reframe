@@ -104,7 +104,7 @@ def extended_parser():
         envvar='RFM_KEEP_STAGE_FILES', configvar='general/keep_stage_files'
     )
     foo_options.add_argument(
-        '--timestamp', action='store', nargs='?', const='',
+        '--timestamp', action='store',
         envvar='RFM_TIMESTAMP_DIRS', configvar='general/timestamp_dirs'
     )
     foo_options.add_argument(
@@ -180,10 +180,3 @@ def test_option_envvar_conversion_error(default_exec_ctx, extended_parser):
         options = extended_parser.parse_args(['--nocolor'])
         errors = options.update_config(site_config)
         assert len(errors) == 1
-
-
-def test_option_nargs(default_exec_ctx, extended_parser):
-    site_config = rt.runtime().site_config
-    options = extended_parser.parse_args(['--timestamp'])
-    assert options.timestamp == ''
-    assert site_config.get('general/0/timestamp_dirs') == '%FT%T'
