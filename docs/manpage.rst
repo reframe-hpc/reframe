@@ -299,13 +299,13 @@ Options controlling ReFrame execution
    - ``async``: Tests will be executed asynchronously.
      This is the default policy.
 
-     The ``async`` execution policy executes the run phase of tests asynchronously by submitting their associated jobs in a non-blocking way.
-     ReFrame's runtime monitors the progress of each test and will resume the pipeline execution of an asynchronously spawned test as soon as its run phase has finished.
+     The ``async`` execution policy executes the build and run phases of tests asynchronously by submitting their associated jobs in a non-blocking way.
+     ReFrame's runtime monitors the progress of each test and will resume the pipeline execution of an asynchronously spawned test as soon as its build or run phase have finished.
      Note that the rest of the pipeline stages are still executed sequentially in this policy.
 
      Concurrency can be controlled by setting the :js:attr:`max_jobs` system partition configuration parameter.
      As soon as the concurrency limit is reached, ReFrame will first poll the status of all its pending tests to check if any execution slots have been freed up.
-     If there are tests that have finished their run phase, ReFrame will keep pushing tests for execution until the concurrency limit is reached again.
+     If there are tests that have finished their build or run phase, ReFrame will keep pushing tests for execution until the concurrency limit is reached again.
      If no execution slots are available, ReFrame will throttle job submission.
 
 .. option:: --force-local

@@ -52,7 +52,8 @@ A `job descriptor <regression_test_api.html#reframe.core.pipeline.RegressionTest
 The Build Phase
 ---------------
 
-During this phase the source code associated with the test is compiled using the current programming environment.
+During this phase a job script associated with the compilation of the test will be created and it will be submitted for execution.
+The source code associated with the test is compiled using the current programming environment.
 If the test is `"run-only," <regression_test_api.html#reframe.core.pipeline.RunOnlyRegressionTest>`__ this phase is a no-op.
 
 Before building the test, all the `resources <regression_test_api.html#reframe.core.pipeline.RegressionTest.sourcesdir>`__ associated with it are copied to the test case's stage directory.
@@ -114,7 +115,7 @@ As the figure below shows, this can lead to long idling times in the run phase, 
 
 
 In the asynchronous execution policy, multiple tests can be simultaneously on-the-fly.
-When a test enters the run phase, ReFrame does not block, but continues by picking the next test case to run.
+When a test enters the build or run phase, ReFrame does not block, but continues by picking the next test case to run.
 This continues until no more test cases are left for execution or until a maximum concurrency limit is reached.
 At the end, ReFrame enters a busy-wait loop monitoring the spawned test cases.
 As soon as test case finishes, it resumes its pipeline and runs it to completion.
