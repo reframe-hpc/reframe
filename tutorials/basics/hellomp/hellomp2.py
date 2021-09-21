@@ -22,8 +22,8 @@ class HelloThreadedExtendedTest(rfm.RegressionTest):
         if environ in {'clang', 'gnu'}:
             self.build_system.cxxflags += ['-pthread']
 
-    @run_before('sanity')
-    def set_sanity_patterns(self):
+    @sanity_function
+    def assert_num_messages(self):
         num_messages = sn.len(sn.findall(r'\[\s?\d+\] Hello, World\!',
                                          self.stdout))
-        self.sanity_patterns = sn.assert_eq(num_messages, 16)
+        return sn.assert_eq(num_messages, 16)

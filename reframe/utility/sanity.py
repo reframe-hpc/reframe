@@ -164,9 +164,11 @@ def print(obj, *, sep=' ', end='\n', file=None, flush=False):
 
     .. code:: python
 
-        self.sanity_patterns = sn.assert_eq(
-            sn.count(sn.print(sn.extract_all(...))), 10
-        )
+        @sanity_function
+        def my_sanity_fn(self):
+            return sn.assert_eq(
+                sn.count(sn.print(sn.extract_all(...))), 10
+            )
 
     If ``file`` is None, :func:`print` will print its arguments to the
     standard output. Unlike the builtin :func:`print() <python:print>`
