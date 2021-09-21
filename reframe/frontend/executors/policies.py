@@ -479,7 +479,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         for part in self._partitions:
             partname = part.fullname
             num_tasks = len(self._running_tasks[partname])
-            getlogger().debug2(f'Polling {num_tasks} running task(s) in {partname!r}')
+            getlogger().debug2(f'Polling {num_tasks} running task(s) in '
+                               f'{partname!r}')
             forced_local_jobs, part_jobs = split_jobs(
                 self._running_tasks[partname]
             )
@@ -491,9 +492,11 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 t.run_complete()
 
             num_tasks = len(self._building_tasks[partname])
-            getlogger().debug2(f'Polling {num_tasks} building task(s) in {partname!r}')
+            getlogger().debug2(f'Polling {num_tasks} building task(s) in '
+                               f'{partname!r}')
             forced_local_jobs, part_jobs = split_jobs(
-                self._building_tasks[partname], build_split=True, build_jobs=True
+                self._building_tasks[partname], build_split=True,
+                build_jobs=True
             )
             part.scheduler.poll(*part_jobs)
             self.local_scheduler.poll(*forced_local_jobs)
