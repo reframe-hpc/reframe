@@ -90,7 +90,7 @@ class HPCGCheckRef(rfm.RegressionTest, HPCGHookMixin):
         self.tags = {'diagnostic', 'benchmark', 'craype', 'external-resources'}
 
     @property
-    @sn.sanity_function
+    @deferrable
     def num_tasks_assigned(self):
         return self.job.num_tasks
 
@@ -165,12 +165,12 @@ class HPCGCheckMKL(rfm.RegressionTest, HPCGHookMixin):
         self.tags = {'diagnostic', 'benchmark', 'craype'}
 
     @property
-    @sn.sanity_function
+    @deferrable
     def num_tasks_assigned(self):
         return self.job.num_tasks
 
     @property
-    @sn.sanity_function
+    @deferrable
     def outfile_lazy(self):
         pattern = (f'n{self.problem_size}-{self.job.num_tasks}p-'
                    f'{self.num_cpus_per_task}t*.*')
@@ -265,6 +265,6 @@ class HPCG_GPUCheck(rfm.RunOnlyRegressionTest, HPCGHookMixin):
         ])
 
     @property
-    @sn.sanity_function
+    @deferrable
     def num_tasks_assigned(self):
         return self.job.num_tasks
