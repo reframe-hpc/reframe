@@ -47,47 +47,51 @@ class HPCGHookMixin(rfm.RegressionMixin):
 
 @rfm.simple_test
 class HPCGCheckRef(rfm.RegressionTest, HPCGHookMixin):
-    def __init__(self):
-        self.descr = 'HPCG reference benchmark'
-        self.valid_systems = ['daint:mc', 'daint:gpu', 'dom:gpu', 'dom:mc']
-        self.valid_prog_environs = ['PrgEnv-gnu']
+    descr = 'HPCG reference benchmark'
+    valid_systems = ['daint:mc', 'daint:gpu', 'dom:gpu', 'dom:mc']
+    valid_prog_environs = ['PrgEnv-gnu']
+    build_system = 'Make'
+    sourcesdir = 'https://github.com/hpcg-benchmark/hpcg.git'
+    executable = 'bin/xhpcg'
+    executable_opts = ['--nx=104', '--ny=104', '--nz=104', '-t2']
+    # use glob to catch the output file suffix dependent on execution time
+    output_file = sn.getitem(sn.glob('HPCG*.txt'), 0)
+    num_tasks = 0
+    num_cpus_per_task = 1
+    system_num_tasks = {
+        'daint:mc':  36,
+        'daint:gpu': 12,
+        'dom:mc':  36,
+        'dom:gpu': 12
+    }
+
+    reference = {
+        'daint:gpu': {
+            'gflops': (7.6, -0.1, None, 'Gflop/s')
+        },
+        'daint:mc': {
+            'gflops': (13.4, -0.1, None, 'Gflop/s')
+        },
+        'dom:gpu': {
+            'gflops': (7.6, -0.1, None, 'Gflop/s')
+        },
+        'dom:mc': {
+            'gflops': (13.4, -0.1, None, 'Gflop/s')
+        }
+    }
+
+    maintainers = ['SK', 'EK']
+    tags = {'diagnostic', 'benchmark', 'craype', 'external-resources'}
+
+    @run_after('init')
+    def set_modules(self):
         if self.current_system.name in {'daint', 'dom'}:
             self.modules = ['craype-hugepages8M']
 
-        self.build_system = 'Make'
+    @run_before('compile')
+    def set_build_opts(self):
         self.build_system.options = ['arch=MPI_GCC_OMP']
-        self.sourcesdir = 'https://github.com/hpcg-benchmark/hpcg.git'
-        self.executable = 'bin/xhpcg'
-        self.executable_opts = ['--nx=104', '--ny=104', '--nz=104', '-t2']
-        # use glob to catch the output file suffix dependent on execution time
-        self.output_file = sn.getitem(sn.glob('HPCG*.txt'), 0)
 
-        self.num_tasks = 0
-        self.num_cpus_per_task = 1
-        self.system_num_tasks = {
-            'daint:mc':  36,
-            'daint:gpu': 12,
-            'dom:mc':  36,
-            'dom:gpu': 12
-        }
-
-        self.reference = {
-            'daint:gpu': {
-                'gflops': (7.6, -0.1, None, 'Gflop/s')
-            },
-            'daint:mc': {
-                'gflops': (13.4, -0.1, None, 'Gflop/s')
-            },
-            'dom:gpu': {
-                'gflops': (7.6, -0.1, None, 'Gflop/s')
-            },
-            'dom:mc': {
-                'gflops': (13.4, -0.1, None, 'Gflop/s')
-            }
-        }
-
-        self.maintainers = ['SK', 'EK']
-        self.tags = {'diagnostic', 'benchmark', 'craype', 'external-resources'}
 
     @property
     @deferrable
