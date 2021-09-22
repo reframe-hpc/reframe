@@ -125,48 +125,48 @@ class HPCGCheckRef(rfm.RegressionTest, HPCGHookMixin):
 
 @rfm.simple_test
 class HPCGCheckMKL(rfm.RegressionTest, HPCGHookMixin):
-    def __init__(self):
-        self.descr = 'HPCG benchmark Intel MKL implementation'
-        self.valid_systems = ['daint:mc', 'dom:mc', 'daint:gpu', 'dom:gpu']
-        self.valid_prog_environs = ['PrgEnv-intel']
-        self.modules = ['craype-hugepages8M']
-        self.build_system = 'Make'
-        self.prebuild_cmds = ['cp -r ${MKLROOT}/benchmarks/hpcg/* .',
-                              'mv Make.CrayXC setup', './configure CrayXC']
+    descr = 'HPCG benchmark Intel MKL implementation'
+    valid_systems = ['daint:mc', 'dom:mc', 'daint:gpu', 'dom:gpu']
+    valid_prog_environs = ['PrgEnv-intel']
+    modules = ['craype-hugepages8M']
+    build_system = 'Make'
+    prebuild_cmds = ['cp -r ${MKLROOT}/benchmarks/hpcg/* .',
+                     'mv Make.CrayXC setup', './configure CrayXC']
 
-        self.num_tasks = 0
-        self.problem_size = 104
+    num_tasks = 0
+    problem_size = 104
+    variables = {
+        'HUGETLB_VERBOSE': '0',
+        'MPICH_MAX_THREAD_SAFETY': 'multiple',
+        'MPICH_USE_DMAPP_COLL': '1',
+        'PMI_NO_FORK': '1',
+        'KMP_AFFINITY': 'granularity=fine,compact'
+    }
 
-        self.variables = {
-            'HUGETLB_VERBOSE': '0',
-            'MPICH_MAX_THREAD_SAFETY': 'multiple',
-            'MPICH_USE_DMAPP_COLL': '1',
-            'PMI_NO_FORK': '1',
-            'KMP_AFFINITY': 'granularity=fine,compact'
-        }
+    executable = 'bin/xhpcg_avx2'
+    reference = {
+        'dom:mc': {
+            'gflops': (22, -0.1, None, 'Gflop/s')
+        },
+        'daint:mc': {
+            'gflops': (22, -0.1, None, 'Gflop/s')
+        },
+        'dom:gpu': {
+            'gflops': (10.7, -0.1, None, 'Gflop/s')
+        },
+        'daint:gpu': {
+            'gflops': (10.7, -0.1, None, 'Gflop/s')
+        },
+    }
 
-        self.executable = 'bin/xhpcg_avx2'
+    maintainers = ['SK']
+    tags = {'diagnostic', 'benchmark', 'craype'}
+
+    @run_before('run')
+    def set_exec_opt(self):
         self.executable_opts = [f'--nx={self.problem_size}',
                                 f'--ny={self.problem_size}',
                                 f'--nz={self.problem_size}', '-t2']
-
-        self.reference = {
-            'dom:mc': {
-                'gflops': (22, -0.1, None, 'Gflop/s')
-            },
-            'daint:mc': {
-                'gflops': (22, -0.1, None, 'Gflop/s')
-            },
-            'dom:gpu': {
-                'gflops': (10.7, -0.1, None, 'Gflop/s')
-            },
-            'daint:gpu': {
-                'gflops': (10.7, -0.1, None, 'Gflop/s')
-            },
-        }
-
-        self.maintainers = ['SK']
-        self.tags = {'diagnostic', 'benchmark', 'craype'}
 
     @property
     @deferrable
@@ -219,21 +219,33 @@ class HPCGCheckMKL(rfm.RegressionTest, HPCGHookMixin):
 
 @rfm.simple_test
 class HPCG_GPUCheck(rfm.RunOnlyRegressionTest, HPCGHookMixin):
-    def __init__(self):
-        self.maintainers = ['SK', 'VH']
-        self.descr = 'HPCG benchmark on GPUs'
+    descr = 'HPCG benchmark on GPUs'
+    # there's no binary with support for CUDA 10 yet
+    valid_systems = ['daint:gpu']
+    valid_prog_environs = ['PrgEnv-gnu']
+    modules = ['craype-accel-nvidia60', 'craype-hugepages8M']
+    executable = 'xhpcg_gpu_3.1'
+    num_tasks = 0
+    num_tasks_per_node = 1
+    num_cpus_per_task = 12
+    output_file = sn.getitem(sn.glob('*.yaml'), 0)
+    reference = {
+        'daint:gpu': {
+            'gflops': (94.7, -0.1, None, 'Gflop/s')
+        },
+        'dom:gpu': {
+            'gflops': (94.7, -0.1, None, 'Gflop/s')
+        },
+    }
+    maintainers = ['SK', 'VH']
+
+    @run_after('init')
+    def set_sourcedir(self):
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'HPCG')
 
-        # there's no binary with support for CUDA 10 yet
-        self.valid_systems = ['daint:gpu']
-        self.valid_prog_environs = ['PrgEnv-gnu']
-        self.modules = ['craype-accel-nvidia60', 'craype-hugepages8M']
-        self.executable = 'xhpcg_gpu_3.1'
-        self.prerun_cmds = ['chmod +x %s' % self.executable]
-        self.num_tasks = 0
-        self.num_tasks_per_node = 1
-        self.num_cpus_per_task = 12
+    @run_after('init')
+    def set_variables(self):
         self.variables = {
             'PMI_NO_FORK': '1',
             'MPICH_USE_DMAPP_COLL': '1',
@@ -243,17 +255,12 @@ class HPCG_GPUCheck(rfm.RunOnlyRegressionTest, HPCGHookMixin):
             'HUGETLB_DEFAULT_PAGE_SIZE': '8M',
         }
 
-        self.output_file = sn.getitem(sn.glob('*.yaml'), 0)
+    @run_before('run')
+    def set_exec_permissions(self):
+        self.prerun_cmds = ['chmod +x %s' % self.executable]
 
-        self.reference = {
-            'daint:gpu': {
-                'gflops': (94.7, -0.1, None, 'Gflop/s')
-            },
-            'dom:gpu': {
-                'gflops': (94.7, -0.1, None, 'Gflop/s')
-            },
-        }
-
+    @run_after('init')
+    def sanity_and_perf(self):
         num_nodes = self.num_tasks_assigned / self.num_tasks_per_node
         self.perf_patterns = {
             'gflops': sn.extractsingle(
