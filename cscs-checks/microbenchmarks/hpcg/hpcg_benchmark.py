@@ -114,9 +114,9 @@ class HPCGCheckRef(rfm.RegressionTest, HPCGHookMixin):
                 self.output_file, 'perf',  float) / num_nodes
         }
 
-    @run_before('sanity')
-    def set_sanity(self):
-        self.sanity_patterns = sn.all([
+    @sanity_function
+    def validate_passed(self):
+        return sn.all([
             sn.assert_eq(4, sn.count(
                 sn.findall(r'PASSED', self.output_file))),
             sn.assert_eq(0, self.num_tasks_assigned % self.num_tasks_per_node)
@@ -202,9 +202,9 @@ class HPCGCheckMKL(rfm.RegressionTest, HPCGHookMixin):
                 self.outfile_lazy, 'perf',  float) / num_nodes
         }
 
-    @run_before('sanity')
-    def set_sanity(self):
-        self.sanity_patterns = sn.all([
+    @sanity_function
+    def validate_passed(self):
+        return sn.all([
             sn.assert_not_found(
                 r'invalid because the ratio',
                 self.outfile_lazy,
@@ -260,7 +260,7 @@ class HPCG_GPUCheck(rfm.RunOnlyRegressionTest, HPCGHookMixin):
         self.prerun_cmds = ['chmod +x %s' % self.executable]
 
     @run_after('init')
-    def sanity_and_perf(self):
+    def perf(self):
         num_nodes = self.num_tasks_assigned / self.num_tasks_per_node
         self.perf_patterns = {
             'gflops': sn.extractsingle(
@@ -269,7 +269,9 @@ class HPCG_GPUCheck(rfm.RunOnlyRegressionTest, HPCGHookMixin):
                 self.output_file, 'perf',  float) / num_nodes
         }
 
-        self.sanity_patterns = sn.all([
+    @sanity_function
+    def validate_passed(self):
+        return sn.all([
             sn.assert_eq(4, sn.count(
                 sn.findall(r'PASSED', self.output_file))),
             sn.assert_eq(0, self.num_tasks_assigned % self.num_tasks_per_node)
