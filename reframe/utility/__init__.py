@@ -84,7 +84,6 @@ def import_module_from_file(filename, force=False):
     rfm_root = os.path.realpath(os.path.join(os.path.dirname(__file__),
                                 '../..'))
     rel_filename = os.path.relpath(filename, rfm_root)
-    # rel_filename = os.path.relpath(filename, __file__)
     module_name = _get_module_name(rel_filename)
     if rel_filename.startswith('..'):
         # We cannot use the standard Python import mechanism here, because the
