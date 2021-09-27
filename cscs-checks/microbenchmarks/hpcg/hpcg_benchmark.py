@@ -58,12 +58,6 @@ class HPCGCheckRef(rfm.RegressionTest, HPCGHookMixin):
     output_file = sn.getitem(sn.glob('HPCG*.txt'), 0)
     num_tasks = 0
     num_cpus_per_task = 1
-    system_num_tasks = {
-        'daint:mc':  36,
-        'daint:gpu': 12,
-        'dom:mc':  36,
-        'dom:gpu': 12
-    }
 
     reference = {
         'daint:gpu': {
@@ -100,13 +94,16 @@ class HPCGCheckRef(rfm.RegressionTest, HPCGHookMixin):
 
     @run_before('compile')
     def set_tasks(self):
-        self.num_tasks_per_node = self.system_num_tasks.get(
-            self.current_partition.fullname, 1
-        )
+        if self.current_partition.processor.num_cores:
+            self.num_tasks_per_node = (
+                self.current_partition.processor.num_cores
+            )
+        else:
+            self.num_tasks_per_node = 1
 
     @performance_function('Gflop/s')
     def gflops(self):
-        num_nodes = self.num_tasks_assigned / self.num_tasks_per_node
+        num_nodes = self.num_tasks_assigned // self.num_tasks_per_node
         return (
             sn.extractsingle(
             r'HPCG result is VALID with a GFLOP\/s rating of=\s*'
@@ -194,7 +191,7 @@ class HPCGCheckMKL(rfm.RegressionTest, HPCGHookMixin):
         # since this is a flexible test, we divide the extracted
         # performance by the number of nodes and compare
         # against a single reference
-        num_nodes = self.num_tasks_assigned / self.num_tasks_per_node
+        num_nodes = self.num_tasks_assigned // self.num_tasks_per_node
         return (
             sn.extractsingle(
             r'HPCG result is VALID with a GFLOP\/s rating of(=|:)\s*'
@@ -227,7 +224,6 @@ class HPCG_GPUCheck(rfm.RunOnlyRegressionTest, HPCGHookMixin):
     executable = 'xhpcg_gpu_3.1'
     num_tasks = 0
     num_tasks_per_node = 1
-    num_cpus_per_task = 12
     output_file = sn.getitem(sn.glob('*.yaml'), 0)
     reference = {
         'daint:gpu': {
@@ -238,6 +234,15 @@ class HPCG_GPUCheck(rfm.RunOnlyRegressionTest, HPCGHookMixin):
         },
     }
     maintainers = ['SK', 'VH']
+
+    @run_after('setup')
+    def set_num_tasks(self):
+        if self.current_partition.processor.num_cores:
+            self.num_cpus_per_task = (
+                self.current_partition.processor.num_cores
+            )
+        else:
+            self.skip(msg='number of cores is not set in the configuration')
 
     @run_after('init')
     def set_sourcedir(self):
@@ -269,7 +274,7 @@ class HPCG_GPUCheck(rfm.RunOnlyRegressionTest, HPCGHookMixin):
 
     @performance_function('Gflop/s')
     def gflops(self):
-        num_nodes = self.num_tasks_assigned / self.num_tasks_per_node
+        num_nodes = self.num_tasks_assigned // self.num_tasks_per_node
         return (
             sn.extractsingle(
             r'HPCG result is VALID with a GFLOP\/s rating of:\s*'
