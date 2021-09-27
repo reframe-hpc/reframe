@@ -218,7 +218,7 @@ class HPCGCheckMKL(rfm.RegressionTest, HPCGHookMixin):
 class HPCG_GPUCheck(rfm.RunOnlyRegressionTest, HPCGHookMixin):
     descr = 'HPCG benchmark on GPUs'
     # there's no binary with support for CUDA 10 yet
-    valid_systems = ['daint:gpu']
+    valid_systems = []
     valid_prog_environs = ['PrgEnv-gnu']
     modules = ['craype-accel-nvidia60', 'craype-hugepages8M']
     executable = 'xhpcg_gpu_3.1'
