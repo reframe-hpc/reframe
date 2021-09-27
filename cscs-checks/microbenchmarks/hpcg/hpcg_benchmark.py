@@ -104,15 +104,15 @@ class HPCGCheckRef(rfm.RegressionTest, HPCGHookMixin):
             self.current_partition.fullname, 1
         )
 
-    @run_before('performance')
-    def set_performance(self):
+    @performance_function('Gflop/s')
+    def gflops(self):
         num_nodes = self.num_tasks_assigned / self.num_tasks_per_node
-        self.perf_patterns = {
-            'gflops': sn.extractsingle(
-                r'HPCG result is VALID with a GFLOP\/s rating of=\s*'
-                r'(?P<perf>\S+)',
-                self.output_file, 'perf',  float) / num_nodes
-        }
+        return (
+            sn.extractsingle(
+            r'HPCG result is VALID with a GFLOP\/s rating of=\s*'
+            r'(?P<perf>\S+)',
+            self.output_file, 'perf',  float) / num_nodes
+        )
 
     @sanity_function
     def validate_passed(self):
@@ -189,18 +189,18 @@ class HPCGCheckMKL(rfm.RegressionTest, HPCGHookMixin):
             self.num_tasks_per_node = 4
             self.num_cpus_per_task = 18
 
-    @run_before('performance')
-    def set_performance(self):
+    @performance_function('Gflop/s')
+    def gflops(self):
         # since this is a flexible test, we divide the extracted
         # performance by the number of nodes and compare
         # against a single reference
         num_nodes = self.num_tasks_assigned / self.num_tasks_per_node
-        self.perf_patterns = {
-            'gflops': sn.extractsingle(
-                r'HPCG result is VALID with a GFLOP\/s rating of(=|:)\s*'
-                r'(?P<perf>\S+)',
-                self.outfile_lazy, 'perf',  float) / num_nodes
-        }
+        return (
+            sn.extractsingle(
+            r'HPCG result is VALID with a GFLOP\/s rating of(=|:)\s*'
+            r'(?P<perf>\S+)',
+            self.outfile_lazy, 'perf',  float) / num_nodes
+        )
 
     @sanity_function
     def validate_passed(self):
@@ -259,16 +259,6 @@ class HPCG_GPUCheck(rfm.RunOnlyRegressionTest, HPCGHookMixin):
     def set_exec_permissions(self):
         self.prerun_cmds = ['chmod +x %s' % self.executable]
 
-    @run_after('init')
-    def perf(self):
-        num_nodes = self.num_tasks_assigned / self.num_tasks_per_node
-        self.perf_patterns = {
-            'gflops': sn.extractsingle(
-                r'HPCG result is VALID with a GFLOP\/s rating of:\s*'
-                r'(?P<perf>\S+)',
-                self.output_file, 'perf',  float) / num_nodes
-        }
-
     @sanity_function
     def validate_passed(self):
         return sn.all([
@@ -276,6 +266,16 @@ class HPCG_GPUCheck(rfm.RunOnlyRegressionTest, HPCGHookMixin):
                 sn.findall(r'PASSED', self.output_file))),
             sn.assert_eq(0, self.num_tasks_assigned % self.num_tasks_per_node)
         ])
+
+    @performance_function('Gflop/s')
+    def gflops(self):
+        num_nodes = self.num_tasks_assigned / self.num_tasks_per_node
+        return (
+            sn.extractsingle(
+            r'HPCG result is VALID with a GFLOP\/s rating of:\s*'
+            r'(?P<perf>\S+)',
+            self.output_file, 'perf',  float) / num_nodes
+        )
 
     @property
     @deferrable
