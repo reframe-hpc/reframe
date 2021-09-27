@@ -106,9 +106,9 @@ class HPCGCheckRef(rfm.RegressionTest, HPCGHookMixin):
         num_nodes = self.num_tasks_assigned // self.num_tasks_per_node
         return (
             sn.extractsingle(
-            r'HPCG result is VALID with a GFLOP\/s rating of=\s*'
-            r'(?P<perf>\S+)',
-            self.output_file, 'perf',  float) / num_nodes
+                r'HPCG result is VALID with a GFLOP\/s rating of=\s*'
+                r'(?P<perf>\S+)',
+                self.output_file, 'perf',  float) / num_nodes
         )
 
     @sanity_function
@@ -194,9 +194,9 @@ class HPCGCheckMKL(rfm.RegressionTest, HPCGHookMixin):
         num_nodes = self.num_tasks_assigned // self.num_tasks_per_node
         return (
             sn.extractsingle(
-            r'HPCG result is VALID with a GFLOP\/s rating of(=|:)\s*'
-            r'(?P<perf>\S+)',
-            self.outfile_lazy, 'perf',  float) / num_nodes
+                r'HPCG result is VALID with a GFLOP\/s rating of(=|:)\s*'
+                r'(?P<perf>\S+)',
+                self.outfile_lazy, 'perf',  float) / num_nodes
         )
 
     @sanity_function
@@ -277,9 +277,9 @@ class HPCG_GPUCheck(rfm.RunOnlyRegressionTest, HPCGHookMixin):
         num_nodes = self.num_tasks_assigned // self.num_tasks_per_node
         return (
             sn.extractsingle(
-            r'HPCG result is VALID with a GFLOP\/s rating of:\s*'
-            r'(?P<perf>\S+)',
-            self.output_file, 'perf',  float) / num_nodes
+                r'HPCG result is VALID with a GFLOP\/s rating of:\s*'
+                r'(?P<perf>\S+)',
+                self.output_file, 'perf',  float) / num_nodes
         )
 
     @property
