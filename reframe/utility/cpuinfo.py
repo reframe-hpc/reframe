@@ -11,6 +11,7 @@ import re
 
 import reframe.utility.osext as osext
 from reframe.core.exceptions import SpawnedProcessError
+from reframe.core.logging import getlogger
 
 
 def _bits_from_str(mask_s):
@@ -206,32 +207,44 @@ def _sysctl_topo():
     match = re.search(r'hw\.ncpu: (?P<num_cpus>\d+)', exec_output.stdout)
     if match:
         num_cpus = int(match.group('num_cpus'))
+    else:
+        getlogger().warning(f'not able to detect num_cpus')
 
     match = re.search(r'hw\.physicalcpu: (?P<num_cores>\d+)',
                       exec_output.stdout)
     if match:
         num_cores = int(match.group('num_cores'))
+    else:
+        getlogger().warning(f'not able to detect num_cores')
 
     match = re.search(r'hw\.packages: (?P<num_sockets>\d+)',
                       exec_output.stdout)
     if match:
         num_sockets = int(match.group('num_sockets'))
         cpuinfo['num_sockets'] = num_sockets
+    else:
+        getlogger().warning(f'not able to detect num_sockets')
 
     match = re.search(r'hw\.cacheconfig:(?P<cacheconfig>(\s\d+)*)',
                       exec_output.stdout)
     if match:
         cacheconfig = list(map(int, match.group('cacheconfig').split()))
+    else:
+        getlogger().warning(f'not able to detect cacheconfig')
 
     match = re.search(r'hw\.cachesize:(?P<cachesize>(\s\d+)*)',
                       exec_output.stdout)
     if match:
         cachesize = list(map(int, match.group('cachesize').split()))
+    else:
+        getlogger().warning(f'not able to detect cachesize')
 
     match = re.search(r'hw\.cachelinesize: (?P<linesize>\d+)',
                       exec_output.stdout)
     if match:
         linesize = int(match.group('linesize'))
+    else:
+        getlogger().warning(f'not able to detect cache linesize')
 
     # index 0 is referring to memory
     cache_associativity = [0]
@@ -242,7 +255,13 @@ def _sysctl_topo():
         match = re.search(rf'machdep\.cpu\.cache\.L{i}_associativity: '
                           rf'(?P<associativity>\d+)',
                           exec_output.stdout)
-        assoc = int(match.group('associativity')) if match else 0
+        if match:
+            assoc = int(match.group('associativity'))
+        else:
+            assoc = 0
+            getlogger().warning(f'not able to detect L{i} cache '
+                                f'associativity')
+
         cache_associativity.append(assoc)
 
     num_cpus_per_socket = num_cpus // num_sockets
