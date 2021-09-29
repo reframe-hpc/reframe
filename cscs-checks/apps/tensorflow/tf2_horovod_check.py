@@ -5,10 +5,11 @@
 
 import reframe as rfm
 import reframe.utility.osext as osext
+
 from hpctestlib.apps.tensorflow.base_check import TensorFlow2Horovod_BaseTest
 
 
-REFERENCE_SMALL_PERFOMANCE = {
+REFERENCE_SMALL_PERFORMANCE = {
     'dom:gpu': {
         'throughput': (1712, -0.05, None, 'images/s'),
         'throughput_per_gpu': (214, -0.05, None, 'images/s'),
@@ -19,7 +20,7 @@ REFERENCE_SMALL_PERFOMANCE = {
     },
 }
 
-REFERENCE_LARGE_PERFOMANCE = {
+REFERENCE_LARGE_PERFORMANCE = {
     'daint:gpu': {
         'throughput': (6848, -0.05, None, 'images/s'),
         'throughput_per_gpu': (214, -0.05, None, 'images/s')
@@ -47,10 +48,10 @@ class TensorFlow2HorovodTestCSCS(TensorFlow2Horovod_BaseTest):
         if self.variant == 'small':
             self.valid_systems += ['dom:gpu']
             self.num_tasks = 8
-            self.reference = REFERENCE_SMALL_PERFOMANCE
+            self.reference = REFERENCE_SMALL_PERFORMANCE
         else:
             self.num_tasks = 32
-            self.reference = REFERENCE_LARGE_PERFOMANCE
+            self.reference = REFERENCE_LARGE_PERFORMANCE
 
     @run_after('init')
     def set_executable_opts(self):
