@@ -16,7 +16,6 @@ class TensorFlow2Horovod_BaseTest(rfm.RunOnlyRegressionTest):
     state-of-the-art in ML and developers easily build and deploy ML
     powered applications. (see tensorflow.org).
 
-
     Horovod is a distributed deep learning training
     framework for TensorFlow, Keras, PyTorch, and Apache
     MXNet. The goal of Horovod is to make distributed deep
@@ -31,34 +30,26 @@ class TensorFlow2Horovod_BaseTest(rfm.RunOnlyRegressionTest):
 
     descr = 'Distributed training with TensorFlow2 and Horovod'
 
-    #: Name of the model, that used for the testing
-    #:
-    #: :type: str
+    # Name of the model used for the testing
     model = 'InceptionV3'
 
-    #: Size of the batch, that used during the learning of models
-    #:
-    #: :type: int
-    #: :default: 32
+    # Size of the batch used during the learning of models
     batch_size = variable(int, value=32)
-
-    #: :default: :class:`required`
-    executable = required
 
     executable = 'python'
 
-    #: Executable script for the tests
-    #:
-    #: :type: str
+    # Executable script for the tests
     script = 'tensorflow2_synthetic_benchmark.py'
 
     @run_after('init')
     def set_prerun_cmds(self):
-        self.prerun_cmds = ['wget https://raw.githubusercontent.com/horovod/'
-                            'horovod/842d1075e8440f15e84364f494645c28bf20c3ae/'
-                            'examples/tensorflow2_synthetic_benchmark.py',
-                            'sed -i "s/weights=None/weights=None, '
-                            f'input_shape=(224, 224, 3)/g" {self.script}']
+        self.prerun_cmds = [
+            f'wget https://raw.githubusercontent.com/horovod/'
+            f'horovod/842d1075e8440f15e84364f494645c28bf20c3ae/'
+            f'examples/tensorflow2_synthetic_benchmark.py',
+            f'sed -i "s/weights=None/weights=None, '
+            f'input_shape=(224, 224, 3)/g" {self.script}'
+        ]
 
     @performance_function('images/s', perf_key='throughput_per_gpu')
     def set_perf_per_gpu(self):
