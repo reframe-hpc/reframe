@@ -23,45 +23,24 @@ class ParaView_BaseCheck(rfm.RunOnlyRegressionTest, pin_prefix=True):
     (see paraview.org)
 
     The presented abstract run-only class checks the ParaView perfomance.
-    To do this, it is necessary to define in tests the name of vendor
-    and renderer for corresponding platform. This information is used to
+    To do this, it is necessary to define in the tests the name of vendor
+    and the renderer for corresponding platform. This information is used to
     check for errors at the end of program execution. The test itself
     consists in performing a simple task for ParaView (creating a
     colored sphere). The default assumption is that ParaView is already
-    installed on the device under test.
+    installed on the system under test.
     '''
 
-    #: :default: :class:`required`
     num_tasks_per_node = required
-
-    #: :default: :class:`required`
-    executable = required
-
     executable = 'pvbatch'
     executable_opts = ['coloredSphere.py']
-
-    #: Name of vendor of graphic driver.
-    #:
-    #: :default: : 'None'
     mc_vendor = variable(str, value='None')
-
-    #: Name of graphic driver.
-    #:
-    #: :default: : 'None'
     mc_renderer = variable(str, value='None')
-
-    #: Name of processor vendor.
-    #:
-    #: :default: : 'None'
     gpu_vendor = variable(str, value='None')
-
-    #: Name of processor.
-    #:
-    #: :default: : 'None'
     gpu_renderer = variable(str, value='None')
 
     @sanity_function
-    def set_sanity(self):
+    def assert_vendor_renderer(self):
         if self.current_partition.name == 'mc':
             return sn.all([
                 sn.assert_found(f'Vendor:   {self.mc_vendor}', self.stdout),
