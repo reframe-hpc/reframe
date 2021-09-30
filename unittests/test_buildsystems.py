@@ -289,6 +289,9 @@ def test_spack_no_env(environ, tmp_path):
             f'spack install'
         ]
 
+    assert build_system.environment == 'rfm_spack_env'
+
+
 def test_easybuild(environ, tmp_path):
     build_system = bs.EasyBuild()
     build_system.easyconfigs = ['ec1.eb', 'ec2.eb']

@@ -15,7 +15,7 @@ class NamdCheck(rfm.RunOnlyRegressionTest):
     variant = parameter(['maint', 'prod'])
     arch = parameter(['gpu', 'cpu'])
 
-    valid_prog_environs = ['builtin', 'cpeIntel']
+    valid_prog_environs = ['builtin', 'cpeGNU']
     modules = ['NAMD']
     executable = 'namd2'
     use_multithreading = True
@@ -48,10 +48,8 @@ class NamdCheck(rfm.RunOnlyRegressionTest):
 
     @run_after('init')
     def adapt_valid_prog_environs(self):
-        if self.current_system.name == 'pilatus':
+        if self.current_system.name in ['eiger', 'pilatus']:
             self.valid_prog_environs.remove('builtin')
-        else:
-            self.valid_prog_environs.remove('cpeIntel')
 
     @run_after('init')
     def setup_parallel_run(self):
@@ -104,13 +102,7 @@ class NamdCheck(rfm.RunOnlyRegressionTest):
         ])
 
     @run_before('performance')
-    def setup_perf_vars(self):
-        self.perf_patterns = {
-            'days_ns': sn.avg(sn.extractall(
-                r'Info: Benchmark time: \S+ CPUs \S+ '
-                r's/step (?P<days_ns>\S+) days/ns \S+ MB memory',
-                self.stdout, 'days_ns', float))
-        }
+    def set_reference(self):
         if self.arch == 'gpu':
             if self.scale == 'small':
                 self.reference = {
@@ -135,3 +127,10 @@ class NamdCheck(rfm.RunOnlyRegressionTest):
                     'eiger:mc': {'days_ns': (0.05, None, 0.05, 'days/ns')},
                     'pilatus:mc': {'days_ns': (0.05, None, 0.05, 'days/ns')}
                 }
+
+    @performance_function('days/ns')
+    def days_ns(self):
+        return sn.avg(sn.extractall(
+            r'Info: Benchmark time: \S+ CPUs \S+ '
+            r's/step (?P<days_ns>\S+) days/ns \S+ MB memory',
+            self.stdout, 'days_ns', float))

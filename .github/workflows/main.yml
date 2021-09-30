@@ -47,6 +47,17 @@ jobs:
       run: |
         docker run reframe:${{ matrix.modules-version }}
 
+  tutorialtest:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build Image for Tutorial Tests
+      run: |
+        docker build -f ci-scripts/dockerfiles/tutorials.dockerfile -t reframe:tutorials .
+    - name: Run Tutorial Tests
+      run: |
+        docker run reframe:tutorials
+
   unusedimports:
     runs-on: ubuntu-latest
     steps:
