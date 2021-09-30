@@ -7,7 +7,6 @@ import math
 
 import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.backends import getlauncher
 
 
 class Spark_BaseCheck(rfm.RunOnlyRegressionTest, pin_prefix=True):
@@ -21,23 +20,15 @@ class Spark_BaseCheck(rfm.RunOnlyRegressionTest, pin_prefix=True):
     learning, GraphX for graph processing, and Structured Streaming for
     incremental computation and stream processing (see spark.apache.org).
 
-    The presented abstract run-only class checks the spark perfomance.
-    To do this, it is necessary to define the tolerance of admissible
-    deviation . This data is used to check if
-    the task is being executed correctly, that is, the final value of pi
-    is correct (approximately the same as obtained from library math).
-    The default assumption is that Spark is already installed on
-    the device under test.
+    The present abstract run-only class checks the Spark perfomance.
+    To do this, it is necessary to define the tolerance of acceptable
+    deviation. The tolerance is used to check if the task executed correctly,
+    comparing the value of pi calculated to the one obtained from the math
+    library. The default assumption is that Spark is already installed on the
+    system under test.
     '''
 
-    #: Name of the package to be checked
     variant = parameter(['spark', 'pyspark'])
-
-    #: Maximum deviation from the table value of pi,
-    #: that is acceptable.
-    #:
-    #: :type: float
-    #: :default: 0.01
     tolerance = variable(float, value=0.01)
 
     @run_after('init')
@@ -57,7 +48,7 @@ class Spark_BaseCheck(rfm.RunOnlyRegressionTest, pin_prefix=True):
 
     @sanity_function
     def assert_pi_readout(self):
-        '''Assert the obtained pi value meets the specified tolerances.'''
+        '''Assert that the obtained pi value meets the specified tolerances.'''
 
         pi_value = sn.extractsingle(r'Pi is roughly\s+(?P<pi>\S+)',
                                     self.stdout, 'pi', float)
