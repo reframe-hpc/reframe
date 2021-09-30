@@ -3,10 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import math
-
 import reframe as rfm
-import reframe.utility.sanity as sn
 
 from reframe.core.backends import getlauncher
 from hpctestlib.apps.spark.base_check import Spark_BaseCheck
