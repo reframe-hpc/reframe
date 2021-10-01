@@ -19,18 +19,18 @@ We first create a basic run-only test, that fetches the benchmarks:
 
 
 .. literalinclude:: ../tutorials/deps/osu_benchmarks.py
-   :lines: 130-
+   :lines: 115-
 
 This test doesn't need any specific programming environment, so we simply pick the ``builtin`` environment in the ``login`` partition.
 The build tests would then copy the benchmark code and build it for the different programming environments:
 
 .. literalinclude:: ../tutorials/deps/osu_benchmarks.py
-   :lines: 103-128
+   :lines: 88-112
 
 The only new thing that comes in with the :class:`OSUBuildTest` test is the following:
 
 .. literalinclude:: ../tutorials/deps/osu_benchmarks.py
-   :lines: 110-112
+   :lines: 95-97
 
 Here we tell ReFrame that this test depends on a test named :class:`OSUDownloadTest`.
 This test may or may not be defined in the same test file; all ReFrame needs is the test name.
@@ -46,7 +46,7 @@ The next step for the :class:`OSUBuildTest` is to set its :attr:`sourcesdir` to 
 This is achieved with the following specially decorated function:
 
 .. literalinclude:: ../tutorials/deps/osu_benchmarks.py
-   :lines: 114-119
+   :lines: 99-104
 
 The :func:`@require_deps <reframe.core.decorators.require_deps>` decorator binds each argument of the decorated function to the corresponding target dependency.
 In order for the binding to work correctly the function arguments must be named after the target dependencies.
@@ -62,7 +62,7 @@ For the next test we need to use the OSU benchmark binaries that we just built, 
 Here is the relevant part:
 
 .. literalinclude:: ../tutorials/deps/osu_benchmarks.py
-   :lines: 13-50
+   :lines: 13-45
 
 First, since we will have multiple similar benchmarks, we move all the common functionality to the :class:`OSUBenchmarkTestBase` base class.
 Again nothing new here; we are going to use two nodes for the benchmark and we set :attr:`sourcesdir <reframe.core.pipeline.RegressionTest.sourcesdir>` to ``None``, since none of the benchmark tests will use any additional resources.
@@ -79,7 +79,7 @@ The next step for the :class:`OSULatencyTest` is to set its executable to point 
 This is achieved with the following specially decorated function:
 
 .. literalinclude:: ../tutorials/deps/osu_benchmarks.py
-   :lines: 38-44
+   :lines: 35-41
 
 This concludes the presentation of the :class:`OSULatencyTest` test. The :class:`OSUBandwidthTest` is completely analogous.
 
@@ -87,7 +87,7 @@ The :class:`OSUAllreduceTest` shown below is similar to the other two, except th
 It is essentially a scalability test that is running the ``osu_allreduce`` executable created by the :class:`OSUBuildTest` for 2, 4, 8 and 16 nodes.
 
 .. literalinclude:: ../tutorials/deps/osu_benchmarks.py
-   :lines: 76-100
+   :lines: 66-85
 
 The full set of OSU example tests is shown below:
 

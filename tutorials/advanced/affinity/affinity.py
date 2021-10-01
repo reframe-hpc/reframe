@@ -23,6 +23,6 @@ class AffinityTest(rfm.RegressionTest):
     def set_cpu_binding(self):
         self.job.launcher.options = ['--cpu-bind=cores']
 
-    @run_before('sanity')
-    def set_sanity_patterns(self):
-        self.sanity_patterns = sn.assert_found(r'CPU affinity', self.stdout)
+    @sanity_function
+    def validate_test(self):
+        return sn.assert_found(r'CPU affinity', self.stdout)

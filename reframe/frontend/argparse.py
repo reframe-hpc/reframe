@@ -184,8 +184,7 @@ class _ArgumentHolder:
         kwargs['dest'] = opt_name
 
         # Convert 'store_true' and 'store_false' actions to their
-        # 'store_const' equivalents, because they otherwise imply imply a
-        # default
+        # 'store_const' equivalents, because they otherwise imply a default
         action = kwargs.get('action', None)
         if action == 'store_true' or action == 'store_false':
             kwargs['action'] = 'store_const'
