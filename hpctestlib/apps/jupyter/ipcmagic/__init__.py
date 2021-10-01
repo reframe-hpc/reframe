@@ -6,11 +6,12 @@
 import reframe as rfm
 import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
+
 from reframe.core.backends import getlauncher
 
 
 @rfm.simple_test
-class IPCMagic_BaseCheck(rfm.RunOnlyRegressionTest, pin_prefix=True):
+class IPCMagic(rfm.RunOnlyRegressionTest, pin_prefix=True):
     '''Base class for the IPCMagic Test.
 
     MPI for Python provides bindings of the Message Passing Interface
@@ -40,10 +41,9 @@ class IPCMagic_BaseCheck(rfm.RunOnlyRegressionTest, pin_prefix=True):
 
     executable = 'ipython'
 
-    #: Name of testing script
+    # Name of testing script
     executable_opts = ['tf-hvd-sgd-ipc-tf2.py']
 
-    modules = [f'ipcmagic', f'jupyterlab']
     descr = 'Distributed training with TensorFlow using ipyparallel'
 
     @performance_function('N/A', perf_key='slope')
