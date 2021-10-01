@@ -1574,18 +1574,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
            <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
            more details.
 
-
-           .. versionchanged:: 3.4
-              Overriding this method directly in no longer allowed. See `here
-              <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
-              more details.
-
         '''
         if not self._build_job:
             return True
 
-        t = self._build_job.finished()
-        return t
+        return self._build_job.finished()
 
     @final
     def run_complete(self):

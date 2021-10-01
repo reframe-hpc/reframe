@@ -158,13 +158,13 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def on_task_run(self, task):
         pass
 
-    def on_task_build(self, task):
+    def on_task_compile(self, task):
         pass
 
     def on_task_exit(self, task):
         pass
 
-    def on_task_build_exit(self, task):
+    def on_task_compile_exit(self, task):
         pass
 
     def on_task_skip(self, task):
@@ -234,7 +234,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._task_index = {}
 
         # All currently building tasks per partition
-        self._building_tasks = {}
+        self._build_tasks = {}
 
         # All currently running tasks per partition
         self._running_tasks = {}
@@ -276,7 +276,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         )
         try:
             partname = task.check.current_partition.fullname
-            self._building_tasks[partname].remove(task)
+            self._build_tasks[partname].remove(task)
         except (ValueError, AttributeError, KeyError):
             getlogger().debug2('Task was not building')
             pass
@@ -306,9 +306,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         partname = task.check.current_partition.fullname
         self._running_tasks[partname].append(task)
 
-    def on_task_build(self, task):
+    def on_task_compile(self, task):
         partname = task.check.current_partition.fullname
-        self._building_tasks[partname].append(task)
+        self._build_tasks[partname].append(task)
 
     def on_task_skip(self, task):
         # Remove the task from the running list if it was skipped after the
@@ -319,7 +319,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 self._running_tasks[partname].remove(task)
 
             if task.failed_stage in ('compile_complete', 'compile_wait'):
-                self._building_tasks[partname].remove(task)
+                self._build_tasks[partname].remove(task)
 
         msg = str(task.exc_info[1])
         self.printer.status('SKIP', msg, just='right')
@@ -367,7 +367,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._remove_from_running(task)
         self._completed_tasks.append(task)
 
-    def on_task_build_exit(self, task):
+    def on_task_compile_exit(self, task):
         task.compile_wait()
         self._remove_from_building(task)
         self._reschedule_run(task)
@@ -404,7 +404,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
         # Set partition-based counters, if not set already
         self._running_tasks.setdefault(partition.fullname, [])
-        self._building_tasks.setdefault(partition.fullname, [])
+        self._build_tasks.setdefault(partition.fullname, [])
         self._ready_tasks.setdefault(partition.fullname, [])
         self._max_jobs.setdefault(partition.fullname, partition.max_jobs)
 
@@ -445,7 +445,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         except TaskExit:
             if not task.failed and not task.skipped:
                 with contextlib.suppress(TaskExit):
-                    self._reschedule(task)
+                    self._reschedule_compile(task)
 
             return
         except ABORT_REASONS as e:
@@ -458,18 +458,18 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def _poll_tasks(self):
         '''Update the counts of running checks per partition.'''
 
-        def split_jobs(tasks, build_split=False, build_jobs=False):
+        def split_jobs(tasks, split_build_jobs=False):
             '''Split jobs into forced local and normal ones.'''
             forced_local = []
             normal = []
             for t in tasks:
-                if t.check.local or (build_split and t.check.build_locally):
-                    if build_jobs:
+                if t.check.local or (split_build_jobs and t.check.build_locally):
+                    if split_build_jobs:
                         forced_local.append(t.check.build_job)
                     else:
                         forced_local.append(t.check.job)
                 else:
-                    if build_jobs:
+                    if split_build_jobs:
                         normal.append(t.check.build_job)
                     else:
                         normal.append(t.check.job)
@@ -491,18 +491,17 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             for t in self._running_tasks[partname][:]:
                 t.run_complete()
 
-            num_tasks = len(self._building_tasks[partname])
+            num_tasks = len(self._build_tasks[partname])
             getlogger().debug2(f'Polling {num_tasks} building task(s) in '
                                f'{partname!r}')
             forced_local_jobs, part_jobs = split_jobs(
-                self._building_tasks[partname], build_split=True,
-                build_jobs=True
+                self._build_tasks[partname], split_build_jobs=True
             )
             part.scheduler.poll(*part_jobs)
             self.local_scheduler.poll(*forced_local_jobs)
 
-            # Trigger notifications for finished jobs
-            for t in self._building_tasks[partname][:]:
+            # Trigger notifications for finished compilation jobs
+            for t in self._build_tasks[partname][:]:
                 t.compile_complete()
 
     def _setup_all(self):
@@ -551,8 +550,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                                     self._completed_tasks):
             task.abort(cause)
 
-    def _reschedule(self, task):
-        getlogger().debug2(f'Scheduling test case {task.testcase} for running')
+    def _reschedule_compile(self, task):
+        getlogger().debug2(f'Scheduling test case {task.testcase} for compiling')
         task.compile()
 
     def _reschedule_run(self, task):
@@ -570,7 +569,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 except IndexError:
                     break
 
-                self._reschedule(task)
+                self._reschedule_compile(task)
                 num_rescheduled += 1
 
             if num_rescheduled:
@@ -583,7 +582,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                                'waiting for spawned checks to finish')
         while (countall(self._running_tasks) or self._waiting_tasks or
                self._completed_tasks or countall(self._ready_tasks) or
-               countall(self._building_tasks)):
+               countall(self._build_tasks)):
             getlogger().debug2(f'Running tasks: '
                                f'{countall(self._running_tasks)}')
             try:

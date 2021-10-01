@@ -52,7 +52,7 @@ A `job descriptor <regression_test_api.html#reframe.core.pipeline.RegressionTest
 The Build Phase
 ---------------
 
-During this phase a job script associated with the compilation of the test will be created and it will be submitted for execution.
+During this phase a job script for the compilation of the test will be created and it will be submitted for execution.
 The source code associated with the test is compiled using the current programming environment.
 If the test is `"run-only," <regression_test_api.html#reframe.core.pipeline.RunOnlyRegressionTest>`__ this phase is a no-op.
 

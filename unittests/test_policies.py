@@ -545,10 +545,10 @@ class _TaskEventMonitor(executors.TaskEventListener):
         last = self.num_tasks[-1]
         self.num_tasks.append(last - 1)
 
-    def on_task_build(self, task):
+    def on_task_compile(self, task):
         pass
 
-    def on_task_build_exit(self, task):
+    def on_task_compile_exit(self, task):
         pass
 
     def on_task_success(self, task):

@@ -286,7 +286,7 @@ class RegressionTask:
 
     def compile(self):
         self._safe_call(self.check.compile)
-        self._notify_listeners('on_task_build')
+        self._notify_listeners('on_task_compile')
 
     def compile_wait(self):
         self._safe_call(self.check.compile_wait)
@@ -306,7 +306,7 @@ class RegressionTask:
     def compile_complete(self):
         done = self._safe_call(self.check.compile_complete)
         if done:
-            self._notify_listeners('on_task_build_exit')
+            self._notify_listeners('on_task_compile_exit')
 
         return done
 
@@ -378,16 +378,16 @@ class TaskEventListener(abc.ABC):
         '''Called whenever the run() method of a RegressionTask is called.'''
 
     @abc.abstractmethod
-    def on_task_build(self, task):
-        '''Called whenever the build() method of a RegressionTask is called.'''
+    def on_task_compile(self, task):
+        '''Called whenever the compile() method of a RegressionTask is called.'''
 
     @abc.abstractmethod
     def on_task_exit(self, task):
         '''Called whenever a RegressionTask finishes.'''
 
     @abc.abstractmethod
-    def on_task_build_exit(self, task):
-        '''Called whenever a RegressionTask build finishes.'''
+    def on_task_compile_exit(self, task):
+        '''Called whenever a RegressionTask compilation phase finishes.'''
 
     @abc.abstractmethod
     def on_task_skip(self, task):
