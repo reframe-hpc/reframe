@@ -33,6 +33,21 @@ jobs:
       with:
         fail_ci_if_error: true
 
+  unittest-macos:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+    - name: Install dependencies
+      run: |
+        ./bootstrap.sh
+    - name: Generic Unittests
+      run: |
+        ./test_reframe.py
+
   modulestest:
     runs-on: ubuntu-latest
     strategy:
