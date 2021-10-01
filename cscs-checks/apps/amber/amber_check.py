@@ -6,11 +6,11 @@
 import contextlib
 
 import reframe as rfm
-from hpctestlib.apps.amber.nve import Amber_NVE
+from hpctestlib.apps.amber.nve import amber_nve_check
 
 
 @rfm.simple_test
-class amber_check(Amber_NVE):
+class amber_check_cscs(amber_nve_check):
     modules = ['Amber']
     valid_prog_environs = ['builtin']
     extra_resources = {
@@ -67,8 +67,8 @@ class amber_check(Amber_NVE):
     @run_after('init')
     def scope_systems(self):
         valid_systems = {
-            'gpu': {1: ['daint:gpu', 'dom:gpu']},
-            'cpu': {
+            'cuda': {1: ['daint:gpu', 'dom:gpu']},
+            'mpi': {
                 4: ['eiger:mc', 'pilatus:mc'],
                 6: ['daint:mc', 'dom:mc'],
                 8: ['pilatus:mc'],
@@ -76,7 +76,7 @@ class amber_check(Amber_NVE):
             }
         }
         try:
-            self.valid_systems = valid_systems[self.platform][self.num_nodes]
+            self.valid_systems = valid_systems[self.variant][self.num_nodes]
         except KeyError:
             self.valid_systems = []
 
@@ -87,7 +87,7 @@ class amber_check(Amber_NVE):
 
     @run_after('init')
     def set_num_gpus_per_node(self):
-        if self.platform == 'gpu':
+        if self.variant == 'cuda':
             self.num_gpus_per_node = 1
 
     @run_after('setup')
@@ -99,7 +99,7 @@ class amber_check(Amber_NVE):
 
     @run_after('setup')
     def set_num_tasks(self):
-        if self.platform == 'gpu':
+        if self.variant == 'cuda':
             self.num_tasks_per_node = 1
         else:
             proc = self.current_partition.processor
@@ -119,7 +119,7 @@ class amber_check(Amber_NVE):
 
         with contextlib.suppress(KeyError):
             self.reference = {
-                '*': {
+                pname: {
                     'perf': self.allref[self.num_nodes][arch][self.benchmark]
                 }
             }

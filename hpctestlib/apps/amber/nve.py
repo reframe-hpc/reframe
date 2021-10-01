@@ -8,7 +8,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-class Amber_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
+class amber_nve_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
     '''Base class for the Amber NVE Test.
 
     Amber is a suite of biomolecular simulation programs. It
@@ -54,7 +54,7 @@ class Amber_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
 
     #: Parameter pack containing the platform ID, input file and
     #: executable.
-    platform = parameter(['cpu', 'gpu'])
+    variant = parameter(['mpi', 'cuda'])
 
     #: NVE simulation parameter pack with the benchmark name,
     #: energy reference and energy tolerance for each case.
@@ -66,23 +66,36 @@ class Amber_NVE(rfm.RunOnlyRegressionTest, pin_prefix=True):
     ])
     tags = {'sciapp', 'chemistry'}
 
-    @run_after('init')
-    def prepare_test(self):
-        params = {
-            'cpu': ('mdin.CPU', 'pmemd.MPI'),
-            'gpu': ('mdin.GPU', 'pmemd.cuda.MPI')
-        }
-        with contextlib.suppress(KeyError):
-            self.input_file, self.executable = params[self.platform]
+    #: Number of tasks to use
+    num_tasks = required
 
+    @run_after('init')
+    def set_energy_references(self):
         energies = {
             'Cellulose_production_NVE': (-443246.0, 5.0E-05),
             'FactorIX_production_NVE': (-234188.0, 1.0E-04),
             'JAC_production_NVE_4fs': (-44810.0, 1.0E-03),
             'JAC_production_NVE': (-58138.0, 5.0E-04)
         }
-        with contextlib.suppress(KeyError):
+        try:
             self.energy_value, self.energy_tolerance = energies[self.benchmark]
+        except KeyError:
+            raise ValueError(
+                f'no energy reference set for benchmark {self.benchmark!r}'
+            ) from None
+
+    @run_after('init')
+    def prepare_test(self):
+        params = {
+            'mpi':  ('mdin.CPU', 'pmemd.MPI'),
+            'cuda': ('mdin.GPU', 'pmemd.cuda.MPI')
+        }
+        try:
+            self.input_file, self.executable = params[self.variant]
+        except KeyError:
+            raise ValueError(
+                f'test not set up for platform {self.variant!r}'
+            ) from None
 
         self.prerun_cmds = [
             # cannot use wget because it is not installed on eiger
