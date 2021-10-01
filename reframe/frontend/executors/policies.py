@@ -6,6 +6,7 @@
 import contextlib
 import functools
 import itertools
+import math
 import sys
 import time
 
@@ -63,9 +64,10 @@ class _PollController:
     def snooze(self):
         t_elapsed = time.time() - self._t_init
         self._num_polls += 1
+        poll_rate = self._num_polls / t_elapsed if t_elapsed else math.inf
         getlogger().debug2(
             f'Poll rate control: sleeping for {self._sleep_duration}s '
-            f'(current poll rate: {self._num_polls/t_elapsed} polls/s)'
+            f'(current poll rate: {poll_rate} polls/s)'
         )
         time.sleep(self._sleep_duration)
 

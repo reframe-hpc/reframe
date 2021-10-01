@@ -23,23 +23,28 @@ from reframe.core.logging import getlogger
 
 
 class FixtureRegistry:
-    '''Registry to store multiple fixture variants from multiple classes.
+    '''Regression test fixture registry.
 
-    A given regression test class might lead to multiple fixtures. Hence,
-    this registry stores the fixtures in key-value mappings, where the
-    key is the class deriving from the
-    :class:`reframe.pipeline.core.RegressionTest` class and the values are
-    sub-mappings for all the different fixture variants arising from each
-    class. These sub-mappings use the unique fixture ID (i.e. the ``name``)
-    as keys, and a tuple with the fixture variant, valid systems and valid
-    programming environments as values.
+    This registry consists of a dictionary where the keys are the fixture
+    classes and the values are dictionaries containing raw data that
+    identifies each of the registered fixtures to be instantiated from the
+    fixture class.
 
-    This registry defines the naming convention to generate the unique IDs
-    for each fixture variants and give support for the different scopes.
-    This is resolved by the ``add`` method below.
+    This registry mangles the fixture name to account for the fixture scope and
+    other fixture-specific details that make the fixture unique. This name
+    mangling ensures that two different fixtures from the same class do not
+    have the same name. In this context, a fixture variant is determined by the
+    fixture scope and a 4-element tuple containing the class variant number, a
+    list with the valid environments, another list with the valid partitions
+    and a key-value pair mapping with any fixture variables that may be set
+    during the instantiation of the fixture class.
 
-    A test that modifies the ``name`` attribute will result into undefined
-    behavior.
+    Fixtures are added to the registry with the :func:`add` method, and the
+    registered fixtures can be instantiated with the :func:`instantiate_all`
+    method.
+
+    Since the fixture name is mangled to be unique, a fixture that
+    modifies its :attr:`name` attribute may result in an undefined behaviour.
 
     :meta private:
     '''
@@ -51,43 +56,63 @@ class FixtureRegistry:
         sys_part = runtime.runtime().system.partitions
         self._part_map = {p.fullname: i for i, p in enumerate(sys_part)}
 
-    def add(self, fixture, variant_num, branch, partitions, prog_envs):
-        '''Add a fixture to the registry.
+    def add(self, fixture, variant_num, parent_name, partitions, prog_envs):
+        '''Register a fixture.
 
-        This function handles the naming convention to avoid the clash when
-        multiple tests use the same fixtures with the different scope levels.
-        Fixtures steal the ``valid_systems`` and ``valid_prog_environs`` from
-        the parent test. The nummber of env+partition combinations that get
-        stolen from the parent test depends on the fixture's scope level:
-         - session: Only one env+part combination per fixture.
-         - partition: Only one environment per partition.
-         - environment: One test per available part-env combination.
-         - test: Use the ``valid_systems`` and ``valid_prog_environs`` from the
-           root test without any modification. Fixtures with this scope are not
-           shared with any other tests, so their name contains the full tree
-           branch leading up to the fixture (this is to avoid collisions with
-           any other branches).
+        This method mangles the fixture name, ensuring that different fixture
+        variants (see above for the definition of a fixture variant in the
+        context of a fixture registry) have a different name. This method
+        is aware of the public members from the :class:`TestFixture`.
+        Fixtures `steal` the valid environments and valid partitions from
+        their parent test, where the number of combinations that trickle
+        down into the fixture varies depending on the fixture's scope.
+        The rationale is as follows for the different scopes:
+         - session: Only one environment+partition combination per fixture.
+               This kind of fixture may be shared across all tests. The name
+               for fixtures with this scope is not mangled by this registry.
+         - partition: Only one environment per partition. This kind of fixture
+               may be shared amongst all the tests running on the same
+               partition. The name is mangled to include the partition where
+               fixture will run.
+         - environment: One fixture per available environment+partition
+               combination. This kind of fixture may be shared only with
+               other tests that execute on the same environment+partition
+               combination. The name is mangled to contain the partition and
+               the environment where the fixture will run.
+         - test: Use the environments and partitions from the parent test
+               without any modifications. Fixtures using this scope are
+               private to the parent test and they will not be shared with
+               any other test in the session. The fixture name is mangled to
+               contain the name of the parent test the fixture belongs to.
 
-        This method returns a list with the names of the newly registered
-        fixtures.
+        If a fixture modifies the default value of any of its attributes,
+        these modified variables are always mangled into the fixture name
+        regardless of the scope used.
+
+        This method returns a list with the mangled names of the newly
+        registered fixtures.
 
         :param fixture: An instance of :class:`TestFixture`.
-        :param variant_num: The variant index to instantiate the fixture with.
-        :param branch: The branch the fixture belongs to.
-        :param partitions: The system partitions supported by the root test.
-        :param prog_envs: The valid programming environments from the root.
+        :param variant_num: The variant index for the given ``fixture``.
+        :param parent_name: The full name of the parent test. This argument
+            is used to mangle the fixture name for those with a ``'test'``
+            scope, such that the fixture is private to its parent test.
+        :param partitions: The system partitions supported by the parent test.
+        :param prog_envs: The valid programming environments from the parent.
         '''
 
         cls = fixture.cls
         scope = fixture.scope
         fname = fixture.get_name(variant_num)
         variables = fixture.variables
+        reg_names = []
+        self._reg.setdefault(cls, dict())
+
+        # Mangle the fixture name with the modified variables
         fname += ''.join(
             (f'%{k}={utils.toalphanum(str(v))}' for k, v
              in variables.items())
         )
-        reg_names = []
-        self._reg.setdefault(cls, dict())
 
         # Select only the valid partitions
         valid_partitions = self._filter_valid_partitions(partitions)
@@ -97,7 +122,7 @@ class FixtureRegistry:
             # The name is just the class name
             name = fname
 
-            # Select an environment supported by the partition
+            # Select an environment supported by a partition
             valid_envs = self._filter_valid_environs(valid_partitions[0],
                                                      prog_envs)
 
@@ -108,7 +133,7 @@ class FixtureRegistry:
             reg_names.append(name)
         elif scope == 'partition':
             for p in valid_partitions:
-                # The name contains the full partition name
+                # The mangled name contains the full partition name
                 name = '~'.join([fname, p])
 
                 # Select an environment supported by the partition
@@ -122,7 +147,7 @@ class FixtureRegistry:
         elif scope == 'environment':
             for p in valid_partitions:
                 for env in self._filter_valid_environs(p, prog_envs):
-                    # The name contains the full part and env names
+                    # The mangled name contains the full part and env names
                     name = '~'.join([fname, '+'.join([p, env])])
 
                     # Register the fixture
@@ -131,12 +156,12 @@ class FixtureRegistry:
                     )
                     reg_names.append(name)
         elif scope == 'test':
-            # The name contains the full tree branch.
-            name = '~'.join([fname, branch])
+            # The mangled name contains the parent test name.
+            name = '~'.join([fname, parent_name])
 
             # Register the fixture
             self._reg[cls][name] = (
-                variant_num, list(prog_envs), list(partitions),
+                variant_num, list(prog_envs), list(valid_partitions),
                 variables
             )
             reg_names.append(name)
@@ -147,7 +172,12 @@ class FixtureRegistry:
         '''Extend the current registry with the items from another registry.
 
         In the event of a clash, the elements from ``other`` take precedence.
+        Clashes are allowed because they would only happen when two fixtures
+        are equivalent (for example, for a fixture with ``'session'`` scope is
+        irrelevant which partition or environment is selected to run the
+        fixture).
         '''
+
         self._is_registry(other)
         for cls, variants in other._reg.items():
             self._reg.setdefault(cls, dict())
@@ -160,6 +190,7 @@ class FixtureRegistry:
         The resulting registry contains the elements from the current registry
         that are not present in ``other``.
         '''
+
         self._is_registry(other)
         ret = FixtureRegistry()
         for cls, variants in self._reg.items():
@@ -176,6 +207,7 @@ class FixtureRegistry:
 
     def instantiate_all(self):
         '''Instantiate all the fixtures in the registry.'''
+
         ret = []
         for cls, variants in self._reg.items():
             for name, args in variants.items():
@@ -239,10 +271,11 @@ class FixtureRegistry:
 
     def _is_registry(self, other):
         if not isinstance(other, FixtureRegistry):
-            raise TypeError('argument is not a FixtureRegistry')
+            raise TypeError('other is not a FixtureRegistry')
 
     def __getitem__(self, cls):
         '''Return the names of all registered fixtures from a given class.'''
+
         try:
             return self._reg[cls]
         except KeyError:
@@ -256,19 +289,18 @@ class TestFixture:
     '''Regression test fixture class.
 
     A fixture is a regression test that generates a resource that must exist
-    before the parent test is executed.
-    A fixture is a class that derives from the
-    :class:`reframe.core.pipeline.RegressionTest` class and serves as a
-    building block to compose a more complex test structure.
-    Since fixtures are full ReFrame tests on their own, a fixture can have
-    multiple fixtures, and so on; building a tree-like structure.
+    before the parent test is executed. A fixture is a class that derives from
+    the :class:`reframe.core.pipeline.RegressionTest` class and serves as a
+    building block to compose a more complex test structure. Since fixtures are
+    full ReFrame tests on their own, a fixture can have multiple fixtures, and
+    so on; building a tree-like structure.
 
     However, a given fixture may be shared by multiple regression tests that
     need the same resource. This can be achieved by setting the appropriate
-    scope level on which the fixture should be shared.
-    By default, fixtures are registered with the ``'test'`` scope, which makes
-    each fixture "private" to each of the parent tests. Hence, if all fixtures
-    use this scope, the resulting fixture hierarchy can be thought of multiple
+    scope level on which the fixture should be shared. By default, fixtures
+    are registered with the ``'test'`` scope, which makes each fixture
+    `private` to each of the parent tests. Hence, if all fixtures use this
+    scope, the resulting fixture hierarchy can be thought of multiple
     independent trees that emanate from each root regression test. On the other
     hand, setting a more relaxed scope that allows resource sharing across
     different regression tests will effectively interconnect the fixture trees
@@ -278,21 +310,27 @@ class TestFixture:
     ``'environment'``, ``'partition'`` and ``'session'``. Fixtures with
     a scope set to either ``'partition'`` or ``'session'`` must derive from
     the :class:`reframe.core.pipeline.RunOnlyRegressionTest` class, since the
-    generated resource must not depend on the programming environment.
+    generated resource must not depend on the programming environment. Fixtures
+    with scopes set to either ``'environment'`` or ``'test'`` can derive from
+    any derived class from :class:`reframe.core.pipeline.RegressionTest`.
 
     Fixtures may be parameterized, where a regression test that uses a
     parameterized fixture is by extension a parameterized test. Hence, the
     number of test variants of a test will depend on the test parameters and
     the parameters of each of the fixtures that compose the parent test. Each
     possible parameter-fixture combination has a unique ``variant_num``, which
-    is an index in the range from ``[0, cls.num_variants)``. This is for a
-    ``'fork'`` action. When a ``'join'`` action is specified, the parent test
-    will reduce all the fixture variants from a single root test instance.
+    is an index in the range from ``[0, cls.num_variants)``. This is the
+    default behaviour and it is achieved when the action argument is set to
+    ``'fork'``. On the other hand, if this argument is set to a ``'join'``
+    action, the parent test will reduce all the fixture variants.
 
     The variants from a given fixture to be used by the parent test can be
     filtered out through the variants optional argument. This can either be
     a list of the variant numbers to be used, or it can be a dictionary with
     conditions on the parameter space of the fixture.
+
+    Also, a fixture may set or update the default value of a test variable
+    by passing the appropriate key-value mapping as the ``variables`` argument.
 
     :meta private:
     '''
@@ -388,10 +426,10 @@ class TestFixture:
 
         If the fixture action was set to ``'fork'``, the fork variants match
         the fixture variants. Thus, parameterizing a fixture is effectively
-        a parameterisation of the root test. On the other hand, if the fixture
-        was specified a ``'join'`` action, the fixture variants will not
-        translate into more variants (forks) of the root test, and this root
-        test will instead gather all the fixture variants under the same
+        a parameterisation of the parent test. On the other hand, if the
+        fixture was specified a ``'join'`` action, the fixture variants will
+        not translate into more variants (forks) of the parent test, and this
+        parent test will instead gather all the fixture variants under the same
         instance. To achieve this special behavior, the list of fork variants
         is set to ``[None]``.
         '''
@@ -413,7 +451,7 @@ class FixtureSpace(namespaces.Namespace):
     in the base classes, and later extended by the locally defined fixtures
     that are expected in the local fixture space. Defining fixtures with the
     same name in more than one of the base classes is disallowed. However,
-    a fixture defined in a base class can be overridden bya fixture defined
+    a fixture defined in a base class can be overridden by a fixture defined
     in the derived class under the same name.
 
     The fixture injection occurs on an instance of the target class. The
@@ -474,7 +512,7 @@ class FixtureSpace(namespaces.Namespace):
     def inject(self, obj, cls=None, fixture_variant=None):
         '''Build fixture registry and inject it in the parent's test instance.
 
-        A fixture steals the valid_systems and valid_prog_environments from the
+        A fixture steals the valid_systems and valid_prog_environs from the
         parent tests, and these attributes could be set during the parent
         test's instantiation. Similarly, the fixture registry requires of the
         parent test's full name to build unique IDs for fixtures with the
