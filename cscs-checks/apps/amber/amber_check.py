@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import contextlib
-
 import reframe as rfm
 from hpctestlib.apps.amber.nve import amber_nve_check
 
