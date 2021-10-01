@@ -30,19 +30,17 @@ class Spark_BaseCheck(rfm.RunOnlyRegressionTest, pin_prefix=True):
 
     variant = parameter(['spark', 'pyspark'])
     tolerance = variable(float, value=0.01)
+    prerun_cmds = ['start-all.sh']
+    postrun_cmds = ['stop-all.sh']
+    executable = 'spark-submit'
+    executable_opts = required
 
     @run_after('init')
     def set_description(self):
         self.mydescr = f'Simple calculation of pi with {self.variant}'
 
     @run_before('run')
-    def set_run_cmds(self):
-        self.prerun_cmds = ['start-all.sh']
-        self.postrun_cmds = ['stop-all.sh']
-
-    @run_before('run')
-    def set_executable_opts(self):
-        self.executable = 'spark-submit'
+    def set_pyspark_opts(self):
         if self.variant == 'pyspark':
             self.executable_opts.append('spark_pi.py')
 
