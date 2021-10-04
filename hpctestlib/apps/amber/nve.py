@@ -5,62 +5,63 @@
 
 import reframe as rfm
 import reframe.utility.sanity as sn
-import reframe.utility.typecheck as typ
 
 
 class amber_nve_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
-    '''Base class for the Amber NVE Test.
+    '''Amber NVE test.
 
-    Amber is a suite of biomolecular simulation programs. It
-    began in the late 1970's, and is maintained by an active
-    development community (see ambermd.org).
+    `Amber <https://ambermd.org/>`__ is a suite of biomolecular simulation
+    programs. It began in the late 1970's, and is maintained by an active
+    development community.
 
-    The presented abstract run-only class checks the amber perfomance.
-    To do this, it is necessary to define in tests the name
-    of the running script (input file), the output file,
-    as well as set the reference values of energy and possible
-    deviations from this value. This data is used to check if
-    the task is being executed correctly, that is, the final energy
-    is correct (approximately the reference). The default assumption
-    is that Amber is already installed on the device under test.
+    This test is parametrized over the benchmark type (see
+    :attr:`benchmark_info`) and the variant of the code (see :attr:`variant`).
+    Each test instance executes the benchmark, validates numerically its output
+    and extracts and reports a performance metric.
+
     '''
 
     #: The output file to pass to the Amber executable.
     #:
-    #: :type: `str`
+    #: :type: :class:`str`
+    #: :required: No
     #: :default: ``'amber.out'``
     output_file = variable(str, value='amber.out')
 
     #: The input file to use.
     #:
-    #: The library sets this file to ``mdin.CPU`` or ``mdin.GPU`` depending on
-    #: the test variant.
+    #: This is set to ``mdin.CPU`` or ``mdin.GPU`` depending on the test
+    #: variant during initialization.
     #:
-    #: :default: :obj:`required`
+    #: :type: :class:`str`
+    #: :required: Yes
     input_file = variable(str)
 
     #: The name of the benchmark that this test encodes.
     #:
-    #: :type: `str`
-    #: :required:
-    #: :default: Set by the corresponding value in the :attr:`benchmark_info`
-    #:   parameter pack during initialisation.
+    #: This is set from the corresponding value in the :attr:`benchmark_info`
+    #: parameter pack during initialization.
+    #:
+    #: :type: :class:`str`
+    #: :required: Yes
     benchmark = variable(str)
 
     #: Energy value reference.
     #:
+    #: This is set from the corresponding value in the :attr:`benchmark_info`
+    #: parameter pack during initialization.
+    #:
     #: :type: `float`
-    #: :required:
-    #: :default: Set by the corresponding value in the :attr:`benchmark_info`
-    #:   parameter pack during initialisation.
+    #: :required: Yes
     energy_ref = variable(float)
 
     #: Energy value tolerance.
     #:
+    #: This is set from the corresponding value in the :attr:`benchmark_info`
+    #: parameter pack during initialization.
+    #:
     #: :type: `float`
-    #: :required:
-    #: :default: Set by the corresponding value in the :attr:`benchmark_info`
-    #:   parameter pack during initialisation.
+    #: :required: Yes
     energy_tol = variable(float)
 
     #: Parameter pack encoding the benchmark information.
@@ -69,7 +70,7 @@ class amber_nve_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
     #: the second is the energy reference and the third is the
     #: tolerance threshold.
     #:
-    #: :type:`Tuple[str, float, float]`
+    #: :type: `Tuple[str, float, float]`
     #: :values:
     #:     .. code-block:: python
     #:
@@ -79,7 +80,6 @@ class amber_nve_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
     #:            ('JAC_production_NVE_4fs', -44810.0, 1.0E-03),
     #:            ('JAC_production_NVE', -58138.0, 5.0E-04)
     #:        ]
-    #:
     benchmark_info = parameter([
         ('Cellulose_production_NVE', -443246.0, 5.0E-05),
         ('FactorIX_production_NVE', -234188.0, 1.0E-04),
@@ -95,10 +95,15 @@ class amber_nve_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
 
     # Test tags
     #
+    # :required: No
     # :default: ``{'sciapp', 'chemistry'}``
     tags = {'sciapp', 'chemistry'}
 
-    #: The :attr:`~reframe.core.pipeline.RegressionTest.num_tasks` is required
+    #: See :attr:`~reframe.core.pipeline.RegressionTest.num_tasks`.
+    #:
+    #: The ``mpi`` variant of the test requires ``num_tasks > 1``.
+    #:
+    #: :required: Yes
     num_tasks = required
 
     @run_after('init')
