@@ -9,7 +9,7 @@ from hpctestlib.apps.amber.nve import amber_nve_check
 
 
 @rfm.simple_test
-class amber_check_cscs(amber_nve_check):
+class cscs_amber_check(amber_nve_check):
     modules = ['Amber']
     valid_prog_environs = ['builtin']
     extra_resources = {
