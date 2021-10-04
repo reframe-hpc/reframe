@@ -20,9 +20,9 @@ class EchoRandTest(rfm.RunOnlyRegressionTest):
         f'$((RANDOM%({upper}+1-{lower})+{lower}))'
     ]
 
-    @run_before('sanity')
-    def set_sanity_patterns(self):
-        self.sanity_patterns = sn.assert_bounded(
+    @sanity_function
+    def assert_solution(self):
+        return sn.assert_bounded(
             sn.extractsingle(
                 r'Random: (?P<number>\S+)', self.stdout, 'number', float
             ),
