@@ -34,10 +34,30 @@ class ParaView_BaseCheck(rfm.RunOnlyRegressionTest, pin_prefix=True):
     num_tasks_per_node = required
     executable = 'pvbatch'
     executable_opts = ['coloredSphere.py']
-    mc_vendor = variable(str, value='None')
-    mc_renderer = variable(str, value='None')
-    gpu_vendor = variable(str, value='None')
-    gpu_renderer = variable(str, value='None')
+
+    #: The vendor of the renderer in case of non-gpu hardware
+    #:
+    #: :type: :class:`str`
+    #: :required: No
+    mc_vendor = variable(str, 'None')
+
+    #: The renderer in case of non-gpu hardware
+    #:
+    #: :type: :class:`str`
+    #: :required: No
+    mc_renderer = variable(str, 'None')
+
+    #: The vendor of the gpu
+    #:
+    #: :type: :class:`str`
+    #: :required: No
+    gpu_vendor = variable(str, 'None')
+
+    #: The renderer used by the gpu
+    #:
+    #: :type: :class:`str`
+    #: :required: No
+    gpu_renderer = variable(str, 'None')
 
     @sanity_function
     def assert_vendor_renderer(self):
