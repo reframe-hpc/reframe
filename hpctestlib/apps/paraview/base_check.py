@@ -39,25 +39,29 @@ class ParaView_BaseCheck(rfm.RunOnlyRegressionTest, pin_prefix=True):
     #:
     #: :type: :class:`str`
     #: :required: No
-    mc_vendor = variable(str, 'None')
+    #: :default: ``'N/A'``
+    mc_vendor = variable(str, value='N/A')
 
     #: The renderer in case of non-gpu hardware
     #:
     #: :type: :class:`str`
     #: :required: No
-    mc_renderer = variable(str, 'None')
+    #: :default: ``'N/A'``
+    mc_renderer = variable(str, value='N/A')
 
     #: The vendor of the gpu
     #:
     #: :type: :class:`str`
     #: :required: No
-    gpu_vendor = variable(str, 'None')
+    #: :default: ``'N/A'``
+    gpu_vendor = variable(str, value='N/A')
 
     #: The renderer used by the gpu
     #:
     #: :type: :class:`str`
     #: :required: No
-    gpu_renderer = variable(str, 'None')
+    #: :default: ``'N/A'``
+    gpu_renderer = variable(str, value='N/A')
 
     @sanity_function
     def assert_vendor_renderer(self):
