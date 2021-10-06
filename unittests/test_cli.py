@@ -11,6 +11,7 @@ import os
 import pytest
 import re
 import sys
+import time
 
 import reframe.core.environments as env
 import reframe.frontend.runreport as runreport
@@ -474,9 +475,7 @@ def test_execution_modes(run_reframe):
 
 
 def test_timestamp_option(run_reframe):
-    from datetime import datetime
-
-    timefmt = datetime.now().strftime('xxx_%F')
+    timefmt = time.strftime('xxx_%F')
     returncode, stdout, _ = run_reframe(
         checkpath=['unittests/resources/checks'],
         action='list',
@@ -484,6 +483,17 @@ def test_timestamp_option(run_reframe):
     )
     assert returncode == 0
     assert timefmt in stdout
+
+
+def test_timestamp_option_default(run_reframe):
+    timefmt_date_part = time.strftime('%FT')
+    returncode, stdout, _ = run_reframe(
+        checkpath=['unittests/resources/checks'],
+        action='list',
+        more_options=['-R', '--timestamp']
+    )
+    assert returncode == 0
+    assert timefmt_date_part in stdout
 
 
 def test_list_empty_prgenvs_check_and_options(run_reframe):

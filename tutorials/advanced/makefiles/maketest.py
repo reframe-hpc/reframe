@@ -22,11 +22,9 @@ class MakefileTest(rfm.RegressionTest):
     def set_compiler_flags(self):
         self.build_system.cppflags = [f'-DELEM_TYPE={self.elem_type}']
 
-    @run_before('sanity')
-    def set_sanity_patterns(self):
-        self.sanity_patterns = sn.assert_found(
-            rf'Result \({self.elem_type}\):', self.stdout
-        )
+    @sanity_function
+    def validate_test(self):
+        return sn.assert_found(rf'Result \({self.elem_type}\):', self.stdout)
 
 
 @rfm.simple_test
@@ -41,6 +39,6 @@ class MakeOnlyTest(rfm.CompileOnlyRegressionTest):
     def set_compiler_flags(self):
         self.build_system.cppflags = [f'-DELEM_TYPE={self.elem_type}']
 
-    @run_before('sanity')
-    def set_sanity_patterns(self):
-        self.sanity_patterns = sn.assert_not_found(r'warning', self.stdout)
+    @sanity_function
+    def validate_compilation(self):
+        return sn.assert_not_found(r'warning', self.stdout)
