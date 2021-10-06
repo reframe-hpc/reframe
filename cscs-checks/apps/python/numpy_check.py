@@ -5,7 +5,7 @@
 
 import reframe as rfm
 
-from hpctestlib.apps.python.base_check import Numpy_BaseCheck
+from hpctestlib.apps.python.numpy.base_check import Numpy_BaseCheck
 
 
 REFERENCE_PERFOMANCE = {
@@ -43,22 +43,17 @@ REFERENCE_PERFOMANCE = {
 @rfm.simple_test
 class Numpy_TestCSCS(Numpy_BaseCheck):
     valid_prog_environs = ['builtin']
+    valid_systems = ['daint:gpu', 'daint-mc', 'dom:gpu', 'dom:mc']
     modules = ['numpy']
     variables = {
         'OMP_NUM_THREADS': '$SLURM_CPUS_PER_TASK',
     }
     num_tasks_per_node = 1
     use_multithreading = False
+    reference = REFERENCE_PERFOMANCE
     tags = {'production'}
     maintainers = ['RS', 'TR']
-    reference = REFERENCE_PERFOMANCE
-    platform = parameter(['gpu', 'cpu'])
 
-    @run_after('init')
-    def set_system(self):
-        if self.platform == 'gpu':
-            self.valid_systems = ['daint:gpu', 'dom:gpu']
-            self.num_cpus_per_task = 12
-        else:
-            self.valid_systems = ['daint:mc', 'dom:mc']
-            self.num_cpus_per_task = 36
+    @run_after('setup')
+    def set_num_cpus_per_task(self):
+        self.num_cpus_per_task = self.current_partition.processor.num_cores
