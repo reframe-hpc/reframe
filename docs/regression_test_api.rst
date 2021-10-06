@@ -17,6 +17,15 @@ Test Base Classes
    :show-inheritance:
 
 
+.. _test-variants:
+
+-------------
+Test variants
+-------------
+
+What's a test variant and low-level details on how to access and filter the full variant space.
+
+
 ---------------
 Test Decorators
 ---------------
@@ -28,21 +37,17 @@ Test Decorators
 .. autodecorator:: reframe.core.decorators.simple_test
 
 
---------
-Builtins
---------
+--------------
+Built-in types
+--------------
 
 .. versionadded:: 3.4.2
 
-ReFrame provides built-in types and functions which facilitate the process of writing extensible regression tests (i.e. a test library).
+ReFrame provides built-in types which facilitate the process of writing extensible regression tests (i.e. a test library).
 These *builtins* are only available when used directly in the class body of classes derived from any of the :ref:`regression-bases`.
 Through builtins, ReFrame internals are able to *pre-process* and validate the test input before the actual test creation takes place.
 This provides the ReFrame internals with further control over the user's input, making the process of writing regression tests less error-prone.
 In essence, these builtins exert control over the test creation, and they allow adding and/or modifying certain attributes of the regression test.
-
-
-Built-in types
---------------
 
 .. py:function:: RegressionMixin.parameter(values=None, inherit_params=False, filter_params=None)
 
@@ -185,9 +190,12 @@ Built-in types
       valid_prog_environs = ['*']
 
       @run_before('run')
-      def set_exec_and_sanity(self):
+      def set_executable(self):
           self.executable = f'echo {self.what}'
-          self.sanity_patterns = sn.assert_found(fr'{self.what}')
+
+      @sanity_function
+      def assert_what(self):
+          return sn.assert_found(fr'{self.what}')
 
 
     # Test as written by the user
@@ -227,6 +235,299 @@ Built-in types
   :param `**kwargs`: *kwargs* to be forwarded to the constructor of the field validator.
 
 
+.. py:function:: RegressionMixin.fixture(cls, *, scope='test', action='fork', variants='all', variables=None)
+
+  Declare a new fixture in the current regression test.
+  A fixture is a regression test that creates, prepares and/or manages a resource for another regression test.
+  Fixtures may contain other fixtures and so on, forming a tree-like structure.
+  A parent fixture (or a regular regression test) requires the resources managed by its child fixtures in order to run, and it may only access these fixture resources after its ``setup`` pipeline stage.
+  The execution of parent fixtures is postponed until all their respective children have completed execution.
+  However, the destruction of the resources managed by a fixture occurs in reverse order, only after the parent fixture has been destroyed.
+  This destruction of resources takes place during the ``cleanup`` pipeline stage of the regression test.
+  Fixtures must not define the members :attr:`~reframe.core.pipeline.RegressionTest.valid_systems` and :attr:`~reframe.core.pipeline.RegressionTest.valid_prog_environs`.
+  These variables will be defined based on the values specified in the parent test, ensuring that the fixture runs with a suitable system partition and programming environment combination.
+  A fixture's :attr:`~reframe.core.pipeline.RegressionTest.name` attribute may be internally mangled depending on the arguments passed during the fixture declaration.
+  Hence, manually setting or modifying the :attr:`~reframe.core.pipeline.RegressionTest.name` attribute in the fixture class (i.e. the ``cls`` argument) is disallowed, and breaking this restriction will result in undefined behaviour.
+
+  By default, the resources managed by a fixture are private to the parent test.
+  However, it is possible to share these resources across different tests by passing the appropriate fixture ``scope`` argument.
+  The different scope levels are independent from each other and a fixture only executes once per scope, where all the tests that belong to that same scope may use the same resources managed by a given fixture instance.
+  The available scopes are:
+
+   * **session**: This scope encloses all the tests and fixtures that run in the full ReFrame session.
+     This may include tests that use different system partition and programming environment combinations.
+     The fixture class must derive from :class:`~reframe.core.pipeline.RunOnlyRegressionTest` to avoid any implicit dependencies on the partition or the programming environment used.
+   * **partition**: This scope spans across a single system partition.
+     This may include different tests that run on the same partition but use different programming environments.
+     Fixtures with this scope must be independent of the programming environment, which restricts the fixture class to derive from :class:`~reframe.core.pipeline.RunOnlyRegressionTest`.
+   * **environment**: The extent of this scope covers a single combination of system partition and programming environment.
+     Since the fixture is guaranteed to have the same partition and programming environment as the parent test, the fixture class can be any derived class from :class:`~reframe.core.pipeline.RegressionTest`.
+   * **test**: This scope covers a single instance of the parent test.
+     The resources provided by the fixture are exclusive to each parent test instance.
+
+  Rather than specifying the scope at the fixture class definition, ReFrame fixtures set the scope level from the consumer side (i.e. when used by another test or fixture).
+  A test may declare multiple fixtures using the same class, where fixtures with different scopes are guaranteed to point to different instances of the fixture class.
+  On the other hand, when two or more fixtures use the same fixture class and have the same scope, these different fixtures will point to the same underlying resource if the fixtures refer to the same :ref:`variant<test-variants>` of the fixture class.
+  The example below illustrates the different fixture scope usages:
+
+  .. code:: python
+
+    class MyFixture(rfm.RunOnlyRegressionTest):
+       '''Manage some resource'''
+       my_var = variable(int, value=1)
+       ...
+
+
+    @rfm.simple_test
+    class TestA(rfm.RegressionTest):
+        valid_systems = ['p1', 'p2']
+        valid_prog_environs = ['e1', 'e2']
+        f1 = fixture(MyFixture, scope='session')     # Shared throughout the full session
+        f2 = fixture(MyFixture, scope='partition')   # Shared for each supported partition
+        f3 = fixture(MyFixture, scope='environment') # Shared for each supported part+environ
+        f4 = fixture(MyFixture, scope='test')        # Private evaluation of MyFixture
+        ...
+
+
+    @rfm.simple_test
+    class TestB(rfm.RegressionTest):
+        valid_systems = ['p1']
+        valid_prog_environs = ['e1']
+        f1 = fixture(MyFixture, scope='test')        # Another private instance of MyFixture
+        f2 = fixture(MyFixture, scope='environment') # Same as f3 in TestA for p1 + e1
+        f3 = fixture(MyFixture, scope='session')     # Same as f1 in TestA
+        ...
+
+        @run_after('setup')
+        def acess_fixture_resources(self):
+            '''Dummy pipeline hook to illustrate fixture resource access.'''
+            assert self.f1.my_var is not self.f2.my_var
+            assert self.f1.my_var is not self.f3.my_var
+
+
+  :class:`TestA` supports two different valid systems and another two valid programming environments.
+  Assuming that both environments are supported by each of the system partitions ``'p1'`` and ``'p2'``, this test will execute a total of four times.
+  This test uses the very simple :class:`MyFixture` fixture multiple times using different scopes, where fixture ``f1`` (session scope) will be shared across the four test instances, and fixture ``f4`` (test scope) will be executed once per test instance.
+  On the other hand, ``f2`` (partition scope) will run once per partition supported by test :class:`TestA`, and the multiple per-partition executions (i.e. for each programming environment) will share the same underlying resource for ``f2``.
+  Lastly, ``f3`` will run a total of four times, which is once per partition and environment combination.
+  This simple :class:`TestA` shows how multiple instances from the same test can share resources, but the real power behind fixtures is illustrated with :class:`TestB`, where this resource sharing is extended across different tests.
+  For simplicity, :class:`TestB` only supports a single partition ``'p1'`` and programming environment ``'e1'``, and similarly to :class:`TestA`, ``f1`` (test scope) causes a private evaluation of the fixture :class:`MyFixture`.
+  However, the resources managed by fixtures ``f2`` (environment scope) and ``f3`` (session scope) are shared with :class:`Test1`.
+
+  Fixtures are treated by ReFrame as first-class ReFrame tests, which means that these classes can use the same built-in functionalities as in regular tests decorated with :func:`@rfm.simple_test<reframe.core.decorators.simple_test>`.
+  This includes the :func:`~reframe.core.pipeline.RegressionMixin.parameter` built-in, where fixtures may have more than one :ref:`variant<test-variants>`.
+  When this occurs, a parent test may select to either treat a parameterized fixture as a test parameter, or instead, to gather all the fixture variants from a single instance of the parent test.
+  In essence, fixtures implement `fork-join` model whose behaviour may be controlled through the ``action`` argument.
+  This argument may be set to one of the following options:
+
+   * **fork**: This option parameterizes the parent test as a function of the fixture variants.
+     The fixture handle will resolve to a single instance of the fixture.
+   * **join**: This option gathers all the variants from a fixture into a single instance of the parent test.
+     The fixture handle will point to a list containing all the fixture variants.
+
+  A test may declare multiple fixtures with different ``action`` options, where the default ``action`` option is ``'fork'``.
+  The example below illustrates the behaviour of these two different options.
+
+  .. code:: python
+
+    class ParamFix(rfm.RegressionTest):
+        '''Manage some resource'''
+        p = parameter(range(5)) # A simple test parameter
+        ...
+
+
+    @rfm.simple_test
+    class TestC(rfm.RegressionTest):
+        # Parameterize TestC for each ParamFix variant
+        f = fixture(ParamFix, action='fork') 
+        ...
+
+        @run_after('setup')
+        def access_fixture_resources(self):
+            print(self.f.p) # Prints the fixture's variant parameter value
+
+
+    @rfm.simple_test
+    class TestD(rfm.RegressionTest):
+        # Gather all fixture variants into a single test
+        f = fixture(ParamFix, action='join')
+        ...
+
+        @run_after('setup')
+        def reduce_range(self):
+            '''Sum all the values of p for each fixture variant'''
+            red = functools.reduce(lambda x, y: x+y, (fix.p for fix in self.f))
+            n = len(self.f)-1
+            assert red == (n*n + n)/2
+
+  Here :class:`ParamFix` is a simple fixture class with a single parameter.
+  When the test :class:`TestC` uses this fixture with a ``'fork'`` action, the test is implicitly parameterized over each variant of :class:`ParamFix`.
+  Hence, when the :func:`access_fixture_resources` post-setup hook accesses the fixture ``f``, it only access a single instance of the :class:`ParamFix` fixture.
+  On the other hand, when this same fixture is used with a ``'join'`` action by :class:`TestD`, the test is not parameterized and all the :class:`ParamFix` instances are gathered into ``f`` as a list.
+  Thus, the post-setup pipeline hook :func:`reduce_range` can access all the fixture variants and compute a reduction of the different ``p`` values.
+
+  When declaring a fixture, a parent test may select a subset of the fixture variants through the ``variants`` argument.
+  This variant selection can be done by either passing an iterable containing valid variant indices (see :ref:`test-variants` for further information on how the test variants are indexed), or instead, passing a mapping with the parameter name (of the fixture class) as keys and filtering functions as values.
+  These filtering functions are unary functions that return the value of a boolean expression on the values of the specified parameter, and they all must evaluate to :class:`True` for at least one of the fixture class variants.
+  See the example below for an illustration on how to filter-out fixture variants.
+
+  .. code:: python
+
+    class ComplexFixture(rfm.RegressionTest):
+        # A fixture with 400 different variants.
+        p0 = parameter(range(100))
+        p1 = parameter(['a', 'b', 'c', 'd'])
+        ...
+
+    @rfm.simple_test
+    class TestE(rfm.RegressionTest):
+        # Select the fixture variants with boolean conditions
+        foo = fixture(ComplexFixture,
+                      variants={'p0': lambda x: x<10, 'p1': lambda x: x=='d'})
+
+        # Select the fixture variants by index
+        bar = fixture(ComplexFixture, variants=range(300,310))
+        ...
+
+  A parent test may also specify the value of different variables in the fixture class to be set before its instantiation, where these variables must have been declared in the fixture class with the :func:`~reframe.core.pipeline.RegressionMixin.variable` built-in.
+  This variable specification is equivalent to deriving a new class from the fixture class, and setting these variable values in the class body of the newly derived class.
+  Therefore, when fixture declarations use the same fixture class and pass different values to the ``variables`` argument, the fixture class is interpreted as a different class for each of these fixture declarations.
+  See the example below.
+
+  .. code:: python
+
+    class Fixture(rfm.RegressionTest):
+        v = variable(int, value=1)
+        ...
+
+    @rfm.simple_test
+    class TestF(rfm.RegressionTest):
+        foo = fixture(Fixture)
+        bar = fixture(Fixture, variables={'v':5})
+        baz = fixture(Fixture, variables={'v':10})
+        ...
+
+        @run_after('setup')
+        def print_fixture_variables(self):
+            print(self.foo.v) # Prints 1
+            print(self.bar.v) # Prints 5
+            print(self.baz.v) # Prints 10
+
+  The test :class:`TestF` declares the fixtures ``foo``, ``bar`` and ``baz`` using the same :class:`Fixture` class.
+  If no variables were set in ``bar`` and ``baz``, this would result into the same fixture being declared multiple times in the same scope (implicitly set to ``'test'``), which would lead to a single instance of :class:`Fixture` being referred to by ``foo``, ``bar`` and ``baz``.
+  However, in this case ReFrame identifies that the declared fixtures pass different values to the ``variables`` argument in the fixture declaration, and executes these three fixtures separately.
+
+  .. note::
+     Mappings passed to the ``variables`` argument that define the same class variables in different order are interpreted as the same value.
+     The two fixture declarations below are equivalent, and both ``foo`` and ``bar`` will point to the same instance of the fixture class :class:`MyResource`.
+
+     .. code:: python
+
+       foo = fixture(MyResource, variables={'a':1, 'b':2})
+       bar = fixture(MyResource, variables={'b':2, 'a':1})
+
+
+
+  :param cls: A class derived from :class:`~reframe.core.pipeline.RegressionTest` that manages a given resource.
+    The base from this class may be further restricted to other derived classes from :class:`~reframe.core.pipeline.RegressionTest` depending on the ``scope`` parameter.
+  :param scope: Sets the extent to which other regression tests may share the resources managed by a fixture.
+    The available scopes are, from more to less restrictive, ``'test'``, ``'environment'``, ``'partition'`` and ``'session'``.
+    By default a fixture's scope is set to ``'test'``, which makes the resource private to the test that uses the fixture.
+    This means that when multiple regression tests use the same fixture class with a ``'test'`` scope, the fixture will run once per regression test.
+    When the scope is set to ``'environment'``, the resources managed by the fixture are shared across all the tests that use the fixture that run on the same system partition and use the same programming environment.
+    When the scope is set to ``'partition'``, the resources managed by the fixture are shared instead across all the tests that use the fixture and run on the same system partition.
+    Lastly, when the scope is set to ``'session'``, the resources managed by the fixture are shared across the full ReFrame session.
+    However, fixtures with either ``'partition'`` or ``'session'`` scopes may be shared across different regression tests under different programming environments, and for this reason, when using these two scopes, the fixture class ``cls`` is required to derive from :class:`~reframe.core.pipeline.RunOnlyRegressionTest`.
+  :param action: Set the behavior of a parameterized fixture to either ``'fork'`` or ``'join'``.
+    With a ``'fork'`` action, a parameterized fixture effectively parameterizes the regression test.
+    On the other hand, a ``'join'`` action gathers all the fixture variants into the same instance of the regression test.
+    By default, the ``action`` parameter is set to ``'fork'``.
+  :param variants: Filter or sub-select a subset of the variants from a parameterized fixture.
+    This argument can be either an iterable with the indices from the desired variants, or a mapping containing unary functions that return the value of a boolean expression on the values of a given parameter.
+  :param variables: Mapping to set the values of fixture's variables. The variables are set after the fixture class has been created (i.e. after the class body has executed) and before the fixture class is instantiated.
+
+
+  .. versionadded:: 3.9.0
+
+
+------------------
+Built-in functions
+------------------
+
+ReFrame provides the following built-in functions, which are only available in the class body of classes deriving from :class:`~reframe.core.pipeline.RegressionMixin`.
+
+.. py:decorator:: RegressionMixin.sanity_function(func)
+
+  Decorate a member function as the sanity function of the test.
+
+  This decorator will convert the given function into a :func:`~RegressionMixin.deferrable` and mark it to be executed during the test's sanity stage.
+  When this decorator is used, manually assigning a value to :attr:`~RegressionTest.sanity_patterns` in the test is not allowed.
+
+  Decorated functions may be overridden by derived classes, and derived classes may also decorate a different method as the test's sanity function.
+  Decorating multiple member functions in the same class is not allowed.
+  However, a :class:`RegressionTest` may inherit from multiple :class:`RegressionMixin` classes with their own sanity functions.
+  In this case, the derived class will follow Python's `MRO <https://docs.python.org/3/library/stdtypes.html#class.__mro__>`_ to find a suitable sanity function.
+
+  .. versionadded:: 3.7.0
+
+.. py:decorator:: RegressionMixin.performance_function(unit, *, perf_key=None)
+
+   Decorate a member function as a performance function of the test.
+
+   This decorator converts the decorated method into a performance deferrable function (see ":ref:`deferrable-performance-functions`" for more details) whose evaluation is deferred to the performance stage of the regression test.
+   The decorated function must take a single argument without a default value (i.e. ``self``) and any number of arguments with default values.
+   A test may decorate multiple member functions as performance functions, where each of the decorated functions must be provided with the units of the performance quantities to be extracted from the test.
+   These performance units must be of type :class:`str`.
+   Any performance function may be overridden in a derived class and multiple bases may define their own performance functions.
+   In the event of a name conflict, the derived class will follow Python's `MRO <https://docs.python.org/3/library/stdtypes.html#class.__mro__>`_ to choose the appropriate performance function.
+   However, defining more than one performance function with the same name in the same class is disallowed.
+
+   The full set of performance functions of a regression test is stored under :attr:`~reframe.core.pipeline.RegressionTest.perf_variables` as key-value pairs, where, by default, the key is the name of the decorated member function, and the value is the deferred performance function itself.
+   Optionally, the key under which a performance function is stored in :attr:`~reframe.core.pipeline.RegressionTest.perf_variables` can be customised by passing the desired key as the ``perf_key`` argument to this decorator.
+
+   .. versionadded:: 3.8.0
+
+.. py:decorator:: RegressionMixin.deferrable(func)
+
+  Converts the decorated method into a deferrable function.
+
+  See :ref:`deferrable-functions` for further information on deferrable functions.
+
+  .. versionadded:: 3.7.0
+
+.. py:function:: RegressionMixin.bind(func, name=None)
+
+  Bind a free function to a regression test.
+
+  By default, the function is bound with the same name as the free function.
+  However, the function can be bound using a different name with the ``name`` argument.
+
+  :param func: external function to be bound to a class.
+  :param name: bind the function under a different name.
+
+  .. versionadded:: 3.6.2
+
+.. py:decorator:: RegressionMixin.require_deps(func)
+
+  Decorator to denote that a function will use the test dependencies.
+
+  The arguments of the decorated function must be named after the dependencies that the function intends to use.
+  The decorator will bind the arguments to a partial realization of the :func:`~reframe.core.pipeline.RegressionTest.getdep` function, such that conceptually the new function arguments will be the following:
+
+  .. code-block:: python
+
+     new_arg = functools.partial(getdep, orig_arg_name)
+
+  The converted arguments are essentially functions accepting a single argument, which is the target test's programming environment.
+  Additionally, this decorator will attach the function to run *after* the test's setup phase, but *before* any other "post-setup" pipeline hook.
+
+  .. warning::
+     .. versionchanged:: 3.7.0
+        Using this function from the :py:mod:`reframe` or :py:mod:`reframe.core.decorators` modules is now deprecated.
+        You should use the built-in function described here.
+
+
+--------------
 Pipeline Hooks
 --------------
 
@@ -303,81 +604,6 @@ The framework will then continue with other activities and it will execute the p
 
   .. versionchanged:: 3.5.2
      Add support for post-init hooks.
-
-
-Built-in functions
-------------------
-
-.. py:decorator:: RegressionMixin.sanity_function(func)
-
-  Decorate a member function as the sanity function of the test.
-
-  This decorator will convert the given function into a :func:`~RegressionMixin.deferrable` and mark it to be executed during the test's sanity stage.
-  When this decorator is used, manually assigning a value to :attr:`~RegressionTest.sanity_patterns` in the test is not allowed.
-
-  Decorated functions may be overridden by derived classes, and derived classes may also decorate a different method as the test's sanity function.
-  Decorating multiple member functions in the same class is not allowed.
-  However, a :class:`RegressionTest` may inherit from multiple :class:`RegressionMixin` classes with their own sanity functions.
-  In this case, the derived class will follow Python's `MRO <https://docs.python.org/3/library/stdtypes.html#class.__mro__>`_ to find a suitable sanity function.
-
-  .. versionadded:: 3.7.0
-
-.. py:decorator:: RegressionMixin.performance_function(unit, *, perf_key=None)
-
-   Decorate a member function as a performance function of the test.
-
-   This decorator converts the decorated method into a performance deferrable function (see ":ref:`deferrable-performance-functions`" for more details) whose evaluation is deferred to the performance stage of the regression test.
-   The decorated function must take a single argument without a default value (i.e. ``self``) and any number of arguments with default values.
-   A test may decorate multiple member functions as performance functions, where each of the decorated functions must be provided with the units of the performance quantitites to be extracted from the test.
-   These performance units must be of type :class:`str`.
-   Any performance function may be overridden in a derived class and multiple bases may define their own performance functions.
-   In the event of a name conflict, the derived class will follow Python's `MRO <https://docs.python.org/3/library/stdtypes.html#class.__mro__>`_ to choose the appropriate performance function.
-   However, defining more than one performance function with the same name in the same class is disallowed.
-
-   The full set of performance functions of a regression test is stored under :attr:`~reframe.core.pipeline.RegressionTest.perf_variables` as key-value pairs, where, by default, the key is the name of the decorated member function, and the value is the deferred performance function itself.
-   Optionally, the key under which a performance function is stored in :attr:`~reframe.core.pipeline.RegressionTest.perf_variables` can be customised by passing the desired key as the ``perf_key`` argument to this decorator.
-
-.. py:decorator:: RegressionMixin.deferrable(func)
-
-  Converts the decorated method into a deferrable function.
-
-  See :ref:`deferrable-functions` for further information on deferrable functions.
-
-  .. versionadded:: 3.7.0
-
-.. py:function:: RegressionMixin.bind(func, name=None)
-
-  Bind a free function to a regression test.
-
-  By default, the function is bound with the same name as the free function.
-  However, the function can be bound using a different name with the ``name`` argument.
-
-  :param func: external function to be bound to a class.
-  :param name: bind the function under a different name.
-
-  .. versionadded:: 3.6.2
-
-.. py:decorator:: RegressionMixin.require_deps(func)
-
-  Decorator to denote that a function will use the test dependencies.
-
-  The arguments of the decorated function must be named after the dependencies that the function intends to use.
-  The decorator will bind the arguments to a partial realization of the :func:`~reframe.core.pipeline.RegressionTest.getdep` function, such that conceptually the new function arguments will be the following:
-
-  .. code-block:: python
-
-     new_arg = functools.partial(getdep, orig_arg_name)
-
-  The converted arguments are essentially functions accepting a single argument, which is the target test's programming environment.
-  Additionally, this decorator will attach the function to run *after* the test's setup phase, but *before* any other "post-setup" pipeline hook.
-
-  .. warning::
-     .. versionchanged:: 3.7.0
-        Using this function from the :py:mod:`reframe` or :py:mod:`reframe.core.decorators` modules is now deprecated.
-        You should use the built-in function described here.
-
-
-
 
 
 ------------------------
