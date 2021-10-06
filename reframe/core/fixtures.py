@@ -331,6 +331,8 @@ class TestFixture:
 
     Also, a fixture may set or update the default value of a test variable
     by passing the appropriate key-value mapping as the ``variables`` argument.
+    This argument is always sorted by the keys, so the original order is
+    irrelevant.
 
     :meta private:
     '''
@@ -387,6 +389,10 @@ class TestFixture:
                 f'invalid variants specified for fixture {cls.__qualname__}'
             )
 
+        # Check that we have some variants
+        if len(self._variants) == 0:
+            raise ValueError('fixture does not have any variants')
+
         if variables and not isinstance(variables, Mapping):
             raise ValueError(
                 "the argument 'variables' must be a mapping."
@@ -394,7 +400,8 @@ class TestFixture:
         elif variables is None:
             variables = {}
 
-        self._variables = variables
+        # Store the variables dict sorted by keys
+        self._variables = dict(sorted(variables.items()))
 
     @property
     def cls(self):
