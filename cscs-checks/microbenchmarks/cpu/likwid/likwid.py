@@ -82,9 +82,12 @@ class CPUBandwidth(MemBandwidthTest):
     }
 
     @run_after('init')
-    def set_(self):
+    def setup_descr(self):
         self.mem_level, self.kernel_name = self.config
         self.descr = f'CPU <- {self.mem_level} {self.kernel_name} benchmark'
+
+    @run_before('performance')
+    def set_reference(self):
         ref_proxy = {part: self.refs[part][self.kernel_name][self.mem_level]
                      for part in self.refs.keys()}
         self.reference = {
