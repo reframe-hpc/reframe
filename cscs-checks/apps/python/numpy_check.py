@@ -43,7 +43,7 @@ REFERENCE_PERFOMANCE = {
 @rfm.simple_test
 class Numpy_TestCSCS(Numpy_BaseCheck):
     valid_prog_environs = ['builtin']
-    valid_systems = ['daint:gpu', 'daint-mc', 'dom:gpu', 'dom:mc']
+    valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
     modules = ['numpy']
     variables = {
         'OMP_NUM_THREADS': '$SLURM_CPUS_PER_TASK',
