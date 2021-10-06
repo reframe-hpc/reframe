@@ -17,15 +17,6 @@ Test Base Classes
    :show-inheritance:
 
 
-.. _test-variants:
-
--------------
-Test variants
--------------
-
-What's a test variant and low-level details on how to access and filter the full variant space.
-
-
 ---------------
 Test Decorators
 ---------------
@@ -389,8 +380,9 @@ In essence, these builtins exert control over the test creation, and they allow 
         bar = fixture(ComplexFixture, variants=range(300,310))
         ...
 
-  A parent test may also specify the value of different variables in the fixture class to be set before its instantiation, where these variables must have been declared in the fixture class with the :func:`~reframe.core.pipeline.RegressionMixin.variable` built-in.
-  This variable specification is equivalent to deriving a new class from the fixture class, and setting these variable values in the class body of the newly derived class.
+  A parent test may also specify the value of different variables in the fixture class to be set before its instantiation.
+  Each variable must have been declared in the fixture class with the :func:`~reframe.core.pipeline.RegressionMixin.variable` built-in, otherwise it is silently ignored.
+  This variable specification is equivalent to deriving a new class from the fixture class, and setting these variable values in the class body of a newly derived class.
   Therefore, when fixture declarations use the same fixture class and pass different values to the ``variables`` argument, the fixture class is interpreted as a different class for each of these fixture declarations.
   See the example below.
 
@@ -604,6 +596,63 @@ The framework will then continue with other activities and it will execute the p
 
   .. versionchanged:: 3.5.2
      Add support for post-init hooks.
+
+
+.. _test-variants:
+
+-------------
+Test variants
+-------------
+
+Through the :func:`~reframe.core.pipeline.RegressionMixin.parameter` and :func:`~reframe.core.pipeline.RegressionMixin.fixture` builtins, a regression test may store multiple versions or `variants` of a regression test at the class level.
+During class creation, the test's parameter and fixture spaces are constructed and combined, assigning a unique index to each of the available test variants.
+In most cases, the user does not need to be aware of all the internals related to this variant indexing, since ReFrame will run by default all the available variants for each of the registered tests.
+On the other hand, in more complex use cases such as setting dependencies across different test variants, or when performing some complex variant sub-selection on a fixture declaration, the user may need to access some of this low-level information related to the variant indexing.
+Therefore, classes that derive from the base :class:`~reframe.core.pipeline.RegressionMixin` provide `classmethods` and properties to query these data.
+
+.. note::
+  When selecting test variants through their variant index, no index ordering should ever be assumed, being the user's responsibility to ensure on each ReFrame run that the selected index corresponds to the desired parameter and/or fixture variants.
+
+.. py:attribute:: RegressionMixin.num_variants
+
+  Total number of unique variants that can be instantiated from a class.
+
+
+.. py:function:: RegressionMixin.get_variant_info(cls, variant_num, *, recurse=False, max_depth=None)
+
+  Get the raw variant data for a given variant index.
+  This function returns a dictionary with the variant data on the different subspaces, such as the parameter values and the fixture variants.
+  The parameter sub-dictionary contains the values for each parameter associated to the given variant number.
+  The fixture sub-dictionary, by default, will return the variant number associated to each of the fixtures.
+  However, if ``recurse`` is set to ``True``, each fixture entry will contain the full variant information for the given variant number.
+  By default, the recursion will traverse the full fixture tree, but this recursion depth can be limited with the ``max_depth`` argument.
+
+  :param variant_num: An integer in the range of [0, cls.num_variants).
+  :param recurse: Flag to control the recursion through the fixture space.
+  :param max_depth: Set the recursion limit. When the ``recurse`` argument is set to ``False``, this option has no effect.
+
+
+.. py:function:: RegressionMixin.get_variant_nums(cls, **conditions)
+
+  Get the variant numbers that meet the specified conditions.
+  The given conditions enable filtering the parameter space of the test.
+  These can be specified by passing key-value pairs with the parameter name to filter and an associated callable that returns ``True`` when the filtering condition is met. Multiple conditions are supported.
+  However, filtering the fixture space is not allowed.
+
+  .. code-block:: python
+
+    # Get the variant numbers where my_param is lower than 4
+    cls.get_variant_nums(my_param=lambda x: x < 4)
+
+  :param conditions: keyword arguments where the key is the test parameter name and the value is a unary function that evaluates a bool condition on the parameter value.
+
+
+.. py:function:: RegressionMixin.fullname(cls, variant_num=None)
+
+  Return the full unique name of a test for a given test variant number.
+  If no ``variant_num`` is provided, this function returns the qualified class name.
+
+  :param variant_num: An integer in the range of [0, cls.num_variants).
 
 
 ------------------------

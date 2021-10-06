@@ -664,12 +664,12 @@ class RegressionTestMeta(type):
         The given conditions enable filtering the parameter space of the test.
         These can be specified by passing key-value pairs with the parameter
         name to filter and an associated callable that returns ``True`` when
-        the fiiltering condition is met. Multiple conditions are supported.
+        the filtering condition is met. Multiple conditions are supported.
         However, filtering the fixture space is not allowed.
 
         .. code-block:: python
 
-           # Filter out the test variants where my_param is larger than 3
+           # Filter out the test variants where my_param is lower than 4
            cls.get_variant_nums(my_param=lambda x: x < 4)
         '''
         if not conditions:
