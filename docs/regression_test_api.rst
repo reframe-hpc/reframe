@@ -40,6 +40,10 @@ Through builtins, ReFrame internals are able to *pre-process* and validate the t
 This provides the ReFrame internals with further control over the user's input, making the process of writing regression tests less error-prone.
 In essence, these builtins exert control over the test creation, and they allow adding and/or modifying certain attributes of the regression test.
 
+.. note::
+  The built-in types described below can only be used to declare class variables, and they must never be part of any container type.
+
+
 .. py:function:: RegressionMixin.parameter(values=None, inherit_params=False, filter_params=None)
 
   Inserts or modifies a regression test parameter.
