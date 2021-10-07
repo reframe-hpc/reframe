@@ -40,10 +40,7 @@ class IPCMagic(rfm.RunOnlyRegressionTest, pin_prefix=True):
     '''
 
     executable = 'ipython'
-
-    # Name of testing script
     executable_opts = ['tf-hvd-sgd-ipc-tf2.py']
-
     descr = 'Distributed training with TensorFlow using ipyparallel'
 
     @performance_function('N/A', perf_key='slope')
@@ -61,12 +58,6 @@ class IPCMagic(rfm.RunOnlyRegressionTest, pin_prefix=True):
         return 4 - sn.count(sn.findall(r'IPCluster is already running',
                                        self.stdout))
 
-    @performance_function('s', perf_key='time')
-    def set_perf_time(self):
-        return sn.extractsingle(r'IPCluster is ready\!\s+'
-                                r'\((?P<time>\d+) seconds\)',
-                                self.stdout, 'time', float)
-
     @run_before('run')
     def reset_launcher(self):
         # Change the job launcher since `ipython`
@@ -82,6 +73,5 @@ class IPCMagic(rfm.RunOnlyRegressionTest, pin_prefix=True):
         nids = sn.extractall(r'nid(?P<nid>\d+)', self.stdout, 'nid', str)
         return sn.all([
             sn.assert_ne(nids, []), sn.assert_ne(nids[0], nids[1]),
-            sn.assert_found(r'IPCluster is ready\!\s+', self.stdout),
             sn.assert_found(r'slope=\S+', self.stdout)
         ])

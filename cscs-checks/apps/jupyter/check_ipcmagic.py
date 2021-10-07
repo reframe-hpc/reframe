@@ -7,28 +7,25 @@ import reframe as rfm
 
 from hpctestlib.apps.jupyter.ipcmagic import IPCMagic
 
-REFERENCE_PERFORMANCE = {
-    'daint:gpu': {
-        'slope': (2.0, -0.1, 0.1, 'N/A'),
-        'offset': (0.0, -0.1, 0.1, 'N/A'),
-        'retries': (0, None, None, 'N/A'),
-        'time': (10, None, None, 's'),
-    },
-    'dom:gpu': {
-        'slope': (2.0, -0.1, 0.1, 'N/A'),
-        'offset': (0.0, -0.1, 0.1, 'N/A'),
-        'retries': (0, None, None, 'N/A'),
-        'time': (10, None, None, 's'),
-    }
-}
 
 @rfm.simple_test
 class ipc_magic_check(IPCMagic):
     valid_systems = ['daint:gpu', 'dom:gpu']
     valid_prog_environs = ['builtin']
-    modules = ['ipcmagic', 'jupyterlab', 'Horovod']
+    modules = ['jupyterlab', 'Horovod']
     num_tasks = 2
     num_tasks_per_node = 1
     maintainers = ['RS', 'TR']
     tags = {'production'}
-    reference = REFERENCE_PERFORMANCE
+    reference = {
+        'daint:gpu': {
+            'slope': (2.0, -0.1, 0.1, 'N/A'),
+            'offset': (0.0, -0.1, 0.1, 'N/A'),
+            'retries': (0, None, None, 'N/A'),
+        },
+        'dom:gpu': {
+            'slope': (2.0, -0.1, 0.1, 'N/A'),
+            'offset': (0.0, -0.1, 0.1, 'N/A'),
+            'retries': (0, None, None, 'N/A'),
+        }
+   }
