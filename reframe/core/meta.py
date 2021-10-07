@@ -15,10 +15,18 @@ import reframe.core.parameters as parameters
 import reframe.core.variables as variables
 import reframe.core.fixtures as fixtures
 import reframe.core.hooks as hooks
+import reframe.core.runtime as rt
 import reframe.utility as utils
 
 from reframe.core.exceptions import ReframeSyntaxError
 from reframe.core.deferrable import deferrable, _DeferredPerformanceExpression
+
+
+def _COMPACT_NAMING_SCHEME():
+    try:
+        return rt.runtime().get_option('general/0/compact_test_names')
+    except Exception:
+        return False
 
 
 class RegressionTestMeta(type):
@@ -749,7 +757,7 @@ class RegressionTestMeta(type):
         '''
         return cls.num_variants == 0
 
-    def fullname(cls, variant_num=None, *, compress_params=False):
+    def fullname(cls, variant_num=None):
         '''Return the full name of a test for a given test variant number.
 
         This function returns a unique name for each of the provided variant
@@ -765,22 +773,18 @@ class RegressionTestMeta(type):
         if variant_num is None:
             return name
 
-        pid, fid = cls._map_variant_num(variant_num)
+        if _COMPACT_NAMING_SCHEME():
+            if cls.num_variants > 1:
+                name += f'@{variant_num}'
+        else:
+            pid, fid = cls._map_variant_num(variant_num)
 
-        # Append the parameters to the name
-        if cls.param_space.params:
-            if compress_params:
-                name += f'@{pid}'
-            else:
+            # Append the parameters to the name
+            if cls.param_space.params:
                 name += '_' + '_'.join(utils.toalphanum(str(v))
                                        for v in cls.param_space[pid].values())
 
-        # Append all the full fixture names to the test name if the fixtures
-        # have more than 1 variant (i.e. parameterized fixture).
-        if cls.fixture_space.fixtures and len(cls.fixture_space) > 1:
-            fs = cls.fixture_space
-            name += '^' + '+'.join(fs[k].cls.fullname(v, compress_params=True)
-                                   for k, v in fs[fid].items()
-                                   if fs[k].cls.num_variants > 1) + '^'
+            if len(cls.fixture_space) > 1:
+                name += f'@{fid}'
 
         return name

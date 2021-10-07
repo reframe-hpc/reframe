@@ -12,6 +12,7 @@ import copy
 import itertools
 import traceback
 from collections.abc import Iterable, Mapping
+from hashlib import sha256
 
 import reframe.core.namespaces as namespaces
 import reframe.core.runtime as runtime
@@ -56,6 +57,9 @@ class FixtureRegistry:
         sys_part = runtime.runtime().system.partitions
         self._part_map = {p.fullname: i for i, p in enumerate(sys_part)}
 
+        # Compact naming switch
+        self._hash = runtime.runtime().get_option('general/0/compact_test_names')
+
     def add(self, fixture, variant_num, parent_name, partitions, prog_envs):
         '''Register a fixture.
 
@@ -87,7 +91,9 @@ class FixtureRegistry:
 
         If a fixture modifies the default value of any of its attributes,
         these modified variables are always mangled into the fixture name
-        regardless of the scope used.
+        regardless of the scope used. These variables are sorted by their
+        name before they're accounted for into the name mangling, so the
+        order on which they're specified is irrelevant.
 
         This method returns a list with the mangled names of the newly
         registered fixtures.
@@ -108,11 +114,16 @@ class FixtureRegistry:
         reg_names = []
         self._reg.setdefault(cls, dict())
 
-        # Mangle the fixture name with the modified variables
-        fname += ''.join(
-            (f'%{k}={utils.toalphanum(str(v))}' for k, v
-             in variables.items())
-        )
+        # Mangle the fixture name with the modified variables (sorted by keys)
+        if variables:
+            vname = ''.join(
+                (f'%{k}={utils.toalphanum(str(v))}' for k, v
+                 in sorted(variables.items()))
+            )
+            if self._hash:
+                vname = '%' + sha256(vname.encode('utf-8')).hexdigest()[:8]
+
+            fname += vname
 
         # Select only the valid partitions
         valid_partitions = self._filter_valid_partitions(partitions)
@@ -134,7 +145,7 @@ class FixtureRegistry:
         elif scope == 'partition':
             for p in valid_partitions:
                 # The mangled name contains the full partition name
-                name = '~'.join([fname, p])
+                name = f'{fname}~{utils.toalphanum(p)}'
 
                 # Select an environment supported by the partition
                 valid_envs = self._filter_valid_environs(p, prog_envs)
@@ -148,7 +159,8 @@ class FixtureRegistry:
             for p in valid_partitions:
                 for env in self._filter_valid_environs(p, prog_envs):
                     # The mangled name contains the full part and env names
-                    name = '~'.join([fname, '+'.join([p, env])])
+                    ext = f'{utils.toalphanum(p)}+{utils.toalphanum(env)}'
+                    name = f'{fname}~{ext}'
 
                     # Register the fixture
                     self._reg[cls][name] = (
@@ -157,7 +169,7 @@ class FixtureRegistry:
                     reg_names.append(name)
         elif scope == 'test':
             # The mangled name contains the parent test name.
-            name = '~'.join([fname, parent_name])
+            name = f'{fname}~{parent_name}'
 
             # Register the fixture
             self._reg[cls][name] = (
@@ -331,8 +343,6 @@ class TestFixture:
 
     Also, a fixture may set or update the default value of a test variable
     by passing the appropriate key-value mapping as the ``variables`` argument.
-    This argument is always sorted by the keys, so the original order is
-    irrelevant.
 
     :meta private:
     '''
@@ -400,8 +410,8 @@ class TestFixture:
         elif variables is None:
             variables = {}
 
-        # Store the variables dict sorted by keys
-        self._variables = dict(sorted(variables.items()))
+        # Store the variables dict
+        self._variables = variables
 
     @property
     def cls(self):
