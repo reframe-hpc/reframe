@@ -723,6 +723,21 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
 
 
+.. envvar:: RFM_COMPACT_TEST_NAMES
+
+   Enable the compact regression test naming scheme.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :js:attr:`compact_test_names` general configuration parameter
+      ================================== ==================
+
+   .. versionadded:: 3.9.0
+
+
 .. envvar:: RFM_CONFIG_FILE
 
    Set the configuration file for ReFrame.

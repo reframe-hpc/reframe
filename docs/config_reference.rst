@@ -1257,6 +1257,15 @@ General Configuration
    The command-line option sets the configuration option to ``false``.
 
 
+.. js:attribute:: .general[].compact_test_names
+
+   :required: No
+   :default: ``false``
+
+   Name the regression tests in a compact format.
+
+   .. versionadded:: 3.9.0
+
 .. js:attribute:: .general[].remote_detect
 
    :required: No
