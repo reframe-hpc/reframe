@@ -28,4 +28,4 @@ class ipc_magic_check(IPCMagic):
             'offset': (0.0, -0.1, 0.1, 'N/A'),
             'retries': (0, None, None, 'N/A'),
         }
-   }
+    }
