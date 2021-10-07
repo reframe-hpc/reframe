@@ -143,8 +143,7 @@ class ParamSpace(namespaces.Namespace):
         '''Extend the parameter space with the local parameter space.'''
 
         local_param_space = getattr(cls, self.local_namespace_name)
-        while local_param_space:
-            name, p = local_param_space.popitem()
+        for name, p in local_param_space.items():
             try:
                 filt_vals = p.filter_params(self.params.get(name, ()))
             except Exception:
@@ -157,6 +156,9 @@ class ParamSpace(namespaces.Namespace):
                         f"'filter_param' must return an iterable "
                         f"(parameter {name!r})"
                     ) from None
+
+        # Clear the local param space
+        local_param_space.clear()
 
         # If any previously declared parameter was defined in the class body
         # by directly assigning it a value, raise an error. Parameters must be
