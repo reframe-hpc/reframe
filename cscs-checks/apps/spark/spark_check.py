@@ -9,6 +9,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 from reframe.core.backends import getlauncher
 
+# Dummy comment to trigger CI
 
 @rfm.simple_test
 class SparkCheck(rfm.RunOnlyRegressionTest):
