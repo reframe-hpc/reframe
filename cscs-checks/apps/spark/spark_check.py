@@ -6,10 +6,10 @@
 import reframe as rfm
 
 from reframe.core.backends import getlauncher
-from hpctestlib.apps.spark.base_check import Spark_BaseCheck
+from hpctestlib.apps.spark.compute_pi import ComputePi
 
 @rfm.simple_test
-class SparkCheck(Spark_BaseCheck):
+class SparkCheck(ComputePi):
     valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
     valid_prog_environs = ['builtin']
     modules = ['Spark']
@@ -20,13 +20,8 @@ class SparkCheck(Spark_BaseCheck):
 
     @run_before('run')
     def prepare_run(self):
-        if self.current_partition.fullname in ['daint:gpu', 'dom:gpu']:
-            num_workers = 12
-            exec_cores = 3
-        else:
-            num_workers = 36
-            exec_cores = 9
-
+        num_workers = self.current_partition.processor.num_cores
+        exec_cores = num_workers // 4
         self.variables = {
             'SPARK_WORKER_CORES': str(num_workers),
             'SPARK_LOCAL_DIRS': '"/tmp"',
@@ -42,6 +37,8 @@ class SparkCheck(Spark_BaseCheck):
                 '--class org.apache.spark.examples.SparkPi',
                 '$EBROOTSPARK/examples/jars/spark-examples*.jar 10000'
             ]
+        elif self.variant == 'pyspark':
+            self.executable_opts += ['spark_pi.py']
 
     @run_before('run')
     def set_job_launcher(self):

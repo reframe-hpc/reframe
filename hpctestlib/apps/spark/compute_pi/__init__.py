@@ -9,7 +9,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-class Spark_BaseCheck(rfm.RunOnlyRegressionTest, pin_prefix=True):
+class ComputePi(rfm.RunOnlyRegressionTest, pin_prefix=True):
     '''Base class for the Spark Test.
 
     Apache Spark is a unified analytics engine for large-scale data
@@ -38,11 +38,6 @@ class Spark_BaseCheck(rfm.RunOnlyRegressionTest, pin_prefix=True):
     @run_after('init')
     def set_description(self):
         self.mydescr = f'Simple calculation of pi with {self.variant}'
-
-    @run_before('run')
-    def set_pyspark_opts(self):
-        if self.variant == 'pyspark':
-            self.executable_opts.append('spark_pi.py')
 
     @sanity_function
     def assert_pi_readout(self):
