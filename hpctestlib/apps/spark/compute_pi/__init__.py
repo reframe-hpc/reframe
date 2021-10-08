@@ -28,11 +28,37 @@ class ComputePi(rfm.RunOnlyRegressionTest, pin_prefix=True):
     system under test.
     '''
 
+    #: Parameter encoding the variant of the test.
+    #:
+    #: :type:`str`
+    #: :values: ``['spark', 'pyspark']``
     variant = parameter(['spark', 'pyspark'])
+
+    #: The absolute tolerance of the computed value of PI
+    #:
+    #: :type: :class:`float`
+    #: :required: No
+    #: :default: `0.01`
     tolerance = variable(float, value=0.01)
+
+    #: See :attr:`~reframe.core.pipeline.RegressionTest.prerun_cmds`.
+    #:
+    #: :required: No
     prerun_cmds = ['start-all.sh']
+
+    #: See :attr:`~reframe.core.pipeline.RegressionTest.prerun_cmds`.
+    #:
+    #: :required: No
     postrun_cmds = ['stop-all.sh']
+
+    #: See :attr:`~reframe.core.pipeline.RegressionTest.executable`.
+    #:
+    #: :required: No
     executable = 'spark-submit'
+
+    #: See :attr:`~reframe.core.pipeline.RegressionTest.executable_opts`.
+    #:
+    #: :required: Yes
     executable_opts = required
 
     @run_after('init')
