@@ -30,6 +30,10 @@ class SparkCheck(ComputePi):
             f'--conf spark.default.parallelism={num_workers}',
             f'--conf spark.executor.cores={exec_cores}',
             f'--conf spark.executor.memory=15g',
+            f'--conf spark.rdd.compress=false',
+            f'--conf spark.shuffle.compress=false',
+            f'--conf spark.broadcast.compress=false',
+            f'--conf spark.hadoop.dfs.replication=1',
             f'--master $SPARKURL'
         ]
         if self.variant == 'spark':
