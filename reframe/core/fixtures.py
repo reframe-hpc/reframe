@@ -128,31 +128,41 @@ class FixtureRegistry:
         # Select only the valid partitions
         valid_partitions = self._filter_valid_partitions(partitions)
 
+        # Return if not any valid partition
+        if not valid_partitions:
+            return []
+
         # Register the fixture
         if scope == 'session':
             # The name is just the class name
             name = fname
 
-            # Select an environment supported by a partition
-            valid_envs = self._filter_valid_environs(valid_partitions[0],
-                                                     prog_envs)
+            # Select a valid environment supported by a partition
+            for part in valid_partitions:
+                valid_envs = self._filter_valid_environs(part, prog_envs)
+                if valid_envs:
+                    break
+            else:
+                return []
 
             # Register the fixture
             self._reg[cls][name] = (
-                variant_num, [valid_envs[0]], [valid_partitions[0]], variables
+                variant_num, [valid_envs[0]], [part], variables
             )
             reg_names.append(name)
         elif scope == 'partition':
-            for p in valid_partitions:
+            for part in valid_partitions:
                 # The mangled name contains the full partition name
-                name = f'{fname}~{utils.toalphanum(p)}'
+                name = f'{fname}~{utils.toalphanum(part)}'
 
                 # Select an environment supported by the partition
-                valid_envs = self._filter_valid_environs(p, prog_envs)
+                valid_envs = self._filter_valid_environs(part, prog_envs)
+                if not valid_envs:
+                    continue
 
                 # Register the fixture
                 self._reg[cls][name] = (
-                    variant_num, [valid_envs[0]], [p], variables
+                    variant_num, [valid_envs[0]], [part], variables
                 )
                 reg_names.append(name)
         elif scope == 'environment':
@@ -404,7 +414,7 @@ class TestFixture:
             raise ValueError('fixture does not have any variants')
 
         if variables and not isinstance(variables, Mapping):
-            raise ValueError(
+            raise TypeError(
                 "the argument 'variables' must be a mapping."
             )
         elif variables is None:
