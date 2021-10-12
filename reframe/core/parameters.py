@@ -287,7 +287,7 @@ class ParamSpace(namespaces.Namespace):
 
         return candidates
 
-    def _get_param_value(name, variant):
+    def _get_param_value(self, name, variant):
         '''Get the a parameter's value for a given variant.
 
         In this context, a variant is a point in the parameter space.
