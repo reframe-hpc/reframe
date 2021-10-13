@@ -217,7 +217,8 @@ def main():
         envvar='RFM_SAVE_LOG_FILES', configvar='general/save_log_files'
     )
     output_options.add_argument(
-        '--timestamp', action='store', nargs='?', const='', metavar='TIMEFMT',
+        '--timestamp', action='store', nargs='?', const='%FT%T',
+        metavar='TIMEFMT',
         help=('Append a timestamp to the output and stage directory prefixes '
               '(default: "%%FT%%T")'),
         envvar='RFM_TIMESTAMP_DIRS', configvar='general/timestamp_dirs'
@@ -741,7 +742,7 @@ def main():
         'cmdline': ' '.join(sys.argv),
         'config_file': rt.site_config.filename,
         'data_version': runreport.DATA_VERSION,
-        'hostname': socket.gethostname(),
+        'hostname': socket.getfqdn(),
         'prefix_output': rt.output_prefix,
         'prefix_stage': rt.stage_prefix,
         'user': osext.osuser(),
