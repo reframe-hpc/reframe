@@ -462,20 +462,20 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def _poll_tasks(self):
         '''Update the counts of running checks per partition.'''
 
-        def split_jobs(tasks, split_build_jobs=False):
+        def split_jobs(tasks, kind='run'):
             '''Split jobs into forced local and normal ones.'''
             forced_local = []
             normal = []
             for t in tasks:
-                if t.check.local or (split_build_jobs and t.check.build_locally):
-                    if split_build_jobs:
+                if t.check.local or (kind=='build' and t.check.build_locally):
+                    if kind=='build':
                         forced_local.append(t.check.build_job)
-                    else:
+                    elif kind=='run':
                         forced_local.append(t.check.job)
                 else:
-                    if split_build_jobs:
+                    if kind=='build':
                         normal.append(t.check.build_job)
-                    else:
+                    elif kind=='run':
                         normal.append(t.check.job)
 
             return forced_local, normal
@@ -499,7 +499,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             getlogger().debug2(f'Polling {num_tasks} building task(s) in '
                                f'{partname!r}')
             forced_local_jobs, part_jobs = split_jobs(
-                self._build_tasks[partname], split_build_jobs=True
+                self._build_tasks[partname], kind='build'
             )
             part.scheduler.poll(*part_jobs)
             self.local_scheduler.poll(*forced_local_jobs)
