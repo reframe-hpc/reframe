@@ -19,7 +19,6 @@ import reframe.core.runtime as runtime
 import reframe.utility.udeps as udeps
 import reframe.utility as utils
 from reframe.core.exceptions import ReframeSyntaxError, what
-from reframe.core.variables import Undefined
 from reframe.core.logging import getlogger
 
 
