@@ -728,8 +728,8 @@ def test_kbd_interrupt_in_wait_with_limited_concurrency(
     runner, _ = async_runner
     with pytest.raises(KeyboardInterrupt):
         runner.runall(make_cases([
-            SleepCheck(10), SleepCheck(10),
-            KeyboardInterruptCheck(), SleepCheck(10)
+            KeyboardInterruptCheck(), SleepCheck(10),
+            SleepCheck(10), SleepCheck(10)
         ]))
 
     assert_interrupted_run(runner)

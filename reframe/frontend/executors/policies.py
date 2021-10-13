@@ -430,20 +430,22 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
                 return
 
-            # if len(self._running_tasks[partname]) >= partition.max_jobs:
-            #     # Make sure that we still exceeded the job limit
-            #     getlogger().debug2(
-            #         f'Reached concurrency limit for partition {partname!r}: '
-            #         f'{partition.max_jobs} job(s)'
-            #     )
-            #     self._poll_tasks()
+            if (len(self._running_tasks[partname]) +
+                len(self._build_tasks[partname]) >= partition.max_jobs):
+                # Make sure that we still exceeded the job limit
+                getlogger().debug2(
+                    f'Reached concurrency limit for partition {partname!r}: '
+                    f'{partition.max_jobs} job(s)'
+                )
+                self._poll_tasks()
 
-            # if len(self._running_tasks[partname]) < partition.max_jobs:
-            #     # Task was put in _ready_tasks during setup
-            #     self._ready_tasks[partname].pop()
-            #     self._reschedule(task)
-            # else:
-            #     self.printer.status('HOLD', task.check.info(), just='right')
+            if (len(self._running_tasks[partname]) +
+                len(self._build_tasks[partname]) < partition.max_jobs):
+                # Task was put in _ready_tasks during setup
+                self._ready_tasks[partname].pop()
+                self._reschedule_compile(task)
+            else:
+                self.printer.status('HOLD', task.check.info(), just='right')
         except TaskExit:
             if not task.failed and not task.skipped:
                 with contextlib.suppress(TaskExit):
@@ -544,6 +546,10 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             task.abort(cause)
 
         self._running_tasks = {}
+        for task in list(itertools.chain(*self._build_tasks.values())):
+            task.abort(cause)
+
+        self._build_tasks = {}
         for ready_list in self._ready_tasks.values():
             for task in ready_list:
                 task.abort(cause)
