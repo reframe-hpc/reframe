@@ -379,7 +379,8 @@ class TaskEventListener(abc.ABC):
 
     @abc.abstractmethod
     def on_task_compile(self, task):
-        '''Called whenever the compile() method of a RegressionTask is called.'''
+        '''Called whenever the compile() method of a RegressionTask is
+        called.'''
 
     @abc.abstractmethod
     def on_task_exit(self, task):

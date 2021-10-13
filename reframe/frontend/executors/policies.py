@@ -559,7 +559,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             task.abort(cause)
 
     def _reschedule_compile(self, task):
-        getlogger().debug2(f'Scheduling test case {task.testcase} for compiling')
+        getlogger().debug2(f'Scheduling test case {task.testcase} for '
+                           f'compiling')
         task.compile()
 
     def _reschedule_run(self, task):
