@@ -100,15 +100,15 @@ class ParamSpace(namespaces.Namespace):
         super().__init__(target_cls, target_namespace)
 
         # Store all param combinations to allow random access.
-        self.__random_access_iter = tuple(
-            itertools.product(*(copy.deepcopy(p)
-                              for p in self.params.values())
-                              )
+        self.__param_combinations = tuple(
+            itertools.product(
+                *(copy.deepcopy(p) for p in self.params.values())
+            )
         )
 
         # Map the parameter names to the position they are stored in the
         # parameter space
-        self._pos_map = {name: idx for idx, name in enumerate(self.params)}
+        self._position = {name: idx for idx, name in enumerate(self.params)}
 
     def join(self, other, cls):
         '''Join other parameter space into the current one.
@@ -170,33 +170,33 @@ class ParamSpace(namespaces.Namespace):
                     f'parameter type'
                 )
 
-    def inject(self, obj, cls=None, params_variant=None):
+    def inject(self, obj, cls=None, params_index=None):
         '''Insert the params in the regression test.
 
         Create and initialize the regression test parameters as object
         attributes. The values assigned to these parameters exclusively depend
-        on the value of params_variant. This argument is simply an index to a
-        a given parametere combination. If params_variant is left with its
+        on the value of params_index. This argument is simply an index to a
+        a given parametere combination. If params_index is left with its
         default value, the regression test parameters are initialized as
         None.
 
         :param obj: The test object.
         :param cls: The test class.
-        :param params_variant: index to a point in the parameter space.
+        :param params_index: index to a point in the parameter space.
         '''
         # Set the values of the test parameters (if any)
-        if self.params and params_variant is not None:
+        if self.params and params_index is not None:
             try:
-                # Consume the parameter space iterator
-                param_values = self.__random_access_iter[params_variant]
-                for index, key in enumerate(self.params):
-                    setattr(obj, key, param_values[index])
-
+                # Get the parameter values for the specified variant
+                param_values = self.__param_combinations[params_index]
             except IndexError as no_params:
                 raise RuntimeError(
                     f'parameter space index out of range for '
                     f'{obj.__class__.__qualname__}'
                 ) from None
+            else:
+                for index, key in enumerate(self.params):
+                    setattr(obj, key, param_values[index])
 
         else:
             # Otherwise init the params as None
@@ -211,7 +211,7 @@ class ParamSpace(namespaces.Namespace):
 
         :return: generator object to iterate over the parameter space.
         '''
-        yield from self.__random_access_iter
+        yield from self.__param_combinations
 
     @property
     def params(self):
@@ -234,7 +234,7 @@ class ParamSpace(namespaces.Namespace):
         if not self.params:
             return 1
 
-        return len(self.__random_access_iter)
+        return len(self.__param_combinations)
 
     def __getitem__(self, key):
         '''Access an element in the parameter space.
@@ -242,10 +242,13 @@ class ParamSpace(namespaces.Namespace):
         If the key is an integer, this function will retrieve a given point in
         the parameter space. If the key is a parameter name, it will instead
         return all the values assigned to that parameter.
+
+        If the key is an integer, this function will raise an
+        :class:`IndexError` if the key is out of bounds.
         '''
         if isinstance(key, int):
             ret = dict()
-            val = self.__random_access_iter[key]
+            val = self.__param_combinations[key]
             for i, key in enumerate(self.params):
                 ret[key] = val[i]
 
@@ -263,7 +266,7 @@ class ParamSpace(namespaces.Namespace):
         parameter names to apply the filtering on and the values are functions
         that expect the parameter's value as the sole argument.
         '''
-        candidates = range(len(self.__random_access_iter))
+        candidates = range(len(self))
         if not conditions:
             return list(candidates)
 
@@ -271,19 +274,19 @@ class ParamSpace(namespaces.Namespace):
         for param, cond in conditions.items():
             if param not in self:
                 raise ValueError(
-                    f'{param!r} is not present in the parameter space'
+                    f'no such parameter: {param!r}'
                 )
             elif not utils.is_trivially_callable(cond, non_def_args=1):
                 raise ValueError(
-                    f'condition on {param!r} must only accept a single'
-                    f'argument'
+                    f'condition on {param!r} must be a callable accepting a '
+                    f'single argument'
                 )
 
             def param_val(variant):
                 return self._get_param_value(param, variant)
 
             # Filter the given condition
-            candidates = list(filter(lambda v: cond(param_val(v)), candidates))
+            candidates = [v for v in candidates if cond(param_val(v))]
 
         return candidates
 
@@ -293,4 +296,4 @@ class ParamSpace(namespaces.Namespace):
         In this context, a variant is a point in the parameter space.
         The name argument is simply the parameter name
         '''
-        return self.__random_access_iter[variant][self._pos_map[name]]
+        return self.__param_combinations[variant][self._position[name]]

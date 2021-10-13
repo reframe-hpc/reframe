@@ -51,11 +51,13 @@ class FixtureRegistry:
     '''
 
     def __init__(self):
-        self._reg = dict()
+        self._registry = dict()
 
         # Build an index map to access the system partitions
         sys_part = runtime.runtime().system.partitions
-        self._part_map = {p.fullname: i for i, p in enumerate(sys_part)}
+        self._env_by_part = {
+            p.fullname: {e.name for e in p.environs} for p in sys_part
+        }
 
         # Compact naming switch
         self._hash = runtime.runtime().get_option('general/0/compact_test_names')
@@ -112,7 +114,7 @@ class FixtureRegistry:
         fname = fixture.get_name(variant_num)
         variables = fixture.variables
         reg_names = []
-        self._reg.setdefault(cls, dict())
+        self._registry.setdefault(cls, dict())
 
         # Mangle the fixture name with the modified variables (sorted by keys)
         if variables:
@@ -146,7 +148,7 @@ class FixtureRegistry:
                 return []
 
             # Register the fixture
-            self._reg[cls][name] = (
+            self._registry[cls][name] = (
                 variant_num, [valid_envs[0]], [part], variables
             )
             reg_names.append(name)
@@ -161,7 +163,7 @@ class FixtureRegistry:
                     continue
 
                 # Register the fixture
-                self._reg[cls][name] = (
+                self._registry[cls][name] = (
                     variant_num, [valid_envs[0]], [part], variables
                 )
                 reg_names.append(name)
@@ -173,7 +175,7 @@ class FixtureRegistry:
                     name = f'{fname}~{ext}'
 
                     # Register the fixture
-                    self._reg[cls][name] = (
+                    self._registry[cls][name] = (
                         variant_num, [env], [p], variables
                     )
                     reg_names.append(name)
@@ -182,7 +184,7 @@ class FixtureRegistry:
             name = f'{fname}~{parent_name}'
 
             # Register the fixture
-            self._reg[cls][name] = (
+            self._registry[cls][name] = (
                 variant_num, list(prog_envs), list(valid_partitions),
                 variables
             )
@@ -201,10 +203,10 @@ class FixtureRegistry:
         '''
 
         self._is_registry(other)
-        for cls, variants in other._reg.items():
-            self._reg.setdefault(cls, dict())
+        for cls, variants in other._registry.items():
+            self._registry.setdefault(cls, dict())
             for name, args in variants.items():
-                self._reg[cls][name] = args
+                self._registry[cls][name] = args
 
     def difference(self, other):
         '''Build a new registry taking the difference with another registry
@@ -215,15 +217,15 @@ class FixtureRegistry:
 
         self._is_registry(other)
         ret = FixtureRegistry()
-        for cls, variants in self._reg.items():
+        for cls, variants in self._registry.items():
             if cls in other:
-                other_variants = other._reg[cls]
+                other_variants = other._registry[cls]
                 for name, args in variants.items():
                     if name not in other_variants:
-                        ret._reg.setdefault(cls, dict())
-                        ret._reg[cls][name] = args
+                        ret._registry.setdefault(cls, dict())
+                        ret._registry[cls][name] = args
             else:
-                ret._reg[cls] = copy.deepcopy(variants)
+                ret._registry[cls] = copy.deepcopy(variants)
 
         return ret
 
@@ -231,29 +233,23 @@ class FixtureRegistry:
         '''Instantiate all the fixtures in the registry.'''
 
         ret = []
-        for cls, variants in self._reg.items():
+        for cls, variants in self._registry.items():
             for name, args in variants.items():
                 varnum, penv, part, variables = args
 
-                # Set the fixture name and stolen env and part from the parent
-                cls.name = name
-                cls.valid_prog_environs = penv
-                cls.valid_systems = part
-
-                # Retrieve the variable defautls
-                var_def = dict()
-                for key, value in variables.items():
-                    if key in cls.var_space:
-                        try:
-                            var_def[key] = getattr(cls, key).default_value
-                        except ValueError:
-                            var_def[key] = Undefined
-                        finally:
-                            cls.setvar(key, value)
+                # Set the fixture name and stolen env and part from the parent,
+                # alongside the other variables specified during the fixture's
+                # declaration.
+                fixvars = {
+                    'name': name,
+                    'valid_prog_environs': penv,
+                    'valid_systems': part,
+                    **variables
+                }
 
                 try:
                     # Instantiate the fixture
-                    inst = cls(variant_num=varnum)
+                    inst = cls(variant_num=varnum, variables=fixvars)
                 except Exception:
                     exc_info = sys.exc_info()
                     getlogger().warning(
@@ -265,31 +261,19 @@ class FixtureRegistry:
                 else:
                     ret.append(inst)
 
-                # Reset cls defaults and append instance
-                cls.name = Undefined
-                cls.valid_prog_environs = Undefined
-                cls.valid_systems = Undefined
-
-                # Reinstate the deault values
-                for k, v in var_def.items():
-                    cls.setvar(k, v)
         return ret
 
     def _filter_valid_partitions(self, candidate_parts):
-        return [p for p in candidate_parts if p in self._part_map]
+        return [p for p in candidate_parts if p in self._env_by_part]
 
     def _filter_valid_environs(self, part, candidate_environs):
-        sys_part = runtime.runtime().system.partitions
-        supported_envs = {
-            env.name for env
-            in sys_part[self._part_map[part]].environs
-        }
-        valid_envs = []
-        for env in candidate_environs:
-            if env in supported_envs:
-                valid_envs.append(env)
+        ret = []
+        environs = self._env_by_part[part]
+        for e in candidate_environs:
+            if e in environs:
+                ret.append(e)
 
-        return valid_envs
+        return ret
 
     def _is_registry(self, other):
         if not isinstance(other, FixtureRegistry):
@@ -299,12 +283,12 @@ class FixtureRegistry:
         '''Return the names of all registered fixtures from a given class.'''
 
         try:
-            return self._reg[cls]
+            return self._registry[cls]
         except KeyError:
             return []
 
     def __contains__(self, cls):
-        return cls in self._reg
+        return cls in self._registry
 
 
 class TestFixture:
@@ -315,7 +299,7 @@ class TestFixture:
     the :class:`reframe.core.pipeline.RegressionTest` class and serves as a
     building block to compose a more complex test structure. Since fixtures are
     full ReFrame tests on their own, a fixture can have multiple fixtures, and
-    so on; building a tree-like structure.
+    so on; building a directed acyclic graph.
 
     However, a given fixture may be shared by multiple regression tests that
     need the same resource. This can be achieved by setting the appropriate
@@ -323,9 +307,9 @@ class TestFixture:
     are registered with the ``'test'`` scope, which makes each fixture
     `private` to each of the parent tests. Hence, if all fixtures use this
     scope, the resulting fixture hierarchy can be thought of multiple
-    independent trees that emanate from each root regression test. On the other
+    independent branches that emanate from each root regression test. On the other
     hand, setting a more relaxed scope that allows resource sharing across
-    different regression tests will effectively interconnect the fixture trees
+    different regression tests will effectively interconnect the fixture branches
     that share a resource.
 
     From a more to less restrictive scope, the valid scopes are ``'test'``,
@@ -340,14 +324,15 @@ class TestFixture:
     parameterized fixture is by extension a parameterized test. Hence, the
     number of test variants of a test will depend on the test parameters and
     the parameters of each of the fixtures that compose the parent test. Each
-    possible parameter-fixture combination has a unique ``variant_num``, which
-    is an index in the range from ``[0, cls.num_variants)``. This is the
-    default behaviour and it is achieved when the action argument is set to
-    ``'fork'``. On the other hand, if this argument is set to a ``'join'``
-    action, the parent test will reduce all the fixture variants.
+    possible parameter-fixture combination has a unique `variant number`, which
+    is an index in the range from ``[0, N)``, where `N` is the total number of
+    test variants. This is the default behaviour and it is achieved when the
+    action argument is set to ``'fork'``. On the other hand, if this argument
+    is set to a ``'join'`` action, the parent test will reduce all the fixture
+    variants.
 
     The variants from a given fixture to be used by the parent test can be
-    filtered out through the variants optional argument. This can either be
+    filtered out through the ``variants`` optional argument. This can either be
     a list of the variant numbers to be used, or it can be a dictionary with
     conditions on the parameter space of the fixture.
 
@@ -377,19 +362,19 @@ class TestFixture:
         # Check that the fixture class is not an abstract test.
         if cls.is_abstract():
             raise ValueError(
-                f'class {cls.__qualname__!r} is has undefined parameters'
+                f'class {cls.__qualname__!r} has undefined parameters'
             )
 
         # Validate the scope
-        if scope not in {'session', 'partition', 'environment', 'test'}:
+        if scope not in ('session', 'partition', 'environment', 'test'):
             raise ValueError(
-                f'invalid scope for fixture {cls.__qualname__!r} ({scope!r})'
+                f'invalid scope for fixture {cls.__qualname__!r}: {scope!r}'
             )
 
         # Validate the action
-        if action not in {'fork', 'join'}:
+        if action not in ('fork', 'join'):
             raise ValueError(
-                f'invalid action for fixture {cls.__qualname__!r} (action!r)'
+                f'invalid action for fixture {cls.__qualname__!r}: {action!r}'
             )
 
         self._cls = cls
@@ -406,7 +391,7 @@ class TestFixture:
             self._variants = tuple(range(cls.num_variants))
         else:
             raise ValueError(
-                f'invalid variants specified for fixture {cls.__qualname__}'
+                f'invalid variants specified for fixture {cls.__qualname__!r}'
             )
 
         # Check that we have some variants
@@ -449,7 +434,7 @@ class TestFixture:
 
     @property
     def fork_variants(self):
-        '''The list of fixture variants that will fork the parent test.
+        '''The list of fixture variants that the parent test will fork.
 
         If the fixture action was set to ``'fork'``, the fork variants match
         the fixture variants. Thus, parameterizing a fixture is effectively
@@ -497,7 +482,8 @@ class FixtureSpace(namespaces.Namespace):
     def __init__(self, target_cls=None, target_namespace=None):
         super().__init__(target_cls, target_namespace)
 
-        self.__random_access_iter = tuple(
+        # Store all fixture variant combinations to allow random access.
+        self.__variant_combinations = tuple(
             itertools.product(
                 *(list(f.fork_variants for f in self.fixtures.values()))
             )
@@ -514,7 +500,7 @@ class FixtureSpace(namespaces.Namespace):
                 raise ReframeSyntaxError(
                     f'fixture space conflict: '
                     f'fixture {key!r} is defined in more than '
-                    f'one base class of class {cls.__qualname__!r}'
+                    f'one base class of {cls.__qualname__!r}'
                 )
 
             self.fixtures[key] = value
@@ -532,11 +518,11 @@ class FixtureSpace(namespaces.Namespace):
         for key in self.fixtures:
             if key in cls.__dict__:
                 raise ReframeSyntaxError(
-                    f'fixture {key!r} must be modified through the built-in '
-                    f'fixture type'
+                    f'fixture {key!r} can only be redefined through the '
+                    f'fixture built-in'
                 )
 
-    def inject(self, obj, cls=None, fixture_variant=None):
+    def inject(self, obj, cls=None, fixtures_index=None):
         '''Build fixture registry and inject it in the parent's test instance.
 
         A fixture steals the valid_systems and valid_prog_environs from the
@@ -547,8 +533,9 @@ class FixtureSpace(namespaces.Namespace):
 
         :param obj: Parent test's instance.
         :param cls: Parent test's class.
-        :param fixture_variant: Index representing a point in the fixture
-            space.
+        :param fixtures_index: Index representing a point in the fixture
+            space. This point represents a unique variant combination of all
+            the fixtures present in the fixture space.
 
         .. note::
            This function is aware of the implementation of the
@@ -556,30 +543,30 @@ class FixtureSpace(namespaces.Namespace):
         '''
 
         # Nothing to do if the fixture space is empty
-        if not self.fixtures or fixture_variant is None:
+        if not self.fixtures or fixtures_index is None:
             return
 
         # Create the fixture registry
         obj._rfm_fixture_registry = FixtureRegistry()
 
         # Prepare the partitions and prog_envs
-        part, prog_envs = self._get_partitions_and_prog_envs(obj)
+        part, prog_envs = self._expand_partitions_envs(obj)
 
-        # Get the variant numbers for each of the fixtures (as a k-v map) for
-        # the given point in the fixture space.
-        fixture_variant_num_map = self[fixture_variant]
+        # Get the unique fixture variant combiantion (as a k-v map) for
+        # the given index.
+        fixture_variants = self[fixtures_index]
 
         # Register the fixtures
         for name, fixture in self.fixtures.items():
-            var_num = fixture_variant_num_map[name]
+            var_num = fixture_variants[name]
 
             # Handle the 'fork' and 'join' actions:
             # var_num is None when the fixture has a 'join' action. Otherwise
             # var_num is a nonnegative integer.
-            if var_num is None:
-                var_num = fixture.variants
-            else:
+            if isinstance(var_num, int):
                 var_num = [var_num]
+            else:
+                var_num = fixture.variants
 
             dep_names = []
             for variant in var_num:
@@ -610,13 +597,14 @@ class FixtureSpace(namespaces.Namespace):
             for dep_name in dep_names:
                 obj.depends_on(dep_name, dep_kind)
 
-    def _get_partitions_and_prog_envs(self, obj):
+    def _expand_partitions_envs(self, obj):
         '''Process the partitions and programming environs of the parent.'''
+
         try:
             part = tuple(obj.valid_systems)
         except AttributeError:
             raise ReframeSyntaxError(
-                f'valid_systems is undefined in test {obj.name}'
+                f"'valid_systems' is undefined in test {obj.name}"
             )
         else:
             rt = runtime.runtime()
@@ -627,7 +615,7 @@ class FixtureSpace(namespaces.Namespace):
             prog_envs = tuple(obj.valid_prog_environs)
         except AttributeError:
             raise ReframeSyntaxError(
-                f'valid_prog_environs is undefined in test {obj.name}'
+                f"'valid_prog_environs' is undefined in test {obj.name}"
             )
         else:
             if '*' in prog_envs:
@@ -635,18 +623,20 @@ class FixtureSpace(namespaces.Namespace):
                 for p in runtime.runtime().system.partitions:
                     for e in p.environs:
                         all_pes.add(e.name)
+
                 prog_envs = tuple(all_pes)
+
         return part, prog_envs
 
     def __iter__(self):
         '''Walk through all index combinations for all fixtures.'''
-        yield from self.__random_access_iter
+        yield from self.__variant_combinations
 
     def __len__(self):
         if not self.fixtures:
             return 1
 
-        return len(self.__random_access_iter)
+        return len(self.__variant_combinations)
 
     def __getitem__(self, key):
         '''Access an element in the fixture space.
@@ -660,7 +650,7 @@ class FixtureSpace(namespaces.Namespace):
         '''
         if isinstance(key, int):
             ret = dict()
-            f_ids = self.__random_access_iter[key]
+            f_ids = self.__variant_combinations[key]
             for i, f in enumerate(self.fixtures):
                 ret[f] = f_ids[i]
 

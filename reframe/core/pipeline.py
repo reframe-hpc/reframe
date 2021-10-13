@@ -111,6 +111,11 @@ def final(fn):
     return _wrapped
 
 
+_RFM_MIXIN_KIND = 0
+_RFM_COMPILE_KIND = 1
+_RFM_RUN_KIND = 2
+
+
 class RegressionMixin(metaclass=RegressionTestMeta):
     '''Base mixin class for regression tests.
 
@@ -124,7 +129,7 @@ class RegressionMixin(metaclass=RegressionTestMeta):
     .. versionadded:: 3.4.2
     '''
 
-    _rfm_regression_class_kind = 0
+    _rfm_regression_class_kind = _RFM_MIXIN_KIND
 
 
 class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
@@ -179,7 +184,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     '''
 
-    _rfm_regression_class_kind = 3
+    _rfm_regression_class_kind = _RFM_COMPILE_KIND | _RFM_RUN_KIND
 
     def disable_hook(self, hook_name):
         '''Disable pipeline hook by name.
@@ -894,10 +899,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     @deferrable
     def __rfm_init__(self, *args, prefix=None, **kwargs):
         if not hasattr(self, 'name'):
-            try:
-                self.name = type(self).fullname(self.variant_num)
-            except ValueError as err:
-                raise ReframeSyntaxError(err) from None
+            self.name = type(self).fullname(self.variant_num)
 
             # Add the parameters from the parameterized_test decorator.
             if args or kwargs:
@@ -1003,20 +1005,20 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     def __getattr__(self, name):
         ''' Intercept the special builtin-related AttributeError.'''
+
         if (name in self._rfm_var_space and
             not self._rfm_var_space[name].is_defined()):
             raise AttributeError(
                 f'required variable {name!r} has not been set'
             ) from None
-
         elif name in self._rfm_fixture_space:
             raise AttributeError(
                 f'fixture {name!r} has not yet been resolved: '
-                f'fixtures are injected during the setup stage'
+                f'fixtures are resolved during the setup stage'
             )
         else:
             raise AttributeError(
-                f'{type(self).__qualname__} object has no attribute {name!r}'
+                f'{type(self).__qualname__!r} object has no attribute {name!r}'
             )
 
     # Export read-only views to interesting fields
@@ -1054,10 +1056,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     @property
     def variant_num(self):
-        '''The variant number the test was constructed with.
+        '''The variant number of the test.
 
-        In essence, this is an index representing a unique point in the
-        parameter and fixture spaces.
+        This number should be treated as a unique ID representing a unique
+        combination of the available parameter and fixture variants.
 
         :type: :class:`int`
         '''
@@ -1253,11 +1255,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         registry = getattr(self, '_rfm_fixture_registry', None)
         for fname, f in fixtures.items():
             if f.scope == 'session':
-                part = 'any'
-                environ = 'any'
+                part = '*'
+                environ = '*'
             elif f.scope == 'partition':
                 part = None
-                environ = 'any'
+                environ = '*'
             else:
                 part = None
                 environ = None
@@ -1278,8 +1280,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 # When using the fork action, a fixture handle can only have
                 # a single fixture instance attached.
                 if len(deps) < 1:
-                    raise RuntimeError(
-                        f'fixture {fname} has more than one instances'
+                    raise PipelineError(
+                        f'fixture {fname!r} has more than one instances'
                     )
 
                 deps = deps[0]
@@ -1357,13 +1359,13 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self._current_partition = partition
         self._current_environ = environ
         self._setup_paths()
+        self._resolve_fixtures()
         self._job = self._setup_job(f'rfm_{self.name}_job',
                                     self.local,
                                     **job_opts)
         self._build_job = self._setup_job(f'rfm_{self.name}_build',
                                           self.local or self.build_locally,
                                           **job_opts)
-        self._resolve_fixtures()
 
     def _copy_to_stagedir(self, path):
         self.logger.debug(f'Copying {path} to stage directory')
@@ -2110,7 +2112,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         .. versionadded:: 2.21
 
         .. versionchanged:: 3.8.0
-           Setting ``environ`` and ``part`` to ``'any'`` will skip the match
+           Setting ``environ`` or ``part`` to ``'*'`` will skip the match
            check on the environment and partition, respectively.
 
         '''
@@ -2128,26 +2130,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         if self._case is None or self._case() is None:
             raise DependencyError('no test case is associated with this test')
 
-        if environ != 'any' and part != 'any':
-            for d in self._case().deps:
-                if (d.check.name == target and
-                    d.environ.name == environ and
-                    d.partition.name == part):
-                    return d.check
-        elif environ == 'any' and part != 'any':
-            for d in self._case().deps:
-                if (d.check.name == target and
-                    d.partition.name == part):
-                    return d.check
-        elif environ != 'any' and part == 'any':
-            for d in self._case().deps:
-                if (d.check.name == target and
-                    d.environ.name == environ):
-                    return d.check
-        elif environ == 'any' and part == 'any':
-            for d in self._case().deps:
-                if d.check.name == target:
-                    return d.check
+        for d in self._case().deps:
+            mask = int(d.check.name == target)
+            mask |= (int(d.partition.name==part) | int(part=='*')) << 1
+            mask |= (int(d.environ.name==environ) | int(environ=='*')) << 2
+            if mask == 7:
+                return d.check
 
         raise DependencyError(f'could not resolve dependency to ({target!r}, '
                               f'{part!r}, {environ!r})')
@@ -2197,7 +2185,7 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
     module.
     '''
 
-    _rfm_regression_class_kind = 2
+    _rfm_regression_class_kind = _RFM_RUN_KIND
 
     def setup(self, partition, environ, **job_opts):
         '''The setup stage of the regression test pipeline.
@@ -2254,7 +2242,7 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
     module.
     '''
 
-    _rfm_regression_class_kind = 1
+    _rfm_regression_class_kind = _RFM_COMPILE_KIND
 
     def setup(self, partition, environ, **job_opts):
         '''The setup stage of the regression test pipeline.

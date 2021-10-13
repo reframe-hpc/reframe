@@ -9,6 +9,7 @@
 
 import functools
 import types
+import collections
 
 import reframe.core.namespaces as namespaces
 import reframe.core.parameters as parameters
@@ -226,24 +227,21 @@ class RegressionTestMeta(type):
         ]
 
         # Regression test parameter space defined at the class level
-        local_param_space = namespaces.LocalNamespace()
-        namespace['_rfm_local_param_space'] = local_param_space
+        namespace['_rfm_local_param_space'] = namespaces.LocalNamespace()
 
         # Directive to insert a regression test parameter directly in the
         # class body as: `P0 = parameter([0,1,2,3])`.
         namespace['parameter'] = parameters.TestParam
 
         # Regression test var space defined at the class level
-        local_var_space = namespaces.LocalNamespace()
-        namespace['_rfm_local_var_space'] = local_var_space
+        namespace['_rfm_local_var_space'] = namespaces.LocalNamespace()
 
         # Directives to add/modify a regression test variable
         namespace['variable'] = variables.TestVar
         namespace['required'] = variables.Undefined
 
         # Regression test fixture space
-        local_fixture_space = namespaces.LocalNamespace()
-        namespace['_rfm_local_fixture_space'] = local_fixture_space
+        namespace['_rfm_local_fixture_space'] = namespaces.LocalNamespace()
 
         # Directive to add a fixture
         namespace['fixture'] = fixtures.TestFixture
@@ -473,29 +471,44 @@ class RegressionTestMeta(type):
 
         :param variant_num: The test variant number. This must be an integer
           in the range of [0, cls.num_variants).
+        :param variables: Mapping containing variables to be set during
+          instantiation, but before initialization.
         '''
 
         # Intercept the requested variant number (if any) and map it to the
         # respective points in the parameter and fixture spaces.
         variant_num = kwargs.pop('variant_num', None)
-        param_variant, fixt_variant = cls._map_variant_num(variant_num)
+        param_index, fixt_index = cls._map_variant_num(variant_num)
+
+        # Intercept variables to be set before initialization
+        variables = kwargs.pop('variables', {})
+        if not isinstance(variables, collections.abc.Mapping):
+            raise TypeError("'variables' argument must be a mapping")
 
         obj = cls.__new__(cls, *args, **kwargs)
 
         # Insert the var and param spaces
         cls._rfm_var_space.inject(obj, cls)
-        cls._rfm_param_space.inject(obj, cls, param_variant)
+        cls._rfm_param_space.inject(obj, cls, param_index)
 
         # Inject the variant numbers (if any present)
         if variant_num is not None:
             obj._rfm_variant_num = variant_num
-            obj._rfm_param_variant = param_variant
-            obj._rfm_fixt_variant = fixt_variant
+            obj._rfm_param_variant = param_index
+            obj._rfm_fixt_variant = fixt_index
+
+        # Set the variables passed to the constructor
+        for k, v in variables.items():
+            if k in cls.var_space:
+                setattr(obj, k, v)
 
         obj.__init__(*args, **kwargs)
 
         # Register the fixtures
-        cls._rfm_fixture_space.inject(obj, cls, fixt_variant)
+        # Fixtures must be injected after the object's initialisation because
+        # they require the valid_systems and valid_prog_environs attributes
+        # from the object.
+        cls._rfm_fixture_space.inject(obj, cls, fixt_index)
         return obj
 
     def __getattribute__(cls, name):
@@ -644,7 +657,7 @@ class RegressionTestMeta(type):
     @property
     def num_variants(cls):
         '''Number of unique tests that can be instantiated from this class.'''
-        return len(cls._rfm_param_space)*len(cls._rfm_fixture_space)
+        return len(cls._rfm_param_space) * len(cls._rfm_fixture_space)
 
     def _map_variant_num(cls, variant_num=None):
         '''Map the global variant number into its sub-components.
@@ -654,7 +667,7 @@ class RegressionTestMeta(type):
         '''
 
         if variant_num is None:
-            return (None,)*2
+            return None, None
 
         # Bounds-check the variant number
         if variant_num >= cls.num_variants or variant_num < 0:
@@ -663,8 +676,8 @@ class RegressionTestMeta(type):
                 f'[0, {cls.num_variants})'
             )
 
-        p_space_len = len(cls._rfm_param_space)
-        return variant_num % p_space_len, variant_num // p_space_len
+        p_space_size = len(cls._rfm_param_space)
+        return variant_num % p_space_size, variant_num // p_space_size
 
     def get_variant_nums(cls, **conditions):
         '''Get the variant numbers that meet the specified conditions.
@@ -677,17 +690,24 @@ class RegressionTestMeta(type):
 
         .. code-block:: python
 
-           # Filter out the test variants where my_param is lower than 4
+           # Filter out the test variants where my_param is greater than 3
            cls.get_variant_nums(my_param=lambda x: x < 4)
         '''
         if not conditions:
             return list(range(cls.num_variants))
 
+        # Filter the parameter indices - only for [0, len(cls.param_space))
         inner_variants = cls.param_space.get_variant_nums(**conditions)
+
+        # The full variant space is of size param_space * fixture_space, and
+        # the parameter space is the inner-most index in this coordinate
+        # system. The inner_variants only contain the variants filtered in the
+        # range of [0, len(cls.param_space)), so we use this "mask" to compute
+        # the full variant indices in the range [0, cls.num_variants).
         outer_variants = []
-        param_space_len = len(cls.param_space)
-        for i in range(cls.num_variants//param_space_len):
-            outer_variants += map(lambda x: x + param_space_len*i,
+        param_space_size = len(cls.param_space)
+        for i in range(cls.num_variants // param_space_size):
+            outer_variants += map(lambda x: x + param_space_size*i,
                                   inner_variants)
 
         return outer_variants
@@ -709,6 +729,36 @@ class RegressionTestMeta(type):
         for the given variant number. By default, the recursion will traverse
         the full fixture tree, but this recursion depth can be limited with the
         ``max_depth`` argument.
+
+        See the example below:
+
+        .. code:: python
+
+          class Foo(rfm.RegressionTest):
+              p0 = parameter(range(2))
+              ...
+
+          class Bar(rfm.RegressionTest):
+              ...
+
+          class MyTest(rfm.RegressionTest):
+              p1 = parameter(['a', 'b'])
+              f0 = fixture(Foo)
+              f1 = fixture(Bar)
+              ...
+
+          # Get the raw info for variant 0
+          MyTest.get_variant_info(0, recursive=True)
+          # {
+          #     'params': {'p1': 'a'},
+          #     'fixtures': {
+          #         'f0': {
+          #             'params': {'p0': 0},
+          #             'fixtures': {}
+          #         },
+          #         'f1': 0,
+          #     }
+          # }
         '''
 
         pid, fid = cls._map_variant_num(variant_num)
@@ -721,6 +771,9 @@ class RegressionTestMeta(type):
 
         if recurse and (max_depth is None or rdepth < max_depth):
             for fix, variant in ret['fixtures'].items():
+                if not isinstance(variant, int):
+                    continue
+
                 fcls = cls.fixture_space[fix].cls
                 ret['fixtures'][fix] = fcls.get_variant_info(
                     variant, recurse=recurse, max_depth=max_depth,
