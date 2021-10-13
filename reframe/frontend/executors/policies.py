@@ -467,15 +467,16 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             forced_local = []
             normal = []
             for t in tasks:
-                if t.check.local or (kind=='build' and t.check.build_locally):
-                    if kind=='build':
+                if kind == 'build':
+                    if t.check.local or t.check.build_locally:
                         forced_local.append(t.check.build_job)
-                    elif kind=='run':
-                        forced_local.append(t.check.job)
-                else:
-                    if kind=='build':
+                    else:
                         normal.append(t.check.build_job)
-                    elif kind=='run':
+
+                elif kind == 'run':
+                    if t.check.local:
+                        forced_local.append(t.check.job)
+                    else:
                         normal.append(t.check.job)
 
             return forced_local, normal
