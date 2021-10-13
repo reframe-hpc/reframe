@@ -5,7 +5,7 @@
 
 import reframe as rfm
 
-from hpctestlib.apps.python.numpy.numpy_ops import numpy_ops_check
+from hpctestlib.python.numpy.numpy_ops import numpy_ops_check
 
 
 @rfm.simple_test
@@ -16,19 +16,19 @@ class cscs_numpy_test(numpy_ops_check):
     num_tasks_per_node = 1
     use_multithreading = False
     all_ref = {
-        'haswell': {
-            'dot': (0.4, None, 0.05, 'seconds'),
-            'svd': (0.37, None, 0.05, 'seconds'),
-            'cholesky': (0.12, None, 0.05, 'seconds'),
-            'eigendec': (3.5, None, 0.05, 'seconds'),
-            'inv': (0.21, None, 0.05, 'seconds'),
+        'haswell@12c': {
+            'dot': (0.4, None, 0.05, 's'),
+            'svd': (0.37, None, 0.05, 's'),
+            'cholesky': (0.12, None, 0.05, 's'),
+            'eigendec': (3.5, None, 0.05, 's'),
+            'inv': (0.21, None, 0.05, 's'),
         },
-        'broadwell': {
-            'dot': (0.3, None, 0.05, 'seconds'),
-            'svd': (0.35, None, 0.05, 'seconds'),
-            'cholesky': (0.1, None, 0.05, 'seconds'),
-            'eigendec': (4.14, None, 0.05, 'seconds'),
-            'inv': (0.16, None, 0.05, 'seconds'),
+        'broadwell@36c': {
+            'dot': (0.3, None, 0.05, 's'),
+            'svd': (0.35, None, 0.05, 's'),
+            'cholesky': (0.1, None, 0.05, 's'),
+            'eigendec': (4.14, None, 0.05, 's'),
+            'inv': (0.16, None, 0.05, 's'),
         }
     }
     tags = {'production'}
@@ -45,6 +45,7 @@ class cscs_numpy_test(numpy_ops_check):
     def set_perf_ref(self):
         arch = self.current_partition.processor.arch
         pname = self.current_partition.fullname
+        num_cores = self.current_partition.processor.num_cores
         self.reference = {
-            pname: self.all_ref[arch]
+            pname: self.all_ref[f'{arch}@{num_cores}c']
         }

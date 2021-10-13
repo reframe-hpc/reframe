@@ -7,6 +7,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
+@rfm.simple_test
 class numpy_ops_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
     '''NumPy basic operations test.
 
@@ -26,49 +27,48 @@ class numpy_ops_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
     currest system.
     '''
 
-    #: See :attr:`~reframe.core.pipeline.RegressionTest.executable`.
-    #:
-    #: :required: No
     executable = 'python'
-
-    #: See :attr:`~reframe.core.pipeline.RegressionTest.executable_opts`.
-    #:
-    #: :required: No
     executable_opts = ['np_ops.py']
-
-    #: See :attr:`~reframe.core.pipeline.RegressionTest.descr`.
-    #:
-    #: :required: No
     descr = 'Test NumPy operations: dot, svd, cholesky, eigen and inv'
 
-    @performance_function('seconds', perf_key='dot')
+    @performance_function('s', perf_key='dot')
     def time_dot(self):
+        '''Time of the ``dot`` kernel in seconds.'''
+
         return sn.extractsingle(
             r'^Dotted two 4096x4096 matrices in\s+(?P<dot>\S+)\s+s',
             self.stdout, 'dot', float)
 
-    @performance_function('seconds', perf_key='svd')
+    @performance_function('s', perf_key='svd')
     def time_svd(self):
+        '''Time of the ``svd`` kernel in seconds.'''
+
         return sn.extractsingle(
             r'^SVD of a 2048x1024 matrix in\s+(?P<svd>\S+)\s+s',
             self.stdout, 'svd', float)
 
-    @performance_function('seconds', perf_key='cholesky')
+    @performance_function('s', perf_key='cholesky')
     def time_cholesky(self):
+        '''Time of the ``cholesky`` kernel in seconds.'''
+
         return sn.extractsingle(
             r'^Cholesky decomposition of a 2048x2048 matrix in'
             r'\s+(?P<cholesky>\S+)\s+s',
             self.stdout, 'cholesky', float)
 
-    @performance_function('seconds', perf_key='eigendec')
+    @performance_function('s', perf_key='eigendec')
     def time_eigendec(self):
+        '''Time of the ``eigendec`` kernel in seconds.'''
+
         return sn.extractsingle(
             r'^Eigendecomposition of a 2048x2048 matrix in'
             r'\s+(?P<eigendec>\S+)\s+s',
             self.stdout, 'eigendec', float)
 
-    @performance_function('seconds', perf_key='inv')
+    @performance_function('s', perf_key='inv')
     def time_inv(self):
+        '''Time of the ``inv`` kernel in seconds.'''
+
         return sn.extractsingle(
             r'^Inversion of a 2048x2048 matrix in\s+(?P<inv>\S+)\s+s',
             self.stdout, 'inv', float)
