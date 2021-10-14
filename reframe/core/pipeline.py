@@ -2132,8 +2132,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         for d in self._case().deps:
             mask = int(d.check.name == target)
-            mask |= (int(d.partition.name==part) | int(part=='*')) << 1
-            mask |= (int(d.environ.name==environ) | int(environ=='*')) << 2
+            mask |= (int(d.partition.name == part) | int(part == '*')) << 1
+            mask |= (int(d.environ.name == environ) | int(environ == '*')) << 2
             if mask == 7:
                 return d.check
 

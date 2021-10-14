@@ -75,7 +75,7 @@ def test_empty_variants():
 
     with pytest.raises(ValueError):
         class MyTest(rfm.RegressionMixin):
-            f = fixture(Foo, variants={'p': lambda x: x>10})
+            f = fixture(Foo, variants={'p': lambda x: x > 10})
 
     with pytest.raises(ValueError):
         class MyTest(rfm.RegressionMixin):
@@ -95,8 +95,12 @@ def test_fork_join_variants():
     assert MyTest.num_variants == 4
     assert MyTest.fixture_space['f0'].variants == (0, 1, 2, 3)
     assert MyTest.fixture_space['f1'].variants == (0, 1, 2, 3)
-    assert MyTest.fixture_space['f0'].fork_variants == (0, 1, 2, 3)
-    assert MyTest.fixture_space['f1'].fork_variants == [None]
+
+    # The fork action has only one variant per fork
+    assert MyTest.fixture_space['f0'].fork_variants == ((0,), (1,), (2,), (3,))
+
+    # The join action has only one fork with all the variants in it
+    assert MyTest.fixture_space['f1'].fork_variants == ((0, 1, 2, 3),)
 
 
 def test_default_variable():
@@ -171,16 +175,16 @@ def test_fixture_space_access():
     assert len(Foo.fixture_space.fixtures) == 4
 
     # Assert the fixture variant ID combination for each of the Foo variants
-    assert [v for v in Foo.fixture_space] == [(None, 0, None, 0), # Foo var #0
-                                              (None, 0, None, 1), # Foo var #1
-                                              (None, 1, None, 0), # Foo var #2
-                                              (None, 1, None, 1)] # Foo var #3
+    assert [v for v in Foo.fixture_space] == [((0, 1), (0,), (0, 1), (0,)),
+                                              ((0, 1), (0,), (0, 1), (1,)),
+                                              ((0, 1), (1,), (0, 1), (0,)),
+                                              ((0, 1), (1,), (0, 1), (1,))]
 
     # Get the k-v map for Foo's variant #2
-    assert Foo.fixture_space[2] == {'f0': 0,
-                                    'f1': None,
-                                    'f2': 1,
-                                    'f3': None}
+    assert Foo.fixture_space[2] == {'f0': (0,),
+                                    'f1': (0, 1),
+                                    'f2': (1,),
+                                    'f3': (0, 1)}
 
     # Access the fixture space by fixture name - get the fixture object
     assert Foo.fixture_space['f1'].cls == P0
@@ -255,6 +259,7 @@ def test_fixture_registry_edges(fixture_sys, simple_fixture):
 
     reg = fixtures.FixtureRegistry()
     registered_fix = set()
+
     def register(p, e, **kwargs):
         registered_fix.update(
             reg.add(simple_fixture(**kwargs),
@@ -290,21 +295,21 @@ def test_fixture_registry_variables(fixture_sys, simple_fixture):
     sys = rt.runtime().system
     part = sys.partitions[0].fullname
     env = sys.partitions[0].environs[0].name
-
     registered_fix = set()
+
     def register(**kwargs):
         registered_fix.update(
             reg.add(simple_fixture(**kwargs),
                     0, 'b', [part], [env])
         )
 
-    register(variables={'a':1, 'b':2})
+    register(variables={'a': 1, 'b': 2})
     assert len(registered_fix) == 1
-    register(variables={'b':2, 'a':1})
+    register(variables={'b': 2, 'a': 1})
     assert len(registered_fix) == 1
 
     # Fixture with different variables is treated as a new fixture.
-    register(variables={'a':2, 'b':2})
+    register(variables={'a': 2, 'b': 2})
     assert len(registered_fix) == 2
     register()
     assert len(registered_fix) == 3
@@ -319,8 +324,8 @@ def test_fixture_registry_variants(fixture_sys, param_fixture):
     sys = rt.runtime().system
     part = sys.partitions[0].fullname
     env = sys.partitions[0].environs[0].name
-
     registered_fix = set()
+
     def register(scope='test', variant=0):
         registered_fix.update(
             reg.add(param_fixture(scope=scope), variant,
@@ -354,8 +359,8 @@ def test_fixture_registry_base_arg(fixture_sys, simple_fixture):
     sys = rt.runtime().system
     part = sys.partitions[0].fullname
     env = sys.partitions[0].environs[0].name
-
     registered_fix = set()
+
     def register(scope='test', base=0):
         registered_fix.update(
             reg.add(simple_fixture(scope=scope), 0,

@@ -59,7 +59,9 @@ class FixtureRegistry:
         }
 
         # Compact naming switch
-        self._hash = runtime.runtime().get_option('general/0/compact_test_names')
+        self._hash = runtime.runtime().get_option(
+            'general/0/compact_test_names'
+        )
 
     def add(self, fixture, variant_num, parent_name, partitions, prog_envs):
         '''Register a fixture.
@@ -306,10 +308,10 @@ class TestFixture:
     are registered with the ``'test'`` scope, which makes each fixture
     `private` to each of the parent tests. Hence, if all fixtures use this
     scope, the resulting fixture hierarchy can be thought of multiple
-    independent branches that emanate from each root regression test. On the other
-    hand, setting a more relaxed scope that allows resource sharing across
-    different regression tests will effectively interconnect the fixture branches
-    that share a resource.
+    independent branches that emanate from each root regression test. On the
+    other hand, setting a more relaxed scope that allows resource sharing
+    across different regression tests will effectively interconnect the
+    fixture branches that share a resource.
 
     From a more to less restrictive scope, the valid scopes are ``'test'``,
     ``'environment'``, ``'partition'`` and ``'session'``. Fixtures with
@@ -433,21 +435,35 @@ class TestFixture:
 
     @property
     def fork_variants(self):
-        '''The list of fixture variants that the parent test will fork.
+        '''Collection of fixture variant sets the parent test will fork.
 
-        If the fixture action was set to ``'fork'``, the fork variants match
-        the fixture variants. Thus, parameterizing a fixture is effectively
-        a parameterisation of the parent test. On the other hand, if the
-        fixture was specified a ``'join'`` action, the fixture variants will
-        not translate into more variants (forks) of the parent test, and this
-        parent test will instead gather all the fixture variants under the same
-        instance. To achieve this special behavior, the list of fork variants
-        is set to ``[None]``.
+        This function returns a tuple, where each of the elements represents
+        a single fork. These elements are iterables containing a set of the
+        fixture variant indices that a single fork will reduce. For example,
+        for a returned tuple ``((1, 2), (3, 4))``, the parent test using this
+        fixture will fork twice, where the first fork will reduce the fixture
+        vairants #1 and #2, and the second fork will reduce the fixture
+        variants #3 and #4.
+
+        With a ``'fork'`` action, the returned tuple will have as many elements
+        as specified fixture vairants, where each of the elements is a
+        one-element tuple containing a unique fixture variant ID (with the
+        above example, this is ``((1,), (2,), (3,), (4,))``). With a ``'join'``
+        action, the returned tuple will contain a single iterable containing
+        all the specified fixture variants (``((1, 2, 3, 4),)``).
+
+        .. note::
+          This forking model could be made fully customisable to the user by
+          simply allowing to pass a function as the ``action`` argument that
+          process the variants in their custom way to generate the tuple of
+          iterables. However, this would conceptually overlap with the
+          ``variants`` argument, since a user could pass a function that does
+          not use the specified fixture variants at all.
         '''
         if self._action == 'join':
-            return [None]
+            return tuple((self.variants,))
         else:
-            return self.variants
+            return tuple((v,) for v in self.variants)
 
     @property
     def variables(self):
@@ -557,18 +573,8 @@ class FixtureSpace(namespaces.Namespace):
 
         # Register the fixtures
         for name, fixture in self.fixtures.items():
-            var_num = fixture_variants[name]
-
-            # Handle the 'fork' and 'join' actions:
-            # var_num is None when the fixture has a 'join' action. Otherwise
-            # var_num is a nonnegative integer.
-            if isinstance(var_num, int):
-                var_num = [var_num]
-            else:
-                var_num = fixture.variants
-
             dep_names = []
-            for variant in var_num:
+            for variant in fixture_variants[name]:
                 try:
                     # Register all the variants and track the fixture names
                     dep_names += obj._rfm_fixture_registry.add(fixture,
