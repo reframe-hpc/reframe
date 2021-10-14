@@ -23,7 +23,7 @@ class BuildHip(rfm.RegressionTest):
     build_system = 'CMake'
 
     # Checkout the latest tag - git describe doesn't work here
-    prebuild_cmds = ["git tag | tail -1 | xargs git checkout $1"]
+    prebuild_cmds = ['git tag | tail -1 | xargs git checkout $1']
 
     postbuild_cmds = ['make install']
     executable = f'{hip_path}/bin/hipcc'
