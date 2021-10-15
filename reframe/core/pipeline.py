@@ -1267,11 +1267,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             deps = []
             for fixture_instance, data in registry[f.cls].items():
                 if f.scope == 'partition':
-                    if data[2][0] != self.current_partition.fullname:
+                    if data.partitions[0] != self.current_partition.fullname:
                         continue
                 elif f.scope == 'environment':
-                    if (data[1][0] != self.current_environ.name or
-                        data[2][0] != self.current_partition.fullname):
+                    if (data.environments[0] != self.current_environ.name or
+                        data.partitions[0] != self.current_partition.fullname):
                         continue
 
                 deps.append(self.getdep(fixture_instance, environ, part))

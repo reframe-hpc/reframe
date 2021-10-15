@@ -22,6 +22,37 @@ from reframe.core.exceptions import ReframeSyntaxError, what
 from reframe.core.logging import getlogger
 
 
+class FixtureData:
+    '''Store raw data related to a fixture instance.
+
+    The stored data is the fixture class variant number, a list with the valid
+    environments, another list with the valid partitions, and a dictionary with
+    any fixture variables that may be set during the instantiation of the
+    fixture class.
+
+    This data is required to instantiate the fixture.
+    '''
+
+    def __init__(self, variant_num, envs, parts, variables):
+        self.data = (variant_num, envs, parts, variables,)
+
+    @property
+    def variant_num(self):
+        return self.data[0]
+
+    @property
+    def environments(self):
+        return self.data[1]
+
+    @property
+    def partitions(self):
+        return self.data[2]
+
+    @property
+    def variables(self):
+        return self.data[3]
+
+
 class FixtureRegistry:
     '''Regression test fixture registry.
 
@@ -149,7 +180,7 @@ class FixtureRegistry:
                 return []
 
             # Register the fixture
-            self._registry[cls][name] = (
+            self._registry[cls][name] = FixtureData(
                 variant_num, [valid_envs[0]], [part], variables
             )
             reg_names.append(name)
@@ -164,7 +195,7 @@ class FixtureRegistry:
                     continue
 
                 # Register the fixture
-                self._registry[cls][name] = (
+                self._registry[cls][name] = FixtureData(
                     variant_num, [valid_envs[0]], [part], variables
                 )
                 reg_names.append(name)
@@ -176,7 +207,7 @@ class FixtureRegistry:
                     name = f'{fname}~{ext}'
 
                     # Register the fixture
-                    self._registry[cls][name] = (
+                    self._registry[cls][name] = FixtureData(
                         variant_num, [env], [p], variables
                     )
                     reg_names.append(name)
@@ -185,7 +216,7 @@ class FixtureRegistry:
             name = f'{fname}~{parent_name}'
 
             # Register the fixture
-            self._registry[cls][name] = (
+            self._registry[cls][name] = FixtureData(
                 variant_num, list(prog_envs), list(valid_partitions),
                 variables
             )
@@ -236,7 +267,7 @@ class FixtureRegistry:
         ret = []
         for cls, variants in self._registry.items():
             for name, args in variants.items():
-                varnum, penv, part, variables = args
+                varnum, penv, part, variables = args.data
 
                 # Set the fixture name and stolen env and part from the parent,
                 # alongside the other variables specified during the fixture's
@@ -281,7 +312,11 @@ class FixtureRegistry:
             raise TypeError('other is not a FixtureRegistry')
 
     def __getitem__(self, cls):
-        '''Return the names of all registered fixtures from a given class.'''
+        '''Return the sub-dictionary for a given fixture class.
+
+        The keys are the mangled fixture names and the values are the raw data
+        to instantiate the fixture class with.
+        '''
 
         try:
             return self._registry[cls]
