@@ -276,6 +276,11 @@ def main():
         metavar='PATTERN', default=[],
         help='Exclude checks whose name matches PATTERN'
     )
+    select_options.add_argument(
+        '--exclude-tags', action='append', dest='exclude_tags',
+        metavar='PATTERN', default=[],
+        help='Exclude checks whose tag matches PATTERN'
+    )
 
     # Action options
     action_options.add_argument(
@@ -803,6 +808,10 @@ def main():
         )
 
         # Filter test cases by tags
+        if options.exclude_tags:
+            for tag in options.exclude_tags:
+                testcases = filter(filters.have_not_tag(tag), testcases)
+
         for tag in options.tags:
             testcases = filter(filters.have_tag(tag), testcases)
 
