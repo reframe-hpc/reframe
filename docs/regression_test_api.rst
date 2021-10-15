@@ -42,6 +42,13 @@ In essence, these builtins exert control over the test creation, and they allow 
 
 .. note::
   The built-in types described below can only be used to declare class variables, and they must never be part of any container type.
+  Ignoring this restriction will result in undefined behavior.
+
+  .. code::
+
+    class MyTest(rfm.RegressionMixin):
+        p0 = parameter([1, 2])   # Correct
+        p1 = [parameter([1, 2])] # Undefined behavior
 
 
 .. py:function:: RegressionMixin.parameter(values=None, inherit_params=False, filter_params=None)
@@ -234,15 +241,20 @@ In essence, these builtins exert control over the test creation, and they allow 
 
   Declare a new fixture in the current regression test.
   A fixture is a regression test that creates, prepares and/or manages a resource for another regression test.
-  Fixtures may contain other fixtures and so on, forming a tree-like structure.
+  Fixtures may contain other fixtures and so on, forming a directed acyclic graph.
   A parent fixture (or a regular regression test) requires the resources managed by its child fixtures in order to run, and it may only access these fixture resources after its ``setup`` pipeline stage.
   The execution of parent fixtures is postponed until all their respective children have completed execution.
-  However, the destruction of the resources managed by a fixture occurs in reverse order, only after the parent fixture has been destroyed.
+  However, the destruction of the resources managed by a fixture occurs in reverse order, only after all the parent fixtures have been destroyed.
   This destruction of resources takes place during the ``cleanup`` pipeline stage of the regression test.
   Fixtures must not define the members :attr:`~reframe.core.pipeline.RegressionTest.valid_systems` and :attr:`~reframe.core.pipeline.RegressionTest.valid_prog_environs`.
-  These variables will be defined based on the values specified in the parent test, ensuring that the fixture runs with a suitable system partition and programming environment combination.
+  These variables are defined based on the values specified in the parent test, ensuring that the fixture runs with a suitable system partition and programming environment combination.
   A fixture's :attr:`~reframe.core.pipeline.RegressionTest.name` attribute may be internally mangled depending on the arguments passed during the fixture declaration.
-  Hence, manually setting or modifying the :attr:`~reframe.core.pipeline.RegressionTest.name` attribute in the fixture class (i.e. the ``cls`` argument) is disallowed, and breaking this restriction will result in undefined behaviour.
+  Hence, manually setting or modifying the :attr:`~reframe.core.pipeline.RegressionTest.name` attribute in the fixture class is disallowed, and breaking this restriction will result in undefined behavior.
+
+  .. note::
+    The fixture name mangling is considered an internal framework mechanism and it may change in future versions without any notice.
+    Users must not express any logic in their tests that relies on a given fixture name mangling scheme.
+
 
   By default, the resources managed by a fixture are private to the parent test.
   However, it is possible to share these resources across different tests by passing the appropriate fixture ``scope`` argument.
@@ -257,8 +269,8 @@ In essence, these builtins exert control over the test creation, and they allow 
      Fixtures with this scope must be independent of the programming environment, which restricts the fixture class to derive from :class:`~reframe.core.pipeline.RunOnlyRegressionTest`.
    * **environment**: The extent of this scope covers a single combination of system partition and programming environment.
      Since the fixture is guaranteed to have the same partition and programming environment as the parent test, the fixture class can be any derived class from :class:`~reframe.core.pipeline.RegressionTest`.
-   * **test**: This scope covers a single instance of the parent test.
-     The resources provided by the fixture are exclusive to each parent test instance.
+   * **test**: This scope covers a single instance of the parent test, where the resources provided by the fixture are exclusive to each parent test instance.
+     The fixture class can be any derived class from :class:`~reframe.core.pipeline.RegressionTest`.
 
   Rather than specifying the scope at the fixture class definition, ReFrame fixtures set the scope level from the consumer side (i.e. when used by another test or fixture).
   A test may declare multiple fixtures using the same class, where fixtures with different scopes are guaranteed to point to different instances of the fixture class.
@@ -312,7 +324,7 @@ In essence, these builtins exert control over the test creation, and they allow 
   Fixtures are treated by ReFrame as first-class ReFrame tests, which means that these classes can use the same built-in functionalities as in regular tests decorated with :func:`@rfm.simple_test<reframe.core.decorators.simple_test>`.
   This includes the :func:`~reframe.core.pipeline.RegressionMixin.parameter` built-in, where fixtures may have more than one :ref:`variant<test-variants>`.
   When this occurs, a parent test may select to either treat a parameterized fixture as a test parameter, or instead, to gather all the fixture variants from a single instance of the parent test.
-  In essence, fixtures implement `fork-join` model whose behaviour may be controlled through the ``action`` argument.
+  In essence, fixtures implement `fork-join` model whose behavior may be controlled through the ``action`` argument.
   This argument may be set to one of the following options:
 
    * **fork**: This option parameterizes the parent test as a function of the fixture variants.
@@ -321,7 +333,7 @@ In essence, these builtins exert control over the test creation, and they allow 
      The fixture handle will point to a list containing all the fixture variants.
 
   A test may declare multiple fixtures with different ``action`` options, where the default ``action`` option is ``'fork'``.
-  The example below illustrates the behaviour of these two different options.
+  The example below illustrates the behavior of these two different options.
 
   .. code:: python
 
@@ -425,15 +437,15 @@ In essence, these builtins exert control over the test creation, and they allow 
 
 
   :param cls: A class derived from :class:`~reframe.core.pipeline.RegressionTest` that manages a given resource.
-    The base from this class may be further restricted to other derived classes from :class:`~reframe.core.pipeline.RegressionTest` depending on the ``scope`` parameter.
+    The base from this class may be further restricted to other derived classes of :class:`~reframe.core.pipeline.RegressionTest` depending on the ``scope`` parameter.
   :param scope: Sets the extent to which other regression tests may share the resources managed by a fixture.
     The available scopes are, from more to less restrictive, ``'test'``, ``'environment'``, ``'partition'`` and ``'session'``.
     By default a fixture's scope is set to ``'test'``, which makes the resource private to the test that uses the fixture.
     This means that when multiple regression tests use the same fixture class with a ``'test'`` scope, the fixture will run once per regression test.
-    When the scope is set to ``'environment'``, the resources managed by the fixture are shared across all the tests that use the fixture that run on the same system partition and use the same programming environment.
+    When the scope is set to ``'environment'``, the resources managed by the fixture are shared across all the tests that use the fixture and run on the same system partition and use the same programming environment.
     When the scope is set to ``'partition'``, the resources managed by the fixture are shared instead across all the tests that use the fixture and run on the same system partition.
     Lastly, when the scope is set to ``'session'``, the resources managed by the fixture are shared across the full ReFrame session.
-    However, fixtures with either ``'partition'`` or ``'session'`` scopes may be shared across different regression tests under different programming environments, and for this reason, when using these two scopes, the fixture class ``cls`` is required to derive from :class:`~reframe.core.pipeline.RunOnlyRegressionTest`.
+    Fixtures with either ``'partition'`` or ``'session'`` scopes may be shared across different regression tests under different programming environments, and for this reason, when using these two scopes, the fixture class ``cls`` is required to derive from :class:`~reframe.core.pipeline.RunOnlyRegressionTest`.
   :param action: Set the behavior of a parameterized fixture to either ``'fork'`` or ``'join'``.
     With a ``'fork'`` action, a parameterized fixture effectively parameterizes the regression test.
     On the other hand, a ``'join'`` action gathers all the fixture variants into the same instance of the regression test.
@@ -614,7 +626,7 @@ In most cases, the user does not need to be aware of all the internals related t
 On the other hand, in more complex use cases such as setting dependencies across different test variants, or when performing some complex variant sub-selection on a fixture declaration, the user may need to access some of this low-level information related to the variant indexing.
 Therefore, classes that derive from the base :class:`~reframe.core.pipeline.RegressionMixin` provide `classmethods` and properties to query these data.
 
-.. note::
+.. warning::
   When selecting test variants through their variant index, no index ordering should ever be assumed, being the user's responsibility to ensure on each ReFrame run that the selected index corresponds to the desired parameter and/or fixture variants.
 
 .. py:attribute:: RegressionMixin.num_variants
@@ -627,7 +639,7 @@ Therefore, classes that derive from the base :class:`~reframe.core.pipeline.Regr
   Get the raw variant data for a given variant index.
   This function returns a dictionary with the variant data on the different subspaces, such as the parameter values and the fixture variants.
   The parameter sub-dictionary contains the values for each parameter associated to the given variant number.
-  The fixture sub-dictionary, by default, will return the variant number associated to each of the fixtures.
+  The fixture sub-dictionary, by default, will return the variant numbers associated to each of the fixtures.
   However, if ``recurse`` is set to ``True``, each fixture entry will contain the full variant information for the given variant number.
   By default, the recursion will traverse the full fixture tree, but this recursion depth can be limited with the ``max_depth`` argument.
 
