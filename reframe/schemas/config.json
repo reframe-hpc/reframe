@@ -498,6 +498,7 @@
         "general/check_search_recursive": false,
         "general/clean_stagedir": true,
         "general/colorize": true,
+        "general/git_clone_timeout": 5,
         "general/ignore_check_conflicts": false,
         "general/trap_job_errors": false,
         "general/keep_stage_files": false,
