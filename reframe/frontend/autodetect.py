@@ -242,6 +242,9 @@ def detect_topology():
 
                 _save_info(topo_file, part.processor.info)
             elif detect_remote_systems:
+                # We disable remote detection on the submitted job to avoid
+                # uncontrolled creation of jobs; see GH bug #2226
+                vars['RFM_REMOTE_DETECT'] = 'False'
                 with runtime.temp_environment(modules=modules, variables=vars):
                     part._processor = ProcessorInfo(_remote_detect(part))
 
