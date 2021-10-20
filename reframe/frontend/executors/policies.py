@@ -235,10 +235,10 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         # Index tasks by test cases
         self._task_index = {}
 
-        # All currently building tasks per partition
+        # All tasks currently in their build phase per partition
         self._build_tasks = {}
 
-        # All currently running tasks per partition
+        # All tasks currently in their run phase per partition
         self._running_tasks = {}
 
         # Tasks that need to be finalized
@@ -492,7 +492,10 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             part.scheduler.poll(*part_jobs)
             self.local_scheduler.poll(*forced_local_jobs)
 
-            # Trigger notifications for finished jobs
+            # Trigger notifications for finished jobs.
+            # We need need a copy of the list here in order to not modify the
+            # list while looping over it. `run_complete` calls `on_task_exit`,
+            # which in turn will remove the task from `_running_tasks`.
             for t in self._running_tasks[partname][:]:
                 t.run_complete()
 
