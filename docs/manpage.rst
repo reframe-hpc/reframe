@@ -392,7 +392,7 @@ Options controlling ReFrame execution
 
    .. tip::
 
-     If you use a variable's value in the definition of another variable or parameter and you need to control that variable from the command line, you should consider using an environment variable to set it, as in the following example:
+     In cases where the class body expresses logic as a function of a variable, the variable's default value (i.e. the value set through the value argument) may be modified through an environment variable as follows:
 
      .. code-block:: python
 
