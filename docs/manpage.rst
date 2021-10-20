@@ -392,7 +392,7 @@ Options controlling ReFrame execution
 
    .. tip::
 
-     In cases that you really need the variable to be set before the test is instantiated, like parameterising the test based on this variable, you can do it through an environment variable:
+     If you use a variable's value in the definition of another variable or parameter and you need to control that variable from the command line, you should consider using an environment variable to set it, as in the following example:
 
      .. code-block:: python
 
@@ -400,9 +400,9 @@ Options controlling ReFrame execution
 
       @rfm.simple_test
       class my_test(rfm.RegressionTest):
-          foo = variable(int, value=int(os.getenv('MYFOOVAR', 1)))
+          max_nodes = variable(int, value=int(os.getenv('MAX_NODES', 1)))
           # Parameterise number of nodes
-          num_nodes = parameter((1 << i for i in range(0, int(foo))))
+          num_nodes = parameter((1 << i for i in range(0, int(max_nodes))))
 
    - If the variable is set in any pipeline hook, the command line assignment will have an effect until the variable assignment in the pipeline hook is reached.
      The variable will be then overwritten.
