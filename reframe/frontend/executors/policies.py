@@ -464,6 +464,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
         def split_jobs(tasks, kind='run'):
             '''Split jobs into forced local and normal ones.'''
+
             forced_local = []
             normal = []
             for t in tasks:
@@ -493,9 +494,11 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             self.local_scheduler.poll(*forced_local_jobs)
 
             # Trigger notifications for finished jobs.
-            # We need need a copy of the list here in order to not modify the
-            # list while looping over it. `run_complete` calls `on_task_exit`,
-            # which in turn will remove the task from `_running_tasks`.
+            #
+            # NOTE: We need a copy of the list here in order to not modify the
+            # list while looping over it. `run_complete()` calls
+            # `on_task_exit()`, which in turn will remove the task from
+            # `_running_tasks`.
             for t in self._running_tasks[partname][:]:
                 t.run_complete()
 
