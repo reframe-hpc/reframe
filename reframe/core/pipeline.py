@@ -1568,12 +1568,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             :class:`True` is returned.
         :raises reframe.core.exceptions.ReframeError: In case of errors.
 
-        .. warning::
-           You may not override this method directly unless you are in
-           special test. See `here
-           <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
-           more details.
-
         '''
         if not self._build_job:
             return True
