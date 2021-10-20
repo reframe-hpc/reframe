@@ -11,7 +11,7 @@ from reframe.core.backends import getlauncher
 
 @rfm.simple_test
 class IPCMagic(rfm.RunOnlyRegressionTest, pin_prefix=True):
-    '''Base class for the IPCMagic Test.
+    '''Class for the IPCMagic Test.
 
     MPI for Python provides bindings of the Message Passing Interface
     (MPI) standard for Python, allowing any Python program to exploit
@@ -26,20 +26,30 @@ class IPCMagic(rfm.RunOnlyRegressionTest, pin_prefix=True):
 
     The engines and another server that moderates the cluster, called the
     controller, can be started an stopped with the magic %ipcluster start n
-    <num-engines> --mpi and %ipcluster stop, respectively. Such commands
-    are available through the module ipcmagic
-    (see user.cscs.ch/tools/interactive/jupyterlab/).
+    <num-engines> --mpi and %ipcluster stop, respectively
+    (see https://user.cscs.ch/tools/interactive/jupyterlab/).
 
-    The presented abstract run-only class checks the IPCMagic perfomance.
+    The presented run-only class checks the IPCMagic perfomance.
     To do this, the source has written a program with a single-layer neural
     network and a noisy linear function to be trained on. The parameters of
     this linear function are returned at the end along with the resulting
-    loss function.  The default assumption is that IPCMagic is already
+    loss function. The default assumption is that IPCMagic is already
     installed on the device under test.
     '''
 
+    #: See :attr:`~reframe.core.pipeline.RegressionTest.executable`.
+    #:
+    #: :required: No
     executable = 'ipython'
+
+    #: See :attr:`~reframe.core.pipeline.RegressionTest.executable_opts`.
+    #:
+    #: :required: No
     executable_opts = ['tf-hvd-sgd-ipc-tf2.py']
+
+    #: See :attr:`~reframe.core.pipeline.RegressionTest.descr`.
+    #:
+    #: :required: No
     descr = 'Distributed training with TensorFlow using ipyparallel'
 
     @performance_function('N/A', perf_key='slope')
