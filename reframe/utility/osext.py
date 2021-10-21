@@ -432,7 +432,7 @@ def git_clone(url, targetdir=None, timeout=5):
                 timeout=timeout)
 
 
-def git_repo_exists(url, timeout):
+def git_repo_exists(url, timeout=5):
     '''Check if URL refers to a valid Git repository.
 
     :arg url: The URL to check.
