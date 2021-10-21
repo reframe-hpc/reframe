@@ -39,9 +39,7 @@ class TestVar:
     :meta private:
     '''
 
-    __slots__ = (
-        'field', '_default_value', 'name', '__attrs__'
-    )
+    __slots__ = ('_field', '_default_value', '_name',)
 
     def __init__(self, *args, **kwargs):
         field_type = kwargs.pop('field', fields.TypedField)
@@ -53,8 +51,7 @@ class TestVar:
                 f'{fields.Field.__qualname__}'
             )
 
-        self.field = field_type(*args, **kwargs)
-        self.__attrs__ = dict()
+        self._field = field_type(*args, **kwargs)
 
     def is_defined(self):
         return self._default_value is not Undefined
@@ -73,27 +70,37 @@ class TestVar:
         return copy.deepcopy(self._default_value)
 
     @property
-    def attrs(self):
-        # Variable attributes must also be returned by-value.
-        return copy.deepcopy(self.__attrs__)
+    def field(self):
+        return self._field
+
+    @property
+    def name(self):
+        return self._name
 
     def __set_name__(self, owner, name):
-        self.name = name
+        self._name = name
 
     def __setattr__(self, name, value):
         '''Set any additional variable attribute into __attrs__.'''
         if name in self.__slots__:
             super().__setattr__(name, value)
         else:
-            self.__attrs__[name] = value
+            setattr(self._default_value, name, value)
 
     def __getattr__(self, name):
-        '''Attribute lookup into __attrs__.'''
-        attrs = self.__getattribute__('__attrs__')
+        '''Attribute lookup into the variable's value.'''
+        def_val = self.__getattribute__('_default_value')
         try:
-            return attrs[name]
-        except KeyError:
-            var_name = self.__getattribute__('name')
+            # NOTE: This if here is necessary to avoid a deepcopy issue.
+            # If we just do a getattr here and the def_val is Undefined,
+            # the deepcopy routine returns Undefined as a deepcopy of a
+            # TestVar instance.
+            if def_val is Undefined:
+                raise AttributeError('Undefined does not have attributes')
+            else:
+                return getattr(def_val, name)
+        except AttributeError:
+            var_name = self.__getattribute__('_name')
             raise AttributeError(
                 f'variable {var_name!r} has no attribute {name!r}'
             ) from None
@@ -101,7 +108,7 @@ class TestVar:
     def _check_is_defined(self):
         if not self.is_defined():
             raise ReframeSyntaxError(
-                f'variable {self.name} is not assigned a value'
+                f'variable {self._name} is not assigned a value'
             )
 
     def __repr__(self):
@@ -537,11 +544,6 @@ class VarSpace(namespaces.Namespace):
             # If the var is defined, set its value
             if var.is_defined():
                 setattr(obj, name, var.default_value)
-
-                # If the variable value itself has attributes, inject them.
-                value = getattr(obj, name)
-                for attr, attr_value in var.attrs.items():
-                    setattr(value, attr, attr_value)
 
             # Track the variables that have been injected.
             self._injected_vars.add(name)
