@@ -5,9 +5,9 @@
 
 import pytest
 
+import reframe as rfm
 import reframe.core.meta as meta
 import reframe.core.deferrable as deferrable
-
 from reframe.core.exceptions import ReframeSyntaxError
 
 
@@ -42,9 +42,13 @@ def test_directives(MyMeta):
     def ext_fn(x):
         pass
 
+    class MyFixture(rfm.RunOnlyRegressionTest):
+        pass
+
     class MyTest(MyMeta):
         p = parameter()
         v = variable(int)
+        f = fixture(MyFixture)
         bind(ext_fn, name='ext')
         run_before('run')(ext)
         run_after('run')(ext)
@@ -58,6 +62,7 @@ def test_directives(MyMeta):
         def __init__(self):
             assert not hasattr(self, 'parameter')
             assert not hasattr(self, 'variable')
+            assert not hasattr(self, 'fixture')
             assert not hasattr(self, 'bind')
             assert not hasattr(self, 'run_before')
             assert not hasattr(self, 'run_after')
@@ -369,3 +374,48 @@ def test_performance_function_errors(MyMeta):
             @performance_function(5)
             def perf_fn(self):
                 pass
+
+
+def test_setting_variables_on_instantiation(MyMeta):
+    class Foo(MyMeta):
+        v = variable(int, value=1)
+
+    assert Foo().v == 1
+    assert Foo(variables={'v': 10}).v == 10
+
+
+def test_variants(MyMeta):
+    class Foo(MyMeta):
+        p = parameter(['a', 'b'])
+
+    assert Foo.num_variants == 2
+    assert Foo.get_variant_info(0)['params']['p'] == 'a'
+    assert Foo(variant_num=0).p == 'a'
+    assert Foo(variant_num=1).p == 'b'
+
+
+def test_get_info(MyMeta):
+    class Fix(rfm.RegressionTest):
+        p = parameter(['a', 'b'])
+
+    class Foo(MyMeta):
+        f = fixture(Fix)
+
+    assert Foo.num_variants == 2
+    assert Foo.get_variant_info(0, recurse=True) == {
+                                                        'params': {},
+                                                        'fixtures': {
+                                                            'f': (0,)
+                                                        }
+                                                    }
+
+
+def test_get_variant_nums(MyMeta):
+    class Foo(MyMeta):
+        p = parameter(range(10))
+        q = parameter(range(10))
+
+    variants = Foo.get_variant_nums(p=lambda x: x<5, q=lambda x: x>3)
+    for variant in variants:
+        assert Foo.get_variant_info(variant)['params']['p'] < 5
+        assert Foo.get_variant_info(variant)['params']['q'] > 3

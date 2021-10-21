@@ -9,6 +9,7 @@ import reframe as rfm
 import unittests.utility as test_util
 import reframe.core.fixtures as fixtures
 import reframe.core.runtime as rt
+import reframe.utility.udeps as udeps
 from reframe.core.exceptions import ReframeSyntaxError
 
 
@@ -16,9 +17,17 @@ def test_fixture_class_types():
     class Foo:
         pass
 
+    # Wrong fixture classes
+
     with pytest.raises(ValueError):
         class MyTest(rfm.RegressionMixin):
             f = fixture(Foo)
+
+    with pytest.raises(ValueError):
+        class MyTest(rfm.RegressionMixin):
+            f = fixture(rfm.RegressionMixin)
+
+    # Session and partition scopes must be run-only.
 
     with pytest.raises(ValueError):
         class MyTest(rfm.RegressionMixin):
@@ -67,7 +76,7 @@ def test_abstract_fixture():
             f = fixture(Foo)
 
 
-def test_empty_variants():
+def test_fixture_variants():
     '''Fixtures must have at least one valid variant.'''
 
     class Foo(rfm.RegressionTest):
@@ -80,6 +89,12 @@ def test_empty_variants():
     with pytest.raises(ValueError):
         class MyTest(rfm.RegressionMixin):
             f = fixture(Foo, variants=())
+
+    # Test default variants argument 'all'
+    class MyTest(rfm.RegressionMixin):
+        f = fixture(Foo, variants='all')
+
+    assert MyTest.fixture_space['f'].variants == (0, 1, 2, 3,)
 
 
 def test_fork_join_variants():
@@ -103,11 +118,14 @@ def test_fork_join_variants():
     assert MyTest.fixture_space['f1'].fork_variants == ((0, 1, 2, 3),)
 
 
-def test_default_variable():
+def test_default_args():
     class Foo(rfm.RegressionMixin):
         f = fixture(rfm.RegressionTest)
 
     assert Foo.fixture_space['f'].variables == {}
+    assert Foo.fixture_space['f'].action == 'fork'
+    assert Foo.fixture_space['f'].scope == 'test'
+    assert Foo.fixture_space['f'].variants == (0,)
 
 
 def test_fixture_inheritance():
@@ -146,13 +164,16 @@ def test_fixture_inheritance_clash():
 
 
 def test_fixture_override():
-    '''A child class may only override a fixture with a new fixture.'''
+    '''A child class may only redefine a fixture with the fixture builtin.'''
 
     class Foo(rfm.RegressionMixin):
         f0 = fixture(rfm.RegressionTest)
 
+    class Bar(Foo):
+        f0 = fixture(rfm.RegressionTest)
+
     with pytest.raises(ReframeSyntaxError):
-        class Baz(Foo):
+        class Bar(Foo):
             f0 = 4
 
 
@@ -192,6 +213,17 @@ def test_fixture_space_access():
     assert Foo.fixture_space['f1'].action == 'join'
 
 
+def test_fixture_data():
+    '''Test the structure that holds the raw fixture data in the registry.'''
+
+    d = fixtures.FixtureData(1, 2, 3, 4)
+    assert d.data == (1, 2, 3, 4,)
+    assert d.variant_num == 1
+    assert d.environments == 2
+    assert d.partitions == 3
+    assert d.variables == 4
+
+
 @pytest.fixture
 def fixture_sys(make_exec_ctx_g):
     yield from make_exec_ctx_g(test_util.TEST_CONFIG_FILE, 'sys1')
@@ -200,7 +232,7 @@ def fixture_sys(make_exec_ctx_g):
 @pytest.fixture
 def simple_fixture():
     class MyFixture(rfm.RunOnlyRegressionTest):
-        pass
+        v = variable(int, value=1)
 
     def _fixture_wrapper(**kwargs):
         return fixtures.TestFixture(MyFixture, **kwargs)
@@ -280,10 +312,42 @@ def test_fixture_registry_edges(fixture_sys, simple_fixture):
     assert len(registered_fix) == 0
     register([partitions[0]], ['wrong_environment'], scope='test')
     assert len(registered_fix) == 1
+    registered_fix.pop()
 
-    # Environ e2 is not supported in first specified partition
+    # Environ 'e2' is not supported in 'sys1:p0', but is in 'sys1:p1'
     register(['sys1:p0', 'sys1:p1'], ['e2'], scope='session')
-    assert len(registered_fix) == 2
+    assert 'e2' not in {env.name for p in rt.runtime().system.partitions
+                        if p.fullname == 'sys1:p0' for env in p.environs}
+    assert 'e2' in {env.name for p in rt.runtime().system.partitions
+                    if p.fullname == 'sys1:p1' for env in p.environs}
+    assert len(registered_fix) == 1
+
+    # 'sys1:p0' is skipped on this fixture because env 'e2' is not supported
+    last_fixture = reg[simple_fixture().cls][registered_fix.pop()]
+    assert last_fixture.partitions == ['sys1:p1']
+    assert last_fixture.environments == ['e2']
+
+    # Similar behavior withe the partition scope
+    register(['sys1:p0', 'sys1:p1'], ['e2'], scope='partition')
+    assert len(registered_fix) == 1
+    last_fixture = reg[simple_fixture().cls][registered_fix.pop()]
+    assert last_fixture.partitions == ['sys1:p1']
+    assert last_fixture.environments == ['e2']
+
+    # And also similar behavior withe the environment scope
+    register(['sys1:p0', 'sys1:p1'], ['e2'], scope='environment')
+    assert len(registered_fix) == 1
+    last_fixture = reg[simple_fixture().cls][registered_fix.pop()]
+    assert last_fixture.partitions == ['sys1:p1']
+    assert last_fixture.environments == ['e2']
+
+    # However, with the test scope partitions and environments get copied
+    # without any filtering.
+    register(['sys1:p0', 'sys1:p1'], ['e2'], scope='test')
+    assert len(registered_fix) == 1
+    last_fixture = reg[simple_fixture().cls][registered_fix.pop()]
+    assert last_fixture.partitions == ['sys1:p0', 'sys1:p1']
+    assert last_fixture.environments == ['e2']
 
 
 def test_fixture_registry_variables(fixture_sys, simple_fixture):
@@ -313,6 +377,13 @@ def test_fixture_registry_variables(fixture_sys, simple_fixture):
     assert len(registered_fix) == 2
     register()
     assert len(registered_fix) == 3
+
+    # Test also the format of the internal fixture tuple
+    fixt_data = list(reg[simple_fixture().cls].values())[0]
+    assert fixt_data.variant_num == 0
+    assert fixt_data.environments == [env]
+    assert fixt_data.partitions == [part]
+    assert all((v in fixt_data.variables for v in ('b', 'a')))
 
 
 def test_fixture_registry_variants(fixture_sys, param_fixture):
@@ -361,7 +432,7 @@ def test_fixture_registry_base_arg(fixture_sys, simple_fixture):
     env = sys.partitions[0].environs[0].name
     registered_fix = set()
 
-    def register(scope='test', base=0):
+    def register(scope, base):
         registered_fix.update(
             reg.add(simple_fixture(scope=scope), 0,
                     base, [part], [env])
@@ -387,3 +458,117 @@ def test_fixture_registry_base_arg(fixture_sys, simple_fixture):
     assert len(registered_fix) == 5
     register(scope='session', base='b3')
     assert len(registered_fix) == 5
+
+
+def test_overlapping_registries(fixture_sys, simple_fixture, param_fixture):
+    '''Test instantiate_all, update and difference registry methods.'''
+
+    # Get one valid part+env combination
+    sys = rt.runtime().system
+    part = sys.partitions[0].fullname
+    env = sys.partitions[0].environs[0].name
+
+    # Build base registry with some fixtures
+    reg = fixtures.FixtureRegistry()
+    reg.add(simple_fixture(), 0, 'b', [part], [env])
+    for i in param_fixture().variants:
+        reg.add(param_fixture(), i, 'b', [part], [env])
+
+    # Build overlapping registry
+    other = fixtures.FixtureRegistry()
+    other.add(simple_fixture(variables={'v': 2}), 0, 'b', [part], [env])
+    for i in param_fixture().variants:
+        other.add(param_fixture(), i, 'b', [part], [env])
+
+    assert len(reg.instantiate_all()) == len(param_fixture().variants) + 1
+    assert len(other.instantiate_all()) == len(param_fixture().variants) + 1
+
+    # Test difference method
+    diff_reg = other.difference(reg)
+    inst = diff_reg.instantiate_all()
+
+    # Assert the difference is only the simple fixture with custom variable v.
+    # This also tests that the instantiate_all method sets the test variables
+    # correctly.
+    assert len(inst) == 1
+    assert inst[0].v == 2
+    assert inst[0].name == list(diff_reg[simple_fixture().cls].keys())[0]
+    assert inst[0].valid_systems == [part]
+    assert inst[0].valid_prog_environs == [env]
+
+    # Test the difference method in the opposite direction
+    diff_reg = reg.difference(other)
+    inst = diff_reg.instantiate_all()
+    assert len(inst) == 1
+    assert inst[0].v == 1
+
+    # Test the update method
+    reg.update(other)
+    assert len(reg.instantiate_all()) == len(param_fixture().variants) + 2
+
+
+def test_expand_part_env(fixture_sys, simple_fixture):
+    '''Test expansion of partitions and environments.'''
+
+    class MyTest(rfm.RegressionTest):
+        foo = simple_fixture(scope='test')
+
+    # The fixture registry is not injected when no variant_num is provided
+    assert not hasattr(MyTest(), '_rfm_fixture_registry')
+
+    # Assert errors are raised when root test does not specify part and env
+    with pytest.raises(ReframeSyntaxError, match="'valid_systems'"):
+        MyTest(variant_num=0)
+
+    MyTest.valid_systems = ['sys1']
+    with pytest.raises(ReframeSyntaxError, match="'valid_prog_environs'"):
+        MyTest(variant_num=0)
+
+    # Test the part and envs got expanded properly by the registry. For this
+    # the fixture must be of test scope, so that the envs and parts just get
+    # passed along to the same fixture instance.
+
+    def get_fixt_data(inst):
+        '''Helper function to retrieve the fixture data'''
+        return list(
+            getattr(
+                inst, '_rfm_fixture_registry'
+            )[simple_fixture().cls].values()
+        )[0]
+
+    MyTest.valid_prog_environs = ['*']
+    d = get_fixt_data(MyTest(variant_num=0))
+    assert all(env in d.environments for env in ('e0', 'e1', 'e2', 'e3'))
+    assert all(part in d.partitions for part in ('sys1:p0', 'sys1:p1'))
+
+    # Repeat now using * for the valid_systems
+    MyTest.valid_systems = ['*']
+    d = get_fixt_data(MyTest(variant_num=0))
+    assert all(part in d.partitions for part in ('sys1:p0', 'sys1:p1'))
+
+
+def test_fixture_injection(fixture_sys, simple_fixture, param_fixture):
+    '''Test the fixture injection.'''
+
+    def get_injected_deps(**kwargs):
+        class MyTest(rfm.RegressionTest):
+            foo = simple_fixture(**kwargs)
+            valid_systems = ['sys1:p0']
+            valid_prog_environs = ['e0']
+
+        return MyTest(variant_num=0).user_deps()[0]
+
+    assert get_injected_deps(scope='session')[1] == udeps.fully
+    assert get_injected_deps(scope='partition')[1] == udeps.by_part
+    assert get_injected_deps(scope='environment')[1] == udeps.by_case
+    assert get_injected_deps(scope='test')[1] == udeps.by_case
+
+    # Test that parameterized fixtures with a join action inject multiple deps
+    class MyTest(rfm.RegressionTest):
+        foo = param_fixture(action='join')
+        valid_systems = ['sys1:p0']
+        valid_prog_environs = ['e0']
+
+    assert len(
+        MyTest(variant_num=0).user_deps()
+    ) == len(param_fixture().variants)
