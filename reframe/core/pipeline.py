@@ -111,9 +111,9 @@ def final(fn):
     return _wrapped
 
 
-_RFM_MIXIN_KIND = 0
-_RFM_COMPILE_KIND = 1
-_RFM_RUN_KIND = 2
+_RFM_TEST_KIND_MIXIN = 0
+_RFM_TEST_KIND_COMPILE = 1
+_RFM_TEST_KIND_RUN = 2
 
 
 class RegressionMixin(metaclass=RegressionTestMeta):
@@ -129,7 +129,7 @@ class RegressionMixin(metaclass=RegressionTestMeta):
     .. versionadded:: 3.4.2
     '''
 
-    _rfm_regression_class_kind = _RFM_MIXIN_KIND
+    _rfm_regression_class_kind = _RFM_TEST_KIND_MIXIN
 
 
 class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
@@ -184,7 +184,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     '''
 
-    _rfm_regression_class_kind = _RFM_COMPILE_KIND | _RFM_RUN_KIND
+    _rfm_regression_class_kind = _RFM_TEST_KIND_COMPILE | _RFM_TEST_KIND_RUN
 
     def disable_hook(self, hook_name):
         '''Disable pipeline hook by name.
@@ -2185,7 +2185,7 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
     module.
     '''
 
-    _rfm_regression_class_kind = _RFM_RUN_KIND
+    _rfm_regression_class_kind = _RFM_TEST_KIND_RUN
 
     def setup(self, partition, environ, **job_opts):
         '''The setup stage of the regression test pipeline.
@@ -2242,7 +2242,7 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
     module.
     '''
 
-    _rfm_regression_class_kind = _RFM_COMPILE_KIND
+    _rfm_regression_class_kind = _RFM_TEST_KIND_COMPILE
 
     def setup(self, partition, environ, **job_opts):
         '''The setup stage of the regression test pipeline.

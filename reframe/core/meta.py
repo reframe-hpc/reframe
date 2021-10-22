@@ -23,11 +23,13 @@ from reframe.core.exceptions import ReframeSyntaxError
 from reframe.core.deferrable import deferrable, _DeferredPerformanceExpression
 
 
-def _COMPACT_NAMING_SCHEME():
+def _use_compact_names():
     try:
-        return rt.runtime().get_option('general/0/compact_test_names')
-    except Exception:
-        return False
+        return getattr(_use_compact_names, '_cached')
+    except AttributeError:
+        ret = rt.runtime().get_option('general/0/compact_test_names')
+        _use_compact_names._cached = ret
+        return ret
 
 
 class RegressionTestMeta(type):
@@ -826,7 +828,7 @@ class RegressionTestMeta(type):
         if variant_num is None:
             return name
 
-        if _COMPACT_NAMING_SCHEME():
+        if _use_compact_names():
             if cls.num_variants > 1:
                 name += f'@{variant_num}'
         else:

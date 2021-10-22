@@ -41,7 +41,7 @@ This provides the ReFrame internals with further control over the user's input, 
 In essence, these builtins exert control over the test creation, and they allow adding and/or modifying certain attributes of the regression test.
 
 .. note::
-  The built-in types described below can only be used to declare class variables, and they must never be part of any container type.
+  The built-in types described below can only be used to declare class variables and must never be part of any container type.
   Ignoring this restriction will result in undefined behavior.
 
   .. code::
@@ -251,7 +251,7 @@ In essence, these builtins exert control over the test creation, and they allow 
   A fixture's :attr:`~reframe.core.pipeline.RegressionTest.name` attribute may be internally mangled depending on the arguments passed during the fixture declaration.
   Hence, manually setting or modifying the :attr:`~reframe.core.pipeline.RegressionTest.name` attribute in the fixture class is disallowed, and breaking this restriction will result in undefined behavior.
 
-  .. note::
+  .. warning::
     The fixture name mangling is considered an internal framework mechanism and it may change in future versions without any notice.
     Users must not express any logic in their tests that relies on a given fixture name mangling scheme.
 
@@ -306,7 +306,7 @@ In essence, these builtins exert control over the test creation, and they allow 
         ...
 
         @run_after('setup')
-        def acess_fixture_resources(self):
+        def access_fixture_resources(self):
             '''Dummy pipeline hook to illustrate fixture resource access.'''
             assert self.f1.my_var is not self.f2.my_var
             assert self.f1.my_var is not self.f3.my_var
@@ -363,9 +363,9 @@ In essence, these builtins exert control over the test creation, and they allow 
         @run_after('setup')
         def reduce_range(self):
             '''Sum all the values of p for each fixture variant'''
-            red = functools.reduce(lambda x, y: x+y, (fix.p for fix in self.f))
+            res = functools.reduce(lambda x, y: x+y, (fix.p for fix in self.f))
             n = len(self.f)-1
-            assert red == (n*n + n)/2
+            assert res == (n*n + n)/2
 
   Here :class:`ParamFix` is a simple fixture class with a single parameter.
   When the test :class:`TestC` uses this fixture with a ``'fork'`` action, the test is implicitly parameterized over each variant of :class:`ParamFix`.
@@ -631,7 +631,7 @@ Therefore, classes that derive from the base :class:`~reframe.core.pipeline.Regr
 
 .. py:attribute:: RegressionMixin.num_variants
 
-  Total number of unique variants that can be instantiated from a class.
+  Total number of unique test variants in a class.
 
 
 .. py:function:: RegressionMixin.get_variant_info(cls, variant_num, *, recurse=False, max_depth=None)
@@ -642,6 +642,35 @@ Therefore, classes that derive from the base :class:`~reframe.core.pipeline.Regr
   The fixture sub-dictionary, by default, will return the variant numbers associated to each of the fixtures.
   However, if ``recurse`` is set to ``True``, each fixture entry will contain the full variant information for the given variant number.
   By default, the recursion will traverse the full fixture tree, but this recursion depth can be limited with the ``max_depth`` argument.
+  See the example below.
+
+  .. code:: python
+
+     class Foo(rfm.RegressionTest):
+         p0 = parameter(range(2))
+         ...
+
+     class Bar(rfm.RegressionTest):
+         ...
+
+     class MyTest(rfm.RegressionTest):
+         p1 = parameter(['a', 'b'])
+         f0 = fixture(Foo)
+         f1 = fixture(Bar)
+         ...
+
+     # Get the raw info for variant 0
+     MyTest.get_variant_info(0, recursive=True)
+     # {
+     #     'params': {'p1': 'a'},
+     #     'fixtures': {
+     #         'f0': {
+     #             'params': {'p0': 0},
+     #             'fixtures': {}
+     #         },
+     #         'f1': 0,
+     #     }
+     # }
 
   :param variant_num: An integer in the range of [0, cls.num_variants).
   :param recurse: Flag to control the recursion through the fixture space.

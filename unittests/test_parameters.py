@@ -319,7 +319,7 @@ def test_override_parameter():
 
 
 def test_parameter_space_order():
-    '''This test can be removed together with the parameterizet_test decorator.
+    '''FIXME: This can be removed when the old naming scheme is dropped.
 
     The order of the parameters is only relevant for the old naming scheme.
     This test simply ensures that these legacy options are not broken.

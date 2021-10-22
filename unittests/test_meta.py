@@ -383,6 +383,9 @@ def test_setting_variables_on_instantiation(MyMeta):
     assert Foo().v == 1
     assert Foo(variables={'v': 10}).v == 10
 
+    # Non-variables are silently ignored
+    assert not hasattr(Foo(variables={'vv': 10}), 'vv')
+
 
 def test_variants(MyMeta):
     class Foo(MyMeta):

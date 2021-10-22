@@ -187,7 +187,7 @@ class FixtureRegistry:
         elif scope == 'partition':
             for part in valid_partitions:
                 # The mangled name contains the full partition name
-                name = f'{fname}~{utils.toalphanum(part)}'
+                name = f'{fname}~{part}'
 
                 # Select an environment supported by the partition
                 valid_envs = self._filter_valid_environs(part, prog_envs)
@@ -200,15 +200,15 @@ class FixtureRegistry:
                 )
                 reg_names.append(name)
         elif scope == 'environment':
-            for p in valid_partitions:
-                for env in self._filter_valid_environs(p, prog_envs):
+            for part in valid_partitions:
+                for env in self._filter_valid_environs(part, prog_envs):
                     # The mangled name contains the full part and env names
-                    ext = f'{utils.toalphanum(p)}+{utils.toalphanum(env)}'
+                    ext = f'{part}+{env}'
                     name = f'{fname}~{ext}'
 
                     # Register the fixture
                     self._registry[cls][name] = FixtureData(
-                        variant_num, [env], [p], variables
+                        variant_num, [env], [part], variables
                     )
                     reg_names.append(name)
         elif scope == 'test':
@@ -272,7 +272,7 @@ class FixtureRegistry:
                 # Set the fixture name and stolen env and part from the parent,
                 # alongside the other variables specified during the fixture's
                 # declaration.
-                fixvars = {
+                fixtvars = {
                     'name': name,
                     'valid_prog_environs': penv,
                     'valid_systems': part,
@@ -281,7 +281,7 @@ class FixtureRegistry:
 
                 try:
                     # Instantiate the fixture
-                    inst = cls(variant_num=varnum, variables=fixvars)
+                    inst = cls(variant_num=varnum, variables=fixtvars)
                 except Exception:
                     exc_info = sys.exc_info()
                     getlogger().warning(
@@ -317,11 +317,7 @@ class FixtureRegistry:
         The keys are the mangled fixture names and the values are the raw data
         to instantiate the fixture class with.
         '''
-
-        try:
-            return self._registry[cls]
-        except KeyError:
-            return []
+        return self._registry.get(cls, dict())
 
     def __contains__(self, cls):
         return cls in self._registry
@@ -470,18 +466,18 @@ class TestFixture:
 
     @property
     def fork_variants(self):
-        '''Collection of fixture variant sets the parent test will fork.
+        '''Collection of fixture variant sets that the parent test will fork.
 
         This function returns a tuple, where each of the elements represents
         a single fork. These elements are iterables containing a set of the
         fixture variant indices that a single fork will reduce. For example,
         for a returned tuple ``((1, 2), (3, 4))``, the parent test using this
         fixture will fork twice, where the first fork will reduce the fixture
-        vairants #1 and #2, and the second fork will reduce the fixture
+        variants #1 and #2, and the second fork will reduce the fixture
         variants #3 and #4.
 
         With a ``'fork'`` action, the returned tuple will have as many elements
-        as specified fixture vairants, where each of the elements is a
+        as specified fixture variants, where each of the elements is a
         one-element tuple containing a unique fixture variant ID (with the
         above example, this is ``((1,), (2,), (3,), (4,))``). With a ``'join'``
         action, the returned tuple will contain a single iterable containing
