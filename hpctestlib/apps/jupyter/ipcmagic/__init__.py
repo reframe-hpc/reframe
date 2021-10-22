@@ -10,8 +10,8 @@ from reframe.core.backends import getlauncher
 
 
 @rfm.simple_test
-class IPCMagic(rfm.RunOnlyRegressionTest, pin_prefix=True):
-    '''Class for the IPCMagic Test.
+class ipcmagic_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
+    '''Test IPCMagic via a distributed TensorFlow training with ipyparallel.
 
     MPI for Python provides bindings of the Message Passing Interface
     (MPI) standard for Python, allowing any Python program to exploit
@@ -29,7 +29,7 @@ class IPCMagic(rfm.RunOnlyRegressionTest, pin_prefix=True):
     <num-engines> --mpi and %ipcluster stop, respectively
     (see https://user.cscs.ch/tools/interactive/jupyterlab/).
 
-    The presented run-only class checks the IPCMagic perfomance.
+    This test checks the IPCMagic performance.
     To do this, the source has written a program with a single-layer neural
     network and a noisy linear function to be trained on. The parameters of
     this linear function are returned at the end along with the resulting
@@ -37,33 +37,24 @@ class IPCMagic(rfm.RunOnlyRegressionTest, pin_prefix=True):
     installed on the device under test.
     '''
 
-    #: See :attr:`~reframe.core.pipeline.RegressionTest.executable`.
-    #:
-    #: :required: No
     executable = 'ipython'
-
-    #: See :attr:`~reframe.core.pipeline.RegressionTest.executable_opts`.
-    #:
-    #: :required: No
     executable_opts = ['tf-hvd-sgd-ipc-tf2.py']
-
-    #: See :attr:`~reframe.core.pipeline.RegressionTest.descr`.
-    #:
-    #: :required: No
+    num_tasks = 2
+    num_tasks_per_node = 1
     descr = 'Distributed training with TensorFlow using ipyparallel'
 
     @performance_function('N/A', perf_key='slope')
-    def set_perf_slope(self):
+    def fitted_line_slope(self):
         return sn.extractsingle(r'slope=(?P<slope>\S+)',
                                 self.stdout, 'slope', float)
 
     @performance_function('N/A', perf_key='offset')
-    def set_perf_offset(self):
+    def fitted_line_offset(self):
         return sn.extractsingle(r'offset=(?P<offset>\S+)',
                                 self.stdout, 'offset', float)
 
     @performance_function('N/A', perf_key='retries')
-    def set_perf_retries(self):
+    def retries(self):
         return 4 - sn.count(sn.findall(r'IPCluster is already running',
                                        self.stdout))
 
@@ -81,6 +72,7 @@ class IPCMagic(rfm.RunOnlyRegressionTest, pin_prefix=True):
 
         nids = sn.extractall(r'nid(?P<nid>\d+)', self.stdout, 'nid', str)
         return sn.all([
-            sn.assert_ne(nids, []), sn.assert_ne(nids[0], nids[1]),
+            sn.assert_eq(sn.len(nids), 2),
+            sn.assert_ne(nids[0], nids[1]),
             sn.assert_found(r'slope=\S+', self.stdout)
         ])

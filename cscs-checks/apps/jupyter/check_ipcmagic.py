@@ -5,16 +5,14 @@
 
 import reframe as rfm
 
-from hpctestlib.apps.jupyter.ipcmagic import IPCMagic
+from hpctestlib.apps.jupyter.ipcmagic import ipcmagic_check
 
 
 @rfm.simple_test
-class ipc_magic_check(IPCMagic):
+class cscs_ipcmagic_check(ipcmagic_check):
     valid_systems = ['daint:gpu', 'dom:gpu']
     valid_prog_environs = ['builtin']
     modules = ['jupyterlab', 'Horovod']
-    num_tasks = 2
-    num_tasks_per_node = 1
     maintainers = ['RS', 'TR']
     tags = {'production'}
     reference = {
