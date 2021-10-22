@@ -90,6 +90,7 @@ class TestVar:
     def __getattr__(self, name):
         '''Attribute lookup into the variable's value.'''
         def_val = self.__getattribute__('_default_value')
+
         # NOTE: This if below is necessary to avoid breaking the deepcopy
         # of instances of this class. Without it, a deepcopy of instances of
         # this class can return an instance of _UndefinedType when def_val
