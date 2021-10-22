@@ -90,20 +90,21 @@ class TestVar:
     def __getattr__(self, name):
         '''Attribute lookup into the variable's value.'''
         def_val = self.__getattribute__('_default_value')
-        try:
-            # NOTE: This if here is necessary to avoid a deepcopy issue.
-            # If we just do a getattr here and the def_val is Undefined,
-            # the deepcopy routine returns Undefined as a deepcopy of a
-            # TestVar instance.
-            if def_val is Undefined:
-                raise AttributeError('Undefined does not have attributes')
-            else:
+        # NOTE: This if below is necessary to avoid breaking the deepcopy
+        # of instances of this class. Without it, a deepcopy of instances of
+        # this class can return an instance of _UndefinedType when def_val
+        # is Undefined. This is because _UndefinedType implements a custom
+        # __deepcopy__ method.
+        if def_val is not Undefined:
+            try:
                 return getattr(def_val, name)
-        except AttributeError:
-            var_name = self.__getattribute__('_name')
-            raise AttributeError(
-                f'variable {var_name!r} has no attribute {name!r}'
-            ) from None
+            except AttributeError:
+                '''Raise the AttributeError below.'''
+
+        var_name = self.__getattribute__('_name')
+        raise AttributeError(
+            f'variable {var_name!r} has no attribute {name!r}'
+        ) from None
 
     def _check_is_defined(self):
         if not self.is_defined():
