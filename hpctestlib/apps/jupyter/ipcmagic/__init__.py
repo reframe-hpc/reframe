@@ -43,17 +43,17 @@ class ipcmagic_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
     num_tasks_per_node = 1
     descr = 'Distributed training with TensorFlow using ipyparallel'
 
-    @performance_function('N/A', perf_key='slope')
+    @performance_function('N/A')
     def fitted_line_slope(self):
         return sn.extractsingle(r'slope=(?P<slope>\S+)',
                                 self.stdout, 'slope', float)
 
-    @performance_function('N/A', perf_key='offset')
+    @performance_function('N/A')
     def fitted_line_offset(self):
         return sn.extractsingle(r'offset=(?P<offset>\S+)',
                                 self.stdout, 'offset', float)
 
-    @performance_function('N/A', perf_key='retries')
+    @performance_function('N/A')
     def retries(self):
         return 4 - sn.count(sn.findall(r'IPCluster is already running',
                                        self.stdout))
