@@ -621,7 +621,6 @@ def main():
         )
 
     rt = runtime.runtime()
-    autodetect.detect_topology()
     try:
         if site_config.get('general/0/module_map_file'):
             rt.modules_system.load_mapping_from_file(
@@ -680,6 +679,7 @@ def main():
 
         sys.exit(0)
 
+    autodetect.detect_topology()
     printer.debug(format_env(options.env_vars))
 
     # Setup the check loader
