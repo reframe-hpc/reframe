@@ -428,7 +428,7 @@ def git_clone(url, targetdir=None, timeout=5):
         raise ReframeError('git repository does not exist')
 
     targetdir = targetdir or ''
-    run_command(f'git clone {url} {targetdir}', check=True, 
+    run_command(f'git clone {url} {targetdir}', check=True,
                 timeout=timeout)
 
 
