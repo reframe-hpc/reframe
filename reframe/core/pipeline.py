@@ -1251,9 +1251,28 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         the 'join' action, the injected handle will point to a list with all
         the available fixture variants.
         '''
+
+        current_part = self.current_partition.fullname
+        current_env = self.current_environ.name
+
+        # Get the declared and registered fixtures
         fixtures = type(self)._rfm_fixture_space
         registry = getattr(self, '_rfm_fixture_registry', None)
-        for fname, f in fixtures.items():
+
+        # If this instance does not have a variant number, return
+        if self.fixture_variant is None:
+            return
+
+        # Get the fixture variants required for this test variant.
+        # This would retrieve the same information than when calling
+        # ``type(self).get_variant_info(self.variant_num)['fixtures']``.
+        target_fixt_variants = type(self).fixture_space[self.fixture_variant]
+
+        for handle_name, f in fixtures.items():
+            # Get the target variants for this fixture
+            target_variants = target_fixt_variants[handle_name]
+
+            # Prepare the getdep argumens based on the fixture's scope
             if f.scope == 'session':
                 part = '*'
                 environ = '*'
@@ -1264,29 +1283,45 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 part = None
                 environ = None
 
+            # List to store all the targeted fixture variants
             deps = []
-            for fixture_instance, data in registry[f.cls].items():
-                if f.scope == 'partition':
-                    if data.partitions[0] != self.current_partition.fullname:
+
+            # Scan the fixture registry and resolve the fixtures.
+            # NOTE: The fixture registry can have multiple fixture instances
+            # registered under the same fixture class. So the loop below must
+            # also inspect the fixture data the instance was registered with.
+            for fixt_name, fixt_data in registry[f.cls].items():
+                if f.scope != fixt_data.scope:
+                    continue
+                elif fixt_data.variant_num not in target_variants:
+                    continue
+                elif f.scope == 'partition':
+                    if fixt_data.partitions[0] != current_part:
                         continue
                 elif f.scope == 'environment':
-                    if (data.environments[0] != self.current_environ.name or
-                        data.partitions[0] != self.current_partition.fullname):
+                    if (fixt_data.environments[0] != current_env or
+                        fixt_data.partitions[0] != current_part):
                         continue
 
-                deps.append(self.getdep(fixture_instance, environ, part))
+                # Resolve the fixture
+                deps.append(self.getdep(fixt_name, environ, part))
 
             if f.action == 'fork':
                 # When using the fork action, a fixture handle can only have
-                # a single fixture instance attached.
-                if len(deps) < 1:
+                # a single fixture instance attached. This could only happen
+                # if either any of the above ifs is buggy or if a fixture with
+                # a fork action ever has more than one index per fork variant.
+                # None of this can happen from user input, but this must stay
+                # here to ensure the unit tests do not fail silently.
+                if len(deps) > 1:
                     raise PipelineError(
-                        f'fixture {fname!r} has more than one instances'
+                        f'fixture {handle_name!r} has more than one instances'
                     )
 
                 deps = deps[0]
 
-            setattr(self, fname, deps)
+            # Inject the fixtures
+            setattr(self, handle_name, deps)
 
     def _setup_paths(self):
         '''Setup the check's dynamic paths.'''

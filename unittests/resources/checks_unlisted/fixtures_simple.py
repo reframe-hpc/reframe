@@ -6,6 +6,8 @@
 import reframe as rfm
 import reframe.utility.sanity as sn
 
+import os
+
 
 class HelloFixture(rfm.RunOnlyRegressionTest):
     executable = 'echo hello from fixture'
@@ -14,17 +16,22 @@ class HelloFixture(rfm.RunOnlyRegressionTest):
     def assert_output(self):
         return sn.assert_found(r'hello from fixture', self.stdout)
 
+
 @rfm.simple_test
 class TestA(rfm.RunOnlyRegressionTest):
     valid_systems = ['*']
     valid_prog_environs = ['*']
+    executable = '/bin/true'
 
     # Declare the fixture
     f = fixture(HelloFixture, scope='session')
 
     @sanity_function
     def inspect_fixture(self):
-        return sn.assert_found(r'hello from fixture', self.f.stdout)
+        return sn.assert_found(
+            r'hello from fixture',
+            os.path.join(self.f.stagedir, self.f.stdout.evaluate())
+        )
 
 
 @rfm.simple_test

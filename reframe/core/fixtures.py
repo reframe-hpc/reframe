@@ -26,15 +26,15 @@ class FixtureData:
     '''Store raw data related to a fixture instance.
 
     The stored data is the fixture class variant number, a list with the valid
-    environments, another list with the valid partitions, and a dictionary with
+    environments, another list with the valid partitions, a dictionary with
     any fixture variables that may be set during the instantiation of the
-    fixture class.
+    fixture class, and the scope used for the fixture.
 
     This data is required to instantiate the fixture.
     '''
 
-    def __init__(self, variant_num, envs, parts, variables):
-        self.data = (variant_num, envs, parts, variables,)
+    def __init__(self, variant_num, envs, parts, variables, scope):
+        self.data = (variant_num, envs, parts, variables, scope,)
 
     @property
     def variant_num(self):
@@ -51,6 +51,10 @@ class FixtureData:
     @property
     def variables(self):
         return self.data[3]
+
+    @property
+    def scope(self):
+        return self.data[4]
 
 
 class FixtureRegistry:
@@ -181,7 +185,7 @@ class FixtureRegistry:
 
             # Register the fixture
             self._registry[cls][name] = FixtureData(
-                variant_num, [valid_envs[0]], [part], variables
+                variant_num, [valid_envs[0]], [part], variables, scope
             )
             reg_names.append(name)
         elif scope == 'partition':
@@ -196,7 +200,7 @@ class FixtureRegistry:
 
                 # Register the fixture
                 self._registry[cls][name] = FixtureData(
-                    variant_num, [valid_envs[0]], [part], variables
+                    variant_num, [valid_envs[0]], [part], variables, scope
                 )
                 reg_names.append(name)
         elif scope == 'environment':
@@ -208,7 +212,7 @@ class FixtureRegistry:
 
                     # Register the fixture
                     self._registry[cls][name] = FixtureData(
-                        variant_num, [env], [part], variables
+                        variant_num, [env], [part], variables, scope
                     )
                     reg_names.append(name)
         elif scope == 'test':
@@ -218,7 +222,7 @@ class FixtureRegistry:
             # Register the fixture
             self._registry[cls][name] = FixtureData(
                 variant_num, list(prog_envs), list(valid_partitions),
-                variables
+                variables, scope
             )
             reg_names.append(name)
 
@@ -267,7 +271,7 @@ class FixtureRegistry:
         ret = []
         for cls, variants in self._registry.items():
             for name, args in variants.items():
-                varnum, penv, part, variables = args.data
+                varnum, penv, part, variables, _ = args.data
 
                 # Set the fixture name and stolen env and part from the parent,
                 # alongside the other variables specified during the fixture's

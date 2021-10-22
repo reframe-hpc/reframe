@@ -40,12 +40,12 @@ def test_load_file_absolute(loader):
 
 def test_load_recursive(loader):
     checks = loader.load_from_dir('unittests/resources/checks', recurse=True)
-    assert 16 == len(checks)
+    assert 13 == len(checks)
 
 
 def test_load_all(loader_with_path):
     checks = loader_with_path.load_all()
-    assert 15 == len(checks)
+    assert 12 == len(checks)
 
 
 def test_load_error(loader):
@@ -68,7 +68,7 @@ def test_load_bad_init(loader):
 
 def test_load_fixtures(loader):
     tests = loader.load_from_file(
-        'unittests/resources/checks/hellofixtures.py'
+        'unittests/resources/checks_unlisted/fixtures_simple.py'
     )
     assert 3 == len(tests)
 
