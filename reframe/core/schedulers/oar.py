@@ -67,7 +67,7 @@ class OarJobScheduler(PbsJobScheduler):
     def emit_preamble(self, job):
         # host is de-facto nodes and core is number of cores requested per node
         # number of sockets can also be specified using cpu={num_sockets}
-        TASKS_OPT = '-l /host={num_nodes}/core={num_tasks_per_node}'
+        tasks_opt = '-l /host={num_nodes}/core={num_tasks_per_node}'
 
         # Same reason as oarsub, we give full path to output and error files to
         # avoid writing them in the working dir
@@ -79,14 +79,14 @@ class OarJobScheduler(PbsJobScheduler):
 
         if job.time_limit is not None:
             h, m, s = seconds_to_hms(job.time_limit)
-            TASKS_OPT += ',walltime=%d:%d:%d' % (h, m, s)
+            tasks_opt += ',walltime=%d:%d:%d' % (h, m, s)
 
         # Get number of nodes in the reservation
         num_tasks_per_node = job.num_tasks_per_node or 1
         num_nodes = job.num_tasks // num_tasks_per_node
 
         # Emit main resource reservation option
-        options = [TASKS_OPT.format(
+        options = [tasks_opt.format(
             num_nodes=num_nodes, num_tasks_per_node=num_tasks_per_node,
         )]
 
