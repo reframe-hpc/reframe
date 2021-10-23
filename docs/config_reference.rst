@@ -1271,6 +1271,15 @@ General Configuration
 
    .. versionadded:: 3.9.0
 
+
+.. js:attribute:: .general[].git_clone_timeout
+
+  :required: No
+  :default: 5
+
+  Timeout value in seconds that will be used while cloning git repositories.
+
+
 .. js:attribute:: .general[].remote_detect
 
    :required: No

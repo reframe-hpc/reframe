@@ -255,7 +255,12 @@ def test_variable_with_attribute():
         v = variable(Foo, value=Foo())
         v.my_attr = 'Injected attribute'
 
+    class OtherTest(MyTest):
+        assert v.my_attr == 'Injected attribute'
+        v = Foo()
+
     assert MyTest().v.my_attr == 'Injected attribute'
+    assert not hasattr(OtherTest().v, 'my_attr')
 
 
 def test_local_varspace_is_empty():

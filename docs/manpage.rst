@@ -751,6 +751,22 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
 
 
+.. envvar:: RFM_GIT_CLONE_TIMEOUT
+
+   Timeout in seconds for the ``git clone`` commands.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :js:attr:`git_clone_timeout` general configuration parameter.
+      ================================== ==================
+
+
+   .. versionadded:: 3.9.0
+
+
 .. envvar:: RFM_GRAYLOG_ADDRESS
 
    The address of the Graylog server to send performance logs.
@@ -766,7 +782,6 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
 
    .. versionadded:: 3.1
-
 
 .. envvar:: RFM_GRAYLOG_SERVER
 

@@ -267,6 +267,10 @@ def required_version(*versions):
        Examples of non-compliant version numbers are ``3.5`` and ``3.5-dev0``.
        These should be written as ``3.5.0`` and ``3.5.0-dev.0``.
 
+    .. deprecated:: 3.5.0
+       Please set the ``require_version`` parameter in the class definition
+       instead.
+
     '''
     warn.user_deprecation_warning(
         "the '@required_version' decorator is deprecated; please set "
