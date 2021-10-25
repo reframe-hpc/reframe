@@ -267,6 +267,11 @@ def main():
               'programming environment matching PATTERN')
     )
     select_options.add_argument(
+        '-T', '--exclude-tag', action='append', dest='exclude_tags',
+        metavar='PATTERN', default=[],
+        help='Exclude checks whose tag matches PATTERN'
+    )
+    select_options.add_argument(
         '-t', '--tag', action='append', dest='tags', metavar='PATTERN',
         default=[],
         help='Select checks with at least one tag matching PATTERN'
@@ -275,11 +280,6 @@ def main():
         '-x', '--exclude', action='append', dest='exclude_names',
         metavar='PATTERN', default=[],
         help='Exclude checks whose name matches PATTERN'
-    )
-    select_options.add_argument(
-        '-T', '--exclude-tags', action='append', dest='exclude_tags',
-        metavar='PATTERN', default=[],
-        help='Exclude checks whose tag matches PATTERN'
     )
 
     # Action options
