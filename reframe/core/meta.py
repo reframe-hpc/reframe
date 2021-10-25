@@ -84,11 +84,11 @@ class RegressionTestMeta(type):
 
             elif key in self['_rfm_local_param_space']:
                 raise ReframeSyntaxError(
-                    f'cannot override parameter {key!r}'
+                    f'cannot redefine parameter {key!r}'
                 )
             elif key in self['_rfm_local_fixture_space']:
                 raise ReframeSyntaxError(
-                    f'cannot override fixture {key!r}'
+                    f'cannot redefine fixture {key!r}'
                 )
             else:
                 # Insert the items manually to overide the namespace clash
@@ -145,7 +145,7 @@ class RegressionTestMeta(type):
                             'body is disallowed'
                         ) from None
                     elif key in self['_rfm_local_fixture_space']:
-                        raise ValueError(
+                        raise ReframeSyntaxError(
                             'accessing a fixture from the class body is '
                             'disallowed'
                         ) from None
@@ -773,12 +773,12 @@ class RegressionTestMeta(type):
 
         if recurse and (max_depth is None or rdepth < max_depth):
             for fix, variant in ret['fixtures'].items():
-                if not isinstance(variant, int):
+                if len(variant) > 1:
                     continue
 
                 fcls = cls.fixture_space[fix].cls
                 ret['fixtures'][fix] = fcls.get_variant_info(
-                    variant, recurse=recurse, max_depth=max_depth,
+                    variant[0], recurse=recurse, max_depth=max_depth,
                     _current_depth=rdepth+1
                 )
 

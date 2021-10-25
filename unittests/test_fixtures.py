@@ -173,8 +173,23 @@ def test_fixture_override():
         f0 = fixture(rfm.RegressionTest)
 
     with pytest.raises(ReframeSyntaxError):
-        class Bar(Foo):
+        class Baz(Foo):
             f0 = 4
+
+    with pytest.raises(ReframeSyntaxError):
+        Bar.f0 = 4
+
+    with pytest.raises(ReframeSyntaxError):
+        class Baz(rfm.RegressionMixin):
+            f0 = fixture(rfm.RegressionTest)
+            f0 = 4
+
+
+def test_fixture_access_in_class_body():
+    with pytest.raises(ReframeSyntaxError):
+        class Foo(rfm.RegressionMixin):
+            f0 = fixture(rfm.RegressionTest)
+            print(f0)
 
 
 def test_fixture_space_access():

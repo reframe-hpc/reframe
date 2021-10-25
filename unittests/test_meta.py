@@ -386,6 +386,9 @@ def test_setting_variables_on_instantiation(MyMeta):
     # Non-variables are silently ignored
     assert not hasattr(Foo(variables={'vv': 10}), 'vv')
 
+    with pytest.raises(TypeError):
+        Foo(variables='not a mapping')
+
 
 def test_variants(MyMeta):
     class Foo(MyMeta):
@@ -401,14 +404,89 @@ def test_get_info(MyMeta):
     class Fix(rfm.RegressionTest):
         p = parameter(['a', 'b'])
 
-    class Foo(MyMeta):
+    class Foo(rfm.RegressionTest):
         f = fixture(Fix)
 
     assert Foo.num_variants == 2
-    assert Foo.get_variant_info(0, recurse=True) == {
+    assert Foo.get_variant_info(0, recurse=False) == {
         'params': {},
         'fixtures': {
             'f': (0,)
+        }
+    }
+
+    class Bar(MyMeta):
+        p = parameter(['c'])
+        f = fixture(Foo)
+
+    assert Bar.get_variant_info(0, recurse=False) == {
+        'params': {
+            'p': 'c'
+        },
+        'fixtures': {
+            'f': (0,)
+        }
+    }
+    assert Bar.get_variant_info(0, recurse=True, max_depth=0) == {
+        'params': {
+            'p': 'c'
+        },
+        'fixtures': {
+            'f': (0,)
+        }
+    }
+    assert Bar.get_variant_info(0, recurse=True, max_depth=1) == {
+        'params': {
+            'p': 'c'
+        },
+        'fixtures': {
+            'f': {
+                'params': {},
+                'fixtures': {
+                    'f': (0,)
+                }
+            }
+        }
+    }
+    assert Bar.get_variant_info(0, recurse=True) == {
+        'params': {
+            'p': 'c'
+        },
+        'fixtures': {
+            'f': {
+                'params': {},
+                'fixtures': {
+                    'f': {
+                        'params': {
+                            'p': 'a'
+                        },
+                        'fixtures': {}
+                    }
+                }
+            }
+        }
+    }
+
+    class Baz(Bar):
+        ff = fixture(Fix, action='join')
+
+    assert Baz.get_variant_info(0, recurse=True) == {
+        'params': {
+            'p': 'c'
+        },
+        'fixtures': {
+            'f': {
+                'params': {},
+                'fixtures': {
+                    'f': {
+                        'params': {
+                            'p': 'a'
+                        },
+                        'fixtures': {}
+                    }
+                },
+            },
+            'ff': (0, 1,)
         }
     }
 
@@ -422,3 +500,5 @@ def test_get_variant_nums(MyMeta):
     for variant in variants:
         assert Foo.get_variant_info(variant)['params']['p'] < 5
         assert Foo.get_variant_info(variant)['params']['q'] > 3
+
+    assert Foo.get_variant_nums() == list(range(Foo.num_variants))
