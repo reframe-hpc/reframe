@@ -363,7 +363,7 @@ def test_get_variant_nums():
         p = parameter(range(10))
 
     with pytest.raises(NameError):
-        MyTest.param_space.get_variant_nums(p0=lambda x: x==2)
+        MyTest.param_space.get_variant_nums(p0=lambda x: x == 2)
 
     with pytest.raises(ValueError):
-        MyTest.param_space.get_variant_nums(p=lambda x, y: x==2)
+        MyTest.param_space.get_variant_nums(p=lambda x, y: x == 2)
