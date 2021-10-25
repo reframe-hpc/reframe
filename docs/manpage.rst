@@ -138,6 +138,14 @@ This happens recursively so that if test ``T1`` depends on ``T2`` and ``T2`` dep
    This option may be specified multiple times, in which case tests with *any* of the specified names will be excluded:
    ``-x NAME1 -x NAME2`` is therefore equivalent to ``-x 'NAME1|NAME2'``.
 
+.. option:: -T, --exclude-tags=TAGS
+
+   Exclude tests by tags.
+   ``TAGS`` is interpreted as a `Python Regular Expression <https://docs.python.org/3/library/re.html>`__;
+   any test with tags matching ``TAGS`` will be excluded.
+
+   This option may be specified multiple times, in which case tests with *any* of the specified tags will be excluded:
+   ``-T TAG1 -T TAG2`` is therefore equivalent to ``-x 'TAG1|TAG2'``.
 
 ------------
 Test actions
