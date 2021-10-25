@@ -6,8 +6,6 @@
 import reframe as rfm
 import reframe.utility.sanity as sn
 
-import os
-
 
 class SimpleFixture(rfm.RunOnlyRegressionTest):
     executable = 'echo hello fixture'
