@@ -390,6 +390,20 @@ Options controlling ReFrame execution
           foo = variable(int, value=1)
           num_tasks = foo
 
+   .. tip::
+
+     In cases where the class body expresses logic as a function of a variable and this variable, as well as its dependent logic, need to be controlled externally, the variable's default value (i.e. the value set through the value argument) may be modified as follows through an environment variable and not through the `-S` option:
+
+     .. code-block:: python
+
+      import os
+
+      @rfm.simple_test
+      class my_test(rfm.RegressionTest):
+          max_nodes = variable(int, value=int(os.getenv('MAX_NODES', 1)))
+          # Parameterise number of nodes
+          num_nodes = parameter((1 << i for i in range(0, int(max_nodes))))
+
    - If the variable is set in any pipeline hook, the command line assignment will have an effect until the variable assignment in the pipeline hook is reached.
      The variable will be then overwritten.
    - The `test filtering <#test-filtering>`__ happens *after* a test is instantiated, so the only way to scope a variable assignment is to prefix it with the test class name.
