@@ -390,6 +390,20 @@ Options controlling ReFrame execution
           foo = variable(int, value=1)
           num_tasks = foo
 
+   .. tip::
+
+     In cases where the class body expresses logic as a function of a variable and this variable, as well as its dependent logic, need to be controlled externally, the variable's default value (i.e. the value set through the value argument) may be modified as follows through an environment variable and not through the `-S` option:
+
+     .. code-block:: python
+
+      import os
+
+      @rfm.simple_test
+      class my_test(rfm.RegressionTest):
+          max_nodes = variable(int, value=int(os.getenv('MAX_NODES', 1)))
+          # Parameterise number of nodes
+          num_nodes = parameter((1 << i for i in range(0, int(max_nodes))))
+
    - If the variable is set in any pipeline hook, the command line assignment will have an effect until the variable assignment in the pipeline hook is reached.
      The variable will be then overwritten.
    - The `test filtering <#test-filtering>`__ happens *after* a test is instantiated, so the only way to scope a variable assignment is to prefix it with the test class name.
@@ -736,6 +750,22 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
 
 
+.. envvar:: RFM_GIT_CLONE_TIMEOUT
+
+   Timeout in seconds for the ``git clone`` commands.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :js:attr:`git_clone_timeout` general configuration parameter.
+      ================================== ==================
+
+
+   .. versionadded:: 3.9.0
+
+
 .. envvar:: RFM_GRAYLOG_ADDRESS
 
    The address of the Graylog server to send performance logs.
@@ -751,7 +781,6 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
 
    .. versionadded:: 3.1
-
 
 .. envvar:: RFM_GRAYLOG_SERVER
 

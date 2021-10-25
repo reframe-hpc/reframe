@@ -56,3 +56,4 @@ Publications
    usecases
    migration_2_to_3
    manuals
+   hpctestlib

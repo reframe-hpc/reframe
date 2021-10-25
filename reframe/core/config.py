@@ -269,7 +269,7 @@ class _SiteConfig:
             with open('/etc/xthostname') as fp:
                 hostname = fp.read()
         else:
-            hostname = socket.gethostname()
+            hostname = socket.getfqdn()
 
         getlogger().debug(
             f'Looking for a matching configuration entry '

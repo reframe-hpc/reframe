@@ -456,6 +456,12 @@ def main():
 
     # Options not associated with command-line arguments
     argparser.add_argument(
+        dest='git_clone_timeout',
+        envvar='RFM_GIT_CLONE_TIMEOUT',
+        configvar='general/git_clone_timeout',
+        help='Timeout in seconds of git clone commands'
+    )
+    argparser.add_argument(
         dest='graylog_server',
         envvar='RFM_GRAYLOG_ADDRESS',
         configvar='logging/handlers_perflog/graylog_address',
@@ -615,7 +621,6 @@ def main():
         )
 
     rt = runtime.runtime()
-    autodetect.detect_topology()
     try:
         if site_config.get('general/0/module_map_file'):
             rt.modules_system.load_mapping_from_file(
@@ -674,6 +679,7 @@ def main():
 
         sys.exit(0)
 
+    autodetect.detect_topology()
     printer.debug(format_env(options.env_vars))
 
     # Setup the check loader
@@ -742,7 +748,7 @@ def main():
         'cmdline': ' '.join(sys.argv),
         'config_file': rt.site_config.filename,
         'data_version': runreport.DATA_VERSION,
-        'hostname': socket.gethostname(),
+        'hostname': socket.getfqdn(),
         'prefix_output': rt.output_prefix,
         'prefix_stage': rt.stage_prefix,
         'user': osext.osuser(),
