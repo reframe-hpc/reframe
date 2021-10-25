@@ -74,8 +74,8 @@ class TestB(rfm.RunOnlyRegressionTest):
     executable = '/bin/true'
 
     # Declare the fixtures
-    f0 = fixture(ParamFixture, variants={'p': lambda x: x==0})
-    f1 = fixture(ParamFixture, variants={'p': lambda x: x==1})
+    f0 = fixture(ParamFixture, variants={'p': lambda x: x == 0})
+    f1 = fixture(ParamFixture, variants={'p': lambda x: x == 1})
     f2 = fixture(ParamFixture)
     f3 = fixture(ParamFixture)
     f4 = fixture(ParamFixture, action='join')

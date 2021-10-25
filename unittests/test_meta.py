@@ -406,11 +406,11 @@ def test_get_info(MyMeta):
 
     assert Foo.num_variants == 2
     assert Foo.get_variant_info(0, recurse=True) == {
-                                                        'params': {},
-                                                        'fixtures': {
-                                                            'f': (0,)
-                                                        }
-                                                    }
+        'params': {},
+        'fixtures': {
+            'f': (0,)
+        }
+    }
 
 
 def test_get_variant_nums(MyMeta):
@@ -418,7 +418,7 @@ def test_get_variant_nums(MyMeta):
         p = parameter(range(10))
         q = parameter(range(10))
 
-    variants = Foo.get_variant_nums(p=lambda x: x<5, q=lambda x: x>3)
+    variants = Foo.get_variant_nums(p=lambda x: x < 5, q=lambda x: x > 3)
     for variant in variants:
         assert Foo.get_variant_info(variant)['params']['p'] < 5
         assert Foo.get_variant_info(variant)['params']['q'] > 3
