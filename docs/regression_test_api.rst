@@ -637,10 +637,12 @@ Therefore, classes that derive from the base :class:`~reframe.core.pipeline.Regr
 .. py:function:: RegressionMixin.get_variant_info(cls, variant_num, *, recurse=False, max_depth=None)
 
   Get the raw variant data for a given variant index.
-  This function returns a dictionary with the variant data on the different subspaces, such as the parameter values and the fixture variants.
-  The parameter sub-dictionary contains the values for each parameter associated to the given variant number.
-  The fixture sub-dictionary, by default, will return the variant numbers associated to each of the fixtures.
-  However, if ``recurse`` is set to ``True``, each fixture entry will contain the full variant information for the given variant number.
+  This function returns a dictionary with the variant data such as the parameter values and the fixture variants.
+  The parameter space information is presented in a sub-dictionary under the ``'params'`` key, gathering all the parameter values associated with the given variant number.
+  Similarly, the information on the test's fixtures is gathered in another sub-dictionary under the ``'fixtures'`` key.
+  By default, this sub-dictionary shows a tuple for each fixture, containing the respective fixture variants associated with the given  ``variant_num``.
+  These tuples may only contain more than one fixture variant index if the fixture was declared with a `join` action (see the :func:`~RegressionMixin.fixture` documentation for more information).
+  However, when ``recurse`` is set to ``True``, each fixture entry with a single-element tuple will be expanded to show the full fixture variant information.
   By default, the recursion will traverse the full fixture tree, but this recursion depth can be limited with the ``max_depth`` argument.
   See the example below.
 
@@ -651,15 +653,26 @@ Therefore, classes that derive from the base :class:`~reframe.core.pipeline.Regr
          ...
 
      class Bar(rfm.RegressionTest):
+         p0 = parameter(range(3))
          ...
 
      class MyTest(rfm.RegressionTest):
          p1 = parameter(['a', 'b'])
-         f0 = fixture(Foo)
-         f1 = fixture(Bar)
+         f0 = fixture(Foo, action='fork')
+         f1 = fixture(Bar, action='join')
          ...
 
-     # Get the raw info for variant 0
+     # Get the raw info for variant 0 - without recursion
+     MyTest.get_variant_info(0, recursive=False)
+     # {
+     #     'params': {'p1': 'a'},
+     #     'fixtures': {
+     #         'f0': (0,),
+     #         'f1': (0, 1, 2,)
+     #     }
+     # }
+
+     # Get the raw info for variant 0 - show the full tree
      MyTest.get_variant_info(0, recursive=True)
      # {
      #     'params': {'p1': 'a'},
@@ -668,7 +681,7 @@ Therefore, classes that derive from the base :class:`~reframe.core.pipeline.Regr
      #             'params': {'p0': 0},
      #             'fixtures': {}
      #         },
-     #         'f1': 0,
+     #         'f1': (0, 1, 2,)
      #     }
      # }
 
