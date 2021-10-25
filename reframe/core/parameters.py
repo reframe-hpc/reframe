@@ -273,7 +273,7 @@ class ParamSpace(namespaces.Namespace):
         # Validate conditions
         for param, cond in conditions.items():
             if param not in self:
-                raise ValueError(
+                raise NameError(
                     f'no such parameter: {param!r}'
                 )
             elif not utils.is_trivially_callable(cond, non_def_args=1):

@@ -596,34 +596,31 @@ class FixtureSpace(namespaces.Namespace):
         if not self.fixtures or fixtures_index is None:
             return
 
+        # Get the unique fixture variant combiantion (as a k-v map) for
+        # the given index.
+        try:
+            fixture_variants = self[fixtures_index]
+        except IndexError:
+            raise RuntimeError(
+                f'fixture space index out of range for '
+                f'{obj.__class__.__qualname__}'
+            ) from None
+
         # Create the fixture registry
         obj._rfm_fixture_registry = FixtureRegistry()
 
         # Prepare the partitions and prog_envs
         part, prog_envs = self._expand_partitions_envs(obj)
 
-        # Get the unique fixture variant combiantion (as a k-v map) for
-        # the given index.
-        fixture_variants = self[fixtures_index]
-
         # Register the fixtures
         for name, fixture in self.fixtures.items():
             dep_names = []
             for variant in fixture_variants[name]:
-                try:
-                    # Register all the variants and track the fixture names
-                    dep_names += obj._rfm_fixture_registry.add(fixture,
-                                                               variant,
-                                                               obj.name, part,
-                                                               prog_envs)
-                except Exception:
-                    exc_info = sys.exc_info()
-                    getlogger().warning(
-                        f"skipping fixture {fixture.cls.__qualname__!r}: "
-                        f"{what(*exc_info)} "
-                        f"(rerun with '-v' for more information)"
-                    )
-                    getlogger().verbose(traceback.format_exc())
+                # Register all the variants and track the fixture names
+                dep_names += obj._rfm_fixture_registry.add(fixture,
+                                                           variant,
+                                                           obj.name, part,
+                                                           prog_envs)
 
             # Add dependencies
             if fixture.scope == 'session':

@@ -192,6 +192,22 @@ def test_fixture_access_in_class_body():
             print(f0)
 
 
+def test_fixture_early_access():
+    class Foo(rfm.RegressionTest):
+        pass
+
+    class Bar(rfm.RegressionTest):
+        f = fixture(Foo)
+
+        @run_after('init')
+        def trigger_fixture_error(self):
+            print(self.f)
+
+    msg = "fixture 'f' has not yet been resolved"
+    with pytest.raises(AttributeError, match=msg):
+        Bar()
+
+
 def test_fixture_space_access():
     class P0(rfm.RunOnlyRegressionTest):
         p0 = parameter(range(2))
@@ -230,6 +246,14 @@ def test_fixture_space_access():
     assert Foo.fixture_space['f1'].cls == P0
     assert Foo.fixture_space['f1'].scope == 'environment'
     assert Foo.fixture_space['f1'].action == 'join'
+
+
+def test_fixture_inject_bad_index():
+    class Foo(rfm.RegressionTest):
+        f = fixture(rfm.RegressionTest)
+
+    with pytest.raises(RuntimeError):
+        Foo.fixture_space.inject(Foo(), Foo, fixtures_index=Foo.num_variants+1)
 
 
 def test_fixture_data():
@@ -546,6 +570,21 @@ def test_overlapping_registries(ctx_part_env, simple_fixture, param_fixture):
 
     with pytest.raises(TypeError):
         reg.difference(Foo())
+
+
+def test_bad_fixture_inst(ctx_part_env):
+    '''Test that instantiate_all does not raise an exception.'''
+
+    # Get one valid part+env combination
+    part, env = ctx_part_env()
+
+    class Foo(rfm.RegressionTest):
+        def __init__(self):
+            raise Exception('raise exception during instantiation')
+
+    reg = fixtures.FixtureRegistry()
+    reg.add(fixtures.TestFixture(Foo), 0, 'b', [part], [env])
+    reg.instantiate_all()
 
 
 def test_expand_part_env(fixture_exec_ctx, simple_fixture):

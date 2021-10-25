@@ -172,6 +172,15 @@ def test_consume_param_space():
         test = MyTest(variant_num=i+1)
 
 
+def test_inject_params_wrong_index():
+    class MyTest(ExtendParams):
+        pass
+
+    inst = MyTest()
+    with pytest.raises(RuntimeError):
+        MyTest.param_space.inject(inst, params_index=MyTest.num_variants+1)
+
+
 def test_simple_test_decorator():
     @rfm.simple_test
     class MyTest(ExtendParams):
@@ -347,3 +356,14 @@ def test_class_attr_access():
     assert MyTest.p == (1, 2, 3,)
     with pytest.raises(ReframeSyntaxError, match='cannot override parameter'):
         MyTest.p = (4, 5,)
+
+
+def test_get_variant_nums():
+    class MyTest(rfm.RegressionTest):
+        p = parameter(range(10))
+
+    with pytest.raises(NameError):
+        MyTest.param_space.get_variant_nums(p0=lambda x: x==2)
+
+    with pytest.raises(ValueError):
+        MyTest.param_space.get_variant_nums(p=lambda x, y: x==2)
