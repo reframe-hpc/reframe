@@ -1294,7 +1294,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     def _clone_to_stagedir(self, url):
         self.logger.debug(f'Cloning URL {url} into stage directory')
-        osext.git_clone(self.sourcesdir, self._stagedir)
+        osext.git_clone(
+            self.sourcesdir, self._stagedir,
+            timeout=rt.runtime().get_option('general/0/git_clone_timeout')
+        )
 
     @final
     def compile(self):
