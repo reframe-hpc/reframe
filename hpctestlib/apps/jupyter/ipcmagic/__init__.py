@@ -26,15 +26,13 @@ class ipcmagic_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
 
     The engines and another server that moderates the cluster, called the
     controller, can be started an stopped with the magic %ipcluster start n
-    <num-engines> --mpi and %ipcluster stop, respectively
-    (see https://user.cscs.ch/tools/interactive/jupyterlab/).
+    <num-engines> --mpi and %ipcluster stop, respectively.
 
     This test checks the IPCMagic performance.
-    To do this, the source has written a program with a single-layer neural
-    network and a noisy linear function to be trained on. The parameters of
-    this linear function are returned at the end along with the resulting
-    loss function. The default assumption is that IPCMagic is already
-    installed on the device under test.
+    To do this, a single-layer neural network is trained against a noisy linear
+    function. The parameters of the fitted linear function are returned in the
+    end along with the resulting loss function. The default assumption is that
+    IPCMagic is already installed on the system under test.
     '''
 
     executable = 'ipython'
