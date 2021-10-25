@@ -218,7 +218,7 @@ def test_variable_access():
         x = f'accessing {my_var!r} works because it has a default value.'
 
     assert 'bananas' in getattr(Foo, 'x')
-    with pytest.raises(ValueError):
+    with pytest.raises(ReframeSyntaxError):
         class Foo(rfm.RegressionMixin):
             my_var = variable(int)
             x = f'accessing {my_var!r} fails because its value is not set.'
