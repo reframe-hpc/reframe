@@ -392,7 +392,7 @@ Options controlling ReFrame execution
 
    .. tip::
 
-     In cases where the class body expresses logic as a function of a variable, the variable's default value (i.e. the value set through the value argument) may be modified through an environment variable as follows:
+     In cases where the class body expresses logic as a function of a variable and this variable, as well as its dependent logic, need to be controlled externally, the variable's default value (i.e. the value set through the value argument) may be modified as follows through an environment variable and not through the `-S` option:
 
      .. code-block:: python
 
