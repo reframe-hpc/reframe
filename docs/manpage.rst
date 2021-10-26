@@ -762,7 +762,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
 .. envvar:: RFM_GIT_CLONE_TIMEOUT
 
-   Timeout in seconds for the ``git clone`` commands.
+   Timeout in seconds while checking for existence of repository for the ``git clone`` commands.
 
    .. table::
       :align: left

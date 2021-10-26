@@ -1262,7 +1262,7 @@ General Configuration
   :required: No
   :default: 5
 
-  Timeout value in seconds that will be used while cloning git repositories.
+  Timeout value in seconds that will be used while checking for existence of git repositories.
 
 
 .. js:attribute:: .general[].remote_detect
