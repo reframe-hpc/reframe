@@ -77,13 +77,10 @@ class Namespace(LocalNamespace, metaclass=abc.ABCMeta):
     namespace of the target class. In this context, the target class is
     simply the regression test class where the namespace is to be built.
 
-    To allow for this inheritance and extension of the namespace, this
-    class must define the names under which the local and final namespaces
-    are inserted in the target classes.
-
-    If a target class is provided, the constructor will attach the Namespace
-    instance into the target class with the class attribute name as defined
-    in ``namespace_name``.
+    If a target class is provided, the constructor will build a Namespace
+    instance by inheriting the namespaces found in the base classes, and
+    extending this with the information from the local namespace of the
+    target class.
 
     Eventually, the items from a Namespace are injected as attributes of
     the target class instance by the :func:`inject` method, which must be
@@ -97,66 +94,36 @@ class Namespace(LocalNamespace, metaclass=abc.ABCMeta):
     will occur during the target class instantiation process.
     '''
 
-    @property
-    @abc.abstractmethod
-    def local_namespace_name(self):
-        '''Name of the local namespace in the target class.
-
-        Name under which the local namespace is stored in the
-        :class:`reframe.core.pipeline.RegressionTest` class.
-        '''
-
-    @property
-    @abc.abstractmethod
-    def namespace_name(self):
-        '''Name of the namespace in the target class.
-
-        Name under which the namespace is stored in the
-        :class:`reframe.core.pipeline.RegressionTest` class.
-        '''
-
-    def __init__(self, target_cls=None, illegal_names=None):
+    def __init__(self, target_cls=None, namespace=None, local_namespace=None,
+                 illegal_names=None):
         super().__init__()
         if target_cls:
-            # Assert the Namespace can be built for the target_cls
-            self.assert_target_cls(target_cls)
-
             # Inherit Namespaces from the base clases
-            self.inherit(target_cls)
+            self.inherit(target_cls, namespace)
 
             # Extend the Namespace with the LocalNamespace
-            self.extend(target_cls)
+            self.extend(target_cls, local_namespace)
 
             # Sanity checkings on the resulting Namespace
             self.sanity(target_cls, illegal_names)
 
-            # Attach the Namespace to the target class
-            setattr(target_cls, self.namespace_name, self)
-
-    def assert_target_cls(self, cls):
-        '''Assert the target class has a valid local namespace.'''
-
-        assert hasattr(cls, self.local_namespace_name)
-        assert isinstance(getattr(cls, self.local_namespace_name),
-                          LocalNamespace)
-
-    def inherit(self, cls):
+    def inherit(self, cls, namespace):
         '''Inherit the Namespaces from the bases.'''
 
-        for base in filter(lambda x: hasattr(x, self.namespace_name),
-                           cls.__bases__):
-            assert isinstance(getattr(base, self.namespace_name), type(self))
-            self.join(getattr(base, self.namespace_name), cls)
+        for base in cls.__bases__:
+            other = getattr(base, namespace, None)
+            if isinstance(other, type(self)):
+                self.join(other, cls)
 
     @abc.abstractmethod
     def join(self, other, cls):
         '''Join other Namespace with the current one.'''
 
     @abc.abstractmethod
-    def extend(self, cls):
+    def extend(self, cls, local_namespace):
         '''Extend the namespace with the local namespace.'''
 
-    def sanity(self, cls, illegal_names=None):
+    def sanity(self, cls, illegal_names):
         '''Sanity checks post-creation of the namespace.
 
         By default, we make illegal to have any item in the namespace

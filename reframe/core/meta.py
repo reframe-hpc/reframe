@@ -396,15 +396,24 @@ class RegressionTestMeta(type):
         used_attribute_names = set(cls._rfm_dir)
 
         # Build the var space and extend the target namespace
-        variables.VarSpace(cls, used_attribute_names)
+        cls._rfm_var_space = variables.VarSpace(
+            cls, '_rfm_var_space', '_rfm_local_var_space',
+            used_attribute_names
+        )
         used_attribute_names.update(cls._rfm_var_space.vars)
 
         # Build the parameter space
-        parameters.ParamSpace(cls, used_attribute_names)
+        cls._rfm_param_space = parameters.ParamSpace(
+            cls, '_rfm_param_space', '_rfm_local_param_space',
+            used_attribute_names
+        )
         used_attribute_names.update(cls._rfm_param_space.params)
 
         # Build the fixture space
-        fixtures.FixtureSpace(cls, used_attribute_names)
+        cls._rfm_fixture_space = fixtures.FixtureSpace(
+            cls, '_rfm_fixture_space', '_rfm_local_fixture_space',
+            used_attribute_names
+        )
 
         # Update used names set with the local __dict__
         cls._rfm_dir.update(cls.__dict__)
