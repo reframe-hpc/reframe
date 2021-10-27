@@ -260,6 +260,13 @@ def main():
         '-n', '--name', action='append', dest='names', default=[],
         metavar='PATTERN', help='Select checks whose name matches PATTERN'
     )
+
+    # FIXME: The following is the only selection option that has an associated
+    # (undocumented) configuration variable. This is to support pruning of the
+    # partition environments as the runtime is created, similarly to how the
+    # system partitions are treated. Currently, this facilitates the
+    # implementation of fixtures, but we should reconsider it: see discussion
+    # in https://github.com/eth-cscs/reframe/issues/2245
     select_options.add_argument(
         '-p', '--prgenv', action='append', default=[r'.*'],  metavar='PATTERN',
         configvar='general/valid_env_names',

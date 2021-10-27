@@ -475,7 +475,7 @@ class System(jsonext.JSONSerializable):
                     )
                 )
 
-            env_patt = site_config.get('general/valid_env_names') or [r'.*']
+            env_patt = site_config.get('general/0/valid_env_names') or [r'.*']
             part_environs = [
                 ProgEnvironment(
                     name=e,
