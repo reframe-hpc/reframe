@@ -390,14 +390,14 @@ def test_fixture_registry_edge_cases(ctx_sys, simple_fixture):
     assert last_fixture.partitions == ['sys1:p1']
     assert last_fixture.environments == ['e2']
 
-    # Similar behavior withe the partition scope
+    # Similar behavior with the partition scope
     register(['sys1:p0', 'sys1:p1'], ['e2'], scope='partition')
     assert len(registered_fixt) == 1
     last_fixture = reg[simple_fixture().cls][registered_fixt.pop()]
     assert last_fixture.partitions == ['sys1:p1']
     assert last_fixture.environments == ['e2']
 
-    # And also similar behavior withe the environment scope
+    # And also similar behavior with the environment scope
     register(['sys1:p0', 'sys1:p1'], ['e2'], scope='environment')
     assert len(registered_fixt) == 1
     last_fixture = reg[simple_fixture().cls][registered_fixt.pop()]
@@ -444,7 +444,7 @@ def test_fixture_registry_variables(ctx_part_env, simple_fixture):
     assert fixt_data.variant_num == 0
     assert fixt_data.environments == [env]
     assert fixt_data.partitions == [part]
-    assert all((v in fixt_data.variables for v in ('b', 'a')))
+    assert all(v in fixt_data.variables for v in ('b', 'a'))
 
 
 def test_fixture_registry_variants(ctx_part_env, param_fixture):
@@ -518,7 +518,7 @@ def test_fixture_registry_base_arg(ctx_part_env, simple_fixture):
 
 
 def test_overlapping_registries(ctx_part_env, simple_fixture, param_fixture):
-    '''Test instantiate_all, update and difference registry methods.'''
+    '''Test instantiate_all(), update() and difference() registry methods.'''
 
     # Get one valid part+env combination
     part, env = ctx_part_env()
@@ -543,7 +543,7 @@ def test_overlapping_registries(ctx_part_env, simple_fixture, param_fixture):
     inst = diff_reg.instantiate_all()
 
     # Assert the difference is only the simple fixture with custom variable v.
-    # This also tests that the instantiate_all method sets the test variables
+    # This also tests that the instantiate_all() method sets the test variables
     # correctly.
     assert len(inst) == 1
     assert inst[0].v == 2

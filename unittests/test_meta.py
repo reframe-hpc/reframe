@@ -401,11 +401,11 @@ def test_variants(MyMeta):
 
 
 def test_get_info(MyMeta):
-    class Fix(rfm.RegressionTest):
+    class Fixt(rfm.RegressionTest):
         p = parameter(['a', 'b'])
 
     class Foo(rfm.RegressionTest):
-        f = fixture(Fix)
+        f = fixture(Fixt)
 
     assert Foo.num_variants == 2
     assert Foo.get_variant_info(0, recurse=False) == {
@@ -468,7 +468,7 @@ def test_get_info(MyMeta):
     }
 
     class Baz(Bar):
-        ff = fixture(Fix, action='join')
+        ff = fixture(Fixt, action='join')
 
     assert Baz.get_variant_info(0, recurse=True) == {
         'params': {

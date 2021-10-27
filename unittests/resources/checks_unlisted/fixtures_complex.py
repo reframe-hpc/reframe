@@ -34,7 +34,7 @@ class TestA(rfm.RunOnlyRegressionTest):
 
     valid_systems = ['*']
     valid_prog_environs = ['*']
-    executable = '/bin/true'
+    executable = 'echo'
 
     # Declare the fixtures
     f0 = fixture(SimpleFixture, scope='session', action='fork')
@@ -45,24 +45,24 @@ class TestA(rfm.RunOnlyRegressionTest):
 
     @sanity_function
     def validate_fixture_resolution(self):
-        # Access all the fixtures with a fork action.
-        if (self.f0.data + self.f1.data + self.f2.data + self.f3.data) != 4:
-            return False
+        return sn.all([
+            # Access all the fixtures with a fork action.
+            sn.assert_eq(
+                (self.f0.data + self.f1.data + self.f2.data + self.f3.data), 4
+            ),
 
-        # Assert that only one fixture is resolved with join action.
-        if len(self.f4) != 1:
-            return False
+            # Assert that only one fixture is resolved with join action.
+            sn.assert_eq(sn.len(self.f4), 1),
 
-        # Assert that the fixtures with join and fork actions resolve to the
-        # same instance for the same scope.
-        if self.f4[0] is not self.f0:
-            return False
+            # Assert that the fixtures with join and fork actions resolve to
+            # the same instance for the same scope.
+            sn.assert_eq(self.f4[0], self.f0),
 
-        # Assert that there are only 4 underlying fixture instances.
-        if len({self.f0, self.f1, self.f2, self.f3, *self.f4}) != 4:
-            return False
-
-        return True
+            # Assert that there are only 4 underlying fixture instances.
+            sn.assert_eq(
+                sn.len({self.f0, self.f1, self.f2, self.f3, *self.f4}), 4
+            )
+        ])
 
 
 @rfm.simple_test
@@ -71,7 +71,7 @@ class TestB(rfm.RunOnlyRegressionTest):
 
     valid_systems = ['*']
     valid_prog_environs = ['*']
-    executable = '/bin/true'
+    executable = 'echo'
 
     # Declare the fixtures
     f0 = fixture(ParamFixture, variants={'p': lambda x: x == 0})
@@ -82,20 +82,19 @@ class TestB(rfm.RunOnlyRegressionTest):
 
     @sanity_function
     def validate_fixture_resolution(self):
-        # Assert that f0 and f1 resolve to the right variants
-        if not (self.f0.p == 0 and self.f1.p == 1):
-            return False
-
-        # Assert the outer product of the fixtures variants is correct even
-        # with both fixtures being exactly the same.
         fixt_info = type(self).get_variant_info(self.variant_num)['fixtures']
-        if self.f2.variant_num not in fixt_info['f2']:
-            return False
-        elif self.f3.variant_num not in fixt_info['f3']:
-            return False
+        return sn.all([
+            # Assert that f0 and f1 resolve to the right variants
+            sn.all([sn.assert_eq(self.f0.p, 0), sn.assert_eq(self.f1.p, 1)]),
 
-        # Assert the join behaviour works correctly
-        if len({f.variant_num for f in self.f4}) != ParamFixture.num_variants:
-            return False
+            # Assert the outer product of the fixtures variants is correct even
+            # with both fixtures being exactly the same.
+            sn.assert_true(self.f2.variant_num in fixt_info['f2']),
+            sn.assert_true(self.f3.variant_num in fixt_info['f3']),
 
-        return True
+            # Assert the join behaviour works correctly
+            sn.assert_eq(
+                sn.len({f.variant_num for f in self.f4}),
+                ParamFixture.num_variants
+            )
+        ])
