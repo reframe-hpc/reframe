@@ -267,6 +267,11 @@ def main():
               'programming environment matching PATTERN')
     )
     select_options.add_argument(
+        '-T', '--exclude-tag', action='append', dest='exclude_tags',
+        metavar='PATTERN', default=[],
+        help='Exclude checks whose tag matches PATTERN'
+    )
+    select_options.add_argument(
         '-t', '--tag', action='append', dest='tags', metavar='PATTERN',
         default=[],
         help='Select checks with at least one tag matching PATTERN'
@@ -456,10 +461,11 @@ def main():
 
     # Options not associated with command-line arguments
     argparser.add_argument(
-        dest='git_clone_timeout',
-        envvar='RFM_GIT_CLONE_TIMEOUT',
-        configvar='general/git_clone_timeout',
-        help='Timeout in seconds of git clone commands'
+        dest='git_timeout',
+        envvar='RFM_GIT_TIMEOUT',
+        configvar='general/git_timeout',
+        help=('Timeout in seconds when checking if the url is a '
+              'valid repository.')
     )
     argparser.add_argument(
         dest='graylog_server',
@@ -808,6 +814,9 @@ def main():
         )
 
         # Filter test cases by tags
+        for tag in options.exclude_tags:
+            testcases = filter(filters.have_not_tag(tag), testcases)
+
         for tag in options.tags:
             testcases = filter(filters.have_tag(tag), testcases)
 

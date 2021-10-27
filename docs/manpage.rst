@@ -120,6 +120,16 @@ This happens recursively so that if test ``T1`` depends on ``T2`` and ``T2`` dep
 
    Do not filter tests against the selected system.
 
+.. option:: -T, --exclude-tag=TAG
+
+   Exclude tests by tags.
+
+   ``TAG`` is interpreted as a `Python Regular Expression <https://docs.python.org/3/library/re.html>`__;
+   any test with tags matching ``TAG`` will be excluded.
+
+   This option may be specified multiple times, in which case tests with *any* of the specified tags will be excluded:
+   ``-T TAG1 -T TAG2`` is therefore equivalent to ``-T 'TAG1|TAG2'``.
+
 .. option:: -t, --tag=TAG
 
    Filter tests by tag.
@@ -765,16 +775,16 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
 
 
-.. envvar:: RFM_GIT_CLONE_TIMEOUT
+.. envvar:: RFM_GIT_TIMEOUT
 
-   Timeout in seconds for the ``git clone`` commands.
+   Timeout value in seconds used when checking if a git repository exists.
 
    .. table::
       :align: left
 
       ================================== ==================
       Associated command line option     N/A
-      Associated configuration parameter :js:attr:`git_clone_timeout` general configuration parameter.
+      Associated configuration parameter :js:attr:`git_timeout` general configuration parameter.
       ================================== ==================
 
 

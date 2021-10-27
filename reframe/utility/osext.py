@@ -419,7 +419,8 @@ def git_clone(url, targetdir=None, timeout=5):
     '''Clone a git repository from a URL.
 
     :arg url: The URL to clone from.
-    :arg timeout: Timeout in seconds.
+    :arg timeout: Timeout in seconds when checking if the url is a valid
+         repository.
     :arg targetdir: The directory where the repository will be cloned to. If
         :class:`None`, a new directory will be created with the repository
         name as if ``git clone {url}`` was issued.
@@ -428,8 +429,7 @@ def git_clone(url, targetdir=None, timeout=5):
         raise ReframeError('git repository does not exist')
 
     targetdir = targetdir or ''
-    run_command(f'git clone {url} {targetdir}', check=True,
-                timeout=timeout)
+    run_command(f'git clone {url} {targetdir}', check=True)
 
 
 def git_repo_exists(url, timeout=5):
