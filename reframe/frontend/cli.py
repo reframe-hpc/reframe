@@ -461,10 +461,11 @@ def main():
 
     # Options not associated with command-line arguments
     argparser.add_argument(
-        dest='git_clone_timeout',
-        envvar='RFM_GIT_CLONE_TIMEOUT',
-        configvar='general/git_clone_timeout',
-        help='Timeout in seconds of git clone commands'
+        dest='git_timeout',
+        envvar='RFM_GIT_TIMEOUT',
+        configvar='general/git_timeout',
+        help=('Timeout in seconds when checking if the url is a '
+              'valid repository.')
     )
     argparser.add_argument(
         dest='graylog_server',
