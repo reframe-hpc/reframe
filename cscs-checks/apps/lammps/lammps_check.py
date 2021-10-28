@@ -41,7 +41,7 @@ class LAMMPSBaseCheck(rfm.RunOnlyRegressionTest):
         }
 
         self.tags = {'scs', 'external-resources'}
-        self.maintainers = ['TR', 'VH']
+        self.maintainers = ['VH']
 
 
 @rfm.parameterized_test(*([s, v]
