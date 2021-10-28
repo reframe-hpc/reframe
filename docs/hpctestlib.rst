@@ -16,3 +16,11 @@ Python
 .. automodule:: hpctestlib.python.numpy.numpy_ops
    :members:
    :show-inheritance:
+
+
+Interactive Computing 
+-----------------------
+
+.. automodule:: hpctestlib.apps.jupyter.ipcmagic
+   :members:
+   :show-inheritance:

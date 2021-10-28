@@ -66,7 +66,7 @@ class ipcmagic_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
     def assert_successful_execution(self):
         '''Checks that the program is running on 2 different nodes (nids
         are different), that IPCMagic is configured and returns the correct
-        end-of-program message (return the parameter slope in the end).'''
+        end-of-program message (returns the slope parameter in the end).'''
 
         nids = sn.extractall(r'nid(?P<nid>\d+)', self.stdout, 'nid', str)
         return sn.all([
