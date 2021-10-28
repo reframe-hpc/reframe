@@ -70,7 +70,7 @@ def test_load_fixtures(loader):
     tests = loader.load_from_file(
         'unittests/resources/checks_unlisted/fixtures_simple.py'
     )
-    assert 3 == len(tests)
+    assert 5 == len(tests)
 
 
 def test_special_test():

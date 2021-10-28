@@ -98,6 +98,9 @@ class FixtureRegistry:
             'general/0/compact_test_names'
         )
 
+        # Store the system name for name-mangling purposes
+        self._sys_name = runtime.runtime().system.name
+
     def add(self, fixture, variant_num, parent_name, partitions, prog_envs):
         '''Register a fixture.
 
@@ -173,7 +176,7 @@ class FixtureRegistry:
         # Register the fixture
         if scope == 'session':
             # The name is just the class name
-            name = fname
+            name = f'{fname}~{self._sys_name}'
 
             # Select a valid environment supported by a partition
             for part in valid_partitions:

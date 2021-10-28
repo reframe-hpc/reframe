@@ -18,6 +18,12 @@ class HelloFixture(rfm.RunOnlyRegressionTest):
 
 
 @rfm.simple_test
+class HelloTest(HelloFixture):
+    valid_systems = ['*']
+    valid_prog_environs = ['*']
+
+
+@rfm.simple_test
 class TestA(rfm.RunOnlyRegressionTest):
     valid_systems = ['*']
     valid_prog_environs = ['*']
@@ -36,4 +42,5 @@ class TestA(rfm.RunOnlyRegressionTest):
 
 @rfm.simple_test
 class TestB(TestA):
-    pass
+    '''Use a test as a fixture'''
+    ff = fixture(HelloTest, scope='session')
