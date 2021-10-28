@@ -56,23 +56,17 @@ class dgemm_check(Dgemm):
         '''Fujitsu env only available in ault's a64fx partition.'''
         if self.current_environ.name.startswith('PrgEnv-fujitsu'):
             self.skip_if(
-                self.current_partition.fullname not in {'ault:a64fx'}
+                self.current_partition.fullname not in ('ault:a64fx')
             )
 
     @run_after('setup')
     def set_num_cpus_per_task(self):
-        if self.current_partition.fullname in ['daint:gpu', 'dom:gpu']:
-            self.num_cpus_per_task = 12
-        elif self.current_partition.fullname in ['daint:mc', 'dom:mc']:
-            self.num_cpus_per_task = 36
-        elif self.current_partition.fullname in ['arolla:cn', 'tsa:cn']:
-            self.num_cpus_per_task = 16
-        elif self.current_partition.fullname in ['arolla:pn', 'tsa:pn']:
-            self.num_cpus_per_task = 40
-        elif self.current_partition.fullname in ['eiger:mc', 'pilatus:mc']:
-            self.num_cpus_per_task = 128
-        elif self.current_partition.fullname in ['ault:a64fx']:
-            self.num_cpus_per_task = 48
+        proc = self.current_partition.processor
+        pname = self.current_partition.fullname
+        if not proc.info:
+            self.skip(f'no topology information found for partition {pname!r}')
+
+        self.num_cpus_per_task = proc.num_cpus // proc.num_cpus_per_core
 
     @run_before('compile')
     def set_flags(self):
@@ -95,30 +89,3 @@ class dgemm_check(Dgemm):
             self.build_system.cflags += ['-I$EBROOTOPENBLAS/include']
             self.build_system.ldflags = ['-L$EBROOTOPENBLAS/lib', '-lopenblas',
                                          '-lpthread', '-lgfortran']
-
-    @run_before('performance')
-    def set_perf_patterns(self):
-        '''Override base performance patterns.
-
-        Set each node as a performance variable reporting the Gflop/s.
-        The ``reference`` values for each node are extracted from the
-        ``sys_reference`` dict.
-        '''
-
-        part_name = self.current_partition.fullname
-        with osext.change_dir(self.stagedir):
-            node_names = sn.evaluate(self.get_nodenames())
-
-        # If part_name not in sys_reference, default back to '*'
-        if part_name not in self.sys_reference:
-            part_name = '*'
-
-        # Set references and perf patterns.
-        self.reference = {
-            part_name: {
-                nid: self.sys_reference[part_name] for nid in node_names
-            }
-        }
-        self.perf_patterns = {
-            nid: self.get_node_performance(nid) for nid in node_names
-        }

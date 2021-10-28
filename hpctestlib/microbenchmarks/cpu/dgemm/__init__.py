@@ -31,11 +31,6 @@ class Dgemm(rfm.RegressionTest, pin_prefix=True):
     use_multithreading = False
     executable_opts = ['6144', '12288', '3072']
     build_system = 'SingleSource'
-    reference = {
-        '*': {
-            'min_perf': (None, None, None, 'Gflops/s')
-        }
-    }
     maintainers = ['AJ', 'VH']
 
     @run_before('compile')
@@ -53,7 +48,7 @@ class Dgemm(rfm.RegressionTest, pin_prefix=True):
             'OMP_SCHEDULE': 'static'
         }
 
-    @sn.sanity_function
+    @deferrable
     def get_nodenames(self):
         '''Return a set with the participating node IDs.'''
 
@@ -62,16 +57,16 @@ class Dgemm(rfm.RegressionTest, pin_prefix=True):
             self.stdout, 'hostname'
         ))
 
-    @run_before('sanity')
-    def set_sanity_patterns(self):
+    @sanity_function
+    def assert_all_nodes_completed(self):
         '''Assert that all requested nodes have completed.'''
 
-        self.sanity_patterns = sn.assert_eq(
+        return sn.assert_eq(
             self.job.num_tasks, sn.count(self.get_nodenames()),
             msg='some nodes did not complete'
         )
 
-    @sn.sanity_function
+    @deferrable
     def get_node_performance(self, nodeid):
         '''Get the performance data from a specific ``nodeid``.'''
 
@@ -80,18 +75,10 @@ class Dgemm(rfm.RegressionTest, pin_prefix=True):
             self.stdout, 'gflops', float
         )
 
-    @sn.sanity_function
-    def get_min_performance(self):
+    @performance_function('Gflops/s')
+    def min_perf(self):
         '''Get the lowest performance from all nodes.'''
 
         return sn.min([
             self.get_node_performance(nid) for nid in self.get_nodenames()
         ])
-
-    @run_before('performance')
-    def set_perf_patterns(self):
-        '''Set the perf patterns to check the min performance reported.'''
-
-        self.perf_patterns = {
-            'min_perf': self.get_min_performance(),
-        }
