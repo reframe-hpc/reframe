@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import re
 import json
 
 import reframe.utility as util
@@ -452,6 +453,7 @@ class System(jsonext.JSONSerializable):
         sysname = site_config.get('systems/0/name')
         partitions = []
         config_save = site_config.subconfig_system
+
         for p in site_config.get('systems/0/partitions'):
             site_config.select_subconfig(f'{sysname}:{p["name"]}')
             partid = f"systems/0/partitions/@{p['name']}"
@@ -473,6 +475,7 @@ class System(jsonext.JSONSerializable):
                     )
                 )
 
+            env_patt = site_config.get('general/0/valid_env_names') or [r'.*']
             part_environs = [
                 ProgEnvironment(
                     name=e,
@@ -487,6 +490,7 @@ class System(jsonext.JSONSerializable):
                     fflags=site_config.get(f'environments/@{e}/fflags'),
                     ldflags=site_config.get(f'environments/@{e}/ldflags')
                 ) for e in site_config.get(f'{partid}/environs')
+                if any(re.match(pattern, e) for pattern in env_patt)
             ]
             partitions.append(
                 SystemPartition(

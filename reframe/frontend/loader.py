@@ -18,6 +18,7 @@ import reframe.utility as util
 import reframe.utility.osext as osext
 from reframe.core.exceptions import NameConflictError, is_severe, what
 from reframe.core.logging import getlogger
+from reframe.core.fixtures import FixtureRegistry
 
 
 class RegressionCheckValidator(ast.NodeVisitor):
@@ -170,9 +171,9 @@ class RegressionCheckLoader:
             return []
 
         self._set_defaults(registry)
-        candidates = registry.instantiate_all() if registry else []
-        legacy_candidates = legacy_registry() if legacy_registry else []
-        if self._external_vars and legacy_candidates:
+        test_pool = registry.instantiate_all() if registry else []
+        legacy_tests = legacy_registry() if legacy_registry else []
+        if self._external_vars and legacy_tests:
             getlogger().warning(
                 "variables of tests using the deprecated "
                 "'@parameterized_test' decorator cannot be set externally; "
@@ -180,9 +181,32 @@ class RegressionCheckLoader:
             )
 
         # Merge registries
-        candidates += legacy_candidates
+        test_pool += legacy_tests
+
+        # Do a level-order traversal of the fixture registries of all tests in
+        # the test pool, instantiate all fixtures and generate the final set
+        # of candidate tests to load; the test pool is consumed at the end of
+        # the traversal and all instantiated tests (including fixtures) are
+        # stored in `candidate_tests`.
+        candidate_tests = []
+        fixture_registry = FixtureRegistry()
+        while test_pool:
+            tmp_registry = FixtureRegistry()
+            while test_pool:
+                c = test_pool.pop()
+                reg = getattr(c, '_rfm_fixture_registry', None)
+                candidate_tests.append(c)
+                if reg:
+                    tmp_registry.update(reg)
+
+            # Instantiate the new fixtures and update the registry
+            new_fixtures = tmp_registry.difference(fixture_registry)
+            test_pool = new_fixtures.instantiate_all()
+            fixture_registry.update(new_fixtures)
+
+        # Post-instantiation validation of the candidate tests
         tests = []
-        for c in candidates:
+        for c in candidate_tests:
             if not isinstance(c, RegressionTest):
                 continue
 

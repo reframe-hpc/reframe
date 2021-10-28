@@ -252,7 +252,7 @@ def test_select_subconfig():
     assert site_config.get('systems/0/partitions/0/modules') == []
     assert site_config.get('systems/0/partitions/0/variables') == []
     assert site_config.get('systems/0/partitions/0/max_jobs') == 8
-    assert len(site_config['environments']) == 5
+    assert len(site_config['environments']) == 7
     assert site_config.get('environments/@PrgEnv-gnu/cc') == 'gcc'
     assert site_config.get('environments/0/cxx') == 'g++'
     assert site_config.get('environments/@PrgEnv-cray/cc') == 'cc'
@@ -277,7 +277,6 @@ def test_select_subconfig():
     assert (site_config.get('systems/0/partitions/0/variables') ==
             [['FOO_GPU', 'yes']])
     assert site_config.get('systems/0/partitions/0/max_jobs') == 10
-    assert len(site_config['environments']) == 5
     assert site_config.get('environments/@PrgEnv-gnu/cc') == 'cc'
     assert site_config.get('environments/0/cxx') == 'CC'
     assert site_config.get('general/0/check_search_path') == ['c:d']
