@@ -1,5 +1,7 @@
-ReFrame Test Library
-====================
+ReFrame Test Library (experimental)
+===================================
+
+This is a collection of generic tests that you can either run out-of-the-box by specializing them for your system using the :option:`-S` option or create your site-specific tests by building upon them.
 
 
 Scientific Applications
@@ -18,7 +20,7 @@ Python
    :show-inheritance:
 
 
-Interactive Computing 
+Interactive Computing
 -----------------------
 
 .. automodule:: hpctestlib.apps.jupyter.ipcmagic

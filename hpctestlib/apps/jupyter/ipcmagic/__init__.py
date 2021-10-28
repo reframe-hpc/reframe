@@ -11,28 +11,18 @@ from reframe.core.backends import getlauncher
 
 @rfm.simple_test
 class ipcmagic_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
-    '''Test IPCMagic via a distributed TensorFlow training with ipyparallel.
+    '''Test ipcmagic via a distributed TensorFlow training with ipyparallel.
 
-    MPI for Python provides bindings of the Message Passing Interface
-    (MPI) standard for Python, allowing any Python program to exploit
-    multiple processors.
+    `ipcmagic <https://github.com/eth-cscs/ipcluster_magic>`__ is a Python
+    package and collection of CLI scripts for controlling clusters for
+    Jupyter. For more information, please have a look `here <https://user.cscs.ch/tools/interactive/jupyterlab/#ipython>`__.
 
-    MPI can be made available on Jupyter notebooks through IPyParallel.
-    This is a Python package and collection of CLI scripts for controlling
-    clusters for Jupyter: A set of servers that act as a cluster, called
-    engines, is created and the code in the notebook's cells will be executed
-    within them. This cluster can be run within a single node, or spanning
-    multiple nodes.
-
-    The engines and another server that moderates the cluster, called the
-    controller, can be started an stopped with the magic %ipcluster start n
-    <num-engines> --mpi and %ipcluster stop, respectively.
-
-    This test checks the IPCMagic performance.
+    This test checks the ipcmagic performance.
     To do this, a single-layer neural network is trained against a noisy linear
     function. The parameters of the fitted linear function are returned in the
     end along with the resulting loss function. The default assumption is that
-    IPCMagic is already installed on the system under test.
+    ipcmagic is already installed on the system under test.
+
     '''
 
     executable = 'ipython'
