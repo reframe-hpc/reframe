@@ -1296,7 +1296,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self.logger.debug(f'Cloning URL {url} into stage directory')
         osext.git_clone(
             self.sourcesdir, self._stagedir,
-            timeout=rt.runtime().get_option('general/0/git_timeout')
+            # FIXME: cast to float explicitly due to GH #2246
+            timeout=float(rt.runtime().get_option('general/0/git_timeout'))
         )
 
     @final
