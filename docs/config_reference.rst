@@ -1257,12 +1257,12 @@ General Configuration
    The command-line option sets the configuration option to ``false``.
 
 
-.. js:attribute:: .general[].git_clone_timeout
+.. js:attribute:: .general[].git_timeout
 
   :required: No
   :default: 5
 
-  Timeout value in seconds that will be used while cloning git repositories.
+  Timeout value in seconds used when checking if a git repository exists.
 
 
 .. js:attribute:: .general[].remote_detect
