@@ -4,8 +4,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import reframe as rfm
-import reframe.utility.sanity as sn
-import reframe.utility.osext as osext
 
 from hpctestlib.microbenchmarks.cpu.dgemm import Dgemm
 
