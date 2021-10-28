@@ -114,7 +114,9 @@ class FixtureRegistry:
         The rationale is as follows for the different scopes:
          - session: Only one environment+partition combination per fixture.
                This kind of fixture may be shared across all tests. The name
-               for fixtures with this scope is not mangled by this registry.
+               for fixtures with this scope is mangled with the system name.
+               This is necesssary to avoid name conflicts with classes that
+               are used both as regular tests and fixtures with session scope.
          - partition: Only one environment per partition. This kind of fixture
                may be shared amongst all the tests running on the same
                partition. The name is mangled to include the partition where
@@ -175,7 +177,7 @@ class FixtureRegistry:
 
         # Register the fixture
         if scope == 'session':
-            # The name is just the class name
+            # The name is mangled with the system name
             name = f'{fname}~{self._sys_name}'
 
             # Select a valid environment supported by a partition
