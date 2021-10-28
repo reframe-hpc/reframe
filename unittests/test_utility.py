@@ -269,10 +269,10 @@ def test_git_repo_hash_no_git_repo(git_only, monkeypatch, tmp_path):
 
 def test_git_repo_exists(git_only):
     assert osext.git_repo_exists('https://github.com/eth-cscs/reframe.git',
-                                 timeout=3)
-    assert not osext.git_repo_exists('reframe.git', timeout=3)
+                                 timeout=10)
+    assert not osext.git_repo_exists('reframe.git', timeout=10)
     assert not osext.git_repo_exists('https://github.com/eth-cscs/xxx',
-                                     timeout=3)
+                                     timeout=10)
 
 
 def test_force_remove_file(tmp_path):
@@ -1072,14 +1072,18 @@ def test_sequence_view():
     # Assert immutability
     m = l + [3, 4]
     assert [1, 2, 2, 3, 4] == m
-    assert isinstance(m, util.SequenceView)
+    assert isinstance(m, list)
 
-    m = l
-    l += [3, 4]
-    assert m is not l
-    assert [1, 2, 2] == m
-    assert [1, 2, 2, 3, 4] == l
-    assert isinstance(l, util.SequenceView)
+    m_orig = m = util.SequenceView([1])
+    m += [3, 4]
+    assert m is not m_orig
+    assert [1] == m_orig
+    assert [1, 3, 4] == m
+    assert isinstance(m, list)
+
+    n = m + l
+    assert [1, 3, 4, 1, 2, 2] == n
+    assert isinstance(n, list)
 
     with pytest.raises(TypeError):
         l[1] = 3
@@ -1540,6 +1544,7 @@ def test_jsonext_dumps():
     assert '{"foo":["bar"]}' == jsonext.dumps(
         {'foo': sn.defer(['bar']).evaluate()}, separators=(',', ':')
     )
+    assert '{"(1, 2, 3)": 1}' == jsonext.dumps({(1, 2, 3): 1})
 
 
 # Classes to test JSON deserialization
@@ -1560,12 +1565,26 @@ class _Z(_D):
     pass
 
 
+class _T(jsonext.JSONSerializable):
+    __slots__ = ('t',)
+
+    def __eq__(self, other):
+        if not isinstance(other, _T):
+            return NotImplemented
+
+        return self.t == other.t
+
+
 class _C(jsonext.JSONSerializable):
     def __init__(self, x, y):
         self.x = x
         self.y = y
         self.z = None
         self.w = {1, 2}
+        self.t = None
+
+        # Dump dict with tuples as keys
+        self.v = {(1, 2): 1}
 
     def __rfm_json_decode__(self, json):
         # Sets are converted to lists when encoding, we need to manually
@@ -1579,7 +1598,8 @@ class _C(jsonext.JSONSerializable):
         return (self.x == other.x and
                 self.y == other.y and
                 self.z == other.z and
-                self.w == other.w)
+                self.w == other.w and
+                self.t == other.t)
 
 
 def test_jsonext_load(tmp_path):
@@ -1589,10 +1609,15 @@ def test_jsonext_load(tmp_path):
     c.z = _Z()
     c.z.a += 1
     c.z.b = 'barfoo'
+    c.t = _T()
+    c.t.t = 5
 
     json_dump = tmp_path / 'test.json'
     with open(json_dump, 'w') as fp:
         jsonext.dump(c, fp, indent=2)
+
+    with open(json_dump, 'r') as fp:
+        print(fp.read())
 
     with open(json_dump, 'r') as fp:
         c_restored = jsonext.load(fp)
@@ -1712,6 +1737,19 @@ def test_is_copyable():
     assert util.is_copyable(len)
     assert util.is_copyable(int)
     assert not util.is_copyable(foo())
+
+
+def test_is_trivially_callable():
+    def foo():
+        pass
+
+    def bar(x, y):
+        pass
+
+    assert util.is_trivially_callable(foo)
+    assert util.is_trivially_callable(bar, non_def_args=2)
+    with pytest.raises(TypeError):
+        util.is_trivially_callable(1)
 
 
 def test_nodelist_abbrev():

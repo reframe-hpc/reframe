@@ -5,6 +5,8 @@ oldpwd=$(pwd)
 usage()
 {
     echo "Usage: $0 VERSION"
+    echo "  Environment:"
+    echo "    - GH_DEPLOY_CREDENTIALS=<user>:<token>"
 }
 
 _onerror()
@@ -31,11 +33,18 @@ if [ $py_minor_version -lt 5 ]; then
     exit 1
 fi
 
+if [ -z "$GH_DEPLOY_CREDENTIALS" ]; then
+    _gh_creds_prefix=""
+else
+    _gh_creds_prefix="${GH_DEPLOY_CREDENTIALS}@"
+fi
+
+
 tmpdir=$(mktemp -d)
 echo "Deploying ReFrame version $version ..."
 echo "Working directory: $tmpdir ..."
 cd $tmpdir
-git clone https://github.com/eth-cscs/reframe.git
+git clone https://${_gh_creds_prefix}github.com/eth-cscs/reframe.git
 cd reframe
 ./bootstrap.sh
 found_version=$(./bin/reframe -V | sed -e 's/ (.*)//g')

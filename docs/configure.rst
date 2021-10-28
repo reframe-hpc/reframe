@@ -194,7 +194,7 @@ You can view logger's log level as a general cut off.
 For example, if we have set it to ``warning``, no debug or informational messages would ever be printed.
 
 Finally, there is a special set of handlers for handling performance log messages.
-Performance log messages are generated *only* for `performance tests <tutorial_basics.html#writing-a-performance-test>`__, i.e., tests defining the :attr:`perf_patterns <reframe.core.pipeline.RegressionTest.perf_patterns>` attribute.
+Performance log messages are generated *only* for `performance tests <tutorial_basics.html#writing-a-performance-test>`__, i.e., tests defining the :attr:`~reframe.core.pipeline.RegressionTest.perf_variables` or the :attr:`~reframe.core.pipeline.RegressionTest.perf_patterns` attributes.
 The performance log handlers are stored in the ``handlers_perflog`` property.
 The ``filelog`` handler used in this example will create a file per test and per system/partition combination (``./<system>/<partition>/<testname>.log``) and will append to it the obtained performance data every time a performance test is run.
 Notice how the message to be logged is structured in the ``format`` property, such that it can be easily parsed from post processing tools.
@@ -397,3 +397,43 @@ Let's see some concrete examples:
      "CC"
 
   If you explicitly query a configuration value which is not defined in the configuration file, ReFrame will print its default value.
+
+
+.. _proc-autodetection:
+
+Auto-detecting processor information
+------------------------------------
+
+.. versionadded:: 3.7.0
+
+.. |devices| replace:: :attr:`devices`
+.. _devices: config_reference.html#.systems[].partitions[].devices
+.. |processor| replace:: :attr:`processor`
+.. _processor: config_reference.html#.systems[].partitions[].processor
+.. |detect_remote_system_topology| replace:: :attr:`detect_remote_system_topology`
+.. _detect_remote_system_topology: config_reference.html#.general[].detect_remote_system_topology
+
+ReFrame is able to detect the processor topology of both local and remote partitions automatically.
+The processor and device information are made available to the tests through the corresponding attributes of the :attr:`~reframe.core.pipeline.RegressionTest.current_partition` allowing a test to modify its behavior accordingly.
+Currently, ReFrame supports auto-detection of the local or remote processor information only.
+It does not support auto-detection of devices, in which cases users should explicitly specify this information using the |devices|_ configuration option.
+The processor information auto-detection works as follows:
+
+#. If the |processor|_ configuration is option is defined, then no auto-detection is attempted.
+
+#. If the |processor|_ configuration option is not defined, ReFrame will look for a processor configuration metadata file in ``~/.reframe/topology/{system}-{part}/processor.json``.
+   If the file is found, the topology information is loaded from there.
+   These files are generated automatically by ReFrame from previous runs.
+
+#. If the corresponding metadata files are not found, the processor information will be auto-detected.
+   If the system partition is local (i.e., ``local`` scheduler + ``local`` launcher), the processor information is auto-detected unconditionally and stored in the corresponding metadata file for this partition.
+   If the partition is remote, ReFrame will not try to auto-detect it unless the :envvar:`RFM_REMOTE_DETECT` or the |detect_remote_system_topology|_ configuration option is set.
+   In that case, the steps to auto-detect the remote processor information are the following:
+
+     a. ReFrame creates a fresh clone of itself in a temporary directory created under ``.`` by default.
+        This temporary directory prefix can be changed by setting the :envvar:`RFM_REMOTE_WORKDIR` environment variable.
+     b. ReFrame changes to that directory and launches a job that will first bootstrap the fresh clone and then run that clone with ``{launcher} ./bin/reframe --detect-host-topology=topo.json``.
+        The :option:`--detect-host-topology` option causes ReFrame to detect the topology of the current host,
+        which in this case would be the remote compute nodes.
+
+   In case of errors during auto-detection, ReFrame will simply issue a warning and continue.

@@ -304,6 +304,7 @@ def test_select_subconfig_optional_section_absent():
     site_config = config.load_config('reframe/core/settings.py')
     site_config.select_subconfig()
     assert site_config.get('general/0/colorize') is True
+    assert site_config.get('general/0/git_timeout') == 5
     assert site_config.get('general/verbose') == 0
 
 

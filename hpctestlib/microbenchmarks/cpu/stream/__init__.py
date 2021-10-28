@@ -36,14 +36,6 @@ class Stream(rfm.RegressionTest):
         'OMP_PLACES': 'threads',
         'OMP_PROC_BIND': 'spread'
     }
-    reference = {
-        '*': {
-            'triad': (None, None, None, 'MB/s'),
-            'add': (None, None, None, 'MB/s'),
-            'copy': (None, None, None, 'MB/s'),
-            'scale': (None, None, None, 'MB/s')
-        }
-    }
     maintainers = ['RS', 'SK']
 
     @run_before('run')
@@ -51,29 +43,32 @@ class Stream(rfm.RegressionTest):
         '''Set the number of OMP threads to ``num_cpus_per_task``.'''
         self.variables['OMP_NUM_THREADS'] = f'{self.num_cpus_per_task}'
 
-    @run_before('sanity')
-    def set_sanity_patterns(self):
-        '''Set sanity patterns to check the error threshold.'''
-
-        self.sanity_patterns = sn.assert_found(
+    @sanity_function
+    def assert_solution_is_validated(self):
+        return sn.assert_found(
             r'Solution Validates: avg error less than', self.stdout
         )
 
-    @run_before('performance')
-    def set_performance_patterns(self):
-        '''Set performance to track the triad bandwidth.'''
+    @performance_function('MB/s', perf_key='triad')
+    def extract_min_triad(self):
+        return sn.min(sn.extractall(
+            r'Triad:\s+(?P<triad>\S+)\s+\S+', self.stdout, 'triad', float
+        ))
 
-        self.perf_patterns = {
-            'triad': sn.min(sn.extractall(
-                r'Triad:\s+(?P<triad>\S+)\s+\S+', self.stdout, 'triad', float
-            )),
-            'add': sn.min(sn.extractall(
-                r'Add:\s+(?P<add>\S+)\s+\S+', self.stdout, 'add', float
-            )),
-            'copy': sn.min(sn.extractall(
-                r'Copy:\s+(?P<copy>\S+)\s+\S+', self.stdout, 'copy', float
-            )),
-            'scale': sn.min(sn.extractall(
-                r'Scale:\s+(?P<scale>\S+)\s+\S+', self.stdout, 'scale', float
-            )),
-        }
+    @performance_function('MB/s', perf_key='add')
+    def extract_min_add(self):
+        return sn.min(sn.extractall(
+            r'Add:\s+(?P<add>\S+)\s+\S+', self.stdout, 'add', float
+        ))
+
+    @performance_function('MB/s', perf_key='copy')
+    def extract_min_copy(self):
+        return sn.min(sn.extractall(
+            r'Copy:\s+(?P<copy>\S+)\s+\S+', self.stdout, 'copy', float
+        ))
+
+    @performance_function('MB/s', perf_key='scale')
+    def extract_min_scale(self):
+        return sn.min(sn.extractall(
+            r'Scale:\s+(?P<scale>\S+)\s+\S+', self.stdout, 'scale', float
+        ))

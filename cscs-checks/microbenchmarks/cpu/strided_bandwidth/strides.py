@@ -7,31 +7,49 @@ import reframe as rfm
 
 from hpctestlib.microbenchmarks.cpu.strided_bandwidth import StridedBandwidth
 
-
 @rfm.simple_test
 class strided_bandwidth_check(StridedBandwidth):
     '''Strided bandwidth check.
 
-    This test is parameterized with the ``stride`` parameter, covering the
-    following scenarios: 8-byte stride using the full cache line, 64-byte
-    stride using 1/8 of the cacheline, and 128-byte using 1/8 of every 2nd
-    cacheline.
+    This test is parameterized with the ``stride_bytes`` parameter, covering
+    the following scenarios: 8-byte, 64-byte and 128-byte strides.
 
     This test requires the ``num_cpus`` variable, which is set in a post-setup
-    hook. The data for each supported system is stored in ``system_num_cpus``
-
-    Since the performance references change with the ``stride`` parameter, the
-    references for each test instace are stored in the ``reference_per_stride``
-    variable. The actual references are then set in a pre-performance hook.
+    hook.
     '''
-
-    # Define the stride parameter
-    stride = parameter([1, 8, 16])
 
     valid_systems = ['daint:gpu', 'dom:gpu', 'daint:mc', 'dom:mc',
                      'eiger:mc', 'pilatus:mc', 'ault:a64fx']
     valid_prog_environs = ['PrgEnv-gnu']
-    num_tasks = 0
+
+    # Define the stride parameter
+    stride_bytes = parameter([8, 64, 128])
+
+    # Set required variables
+    num_tasks = 1
+    tags = {'benchmark', 'diagnostic'}
+
+    # Bandwidth references
+    reference_bw = {
+        8: {
+            'haswell': (50, -0.1, 0.1, 'GB/s'),
+            'broadwell': (100, -0.1, 0.1, 'GB/s'),
+            'zen2': (270, -0.1, 0.1, 'GB/s'),
+            'a64fx': (50, -0.1, 0.1, 'GB/s')
+        },
+        64: {
+            'haswell': (6, -0.1, 0.2, 'GB/s'),
+            'broadwell': (12.5, -0.1, 0.2, 'GB/s'),
+            'zen2': (33, -0.1, 0.2, 'GB/s'),
+            'a64fx': (45, -0.1, 0.1, 'GB/s')
+        },
+        128: {
+            'haswell': (4.5, -0.1, 0.2, 'GB/s'),
+            'broadwell': (9.1, -0.1, 0.2, 'GB/s'),
+            'zen2': (33, -0.1, 0.2, 'GB/s'),
+            'a64fx': (25, -0.1, 0.1, 'GB/s')
+        },
+    }
 
     @run_after('init')
     def set_valid_systems(self):
@@ -39,96 +57,26 @@ class strided_bandwidth_check(StridedBandwidth):
         if cp == 'ault':
             self.valid_prog_environs = ['PrgEnv-fujitsu']
 
-    system_num_cpus = variable(
-        dict, value={
-            'daint:mc':  72,
-            'daint:gpu': 24,
-            'dom:mc':  72,
-            'dom:gpu': 24,
-            'eiger:mc': 128,
-            'pilatus:mc': 128,
-            'ault:a64fx': 48,
-        }
-    )
-    reference_per_stride = variable(
-        dict, value={
-            1: {
-                'dom:gpu': {
-                    'bandwidth': (50, -0.1, 0.1, 'GB/s')
-                },
-                'dom:mc': {
-                    'bandwidth': (100, -0.1, 0.1, 'GB/s')
-                },
-                'daint:gpu': {
-                    'bandwidth': (50, -0.1, 0.1, 'GB/s')
-                },
-                'daint:mc': {
-                    'bandwidth': (100, -0.1, 0.1, 'GB/s')
-                },
-                'eiger:mc': {
-                    'bandwidth': (270, -0.1, 0.1, 'GB/s')
-                },
-                'pilatus:mc': {
-                    'bandwidth': (270, -0.1, 0.1, 'GB/s')
-                },
-                'ault:a64fx': {
-                    'bandwidth': (50, -0.1, 0.1, 'GB/s')
-                },
-            },
-            8: {
-                'dom:gpu': {
-                    'bandwidth': (6, -0.1, 0.2, 'GB/s')
-                },
-                'dom:mc': {
-                    'bandwidth': (12.5, -0.1, 0.2, 'GB/s')
-                },
-                'daint:gpu': {
-                    'bandwidth': (6, -0.05, 0.2, 'GB/s')
-                },
-                'daint:mc': {
-                    'bandwidth': (12.5, -0.1, 0.2, 'GB/s')
-                },
-                'eiger:mc': {
-                    'bandwidth': (33, -0.1, 0.2, 'GB/s')
-                },
-                'pilatus:mc': {
-                    'bandwidth': (33, -0.1, 0.2, 'GB/s')
-                },
-                'ault:a64fx': {
-                    'bandwidth': (45, -0.1, 0.1, 'GB/s')
-                },
-            },
-            16: {
-                'dom:gpu': {
-                    'bandwidth': (4.5, -0.1, 0.2, 'GB/s')
-                },
-                'dom:mc': {
-                    'bandwidth': (9.1, -0.1, 0.2, 'GB/s')
-                },
-                'daint:gpu': {
-                    'bandwidth': (4.5, -0.1, 0.2, 'GB/s')
-                },
-                'daint:mc': {
-                    'bandwidth': (9.1, -0.1, 0.2, 'GB/s')
-                },
-                'eiger:mc': {
-                    'bandwidth': (33, -0.1, 0.2, 'GB/s')
-                },
-                'pilatus:mc': {
-                    'bandwidth': (33, -0.1, 0.2, 'GB/s')
-                },
-                'ault:a64fx': {
-                    'bandwidth': (25, -0.1, 0.1, 'GB/s')
-                },
-            }
-        }
-    )
-    tags = {'benchmark', 'diagnostic'}
-
     @run_after('setup')
-    def set_num_cpus(self):
-        self.num_cpus = self.system_num_cpus[self.current_partition.fullname]
+    def skip_if_no_topo(self):
+        proc = self.current_partition.processor
+        pname = self.current_partition.fullname
+        if not proc.info:
+            self.skip(f'no topology information found for partition {pname!r}')
+
+    @run_before('run')
+    def set_exec_opts(self):
+        proc = self.current_partition.processor
+        self.executable_opts = [
+            '100000000', str(self.stride_bytes // 8), f'{proc.num_cpus}'
+        ]
 
     @run_before('performance')
-    def set_references(self):
-        self.reference = self.reference_per_stride[self.stride]
+    def set_reference(self):
+        proc = self.current_partition.processor
+        try:
+            ref = self.reference_bw[self.stride_bytes][proc.arch]
+        except KeyError:
+            return
+        else:
+            self.reference = {'*': {'bandwidth': ref}}

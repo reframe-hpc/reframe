@@ -171,7 +171,7 @@ class TestStats:
                     entry['result'] = 'success'
                     entry['outputdir'] = check.outputdir
 
-                if check.perf_patterns:
+                if check.perfvalues:
                     # Record performance variables
                     entry['perfvars'] = []
                     for key, ref in check.perfvalues.items():
@@ -206,7 +206,7 @@ class TestStats:
         run_report = self.json()[-1]
         last_run = run_report['runid']
         for r in run_report['testcases']:
-            if r['result'] == 'success' or r['result'] == 'aborted':
+            if r['result'] in {'success', 'aborted', 'skipped'}:
                 continue
 
             retry_info = (

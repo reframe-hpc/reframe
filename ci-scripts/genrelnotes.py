@@ -42,10 +42,10 @@ if __name__ == '__main__':
     titles = {
         'feat': '## New features and enhancements',
         'bugfix': '## Bug fixes',
-        'test': '## Regression tests'
+        'testlib': '## Test library'
     }
     sections = collections.OrderedDict()
-    for tag in ['feat', 'bugfix', 'test', 'ci', 'doc']:
+    for tag in ['feat', 'bugfix', 'testlib', 'ci', 'doc']:
         title_line = titles.get(tag, '## Other')
         sections.setdefault(title_line, [])
         for pr, descr in extract_release_notes(completed.stdout, tag):

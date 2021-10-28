@@ -3,93 +3,122 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import os
-
+import contextlib
 import reframe as rfm
-import reframe.utility.sanity as sn
+from hpctestlib.apps.amber.nve import amber_nve_check
 
 
-class AmberBaseCheck(rfm.RunOnlyRegressionTest):
-    def __init__(self, input_file, output_file):
-        self.sourcesdir = os.path.join(self.current_system.resourcesdir,
-                                       'Amber')
-        self.valid_prog_environs = ['builtin']
-        self.modules = ['Amber']
-        self.num_tasks = 1
-        self.num_tasks_per_node = 1
-        self.num_gpus_per_node = 1
-        self.executable_opts = ['-O', '-i', input_file, '-o', output_file]
-        self.keep_files = [output_file]
-        self.extra_resources = {
-            'switches': {
-                'num_switches': 1
+@rfm.simple_test
+class cscs_amber_check(amber_nve_check):
+    modules = ['Amber']
+    valid_prog_environs = ['builtin']
+    extra_resources = {
+        'switches': {
+            'num_switches': 1
+        }
+    }
+    tags |= {'maintenance', 'production'}
+    maintainers = ['VH', 'SO']
+    num_nodes = parameter([1, 4, 6, 8, 16])
+    allref = {
+        1: {
+            'p100': {
+                'Cellulose_production_NVE': (30.0, -0.05, None, 'ns/day'),
+                'FactorIX_production_NVE': (134.0, -0.05, None, 'ns/day'),
+                'JAC_production_NVE': (388.0, -0.05, None, 'ns/day'),
+                'JAC_production_NVE_4fs': (742, -0.05, None, 'ns/day')
+            }
+        },
+        4: {
+            'zen2': {
+                'Cellulose_production_NVE': (3.2, -0.30, None, 'ns/day'),
+                'FactorIX_production_NVE': (7.0, -0.30, None, 'ns/day'),
+                'JAC_production_NVE': (30.0, -0.30, None, 'ns/day'),
+                'JAC_production_NVE_4fs': (45.0, -0.30, None, 'ns/day')
+            }
+        },
+        6: {
+            'broadwell': {
+                'Cellulose_production_NVE': (8.0, -0.30, None, 'ns/day'),
+                'FactorIX_production_NVE': (34.0, -0.30, None, 'ns/day'),
+                'JAC_production_NVE': (90.0, -0.30, None, 'ns/day'),
+                'JAC_production_NVE_4fs': (150.0, -0.30, None, 'ns/day')
+            }
+        },
+        8: {
+            'zen2': {
+                'Cellulose_production_NVE': (1.3, -0.30, None, 'ns/day'),
+                'FactorIX_production_NVE': (3.5, -0.30, None, 'ns/day'),
+                'JAC_production_NVE': (17.0, -0.30, None, 'ns/day'),
+                'JAC_production_NVE_4fs': (30.5, -0.30, None, 'ns/day')
+            }
+        },
+        16: {
+            'broadwell': {
+                'Cellulose_production_NVE': (10.0, -0.30, None, 'ns/day'),
+                'FactorIX_production_NVE': (36.0, -0.30, None, 'ns/day'),
+                'JAC_production_NVE': (78.0, -0.30, None, 'ns/day'),
+                'JAC_production_NVE_4fs': (135.0, -0.30, None, 'ns/day')
             }
         }
+    }
 
-        energy = sn.extractsingle(r' Etot\s+=\s+(?P<energy>\S+)',
-                                  output_file, 'energy', float, item=-2)
-        energy_reference = -443246.8
-        energy_diff = sn.abs(energy - energy_reference)
-        self.sanity_patterns = sn.all([
-            sn.assert_found(r'Final Performance Info:', output_file),
-            sn.assert_lt(energy_diff, 14.9)
-        ])
-
-        self.perf_patterns = {
-            'perf': sn.extractsingle(r'ns/day =\s+(?P<perf>\S+)',
-                                     output_file, 'perf', float, item=1)
+    @run_after('init')
+    def scope_systems(self):
+        valid_systems = {
+            'cuda': {1: ['daint:gpu', 'dom:gpu']},
+            'mpi': {
+                4: ['eiger:mc', 'pilatus:mc'],
+                6: ['daint:mc', 'dom:mc'],
+                8: ['pilatus:mc'],
+                16: ['daint:mc']
+            }
         }
-        self.maintainers = ['SO', 'VH']
-        self.tags = {'scs', 'external-resources'}
+        try:
+            self.valid_systems = valid_systems[self.variant][self.num_nodes]
+        except KeyError:
+            self.valid_systems = []
 
+    @run_after('init')
+    def set_hierarchical_prgenvs(self):
+        if self.current_system.name in ['eiger', 'pilatus']:
+            self.valid_prog_environs = ['cpeIntel']
 
-@rfm.parameterized_test(*(
-    [variant, arch, scale]
-    for variant in ['prod', 'maint']
-    for arch in ['CPU', 'GPU']
-    for scale in ['small', 'large']
-    if (not (scale, arch) == ('large', 'GPU') and
-        not (variant, arch) == ('maint', 'CPU'))
-))
-class AmberCheck(AmberBaseCheck):
-    def __init__(self, variant, arch, scale):
-        super().__init__('mdin.%s' % arch, 'amber.out')
-        self.descr = 'Amber parallel %s %s check (%s)' % (scale, arch, variant)
-        self.tags |= {'maintenance' if variant == 'maint' else 'production'}
-        if arch == 'GPU':
-            self.valid_systems = ['daint:gpu', 'dom:gpu']
-            self.executable = 'pmemd.cuda.MPI'
+    @run_after('init')
+    def set_num_gpus_per_node(self):
+        if self.variant == 'cuda':
+            self.num_gpus_per_node = 1
+
+    @run_after('setup')
+    def skip_if_no_topo(self):
+        proc = self.current_partition.processor
+        pname = self.current_partition.fullname
+        if not proc.info:
+            self.skip(f'no topology information found for partition {pname!r}')
+
+    @run_after('setup')
+    def set_num_tasks(self):
+        if self.variant == 'cuda':
+            self.num_tasks_per_node = 1
+        else:
+            proc = self.current_partition.processor
+            pname = self.current_partition.fullname
+            self.num_tasks_per_node = proc.num_cores
+
+        self.num_tasks = self.num_nodes * self.num_tasks_per_node
+
+    @run_before('performance')
+    def set_perf_reference(self):
+        proc = self.current_partition.processor
+        pname = self.current_partition.fullname
+        if pname in ('daint:gpu', 'dom:gpu'):
+            arch = 'p100'
+        else:
+            arch = proc.arch
+
+        with contextlib.suppress(KeyError):
             self.reference = {
-                'dom:gpu': {
-                    'perf': (30.0, -0.05, None, 'ns/day')
-                },
-                'daint:gpu': {
-                    'perf': (30.0, -0.05, None, 'ns/day')
-                },
+                pname: {
+                    'perf': self.allref[self.num_nodes][arch][self.benchmark]
+                }
             }
-        elif arch == 'CPU':
-            self.valid_systems = ['daint:mc']
-            if scale == 'small':
-                self.valid_systems += ['dom:mc']
-
-            self.executable = 'pmemd.MPI'
-            self.strict_check = False
-            if scale == 'small':
-                self.num_tasks = 216
-                self.num_tasks_per_node = 36
-                self.reference = {
-                    'dom:mc': {
-                        'perf': (8.0, -0.05, None, 'ns/day')
-                    },
-                    'daint:mc': {
-                        'perf': (7.6, -0.05, None, 'ns/day')
-                    }
-                }
-            else:
-                self.num_tasks = 576
-                self.num_tasks_per_node = 36
-                self.reference = {
-                    'daint:mc': {
-                        'perf': (10.7, -0.25, None, 'ns/day')
-                    }
-                }

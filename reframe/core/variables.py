@@ -10,8 +10,9 @@
 import math
 import copy
 
-import reframe.core.namespaces as namespaces
 import reframe.core.fields as fields
+import reframe.core.namespaces as namespaces
+from reframe.core.exceptions import ReframeSyntaxError
 
 
 class _UndefinedType:
@@ -38,22 +39,19 @@ class TestVar:
     :meta private:
     '''
 
-    __slots__ = (
-        'field', '_default_value', 'name', '__attrs__'
-    )
+    __slots__ = ('_field', '_default_value', '_name',)
 
     def __init__(self, *args, **kwargs):
         field_type = kwargs.pop('field', fields.TypedField)
         self._default_value = kwargs.pop('value', Undefined)
 
         if not issubclass(field_type, fields.Field):
-            raise ValueError(
+            raise TypeError(
                 f'field {field_type!r} is not derived from '
                 f'{fields.Field.__qualname__}'
             )
 
-        self.field = field_type(*args, **kwargs)
-        self.__attrs__ = dict()
+        self._field = field_type(*args, **kwargs)
 
     def is_defined(self):
         return self._default_value is not Undefined
@@ -72,35 +70,47 @@ class TestVar:
         return copy.deepcopy(self._default_value)
 
     @property
-    def attrs(self):
-        # Variable attributes must also be returned by-value.
-        return copy.deepcopy(self.__attrs__)
+    def field(self):
+        return self._field
+
+    @property
+    def name(self):
+        return self._name
 
     def __set_name__(self, owner, name):
-        self.name = name
+        self._name = name
 
     def __setattr__(self, name, value):
         '''Set any additional variable attribute into __attrs__.'''
         if name in self.__slots__:
             super().__setattr__(name, value)
         else:
-            self.__attrs__[name] = value
+            setattr(self._default_value, name, value)
 
     def __getattr__(self, name):
-        '''Attribute lookup into __attrs__.'''
-        attrs = self.__getattribute__('__attrs__')
-        try:
-            return attrs[name]
-        except KeyError:
-            var_name = self.__getattribute__('name')
-            raise AttributeError(
-                f'variable {var_name!r} has no attribute {name!r}'
-            ) from None
+        '''Attribute lookup into the variable's value.'''
+        def_val = self.__getattribute__('_default_value')
+
+        # NOTE: This if below is necessary to avoid breaking the deepcopy
+        # of instances of this class. Without it, a deepcopy of instances of
+        # this class can return an instance of _UndefinedType when def_val
+        # is Undefined. This is because _UndefinedType implements a custom
+        # __deepcopy__ method.
+        if def_val is not Undefined:
+            try:
+                return getattr(def_val, name)
+            except AttributeError:
+                '''Raise the AttributeError below.'''
+
+        var_name = self.__getattribute__('_name')
+        raise AttributeError(
+            f'variable {var_name!r} has no attribute {name!r}'
+        ) from None
 
     def _check_is_defined(self):
         if not self.is_defined():
-            raise ValueError(
-                f'variable {self.name} is not assigned a value'
+            raise ReframeSyntaxError(
+                f'variable {self._name} is not assigned a value'
             )
 
     def __repr__(self):
@@ -447,11 +457,10 @@ class VarSpace(namespaces.Namespace):
         :param cls: the target class.
         '''
         for key, var in other.items():
-
             # Make doubly declared vars illegal. Note that this will be
             # triggered when inheriting from multiple RegressionTest classes.
             if key in self.vars:
-                raise ValueError(
+                raise ReframeSyntaxError(
                     f'variable {key!r} is declared in more than one of the '
                     f'parent classes of class {cls.__qualname__!r}'
                 )
@@ -478,7 +487,7 @@ class VarSpace(namespaces.Namespace):
             if isinstance(var, TestVar):
                 # Disable redeclaring a variable
                 if key in self.vars:
-                    raise ValueError(
+                    raise ReframeSyntaxError(
                         f'cannot redeclare the variable {key!r}'
                     )
 
@@ -493,6 +502,11 @@ class VarSpace(namespaces.Namespace):
             if key in self.vars:
                 self.vars[key].define(value)
                 _assigned_vars.add(key)
+            elif value is Undefined:
+                # Cannot be set as Undefined if not a variable
+                raise ReframeSyntaxError(
+                    f'{key!r} has not been declared as a variable'
+                )
 
         # Delete the vars from the class __dict__.
         for key in _assigned_vars:
@@ -513,7 +527,7 @@ class VarSpace(namespaces.Namespace):
 
         for key in self._namespace:
             if key in illegal_names and key not in self._injected_vars:
-                raise ValueError(
+                raise ReframeSyntaxError(
                     f'{key!r} already defined in class '
                     f'{cls.__qualname__!r}'
                 )
@@ -533,14 +547,13 @@ class VarSpace(namespaces.Namespace):
             if var.is_defined():
                 setattr(obj, name, var.default_value)
 
-                # If the variable value itself has attributes, inject them.
-                value = getattr(obj, name)
-                for attr, attr_value in var.attrs.items():
-                    setattr(value, attr, attr_value)
-
             # Track the variables that have been injected.
             self._injected_vars.add(name)
 
     @property
     def vars(self):
         return self._namespace
+
+    @property
+    def injected_vars(self):
+        return self._injected_vars

@@ -4,7 +4,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import pytest
+import reframe.core.warnings as warnings
 import reframe.utility.sanity as sn
+from reframe.core.warnings import ReframeDeprecationWarning
 
 
 def test_defer():
@@ -14,11 +16,71 @@ def test_defer():
     assert isinstance(a, _DeferredExpression)
 
 
+def test_deferrable_perf():
+    from reframe.core.deferrable import _DeferredPerformanceExpression as dpe
+
+    a = sn.defer(3)
+    b = dpe.construct_from_deferred_expr(a, 'some_unit')
+    assert b.unit == 'some_unit'
+
+    # Test wrong unit type
+    with pytest.raises(TypeError):
+        dpe(lambda x: x, 3)
+
+    # Test not from deferred expr
+    with pytest.raises(TypeError):
+        dpe.construct_from_deferred_expr(lambda x: x, 'some_unit')
+
+
 def test_evaluate():
     a = sn.defer(3)
     assert 3 == a.evaluate()
     assert 3 == sn.evaluate(a)
     assert 3 == sn.evaluate(3)
+
+
+def test_recursive_evaluate():
+    @sn.deferrable
+    def c():
+        @sn.deferrable
+        def b():
+            @sn.deferrable
+            def a():
+                return sn.defer(3)
+
+            return a()
+        return b()
+
+    assert 3 == c().evaluate()
+
+
+def test_evaluate_cached():
+    # A dummy mutable
+    my_list = [1]
+
+    @sn.deferrable
+    def my_expr():
+        return my_list[0]
+
+    expr = my_expr()
+    assert expr.evaluate() == 1
+    my_list = [2]
+    assert expr.evaluate(cache=True) == 2
+    my_list = [3]
+    assert expr.evaluate() == 2
+
+    # Test that using cache=True updates the previously cached result
+    assert expr.evaluate(cache=True) == 3
+    my_list = [4]
+    assert expr.evaluate() == 3
+
+
+def test_depr_warn(monkeypatch):
+    monkeypatch.setattr(warnings, '_RAISE_DEPRECATION_ALWAYS', True)
+    with pytest.warns(ReframeDeprecationWarning):
+        @sn.sanity_function
+        def foo():
+            pass
 
 
 def test_implicit_eval():
@@ -40,7 +102,7 @@ def test_iter():
         assert i == e
 
 
-@sn.sanity_function
+@sn.deferrable
 def _add(a, b):
     return a + b
 
@@ -57,7 +119,7 @@ def value_wrapper():
             self._value = 0
 
         @property
-        @sn.sanity_function
+        @sn.deferrable
         def value(self):
             return self._value
 

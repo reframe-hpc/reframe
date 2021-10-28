@@ -60,6 +60,12 @@ def module_collection(modules_system, tmp_path, monkeypatch):
     monkeypatch.setenv('HOME', str(tmp_path))
     coll_name = 'test_collection'
 
+    # Lmod uses LMOD_SYSTEM_NAME to differentiate between collections of
+    # different systems, which is added as a postfix to the collection name.
+    # We monkeypatch it since the test directory is temporary
+    if modules_system.name == 'lmod':
+        monkeypatch.delenv('LMOD_SYSTEM_NAME', raising=False)
+
     # Create modules collections with conflicting modules
     modules_system.load_module('testmod_base')
     modules_system.load_module('testmod_foo')
@@ -237,9 +243,13 @@ def _emit_load_commands_tmod4(modules_system):
         'module restore foo', f'module use {test_util.TEST_MODULES}'
     ]
     assert emit_cmds('foo/1.2') == ['module load foo/1.2']
-    assert emit_cmds('foo', path='/path') == ['module use /path',
-                                              'module load foo',
-                                              'module unuse /path']
+    if modules_system.name == 'lmod':
+        assert emit_cmds('foo', path='/path') == ['module use /path',
+                                                  'module load foo']
+    else:
+        assert emit_cmds('foo', path='/path') == ['module use /path',
+                                                  'module load foo',
+                                                  'module unuse /path']
 
     # Module mappings are not taking into account since v3.3
     assert emit_cmds('m0') == ['module load m0']

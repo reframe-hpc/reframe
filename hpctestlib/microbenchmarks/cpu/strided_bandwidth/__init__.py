@@ -17,7 +17,7 @@ class StridedBandwidth(rfm.RegressionTest, pin_prefix=True):
     (in bytes), the stride (in multiples of 8 bytes) and the number of threads
     to run this application with.
 
-    Derived tests must set the parameter ``stride``, and the variables
+    Derived tests must set the parameter ``stride_bytes``, and the variables
     ``num_cpus`` and ``num_tasks``.
 
     The performance stage measures the bandiwdth in GB/s.
@@ -27,7 +27,7 @@ class StridedBandwidth(rfm.RegressionTest, pin_prefix=True):
     #: This parameter must be opverridden by the derived class.
     #:
     #: :default: ``()``
-    stride = parameter()
+    stride_bytes = parameter()
 
     #: Set the number of cpus per node.
     #:
@@ -40,11 +40,6 @@ class StridedBandwidth(rfm.RegressionTest, pin_prefix=True):
     sourcepath = 'strides.cpp'
     build_system = 'SingleSource'
     num_tasks_per_node = 1
-    reference = {
-        '*': {
-            'bandwidth': (None, None, None, 'GB/s')
-        }
-    }
     maintainers = ['SK']
 
     @run_before('run')
@@ -55,27 +50,25 @@ class StridedBandwidth(rfm.RegressionTest, pin_prefix=True):
         the main docstring above for more info.
         '''
         self.executable_opts = [
-            '100000000', f'{self.stride}', f'{self.num_cpus}'
+            '100000000', f'{self.stride_bytes}', f'{self.num_cpus}'
         ]
 
-    @run_before('sanity')
-    def set_sanity_patterns(self):
+    @sanity_function
+    def assert_bandwidth_is_reported(self):
         ''' Assert that the bandwidth is reported for all the tasks.'''
 
-        self.sanity_patterns = sn.assert_eq(
+        return sn.assert_eq(
             sn.count(sn.findall(r'bandwidth:', self.stdout)),
             self.job.num_tasks
         )
 
-    @run_before('performance')
-    def set_perf_patterns(self):
+    @performance_function('GB/s')
+    def bandwidth(self):
         '''Extract the min bandwidth as a performance metric.'''
 
-        self.perf_patterns = {
-            'bandwidth': sn.min(
-                sn.extractall(
-                    r'bandwidth: (?P<bw>\S+) GB/s',
-                    self.stdout, 'bw', float
-                )
+        return sn.min(
+            sn.extractall(
+                r'bandwidth: (?P<bw>\S+) GB/s',
+                self.stdout, 'bw', float
             )
-        }
+        )

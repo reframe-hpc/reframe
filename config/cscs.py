@@ -195,7 +195,7 @@ site_configuration = {
                         {
                             'type': 'Singularity',
                             'modules': [
-                                'singularity'
+                                'singularity/3.6.4-daint'
                             ]
                         }
                     ],
@@ -243,7 +243,7 @@ site_configuration = {
                         {
                             'type': 'Singularity',
                             'modules': [
-                                'singularity'
+                                'singularity/3.6.4-daint'
                             ]
                         }
                     ],
@@ -342,7 +342,8 @@ site_configuration = {
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
-                        'PrgEnv-pgi'
+                        'PrgEnv-pgi',
+                        'PrgEnv-nvidia'
                     ],
                     'descr': 'Login nodes',
                     'max_jobs': 4,
@@ -362,7 +363,7 @@ site_configuration = {
                         {
                             'type': 'Singularity',
                             'modules': [
-                                'singularity/3.5.3'
+                                'singularity/3.6.4-daint'
                             ]
                         }
                     ],
@@ -378,7 +379,8 @@ site_configuration = {
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
-                        'PrgEnv-pgi'
+                        'PrgEnv-pgi',
+                        'PrgEnv-nvidia'
                     ],
                     'descr': 'Hybrid nodes (Haswell/P100)',
                     'max_jobs': 100,
@@ -404,7 +406,7 @@ site_configuration = {
                         {
                             'type': 'Singularity',
                             'modules': [
-                                'singularity/3.5.3'
+                                'singularity/3.6.4-daint'
                             ]
                         }
                     ],
@@ -420,7 +422,8 @@ site_configuration = {
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
-                        'PrgEnv-pgi'
+                        'PrgEnv-pgi',
+                        'PrgEnv-nvidia'
                     ],
                     'descr': 'Multicore nodes (Broadwell)',
                     'max_jobs': 100,
@@ -695,6 +698,17 @@ site_configuration = {
                     'name': 'mc',
                     'descr': 'Multicore nodes (AMD EPYC 7742, 256|512GB/cn)',
                     'scheduler': 'slurm',
+                    'container_platforms': [
+                        {
+                            'type': 'Sarus',
+                        },
+                        {
+                            'type': 'Singularity',
+                            'modules': [
+                                'singularity/3.5.3-eiger'
+                            ]
+                        }
+                    ],
                     'environs': [
                         'builtin',
                         'PrgEnv-aocc',
@@ -707,6 +721,7 @@ site_configuration = {
                         'cpeIntel'
                     ],
                     'max_jobs': 100,
+                    'access': ['-Cmc', f'--account={osext.osgroup()}'],
                     'resources': [
                         {
                             'name': 'switches',
@@ -721,6 +736,21 @@ site_configuration = {
                             ]
                         },
                     ],
+                    'launcher': 'srun'
+                },
+                {
+                    'name': 'jupyter_mc',
+                    'scheduler': 'slurm',
+                    'environs': [
+                        'builtin'
+                    ],
+                    'access': [
+                        f'-Cmc',
+                        f'--reservation=interact',
+                        f'--account={osext.osgroup()}'
+                    ],
+                    'descr': 'JupyterHub GPU nodes',
+                    'max_jobs': 10,
                     'launcher': 'srun'
                 },
             ]
@@ -756,6 +786,17 @@ site_configuration = {
                     'name': 'mc',
                     'descr': 'Multicore nodes (AMD EPYC 7742, 256|512GB/cn)',
                     'scheduler': 'slurm',
+                    'container_platforms': [
+                        {
+                            'type': 'Sarus',
+                        },
+                        {
+                            'type': 'Singularity',
+                            'modules': [
+                                'singularity/3.5.3-eiger'
+                            ]
+                        }
+                    ],
                     'environs': [
                         'builtin',
                         'PrgEnv-aocc',
@@ -1088,6 +1129,28 @@ site_configuration = {
             ]
         },
         {
+            'name': 'PrgEnv-nvidia',
+            'target_systems': [
+                'pilatus'
+            ],
+            'modules': [
+                'PrgEnv-nvidia',
+                # FIXME: We should not be forcing a cdt version
+                'cpe/21.06'
+            ]
+        },
+        {
+            'name': 'PrgEnv-nvidia',
+            'target_systems': [
+                'dom', 'daint'
+            ],
+            'modules': [
+                'PrgEnv-nvidia',
+                # FIXME: We should not be forcing a cdt version
+                'cdt/21.05'
+            ]
+        },
+        {
             'name': 'builtin',
             'cc': 'cc',
             'cxx': 'CC',
@@ -1183,7 +1246,8 @@ site_configuration = {
             'check_search_path': [
                 'checks/'
             ],
-            'check_search_recursive': True
+            'check_search_recursive': True,
+            'remote_detect': True
         }
     ]
 }

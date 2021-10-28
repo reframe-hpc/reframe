@@ -101,6 +101,11 @@ class _SiteConfig:
     def __getattr__(self, attr):
         return getattr(self._pick_config(), attr)
 
+    @property
+    def schema(self):
+        '''Configuration schema'''
+        return self._schema
+
     def add_sticky_option(self, option, value):
         self._sticky_options[option] = value
 
@@ -264,7 +269,7 @@ class _SiteConfig:
             with open('/etc/xthostname') as fp:
                 hostname = fp.read()
         else:
-            hostname = socket.gethostname()
+            hostname = socket.getfqdn()
 
         getlogger().debug(
             f'Looking for a matching configuration entry '

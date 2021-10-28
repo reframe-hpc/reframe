@@ -13,6 +13,12 @@ import reframe.utility.osext as osext
 from reframe.core.exceptions import SanityError
 
 
+def add_prgenv_nvidia(self):
+    cs = self.current_system.name
+    if cs in {'daint', 'dom'}:
+        self.valid_prog_environs += ['PrgEnv-nvidia']
+
+
 @rfm.simple_test
 class CompileAffinityTool(rfm.CompileOnlyRegressionTest):
     valid_systems = [
@@ -34,13 +40,24 @@ class CompileAffinityTool(rfm.CompileOnlyRegressionTest):
     maintainers = ['RS', 'SK']
     tags = {'production', 'scs', 'maintenance', 'craype'}
 
+    run_after('init')(bind(add_prgenv_nvidia))
+
     @run_before('compile')
     def set_build_opts(self):
         self.build_system.options = ['-C affinity', 'MPI=1']
 
-    @run_before('sanity')
+    @run_before('compile')
+    def prgenv_nvidia_workaround(self):
+        cs = self.current_system.name
+        ce = self.current_environ.name
+        if ce == 'PrgEnv-nvidia' and cs == 'dom':
+            self.build_system.cppflags = [
+                '-D__GCC_ATOMIC_TEST_AND_SET_TRUEVAL'
+            ]
+
+    @sanity_function
     def assert_exec_exists(self):
-        self.sanity_patterns = sn.assert_found(r'affinity', self.stdout)
+        return sn.assert_found(r'affinity', self.stdout)
 
 
 @rfm.simple_test
@@ -105,6 +122,8 @@ class AffinityTestBase(rfm.RunOnlyRegressionTest):
 
     maintainers = ['RS', 'SK']
     tags = {'production', 'scs', 'maintenance', 'craype'}
+
+    run_after('init')(bind(add_prgenv_nvidia))
 
     @run_after('init')
     def set_deps(self):
@@ -209,7 +228,7 @@ class AffinityTestBase(rfm.RunOnlyRegressionTest):
             ]
         }
 
-    @sn.sanity_function
+    @sanity_function
     def assert_consumed_cpu_set(self):
         '''Check that all the resources have been consumed.
 
@@ -258,10 +277,6 @@ class AffinityTestBase(rfm.RunOnlyRegressionTest):
         hint = self.system.get(cp, {}).get('hint', None) or self.hint
         if hint:
             self.job.launcher.options += [f'--hint={hint}']
-
-    @run_before('sanity')
-    def set_sanity(self):
-        self.sanity_patterns = self.assert_consumed_cpu_set()
 
 
 class AffinityOpenMPBase(AffinityTestBase):

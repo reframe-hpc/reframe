@@ -10,8 +10,8 @@
 import contextlib
 import inspect
 import os
-import sys
 
+import reframe
 import reframe.utility as utility
 
 
@@ -305,7 +305,7 @@ def user_frame(exc_type, exc_value, tb):
         return None
 
     for finfo in reversed(inspect.getinnerframes(tb)):
-        relpath = os.path.relpath(finfo.filename, sys.path[0])
+        relpath = os.path.relpath(finfo.filename, reframe.INSTALL_PREFIX)
         if relpath.split(os.sep)[0] != 'reframe':
             return finfo
 
@@ -320,6 +320,22 @@ def is_exit_request(exc_type, exc_value, tb):
                                   FailureLimitError))
 
 
+def is_user_error(exc_type, exc_value, tb):
+    '''Check if error is a user programming error.
+
+    A user error is any of :py:class:`AttributeError`, :py:class:`NameError`,
+    :py:class:`TypeError` or :py:class:`ValueError` and the exception is
+    thrown from user context.
+    '''
+
+    frame = user_frame(exc_type, exc_value, tb)
+    if frame is None:
+        return False
+
+    return isinstance(exc_value,
+                      (AttributeError, NameError, TypeError, ValueError))
+
+
 def is_severe(exc_type, exc_value, tb):
     '''Check if exception is a severe one.'''
 
@@ -330,14 +346,8 @@ def is_severe(exc_type, exc_value, tb):
     if isinstance(exc_value, soft_errors):
         return False
 
-    # Treat specially type and value errors
-    type_error  = isinstance(exc_value, TypeError)
-    value_error = isinstance(exc_value, ValueError)
-    frame = user_frame(exc_type, exc_value, tb)
-    if (type_error or value_error) and frame is not None:
-        return False
-
-    return True
+    # User errors are treated as soft
+    return not is_user_error(exc_type, exc_value, tb)
 
 
 def what(exc_type, exc_value, tb):
@@ -349,14 +359,12 @@ def what(exc_type, exc_value, tb):
     reason = utility.decamelize(exc_type.__name__, ' ')
 
     # We need frame information for user type and value errors
-    frame = user_frame(exc_type, exc_value, tb)
-    user_type_error  = isinstance(exc_value, TypeError)  and frame
-    user_value_error = isinstance(exc_value, ValueError) and frame
     if isinstance(exc_value, KeyboardInterrupt):
         reason = 'cancelled by user'
     elif isinstance(exc_value, AbortTaskError):
         reason = f'aborted due to {type(exc_value.__cause__).__name__}'
-    elif user_type_error or user_value_error:
+    elif is_user_error(exc_type, exc_value, tb):
+        frame = user_frame(exc_type, exc_value, tb)
         relpath = os.path.relpath(frame.filename)
         source = ''.join(frame.code_context)
         reason += f': {relpath}:{frame.lineno}: {exc_value}\n{source}'

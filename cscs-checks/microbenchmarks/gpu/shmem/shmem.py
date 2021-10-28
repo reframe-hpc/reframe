@@ -42,7 +42,7 @@ class gpu_shmem_check(GpuShmem):
         }
     }
     maintainers = ['SK', 'JO']
-    tags = {'benchmark', 'diagnostic', 'craype'}
+    tags = {'benchmark', 'diagnostic', 'craype', 'health'}
 
     # Inject external hooks
     @run_after('setup')

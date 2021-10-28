@@ -17,6 +17,8 @@ import sys
 import types
 import weakref
 
+import reframe
+
 from collections import UserDict
 from . import typecheck as typ
 
@@ -81,7 +83,7 @@ def import_module_from_file(filename, force=False):
         filename = os.path.join(filename, '__init__.py')
 
     # Express filename relative to reframe
-    rel_filename = os.path.relpath(filename, sys.path[0])
+    rel_filename = os.path.relpath(filename, reframe.INSTALL_PREFIX)
     module_name = _get_module_name(rel_filename)
     if rel_filename.startswith('..'):
         # We cannot use the standard Python import mechanism here, because the
@@ -302,6 +304,34 @@ def attrs(obj):
                     pass
 
     return ret
+
+
+def is_trivially_callable(fn, *, non_def_args=0):
+    '''Check that a callable object is trivially callable.
+
+    An object is trivially callable when it can be invoked by providing just
+    an expected number of non-default arguments to its call method. For
+    example, (non-static) member functions expect a single argument without a
+    default value, which will passed as ``cls`` or ``self`` during invocation
+    depending on whether the function is a classmethod or not, respectively.
+    On the other hand, member functions that are static methods are not passed
+    any values by default when invoked. Therefore, these functions can only be
+    trivially callable when their call method expects no arguments by default.
+
+    :param fn: A callable to be tested if its trivially callable.
+    :param non_def_args: The number of non-default arguments the callable
+      ``fn`` expects when invoked.
+    :return: This function returns :obj:`True` if the expected number of
+      arguments matches the value of ``non_def_args``. Otherwise, it returns
+      :obj:`False`.
+    '''
+
+    if not callable(fn):
+        raise TypeError('argument is not a callable')
+
+    explicit_args = [p for p in inspect.signature(fn).parameters.values()
+                     if p.default is p.empty]
+    return len(explicit_args) == non_def_args
 
 
 def _is_builtin_type(cls):
@@ -1338,6 +1368,12 @@ class SequenceView(collections.abc.Sequence):
     :raises TypeError: If the container does not fulfill the
         :py:class:`collections.abc.Sequence` interface.
 
+    .. note::
+
+       You can concatenate a :class:`SequenceView` with a container of the
+       same type as the underlying container of the view, in which case a new
+       container with the concatenated elements will be returned.
+
     '''
 
     def __init__(self, container):
@@ -1388,13 +1424,16 @@ class SequenceView(collections.abc.Sequence):
         return self.__container.__reversed__()
 
     def __add__(self, other):
-        if not isinstance(other, collections.abc.Sequence):
+        if not isinstance(other, type(self.__container)):
             return NotImplemented
 
-        return SequenceView(self.__container + other)
+        return self.__container + other
 
-    def __iadd__(self, other):
-        return NotImplemented
+    def __radd__(self, other):
+        if not isinstance(other, type(self.__container)):
+            return NotImplemented
+
+        return other + self.__container
 
     def __eq__(self, other):
         if isinstance(other, SequenceView):

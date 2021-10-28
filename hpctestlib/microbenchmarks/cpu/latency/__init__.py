@@ -42,16 +42,16 @@ class CpuLatency(rfm.RegressionTest, pin_prefix=True):
         '''Set the ``buffer_sizes`` as the executable options.'''
         self.executable_opts = self.buffer_sizes
 
-    @run_before('sanity')
-    def set_sanity_patterns(self):
+    @sanity_function
+    def count_reported_latencies(self):
         '''Verify the number of reported latency measurements.'''
 
-        self.sanity_patterns = sn.assert_eq(
+        return sn.assert_eq(
             sn.count(sn.findall(r'latency \(ns\)', self.stdout)),
             self.num_tasks*sn.count(self.executable_opts)
         )
 
-    @sn.sanity_function
+    @deferrable
     def get_latency(self, buffer_size):
         '''Extract the worst latency for a given buffer size.'''
 
@@ -61,30 +61,15 @@ class CpuLatency(rfm.RegressionTest, pin_prefix=True):
         ))
 
     @run_before('performance')
-    def set_references(self):
-        '''Set dummy references to get the perf values in the perf report.
-
-        This will create as many levels as items in ``buffer_sizes``. Derived
-        test must override this hook if they wish to use their own reference
-        values.
-        '''
-
-        self.reference = {
-            '*': {
-                f'latencyL{i+1}': (None, None, None, 'ns')
-                for i, buff in enumerate(self.buffer_sizes)
-            }
-        }
-
-    @run_before('performance')
     def set_perf_patterns(self):
-        '''Set the performance patters to extract all latency levels.
+        '''Set the performance functions to extract all latency levels.
 
         The levels are named from ``L1`` to ``L{n}``, where ``n`` is the
         length of ``buffer_sizes``.
         '''
 
-        self.perf_patterns = {
-            f'latencyL{i+1}': self.get_latency(buff)
-            for i, buff in enumerate(self.buffer_sizes)
+        self.perf_variables = {
+            f'latencyL{i+1}': sn.make_performance_function(
+                self.get_latency(buff), 'ns'
+            ) for i, buff in enumerate(self.buffer_sizes)
         }

@@ -71,14 +71,10 @@ class StreamMultiSysTest(rfm.RegressionTest):
             'OMP_PLACES': 'cores'
         }
 
-    @run_before('sanity')
-    def set_sanity_patterns(self):
-        self.sanity_patterns = sn.assert_found(r'Solution Validates',
-                                               self.stdout)
+    @sanity_function
+    def validate_solution(self):
+        return sn.assert_found(r'Solution Validates', self.stdout)
 
-    @run_before('performance')
-    def set_perf_patterns(self):
-        self.perf_patterns = {
-            'Triad': sn.extractsingle(r'Triad:\s+(\S+)\s+.*',
-                                      self.stdout, 1, float),
-        }
+    @performance_function('MB/s', perf_key='Triad')
+    def extract_triad_bw(self):
+        return sn.extractsingle(r'Triad:\s+(\S+)\s+.*', self.stdout, 1, float)

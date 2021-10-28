@@ -19,7 +19,8 @@ class QuantumESPRESSOCheck(rfm.RunOnlyRegressionTest):
 
         self.modules = ['QuantumESPRESSO']
         self.executable = 'pw.x'
-        self.executable_opts = ['-in', 'ausurf.in']
+        self.executable_opts = ['-in', 'ausurf.in',
+                                '-pd', '.true.']
 
         self.sanity_patterns = sn.all([
             sn.assert_found(r'convergence has been achieved', self.stdout),
@@ -60,7 +61,7 @@ class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
                 self.num_tasks_per_core = 1
                 self.variables = {
                     'MPICH_OFI_STARTUP_CONNECT': '1',
-                    'OMP_NUM_THREADS': str(self.num_cpus_per_task),
+                    'OMP_NUM_THREADS': '8',
                     'OMP_PLACES': 'cores',
                     'OMP_PROC_BIND': 'close'
                 }
@@ -76,7 +77,7 @@ class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
                 self.num_tasks_per_core = 1
                 self.variables = {
                     'MPICH_OFI_STARTUP_CONNECT': '1',
-                    'OMP_NUM_THREADS': str(self.num_cpus_per_task),
+                    'OMP_NUM_THREADS': '8',
                     'OMP_PLACES': 'cores',
                     'OMP_PROC_BIND': 'close'
                 }

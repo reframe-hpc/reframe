@@ -207,6 +207,10 @@
                 "arch": {"type": "string"},
                 "num_devices": {"type": "number"}
             }
+        },
+        "devices": {
+            "type": "array",
+            "items": {"$ref": "#/defs/device_info"}
         }
     },
     "type": "object",
@@ -243,8 +247,8 @@
                                 "scheduler": {
                                     "type": "string",
                                     "enum": [
-                                        "local", "pbs", "slurm",
-                                        "squeue", "torque"
+                                        "local", "lsf", "oar", "pbs",
+                                        "sge", "slurm", "squeue", "torque"
                                     ]
                                 },
                                 "launcher": {
@@ -252,7 +256,7 @@
                                     "enum": [
                                         "alps",  "ibrun", "local", "mpirun",
                                         "mpiexec", "srun", "srunalloc", "ssh",
-                                        "upcrun", "upcxx-run"
+                                        "upcrun", "upcxx-run", "lrun", "lrun-gpu"
                                     ]
                                 },
                                 "access": {
@@ -294,10 +298,7 @@
                                     "items": {"type": "string"}
                                  },
                                 "processor": {"$ref": "#/defs/processor_info"},
-                                "devices": {
-                                    "type": "array",
-                                    "items": {"$ref": "#/defs/device_info"}
-                                },
+                                "devices": {"$ref": "#/defs/devices"},
                                 "extras": {"type": "object"},
                                 "resources": {
                                     "type": "array",
@@ -369,7 +370,8 @@
                 "properties": {
                     "name": {
                         "type": "string",
-                        "enum": ["local", "pbs", "slurm", "squeue", "torque"]
+                        "enum": ["local", "lsf", "oar", "pbs",
+                                 "sge", "slurm", "squeue", "torque"]
                     },
                     "ignore_reqnodenotavail": {"type": "boolean"},
                     "resubmit_on_errors": {
@@ -450,6 +452,7 @@
                     "check_search_recursive": {"type": "boolean"},
                     "clean_stagedir": {"type": "boolean"},
                     "colorize": {"type": "boolean"},
+                    "git_timeout": {"type": "number"},
                     "ignore_check_conflicts": {"type": "boolean"},
                     "trap_job_errors": {"type": "boolean"},
                     "keep_stage_files": {"type": "boolean"},
@@ -460,6 +463,8 @@
                     },
                     "non_default_craype": {"type": "boolean"},
                     "purge_environment": {"type": "boolean"},
+                    "remote_detect": {"type": "boolean"},
+                    "remote_workdir": {"type": "string"},
                     "report_file": {"type": "string"},
                     "report_junit": {"type": ["string", "null"]},
                     "resolve_module_conflicts": {"type": "boolean"},
@@ -493,6 +498,7 @@
         "general/check_search_recursive": false,
         "general/clean_stagedir": true,
         "general/colorize": true,
+        "general/git_timeout": 5,
         "general/ignore_check_conflicts": false,
         "general/trap_job_errors": false,
         "general/keep_stage_files": false,
@@ -500,6 +506,8 @@
         "general/module_mappings": [],
         "general/non_default_craype": false,
         "general/purge_environment": false,
+        "general/remote_detect": false,
+        "general/remote_workdir": ".",
         "general/report_file": "${HOME}/.reframe/reports/run-report.json",
         "general/report_junit": null,
         "general/resolve_module_conflicts": true,

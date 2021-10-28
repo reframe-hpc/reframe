@@ -17,21 +17,9 @@ class stream_check(Stream):
         'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn', 'ault:a64fx'
     ]
     valid_prog_environs = [
-        'PrgEnv-cray', 'PrgEnv-gnu', 'PrgEnv-intel', 'PrgEnv-pgi'
+        'PrgEnv-cray', 'PrgEnv-gnu', 'PrgEnv-intel', 'PrgEnv-pgi',
+        'PrgEnv-nvidia'
     ]
-    stream_cpus_per_task = variable(
-        dict, value={
-            'arolla:cn': 16,
-            'arolla:pn': 16,
-            'daint:gpu': 12,
-            'daint:mc': 36,
-            'dom:gpu': 12,
-            'dom:mc': 36,
-            'tsa:cn': 16,
-            'tsa:pn': 16,
-            'ault:a64fx': 48,
-        }
-    )
     triad_reference = variable(
         dict, value={
             'PrgEnv-cray': {
@@ -76,23 +64,26 @@ class stream_check(Stream):
 
     @run_after('setup')
     def set_num_cpus_per_task(self):
-        '''If partition not in ``stream_cpus_per_task``, leave as required.'''
-        self.num_cpus_per_task = self.stream_cpus_per_task.get(
-            self.current_partition.fullname, self.required
-        )
+        '''Set the num cpus based on the autodetected topology.'''
+        proc = self.current_partition.processor
+        pname = self.current_partition.fullname
+        if not proc.info:
+            self.skip(f'no topology information found for partition {pname!r}')
+
+        self.num_cpus_per_task = proc.num_cpus // proc.num_cpus_per_core
 
     @run_before('compile')
     def set_compiler_flags(self):
         '''Set build flags for the different environments.'''
 
         envname = self.current_environ.name
-        if envname in {'PrgEnv-cray', 'PrgEnv-gnu'}:
+        if envname in ('PrgEnv-cray', 'PrgEnv-gnu'):
             self.build_system.cflags += ['-fopenmp', '-O3']
-        elif envname in {'PrgEnv-intel'}:
+        elif envname in ('PrgEnv-intel'):
             self.build_system.cflags += ['-qopenmp', '-O3']
-        elif envname in {'PrgEnv-intel'}:
+        elif envname in ('PrgEnv-pgi', 'PrgEnv-nvidia'):
             self.build_system.cflags += ['-mp', '-O3']
-        elif envname in {'PrgEnv-fujitsu'}:
+        elif envname in ('PrgEnv-fujitsu'):
             self.build_system.cflags += ['-fopenmp', '-mt', '-O3']
             self.build_system.ldflags += ['-mt']
 
@@ -103,20 +94,8 @@ class stream_check(Stream):
             self.variables['OMP_PROC_BIND'] = 'true'
 
     @run_before('performance')
-    def set_perf_references(self):
-        '''Set performance refs as defined in ``triad_reference``.
-
-        All other perf vars are left as default.
-        '''
-
+    def set_triad_references(self):
+        '''Set performance refs as defined in ``triad_reference``.'''
         envname = self.current_environ.name
         if envname in self.triad_reference:
-            extra_refs = {
-                '*': {
-                    'scale': (None, None, None, 'MB/s'),
-                    'add': (None, None, None, 'MB/s'),
-                    'copy': (None, None, None, 'MB/s'),
-                }
-            }
             self.reference = self.triad_reference[envname]
-            self.reference.update(extra_refs)
