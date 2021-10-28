@@ -1243,6 +1243,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         return self.local or self._current_partition.scheduler.is_local
 
+    def is_fixture(self):
+        '''Check if the test is a fixture.'''
+        return getattr(self, '_rfm_is_fixture', False)
+
     def _resolve_fixtures(self):
         '''Resolve the fixture dependencies and inject the fixture handle.
 

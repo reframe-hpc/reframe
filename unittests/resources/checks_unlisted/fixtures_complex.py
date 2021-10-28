@@ -61,7 +61,11 @@ class TestA(rfm.RunOnlyRegressionTest):
             # Assert that there are only 4 underlying fixture instances.
             sn.assert_eq(
                 sn.len({self.f0, self.f1, self.f2, self.f3, *self.f4}), 4
-            )
+            ),
+
+            # Assert is_fixture() function
+            sn.assert_true(self.f0.is_fixture()),
+            sn.assert_false(self.is_fixture())
         ])
 
 

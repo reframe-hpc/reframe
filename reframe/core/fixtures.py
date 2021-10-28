@@ -288,7 +288,8 @@ class FixtureRegistry:
 
                 try:
                     # Instantiate the fixture
-                    inst = cls(variant_num=varnum, variables=fixtvars)
+                    inst = cls(variant_num=varnum, variables=fixtvars,
+                               is_fixture=True)
                 except Exception:
                     exc_info = sys.exc_info()
                     getlogger().warning(

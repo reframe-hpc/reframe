@@ -116,7 +116,10 @@ def list_checks(testcases, printer, detailed=False):
         deps.setdefault(t.check.name, [])
         deps[t.check.name].append((t, t.deps))
 
-    checks = set(t.check for t in testcases)
+    checks = set(
+        t.check for t in testcases
+        if detailed or not t.check.is_fixture()
+    )
     printer.info(
         '\n'.join(format_check(c, deps[c.name], detailed) for c in checks)
     )
