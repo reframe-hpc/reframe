@@ -483,7 +483,8 @@ class VarSpace(namespaces.Namespace):
         is disallowed.
         '''
         local_varspace = getattr(cls, self.local_namespace_name)
-        for key, var in local_varspace.items():
+        while local_varspace:
+            key, var = local_varspace.popitem()
             if isinstance(var, TestVar):
                 # Disable redeclaring a variable
                 if key in self.vars:
@@ -511,9 +512,6 @@ class VarSpace(namespaces.Namespace):
         # Delete the vars from the class __dict__.
         for key in _assigned_vars:
             delattr(cls, key)
-
-        # Clear the local var space
-        local_varspace.clear()
 
     def sanity(self, cls, illegal_names=None):
         '''Sanity checks post-creation of the var namespace.

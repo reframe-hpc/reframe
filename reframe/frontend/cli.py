@@ -7,7 +7,6 @@ import inspect
 import itertools
 import json
 import os
-import re
 import shlex
 import socket
 import sys
@@ -117,7 +116,10 @@ def list_checks(testcases, printer, detailed=False):
         deps.setdefault(t.check.name, [])
         deps[t.check.name].append((t, t.deps))
 
-    checks = set(t.check for t in testcases)
+    checks = set(
+        t.check for t in testcases
+        if detailed or not t.check.is_fixture()
+    )
     printer.info(
         '\n'.join(format_check(c, deps[c.name], detailed) for c in checks)
     )
@@ -261,8 +263,16 @@ def main():
         '-n', '--name', action='append', dest='names', default=[],
         metavar='PATTERN', help='Select checks whose name matches PATTERN'
     )
+
+    # FIXME: The following is the only selection option that has an associated
+    # (undocumented) configuration variable. This is to support pruning of the
+    # partition environments as the runtime is created, similarly to how the
+    # system partitions are treated. Currently, this facilitates the
+    # implementation of fixtures, but we should reconsider it: see discussion
+    # in https://github.com/eth-cscs/reframe/issues/2245
     select_options.add_argument(
         '-p', '--prgenv', action='append', default=[r'.*'],  metavar='PATTERN',
+        configvar='general/valid_env_names',
         help=('Select checks with at least one '
               'programming environment matching PATTERN')
     )
@@ -485,6 +495,13 @@ def main():
         configvar='schedulers/ignore_reqnodenotavail',
         action='store_true',
         help='Graylog server address'
+    )
+    argparser.add_argument(
+        dest='compact_test_names',
+        envvar='RFM_COMPACT_TEST_NAMES',
+        configvar='general/compact_test_names',
+        action='store_true',
+        help='Use a compact test naming scheme'
     )
     argparser.add_argument(
         dest='remote_detect',
@@ -785,17 +802,9 @@ def main():
 
         # Generate all possible test cases first; we will need them for
         # resolving dependencies after filtering
-
-        # Determine the allowed programming environments
-        allowed_environs = {e.name
-                            for env_patt in options.prgenv
-                            for p in rt.system.partitions
-                            for e in p.environs if re.match(env_patt, e.name)}
-
         testcases_all = generate_testcases(checks_found,
                                            options.skip_system_check,
-                                           options.skip_prgenv_check,
-                                           allowed_environs)
+                                           options.skip_prgenv_check)
         testcases = testcases_all
         printer.verbose(f'Generated {len(testcases)} test case(s)')
 
