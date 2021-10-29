@@ -40,6 +40,13 @@ def have_tag(patt):
     return _fn
 
 
+def have_not_tag(patt):
+    def _fn(case):
+        return not have_tag(patt)(case)
+
+    return _fn
+
+
 def have_gpu_only():
     def _fn(case):
         return case.check.num_gpus_per_node > 0

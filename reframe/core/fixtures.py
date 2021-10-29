@@ -98,6 +98,9 @@ class FixtureRegistry:
             'general/0/compact_test_names'
         )
 
+        # Store the system name for name-mangling purposes
+        self._sys_name = runtime.runtime().system.name
+
     def add(self, fixture, variant_num, parent_name, partitions, prog_envs):
         '''Register a fixture.
 
@@ -111,7 +114,9 @@ class FixtureRegistry:
         The rationale is as follows for the different scopes:
          - session: Only one environment+partition combination per fixture.
                This kind of fixture may be shared across all tests. The name
-               for fixtures with this scope is not mangled by this registry.
+               for fixtures with this scope is mangled with the system name.
+               This is necesssary to avoid name conflicts with classes that
+               are used both as regular tests and fixtures with session scope.
          - partition: Only one environment per partition. This kind of fixture
                may be shared amongst all the tests running on the same
                partition. The name is mangled to include the partition where
@@ -172,8 +177,8 @@ class FixtureRegistry:
 
         # Register the fixture
         if scope == 'session':
-            # The name is just the class name
-            name = fname
+            # The name is mangled with the system name
+            name = f'{fname}~{self._sys_name}'
 
             # Select a valid environment supported by a partition
             for part in valid_partitions:
@@ -285,7 +290,8 @@ class FixtureRegistry:
 
                 try:
                     # Instantiate the fixture
-                    inst = cls(variant_num=varnum, variables=fixtvars)
+                    inst = cls(variant_num=varnum, variables=fixtvars,
+                               is_fixture=True)
                 except Exception:
                     exc_info = sys.exc_info()
                     getlogger().warning(

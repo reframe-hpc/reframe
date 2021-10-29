@@ -496,6 +496,9 @@ class RegressionTestMeta(type):
         if not isinstance(variables, collections.abc.Mapping):
             raise TypeError("'variables' argument must be a mapping")
 
+        # Intercept is_fixture argument to flag an instance as a fixture
+        is_fixture = kwargs.pop('is_fixture', False)
+
         obj = cls.__new__(cls, *args, **kwargs)
 
         # Insert the var and param spaces
@@ -507,6 +510,10 @@ class RegressionTestMeta(type):
             obj._rfm_variant_num = variant_num
             obj._rfm_param_variant = param_index
             obj._rfm_fixt_variant = fixt_index
+
+        # Flag the instance as fixture
+        if is_fixture:
+            obj._rfm_is_fixture = True
 
         # Set the variables passed to the constructor
         for k, v in variables.items():

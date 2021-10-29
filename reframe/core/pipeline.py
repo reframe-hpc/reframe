@@ -1243,6 +1243,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         return self.local or self._current_partition.scheduler.is_local
 
+    def is_fixture(self):
+        '''Check if the test is a fixture.'''
+        return getattr(self, '_rfm_is_fixture', False)
+
     def _resolve_fixtures(self):
         '''Resolve the fixture dependencies and inject the fixture handle.
 
@@ -1416,7 +1420,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self.logger.debug(f'Cloning URL {url} into stage directory')
         osext.git_clone(
             self.sourcesdir, self._stagedir,
-            timeout=rt.runtime().get_option('general/0/git_clone_timeout')
+            # FIXME: cast to float explicitly due to GH #2246
+            timeout=float(rt.runtime().get_option('general/0/git_timeout'))
         )
 
     @final
