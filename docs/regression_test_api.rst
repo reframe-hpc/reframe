@@ -575,6 +575,8 @@ The framework will then continue with other activities and it will execute the p
    .. versionchanged:: 3.7.0
       Declaring pipeline hooks using the same name functions from the :py:mod:`reframe` or :py:mod:`reframe.core.decorators` modules is now deprecated.
       You should use the built-in functions described in this section instead.
+   .. versionchanged:: 4.0.0
+      Pipeline hooks can only be defined through the built-in functions described in this section.
 
 .. py:decorator:: RegressionMixin.run_before(stage)
 
@@ -611,13 +613,6 @@ The framework will then continue with other activities and it will execute the p
 
   .. versionchanged:: 3.5.2
      Add support for post-init hooks.
-
-.. warning::
-   .. versionchanged:: 3.7.0
-      Declaring pipeline hooks using the same name functions from the :py:mod:`reframe` or :py:mod:`reframe.core.decorators` modules is now deprecated.
-      You should use the built-in functions described in this section instead.
-   .. versionchanged:: 4.0.0
-      Pipeline hooks can only be defined through the built-in functions described in this section.
 
 
 .. _test-variants:
