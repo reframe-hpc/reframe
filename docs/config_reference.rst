@@ -1322,6 +1322,9 @@ General Configuration
    Trap command errors in the generated job scripts and let them exit immediately.
 
 
+   .. versionadded:: 3.2
+
+
 .. js:attribute:: .general[].keep_stage_files
 
    :required: No

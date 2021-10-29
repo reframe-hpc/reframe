@@ -1123,6 +1123,9 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
 
 
+   .. versionadded:: 3.2
+
+
 .. envvar:: RFM_UNLOAD_MODULES
 
    A comma-separated list of environment modules to be unloaded before acting on any tests.
