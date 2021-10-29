@@ -1113,7 +1113,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
 .. envvar:: RFM_TRAP_JOB_ERRORS
 
-   Ignore job exit code
+   Trap job errors in submitted scripts and fail tests automatically.
 
    .. table::
       :align: left
@@ -1121,6 +1121,8 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
       Associated configuration parameter :js:attr:`trap_job_errors` general configuration parameter
       ================================== ==================
+
+   .. versionadded:: 3.9.0
 
 
 .. envvar:: RFM_UNLOAD_MODULES
