@@ -393,7 +393,9 @@ class RegressionTestMeta(type):
         for base in (b for b in bases if hasattr(b, '_rfm_dir')):
             cls._rfm_dir.update(base._rfm_dir)
 
-        used_attribute_names = set(cls._rfm_dir)
+        used_attribute_names = set(cls._rfm_dir).union(
+            {h.__name__ for h in cls._rfm_hook_registry}
+        )
 
         # Build the var space and extend the target namespace
         cls._rfm_var_space = variables.VarSpace(
