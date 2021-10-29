@@ -247,8 +247,8 @@
                                 "scheduler": {
                                     "type": "string",
                                     "enum": [
-                                        "local", "pbs", "slurm",
-                                        "sge", "squeue", "torque"
+                                        "local", "lsf", "oar", "pbs",
+                                        "sge", "slurm", "squeue", "torque"
                                     ]
                                 },
                                 "launcher": {
@@ -256,7 +256,7 @@
                                     "enum": [
                                         "alps",  "ibrun", "local", "mpirun",
                                         "mpiexec", "srun", "srunalloc", "ssh",
-                                        "upcrun", "upcxx-run"
+                                        "upcrun", "upcxx-run", "lrun", "lrun-gpu"
                                     ]
                                 },
                                 "access": {
@@ -370,7 +370,8 @@
                 "properties": {
                     "name": {
                         "type": "string",
-                        "enum": ["local", "pbs", "sge", "slurm", "squeue", "torque"]
+                        "enum": ["local", "lsf", "oar", "pbs",
+                                 "sge", "slurm", "squeue", "torque"]
                     },
                     "ignore_reqnodenotavail": {"type": "boolean"},
                     "resubmit_on_errors": {
@@ -451,6 +452,8 @@
                     "check_search_recursive": {"type": "boolean"},
                     "clean_stagedir": {"type": "boolean"},
                     "colorize": {"type": "boolean"},
+                    "compact_test_names": {"type": "boolean"},
+                    "git_timeout": {"type": "number"},
                     "ignore_check_conflicts": {"type": "boolean"},
                     "trap_job_errors": {"type": "boolean"},
                     "keep_stage_files": {"type": "boolean"},
@@ -496,6 +499,8 @@
         "general/check_search_recursive": false,
         "general/clean_stagedir": true,
         "general/colorize": true,
+        "general/compact_test_names": false,
+        "general/git_timeout": 5,
         "general/ignore_check_conflicts": false,
         "general/trap_job_errors": false,
         "general/keep_stage_files": false,

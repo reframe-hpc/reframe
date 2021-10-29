@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import re
 import json
 
 import reframe.utility as util
@@ -13,30 +14,50 @@ from reframe.core.logging import getlogger
 from reframe.core.modules import ModulesSystem
 
 
-class ProcessorType(jsonext.JSONSerializable):
+class _ReadOnlyInfo:
+    __slots__ = ('_info',)
+    _known_attrs = ()
+
+    def __init__(self, info):
+        self._info = info
+
+    def __deepcopy__(self, memo):
+        # This is a read-only object; simply return ourself
+        return self
+
+    def __getattr__(self, name):
+        if name in self._known_attrs:
+            return self._info.get(name, None)
+        else:
+            raise AttributeError(
+                f'{type(self).__qualname__!r} object has no attribute {name!r}'
+            )
+
+    def __setattr__(self, name, value):
+        if name in self._known_attrs:
+            raise AttributeError(f'attribute {name!r} is not writeable')
+        else:
+            super().__setattr__(name, value)
+
+
+class ProcessorInfo(_ReadOnlyInfo, jsonext.JSONSerializable):
     '''A representation of a processor inside ReFrame.
+
+    You can access all the keys of the `processor configuration object
+    <config_reference.html#processor-info>`__.
 
     .. versionadded:: 3.5.0
 
     .. warning::
-       Users may not create :class:`ProcessorType` objects directly.
+       Users may not create :class:`ProcessorInfo` objects directly.
 
     '''
 
-    def __init__(self, processor_info):
-        self._arch = None
-        self._num_cpus = None
-        self._num_cpus_per_core = None
-        self._num_cpus_per_socket = None
-        self._num_sockets = None
-        self._topology = None
-        self._info = processor_info
-
-        if not processor_info:
-            return
-
-        for key, val in processor_info.items():
-            setattr(self, f'_{key}', val)
+    __slots__ = ()
+    _known_attrs = (
+        'arch', 'num_cpus', 'num_cpus_per_core',
+        'num_cpus_per_socket', 'num_sockets', 'topology'
+    )
 
     @property
     def info(self):
@@ -47,61 +68,13 @@ class ProcessorType(jsonext.JSONSerializable):
         return self._info
 
     @property
-    def arch(self):
-        '''The microarchitecture of the processor.
-
-        :type: :class:`str` or :class:`None`
-        '''
-        return self._arch
-
-    @property
-    def num_cpus(self):
-        '''Number of logical CPUs.
-
-        :type: integral or :class:`None`
-        '''
-        return self._num_cpus
-
-    @property
-    def num_cpus_per_core(self):
-        '''Number of logical CPUs per core.
-
-        :type: integral or :class:`None`
-        '''
-        return self._num_cpus_per_core
-
-    @property
-    def num_cpus_per_socket(self):
-        '''Number of logical CPUs per socket.
-
-        :type: integral or :class:`None`
-        '''
-        return self._num_cpus_per_socket
-
-    @property
-    def num_sockets(self):
-        '''Number of sockets.
-
-        :type: integral or :class:`None`
-        '''
-        return self._num_sockets
-
-    @property
-    def topology(self):
-        '''Processor topology.
-
-        :type: :class:`Dict[str, obj]` or :class:`None`
-        '''
-        return self._topology
-
-    @property
     def num_cores(self):
         '''Total number of cores.
 
         :type: integral or :class:`None`
         '''
-        if self._num_cpus and self._num_cpus_per_core:
-            return self._num_cpus // self._num_cpus_per_core
+        if self.num_cpus and self.num_cpus_per_core:
+            return self.num_cpus // self.num_cpus_per_core
         else:
             return None
 
@@ -111,8 +84,8 @@ class ProcessorType(jsonext.JSONSerializable):
 
         :type: integral or :class:`None`
         '''
-        if self.num_cores and self._num_sockets:
-            return self.num_cores // self._num_sockets
+        if self.num_cores and self.num_sockets:
+            return self.num_cores // self.num_sockets
         else:
             return None
 
@@ -122,8 +95,8 @@ class ProcessorType(jsonext.JSONSerializable):
 
         :type: integral or :class:`None`
         '''
-        if self._topology and 'numa_nodes' in self._topology:
-            return len(self._topology['numa_nodes'])
+        if self.topology and 'numa_nodes' in self.topology:
+            return len(self.topology['numa_nodes'])
         else:
             return None
 
@@ -140,37 +113,21 @@ class ProcessorType(jsonext.JSONSerializable):
             return None
 
 
-class DeviceType(jsonext.JSONSerializable):
+class DeviceInfo(_ReadOnlyInfo, jsonext.JSONSerializable):
     '''A representation of a device inside ReFrame.
+
+    You can access all the keys of the `device configuration object
+    <config_reference.html#device-info>`__.
 
     .. versionadded:: 3.5.0
 
     .. warning::
-       Users may not create :class:`DeviceType` objects directly.
+       Users may not create :class:`DeviceInfo` objects directly.
 
     '''
 
-    def __init__(self, device_info):
-        self._type = None
-        self._arch = None
-        self._num_devices = 1
-        self._info = device_info
-
-        if not device_info:
-            return
-
-        for key, val in device_info.items():
-            setattr(self, f'_{key}', val)
-
-    @property
-    def num_devices(self):
-        '''Number of devices of this type.
-
-        It will return 1 if it wasn't set in the configuration.
-
-        :type: integral
-        '''
-        return self._num_devices
+    __slots__ = ()
+    _known_attrs = ('type', 'arch')
 
     @property
     def info(self):
@@ -181,12 +138,14 @@ class DeviceType(jsonext.JSONSerializable):
         return self._info
 
     @property
-    def arch(self):
-        '''The architecture of the device.
+    def num_devices(self):
+        '''Number of devices of this type.
 
-        :type: :class:`str` or :class:`None`
+        It will return 1 if it wasn't set in the configuration.
+
+        :type: integral
         '''
-        return self._arch
+        return self._info.get('num_devices', 1)
 
     @property
     def device_type(self):
@@ -194,7 +153,7 @@ class DeviceType(jsonext.JSONSerializable):
 
         :type: :class:`str` or :class:`None`
         '''
-        return self._type
+        return self.type
 
 
 class SystemPartition(jsonext.JSONSerializable):
@@ -222,8 +181,8 @@ class SystemPartition(jsonext.JSONSerializable):
         self._max_jobs = max_jobs
         self._prepare_cmds = prepare_cmds
         self._resources = {r['name']: r['options'] for r in resources}
-        self._processor = ProcessorType(processor)
-        self._devices = [DeviceType(d) for d in devices]
+        self._processor = ProcessorInfo(processor)
+        self._devices = [DeviceInfo(d) for d in devices]
         self._extras = extras
 
     @property
@@ -376,7 +335,7 @@ class SystemPartition(jsonext.JSONSerializable):
 
         .. versionadded:: 3.5.0
 
-        :type: :class:`reframe.core.systems.ProcessorType`
+        :type: :class:`reframe.core.systems.ProcessorInfo`
         '''
         return self._processor
 
@@ -386,7 +345,7 @@ class SystemPartition(jsonext.JSONSerializable):
 
         .. versionadded:: 3.5.0
 
-        :type: :class:`List[reframe.core.systems.DeviceType]`
+        :type: :class:`List[reframe.core.systems.DeviceInfo]`
         '''
         return self._devices
 
@@ -480,6 +439,7 @@ class System(jsonext.JSONSerializable):
         sysname = site_config.get('systems/0/name')
         partitions = []
         config_save = site_config.subconfig_system
+
         for p in site_config.get('systems/0/partitions'):
             site_config.select_subconfig(f'{sysname}:{p["name"]}')
             partid = f"systems/0/partitions/@{p['name']}"
@@ -501,6 +461,7 @@ class System(jsonext.JSONSerializable):
                     )
                 )
 
+            env_patt = site_config.get('general/0/valid_env_names') or [r'.*']
             part_environs = [
                 ProgEnvironment(
                     name=e,
@@ -515,6 +476,7 @@ class System(jsonext.JSONSerializable):
                     fflags=site_config.get(f'environments/@{e}/fflags'),
                     ldflags=site_config.get(f'environments/@{e}/ldflags')
                 ) for e in site_config.get(f'{partid}/environs')
+                if any(re.match(pattern, e) for pattern in env_patt)
             ]
             partitions.append(
                 SystemPartition(

@@ -34,7 +34,8 @@ import reframe.utility.udeps as udeps
 from reframe.core.backends import getlauncher, getscheduler
 from reframe.core.buildsystems import BuildSystemField
 from reframe.core.containers import ContainerPlatformField
-from reframe.core.deferrable import _DeferredExpression
+from reframe.core.deferrable import (_DeferredExpression,
+                                     _DeferredPerformanceExpression)
 from reframe.core.exceptions import (BuildError, DependencyError,
                                      PerformanceError, PipelineError,
                                      SanityError, SkipTestError,
@@ -74,6 +75,11 @@ def final(fn):
     return _wrapped
 
 
+_RFM_TEST_KIND_MIXIN = 0
+_RFM_TEST_KIND_COMPILE = 1
+_RFM_TEST_KIND_RUN = 2
+
+
 class RegressionMixin(metaclass=RegressionTestMeta):
     '''Base mixin class for regression tests.
 
@@ -87,17 +93,7 @@ class RegressionMixin(metaclass=RegressionTestMeta):
     .. versionadded:: 3.4.2
     '''
 
-    def __getattr__(self, name):
-        ''' Intercept the AttributeError if the name is a required variable.'''
-        if (name in self._rfm_var_space and
-            not self._rfm_var_space[name].is_defined()):
-            raise AttributeError(
-                f'required variable {name!r} has not been set'
-            ) from None
-        else:
-            raise AttributeError(
-                f'{type(self).__qualname__} object has no attribute {name!r}'
-            )
+    _rfm_regression_class_kind = _RFM_TEST_KIND_MIXIN
 
 
 class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
@@ -152,6 +148,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     '''
 
+    _rfm_regression_class_kind = _RFM_TEST_KIND_COMPILE | _RFM_TEST_KIND_RUN
+
     def disable_hook(self, hook_name):
         '''Disable pipeline hook by name.
 
@@ -176,6 +174,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: The name of the test.
     #:
     #: :type: string that can contain any character except ``/``
+    #: :default: For non-parameterised tests, the default name is the test
+    #:   class name. For parameterised tests, the default name is constructed
+    #:   by concatenating the test class name and the string representations
+    #:   of every test parameter: ``TestClassName_<param1>_<param2>``.
+    #:   Any non-alphanumeric value in a parameter's representation is
+    #:   converted to ``_``.
     name = variable(typ.Str[r'[^\/]+'])
 
     #: List of programming environments supported by this test.
@@ -562,8 +566,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:     .. versionchanged:: 3.0
     #:        The measurement unit is required. The user should explicitly
     #:        specify :class:`None` if no unit is available.
-    reference = variable(typ.Tuple[object, object, object, object],
-                         field=fields.ScopedDictField, value={})
+    reference = variable(typ.Tuple[object, object, object],
+                         typ.Dict[str, typ.Dict[
+                             str, typ.Tuple[object, object, object, object]]
+    ], field=fields.ScopedDictField, value={})
     # FIXME: There is not way currently to express tuples of `float`s or
     # `None`s, so we just use the very generic `object`
 
@@ -606,8 +612,43 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:     </deferrable_functions_reference>`) as values.
     #:     :class:`None` is also allowed.
     #: :default: :class:`None`
-    perf_patterns = variable(typ.Dict[str, _DeferredExpression],
-                             type(None), value=None)
+    perf_patterns = variable(typ.Dict[str, _DeferredExpression], type(None))
+
+    #: The performance variables associated with the test.
+    #:
+    #: In this context, a performance variable is a key-value pair, where the
+    #: key is the desired variable name and the value is the deferred
+    #: performance expression (i.e. the result of a :ref:`deferrable
+    #: performance function<deferrable-performance-functions>`) that computes
+    #: or extracts the performance variable's value.
+    #:
+    #: By default, ReFrame will populate this field during the test's
+    #: instantiation with all the member functions decorated with the
+    #: :func:`@performance_function
+    #: <reframe.core.pipeline.RegressionMixin.performance_function>` decorator.
+    #: If no performance functions are present in the class, no performance
+    #: checking or reporting will be carried out.
+    #:
+    #: This mapping may be extended or replaced by other performance variables
+    #: that may be defined in any pipeline hook executing before the
+    #: performance stage. To this end, deferred performance functions can be
+    #: created inline using the utility
+    #: :func:`~reframe.utility.sanity.make_performance_function`.
+    #:
+    #: Refer to the :doc:`ReFrame Tutorials </tutorials>` for concrete usage
+    #: examples.
+    #:
+    #: :type: A dictionary with keys of type :class:`str` and deferred
+    #:     performance expressions as values (see
+    #:     :ref:`deferrable-performance-functions`).
+    #: :default: Collection of performance variables associated to each of
+    #:     the member functions decorated with the :func:`@performance_function
+    #:     <reframe.core.pipeline.RegressionMixin.performance_function>`
+    #:     decorator.
+    #:
+    #: .. versionadded:: 3.8.0
+    perf_variables = variable(typ.Dict[str, _DeferredPerformanceExpression],
+                              value={})
 
     #: List of modules to be loaded before running this test.
     #:
@@ -615,8 +656,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    modules = variable(
-        typ.List[str], typ.List[typ.Dict[str, object]], value=[])
+    modules = variable(typ.List[str], typ.List[typ.Dict[str, object]],
+                       value=[])
 
     #: Environment variables to be set before running this test.
     #:
@@ -776,12 +817,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         # injected after __new__ has returned, so we schedule this function
         # call as a pre-init hook).
         obj.__deferred_rfm_init = obj.__rfm_init__(*args,
-                                                   name=cls.__qualname__,
                                                    prefix=prefix, **kwargs)
 
         # Build pipeline hook registry and add the pre-init hook
         cls._rfm_pipeline_hooks = cls._process_hook_registry()
-        cls._rfm_pipeline_hooks['pre___init__'] = [cls.__pre_init__]
+        cls._rfm_pipeline_hooks['pre___init__'] = [obj.__pre_init__]
 
         # Attach the hooks to the pipeline stages
         for stage in _PIPELINE_STAGES:
@@ -793,6 +833,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     def __pre_init__(self):
         '''Initialize the test defaults from a pre-init hook.'''
         self.__deferred_rfm_init.evaluate()
+
+        # Build the default performance dict
+        if not self.perf_variables:
+            for fn in self._rfm_perf_fns.values():
+                self.perf_variables[fn._rfm_perf_key] = fn(self)
 
     def __init__(self):
         pass
@@ -816,12 +861,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             )
 
     @deferrable
-    def __rfm_init__(self, *args, name=None, prefix=None, **kwargs):
-        if name is not None:
-            self.name = name
-
-            # Add the parameters to the name.
-            self.name += self._append_parameters_to_name()
+    def __rfm_init__(self, *args, prefix=None, **kwargs):
+        if not hasattr(self, 'name'):
+            self.name = type(self).fullname(self.variant_num)
 
             # Add the parameters from the parameterized_test decorator.
             if args or kwargs:
@@ -881,13 +923,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         # Disabled hooks
         self._disabled_hooks = set()
 
-    def _append_parameters_to_name(self):
-        if self._rfm_param_space.params:
-            return '_' + '_'.join([util.toalphanum(str(self.__dict__[key]))
-                                   for key in self._rfm_param_space.params])
-        else:
-            return ''
-
     @classmethod
     def _process_hook_registry(cls):
         '''Process and validate the pipeline hooks.'''
@@ -932,6 +967,24 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         return super().__getattribute__(name)
 
+    def __getattr__(self, name):
+        ''' Intercept the special builtin-related AttributeError.'''
+
+        if (name in self._rfm_var_space and
+            not self._rfm_var_space[name].is_defined()):
+            raise AttributeError(
+                f'required variable {name!r} has not been set'
+            ) from None
+        elif name in self._rfm_fixture_space:
+            raise AttributeError(
+                f'fixture {name!r} has not yet been resolved: '
+                f'fixtures are resolved during the setup stage'
+            )
+        else:
+            raise AttributeError(
+                f'{type(self).__qualname__!r} object has no attribute {name!r}'
+            )
+
     # Export read-only views to interesting fields
 
     @property
@@ -964,6 +1017,41 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         :type: :class:`reframe.core.systems.System`.
         '''
         return rt.runtime().system
+
+    @property
+    def variant_num(self):
+        '''The variant number of the test.
+
+        This number should be treated as a unique ID representing a unique
+        combination of the available parameter and fixture variants.
+
+        :type: :class:`int`
+        '''
+        return getattr(self, '_rfm_variant_num', None)
+
+    @property
+    def param_variant(self):
+        '''The point in the parameter space for the test.
+
+        This can be seen as an index to the paraemter space representing a
+        unique combination of the parameter values. This number is directly
+        mapped from ``variant_num``.
+
+        :type: :class:`int`
+        '''
+        return getattr(self, '_rfm_param_variant', None)
+
+    @property
+    def fixture_variant(self):
+        '''The point in the fixture space for the test.
+
+        This can be seen as an index to the fixture space representing a
+        unique combination of the fixture variants. This number is directly
+        mapped from ``variant_num``.
+
+        :type: :class:`int`
+        '''
+        return getattr(self, '_rfm_fixt_variant', None)
 
     @property
     def perfvalues(self):
@@ -1119,6 +1207,90 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         return self.local or self._current_partition.scheduler.is_local
 
+    def is_fixture(self):
+        '''Check if the test is a fixture.'''
+        return getattr(self, '_rfm_is_fixture', False)
+
+    def _resolve_fixtures(self):
+        '''Resolve the fixture dependencies and inject the fixture handle.
+
+        The fixture handle will point directly to the fixture object when the
+        associated fixture uses a 'fork' action. However, when a fixture uses
+        the 'join' action, the injected handle will point to a list with all
+        the available fixture variants.
+        '''
+
+        current_part = self.current_partition.fullname
+        current_env = self.current_environ.name
+
+        # Get the declared and registered fixtures
+        fixtures = type(self)._rfm_fixture_space
+        registry = getattr(self, '_rfm_fixture_registry', None)
+
+        # If this instance does not have a variant number, return
+        if self.fixture_variant is None:
+            return
+
+        # Get the fixture variants required for this test variant.
+        # This would retrieve the same information than when calling
+        # ``type(self).get_variant_info(self.variant_num)['fixtures']``.
+        target_fixt_variants = type(self).fixture_space[self.fixture_variant]
+
+        for handle_name, f in fixtures.items():
+            # Get the target variants for this fixture
+            target_variants = target_fixt_variants[handle_name]
+
+            # Prepare the getdep argumens based on the fixture's scope
+            if f.scope == 'session':
+                part = '*'
+                environ = '*'
+            elif f.scope == 'partition':
+                part = None
+                environ = '*'
+            else:
+                part = None
+                environ = None
+
+            # List to store all the targeted fixture variants
+            deps = []
+
+            # Scan the fixture registry and resolve the fixtures.
+            # NOTE: The fixture registry can have multiple fixture instances
+            # registered under the same fixture class. So the loop below must
+            # also inspect the fixture data the instance was registered with.
+            for fixt_name, fixt_data in registry[f.cls].items():
+                if f.scope != fixt_data.scope:
+                    continue
+                elif fixt_data.variant_num not in target_variants:
+                    continue
+                elif f.scope == 'partition':
+                    if fixt_data.partitions[0] != current_part:
+                        continue
+                elif f.scope == 'environment':
+                    if (fixt_data.environments[0] != current_env or
+                        fixt_data.partitions[0] != current_part):
+                        continue
+
+                # Resolve the fixture
+                deps.append(self.getdep(fixt_name, environ, part))
+
+            if f.action == 'fork':
+                # When using the fork action, a fixture handle can only have
+                # a single fixture instance attached. This could only happen
+                # if either any of the above ifs is buggy or if a fixture with
+                # a fork action ever has more than one index per fork variant.
+                # None of this can happen from user input, but this must stay
+                # here to ensure the unit tests do not fail silently.
+                if len(deps) > 1:
+                    raise PipelineError(
+                        f'fixture {handle_name!r} has more than one instances'
+                    )
+
+                deps = deps[0]
+
+            # Inject the fixtures
+            setattr(self, handle_name, deps)
+
     def _setup_paths(self):
         '''Setup the check's dynamic paths.'''
         self.logger.debug('Setting up test paths')
@@ -1190,6 +1362,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self._current_partition = partition
         self._current_environ = environ
         self._setup_paths()
+        self._resolve_fixtures()
         self._job = self._setup_job(f'rfm_{self.name}_job',
                                     self.local,
                                     **job_opts)
@@ -1209,7 +1382,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     def _clone_to_stagedir(self, url):
         self.logger.debug(f'Cloning URL {url} into stage directory')
-        osext.git_clone(self.sourcesdir, self._stagedir)
+        osext.git_clone(
+            self.sourcesdir, self._stagedir,
+            # FIXME: cast to float explicitly due to GH #2246
+            timeout=float(rt.runtime().get_option('general/0/git_timeout'))
+        )
 
     @final
     def compile(self):
@@ -1606,60 +1783,109 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
               more details.
 
         '''
-        if self.perf_patterns is None:
-            return
 
-        self._setup_perf_logging()
         with osext.change_dir(self._stagedir):
-            # Check if default reference perf values are provided and
-            # store all the variables tested in the performance check
-            has_default = False
-            variables = set()
-            for key, ref in self.reference.items():
-                keyparts = key.split(self.reference.scope_separator)
-                system = keyparts[0]
-                varname = keyparts[-1]
-                unit = ref[3]
-                variables.add((varname, unit))
-                if system == '*':
-                    has_default = True
-                    break
+            if self.perf_variables or self._rfm_perf_fns:
+                if hasattr(self, 'perf_patterns'):
+                    raise ReframeSyntaxError(
+                        f"assigning a value to 'perf_patterns' conflicts ",
+                        f"with using the 'performance_function' decorator ",
+                        f"or setting a value to 'perf_variables'"
+                    )
 
-            if not has_default:
-                if not variables:
-                    # If empty, it means that self.reference was empty, so try
-                    # to infer their name from perf_patterns
-                    variables = {(name, None)
-                                 for name in self.perf_patterns.keys()}
+                # Log the performance variables
+                self._setup_perf_logging()
+                for tag, expr in self.perf_variables.items():
+                    try:
+                        value = expr.evaluate()
+                        unit = expr.unit
+                    except Exception as e:
+                        logging.getlogger().warning(
+                            f'skipping evaluation of performance variable '
+                            f'{tag!r}: {e}'
+                        )
+                        continue
 
-                for var in variables:
-                    name, unit = var
-                    ref_tuple = (0, None, None, unit)
-                    self.reference.update({'*': {name: ref_tuple}})
+                    key = f'{self._current_partition.fullname}:{tag}'
+                    try:
+                        ref = self.reference[key]
 
-            # We first evaluate and log all performance values and then we
-            # check them against the reference. This way we always log them
-            # even if the don't meet the reference.
-            for tag, expr in self.perf_patterns.items():
-                value = sn.evaluate(expr)
-                key = '%s:%s' % (self._current_partition.fullname, tag)
-                if key not in self.reference:
-                    raise SanityError(
-                        "tag `%s' not resolved in references for `%s'" %
-                        (tag, self._current_partition.fullname))
+                        # If units are also provided in the reference, raise
+                        # a warning if they match with the units provided by
+                        # the performance function.
+                        if len(ref) == 4:
+                            if ref[3] != unit:
+                                logging.getlogger().warning(
+                                    f'reference unit ({key!r}) for the '
+                                    f'performance variable {tag!r} '
+                                    f'does not match the unit specified '
+                                    f'in the performance function ({unit!r}): '
+                                    f'{unit!r} will be used'
+                                )
 
-                self._perfvalues[key] = (value, *self.reference[key])
-                self._perf_logger.log_performance(logging.INFO, tag, value,
-                                                  *self.reference[key])
+                            # Pop the unit from the ref tuple (redundant)
+                            ref = ref[:3]
+                    except KeyError:
+                        ref = (0, None, None)
 
+                    self._perfvalues[key] = (value, *ref, unit)
+                    self._perf_logger.log_performance(logging.INFO, tag, value,
+                                                      *ref, unit)
+            elif not hasattr(self, 'perf_patterns'):
+                return
+            else:
+                self._setup_perf_logging()
+                # Check if default reference perf values are provided and
+                # store all the variables tested in the performance check
+                has_default = False
+                variables = set()
+                for key, ref in self.reference.items():
+                    keyparts = key.split(self.reference.scope_separator)
+                    system = keyparts[0]
+                    varname = keyparts[-1]
+                    unit = ref[3]
+                    variables.add((varname, unit))
+                    if system == '*':
+                        has_default = True
+                        break
+
+                if not has_default:
+                    if not variables:
+                        # If empty, it means that self.reference was empty, so
+                        # try to infer their name from perf_patterns
+                        variables = {(name, None)
+                                     for name in self.perf_patterns.keys()}
+
+                    for var in variables:
+                        name, unit = var
+                        ref_tuple = (0, None, None, unit)
+                        self.reference.update({'*': {name: ref_tuple}})
+
+                # We first evaluate and log all performance values and then we
+                # check them against the reference. This way we always log them
+                # even if the don't meet the reference.
+                for tag, expr in self.perf_patterns.items():
+                    value = sn.evaluate(expr)
+                    key = f'{self._current_partition.fullname}:{tag}'
+                    if key not in self.reference:
+                        raise SanityError(
+                            f'tag {tag!r} not resolved in references for '
+                            f'{self._current_partition.fullname}'
+                        )
+
+                    self._perfvalues[key] = (value, *self.reference[key])
+                    self._perf_logger.log_performance(logging.INFO, tag, value,
+                                                      *self.reference[key])
+
+            # Check the performance variables against their references.
             for key, values in self._perfvalues.items():
                 val, ref, low_thres, high_thres, *_ = values
 
                 # Verify that val is a number
                 if not isinstance(val, numbers.Number):
                     raise SanityError(
-                        "the value extracted for performance variable '%s' "
-                        "is not a number: %s" % (key, val)
+                        f'the value extracted for performance variable '
+                        f'{key!r} is not a number: {val}'
                     )
 
                 tag = key.split(':')[-1]
@@ -1833,6 +2059,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         .. versionadded:: 2.21
 
+        .. versionchanged:: 3.8.0
+           Setting ``environ`` or ``part`` to ``'*'`` will skip the match
+           check on the environment and partition, respectively.
+
         '''
         if self.current_environ is None:
             raise DependencyError(
@@ -1849,9 +2079,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             raise DependencyError('no test case is associated with this test')
 
         for d in self._case().deps:
-            if (d.check.name == target and
-                d.environ.name == environ and
-                d.partition.name == part):
+            mask = int(d.check.name == target)
+            mask |= (int(d.partition.name == part) | int(part == '*')) << 1
+            mask |= (int(d.environ.name == environ) | int(environ == '*')) << 2
+            if mask == 7:
                 return d.check
 
         raise DependencyError(f'could not resolve dependency to ({target!r}, '
@@ -1902,6 +2133,8 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
     module.
     '''
 
+    _rfm_regression_class_kind = _RFM_TEST_KIND_RUN
+
     def setup(self, partition, environ, **job_opts):
         '''The setup stage of the regression test pipeline.
 
@@ -1914,6 +2147,7 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
         self._job = self._setup_job(f'rfm_{self.name}_job',
                                     self.local,
                                     **job_opts)
+        self._resolve_fixtures()
 
     def compile(self):
         '''The compilation phase of the regression test pipeline.
@@ -1956,6 +2190,8 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
     module.
     '''
 
+    _rfm_regression_class_kind = _RFM_TEST_KIND_COMPILE
+
     def setup(self, partition, environ, **job_opts):
         '''The setup stage of the regression test pipeline.
 
@@ -1969,6 +2205,7 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
         self._build_job = self._setup_job(f'rfm_{self.name}_build',
                                           self.local or self.build_locally,
                                           **job_opts)
+        self._resolve_fixtures()
 
     @property
     @deferrable

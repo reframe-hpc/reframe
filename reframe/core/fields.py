@@ -15,6 +15,26 @@ from reframe.core.warnings import user_deprecation_warning
 from reframe.utility import ScopedDict
 
 
+class _Convertible:
+    '''Wrapper for values that allowed to be converted implicitly'''
+
+    __slots__ = ('value')
+
+    def __init__(self, value):
+        self.value = value
+
+
+def make_convertible(value):
+    return _Convertible(value)
+
+
+def remove_convertible(value):
+    if isinstance(value, _Convertible):
+        return value.value
+    else:
+        return value
+
+
 class Field:
     '''Base class for attribute validators.'''
 
@@ -34,7 +54,7 @@ class Field:
                                  (objtype.__name__, self._name)) from None
 
     def __set__(self, obj, value):
-        obj.__dict__[self._name] = value
+        obj.__dict__[self._name] = remove_convertible(value)
 
 
 class TypedField(Field):
@@ -46,6 +66,10 @@ class TypedField(Field):
             raise TypeError('{0} is not a sequence of types'.
                             format(self._types))
 
+    @property
+    def valid_types(self):
+        return self._types
+
     def _check_type(self, value):
         if not any(isinstance(value, t) for t in self._types):
             typedescr = '|'.join(t.__name__ for t in self._types)
@@ -54,8 +78,33 @@ class TypedField(Field):
                 (self._name, value, typedescr))
 
     def __set__(self, obj, value):
-        self._check_type(value)
-        super().__set__(obj, value)
+        try:
+            self._check_type(value)
+        except TypeError:
+            raw_value = remove_convertible(value)
+            if raw_value is value:
+                # value was not convertible; reraise
+                raise
+
+            # Try to convert value to any of the supported types
+            value = raw_value
+            for t in self._types:
+                try:
+                    value = t(value)
+                except TypeError:
+                    continue
+                else:
+                    super().__set__(obj, value)
+                    return
+
+            # Conversion failed
+            raise TypeError(
+                f'failed to set field {self._name!r}: '
+                f'could not convert to any of the supported types: '
+                f'{self._types}'
+            )
+        else:
+            super().__set__(obj, value)
 
 
 class ConstantField(Field):
@@ -88,6 +137,7 @@ class TimerField(TypedField):
         super().__init__(str, int, float, *other_types)
 
     def __set__(self, obj, value):
+        value = remove_convertible(value)
         self._check_type(value)
         if isinstance(value, str):
             time_match = re.match(r'^((?P<days>\d+)d)?'
@@ -119,6 +169,7 @@ class ScopedDictField(TypedField):
                          ScopedDict, *other_types)
 
     def __set__(self, obj, value):
+        value = remove_convertible(value)
         self._check_type(value)
         if not isinstance(value, ScopedDict):
             value = ScopedDict(value) if value is not None else value

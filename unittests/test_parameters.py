@@ -72,11 +72,39 @@ def test_param_inheritance():
 
 def test_filter_params():
     class MyTest(ExtendParams):
-        P1 = parameter(inherit_params=True, filter_params=lambda x: x[2:])
+        # We make the return type of the filtering function a list to ensure
+        # that other iterables different to tuples are also valid.
+        P1 = parameter(inherit_params=True,
+                       filter_params=lambda x: list(x[2:]))
 
     assert MyTest.param_space['P0'] == ('a',)
     assert MyTest.param_space['P1'] == ('d', 'e',)
     assert MyTest.param_space['P2'] == ('f', 'g',)
+
+
+def test_wrong_filter():
+    with pytest.raises(TypeError):
+        class MyTest(ExtendParams):
+            '''Filter function is not a function'''
+            P1 = parameter(inherit_params=True, filter_params='not callable')
+
+    with pytest.raises(TypeError):
+        class MyTest(ExtendParams):
+            '''Filter function takes more than 1 argument'''
+            P1 = parameter(inherit_params=True, filter_params=lambda x, y: [])
+
+    def bad_filter(x):
+        raise RuntimeError('bad filter')
+
+    with pytest.raises(RuntimeError):
+        class Foo(ExtendParams):
+            '''Filter function raises'''
+            P1 = parameter(inherit_params=True, filter_params=bad_filter)
+
+    with pytest.raises(ReframeSyntaxError):
+        class Foo(ExtendParams):
+            '''Wrong filter return type'''
+            P1 = parameter(inherit_params=True, filter_params=lambda x: 1)
 
 
 def test_is_abstract_test():
@@ -129,8 +157,8 @@ def test_consume_param_space():
     class MyTest(ExtendParams):
         pass
 
-    for _ in MyTest.param_space:
-        test = MyTest(_rfm_use_params=True)
+    for i in range(MyTest.num_variants):
+        test = MyTest(variant_num=i)
         assert test.P0 is not None
         assert test.P1 is not None
         assert test.P2 is not None
@@ -140,8 +168,17 @@ def test_consume_param_space():
     assert test.P1 is None
     assert test.P2 is None
 
+    with pytest.raises(ValueError):
+        test = MyTest(variant_num=i+1)
+
+
+def test_inject_params_wrong_index():
+    class MyTest(ExtendParams):
+        pass
+
+    inst = MyTest()
     with pytest.raises(RuntimeError):
-        test = MyTest(_rfm_use_params=True)
+        MyTest.param_space.inject(inst, params_index=MyTest.num_variants+1)
 
 
 def test_simple_test_decorator():
@@ -150,7 +187,7 @@ def test_simple_test_decorator():
         pass
 
     mod = inspect.getmodule(MyTest)
-    tests = mod._rfm_gettests()
+    tests = mod._rfm_test_registry.instantiate_all()
     assert len(tests) == 8
     for test in tests:
         assert test.P0 is not None
@@ -222,10 +259,10 @@ def test_param_deepcopy():
     class Bar(Base):
         pass
 
-    assert Foo(_rfm_use_params=True).p0.val == -20
-    assert Foo(_rfm_use_params=True).p0.val == -20
-    assert Bar(_rfm_use_params=True).p0.val == 1
-    assert Bar(_rfm_use_params=True).p0.val == 2
+    assert Foo(variant_num=0).p0.val == -20
+    assert Foo(variant_num=1).p0.val == -20
+    assert Bar(variant_num=0).p0.val == 1
+    assert Bar(variant_num=1).p0.val == 2
 
 
 def test_param_access():
@@ -279,6 +316,21 @@ def test_override_parameter():
             p += 1
 
 
+def test_parameter_space_order():
+    '''FIXME: This can be removed when the old naming scheme is dropped.
+
+    The order of the parameters is only relevant for the old naming scheme.
+    This test simply ensures that these legacy options are not broken.
+    '''
+
+    class MyTest(rfm.RegressionTest):
+        p0 = parameter([0])
+        p1 = parameter([0])
+        p2 = parameter([0])
+
+    assert ['p0', 'p1', 'p2'] == [p for p in MyTest.param_space.params]
+
+
 def test_local_paramspace_is_empty():
     class MyTest(rfm.RegressionTest):
         p = parameter([1, 2, 3])
@@ -293,3 +345,14 @@ def test_class_attr_access():
     assert MyTest.p == (1, 2, 3,)
     with pytest.raises(ReframeSyntaxError, match='cannot override parameter'):
         MyTest.p = (4, 5,)
+
+
+def test_get_variant_nums():
+    class MyTest(rfm.RegressionTest):
+        p = parameter(range(10))
+
+    with pytest.raises(NameError):
+        MyTest.param_space.get_variant_nums(p0=lambda x: x == 2)
+
+    with pytest.raises(ValueError):
+        MyTest.param_space.get_variant_nums(p=lambda x, y: x == 2)

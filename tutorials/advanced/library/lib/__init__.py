@@ -42,9 +42,9 @@ class ContainerBase(rfm.RunOnlyRegressionTest, pin_prefix=True):
         name = self.dist_name[self.dist]
         return rf'{self.dist}.\d+ LTS \({name}\)'
 
-    @run_before('sanity')
-    def set_sanity_patterns(self):
-        self.sanity_patterns = sn.all([
+    @sanity_function
+    def assert_release(self):
+        return sn.all([
             sn.assert_found(self.os_release_pattern, 'release.txt'),
             sn.assert_found(self.os_release_pattern, self.stdout)
         ])

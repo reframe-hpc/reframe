@@ -195,7 +195,7 @@ def _sysfs_topo():
 
 def _sysctl_topo():
     try:
-        exec_output = osext.run_command('sysctl hw machdep.cpu.cache',
+        exec_output = osext.run_command('sysctl hw machdep.cpu',
                                         check=True)
     except (FileNotFoundError, SpawnedProcessError):
         return {}

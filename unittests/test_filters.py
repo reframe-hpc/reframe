@@ -76,6 +76,12 @@ def test_have_tags(sample_cases):
     assert 2 == count_checks(filters.have_tag('z'), sample_cases)
 
 
+def test_have_not_tags(sample_cases):
+    assert 1 == count_checks(filters.have_not_tag('a|c'), sample_cases)
+    assert 3 == count_checks(filters.have_not_tag('p|q'), sample_cases)
+    assert 1 == count_checks(filters.have_not_tag('z'), sample_cases)
+
+
 def test_have_gpu_only(sample_cases):
     assert 2 == count_checks(filters.have_gpu_only(), sample_cases)
 

@@ -13,7 +13,8 @@ import re
 import sys
 
 import reframe.utility as util
-from reframe.core.deferrable import deferrable, _DeferredExpression
+from reframe.core.deferrable import (deferrable, _DeferredExpression,
+                                     _DeferredPerformanceExpression)
 from reframe.core.exceptions import SanityError
 
 
@@ -37,6 +38,29 @@ def _open(filename, *args, **kwargs):
     except OSError as e:
         # Re-raise it as sanity error
         raise SanityError(f'{filename}: {e.strerror}')
+
+
+def make_performance_function(func, unit, *args, **kwargs):
+    '''Convert a callable or deferred expression into a performance function.
+
+    If ``func`` is a deferred expression, the performance function will be
+    built by extending this deferred expression into a deferred performance
+    expression. Otherwise, a new deferred performance expression will be
+    created from the function :func:`func`. The argument ``unit`` is the unit
+    associated with the deferrable performance expression, and ``*args`` and
+    ``**kwargs`` are the arguments to be captured by this deferred expression.
+    See
+    :doc:`deferrable functions reference </deferrable_functions_reference>`
+    for further information on deferrable functions.
+
+    .. versionadded:: 3.8.0
+    '''
+    if isinstance(func, _DeferredExpression):
+        return _DeferredPerformanceExpression.construct_from_deferred_expr(
+            func, unit
+        )
+    else:
+        return _DeferredPerformanceExpression(func, unit, *args, **kwargs)
 
 
 # Deferrable versions of selected builtins
@@ -129,9 +153,11 @@ def print(obj, *, sep=' ', end='\n', file=None, flush=False):
 
     .. code:: python
 
-        self.sanity_patterns = sn.assert_eq(
-            sn.count(sn.print(sn.extract_all(...))), 10
-        )
+        @sanity_function
+        def my_sanity_fn(self):
+            return sn.assert_eq(
+                sn.count(sn.print(sn.extract_all(...))), 10
+            )
 
     If ``file`` is None, :func:`print` will print its arguments to the
     standard output. Unlike the builtin :func:`print() <python:print>`
@@ -875,15 +901,32 @@ def defer(x):
     return x
 
 
-def evaluate(expr):
+def evaluate(expr, cache=False):
     '''Evaluate a deferred expression.
 
     If ``expr`` is not a deferred expression, it will be returned as is.
+    If ``expr`` is a deferred expression and ``cache`` is ``True``, the
+    results of the deferred expression will be cached and subsequent calls
+    to :func:`evaluate` on this deferred expression (when ``cache=False``)
+    will simply return the previously cached result.
+
+    :param expr: The expression to be evaluated.
+    :param cache: Cache the result of this evaluation.
+
+    .. note::
+       When the ``cache`` argument is passed as ``True``, a deferred
+       expression will always be evaluated and its results will be re-cached.
+       This may replace any other results that may have been cached in
+       previous evaluations.
 
     .. versionadded:: 2.21
+
+    .. versionchanged:: 3.8.0
+       The ``cache`` argument is added.
     '''
+
     if isinstance(expr, _DeferredExpression):
-        return expr.evaluate()
+        return expr.evaluate(cache=cache)
     else:
         return expr
 
