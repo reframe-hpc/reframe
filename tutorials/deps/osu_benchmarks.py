@@ -127,4 +127,4 @@ class OSUDownloadTest(rfm.RunOnlyRegressionTest):
 
     @sanity_function
     def validate_download(self):
-        return sn.assert_not_found('error', self.stderr)
+        return sn.assert_true(os.path.exists('osu-micro-benchmarks-5.6.2'))
