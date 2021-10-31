@@ -4,11 +4,13 @@ import reframe.utility.sanity as sn
 
 
 class fetch_osu_benchmarks(rfm.RunOnlyRegressionTest):
+    descr = 'Fetch OSU benchmarks'
     version = variable(str, value='5.6.2')
     executable = 'wget'
     executable_opts = [
         f'http://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-{version}.tar.gz'  # noqa: E501
     ]
+    local = True
 
     @sanity_function
     def validate_download(self):
@@ -16,6 +18,7 @@ class fetch_osu_benchmarks(rfm.RunOnlyRegressionTest):
 
 
 class build_osu_benchmarks(rfm.CompileOnlyRegressionTest):
+    descr = 'Build OSU benchmarks'
     build_system = 'Autotools'
     build_prefix = variable(str)
     osu_benchmarks = fixture(fetch_osu_benchmarks, scope='session')
@@ -45,7 +48,6 @@ class OSUBenchmarkTestBase(rfm.RunOnlyRegressionTest):
 
     valid_systems = ['daint:gpu']
     valid_prog_environs = ['gnu', 'pgi', 'intel']
-    sourcesdir = None
     num_tasks = 2
     num_tasks_per_node = 1
     osu_binaries = fixture(build_osu_benchmarks, scope='environment')
@@ -97,12 +99,9 @@ class osu_allreduce_test(OSUBenchmarkTestBase):
     mpi_tasks = parameter(1 << i for i in range(1, 5))
     descr = 'OSU Allreduce test'
 
-    @run_after('init')
-    def set_num_tasks(self):
-        self.num_tasks = self.mpi_tasks
-
     @run_before('run')
     def set_executable(self):
+        self.num_tasks = self.mpi_tasks
         self.executable = os.path.join(
             self.osu_binaries.stagedir,
             self.osu_binaries.build_prefix,
