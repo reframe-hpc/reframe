@@ -434,11 +434,12 @@ class VarSpace(namespaces.Namespace):
     provided, the VarSpace is simply initialized as empty.
     '''
 
-    def __init__(self, target_cls=None, namespace=None, local_namespace=None,
-                 illegal_names=None):
+    def __init__(self, target_cls=None, illegal_names=None):
         # Set to register the variables already injected in the class
         self._injected_vars = set()
-        super().__init__(target_cls, namespace, local_namespace, illegal_names)
+        super().__init__(target_cls, illegal_names,
+                         ns_name='_rfm_var_space',
+                         ns_local_name='_rfm_local_var_space')
 
     def join(self, other, cls):
         '''Join an existing VarSpace into the current one.
@@ -460,7 +461,7 @@ class VarSpace(namespaces.Namespace):
         # Carry over the set of injected variables
         self._injected_vars.update(other._injected_vars)
 
-    def extend(self, cls, local_namespace):
+    def extend(self, cls):
         '''Extend the VarSpace with the content in the LocalVarSpace.
 
         Merge the VarSpace inherited from the base classes with the
@@ -472,7 +473,7 @@ class VarSpace(namespaces.Namespace):
         of these actions on the same var for the same local var space
         is disallowed.
         '''
-        local_varspace = getattr(cls, local_namespace, False)
+        local_varspace = getattr(cls, self.local_namespace_name, False)
         while local_varspace:
             key, var = local_varspace.popitem()
             if isinstance(var, TestVar):

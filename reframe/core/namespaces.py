@@ -68,14 +68,18 @@ class LocalNamespace:
     def clear(self):
         self._namespace = {}
 
+    def data(self):
+        '''Give access to the underlying namespace'''
+        return self._namespace
+
 
 class Namespace(LocalNamespace, metaclass=abc.ABCMeta):
     '''Namespace of a regression test.
 
-    The final namespace may be built by inheriting namespaces from
-    the base classes, and extended with the information stored in the local
-    namespace of the target class. In this context, the target class is
-    simply the regression test class where the namespace is to be built.
+    The final namespace may be built by inheriting namespaces from the base
+    classes, and extending this one with the information stored in the local
+    namespace of the target class. In this context, the target class is simply
+    the regression test class where the namespace is to be built.
 
     If a target class is provided, the constructor will build a Namespace
     instance by inheriting the namespaces found in the base classes, and
@@ -92,26 +96,37 @@ class Namespace(LocalNamespace, metaclass=abc.ABCMeta):
     target class. Then, after the Namespace is built, if ``illegal_names`` is
     provided, a sanity check is performed, ensuring that no name clashing
     will occur during the target class instantiation process.
+
     '''
 
-    def __init__(self, target_cls=None, namespace=None, local_namespace=None,
-                 illegal_names=None):
+    def __init__(self, target_cls=None, illegal_names=None,
+                 *, ns_name, ns_local_name):
         super().__init__()
+        self._ns_name = ns_name
+        self._ns_local_name = ns_local_name
         if target_cls:
             # Inherit Namespaces from the base clases
-            self.inherit(target_cls, namespace)
+            self.inherit(target_cls)
 
             # Extend the Namespace with the LocalNamespace
-            self.extend(target_cls, local_namespace)
+            self.extend(target_cls)
 
             # Sanity checkings on the resulting Namespace
             self.sanity(target_cls, illegal_names)
 
-    def inherit(self, cls, namespace):
+    @property
+    def namespace_name(self):
+        return self._ns_name
+
+    @property
+    def local_namespace_name(self):
+        return self._ns_local_name
+
+    def inherit(self, cls):
         '''Inherit the Namespaces from the bases.'''
 
         for base in cls.__bases__:
-            other = getattr(base, namespace, None)
+            other = getattr(base, self.namespace_name, None)
             if isinstance(other, type(self)):
                 self.join(other, cls)
 
@@ -120,7 +135,7 @@ class Namespace(LocalNamespace, metaclass=abc.ABCMeta):
         '''Join other Namespace with the current one.'''
 
     @abc.abstractmethod
-    def extend(self, cls, local_namespace):
+    def extend(self, cls):
         '''Extend the namespace with the local namespace.'''
 
     def sanity(self, cls, illegal_names):

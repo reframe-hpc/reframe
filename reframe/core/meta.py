@@ -397,25 +397,14 @@ class RegressionTestMeta(type):
             {h.__name__ for h in cls._rfm_hook_registry}
         )
 
-        # Build the var space and extend the target namespace
-        cls._rfm_var_space = variables.VarSpace(
-            cls, '_rfm_var_space', '_rfm_local_var_space',
-            used_attribute_names
-        )
-        used_attribute_names.update(cls._rfm_var_space.vars)
-
-        # Build the parameter space
-        cls._rfm_param_space = parameters.ParamSpace(
-            cls, '_rfm_param_space', '_rfm_local_param_space',
-            used_attribute_names
-        )
-        used_attribute_names.update(cls._rfm_param_space.params)
-
-        # Build the fixture space
-        cls._rfm_fixture_space = fixtures.FixtureSpace(
-            cls, '_rfm_fixture_space', '_rfm_local_fixture_space',
-            used_attribute_names
-        )
+        # Build the different global class namespaces
+        namespace_types = (variables.VarSpace,
+                           parameters.ParamSpace,
+                           fixtures.FixtureSpace)
+        for ns_type in namespace_types:
+            ns = ns_type(cls, used_attribute_names)
+            setattr(cls, ns.namespace_name, ns)
+            used_attribute_names.update(ns.data())
 
         # Update used names set with the local __dict__
         cls._rfm_dir.update(cls.__dict__)

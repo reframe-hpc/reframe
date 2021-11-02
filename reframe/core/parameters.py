@@ -75,9 +75,10 @@ class ParamSpace(namespaces.Namespace):
     through the ``__getitem__`` method.
     '''
 
-    def __init__(self, target_cls=None, namespace=None, local_namespace=None,
-                 illegal_names=None):
-        super().__init__(target_cls, namespace, local_namespace, illegal_names)
+    def __init__(self, target_cls=None, illegal_names=None):
+        super().__init__(target_cls, illegal_names,
+                         ns_name='_rfm_param_space',
+                         ns_local_name='_rfm_local_param_space')
 
         # Store all param combinations to allow random access.
         self.__param_combinations = tuple(
@@ -119,10 +120,10 @@ class ParamSpace(namespaces.Namespace):
                 other.params.get(key, ()) + self.params.get(key, ())
             )
 
-    def extend(self, cls, local_namespace):
+    def extend(self, cls):
         '''Extend the parameter space with the local parameter space.'''
 
-        local_param_space = getattr(cls, local_namespace, dict())
+        local_param_space = getattr(cls, self.local_namespace_name, dict())
         for name, p in local_param_space.items():
             try:
                 filt_vals = p.filter_params(self.params.get(name, ()))

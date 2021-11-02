@@ -527,9 +527,10 @@ class FixtureSpace(namespaces.Namespace):
     into the target instance under the ``_rfm_fixture_registry`` attribute.
     '''
 
-    def __init__(self, target_cls=None, namespace=None, local_namespace=None,
-                 illegal_names=None):
-        super().__init__(target_cls, namespace, local_namespace, illegal_names)
+    def __init__(self, target_cls=None, illegal_names=None):
+        super().__init__(target_cls, illegal_names,
+                         ns_name='_rfm_fixture_space',
+                         ns_local_name='_rfm_local_fixture_space')
 
         # Store all fixture variant combinations to allow random access.
         self.__variant_combinations = tuple(
@@ -554,9 +555,9 @@ class FixtureSpace(namespaces.Namespace):
 
             self.fixtures[key] = value
 
-    def extend(self, cls, local_namespace):
+    def extend(self, cls):
         '''Extend the inherited fixture space with the local fixture space.'''
-        local_fixture_space = getattr(cls, local_namespace, False)
+        local_fixture_space = getattr(cls, self.local_namespace_name, False)
         while local_fixture_space:
             name, fixture = local_fixture_space.popitem()
             self.fixtures[name] = fixture
