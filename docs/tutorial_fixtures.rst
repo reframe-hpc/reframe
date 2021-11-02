@@ -270,6 +270,6 @@ The following listing shows the output of running the tutorial examples.
 
 
 .. tip::
-   A reasonable question that arises is when should I use fixtures and when dependencies?
+   A reasonable question is how to choose between fixtures and dependencies?
 
    The rule of thumb is use fixtures if your test needs to use any resource of the target test and use dependencies if you simply want to impose an order of execution for your tests.
