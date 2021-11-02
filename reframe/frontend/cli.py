@@ -531,6 +531,13 @@ def main():
         help='Syslog server address'
     )
     argparser.add_argument(
+        dest='trap_job_errors',
+        envvar='RFM_TRAP_JOB_ERRORS',
+        configvar='general/trap_job_errors',
+        action='store_true',
+        help='Trap job errors in job scripts and fail tests automatically'
+    )
+    argparser.add_argument(
         dest='use_login_shell',
         envvar='RFM_USE_LOGIN_SHELL',
         configvar='general/use_login_shell',

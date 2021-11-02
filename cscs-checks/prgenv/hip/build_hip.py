@@ -29,7 +29,6 @@ class BuildHip(rfm.RegressionTest):
     executable = f'{hip_path}/bin/hipcc'
     executable_opts = ['--version']
     maintainers = ['JO']
-    tags = {'production'}
 
     @run_before('compile')
     def set_compile_options(self):
@@ -64,7 +63,6 @@ class HelloHip(rfm.RegressionTest):
     build_system = 'Make'
     executable = f'{sample_dir}/{sample}/{sample}'
     maintainers = ['JO']
-    tags = {'production'}
 
     @run_after('init')
     def set_deps(self):
