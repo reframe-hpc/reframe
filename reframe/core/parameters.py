@@ -8,7 +8,6 @@
 #
 
 import copy
-import functools
 import itertools
 
 import reframe.core.namespaces as namespaces
@@ -53,7 +52,7 @@ class TestParam:
         except TypeError:
             raise TypeError(
                 'the provided parameter filter is not a callable'
-                ) from None
+            ) from None
         else:
             if not valid:
                 raise TypeError('filter function must take a single argument')
@@ -100,8 +99,16 @@ class ParamSpace(namespaces.Namespace):
     def __init__(self, target_cls=None, target_namespace=None):
         super().__init__(target_cls, target_namespace)
 
-        # Internal parameter space usage tracker
-        self.__unique_iter = iter(self)
+        # Store all param combinations to allow random access.
+        self.__param_combinations = tuple(
+            itertools.product(
+                *(copy.deepcopy(p) for p in self.params.values())
+            )
+        )
+
+        # Map the parameter names to the position they are stored in the
+        # parameter space
+        self._position = {name: idx for idx, name in enumerate(self.params)}
 
     def join(self, other, cls):
         '''Join other parameter space into the current one.
@@ -150,6 +157,9 @@ class ParamSpace(namespaces.Namespace):
                         f"(parameter {name!r})"
                     ) from None
 
+        # Clear the local param space
+        local_param_space.clear()
+
         # If any previously declared parameter was defined in the class body
         # by directly assigning it a value, raise an error. Parameters must be
         # changed using the `x = parameter([...])` syntax.
@@ -160,42 +170,33 @@ class ParamSpace(namespaces.Namespace):
                     f'parameter type'
                 )
 
-        # Clear the local param space
-        local_param_space.clear()
-
-    def inject(self, obj, cls=None, use_params=False):
+    def inject(self, obj, cls=None, params_index=None):
         '''Insert the params in the regression test.
 
         Create and initialize the regression test parameters as object
         attributes. The values assigned to these parameters exclusively depend
-        on the use_params argument. If this is set to True, the current object
-        uses the parameter space iterator (see
-        :class:`reframe.core.pipeline.RegressionTest` and consumes a set of
-        parameter values (i.e. a point in the parameter space). Contrarily, if
-        use_params is False, the regression test parameters are initialized as
+        on the value of params_index. This argument is simply an index to a
+        a given parametere combination. If params_index is left with its
+        default value, the regression test parameters are initialized as
         None.
 
         :param obj: The test object.
         :param cls: The test class.
-        :param use_param: bool that dictates whether an instance of the
-            :class:`reframe.core.pipeline.RegressionTest` is to use the
-            parameter values defined in the parameter space.
-
+        :param params_index: index to a point in the parameter space.
         '''
         # Set the values of the test parameters (if any)
-        if use_params and self.params:
+        if self.params and params_index is not None:
             try:
-                # Consume the parameter space iterator
-                param_values = next(self.unique_iter)
-                for index, key in enumerate(self.params):
-                    setattr(obj, key, param_values[index])
-
-            except StopIteration as no_params:
+                # Get the parameter values for the specified variant
+                param_values = self.__param_combinations[params_index]
+            except IndexError as no_params:
                 raise RuntimeError(
-                    f'exhausted parameter space: all possible parameter value'
-                    f' combinations have been used for '
+                    f'parameter space index out of range for '
                     f'{obj.__class__.__qualname__}'
                 ) from None
+            else:
+                for index, key in enumerate(self.params):
+                    setattr(obj, key, param_values[index])
 
         else:
             # Otherwise init the params as None
@@ -210,18 +211,11 @@ class ParamSpace(namespaces.Namespace):
 
         :return: generator object to iterate over the parameter space.
         '''
-        yield from itertools.product(
-            *(copy.deepcopy(p) for p in self.params.values())
-        )
+        yield from self.__param_combinations
 
     @property
     def params(self):
         return self._namespace
-
-    @property
-    def unique_iter(self):
-        '''Expose the internal iterator as read-only'''
-        return self.__unique_iter
 
     def __len__(self):
         '''Returns the number of all possible parameter combinations.
@@ -240,13 +234,66 @@ class ParamSpace(namespaces.Namespace):
         if not self.params:
             return 1
 
-        return functools.reduce(
-            lambda x, y: x*y,
-            (len(p) for p in self.params.values())
-        )
+        return len(self.__param_combinations)
 
     def __getitem__(self, key):
+        '''Access an element in the parameter space.
+
+        If the key is an integer, this function will retrieve a given point in
+        the parameter space. If the key is a parameter name, it will instead
+        return all the values assigned to that parameter.
+
+        If the key is an integer, this function will raise an
+        :class:`IndexError` if the key is out of bounds.
+        '''
+        if isinstance(key, int):
+            ret = dict()
+            val = self.__param_combinations[key]
+            for i, key in enumerate(self.params):
+                ret[key] = val[i]
+
+            return ret
+
         return self.params.get(key, ())
 
     def is_empty(self):
         return self.params == {}
+
+    def get_variant_nums(self, **conditions):
+        '''Filter the paramter indices with a given set of conditions.
+
+        The conditions are passed as key-value pairs, where the keys are the
+        parameter names to apply the filtering on and the values are functions
+        that expect the parameter's value as the sole argument.
+        '''
+        candidates = range(len(self))
+        if not conditions:
+            return list(candidates)
+
+        # Validate conditions
+        for param, cond in conditions.items():
+            if param not in self:
+                raise NameError(
+                    f'no such parameter: {param!r}'
+                )
+            elif not utils.is_trivially_callable(cond, non_def_args=1):
+                raise ValueError(
+                    f'condition on {param!r} must be a callable accepting a '
+                    f'single argument'
+                )
+
+            def param_val(variant):
+                return self._get_param_value(param, variant)
+
+            # Filter the given condition
+            candidates = [v for v in candidates if cond(param_val(v))]
+
+        return candidates
+
+    def _get_param_value(self, name, variant):
+        '''Get the a parameter's value for a given variant.
+
+        In this context, a variant is a point in the parameter space.
+        The name argument is simply the parameter name
+        '''
+        return self.__param_combinations[variant][self._position[name]]
