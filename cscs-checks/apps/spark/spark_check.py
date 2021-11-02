@@ -5,7 +5,6 @@
 
 import reframe as rfm
 
-from reframe.core.backends import getlauncher
 from hpctestlib.apps.spark.compute_pi import compute_pi
 
 @rfm.simple_test
