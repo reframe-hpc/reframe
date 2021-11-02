@@ -61,13 +61,13 @@ class TestParam:
 
 
 class ParamSpace(namespaces.Namespace):
-    ''' Regression test parameter space
+    '''Regression test parameter space
 
     The parameter space is stored as a dictionary (self.params), where the
     keys are the parameter names and the values are tuples with all the
     available values for each parameter. The __init__ method in this class
-    takes the optional argument ``target_class``, which is the regression test
-    class where the parameter space is to be built. If no target class is
+    takes the optional argument ``target_cls``, which is the regression test
+    class that the parameter space is being built for. If no target class is
     provided, the parameter space is initialized as empty.
 
     All the parameter combinations are stored under ``__param_combinations``.
