@@ -30,7 +30,7 @@ Each fixture is associated with a scope.
 This practically indicates at which level a fixture is shared with other tests.
 There are four fixture scopes, which are listed below in decreasing order of generality:
 
-- ``session``: A fixture with this scope will be executed once per a ReFrame run session and will be shared across the whole run.
+- ``session``: A fixture with this scope will be executed once per ReFrame run session and will be shared across the whole run.
 - ``partition``: A fixture with this scope will be executed once per partition and will be shared across all tests that run in that partition.
 - ``environment``: A fixture with this scope will be executed once per partition and environment combination and will be shared across all tests that run with this partition and environment combination.
 - ``test``: A fixture with this scope is private to the test and will be executed for each test case.
@@ -57,7 +57,7 @@ Let's inspect now the :class:`build_osu_benchmarks` fixture:
 It is obvious that it is a normal ReFrame test except that it does not need to be decorated with the :func:`@simple_test <reframe.core.decorators.simple_test>` decorator.
 This means that the test will only be executed if it is a fixture of another test.
 If it was decorated, it would be executed both as a standalone test and as a fixture of another test.
-Another detail is that this test does dot define the :attr:`~reframe.core.pipeline.RegressionTest.valid_systems` and :attr:`~reframe.core.pipeline.RegressionTest.valid_prog_environs` variables.
+Another detail is that this test does not define the :attr:`~reframe.core.pipeline.RegressionTest.valid_systems` and :attr:`~reframe.core.pipeline.RegressionTest.valid_prog_environs` variables.
 Fixtures inherit those variables from the test that owns them depending on the scope.
 
 Similarly to :class:`OSUBenchmarkTestBase`, this test uses a fixture that fetches the OSU benchmarks sources.
@@ -78,7 +78,7 @@ Let's inspect the last fixture, the :class:`fetch_osu_benchmarks`:
 
 There is nothing special to this test -- it is just an ordinary test -- except that we force it to execute locally by setting its :attr:`~reframe.core.pipeline.RegressionTest.local` variable.
 The reason for that is that a fixture at session scope can execute with any partition/environment combination, so ReFrame could have to spawn a job in case it has chosen a remote partition to launch this fixture on.
-For this reason, we simply force it execute locally regardless of the chosen partition.
+For this reason, we simply force it to execute locally regardless of the chosen partition.
 
 It is now time to run the new tests, but let us first list them:
 
@@ -126,7 +126,7 @@ The following figure shows the generated fixtures as well as their conceptual de
 
   :sub:`Expanded fixtures and dependencies for the OSU benchmarks example.`
 
-Notice how the :class:`build_osu_benchmarks` fixture is populated three times, for each partition and environment combination, and the :class:`fetch_osu_benchmarks` is generated only once.
+Notice how the :class:`build_osu_benchmarks` fixture is populated three times, once for each partition and environment combination, and the :class:`fetch_osu_benchmarks` is generated only once.
 Tests in a single ReFrame session must have unique names, so the fixture class name is mangled by the framework to generate a unique name in the test dependency DAG.
 A *scope* part is added to the base name of the fixture, which in this figure is indicated with red color.
 
