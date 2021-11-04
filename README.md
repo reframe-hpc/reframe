@@ -18,7 +18,7 @@ ReFrame is a powerful framework for writing system regression tests and benchmar
 The goal of the framework is to abstract away the complexity of the interactions with the system, separating the logic of a test from the low-level details, which pertain to the system configuration and setup.
 This allows users to write portable tests in a declarative way that describes only the test's functionality.
 
-Tests in ReFrame are simple Python classes that specify the basic parameters of the test.
+Tests in ReFrame are simple Python classes that specify the basic variables and parameters of the test.
 ReFrame offers an intuitive and very powerful syntax that allows users to create test libraries, test factories, as well as complete test workflows using other tests as fixtures.
 ReFrame will load the tests and send them down a well-defined pipeline that will execute them in parallel.
 The stages of this pipeline take care of all the system interaction details, such as programming environment switching, compilation, job submission, job status query, sanity checking and performance assessment.
