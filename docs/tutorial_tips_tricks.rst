@@ -1,5 +1,5 @@
 ===========================
-Tutorial 4: Tips and Tricks
+Tutorial 6: Tips and Tricks
 ===========================
 
 .. versionadded:: 3.4

@@ -61,43 +61,24 @@ class TestParam:
 
 
 class ParamSpace(namespaces.Namespace):
-    ''' Regression test parameter space
+    '''Regression test parameter space
 
-    Host class for the parameter space of a regresion test. The parameter
-    space is stored as a dictionary (self.params), where the keys are the
-    parameter names and the values are tuples with all the available values
-    for each parameter. The __init__ method in this class takes an optional
-    argument (target_class), which is the regression test class where the
-    parameter space is to e inserted as the ``_rfm_param_space`` class
-    attribute. If no target class is provided, the parameter space is
-    initialized as empty. After the parameter space is set, a parameter space
-    iterator is created under self.__unique_iter, which acts as an internal
-    control variable that tracks the usage of this parameter space. This
-    iterator walks through all possible parameter combinations and cannot be
-    restored after reaching exhaustion. The length of this iterator matches
-    the value returned by the member function __len__.
+    The parameter space is stored as a dictionary (self.params), where the
+    keys are the parameter names and the values are tuples with all the
+    available values for each parameter. The __init__ method in this class
+    takes the optional argument ``target_cls``, which is the regression test
+    class that the parameter space is being built for. If no target class is
+    provided, the parameter space is initialized as empty.
 
-    :param target_cls: the class where the full parameter space is to be built.
-    :param target_namespace: a reference namespace to ensure that no name
-        clashes occur (see :class:`reframe.core.namespaces.Namespace`).
-
-    .. note::
-        The __init__ method is aware of the implementation details of the
-        regression test metaclass. This is required to retrieve the parameter
-        spaces from the base classes, and also the local parameter space from
-        the target class.
+    All the parameter combinations are stored under ``__param_combinations``.
+    This enables random-access to any of the available parameter combinations
+    through the ``__getitem__`` method.
     '''
 
-    @property
-    def local_namespace_name(self):
-        return '_rfm_local_param_space'
-
-    @property
-    def namespace_name(self):
-        return '_rfm_param_space'
-
-    def __init__(self, target_cls=None, target_namespace=None):
-        super().__init__(target_cls, target_namespace)
+    def __init__(self, target_cls=None, illegal_names=None):
+        super().__init__(target_cls, illegal_names,
+                         ns_name='_rfm_param_space',
+                         ns_local_name='_rfm_local_param_space')
 
         # Store all param combinations to allow random access.
         self.__param_combinations = tuple(
@@ -142,7 +123,7 @@ class ParamSpace(namespaces.Namespace):
     def extend(self, cls):
         '''Extend the parameter space with the local parameter space.'''
 
-        local_param_space = getattr(cls, self.local_namespace_name)
+        local_param_space = getattr(cls, self.local_namespace_name, dict())
         for name, p in local_param_space.items():
             try:
                 filt_vals = p.filter_params(self.params.get(name, ()))
