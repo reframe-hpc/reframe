@@ -13,7 +13,7 @@ from reframe.core.backends import getlauncher
 
 
 @rfm.simple_test
-class compute_pi(rfm.RunOnlyRegressionTest, pin_prefix=True):
+class compute_pi_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
     '''Test Apache Spark by computing PI.
 
     Apache Spark is a unified analytics engine for large-scale data
@@ -24,12 +24,13 @@ class compute_pi(rfm.RunOnlyRegressionTest, pin_prefix=True):
     learning, GraphX for graph processing, and Structured Streaming for
     incremental computation and stream processing (see spark.apache.org).
 
-    The present class check that Spark is functioning correctly.
-    To do this, it is necessary to define the tolerance of acceptable
-    deviation. The tolerance is used to check that the computations is
-    executed correctly, by comparing the value of PI calculated to the one
-    obtained from the math library. The default assumption is that Spark is
-    already installed on the system under test.
+    This test checks that Spark is functioning correctly. To do this, it is
+    necessary to define the tolerance of acceptable deviation. The tolerance
+    is used to check that the computations are executed correctly, by
+    comparing the value of pi calculated to the one obtained from the math
+    library. The default assumption is that Spark is already installed on the
+    system under test.
+
     '''
 
     #: Parameter encoding the variant of the test.
