@@ -1,5 +1,5 @@
 ===========================
-Tutorial 4: Tips and Tricks
+Tutorial 6: Tips and Tricks
 ===========================
 
 .. versionadded:: 3.4
@@ -556,6 +556,7 @@ ReFrame will process them as usual, but instead of running the selected tests, i
 for running each test individually as a Gitlab job. We then pass the generated CI pipeline file to second phase as
 an artifact and we are done! If ``image`` keyword is defined in ``.gitlab-ci.yml``, the emitted pipeline will use
 the same image as the one defined in the parent pipeline.
+Besides, each job in the generated pipeline will output a separate junit report which can be used to create GitLab badges.
 
 The following figure shows one part of the automatically generated pipeline for the test graph depicted `above <#fig-deps-complex>`__.
 

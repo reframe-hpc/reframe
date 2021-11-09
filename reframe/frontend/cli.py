@@ -7,7 +7,6 @@ import inspect
 import itertools
 import json
 import os
-import re
 import shlex
 import socket
 import sys
@@ -117,7 +116,10 @@ def list_checks(testcases, printer, detailed=False):
         deps.setdefault(t.check.name, [])
         deps[t.check.name].append((t, t.deps))
 
-    checks = set(t.check for t in testcases)
+    checks = set(
+        t.check for t in testcases
+        if detailed or not t.check.is_fixture()
+    )
     printer.info(
         '\n'.join(format_check(c, deps[c.name], detailed) for c in checks)
     )
@@ -217,7 +219,8 @@ def main():
         envvar='RFM_SAVE_LOG_FILES', configvar='general/save_log_files'
     )
     output_options.add_argument(
-        '--timestamp', action='store', nargs='?', const='', metavar='TIMEFMT',
+        '--timestamp', action='store', nargs='?', const='%FT%T',
+        metavar='TIMEFMT',
         help=('Append a timestamp to the output and stage directory prefixes '
               '(default: "%%FT%%T")'),
         envvar='RFM_TIMESTAMP_DIRS', configvar='general/timestamp_dirs'
@@ -260,10 +263,23 @@ def main():
         '-n', '--name', action='append', dest='names', default=[],
         metavar='PATTERN', help='Select checks whose name matches PATTERN'
     )
+
+    # FIXME: The following is the only selection option that has an associated
+    # (undocumented) configuration variable. This is to support pruning of the
+    # partition environments as the runtime is created, similarly to how the
+    # system partitions are treated. Currently, this facilitates the
+    # implementation of fixtures, but we should reconsider it: see discussion
+    # in https://github.com/eth-cscs/reframe/issues/2245
     select_options.add_argument(
         '-p', '--prgenv', action='append', default=[r'.*'],  metavar='PATTERN',
+        configvar='general/valid_env_names',
         help=('Select checks with at least one '
               'programming environment matching PATTERN')
+    )
+    select_options.add_argument(
+        '-T', '--exclude-tag', action='append', dest='exclude_tags',
+        metavar='PATTERN', default=[],
+        help='Exclude checks whose tag matches PATTERN'
     )
     select_options.add_argument(
         '-t', '--tag', action='append', dest='tags', metavar='PATTERN',
@@ -455,6 +471,13 @@ def main():
 
     # Options not associated with command-line arguments
     argparser.add_argument(
+        dest='git_timeout',
+        envvar='RFM_GIT_TIMEOUT',
+        configvar='general/git_timeout',
+        help=('Timeout in seconds when checking if the url is a '
+              'valid repository.')
+    )
+    argparser.add_argument(
         dest='graylog_server',
         envvar='RFM_GRAYLOG_ADDRESS',
         configvar='logging/handlers_perflog/graylog_address',
@@ -472,6 +495,13 @@ def main():
         configvar='schedulers/ignore_reqnodenotavail',
         action='store_true',
         help='Graylog server address'
+    )
+    argparser.add_argument(
+        dest='compact_test_names',
+        envvar='RFM_COMPACT_TEST_NAMES',
+        configvar='general/compact_test_names',
+        action='store_true',
+        help='Use a compact test naming scheme'
     )
     argparser.add_argument(
         dest='remote_detect',
@@ -499,6 +529,13 @@ def main():
         envvar='RFM_SYSLOG_ADDRESS',
         configvar='logging/handlers_perflog/syslog_address',
         help='Syslog server address'
+    )
+    argparser.add_argument(
+        dest='trap_job_errors',
+        envvar='RFM_TRAP_JOB_ERRORS',
+        configvar='general/trap_job_errors',
+        action='store_true',
+        help='Trap job errors in job scripts and fail tests automatically'
     )
     argparser.add_argument(
         dest='use_login_shell',
@@ -614,7 +651,6 @@ def main():
         )
 
     rt = runtime.runtime()
-    autodetect.detect_topology()
     try:
         if site_config.get('general/0/module_map_file'):
             rt.modules_system.load_mapping_from_file(
@@ -673,6 +709,7 @@ def main():
 
         sys.exit(0)
 
+    autodetect.detect_topology()
     printer.debug(format_env(options.env_vars))
 
     # Setup the check loader
@@ -741,7 +778,7 @@ def main():
         'cmdline': ' '.join(sys.argv),
         'config_file': rt.site_config.filename,
         'data_version': runreport.DATA_VERSION,
-        'hostname': socket.gethostname(),
+        'hostname': socket.getfqdn(),
         'prefix_output': rt.output_prefix,
         'prefix_stage': rt.stage_prefix,
         'user': osext.osuser(),
@@ -772,17 +809,9 @@ def main():
 
         # Generate all possible test cases first; we will need them for
         # resolving dependencies after filtering
-
-        # Determine the allowed programming environments
-        allowed_environs = {e.name
-                            for env_patt in options.prgenv
-                            for p in rt.system.partitions
-                            for e in p.environs if re.match(env_patt, e.name)}
-
         testcases_all = generate_testcases(checks_found,
                                            options.skip_system_check,
-                                           options.skip_prgenv_check,
-                                           allowed_environs)
+                                           options.skip_prgenv_check)
         testcases = testcases_all
         printer.verbose(f'Generated {len(testcases)} test case(s)')
 
@@ -802,6 +831,9 @@ def main():
         )
 
         # Filter test cases by tags
+        for tag in options.exclude_tags:
+            testcases = filter(filters.have_not_tag(tag), testcases)
+
         for tag in options.tags:
             testcases = filter(filters.have_tag(tag), testcases)
 

@@ -120,6 +120,16 @@ This happens recursively so that if test ``T1`` depends on ``T2`` and ``T2`` dep
 
    Do not filter tests against the selected system.
 
+.. option:: -T, --exclude-tag=TAG
+
+   Exclude tests by tags.
+
+   ``TAG`` is interpreted as a `Python Regular Expression <https://docs.python.org/3/library/re.html>`__;
+   any test with tags matching ``TAG`` will be excluded.
+
+   This option may be specified multiple times, in which case tests with *any* of the specified tags will be excluded:
+   ``-T TAG1 -T TAG2`` is therefore equivalent to ``-T 'TAG1|TAG2'``.
+
 .. option:: -t, --tag=TAG
 
    Filter tests by tag.
@@ -389,6 +399,20 @@ Options controlling ReFrame execution
       class my_test(rfm.RegressionTest):
           foo = variable(int, value=1)
           num_tasks = foo
+
+   .. tip::
+
+     In cases where the class body expresses logic as a function of a variable and this variable, as well as its dependent logic, need to be controlled externally, the variable's default value (i.e. the value set through the value argument) may be modified as follows through an environment variable and not through the `-S` option:
+
+     .. code-block:: python
+
+      import os
+
+      @rfm.simple_test
+      class my_test(rfm.RegressionTest):
+          max_nodes = variable(int, value=int(os.getenv('MAX_NODES', 1)))
+          # Parameterise number of nodes
+          num_nodes = parameter((1 << i for i in range(0, int(max_nodes))))
 
    - If the variable is set in any pipeline hook, the command line assignment will have an effect until the variable assignment in the pipeline hook is reached.
      The variable will be then overwritten.
@@ -723,6 +747,21 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
 
 
+.. envvar:: RFM_COMPACT_TEST_NAMES
+
+   Enable the compact test naming scheme.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :js:attr:`compact_test_names` general configuration parameter
+      ================================== ==================
+
+   .. versionadded:: 3.9.0
+
+
 .. envvar:: RFM_CONFIG_FILE
 
    Set the configuration file for ReFrame.
@@ -734,6 +773,22 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       Associated command line option     :option:`-C`
       Associated configuration parameter N/A
       ================================== ==================
+
+
+.. envvar:: RFM_GIT_TIMEOUT
+
+   Timeout value in seconds used when checking if a git repository exists.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :js:attr:`git_timeout` general configuration parameter.
+      ================================== ==================
+
+
+   .. versionadded:: 3.9.0
 
 
 .. envvar:: RFM_GRAYLOG_ADDRESS
@@ -751,7 +806,6 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
 
    .. versionadded:: 3.1
-
 
 .. envvar:: RFM_GRAYLOG_SERVER
 
@@ -1059,7 +1113,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
 .. envvar:: RFM_TRAP_JOB_ERRORS
 
-   Ignore job exit code
+   Trap job errors in submitted scripts and fail tests automatically.
 
    .. table::
       :align: left
@@ -1067,6 +1121,8 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
       Associated configuration parameter :js:attr:`trap_job_errors` general configuration parameter
       ================================== ==================
+
+   .. versionadded:: 3.9.0
 
 
 .. envvar:: RFM_UNLOAD_MODULES
