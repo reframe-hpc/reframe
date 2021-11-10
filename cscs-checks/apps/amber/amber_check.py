@@ -5,7 +5,7 @@
 
 import contextlib
 import reframe as rfm
-from hpctestlib.apps.amber.nve import amber_nve_check
+from hpctestlib.sciapps.amber.nve import amber_nve_check
 
 
 @rfm.simple_test
