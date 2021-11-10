@@ -1,5 +1,5 @@
 ===========================
-Tutorial 4: Tips and Tricks
+Tutorial 6: Tips and Tricks
 ===========================
 
 .. versionadded:: 3.4
@@ -90,7 +90,7 @@ As suggested by the warning message, passing :option:`-v` will give you the stac
 Debugging deferred expressions
 ==============================
 
-Although deferred expression that are used in :attr:`sanity_patterns` and :attr:`perf_patterns` behave similarly to normal Python expressions, you need to understand their `implicit evaluation rules <deferrable_functions_reference.html#implicit-evaluation-of-sanity-functions>`__.
+Although deferred expressions that are used in sanity and performance functions behave similarly to normal Python expressions, you need to understand their `implicit evaluation rules <deferrable_functions_reference.html#implicit-evaluation-of-sanity-functions>`__.
 One of the rules is that :func:`str` triggers the implicit evaluation, so trying to use the standard :func:`print` function with a deferred expression, you might get unexpected results if that expression is not yet to be evaluated.
 For this reason, ReFrame offers a sanity function counterpart of :func:`print`, which allows you to safely print deferred expressions.
 
@@ -116,9 +116,9 @@ Trying to use the standard print here :func:`print` function here would be of li
        def set_sourcepath(self):
            self.sourcepath = f'hello.{self.lang}'
 
-       @run_before('sanity')
-       def set_sanity_patterns(self):
-           self.sanity_patterns = sn.assert_found(r'Hello, World\!', sn.print(self.stdout))
+       @sanity_function
+       def validate_output(self):
+           return sn.assert_found(r'Hello, World\!', sn.print(self.stdout))
 
 
 If we run the test, we can see that the correct standard output filename will be printed after sanity:
@@ -146,7 +146,7 @@ If we run the test, we can see that the correct standard output filename will be
 
 Debugging sanity and performance patterns
 =========================================
-When creating a new test that requires a complex output parsing for either the sanity or performance stages, setting the :attr:`sanity_patterns` and :attr:`perf_patterns` may involve some trial and error to debug the complex regular expressions required.
+When creating a new test that requires a complex output parsing for either the ``sanity`` or ``performance`` pipeline stages, tuning the functions decorated by :attr:`@sanity_function<reframe.core.pipeline.RegressionMixin.sanity_function>` or :attr:`@performance_function<reframe.core.pipeline.RegressionMixin.performance_function>` may involve some trial and error to debug the complex regular expressions required.
 For lightweight tests which execute in a few seconds, this trial and error may not be an issue at all.
 However, when dealing with tests which take longer to run, this method can quickly become tedious and inefficient.
 
@@ -154,7 +154,7 @@ However, when dealing with tests which take longer to run, this method can quick
    When dealing with ``make``-based projects which take a long time to compile, you can use the command line option :option:`--dont-restage` in order to speed up the compile stage in subsequent runs.
 
 When a test fails, ReFrame will keep the test output in the stage directory after its execution, which means that one can load this output into a Python shell or another helper script without having to rerun the expensive test again.
-If the test is not failing but the user still wants to experiment or modify the existing :attr:`~reframe.core.pipeline.RegressionTest.sanity_patterns` or :attr:`~reframe.core.pipeline.RegressionTest.perf_patterns`, the command line option :option:`--keep-stage-files` can be used when running ReFrame to avoid deleting the stage directory.
+If the test is not failing but the user still wants to experiment or modify the existing sanity or performance functions, the command line option :option:`--keep-stage-files` can be used when running ReFrame to avoid deleting the stage directory.
 With the executable's output available in the stage directory, one can simply use the `re <https://docs.python.org/3/library/re.html>`_ module to debug regular expressions as shown below.
 
 .. code-block:: python
@@ -168,7 +168,7 @@ With the executable's output available in the stage directory, one can simply us
     >>> # Evaluate the regular expression
     >>> re.find(the_regex_pattern, test_output)
 
-Alternatively to using the `re <https://docs.python.org/3/library/re.html>`_ module, one could use all the sanity functions provided by ReFrame directly from the Python shell.
+Alternatively to using the `re <https://docs.python.org/3/library/re.html>`_ module, one could use all the :mod:`~reframe.utility.sanity` utility provided by ReFrame directly from the Python shell.
 In order to do so, if ReFrame was installed manually using the ``bootstrap.sh`` script, one will have to make all the Python modules from the ``external`` directory accessible to the Python shell as shown below.
 
 .. code-block:: python
@@ -190,7 +190,7 @@ Debugging test loading
 ======================
 
 If you are new to ReFrame, you might wonder sometimes why your tests are not loading or why your tests are not running on the partition they were supposed to run.
-This can be due to ReFrame picking the wrong configuration entry or that your test is not written properly (not decorated, no :attr:`valid_systems` etc.).
+This can be due to ReFrame picking the wrong configuration entry or that your test is not written properly (not decorated, no :attr:`~reframe.core.pipeline.RegressionTest.valid_systems` etc.).
 If you try to load a test file and list its tests by increasing twice the verbosity level, you will get enough output to help you debug such issues.
 Let's try loading the ``tutorials/basics/hello/hello2.py`` file:
 
@@ -552,8 +552,11 @@ The following is an example of ``.gitlab-ci.yml`` file that does exactly that:
 It defines two stages.
 The first one, called ``generate``, will call ReFrame to generate the pipeline specification for the desired tests.
 All the usual `test selection options <manpage.html#test-filtering>`__ can be used to select specific tests.
-ReFrame will process them as usual, but instead of running the selected tests, it will generate the correct steps for running each test individually as a Gitlab job.
-We then pass the generated CI pipeline file to second phase as an artifact and we are done!
+ReFrame will process them as usual, but instead of running the selected tests, it will generate the correct steps
+for running each test individually as a Gitlab job. We then pass the generated CI pipeline file to second phase as
+an artifact and we are done! If ``image`` keyword is defined in ``.gitlab-ci.yml``, the emitted pipeline will use
+the same image as the one defined in the parent pipeline.
+Besides, each job in the generated pipeline will output a separate junit report which can be used to create GitLab badges.
 
 The following figure shows one part of the automatically generated pipeline for the test graph depicted `above <#fig-deps-complex>`__.
 

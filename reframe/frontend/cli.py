@@ -7,7 +7,6 @@ import inspect
 import itertools
 import json
 import os
-import re
 import shlex
 import socket
 import sys
@@ -117,7 +116,10 @@ def list_checks(testcases, printer, detailed=False):
         deps.setdefault(t.check.name, [])
         deps[t.check.name].append((t, t.deps))
 
-    checks = set(t.check for t in testcases)
+    checks = set(
+        t.check for t in testcases
+        if detailed or not t.check.is_fixture()
+    )
     printer.info(
         '\n'.join(format_check(c, deps[c.name], detailed) for c in checks)
     )
@@ -168,25 +170,19 @@ def main():
 
     # Output directory options
     output_options.add_argument(
-        '--prefix', action='store', metavar='DIR',
-        help='Set general directory prefix to DIR',
-        envvar='RFM_PREFIX', configvar='systems/prefix'
+        '--dont-restage', action='store_false', dest='clean_stagedir',
+        help='Reuse the test stage directory',
+        envvar='RFM_CLEAN_STAGEDIR', configvar='general/clean_stagedir'
+    )
+    output_options.add_argument(
+        '--keep-stage-files', action='store_true',
+        help='Keep stage directories even for successful checks',
+        envvar='RFM_KEEP_STAGE_FILES', configvar='general/keep_stage_files'
     )
     output_options.add_argument(
         '-o', '--output', action='store', metavar='DIR',
         help='Set output directory prefix to DIR',
         envvar='RFM_OUTPUT_DIR', configvar='systems/outputdir'
-    )
-    output_options.add_argument(
-        '-s', '--stage', action='store', metavar='DIR',
-        help='Set stage directory prefix to DIR',
-        envvar='RFM_STAGE_DIR', configvar='systems/stagedir'
-    )
-    output_options.add_argument(
-        '--timestamp', action='store', nargs='?', const='', metavar='TIMEFMT',
-        help=('Append a timestamp to the output and stage directory prefixes '
-              '(default: "%%FT%%T")'),
-        envvar='RFM_TIMESTAMP_DIRS', configvar='general/timestamp_dirs'
     )
     output_options.add_argument(
         '--perflogdir', action='store', metavar='DIR',
@@ -196,19 +192,9 @@ def main():
         configvar='logging/handlers_perflog/filelog_basedir'
     )
     output_options.add_argument(
-        '--keep-stage-files', action='store_true',
-        help='Keep stage directories even for successful checks',
-        envvar='RFM_KEEP_STAGE_FILES', configvar='general/keep_stage_files'
-    )
-    output_options.add_argument(
-        '--dont-restage', action='store_false', dest='clean_stagedir',
-        help='Reuse the test stage directory',
-        envvar='RFM_CLEAN_STAGEDIR', configvar='general/clean_stagedir'
-    )
-    output_options.add_argument(
-        '--save-log-files', action='store_true', default=False,
-        help='Save ReFrame log files to the output directory',
-        envvar='RFM_SAVE_LOG_FILES', configvar='general/save_log_files'
+        '--prefix', action='store', metavar='DIR',
+        help='Set general directory prefix to DIR',
+        envvar='RFM_PREFIX', configvar='systems/prefix'
     )
     output_options.add_argument(
         '--report-file', action='store', metavar='FILE',
@@ -222,6 +208,23 @@ def main():
         envvar='RFM_REPORT_JUNIT',
         configvar='general/report_junit'
     )
+    output_options.add_argument(
+        '-s', '--stage', action='store', metavar='DIR',
+        help='Set stage directory prefix to DIR',
+        envvar='RFM_STAGE_DIR', configvar='systems/stagedir'
+    )
+    output_options.add_argument(
+        '--save-log-files', action='store_true', default=False,
+        help='Save ReFrame log files to the output directory',
+        envvar='RFM_SAVE_LOG_FILES', configvar='general/save_log_files'
+    )
+    output_options.add_argument(
+        '--timestamp', action='store', nargs='?', const='%FT%T',
+        metavar='TIMEFMT',
+        help=('Append a timestamp to the output and stage directory prefixes '
+              '(default: "%%FT%%T")'),
+        envvar='RFM_TIMESTAMP_DIRS', configvar='general/timestamp_dirs'
+    )
 
     # Check discovery options
     locate_options.add_argument(
@@ -230,38 +233,23 @@ def main():
         envvar='RFM_CHECK_SEARCH_PATH :', configvar='general/check_search_path'
     )
     locate_options.add_argument(
-        '-R', '--recursive', action='store_true',
-        help='Search for checks in the search path recursively',
-        envvar='RFM_CHECK_SEARCH_RECURSIVE',
-        configvar='general/check_search_recursive'
-    )
-    locate_options.add_argument(
         '--ignore-check-conflicts', action='store_true',
         help=('Skip checks with conflicting names '
               '(this option is deprecated and has no effect)'),
         envvar='RFM_IGNORE_CHECK_CONFLICTS',
         configvar='general/ignore_check_conflicts'
     )
+    locate_options.add_argument(
+        '-R', '--recursive', action='store_true',
+        help='Search for checks in the search path recursively',
+        envvar='RFM_CHECK_SEARCH_RECURSIVE',
+        configvar='general/check_search_recursive'
+    )
 
     # Select options
     select_options.add_argument(
-        '-t', '--tag', action='append', dest='tags', metavar='PATTERN',
-        default=[],
-        help='Select checks with at least one tag matching PATTERN'
-    )
-    select_options.add_argument(
-        '-n', '--name', action='append', dest='names', default=[],
-        metavar='PATTERN', help='Select checks whose name matches PATTERN'
-    )
-    select_options.add_argument(
-        '-x', '--exclude', action='append', dest='exclude_names',
-        metavar='PATTERN', default=[],
-        help='Exclude checks whose name matches PATTERN'
-    )
-    select_options.add_argument(
-        '-p', '--prgenv', action='append', default=[r'.*'],  metavar='PATTERN',
-        help=('Select checks with at least one '
-              'programming environment matching PATTERN')
+        '--cpu-only', action='store_true',
+        help='Select only CPU checks'
     )
     select_options.add_argument(
         '--failed', action='store_true',
@@ -272,18 +260,51 @@ def main():
         help='Select only GPU checks'
     )
     select_options.add_argument(
-        '--cpu-only', action='store_true',
-        help='Select only CPU checks'
+        '-n', '--name', action='append', dest='names', default=[],
+        metavar='PATTERN', help='Select checks whose name matches PATTERN'
+    )
+
+    # FIXME: The following is the only selection option that has an associated
+    # (undocumented) configuration variable. This is to support pruning of the
+    # partition environments as the runtime is created, similarly to how the
+    # system partitions are treated. Currently, this facilitates the
+    # implementation of fixtures, but we should reconsider it: see discussion
+    # in https://github.com/eth-cscs/reframe/issues/2245
+    select_options.add_argument(
+        '-p', '--prgenv', action='append', default=[r'.*'],  metavar='PATTERN',
+        configvar='general/valid_env_names',
+        help=('Select checks with at least one '
+              'programming environment matching PATTERN')
+    )
+    select_options.add_argument(
+        '-T', '--exclude-tag', action='append', dest='exclude_tags',
+        metavar='PATTERN', default=[],
+        help='Exclude checks whose tag matches PATTERN'
+    )
+    select_options.add_argument(
+        '-t', '--tag', action='append', dest='tags', metavar='PATTERN',
+        default=[],
+        help='Select checks with at least one tag matching PATTERN'
+    )
+    select_options.add_argument(
+        '-x', '--exclude', action='append', dest='exclude_names',
+        metavar='PATTERN', default=[],
+        help='Exclude checks whose name matches PATTERN'
     )
 
     # Action options
     action_options.add_argument(
-        '-l', '--list', action='store_true',
-        help='List the selected checks'
+        '--ci-generate', action='store', metavar='FILE',
+        help=('Generate into FILE a Gitlab CI pipeline '
+              'for the selected tests and exit'),
     )
     action_options.add_argument(
         '-L', '--list-detailed', action='store_true',
         help='List the selected checks providing details for each test'
+    )
+    action_options.add_argument(
+        '-l', '--list', action='store_true',
+        help='List the selected checks'
     )
     action_options.add_argument(
         '--list-tags', action='store_true',
@@ -293,47 +314,11 @@ def main():
         '-r', '--run', action='store_true',
         help='Run the selected checks'
     )
-    action_options.add_argument(
-        '--ci-generate', action='store', metavar='FILE',
-        help=('Generate into FILE a Gitlab CI pipeline '
-              'for the selected tests and exit'),
-    )
 
     # Run options
     run_options.add_argument(
-        '-J', '--job-option', action='append', metavar='OPT',
-        dest='job_options', default=[],
-        help='Pass option OPT to job scheduler'
-    )
-    run_options.add_argument(
-        '--force-local', action='store_true',
-        help='Force local execution of checks'
-    )
-    run_options.add_argument(
-        '--skip-sanity-check', action='store_true',
-        help='Skip sanity checking'
-    )
-    run_options.add_argument(
-        '--skip-performance-check', action='store_true',
-        help='Skip performance checking'
-    )
-    run_options.add_argument(
-        '--strict', action='store_true',
-        help='Enforce strict performance checking'
-    )
-    run_options.add_argument(
-        '--skip-system-check', action='store_true',
-        help='Skip system check'
-    )
-    run_options.add_argument(
-        '--skip-prgenv-check', action='store_true',
-        help='Skip programming environment check'
-    )
-    run_options.add_argument(
-        '-S', '--setvar', action='append', metavar='[TEST.]VAR=VAL',
-        dest='vars', default=[],
-        help=('Set test variable VAR to VAL in all tests '
-              'or optionally in TEST only')
+        '--disable-hook', action='append', metavar='NAME', dest='hooks',
+        default=[], help='Disable a pipeline hook for this run'
     )
     run_options.add_argument(
         '--exec-policy', metavar='POLICY', action='store',
@@ -341,7 +326,18 @@ def main():
         help='Set the execution policy of ReFrame (default: "async")'
     )
     run_options.add_argument(
-        '--mode', action='store', help='Execution mode to use'
+        '--flex-alloc-nodes', action='store',
+        dest='flex_alloc_nodes', metavar='{all|STATE|NUM}', default=None,
+        help='Set strategy for the flexible node allocation (default: "idle").'
+    )
+    run_options.add_argument(
+        '--force-local', action='store_true',
+        help='Force local execution of checks'
+    )
+    run_options.add_argument(
+        '-J', '--job-option', action='append', metavar='OPT',
+        dest='job_options', default=[],
+        help='Pass option OPT to job scheduler'
     )
     run_options.add_argument(
         '--max-retries', metavar='NUM', action='store', default=0,
@@ -353,18 +349,38 @@ def main():
         help='Exit after first NUM failures'
     )
     run_options.add_argument(
+        '--mode', action='store', help='Execution mode to use'
+    )
+    run_options.add_argument(
         '--restore-session', action='store', nargs='?', const='',
         metavar='REPORT',
         help='Restore a testing session from REPORT file'
     )
     run_options.add_argument(
-        '--flex-alloc-nodes', action='store',
-        dest='flex_alloc_nodes', metavar='{all|STATE|NUM}', default=None,
-        help='Set strategy for the flexible node allocation (default: "idle").'
+        '-S', '--setvar', action='append', metavar='[TEST.]VAR=VAL',
+        dest='vars', default=[],
+        help=('Set test variable VAR to VAL in all tests '
+              'or optionally in TEST only')
     )
     run_options.add_argument(
-        '--disable-hook', action='append', metavar='NAME', dest='hooks',
-        default=[], help='Disable a pipeline hook for this run'
+        '--skip-performance-check', action='store_true',
+        help='Skip performance checking'
+    )
+    run_options.add_argument(
+        '--skip-prgenv-check', action='store_true',
+        help='Skip programming environment check'
+    )
+    run_options.add_argument(
+        '--skip-sanity-check', action='store_true',
+        help='Skip sanity checking'
+    )
+    run_options.add_argument(
+        '--skip-system-check', action='store_true',
+        help='Skip system check'
+    )
+    run_options.add_argument(
+        '--strict', action='store_true',
+        help='Enforce strict performance checking'
     )
 
     # Environment options
@@ -387,15 +403,14 @@ def main():
         envvar='RFM_MODULE_MAP_FILE', configvar='general/module_map_file'
     )
     env_options.add_argument(
-        '-u', '--unload-module', action='append', metavar='MOD',
-        dest='unload_modules', default=[],
-        help='Unload module MOD before running any regression check',
-        envvar='RFM_UNLOAD_MODULES ,', configvar='general/unload_modules'
-    )
-    env_options.add_argument(
         '--module-path', action='append', metavar='PATH',
         dest='module_paths', default=[],
         help='(Un)use module path PATH before running any regression check',
+    )
+    env_options.add_argument(
+        '--non-default-craype', action='store_true',
+        help='Test a non-default Cray Programming Environment',
+        envvar='RFM_NON_DEFAULT_CRAYPE', configvar='general/non_default_craype'
     )
     env_options.add_argument(
         '--purge-env', action='store_true', dest='purge_env', default=False,
@@ -403,9 +418,10 @@ def main():
         envvar='RFM_PURGE_ENVIRONMENT', configvar='general/purge_environment'
     )
     env_options.add_argument(
-        '--non-default-craype', action='store_true',
-        help='Test a non-default Cray Programming Environment',
-        envvar='RFM_NON_DEFAULT_CRAYPE', configvar='general/non_default_craype'
+        '-u', '--unload-module', action='append', metavar='MOD',
+        dest='unload_modules', default=[],
+        help='Unload module MOD before running any regression check',
+        envvar='RFM_UNLOAD_MODULES ,', configvar='general/unload_modules'
     )
 
     # Miscellaneous options
@@ -416,12 +432,16 @@ def main():
         envvar='RFM_CONFIG_FILE'
     )
     misc_options.add_argument(
-        '--nocolor', action='store_false', dest='colorize',
-        help='Disable coloring of output',
-        envvar='RFM_COLORIZE', configvar='general/colorize'
+        '--detect-host-topology', action='store', nargs='?', const='-',
+        help='Detect the local host topology and exit'
     )
     misc_options.add_argument(
         '--failure-stats', action='store_true', help='Print failure statistics'
+    )
+    misc_options.add_argument(
+        '--nocolor', action='store_false', dest='colorize',
+        help='Disable coloring of output',
+        envvar='RFM_COLORIZE', configvar='general/colorize'
     )
     misc_options.add_argument(
         '--performance-report', action='store_true',
@@ -435,10 +455,6 @@ def main():
     misc_options.add_argument(
         '--system', action='store', help='Load configuration for SYSTEM',
         envvar='RFM_SYSTEM'
-    )
-    misc_options.add_argument(
-        '--detect-host-topology', action='store', nargs='?', const='-',
-        help='Detect the local host topology and exit'
     )
     misc_options.add_argument(
         '--upgrade-config-file', action='store', metavar='OLD[:NEW]',
@@ -455,16 +471,23 @@ def main():
 
     # Options not associated with command-line arguments
     argparser.add_argument(
+        dest='git_timeout',
+        envvar='RFM_GIT_TIMEOUT',
+        configvar='general/git_timeout',
+        help=('Timeout in seconds when checking if the url is a '
+              'valid repository.')
+    )
+    argparser.add_argument(
         dest='graylog_server',
         envvar='RFM_GRAYLOG_ADDRESS',
         configvar='logging/handlers_perflog/graylog_address',
         help='Graylog server address'
     )
     argparser.add_argument(
-        dest='syslog_address',
-        envvar='RFM_SYSLOG_ADDRESS',
-        configvar='logging/handlers_perflog/syslog_address',
-        help='Syslog server address'
+        dest='httpjson_url',
+        envvar='RFM_HTTPJSON_URL',
+        configvar='logging/handlers_perflog/httpjson_url',
+        help='URL of HTTP server accepting JSON logs'
     )
     argparser.add_argument(
         dest='ignore_reqnodenotavail',
@@ -474,24 +497,11 @@ def main():
         help='Graylog server address'
     )
     argparser.add_argument(
-        dest='use_login_shell',
-        envvar='RFM_USE_LOGIN_SHELL',
-        configvar='general/use_login_shell',
+        dest='compact_test_names',
+        envvar='RFM_COMPACT_TEST_NAMES',
+        configvar='general/compact_test_names',
         action='store_true',
-        help='Use a login shell for job scripts'
-    )
-    argparser.add_argument(
-        dest='resolve_module_conflicts',
-        envvar='RFM_RESOLVE_MODULE_CONFLICTS',
-        configvar='general/resolve_module_conflicts',
-        action='store_true',
-        help='Resolve module conflicts automatically'
-    )
-    argparser.add_argument(
-        dest='httpjson_url',
-        envvar='RFM_HTTPJSON_URL',
-        configvar='logging/handlers_perflog/httpjson_url',
-        help='URL of HTTP server accepting JSON logs'
+        help='Use a compact test naming scheme'
     )
     argparser.add_argument(
         dest='remote_detect',
@@ -506,6 +516,33 @@ def main():
         configvar='general/remote_workdir',
         action='store',
         help='Working directory for launching ReFrame remotely'
+    )
+    argparser.add_argument(
+        dest='resolve_module_conflicts',
+        envvar='RFM_RESOLVE_MODULE_CONFLICTS',
+        configvar='general/resolve_module_conflicts',
+        action='store_true',
+        help='Resolve module conflicts automatically'
+    )
+    argparser.add_argument(
+        dest='syslog_address',
+        envvar='RFM_SYSLOG_ADDRESS',
+        configvar='logging/handlers_perflog/syslog_address',
+        help='Syslog server address'
+    )
+    argparser.add_argument(
+        dest='trap_job_errors',
+        envvar='RFM_TRAP_JOB_ERRORS',
+        configvar='general/trap_job_errors',
+        action='store_true',
+        help='Trap job errors in job scripts and fail tests automatically'
+    )
+    argparser.add_argument(
+        dest='use_login_shell',
+        envvar='RFM_USE_LOGIN_SHELL',
+        configvar='general/use_login_shell',
+        action='store_true',
+        help='Use a login shell for job scripts'
     )
 
     # Parse command line
@@ -614,7 +651,6 @@ def main():
         )
 
     rt = runtime.runtime()
-    autodetect.detect_topology()
     try:
         if site_config.get('general/0/module_map_file'):
             rt.modules_system.load_mapping_from_file(
@@ -673,6 +709,7 @@ def main():
 
         sys.exit(0)
 
+    autodetect.detect_topology()
     printer.debug(format_env(options.env_vars))
 
     # Setup the check loader
@@ -741,7 +778,7 @@ def main():
         'cmdline': ' '.join(sys.argv),
         'config_file': rt.site_config.filename,
         'data_version': runreport.DATA_VERSION,
-        'hostname': socket.gethostname(),
+        'hostname': socket.getfqdn(),
         'prefix_output': rt.output_prefix,
         'prefix_stage': rt.stage_prefix,
         'user': osext.osuser(),
@@ -772,17 +809,9 @@ def main():
 
         # Generate all possible test cases first; we will need them for
         # resolving dependencies after filtering
-
-        # Determine the allowed programming environments
-        allowed_environs = {e.name
-                            for env_patt in options.prgenv
-                            for p in rt.system.partitions
-                            for e in p.environs if re.match(env_patt, e.name)}
-
         testcases_all = generate_testcases(checks_found,
                                            options.skip_system_check,
-                                           options.skip_prgenv_check,
-                                           allowed_environs)
+                                           options.skip_prgenv_check)
         testcases = testcases_all
         printer.verbose(f'Generated {len(testcases)} test case(s)')
 
@@ -802,6 +831,9 @@ def main():
         )
 
         # Filter test cases by tags
+        for tag in options.exclude_tags:
+            testcases = filter(filters.have_not_tag(tag), testcases)
+
         for tag in options.tags:
             testcases = filter(filters.have_tag(tag), testcases)
 

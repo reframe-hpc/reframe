@@ -4,87 +4,48 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import reframe as rfm
-import reframe.utility.sanity as sn
+
+from hpctestlib.python.numpy.numpy_ops import numpy_ops_check
 
 
-class NumpyBaseTest(rfm.RunOnlyRegressionTest):
-    def __init__(self):
-        self.descr = 'Test a few typical numpy operations'
-        self.valid_prog_environs = ['builtin']
-        self.modules = ['numpy']
+@rfm.simple_test
+class cscs_numpy_test(numpy_ops_check):
+    valid_prog_environs = ['builtin']
+    valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
+    modules = ['numpy']
+    num_tasks_per_node = 1
+    use_multithreading = False
+    all_ref = {
+        'haswell@12c': {
+            'dot': (0.4, None, 0.05, 's'),
+            'svd': (0.37, None, 0.05, 's'),
+            'cholesky': (0.12, None, 0.05, 's'),
+            'eigendec': (3.5, None, 0.05, 's'),
+            'inv': (0.21, None, 0.05, 's'),
+        },
+        'broadwell@36c': {
+            'dot': (0.3, None, 0.05, 's'),
+            'svd': (0.35, None, 0.05, 's'),
+            'cholesky': (0.1, None, 0.05, 's'),
+            'eigendec': (4.14, None, 0.05, 's'),
+            'inv': (0.16, None, 0.05, 's'),
+        }
+    }
+    tags = {'production'}
+    maintainers = ['RS', 'TR']
+
+    @run_after('setup')
+    def set_num_cpus_per_task(self):
+        self.num_cpus_per_task = self.current_partition.processor.num_cores
+        variables = {
+            'OMP_NUM_THREADS': self.num_cpus_per_task
+        }
+
+    @run_before('performance')
+    def set_perf_ref(self):
+        arch = self.current_partition.processor.arch
+        pname = self.current_partition.fullname
+        num_cores = self.current_partition.processor.num_cores
         self.reference = {
-            'daint:gpu': {
-                'dot': (0.4, None, 0.05, 'seconds'),
-                'svd': (0.37, None, 0.05, 'seconds'),
-                'cholesky': (0.12, None, 0.05, 'seconds'),
-                'eigendec': (3.5, None, 0.05, 'seconds'),
-                'inv': (0.21, None, 0.05, 'seconds'),
-            },
-            'daint:mc': {
-                'dot': (0.3, None, 0.05, 'seconds'),
-                'svd': (0.35, None, 0.05, 'seconds'),
-                'cholesky': (0.1, None, 0.05, 'seconds'),
-                'eigendec': (4.14, None, 0.05, 'seconds'),
-                'inv': (0.16, None, 0.05, 'seconds'),
-            },
-            'dom:gpu': {
-                'dot': (0.4, None, 0.05, 'seconds'),
-                'svd': (0.37, None, 0.05, 'seconds'),
-                'cholesky': (0.12, None, 0.05, 'seconds'),
-                'eigendec': (3.5, None, 0.05, 'seconds'),
-                'inv': (0.21, None, 0.05, 'seconds'),
-            },
-            'dom:mc': {
-                'dot': (0.3, None, 0.05, 'seconds'),
-                'svd': (0.35, None, 0.05, 'seconds'),
-                'cholesky': (0.1, None, 0.05, 'seconds'),
-                'eigendec': (4.14, None, 0.05, 'seconds'),
-                'inv': (0.16, None, 0.05, 'seconds'),
-            },
+            pname: self.all_ref[f'{arch}@{num_cores}c']
         }
-        self.perf_patterns = {
-            'dot': sn.extractsingle(
-                r'^Dotted two 4096x4096 matrices in\s+(?P<dot>\S+)\s+s',
-                self.stdout, 'dot', float),
-            'svd': sn.extractsingle(
-                r'^SVD of a 2048x1024 matrix in\s+(?P<svd>\S+)\s+s',
-                self.stdout, 'svd', float),
-            'cholesky': sn.extractsingle(
-                r'^Cholesky decomposition of a 2048x2048 matrix in'
-                r'\s+(?P<cholesky>\S+)\s+s',
-                self.stdout, 'cholesky', float),
-            'eigendec': sn.extractsingle(
-                r'^Eigendecomposition of a 2048x2048 matrix in'
-                r'\s+(?P<eigendec>\S+)\s+s',
-                self.stdout, 'eigendec', float),
-            'inv': sn.extractsingle(
-                r'^Inversion of a 2048x2048 matrix in\s+(?P<inv>\S+)\s+s',
-                self.stdout, 'inv', float)
-        }
-        self.sanity_patterns = sn.assert_found(r'Numpy version:\s+\S+',
-                                               self.stdout)
-        self.variables = {
-            'OMP_NUM_THREADS': '$SLURM_CPUS_PER_TASK',
-        }
-        self.executable = 'python'
-        self.executable_opts = ['np_ops.py']
-        self.num_tasks_per_node = 1
-        self.use_multithreading = False
-        self.tags = {'production'}
-        self.maintainers = ['RS', 'TR']
-
-
-@rfm.simple_test
-class NumpyHaswellTest(NumpyBaseTest):
-    def __init__(self):
-        super().__init__()
-        self.valid_systems = ['daint:gpu', 'dom:gpu']
-        self.num_cpus_per_task = 12
-
-
-@rfm.simple_test
-class NumpyBroadwellTest(NumpyBaseTest):
-    def __init__(self):
-        super().__init__()
-        self.valid_systems = ['daint:mc', 'dom:mc']
-        self.num_cpus_per_task = 36

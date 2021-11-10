@@ -14,16 +14,14 @@
 
 # ReFrame in a Nutshell
 
-ReFrame is a framework for writing regression tests for HPC systems.
-The goal of this framework is to abstract away the complexity of the interactions with the system, separating the logic of a regression test from the low-level details, which pertain to the system configuration and setup.
-This allows users to write easily portable regression tests, focusing only on the functionality.
+ReFrame is a powerful framework for writing system regression tests and benchmarks, specifically targeted to HPC systems.
+The goal of the framework is to abstract away the complexity of the interactions with the system, separating the logic of a test from the low-level details, which pertain to the system configuration and setup.
+This allows users to write portable tests in a declarative way that describes only the test's functionality.
 
-Regression tests in ReFrame are simple Python classes that specify the basic parameters of the test.
-The framework will load the test and will send it down a well-defined pipeline that will take care of its execution.
+Tests in ReFrame are simple Python classes that specify the basic variables and parameters of the test.
+ReFrame offers an intuitive and very powerful syntax that allows users to create test libraries, test factories, as well as complete test workflows using other tests as fixtures.
+ReFrame will load the tests and send them down a well-defined pipeline that will execute them in parallel.
 The stages of this pipeline take care of all the system interaction details, such as programming environment switching, compilation, job submission, job status query, sanity checking and performance assessment.
-
-Writing system regression tests in a high-level modern programming language, like Python, poses a great advantage in organizing and maintaining the tests.
-Users can create their own test hierarchies, create test factories for generating multiple tests at the same time and also customize them in a simple and expressive way.
 
 Please visit the project's documentation [page](https://reframe-hpc.readthedocs.io/) for all the details!
 
