@@ -260,6 +260,11 @@ def main():
         help='Select only GPU checks'
     )
     select_options.add_argument(
+        '--maintainer', action='append', dest='maintainers', default=[],
+        metavar='PATTERN',
+        help='Select checks with at least one maintainer matching PATTERN'
+    )
+    select_options.add_argument(
         '-n', '--name', action='append', dest='names', default=[],
         metavar='PATTERN', help='Select checks whose name matches PATTERN'
     )
@@ -285,11 +290,6 @@ def main():
         '-t', '--tag', action='append', dest='tags', metavar='PATTERN',
         default=[],
         help='Select checks with at least one tag matching PATTERN'
-    )
-    select_options.add_argument(
-        '--maintainer', action='append', dest='maintainers', metavar='PATTERN',
-        default=[],
-        help='Select checks with at least one maintainer matching PATTERN'
     )
     select_options.add_argument(
         '-x', '--exclude', action='append', dest='exclude_names',
