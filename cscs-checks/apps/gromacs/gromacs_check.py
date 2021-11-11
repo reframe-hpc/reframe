@@ -4,7 +4,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import reframe as rfm
-from hpctestlib.apps.gromacs.base_check import Gromacs_BaseCheck
+from hpctestlib.apps.gromacs import gromacs_check
+
 
 REFERENCE_GPU_PERFORMANCE = {
     'large': {
