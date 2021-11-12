@@ -260,6 +260,11 @@ def main():
         help='Select only GPU checks'
     )
     select_options.add_argument(
+        '--maintainer', action='append', dest='maintainers', default=[],
+        metavar='PATTERN',
+        help='Select checks with at least one maintainer matching PATTERN'
+    )
+    select_options.add_argument(
         '-n', '--name', action='append', dest='names', default=[],
         metavar='PATTERN', help='Select checks whose name matches PATTERN'
     )
@@ -841,6 +846,10 @@ def main():
         printer.verbose(
             f'Filtering test cases(s) by tags: {len(testcases)} remaining'
         )
+
+        # Filter test cases by maintainers
+        for maint in options.maintainers:
+            testcases = filter(filters.have_maintainer(maint), testcases)
 
         # Filter test cases further
         if options.gpu_only and options.cpu_only:

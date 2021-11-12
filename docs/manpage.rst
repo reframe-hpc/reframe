@@ -92,6 +92,17 @@ This happens recursively so that if test ``T1`` depends on ``T2`` and ``T2`` dep
    These are all tests with :attr:`num_gpus_per_node` greater than zero.
    This option and :option:`--cpu-only` are mutually exclusive.
 
+.. option:: --maintainer=MAINTAINER
+
+   Filter tests by maintainer.
+   ``MAINTAINER`` is interpreted as a `Python Regular Expression <https://docs.python.org/3/library/re.html>`__; all tests that have at least a matching maintainer will be selected.
+   ``MAINTAINER`` being a regular expression has the implication that ``--maintainer 'foo'`` will select also tests that define ``'foobar'`` as a maintainer.
+   To restrict the selection to tests defining only ``'foo'``, you should use ``--maintainer 'foo$'``.
+
+   This option may be specified multiple times, in which case only tests defining or matching *all* maintainers will be selected.
+
+   .. versionadded:: 3.9.1
+
 .. option:: -n, --name=NAME
 
    Filter tests by name.
