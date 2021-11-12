@@ -47,6 +47,15 @@ def have_not_tag(patt):
     return _fn
 
 
+def have_maintainer(patt):
+    regex = re_compile(patt)
+
+    def _fn(case):
+        return any(regex.match(p) for p in case.check.maintainers)
+
+    return _fn
+
+
 def have_gpu_only():
     def _fn(case):
         return case.check.num_gpus_per_node > 0

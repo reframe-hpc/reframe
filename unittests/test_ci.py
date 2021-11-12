@@ -31,7 +31,9 @@ def test_ci_gitlab_pipeline():
 
     # Fetch the latest Gitlab CI JSON schema
     try:
-        response = requests.get('https://json.schemastore.org/gitlab-ci')
+        response = requests.get(
+            'https://gitlab.com/gitlab-org/gitlab/-/raw/master/app/assets/javascripts/editor/schema/ci.json'    # noqa: E501
+        )
     except requests.exceptions.ConnectionError as e:
         pytest.skip(f'could not reach URL: {e}')
     else:
