@@ -2216,10 +2216,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         if not self.current_partition:
             return
 
-         proc = self.current_partition.processor
-         pname = self.current_partition.fullname
-         self.skip_if(not proc.info,
-                      f'no topology information found for partition {pname!r}')
+        proc = self.current_partition.processor
+        pname = self.current_partition.fullname
+        self.skip_if(not proc.info,
+                     f'no topology information found for partition {pname!r}')
 
     def __str__(self):
         return "%s(name='%s', prefix='%s')" % (type(self).__name__,
