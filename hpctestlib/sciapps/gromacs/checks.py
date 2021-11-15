@@ -3,12 +3,9 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import os
-
 import reframe as rfm
 import reframe.utility as util
 import reframe.utility.sanity as sn
-import reframe.utility.typecheck as typ
 
 
 @rfm.simple_test
@@ -26,12 +23,6 @@ class gromacs_check(rfm.RunOnlyRegressionTest):
     many groups are also using it for research on non-biological
     systems, e.g. polymers (see gromacs.org).
 
-    The presented abstract run-only class checks the Gromacs perfomance.
-    To do this, it is necessary to define in tests  the reference values
-    of energy and possible deviations from this value. This data is used
-    to check if the task is being executed correctly, that is, the final
-    energy is correct (approximately the reference). The default
-    assumption is that NAMD is already installed on the device under test.
     '''
 
     #: Parameter pack encoding the benchmark information.
@@ -42,8 +33,6 @@ class gromacs_check(rfm.RunOnlyRegressionTest):
     #:
     #: :type: `Tuple[str, float, float]`
     #: :values:
-    #:     .. code-block:: python
-    #:
     benchmark_info = parameter([
         ('HECBioSim/Crambin', 0.0, 0.0),
         ('HECBioSim/Glutamine-Binding-Protein', 0.0, 0.0),
@@ -52,14 +41,13 @@ class gromacs_check(rfm.RunOnlyRegressionTest):
         ('HECBioSim/hEGFRtetramerPair', 0.0, 0.0)
     ])
 
+    #: Parameter encoding the implementation of the non-bonded calculations
+    #:
+    #: :type: :class:`str`
+    #: :values: ``['cpu', 'gpu']``
     nb_impl = parameter(['cpu', 'gpu'])
 
     executable = 'gmx_mpi'
-
-    # Test tags
-    #
-    # :required: No
-    # :default: ``{'sciapp', 'chemistry'}``
     tags = {'sciapp', 'chemistry'}
     keep_files = ['md.log']
 
@@ -68,10 +56,19 @@ class gromacs_check(rfm.RunOnlyRegressionTest):
         self.__bench, self.__energy_ref, self.__energy_tol = self.benchmark_info
         self.descr = f'GROMACS {self.__bench} benchmark (NB: {self.nb_impl})'
         self.prerun_cmds = [
-            f'curl -LJO https://github.com/victorusu/GROMACS_Benchmark_Suite/raw/main/{self.__bench}/benchmark.tpr'
+            f'curl -LJO https://github.com/victorusu/GROMACS_Benchmark_Suite/raw/main/{self.__bench}/benchmark.tpr'  # noqa: E501
         ]
         self.executable_opts = ['mdrun', '-nb', self.nb_impl,
                                 '-s benchmark.tpr']
+
+    @property
+    def bench_name(self):
+        '''The benchmark name.
+
+        :type: :class:`str`
+        '''
+
+        return self.__bench
 
     @performance_function('ns/day')
     def perf(self):

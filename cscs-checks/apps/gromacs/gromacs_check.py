@@ -4,9 +4,134 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import reframe as rfm
-from hpctestlib.apps.gromacs import gromacs_check
+from hpctestlib.sciapps.gromacs.checks import gromacs_check
 
 
+@rfm.simple_test
+class cscs_gromacs_check(gromacs_check):
+    modules = ['GROMACS']
+    maintainers = ['VH', 'VK']
+    use_multithreading = False
+    extra_resources = {
+        'switches': {
+            'num_switches': 1
+        }
+    }
+    executable_opts += ['-dlb yes', '-ntomp 1', '-npme -1']
+    valid_prog_environs = ['builtin']
+
+    # CSCS-specific parameterization
+    num_nodes = parameter([6, 16])
+    mode = parameter(['maintenance', 'production'])
+    allref = {
+        6: {
+            'sm_60': {
+                'HECBioSim/Crambin': (0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimer': (0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimerPair': (0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRtetramerPair': (0, None, None, 'ns/day'),
+            },
+            'broadwell': {
+                'HECBioSim/Crambin': (0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimer': (0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimerPair': (0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRtetramerPair': (0, None, None, 'ns/day'),
+            },
+            'zen2': {
+                'HECBioSim/Crambin': (0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimer': (0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimerPair': (0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRtetramerPair': (0, None, None, 'ns/day'),
+            },
+        },
+        16: {
+            'sm_60': {
+                'HECBioSim/Crambin': (0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimer': (0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimerPair': (0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRtetramerPair': (0, None, None, 'ns/day'),
+            },
+            'broadwell': {
+                'HECBioSim/Crambin': (0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimer': (0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimerPair': (0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRtetramerPair': (0, None, None, 'ns/day'),
+            },
+            'zen2': {
+                'HECBioSim/Crambin': (0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimer': (0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimerPair': (0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRtetramerPair': (0, None, None, 'ns/day'),
+            },
+        }
+    }
+
+    @run_after('init')
+    def setup_filtering_criteria(self):
+        # Update test's description
+        self.descr += f' ({self.num_nodes} node(s), {self.mode!r} mode)'
+
+        # Setup system filtering
+        valid_systems = {
+            'cpu': {
+                6:  ['daint:mc', 'dom:mc', 'eiger:mc', 'pilatus:mc'],
+                16: ['daint:mc', 'eiger:mc']
+            },
+            'gpu': {
+                6:  ['daint:gpu', 'dom:gpu', 'eiger:gpu', 'pilatus:gpu'],
+                16: ['daint:gpu', 'eiger:gpu']
+            }
+        }
+        try:
+            self.valid_systems = valid_systems[self.nb_impl][self.num_nodes]
+        except KeyError:
+            self.valid_systems = []
+
+        # Maintenance mode is not valid for the cpu run
+        if self.nb_impl == 'cpu' and self.mode == 'maintenance':
+            self.valid_systems = []
+
+        # Setup prog env. filtering
+        if self.current_system.name in ('eiger', 'pilatus'):
+            self.valid_prog_environs = ['cpeGNU']
+
+        self.tags |= {self.mode}
+
+    @run_before('run')
+    def setup_run(self):
+        # self.skip_if_no_procinfo()
+        # Setup GPU run
+        if self.nb_impl == 'gpu':
+            self.num_gpus_per_node = 1
+            self.variables = {'CRAY_CUDA_MPS': '1'}
+
+        proc = self.current_partition.processor
+
+        # Choose arch; we set explicitly the GPU arch, since there is no
+        # auto-detection
+        arch = proc.arch
+        if self.current_partition.fullname in ('daint:gpu', 'dom:gpu'):
+            arch = 'sm_60'
+
+        # Setup performance references
+        self.reference = {
+            '*': {
+                'perf': self.allref[self.num_nodes][arch][self.bench_name]
+            }
+        }
+
+        # Setup parallel run
+        self.num_tasks_per_node = proc.num_cores
+        self.num_tasks = self.num_nodes * self.num_tasks_per_node
+
+
+# FIXME: Remove the following references
 REFERENCE_GPU_PERFORMANCE = {
     'large': {
         'daint:gpu': {
@@ -51,83 +176,3 @@ REFERENCE_CPU_PERFORMANCE = {
         },
     }
 }
-
-
-class GromacsBaseCheck(Gromacs_BaseCheck):
-    scale = parameter(['small', 'large'])
-    modules = ['GROMACS']
-    maintainers = ['VH', 'SO']
-    strict_check = False
-    use_multithreading = False
-    extra_resources = {
-        'switches': {
-            'num_switches': 1
-        }
-    }
-    tags = {'scs', 'external-resources'}
-
-    @run_after('init')
-    def env_define(self):
-        if self.current_system.name in ['eiger', 'pilatus']:
-            self.valid_prog_environs = ['cpeGNU']
-        else:
-            self.valid_prog_environs = ['builtin']
-
-    @run_after('init')
-    def set_tags(self):
-        self.tags |= {'maintenance' if self.mode == 'maint'
-                      else 'production'}
-
-    @run_after('setup')
-    def set_reference(self):
-        self.reference = self.reference_dict[self.scale]
-
-
-@rfm.simple_test
-class gromacs_gpu_check(GromacsBaseCheck):
-    mode = parameter(['maint', 'prod'])
-    valid_systems = ['daint:gpu']
-    descr = 'GROMACS GPU check'
-    executable_opts = ['mdrun', '-dlb yes', '-ntomp 1', '-npme 0',
-                       '-s herflat.tpr']
-    variables = {'CRAY_CUDA_MPS': '1'}
-    num_gpus_per_node = 1
-    reference_dict = REFERENCE_GPU_PERFORMANCE
-
-    @run_after('setup')
-    def set_num_tasks(self):
-        if self.scale == 'small':
-            self.valid_systems += ['dom:gpu']
-            self.num_tasks = 72
-            self.num_tasks_per_node = 12
-        else:
-            self.num_tasks = 192
-            self.num_tasks_per_node = 12
-
-
-@rfm.simple_test
-class gromacs_cpu_check(GromacsBaseCheck):
-    mode = parameter(['prod'])
-    valid_systems = ['daint:mc', 'eiger:mc', 'pilatus:mc']
-    descr = 'GROMACS CPU check'
-    executable_opts = ['mdrun', '-dlb yes', '-ntomp 1', '-npme -1',
-                       '-nb cpu', '-s herflat.tpr']
-    reference_dict = REFERENCE_CPU_PERFORMANCE
-
-    @run_after('setup')
-    def set_num_tasks(self):
-        if self.scale == 'small':
-            self.valid_systems += ['dom:mc']
-            if (self.current_system.name in ['daint', 'dom']):
-                self.num_tasks = 216
-                self.num_tasks_per_node = 36
-            elif (self.current_system.name in ['eiger', 'pilatus']):
-                self.num_tasks = 768
-                self.num_tasks_per_node = 128
-        else:
-            if (self.current_system.name in ['daint', 'dom']):
-                self.num_tasks = 576
-                self.num_tasks_per_node = 36
-            elif (self.current_system.name in ['eiger', 'pilatus']):
-                self.num_tasks = 2048
-                self.num_tasks_per_node = 128
