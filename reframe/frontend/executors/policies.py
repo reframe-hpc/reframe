@@ -23,7 +23,12 @@ from reframe.frontend.executors import (ExecutionPolicy, RegressionTask,
 
 
 def countall(d):
-    return functools.reduce(lambda l, r: l + len(r), d.values(), 0)
+    res = 0
+    for (q1, q2) in d.values():
+        res += len(q1)
+        res += len(q2)
+
+    return res
 
 
 def _cleanup_all(tasks, *args, **kwargs):
@@ -276,7 +281,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         )
         try:
             partname = task.check.current_partition.fullname
-            self._running_tasks[partname].remove(task)
+            self._running_tasks[partname][0].remove(task)
         except (ValueError, AttributeError, KeyError):
             getlogger().debug2('Task was not running')
             pass
@@ -287,7 +292,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         )
         try:
             partname = task.check.current_partition.fullname
-            self._compiling_tasks[partname].remove(task)
+            self._compiling_tasks[partname][0].remove(task)
         except (ValueError, AttributeError, KeyError):
             getlogger().debug2('Task was not building')
             pass
@@ -312,17 +317,17 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def on_task_setup(self, task):
         partname = task.check.current_partition.fullname
         if (isinstance(task.check, RunOnlyRegressionTest)):
-            self._ready_to_run_tasks[partname].append(task)
+            self._ready_to_run_tasks[partname][0].append(task)
         else:
-            self._ready_to_compile_tasks[partname].append(task)
+            self._ready_to_compile_tasks[partname][0].append(task)
 
     def on_task_run(self, task):
         partname = task.check.current_partition.fullname
-        self._running_tasks[partname].append(task)
+        self._running_tasks[partname][0].append(task)
 
     def on_task_compile(self, task):
         partname = task.check.current_partition.fullname
-        self._compiling_tasks[partname].append(task)
+        self._compiling_tasks[partname][0].append(task)
 
     def on_task_skip(self, task):
         # Remove the task from the running list if it was skipped after the
@@ -330,10 +335,10 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         if task.check.current_partition:
             partname = task.check.current_partition.fullname
             if task.failed_stage in ('run_complete', 'run_wait'):
-                self._running_tasks[partname].remove(task)
+                self._running_tasks[partname][0].remove(task)
 
             if task.failed_stage in ('compile_complete', 'compile_wait'):
-                self._compiling_tasks[partname].remove(task)
+                self._compiling_tasks[partname][0].remove(task)
 
         msg = str(task.exc_info[1])
         self.printer.status('SKIP', msg, just='right')
@@ -388,7 +393,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         if (isinstance(task.check, CompileOnlyRegressionTest)):
             self._completed_tasks.append(task)
         else:
-            self._ready_to_run_tasks[partname].append(task)
+            self._ready_to_run_tasks[partname][0].append(task)
 
     def _setup_task(self, task):
         if self.deps_skipped(task):
@@ -421,10 +426,10 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._partitions.add(partition)
 
         # Set partition-based counters, if not set already
-        self._running_tasks.setdefault(partition.fullname, [])
-        self._compiling_tasks.setdefault(partition.fullname, [])
-        self._ready_to_compile_tasks.setdefault(partition.fullname, [])
-        self._ready_to_run_tasks.setdefault(partition.fullname, [])
+        self._running_tasks.setdefault(partition.fullname, ([], []))
+        self._compiling_tasks.setdefault(partition.fullname, ([], []))
+        self._ready_to_compile_tasks.setdefault(partition.fullname, ([], []))
+        self._ready_to_run_tasks.setdefault(partition.fullname, ([], []))
         self._max_jobs.setdefault(partition.fullname, partition.max_jobs)
 
         task = RegressionTask(case, self.task_listeners)
@@ -447,8 +452,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
                 return
 
-            if (len(self._running_tasks[partname]) +
-                len(self._compiling_tasks[partname]) >= partition.max_jobs):
+            if (len(self._running_tasks[partname][0]) +
+                len(self._compiling_tasks[partname][0]) >= partition.max_jobs):
                 # Make sure that we still exceeded the job limit
                 getlogger().debug2(
                     f'Reached concurrency limit for partition {partname!r}: '
@@ -456,15 +461,15 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 )
                 self._poll_tasks()
 
-            if (len(self._running_tasks[partname]) +
-                len(self._compiling_tasks[partname]) < partition.max_jobs):
+            if (len(self._running_tasks[partname][0]) +
+                len(self._compiling_tasks[partname][0]) < partition.max_jobs):
                 if isinstance(task.check, RunOnlyRegressionTest):
                     # Task was put in _ready_to_run_tasks during setup
-                    self._ready_to_run_tasks[partname].pop()
+                    self._ready_to_run_tasks[partname][0].pop()
                     self._reschedule_run(task)
                 else:
                     # Task was put in _ready_to_compile_tasks during setup
-                    self._ready_to_compile_tasks[partname].pop()
+                    self._ready_to_compile_tasks[partname][0].pop()
                     self._reschedule_compile(task)
             else:
                 self.printer.status('HOLD', task.check.info(), just='right')
@@ -505,11 +510,11 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
         for part in self._partitions:
             partname = part.fullname
-            num_tasks = len(self._running_tasks[partname])
+            num_tasks = len(self._running_tasks[partname][0])
             getlogger().debug2(f'Polling {num_tasks} running task(s) in '
                                f'{partname!r}')
             forced_local_jobs, part_jobs = split_jobs(
-                self._running_tasks[partname]
+                self._running_tasks[partname][0]
             )
             part.scheduler.poll(*part_jobs)
             self.local_scheduler.poll(*forced_local_jobs)
@@ -518,20 +523,20 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             # We need need a copy of the list here in order to not modify the
             # list while looping over it. `run_complete` calls `on_task_exit`,
             # which in turn will remove the task from `_running_tasks`.
-            for t in self._running_tasks[partname][:]:
+            for t in self._running_tasks[partname][0][:]:
                 t.run_complete()
 
-            num_tasks = len(self._compiling_tasks[partname])
+            num_tasks = len(self._compiling_tasks[partname][0])
             getlogger().debug2(f'Polling {num_tasks} building task(s) in '
                                f'{partname!r}')
             forced_local_jobs, part_jobs = split_jobs(
-                self._compiling_tasks[partname], kind='build'
+                self._compiling_tasks[partname][0], kind='build'
             )
             part.scheduler.poll(*part_jobs)
             self.local_scheduler.poll(*forced_local_jobs)
 
             # Trigger notifications for finished compilation jobs
-            for t in self._compiling_tasks[partname][:]:
+            for t in self._compiling_tasks[partname][0][:]:
                 t.compile_complete()
 
     def _setup_all(self):
@@ -568,18 +573,22 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def _failall(self, cause):
         '''Mark all tests as failures'''
         getlogger().debug2(f'Aborting all tasks due to {type(cause).__name__}')
-        for task in list(itertools.chain(*self._running_tasks.values())):
+        for task in list(itertools.chain(*itertools.chain(*self._running_tasks.values()))):
             task.abort(cause)
 
         self._running_tasks = {}
-        for task in list(itertools.chain(*self._compiling_tasks.values())):
+        for task in list(itertools.chain(*itertools.chain(*self._compiling_tasks.values()))):
             task.abort(cause)
 
         self._compiling_tasks = {}
-        for ready_list in self._ready_to_compile_tasks.values():
-            for task in ready_list:
-                task.abort(cause)
+        for task in list(itertools.chain(*itertools.chain(*self._ready_to_compile_tasks.values()))):
+            task.abort(cause)
 
+        self._ready_to_compile_tasks = {}
+        for task in list(itertools.chain(*itertools.chain(*self._ready_to_run_tasks.values()))):
+            task.abort(cause)
+
+        self._ready_to_run_tasks = {}
         for task in itertools.chain(self._waiting_tasks,
                                     self._completed_tasks):
             task.abort(cause)
@@ -597,15 +606,15 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         for part in self._partitions:
             partname = part.fullname
             num_tasks = (
-                len(self._running_tasks[partname]) +
-                len(self._compiling_tasks[partname])
+                len(self._running_tasks[partname][0]) +
+                len(self._compiling_tasks[partname][0])
             )
             num_empty_slots = self._max_jobs[partname] - num_tasks
             num_rescheduled = 0
             for _ in range(num_empty_slots):
                 try:
                     queue = getattr(self, f'_ready_to_{phase}_tasks')
-                    task = queue[partname].pop()
+                    task = queue[partname][0].pop()
                 except IndexError:
                     break
 
@@ -622,7 +631,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                                'waiting for spawned checks to finish')
         while (countall(self._running_tasks) or self._waiting_tasks or
                self._completed_tasks or countall(self._ready_to_compile_tasks) or
-               countall(self._compiling_tasks)):
+               countall(self._compiling_tasks) or countall(self._ready_to_run_tasks)):
             getlogger().debug2(f'Running tasks: '
                                f'{countall(self._running_tasks)}')
             try:
