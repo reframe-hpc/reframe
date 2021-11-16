@@ -146,6 +146,6 @@ class gromacs_check(rfm.RunOnlyRegressionTest):
         energy_diff = sn.abs(energy - self.energy_ref)
         return sn.all([
             sn.assert_found('Finished mdrun', 'md.log'),
-            sn.assert_reference(energy, self.__energy_ref,
-                                -self.__energy_tol, self.__energy_tol)
+            sn.assert_reference(energy, self.energy_ref,
+                                -self.energy_tol, self.energy_tol)
         ])

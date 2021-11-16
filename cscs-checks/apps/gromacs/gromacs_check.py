@@ -185,14 +185,15 @@ class cscs_gromacs_check(gromacs_check):
             self.valid_systems = []
 
         # Setup prog env. filtering
-        if self.current_system.name in ['eiger', 'pilatus']:
+        if self.current_system.name in ('eiger', 'pilatus'):
             self.valid_prog_environs = ['cpeGNU']
 
         self.tags |= {self.mode}
 
     @run_before('run')
     def setup_run(self):
-        # self.skip_if_no_procinfo()
+        self.skip_if_no_procinfo()
+
         # Setup GPU run
         if self.nb_impl == 'gpu':
             self.num_gpus_per_node = 1
@@ -209,7 +210,8 @@ class cscs_gromacs_check(gromacs_check):
         try:
             found = self.allref[self.num_nodes][arch][self.bench_name]
         except KeyError:
-            self.skip("Test configuration is not supported")
+            self.skip(f'Configuration with {self.num_nodes} node(s) of '
+                      f'{self.bench_name!r} is not supported on {self.arch!r}')
 
         # Setup performance references
         self.reference = {
@@ -221,4 +223,3 @@ class cscs_gromacs_check(gromacs_check):
         # Setup parallel run
         self.num_tasks_per_node = proc.num_cores
         self.num_tasks = self.num_nodes * self.num_tasks_per_node
-
