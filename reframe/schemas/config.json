@@ -358,6 +358,7 @@
                         "type": "array",
                         "items": {"type": "string"}
                     },
+                    "extras": {"type": "object"},
                     "target_systems": {"$ref": "#/defs/system_ref"}
                 },
                 "required": ["name"],
@@ -495,6 +496,7 @@
         "environments/cxxflags": [],
         "environments/fflags": [],
         "environments/ldflags": [],
+        "environments/extras": {},
         "environments/target_systems": ["*"],
         "general/check_search_path": ["${RFM_INSTALL_PREFIX}/checks/"],
         "general/check_search_recursive": false,
