@@ -317,7 +317,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def local_index(self, task, phase='run'):
         return (
             task.check.local or
-            (phase == 'build' and task.check.build_locally)
+            (phase == 'compile' and task.check.build_locally)
         )
 
     def on_task_setup(self, task):
@@ -463,8 +463,25 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             else:
                 local_index = self.local_index(task, phase='compile')
 
-            if (len(self._running_tasks[partname][local_index]) +
-                len(self._compiling_tasks[partname][local_index]) >= partition.max_jobs):
+            job_limit = self._rfm_max_jobs if local_index else partition.max_jobs
+
+            def all_submissions(local, partname=None):
+                if local:
+                    local_tasks = 0
+                    for (_, lt) in self._running_tasks.values():
+                        local_tasks += len(lt)
+
+                    for (_, lt) in self._compiling_tasks.values():
+                        local_tasks += len(lt)
+
+                    return local_tasks
+                else:
+                    return (
+                        len(self._running_tasks[partname][local]) +
+                        len(self._compiling_tasks[partname][local])
+                    )
+
+            if (all_submissions(local_index, partname) >= job_limit):
                 # Make sure that we still exceeded the job limit
                 getlogger().debug2(
                     f'Reached concurrency limit for partition {partname!r}: '
@@ -472,8 +489,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 )
                 self._poll_tasks()
 
-            if (len(self._running_tasks[partname][local_index]) +
-                len(self._compiling_tasks[partname][local_index]) < partition.max_jobs):
+            if (all_submissions(local_index, partname) < job_limit):
                 if isinstance(task.check, RunOnlyRegressionTest):
                     # Task was put in _ready_to_run_tasks during setup
                     self._ready_to_run_tasks[partname][local_index].pop()
@@ -484,6 +500,12 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                     self._reschedule_compile(task)
             else:
                 self.printer.status('HOLD', task.check.info(), just='right')
+
+            # NOTE: If we don't schedule runs here and we have a lot of tests
+            # compiling we will begin submitting only after all the tests are
+            # processed. On the other hand I am not sure where to schedule
+            # runs here.
+            self._reschedule_all(phase='run')
         except TaskExit:
             if not task.failed and not task.skipped:
                 with contextlib.suppress(TaskExit):
