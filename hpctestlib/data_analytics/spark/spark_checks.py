@@ -35,7 +35,7 @@ class compute_pi_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
 
     #: Parameter encoding the variant of the test.
     #:
-    #: :type:`str`
+    #: :type: :class:`str`
     #: :values: ``['spark', 'pyspark']``
     variant = parameter(['spark', 'pyspark'])
 

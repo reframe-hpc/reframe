@@ -34,17 +34,20 @@ def sample_cases():
         make_case({
             'name': 'check1',
             'tags': {'a', 'b', 'c', 'd'},
-            'num_gpus_per_node': 1
+            'num_gpus_per_node': 1,
+            'maintainers': {'A', 'B', 'C', 'D'}
         }),
         make_case({
             'name': 'check2',
             'tags': {'x', 'y', 'z'},
-            'num_gpus_per_node': 0
+            'num_gpus_per_node': 0,
+            'maintainers': {'X', 'Y', 'Z'}
         }),
         make_case({
             'name': 'check3',
             'tags': {'a', 'z'},
-            'num_gpus_per_node': 1
+            'num_gpus_per_node': 1,
+            'maintainers': {'A', 'Z'}
         })
     ]
 
@@ -80,6 +83,12 @@ def test_have_not_tags(sample_cases):
     assert 1 == count_checks(filters.have_not_tag('a|c'), sample_cases)
     assert 3 == count_checks(filters.have_not_tag('p|q'), sample_cases)
     assert 1 == count_checks(filters.have_not_tag('z'), sample_cases)
+
+
+def test_have_maintainers(sample_cases):
+    assert 2 == count_checks(filters.have_maintainer('A|C'), sample_cases)
+    assert 0 == count_checks(filters.have_maintainer('P|Q'), sample_cases)
+    assert 2 == count_checks(filters.have_maintainer('Z'), sample_cases)
 
 
 def test_have_gpu_only(sample_cases):

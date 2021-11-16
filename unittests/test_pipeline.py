@@ -17,7 +17,7 @@ import unittests.utility as test_util
 from reframe.core.containers import _STAGEDIR_MOUNT
 from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
                                      PerformanceError, SanityError,
-                                     ReframeSyntaxError)
+                                     SkipTestError, ReframeSyntaxError)
 
 
 def _run(test, partition, prgenv):
@@ -1455,3 +1455,35 @@ def test_not_configured_container_platform(container_test, local_exec_ctx):
 
     with pytest.raises(PipelineError):
         _run(container_test(platform, 'ubuntu:18.04'), *local_exec_ctx)
+
+
+def test_skip_if_no_topo(HelloTest, local_exec_ctx):
+    class MyTest(HelloTest):
+        skip_message = variable(str, type(None), value=None)
+
+        @run_after('setup')
+        def access_topo(self):
+            self.skip_if_no_procinfo(self.skip_message)
+
+    class EchoTest(rfm.RunOnlyRegressionTest):
+        valid_systems = ['*']
+        valid_prog_environs = ['*']
+        executable = 'echo'
+        sanity_patterns = sn.assert_true(1)
+
+        @run_before('setup')
+        def access_topo(self):
+            self.skip_if_no_procinfo()
+
+    # The test should be skipped, because the auto-detection has not run
+    t = MyTest()
+    with pytest.raises(SkipTestError, match='no topology.*information'):
+        _run(t, *local_exec_ctx)
+
+    # Re-run to test that the custom message is used
+    t.skip_message = 'custom message'
+    with pytest.raises(SkipTestError, match='custom message'):
+        _run(t, *local_exec_ctx)
+
+    # This test should run to completion without problems
+    _run(EchoTest(), *local_exec_ctx)
