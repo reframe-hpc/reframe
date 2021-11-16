@@ -43,7 +43,6 @@ class tensorflow_cnn_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
 
     executable = 'python tensorflow2_synthetic_benchmark.py'
     tags = {'ml', 'cnn', 'horovod'}
-    maintainers = ['sarafael', 'henrique']
 
     @run_after('init')
     def prepare_test(self):
