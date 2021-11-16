@@ -209,7 +209,6 @@ site_configuration = {
                 'checks/'
             ],
             'check_search_recursive': True,
-            'remote_detect': True
         }
     ]
 }
