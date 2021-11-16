@@ -248,7 +248,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         # Retired tasks that need to be cleaned up
         self._retired_tasks = []
 
-        # Ready tasks to be executed per partition
+        # Tasks ready to be compiled per partition
         self._ready_to_compile_tasks = {}
 
         # Tasks that are waiting for dependencies
