@@ -5,7 +5,7 @@
 
 import reframe as rfm
 
-from hpctestlib.data_analytics.spark.compute_pi import compute_pi_check
+from hpctestlib.data_analytics.spark.spark_checks import compute_pi_check
 
 
 @rfm.simple_test
