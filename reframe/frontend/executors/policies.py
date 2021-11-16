@@ -237,7 +237,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._task_index = {}
 
         # All tasks currently in their build phase per partition
-        self._build_tasks = {}
+        self._compiling_tasks = {}
 
         # All tasks currently in their run phase per partition
         self._running_tasks = {}
@@ -282,7 +282,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         )
         try:
             partname = task.check.current_partition.fullname
-            self._build_tasks[partname].remove(task)
+            self._compiling_tasks[partname].remove(task)
         except (ValueError, AttributeError, KeyError):
             getlogger().debug2('Task was not building')
             pass
@@ -314,7 +314,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def on_task_compile(self, task):
         partname = task.check.current_partition.fullname
-        self._build_tasks[partname].append(task)
+        self._compiling_tasks[partname].append(task)
 
     def on_task_skip(self, task):
         # Remove the task from the running list if it was skipped after the
@@ -325,7 +325,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 self._running_tasks[partname].remove(task)
 
             if task.failed_stage in ('compile_complete', 'compile_wait'):
-                self._build_tasks[partname].remove(task)
+                self._compiling_tasks[partname].remove(task)
 
         msg = str(task.exc_info[1])
         self.printer.status('SKIP', msg, just='right')
@@ -410,7 +410,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
         # Set partition-based counters, if not set already
         self._running_tasks.setdefault(partition.fullname, [])
-        self._build_tasks.setdefault(partition.fullname, [])
+        self._compiling_tasks.setdefault(partition.fullname, [])
         self._ready_to_compile_tasks.setdefault(partition.fullname, [])
         self._max_jobs.setdefault(partition.fullname, partition.max_jobs)
 
@@ -435,7 +435,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 return
 
             if (len(self._running_tasks[partname]) +
-                len(self._build_tasks[partname]) >= partition.max_jobs):
+                len(self._compiling_tasks[partname]) >= partition.max_jobs):
                 # Make sure that we still exceeded the job limit
                 getlogger().debug2(
                     f'Reached concurrency limit for partition {partname!r}: '
@@ -444,7 +444,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 self._poll_tasks()
 
             if (len(self._running_tasks[partname]) +
-                len(self._build_tasks[partname]) < partition.max_jobs):
+                len(self._compiling_tasks[partname]) < partition.max_jobs):
                 # Task was put in _ready_to_compile_tasks during setup
                 self._ready_to_compile_tasks[partname].pop()
                 self._reschedule_compile(task)
@@ -503,17 +503,17 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             for t in self._running_tasks[partname][:]:
                 t.run_complete()
 
-            num_tasks = len(self._build_tasks[partname])
+            num_tasks = len(self._compiling_tasks[partname])
             getlogger().debug2(f'Polling {num_tasks} building task(s) in '
                                f'{partname!r}')
             forced_local_jobs, part_jobs = split_jobs(
-                self._build_tasks[partname], kind='build'
+                self._compiling_tasks[partname], kind='build'
             )
             part.scheduler.poll(*part_jobs)
             self.local_scheduler.poll(*forced_local_jobs)
 
             # Trigger notifications for finished compilation jobs
-            for t in self._build_tasks[partname][:]:
+            for t in self._compiling_tasks[partname][:]:
                 t.compile_complete()
 
     def _setup_all(self):
@@ -554,10 +554,10 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             task.abort(cause)
 
         self._running_tasks = {}
-        for task in list(itertools.chain(*self._build_tasks.values())):
+        for task in list(itertools.chain(*self._compiling_tasks.values())):
             task.abort(cause)
 
-        self._build_tasks = {}
+        self._compiling_tasks = {}
         for ready_list in self._ready_to_compile_tasks.values():
             for task in ready_list:
                 task.abort(cause)
@@ -599,7 +599,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                                'waiting for spawned checks to finish')
         while (countall(self._running_tasks) or self._waiting_tasks or
                self._completed_tasks or countall(self._ready_to_compile_tasks) or
-               countall(self._build_tasks)):
+               countall(self._compiling_tasks)):
             getlogger().debug2(f'Running tasks: '
                                f'{countall(self._running_tasks)}')
             try:
