@@ -21,53 +21,132 @@ class cscs_gromacs_check(gromacs_check):
     valid_prog_environs = ['builtin']
 
     # CSCS-specific parameterization
-    num_nodes = parameter([6, 16])
+    num_nodes = parameter([1, 2, 4, 6, 8, 16])
     mode = parameter(['maintenance', 'production'])
     allref = {
-        6: {
+        1: {
             'sm_60': {
-                'HECBioSim/Crambin': (0, None, None, 'ns/day'),
-                'HECBioSim/Glutamine-Binding-Protein': (0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRDimer': (0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRDimerPair': (0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRtetramerPair': (0, None, None, 'ns/day'),
+                'HECBioSim/Crambin': (170.0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (70.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimer': (7.5, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimerPair': (3.0, None, None, 'ns/day'),
             },
             'broadwell': {
-                'HECBioSim/Crambin': (0, None, None, 'ns/day'),
-                'HECBioSim/Glutamine-Binding-Protein': (0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRDimer': (0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRDimerPair': (0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRtetramerPair': (0, None, None, 'ns/day'),
+                'HECBioSim/Crambin': (107.0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (36.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimer': (3.0, None, None, 'ns/day'),
             },
             'zen2': {
-                'HECBioSim/Crambin': (0, None, None, 'ns/day'),
-                'HECBioSim/Glutamine-Binding-Protein': (0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRDimer': (0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRDimerPair': (0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRtetramerPair': (0, None, None, 'ns/day'),
+                'HECBioSim/Crambin': (320.0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (120.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimer': (16.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimerPair': (7.0, None, None, 'ns/day'),
+            },
+        },
+        2: {
+            'sm_60': {
+                'HECBioSim/Crambin': (170.0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (105.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimer': (13.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimerPair': (5.0, None, None, 'ns/day'),
+            },
+            'broadwell': {
+                'HECBioSim/Crambin': (145.0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (60.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimer': (7.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimerPair': (3.0, None, None, 'ns/day'),
+            },
+            'zen2': {
+                'HECBioSim/Crambin': (355.0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (210.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimer': (31.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimerPair': (13.0, None, None, 'ns/day'),
+            },
+        },
+        4: {
+            'sm_60': {
+                'HECBioSim/Crambin': (200.0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (120.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimer': (20.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimerPair': (9.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRtetramerPair': (5.0, None, None, 'ns/day'),
+            },
+            'broadwell': {
+                'HECBioSim/Crambin': (160.0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (90.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimer': (14.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimerPair': (5.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRtetramerPair': (3.0, None, None, 'ns/day'),
+            },
+            'zen2': {
+                'HECBioSim/Crambin': (340.0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (230.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimer': (56.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimerPair': (25.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRtetramerPair': (11.0, None, None, 'ns/day'),
+            },
+        },
+        6: {
+            'sm_60': {
+                'HECBioSim/Crambin': (170.0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (120.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimer': (25.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimerPair': (13.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRtetramerPair': (7.0, None, None, 'ns/day'),
+            },
+            'broadwell': {
+                'HECBioSim/Crambin': (180.0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (105.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimer': (20.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimerPair': (7.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRtetramerPair': (4.0, None, None, 'ns/day'),
+            },
+            'zen2': {
+                'HECBioSim/Glutamine-Binding-Protein': (240.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimer': (75.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimerPair': (33.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRtetramerPair': (13.0, None, None, 'ns/day'),
+            },
+        },
+        8: {
+            'sm_60': {
+                'HECBioSim/Crambin': (200.0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (140.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimer': (28.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimerPair': (14.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRtetramerPair': (8.0, None, None, 'ns/day'),
+            },
+            'broadwell': {
+                'HECBioSim/Crambin': (240.0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (110.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimer': (25.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimerPair': (9.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRtetramerPair': (5.0, None, None, 'ns/day'),
+            },
+            'zen2': {
+                'HECBioSim/Glutamine-Binding-Protein': (250.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimer': (80.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimerPair': (43.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRtetramerPair': (20.0, None, None, 'ns/day'),
             },
         },
         16: {
             'sm_60': {
-                'HECBioSim/Crambin': (0, None, None, 'ns/day'),
-                'HECBioSim/Glutamine-Binding-Protein': (0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRDimer': (0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRDimerPair': (0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRtetramerPair': (0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (170.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimer': (40.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimerPair': (20.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRtetramerPair': (13.0, None, None, 'ns/day'),
             },
             'broadwell': {
-                'HECBioSim/Crambin': (0, None, None, 'ns/day'),
-                'HECBioSim/Glutamine-Binding-Protein': (0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRDimer': (0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRDimerPair': (0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRtetramerPair': (0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (160.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimer': (30.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimerPair': (14.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRtetramerPair': (8.0, None, None, 'ns/day'),
             },
             'zen2': {
-                'HECBioSim/Crambin': (0, None, None, 'ns/day'),
-                'HECBioSim/Glutamine-Binding-Protein': (0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRDimer': (0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRDimerPair': (0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRtetramerPair': (0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimer': (82.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimerPair': (49.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRtetramerPair': (25.0, None, None, 'ns/day'),
             },
         }
     }
@@ -80,11 +159,19 @@ class cscs_gromacs_check(gromacs_check):
         # Setup system filtering
         valid_systems = {
             'cpu': {
-                6:  ['daint:mc', 'dom:mc', 'eiger:mc', 'pilatus:mc'],
+                1: ['daint:mc', 'dom:mc', 'eiger:mc', 'pilatus:mc'],
+                2: ['daint:mc', 'dom:mc', 'eiger:mc', 'pilatus:mc'],
+                4: ['daint:mc', 'dom:mc', 'eiger:mc', 'pilatus:mc'],
+                6: ['daint:mc', 'dom:mc', 'eiger:mc', 'pilatus:mc'],
+                8: ['daint:mc', 'eiger:mc'],
                 16: ['daint:mc', 'eiger:mc']
             },
             'gpu': {
-                6:  ['daint:gpu', 'dom:gpu', 'eiger:gpu', 'pilatus:gpu'],
+                1: ['daint:gpu', 'dom:gpu', 'eiger:gpu', 'pilatus:gpu'],
+                2: ['daint:gpu', 'dom:gpu', 'eiger:gpu', 'pilatus:gpu'],
+                4: ['daint:gpu', 'dom:gpu', 'eiger:gpu', 'pilatus:gpu'],
+                6: ['daint:gpu', 'dom:gpu', 'eiger:gpu', 'pilatus:gpu'],
+                8: ['daint:gpu', 'eiger:gpu'],
                 16: ['daint:gpu', 'eiger:gpu']
             }
         }
@@ -98,7 +185,7 @@ class cscs_gromacs_check(gromacs_check):
             self.valid_systems = []
 
         # Setup prog env. filtering
-        if self.current_system.name in ('eiger', 'pilatus'):
+        if self.current_system.name in ['eiger', 'pilatus']:
             self.valid_prog_environs = ['cpeGNU']
 
         self.tags |= {self.mode}
@@ -119,6 +206,11 @@ class cscs_gromacs_check(gromacs_check):
         if self.current_partition.fullname in ('daint:gpu', 'dom:gpu'):
             arch = 'sm_60'
 
+        try:
+            found = self.allref[self.num_nodes][arch][self.bench_name]
+        except KeyError:
+            self.skip("Test configuration is not supported")
+
         # Setup performance references
         self.reference = {
             '*': {
@@ -130,49 +222,3 @@ class cscs_gromacs_check(gromacs_check):
         self.num_tasks_per_node = proc.num_cores
         self.num_tasks = self.num_nodes * self.num_tasks_per_node
 
-
-# FIXME: Remove the following references
-REFERENCE_GPU_PERFORMANCE = {
-    'large': {
-        'daint:gpu': {
-            'maint': (63.0, -0.10, None, 'ns/day'),
-            'prod': (63.0, -0.20, None, 'ns/day'),
-        },
-    },
-    'small': {
-        'daint:gpu': {
-            'prod': (35.0, -0.10, None, 'ns/day'),
-        },
-        'dom:gpu': {
-            'prod': (37.0, -0.05, None, 'ns/day'),
-        },
-    }
-}
-
-REFERENCE_CPU_PERFORMANCE = {
-    'large': {
-        'daint:mc': {
-            'prod': (68.0, -0.20, None, 'ns/day'),
-        },
-        'eiger:mc': {
-            'prod': (146.00, -0.20, None, 'ns/day'),
-        },
-        'pilatus:mc': {
-            'prod': (146.00, -0.20, None, 'ns/day'),
-        },
-    },
-    'small': {
-        'daint:mc': {
-            'prod': (38.8, -0.10, None, 'ns/day'),
-        },
-        'dom:mc': {
-            'prod': (40.0, -0.05, None, 'ns/day'),
-        },
-        'eiger:mc': {
-            'prod': (103.00, -0.10, None, 'ns/day'),
-        },
-        'dom:mc': {
-            'prod': (103.00, -0.10, None, 'ns/day'),
-        },
-    }
-}

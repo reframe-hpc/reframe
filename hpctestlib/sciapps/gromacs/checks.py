@@ -34,11 +34,11 @@ class gromacs_check(rfm.RunOnlyRegressionTest):
     #: :type: `Tuple[str, float, float]`
     #: :values:
     benchmark_info = parameter([
-        ('HECBioSim/Crambin', 0.0, 0.0),
-        ('HECBioSim/Glutamine-Binding-Protein', 0.0, 0.0),
-        ('HECBioSim/hEGFRDimer', 0.0, 0.0),
-        ('HECBioSim/hEGFRDimerPair', 0.0, 0.0),
-        ('HECBioSim/hEGFRtetramerPair', 0.0, 0.0)
+        ('HECBioSim/Crambin', -204107.0, 0.001),
+        ('HECBioSim/Glutamine-Binding-Protein', -724598.0, 0.001),
+        ('HECBioSim/hEGFRDimer', -3.32892e+06, 0.001),
+        ('HECBioSim/hEGFRDimerPair', -1.20733e+07, 0.001),
+        ('HECBioSim/hEGFRtetramerPair', -2.09831e+07, 0.001)
     ])
 
     #: Parameter encoding the implementation of the non-bonded calculations
@@ -130,5 +130,6 @@ class gromacs_check(rfm.RunOnlyRegressionTest):
         energy_diff = sn.abs(energy - self.__energy_ref)
         return sn.all([
             sn.assert_found('Finished mdrun', 'md.log'),
-            sn.assert_lt(energy_diff, self.__energy_tol)
+            #sn.assert_lt(energy_diff, self.__energy_tol)
+            sn.assert_reference(energy, self.__energy_ref, -self.__energy_tol, self.__energy_tol)
         ])
