@@ -10,6 +10,7 @@ import math
 import sys
 import time
 
+import reframe.core.runtime as rt
 from reframe.core.exceptions import (FailureLimitError,
                                      SkipTestError,
                                      TaskDependencyError,
@@ -260,6 +261,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._partitions = set()
 
         self.task_listeners.append(self)
+
+        # Max jobs spawned by the reframe thread
+        self._rfm_max_jobs = rt.runtime().get_option(f'systems/0/rfm_max_jobs')
 
     def _remove_from_running(self, task):
         getlogger().debug2(
