@@ -249,7 +249,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._retired_tasks = []
 
         # Ready tasks to be executed per partition
-        self._ready_tasks = {}
+        self._ready_to_compile_tasks = {}
 
         # Tasks that are waiting for dependencies
         self._waiting_tasks = []
@@ -306,7 +306,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def on_task_setup(self, task):
         partname = task.check.current_partition.fullname
-        self._ready_tasks[partname].append(task)
+        self._ready_to_compile_tasks[partname].append(task)
 
     def on_task_run(self, task):
         partname = task.check.current_partition.fullname
@@ -411,7 +411,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         # Set partition-based counters, if not set already
         self._running_tasks.setdefault(partition.fullname, [])
         self._build_tasks.setdefault(partition.fullname, [])
-        self._ready_tasks.setdefault(partition.fullname, [])
+        self._ready_to_compile_tasks.setdefault(partition.fullname, [])
         self._max_jobs.setdefault(partition.fullname, partition.max_jobs)
 
         task = RegressionTask(case, self.task_listeners)
@@ -445,8 +445,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
             if (len(self._running_tasks[partname]) +
                 len(self._build_tasks[partname]) < partition.max_jobs):
-                # Task was put in _ready_tasks during setup
-                self._ready_tasks[partname].pop()
+                # Task was put in _ready_to_compile_tasks during setup
+                self._ready_to_compile_tasks[partname].pop()
                 self._reschedule_compile(task)
             else:
                 self.printer.status('HOLD', task.check.info(), just='right')
@@ -558,7 +558,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             task.abort(cause)
 
         self._build_tasks = {}
-        for ready_list in self._ready_tasks.values():
+        for ready_list in self._ready_to_compile_tasks.values():
             for task in ready_list:
                 task.abort(cause)
 
@@ -582,7 +582,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             num_rescheduled = 0
             for _ in range(num_empty_slots):
                 try:
-                    task = self._ready_tasks[partname].pop()
+                    task = self._ready_to_compile_tasks[partname].pop()
                 except IndexError:
                     break
 
@@ -598,7 +598,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self.printer.separator('short single line',
                                'waiting for spawned checks to finish')
         while (countall(self._running_tasks) or self._waiting_tasks or
-               self._completed_tasks or countall(self._ready_tasks) or
+               self._completed_tasks or countall(self._ready_to_compile_tasks) or
                countall(self._build_tasks)):
             getlogger().debug2(f'Running tasks: '
                                f'{countall(self._running_tasks)}')
