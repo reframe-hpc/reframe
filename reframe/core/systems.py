@@ -365,13 +365,11 @@ class SystemPartition(jsonext.JSONSerializable):
 
     @property
     def extras(self):
-        '''User defined attributes of the system.
-
-        By default, it is an empty dictionary.
+        '''User defined properties defined in the configuration.
 
         .. versionadded:: 3.5.0
 
-        :type: :class:`object`
+        :type: :class:`Dict[str, object]`
         '''
         return self._extras
 
@@ -481,6 +479,7 @@ class System(jsonext.JSONSerializable):
                     name=e,
                     modules=site_config.get(f'environments/@{e}/modules'),
                     variables=site_config.get(f'environments/@{e}/variables'),
+                    extras=site_config.get(f'environments/@{e}/extras'),
                     cc=site_config.get(f'environments/@{e}/cc'),
                     cxx=site_config.get(f'environments/@{e}/cxx'),
                     ftn=site_config.get(f'environments/@{e}/ftn'),
