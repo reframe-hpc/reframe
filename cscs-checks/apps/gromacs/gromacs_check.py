@@ -27,18 +27,18 @@ class cscs_gromacs_check(gromacs_check):
         1: {
             'sm_60': {
                 'HECBioSim/Crambin': (170.0, None, None, 'ns/day'),
-                'HECBioSim/Glutamine-Binding-Protein': (70.0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (70.0, None, None, 'ns/day'),    # noqa: E501
                 'HECBioSim/hEGFRDimer': (7.5, None, None, 'ns/day'),
                 'HECBioSim/hEGFRDimerPair': (3.0, None, None, 'ns/day'),
             },
             'broadwell': {
                 'HECBioSim/Crambin': (107.0, None, None, 'ns/day'),
-                'HECBioSim/Glutamine-Binding-Protein': (36.0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (36.0, None, None, 'ns/day'),    # noqa: E501
                 'HECBioSim/hEGFRDimer': (3.0, None, None, 'ns/day'),
             },
             'zen2': {
                 'HECBioSim/Crambin': (320.0, None, None, 'ns/day'),
-                'HECBioSim/Glutamine-Binding-Protein': (120.0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (120.0, None, None, 'ns/day'),   # noqa: E501
                 'HECBioSim/hEGFRDimer': (16.0, None, None, 'ns/day'),
                 'HECBioSim/hEGFRDimerPair': (7.0, None, None, 'ns/day'),
             },
@@ -46,19 +46,19 @@ class cscs_gromacs_check(gromacs_check):
         2: {
             'sm_60': {
                 'HECBioSim/Crambin': (170.0, None, None, 'ns/day'),
-                'HECBioSim/Glutamine-Binding-Protein': (105.0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (105.0, None, None, 'ns/day'),   # noqa: E501
                 'HECBioSim/hEGFRDimer': (13.0, None, None, 'ns/day'),
                 'HECBioSim/hEGFRDimerPair': (5.0, None, None, 'ns/day'),
             },
             'broadwell': {
                 'HECBioSim/Crambin': (145.0, None, None, 'ns/day'),
-                'HECBioSim/Glutamine-Binding-Protein': (60.0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (60.0, None, None, 'ns/day'),    # noqa: E501
                 'HECBioSim/hEGFRDimer': (7.0, None, None, 'ns/day'),
                 'HECBioSim/hEGFRDimerPair': (3.0, None, None, 'ns/day'),
             },
             'zen2': {
                 'HECBioSim/Crambin': (355.0, None, None, 'ns/day'),
-                'HECBioSim/Glutamine-Binding-Protein': (210.0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (210.0, None, None, 'ns/day'),   # noqa: E501
                 'HECBioSim/hEGFRDimer': (31.0, None, None, 'ns/day'),
                 'HECBioSim/hEGFRDimerPair': (13.0, None, None, 'ns/day'),
             },
@@ -66,21 +66,21 @@ class cscs_gromacs_check(gromacs_check):
         4: {
             'sm_60': {
                 'HECBioSim/Crambin': (200.0, None, None, 'ns/day'),
-                'HECBioSim/Glutamine-Binding-Protein': (120.0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (120.0, None, None, 'ns/day'),   # noqa: E501
                 'HECBioSim/hEGFRDimer': (20.0, None, None, 'ns/day'),
                 'HECBioSim/hEGFRDimerPair': (9.0, None, None, 'ns/day'),
                 'HECBioSim/hEGFRtetramerPair': (5.0, None, None, 'ns/day'),
             },
             'broadwell': {
                 'HECBioSim/Crambin': (160.0, None, None, 'ns/day'),
-                'HECBioSim/Glutamine-Binding-Protein': (90.0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (90.0, None, None, 'ns/day'),    # noqa: E501
                 'HECBioSim/hEGFRDimer': (14.0, None, None, 'ns/day'),
                 'HECBioSim/hEGFRDimerPair': (5.0, None, None, 'ns/day'),
                 'HECBioSim/hEGFRtetramerPair': (3.0, None, None, 'ns/day'),
             },
             'zen2': {
                 'HECBioSim/Crambin': (340.0, None, None, 'ns/day'),
-                'HECBioSim/Glutamine-Binding-Protein': (230.0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (230.0, None, None, 'ns/day'),   # noqa: E501
                 'HECBioSim/hEGFRDimer': (56.0, None, None, 'ns/day'),
                 'HECBioSim/hEGFRDimerPair': (25.0, None, None, 'ns/day'),
                 'HECBioSim/hEGFRtetramerPair': (11.0, None, None, 'ns/day'),
@@ -89,20 +89,20 @@ class cscs_gromacs_check(gromacs_check):
         6: {
             'sm_60': {
                 'HECBioSim/Crambin': (170.0, None, None, 'ns/day'),
-                'HECBioSim/Glutamine-Binding-Protein': (120.0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (120.0, None, None, 'ns/day'),   # noqa: E501
                 'HECBioSim/hEGFRDimer': (25.0, None, None, 'ns/day'),
                 'HECBioSim/hEGFRDimerPair': (13.0, None, None, 'ns/day'),
                 'HECBioSim/hEGFRtetramerPair': (7.0, None, None, 'ns/day'),
             },
             'broadwell': {
                 'HECBioSim/Crambin': (180.0, None, None, 'ns/day'),
-                'HECBioSim/Glutamine-Binding-Protein': (105.0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (105.0, None, None, 'ns/day'),   # noqa: E501
                 'HECBioSim/hEGFRDimer': (20.0, None, None, 'ns/day'),
                 'HECBioSim/hEGFRDimerPair': (7.0, None, None, 'ns/day'),
                 'HECBioSim/hEGFRtetramerPair': (4.0, None, None, 'ns/day'),
             },
             'zen2': {
-                'HECBioSim/Glutamine-Binding-Protein': (240.0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (240.0, None, None, 'ns/day'),   # noqa: E501
                 'HECBioSim/hEGFRDimer': (75.0, None, None, 'ns/day'),
                 'HECBioSim/hEGFRDimerPair': (33.0, None, None, 'ns/day'),
                 'HECBioSim/hEGFRtetramerPair': (13.0, None, None, 'ns/day'),
@@ -111,20 +111,20 @@ class cscs_gromacs_check(gromacs_check):
         8: {
             'sm_60': {
                 'HECBioSim/Crambin': (200.0, None, None, 'ns/day'),
-                'HECBioSim/Glutamine-Binding-Protein': (140.0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (140.0, None, None, 'ns/day'),   # noqa: E501
                 'HECBioSim/hEGFRDimer': (28.0, None, None, 'ns/day'),
                 'HECBioSim/hEGFRDimerPair': (14.0, None, None, 'ns/day'),
                 'HECBioSim/hEGFRtetramerPair': (8.0, None, None, 'ns/day'),
             },
             'broadwell': {
                 'HECBioSim/Crambin': (240.0, None, None, 'ns/day'),
-                'HECBioSim/Glutamine-Binding-Protein': (110.0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (110.0, None, None, 'ns/day'),   # noqa: E501
                 'HECBioSim/hEGFRDimer': (25.0, None, None, 'ns/day'),
                 'HECBioSim/hEGFRDimerPair': (9.0, None, None, 'ns/day'),
                 'HECBioSim/hEGFRtetramerPair': (5.0, None, None, 'ns/day'),
             },
             'zen2': {
-                'HECBioSim/Glutamine-Binding-Protein': (250.0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (250.0, None, None, 'ns/day'),   # noqa: E501
                 'HECBioSim/hEGFRDimer': (80.0, None, None, 'ns/day'),
                 'HECBioSim/hEGFRDimerPair': (43.0, None, None, 'ns/day'),
                 'HECBioSim/hEGFRtetramerPair': (20.0, None, None, 'ns/day'),
@@ -132,13 +132,13 @@ class cscs_gromacs_check(gromacs_check):
         },
         16: {
             'sm_60': {
-                'HECBioSim/Glutamine-Binding-Protein': (170.0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (170.0, None, None, 'ns/day'),   # noqa: E501
                 'HECBioSim/hEGFRDimer': (40.0, None, None, 'ns/day'),
                 'HECBioSim/hEGFRDimerPair': (20.0, None, None, 'ns/day'),
                 'HECBioSim/hEGFRtetramerPair': (13.0, None, None, 'ns/day'),
             },
             'broadwell': {
-                'HECBioSim/Glutamine-Binding-Protein': (160.0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (160.0, None, None, 'ns/day'),   # noqa: E501
                 'HECBioSim/hEGFRDimer': (30.0, None, None, 'ns/day'),
                 'HECBioSim/hEGFRDimerPair': (14.0, None, None, 'ns/day'),
                 'HECBioSim/hEGFRtetramerPair': (8.0, None, None, 'ns/day'),
