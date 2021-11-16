@@ -7,7 +7,15 @@ This is a collection of generic tests that you can either run out-of-the-box by 
 Scientific Applications
 -----------------------
 
-.. automodule:: hpctestlib.apps.amber.nve
+.. automodule:: hpctestlib.sciapps.amber.nve
+   :members:
+   :show-inheritance:
+
+
+Data Analytics
+--------------
+
+.. automodule:: hpctestlib.data_analytics.spark.spark_checks
    :members:
    :show-inheritance:
 
@@ -21,8 +29,16 @@ Python
 
 
 Interactive Computing
------------------------
+---------------------
 
-.. automodule:: hpctestlib.apps.jupyter.ipcmagic
+.. automodule:: hpctestlib.interactive.jupyter.ipcmagic
+   :members:
+   :show-inheritance:
+
+
+Machine Learning
+----------------
+
+.. automodule:: hpctestlib.ml.tensorflow.horovod
    :members:
    :show-inheritance:

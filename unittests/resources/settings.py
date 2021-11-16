@@ -163,6 +163,10 @@ site_configuration = {
             'modules': [
                 {'name': 'PrgEnv-gnu', 'collection': False, 'path': None}
             ],
+            'extras': {
+                'foo': 2,
+                'bar': 'y'
+            },
         },
         {
             'name': 'PrgEnv-gnu',
@@ -170,6 +174,10 @@ site_configuration = {
             'cc': 'gcc',
             'cxx': 'g++',
             'ftn': 'gfortran',
+            'extras': {
+                'foo': 1,
+                'bar': 'x'
+            },
             'target_systems': ['testsys:login']
         },
         {

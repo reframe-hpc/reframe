@@ -47,72 +47,73 @@ class HPCGHookMixin(rfm.RegressionMixin):
 
 @rfm.simple_test
 class HPCGCheckRef(rfm.RegressionTest, HPCGHookMixin):
-    def __init__(self):
-        self.descr = 'HPCG reference benchmark'
-        self.valid_systems = ['daint:mc', 'daint:gpu', 'dom:gpu', 'dom:mc']
-        self.valid_prog_environs = ['PrgEnv-gnu']
+    descr = 'HPCG reference benchmark'
+    valid_systems = ['daint:mc', 'daint:gpu', 'dom:gpu', 'dom:mc']
+    valid_prog_environs = ['PrgEnv-gnu']
+    build_system = 'Make'
+    sourcesdir = 'https://github.com/hpcg-benchmark/hpcg.git'
+    executable = 'bin/xhpcg'
+    executable_opts = ['--nx=104', '--ny=104', '--nz=104', '-t2']
+    # use glob to catch the output file suffix dependent on execution time
+    output_file = sn.getitem(sn.glob('HPCG*.txt'), 0)
+    num_tasks = 0
+    num_cpus_per_task = 1
+
+    reference = {
+        'daint:gpu': {
+            'gflops': (7.6, -0.1, None, 'Gflop/s')
+        },
+        'daint:mc': {
+            'gflops': (13.4, -0.1, None, 'Gflop/s')
+        },
+        'dom:gpu': {
+            'gflops': (7.6, -0.1, None, 'Gflop/s')
+        },
+        'dom:mc': {
+            'gflops': (13.4, -0.1, None, 'Gflop/s')
+        }
+    }
+
+    maintainers = ['SK', 'EK']
+    tags = {'diagnostic', 'benchmark', 'craype', 'external-resources'}
+
+    @run_after('init')
+    def set_modules(self):
         if self.current_system.name in {'daint', 'dom'}:
             self.modules = ['craype-hugepages8M']
 
-        self.build_system = 'Make'
+    @run_before('compile')
+    def set_build_opts(self):
         self.build_system.options = ['arch=MPI_GCC_OMP']
-        self.sourcesdir = 'https://github.com/hpcg-benchmark/hpcg.git'
-        self.executable = 'bin/xhpcg'
-        self.executable_opts = ['--nx=104', '--ny=104', '--nz=104', '-t2']
-        # use glob to catch the output file suffix dependent on execution time
-        self.output_file = sn.getitem(sn.glob('HPCG*.txt'), 0)
 
-        self.num_tasks = 0
-        self.num_cpus_per_task = 1
-        self.system_num_tasks = {
-            'daint:mc':  36,
-            'daint:gpu': 12,
-            'dom:mc':  36,
-            'dom:gpu': 12
-        }
-
-        self.reference = {
-            'daint:gpu': {
-                'gflops': (7.6, -0.1, None, 'Gflop/s')
-            },
-            'daint:mc': {
-                'gflops': (13.4, -0.1, None, 'Gflop/s')
-            },
-            'dom:gpu': {
-                'gflops': (7.6, -0.1, None, 'Gflop/s')
-            },
-            'dom:mc': {
-                'gflops': (13.4, -0.1, None, 'Gflop/s')
-            }
-        }
-
-        self.maintainers = ['SK', 'EK']
-        self.tags = {'diagnostic', 'benchmark', 'craype', 'external-resources'}
 
     @property
-    @sn.sanity_function
+    @deferrable
     def num_tasks_assigned(self):
         return self.job.num_tasks
 
     @run_before('compile')
     def set_tasks(self):
-        self.num_tasks_per_node = self.system_num_tasks.get(
-            self.current_partition.fullname, 1
-        )
+        if self.current_partition.processor.num_cores:
+            self.num_tasks_per_node = (
+                self.current_partition.processor.num_cores
+            )
+        else:
+            self.num_tasks_per_node = 1
 
-    @run_before('performance')
-    def set_performance(self):
-        num_nodes = self.num_tasks_assigned / self.num_tasks_per_node
-        self.perf_patterns = {
-            'gflops': sn.extractsingle(
+    @performance_function('Gflop/s')
+    def gflops(self):
+        num_nodes = self.num_tasks_assigned // self.num_tasks_per_node
+        return (
+            sn.extractsingle(
                 r'HPCG result is VALID with a GFLOP\/s rating of=\s*'
                 r'(?P<perf>\S+)',
                 self.output_file, 'perf',  float) / num_nodes
-        }
+        )
 
-    @run_before('sanity')
-    def set_sanity(self):
-        self.sanity_patterns = sn.all([
+    @sanity_function
+    def validate_passed(self):
+        return sn.all([
             sn.assert_eq(4, sn.count(
                 sn.findall(r'PASSED', self.output_file))),
             sn.assert_eq(0, self.num_tasks_assigned % self.num_tasks_per_node)
@@ -121,56 +122,56 @@ class HPCGCheckRef(rfm.RegressionTest, HPCGHookMixin):
 
 @rfm.simple_test
 class HPCGCheckMKL(rfm.RegressionTest, HPCGHookMixin):
-    def __init__(self):
-        self.descr = 'HPCG benchmark Intel MKL implementation'
-        self.valid_systems = ['daint:mc', 'dom:mc', 'daint:gpu', 'dom:gpu']
-        self.valid_prog_environs = ['PrgEnv-intel']
-        self.modules = ['craype-hugepages8M']
-        self.build_system = 'Make'
-        self.prebuild_cmds = ['cp -r ${MKLROOT}/benchmarks/hpcg/* .',
-                              'mv Make.CrayXC setup', './configure CrayXC']
+    descr = 'HPCG benchmark Intel MKL implementation'
+    valid_systems = ['daint:mc', 'dom:mc', 'daint:gpu', 'dom:gpu']
+    valid_prog_environs = ['PrgEnv-intel']
+    modules = ['craype-hugepages8M']
+    build_system = 'Make'
+    prebuild_cmds = ['cp -r ${MKLROOT}/benchmarks/hpcg/* .',
+                     'mv Make.CrayXC setup', './configure CrayXC']
 
-        self.num_tasks = 0
-        self.problem_size = 104
+    num_tasks = 0
+    problem_size = 104
+    variables = {
+        'HUGETLB_VERBOSE': '0',
+        'MPICH_MAX_THREAD_SAFETY': 'multiple',
+        'MPICH_USE_DMAPP_COLL': '1',
+        'PMI_NO_FORK': '1',
+        'KMP_AFFINITY': 'granularity=fine,compact'
+    }
 
-        self.variables = {
-            'HUGETLB_VERBOSE': '0',
-            'MPICH_MAX_THREAD_SAFETY': 'multiple',
-            'MPICH_USE_DMAPP_COLL': '1',
-            'PMI_NO_FORK': '1',
-            'KMP_AFFINITY': 'granularity=fine,compact'
-        }
+    executable = 'bin/xhpcg_avx2'
+    reference = {
+        'dom:mc': {
+            'gflops': (22, -0.1, None, 'Gflop/s')
+        },
+        'daint:mc': {
+            'gflops': (22, -0.1, None, 'Gflop/s')
+        },
+        'dom:gpu': {
+            'gflops': (10.7, -0.1, None, 'Gflop/s')
+        },
+        'daint:gpu': {
+            'gflops': (10.7, -0.1, None, 'Gflop/s')
+        },
+    }
 
-        self.executable = 'bin/xhpcg_avx2'
+    maintainers = ['SK']
+    tags = {'diagnostic', 'benchmark', 'craype'}
+
+    @run_before('run')
+    def set_exec_opt(self):
         self.executable_opts = [f'--nx={self.problem_size}',
                                 f'--ny={self.problem_size}',
                                 f'--nz={self.problem_size}', '-t2']
 
-        self.reference = {
-            'dom:mc': {
-                'gflops': (22, -0.1, None, 'Gflop/s')
-            },
-            'daint:mc': {
-                'gflops': (22, -0.1, None, 'Gflop/s')
-            },
-            'dom:gpu': {
-                'gflops': (10.7, -0.1, None, 'Gflop/s')
-            },
-            'daint:gpu': {
-                'gflops': (10.7, -0.1, None, 'Gflop/s')
-            },
-        }
-
-        self.maintainers = ['SK']
-        self.tags = {'diagnostic', 'benchmark', 'craype'}
-
     @property
-    @sn.sanity_function
+    @deferrable
     def num_tasks_assigned(self):
         return self.job.num_tasks
 
     @property
-    @sn.sanity_function
+    @deferrable
     def outfile_lazy(self):
         pattern = (f'n{self.problem_size}-{self.job.num_tasks}p-'
                    f'{self.num_cpus_per_task}t*.*')
@@ -185,22 +186,22 @@ class HPCGCheckMKL(rfm.RegressionTest, HPCGHookMixin):
             self.num_tasks_per_node = 4
             self.num_cpus_per_task = 18
 
-    @run_before('performance')
-    def set_performance(self):
+    @performance_function('Gflop/s')
+    def gflops(self):
         # since this is a flexible test, we divide the extracted
         # performance by the number of nodes and compare
         # against a single reference
-        num_nodes = self.num_tasks_assigned / self.num_tasks_per_node
-        self.perf_patterns = {
-            'gflops': sn.extractsingle(
+        num_nodes = self.num_tasks_assigned // self.num_tasks_per_node
+        return (
+            sn.extractsingle(
                 r'HPCG result is VALID with a GFLOP\/s rating of(=|:)\s*'
                 r'(?P<perf>\S+)',
                 self.outfile_lazy, 'perf',  float) / num_nodes
-        }
+        )
 
-    @run_before('sanity')
-    def set_sanity(self):
-        self.sanity_patterns = sn.all([
+    @sanity_function
+    def validate_passed(self):
+        return sn.all([
             sn.assert_not_found(
                 r'invalid because the ratio',
                 self.outfile_lazy,
@@ -215,21 +216,41 @@ class HPCGCheckMKL(rfm.RegressionTest, HPCGHookMixin):
 
 @rfm.simple_test
 class HPCG_GPUCheck(rfm.RunOnlyRegressionTest, HPCGHookMixin):
-    def __init__(self):
-        self.maintainers = ['SK', 'VH']
-        self.descr = 'HPCG benchmark on GPUs'
+    descr = 'HPCG benchmark on GPUs'
+    # there's no binary with support for CUDA 10 yet
+    valid_systems = []
+    valid_prog_environs = ['PrgEnv-gnu']
+    modules = ['craype-accel-nvidia60', 'craype-hugepages8M']
+    executable = 'xhpcg_gpu_3.1'
+    num_tasks = 0
+    num_tasks_per_node = 1
+    output_file = sn.getitem(sn.glob('*.yaml'), 0)
+    reference = {
+        'daint:gpu': {
+            'gflops': (94.7, -0.1, None, 'Gflop/s')
+        },
+        'dom:gpu': {
+            'gflops': (94.7, -0.1, None, 'Gflop/s')
+        },
+    }
+    maintainers = ['SK', 'VH']
+
+    @run_after('setup')
+    def set_num_tasks(self):
+        if self.current_partition.processor.num_cores:
+            self.num_cpus_per_task = (
+                self.current_partition.processor.num_cores
+            )
+        else:
+            self.skip(msg='number of cores is not set in the configuration')
+
+    @run_after('init')
+    def set_sourcedir(self):
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'HPCG')
 
-        # there's no binary with support for CUDA 10 yet
-        self.valid_systems = ['daint:gpu']
-        self.valid_prog_environs = ['PrgEnv-gnu']
-        self.modules = ['craype-accel-nvidia60', 'craype-hugepages8M']
-        self.executable = 'xhpcg_gpu_3.1'
-        self.prerun_cmds = ['chmod +x %s' % self.executable]
-        self.num_tasks = 0
-        self.num_tasks_per_node = 1
-        self.num_cpus_per_task = 12
+    @run_after('init')
+    def set_variables(self):
         self.variables = {
             'PMI_NO_FORK': '1',
             'MPICH_USE_DMAPP_COLL': '1',
@@ -239,32 +260,29 @@ class HPCG_GPUCheck(rfm.RunOnlyRegressionTest, HPCGHookMixin):
             'HUGETLB_DEFAULT_PAGE_SIZE': '8M',
         }
 
-        self.output_file = sn.getitem(sn.glob('*.yaml'), 0)
+    @run_before('run')
+    def set_exec_permissions(self):
+        self.prerun_cmds = ['chmod +x %s' % self.executable]
 
-        self.reference = {
-            'daint:gpu': {
-                'gflops': (94.7, -0.1, None, 'Gflop/s')
-            },
-            'dom:gpu': {
-                'gflops': (94.7, -0.1, None, 'Gflop/s')
-            },
-        }
-
-        num_nodes = self.num_tasks_assigned / self.num_tasks_per_node
-        self.perf_patterns = {
-            'gflops': sn.extractsingle(
-                r'HPCG result is VALID with a GFLOP\/s rating of:\s*'
-                r'(?P<perf>\S+)',
-                self.output_file, 'perf',  float) / num_nodes
-        }
-
-        self.sanity_patterns = sn.all([
+    @sanity_function
+    def validate_passed(self):
+        return sn.all([
             sn.assert_eq(4, sn.count(
                 sn.findall(r'PASSED', self.output_file))),
             sn.assert_eq(0, self.num_tasks_assigned % self.num_tasks_per_node)
         ])
 
+    @performance_function('Gflop/s')
+    def gflops(self):
+        num_nodes = self.num_tasks_assigned // self.num_tasks_per_node
+        return (
+            sn.extractsingle(
+                r'HPCG result is VALID with a GFLOP\/s rating of:\s*'
+                r'(?P<perf>\S+)',
+                self.output_file, 'perf',  float) / num_nodes
+        )
+
     @property
-    @sn.sanity_function
+    @deferrable
     def num_tasks_assigned(self):
         return self.job.num_tasks

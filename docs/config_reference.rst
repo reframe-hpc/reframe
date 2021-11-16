@@ -416,8 +416,7 @@ System Partition Configuration
    :required: No
    :default: ``{}``
 
-   User defined attributes of the system partition that will be accessible from the ReFrame tests.
-   By default it is an empty dictionary.
+   User defined attributes of the partition. This will be accessible through the :attr:`~reframe.core.systems.SystemPartition.extras` attribute of the :attr:`~reframe.core.pipeline.RegressionTest.current_partition`.
 
    .. versionadded:: 3.5.0
 
@@ -580,6 +579,16 @@ They are associated with `system partitions <#system-partition-configuration>`__
    You may reference other environment variables when defining an environment variable here.
    ReFrame will expand its value.
    Variables are set after the environment modules are loaded.
+
+
+.. js:attribute:: .environments[].extras
+
+   :required: No
+   :default: ``{}``
+
+   User defined attributes of the environment. This will be accessible through the :attr:`~reframe.core.environments.Environment.extras` attribute of the :attr:`~reframe.core.pipeline.RegressionTest.current_environ`.
+
+   .. versionadded:: 3.9.1
 
 
 .. js:attribute:: .environments[].cc
