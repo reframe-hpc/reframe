@@ -9,36 +9,57 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class tensorflow_cnn_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
-    '''Base class for the TensorFlow2 Horovod Test.
+    '''Run a synthetic CNN benchmark with TensorFlow2 and Horovod.
 
-    TensorFlow is an end-to-end open source platform for machine
-    learning. It has a comprehensive, flexible ecosystem of tools,
-    libraries and community resources that lets researchers push the
-    state-of-the-art in ML and developers easily build and deploy ML
-    powered applications. (see tensorflow.org).
+    TensorFlow is an end-to-end open source platform for machine learning. It
+    has a comprehensive, flexible ecosystem of tools, libraries and community
+    resources that lets researchers push the state-of-the-art in ML and
+    developers easily build and deploy ML powered applications. For more
+    information, refer to `<https://www.tensorflow.org/>`__.
 
-    Horovod is a distributed deep learning training
-    framework for TensorFlow, Keras, PyTorch, and Apache
-    MXNet. The goal of Horovod is to make distributed deep
-    learning fast and easy to use (see github.com/horovod/horovod).
+    Horovod is a distributed deep learning training framework for TensorFlow,
+    Keras, PyTorch, and Apache MXNet. The goal of Horovod is to make
+    distributed deep learning fast and easy to use. For more information refer
+    to `<https://github.com/horovod/horovod>`__.
 
-    This test tests the performance of TensorFlow2 and Horovod using
-    classic deep learning model Inception v3. It checks whether learning is
-    performed to the end. The default assumption
-    is that TensorFlow2 and Horovod is already installed on the device
-    under test.
+    This test runs the Horovod ``tensorflow2_synthentic_benchmark.py``
+    example, checks its sanity and extracts the GPU performance.
     '''
 
+    #: The version of Horovod to use.
+    #:
+    #: :type: :class:`str`
+    #: :default: ``'v0.21.0'``
     benchmark_version = variable(str, value='v0.21.0')
 
-    # Name of the model used for the testing
+    #: The name of the model to use for this benchmark.
+    #:
+    #: :type: :class:`str`
+    #: :default: ``'InceptionV3'``
     model = variable(str, value='InceptionV3')
 
-    # Size of the batch used during the learning of models
+    #: The size of the batch used during the learning of models.
+    #:
+    #: :type: :class:`int`
+    #: :default: ``32``
     batch_size = variable(int, value=32)
 
+    #: The number of iterations.
+    #:
+    #: :type: :class:`int`
+    #: :default: ``5``
     num_iters = variable(int, value=5)
+
+    #: The number of batches per iteration.
+    #:
+    #: :type: :class:`int`
+    #: :default: ``5``
     num_batches_per_iter = variable(int, value=5)
+
+    #: The number of warmup batches
+    #:
+    #: :type: :class:`int`
+    #: :default: ``5``
     num_warmup_batches = variable(int, value=5)
 
     executable = 'python tensorflow2_synthetic_benchmark.py'
@@ -65,12 +86,14 @@ class tensorflow_cnn_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
 
     @performance_function('images/s')
     def throughput_iteration(self):
+        '''The average GPU throughput per iteration in ``images/s``.'''
         return sn.avg(
             sn.extractall(r'Img/sec per GPU: (\S+) \S+', self.stdout, 1, float)
         )
 
     @performance_function('images/s')
     def throughput_total(self):
+        '''The total GPU throughput of the benchmark in ``images/s``.'''
         return sn.extractsingle(
             rf'Total img/sec on {self.num_tasks} GPU\(s\): (\S+) \S+',
             self.stdout, 1, float
