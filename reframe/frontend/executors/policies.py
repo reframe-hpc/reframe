@@ -379,7 +379,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def on_task_compile_exit(self, task):
         task.compile_wait()
         self._remove_from_building(task)
-        self._reschedule_run(task)
+        partname = task.check.current_partition.fullname
+        self._ready_to_run_tasks[partname].append(task)
 
     def _setup_task(self, task):
         if self.deps_skipped(task):
@@ -415,6 +416,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._running_tasks.setdefault(partition.fullname, [])
         self._compiling_tasks.setdefault(partition.fullname, [])
         self._ready_to_compile_tasks.setdefault(partition.fullname, [])
+        self._ready_to_run_tasks.setdefault(partition.fullname, [])
         self._max_jobs.setdefault(partition.fullname, partition.max_jobs)
 
         task = RegressionTask(case, self.task_listeners)
@@ -578,23 +580,28 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         getlogger().debug2(f'Scheduling test case {task.testcase} for running')
         task.run()
 
-    def _reschedule_all(self):
-        for partname, tasks in self._running_tasks.items():
-            num_tasks = len(tasks)
+    def _reschedule_all(self, phase='run'):
+        for part in self._partitions:
+            partname = part.fullname
+            num_tasks = (
+                len(self._running_tasks[partname]) +
+                len(self._compiling_tasks[partname])
+            )
             num_empty_slots = self._max_jobs[partname] - num_tasks
             num_rescheduled = 0
             for _ in range(num_empty_slots):
                 try:
-                    task = self._ready_to_compile_tasks[partname].pop()
+                    queue = getattr(self, f'_ready_to_{phase}_tasks')
+                    task = queue[partname].pop()
                 except IndexError:
                     break
 
-                self._reschedule_compile(task)
+                getattr(self, f'_reschedule_{phase}')(task)
                 num_rescheduled += 1
 
             if num_rescheduled:
                 getlogger().debug2(
-                    f'Rescheduled {num_rescheduled} job(s) on {partname!r}'
+                    f'Rescheduled {num_rescheduled} {phase} job(s) on {partname!r}'
                 )
 
     def exit(self):
@@ -616,14 +623,16 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 num_running = countall(self._running_tasks)
                 self._finalize_all()
                 self._setup_all()
-                self._reschedule_all()
+                self._reschedule_all(phase='compile')
+                self._reschedule_all(phase='run')
                 _cleanup_all(self._retired_tasks, not self.keep_stage_files)
                 if num_running:
                     self._pollctl.running_tasks(num_running).snooze()
 
             except TaskExit:
                 with contextlib.suppress(TaskExit):
-                    self._reschedule_all()
+                    self._reschedule_all(phase='compile')
+                    self._reschedule_all(phase='run')
             except ABORT_REASONS as e:
                 self._failall(e)
                 raise
