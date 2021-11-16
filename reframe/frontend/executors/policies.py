@@ -236,8 +236,17 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         # Index tasks by test cases
         self._task_index = {}
 
+        # Tasks that are waiting for dependencies
+        self._waiting_tasks = []
+
+        # Tasks ready to be compiled per partition
+        self._ready_to_compile_tasks = {}
+
         # All tasks currently in their build phase per partition
         self._compiling_tasks = {}
+
+        # Tasks ready to run per partition
+        self._ready_to_run_tasks = {}
 
         # All tasks currently in their run phase per partition
         self._running_tasks = {}
@@ -248,22 +257,16 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         # Retired tasks that need to be cleaned up
         self._retired_tasks = []
 
-        # Tasks ready to be compiled per partition
-        self._ready_to_compile_tasks = {}
-
-        # Tasks that are waiting for dependencies
-        self._waiting_tasks = []
-
         # Job limit per partition
         self._max_jobs = {}
+
+        # Max jobs spawned by the reframe thread
+        self._rfm_max_jobs = rt.runtime().get_option(f'systems/0/rfm_max_jobs')
 
         # Keep a reference to all the partitions
         self._partitions = set()
 
         self.task_listeners.append(self)
-
-        # Max jobs spawned by the reframe thread
-        self._rfm_max_jobs = rt.runtime().get_option(f'systems/0/rfm_max_jobs')
 
     def _remove_from_running(self, task):
         getlogger().debug2(
