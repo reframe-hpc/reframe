@@ -97,8 +97,7 @@ class TestCase:
 
 def generate_testcases(checks,
                        skip_system_check=False,
-                       skip_environ_check=False,
-                       allowed_environs=None):
+                       skip_environ_check=False):
     '''Generate concrete test cases from checks.'''
 
     def supports_partition(c, p):
@@ -115,9 +114,8 @@ def generate_testcases(checks,
                 continue
 
             for e in p.environs:
-                if allowed_environs is None or e.name in allowed_environs:
-                    if supports_environ(c, e):
-                        cases.append(TestCase(c, p, e))
+                if supports_environ(c, e):
+                    cases.append(TestCase(c, p, e))
 
     return cases
 

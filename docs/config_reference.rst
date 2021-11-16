@@ -1257,6 +1257,29 @@ General Configuration
    The command-line option sets the configuration option to ``false``.
 
 
+.. js:attribute:: .general[].compact_test_names
+
+   :required: No
+   :default: ``false``
+
+   Use a compact test naming scheme.
+   When set to ``true``, the test parameter values will not be encoded into the test name.
+   Instead, the several test variants are differentiated by including the unique variant number into the test name.
+
+   .. warning::
+      The default value will be changed to ``true`` in version 4.0.0.
+
+   .. versionadded:: 3.9.0
+
+
+.. js:attribute:: .general[].git_timeout
+
+  :required: No
+  :default: 5
+
+  Timeout value in seconds used when checking if a git repository exists.
+
+
 .. js:attribute:: .general[].remote_detect
 
    :required: No
@@ -1297,6 +1320,8 @@ General Configuration
    :default: ``false``
 
    Trap command errors in the generated job scripts and let them exit immediately.
+
+   .. versionadded:: 3.2
 
 
 .. js:attribute:: .general[].keep_stage_files
