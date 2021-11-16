@@ -16,6 +16,8 @@ from reframe.core.exceptions import (FailureLimitError,
                                      TaskDependencyError,
                                      TaskExit)
 from reframe.core.logging import getlogger
+from reframe.core.pipeline import (CompileOnlyRegressionTest,
+                                   RunOnlyRegressionTest)
 from reframe.frontend.executors import (ExecutionPolicy, RegressionTask,
                                         TaskEventListener, ABORT_REASONS)
 
@@ -309,7 +311,10 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def on_task_setup(self, task):
         partname = task.check.current_partition.fullname
-        self._ready_to_compile_tasks[partname].append(task)
+        if (isinstance(task.check, RunOnlyRegressionTest)):
+            self._ready_to_run_tasks[partname].append(task)
+        else:
+            self._ready_to_compile_tasks[partname].append(task)
 
     def on_task_run(self, task):
         partname = task.check.current_partition.fullname
@@ -380,7 +385,10 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         task.compile_wait()
         self._remove_from_building(task)
         partname = task.check.current_partition.fullname
-        self._ready_to_run_tasks[partname].append(task)
+        if (isinstance(task.check, CompileOnlyRegressionTest)):
+            self._completed_tasks.append(task)
+        else:
+            self._ready_to_run_tasks[partname].append(task)
 
     def _setup_task(self, task):
         if self.deps_skipped(task):
@@ -450,9 +458,14 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
             if (len(self._running_tasks[partname]) +
                 len(self._compiling_tasks[partname]) < partition.max_jobs):
-                # Task was put in _ready_to_compile_tasks during setup
-                self._ready_to_compile_tasks[partname].pop()
-                self._reschedule_compile(task)
+                if isinstance(task.check, RunOnlyRegressionTest):
+                    # Task was put in _ready_to_run_tasks during setup
+                    self._ready_to_run_tasks[partname].pop()
+                    self._reschedule_run(task)
+                else:
+                    # Task was put in _ready_to_compile_tasks during setup
+                    self._ready_to_compile_tasks[partname].pop()
+                    self._reschedule_compile(task)
             else:
                 self.printer.status('HOLD', task.check.info(), just='right')
         except TaskExit:
