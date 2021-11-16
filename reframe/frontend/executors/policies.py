@@ -281,7 +281,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         )
         try:
             partname = task.check.current_partition.fullname
-            self._running_tasks[partname][0].remove(task)
+            self._running_tasks[partname][self.local_index(task, phase='run')].remove(task)
         except (ValueError, AttributeError, KeyError):
             getlogger().debug2('Task was not running')
             pass
@@ -292,7 +292,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         )
         try:
             partname = task.check.current_partition.fullname
-            self._compiling_tasks[partname][0].remove(task)
+            self._compiling_tasks[partname][self.local_index(task, phase='compile')].remove(task)
         except (ValueError, AttributeError, KeyError):
             getlogger().debug2('Task was not building')
             pass
@@ -314,20 +314,26 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         return any(self._task_index[c].skipped
                    for c in task.testcase.deps if c in self._task_index)
 
+    def local_index(self, task, phase='run'):
+        return (
+            task.check.local or
+            (phase == 'build' and task.check.build_locally)
+        )
+
     def on_task_setup(self, task):
         partname = task.check.current_partition.fullname
         if (isinstance(task.check, RunOnlyRegressionTest)):
-            self._ready_to_run_tasks[partname][0].append(task)
+            self._ready_to_run_tasks[partname][self.local_index(task, phase='run')].append(task)
         else:
-            self._ready_to_compile_tasks[partname][0].append(task)
+            self._ready_to_compile_tasks[partname][self.local_index(task, phase='compile')].append(task)
 
     def on_task_run(self, task):
         partname = task.check.current_partition.fullname
-        self._running_tasks[partname][0].append(task)
+        self._running_tasks[partname][self.local_index(task, phase='run')].append(task)
 
     def on_task_compile(self, task):
         partname = task.check.current_partition.fullname
-        self._compiling_tasks[partname][0].append(task)
+        self._compiling_tasks[partname][self.local_index(task, phase='compile')].append(task)
 
     def on_task_skip(self, task):
         # Remove the task from the running list if it was skipped after the
@@ -335,10 +341,10 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         if task.check.current_partition:
             partname = task.check.current_partition.fullname
             if task.failed_stage in ('run_complete', 'run_wait'):
-                self._running_tasks[partname][0].remove(task)
+                self._running_tasks[partname][self.local_index(task, phase='run')].remove(task)
 
             if task.failed_stage in ('compile_complete', 'compile_wait'):
-                self._compiling_tasks[partname][0].remove(task)
+                self._compiling_tasks[partname][self.local_index(task, phase='compile')].remove(task)
 
         msg = str(task.exc_info[1])
         self.printer.status('SKIP', msg, just='right')
@@ -393,7 +399,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         if (isinstance(task.check, CompileOnlyRegressionTest)):
             self._completed_tasks.append(task)
         else:
-            self._ready_to_run_tasks[partname][0].append(task)
+            self._ready_to_run_tasks[partname][self.local_index(task, phase='run')].append(task)
 
     def _setup_task(self, task):
         if self.deps_skipped(task):
@@ -452,8 +458,13 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
                 return
 
-            if (len(self._running_tasks[partname][0]) +
-                len(self._compiling_tasks[partname][0]) >= partition.max_jobs):
+            if isinstance(task.check, RunOnlyRegressionTest):
+                local_index = self.local_index(task, phase='run')
+            else:
+                local_index = self.local_index(task, phase='compile')
+
+            if (len(self._running_tasks[partname][local_index]) +
+                len(self._compiling_tasks[partname][local_index]) >= partition.max_jobs):
                 # Make sure that we still exceeded the job limit
                 getlogger().debug2(
                     f'Reached concurrency limit for partition {partname!r}: '
@@ -461,15 +472,15 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 )
                 self._poll_tasks()
 
-            if (len(self._running_tasks[partname][0]) +
-                len(self._compiling_tasks[partname][0]) < partition.max_jobs):
+            if (len(self._running_tasks[partname][local_index]) +
+                len(self._compiling_tasks[partname][local_index]) < partition.max_jobs):
                 if isinstance(task.check, RunOnlyRegressionTest):
                     # Task was put in _ready_to_run_tasks during setup
-                    self._ready_to_run_tasks[partname][0].pop()
+                    self._ready_to_run_tasks[partname][local_index].pop()
                     self._reschedule_run(task)
                 else:
                     # Task was put in _ready_to_compile_tasks during setup
-                    self._ready_to_compile_tasks[partname][0].pop()
+                    self._ready_to_compile_tasks[partname][local_index].pop()
                     self._reschedule_compile(task)
             else:
                 self.printer.status('HOLD', task.check.info(), just='right')
@@ -488,34 +499,13 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def _poll_tasks(self):
         '''Update the counts of running checks per partition.'''
-
-        def split_jobs(tasks, kind='run'):
-            '''Split jobs into forced local and normal ones.'''
-            forced_local = []
-            normal = []
-            for t in tasks:
-                if kind == 'build':
-                    if t.check.local or t.check.build_locally:
-                        forced_local.append(t.check.build_job)
-                    else:
-                        normal.append(t.check.build_job)
-
-                elif kind == 'run':
-                    if t.check.local:
-                        forced_local.append(t.check.job)
-                    else:
-                        normal.append(t.check.job)
-
-            return forced_local, normal
-
         for part in self._partitions:
             partname = part.fullname
             num_tasks = len(self._running_tasks[partname][0])
             getlogger().debug2(f'Polling {num_tasks} running task(s) in '
                                f'{partname!r}')
-            forced_local_jobs, part_jobs = split_jobs(
-                self._running_tasks[partname][0]
-            )
+            part_jobs = [t.check.job for t in self._running_tasks[partname][0]]
+            forced_local_jobs = [t.check.job for t in self._running_tasks[partname][1]]
             part.scheduler.poll(*part_jobs)
             self.local_scheduler.poll(*forced_local_jobs)
 
@@ -523,20 +513,19 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             # We need need a copy of the list here in order to not modify the
             # list while looping over it. `run_complete` calls `on_task_exit`,
             # which in turn will remove the task from `_running_tasks`.
-            for t in self._running_tasks[partname][0][:]:
+            for t in self._running_tasks[partname][0] + self._running_tasks[partname][1]:
                 t.run_complete()
 
             num_tasks = len(self._compiling_tasks[partname][0])
             getlogger().debug2(f'Polling {num_tasks} building task(s) in '
                                f'{partname!r}')
-            forced_local_jobs, part_jobs = split_jobs(
-                self._compiling_tasks[partname][0], kind='build'
-            )
+            part_jobs = [t.check.build_job for t in self._compiling_tasks[partname][0]]
+            forced_local_jobs = [t.check.build_job for t in self._compiling_tasks[partname][1]]
             part.scheduler.poll(*part_jobs)
             self.local_scheduler.poll(*forced_local_jobs)
 
             # Trigger notifications for finished compilation jobs
-            for t in self._compiling_tasks[partname][0][:]:
+            for t in self._compiling_tasks[partname][0] + self._compiling_tasks[partname][1]:
                 t.compile_complete()
 
     def _setup_all(self):
@@ -603,15 +592,21 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         task.run()
 
     def _reschedule_all(self, phase='run'):
+        local_tasks = 0
+        for (_, lt) in self._running_tasks.values():
+            local_tasks += len(lt)
+
+        local_slots = self._rfm_max_jobs - local_tasks
         for part in self._partitions:
             partname = part.fullname
-            num_tasks = (
+            part_tasks = (
                 len(self._running_tasks[partname][0]) +
                 len(self._compiling_tasks[partname][0])
             )
-            num_empty_slots = self._max_jobs[partname] - num_tasks
+            part_slots = self._max_jobs[partname] - part_tasks
             num_rescheduled = 0
-            for _ in range(num_empty_slots):
+
+            for _ in range(part_slots):
                 try:
                     queue = getattr(self, f'_ready_to_{phase}_tasks')
                     task = queue[partname][0].pop()
@@ -621,9 +616,21 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 getattr(self, f'_reschedule_{phase}')(task)
                 num_rescheduled += 1
 
+            for _ in range(local_slots):
+                try:
+                    queue = getattr(self, f'_ready_to_{phase}_tasks')
+                    task = queue[partname][1].pop()
+                except IndexError:
+                    break
+
+                getattr(self, f'_reschedule_{phase}')(task)
+                local_slots -= 1
+                num_rescheduled += 1
+
             if num_rescheduled:
                 getlogger().debug2(
-                    f'Rescheduled {num_rescheduled} {phase} job(s) on {partname!r}'
+                    f'Rescheduled {num_rescheduled} {phase} job(s) on '
+                    f'{partname!r}'
                 )
 
     def exit(self):
