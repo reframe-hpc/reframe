@@ -34,3 +34,11 @@ Interactive Computing
 .. automodule:: hpctestlib.interactive.jupyter.ipcmagic
    :members:
    :show-inheritance:
+
+
+Machine Learning
+----------------
+
+.. automodule:: hpctestlib.ml.tensorflow.horovod
+   :members:
+   :show-inheritance:
