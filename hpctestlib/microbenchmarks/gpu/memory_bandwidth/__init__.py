@@ -5,6 +5,7 @@
 
 import reframe.utility.sanity as sn
 import reframe as rfm
+import sys
 
 
 __all__ = ['GpuBandwidth', 'GpuBandwidthD2D']
@@ -144,7 +145,7 @@ class GpuBandwidth(GpuBandwidthBase):
 
         # Extract the bandwidth corresponding to the right node, transfer and
         # device.
-        return (rf'^[^,]*\[[^\]]*\]\s*{direction}\s*bandwidth on device'
+        return (rf'^\[[^\]]*\]\s*{direction}\s*bandwidth on device'
                 r' \d+ is \s*(\S+)\s*GB/s.')
 
 
