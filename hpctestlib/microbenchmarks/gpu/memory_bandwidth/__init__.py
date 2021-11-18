@@ -5,7 +5,6 @@
 
 import reframe.utility.sanity as sn
 import reframe as rfm
-import sys
 
 
 __all__ = ['GpuBandwidth', 'GpuBandwidthD2D']
