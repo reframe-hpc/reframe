@@ -179,6 +179,6 @@ class GpuBandwidthD2D(GpuBandwidthBase):
         '''
         self.perf_patterns = {
             'bw': sn.min(sn.extractall(
-                r'^[^,]*\[[^\]]*\]\s+GPU\s+\d+\s+(\s*\d+.\d+\s)+',
+                r'^\[[^\]]*\]\s+GPU\s+\d+\s+(\s*\d+.\d+\s)+',
                 self.stdout, 1, float))
         }
