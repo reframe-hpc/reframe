@@ -120,7 +120,7 @@ class RegressionTestMeta(type):
 
             # Register the hooks - if a value does not meet the conditions
             # it will be simply ignored
-            self['_rfm_hook_registry'].add(value)
+            self['_rfm_local_hook_registry'].add(value)
 
         def __getitem__(self, key):
             '''Expose and control access to the local namespaces.
@@ -306,6 +306,7 @@ class RegressionTestMeta(type):
         namespace['run_after'] = run_after
         namespace['require_deps'] = hooks.require_deps
         namespace['_rfm_hook_registry'] = hooks.HookRegistry()
+        namespace['_rfm_local_hook_registry'] = hooks.HookRegistry()
 
         # Machinery to add a sanity function
         def sanity_function(fn):
@@ -394,7 +395,7 @@ class RegressionTestMeta(type):
             cls._rfm_dir.update(base._rfm_dir)
 
         used_attribute_names = set(cls._rfm_dir).union(
-            {h.__name__ for h in cls._rfm_hook_registry}
+            {h.__name__ for h in cls._rfm_local_hook_registry}
         )
 
         # Build the different global class namespaces
@@ -409,11 +410,14 @@ class RegressionTestMeta(type):
         # Update used names set with the local __dict__
         cls._rfm_dir.update(cls.__dict__)
 
-        # Update the hook registry with the bases
-        for base in cls._rfm_bases:
-            cls._rfm_hook_registry.update(
-                base._rfm_hook_registry, denied_hooks=namespace
-            )
+        # Populate the global hook registry with the hook registries of the
+        # parent classes in MRO order
+        cls._rfm_hook_registry.update(cls._rfm_local_hook_registry)
+        for c in cls.mro()[1:]:
+            if hasattr(c, '_rfm_local_hook_registry'):
+                cls._rfm_hook_registry.update(
+                    c._rfm_local_hook_registry, denied_hooks=namespace
+                )
 
         # Search the bases if no local sanity functions exist.
         if '_rfm_sanity' not in namespace:
