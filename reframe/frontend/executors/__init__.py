@@ -128,6 +128,7 @@ class RegressionTask:
         self._case = case
         self._failed_stage = None
         self._current_stage = 'startup'
+        self.policy_stage = 'wait'
         self._exc_info = (None, None, None)
         self._listeners = list(listeners)
         self._skipped = False

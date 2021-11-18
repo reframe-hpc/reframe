@@ -235,7 +235,6 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
 class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def __init__(self):
-
         super().__init__()
 
         self._pollctl = _PollController()
@@ -243,25 +242,19 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         # Index tasks by test cases
         self._task_index = {}
 
-        # Tasks that are waiting for dependencies
-        self._waiting_tasks = []
+        # A set of all the current tasks
+        self._current_tasks = set()
 
-        # Tasks ready to be compiled per partition
-        self._ready_to_compile_tasks = {}
+        # Keep a reference to all the partitions
+        self._partitions = set()
 
-        # All tasks currently in their build phase per partition
-        self._compiling_tasks = {}
+        # A set of the jobs that should be polled by this scheduler
+        self._local_scheduler_tasks = set()
 
-        # Tasks ready to run per partition
-        self._ready_to_run_tasks = {}
+        # Sets of the jobs that should be polled for each partition
+        self._scheduler_tasks = {}
 
-        # All tasks currently in their run phase per partition
-        self._running_tasks = {}
-
-        # Tasks that need to be finalized
-        self._completed_tasks = []
-
-        # Retired tasks that need to be cleaned up
+        #
         self._retired_tasks = []
 
         # Job limit per partition
@@ -270,35 +263,223 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         # Max jobs spawned by the reframe thread
         self._rfm_max_jobs = rt.runtime().get_option(f'systems/0/rfm_max_jobs')
 
-        # Keep a reference to all the partitions
-        self._partitions = set()
-
         self.task_listeners.append(self)
 
-    def _remove_from_running(self, task):
-        getlogger().debug2(
-            f'Removing task from the running list: {task.testcase}'
-        )
-        try:
-            partname = task.check.current_partition.fullname
-            self._running_tasks[partname][self.local_index(task, phase='run')].remove(task)
-        except (ValueError, AttributeError, KeyError):
-            getlogger().debug2('Task was not running')
-            pass
+    def runcase(self, case):
+        super().runcase(case)
+        check, partition, environ = case
+        self._partitions.add(partition)
 
-    def _remove_from_building(self, task):
-        getlogger().debug2(
-            f'Removing task from the building list: {task.testcase}'
+        # Set partition-based counters, if not set already
+        self._scheduler_tasks.setdefault(partition.fullname, set())
+        self._max_jobs.setdefault(partition.fullname, partition.max_jobs)
+        task = RegressionTask(case, self.task_listeners)
+        self._task_index[case] = task
+        self.stats.add_task(task)
+        self.printer.status(
+            'START', '%s on %s using %s' %
+            (check.name, partition.fullname, environ.name)
         )
-        try:
-            partname = task.check.current_partition.fullname
-            self._compiling_tasks[partname][self.local_index(task, phase='compile')].remove(task)
-        except (ValueError, AttributeError, KeyError):
-            getlogger().debug2('Task was not building')
-            pass
+        self._current_tasks.add(task)
 
-    # FIXME: The following functions are very similar and they are also reused
-    # in the serial policy; we should refactor them
+    def exit(self):
+        self.printer.separator('short single line',
+                               'waiting for spawned checks to finish')
+        while self._current_tasks:
+            try:
+                self._poll_tasks()
+                num_running = sum(
+                    1 if t.policy_stage in ['running', 'compiling']
+                    else 0 for t in self._current_tasks
+                )
+                self.advance_all(self._current_tasks)
+                _cleanup_all(self._retired_tasks, not self.keep_stage_files)
+                if num_running:
+                    self._pollctl.running_tasks(num_running).snooze()
+            except ABORT_REASONS as e:
+                self._failall(e)
+                raise
+
+        self.printer.separator('short single line',
+                               'all spawned checks have finished\n')
+
+    def _poll_tasks(self):
+        for part in self._partitions:
+            jobs = []
+            for t in self._scheduler_tasks[part.fullname]:
+                if t.policy_stage == 'compiling':
+                    jobs.append(t.check.build_job)
+                elif t.policy_stage == 'running':
+                    jobs.append(t.check.job)
+
+            part.scheduler.poll(*jobs)
+
+        jobs = []
+        for t in self._local_scheduler_tasks:
+            if t.policy_stage == 'compiling':
+                jobs.append(t.check.build_job)
+            elif t.policy_stage == 'running':
+                jobs.append(t.check.job)
+
+        self.local_scheduler.poll(*jobs)
+
+    def advance_all(self, tasks, timeout=None):
+        t_init = time.time()
+        num_prog = 0
+
+        # progress might remove the tasks that retire or fail
+        for t in list(tasks):
+            method = getattr(self, f'advance_{t.policy_stage}')
+            num_prog += method(t)
+            t_elapsed = time.time() - t_init
+            if timeout and t_elapsed > timeout and num_prog:
+                break
+
+    def advance_wait(self, task):
+        if self.deps_skipped(task):
+            try:
+                raise SkipTestError('skipped due to skipped dependencies')
+            except SkipTestError as e:
+                task.skip()
+                self._current_tasks.remove(task)
+                return 1
+
+        elif self.deps_succeeded(task):
+            try:
+                task.setup(task.testcase.partition,
+                           task.testcase.environ,
+                           sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
+                           sched_options=self.sched_options)
+            except TaskExit:
+                self._current_tasks.remove(task)
+                return 1
+            else:
+                if isinstance(task.check, RunOnlyRegressionTest):
+                    task.policy_stage = 'ready_to_run'
+                else:
+                    task.policy_stage = 'ready_to_compile'
+
+                return 1
+
+        elif self.deps_failed(task):
+            exc = TaskDependencyError('dependencies failed')
+            task.fail((type(exc), exc, None))
+            self._current_tasks.remove(task)
+            return 1
+        else:
+            # Not all dependencies have finished yet
+            return 0
+
+    def advance_ready_to_compile(self, task):
+        if task.check.local or task.check.build_locally:
+            if len(self._local_scheduler_tasks) <= self._rfm_max_jobs:
+                try:
+                    task.compile()
+                    task.policy_stage = 'compiling'
+                    self._local_scheduler_tasks.add(task)
+                except TaskExit:
+                    self._current_tasks.remove(task)
+
+                return 1
+            else:
+                return 0
+
+        partname = task.check.current_partition.fullname
+        if len(self._scheduler_tasks[partname]) <= self._max_jobs[partname]:
+            try:
+                task.compile()
+                task.policy_stage = 'compiling'
+                self._scheduler_tasks[partname].add(task)
+            except TaskExit:
+                self._current_tasks.remove(task)
+
+            return 1
+
+        return 0
+
+    def advance_compiling(self, task):
+        try:
+            if task.compile_complete():
+                if task.check.local or task.check.build_locally:
+                    self._local_scheduler_tasks.remove(task)
+                else:
+                    partname = task.check.current_partition.fullname
+                    self._scheduler_tasks[partname].remove(task)
+
+                if isinstance(task.check, CompileOnlyRegressionTest):
+                    task.policy_stage = 'completed'
+                else:
+                    task.policy_stage = 'ready_to_run'
+
+                return 1
+            else:
+                return 0
+
+        except TaskExit:
+            self._current_tasks.remove(task)
+            return 1
+
+    def advance_ready_to_run(self, task):
+        if task.check.local:
+            if len(self._local_scheduler_tasks) <= self._rfm_max_jobs:
+                try:
+                    task.run()
+                    task.policy_stage = 'running'
+                    self._local_scheduler_tasks.add(task)
+                except TaskExit:
+                    self._current_tasks.remove(task)
+
+                return 1
+            else:
+                return 0
+
+        partname = task.check.current_partition.fullname
+        if len(self._scheduler_tasks[partname]) <= self._max_jobs[partname]:
+            try:
+                task.run()
+                task.policy_stage = 'running'
+                self._scheduler_tasks[partname].add(task)
+            except TaskExit:
+                self._current_tasks.remove(task)
+
+            return 1
+
+        return 0
+
+    def advance_running(self, task):
+        try:
+            if task.run_complete():
+                if task.check.local:
+                    self._local_scheduler_tasks.remove(task)
+                else:
+                    partname = task.check.current_partition.fullname
+                    self._scheduler_tasks[partname].remove(task)
+
+                task.policy_stage = 'completed'
+                return 1
+            else:
+                return 0
+
+        except TaskExit:
+            self._current_tasks.remove(task)
+            return 1
+
+    def advance_completed(self, task):
+        try:
+            if not self.skip_sanity_check:
+                task.sanity()
+
+            if not self.skip_performance_check:
+                task.performance()
+
+            task.finalize()
+            self._retired_tasks.append(task)
+            self._current_tasks.remove(task)
+        except TaskExit:
+            self._current_tasks.remove(task)
+        finally:
+            return 1
+
     def deps_failed(self, task):
         # NOTE: Restored dependencies are not in the task_index
         return any(self._task_index[c].failed
@@ -314,379 +495,71 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         return any(self._task_index[c].skipped
                    for c in task.testcase.deps if c in self._task_index)
 
-    def local_index(self, task, phase='run'):
-        return (
-            task.check.local or
-            (phase == 'compile' and task.check.build_locally)
-        )
+    def _failall(self, cause):
+        '''Mark all tests as failures'''
+        getlogger().debug2(f'Aborting all tasks due to {type(cause).__name__}')
+        for task in self._current_tasks:
+            task.abort(cause)
 
+    # TODO all this prints have to obviously leave from here...
     def on_task_setup(self, task):
-        partname = task.check.current_partition.fullname
-        if (isinstance(task.check, RunOnlyRegressionTest)):
-            self._ready_to_run_tasks[partname][self.local_index(task, phase='run')].append(task)
-        else:
-            self._ready_to_compile_tasks[partname][self.local_index(task, phase='compile')].append(task)
+        print(task.check.name, 'setup')
 
     def on_task_run(self, task):
-        partname = task.check.current_partition.fullname
-        self._running_tasks[partname][self.local_index(task, phase='run')].append(task)
+        print(task.check.name, 'run')
 
     def on_task_compile(self, task):
-        partname = task.check.current_partition.fullname
-        self._compiling_tasks[partname][self.local_index(task, phase='compile')].append(task)
+        print(task.check.name, 'compile')
+
+    def on_task_exit(self, task):
+        print(task.check.name, 'run exit')
+
+    def on_task_compile_exit(self, task):
+        print(task.check.name, 'compile exit')
 
     def on_task_skip(self, task):
-        # Remove the task from the running list if it was skipped after the
-        # run phase
-        if task.check.current_partition:
-            partname = task.check.current_partition.fullname
-            if task.failed_stage in ('run_complete', 'run_wait'):
-                self._running_tasks[partname][self.local_index(task, phase='run')].remove(task)
-
-            if task.failed_stage in ('compile_complete', 'compile_wait'):
-                self._compiling_tasks[partname][self.local_index(task, phase='compile')].remove(task)
-
-        msg = str(task.exc_info[1])
-        self.printer.status('SKIP', msg, just='right')
+        print(task.check.name, 'skip')
 
     def on_task_failure(self, task):
-        if task.aborted:
-            return
-
         self._num_failed_tasks += 1
-        msg = f'{task.check.info()} [{task.pipeline_timings_basic()}]'
+        timings = task.pipeline_timings(['compile_complete',
+                                         'run_complete',
+                                         'total'])
+        msg = f'{task.check.info()} [{timings}]'
         if task.failed_stage == 'cleanup':
             self.printer.status('ERROR', msg, just='right')
         else:
-            self._remove_from_running(task)
-            self._remove_from_building(task)
             self.printer.status('FAIL', msg, just='right')
 
-        stagedir = task.check.stagedir
-        if not stagedir:
-            stagedir = '<not available>'
-
+        timings = task.pipeline_timings(['setup',
+                                         'compile_complete',
+                                         'run_complete',
+                                         'sanity',
+                                         'performance',
+                                         'total'])
         getlogger().info(f'==> test failed during {task.failed_stage!r}: '
-                         f'test staged in {stagedir!r}')
-        getlogger().verbose(f'==> timings: {task.pipeline_timings_all()}')
+                         f'test staged in {task.check.stagedir!r}')
+        getlogger().verbose(f'==> {timings}')
         if self._num_failed_tasks >= self.max_failures:
             raise FailureLimitError(
                 f'maximum number of failures ({self.max_failures}) reached'
             )
 
     def on_task_success(self, task):
-        msg = f'{task.check.info()} [{task.pipeline_timings_basic()}]'
+        timings = task.pipeline_timings(['compile_complete',
+                                         'run_complete',
+                                         'total'])
+        msg = f'{task.check.info()} [{timings}]'
         self.printer.status('OK', msg, just='right')
-        getlogger().verbose(f'==> timings: {task.pipeline_timings_all()}')
+        timings = task.pipeline_timings(['setup',
+                                         'compile_complete',
+                                         'run_complete',
+                                         'sanity',
+                                         'performance',
+                                         'total'])
+        getlogger().verbose(f'==> {timings}')
 
-        # Update reference count of dependencies
         for c in task.testcase.deps:
             # NOTE: Restored dependencies are not in the task_index
             if c in self._task_index:
                 self._task_index[c].ref_count -= 1
-
-        self._retired_tasks.append(task)
-
-    def on_task_exit(self, task):
-        task.run_wait()
-        self._remove_from_running(task)
-        self._completed_tasks.append(task)
-
-    def on_task_compile_exit(self, task):
-        task.compile_wait()
-        self._remove_from_building(task)
-        partname = task.check.current_partition.fullname
-        if (isinstance(task.check, CompileOnlyRegressionTest)):
-            self._completed_tasks.append(task)
-        else:
-            self._ready_to_run_tasks[partname][self.local_index(task, phase='run')].append(task)
-
-    def _setup_task(self, task):
-        if self.deps_skipped(task):
-            try:
-                raise SkipTestError('skipped due to skipped dependencies')
-            except SkipTestError as e:
-                task.skip()
-                return False
-        elif self.deps_succeeded(task):
-            try:
-                task.setup(task.testcase.partition,
-                           task.testcase.environ,
-                           sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
-                           sched_options=self.sched_options)
-            except TaskExit:
-                return False
-            else:
-                return True
-        elif self.deps_failed(task):
-            exc = TaskDependencyError('dependencies failed')
-            task.fail((type(exc), exc, None))
-            return False
-        else:
-            # Not all dependencies have finished yet
-            return False
-
-    def runcase(self, case):
-        super().runcase(case)
-        check, partition, environ = case
-        self._partitions.add(partition)
-
-        # Set partition-based counters, if not set already
-        self._running_tasks.setdefault(partition.fullname, ([], []))
-        self._compiling_tasks.setdefault(partition.fullname, ([], []))
-        self._ready_to_compile_tasks.setdefault(partition.fullname, ([], []))
-        self._ready_to_run_tasks.setdefault(partition.fullname, ([], []))
-        self._max_jobs.setdefault(partition.fullname, partition.max_jobs)
-
-        task = RegressionTask(case, self.task_listeners)
-        self._task_index[case] = task
-        self.stats.add_task(task)
-        self.printer.status(
-            'RUN', '%s on %s using %s' %
-            (check.name, partition.fullname, environ.name)
-        )
-        try:
-            partname = partition.fullname
-            if not self._setup_task(task):
-                if not task.skipped and not task.failed:
-                    self.printer.status(
-                        'DEP', '%s on %s using %s' %
-                        (check.name, partname, environ.name),
-                        just='right'
-                    )
-                    self._waiting_tasks.append(task)
-
-                return
-
-            if isinstance(task.check, RunOnlyRegressionTest):
-                local_index = self.local_index(task, phase='run')
-            else:
-                local_index = self.local_index(task, phase='compile')
-
-            job_limit = self._rfm_max_jobs if local_index else partition.max_jobs
-
-            def all_submissions(local, partname=None):
-                if local:
-                    local_tasks = 0
-                    for (_, lt) in self._running_tasks.values():
-                        local_tasks += len(lt)
-
-                    for (_, lt) in self._compiling_tasks.values():
-                        local_tasks += len(lt)
-
-                    return local_tasks
-                else:
-                    return (
-                        len(self._running_tasks[partname][local]) +
-                        len(self._compiling_tasks[partname][local])
-                    )
-
-            if (all_submissions(local_index, partname) >= job_limit):
-                # Make sure that we still exceeded the job limit
-                getlogger().debug2(
-                    f'Reached concurrency limit for partition {partname!r}: '
-                    f'{partition.max_jobs} job(s)'
-                )
-                self._poll_tasks()
-
-            if (all_submissions(local_index, partname) < job_limit):
-                if isinstance(task.check, RunOnlyRegressionTest):
-                    # Task was put in _ready_to_run_tasks during setup
-                    self._ready_to_run_tasks[partname][local_index].pop()
-                    self._reschedule_run(task)
-                else:
-                    # Task was put in _ready_to_compile_tasks during setup
-                    self._ready_to_compile_tasks[partname][local_index].pop()
-                    self._reschedule_compile(task)
-            else:
-                self.printer.status('HOLD', task.check.info(), just='right')
-
-            # NOTE: If we don't schedule runs here and we have a lot of tests
-            # compiling we will begin submitting only after all the tests are
-            # processed. On the other hand I am not sure where to schedule
-            # runs here.
-            self._reschedule_all(phase='run')
-        except TaskExit:
-            if not task.failed and not task.skipped:
-                with contextlib.suppress(TaskExit):
-                    self._reschedule_compile(task)
-
-            return
-        except ABORT_REASONS as e:
-            # If abort was caused due to failure elsewhere, abort current
-            # task as well
-            task.abort(e)
-            self._failall(e)
-            raise
-
-    def _poll_tasks(self):
-        '''Update the counts of running checks per partition.'''
-        for part in self._partitions:
-            partname = part.fullname
-            num_tasks = len(self._running_tasks[partname][0])
-            getlogger().debug2(f'Polling {num_tasks} running task(s) in '
-                               f'{partname!r}')
-            part_jobs = [t.check.job for t in self._running_tasks[partname][0]]
-            forced_local_jobs = [t.check.job for t in self._running_tasks[partname][1]]
-            part.scheduler.poll(*part_jobs)
-            self.local_scheduler.poll(*forced_local_jobs)
-
-            # Trigger notifications for finished jobs.
-            # We need need a copy of the list here in order to not modify the
-            # list while looping over it. `run_complete` calls `on_task_exit`,
-            # which in turn will remove the task from `_running_tasks`.
-            for t in self._running_tasks[partname][0] + self._running_tasks[partname][1]:
-                t.run_complete()
-
-            num_tasks = len(self._compiling_tasks[partname][0])
-            getlogger().debug2(f'Polling {num_tasks} building task(s) in '
-                               f'{partname!r}')
-            part_jobs = [t.check.build_job for t in self._compiling_tasks[partname][0]]
-            forced_local_jobs = [t.check.build_job for t in self._compiling_tasks[partname][1]]
-            part.scheduler.poll(*part_jobs)
-            self.local_scheduler.poll(*forced_local_jobs)
-
-            # Trigger notifications for finished compilation jobs
-            for t in self._compiling_tasks[partname][0] + self._compiling_tasks[partname][1]:
-                t.compile_complete()
-
-    def _setup_all(self):
-        still_waiting = []
-        for task in self._waiting_tasks:
-            if (not self._setup_task(task) and
-                not task.failed and not task.skipped):
-                still_waiting.append(task)
-
-        self._waiting_tasks[:] = still_waiting
-
-    def _finalize_all(self):
-        getlogger().debug2(f'Finalizing {len(self._completed_tasks)} task(s)')
-        while True:
-            try:
-                task = self._completed_tasks.pop()
-            except IndexError:
-                break
-
-            getlogger().debug2(f'Finalizing task {task.testcase}')
-            with contextlib.suppress(TaskExit):
-                self._finalize_task(task)
-
-    def _finalize_task(self, task):
-        getlogger().debug2(f'Finalizing task {task.testcase}')
-        if not self.skip_sanity_check:
-            task.sanity()
-
-        if not self.skip_performance_check:
-            task.performance()
-
-        task.finalize()
-
-    def _failall(self, cause):
-        '''Mark all tests as failures'''
-        getlogger().debug2(f'Aborting all tasks due to {type(cause).__name__}')
-        for task in list(itertools.chain(*itertools.chain(*self._running_tasks.values()))):
-            task.abort(cause)
-
-        self._running_tasks = {}
-        for task in list(itertools.chain(*itertools.chain(*self._compiling_tasks.values()))):
-            task.abort(cause)
-
-        self._compiling_tasks = {}
-        for task in list(itertools.chain(*itertools.chain(*self._ready_to_compile_tasks.values()))):
-            task.abort(cause)
-
-        self._ready_to_compile_tasks = {}
-        for task in list(itertools.chain(*itertools.chain(*self._ready_to_run_tasks.values()))):
-            task.abort(cause)
-
-        self._ready_to_run_tasks = {}
-        for task in itertools.chain(self._waiting_tasks,
-                                    self._completed_tasks):
-            task.abort(cause)
-
-    def _reschedule_compile(self, task):
-        getlogger().debug2(f'Scheduling test case {task.testcase} for '
-                           f'compiling')
-        task.compile()
-
-    def _reschedule_run(self, task):
-        getlogger().debug2(f'Scheduling test case {task.testcase} for running')
-        task.run()
-
-    def _reschedule_all(self, phase='run'):
-        local_tasks = 0
-        for (_, lt) in self._running_tasks.values():
-            local_tasks += len(lt)
-
-        local_slots = self._rfm_max_jobs - local_tasks
-        for part in self._partitions:
-            partname = part.fullname
-            part_tasks = (
-                len(self._running_tasks[partname][0]) +
-                len(self._compiling_tasks[partname][0])
-            )
-            part_slots = self._max_jobs[partname] - part_tasks
-            num_rescheduled = 0
-
-            for _ in range(part_slots):
-                try:
-                    queue = getattr(self, f'_ready_to_{phase}_tasks')
-                    task = queue[partname][0].pop()
-                except IndexError:
-                    break
-
-                getattr(self, f'_reschedule_{phase}')(task)
-                num_rescheduled += 1
-
-            for _ in range(local_slots):
-                try:
-                    queue = getattr(self, f'_ready_to_{phase}_tasks')
-                    task = queue[partname][1].pop()
-                except IndexError:
-                    break
-
-                getattr(self, f'_reschedule_{phase}')(task)
-                local_slots -= 1
-                num_rescheduled += 1
-
-            if num_rescheduled:
-                getlogger().debug2(
-                    f'Rescheduled {num_rescheduled} {phase} job(s) on '
-                    f'{partname!r}'
-                )
-
-    def exit(self):
-        self.printer.separator('short single line',
-                               'waiting for spawned checks to finish')
-        while (countall(self._running_tasks) or self._waiting_tasks or
-               self._completed_tasks or countall(self._ready_to_compile_tasks) or
-               countall(self._compiling_tasks) or countall(self._ready_to_run_tasks)):
-            getlogger().debug2(f'Running tasks: '
-                               f'{countall(self._running_tasks)}')
-            try:
-                self._poll_tasks()
-
-                # We count running tasks just after polling in order to check
-                # more reliably that the state has changed, so that we
-                # decrease the sleep time. Otherwise if the number of tasks
-                # rescheduled was the as the number of tasks retired, the
-                # sleep time would be increased.
-                num_running = countall(self._running_tasks)
-                self._finalize_all()
-                self._setup_all()
-                self._reschedule_all(phase='compile')
-                self._reschedule_all(phase='run')
-                _cleanup_all(self._retired_tasks, not self.keep_stage_files)
-                if num_running:
-                    self._pollctl.running_tasks(num_running).snooze()
-
-            except TaskExit:
-                with contextlib.suppress(TaskExit):
-                    self._reschedule_all(phase='compile')
-                    self._reschedule_all(phase='run')
-            except ABORT_REASONS as e:
-                self._failall(e)
-                raise
-
-        self.printer.separator('short single line',
-                               'all spawned checks have finished\n')
