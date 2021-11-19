@@ -772,7 +772,7 @@ def weird_mro_test(HelloTest):
     #
     # See example in https://www.python.org/download/releases/2.3/mro/
     #
-    # The MRO of A is ABECDFO, which means that E is more specialized than C!
+    # The MRO of A is ABECDFX, which means that E is more specialized than C!
     class X(rfm.RegressionMixin):
         pass
 
