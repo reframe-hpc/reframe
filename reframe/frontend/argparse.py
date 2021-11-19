@@ -39,10 +39,10 @@ import os
 
 
 def _convert_to_bool(s):
-    if s.lower() in ('true', 'yes', 'y'):
+    if s.lower() in ('true', 'yes', 'y', '1'):
         return True
 
-    if s.lower() in ('false', 'no', 'n'):
+    if s.lower() in ('false', 'no', 'n', '0'):
         return False
 
     raise ValueError
