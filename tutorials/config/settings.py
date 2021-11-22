@@ -7,7 +7,9 @@
 # Tutorial settings
 #
 
+# rfmdocstart: site-configuration
 site_configuration = {
+    # rfmdocstart: systems
     'systems': [
         {
             'name': 'catalina',
@@ -50,6 +52,8 @@ site_configuration = {
                     'launcher': 'local',
                     'environs': ['builtin', 'gnu', 'intel', 'pgi', 'cray'],
                 },
+                # rfmdocstart: gpu-mc-partitions
+                # rfmdocstart: gpu-partition
                 {
                     'name': 'gpu',
                     'descr': 'Hybrid nodes',
@@ -75,6 +79,7 @@ site_configuration = {
                         }
                     ]
                 },
+                # rfmdocend: gpu-partition
                 {
                     'name': 'mc',
                     'descr': 'Multicore nodes',
@@ -90,6 +95,7 @@ site_configuration = {
                         }
                     ]
                 }
+                # rfmdocend: gpu-mc-partitions
             ]
         },
         {
@@ -106,6 +112,8 @@ site_configuration = {
             ]
         },
     ],
+    # rfmdocend: systems
+    # rfmdocstart: environments
     'environments': [
         {
             'name': 'gnu',
@@ -165,6 +173,8 @@ site_configuration = {
             'target_systems': ['daint']
         }
     ],
+    # rfmdocend: environments
+    # rfmdocstart: logging
     'logging': [
         {
             'level': 'debug',
@@ -201,4 +211,6 @@ site_configuration = {
             ]
         }
     ],
+    # rfmdocend: logging
 }
+# rfmdocend: site-configuration

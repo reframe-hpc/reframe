@@ -27,7 +27,8 @@ Here is the adapted code with the relevant parts highlighted (for simplicity, we
 
 
 .. literalinclude:: ../tutorials/advanced/parameterized/stream.py
-   :lines: 6-
+   :start-after: # rfmdocstart: parameterized
+   :end-before: # rfmdocend: parameterized
    :emphasize-lines: 7-9,44-51,55-56
 
 Any ordinary ReFrame test becomes a parameterized one if the user defines parameters inside the class body of the test.
@@ -114,7 +115,8 @@ Here is the C++ program:
 
 .. literalinclude:: ../tutorials/advanced/makefiles/src/dotprod.cpp
    :language: cpp
-   :lines: 6-
+   :start-after: // rfmdocstart: dotprod
+   :end-before: // rfmdocend: dotprod
 
 The directory structure for this test is the following:
 
@@ -135,7 +137,8 @@ Let's have a look at the test itself:
 
 
 .. literalinclude:: ../tutorials/advanced/makefiles/maketest.py
-   :lines: 6-27
+   :start-after: # rfmdocstart: maketest
+   :end-before: # rfmdocend: maketest
    :emphasize-lines: 18,22
 
 First, if you're using any build system other than ``SingleSource``, you must set the :attr:`executable` attribute of the test, because ReFrame cannot know what is the actual executable to be run.
@@ -258,7 +261,8 @@ Here is the full regression test:
 
 
 .. literalinclude:: ../tutorials/advanced/runonly/echorand.py
-   :lines: 6-
+   :start-after: # rfmdocstart: echorand
+   :end-before: # rfmdocend: echorand
    :emphasize-lines: 6
 
 There is nothing special for this test compared to those presented so far except that it derives from the :class:`~reframe.core.pipeline.RunOnlyRegressionTest` class.
@@ -281,7 +285,8 @@ The following test is a compile-only version of the :class:`MakefileTest` presen
 
 
 .. literalinclude:: ../tutorials/advanced/makefiles/maketest.py
-   :lines: 30-
+   :start-after: # rfmdocstart: makeonlytest
+   :end-before: # rfmdocend: makeonlytest
    :emphasize-lines: 2
 
 What is worth noting here is that the standard output and standard error of the test, which are accessible through the :attr:`~reframe.core.pipeline.RegressionTest.stdout` and :attr:`~reframe.core.pipeline.RegressionTest.stderr` attributes, correspond now to the standard output and error of the compilation command.
@@ -300,7 +305,8 @@ ReFrame offers the :class:`~reframe.core.pipeline.RegressionMixin` class that al
 In the example below, we create an :class:`ElemTypeParam` mixin that holds the definition of the :attr:`elem_type` parameter which is inherited by both the concrete test classes:
 
 .. literalinclude:: ../tutorials/advanced/makefiles/maketest_mixin.py
-   :lines: 6-
+   :start-after: # rfmdocstart: maketestmixin
+   :end-before: # rfmdocend: maketestmixin
    :emphasize-lines: 5-6,10,30
 
 
@@ -347,7 +353,8 @@ The following script prints 100 random integers between the limits given by the 
 
 .. literalinclude:: ../tutorials/advanced/random/src/random_numbers.sh
   :language: bash
-  :lines: 7-
+  :start-after: # rfmdocstart: random_numbers
+  :end-before: # rfmdocend: random_numbers
 
 In the corresponding regression test we want to check that all the random numbers generated lie between the two limits, which means that a common sanity check has to be applied to all the printed random numbers.
 Here is the corresponding regression test:
@@ -358,7 +365,8 @@ Here is the corresponding regression test:
 
 
 .. literalinclude:: ../tutorials/advanced/random/randint.py
-  :lines: 6-
+  :start-after: # rfmdocstart: randint
+  :end-before: # rfmdocend: randint
   :emphasize-lines: 12-
 
 First, we extract all the generated random numbers from the output.
@@ -399,7 +407,8 @@ Here is the modified test file:
 
 
 .. literalinclude:: ../tutorials/advanced/random/prepostrun.py
-   :lines: 6-
+   :start-after: # rfmdocstart: prepostrun
+   :end-before: # rfmdocend: prepostrun
    :emphasize-lines: 10-11,19,22
 
 The :attr:`prerun_cmds` and :attr:`postrun_cmds` are lists of commands to be emitted in the generated job script before and after the parallel launch of the executable.
@@ -458,7 +467,8 @@ Here is the test:
 
 
 .. literalinclude:: ../tutorials/advanced/jobopts/eatmemory.py
-   :lines: 6-25
+   :start-after: # rfmdocstart: memorylimit
+   :end-before: # rfmdocend: memorylimit
    :emphasize-lines: 12-14
 
 Each ReFrame test has an associated `run job descriptor <regression_test_api.html#reframe.core.pipeline.RegressionTest.job>`__ which represents the scheduler job that will be used to run this test.
@@ -501,8 +511,9 @@ You can then use those resources transparently from within your test.
 To achieve this in our case, we first need to define a ``memory`` resource in the configuration:
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 31-52,63-79
-   :emphasize-lines: 17-22,32-38
+   :start-after: # rfmdocstart: gpu-mc-partitions
+   :end-before: # rfmdocend: gpu-mc-partitions
+   :emphasize-lines: 10-15,36-41
 
 Notice that we do not define the resource for all the partitions, but only for those that it makes sense.
 Each resource has a name and a set of scheduler options that will be passed to the scheduler when this resource will be requested by the test.
@@ -515,7 +526,8 @@ Let's see how we can rewrite the :class:`MemoryLimitTest` using the ``memory`` r
 
 
 .. literalinclude:: ../tutorials/advanced/jobopts/eatmemory.py
-   :lines: 28-
+   :start-after: # rfmdocstart: memorylimitresources
+   :end-before: # rfmdocend: memorylimitresources
    :emphasize-lines: 7-9
 
 The extra resources that the test needs to obtain through its scheduler are specified in the :attr:`~reframe.core.pipeline.RegressionTest.extra_resources` attribute, which is a dictionary with the resource names as its keys and another dictionary assigning values to the resource placeholders as its values.
@@ -548,7 +560,8 @@ In the following test we run a CPU affinity test using `this <https://github.com
 
 
 .. literalinclude:: ../tutorials/advanced/affinity/affinity.py
-   :lines: 6-
+   :start-after: # rfmdocstart: affinitytest
+   :end-before: # rfmdocend: affinitytest
 
 The approach is identical to the approach we took in the :class:`MemoryLimitTest` test `above <#adding-job-scheduler-options-per-test>`__, except that we now set the launcher options.
 
@@ -624,7 +637,8 @@ It resembles a scaling test, except that all happens inside a single ReFrame tes
 
 
 .. literalinclude:: ../tutorials/advanced/multilaunch/multilaunch.py
-   :lines: 6-
+   :start-after: # rfmdocstart: multilaunchtest
+   :end-before: # rfmdocend: multilaunchtest
    :emphasize-lines: 13-19
 
 The additional parallel launch commands are inserted in either the :attr:`prerun_cmds` or :attr:`postrun_cmds` lists.
@@ -677,7 +691,8 @@ The test will verify that all the nodes print the expected host name:
 
 
 .. literalinclude:: ../tutorials/advanced/flexnodes/flextest.py
-   :lines: 6-
+   :start-after: # rfmdocstart: flextest
+   :end-before: # rfmdocend: flextest
    :emphasize-lines: 10-
 
 The first thing to notice in this test is that :attr:`~reframe.core.pipeline.RegressionTest.num_tasks` is set to zero as default, which is a requirement for flexible tests.
@@ -703,7 +718,8 @@ ReFrame can be used also to test applications that run inside a container.
 First, we need to enable the container platform support in ReFrame's configuration and, specifically, at the partition configuration level:
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 39-63
+   :start-after: # rfmdocstart: gpu-partition
+   :end-before: # rfmdocend: gpu-partition
    :emphasize-lines: 15-24
 
 For each partition, users can define a list of container platforms supported using the :js:attr:`container_platforms` `configuration parameter <config_reference.html#.systems[].partitions[].container_platforms>`__.
@@ -718,7 +734,8 @@ The following parameterized test, will create two tests, one for each of the sup
 
 
 .. literalinclude:: ../tutorials/advanced/containers/container_test.py
-   :lines: 6-
+   :start-after: # rfmdocstart: containertest
+   :end-before: # rfmdocend: containertest
    :emphasize-lines: 11-19
 
 A container-based test can be written as :class:`~reframe.core.pipeline.RunOnlyRegressionTest` that sets the :attr:`~reframe.core.pipeline.RegressionTest.container_platform` attribute.
@@ -776,7 +793,8 @@ and ``/rfm_workdir`` corresponds to the stage directory on the host system.
 Therefore, the ``release.txt`` file can now be used in the subsequent sanity checks:
 
 .. literalinclude:: ../tutorials/advanced/containers/container_test.py
-   :lines: 26-29
+   :start-after: # rfmdocstart: assert_release
+   :end-before: # rfmdocend: assert_release
 
 
 For a complete list of the available attributes of a specific container platform, please have a look at the :ref:`container-platforms` section of the :doc:`regression_test_api` guide.
@@ -803,7 +821,8 @@ Thus, removing all the system and configuration specific variables, and moving a
 
 
 .. literalinclude:: ../tutorials/advanced/library/lib/__init__.py
-   :lines: 6-
+   :start-after: # rfmdocstart: containerbase
+   :end-before: # rfmdocend: containerbase
    :emphasize-lines: 8-17
 
 Note that the class :class:`ContainerBase` is not decorated since it does not specify the required variables ``valid_systems`` and ``valid_prog_environs``, and it declares the ``platform`` parameter without any defined values assigned.
@@ -826,7 +845,6 @@ This will allow the retrieval of the sources located in the library by any deriv
 
 
 .. literalinclude:: ../tutorials/advanced/library/lib/src/get_os_release.sh
-   :lines: 1-
 
 Now from the user's perspective, the only thing to do is to import the above base test and specify the required variables and parameters.
 For consistency with the above example, we set the ``platform`` parameter to use Sarus and Singularity, and we configure the test to run on Piz Daint with the built-in programming environment.
@@ -838,7 +856,8 @@ Hence, the above :class:`ContainerTest` is now reduced to the following:
 
 
 .. literalinclude:: ../tutorials/advanced/library/usr/container_test.py
-   :lines: 6-
+   :start-after: # rfmdocstart: container_test
+   :end-before: # rfmdocend: container_test
 
 In a similar fashion, any other user could reuse the above :class:`ContainerBase` class and write the test for their own system with a few lines of code.
 

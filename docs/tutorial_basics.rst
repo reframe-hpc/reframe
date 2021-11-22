@@ -40,7 +40,8 @@ Here is its C version:
 
 .. literalinclude:: ../tutorials/basics/hello/src/hello.c
    :language: c
-   :lines: 6-
+   :start-after: // rfmdocstart: helloworld
+   :end-before: // rfmdocend: helloworld
 
 
 And here is the ReFrame version of it:
@@ -51,7 +52,8 @@ And here is the ReFrame version of it:
 
 
 .. literalinclude:: ../tutorials/basics/hello/hello1.py
-   :lines: 6-
+   :start-after: # rfmdocstart: hellotest
+   :end-before: # rfmdocend: hellotest
 
 
 Regression tests in ReFrame are specially decorated classes that ultimately derive from :class:`~reframe.core.pipeline.RegressionTest`.
@@ -228,7 +230,8 @@ ReFrame allows you to avoid this in several ways but the most compact is to defi
 
 
 .. literalinclude:: ../tutorials/basics/hello/hello2.py
-   :lines: 6-
+   :start-after: # rfmdocstart: hellomultilang
+   :end-before: # rfmdocend: hellomultilang
 
 
 This test extends the ``hello1.py`` test by defining the ``lang`` parameter with the :py:func:`~reframe.core.pipeline.RegressionMixin.parameter` built-in.
@@ -252,7 +255,8 @@ This is exactly what we want to do here, and we know that the test sources are n
 Hence, we move the ``sourcepath`` assignment into a pre-compile hook.
 
 .. literalinclude:: ../tutorials/basics/hello/hello2.py
-   :lines: 17-19
+   :start-after: # rdmdocstart: set_sourcepath
+   :end-before: # rdmdocend: set_sourcepath
 
 The use of hooks is covered in more detail later on, but for now, let's just think of them as a way to defer the execution of a function to a given stage of the test's pipeline.
 By using hooks, any user could now derive from this class and attach other hooks (for example, adding some compiler flags) without having to worry about overriding the base method that sets the ``sourcepath`` variable.
@@ -347,8 +351,9 @@ Note that you should *not* edit this configuration file in place.
 Here is how the new configuration file looks like with the needed additions highlighted:
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 10-25,81-102,135-
-   :emphasize-lines: 3-16,32-43
+   :start-after: # rfmdocstart: site-configuration
+   :end-before: # rfmdocend: site-configuration
+   :emphasize-lines: 4-17, 91-103
 
 Here we define a system named ``catalina`` that has one partition named ``default``.
 This partition makes no use of any `workload manager <config_reference.html#.systems[].partitions[].scheduler>`__, but instead launches any jobs locally as OS processes.
@@ -437,7 +442,8 @@ We extend our C++ "Hello, World!" example to print the greetings from multiple t
 
 .. literalinclude:: ../tutorials/basics/hellomp/src/hello_threads.cpp
    :language: cpp
-   :lines: 6-
+   :start-after: // rfmdocstart: hello_threads
+   :end-before: // rfmdocend: hello_threads
 
 This program takes as argument the number of threads it will create and it uses ``std::thread``, which is a C++11 addition, meaning that we will need to pass ``-std=c++11`` to our compilers.
 Here is the corresponding ReFrame test, where the new concepts introduced are highlighted:
@@ -448,7 +454,8 @@ Here is the corresponding ReFrame test, where the new concepts introduced are hi
 
 
 .. literalinclude:: ../tutorials/basics/hellomp/hellomp1.py
-   :lines: 6-
+   :start-after: # rfmdocstart: hellothreaded
+   :end-before: # rfmdocend: hellothreaded
    :emphasize-lines: 10-10, 13-18
 
 
@@ -554,7 +561,8 @@ See the highlighted lines below in the modified version of the :attr:`@sanity_fu
 
 
 .. literalinclude:: ../tutorials/basics/hellomp/hellomp2.py
-   :lines: 6-
+   :start-after: # rfmdocstart: hellothreadedextended
+   :end-before: # rfmdocend: hellothreadedextended
    :emphasize-lines: 22-24
 
 This new :attr:`@sanity_function<reframe.core.pipeline.RegressionMixin.sanity_function>` counts all the pattern matches in the tests's :attr:`~reframe.core.pipeline.RegressionTest.stdout` and checks that this count matches the expected value.
@@ -636,7 +644,8 @@ To fix this test, we need to compile with ``-DSYNC_MESSAGES``, which will synchr
 
 
 .. literalinclude:: ../tutorials/basics/hellomp/hellomp3.py
-   :lines: 6-
+   :start-after: # rfmdocstart: hellothreadedextented2
+   :end-before: # rfmdocend: hellothreadedextented2
    :emphasize-lines: 15
 
 
@@ -653,7 +662,8 @@ In the test below, we highlight the lines that introduce new concepts.
 
 
 .. literalinclude:: ../tutorials/basics/stream/stream1.py
-   :lines: 6-
+   :start-after: # rfmdocstart: streamtest
+   :end-before: # rfmdocend: streamtest
    :emphasize-lines: 9-11,14-17,28-
 
 First of all, notice that we restrict the programming environments to ``gnu`` only, since this test requires OpenMP, which our installation of Clang does not have.
@@ -746,7 +756,8 @@ Hence, in this example, we show how to collapse all these four performance funct
    cat tutorials/basics/stream/stream2.py
 
 .. literalinclude:: ../tutorials/basics/stream/stream2.py
-   :lines: 6-
+   :start-after: # rfmdocstart: streamtest2
+   :end-before: # rfmdocend: streamtest2
    :emphasize-lines: 28-
 
 As shown in the highlighted lines, this example collapses the four performance functions from the previous example into the :func:`extract_bw` function, which is also decorated with the :attr:`@performance_function<reframe.core.pipeline.RegressionMixin.performance_function>` decorator with the units set to ``'MB/s'``.
@@ -792,7 +803,8 @@ In the following example, we set the reference values for all the STREAM sub-ben
 
 
 .. literalinclude:: ../tutorials/basics/stream/stream3.py
-   :lines: 6-
+   :start-after: # rfmdocstart: streamtest3
+   :end-before: # rfmdocend: streamtest3
    :emphasize-lines: 18-25
 
 
@@ -883,8 +895,9 @@ Let's extend our configuration file for Piz Daint.
 
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 10-46,63-71,78-
-   :emphasize-lines: 17-49,71-102,115-121
+   :start-after: # rfmdocstart: site-configuration
+   :end-before: # rfmdocend: site-configuration
+   :emphasize-lines: 32-91,114-145,158-164
 
 
 First of all, we need to define a new system and set the list of hostnames that will help ReFrame identify it.
@@ -1143,7 +1156,8 @@ Let's see and comment the changes:
    cat tutorials/basics/stream/stream4.py
 
 .. literalinclude:: ../tutorials/basics/stream/stream4.py
-   :lines: 6-
+   :start-after: # rfmdocstart: streamtest4
+   :end-before: # rfmdocend: streamtest4
    :emphasize-lines: 8, 27-41, 46-56
 
 First of all, we need to add the new programming environments in the list of the supported ones.

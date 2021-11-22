@@ -1,3 +1,4 @@
+# rfmdocstart: required-packages
 archspec==0.1.2
 argcomplete==1.12.3
 coverage==5.5
@@ -12,4 +13,5 @@ requests==2.25.1
 semver==2.13.0
 setuptools==56.0.0
 wcwidth==0.2.5
+# rfmdocend: required-packages
 #+pygelf%pygelf==0.4.0
