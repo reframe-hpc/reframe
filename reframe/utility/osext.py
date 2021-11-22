@@ -415,7 +415,7 @@ def is_url(s):
     return parsed.scheme != '' and parsed.netloc != ''
 
 
-def git_clone(url, targetdir=None, opts=[], timeout=5):
+def git_clone(url, targetdir=None, opts=None, timeout=5):
     '''Clone a git repository from a URL.
 
     :arg url: The URL to clone from.
@@ -430,7 +430,7 @@ def git_clone(url, targetdir=None, opts=[], timeout=5):
         raise ReframeError('git repository does not exist')
 
     targetdir = targetdir or ''
-    opts = ' '.join(opts)
+    opts = ' '.join(opts) if opts is not None else ''
     run_command(f'git clone {opts} {url} {targetdir}', check=True)
 
 
