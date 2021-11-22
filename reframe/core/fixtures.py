@@ -152,7 +152,7 @@ class FixtureRegistry:
 
         cls = fixture.cls
         scope = fixture.scope
-        fname = fixture.get_name(variant_num)
+        fname = fixture.cls.variant_name(variant_num)
         variables = fixture.variables
         reg_names = []
         self._registry.setdefault(cls, dict())
@@ -459,10 +459,6 @@ class TestFixture:
     def scope(self):
         '''The fixture scope.'''
         return self._scope
-
-    def get_name(self, variant_num=None):
-        '''Utility to retrieve the full name of a given fixture variant.'''
-        return self.cls.variant_name(variant_num)
 
     @property
     def action(self):
