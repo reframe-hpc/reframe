@@ -903,7 +903,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     @deferrable
     def __rfm_init__(self, *args, prefix=None, **kwargs):
         if not hasattr(self, 'name'):
-            self.name = type(self).fullname(self.variant_num)
+            self.name = type(self).variant_name(self.variant_num)
 
             # Add the parameters from the parameterized_test decorator.
             if args or kwargs:

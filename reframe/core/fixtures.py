@@ -462,7 +462,7 @@ class TestFixture:
 
     def get_name(self, variant_num=None):
         '''Utility to retrieve the full name of a given fixture variant.'''
-        return self.cls.fullname(variant_num)
+        return self.cls.variant_name(variant_num)
 
     @property
     def action(self):

@@ -823,8 +823,8 @@ class RegressionTestMeta(type):
         '''
         return cls.num_variants == 0
 
-    def fullname(cls, variant_num=None):
-        '''Return the full name of a test for a given test variant number.
+    def variant_name(cls, variant_num=None):
+        '''Return the name of a test variant for a given variant number.
 
         This function returns a unique name for each of the provided variant
         numbers. If no ``variant_num`` is provided, this function returns the
