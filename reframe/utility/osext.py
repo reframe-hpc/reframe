@@ -419,7 +419,7 @@ def git_clone(url, targetdir=None, opts=None, timeout=5):
     '''Clone a git repository from a URL.
 
     :arg url: The URL to clone from.
-    :arg opts: List of options to be passed to `git clone` command
+    :arg opts: List of options to be passed to the `git clone` command
     :arg timeout: Timeout in seconds when checking if the url is a valid
          repository.
     :arg targetdir: The directory where the repository will be cloned to. If
