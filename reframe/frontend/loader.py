@@ -215,13 +215,13 @@ class RegressionCheckLoader:
 
             testfile = module.__file__
             try:
-                conflicted = self._loaded[c.name]
+                conflicted = self._loaded[c.unique_name]
             except KeyError:
-                self._loaded[c.name] = testfile
+                self._loaded[c.unique_name] = testfile
                 tests.append(c)
             else:
                 raise NameConflictError(
-                    f'test {c.name!r} from {testfile!r} '
+                    f'test {c.unique_name!r} from {testfile!r} '
                     f'is already defined in {conflicted!r}'
                 )
 

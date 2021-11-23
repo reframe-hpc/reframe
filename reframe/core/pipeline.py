@@ -220,7 +220,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:   of every test parameter: ``TestClassName_<param1>_<param2>``.
     #:   Any non-alphanumeric value in a parameter's representation is
     #:   converted to ``_``.
-    name = variable(typ.Str[r'[^\/]+'])
+    # name = variable(typ.Str[r'[^\/]+'])
 
     #: List of programming environments supported by this test.
     #:
@@ -902,18 +902,18 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     @deferrable
     def __rfm_init__(self, *args, prefix=None, **kwargs):
-        if not hasattr(self, 'name'):
-            self.name = type(self).variant_name(self.variant_num)
+        if not self.is_fixture():
+            self._rfm_unique_name = type(self).variant_name(self.variant_num)
 
             # Add the parameters from the parameterized_test decorator.
             if args or kwargs:
                 arg_names = map(lambda x: util.toalphanum(str(x)),
                                 itertools.chain(args, kwargs.values()))
-                self.name += '_' + '_'.join(arg_names)
+                self._rfm_unique_name += '_' + '_'.join(arg_names)
 
         # Pass if descr is a required variable.
         if not hasattr(self, 'descr'):
-            self.descr = self.name
+            self.descr = self._rfm_unique_name
 
         self._perfvalues = {}
 
@@ -1025,7 +1025,28 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 f'{type(self).__qualname__!r} object has no attribute {name!r}'
             )
 
+    def __setattr__(self, name, value):
+        if name == 'name':
+            user_deprecation_warning(
+                'setting the name of the test is deprecated; see for XXX for details'
+            )
+            self._rfm_unique_name = value
+        else:
+            super().__setattr__(name, value)
+
     # Export read-only views to interesting fields
+
+    @property
+    def unique_name(self):
+        '''Return the unique name of this test.
+
+        .. versionadded:: 3.10.0
+        '''
+        return self._rfm_unique_name
+
+    @property
+    def name(self):
+        return self._rfm_unique_name
 
     @property
     def current_environ(self):

@@ -282,7 +282,6 @@ class FixtureRegistry:
                 # alongside the other variables specified during the fixture's
                 # declaration.
                 fixtvars = {
-                    'name': name,
                     'valid_prog_environs': penv,
                     'valid_systems': part,
                     **variables
@@ -290,8 +289,8 @@ class FixtureRegistry:
 
                 try:
                     # Instantiate the fixture
-                    inst = cls(variant_num=varnum, variables=fixtvars,
-                               is_fixture=True)
+                    inst = cls(variant_num=varnum, fixt_name=name,
+                               variables=fixtvars)
                 except Exception:
                     exc_info = sys.exc_info()
                     getlogger().warning(

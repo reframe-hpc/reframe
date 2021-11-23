@@ -10,7 +10,6 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class HelloTest(rfm.RegressionTest):
     def __init__(self):
-        self.name = 'hellocheck'
         self.descr = 'C Hello World test'
 
         # All available systems are supported

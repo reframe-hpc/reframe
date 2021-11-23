@@ -556,7 +556,7 @@ def test_filtering_multiple_criteria(run_reframe):
     returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks'],
         action='list',
-        more_options=['-t', 'foo', '-n', 'hellocheck']
+        more_options=['-t', 'foo', '-n', 'HelloTest']
     )
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr

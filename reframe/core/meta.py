@@ -485,6 +485,7 @@ class RegressionTestMeta(type):
         # respective points in the parameter and fixture spaces.
         variant_num = kwargs.pop('variant_num', None)
         param_index, fixt_index = cls._map_variant_num(variant_num)
+        fixt_name = kwargs.pop('fixt_name', None)
 
         # Intercept variables to be set before initialization
         variables = kwargs.pop('variables', {})
@@ -507,7 +508,8 @@ class RegressionTestMeta(type):
             obj._rfm_fixt_variant = fixt_index
 
         # Flag the instance as fixture
-        if is_fixture:
+        if fixt_name:
+            obj._rfm_unique_name = fixt_name
             obj._rfm_is_fixture = True
 
         # Set the variables passed to the constructor
@@ -841,7 +843,7 @@ class RegressionTestMeta(type):
 
         if _use_compact_names():
             if cls.num_variants > 1:
-                name += f'@{variant_num}'
+                name += f'%{variant_num}'
         else:
             pid, fid = cls._map_variant_num(variant_num)
 
@@ -851,6 +853,6 @@ class RegressionTestMeta(type):
                                        for v in cls.param_space[pid].values())
 
             if len(cls.fixture_space) > 1:
-                name += f'@{fid}'
+                name += f'%{fid}'
 
         return name
