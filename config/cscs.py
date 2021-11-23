@@ -341,7 +341,6 @@ site_configuration = {
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
-                        'PrgEnv-pgi',
                         'PrgEnv-nvidia'
                     ],
                     'descr': 'Login nodes',
@@ -378,7 +377,6 @@ site_configuration = {
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
-                        'PrgEnv-pgi',
                         'PrgEnv-nvidia'
                     ],
                     'descr': 'Hybrid nodes (Haswell/P100)',
@@ -421,7 +419,6 @@ site_configuration = {
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
-                        'PrgEnv-pgi',
                         'PrgEnv-nvidia'
                     ],
                     'descr': 'Multicore nodes (Broadwell)',
@@ -1129,13 +1126,18 @@ site_configuration = {
         {
             'name': 'PrgEnv-nvidia',
             'target_systems': [
-                'dom', 'daint'
+                'daint'
             ],
             'modules': [
                 'PrgEnv-nvidia',
                 # FIXME: We should not be forcing a cdt version
                 'cdt/21.05'
             ]
+        },
+        {
+            'name': 'PrgEnv-nvidia',
+            'target_systems': ['dom'],
+            'modules': ['PrgEnv-nvidia']
         },
         {
             'name': 'builtin',
