@@ -1136,12 +1136,8 @@ site_configuration = {
         },
         {
             'name': 'PrgEnv-nvidia',
-            'target_systems': [
-                'dom'
-            ],
-            'modules': [
-                'PrgEnv-nvidia',
-            ]
+            'target_systems': ['dom'],
+            'modules': ['PrgEnv-nvidia']
         },
         {
             'name': 'builtin',
