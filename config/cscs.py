@@ -14,19 +14,14 @@ site_configuration = {
         {
             'name': 'ault',
             'descr': 'Ault TDS',
-            'hostnames': [
-                'ault'
-            ],
+            'hostnames': ['ault'],
             'modules_system': 'lmod',
             'resourcesdir': '/apps/common/UES/reframe/resources',
             'partitions': [
                 {
                     'name': 'login',
                     'scheduler': 'local',
-                    'environs': [
-                        'builtin',
-                        'PrgEnv-gnu'
-                    ],
+                    'environs': ['builtin', 'PrgEnv-gnu'],
                     'descr': 'Login nodes',
                     'max_jobs': 4,
                     'launcher': 'local'
@@ -34,13 +29,8 @@ site_configuration = {
                 {
                     'name': 'a64fx',
                     'scheduler': 'slurm',
-                    'access': [
-                        '-pa64fx'
-                    ],
-                    'environs': [
-                        'builtin',
-                        'PrgEnv-gnu'
-                    ],
+                    'access': ['-pa64fx'],
+                    'environs': ['builtin', 'PrgEnv-gnu'],
                     'descr': 'Fujitsu A64FX CPUs',
                     'max_jobs': 100,
                     'launcher': 'srun'
@@ -48,13 +38,8 @@ site_configuration = {
                 {
                     'name': 'amda100',
                     'scheduler': 'slurm',
-                    'access': [
-                        '-pamda100'
-                    ],
-                    'environs': [
-                        'builtin',
-                        'PrgEnv-gnu'
-                    ],
+                    'access': ['-pamda100'],
+                    'environs': ['builtin', 'PrgEnv-gnu'],
                     'descr': 'AMD Naples 32c + 4x NVIDIA A100',
                     'max_jobs': 100,
                     'launcher': 'srun'
@@ -62,13 +47,8 @@ site_configuration = {
                 {
                     'name': 'amdv100',
                     'scheduler': 'slurm',
-                    'access': [
-                        '-pamdv100'
-                    ],
-                    'environs': [
-                        'builtin',
-                        'PrgEnv-gnu'
-                    ],
+                    'access': ['-pamdv100'],
+                    'environs': ['builtin', 'PrgEnv-gnu'],
                     'descr': 'AMD Naples 32c + 2x NVIDIA V100',
                     'max_jobs': 100,
                     'launcher': 'srun'
@@ -76,13 +56,8 @@ site_configuration = {
                 {
                     'name': 'amdvega',
                     'scheduler': 'slurm',
-                    'access': [
-                        '-pamdvega'
-                    ],
-                    'environs': [
-                        'builtin',
-                        'PrgEnv-gnu'
-                    ],
+                    'access': ['-pamdvega'],
+                    'environs': ['builtin', 'PrgEnv-gnu'],
                     'descr': 'AMD Naples 32c + 3x AMD GFX900',
                     'max_jobs': 100,
                     'launcher': 'srun'
@@ -90,13 +65,8 @@ site_configuration = {
                 {
                     'name': 'intelv100',
                     'scheduler': 'slurm',
-                    'access': [
-                        '-pintelv100'
-                    ],
-                    'environs': [
-                        'builtin',
-                        'PrgEnv-gnu'
-                    ],
+                    'access': ['-pintelv100'],
+                    'environs': ['builtin', 'PrgEnv-gnu'],
                     'descr': 'Intel Skylake 36c + 4x NVIDIA V100',
                     'max_jobs': 100,
                     'launcher': 'srun'
@@ -104,13 +74,8 @@ site_configuration = {
                 {
                     'name': 'intel',
                     'scheduler': 'slurm',
-                    'access': [
-                        '-pintel'
-                    ],
-                    'environs': [
-                        'builtin',
-                        'PrgEnv-gnu'
-                    ],
+                    'access': ['-pintel'],
+                    'environs': ['builtin', 'PrgEnv-gnu'],
                     'descr': 'Intel Skylake 36c',
                     'max_jobs': 100,
                     'launcher': 'srun'
@@ -120,9 +85,7 @@ site_configuration = {
         {
             'name': 'tave',
             'descr': 'Grand Tave',
-            'hostnames': [
-                'tave'
-            ],
+            'hostnames': ['tave'],
             'modules_system': 'tmod',
             'resourcesdir': '/apps/common/UES/reframe/resources',
             'partitions': [
@@ -158,17 +121,13 @@ site_configuration = {
         {
             'name': 'daint',
             'descr': 'Piz Daint',
-            'hostnames': [
-                'daint'
-            ],
+            'hostnames': ['daint'],
             'modules_system': 'tmod',
             'resourcesdir': '/apps/common/UES/reframe/resources',
             'partitions': [
                 {
                     'name': 'login',
                     'scheduler': 'local',
-                    'modules': [],
-                    'access': [],
                     'environs': [
                         'builtin',
                         'PrgEnv-cray',
@@ -187,20 +146,14 @@ site_configuration = {
                     'container_platforms': [
                         {
                             'type': 'Sarus',
-                            'modules': [
-                                'sarus'
-                            ]
+                            'modules': ['sarus']
                         },
                         {
                             'type': 'Singularity',
-                            'modules': [
-                                'singularity/3.6.4-daint'
-                            ]
+                            'modules': ['singularity/3.6.4-daint']
                         }
                     ],
-                    'modules': [
-                        'daint-gpu'
-                    ],
+                    'modules': ['daint-gpu'],
                     'access': [
                         f'--constraint=gpu',
                         f'--account={osext.osgroup()}'
@@ -217,9 +170,7 @@ site_configuration = {
                     'resources': [
                         {
                             'name': 'switches',
-                            'options': [
-                                '--switches={num_switches}'
-                            ]
+                            'options': ['--switches={num_switches}']
                         },
                         {
                             'name': 'gres',
@@ -235,20 +186,14 @@ site_configuration = {
                     'container_platforms': [
                         {
                             'type': 'Sarus',
-                            'modules': [
-                                'sarus'
-                            ]
+                            'modules': ['sarus']
                         },
                         {
                             'type': 'Singularity',
-                            'modules': [
-                                'singularity/3.6.4-daint'
-                            ]
+                            'modules': ['singularity/3.6.4-daint']
                         }
                     ],
-                    'modules': [
-                        'daint-mc'
-                    ],
+                    'modules': ['daint-mc'],
                     'access': [
                         f'--constraint=mc',
                         f'--account={osext.osgroup()}'
@@ -265,9 +210,7 @@ site_configuration = {
                     'resources': [
                         {
                             'name': 'switches',
-                            'options': [
-                                '--switches={num_switches}'
-                            ]
+                            'options': ['--switches={num_switches}']
                         },
                         {
                             'name': 'gres',
@@ -279,9 +222,7 @@ site_configuration = {
                 {
                     'name': 'jupyter_gpu',
                     'scheduler': 'slurm',
-                    'environs': [
-                        'builtin'
-                    ],
+                    'environs': ['builtin'],
                     'access': [
                         f'-Cgpu',
                         f'--reservation=interact_gpu',
@@ -294,9 +235,7 @@ site_configuration = {
                 {
                     'name': 'jupyter_mc',
                     'scheduler': 'slurm',
-                    'environs': [
-                        'builtin'
-                    ],
+                    'environs': ['builtin'],
                     'access': [
                         f'-Cmc',
                         f'--reservation=interact_mc',
@@ -309,9 +248,7 @@ site_configuration = {
                 {
                     'name': 'xfer',
                     'scheduler': 'slurm',
-                    'environs': [
-                        'builtin'
-                    ],
+                    'environs': ['builtin'],
                     'access': [
                         f'--partition=xfer',
                         f'--account={osext.osgroup()}'
@@ -325,17 +262,13 @@ site_configuration = {
         {
             'name': 'dom',
             'descr': 'Dom TDS',
-            'hostnames': [
-                'dom'
-            ],
+            'hostnames': ['dom'],
             'modules_system': 'tmod',
             'resourcesdir': '/apps/common/UES/reframe/resources',
             'partitions': [
                 {
                     'name': 'login',
                     'scheduler': 'local',
-                    'modules': [],
-                    'access': [],
                     'environs': [
                         'builtin',
                         'PrgEnv-cray',
@@ -354,20 +287,14 @@ site_configuration = {
                     'container_platforms': [
                         {
                             'type': 'Sarus',
-                            'modules': [
-                                'sarus'
-                            ]
+                            'modules': ['sarus']
                         },
                         {
                             'type': 'Singularity',
-                            'modules': [
-                                'singularity/3.6.4-daint'
-                            ]
+                            'modules': ['singularity/3.6.4-daint']
                         }
                     ],
-                    'modules': [
-                        'daint-gpu'
-                    ],
+                    'modules': ['daint-gpu'],
                     'access': [
                         f'--constraint=gpu',
                         f'--account={osext.osgroup()}'
@@ -396,20 +323,14 @@ site_configuration = {
                     'container_platforms': [
                         {
                             'type': 'Sarus',
-                            'modules': [
-                                'sarus'
-                            ]
+                            'modules': ['sarus']
                         },
                         {
                             'type': 'Singularity',
-                            'modules': [
-                                'singularity/3.6.4-daint'
-                            ]
+                            'modules': ['singularity/3.6.4-daint']
                         }
                     ],
-                    'modules': [
-                        'daint-mc'
-                    ],
+                    'modules': ['daint-mc'],
                     'access': [
                         f'--constraint=mc',
                         f'--account={osext.osgroup()}'
@@ -434,9 +355,7 @@ site_configuration = {
                 {
                     'name': 'jupyter_gpu',
                     'scheduler': 'slurm',
-                    'environs': [
-                        'builtin'
-                    ],
+                    'environs': ['builtin'],
                     'access': [
                         f'-Cgpu',
                         f'--reservation=interact_gpu',
@@ -449,9 +368,7 @@ site_configuration = {
                 {
                     'name': 'jupyter_mc',
                     'scheduler': 'slurm',
-                    'environs': [
-                        'builtin'
-                    ],
+                    'environs': ['builtin'],
                     'access': [
                         f'-Cmc',
                         f'--reservation=interact_mc',
@@ -466,18 +383,14 @@ site_configuration = {
         {
             'name': 'fulen',
             'descr': 'Fulen',
-            'hostnames': [
-                r'fulen-ln\d+'
-            ],
+            'hostnames': [r'fulen-ln\d+'],
             'modules_system': 'tmod',
             'resourcesdir': '/apps/common/UES/reframe/resources',
             'partitions': [
                 {
                     'name': 'login',
                     'scheduler': 'local',
-                    'environs': [
-                        'PrgEnv-gnu'
-                    ],
+                    'environs': ['PrgEnv-gnu'],
                     'descr': 'Login nodes',
                     'max_jobs': 1,
                     'launcher': 'local'
@@ -485,33 +398,23 @@ site_configuration = {
                 {
                     'name': 'normal',
                     'scheduler': 'slurm',
-                    'environs': [
-                        'PrgEnv-gnu'
-                    ],
+                    'environs': ['PrgEnv-gnu'],
                     'descr': 'Compute nodes - default partition',
                     'launcher': 'srun'
                 },
                 {
                     'name': 'fat',
                     'scheduler': 'slurm',
-                    'environs': [
-                        'PrgEnv-gnu'
-                    ],
-                    'access': [
-                        '--partition fat'
-                    ],
+                    'environs': ['PrgEnv-gnu'],
+                    'access': ['--partition fat'],
                     'descr': 'High-memory compute nodes',
                     'launcher': 'srun'
                 },
                 {
                     'name': 'gpu',
                     'scheduler': 'slurm',
-                    'environs': [
-                        'PrgEnv-gnu'
-                    ],
-                    'access': [
-                        '--partition gpu'
-                    ],
+                    'environs': ['PrgEnv-gnu'],
+                    'access': ['--partition gpu'],
                     'descr': 'Hybrid compute nodes',
                     'launcher': 'srun'
                 }
@@ -520,9 +423,7 @@ site_configuration = {
         {
             'name': 'arolla',
             'descr': 'Arolla MCH',
-            'hostnames': [
-                r'arolla-\w+\d+'
-            ],
+            'hostnames': [r'arolla-\w+\d+'],
             'modules_system': 'tmod',
             'resourcesdir': '/apps/common/UES/reframe/resources',
             'partitions': [
@@ -544,9 +445,7 @@ site_configuration = {
                 {
                     'name': 'pn',
                     'scheduler': 'slurm',
-                    'access': [
-                        '--partition=pn-regression'
-                    ],
+                    'access': ['--partition=pn-regression'],
                     'environs': [
                         'PrgEnv-pgi',
                         'PrgEnv-pgi-nompi',
@@ -562,9 +461,7 @@ site_configuration = {
                 {
                     'name': 'cn',
                     'scheduler': 'slurm',
-                    'access': [
-                        '--partition=cn-regression'
-                    ],
+                    'access': ['--partition=cn-regression'],
                     'environs': [
                         'PrgEnv-gnu',
                         'PrgEnv-gnu-nompi',
@@ -577,9 +474,7 @@ site_configuration = {
                     'resources': [
                         {
                             'name': '_rfm_gpu',
-                            'options': [
-                                '--gres=gpu:{num_gpus_per_node}'
-                            ]
+                            'options': ['--gres=gpu:{num_gpus_per_node}']
                         }
                     ],
                     'max_jobs': 50,
@@ -590,9 +485,7 @@ site_configuration = {
         {
             'name': 'tsa',
             'descr': 'Tsa MCH',
-            'hostnames': [
-                r'tsa-\w+\d+'
-            ],
+            'hostnames': [r'tsa-\w+\d+'],
             'modules_system': 'tmod',
             'resourcesdir': '/apps/common/UES/reframe/resources',
             'partitions': [
@@ -616,9 +509,7 @@ site_configuration = {
                 {
                     'name': 'pn',
                     'scheduler': 'slurm',
-                    'access': [
-                        '--partition=pn-regression'
-                    ],
+                    'access': ['--partition=pn-regression'],
                     'environs': [
                         'PrgEnv-pgi',
                         'PrgEnv-pgi-nompi',
@@ -636,9 +527,7 @@ site_configuration = {
                 {
                     'name': 'cn',
                     'scheduler': 'slurm',
-                    'access': [
-                        '--partition=cn-regression'
-                    ],
+                    'access': ['--partition=cn-regression'],
                     'environs': [
                         'PrgEnv-gnu',
                         'PrgEnv-gnu-nompi',
@@ -654,9 +543,7 @@ site_configuration = {
                     'resources': [
                         {
                             'name': '_rfm_gpu',
-                            'options': [
-                                '--gres=gpu:{num_gpus_per_node}'
-                            ]
+                            'options': ['--gres=gpu:{num_gpus_per_node}']
                         }
                     ],
                     'launcher': 'srun'
@@ -666,9 +553,7 @@ site_configuration = {
         {
             'name': 'eiger',
             'descr': 'Alps Cray EX Supercomputer',
-            'hostnames': [
-                'eiger'
-            ],
+            'hostnames': ['eiger'],
             'modules_system': 'lmod',
             'resourcesdir': '/apps/common/UES/reframe/resources',
             'partitions': [
@@ -700,9 +585,7 @@ site_configuration = {
                         },
                         {
                             'type': 'Singularity',
-                            'modules': [
-                                'singularity/3.5.3-eiger'
-                            ]
+                            'modules': ['singularity/3.5.3-eiger']
                         }
                     ],
                     'environs': [
@@ -721,15 +604,11 @@ site_configuration = {
                     'resources': [
                         {
                             'name': 'switches',
-                            'options': [
-                                '--switches={num_switches}'
-                            ]
+                            'options': ['--switches={num_switches}']
                         },
                         {
                             'name': 'memory',
-                            'options': [
-                                '--mem={mem_per_node}'
-                            ]
+                            'options': ['--mem={mem_per_node}']
                         },
                     ],
                     'launcher': 'srun'
@@ -737,9 +616,7 @@ site_configuration = {
                 {
                     'name': 'jupyter_mc',
                     'scheduler': 'slurm',
-                    'environs': [
-                        'builtin'
-                    ],
+                    'environs': ['builtin'],
                     'access': [
                         f'-Cmc',
                         f'--reservation=interact',
@@ -754,9 +631,7 @@ site_configuration = {
         {
             'name': 'pilatus',
             'descr': 'Alps Cray EX Supercomputer TDS',
-            'hostnames': [
-                'pilatus'
-            ],
+            'hostnames': ['pilatus'],
             'modules_system': 'lmod',
             'resourcesdir': '/apps/common/UES/reframe/resources',
             'partitions': [
@@ -788,9 +663,7 @@ site_configuration = {
                         },
                         {
                             'type': 'Singularity',
-                            'modules': [
-                                'singularity/3.5.3-eiger'
-                            ]
+                            'modules': ['singularity/3.5.3-eiger']
                         }
                     ],
                     'environs': [
@@ -809,15 +682,11 @@ site_configuration = {
                     'resources': [
                         {
                             'name': 'switches',
-                            'options': [
-                                '--switches={num_switches}'
-                            ]
+                            'options': ['--switches={num_switches}']
                         },
                         {
                             'name': 'memory',
-                            'options': [
-                                '--mem={mem_per_node}'
-                            ]
+                            'options': ['--mem={mem_per_node}']
                         },
                     ],
                     'launcher': 'srun'
@@ -831,9 +700,7 @@ site_configuration = {
                 {
                     'name': 'default',
                     'scheduler': 'local',
-                    'environs': [
-                        'builtin'
-                    ],
+                    'environs': ['builtin'],
                     'descr': 'Login nodes',
                     'launcher': 'local'
                 }
@@ -844,279 +711,181 @@ site_configuration = {
     'environments': [
         {
             'name': 'PrgEnv-gnu',
-            'target_systems': [
-                'ault'
-            ],
-            'modules': [
-                'openmpi'
-            ],
+            'target_systems': ['ault'],
+            'modules': ['openmpi'],
             'cc': 'mpicc',
             'cxx': 'mpicxx',
             'ftn': 'mpif90'
         },
         {
             'name': 'builtin',
-            'target_systems': [
-                'ault'
-            ],
+            'target_systems': ['ault'],
             'cc': 'cc',
             'cxx': '',
             'ftn': ''
         },
         {
             'name': 'builtin-gcc',
-            'target_systems': [
-                'ault'
-            ],
+            'target_systems': ['ault'],
             'cc': 'gcc',
             'cxx': 'g++',
             'ftn': 'gfortran'
         },
         {
             'name': 'PrgEnv-pgi-nompi-nocuda',
-            'target_systems': [
-                'arolla',
-            ],
-            'modules': [
-                'PrgEnv-pgi/19.9-nocuda'
-            ],
+            'target_systems': ['arolla'],
+            'modules': ['PrgEnv-pgi/19.9-nocuda'],
             'cc': 'pgcc',
             'cxx': 'pgc++',
             'ftn': 'pgf90'
         },
         {
             'name': 'PrgEnv-pgi-nompi-nocuda',
-            'target_systems': [
-                'tsa',
-            ],
-            'modules': [
-                'PrgEnv-pgi/20.4-nocuda'
-            ],
+            'target_systems': ['tsa'],
+            'modules': ['PrgEnv-pgi/20.4-nocuda'],
             'cc': 'pgcc',
             'cxx': 'pgc++',
             'ftn': 'pgf90'
         },
         {
             'name': 'PrgEnv-pgi-nompi',
-            'target_systems': [
-                'arolla',
-            ],
-            'modules': [
-                'PrgEnv-pgi/19.9'
-            ],
+            'target_systems': ['arolla'],
+            'modules': ['PrgEnv-pgi/19.9'],
             'cc': 'pgcc',
             'cxx': 'pgc++',
             'ftn': 'pgf90'
         },
         {
             'name': 'PrgEnv-pgi-nompi',
-            'target_systems': [
-                'tsa',
-            ],
-            'modules': [
-                'PrgEnv-pgi/20.4'
-            ],
+            'target_systems': ['tsa'],
+            'modules': ['PrgEnv-pgi/20.4'],
             'cc': 'pgcc',
             'cxx': 'pgc++',
             'ftn': 'pgf90'
         },
         {
             'name': 'PrgEnv-pgi',
-            'target_systems': [
-                'arolla',
-            ],
-            'modules': [
-                'PrgEnv-pgi/19.9'
-            ],
+            'target_systems': ['arolla'],
+            'modules': ['PrgEnv-pgi/19.9'],
             'cc': 'mpicc',
             'cxx': 'mpicxx',
             'ftn': 'mpifort'
         },
         {
             'name': 'PrgEnv-pgi',
-            'target_systems': [
-                'tsa',
-            ],
-            'modules': [
-                'PrgEnv-pgi/20.4'
-            ],
+            'target_systems': ['tsa'],
+            'modules': ['PrgEnv-pgi/20.4'],
             'cc': 'mpicc',
             'cxx': 'mpicxx',
             'ftn': 'mpifort'
         },
         {
             'name': 'PrgEnv-pgi-nocuda',
-            'target_systems': [
-                'arolla',
-            ],
-            'modules': [
-                'PrgEnv-pgi/19.9-nocuda'
-            ],
+            'target_systems': ['arolla'],
+            'modules': ['PrgEnv-pgi/19.9-nocuda'],
             'cc': 'mpicc',
             'cxx': 'mpicxx',
             'ftn': 'mpifort'
         },
         {
             'name': 'PrgEnv-pgi-nocuda',
-            'target_systems': [
-                'tsa',
-            ],
-            'modules': [
-                'PrgEnv-pgi/20.4-nocuda'
-            ],
+            'target_systems': ['tsa'],
+            'modules': ['PrgEnv-pgi/20.4-nocuda'],
             'cc': 'mpicc',
             'cxx': 'mpicxx',
             'ftn': 'mpifort'
         },
         {
             'name': 'PrgEnv-gnu',
-            'target_systems': [
-                'arolla', 'tsa'
-            ],
-            'modules': [
-                'PrgEnv-gnu/19.2'
-            ],
+            'target_systems': ['arolla', 'tsa'],
+            'modules': ['PrgEnv-gnu/19.2'],
             'cc': 'mpicc',
             'cxx': 'mpicxx',
             'ftn': 'mpifort'
         },
         {
             'name': 'PrgEnv-gnu-nocuda',
-            'target_systems': [
-                'arolla', 'tsa'
-            ],
-            'modules': [
-                'PrgEnv-gnu/19.2-nocuda'
-            ],
+            'target_systems': ['arolla', 'tsa'],
+            'modules': ['PrgEnv-gnu/19.2-nocuda'],
             'cc': 'mpicc',
             'cxx': 'mpicxx',
             'ftn': 'mpifort'
         },
         {
             'name': 'PrgEnv-gnu-nompi',
-            'target_systems': [
-                'arolla', 'tsa'
-            ],
-            'modules': [
-                'PrgEnv-gnu/19.2'
-            ],
+            'target_systems': ['arolla', 'tsa'],
+            'modules': ['PrgEnv-gnu/19.2'],
             'cc': 'gcc',
             'cxx': 'g++',
             'ftn': 'gfortran'
         },
         {
             'name': 'PrgEnv-gnu-nompi-nocuda',
-            'target_systems': [
-                'arolla', 'tsa'
-            ],
-            'modules': [
-                'PrgEnv-gnu/19.2-nocuda'
-            ],
+            'target_systems': ['arolla', 'tsa'],
+            'modules': ['PrgEnv-gnu/19.2-nocuda'],
             'cc': 'gcc',
             'cxx': 'g++',
             'ftn': 'gfortran'
         },
         {
             'name': 'PrgEnv-aocc',
-            'target_systems': [
-                'eiger', 'pilatus'
-            ],
-            'modules': [
-                'PrgEnv-aocc'
-            ]
+            'target_systems': ['eiger', 'pilatus'],
+            'modules': ['PrgEnv-aocc']
         },
         {
             'name': 'PrgEnv-cray',
-            'target_systems': [
-                'eiger', 'pilatus'
-            ],
-            'modules': [
-                'PrgEnv-cray'
-            ]
+            'target_systems': ['eiger', 'pilatus'],
+            'modules': ['PrgEnv-cray']
         },
         {
             'name': 'PrgEnv-gnu',
-            'target_systems': [
-                'eiger', 'pilatus'
-            ],
-            'modules': [
-                'PrgEnv-gnu'
-            ]
+            'target_systems': ['eiger', 'pilatus'],
+            'modules': ['PrgEnv-gnu']
         },
         {
             'name': 'PrgEnv-intel',
-            'target_systems': [
-                'eiger', 'pilatus'
-            ],
-            'modules': [
-                'PrgEnv-intel'
-            ]
+            'target_systems': ['eiger', 'pilatus'],
+            'modules': ['PrgEnv-intel']
         },
         {
             'name': 'cpeAMD',
-            'target_systems': [
-                'eiger', 'pilatus'
-            ],
-            'modules': [
-                'cpeAMD'
-            ],
+            'target_systems': ['eiger', 'pilatus'],
+            'modules': ['cpeAMD']
         },
         {
             'name': 'cpeCray',
-            'target_systems': [
-                'eiger', 'pilatus'
-            ],
-            'modules': [
-                'cpeCray'
-            ],
+            'target_systems': ['eiger', 'pilatus'],
+            'modules': ['cpeCray']
         },
         {
             'name': 'cpeGNU',
-            'target_systems': [
-                'eiger', 'pilatus'
-            ],
-            'modules': [
-                'cpeGNU'
-            ],
+            'target_systems': ['eiger', 'pilatus'],
+            'modules': ['cpeGNU']
         },
         {
             'name': 'cpeIntel',
-            'target_systems': [
-                'eiger', 'pilatus'
-            ],
-            'modules': [
-                'cpeIntel'
-            ],
+            'target_systems': ['eiger', 'pilatus'],
+            'modules': ['cpeIntel']
         },
         {
             'name': 'PrgEnv-cray',
-            'modules': [
-                'PrgEnv-cray'
-            ]
+            'modules': ['PrgEnv-cray']
         },
         {
             'name': 'PrgEnv-gnu',
-            'modules': [
-                'PrgEnv-gnu'
-            ]
+            'modules': ['PrgEnv-gnu']
         },
         {
             'name': 'PrgEnv-intel',
-            'modules': [
-                'PrgEnv-intel'
-            ]
+            'modules': ['PrgEnv-intel']
         },
         {
             'name': 'PrgEnv-pgi',
-            'modules': [
-                'PrgEnv-pgi'
-            ]
+            'modules': ['PrgEnv-pgi']
         },
         {
             'name': 'PrgEnv-nvidia',
-            'target_systems': [
-                'pilatus'
-            ],
+            'target_systems': ['pilatus'],
             'modules': [
                 'PrgEnv-nvidia',
                 # FIXME: We should not be forcing a cdt version
@@ -1125,9 +894,7 @@ site_configuration = {
         },
         {
             'name': 'PrgEnv-nvidia',
-            'target_systems': [
-                'daint'
-            ],
+            'target_systems': ['daint'],
             'modules': [
                 'PrgEnv-nvidia',
                 # FIXME: We should not be forcing a cdt version
@@ -1232,9 +999,7 @@ site_configuration = {
     ],
     'general': [
         {
-            'check_search_path': [
-                'checks/'
-            ],
+            'check_search_path': ['checks/'],
             'check_search_recursive': True,
             'remote_detect': True
         }
