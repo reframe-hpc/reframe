@@ -783,12 +783,12 @@ class RegressionTestMeta(type):
         rdepth = kwargs.get('_current_depth', 0)
 
         if recurse and (max_depth is None or rdepth < max_depth):
-            for fix, variant in ret['fixtures'].items():
+            for fixt, variant in ret['fixtures'].items():
                 if len(variant) > 1:
                     continue
 
-                fcls = cls.fixture_space[fix].cls
-                ret['fixtures'][fix] = fcls.get_variant_info(
+                fcls = cls.fixture_space[fixt].cls
+                ret['fixtures'][fixt] = fcls.get_variant_info(
                     variant[0], recurse=recurse, max_depth=max_depth,
                     _current_depth=rdepth+1
                 )
