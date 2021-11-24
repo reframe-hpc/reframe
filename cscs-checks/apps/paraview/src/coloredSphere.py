@@ -2,14 +2,14 @@ import os
 
 from paraview.simple import *
 from paraview.modules.vtkRemotingCore import vtkProcessModule
-from paraview.modules.vtkRemotingViews import vtkPVOpenGLInformation,
+from paraview.modules.vtkRemotingViews import vtkPVOpenGLInformation, \
                                        vtkPVRenderingCapabilitiesInformation
 
 basename = os.getenv('SCRATCH')
 if basename is None:
     basename = "/tmp"
 
-Version = str(servermanager.vtkSMProxyManager.GetVersionMajor()) + "." +
+Version = str(servermanager.vtkSMProxyManager.GetVersionMajor()) + "." + \
           str(servermanager.vtkSMProxyManager.GetVersionMinor())
 
 info = vtkPVOpenGLInformation()
@@ -28,10 +28,10 @@ if rank == 0:
     print("Version:  %s" % info.GetVersion())
     print("Renderer: %s" % info.GetRenderer())
 
-if renInfo.Supports(
+if renInfo.Supports( \
     vtkPVRenderingCapabilitiesInformation.HEADLESS_RENDERING_USES_EGL):
     Vendor = "EGL"
-elif renInfo.Supports(
+elif renInfo.Supports( \
     vtkPVRenderingCapabilitiesInformation.HEADLESS_RENDERING_USES_OSMESA):
     Vendor = "OSMESA"
 else:
