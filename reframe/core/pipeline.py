@@ -197,15 +197,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     @classmethod
     def pipeline_hooks(cls):
-        # The hook registry stores hooks in MRO order, but we want to attach
-        # the hooks in reverse order so that the more specialized hooks (those
-        # at the beginning of the MRO list) will be executed last
-
         ret = {}
         for hook in cls._rfm_hook_registry:
             for stage in hook.stages:
                 try:
-                    ret[stage].insert(0, hook.fn)
+                    ret[stage].append(hook.fn)
                 except KeyError:
                     ret[stage] = [hook.fn]
 
