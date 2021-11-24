@@ -30,7 +30,6 @@ class ParaViewCheck(rfm.RunOnlyRegressionTest):
     def set_sanity(self):
         if self.current_partition.name == 'mc':
             self.sanity_patterns = sn.all([
-                sn.assert_found('Vendor:   VMware, Inc.', self.stdout),
                 sn.assert_found('Renderer: llvmpipe', self.stdout)
             ])
         elif self.current_partition.name == 'gpu':
