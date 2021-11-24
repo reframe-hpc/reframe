@@ -57,7 +57,7 @@ def format_check(check, check_deps, detailed=False):
 
     location = inspect.getfile(type(check))
     if not detailed:
-        return f'- {check.name} (found in {location!r})'
+        return f'- {check.display_name} (found in {location!r})'
 
     if check.num_tasks > 0:
         node_alloc_scheme = (f'standard ({check.num_tasks} task(s) -- '

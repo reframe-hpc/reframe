@@ -1057,7 +1057,27 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
            The display name may not be unique.
 
         '''
-        return self.unique_name
+        def _format_params(info, prefix=' %'):
+            name = ''
+            for p, v in info['params'].items():
+                name += f'{prefix}{p}={v}'
+
+            for f, v in info['fixtures'].items():
+                if isinstance(v, tuple):
+                    # This is join fixture
+                    continue
+
+                name += _format_params(v, f'{prefix}{f}.')
+
+            return name
+
+        if hasattr(self, '_rfm_display_name'):
+            return self._rfm_display_name
+
+        cls = type(self)
+        variant_info = cls.get_variant_info(self.variant_num, recurse=True)
+        self._rfm_display_name = cls.__name__ + _format_params(variant_info)
+        return self._rfm_display_name
 
     @property
     def name(self):
