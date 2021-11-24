@@ -1038,15 +1038,31 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     @property
     def unique_name(self):
-        '''Return the unique name of this test.
+        '''The unique name of this test.
 
         .. versionadded:: 3.10.0
         '''
         return self._rfm_unique_name
 
     @property
+    def display_name(self):
+        '''A human-readable version of the name this test.
+
+        This name contains a string representation of the various parameters
+        of this specific test variant.
+
+        .. versionadded;: 3.10.0
+
+        .. note::
+           The display name may not be unique.
+
+        '''
+        return self.unique_name
+
+    @property
     def name(self):
-        return self._rfm_unique_name
+        # For backward compatibility
+        return self.unique_name
 
     @property
     def current_environ(self):
