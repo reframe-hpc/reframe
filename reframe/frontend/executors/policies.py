@@ -276,9 +276,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         task = RegressionTask(case, self.task_listeners)
         self._task_index[case] = task
         self.stats.add_task(task)
-        self.printer.status(
-            'START', '%s on %s using %s' %
-            (check.name, partition.fullname, environ.name)
+        self.printer.info(
+            f'==> added {check.name} on {partition.fullname} '
+            f'using {environ.name}'
         )
         self._current_tasks.add(task)
 
@@ -400,6 +400,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def advance_compiling(self, task):
         try:
             if task.compile_complete():
+                task.compile_wait()
                 if task.check.local or task.check.build_locally:
                     self._local_scheduler_tasks.remove(task)
                 else:
@@ -416,6 +417,12 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 return 0
 
         except TaskExit:
+            if task.check.local or task.check.build_locally:
+                    self._local_scheduler_tasks.remove(task)
+            else:
+                partname = task.check.current_partition.fullname
+                self._scheduler_tasks[partname].remove(task)
+
             self._current_tasks.remove(task)
             return 1
 
@@ -449,6 +456,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def advance_running(self, task):
         try:
             if task.run_complete():
+                task.run_wait()
                 if task.check.local:
                     self._local_scheduler_tasks.remove(task)
                 else:
@@ -461,6 +469,12 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 return 0
 
         except TaskExit:
+            if task.check.local:
+                self._local_scheduler_tasks.remove(task)
+            else:
+                partname = task.check.current_partition.fullname
+                self._scheduler_tasks[partname].remove(task)
+
             self._current_tasks.remove(task)
             return 1
 
@@ -503,21 +517,29 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     # TODO all this prints have to obviously leave from here...
     def on_task_setup(self, task):
-        print(task.check.name, 'setup')
+        self.printer.status(
+            'START', '%s on %s using %s' %
+            (task.check.name, task.check.current_partition.fullname, task.check.current_environ.name)
+        )
 
     def on_task_run(self, task):
+        pass
         print(task.check.name, 'run')
 
     def on_task_compile(self, task):
+        pass
         print(task.check.name, 'compile')
 
     def on_task_exit(self, task):
+        pass
         print(task.check.name, 'run exit')
 
     def on_task_compile_exit(self, task):
+        pass
         print(task.check.name, 'compile exit')
 
     def on_task_skip(self, task):
+        pass
         print(task.check.name, 'skip')
 
     def on_task_failure(self, task):
