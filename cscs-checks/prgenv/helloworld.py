@@ -3,8 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-from datetime import datetime
-
 import re
 import reframe as rfm
 import reframe.utility.sanity as sn
