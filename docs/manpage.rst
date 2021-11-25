@@ -699,7 +699,11 @@ Environment
 Several aspects of ReFrame can be controlled through environment variables.
 Usually environment variables have counterparts in command line options or configuration parameters.
 In such cases, command-line options take precedence over environment variables, which in turn precede configuration parameters.
-Boolean environment variables can have any value of ``true``, ``yes`` or ``y`` (case insensitive) to denote true and any value of ``false``, ``no`` or ``n`` (case insensitive) to denote false.
+Boolean environment variables can have any value of ``true``, ``yes``, ``y`` (case insensitive) or ``1`` to denote true and any value of ``false``, ``no``, ``n`` (case insensitive) or ``0`` to denote false.
+
+.. versionchanged:: 3.9.2
+  Values ``1`` and ``0`` are now valid for boolean environment variables.
+
 
 Here is an alphabetical list of the environment variables recognized by ReFrame:
 

@@ -346,7 +346,7 @@ In essence, these builtins exert control over the test creation, and they allow 
     @rfm.simple_test
     class TestC(rfm.RegressionTest):
         # Parameterize TestC for each ParamFix variant
-        f = fixture(ParamFix, action='fork') 
+        f = fixture(ParamFix, action='fork')
         ...
 
         @run_after('setup')
@@ -546,7 +546,7 @@ Pipeline hooks attached to multiple stages will be executed on each pipeline sta
 Pipeline stages with multiple hooks attached will execute these hooks in the order in which they were attached to the given pipeline stage.
 A derived class will inherit all the pipeline hooks defined in its bases, except for those whose hook function is overridden by the derived class.
 A function that overrides a pipeline hook from any of the base classes will not be a pipeline hook unless the overriding function is explicitly reattached to any pipeline stage.
-In the event of a name clash arising from multiple inheritance, the inherited pipeline hook will be chosen following Python's `MRO <https://docs.python.org/3/library/stdtypes.html#class.__mro__>`_.
+In the event of a name clash arising from multiple inheritance, the inherited pipeline hook will be chosen following Python's `MRO <https://docs.python.org/3/library/stdtypes.html#class.__mro__>`__.
 
 A function may be attached to any of the following stages (listed in order of execution): ``init``, ``setup``, ``compile``, ``run``, ``sanity``, ``performance`` and ``cleanup``.
 The ``init`` stage refers to the test's instantiation and it runs before entering the execution pipeline.
@@ -555,6 +555,22 @@ Hooks attached to any other stage will run exactly before or after this stage ex
 So although a "post-init" and a "pre-setup" hook will both run *after* a test has been initialized and *before* the test goes through the first pipeline stage, they will execute in different times:
 the post-init hook will execute *right after* the test is initialized.
 The framework will then continue with other activities and it will execute the pre-setup hook *just before* it schedules the test for executing its setup stage.
+
+Pipeline hooks are executed in reverse MRO order, i.e., the hooks of the least specialized class will be executed first.
+In the following example, :func:`BaseTest.x` will execute before :func:`DerivedTest.y`:
+
+.. code:: python
+
+   class BaseTest(rfm.RegressionTest):
+       @run_after('setup')
+       def x(self):
+           '''Hook x'''
+
+   class DerivedTest(BaseTeset):
+       @run_after('setup')
+       def y(self):
+           '''Hook y'''
+
 
 .. note::
    Pipeline hooks do not execute in the test's stage directory.
@@ -576,6 +592,16 @@ The framework will then continue with other activities and it will execute the p
    .. versionchanged:: 3.7.0
       Declaring pipeline hooks using the same name functions from the :py:mod:`reframe` or :py:mod:`reframe.core.decorators` modules is now deprecated.
       You should use the built-in functions described in this section instead.
+
+.. warning::
+   .. versionchanged:: 3.9.2
+
+      Execution of pipeline hooks until this version was implementation-defined.
+      In practice, hooks of a derived class were executed before those of its parents.
+
+      This version defines the execution order of hooks, which now follows a strict reverse MRO order, so that parent hooks will execute before those of derived classes.
+      Tests that relied on the execution order of hooks might break with this change.
+
 
 .. py:decorator:: RegressionMixin.run_before(stage)
 

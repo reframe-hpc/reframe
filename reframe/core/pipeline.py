@@ -397,7 +397,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     #: .. versionadded:: 3.0
     #:
-    #: List of shell commands to execute before launching this job.
+    #: List of shell commands to execute before the parallel launch command.
     #:
     #: These commands do not execute in the context of ReFrame.
     #: Instead, they are emitted in the generated job script just before the
@@ -409,7 +409,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     #: .. versionadded:: 3.0
     #:
-    #: List of shell commands to execute after launching this job.
+    #: List of shell commands to execute after the parallel launch command.
     #:
     #: See :attr:`prerun_cmds` for a more detailed description of the
     #: semantics.
