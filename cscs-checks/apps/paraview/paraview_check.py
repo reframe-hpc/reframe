@@ -25,7 +25,7 @@ class ParaViewCheck(rfm.RunOnlyRegressionTest):
         if self.current_system.name in {'eiger', 'pilatus'}:
             self.valid_prog_environs = ['cpeCray']
 
-    @run_before('sanity')
+    @sanity_function
     def assert_vendor_renderer(self):
         if self.current_partition.name == 'mc':
             return sn.assert_found('Renderer: llvmpipe', self.stdout)
