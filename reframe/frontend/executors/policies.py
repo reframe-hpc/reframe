@@ -354,10 +354,10 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 self._current_tasks.remove(task)
                 return 1
             else:
-                if isinstance(task.check, RunOnlyRegressionTest):
-                    task.policy_stage = 'ready_to_run'
-                else:
-                    task.policy_stage = 'ready_to_compile'
+                # if isinstance(task.check, RunOnlyRegressionTest):
+                #     task.policy_stage = 'ready_to_run'
+                # else:
+                task.policy_stage = 'ready_to_compile'
 
                 return 1
 
@@ -407,10 +407,10 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                     partname = task.check.current_partition.fullname
                     self._scheduler_tasks[partname].remove(task)
 
-                if isinstance(task.check, CompileOnlyRegressionTest):
-                    task.policy_stage = 'completed'
-                else:
-                    task.policy_stage = 'ready_to_run'
+                # if isinstance(task.check, CompileOnlyRegressionTest):
+                #     task.policy_stage = 'completed'
+                # else:
+                task.policy_stage = 'ready_to_run'
 
                 return 1
             else:
