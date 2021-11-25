@@ -25,6 +25,12 @@ class gromacs_check(rfm.RunOnlyRegressionTest):
 
     '''
 
+    #: The version of Horovod to use.
+    #:
+    #: :type: :class:`str`
+    #: :default: ``'v0.21.0'``
+    benchmark_version = variable(str, value='1.0.0')
+
     #: Parameter pack encoding the benchmark information.
     #:
     #: The first element of the tuple refers to the benchmark name,
@@ -37,6 +43,7 @@ class gromacs_check(rfm.RunOnlyRegressionTest):
         ('HECBioSim/Crambin', -204107.0, 0.001),
         ('HECBioSim/Glutamine-Binding-Protein', -724598.0, 0.001),
         ('HECBioSim/hEGFRDimer', -3.32892e+06, 0.001),
+        ('HECBioSim/hEGFRDimerSmallerPL',-3.27080e+06, 0.001),
         ('HECBioSim/hEGFRDimerPair', -1.20733e+07, 0.001),
         ('HECBioSim/hEGFRtetramerPair', -2.09831e+07, 0.001)
     ])
@@ -47,7 +54,7 @@ class gromacs_check(rfm.RunOnlyRegressionTest):
     #: :values: ``['cpu', 'gpu']``
     nb_impl = parameter(['cpu', 'gpu'])
 
-    executable = 'gmx_mpi'
+    executable = 'gmx_mpi mdrun'
     tags = {'sciapp', 'chemistry'}
     keep_files = ['md.log']
 
@@ -56,10 +63,9 @@ class gromacs_check(rfm.RunOnlyRegressionTest):
         self.__bench, self.__energy_ref, self.__energy_tol = self.benchmark_info
         self.descr = f'GROMACS {self.__bench} benchmark (NB: {self.nb_impl})'
         self.prerun_cmds = [
-            f'curl -LJO https://github.com/victorusu/GROMACS_Benchmark_Suite/raw/main/{self.__bench}/benchmark.tpr'  # noqa: E501
+            f'curl -LJO https://github.com/victorusu/GROMACS_Benchmark_Suite/raw/{self.benchmark_version}/{self.__bench}/benchmark.tpr' # noqa: E501
         ]
-        self.executable_opts = ['mdrun', '-nb', self.nb_impl,
-                                '-s benchmark.tpr']
+        self.executable_opts += ['-nb', self.nb_impl, '-s benchmark.tpr']
 
     @property
     def bench_name(self):
@@ -100,6 +106,14 @@ class gromacs_check(rfm.RunOnlyRegressionTest):
                                 'md.log', 'energy', float, item=-1)
 
     @deferrable
+    def energy_hecbiosim_hegfrdimersmallerpl(self):
+        return sn.extractsingle(r'\s+Potential\s+Kinetic En\.\s+Total Energy'
+                                r'\s+Conserved En\.\s+Temperature\n'
+                                r'(\s+\S+){2}\s+(?P<energy>\S+)(\s+\S+){2}\n'
+                                r'\s+Pressure \(bar\)\s+Constr\. rmsd',
+                                'md.log', 'energy', float, item=-1)
+
+    @deferrable
     def energy_hecbiosim_hegfrdimerpair(self):
         return sn.extractsingle(r'\s+Potential\s+Kinetic En\.\s+Total Energy'
                                 r'\s+Conserved En\.\s+Temperature\n'
@@ -130,6 +144,6 @@ class gromacs_check(rfm.RunOnlyRegressionTest):
         energy_diff = sn.abs(energy - self.__energy_ref)
         return sn.all([
             sn.assert_found('Finished mdrun', 'md.log'),
-            #sn.assert_lt(energy_diff, self.__energy_tol)
-            sn.assert_reference(energy, self.__energy_ref, -self.__energy_tol, self.__energy_tol)
+            sn.assert_reference(energy, self.__energy_ref,
+                                -self.__energy_tol, self.__energy_tol)
         ])
