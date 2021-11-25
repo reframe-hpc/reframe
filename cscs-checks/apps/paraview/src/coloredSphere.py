@@ -31,10 +31,10 @@ if rank == 0:
     print("Renderer: %s" % info.GetRenderer())
 
 if renInfo.Supports(
-    vtkPVRenderingCapabilitiesInformation.HEADLESS_RENDERING_USES_EGL): # noqa: E125
+    vtkPVRenderingCapabilitiesInformation.HEADLESS_RENDERING_USES_EGL):  # noqa: E125
     Vendor = "EGL"
 elif renInfo.Supports(
-    vtkPVRenderingCapabilitiesInformation.HEADLESS_RENDERING_USES_OSMESA): # noqa: E125
+    vtkPVRenderingCapabilitiesInformation.HEADLESS_RENDERING_USES_OSMESA):  # noqa: E125
     Vendor = "OSMESA"
 else:
     Vendor = ""
