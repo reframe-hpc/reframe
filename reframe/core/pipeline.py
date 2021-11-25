@@ -2203,6 +2203,26 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         if cond:
             self.skip(msg)
 
+    def skip_if_no_procinfo(self, msg=None):
+        '''Skip test if no processor topology information is available.
+
+        This method has effect only if called after the ``setup`` stage.
+
+        :arg msg: A message explaining why the test was skipped.
+            If not specified, a default message will be used.
+
+        .. versionadded:: 3.9.1
+        '''
+        if not self.current_partition:
+            return
+
+        proc = self.current_partition.processor
+        pname = self.current_partition.fullname
+        if msg is None:
+            msg = f'no topology information found for partition {pname!r}'
+
+        self.skip_if(not proc.info, msg)
+
     def __str__(self):
         return "%s(name='%s', prefix='%s')" % (type(self).__name__,
                                                self.name, self.prefix)

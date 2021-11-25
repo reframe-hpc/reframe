@@ -5,7 +5,7 @@
 
 import reframe as rfm
 
-from hpctestlib.sciapps.jupyter.ipcmagic import ipcmagic_check
+from hpctestlib.interactive.jupyter.ipcmagic import ipcmagic_check
 
 
 @rfm.simple_test

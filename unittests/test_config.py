@@ -259,6 +259,10 @@ def test_select_subconfig():
     assert site_config.get('environments/1/cxx') == 'CC'
     assert (site_config.get('environments/@PrgEnv-cray/modules') ==
             [{'name': 'PrgEnv-cray', 'collection': False, 'path': None}])
+    assert site_config.get('environments/@PrgEnv-gnu/extras') == {'foo': 1,
+                                                                  'bar': 'x'}
+    assert site_config.get('environments/@PrgEnv-cray/extras') == {}
+
     assert len(site_config.get('general')) == 1
     assert site_config.get('general/0/check_search_path') == ['a:b']
 
@@ -358,6 +362,7 @@ def test_system_create():
     assert len(partition.environs) == 2
     assert partition.environment('PrgEnv-gnu').cc == 'cc'
     assert partition.environment('PrgEnv-gnu').cflags == []
+    assert partition.environment('PrgEnv-gnu').extras == {'foo': 2, 'bar': 'y'}
 
     # Check resource instantiation
     resource_spec = partition.get_resource('gpu', num_gpus_per_node=16)

@@ -60,7 +60,7 @@ class gromacs_check(rfm.RunOnlyRegressionTest):
 
     @run_after('init')
     def prepare_test(self):
-        self.__bench, self.__energy_ref, self.__energy_tol = self.benchmark_info
+        self.__bench, self.__nrg_ref, self.__nrg_tol = self.benchmark_info
         self.descr = f'GROMACS {self.__bench} benchmark (NB: {self.nb_impl})'
         self.prerun_cmds = [
             f'curl -LJO https://github.com/victorusu/GROMACS_Benchmark_Suite/raw/{self.benchmark_version}/{self.__bench}/benchmark.tpr' # noqa: E501
@@ -75,6 +75,22 @@ class gromacs_check(rfm.RunOnlyRegressionTest):
         '''
 
         return self.__bench
+
+    @property
+    def energy_ref(self):
+        '''The energy reference value for this benchmark.
+
+        :type: :class:`str`
+        '''
+        return self.__nrg_ref
+
+    @property
+    def energy_tol(self):
+        '''The energy tolerance value for this benchmark.
+
+        :type: :class:`str`
+        '''
+        return self.__nrg_tol
 
     @performance_function('ns/day')
     def perf(self):
@@ -141,9 +157,9 @@ class gromacs_check(rfm.RunOnlyRegressionTest):
                  f"please define a member function '{energy_fn_name}()'")
         ).evaluate()
         energy = energy_fn()
-        energy_diff = sn.abs(energy - self.__energy_ref)
+        energy_diff = sn.abs(energy - self.energy_ref)
         return sn.all([
             sn.assert_found('Finished mdrun', 'md.log'),
-            sn.assert_reference(energy, self.__energy_ref,
-                                -self.__energy_tol, self.__energy_tol)
+            sn.assert_reference(energy, self.energy_ref,
+                                -self.energy_tol, self.energy_tol)
         ])
