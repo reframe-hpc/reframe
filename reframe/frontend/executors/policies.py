@@ -282,10 +282,36 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         )
         self._current_tasks.add(task)
 
+    def print_state_of_tasks(self, tasks):
+        stats = {
+            'wait': [],
+            'ready_to_compile': {},
+            'compiling': {},
+            'ready_to_run': {},
+            'running': {},
+            'completed': {}
+        }
+        print(f'Total tasks: {len(tasks)}')
+        for t in tasks:
+            if t.policy_stage == 'wait':
+                stats['wait'].append(t)
+            else:
+                stats[t.policy_stage].setdefault(t.check.current_partition.fullname, [])
+                stats[t.policy_stage][t.check.current_partition.fullname].append(t)
+
+        print(f"Tasks in wait: {len(stats['wait'])}")
+        phases = ['ready_to_compile', 'compiling', 'ready_to_run', 'running', 'completed']
+        for phase in phases:
+            print(f"Tasks in {phase}:")
+            for part in stats[phase]:
+                print(f"  {part}: {len(stats[phase][part])}")
+
     def exit(self):
         self.printer.separator('short single line',
                                'waiting for spawned checks to finish')
         while self._current_tasks:
+            # print()
+            # self.print_state_of_tasks(self._current_tasks)
             try:
                 self._poll_tasks()
                 num_running = sum(
