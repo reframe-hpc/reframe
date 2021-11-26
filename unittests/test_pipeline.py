@@ -753,17 +753,70 @@ def test_inherited_hooks(HelloTest, local_exec_ctx):
         def z(self):
             self.var += 1
 
+        @run_after('setup')
+        def w(self):
+            self.var += 1
+
     class MyTest(DerivedTest):
         pass
 
     test = MyTest()
     _run(test, *local_exec_ctx)
-    assert test.var == 2
+    assert test.var == 3
     assert test.foo == 1
     assert test.pipeline_hooks() == {
-        'post_setup': [DerivedTest.z, BaseTest.x],
+        'post_setup': [BaseTest.x, DerivedTest.z, DerivedTest.w],
         'pre_run': [C.y],
     }
+
+
+@pytest.fixture
+def weird_mro_test(HelloTest):
+    # This returns a class with non-obvious MRO resolution.
+    #
+    # See example in https://www.python.org/download/releases/2.3/mro/
+    #
+    # The MRO of A is ABECDFX, which means that E is more specialized than C!
+    class X(rfm.RegressionMixin):
+        pass
+
+    class D(X):
+        @run_after('setup')
+        def d(self):
+            pass
+
+    class E(X):
+        @run_after('setup')
+        def e(self):
+            pass
+
+    class F(X):
+        @run_after('setup')
+        def f(self):
+            pass
+
+    class C(D, F):
+        @run_after('setup')
+        def c(self):
+            pass
+
+    class B(E, D):
+        @run_after('setup')
+        def b(self):
+            pass
+
+    class A(B, C, HelloTest):
+        @run_after('setup')
+        def a(self):
+            pass
+
+    return A
+
+
+def test_inherited_hooks_order(weird_mro_test, local_exec_ctx):
+    t = weird_mro_test()
+    hook_order = [fn.__name__ for fn in t.pipeline_hooks()['post_setup']]
+    assert hook_order == ['f', 'd', 'c', 'e', 'b', 'a']
 
 
 def test_inherited_hooks_from_instantiated_tests(HelloTest, local_exec_ctx):
