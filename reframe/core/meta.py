@@ -411,13 +411,14 @@ class RegressionTestMeta(type):
         cls._rfm_dir.update(cls.__dict__)
 
         # Populate the global hook registry with the hook registries of the
-        # parent classes in MRO order
-        cls._rfm_hook_registry.update(cls._rfm_local_hook_registry)
-        for c in cls.mro()[1:]:
+        # parent classes in reverse MRO order
+        for c in list(reversed(cls.mro()))[:-1]:
             if hasattr(c, '_rfm_local_hook_registry'):
                 cls._rfm_hook_registry.update(
                     c._rfm_local_hook_registry, denied_hooks=namespace
                 )
+
+        cls._rfm_hook_registry.update(cls._rfm_local_hook_registry)
 
         # Search the bases if no local sanity functions exist.
         if '_rfm_sanity' not in namespace:

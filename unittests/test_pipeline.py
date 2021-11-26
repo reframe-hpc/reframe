@@ -753,15 +753,19 @@ def test_inherited_hooks(HelloTest, local_exec_ctx):
         def z(self):
             self.var += 1
 
+        @run_after('setup')
+        def w(self):
+            self.var += 1
+
     class MyTest(DerivedTest):
         pass
 
     test = MyTest()
     _run(test, *local_exec_ctx)
-    assert test.var == 2
+    assert test.var == 3
     assert test.foo == 1
     assert test.pipeline_hooks() == {
-        'post_setup': [BaseTest.x, DerivedTest.z],
+        'post_setup': [BaseTest.x, DerivedTest.z, DerivedTest.w],
         'pre_run': [C.y],
     }
 
