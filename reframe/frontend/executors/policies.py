@@ -4,8 +4,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import contextlib
-import functools
-import itertools
 import math
 import sys
 import time
