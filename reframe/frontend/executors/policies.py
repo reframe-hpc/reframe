@@ -407,7 +407,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def advance_ready_to_compile(self, task):
         if task.check.local or task.check.build_locally:
-            if len(self._local_scheduler_tasks) <= self._rfm_max_jobs:
+            if len(self._local_scheduler_tasks) < self._rfm_max_jobs:
                 try:
                     task.compile()
                     task.policy_stage = 'compiling'
@@ -420,7 +420,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 return 0
 
         partname = task.check.current_partition.fullname
-        if len(self._scheduler_tasks[partname]) <= self._max_jobs[partname]:
+        if len(self._scheduler_tasks[partname]) < self._max_jobs[partname]:
             try:
                 task.compile()
                 task.policy_stage = 'compiling'
@@ -472,7 +472,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def advance_ready_to_run(self, task):
         if task.check.local:
-            if len(self._local_scheduler_tasks) <= self._rfm_max_jobs:
+            if len(self._local_scheduler_tasks) < self._rfm_max_jobs:
                 try:
                     task.run()
                     task.policy_stage = 'running'
@@ -485,7 +485,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 return 0
 
         partname = task.check.current_partition.fullname
-        if len(self._scheduler_tasks[partname]) <= self._max_jobs[partname]:
+        if len(self._scheduler_tasks[partname]) < self._max_jobs[partname]:
             try:
                 task.run()
                 task.policy_stage = 'running'
