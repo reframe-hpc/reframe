@@ -22,7 +22,6 @@ class cscs_gromacs_check(gromacs_check):
 
     # CSCS-specific parameterization
     num_nodes = parameter([1, 2, 4, 6, 8, 16])
-    mode = parameter(['maintenance', 'production'])
     allref = {
         1: {
             'sm_60': {
@@ -172,7 +171,7 @@ class cscs_gromacs_check(gromacs_check):
     @run_after('init')
     def setup_filtering_criteria(self):
         # Update test's description
-        self.descr += f' ({self.num_nodes} node(s), {self.mode!r} mode)'
+        self.descr += f' ({self.num_nodes} node(s))'
 
         # Setup system filtering
         valid_systems = {
@@ -198,15 +197,15 @@ class cscs_gromacs_check(gromacs_check):
         except KeyError:
             self.valid_systems = []
 
-        # Maintenance mode is not valid for the cpu run
-        if self.nb_impl == 'cpu' and self.mode == 'maintenance':
-            self.valid_systems = []
-
         # Setup prog env. filtering
         if self.current_system.name in ('eiger', 'pilatus'):
             self.valid_prog_environs = ['cpeGNU']
 
-        self.tags |= {self.mode}
+        if self.num_nodes in (6, 16):
+            self.tags |= {'production'}
+            if (self.nb_impl == 'gpu' and
+                self.bench_name == 'HECBioSim/hEGFRDimerSmallerPL'):
+                self.tags |= {'maintenance'}
 
     @run_before('run')
     def setup_run(self):
