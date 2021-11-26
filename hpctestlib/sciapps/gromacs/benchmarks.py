@@ -28,7 +28,7 @@ class gromacs_check(rfm.RunOnlyRegressionTest):
     #: The version of Horovod to use.
     #:
     #: :type: :class:`str`
-    #: :default: ``'v0.21.0'``
+    #: :default: ``'1.0.0'``
     benchmark_version = variable(str, value='1.0.0')
 
     #: Parameter pack encoding the benchmark information.
@@ -43,7 +43,7 @@ class gromacs_check(rfm.RunOnlyRegressionTest):
         ('HECBioSim/Crambin', -204107.0, 0.001),
         ('HECBioSim/Glutamine-Binding-Protein', -724598.0, 0.001),
         ('HECBioSim/hEGFRDimer', -3.32892e+06, 0.001),
-        ('HECBioSim/hEGFRDimerSmallerPL',-3.27080e+06, 0.001),
+        ('HECBioSim/hEGFRDimerSmallerPL', -3.27080e+06, 0.001),
         ('HECBioSim/hEGFRDimerPair', -1.20733e+07, 0.001),
         ('HECBioSim/hEGFRtetramerPair', -2.09831e+07, 0.001)
     ])
@@ -63,9 +63,9 @@ class gromacs_check(rfm.RunOnlyRegressionTest):
         self.__bench, self.__nrg_ref, self.__nrg_tol = self.benchmark_info
         self.descr = f'GROMACS {self.__bench} benchmark (NB: {self.nb_impl})'
         self.prerun_cmds = [
-            f'curl -LJO https://github.com/victorusu/GROMACS_Benchmark_Suite/raw/{self.benchmark_version}/{self.__bench}/benchmark.tpr' # noqa: E501
+            f'curl -LJO https://github.com/victorusu/GROMACS_Benchmark_Suite/raw/{self.benchmark_version}/{self.__bench}/benchmark.tpr'  # noqa: E501
         ]
-        self.executable_opts += ['-nb', self.nb_impl, '-s benchmark.tpr']
+        self.executable_opts = ['-nb', self.nb_impl, '-s benchmark.tpr']
 
     @property
     def bench_name(self):
