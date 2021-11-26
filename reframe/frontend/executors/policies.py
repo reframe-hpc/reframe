@@ -353,13 +353,22 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             except TaskExit:
                 self._current_tasks.remove(task)
                 return 1
+
+            if isinstance(task.check, RunOnlyRegressionTest):
+                try:
+                    task.compile()
+                    task.compile_wait()
+                except TaskExit:
+                    # Run and run_wait are no-ops for
+                    # CompileOnlyRegressionTest. This shouldn't fail.
+                    self._current_tasks.remove(task)
+                    return 1
+
+                task.policy_stage = 'ready_to_run'
             else:
-                # if isinstance(task.check, RunOnlyRegressionTest):
-                #     task.policy_stage = 'ready_to_run'
-                # else:
                 task.policy_stage = 'ready_to_compile'
 
-                return 1
+            return 1
 
         elif self.deps_failed(task):
             exc = TaskDependencyError('dependencies failed')
@@ -407,10 +416,19 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                     partname = task.check.current_partition.fullname
                     self._scheduler_tasks[partname].remove(task)
 
-                # if isinstance(task.check, CompileOnlyRegressionTest):
-                #     task.policy_stage = 'completed'
-                # else:
-                task.policy_stage = 'ready_to_run'
+                if isinstance(task.check, CompileOnlyRegressionTest):
+                    try:
+                        task.run()
+                        task.run_wait()
+                    except TaskExit:
+                        # Run and run_wait are no-ops for
+                        # CompileOnlyRegressionTest. This shouldn't fail.
+                        self._current_tasks.remove(task)
+                        return 1
+
+                    task.policy_stage = 'completed'
+                else:
+                    task.policy_stage = 'ready_to_run'
 
                 return 1
             else:
@@ -513,34 +531,41 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         '''Mark all tests as failures'''
         getlogger().debug2(f'Aborting all tasks due to {type(cause).__name__}')
         for task in self._current_tasks:
-            task.abort(cause)
+            with contextlib.suppress(FailureLimitError):
+                task.abort(cause)
 
     # TODO all this prints have to obviously leave from here...
     def on_task_setup(self, task):
+        # print(task.check.name, 'setup')
+        pass
+
+    def on_task_run(self, task):
+        if isinstance(task.check, RunOnlyRegressionTest):
+            self.printer.status(
+                'RUN', '%s on %s using %s' %
+                (task.check.name, task.check.current_partition.fullname, task.check.current_environ.name)
+            )
+
+    def on_task_compile(self, task):
+        if isinstance(task.check, RunOnlyRegressionTest):
+            return
+
         self.printer.status(
-            'START', '%s on %s using %s' %
+            'BUILD', '%s on %s using %s' %
             (task.check.name, task.check.current_partition.fullname, task.check.current_environ.name)
         )
 
-    def on_task_run(self, task):
-        pass
-        print(task.check.name, 'run')
-
-    def on_task_compile(self, task):
-        pass
-        print(task.check.name, 'compile')
-
     def on_task_exit(self, task):
         pass
-        print(task.check.name, 'run exit')
+        # print(task.check.name, 'run exit')
 
     def on_task_compile_exit(self, task):
         pass
-        print(task.check.name, 'compile exit')
+        # print(task.check.name, 'compile exit')
 
     def on_task_skip(self, task):
         pass
-        print(task.check.name, 'skip')
+        # print(task.check.name, 'skip')
 
     def on_task_failure(self, task):
         self._num_failed_tasks += 1
