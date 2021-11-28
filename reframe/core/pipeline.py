@@ -910,10 +910,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 arg_names = map(lambda x: util.toalphanum(str(x)),
                                 itertools.chain(args, kwargs.values()))
                 self._rfm_unique_name += '_' + '_'.join(arg_names)
+                self._rfm_old_style_params = True
 
         # Pass if descr is a required variable.
         if not hasattr(self, 'descr'):
-            self.descr = self._rfm_unique_name
+            self.descr = self.display_name
 
         self._perfvalues = {}
 
@@ -1057,10 +1058,18 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
            The display name may not be unique.
 
         '''
+        cls = type(self)
+
         def _format_params(info, prefix=' %'):
             name = ''
             for p, v in info['params'].items():
-                name += f'{prefix}{p}={v}'
+                try:
+                    format_fn = cls.param_space.params_meta[p].format
+                except KeyError:
+                    print(cls.fixture_space)
+                    def format_fn(x): return x
+
+                name += f'{prefix}{p}={format_fn(v)}'
 
             for f, v in info['fixtures'].items():
                 if isinstance(v, tuple):
@@ -1071,10 +1080,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
             return name
 
+        if hasattr(self, '_rfm_old_style_params'):
+            return self.unique_name
+
         if hasattr(self, '_rfm_display_name'):
             return self._rfm_display_name
 
-        cls = type(self)
         variant_info = cls.get_variant_info(self.variant_num, recurse=True)
         self._rfm_display_name = cls.__name__ + _format_params(variant_info)
         return self._rfm_display_name

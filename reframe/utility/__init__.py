@@ -783,8 +783,11 @@ def _parse_node(nodename):
     return basename, width, nodeid
 
 
-def _count_digits(n):
-    '''Count digits of a decimal number.'''
+def count_digits(n):
+    '''Count the digits of a decimal number.
+
+    :meta private:
+    '''
 
     num_digits = 1
     while n > 10:
@@ -841,7 +844,7 @@ class _NodeGroup:
                     abbrev.append(f'{self.name}{s_start}')
             else:
                 last = start + delta*(size-1)
-                digits_last = _count_digits(last)
+                digits_last = count_digits(last)
                 pad = self.width - digits_last
                 nd_range = self.name
                 if pad > 0:

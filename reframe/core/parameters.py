@@ -15,6 +15,25 @@ import reframe.utility as utils
 from reframe.core.exceptions import ReframeSyntaxError
 
 
+class _ParamMetadata:
+    '''Store metadata for parameters.
+
+    Currently this structure holds only the custom display function, but in
+    the future could contain other metadata such as type information or source
+    code information.
+
+    '''
+
+    __slots__ = ('__fmt_fn',)
+
+    def __init__(self, fmt_fn):
+        self.__fmt_fn = fmt_fn
+
+    @property
+    def format(self):
+        return self.__fmt_fn
+
+
 class TestParam:
     '''Regression test paramter class.
 
@@ -28,7 +47,7 @@ class TestParam:
     '''
 
     def __init__(self, values=None,
-                 inherit_params=False, filter_params=None):
+                 inherit_params=False, filter_params=None, fmt=None):
         if values is None:
             values = []
 
@@ -46,18 +65,25 @@ class TestParam:
 
         self.values = tuple(values)
 
-        # Validate the filter_param argument
-        try:
-            valid = utils.is_trivially_callable(filter_params, non_def_args=1)
-        except TypeError:
-            raise TypeError(
-                'the provided parameter filter is not a callable'
-            ) from None
-        else:
-            if not valid:
-                raise TypeError('filter function must take a single argument')
+        # Validate and set the filter_params function
+        if (not callable(filter_params) or
+            not utils.is_trivially_callable(filter_params, non_def_args=1)):
+            raise TypeError("'filter_params' argument must be a callable "
+                            "accepting a single argument")
 
         self.filter_params = filter_params
+
+        # Validate and set the alternative function
+        if fmt is None:
+            def fmt(x):
+                return x
+
+        if (not callable(fmt) or
+            not utils.is_trivially_callable(fmt, non_def_args=1)):
+            raise TypeError("'fmt' argument must be a callable "
+                            "accepting a single argument")
+
+        self.metadata = _ParamMetadata(fmt)
 
 
 class ParamSpace(namespaces.Namespace):
@@ -109,7 +135,6 @@ class ParamSpace(namespaces.Namespace):
             if (key in self.params and
                 self.params[key] != () and
                 other.params[key] != ()):
-
                 raise ReframeSyntaxError(
                     f'parameter space conflict: '
                     f'parameter {key!r} is defined in more than '
@@ -119,6 +144,7 @@ class ParamSpace(namespaces.Namespace):
             self.params[key] = (
                 other.params.get(key, ()) + self.params.get(key, ())
             )
+            self.params_meta[key] = other.params_meta[key]
 
     def extend(self, cls):
         '''Extend the parameter space with the local parameter space.'''
@@ -137,6 +163,8 @@ class ParamSpace(namespaces.Namespace):
                         f"'filter_param' must return an iterable "
                         f"(parameter {name!r})"
                     ) from None
+
+            self.params_meta[name] = p.metadata
 
         # Clear the local param space
         local_param_space.clear()
@@ -197,6 +225,14 @@ class ParamSpace(namespaces.Namespace):
     @property
     def params(self):
         return self._namespace
+
+    @property
+    def params_meta(self):
+        '''Metadata of parameters'''
+        if not hasattr(self, '_params_meta'):
+            self._params_meta = {}
+
+        return self._params_meta
 
     def __len__(self):
         '''Returns the number of all possible parameter combinations.

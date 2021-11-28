@@ -843,7 +843,8 @@ class RegressionTestMeta(type):
 
         if _use_compact_names():
             if cls.num_variants > 1:
-                name += f'%{variant_num}'
+                width = utils.count_digits(cls.num_variants)
+                name += f'_{variant_num:0{width}}'
         else:
             pid, fid = cls._map_variant_num(variant_num)
 
