@@ -12,5 +12,7 @@ class HelloTest(rfm.RegressionTest):
     valid_systems = ['*']
     valid_prog_environs = ['*']
     sourcepath = 'hello.c'
-    executable_opts = ['> hello.out']
-    sanity_patterns = sn.assert_found(r'Hello, World\!', 'hello.out')
+
+    @sanity_function
+    def assert_hello(self):
+        return sn.assert_found(r'Hello, World\!', self.stdout)

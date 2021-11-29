@@ -210,17 +210,21 @@ System Partition Configuration
    Supported schedulers are the following:
 
    - ``local``: Jobs will be launched locally without using any job scheduler.
+   - ``oar``: Jobs will be launched using the `OAR <https://oar.imag.fr/>`__ scheduler.
    - ``pbs``: Jobs will be launched using the `PBS Pro <https://en.wikipedia.org/wiki/Portable_Batch_System>`__ scheduler.
-   - ``torque``: Jobs will be launched using the `Torque <https://en.wikipedia.org/wiki/TORQUE>`__ scheduler.
    - ``sge``: Jobs will be launched using the `Sun Grid Engine <https://arc.liv.ac.uk/SGE/htmlman/manuals.html>`__ scheduler.
    - ``slurm``: Jobs will be launched using the `Slurm <https://www.schedmd.com/>`__ scheduler.
      This backend requires job accounting to be enabled in the target system.
      If not, you should consider using the ``squeue`` backend below.
    - ``squeue``: Jobs will be launched using the `Slurm <https://www.schedmd.com/>`__ scheduler.
      This backend does not rely on job accounting to retrieve job statuses, but ReFrame does its best to query the job state as reliably as possible.
+   - ``torque``: Jobs will be launched using the `Torque <https://en.wikipedia.org/wiki/TORQUE>`__ scheduler.
 
    .. versionadded:: 3.7.2
       Support for the SGE scheduler is added.
+
+   .. versionadded:: 3.8.2
+      Support for the OAR scheduler is added.
 
    .. note::
 
@@ -276,6 +280,8 @@ System Partition Configuration
      This is a custom parallel program launcher used at `TACC <https://portal.tacc.utexas.edu/user-guides/stampede2>`__.
    - ``local``: No parallel program launcher will be used.
      The program will be launched locally.
+   - ``lrun``: Parallel programs will be launched using `LC Launcher  <https://hpc.llnl.gov/training/tutorials/using-lcs-sierra-system#lrun>`__'s ``lrun`` command.
+   - ``lrun-gpu``: Parallel programs will be launched using `LC Launcher <https://hpc.llnl.gov/training/tutorials/using-lcs-sierra-system#lrun>`__'s ``lrun -M "-gpu"`` command that enables the CUDA-aware Spectrum MPI.
    - ``mpirun``: Parallel programs will be launched using the ``mpirun`` command.
    - ``mpiexec``: Parallel programs will be launched using the ``mpiexec`` command.
    - ``srun``: Parallel programs will be launched using `Slurm <https://slurm.schedmd.com/srun.html>`__'s ``srun`` command.
@@ -410,8 +416,7 @@ System Partition Configuration
    :required: No
    :default: ``{}``
 
-   User defined attributes of the system partition that will be accessible from the ReFrame tests.
-   By default it is an empty dictionary.
+   User defined attributes of the partition. This will be accessible through the :attr:`~reframe.core.systems.SystemPartition.extras` attribute of the :attr:`~reframe.core.pipeline.RegressionTest.current_partition`.
 
    .. versionadded:: 3.5.0
 
@@ -574,6 +579,16 @@ They are associated with `system partitions <#system-partition-configuration>`__
    You may reference other environment variables when defining an environment variable here.
    ReFrame will expand its value.
    Variables are set after the environment modules are loaded.
+
+
+.. js:attribute:: .environments[].extras
+
+   :required: No
+   :default: ``{}``
+
+   User defined attributes of the environment. This will be accessible through the :attr:`~reframe.core.environments.Environment.extras` attribute of the :attr:`~reframe.core.pipeline.RegressionTest.current_environ`.
+
+   .. versionadded:: 3.9.1
 
 
 .. js:attribute:: .environments[].cc
@@ -1251,6 +1266,29 @@ General Configuration
    The command-line option sets the configuration option to ``false``.
 
 
+.. js:attribute:: .general[].compact_test_names
+
+   :required: No
+   :default: ``false``
+
+   Use a compact test naming scheme.
+   When set to ``true``, the test parameter values will not be encoded into the test name.
+   Instead, the several test variants are differentiated by including the unique variant number into the test name.
+
+   .. warning::
+      The default value will be changed to ``true`` in version 4.0.0.
+
+   .. versionadded:: 3.9.0
+
+
+.. js:attribute:: .general[].git_timeout
+
+  :required: No
+  :default: 5
+
+  Timeout value in seconds used when checking if a git repository exists.
+
+
 .. js:attribute:: .general[].remote_detect
 
    :required: No
@@ -1291,6 +1329,8 @@ General Configuration
    :default: ``false``
 
    Trap command errors in the generated job scripts and let them exit immediately.
+
+   .. versionadded:: 3.2
 
 
 .. js:attribute:: .general[].keep_stage_files

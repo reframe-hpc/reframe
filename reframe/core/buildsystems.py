@@ -845,10 +845,14 @@ class Spack(BuildSystem):
     #: :default: ``[]``
     install_opts = variable(typ.List[str], value=[])
 
+    def __init__(self):
+        # Set to True if the environment was auto-generated
+        self._auto_env = False
+
     def emit_build_commands(self, environ):
         ret = self._env_activate_cmds()
 
-        if not self.environment:
+        if self._auto_env:
             install_tree = self.install_tree or 'opt/spack'
             ret.append(f'spack config add '
                        f'"config:install_tree:root:{install_tree}"')
@@ -866,13 +870,12 @@ class Spack(BuildSystem):
 
     def _env_activate_cmds(self):
         cmds = ['. "$(spack location --spack-root)/share/spack/setup-env.sh"']
-        if self.environment:
-            environment = self.environment
-        else:
-            environment = 'rfm_spack_env'
-            cmds.append(f'spack env create -d {environment}')
+        if not self.environment:
+            self.environment = 'rfm_spack_env'
+            cmds.append(f'spack env create -d {self.environment}')
+            self._auto_env = True
 
-        cmds.append(f'spack env activate -V -d {environment}')
+        cmds.append(f'spack env activate -V -d {self.environment}')
         return cmds
 
     def prepare_cmds(self):

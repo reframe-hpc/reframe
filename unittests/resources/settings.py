@@ -135,6 +135,26 @@ site_configuration = {
                 }
 
             ]
+        },
+        {
+            'name': 'sys1',
+            'descr': 'System for testing fixtures',
+            'hostnames': [r'sys\d+'],
+            'partitions': [
+                {
+                    'name': 'p0',
+                    'scheduler': 'local',
+                    'launcher': 'local',
+                    'environs': ['e0', 'e1', 'e3']
+                },
+                {
+                    'name': 'p1',
+                    'scheduler': 'local',
+                    'launcher': 'local',
+                    'environs': ['e0', 'e1', 'e2']
+                }
+
+            ]
         }
     ],
     'environments': [
@@ -143,6 +163,10 @@ site_configuration = {
             'modules': [
                 {'name': 'PrgEnv-gnu', 'collection': False, 'path': None}
             ],
+            'extras': {
+                'foo': 2,
+                'bar': 'y'
+            },
         },
         {
             'name': 'PrgEnv-gnu',
@@ -150,6 +174,10 @@ site_configuration = {
             'cc': 'gcc',
             'cxx': 'g++',
             'ftn': 'gfortran',
+            'extras': {
+                'foo': 1,
+                'bar': 'x'
+            },
             'target_systems': ['testsys:login']
         },
         {
@@ -169,6 +197,14 @@ site_configuration = {
         {
             'name': 'e1',
             'modules': ['m1']
+        },
+        {
+            'name': 'e2',
+            'modules': ['m2']
+        },
+        {
+            'name': 'e3',
+            'modules': ['m3']
         },
         {
             'name': 'irrelevant',
@@ -233,6 +269,10 @@ site_configuration = {
         {
             'check_search_path': ['c:d'],
             'target_systems': ['testsys']
+        },
+        {
+            'compact_test_names': True,
+            'target_systems': ['sys1']
         }
     ]
 }
