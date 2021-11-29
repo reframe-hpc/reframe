@@ -52,7 +52,7 @@ site_configuration = {
                     'launcher': 'local',
                     'environs': ['builtin', 'gnu', 'intel', 'pgi', 'cray'],
                 },
-                # rfmdocstart: gpu-mc-partitions
+                # rfmdocstart: all-partitions
                 # rfmdocstart: gpu-partition
                 {
                     'name': 'gpu',
@@ -95,7 +95,7 @@ site_configuration = {
                         }
                     ]
                 }
-                # rfmdocend: gpu-mc-partitions
+                # rfmdocend: all-partitions
             ]
         },
         {

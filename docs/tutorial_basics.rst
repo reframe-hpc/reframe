@@ -255,8 +255,8 @@ This is exactly what we want to do here, and we know that the test sources are n
 Hence, we move the ``sourcepath`` assignment into a pre-compile hook.
 
 .. literalinclude:: ../tutorials/basics/hello/hello2.py
-   :start-after: # rdmdocstart: set_sourcepath
-   :end-before: # rdmdocend: set_sourcepath
+   :start-after: # rfmdocstart: set_sourcepath
+   :end-before: # rfmdocend: set_sourcepath
 
 The use of hooks is covered in more detail later on, but for now, let's just think of them as a way to defer the execution of a function to a given stage of the test's pipeline.
 By using hooks, any user could now derive from this class and attach other hooks (for example, adding some compiler flags) without having to worry about overriding the base method that sets the ``sourcepath`` variable.
@@ -653,7 +653,7 @@ Writing A Performance Test
 --------------------------
 
 An important aspect of regression testing is checking for performance regressions.
-In this example, we write a test that downloads the `STREAM <http://www.cs.virginia.edu/stream/ref.html>`__ benchmark, compiles it, runs it and records its performance.
+In this example, we write a test that downloads the `STREAM <https://raw.githubusercontent.com/jeffhammond/STREAM/master/stream.c>`__ benchmark, compiles it, runs it and records its performance.
 In the test below, we highlight the lines that introduce new concepts.
 
 .. code-block:: console
@@ -664,7 +664,7 @@ In the test below, we highlight the lines that introduce new concepts.
 .. literalinclude:: ../tutorials/basics/stream/stream1.py
    :start-after: # rfmdocstart: streamtest
    :end-before: # rfmdocend: streamtest
-   :emphasize-lines: 9-11,14-17,28-
+   :emphasize-lines: 9-12,15-18,29-
 
 First of all, notice that we restrict the programming environments to ``gnu`` only, since this test requires OpenMP, which our installation of Clang does not have.
 The next thing to notice is the :attr:`~reframe.core.pipeline.RegressionTest.prebuild_cmds` attribute, which provides a list of commands to be executed before the build step.
@@ -758,7 +758,7 @@ Hence, in this example, we show how to collapse all these four performance funct
 .. literalinclude:: ../tutorials/basics/stream/stream2.py
    :start-after: # rfmdocstart: streamtest2
    :end-before: # rfmdocend: streamtest2
-   :emphasize-lines: 28-
+   :emphasize-lines: 29-
 
 As shown in the highlighted lines, this example collapses the four performance functions from the previous example into the :func:`extract_bw` function, which is also decorated with the :attr:`@performance_function<reframe.core.pipeline.RegressionMixin.performance_function>` decorator with the units set to ``'MB/s'``.
 However, the :func:`extract_bw` function now takes the optional argument ``kind`` which selects the STREAM benchmark to extract.
@@ -805,7 +805,7 @@ In the following example, we set the reference values for all the STREAM sub-ben
 .. literalinclude:: ../tutorials/basics/stream/stream3.py
    :start-after: # rfmdocstart: streamtest3
    :end-before: # rfmdocend: streamtest3
-   :emphasize-lines: 18-25
+   :emphasize-lines: 19-26
 
 
 The performance reference tuple consists of the reference value, the lower and upper thresholds expressed as fractional numbers relative to the reference value, and the unit of measurement.
@@ -897,7 +897,7 @@ Let's extend our configuration file for Piz Daint.
 .. literalinclude:: ../tutorials/config/settings.py
    :start-after: # rfmdocstart: site-configuration
    :end-before: # rfmdocend: site-configuration
-   :emphasize-lines: 32-91,114-145,158-164
+   :emphasize-lines: 32-90,114-145,158-164
 
 
 First of all, we need to define a new system and set the list of hostnames that will help ReFrame identify it.
@@ -1158,7 +1158,7 @@ Let's see and comment the changes:
 .. literalinclude:: ../tutorials/basics/stream/stream4.py
    :start-after: # rfmdocstart: streamtest4
    :end-before: # rfmdocend: streamtest4
-   :emphasize-lines: 8, 27-41, 46-56
+   :emphasize-lines: 8, 28-42, 47-57
 
 First of all, we need to add the new programming environments in the list of the supported ones.
 Now there is the problem that each compiler has its own flags for enabling OpenMP, so we need to differentiate the behavior of the test based on the programming environment.

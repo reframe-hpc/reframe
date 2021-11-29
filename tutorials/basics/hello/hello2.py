@@ -15,11 +15,11 @@ class HelloMultiLangTest(rfm.RegressionTest):
     valid_systems = ['*']
     valid_prog_environs = ['*']
 
-    # rdmdocstart: set_sourcepath
+    # rfmdocstart: set_sourcepath
     @run_before('compile')
     def set_sourcepath(self):
         self.sourcepath = f'hello.{self.lang}'
-    # rdmdocend: set_sourcepath
+    # rfmdocend: set_sourcepath
 
     @sanity_function
     def assert_hello(self):

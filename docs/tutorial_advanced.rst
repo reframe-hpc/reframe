@@ -29,7 +29,7 @@ Here is the adapted code with the relevant parts highlighted (for simplicity, we
 .. literalinclude:: ../tutorials/advanced/parameterized/stream.py
    :start-after: # rfmdocstart: parameterized
    :end-before: # rfmdocend: parameterized
-   :emphasize-lines: 7-9,44-51,55-56
+   :emphasize-lines: 7-9,45-52,56-57
 
 Any ordinary ReFrame test becomes a parameterized one if the user defines parameters inside the class body of the test.
 This is done using the :py:func:`~reframe.core.pipeline.RegressionTest.parameter` ReFrame built-in function, which accepts the list of parameter values.
@@ -511,8 +511,8 @@ You can then use those resources transparently from within your test.
 To achieve this in our case, we first need to define a ``memory`` resource in the configuration:
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :start-after: # rfmdocstart: gpu-mc-partitions
-   :end-before: # rfmdocend: gpu-mc-partitions
+   :start-after: # rfmdocstart: all-partitions
+   :end-before: # rfmdocend: all-partitions
    :emphasize-lines: 10-15,36-41
 
 Notice that we do not define the resource for all the partitions, but only for those that it makes sense.

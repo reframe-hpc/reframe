@@ -13,7 +13,8 @@ class StreamMultiSysTest(rfm.RegressionTest):
     valid_systems = ['*']
     valid_prog_environs = ['cray', 'gnu', 'intel', 'pgi']
     prebuild_cmds = [
-        'wget http://www.cs.virginia.edu/stream/FTP/Code/stream.c',
+        'wget https://raw.githubusercontent.com/jeffhammond/STREAM/'
+        'master/stream.c'
     ]
     build_system = 'SingleSource'
     sourcepath = 'stream.c'
