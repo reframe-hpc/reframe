@@ -1066,7 +1066,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 try:
                     format_fn = cls.param_space.params_meta[p].format
                 except KeyError:
-                    print(cls.fixture_space)
                     def format_fn(x): return x
 
                 name += f'{prefix}{p}={format_fn(v)}'
