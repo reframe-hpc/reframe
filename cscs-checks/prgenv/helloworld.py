@@ -14,10 +14,10 @@ class HelloWorldBaseTest(rfm.RegressionTest):
     prgenv_flags = {}
     sourcepath = 'hello_world'
     build_system = 'SingleSource'
-    prebuild_cmds = ['RFM_BUILD_TIME="$(date +%s%N)"']
+    prebuild_cmds = ['_rfm_build_time="$(date +%s%N)"']
     postbuild_cmds = [
-        'RFM_BUILD_TIME="$(($(date +%s%N)-RFM_BUILD_TIME))"',
-        'echo "Compilations time (ns): $RFM_BUILD_TIME"'
+        '_rfm_build_time="$(($(date +%s%N)-_rfm_build_time))"',
+        'echo "Compilations time (ns): $_rfm_build_time"'
     ]
     valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                      'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn']
