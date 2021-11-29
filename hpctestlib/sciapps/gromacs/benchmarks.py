@@ -10,28 +10,22 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class gromacs_check(rfm.RunOnlyRegressionTest):
-    '''Base class for the Gromacs Test.
+    '''GROMACS benchmark test.
 
-    GROMACS is a versatile package to perform molecular dynamics,
-    i.e. simulate the Newtonian equations of motion for systems
-    with hundreds to millions of particles.
-
-    It is primarily designed for biochemical molecules like proteins,
-    lipids and nucleic acids that have a lot of complicated bonded
-    interactions, but since GROMACS is extremely fast at calculating
-    the nonbonded interactions (that usually dominate simulations)
-    many groups are also using it for research on non-biological
-    systems, e.g. polymers (see gromacs.org).
+    `GROMACS <https://www.gromacs.org/>`__ is a versatile package to perform
+    molecular dynamics, i.e. simulate the Newtonian equations of motion for
+    systems with hundreds to millions of particles.
 
     The benchmarks consist on a set of different inputs files that vary in the
-    number of atoms. The original input files are part of the HECBioSim
-    Benchmark suite (https://www.hecbiosim.ac.uk/access-hpc/benchmarks ).
+    number of atoms and can be found in the following repository, which is
+    also versioned: https://github.com/victorusu/GROMACS_Benchmark_Suite/.
+
     Each test instance validates numerically its output and extracts and
     reports a performance metric.
 
     '''
 
-    #: The version of Horovod to use.
+    #: The version of the benchmark suite to use.
     #:
     #: :type: :class:`str`
     #: :default: ``'1.0.0'``
@@ -69,8 +63,8 @@ class gromacs_check(rfm.RunOnlyRegressionTest):
         self.__bench, self.__nrg_ref, self.__nrg_tol = self.benchmark_info
         self.descr = f'GROMACS {self.__bench} benchmark (NB: {self.nb_impl})'
         self.prerun_cmds = [
-                f'curl -LJO https://github.com/victorusu/GROMACS_Benchmark_Suite/raw/{self.benchmark_version}/{self.__bench}/benchmark.tpr'  # noqa: E501
-            ]
+            f'curl -LJO https://github.com/victorusu/GROMACS_Benchmark_Suite/raw/{self.benchmark_version}/{self.__bench}/benchmark.tpr'  # noqa: E501
+        ]
         self.executable_opts = ['-nb', self.nb_impl, '-s benchmark.tpr']
 
     @property
@@ -153,7 +147,7 @@ class gromacs_check(rfm.RunOnlyRegressionTest):
 
     @sanity_function
     def assert_energy_readout(self):
-        '''Assert the obtained energy meets the specified tolerances.'''
+        '''Assert that the obtained energy meets the benchmark tolerances.'''
 
         energy_fn_name = f'energy_{util.toalphanum(self.__bench).lower()}'
         energy_fn = getattr(self, energy_fn_name, None)
