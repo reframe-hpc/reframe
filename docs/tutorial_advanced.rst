@@ -29,7 +29,7 @@ Here is the adapted code with the relevant parts highlighted (for simplicity, we
 .. literalinclude:: ../tutorials/advanced/parameterized/stream.py
    :start-after: # rfmdocstart: parameterized
    :end-before: # rfmdocend: parameterized
-   :emphasize-lines: 7-9,45-52,56-57
+   :emphasize-lines: 7-9,44-51,55-56
 
 Any ordinary ReFrame test becomes a parameterized one if the user defines parameters inside the class body of the test.
 This is done using the :py:func:`~reframe.core.pipeline.RegressionTest.parameter` ReFrame built-in function, which accepts the list of parameter values.

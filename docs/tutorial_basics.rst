@@ -664,7 +664,7 @@ In the test below, we highlight the lines that introduce new concepts.
 .. literalinclude:: ../tutorials/basics/stream/stream1.py
    :start-after: # rfmdocstart: streamtest
    :end-before: # rfmdocend: streamtest
-   :emphasize-lines: 9-12,15-18,29-
+   :emphasize-lines: 9-11,14-17,28-
 
 First of all, notice that we restrict the programming environments to ``gnu`` only, since this test requires OpenMP, which our installation of Clang does not have.
 The next thing to notice is the :attr:`~reframe.core.pipeline.RegressionTest.prebuild_cmds` attribute, which provides a list of commands to be executed before the build step.
@@ -758,7 +758,7 @@ Hence, in this example, we show how to collapse all these four performance funct
 .. literalinclude:: ../tutorials/basics/stream/stream2.py
    :start-after: # rfmdocstart: streamtest2
    :end-before: # rfmdocend: streamtest2
-   :emphasize-lines: 29-
+   :emphasize-lines: 28-
 
 As shown in the highlighted lines, this example collapses the four performance functions from the previous example into the :func:`extract_bw` function, which is also decorated with the :attr:`@performance_function<reframe.core.pipeline.RegressionMixin.performance_function>` decorator with the units set to ``'MB/s'``.
 However, the :func:`extract_bw` function now takes the optional argument ``kind`` which selects the STREAM benchmark to extract.
@@ -805,7 +805,7 @@ In the following example, we set the reference values for all the STREAM sub-ben
 .. literalinclude:: ../tutorials/basics/stream/stream3.py
    :start-after: # rfmdocstart: streamtest3
    :end-before: # rfmdocend: streamtest3
-   :emphasize-lines: 19-26
+   :emphasize-lines: 18-25
 
 
 The performance reference tuple consists of the reference value, the lower and upper thresholds expressed as fractional numbers relative to the reference value, and the unit of measurement.
@@ -1158,7 +1158,7 @@ Let's see and comment the changes:
 .. literalinclude:: ../tutorials/basics/stream/stream4.py
    :start-after: # rfmdocstart: streamtest4
    :end-before: # rfmdocend: streamtest4
-   :emphasize-lines: 8, 28-42, 47-57
+   :emphasize-lines: 8, 27-41, 43-56
 
 First of all, we need to add the new programming environments in the list of the supported ones.
 Now there is the problem that each compiler has its own flags for enabling OpenMP, so we need to differentiate the behavior of the test based on the programming environment.
