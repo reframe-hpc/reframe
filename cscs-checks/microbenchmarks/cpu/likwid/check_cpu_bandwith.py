@@ -15,22 +15,28 @@ class MemBandwidthTest(rfm.RunOnlyRegressionTest):
     num_tasks = 1
     num_tasks_per_node = 1
     num_tasks_per_core = 2
+
     # Test each level at half capacity times nthreads per domain
+    # FIXME: This should be adapted to use the topology autodetection features
     system_cache_sizes = {
-        'daint:mc':  {'L1': '288kB', 'L2': '2304kB', 'L3': '23MB',
-                      'memory': '1800MB'},
-        'daint:gpu': {'L1': '192kB', 'L2': '1536kB', 'L3': '15MB',
-                      'memory': '1200MB'},
-        'dom:mc':    {'L1': '288kB', 'L2': '2304kB', 'L3': '23MB',
-                      'memory': '1800MB'},
-        'dom:gpu':   {'L1': '192kB', 'L2': '1536kB', 'L3': '15MB',
-                      'memory': '1200MB'},
+        'daint:mc':  {
+            'L1': '288kB', 'L2': '2304kB', 'L3': '23MB', 'memory': '1800MB'
+        },
+        'daint:gpu': {
+            'L1': '192kB', 'L2': '1536kB', 'L3': '15MB', 'memory': '1200MB'
+        },
+        'dom:mc': {
+            'L1': '288kB', 'L2': '2304kB', 'L3': '23MB', 'memory': '1800MB'
+        },
+        'dom:gpu': {
+            'L1': '192kB', 'L2': '1536kB', 'L3': '15MB', 'memory': '1200MB'
+        }
     }
     maintainers = ['SK', 'CB']
     tags = {'benchmark', 'diagnostic', 'health'}
 
     @sanity_function
-    def assert_ge(self):
+    def validate_test(self):
         self.bw_pattern = sn.min(sn.extractall(r'MByte/s:\s*(?P<bw>\S+)',
                                                self.stdout, 'bw', float))
         return sn.assert_ge(self.bw_pattern, 0.0)
@@ -39,14 +45,8 @@ class MemBandwidthTest(rfm.RunOnlyRegressionTest):
     def bandwidth(self):
         return self.bw_pattern
 
-    @run_after('setup')
-    def skip_if_no_topo(self):
-        proc = self.current_partition.processor
-        pname = self.current_partition.fullname
-        if not proc.info:
-            self.skip(f'no topology information found for partition {pname!r}')
-
     def set_processor_properties(self):
+        self.skip_if_no_procinfo()
         self.num_cpus_per_task = self.current_partition.processor.num_cpus
         numa_nodes = self.current_partition.processor.topology['numa_nodes']
         self.numa_domains = [f'S{i}' for i, _ in enumerate(numa_nodes)]
@@ -58,6 +58,7 @@ class MemBandwidthTest(rfm.RunOnlyRegressionTest):
 
 @rfm.simple_test
 class CPUBandwidth(MemBandwidthTest):
+    # FIXME: This should be expressed in a better way
     config = parameter([*[[l, k] for l in ['L1', 'L2', 'L3']
                           for k in ['load_avx', 'store_avx']],
                         ['memory', 'load_avx'],
