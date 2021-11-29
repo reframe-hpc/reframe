@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+# rfmdocstart: eb-test
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -28,3 +29,4 @@ class BZip2EBCheck(rfm.RegressionTest):
     @sanity_function
     def assert_version(self):
         return sn.assert_found(r'Version 1.0.6', self.stderr)
+# rfmdocend: eb-test

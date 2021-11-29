@@ -144,7 +144,7 @@ class GpuBandwidth(GpuBandwidthBase):
 
         # Extract the bandwidth corresponding to the right node, transfer and
         # device.
-        return (rf'^[^,]*\[[^\]]*\]\s*{direction}\s*bandwidth on device'
+        return (rf'^\[[^\]]*\]\s*{direction}\s*bandwidth on device'
                 r' \d+ is \s*(\S+)\s*GB/s.')
 
 
@@ -179,6 +179,6 @@ class GpuBandwidthD2D(GpuBandwidthBase):
         '''
         self.perf_patterns = {
             'bw': sn.min(sn.extractall(
-                r'^[^,]*\[[^\]]*\]\s+GPU\s+\d+\s+(\s*\d+.\d+\s)+',
+                r'^\[[^\]]*\]\s+GPU\s+\d+\s+(\s*\d+.\d+\s)+',
                 self.stdout, 1, float))
         }

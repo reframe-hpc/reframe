@@ -11,6 +11,7 @@ import os
 import pytest
 import re
 import sys
+import time
 
 import reframe.core.environments as env
 import reframe.frontend.runreport as runreport
@@ -474,9 +475,7 @@ def test_execution_modes(run_reframe):
 
 
 def test_timestamp_option(run_reframe):
-    from datetime import datetime
-
-    timefmt = datetime.now().strftime('xxx_%F')
+    timefmt = time.strftime('xxx_%F')
     returncode, stdout, _ = run_reframe(
         checkpath=['unittests/resources/checks'],
         action='list',
@@ -484,6 +483,17 @@ def test_timestamp_option(run_reframe):
     )
     assert returncode == 0
     assert timefmt in stdout
+
+
+def test_timestamp_option_default(run_reframe):
+    timefmt_date_part = time.strftime('%FT')
+    returncode, stdout, _ = run_reframe(
+        checkpath=['unittests/resources/checks'],
+        action='list',
+        more_options=['-R', '--timestamp']
+    )
+    assert returncode == 0
+    assert timefmt_date_part in stdout
 
 
 def test_list_empty_prgenvs_check_and_options(run_reframe):
@@ -797,4 +807,65 @@ def test_external_vars_invalid_expr(run_reframe):
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert 'invalid test variable assignment' in stdout
+    assert returncode == 0
+
+
+def test_fixture_registry_env_sys(run_reframe):
+    '''Test that the fixtures see the cli options.
+
+    The loaded checks have a system scope fixture named HelloFixture. Hence,
+    this fixture will take any partition+environ combination from the parent
+    tests. So by restricting the partition and the environment to only one
+    single option, here we test that the fixture has the valid_systems and
+    valid_prog_environs as passed throught the cli options.
+    '''
+    returncode, stdout, stderr = run_reframe(
+        system='sys1:p0',
+        environs=['e3'],
+        checkpath=['unittests/resources/checks_unlisted/fixtures_simple.py'],
+        more_options=['-n', 'HelloFixture'],
+        action='list_detailed'
+    )
+    assert returncode == 0
+    assert 'e3' in stdout
+    assert 'sys1:p0' in stdout
+    returncode, stdout, stderr = run_reframe(
+        system='sys1:p0',
+        environs=['e1'],
+        checkpath=['unittests/resources/checks_unlisted/fixtures_simple.py'],
+        more_options=['-n', 'HelloFixture'],
+        action='list_detailed'
+    )
+    assert returncode == 0
+    assert 'e1' in stdout
+    assert 'sys1:p0' in stdout
+    returncode, stdout, stderr = run_reframe(
+        system='sys1:p1',
+        environs=['e1'],
+        checkpath=['unittests/resources/checks_unlisted/fixtures_simple.py'],
+        more_options=['-n', 'HelloFixture'],
+        action='list_detailed'
+    )
+    assert returncode == 0
+    assert 'e1' in stdout
+    assert 'sys1:p1' in stdout
+    returncode, stdout, stderr = run_reframe(
+        system='sys1:p1',
+        environs=['e2'],
+        checkpath=['unittests/resources/checks_unlisted/fixtures_simple.py'],
+        more_options=['-n', 'HelloFixture'],
+        action='list_detailed'
+    )
+    assert returncode == 0
+    assert 'e2' in stdout
+    assert 'sys1:p1' in stdout
+
+
+def test_fixture_resolution(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        system='sys1',
+        environs=[],
+        checkpath=['unittests/resources/checks_unlisted/fixtures_complex.py'],
+        action='run'
+    )
     assert returncode == 0

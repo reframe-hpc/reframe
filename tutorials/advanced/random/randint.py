@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+# rfmdocstart: randint
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -14,12 +15,13 @@ class DeferredIterationTest(rfm.RunOnlyRegressionTest):
     valid_prog_environs = ['*']
     executable = './random_numbers.sh'
 
-    @run_before('sanity')
-    def set_sanity_patterns(self):
+    @sanity_function
+    def validate_test(self):
         numbers = sn.extractall(
             r'Random: (?P<number>\S+)', self.stdout, 'number', float
         )
-        self.sanity_patterns = sn.all([
+        return sn.all([
             sn.assert_eq(sn.count(numbers), 100),
             sn.all(sn.map(lambda x: sn.assert_bounded(x, 90, 100), numbers))
         ])
+# rfmdocend: randint

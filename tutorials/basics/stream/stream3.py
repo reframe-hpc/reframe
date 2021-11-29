@@ -3,16 +3,17 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+# rfmdocstart: streamtest3
 import reframe as rfm
 import reframe.utility.sanity as sn
 
 
 @rfm.simple_test
-class StreamMultiSysTest(rfm.RegressionTest):
+class StreamWithRefTest(rfm.RegressionTest):
     valid_systems = ['*']
-    valid_prog_environs = ['cray', 'gnu', 'intel', 'pgi']
+    valid_prog_environs = ['gnu']
     prebuild_cmds = [
-        'wget http://www.cs.virginia.edu/stream/FTP/Code/stream.c',
+        'wget https://raw.githubusercontent.com/jeffhammond/STREAM/master/stream.c'  # noqa: E501
     ]
     build_system = 'SingleSource'
     sourcepath = 'stream.c'
@@ -29,51 +30,33 @@ class StreamMultiSysTest(rfm.RegressionTest):
         }
     }
 
-    # Flags per programming environment
-    flags = variable(dict, value={
-        'cray':  ['-fopenmp', '-O3', '-Wall'],
-        'gnu':   ['-fopenmp', '-O3', '-Wall'],
-        'intel': ['-qopenmp', '-O3', '-Wall'],
-        'pgi':   ['-mp', '-O3']
-    })
-
-    # Number of cores for each system
-    cores = variable(dict, value={
-        'catalina:default': 4,
-        'daint:gpu': 12,
-        'daint:mc': 36,
-        'daint:login': 10
-    })
-
     @run_before('compile')
     def set_compiler_flags(self):
         self.build_system.cppflags = ['-DSTREAM_ARRAY_SIZE=$((1 << 25))']
-        environ = self.current_environ.name
-        self.build_system.cflags = self.flags.get(environ, [])
+        self.build_system.cflags = ['-fopenmp', '-O3', '-Wall']
 
-    @run_before('run')
-    def set_num_threads(self):
-        num_threads = self.cores.get(self.current_partition.fullname, 1)
-        self.num_cpus_per_task = num_threads
-        self.variables = {
-            'OMP_NUM_THREADS': str(num_threads),
-            'OMP_PLACES': 'cores'
-        }
+    @sanity_function
+    def validate_solution(self):
+        return sn.assert_found(r'Solution Validates', self.stdout)
 
-    @run_before('sanity')
-    def set_sanity_patterns(self):
-        self.sanity_patterns = sn.assert_found(r'Solution Validates',
-                                               self.stdout)
+    @performance_function('MB/s')
+    def extract_bw(self, kind='Copy'):
+        '''Generic performance extraction function.'''
+
+        if kind not in ('Copy', 'Scale', 'Add', 'Triad'):
+            raise ValueError(f'illegal value in argument kind ({kind!r})')
+
+        return sn.extractsingle(rf'{kind}:\s+(\S+)\s+.*',
+                                self.stdout, 1, float)
 
     @run_before('performance')
-    def set_perf_patterns(self):
-        self.perf_patterns = {
-            'Copy': sn.extractsingle(r'Copy:\s+(\S+)\s+.*',
-                                     self.stdout, 1, float),
-            'Scale': sn.extractsingle(r'Scale:\s+(\S+)\s+.*',
-                                      self.stdout, 1, float),
-            'Add': sn.extractsingle(r'Add:\s+(\S+)\s+.*',
-                                    self.stdout, 1, float),
-            'Triad': sn.extractsingle(r'Triad:\s+(\S+)\s+.*',
-                                      self.stdout, 1, float)
+    def set_perf_variables(self):
+        '''Build the dictionary with all the performance variables.'''
+
+        self.perf_variables = {
+            'Copy': self.extract_bw(),
+            'Scale': self.extract_bw('Scale'),
+            'Add': self.extract_bw('Add'),
+            'Triad': self.extract_bw('Triad'),
         }
+# rfmdocend: streamtest3

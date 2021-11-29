@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+# rfmdocstart: memorylimit
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -18,13 +19,15 @@ class MemoryLimitTest(rfm.RegressionTest):
     def set_memory_limit(self):
         self.job.options = ['--mem=1000']
 
-    @run_before('sanity')
-    def set_sanity_patterns(self):
-        self.sanity_patterns = sn.assert_found(
+    @sanity_function
+    def validate_test(self):
+        return sn.assert_found(
             r'(exceeded memory limit)|(Out Of Memory)', self.stderr
         )
+# rfmdocend: memorylimit
 
 
+# rfmdocstart: memorylimitresources
 @rfm.simple_test
 class MemoryLimitWithResourcesTest(rfm.RegressionTest):
     valid_systems = ['daint:gpu', 'daint:mc']
@@ -35,8 +38,9 @@ class MemoryLimitWithResourcesTest(rfm.RegressionTest):
         'memory': {'size': '1000'}
     }
 
-    @run_before('sanity')
-    def set_sanity_patterns(self):
-        self.sanity_patterns = sn.assert_found(
+    @sanity_function
+    def validate_test(self):
+        return sn.assert_found(
             r'(exceeded memory limit)|(Out Of Memory)', self.stderr
         )
+# rfmdocend: memorylimitresources

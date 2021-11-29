@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import re
 import json
 
 import reframe.utility as util
@@ -364,13 +365,11 @@ class SystemPartition(jsonext.JSONSerializable):
 
     @property
     def extras(self):
-        '''User defined attributes of the system.
-
-        By default, it is an empty dictionary.
+        '''User defined properties defined in the configuration.
 
         .. versionadded:: 3.5.0
 
-        :type: :class:`object`
+        :type: :class:`Dict[str, object]`
         '''
         return self._extras
 
@@ -452,6 +451,7 @@ class System(jsonext.JSONSerializable):
         sysname = site_config.get('systems/0/name')
         partitions = []
         config_save = site_config.subconfig_system
+
         for p in site_config.get('systems/0/partitions'):
             site_config.select_subconfig(f'{sysname}:{p["name"]}')
             partid = f"systems/0/partitions/@{p['name']}"
@@ -473,11 +473,13 @@ class System(jsonext.JSONSerializable):
                     )
                 )
 
+            env_patt = site_config.get('general/0/valid_env_names') or [r'.*']
             part_environs = [
                 ProgEnvironment(
                     name=e,
                     modules=site_config.get(f'environments/@{e}/modules'),
                     variables=site_config.get(f'environments/@{e}/variables'),
+                    extras=site_config.get(f'environments/@{e}/extras'),
                     cc=site_config.get(f'environments/@{e}/cc'),
                     cxx=site_config.get(f'environments/@{e}/cxx'),
                     ftn=site_config.get(f'environments/@{e}/ftn'),
@@ -487,6 +489,7 @@ class System(jsonext.JSONSerializable):
                     fflags=site_config.get(f'environments/@{e}/fflags'),
                     ldflags=site_config.get(f'environments/@{e}/ldflags')
                 ) for e in site_config.get(f'{partid}/environs')
+                if any(re.match(pattern, e) for pattern in env_patt)
             ]
             partitions.append(
                 SystemPartition(

@@ -39,10 +39,10 @@ import os
 
 
 def _convert_to_bool(s):
-    if s.lower() in ('true', 'yes', 'y'):
+    if s.lower() in ('true', 'yes', 'y', '1'):
         return True
 
-    if s.lower() in ('false', 'no', 'n'):
+    if s.lower() in ('false', 'no', 'n', '0'):
         return False
 
     raise ValueError
@@ -184,8 +184,7 @@ class _ArgumentHolder:
         kwargs['dest'] = opt_name
 
         # Convert 'store_true' and 'store_false' actions to their
-        # 'store_const' equivalents, because they otherwise imply imply a
-        # default
+        # 'store_const' equivalents, because they otherwise imply a default
         action = kwargs.get('action', None)
         if action == 'store_true' or action == 'store_false':
             kwargs['action'] = 'store_const'

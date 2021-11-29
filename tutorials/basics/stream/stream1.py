@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+# rfmdocstart: streamtest
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -12,7 +13,7 @@ class StreamTest(rfm.RegressionTest):
     valid_systems = ['*']
     valid_prog_environs = ['gnu']
     prebuild_cmds = [
-        'wget http://www.cs.virginia.edu/stream/FTP/Code/stream.c',
+        'wget https://raw.githubusercontent.com/jeffhammond/STREAM/master/stream.c'  # noqa: E501
     ]
     build_system = 'SingleSource'
     sourcepath = 'stream.c'
@@ -26,20 +27,23 @@ class StreamTest(rfm.RegressionTest):
         self.build_system.cppflags = ['-DSTREAM_ARRAY_SIZE=$((1 << 25))']
         self.build_system.cflags = ['-fopenmp', '-O3', '-Wall']
 
-    @run_before('sanity')
-    def set_sanity_patterns(self):
-        self.sanity_patterns = sn.assert_found(r'Solution Validates',
-                                               self.stdout)
+    @sanity_function
+    def validate_solution(self):
+        return sn.assert_found(r'Solution Validates', self.stdout)
 
-    @run_before('performance')
-    def set_perf_patterns(self):
-        self.perf_patterns = {
-            'Copy': sn.extractsingle(r'Copy:\s+(\S+)\s+.*',
-                                     self.stdout, 1, float),
-            'Scale': sn.extractsingle(r'Scale:\s+(\S+)\s+.*',
-                                      self.stdout, 1, float),
-            'Add': sn.extractsingle(r'Add:\s+(\S+)\s+.*',
-                                    self.stdout, 1, float),
-            'Triad': sn.extractsingle(r'Triad:\s+(\S+)\s+.*',
-                                      self.stdout, 1, float)
-        }
+    @performance_function('MB/s', perf_key='Copy')
+    def extract_copy_perf(self):
+        return sn.extractsingle(r'Copy:\s+(\S+)\s+.*', self.stdout, 1, float)
+
+    @performance_function('MB/s', perf_key='Scale')
+    def extract_scale_perf(self):
+        return sn.extractsingle(r'Scale:\s+(\S+)\s+.*', self.stdout, 1, float)
+
+    @performance_function('MB/s', perf_key='Add')
+    def extract_add_perf(self):
+        return sn.extractsingle(r'Add:\s+(\S+)\s+.*', self.stdout, 1, float)
+
+    @performance_function('MB/s', perf_key='Triad')
+    def extract_triad_perf(self):
+        return sn.extractsingle(r'Triad:\s+(\S+)\s+.*', self.stdout, 1, float)
+# rfmdocend: streamtest

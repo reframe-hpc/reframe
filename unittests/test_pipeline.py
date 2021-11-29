@@ -17,7 +17,7 @@ import unittests.utility as test_util
 from reframe.core.containers import _STAGEDIR_MOUNT
 from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
                                      PerformanceError, SanityError,
-                                     ReframeSyntaxError)
+                                     SkipTestError, ReframeSyntaxError)
 
 
 def _run(test, partition, prgenv):
@@ -753,17 +753,70 @@ def test_inherited_hooks(HelloTest, local_exec_ctx):
         def z(self):
             self.var += 1
 
+        @run_after('setup')
+        def w(self):
+            self.var += 1
+
     class MyTest(DerivedTest):
         pass
 
     test = MyTest()
     _run(test, *local_exec_ctx)
-    assert test.var == 2
+    assert test.var == 3
     assert test.foo == 1
     assert test.pipeline_hooks() == {
-        'post_setup': [DerivedTest.z, BaseTest.x],
+        'post_setup': [BaseTest.x, DerivedTest.z, DerivedTest.w],
         'pre_run': [C.y],
     }
+
+
+@pytest.fixture
+def weird_mro_test(HelloTest):
+    # This returns a class with non-obvious MRO resolution.
+    #
+    # See example in https://www.python.org/download/releases/2.3/mro/
+    #
+    # The MRO of A is ABECDFX, which means that E is more specialized than C!
+    class X(rfm.RegressionMixin):
+        pass
+
+    class D(X):
+        @run_after('setup')
+        def d(self):
+            pass
+
+    class E(X):
+        @run_after('setup')
+        def e(self):
+            pass
+
+    class F(X):
+        @run_after('setup')
+        def f(self):
+            pass
+
+    class C(D, F):
+        @run_after('setup')
+        def c(self):
+            pass
+
+    class B(E, D):
+        @run_after('setup')
+        def b(self):
+            pass
+
+    class A(B, C, HelloTest):
+        @run_after('setup')
+        def a(self):
+            pass
+
+    return A
+
+
+def test_inherited_hooks_order(weird_mro_test, local_exec_ctx):
+    t = weird_mro_test()
+    hook_order = [fn.__name__ for fn in t.pipeline_hooks()['post_setup']]
+    assert hook_order == ['f', 'd', 'c', 'e', 'b', 'a']
 
 
 def test_inherited_hooks_from_instantiated_tests(HelloTest, local_exec_ctx):
@@ -1455,3 +1508,35 @@ def test_not_configured_container_platform(container_test, local_exec_ctx):
 
     with pytest.raises(PipelineError):
         _run(container_test(platform, 'ubuntu:18.04'), *local_exec_ctx)
+
+
+def test_skip_if_no_topo(HelloTest, local_exec_ctx):
+    class MyTest(HelloTest):
+        skip_message = variable(str, type(None), value=None)
+
+        @run_after('setup')
+        def access_topo(self):
+            self.skip_if_no_procinfo(self.skip_message)
+
+    class EchoTest(rfm.RunOnlyRegressionTest):
+        valid_systems = ['*']
+        valid_prog_environs = ['*']
+        executable = 'echo'
+        sanity_patterns = sn.assert_true(1)
+
+        @run_before('setup')
+        def access_topo(self):
+            self.skip_if_no_procinfo()
+
+    # The test should be skipped, because the auto-detection has not run
+    t = MyTest()
+    with pytest.raises(SkipTestError, match='no topology.*information'):
+        _run(t, *local_exec_ctx)
+
+    # Re-run to test that the custom message is used
+    t.skip_message = 'custom message'
+    with pytest.raises(SkipTestError, match='custom message'):
+        _run(t, *local_exec_ctx)
+
+    # This test should run to completion without problems
+    _run(EchoTest(), *local_exec_ctx)

@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+# rfmdocstart: hellomultilang
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -13,9 +14,14 @@ class HelloMultiLangTest(rfm.RegressionTest):
 
     valid_systems = ['*']
     valid_prog_environs = ['*']
-    executable_opts = ['> hello.out']
-    sanity_patterns = sn.assert_found(r'Hello, World\!', 'hello.out')
 
+    # rfmdocstart: set_sourcepath
     @run_before('compile')
     def set_sourcepath(self):
         self.sourcepath = f'hello.{self.lang}'
+    # rfmdocend: set_sourcepath
+
+    @sanity_function
+    def assert_hello(self):
+        return sn.assert_found(r'Hello, World\!', self.stdout)
+# rfmdocend: hellomultilang

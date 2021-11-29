@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+# rfmdocstart: maketest
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -22,13 +23,13 @@ class MakefileTest(rfm.RegressionTest):
     def set_compiler_flags(self):
         self.build_system.cppflags = [f'-DELEM_TYPE={self.elem_type}']
 
-    @run_before('sanity')
-    def set_sanity_patterns(self):
-        self.sanity_patterns = sn.assert_found(
-            rf'Result \({self.elem_type}\):', self.stdout
-        )
+    @sanity_function
+    def validate_test(self):
+        return sn.assert_found(rf'Result \({self.elem_type}\):', self.stdout)
+# rfmdocend: maketest
 
 
+# rfmdocstart: makeonlytest
 @rfm.simple_test
 class MakeOnlyTest(rfm.CompileOnlyRegressionTest):
     elem_type = parameter(['float', 'double'])
@@ -41,6 +42,7 @@ class MakeOnlyTest(rfm.CompileOnlyRegressionTest):
     def set_compiler_flags(self):
         self.build_system.cppflags = [f'-DELEM_TYPE={self.elem_type}']
 
-    @run_before('sanity')
-    def set_sanity_patterns(self):
-        self.sanity_patterns = sn.assert_not_found(r'warning', self.stdout)
+    @sanity_function
+    def validate_compilation(self):
+        return sn.assert_not_found(r'warning', self.stdout)
+# rfmdocend: makeonlytest

@@ -247,8 +247,8 @@
                                 "scheduler": {
                                     "type": "string",
                                     "enum": [
-                                        "local", "pbs", "slurm",
-                                        "sge", "squeue", "torque", "lsf"
+                                        "local", "lsf", "oar", "pbs",
+                                        "sge", "slurm", "squeue", "torque"
                                     ]
                                 },
                                 "launcher": {
@@ -357,6 +357,7 @@
                         "type": "array",
                         "items": {"type": "string"}
                     },
+                    "extras": {"type": "object"},
                     "target_systems": {"$ref": "#/defs/system_ref"}
                 },
                 "required": ["name"],
@@ -370,7 +371,8 @@
                 "properties": {
                     "name": {
                         "type": "string",
-                        "enum": ["local", "pbs", "sge", "slurm", "squeue", "torque", "lsf"]
+                        "enum": ["local", "lsf", "oar", "pbs",
+                                 "sge", "slurm", "squeue", "torque"]
                     },
                     "ignore_reqnodenotavail": {"type": "boolean"},
                     "resubmit_on_errors": {
@@ -451,6 +453,8 @@
                     "check_search_recursive": {"type": "boolean"},
                     "clean_stagedir": {"type": "boolean"},
                     "colorize": {"type": "boolean"},
+                    "compact_test_names": {"type": "boolean"},
+                    "git_timeout": {"type": "number"},
                     "ignore_check_conflicts": {"type": "boolean"},
                     "trap_job_errors": {"type": "boolean"},
                     "keep_stage_files": {"type": "boolean"},
@@ -491,11 +495,14 @@
         "environments/cxxflags": [],
         "environments/fflags": [],
         "environments/ldflags": [],
+        "environments/extras": {},
         "environments/target_systems": ["*"],
         "general/check_search_path": ["${RFM_INSTALL_PREFIX}/checks/"],
         "general/check_search_recursive": false,
         "general/clean_stagedir": true,
         "general/colorize": true,
+        "general/compact_test_names": false,
+        "general/git_timeout": 5,
         "general/ignore_check_conflicts": false,
         "general/trap_job_errors": false,
         "general/keep_stage_files": false,
