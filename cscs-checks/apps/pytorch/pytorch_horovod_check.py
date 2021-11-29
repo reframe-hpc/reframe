@@ -5,7 +5,6 @@
 
 import contextlib
 import reframe as rfm
-import reframe.utility.osext as osext
 
 from hpctestlib.ml.pytorch.horovod import pytorch_cnn_check
 
