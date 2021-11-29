@@ -7,6 +7,9 @@ ifeq ($(PE_ENV),GNU)
 ifeq ($(word 1, $(subst ., ,$(GNU_VERSION))),10)
 MISMATCH = -fallow-argument-mismatch
 endif
+ifeq ($(word 1, $(subst ., ,$(GNU_VERSION))),11)
+MISMATCH = -fallow-argument-mismatch -w
+endif
 endif
 
 $(OBJS):

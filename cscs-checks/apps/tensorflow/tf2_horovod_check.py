@@ -29,7 +29,7 @@ class cscs_tensorflow_horovod_check(tensorflow_cnn_check):
                 'throughput_iteration': (214, -0.05, None, 'images/s')
             }
         },
-        16: {
+        32: {
             'sm_60': {
                 'throughput_total': (6848, -0.05, None, 'images/s'),
                 'throughput_iteration': (214, -0.05, None, 'images/s')
@@ -39,7 +39,7 @@ class cscs_tensorflow_horovod_check(tensorflow_cnn_check):
 
     @run_after('init')
     def setup_filtering_criteria(self):
-        if self.num_nodes == 32:
+        if self.num_nodes == 8:
             self.valid_systems += ['dom:gpu']
 
     @run_before('run')
