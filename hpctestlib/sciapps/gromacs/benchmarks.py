@@ -23,6 +23,12 @@ class gromacs_check(rfm.RunOnlyRegressionTest):
     many groups are also using it for research on non-biological
     systems, e.g. polymers (see gromacs.org).
 
+    The benchmarks consist on a set of different inputs files that vary in the
+    number of atoms. The original input files are part of the HECBioSim
+    Benchmark suite (https://www.hecbiosim.ac.uk/access-hpc/benchmarks ).
+    Each test instance validates numerically its output and extracts and
+    reports a performance metric.
+
     '''
 
     #: The version of Horovod to use.

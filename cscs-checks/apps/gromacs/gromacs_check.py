@@ -228,7 +228,7 @@ class cscs_gromacs_check(gromacs_check):
             found = self.allref[self.num_nodes][arch][self.bench_name]
         except KeyError:
             self.skip(f'Configuration with {self.num_nodes} node(s) of '
-                      f'{self.bench_name!r} is not supported on {self.arch!r}')
+                      f'{self.bench_name!r} is not supported on {arch!r}')
 
         # Setup performance references
         self.reference = {
