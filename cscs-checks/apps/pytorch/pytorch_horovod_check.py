@@ -3,49 +3,55 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import contextlib
 import reframe as rfm
-import reframe.utility.sanity as sn
-from hpctestlib.apps.pytorch.base_check import PytorchHorovod_BaseTest
+import reframe.utility.osext as osext
+
+from hpctestlib.ml.pytorch.horovod import pytorch_cnn_check
 
 
 @rfm.simple_test
-class PytorchHorovodTest(PytorchHorovod_BaseTest):
-    tags = {'production'}
-    maintainers = ['RS', 'HM']
-    mpi_task = parameter([32, 8, 1])
+class cscs_tensorflow_horovod_check(pytorch_cnn_check):
+    num_nodes = parameter([8, 32, 1])
+    model_name = parameter(['inception_v3', 'resnet50'])
+    num_tasks_per_node = 1
+    batch_size = 64
     valid_systems = ['daint:gpu']
     valid_prog_environs = ['builtin']
     modules = ['PyTorch']
-    num_tasks_per_node = 1
-    num_cpus_per_task = 12
-    batch_size = 64
+    tags |= {'production'}
+    maintainers = ['sarafael', 'henrique']
 
     @run_after('init')
-    def set_valid_systems(self):
-        self.num_tasks = self.mpi_task
-        if self.mpi_task < 20:
+    def setup_filtering_criteria(self):
+        self.model = self.model_name
+        if self.num_nodes == 8:
             self.valid_systems += ['dom:gpu']
 
-    @run_after('init')
-    def set_variables(self):
+    @run_before('run')
+    def setup_run(self):
+        proc = self.current_partition.processor
+        self.num_tasks = self.num_nodes * self.num_tasks_per_node
+        self.num_cpus_per_task = proc.num_cores
         self.variables = {
             'NCCL_DEBUG': 'INFO',
             'NCCL_IB_HCA': 'ipogif0',
             'NCCL_IB_CUDA_SUPPORT': '1',
-            'OMP_NUM_THREADS': '$SLURM_CPUS_PER_TASK',
+            'OMP_NUM_THREADS': str(self.num_cpus_per_task)
         }
 
-    @run_after('setup')
-    def set_reference(self):
-        ref_per_gpu = 131 if self.model == 'inception_v3' else 201
-        ref_per_job = ref_per_gpu * self.mpi_task
-        self.reference = {
-            'dom:gpu': {
-                'throughput_per_gpu': (ref_per_gpu, -0.1, None, 'images/s'),
-                'throughput_per_job': (ref_per_job, -0.1, None, 'images/s'),
-            },
-            'daint:gpu': {
-                'throughput_per_gpu': (ref_per_gpu, -0.1, None, 'images/s'),
-                'throughput_per_job': (ref_per_job, -0.1, None, 'images/s'),
+    # @run_before('performance')
+    # def set_performance(self):
+        ref_per_gpu_sm60 = 131 if self.model == 'inception_v3' else 201
+        ref_total_sm60 = ref_per_gpu_sm60 * self.num_nodes
+        allref = {
+            'sm_60': {
+                'throughput_total': (ref_total_sm60, -0.05, None, 'images/s'),
+                'throughput_iteration': (ref_per_gpu_sm60, -0.05, None,
+                                         'images/s')
             }
         }
+        with contextlib.suppress(KeyError):
+            self.reference = {
+                '*': allref[self.num_nodes]['sm_60']
+            }
