@@ -778,8 +778,8 @@ class RegressionTestMeta(type):
 
         pid, fid = cls._map_variant_num(variant_num)
         ret = dict()
-        ret['params'] = cls.param_space[pid]
-        ret['fixtures'] = cls.fixture_space[fid]
+        ret['params'] = cls.param_space[pid] if pid is not None else {}
+        ret['fixtures'] = cls.fixture_space[fid] if fid is not None else {}
 
         # Get current recursion level
         rdepth = kwargs.get('_current_depth', 0)
