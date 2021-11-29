@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+# rfmdocstart: containerbase
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -48,3 +49,4 @@ class ContainerBase(rfm.RunOnlyRegressionTest, pin_prefix=True):
             sn.assert_found(self.os_release_pattern, 'release.txt'),
             sn.assert_found(self.os_release_pattern, self.stdout)
         ])
+# rfmdocend: containerbase

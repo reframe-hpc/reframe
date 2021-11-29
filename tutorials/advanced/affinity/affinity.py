@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+# rfmdocstart: affinitytest
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -26,3 +27,4 @@ class AffinityTest(rfm.RegressionTest):
     @sanity_function
     def validate_test(self):
         return sn.assert_found(r'CPU affinity', self.stdout)
+# rfmdocend: affinitytest

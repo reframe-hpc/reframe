@@ -53,7 +53,8 @@ We will explore the basic configuration of ReFrame by looking into the configura
 For the complete listing and description of all configuration options, you should refer to the :doc:`config_reference`.
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 10-
+   :start-after: # rfmdocstart: site-configuration
+   :end-before: # rfmdocend: site-configuration
 
 There are three required sections that each configuration file must provide: ``systems``, ``environments`` and ``logging``.
 We will first cover these and then move on to the optional ones.
@@ -68,7 +69,8 @@ Each system is a different object inside the ``systems`` section.
 In our example we define three systems, a Mac laptop, Piz Daint and a generic fallback system:
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 11-94
+   :start-after: # rfmdocstart: systems
+   :end-before: # rfmdocend: systems
 
 Each system is associated with a set of properties, which in this case are the following:
 
@@ -90,7 +92,8 @@ The ``login`` partition refers to the login nodes of the system, whereas the ``g
 Let's pick the ``gpu`` partition and look into it in more detail:
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 39-63
+   :start-after: # rfmdocstart: gpu-partition
+   :end-before: # rfmdocend: gpu-partition
 
 The basic properties of a partition are the following:
 
@@ -132,7 +135,8 @@ In our example, we define environments for all the basic compilers as well as a 
 In certain contexts, it is useful to see a ReFrame environment as a wrapper of a programming toolchain (MPI + compiler combination):
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 95-153
+   :start-after: # rfmdocstart: environments
+   :end-before: # rfmdocend: environments
 
 Each environment is associated with a name.
 This name will be used to reference this environment in different contexts, as for example in the ``environs`` property of the system partitions.
@@ -154,7 +158,8 @@ Additionally, it allows for logging performance data from performance tests into
 Let's see how logging is defined in our example configuration, which also represents a typical one for logging:
 
 .. literalinclude:: ../tutorials/config/settings.py
-   :lines: 154-189
+   :start-after: # rfmdocstart: logging
+   :end-before: # rfmdocend: logging
 
 Logging is configured under the ``logging`` section of the configuration, which is a list of logger objects.
 Unless you want to configure logging differently for different systems, a single logger object is enough.
