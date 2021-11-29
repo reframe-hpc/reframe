@@ -49,9 +49,7 @@ You can optionally run the framework's unit tests with the following command:
 ./test_reframe.py -v
 ```
 
-NOTE: Unit tests require a functional C compiler, available through the `cc` command, that is also able to recognize the ``-O2`` option.
-The [GNU Make](https://www.gnu.org/software/make/) build tool is also needed.
-
+NOTE: Unit tests require a POSIX-compliant C compiler (available through the `cc` command), as well as the `make` utility.
 
 ### Building the documentation locally
 
