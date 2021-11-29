@@ -27,7 +27,6 @@ class MemoryLimitTest(rfm.RegressionTest):
 # rfmdocend: memorylimit
 
 
-
 # rfmdocstart: memorylimitresources
 @rfm.simple_test
 class MemoryLimitWithResourcesTest(rfm.RegressionTest):
