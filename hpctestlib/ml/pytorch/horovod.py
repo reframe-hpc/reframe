@@ -65,12 +65,14 @@ class pytorch_cnn_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
     tags = {'ml', 'cnn', 'horovod'}
 
     @run_after('init')
-    def prepare_test(self):
+    def update_descr(self):
         # Get the python script
-        script = self.executable.split()[1]
-
         self.descr = (f'Distributed CNN training with PyTorch and Horovod '
                       f'(model: {self.model})')
+
+    @run_before('run')
+    def prepare_run(self):
+        script = self.executable.split()[1]
         self.prerun_cmds = [
             f'curl -LJO https://raw.githubusercontent.com/horovod/horovod/{self.benchmark_version}/examples/pytorch/{script}',  # noqa: E501
         ]
