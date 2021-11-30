@@ -11,6 +11,9 @@ Scientific Applications
    :members:
    :show-inheritance:
 
+.. automodule:: hpctestlib.sciapps.gromacs.benchmarks
+   :members:
+   :show-inheritance:
 
 Data Analytics
 --------------
