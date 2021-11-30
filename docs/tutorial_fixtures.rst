@@ -13,14 +13,16 @@ For the full documentation of the test fixtures, you should refer to the :doc:`r
 The full example of the OSU benchmarks using test fixtures is shown below with the relevant parts highlighted:
 
 .. literalinclude:: ../tutorials/fixtures/osu_benchmarks.py
-   :lines: 6-
-   :emphasize-lines: 6-43,53,67-68,85-86,106-107
+   :start-after: # rfmdocstart: fixtures-test
+   :end-before: # rfmdocend: fixtures-test
+   :emphasize-lines: 7-18,23-48,52-65,68-85,88-104,107-124
 
 Let's start from the leaf tests, i.e. the tests that execute the benchmarks (:class:`osu_latency_test`, :class:`osu_bandwidth_test` and :class:`osu_allreduce_test`).
 As in the dependencies example, all these tests derive from the :class:`OSUBenchmarkTestBase`, where we define a fixture that will take care of generating the binaries of the tests:
 
 .. literalinclude:: ../tutorials/fixtures/osu_benchmarks.py
-   :lines: 58
+   :start-after: # rfmdocstart: osu-binaries
+   :end-before: # rfmdocend: osu-binaries
 
 A test defines a fixture using the :func:`~reframe.core.pipeline.RegressionMixin.fixture` builtin and assigns it a name by assigning the return value of the builtin to a test variable, here ``osu_binaries``.
 This name will be used later to access the resource managed by the fixture.
@@ -43,7 +45,8 @@ Since a fixture is a standard ReFrame test, you can access any information of th
 The individual benchmarks do exactly that:
 
 .. literalinclude:: ../tutorials/fixtures/osu_benchmarks.py
-   :lines: 69-76
+   :start-after: # rfmdocstart: prepare-run
+   :end-before: # rfmdocend: prepare-run
    :emphasize-lines: 4-5
 
 Here we construct the final executable path by accessing the standard :attr:`~reframe.core.pipeline.RegressionTest.stagedir` attribute of the test as well as the custom-defined :attr:`build_prefix` variable of the :class:`build_osu_benchmarks` fixture.
@@ -51,8 +54,9 @@ Here we construct the final executable path by accessing the standard :attr:`~re
 Let's inspect now the :class:`build_osu_benchmarks` fixture:
 
 .. literalinclude:: ../tutorials/fixtures/osu_benchmarks.py
-   :lines: 25-49
-   :emphasize-lines: 5,9,12
+   :start-after: # rfmdocstart: build-osu-benchmarks
+   :end-before: # rfmdocend: build-osu-benchmarks
+   :emphasize-lines: 6,11,14
 
 It is obvious that it is a normal ReFrame test except that it does not need to be decorated with the :func:`@simple_test <reframe.core.decorators.simple_test>` decorator.
 This means that the test will only be executed if it is a fixture of another test.
@@ -66,14 +70,16 @@ We could fetch the OSU benchmarks in this test, but we choose to separate the tw
 The ``osu_benchmarks`` fixture is defined at session scope, since we only need to download the benchmarks once for the whole session:
 
 .. literalinclude:: ../tutorials/fixtures/osu_benchmarks.py
-   :lines: 58
+   :start-after: # rfmdocstart: osu-benchmarks
+   :end-before: # rfmdocend: osu-benchmarks
 
 The rest of the test is very straightforward.
 
 Let's inspect the last fixture, the :class:`fetch_osu_benchmarks`:
 
 .. literalinclude:: ../tutorials/fixtures/osu_benchmarks.py
-   :lines: 11-22
+   :start-after: # rfmdocstart: fetch-osu-benchmarks
+   :end-before: # rfmdocend: fetch-osu-benchmarks
    :emphasize-lines: 8
 
 There is nothing special to this test -- it is just an ordinary test -- except that we force it to execute locally by setting its :attr:`~reframe.core.pipeline.RegressionTest.local` variable.

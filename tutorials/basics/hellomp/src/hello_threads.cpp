@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
+// rfmdocstart: hello_threads
 #include <iomanip>
 #include <iostream>
 #include <mutex>
@@ -47,3 +48,4 @@ int main(int argc, char *argv[])
 
     return 0;
 }
+// rfmdocend: hello_threads

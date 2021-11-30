@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+# rfmdocstart: randint
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -23,3 +24,4 @@ class DeferredIterationTest(rfm.RunOnlyRegressionTest):
             sn.assert_eq(sn.count(numbers), 100),
             sn.all(sn.map(lambda x: sn.assert_bounded(x, 90, 100), numbers))
         ])
+# rfmdocend: randint
