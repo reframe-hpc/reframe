@@ -12,6 +12,7 @@ from hpctestlib.ml.pytorch.horovod import pytorch_cnn_check
 @rfm.simple_test
 class cscs_pytorch_horovod_check(pytorch_cnn_check):
     num_nodes = parameter([1, 8, 32])
+    model_name = parameter(['inception_v3', 'resnet50'])
     num_tasks_per_node = 1
     batch_size = 64
     valid_systems = ['daint:gpu']
@@ -29,7 +30,6 @@ class cscs_pytorch_horovod_check(pytorch_cnn_check):
             }
         }
     }
-    model_name = parameter(allref['sm_60'].keys())
 
     @run_after('init')
     def setup_filtering_criteria(self):
@@ -49,12 +49,13 @@ class cscs_pytorch_horovod_check(pytorch_cnn_check):
             'NCCL_IB_CUDA_SUPPORT': '1',
             'OMP_NUM_THREADS': str(self.num_cpus_per_task)
         }
-        ref_per_gpu = self.allref['sm_60'][self.model]['throughput_per_gpu'][0]
-        ref_total = ref_per_gpu * self.num_nodes
         with contextlib.suppress(KeyError):
+            ref_vars = self.allref['sm_60'][self.model]
+            ref_per_gpu = ref_vars['throughput_per_gpu'][0]
+            ref_total = ref_per_gpu * self.num_nodes
             self.reference = {
                 '*': {
-                    **self.allref['sm_60'][self.model],
+                    **ref_vars,
                     'throughput_total': (ref_total, -0.05, None, 'images/s'),
                 }
             }
