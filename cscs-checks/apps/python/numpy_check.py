@@ -38,7 +38,7 @@ class cscs_numpy_test(numpy_ops_check):
     def set_num_cpus_per_task(self):
         self.num_cpus_per_task = self.current_partition.processor.num_cores
         self.variables = {
-            'OMP_NUM_THREADS': self.num_cpus_per_task
+            'OMP_NUM_THREADS': str(self.num_cpus_per_task)
         }
 
     @run_before('performance')
