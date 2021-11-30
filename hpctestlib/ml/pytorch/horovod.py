@@ -9,22 +9,20 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class pytorch_cnn_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
-    '''Base class for the Pytorch Horovod Test.
+    '''Run a synthetic CNN benchmark with PyTorch and Horovod.
 
-    PyTorch is an optimized tensor library for deep
-    learning using GPUs and CPUs (see pytorch.org).
+    PyTorch is a Python package that provides tensor computation like
+    NumPy with strong GPU acceleration and deep neural networks built
+    on a tape-based autograd system. For more information, refer to
+    `<https://pytorch.org/>`__.
 
+    Horovod is a distributed deep learning training framework for TensorFlow,
+    Keras, PyTorch, and Apache MXNet. The goal of Horovod is to make
+    distributed deep learning fast and easy to use. For more information refer
+    to `<https://github.com/horovod/horovod>`__.
 
-    Horovod is a distributed deep learning training
-    framework for TensorFlow, Keras, PyTorch, and Apache
-    MXNet. The goal of Horovod is to make distributed deep
-    learning fast and easy to use (see github.com/horovod/horovod).
-
-    This test tests the performance of Pytorch and Horovod using
-    two classic deep learning models. It checks whether learning is
-    performed to the end. The default assumption
-    is that Pytorch and Horovod is already installed on the device
-    under test.
+    This test runs the Horovod ``pytorch_synthentic_benchmark.py``
+    example, checks its sanity and extracts the GPU performance.
     '''
 
     #: The version of Horovod to use.

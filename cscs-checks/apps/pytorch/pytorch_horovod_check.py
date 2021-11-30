@@ -10,8 +10,8 @@ from hpctestlib.ml.pytorch.horovod import pytorch_cnn_check
 
 
 @rfm.simple_test
-class cscs_tensorflow_horovod_check(pytorch_cnn_check):
-    num_nodes = parameter([8, 32, 1])
+class cscs_pytorch_horovod_check(pytorch_cnn_check):
+    num_nodes = parameter([1, 8, 32])
     model_name = parameter(['inception_v3', 'resnet50'])
     num_tasks_per_node = 1
     batch_size = 64
@@ -29,6 +29,7 @@ class cscs_tensorflow_horovod_check(pytorch_cnn_check):
 
     @run_before('run')
     def setup_run(self):
+        self.skip_if_no_procinfo()
         proc = self.current_partition.processor
         self.num_tasks = self.num_nodes * self.num_tasks_per_node
         self.num_cpus_per_task = proc.num_cores
@@ -38,9 +39,6 @@ class cscs_tensorflow_horovod_check(pytorch_cnn_check):
             'NCCL_IB_CUDA_SUPPORT': '1',
             'OMP_NUM_THREADS': str(self.num_cpus_per_task)
         }
-
-    # @run_before('performance')
-    # def set_performance(self):
         ref_per_gpu_sm60 = 131 if self.model == 'inception_v3' else 201
         ref_total_sm60 = ref_per_gpu_sm60 * self.num_nodes
         allref = {
