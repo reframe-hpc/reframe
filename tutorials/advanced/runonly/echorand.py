@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+# rfmdocstart: echorand
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -28,3 +29,4 @@ class EchoRandTest(rfm.RunOnlyRegressionTest):
             ),
             self.lower, self.upper
         )
+# rfmdocend: echorand
