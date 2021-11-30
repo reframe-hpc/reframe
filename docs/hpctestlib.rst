@@ -45,3 +45,7 @@ Machine Learning
 .. automodule:: hpctestlib.ml.tensorflow.horovod
    :members:
    :show-inheritance:
+
+.. automodule:: hpctestlib.ml.pytorch.horovod
+   :members:
+   :show-inheritance:
