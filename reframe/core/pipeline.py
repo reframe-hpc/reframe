@@ -1064,7 +1064,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             name = ''
             for p, v in info['params'].items():
                 try:
-                    format_fn = cls.param_space.params_meta[p].format
+                    format_fn = cls.param_space[p].format
                 except KeyError:
                     def format_fn(x): return x
 

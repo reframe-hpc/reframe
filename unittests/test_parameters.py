@@ -42,32 +42,33 @@ def test_params_are_present():
     class MyTest(TwoParams):
         pass
 
-    assert MyTest.param_space['P0'] == ('a',)
-    assert MyTest.param_space['P1'] == ('b',)
+    assert MyTest.param_space['P0'].values == ('a',)
+    assert MyTest.param_space['P1'].values == ('b',)
 
 
 def test_abstract_param():
     class MyTest(Abstract):
         pass
 
-    assert MyTest.param_space['P0'] == ()
-    assert MyTest.param_space['P1'] == ('b',)
+    print(MyTest.param_space)
+    assert MyTest.param_space['P0'].values == ()
+    assert MyTest.param_space['P1'].values == ('b',)
 
 
 def test_param_override():
     class MyTest(TwoParams):
         P1 = parameter(['-'])
 
-    assert MyTest.param_space['P0'] == ('a',)
-    assert MyTest.param_space['P1'] == ('-',)
+    assert MyTest.param_space['P0'].values == ('a',)
+    assert MyTest.param_space['P1'].values == ('-',)
 
 
 def test_param_inheritance():
     class MyTest(TwoParams):
         P1 = parameter(['c'], inherit_params=True)
 
-    assert MyTest.param_space['P0'] == ('a',)
-    assert MyTest.param_space['P1'] == ('b', 'c',)
+    assert MyTest.param_space['P0'].values == ('a',)
+    assert MyTest.param_space['P1'].values == ('b', 'c',)
 
 
 def test_filter_params():
@@ -77,9 +78,9 @@ def test_filter_params():
         P1 = parameter(inherit_params=True,
                        filter_params=lambda x: list(x[2:]))
 
-    assert MyTest.param_space['P0'] == ('a',)
-    assert MyTest.param_space['P1'] == ('d', 'e',)
-    assert MyTest.param_space['P2'] == ('f', 'g',)
+    assert MyTest.param_space['P0'].values == ('a',)
+    assert MyTest.param_space['P1'].values == ('d', 'e',)
+    assert MyTest.param_space['P2'].values == ('f', 'g',)
 
 
 def test_wrong_filter():
@@ -312,7 +313,7 @@ def test_override_regular_attribute():
         p = 4
         p = parameter([1, 2])
 
-    assert Foo.p == (1, 2,)
+    assert Foo.p.values == (1, 2,)
 
 
 def test_override_parameter():
@@ -353,7 +354,7 @@ def test_class_attr_access():
     class MyTest(rfm.RegressionTest):
         p = parameter([1, 2, 3])
 
-    assert MyTest.p == (1, 2, 3,)
+    assert MyTest.p.values == (1, 2, 3,)
     with pytest.raises(ReframeSyntaxError, match='cannot override parameter'):
         MyTest.p = (4, 5,)
 
