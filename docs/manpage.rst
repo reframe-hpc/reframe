@@ -387,6 +387,7 @@ Options controlling ReFrame execution
    ReFrame will try to convert ``VAL`` to the type of the variable.
    If it does not succeed, a warning will be issued and the variable will not be set.
    ``VAL`` can take the special value ``@none`` to denote that the variable must be set to :obj:`None`.
+   Furthermore, ``VAL`` can take one of the special ``@True`` and ``@False`` values according to which the variable is set to :class:`True` and :class:`False` respectively.
 
    Sequence and mapping types can also be set from the command line by using the following syntax:
 
@@ -442,6 +443,9 @@ Options controlling ReFrame execution
             num_tasks = required
 
    .. versionadded:: 3.8.0
+
+   .. versionchanged:: 3.9.3
+      Accept the ``@True`` and ``@False`` special values.
 
 .. option:: --skip-performance-check
 
