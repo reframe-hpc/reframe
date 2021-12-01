@@ -249,22 +249,28 @@ class ParamSpace(namespaces.Namespace):
     def __getitem__(self, key):
         '''Access an element in the parameter space.
 
-        If the key is an integer, this function will retrieve a given point in
-        the parameter space. If the key is a parameter name, it will instead
-        return all the values assigned to that parameter.
+        If the key is an integer, this will be interpreted as a point in the
+        parameter space and this function will return a mapping of the
+        parameter names and their corresponding values. If the key is a
+        parameter name, it will instead return all the values assigned to that
+        parameter.
 
         If the key is an integer, this function will raise an
         :class:`IndexError` if the key is out of bounds.
+
         '''
         if isinstance(key, int):
-            ret = dict()
+            ret = {}
             val = self.__param_combinations[key]
-            for i, key in enumerate(self.params):
-                ret[key] = val[i]
+            for i, name in enumerate(self.params):
+                ret[name] = val[i]
 
             return ret
 
-        return self.params.get(key, ())
+        try:
+            return self.params[key].values
+        except KeyError:
+            return ()
 
     def is_empty(self):
         return self.params == {}

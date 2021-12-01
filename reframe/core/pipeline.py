@@ -1029,7 +1029,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     def __setattr__(self, name, value):
         if name == 'name':
             user_deprecation_warning(
-                'setting the name of the test is deprecated; see for XXX for details'
+                'setting the name of the test is deprecated; see for XXX for details',
+                from_version='3.10.0'
             )
             self._rfm_unique_name = value
         else:
@@ -1058,16 +1059,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
            The display name may not be unique.
 
         '''
-        cls = type(self)
-
-        def _format_params(info, prefix=' %'):
+        def _format_params(cls, info, prefix=' %'):
             name = ''
             for p, v in info['params'].items():
-                try:
-                    format_fn = cls.param_space[p].format
-                except KeyError:
-                    def format_fn(x): return x
-
+                format_fn = cls.raw_params[p].format
                 name += f'{prefix}{p}={format_fn(v)}'
 
             for f, v in info['fixtures'].items():
@@ -1075,7 +1070,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                     # This is join fixture
                     continue
 
-                name += _format_params(v, f'{prefix}{f}.')
+                fixt_cls = cls.fixture_space[f].cls
+                name += _format_params(fixt_cls, v, f'{prefix}{f}.')
 
             return name
 
@@ -1085,8 +1081,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         if hasattr(self, '_rfm_display_name'):
             return self._rfm_display_name
 
+        cls = type(self)
+        basename = cls.__name__
         variant_info = cls.get_variant_info(self.variant_num, recurse=True)
-        self._rfm_display_name = cls.__name__ + _format_params(variant_info)
+        self._rfm_display_name = basename + _format_params(cls, variant_info)
         return self._rfm_display_name
 
     @property

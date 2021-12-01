@@ -774,16 +774,17 @@ class RegressionTestMeta(type):
           #         'f1': 0,
           #     }
           # }
+
         '''
 
         pid, fid = cls._map_variant_num(variant_num)
-        ret = dict()
-        ret['params'] = cls.param_space[pid] if pid is not None else {}
-        ret['fixtures'] = cls.fixture_space[fid] if fid is not None else {}
+        ret = {
+            'params': cls.param_space[pid] if pid is not None else {},
+            'fixtures': cls.fixture_space[fid] if fid is not None else {}
+        }
 
         # Get current recursion level
         rdepth = kwargs.get('_current_depth', 0)
-
         if recurse and (max_depth is None or rdepth < max_depth):
             for fixt, variant in ret['fixtures'].items():
                 if len(variant) > 1:
@@ -796,6 +797,11 @@ class RegressionTestMeta(type):
                 )
 
         return ret
+
+    @property
+    def raw_params(cls):
+        '''Expose the raw parameters.'''
+        return cls.param_space.params
 
     @property
     def param_space(cls):

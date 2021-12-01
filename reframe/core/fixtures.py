@@ -508,7 +508,7 @@ class TestFixture:
 
 
 class FixtureSpace(namespaces.Namespace):
-    ''' Regression test fixture space.
+    '''Regression test fixture space.
 
     The fixture space is first built by joining the available fixture spaces
     in the base classes, and later extended by the locally defined fixtures
@@ -681,7 +681,7 @@ class FixtureSpace(namespaces.Namespace):
         underlying fixture object with that name.
         '''
         if isinstance(key, int):
-            ret = dict()
+            ret = {}
             f_ids = self.__variant_combinations[key]
             for i, f in enumerate(self.fixtures):
                 ret[f] = f_ids[i]

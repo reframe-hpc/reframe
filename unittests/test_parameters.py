@@ -42,8 +42,8 @@ def test_params_are_present():
     class MyTest(TwoParams):
         pass
 
-    assert MyTest.param_space['P0'].values == ('a',)
-    assert MyTest.param_space['P1'].values == ('b',)
+    assert MyTest.param_space['P0'] == ('a',)
+    assert MyTest.param_space['P1'] == ('b',)
 
 
 def test_abstract_param():
@@ -51,24 +51,24 @@ def test_abstract_param():
         pass
 
     print(MyTest.param_space)
-    assert MyTest.param_space['P0'].values == ()
-    assert MyTest.param_space['P1'].values == ('b',)
+    assert MyTest.param_space['P0'] == ()
+    assert MyTest.param_space['P1'] == ('b',)
 
 
 def test_param_override():
     class MyTest(TwoParams):
         P1 = parameter(['-'])
 
-    assert MyTest.param_space['P0'].values == ('a',)
-    assert MyTest.param_space['P1'].values == ('-',)
+    assert MyTest.param_space['P0'] == ('a',)
+    assert MyTest.param_space['P1'] == ('-',)
 
 
 def test_param_inheritance():
     class MyTest(TwoParams):
         P1 = parameter(['c'], inherit_params=True)
 
-    assert MyTest.param_space['P0'].values == ('a',)
-    assert MyTest.param_space['P1'].values == ('b', 'c',)
+    assert MyTest.param_space['P0'] == ('a',)
+    assert MyTest.param_space['P1'] == ('b', 'c',)
 
 
 def test_filter_params():
@@ -78,9 +78,9 @@ def test_filter_params():
         P1 = parameter(inherit_params=True,
                        filter_params=lambda x: list(x[2:]))
 
-    assert MyTest.param_space['P0'].values == ('a',)
-    assert MyTest.param_space['P1'].values == ('d', 'e',)
-    assert MyTest.param_space['P2'].values == ('f', 'g',)
+    assert MyTest.param_space['P0'] == ('a',)
+    assert MyTest.param_space['P1'] == ('d', 'e',)
+    assert MyTest.param_space['P2'] == ('f', 'g',)
 
 
 def test_wrong_filter():
