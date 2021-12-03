@@ -473,6 +473,10 @@ def main():
         help='Increase verbosity level of output',
         envvar='RFM_VERBOSE', configvar='general/verbose'
     )
+    misc_options.add_argument(
+        '-q', '--quiet', action='count',
+        help='Decrease verbosity level of output',
+    )
 
     # Options not associated with command-line arguments
     argparser.add_argument(
@@ -637,6 +641,14 @@ def main():
         printer.error(f'failed to load configuration: {e}')
         printer.error(logfiles_message())
         sys.exit(1)
+
+    if options.quiet:
+        verbosity = int(site_config.get('general/0/verbose'))
+        new_verbosity_level = verbosity - int(options.quiet)
+        if new_verbosity_level < 0:
+            new_verbosity_level = 0
+
+        site_config.add_sticky_option('general/verbose', new_verbosity_level)
 
     logging.getlogger().colorize = site_config.get('general/0/colorize')
     printer.colorize = site_config.get('general/0/colorize')
