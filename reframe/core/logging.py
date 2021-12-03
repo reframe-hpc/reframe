@@ -364,7 +364,7 @@ def _create_httpjson_handler(site_config, config_prefix):
             pass
     except OSError as e:
         getlogger().warning(
-            f'httpjson: could not connect to server'
+            f'httpjson: could not connect to server '
             f'{parsed_url.hostname}:{parsed_url.port}: {e}'
         )
         return None
