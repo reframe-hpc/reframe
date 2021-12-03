@@ -145,6 +145,15 @@ def logfiles_message():
     return msg
 
 
+def set_quiet_level(quiet_level, site_config):
+    verbosity = int(site_config.get('general/0/verbose'))
+    new_verbosity_level = verbosity - int(quiet_level)
+    if new_verbosity_level < 0:
+        new_verbosity_level = 0
+
+    site_config.add_sticky_option('general/verbose', new_verbosity_level)
+
+
 def main():
     # Setup command line options
     argparser = argparse.ArgumentParser()
@@ -570,6 +579,9 @@ def main():
     options.update_config(site_config)
     logging.configure_logging(site_config)
     logging.getlogger().colorize = site_config.get('general/0/colorize')
+    if options.quiet:
+        set_quiet_level(options.quiet, site_config)
+
     printer = PrettyPrinter()
     printer.colorize = site_config.get('general/0/colorize')
     printer.inc_verbosity(site_config.get('general/0/verbose'))
@@ -643,12 +655,7 @@ def main():
         sys.exit(1)
 
     if options.quiet:
-        verbosity = int(site_config.get('general/0/verbose'))
-        new_verbosity_level = verbosity - int(options.quiet)
-        if new_verbosity_level < 0:
-            new_verbosity_level = 0
-
-        site_config.add_sticky_option('general/verbose', new_verbosity_level)
+        set_quiet_level(options.quiet, site_config)
 
     logging.getlogger().colorize = site_config.get('general/0/colorize')
     printer.colorize = site_config.get('general/0/colorize')
