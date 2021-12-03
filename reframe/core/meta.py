@@ -486,14 +486,15 @@ class RegressionTestMeta(type):
         variant_num = kwargs.pop('variant_num', None)
         param_index, fixt_index = cls._map_variant_num(variant_num)
         fixt_name = kwargs.pop('fixt_name', None)
+        fixt_data = kwargs.pop('fixt_data', None)
 
         # Intercept variables to be set before initialization
-        variables = kwargs.pop('variables', {})
-        if not isinstance(variables, collections.abc.Mapping):
-            raise TypeError("'variables' argument must be a mapping")
+        fixt_vars = kwargs.pop('fixt_vars', {})
+        if not isinstance(fixt_vars, collections.abc.Mapping):
+            raise TypeError("'fixt_vars' argument must be a mapping")
 
         # Intercept is_fixture argument to flag an instance as a fixture
-        is_fixture = kwargs.pop('is_fixture', False)
+        # is_fixture = kwargs.pop('is_fixture', False)
 
         obj = cls.__new__(cls, *args, **kwargs)
 
@@ -510,10 +511,11 @@ class RegressionTestMeta(type):
         # Flag the instance as fixture
         if fixt_name:
             obj._rfm_unique_name = fixt_name
+            obj._rfm_fixt_data = fixt_data
             obj._rfm_is_fixture = True
 
         # Set the variables passed to the constructor
-        for k, v in variables.items():
+        for k, v in fixt_vars.items():
             if k in cls.var_space:
                 setattr(obj, k, v)
 
@@ -786,12 +788,12 @@ class RegressionTestMeta(type):
         # Get current recursion level
         rdepth = kwargs.get('_current_depth', 0)
         if recurse and (max_depth is None or rdepth < max_depth):
-            for fixt, variant in ret['fixtures'].items():
+            for fname, variant in ret['fixtures'].items():
                 if len(variant) > 1:
                     continue
 
-                fcls = cls.fixture_space[fixt].cls
-                ret['fixtures'][fixt] = fcls.get_variant_info(
+                fixt = cls.fixture_space[fname]
+                ret['fixtures'][fname] = fixt.cls.get_variant_info(
                     variant[0], recurse=recurse, max_depth=max_depth,
                     _current_depth=rdepth+1
                 )
@@ -860,6 +862,6 @@ class RegressionTestMeta(type):
                                        for v in cls.param_space[pid].values())
 
             if len(cls.fixture_space) > 1:
-                name += f'%{fid}'
+                name += f'_{fid}'
 
         return name

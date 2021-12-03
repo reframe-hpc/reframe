@@ -1070,8 +1070,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                     # This is join fixture
                     continue
 
-                fixt_cls = cls.fixture_space[f].cls
-                name += _format_params(fixt_cls, v, f'{prefix}{f}.')
+                fixt = cls.fixture_space[f]
+                name += _format_params(fixt.cls, v, f'{prefix}{f}.')
+
+                # Append any variables set for the fixtures
+                for var, val in fixt.variables.items():
+                    name += f'{prefix}{f}.{var}={val}'
 
             return name
 
@@ -1085,6 +1089,14 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         basename = cls.__name__
         variant_info = cls.get_variant_info(self.variant_num, recurse=True)
         self._rfm_display_name = basename + _format_params(cls, variant_info)
+        if self.is_fixture():
+            # Add the variable info and scope
+            fixt_data = self._rfm_fixt_data
+            suffix = ''.join(f' %{k}={v}' for k,
+                             v in fixt_data.variables.items())
+            suffix += f' ~{fixt_data.scope_enc}'
+            self._rfm_display_name += suffix
+
         return self._rfm_display_name
 
     @property

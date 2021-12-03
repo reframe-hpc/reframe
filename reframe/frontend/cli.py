@@ -152,10 +152,15 @@ def list_checks2(testcases, printer, detailed=False):
 
     # We need the leaf test cases to be printed at the leftmost
     testcases = list(t for t in testcases if t.in_degree == 0)
+    num_checks = 0
     for t in testcases:
         printer.info(f'- {t.check.display_name} [{t.check.unique_name}]')
-        for l in reversed(dep_lines(t, prefix='    ')):
+        num_checks += 1
+        for l in reversed(dep_lines(t, prefix='  ')):
             printer.info(l)
+            num_checks += 1
+
+    printer.info(f'Found {num_checks} check(s)\n')
 
 
 def list_tags(testcases, printer):

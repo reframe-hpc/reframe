@@ -381,13 +381,13 @@ def test_setting_variables_on_instantiation(MyMeta):
         v = variable(int, value=1)
 
     assert Foo().v == 1
-    assert Foo(variables={'v': 10}).v == 10
+    assert Foo(fixt_vars={'v': 10}).v == 10
 
     # Non-variables are silently ignored
-    assert not hasattr(Foo(variables={'vv': 10}), 'vv')
+    assert not hasattr(Foo(fixt_vars={'vv': 10}), 'vv')
 
     with pytest.raises(TypeError):
-        Foo(variables='not a mapping')
+        Foo(fixt_vars='not a mapping')
 
 
 def test_variants(MyMeta):
