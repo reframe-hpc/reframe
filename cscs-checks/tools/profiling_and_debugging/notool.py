@@ -57,14 +57,12 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
     def prgEnv_nvidia_workaround(self):
         envname = self.current_environ.name
         sysname = self.current_system.name
-        if sysname in ['pilatus', 'eiger', 'dom', 'daint']:
-            # FIXME: Fatal error in PMPI_Init_thread
+        if sysname in ['pilatus', 'eiger']:
+            # FIXME: skipping to avoid "Fatal error in PMPI_Init_thread"
             self.skip_if(envname == 'PrgEnv-nvidia', '')
 
     @run_before('compile')
     def set_flags(self):
-        # FIXME: workaround for C4KCUST-308
-        # self.modules += ['cray-mpich']
         self.prebuild_cmds += ['module list']
         self.prgenv_flags = {
             'PrgEnv-aocc': ['-O2', '-g', '-fopenmp'],
@@ -81,7 +79,6 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         self.build_system.cflags = prgenv_flags
         self.build_system.cxxflags = prgenv_flags
         self.build_system.fflags = prgenv_flags
-        # self.build_system.ldflags = ['-lm']
 
     @run_before('run')
     def set_prerun_cmds(self):
