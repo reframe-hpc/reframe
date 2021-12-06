@@ -8,14 +8,14 @@ class external_x(rfm.RunOnlyRegressionTest):
     valid_systems = ['*']
     valid_prog_environs = ['*']
     foo = variable(int, value=1)
-    bar = variable(bool, value=False)
+    ham = variable(bool, value=False)
     executable = 'echo'
 
     @sanity_function
     def assert_foo(self):
         return sn.all([
             sn.assert_eq(self.foo, 3),
-            sn.assert_true(self.bar)
+            sn.assert_true(self.ham)
         ])
 
 
