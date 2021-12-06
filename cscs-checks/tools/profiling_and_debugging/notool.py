@@ -34,6 +34,13 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         self.descr = f'Jacobi (without tool) {self.lang} check'
         self.name = f'{type(self).__name__}_{self.lang.replace("+", "p")}'
 
+    @run_after('init')
+    def remove_buggy_prgenv(self):
+        # FIXME: skipping to avoid "Fatal error in PMPI_Init_thread"
+        if self.current_system.name in ('eiger', 'pilatus'):
+            self.valid_prog_environs.remove('eiger:mc')
+            self.valid_prog_environs.remove('pilatus:mc')
+
     @run_before('compile')
     def set_sources_dir(self):
         self.sourcesdir = os.path.join('src', self.lang)
@@ -52,14 +59,6 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
             'OMP_NUM_THREADS': str(self.num_cpus_per_task),
             'OMP_PROC_BIND': 'true',
         }
-
-    @run_before('compile')
-    def prgEnv_nvidia_workaround(self):
-        envname = self.current_environ.name
-        sysname = self.current_system.name
-        if sysname in ['pilatus', 'eiger']:
-            # FIXME: skipping to avoid "Fatal error in PMPI_Init_thread"
-            self.skip_if(envname == 'PrgEnv-nvidia', '')
 
     @run_before('compile')
     def set_flags(self):
