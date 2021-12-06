@@ -392,7 +392,7 @@ Options controlling ReFrame execution
    - ``@true``: sets the variable to :class:`True`
    - ``@false``: sets the variable to :class:`False`
 
-   .. note::
+   .. warning::
       Trying to set a boolean variable using a value different from ``@true`` or ``@false``, will be interpreted as :class:`True` since ReFrame will try to implicitly convert the given string to a boolean, which is a valid Python operation.
 
    Sequence and mapping types can also be set from the command line by using the following syntax:
@@ -448,8 +448,6 @@ Options controlling ReFrame execution
         class my_test(rfm.RegressionTest):
             num_tasks = required
 
-   .. note::
-      Trying to set a boolean variable using a value different from ``@true`` or ``@false`` will be interpreted as :class:`True` since ReFrame will try to implicitly convert the given string to a boolean, which is a valid Python operation.
 
    .. versionadded:: 3.8.0
 
