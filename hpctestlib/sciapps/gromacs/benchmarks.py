@@ -65,7 +65,7 @@ class gromacs_check(rfm.RunOnlyRegressionTest):
         self.prerun_cmds = [
             f'curl -LJO https://github.com/victorusu/GROMACS_Benchmark_Suite/raw/{self.benchmark_version}/{self.__bench}/benchmark.tpr'  # noqa: E501
         ]
-        self.executable_opts = ['-nb', self.nb_impl, '-s benchmark.tpr']
+        self.executable_opts += ['-nb', self.nb_impl, '-s benchmark.tpr']
 
     @property
     def bench_name(self):
