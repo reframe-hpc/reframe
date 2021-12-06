@@ -20,7 +20,7 @@ class ParaViewCheck(rfm.RunOnlyRegressionTest):
     maintainers = ['JF', 'TM']
     tags = {'scs', 'production'}
 
-    @run_after('setup')
+    @run_after('init')
     def set_prgenv_alps(self):
         if self.current_system.name in {'eiger', 'pilatus'}:
             self.valid_prog_environs = ['cpeCray']
