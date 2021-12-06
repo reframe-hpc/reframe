@@ -38,8 +38,7 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
     def remove_buggy_prgenv(self):
         # FIXME: skipping to avoid "Fatal error in PMPI_Init_thread"
         if self.current_system.name in ('eiger', 'pilatus'):
-            self.valid_prog_environs.remove('eiger:mc')
-            self.valid_prog_environs.remove('pilatus:mc')
+            self.valid_prog_environs.remove('PrgEnv-nvidia')
 
     @run_before('compile')
     def set_sources_dir(self):
