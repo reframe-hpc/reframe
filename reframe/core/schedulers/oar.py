@@ -73,8 +73,8 @@ class OarJobScheduler(PbsJobScheduler):
         # avoid writing them in the working dir
         preamble = [
             self._format_option(f'-n "{job.name}"'),
-            self._format_option(f'-O {os.path.join(job.workdir, job.stdout)}'),
-            self._format_option(f'-E {os.path.join(job.workdir, job.stderr)}'),
+            self._format_option(f'-O {job.stdout}'),
+            self._format_option(f'-E {job.stderr}'),
         ]
 
         if job.time_limit is not None:
@@ -98,14 +98,10 @@ class OarJobScheduler(PbsJobScheduler):
             else:
                 preamble.append(self._format_option(opt))
 
-        # OAR starts the job in the home directory by default
-        preamble.append(f'cd {job.workdir}')
         return preamble
 
     def submit(self, job):
-        # For some reason OAR job manager says that job launching dir is
-        # working dir of the repo and not stage dir. A workaround is to give
-        # full path of script to oarsub
+        # OAR batch submission mode needs full path to the job script
         job_script_fullpath = os.path.join(job.workdir, job.script_filename)
 
         # OAR needs -S to submit job in batch mode
