@@ -1,24 +1,24 @@
 import os
 
 from paraview.simple import *
-
+from paraview.modules.vtkRemotingCore import vtkProcessModule
+from paraview.modules.vtkRemotingViews import (
+    vtkPVOpenGLInformation,
+    vtkPVRenderingCapabilitiesInformation
+)
 
 basename = os.getenv('SCRATCH')
 if basename is None:
     basename = "/tmp"
 
-Version = str(GetParaViewVersion())
-if(servermanager.vtkSMProxyManager.GetVersionMajor() == 5):
-    if(servermanager.vtkSMProxyManager.GetVersionMinor() == 8):
-        from paraview.modules.vtkRemotingCore import vtkProcessModule
-        info = GetOpenGLInformation(
-            location=servermanager.vtkSMSession.RENDER_SERVER
-        )
-    elif(servermanager.vtkSMProxyManager.GetVersionMinor() == 9):
-        from paraview.modules.vtkRemotingCore import vtkProcessModule
-        from paraview.modules.vtkRemotingViews import vtkPVOpenGLInformation
-        info = vtkPVOpenGLInformation()
-        info.CopyFromObject(None)
+Version = (str(servermanager.vtkSMProxyManager.GetVersionMajor()) + "." +
+           str(servermanager.vtkSMProxyManager.GetVersionMinor()))
+
+info = vtkPVOpenGLInformation()
+info.CopyFromObject(None)
+renInfo = vtkPVRenderingCapabilitiesInformation()
+renInfo.GetCapabilities()
+renInfo.CopyFromObject(None)
 
 rank = vtkProcessModule.GetProcessModule().GetPartitionId()
 nbprocs = servermanager.ActiveConnection.GetNumberOfDataPartitions()
@@ -30,16 +30,14 @@ if rank == 0:
     print("Version:  %s" % info.GetVersion())
     print("Renderer: %s" % info.GetRenderer())
 
-Vendor = info.GetVendor().split()[0]
-
-"""
->>> info.GetRenderer()
-'SWR (LLVM 8.0, 256 bits)'
->>> info.GetVendor()
-'Intel Corporation'
->>> info.GetVersion()
-'3.3 (Core Profile) Mesa 18.3.3'
-"""
+if renInfo.Supports(
+    vtkPVRenderingCapabilitiesInformation.HEADLESS_RENDERING_USES_EGL):  # noqa: E125
+    Vendor = "EGL"
+elif renInfo.Supports(
+    vtkPVRenderingCapabilitiesInformation.HEADLESS_RENDERING_USES_OSMESA):  # noqa: E125
+    Vendor = "OSMESA"
+else:
+    Vendor = ""
 
 view = GetRenderView()
 view.CameraPosition = [1.642208, 1.973803, 2.14555]

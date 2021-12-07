@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+# rfmdocstart: streamtest4
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -12,7 +13,7 @@ class StreamMultiSysTest(rfm.RegressionTest):
     valid_systems = ['*']
     valid_prog_environs = ['cray', 'gnu', 'intel', 'pgi']
     prebuild_cmds = [
-        'wget http://www.cs.virginia.edu/stream/FTP/Code/stream.c',
+        'wget https://raw.githubusercontent.com/jeffhammond/STREAM/master/stream.c'  # noqa: E501
     ]
     build_system = 'SingleSource'
     sourcepath = 'stream.c'
@@ -80,3 +81,4 @@ class StreamMultiSysTest(rfm.RegressionTest):
             'Add': self.extract_bw('Add'),
             'Triad': self.extract_bw('Triad'),
         }
+# rfmdocend: streamtest4
