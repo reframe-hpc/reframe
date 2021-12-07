@@ -9,32 +9,28 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class ParaViewCheck(rfm.RunOnlyRegressionTest):
-    def __init__(self):
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'eiger:mc', 'pilatus:mc']
+    valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+                     'eiger:mc', 'pilatus:mc']
+    valid_prog_environs = ['builtin']
+    num_tasks = 12
+    num_tasks_per_node = 12
+    modules = ['ParaView']
+    executable = 'pvbatch'
+    executable_opts = ['coloredSphere.py']
+    maintainers = ['JF', 'TM']
+    tags = {'scs', 'production'}
 
-        if self.current_system.name in ['eiger', 'pilatus']:
+    @run_after('init')
+    def set_prgenv_alps(self):
+        if self.current_system.name in {'eiger', 'pilatus'}:
             self.valid_prog_environs = ['cpeCray']
-        else:
-            self.valid_prog_environs = ['builtin']
 
-        self.num_tasks = 12
-        self.num_tasks_per_node = 12
-        self.modules = ['ParaView']
-        self.executable = 'pvbatch'
-        self.executable_opts = ['coloredSphere.py']
-        self.maintainers = ['JF', 'TM']
-        self.tags = {'scs', 'production'}
-
-    @run_before('sanity')
-    def set_sanity(self):
+    @sanity_function
+    def assert_vendor_renderer(self):
         if self.current_partition.name == 'mc':
-            self.sanity_patterns = sn.all([
-                sn.assert_found('Vendor:   VMware, Inc.', self.stdout),
-                sn.assert_found('Renderer: llvmpipe', self.stdout)
-            ])
+            return sn.assert_found('Renderer: llvmpipe', self.stdout)
         elif self.current_partition.name == 'gpu':
-            self.sanity_patterns = sn.all([
+            return sn.all([
                 sn.assert_found('Vendor:   NVIDIA Corporation', self.stdout),
                 sn.assert_found('Renderer: Tesla P100', self.stdout)
             ])
