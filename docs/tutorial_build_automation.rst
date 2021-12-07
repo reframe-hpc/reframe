@@ -23,8 +23,10 @@ Let's consider a simple ReFrame test that installs ``bzip2-1.0.6`` given the eas
 The following code block shows the check, highlighting the lines specific to this tutorial:
 
 .. literalinclude:: ../tutorials/build_systems/easybuild/eb_test.py
-   :lines: 6-
+   :start-after: # rfmdocstart: eb-test
+   :end-before: # rfmdocend: eb-test
    :emphasize-lines: 12,14-17,19-21
+
 
 The test looks pretty standard except for the highlighted blocks.
 Let's have a look first to the block in the :class:`BZip2Check` class.
@@ -104,7 +106,8 @@ This example is the equivalent to the previous one, except that it uses Spack to
 Here is the test's code:
 
 .. literalinclude:: ../tutorials/build_systems/spack/spack_test.py
-   :lines: 6-
+   :start-after: # rfmdocstart: spack-test
+   :end-before: # rfmdocend: spack-test
    :emphasize-lines: 12,14-16
 
 

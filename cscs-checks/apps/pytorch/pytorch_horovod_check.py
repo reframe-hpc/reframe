@@ -3,82 +3,59 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import contextlib
 import reframe as rfm
-import reframe.utility.sanity as sn
+
+from hpctestlib.ml.pytorch.horovod import pytorch_cnn_check
 
 
-@rfm.parameterized_test(*[[model, mpi_task]
-                          for mpi_task in [32, 8, 1]
-                          for model in ['inception_v3', 'resnet50']])
-class PytorchHorovodTest(rfm.RunOnlyRegressionTest):
-    def __init__(self, model, mpi_task):
-        self.descr = 'Distributed training with Pytorch and Horovod'
-        self.valid_systems = ['daint:gpu']
-        if mpi_task < 20:
+@rfm.simple_test
+class cscs_pytorch_horovod_check(pytorch_cnn_check):
+    num_nodes = parameter([1, 8, 32])
+    model_name = parameter(['inception_v3', 'resnet50'])
+    num_tasks_per_node = 1
+    batch_size = 64
+    valid_systems = ['daint:gpu']
+    valid_prog_environs = ['builtin']
+    modules = ['PyTorch']
+    tags |= {'production'}
+    maintainers = ['sarafael', 'henrique']
+    allref = {
+        'sm_60': {
+            'inception_v3': {
+                'throughput_per_gpu': (131, -0.05, None, 'images/s'),
+            },
+            'resnet50': {
+                'throughput_per_gpu': (201, -0.05, None, 'images/s'),
+            }
+        }
+    }
+
+    @run_after('init')
+    def setup_filtering_criteria(self):
+        self.model = self.model_name
+        if self.num_nodes == 8:
             self.valid_systems += ['dom:gpu']
 
-        self.valid_prog_environs = ['builtin']
-        self.modules = ['PyTorch']
-        self.num_tasks_per_node = 1
-        self.num_cpus_per_task = 12
-        self.num_tasks = mpi_task
-        batch_size = 64
+    @run_before('run')
+    def setup_run(self):
+        self.skip_if_no_procinfo()
+        proc = self.current_partition.processor
+        self.num_tasks = self.num_nodes * self.num_tasks_per_node
+        self.num_cpus_per_task = proc.num_cores
         self.variables = {
             'NCCL_DEBUG': 'INFO',
             'NCCL_IB_HCA': 'ipogif0',
             'NCCL_IB_CUDA_SUPPORT': '1',
-            'OMP_NUM_THREADS': '$SLURM_CPUS_PER_TASK',
+            'OMP_NUM_THREADS': str(self.num_cpus_per_task)
         }
-        hash = 'master'
-        git_url = f'https://raw.githubusercontent.com/horovod/horovod/{hash}/examples/pytorch'  # noqa: E501
-        git_src = 'pytorch_synthetic_benchmark.py'
-        self.prerun_cmds = [f'wget {git_url}/{git_src}']
-
-        if model == 'inception_v3':
-            self.prerun_cmds += [
-                'python3 -m venv --system-site-packages myvenv',
-                'source myvenv/bin/activate',
-                'pip install scipy',
-                'sed -i "s-output = model(data)-output, aux = model(data)-"'
-                f' {git_src}',
-                'sed -i "s-data = torch.randn(args.batch_size, 3, 224, 224)-'
-                f'data = torch.randn(args.batch_size, 3, 299, 299)-"'
-                f' {git_src}'
-            ]
-
-        self.executable = 'python'
-        self.executable_opts = [
-            git_src,
-            f'--model {model}',
-            f'--batch-size {batch_size}',
-            '--num-iters 5',
-            '--num-batches-per-iter 5'
-        ]
-        self.tags = {'production'}
-        self.maintainers = ['RS', 'HM']
-        self.sanity_patterns = sn.all([
-            sn.assert_found(rf'Model: {model}', self.stdout),
-            sn.assert_found(rf'Batch size: {batch_size}', self.stdout)
-        ])
-        self.perf_patterns = {
-            'throughput_per_gpu': sn.extractsingle(
-                r'Img/sec per GPU: (?P<throughput_per_gpu>\S+) \S+',
-                self.stdout, 'throughput_per_gpu', float
-            ),
-            'throughput_per_job': sn.extractsingle(
-                r'Total img/sec on \d+ GPU\(s\): (?P<throughput>\S+) \S+',
-                self.stdout, 'throughput', float
-            ),
-        }
-        ref_per_gpu = 131 if model == 'inception_v3' else 201
-        ref_per_job = ref_per_gpu * mpi_task
-        self.reference = {
-            'dom:gpu': {
-                'throughput_per_gpu': (ref_per_gpu, -0.1, None, 'images/s'),
-                'throughput_per_job': (ref_per_job, -0.1, None, 'images/s'),
-            },
-            'daint:gpu': {
-                'throughput_per_gpu': (ref_per_gpu, -0.1, None, 'images/s'),
-                'throughput_per_job': (ref_per_job, -0.1, None, 'images/s'),
+        with contextlib.suppress(KeyError):
+            ref_vars = self.allref['sm_60'][self.model]
+            ref_per_gpu = ref_vars['throughput_per_gpu'][0]
+            ref_total = ref_per_gpu * self.num_nodes
+            self.reference = {
+                '*': {
+                    **ref_vars,
+                    'throughput_total': (ref_total, -0.05, None, 'images/s'),
+                }
             }
-        }

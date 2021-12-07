@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+# rfmdocstart: prepostrun
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -26,3 +27,4 @@ class PrepostRunTest(rfm.RunOnlyRegressionTest):
             sn.all(sn.map(lambda x: sn.assert_bounded(x, 90, 100), numbers)),
             sn.assert_found(r'FINISHED', self.stdout)
         ])
+# rfmdocend: prepostrun
