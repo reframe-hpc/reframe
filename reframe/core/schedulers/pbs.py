@@ -117,7 +117,7 @@ class PbsJobScheduler(sched.JobScheduler):
         preamble = [
             self._format_option(f'-N {job_name}'),
             self._format_option(f'-o {job.stdout}'),
-            self._format_option(f'-e {job.stdout}'),
+            self._format_option(f'-e {job.stderr}'),
         ]
 
         if job.time_limit is not None:
