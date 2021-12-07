@@ -1,5 +1,5 @@
 # rfmdocstart: required-packages
-archspec==0.1.2
+archspec==0.1.3
 argcomplete==1.12.3
 coverage==5.5
 importlib_metadata==4.0.1; python_version < '3.8'
