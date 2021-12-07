@@ -113,10 +113,11 @@ class PbsJobScheduler(sched.JobScheduler):
         return _PbsJob(*args, **kwargs)
 
     def emit_preamble(self, job):
+        job_name = job.name.replace(' ', '')
         preamble = [
-            self._format_option('-N %s' % job.name.replace(' ', ''),
-            self._format_option('-o %s' % job.stdout),
-            self._format_option('-e %s' % job.stderr),
+            self._format_option(f'-N {job_name}'),
+            self._format_option(f'-o {job.stdout}'),
+            self._format_option(f'-e {job.stdout}'),
         ]
 
         if job.time_limit is not None:
@@ -127,7 +128,7 @@ class PbsJobScheduler(sched.JobScheduler):
         preamble += self._emit_lselect_option(job)
 
         # PBS starts the job in the home directory by default
-        preamble.append('cd %s' % job.workdir)
+        preamble.append(f'cd {job.workdir}')
         return preamble
 
     def allnodes(self):
