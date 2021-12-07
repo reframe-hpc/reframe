@@ -114,7 +114,7 @@ class PbsJobScheduler(sched.JobScheduler):
 
     def emit_preamble(self, job):
         preamble = [
-            self._format_option('-N "%s"' % job.name),
+            self._format_option('-N %s' % job.name),
             self._format_option('-o %s' % job.stdout),
             self._format_option('-e %s' % job.stderr),
         ]
