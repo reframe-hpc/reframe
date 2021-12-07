@@ -145,13 +145,9 @@ def logfiles_message():
     return msg
 
 
-def set_quiet_level(quiet_level, site_config):
-    verbosity = int(site_config.get('general/0/verbose'))
-    new_verbosity_level = verbosity - int(quiet_level)
-    if new_verbosity_level < 0:
-        new_verbosity_level = 0
-
-    site_config.add_sticky_option('general/verbose', new_verbosity_level)
+def calc_verbosity(site_config, quiesce):
+    curr_verbosity = site_config.get('general/0/verbose')
+    return curr_verbosity - quiesce
 
 
 def main():
@@ -483,7 +479,7 @@ def main():
         envvar='RFM_VERBOSE', configvar='general/verbose'
     )
     misc_options.add_argument(
-        '-q', '--quiet', action='count',
+        '-q', '--quiet', action='count', default=0,
         help='Decrease verbosity level of output',
     )
 
@@ -579,12 +575,9 @@ def main():
     options.update_config(site_config)
     logging.configure_logging(site_config)
     logging.getlogger().colorize = site_config.get('general/0/colorize')
-    if options.quiet:
-        set_quiet_level(options.quiet, site_config)
-
     printer = PrettyPrinter()
     printer.colorize = site_config.get('general/0/colorize')
-    printer.inc_verbosity(site_config.get('general/0/verbose'))
+    printer.adjust_verbosity(calc_verbosity(site_config, options.quiet))
     if os.getenv('RFM_GRAYLOG_SERVER'):
         printer.warning(
             'RFM_GRAYLOG_SERVER environment variable is deprecated; '
@@ -654,12 +647,9 @@ def main():
         printer.error(logfiles_message())
         sys.exit(1)
 
-    if options.quiet:
-        set_quiet_level(options.quiet, site_config)
-
     logging.getlogger().colorize = site_config.get('general/0/colorize')
     printer.colorize = site_config.get('general/0/colorize')
-    printer.inc_verbosity(site_config.get('general/0/verbose'))
+    printer.adjust_verbosity(calc_verbosity(site_config, options.quiet))
     try:
         printer.debug('Initializing runtime')
         runtime.init_runtime(site_config)

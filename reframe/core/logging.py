@@ -659,16 +659,19 @@ class LoggerAdapter(logging.LoggerAdapter):
 
         super().error(message, *args, **kwargs)
 
-    def inc_verbosity(self, num_steps):
-        '''Convenience function for increasing the verbosity
+    def adjust_verbosity(self, num_steps):
+        '''Convenience function for increasing or decreasing the verbosity
         of the logger step-wise.'''
         log_levels = sorted(_log_level_names.keys())[1:]
         for h in self.std_stream_handlers:
             level_idx = log_levels.index(h.level)
-            if level_idx - num_steps < 0:
+            new_level_idx = level_idx - num_steps
+            if new_level_idx < 0:
                 new_level = log_levels[0]
+            elif new_level_idx >= len(log_levels):
+                new_level = log_levels[-1]
             else:
-                new_level = log_levels[level_idx - num_steps]
+                new_level = log_levels[new_level_idx]
 
             h.setLevel(new_level)
 
