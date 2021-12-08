@@ -624,26 +624,14 @@ def test_verbosity_with_check(run_reframe):
     assert 0 == returncode
 
 
-def test_quiet_with_check(run_reframe):
+def test_quiesce_with_check(run_reframe):
     returncode, stdout, stderr = run_reframe(
-        more_options=['-vvv'],
+        more_options=['-v', '-qqq'],    # Show only errors
         system='testsys',
         action='list',
         checkpath=['unittests/resources/checks/hellocheck.py']
     )
-    assert 'Loading user configuration' in stdout
-    assert 0 == returncode
-
-    returncode, stdout, stderr = run_reframe(
-        more_options=['-vvv', '-qqq'],
-        system='testsys',
-        action='list',
-        checkpath=['unittests/resources/checks/hellocheck.py']
-    )
-    assert 'Loading user configuration' not in stdout
-    assert '' != stdout
-    assert '--- Logging error ---' not in stdout
-    assert 'Traceback' not in stdout
+    assert stdout == ''
     assert 'Traceback' not in stderr
     assert 0 == returncode
 
