@@ -127,6 +127,7 @@ def list_checks(testcases, printer, detailed=False):
 
 def list_checks2(testcases, printer, detailed=False):
     printer.info('[List of matched checks]')
+    unique_checks = set()
 
     def dep_lines(u, *, prefix, depth=0, lines=None, printed=None):
         if lines is None:
@@ -141,7 +142,9 @@ def list_checks2(testcases, printer, detailed=False):
                 dep_lines(v, prefix=prefix + 2*' ', depth=depth+1,
                           lines=lines, printed=printed)
 
-            printed.add(v.check.name)
+            printed.add(v.check.unique_name)
+            if not v.check.is_fixture():
+                unique_checks.add(v.check.unique_name)
 
         if depth:
             lines.append(
@@ -152,15 +155,15 @@ def list_checks2(testcases, printer, detailed=False):
 
     # We need the leaf test cases to be printed at the leftmost
     testcases = list(t for t in testcases if t.in_degree == 0)
-    num_checks = 0
     for t in testcases:
         printer.info(f'- {t.check.display_name} [{t.check.unique_name}]')
-        num_checks += 1
+        if not t.check.is_fixture():
+            unique_checks.add(t.check.unique_name)
+
         for l in reversed(dep_lines(t, prefix='  ')):
             printer.info(l)
-            num_checks += 1
 
-    printer.info(f'Found {num_checks} check(s)\n')
+    printer.info(f'Found {len(unique_checks)} check(s)\n')
 
 
 def list_tags(testcases, printer):
