@@ -15,12 +15,10 @@ import reframe as rfm
 
 @rfm.simple_test
 class KeyboardInterruptCheck(rfm.RunOnlyRegressionTest):
-    def __init__(self):
-        self.local = True
-        self.executable = 'sleep 1'
-        self.valid_systems = ['*']
-        self.valid_prog_environs = ['*']
-        self.tags = {self.name}
+    local = True
+    executable = 'sleep 1'
+    valid_systems = ['*']
+    valid_prog_environs = ['*']
 
     @run_before('setup')
     def raise_keyboard_interrupt(self):

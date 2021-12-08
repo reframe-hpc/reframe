@@ -140,21 +140,19 @@ def container_local_exec_ctx(local_user_exec_ctx):
 
 
 def test_eq():
-    class T0(rfm.RegressionTest):
-        def __init__(self):
-            self.name = 'T0'
+    T0 = rfm.make_test('T0', (rfm.RegressionTest,), {})
+    T1 = rfm.make_test('T1', (rfm.RegressionTest,), {})
+    T2 = rfm.make_test('T1', (rfm.RegressionTest,), {})
 
-    class T1(rfm.RegressionTest):
-        def __init__(self):
-            self.name = 'T0'
-
-    t0, t1 = T0(), T1()
-    assert t0 == t1
-    assert hash(t0) == hash(t1)
-
-    t1.name = 'T1'
+    t0, t1, t2 = T0(), T1(), T2()
     assert t0 != t1
     assert hash(t0) != hash(t1)
+
+    # T1 and T2 are different classes but have the same name, so the
+    # corresponding tests should compare equal
+    assert T1 is not T2
+    assert t1 == t2
+    assert hash(t1) == hash(t2)
 
 
 def test_environ_setup(hellotest, local_exec_ctx):
@@ -524,11 +522,7 @@ def test_sourcepath_non_existent(local_exec_ctx):
 def test_extra_resources(HelloTest, testsys_system):
     @test_util.custom_prefix('unittests/resources/checks')
     class MyTest(HelloTest):
-        def __init__(self):
-            super().__init__()
-            self.name = type(self).__name__
-            self.executable = os.path.join('.', self.name)
-            self.local = True
+        local = True
 
         @run_after('setup')
         def set_resources(self):
@@ -612,7 +606,6 @@ def test_setup_hooks(HelloTest, local_exec_ctx):
     class MyTest(HelloTest):
         def __init__(self):
             super().__init__()
-            self.name = type(self).__name__
             self.executable = os.path.join('.', self.name)
             self.count = 0
 
@@ -634,11 +627,7 @@ def test_setup_hooks(HelloTest, local_exec_ctx):
 def test_compile_hooks(HelloTest, local_exec_ctx):
     @test_util.custom_prefix('unittests/resources/checks')
     class MyTest(HelloTest):
-        def __init__(self):
-            super().__init__()
-            self.name = type(self).__name__
-            self.executable = os.path.join('.', self.name)
-            self.count = 0
+        count = variable(int, value=0)
 
         @run_before('compile')
         def setflags(self):
@@ -659,11 +648,6 @@ def test_compile_hooks(HelloTest, local_exec_ctx):
 def test_run_hooks(HelloTest, local_exec_ctx):
     @test_util.custom_prefix('unittests/resources/checks')
     class MyTest(HelloTest):
-        def __init__(self):
-            super().__init__()
-            self.name = type(self).__name__
-            self.executable = os.path.join('.', self.name)
-
         @run_before('run')
         def setflags(self):
             self.postrun_cmds = ['echo hello > greetings.txt']
@@ -681,11 +665,7 @@ def test_run_hooks(HelloTest, local_exec_ctx):
 def test_multiple_hooks(HelloTest, local_exec_ctx):
     @test_util.custom_prefix('unittests/resources/checks')
     class MyTest(HelloTest):
-        def __init__(self):
-            super().__init__()
-            self.name = type(self).__name__
-            self.executable = os.path.join('.', self.name)
-            self.var = 0
+        var = variable(int, value=0)
 
         @run_after('setup')
         def x(self):
@@ -707,11 +687,7 @@ def test_multiple_hooks(HelloTest, local_exec_ctx):
 def test_stacked_hooks(HelloTest, local_exec_ctx):
     @test_util.custom_prefix('unittests/resources/checks')
     class MyTest(HelloTest):
-        def __init__(self):
-            super().__init__()
-            self.name = type(self).__name__
-            self.executable = os.path.join('.', self.name)
-            self.var = 0
+        var = variable(int, value=0)
 
         @run_before('setup')
         @run_after('setup')
@@ -733,11 +709,7 @@ def test_multiple_inheritance(HelloTest):
 def test_inherited_hooks(HelloTest, local_exec_ctx):
     @test_util.custom_prefix('unittests/resources/checks')
     class BaseTest(HelloTest):
-        def __init__(self):
-            super().__init__()
-            self.name = type(self).__name__
-            self.executable = os.path.join('.', self.name)
-            self.var = 0
+        var = variable(int, value=0)
 
         @run_after('setup')
         def x(self):
@@ -818,11 +790,7 @@ def test_inherited_hooks_order(weird_mro_test, local_exec_ctx):
 def test_inherited_hooks_from_instantiated_tests(HelloTest, local_exec_ctx):
     @test_util.custom_prefix('unittests/resources/checks')
     class T0(HelloTest):
-        def __init__(self):
-            super().__init__()
-            self.name = type(self).__name__
-            self.executable = os.path.join('.', self.name)
-            self.var = 0
+        var = variable(int, value=0)
 
         @run_after('setup')
         def x(self):
@@ -847,12 +815,8 @@ def test_inherited_hooks_from_instantiated_tests(HelloTest, local_exec_ctx):
 def test_overriden_hooks(HelloTest, local_exec_ctx):
     @test_util.custom_prefix('unittests/resources/checks')
     class BaseTest(HelloTest):
-        def __init__(self):
-            super().__init__()
-            self.name = type(self).__name__
-            self.executable = os.path.join('.', self.name)
-            self.var = 0
-            self.foo = 0
+        var = variable(int, value=0)
+        foo = variable(int, value=0)
 
         @run_after('setup')
         def x(self):
@@ -881,12 +845,8 @@ def test_overriden_hooks(HelloTest, local_exec_ctx):
 def test_disabled_hooks(HelloTest, local_exec_ctx):
     @test_util.custom_prefix('unittests/resources/checks')
     class BaseTest(HelloTest):
-        def __init__(self):
-            super().__init__()
-            self.name = type(self).__name__
-            self.executable = os.path.join('.', self.name)
-            self.var = 0
-            self.foo = 0
+        var = variable(int, value=0)
+        foo = variable(int, value=0)
 
         @run_after('setup')
         def x(self):
@@ -914,18 +874,12 @@ def test_require_deps(HelloTest, local_exec_ctx):
 
     @test_util.custom_prefix('unittests/resources/checks')
     class T0(HelloTest):
-        def __init__(self):
-            super().__init__()
-            self.name = type(self).__name__
-            self.executable = os.path.join('.', self.name)
-            self.x = 1
+        x = variable(int, value=1)
 
     @test_util.custom_prefix('unittests/resources/checks')
     class T1(HelloTest):
-        def __init__(self):
-            super().__init__()
-            self.name = type(self).__name__
-            self.executable = os.path.join('.', self.name)
+        @run_after('init')
+        def setdeps(self):
             self.depends_on('T0')
 
         @require_deps
@@ -959,7 +913,7 @@ def test_regression_test_name():
 
     test = MyTest(1, 2)
     assert os.path.abspath(os.path.dirname(__file__)) == test.prefix
-    assert 'test_regression_test_name.<locals>.MyTest_1_2' == test.name
+    assert 'MyTest_1_2' == test.name
 
 
 def test_strange_test_names():
@@ -976,7 +930,7 @@ def test_strange_test_names():
             self.b = b
 
     test = MyTest('(a*b+c)/12', C(33))
-    assert ('test_strange_test_names.<locals>.MyTest__a_b_c__12_C_33_' ==
+    assert ('MyTest__a_b_c__12_C_33_' ==
             test.name)
 
 
@@ -991,7 +945,7 @@ def test_name_user_inheritance():
             super().__init__(1, 2)
 
     test = MyTest()
-    assert 'test_name_user_inheritance.<locals>.MyTest' == test.name
+    assert 'MyTest' == test.name
 
 
 def test_name_runonly_test():
@@ -1002,7 +956,7 @@ def test_name_runonly_test():
 
     test = MyTest(1, 2)
     assert os.path.abspath(os.path.dirname(__file__)) == test.prefix
-    assert 'test_name_runonly_test.<locals>.MyTest_1_2' == test.name
+    assert 'MyTest_1_2' == test.name
 
 
 def test_name_compileonly_test():
@@ -1013,7 +967,7 @@ def test_name_compileonly_test():
 
     test = MyTest(1, 2)
     assert os.path.abspath(os.path.dirname(__file__)) == test.prefix
-    assert 'test_name_compileonly_test.<locals>.MyTest_1_2' == test.name
+    assert 'MyTest_1_2' == test.name
 
 
 def test_trap_job_errors_without_sanity_patterns(local_exec_ctx):
@@ -1430,18 +1384,22 @@ def container_test(tmp_path):
     def _container_test(platform, image):
         @test_util.custom_prefix(tmp_path)
         class ContainerTest(rfm.RunOnlyRegressionTest):
-            def __init__(self):
-                self.name = 'container_test'
-                self.valid_prog_environs = ['*']
-                self.valid_systems = ['*']
+            valid_prog_environs = ['*']
+            valid_systems = ['*']
+            prerun_cmds = ['touch foo']
+
+            @run_after('init')
+            def setup_container_platf(self):
                 self.container_platform = platform
                 self.container_platform.image = image
                 self.container_platform.command = (
                     f"bash -c 'cd {_STAGEDIR_MOUNT}; pwd; ls; "
                     f"cat /etc/os-release'"
                 )
-                self.prerun_cmds = ['touch foo']
-                self.sanity_patterns = sn.all([
+
+            @sanity_function
+            def assert_os_release(self):
+                return sn.all([
                     sn.assert_found(rf'^{_STAGEDIR_MOUNT}', self.stdout),
                     sn.assert_found(r'^foo', self.stdout),
                     sn.assert_found(
@@ -1536,3 +1494,39 @@ def test_skip_if_no_topo(HelloTest, local_exec_ctx):
 
     # This test should run to completion without problems
     _run(EchoTest(), *local_exec_ctx)
+
+
+def test_make_test_without_builtins(local_exec_ctx):
+    hello_cls = rfm.make_test(
+        'HelloTest', (rfm.RunOnlyRegressionTest,),
+        {
+            'valid_systems': ['*'],
+            'valid_prog_environs': ['*'],
+            'executable': 'echo',
+            'sanity_patterns': sn.assert_true(1)
+        }
+    )
+
+    assert hello_cls.__name__ == 'HelloTest'
+    _run(hello_cls(), *local_exec_ctx)
+
+
+def test_make_test_with_builtins(local_exec_ctx):
+    class _X(rfm.RunOnlyRegressionTest):
+        valid_systems = ['*']
+        valid_prog_environs = ['*']
+        executable = 'echo'
+        message = variable(str)
+
+        @run_before('run')
+        def set_message(self):
+            self.executable_opts = [self.message]
+
+        @sanity_function
+        def validate(self):
+            return sn.assert_found(self.message, self.stdout)
+
+    hello_cls = rfm.make_test('HelloTest', (_X,), {})
+    hello_cls.setvar('message', 'hello')
+    assert hello_cls.__name__ == 'HelloTest'
+    _run(hello_cls(), *local_exec_ctx)

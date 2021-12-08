@@ -845,7 +845,7 @@ class RegressionTestMeta(type):
         :meta private:
         '''
 
-        name = cls.__qualname__
+        name = cls.__name__
         if variant_num is None:
             return name
 

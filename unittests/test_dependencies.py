@@ -519,16 +519,14 @@ def test_build_deps_empty(default_exec_ctx):
 
 @pytest.fixture
 def make_test():
-    class MyTest(rfm.RegressionTest):
-        def __init__(self, name):
-            self.name = name
-            self.valid_systems = ['*']
-            self.valid_prog_environs = ['*']
-            self.executable = 'echo'
-            self.executable_opts = [name]
-
     def _make_test(name):
-        return MyTest(name)
+        class _Test(rfm.RegressionTest):
+            valid_systems = ['*']
+            valid_prog_environs = ['*']
+            executable = 'echo'
+            executable_opts = [name]
+
+        return rfm.make_test(name, (_Test,), {})()
 
     return _make_test
 

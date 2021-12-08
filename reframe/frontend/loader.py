@@ -100,8 +100,8 @@ class RegressionCheckLoader:
             getlogger().warning(
                 f'{checkfile}: {attr!r} is not copyable; '
                 f'not copyable attributes are not '
-                f'allowed inside the __init__() method; '
-                f'consider setting them in a pipeline hook instead'
+                f'allowed inside the __init__() method or post-init hooks; '
+                f'consider setting them in another pipeline hook instead'
             )
             return False
 

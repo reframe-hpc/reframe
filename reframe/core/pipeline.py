@@ -9,7 +9,8 @@
 
 __all__ = [
     'CompileOnlyRegressionTest', 'RegressionTest', 'RunOnlyRegressionTest',
-    'DEPEND_BY_ENV', 'DEPEND_EXACT', 'DEPEND_FULLY', 'final', 'RegressionMixin'
+    'DEPEND_BY_ENV', 'DEPEND_EXACT', 'DEPEND_FULLY', 'final', 'RegressionMixin',
+    'make_test'
 ]
 
 
@@ -114,6 +115,13 @@ def final(fn):
 _RFM_TEST_KIND_MIXIN = 0
 _RFM_TEST_KIND_COMPILE = 1
 _RFM_TEST_KIND_RUN = 2
+
+
+def make_test(name, bases, body, **kwargs):
+    namespace = RegressionTestMeta.__prepare__(name, bases, **kwargs)
+    namespace.update(body)
+    cls = RegressionTestMeta(name, bases, namespace, **kwargs)
+    return cls
 
 
 class RegressionMixin(metaclass=RegressionTestMeta):
@@ -2312,10 +2320,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         if not isinstance(other, RegressionTest):
             return NotImplemented
 
-        return self.name == other.name
+        return self.unique_name == other.unique_name
 
     def __hash__(self):
-        return hash(self.name)
+        return hash(self.unique_name)
 
     def __rfm_json_decode__(self, json):
         # 'tags' are decoded as list, so we convert them to a set
