@@ -20,7 +20,6 @@ import itertools
 import numbers
 import os
 import shutil
-import warnings
 
 import reframe.core.environments as env
 import reframe.core.fields as fields
@@ -222,14 +221,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:   Any non-alphanumeric value in a parameter's representation is
     #:   converted to ``_``.
     # name = variable(typ.Str[r'[^\/]+'])
-    name = variable(
-        field=fields.DeprecatedField,
-        target_field=fields.TypedField(typ.Str[r'[^\/]+']),
-        message=("'name' is deprecated: "
-                 "use either 'unique_name' or 'display_name': "
-                 "note that setting the name of the test is now disallowed"),
-        from_version='3.10.0'
-    )
 
     #: List of programming environments supported by this test.
     #:
@@ -925,10 +916,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         if not hasattr(self, 'descr'):
             self.descr = self.display_name
 
-        with warnings.catch_warnings():
-            if not hasattr(self, 'name'):
-                self.name = self._rfm_unique_name
-
         self._perfvalues = {}
 
         # Static directories of the regression check
@@ -1039,7 +1026,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 f'{type(self).__qualname__!r} object has no attribute {name!r}'
             )
 
-    def r__setattr__(self, name, value):
+    def __setattr__(self, name, value):
         if name == 'name':
             user_deprecation_warning(
                 'setting the name of the test is deprecated; see for XXX for details',
@@ -1113,7 +1100,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         return self._rfm_display_name
 
     @property
-    def r_name(self):
+    def name(self):
         # For backward compatibility
         return self.unique_name
 
