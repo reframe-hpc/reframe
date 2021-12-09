@@ -20,7 +20,7 @@ import reframe.core.schedulers as sched
 import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
 from reframe.core.exceptions import JobError, JobSchedulerError
-from reframe.utility import seconds_to_hms
+from reframe.utility import seconds_to_hms, toalphanum
 
 
 # Time to wait after a job is finished for its standard output/error to be
@@ -115,7 +115,7 @@ class PbsJobScheduler(sched.JobScheduler):
     def emit_preamble(self, job):
         # The job name is a string of up to 15 alphanumeric characters
         # where the first character is alphabetic
-        job_name = job.name.replace(' ', '')[:15]
+        job_name = toalphanum(job.name)[:15]
         preamble = [
             self._format_option(f'-N {job_name}'),
             self._format_option(f'-o {job.stdout}'),
