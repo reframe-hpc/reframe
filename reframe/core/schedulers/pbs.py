@@ -113,7 +113,9 @@ class PbsJobScheduler(sched.JobScheduler):
         return _PbsJob(*args, **kwargs)
 
     def emit_preamble(self, job):
-        job_name = job.name.replace(' ', '')
+        # The job name is a string of up to 15 alphanumeric characters
+        # where the first character is alphabetic
+        job_name = job.name.replace(' ', '')[:15]
         preamble = [
             self._format_option(f'-N {job_name}'),
             self._format_option(f'-o {job.stdout}'),
