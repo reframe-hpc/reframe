@@ -194,7 +194,7 @@ def _expected_pbs_directives(job):
     num_nodes = job.num_tasks // job.num_tasks_per_node
     num_cpus_per_node = job.num_cpus_per_task * job.num_tasks_per_node
     return set([
-        '#PBS -N "testjob"',
+        '#PBS -N testjob',
         '#PBS -l walltime=0:5:0',
         '#PBS -o %s' % job.stdout,
         '#PBS -e %s' % job.stderr,
@@ -213,7 +213,7 @@ def _expected_torque_directives(job):
     num_nodes = job.num_tasks // job.num_tasks_per_node
     num_cpus_per_node = job.num_cpus_per_task * job.num_tasks_per_node
     return set([
-        '#PBS -N "testjob"',
+        '#PBS -N testjob',
         '#PBS -l walltime=0:5:0',
         '#PBS -o %s' % job.stdout,
         '#PBS -e %s' % job.stderr,
