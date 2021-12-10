@@ -9,17 +9,21 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class HelloMakeTest(rfm.RegressionTest):
-    def __init__(self):
-        self.descr = 'C++ Hello World test'
+    descr = 'Makefile test'
 
-        # All available systems are supported
-        self.valid_systems = ['*']
-        self.valid_prog_environs = ['*']
-        self.build_system = 'Make'
+    # All available systems are supported
+    valid_systems = ['*']
+    valid_prog_environs = ['*']
+    build_system = 'Make'
+    executable = './hello_c'
+    keep_files = ['hello_c']
+    tags = {'foo', 'bar'}
+    maintainers = ['VK']
+
+    @run_before('compile')
+    def setflags(self):
         self.build_system.cflags = ['-O2']
-        self.build_system.cxxflags = ['-O2']
-        self.executable = './hello_c'
-        self.keep_files = ['hello_c']
-        self.tags = {'foo', 'bar'}
-        self.sanity_patterns = sn.assert_found(r'Hello, World\!', self.stdout)
-        self.maintainers = ['VK']
+
+    @sanity_function
+    def validate(self):
+        return sn.assert_found(r'Hello, World\!', self.stdout)
