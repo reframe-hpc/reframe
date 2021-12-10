@@ -92,12 +92,12 @@ class DGEMMTest(rfm.RegressionTest):
         pname = self.current_partition.fullname
         arch = self.current_partition.processor.arch
         for hostname in all_tested_nodes:
-            key = f'{pname}:{hostname}'
+            key = f'{arch}@{self.num_cpus_per_task}c'
             if key in self.arch_refs:
-                self.reference[key] = self.arch_refs[arch]
+                self.reference[f'{pname}:{hostname}'] = self.arch_refs[key]
 
             self.perf_patterns[hostname] = sn.extractsingle(
-                r'%s:\s+Avg\. performance\s+:\s+(?P<gflops>\S+)'
-                r'\sGflop/s' % hostname, self.stdout, 'gflops', float)
+                fr'{hostname}:\s+Avg\. performance\s+:\s+(?P<gflops>\S+)'
+                fr'\sGflop/s', self.stdout, 'gflops', float)
 
         return True
