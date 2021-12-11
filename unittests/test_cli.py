@@ -90,6 +90,10 @@ def run_reframe(tmp_path, perflogdir, monkeypatch):
             argv += ['-l']
         elif action == 'list_detailed':
             argv += ['-L']
+        elif action == 'list_concretized':
+            argv += ['-lC']
+        elif action == 'list_detailed_concretized':
+            argv += ['-LC']
         elif action == 'list_tags':
             argv += ['--list-tags']
         elif action == 'help':
@@ -533,6 +537,24 @@ def test_list_with_details(run_reframe):
     returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks/frontend_checks.py'],
         action='list_detailed'
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert returncode == 0
+
+
+def test_list_concretized(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        checkpath=['unittests/resources/checks/frontend_checks.py'],
+        action='list_concretized'
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert returncode == 0
+
+    returncode, stdout, stderr = run_reframe(
+        checkpath=['unittests/resources/checks/frontend_checks.py'],
+        action='list_detailed_concretized'
     )
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr

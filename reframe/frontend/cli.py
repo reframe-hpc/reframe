@@ -125,7 +125,7 @@ def list_checks(testcases, printer, detailed=False):
     printer.info(f'Found {len(checks)} check(s)\n')
 
 
-def list_checks2(testcases, printer, detailed=False):
+def list_checks2(testcases, printer, detailed=False, concretized=False):
     printer.info('[List of matched checks]')
     unique_checks = set()
 
@@ -138,7 +138,8 @@ def list_checks2(testcases, printer, detailed=False):
 
         adj = u.deps
         for v in adj:
-            if v.check.unique_name not in printed:
+            if concretized or (not concretized and
+                               v.check.unique_name not in printed):
                 dep_lines(v, prefix=prefix + 2*' ', depth=depth+1,
                           lines=lines, printed=printed)
 
@@ -147,8 +148,17 @@ def list_checks2(testcases, printer, detailed=False):
                 unique_checks.add(v.check.unique_name)
 
         if depth:
+            tc_info = ''
+            details = ''
+            if concretized:
+                tc_info = f' @{u.partition.fullname}+{u.environ.name}'
+
+            location = inspect.getfile(type(u.check))
+            if detailed:
+                details = f' [id: {u.check.unique_name}, file: {location!r}]'
+
             lines.append(
-                f'{prefix}^{u.check.display_name} [{u.check.unique_name}]'
+                f'{prefix}^{u.check.display_name}{tc_info}{details}'
             )
 
         return lines
@@ -156,14 +166,44 @@ def list_checks2(testcases, printer, detailed=False):
     # We need the leaf test cases to be printed at the leftmost
     testcases = list(t for t in testcases if t.in_degree == 0)
     for t in testcases:
-        printer.info(f'- {t.check.display_name} [{t.check.unique_name}]')
+        tc_info = ''
+        details = ''
+        if concretized:
+            tc_info = f' @{t.partition.fullname}+{t.environ.name}'
+
+        location = inspect.getfile(type(t.check))
+        if detailed:
+            details = f' [id: {t.check.unique_name}, file: {location!r}]'
+
+        # if not concretized and t.check.name not in unique_checks:
+        if concretized or (not concretized and
+                           t.check.unique_name not in unique_checks):
+            printer.info(f'- {t.check.display_name}{tc_info}{details}')
+
         if not t.check.is_fixture():
             unique_checks.add(t.check.unique_name)
 
         for l in reversed(dep_lines(t, prefix='  ')):
             printer.info(l)
 
-    printer.info(f'Found {len(unique_checks)} check(s)\n')
+    if concretized:
+        printer.info(f'Concretized {len(testcases)} test case(s)\n')
+    else:
+        printer.info(f'Found {len(unique_checks)} check(s)\n')
+
+
+def describe_checks(testcases, printer):
+    checks = []
+    unique_names = set()
+    for tc in testcases:
+        if tc.check.is_fixture():
+            continue
+
+        if tc.check.name not in unique_names:
+            checks.append(tc.check)
+            unique_names.add(tc.check.name)
+
+    printer.info(jsonext.dumps(checks, indent=2))
 
 
 def list_tags(testcases, printer):
@@ -344,12 +384,13 @@ def main():
               'for the selected tests and exit'),
     )
     action_options.add_argument(
-        '-L', '--list-detailed', action='store_true',
-        help='List the selected checks providing details for each test'
+        '-L', '--list-detailed', nargs='?', const='T', choices=['C', 'T'],
+        help=('List the selected tests (T) or the concretized test cases (C) '
+              'providing more details')
     )
     action_options.add_argument(
-        '-l', '--list', action='store_true',
-        help='List the selected checks'
+        '-l', '--list', nargs='?', const='T', choices=['C', 'T'],
+        help='List the selected tests (T) or the concretized test cases (C)'
     )
     action_options.add_argument(
         '--list-tags', action='store_true',
@@ -970,7 +1011,10 @@ def main():
 
         # Act on checks
         if options.list or options.list_detailed:
-            list_checks2(testcases, printer, options.list_detailed)
+            concretized = (options.list == 'C' or
+                           options.list_detailed == 'C')
+            detailed = options.list_detailed is not None
+            list_checks2(testcases, printer, detailed, concretized)
             sys.exit(0)
 
         if options.list_tags:
