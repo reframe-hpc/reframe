@@ -70,7 +70,7 @@ class TestStats:
                     environ_name = t.check.current_environ.name
 
                 # Overwrite entry from previous run if available
-                messages[f"{t.check.name}:{partition_name}:{environ_name}"] = (
+                messages[f"{t.check.unique_name}:{partition_name}:{environ_name}"] = (
                     f"  * Test {t.check.info()} was retried {run} time(s) and "
                     f"{'failed' if t.failed else 'passed'}."
                 )
@@ -96,14 +96,14 @@ class TestStats:
                     'build_stderr': None,
                     'build_stdout': None,
                     'dependencies_actual': [
-                        (d.check.name, d.partition.fullname, d.environ.name)
+                        (d.check.unique_name, d.partition.fullname, d.environ.name)
                         for d in t.testcase.deps
                     ],
                     'dependencies_conceptual': [
                         d[0] for d in t.check.user_deps()
                     ],
                     'description': check.descr,
-                    'prefix': check.prefix,
+                    'display_name': check.display_name,
                     'filename': inspect.getfile(type(check)),
                     'environment': None,
                     'fail_phase': None,
@@ -116,6 +116,7 @@ class TestStats:
                     'nodelist': [],
                     'outputdir': None,
                     'perfvars': None,
+                    'prefix': check.prefix,
                     'result': None,
                     'stagedir': check.stagedir,
                     'scheduler': None,
@@ -126,7 +127,8 @@ class TestStats:
                     'time_run': t.duration('run_complete'),
                     'time_sanity': t.duration('sanity'),
                     'time_setup': t.duration('setup'),
-                    'time_total': t.duration('total')
+                    'time_total': t.duration('total'),
+                    'unique_name': check.unique_name
                 }
 
                 # We take partition and environment from the test case and not
@@ -213,7 +215,7 @@ class TestStats:
                 f'(for the last of {last_run} retries)' if last_run > 0 else ''
             )
             printer.info(line_width * '-')
-            printer.info(f"FAILURE INFO for {r['name']} {retry_info}")
+            printer.info(f"FAILURE INFO for {r['unique_name']} {retry_info}")
             printer.info(f"  * Test Description: {r['description']}")
             printer.info(f"  * System partition: {r['system']}")
             printer.info(f"  * Environment: {r['environment']}")
@@ -230,7 +232,7 @@ class TestStats:
                          f"{r['dependencies_actual']}")
             printer.info(f"  * Maintainers: {r['maintainers']}")
             printer.info(f"  * Failing phase: {r['fail_phase']}")
-            printer.info(f"  * Rerun with '-n {r['name']}"
+            printer.info(f"  * Rerun with '-n {r['unique_name']}"
                          f" -p {r['environment']} --system {r['system']} -r'")
             printer.info(f"  * Reason: {r['fail_reason']}")
 
@@ -251,7 +253,7 @@ class TestStats:
             partfullname = partition.fullname if partition else 'None'
             environ_name = (check.current_environ.name
                             if check.current_environ else 'None')
-            f = f'[{check.name}, {environ_name}, {partfullname}]'
+            f = f'[{check.unique_name}, {environ_name}, {partfullname}]'
             if tf.failed_stage not in failures:
                 failures[tf.failed_stage] = []
 
@@ -297,10 +299,10 @@ class TestStats:
         previous_part = ''
         for t in self.tasks():
             if t.check.perfvalues.keys():
-                if t.check.name != previous_name:
+                if t.check.unique_name != previous_name:
                     report_body.append(line_width * '-')
-                    report_body.append(t.check.name)
-                    previous_name = t.check.name
+                    report_body.append(t.check.unique_name)
+                    previous_name = t.check.unique_name
 
                 if t.check.current_partition.fullname != previous_part:
                     report_body.append(

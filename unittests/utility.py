@@ -12,6 +12,7 @@ import inspect
 import os
 import sys
 
+import reframe as rfm
 import reframe.core.config as config
 import reframe.core.modules as modules
 import reframe.core.runtime as rt
@@ -159,3 +160,20 @@ def dispatch(argname, suffix=None):
         return _wrapped
 
     return _dispatch_deco
+
+
+def make_check(cls, *, alt_name=None, **vars):
+    '''Create a new test from class `cls`.
+
+    :arg cls: the class of the test.
+    'arg alt_name: an alternative name to be given to the test class
+    :arg vars: variables to set in the test upon creation
+    '''
+
+    if alt_name:
+        cls = rfm.make_test(alt_name, (cls,), {})
+
+    for k, v in vars.items():
+        cls.setvar(k, v)
+
+    return cls()

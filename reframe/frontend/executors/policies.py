@@ -91,7 +91,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
         self.printer.status(
             'RUN', '%s on %s using %s' %
-            (check.name, partition.fullname, environ.name)
+            (check.unique_name, partition.fullname, environ.name)
         )
         task = RegressionTask(case, self.task_listeners)
         self._task_index[case] = task
@@ -381,7 +381,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self.stats.add_task(task)
         self.printer.status(
             'RUN', '%s on %s using %s' %
-            (check.name, partition.fullname, environ.name)
+            (check.unique_name, partition.fullname, environ.name)
         )
         try:
             partname = partition.fullname
@@ -389,7 +389,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 if not task.skipped and not task.failed:
                     self.printer.status(
                         'DEP', '%s on %s using %s' %
-                        (check.name, partname, environ.name),
+                        (check.unique_name, partname, environ.name),
                         just='right'
                     )
                     self._waiting_tasks.append(task)

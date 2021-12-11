@@ -22,6 +22,7 @@
                     "items": {"type": "string"}
                 },
                 "description": {"type": "string"},
+                "display_name": {"type": "string"},
                 "environment": {"type": ["string", "null"]},
                 "fail_info": {
                     "type": ["object", "null"],
@@ -94,10 +95,12 @@
                 "time_run": {"type": ["number", "null"]},
                 "time_sanity": {"type": ["number", "null"]},
                 "time_setup": {"type": ["number", "null"]},
-                "time_total": {"type": ["number", "null"]}
+                "time_total": {"type": ["number", "null"]},
+                "unique_name": {"type": "string"}
             },
             "required": [
-                "environment", "name", "result", "system", "filename"
+                "environment", "fail_phase", "fail_reason", "filename",
+                "result", "stagedir", "system", "time_total", "unique_name"
             ]
         }
     },
@@ -122,7 +125,7 @@
                 "version": {"type": "string"},
                 "workdir": {"type": "string"}
             },
-            "required": ["data_version"]
+            "required": ["data_version", "hostname", "time_elapsed", "time_start"]
         },
         "restored_cases": {
             "type": "array",

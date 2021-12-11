@@ -79,34 +79,24 @@ def testsys_exec_ctx(make_exec_ctx_g):
     yield from make_exec_ctx_g(system='testsys:gpu')
 
 
-def make_check(cls, *, alt_name=None, **vars):
-    if alt_name:
-        cls = rfm.make_test(alt_name, (cls,), {})
-
-    for k, v in vars.items():
-        cls.setvar(k, v)
-
-    return cls()
-
-
 def make_kbd_check(phase='wait'):
-    return make_check(KeyboardInterruptCheck, phase=phase)
+    return test_util.make_check(KeyboardInterruptCheck, phase=phase)
 
 
 @pytest.fixture
 def make_sleep_check():
     test_id = 0
 
-    def _make_check(sleep_time, poll_fail=None):
+    def _do_make_check(sleep_time, poll_fail=None):
         nonlocal test_id
-        test = make_check(SleepCheck,
-                          sleep_time=sleep_time,
-                          poll_fail=poll_fail,
-                          alt_name=f'SleepCheck_{test_id}')
+        test = test_util.make_check(SleepCheck,
+                                    sleep_time=sleep_time,
+                                    poll_fail=poll_fail,
+                                    alt_name=f'SleepCheck_{test_id}')
         test_id += 1
         return test
 
-    return _make_check
+    return _do_make_check
 
 
 @pytest.fixture(params=[policies.SerialExecutionPolicy,
@@ -289,13 +279,13 @@ def test_runall(make_runner, make_cases, common_exec_ctx, tmp_path):
     with pytest.raises(ReframeError, match=r'is not a valid JSON file'):
         runreport.load_report(tmp_path / 'invalid.json')
 
-    # Generate a report with an incorrect data version
-    report['session_info']['data_version'] = '10.0.0'
+    # Generate a report that does not comply to the schema
+    del report['session_info']['hostname']
     with open(tmp_path / 'invalid-version.json', 'w') as fp:
         jsonext.dump(report, fp)
 
     with pytest.raises(ReframeError,
-                       match=r'incompatible report data versions'):
+                       match=r'invalid report'):
         runreport.load_report(tmp_path / 'invalid-version.json')
 
 
@@ -477,7 +467,7 @@ def test_pass_in_retries(make_runner, make_cases, tmp_path, common_exec_ctx):
     tmpfile.write_text('0\n')
     runner = make_runner(max_retries=3)
     runner.runall(make_cases([
-        make_check(RetriesCheck, filename=str(tmpfile), num_runs=2)
+        test_util.make_check(RetriesCheck, filename=str(tmpfile), num_runs=2)
     ]))
 
     # Ensure that the test passed after retries in run `pass_run_no`

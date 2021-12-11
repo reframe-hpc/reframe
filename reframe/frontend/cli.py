@@ -85,7 +85,7 @@ def format_check(check, check_deps, detailed=False):
         ),
         'Dependencies (actual)': fmt_deps()
     }
-    lines = [f'- {check.name}:']
+    lines = [f'- {check.unique_name}:']
     for prop, val in check_info.items():
         lines.append(f'    {prop}:')
         if isinstance(val, dict):
@@ -113,8 +113,8 @@ def list_checks(testcases, printer, detailed=False):
     # Collect dependencies per test
     deps = {}
     for t in testcases:
-        deps.setdefault(t.check.name, [])
-        deps[t.check.name].append((t, t.deps))
+        deps.setdefault(t.check.unique_name, [])
+        deps[t.check.unique_name].append((t, t.deps))
 
     checks = set(
         t.check for t in testcases if not t.check.is_fixture() or detailed
@@ -138,7 +138,7 @@ def list_checks2(testcases, printer, detailed=False):
 
         adj = u.deps
         for v in adj:
-            if v.check.name not in printed:
+            if v.check.unique_name not in printed:
                 dep_lines(v, prefix=prefix + 2*' ', depth=depth+1,
                           lines=lines, printed=printed)
 

@@ -651,7 +651,7 @@ class FixtureSpace(namespaces.Namespace):
             part = tuple(obj.valid_systems)
         except AttributeError:
             raise ReframeSyntaxError(
-                f"'valid_systems' is undefined in test {obj.name}"
+                f"'valid_systems' is undefined in test {obj.unique_name!r}"
             )
         else:
             rt = runtime.runtime()
@@ -662,7 +662,7 @@ class FixtureSpace(namespaces.Namespace):
             prog_envs = tuple(obj.valid_prog_environs)
         except AttributeError:
             raise ReframeSyntaxError(
-                f"'valid_prog_environs' is undefined in test {obj.name}"
+                f"'valid_prog_environs' is undefined in test {obj.unique_name!r}"
             )
         else:
             if '*' in prog_envs:

@@ -5,50 +5,42 @@
 
 import pytest
 
+import reframe as rfm
 import reframe.core.exceptions as errors
 import reframe.frontend.executors as executors
 import reframe.frontend.filters as filters
 import reframe.utility.sanity as sn
+import unittests.utility as test_util
 
 
 def count_checks(filter_fn, checks):
     return sn.count(filter(filter_fn, checks))
 
 
-def make_case(attrs):
-    class _MyTest:
-        def __init__(self):
-            self.valid_systems = ['*']
-            self.valid_prog_environs = ['*']
-
-    test = _MyTest()
-    for k, v in attrs.items():
-        setattr(test, k, v)
-
+def make_case(*args, **kwargs):
+    test = test_util.make_check(*args, **kwargs)
     return executors.TestCase(test, None, None)
 
 
 @pytest.fixture
 def sample_cases():
+    class _X(rfm.RegressionTest):
+        valid_systems = ['*']
+        valid_prog_environs = ['*']
+
     return [
-        make_case({
-            'name': 'check1',
-            'tags': {'a', 'b', 'c', 'd'},
-            'num_gpus_per_node': 1,
-            'maintainers': {'A', 'B', 'C', 'D'}
-        }),
-        make_case({
-            'name': 'check2',
-            'tags': {'x', 'y', 'z'},
-            'num_gpus_per_node': 0,
-            'maintainers': {'X', 'Y', 'Z'}
-        }),
-        make_case({
-            'name': 'check3',
-            'tags': {'a', 'z'},
-            'num_gpus_per_node': 1,
-            'maintainers': {'A', 'Z'}
-        })
+        make_case(_X, alt_name='check1',
+                  tags={'a', 'b', 'c', 'd'},
+                  num_gpus_per_node=1,
+                  maintainers=['A', 'B', 'C', 'D']),
+        make_case(_X, alt_name='check2',
+                  tags={'x', 'y', 'z'},
+                  num_gpus_per_node=0,
+                  maintainers=['X', 'Y', 'Z']),
+        make_case(_X, alt_name='check3',
+                  tags={'a', 'z'},
+                  num_gpus_per_node=1,
+                  maintainers=['A', 'Z'])
     ]
 
 

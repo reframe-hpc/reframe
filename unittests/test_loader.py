@@ -94,56 +94,34 @@ def test_special_test():
 
     @rfm.simple_test
     class TestSimple(rfm.RegressionTest):
-        def __init__(self):
-            pass
+        pass
 
     @rfm.simple_test
     class TestSpecial(rfm.RegressionTest, special=True):
-        def __init__(self):
-            pass
-
         def setup(self, partition, environ, **job_opts):
             super().setup(partition, environ, **job_opts)
 
     @rfm.simple_test
     class TestSpecialRunOnly(rfm.RunOnlyRegressionTest,
                              special=True):
-        def __init__(self):
-            pass
-
         def setup(self, partition, environ, **job_opts):
             super().setup(partition, environ, **job_opts)
-
-        def run(self):
-            super().run()
 
     @rfm.simple_test
     class TestSpecialCompileOnly(rfm.CompileOnlyRegressionTest,
                                  special=True):
-        def __init__(self):
-            pass
-
         def setup(self, partition, environ, **job_opts):
             super().setup(partition, environ, **job_opts)
-
-        def run(self):
-            super().run()
 
     with pytest.raises(ReframeSyntaxError):
         @rfm.simple_test
         class TestSpecialDerived(TestSpecial):
-            def __init__(self):
-                pass
-
             def setup(self, partition, environ, **job_opts):
                 super().setup(partition, environ, **job_opts)
 
     with pytest.warns(ReframeDeprecationWarning):
         @rfm.simple_test
         class TestFinal(rfm.RegressionTest):
-            def __init__(self):
-                pass
-
             @rfm.final
             def my_new_final(self):
                 pass

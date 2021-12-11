@@ -54,7 +54,7 @@ class TestCase:
         return iter([self._check, self._partition, self._environ])
 
     def __hash__(self):
-        return (hash(self.check.name) ^
+        return (hash(self.check.unique_name) ^
                 hash(self.partition.fullname) ^
                 hash(self.environ.name))
 
@@ -62,12 +62,12 @@ class TestCase:
         if not isinstance(other, type(self)):
             return NotImplemented
 
-        return (self.check.name == other.check.name and
+        return (self.check.unique_name == other.check.unique_name and
                 self.environ.name == other.environ.name and
                 self.partition.fullname == other.partition.fullname)
 
     def __repr__(self):
-        c, p, e = self.check.name, self.partition.fullname, self.environ.name
+        c, p, e = self.check.unique_name, self.partition.fullname, self.environ.name
         return f'({c!r}, {p!r}, {e!r})'
 
     @property
@@ -420,7 +420,7 @@ class Runner:
         return self._stats
 
     def runall(self, testcases, restored_cases=None):
-        num_checks = len({tc.check.name for tc in testcases})
+        num_checks = len({tc.check.unique_name for tc in testcases})
         self._printer.separator('short double line',
                                 'Running %d check(s)' % num_checks)
         self._printer.timestamp('Started on', 'short double line')
@@ -457,7 +457,7 @@ class Runner:
         rt = runtime.runtime()
         failures = self._stats.failed()
         while (failures and rt.current_run < self._max_retries):
-            num_failed_checks = len({tc.check.name for tc in failures})
+            num_failed_checks = len({tc.check.unique_name for tc in failures})
             rt.next_run()
 
             self._printer.separator(
@@ -477,14 +477,14 @@ class Runner:
         def print_separator(check, prefix):
             self._printer.separator(
                 'short single line',
-                '%s %s (%s)' % (prefix, check.name, check.descr)
+                '%s %s (%s)' % (prefix, check.unique_name, check.descr)
             )
 
         self._policy.enter()
         self._printer.reset_progress(len(testcases))
         last_check = None
         for t in testcases:
-            if last_check is None or last_check.name != t.check.name:
+            if last_check is None or last_check.unique_name != t.check.unique_name:
                 if last_check is not None:
                     print_separator(last_check, 'finished processing')
                     self._printer.info('')

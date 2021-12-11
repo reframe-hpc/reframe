@@ -19,7 +19,7 @@ def have_name(patt):
     regex = re_compile(patt)
 
     def _fn(case):
-        return regex.match(case.check.name)
+        return regex.match(case.check.unique_name)
 
     return _fn
 

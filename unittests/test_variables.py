@@ -155,7 +155,8 @@ def test_require_var(OneVarTest):
     class MyTest(OneVarTest):
         foo = required
 
-        def __init__(self):
+        @run_after('init')
+        def print_foo(self):
             print(self.foo)
 
     with pytest.raises(AttributeError):
@@ -165,9 +166,6 @@ def test_require_var(OneVarTest):
 def test_required_var_not_present(OneVarTest):
     class MyTest(OneVarTest):
         foo = required
-
-        def __init__(self):
-            pass
 
     MyTest()
 

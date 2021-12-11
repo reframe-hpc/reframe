@@ -270,7 +270,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: A detailed description of the test.
     #:
     #: :type: :class:`str`
-    #: :default: ``self.name``
+    #: :default: ``self.display_name``
     descr = variable(str)
 
     #: The path to the source file or source directory of the test.
@@ -365,8 +365,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: The name of the executable to be launched during the run phase.
     #:
     #: If this variable is undefined when entering the compile pipeline
-    #: stage, it will be set to ``os.path.join('.', self.name)``. Classes
-    #: that override the compile stage may leave this variable undefined.
+    #: stage, it will be set to ``os.path.join('.', self.unique_name)``.
+    #: Classes that override the compile stage may leave this variable
+    #: undefined.
     #:
     #: :type: :class:`str`
     #: :default: :class:`required`
@@ -1295,12 +1296,13 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
            you use the :class:`RegressionTest`'s attributes, because this
            method may be called at any point of the test's lifetime.
         '''
-        ret = self.name
+
+        ret = self.display_name
         if self.current_partition:
-            ret += ' on %s' % self.current_partition.fullname
+            ret += f' @{self.current_partition.fullname}'
 
         if self.current_environ:
-            ret += ' using %s' % self.current_environ.name
+            ret += f'+{self.current_environ.name}'
 
         return ret
 
@@ -1423,11 +1425,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             runtime = rt.runtime()
             self._stagedir = runtime.make_stagedir(
                 self.current_system.name, self._current_partition.name,
-                self._current_environ.name, self.name
+                self._current_environ.name, self.unique_name
             )
             self._outputdir = runtime.make_outputdir(
                 self.current_system.name, self._current_partition.name,
-                self._current_environ.name, self.name
+                self._current_environ.name, self.unique_name
             )
         except OSError as e:
             raise PipelineError('failed to set up paths') from e
@@ -1488,10 +1490,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self._current_environ = environ
         self._setup_paths()
         self._resolve_fixtures()
-        self._job = self._setup_job(f'rfm_{self.name}_job',
+        self._job = self._setup_job(f'rfm_{self.unique_name}_job',
                                     self.local,
                                     **job_opts)
-        self._build_job = self._setup_job(f'rfm_{self.name}_build',
+        self._build_job = self._setup_job(f'rfm_{self.unique_name}_build',
                                           self.local or self.build_locally,
                                           **job_opts)
 
@@ -1559,7 +1561,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         # Set executable (only if hasn't been provided)
         if not hasattr(self, 'executable'):
-            self.executable = os.path.join('.', self.name)
+            self.executable = os.path.join('.', self.unique_name)
 
         # Verify the sourcepath and determine the sourcepath in the stagedir
         if (os.path.isabs(self.sourcepath) or
@@ -2263,7 +2265,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             raise DependencyError('no test case is associated with this test')
 
         for d in self._case().deps:
-            mask = int(d.check.name == target)
+            mask = int(d.check.unique_name == target)
             mask |= (int(d.partition.name == part) | int(part == '*')) << 1
             mask |= (int(d.environ.name == environ) | int(environ == '*')) << 2
             if mask == 7:
@@ -2313,8 +2315,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self.skip_if(not proc.info, msg)
 
     def __str__(self):
-        return "%s(name='%s', prefix='%s')" % (type(self).__name__,
-                                               self.name, self.prefix)
+        return f'{self.unique_name} [{self.display_name}]'
 
     def __eq__(self, other):
         if not isinstance(other, RegressionTest):
@@ -2348,9 +2349,8 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
         self._current_partition = partition
         self._current_environ = environ
         self._setup_paths()
-        self._job = self._setup_job(f'rfm_{self.name}_job',
-                                    self.local,
-                                    **job_opts)
+        self._job = self._setup_job(f'rfm_{self.unique_name}_job',
+                                    self.local, **job_opts)
         self._resolve_fixtures()
 
     def compile(self):
@@ -2406,7 +2406,7 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
         self._current_partition = partition
         self._current_environ = environ
         self._setup_paths()
-        self._build_job = self._setup_job(f'rfm_{self.name}_build',
+        self._build_job = self._setup_job(f'rfm_{self.unique_name}_build',
                                           self.local or self.build_locally,
                                           **job_opts)
         self._resolve_fixtures()

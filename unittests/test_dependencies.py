@@ -320,12 +320,10 @@ def test_dependecies_how_functions_undoc():
 
 def test_build_deps_deprecated_syntax(loader, default_exec_ctx):
     class Test0(rfm.RegressionTest):
-        def __init__(self):
-            self.valid_systems = ['sys0:p0', 'sys0:p1']
-            self.valid_prog_environs = ['e0', 'e1']
-            self.executable = 'echo'
-            self.executable_opts = [self.name]
-            self.sanity_patterns = sn.assert_found(self.name, self.stdout)
+        valid_systems = ['sys0:p0', 'sys0:p1']
+        valid_prog_environs = ['e0', 'e1']
+        executable = 'echo'
+        sanity_patterns = sn.assert_true(1)
 
     class Test1_deprecated(rfm.RunOnlyRegressionTest):
         kind = parameter([rfm.DEPEND_FULLY,
