@@ -36,69 +36,6 @@ from reframe.frontend.executors.policies import (SerialExecutionPolicy,
 from reframe.frontend.executors import Runner, generate_testcases
 
 
-def format_check(check, check_deps, detailed=False):
-    def fmt_list(x):
-        if not x:
-            return '<none>'
-
-        return ', '.join(x)
-
-    def fmt_deps():
-        no_deps = True
-        lines = []
-        for t, deps in check_deps:
-            for d in deps:
-                lines.append(f'- {t} -> {d}')
-
-        if lines:
-            return '\n      '.join(lines)
-        else:
-            return '<none>'
-
-    location = inspect.getfile(type(check))
-    if not detailed:
-        return f'- {check.unique_name} [{check.display_name}]'
-
-    if check.num_tasks > 0:
-        node_alloc_scheme = (f'standard ({check.num_tasks} task(s) -- '
-                             f'may be set differently in hooks)')
-    elif check.num_tasks == 0:
-        node_alloc_scheme = 'flexible'
-    else:
-        node_alloc_scheme = f'flexible (minimum {-check.num_tasks} task(s))'
-
-    check_info = {
-        'Description': check.descr,
-        'Environment modules': fmt_list(check.modules),
-        'Location': location,
-        'Maintainers': fmt_list(check.maintainers),
-        'Node allocation': node_alloc_scheme,
-        'Pipeline hooks': {
-            k: fmt_list(fn.__name__ for fn in v)
-            for k, v in check.pipeline_hooks().items()
-        },
-        'Tags': fmt_list(check.tags),
-        'Valid environments': fmt_list(check.valid_prog_environs),
-        'Valid systems': fmt_list(check.valid_systems),
-        'Dependencies (conceptual)': fmt_list(
-            [d[0] for d in check.user_deps()]
-        ),
-        'Dependencies (actual)': fmt_deps()
-    }
-    lines = [f'- {check.unique_name}:']
-    for prop, val in check_info.items():
-        lines.append(f'    {prop}:')
-        if isinstance(val, dict):
-            for k, v in val.items():
-                lines.append(f'      - {k}: {v}')
-        else:
-            lines.append(f'      {val}')
-
-        lines.append('')
-
-    return '\n'.join(lines)
-
-
 def format_env(envvars):
     ret = '[ReFrame Environment]\n'
     notset = '<not set>'
@@ -107,25 +44,7 @@ def format_env(envvars):
     return ret
 
 
-def list_checks(testcases, printer, detailed=False):
-    printer.info('[List of matched checks]')
-
-    # Collect dependencies per test
-    deps = {}
-    for t in testcases:
-        deps.setdefault(t.check.unique_name, [])
-        deps[t.check.unique_name].append((t, t.deps))
-
-    checks = set(
-        t.check for t in testcases if not t.check.is_fixture() or detailed
-    )
-    printer.info(
-        '\n'.join(format_check(c, deps[c.name], detailed) for c in checks)
-    )
-    printer.info(f'Found {len(checks)} check(s)\n')
-
-
-def list_checks2(testcases, printer, detailed=False, concretized=False):
+def list_checks(testcases, printer, detailed=False, concretized=False):
     printer.info('[List of matched checks]')
     unique_checks = set()
 
@@ -193,17 +112,46 @@ def list_checks2(testcases, printer, detailed=False, concretized=False):
 
 
 def describe_checks(testcases, printer):
-    checks = []
+    records = []
     unique_names = set()
     for tc in testcases:
         if tc.check.is_fixture():
             continue
 
         if tc.check.name not in unique_names:
-            checks.append(tc.check)
             unique_names.add(tc.check.name)
+            rec = json.loads(jsonext.dumps(tc.check))
 
-    printer.info(jsonext.dumps(checks, indent=2))
+            # Now manipulate the record to be more user-friendly
+            #
+            # 1. Add other fields that are relevant for users
+            # 2. Remove all private fields
+            rec['unique_name'] = tc.check.unique_name
+            rec['display_name'] = tc.check.display_name
+            rec['pipeline_hooks'] = {}
+            rec['perf_variables'] = list(rec['perf_variables'].keys())
+            for stage, hooks in tc.check.pipeline_hooks().items():
+                for hk in hooks:
+                    rec['pipeline_hooks'].setdefault(stage, [])
+                    rec['pipeline_hooks'][stage].append(hk.__name__)
+
+            for attr in list(rec.keys()):
+                if attr == '__rfm_class__' or attr == '__rfm_file__':
+                    continue
+
+                if attr.startswith('_'):
+                    del rec[attr]
+
+            # List all required variables
+            required = []
+            for var in tc.check._rfm_var_space:
+                if not tc.check._rfm_var_space[var].is_defined():
+                    required.append(var)
+
+            rec['__rfm_required__'] = required
+            records.append(dict(sorted(rec.items())))
+
+    printer.info(jsonext.dumps(records, indent=2))
 
 
 def list_tags(testcases, printer):
@@ -382,6 +330,11 @@ def main():
         '--ci-generate', action='store', metavar='FILE',
         help=('Generate into FILE a Gitlab CI pipeline '
               'for the selected tests and exit'),
+    )
+
+    action_options.add_argument(
+        '--describe', action='store_true',
+        help='Give full details on the selected tests'
     )
     action_options.add_argument(
         '-L', '--list-detailed', nargs='?', const='T', choices=['C', 'T'],
@@ -631,6 +584,25 @@ def main():
         help='Use a login shell for job scripts'
     )
 
+    def restrict_logging():
+        '''Restrict logging to errors only.
+
+        This is done when specific options are passed, which generate JSON
+        output and we don't want to pollute the output with other logging
+        output.
+
+        :returns: :obj:`True` if the logging was restricted, :obj:`False`
+            otherwise.
+
+        '''
+
+        if (options.show_config or
+            options.detect_host_topology or options.describe):
+            logging.getlogger().setLevel(logging.ERROR)
+            return True
+        else:
+            return False
+
     # Parse command line
     options = argparser.parse_args()
     if len(sys.argv) == 1:
@@ -646,10 +618,11 @@ def main():
     site_config.select_subconfig('generic')
     options.update_config(site_config)
     logging.configure_logging(site_config)
-    logging.getlogger().colorize = site_config.get('general/0/colorize')
     printer = PrettyPrinter()
     printer.colorize = site_config.get('general/0/colorize')
-    printer.inc_verbosity(site_config.get('general/0/verbose'))
+    if not restrict_logging():
+        printer.inc_verbosity(site_config.get('general/0/verbose'))
+
     if os.getenv('RFM_GRAYLOG_SERVER'):
         printer.warning(
             'RFM_GRAYLOG_SERVER environment variable is deprecated; '
@@ -719,9 +692,10 @@ def main():
         printer.error(logfiles_message())
         sys.exit(1)
 
-    logging.getlogger().colorize = site_config.get('general/0/colorize')
     printer.colorize = site_config.get('general/0/colorize')
-    printer.inc_verbosity(site_config.get('general/0/verbose'))
+    if not restrict_logging():
+        printer.inc_verbosity(site_config.get('general/0/verbose'))
+
     try:
         printer.debug('Initializing runtime')
         runtime.init_runtime(site_config)
@@ -761,6 +735,8 @@ def main():
 
     # Show configuration after everything is set up
     if options.show_config:
+        # Restore logging level
+        printer.setLevel(logging.INFO)
         config_param = options.show_config
         if config_param == 'all':
             printer.info(str(rt.site_config))
@@ -778,14 +754,17 @@ def main():
     if options.detect_host_topology:
         from reframe.utility.cpuinfo import cpuinfo
 
+        s_cpuinfo = cpuinfo()
+
+        # Restore logging level
+        printer.setLevel(logging.INFO)
         topofile = options.detect_host_topology
         if topofile == '-':
-            json.dump(cpuinfo(), sys.stdout, indent=2)
-            sys.stdout.write('\n')
+            printer.info(json.dumps(s_cpuinfo, indent=2))
         else:
             try:
                 with open(topofile, 'w') as fp:
-                    json.dump(cpuinfo(), fp, indent=2)
+                    json.dump(s_cpuinfo, fp, indent=2)
                     fp.write('\n')
             except OSError as e:
                 getlogger().error(
@@ -1010,11 +989,17 @@ def main():
                 tc.check.disable_hook(h)
 
         # Act on checks
+        if options.describe:
+            # Restore logging level
+            printer.setLevel(logging.INFO)
+            describe_checks(testcases, printer)
+            sys.exit(0)
+
         if options.list or options.list_detailed:
             concretized = (options.list == 'C' or
                            options.list_detailed == 'C')
             detailed = options.list_detailed is not None
-            list_checks2(testcases, printer, detailed, concretized)
+            list_checks(testcases, printer, detailed, concretized)
             sys.exit(0)
 
         if options.list_tags:
@@ -1284,4 +1269,5 @@ def main():
             printer.error(f'could not save log file: {e}')
             sys.exit(1)
         finally:
-            printer.info(logfiles_message())
+            if not restrict_logging():
+                printer.info(logfiles_message())
