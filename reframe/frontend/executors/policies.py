@@ -362,7 +362,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 task.skip()
                 self._current_tasks.remove(task)
                 return 1
-
         elif self.deps_succeeded(task):
             try:
                 self.printer.status(
@@ -392,7 +391,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 task.policy_stage = 'ready_to_compile'
 
             return 1
-
         elif self.deps_failed(task):
             exc = TaskDependencyError('dependencies failed')
             task.fail((type(exc), exc, None))
