@@ -246,20 +246,18 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         # Keep a reference to all the partitions
         self._partitions = set()
 
-        # A set of the jobs that should be polled by this scheduler
-        self._local_scheduler_tasks = set()
-
         # Sets of the jobs that should be polled for each partition
-        self._scheduler_tasks = {}
+        self._scheduler_tasks = {
+            '_rfm_local' : set()
+        }
 
-        #
+        # Retired tasks that need to be cleaned up
         self._retired_tasks = []
 
         # Job limit per partition
-        self._max_jobs = {}
-
-        # Max jobs spawned by the reframe thread
-        self._rfm_max_jobs = rt.runtime().get_option(f'systems/0/rfm_max_jobs')
+        self._max_jobs = {
+            '_rfm_local' : rt.runtime().get_option(f'systems/0/rfm_max_jobs')
+        }
 
         self.task_listeners.append(self)
 
@@ -271,15 +269,17 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         # Set partition-based counters, if not set already
         self._scheduler_tasks.setdefault(partition.fullname, set())
         self._max_jobs.setdefault(partition.fullname, partition.max_jobs)
+
         task = RegressionTask(case, self.task_listeners)
         self._task_index[case] = task
         self.stats.add_task(task)
-        self.printer.info(
+        getlogger().debug2(
             f'==> added {check.name} on {partition.fullname} '
             f'using {environ.name}'
         )
         self._current_tasks.add(task)
 
+    # TODO: This is only for testing purposes here and should be deleted
     def print_state_of_tasks(self, tasks):
         stats = {
             'wait': [],
@@ -305,16 +305,14 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 print(f"  {part}: {len(stats[phase][part])}")
 
     def exit(self):
-        self.printer.separator('short single line',
-                               'waiting for spawned checks to finish')
         while self._current_tasks:
             # print()
             # self.print_state_of_tasks(self._current_tasks)
             try:
                 self._poll_tasks()
                 num_running = sum(
-                    1 if t.policy_stage in ['running', 'compiling']
-                    else 0 for t in self._current_tasks
+                    1 if t.policy_stage in ('running', 'compiling') else 0
+                    for t in self._current_tasks
                 )
                 self.advance_all(self._current_tasks)
                 _cleanup_all(self._retired_tasks, not self.keep_stage_files)
@@ -323,9 +321,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             except ABORT_REASONS as e:
                 self._failall(e)
                 raise
-
-        self.printer.separator('short single line',
-                               'all spawned checks have finished\n')
 
     def _poll_tasks(self):
         for part in self._partitions:
@@ -339,7 +334,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             part.scheduler.poll(*jobs)
 
         jobs = []
-        for t in self._local_scheduler_tasks:
+        for t in self._scheduler_tasks['_rfm_local']:
             if t.policy_stage == 'compiling':
                 jobs.append(t.check.build_job)
             elif t.policy_stage == 'running':
@@ -349,14 +344,14 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def advance_all(self, tasks, timeout=None):
         t_init = time.time()
-        num_prog = 0
+        num_progressed = 0
 
         # progress might remove the tasks that retire or fail
         for t in list(tasks):
-            method = getattr(self, f'advance_{t.policy_stage}')
-            num_prog += method(t)
+            bump_state = getattr(self, f'advance_{t.policy_stage}')
+            num_progressed += bump_state(t)
             t_elapsed = time.time() - t_init
-            if timeout and t_elapsed > timeout and num_prog:
+            if timeout and t_elapsed > timeout and num_progressed:
                 break
 
     def advance_wait(self, task):
@@ -370,6 +365,10 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
         elif self.deps_succeeded(task):
             try:
+                self.printer.status(
+                    'RUN', '%s on %s using %s' %
+                    (task.check.name, task.testcase.partition.fullname, task.testcase.environ.name)
+                )
                 task.setup(task.testcase.partition,
                            task.testcase.environ,
                            sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
@@ -404,20 +403,10 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             return 0
 
     def advance_ready_to_compile(self, task):
-        if task.check.local or task.check.build_locally:
-            if len(self._local_scheduler_tasks) < self._rfm_max_jobs:
-                try:
-                    task.compile()
-                    task.policy_stage = 'compiling'
-                    self._local_scheduler_tasks.add(task)
-                except TaskExit:
-                    self._current_tasks.remove(task)
-
-                return 1
-            else:
-                return 0
-
-        partname = task.check.current_partition.fullname
+        partname = (
+            '_rfm_local' if task.check.local or task.check.build_locally
+            else task.check.current_partition.fullname
+        )
         if len(self._scheduler_tasks[partname]) < self._max_jobs[partname]:
             try:
                 task.compile()
@@ -431,14 +420,14 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         return 0
 
     def advance_compiling(self, task):
+        partname = (
+            '_rfm_local' if task.check.local or task.check.build_locally
+            else task.check.current_partition.fullname
+        )
         try:
             if task.compile_complete():
                 task.compile_wait()
-                if task.check.local or task.check.build_locally:
-                    self._local_scheduler_tasks.remove(task)
-                else:
-                    partname = task.check.current_partition.fullname
-                    self._scheduler_tasks[partname].remove(task)
+                self._scheduler_tasks[partname].remove(task)
 
                 if isinstance(task.check, CompileOnlyRegressionTest):
                     try:
@@ -459,30 +448,15 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 return 0
 
         except TaskExit:
-            if task.check.local or task.check.build_locally:
-                    self._local_scheduler_tasks.remove(task)
-            else:
-                partname = task.check.current_partition.fullname
-                self._scheduler_tasks[partname].remove(task)
-
+            self._scheduler_tasks[partname].remove(task)
             self._current_tasks.remove(task)
             return 1
 
     def advance_ready_to_run(self, task):
-        if task.check.local:
-            if len(self._local_scheduler_tasks) < self._rfm_max_jobs:
-                try:
-                    task.run()
-                    task.policy_stage = 'running'
-                    self._local_scheduler_tasks.add(task)
-                except TaskExit:
-                    self._current_tasks.remove(task)
-
-                return 1
-            else:
-                return 0
-
-        partname = task.check.current_partition.fullname
+        partname = (
+            '_rfm_local' if task.check.local
+            else task.check.current_partition.fullname
+        )
         if len(self._scheduler_tasks[partname]) < self._max_jobs[partname]:
             try:
                 task.run()
@@ -496,14 +470,14 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         return 0
 
     def advance_running(self, task):
+        partname = (
+            '_rfm_local' if task.check.local
+            else task.check.current_partition.fullname
+        )
         try:
             if task.run_complete():
                 task.run_wait()
-                if task.check.local:
-                    self._local_scheduler_tasks.remove(task)
-                else:
-                    partname = task.check.current_partition.fullname
-                    self._scheduler_tasks[partname].remove(task)
+                self._scheduler_tasks[partname].remove(task)
 
                 task.policy_stage = 'completed'
                 return 1
@@ -511,12 +485,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 return 0
 
         except TaskExit:
-            if task.check.local:
-                self._local_scheduler_tasks.remove(task)
-            else:
-                partname = task.check.current_partition.fullname
-                self._scheduler_tasks[partname].remove(task)
-
+            self._scheduler_tasks[partname].remove(task)
             self._current_tasks.remove(task)
             return 1
 
@@ -560,36 +529,22 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     # TODO all this prints have to obviously leave from here...
     def on_task_setup(self, task):
-        # print(task.check.name, 'setup')
         pass
 
     def on_task_run(self, task):
-        if isinstance(task.check, RunOnlyRegressionTest):
-            self.printer.status(
-                'RUN', '%s on %s using %s' %
-                (task.check.name, task.check.current_partition.fullname, task.check.current_environ.name)
-            )
+        pass
 
     def on_task_compile(self, task):
-        if isinstance(task.check, RunOnlyRegressionTest):
-            return
-
-        self.printer.status(
-            'BUILD', '%s on %s using %s' %
-            (task.check.name, task.check.current_partition.fullname, task.check.current_environ.name)
-        )
+        pass
 
     def on_task_exit(self, task):
         pass
-        # print(task.check.name, 'run exit')
 
     def on_task_compile_exit(self, task):
         pass
-        # print(task.check.name, 'compile exit')
 
     def on_task_skip(self, task):
         pass
-        # print(task.check.name, 'skip')
 
     def on_task_failure(self, task):
         self._num_failed_tasks += 1

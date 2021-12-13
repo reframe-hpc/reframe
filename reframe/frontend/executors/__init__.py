@@ -498,26 +498,16 @@ class Runner:
                 '%s %s (%s)' % (prefix, check.name, check.descr)
             )
 
+        self._printer.separator('short single line',
+                                'start processing checks')
         self._policy.enter()
         self._printer.reset_progress(len(testcases))
-        last_check = None
         for t in testcases:
-            if last_check is None or last_check.name != t.check.name:
-                if last_check is not None:
-                    print_separator(last_check, 'finished processing')
-                    self._printer.info('')
-
-                print_separator(t.check, 'started processing')
-                last_check = t.check
-
             self._policy.runcase(t)
 
-        # Close the last visual box
-        if last_check is not None:
-            print_separator(last_check, 'finished processing')
-            self._printer.info('')
-
         self._policy.exit()
+        self._printer.separator('short single line',
+                               'all spawned checks have finished\n')
 
 
 class ExecutionPolicy(abc.ABC):

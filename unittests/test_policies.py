@@ -600,7 +600,9 @@ def test_concurrency_unlimited(async_runner, make_cases, make_exec_ctx):
     # make_exec_ctx(options=max_jobs_opts(num_checks))
 
     runner, monitor = async_runner
-    runner.policy._rfm_max_jobs = num_checks
+    runner.policy._max_jobs = {
+        '_rfm_local' : num_checks
+    }
     runner.runall(make_cases([SleepCheck(.5) for i in range(num_checks)]))
 
     # Ensure that all tests were run and without failures.
@@ -628,7 +630,9 @@ def test_concurrency_limited(async_runner, make_cases, make_exec_ctx):
     # make_exec_ctx(options=max_jobs_opts(max_jobs))
 
     runner, monitor = async_runner
-    runner.policy._rfm_max_jobs = 3
+    runner.policy._max_jobs = {
+        '_rfm_local' : 3
+    }
     runner.runall(make_cases([SleepCheck(.5) for i in range(num_checks)]))
 
     # Ensure that all tests were run and without failures.
@@ -670,7 +674,9 @@ def test_concurrency_none(async_runner, make_cases, make_exec_ctx):
     # make_exec_ctx(options=max_jobs_opts(1))
 
     runner, monitor = async_runner
-    runner.policy._rfm_max_jobs = 1
+    runner.policy._max_jobs = {
+        '_rfm_local' : 1
+    }
     runner.runall(make_cases([SleepCheck(.5) for i in range(num_checks)]))
 
     # Ensure that all tests were run and without failures.
