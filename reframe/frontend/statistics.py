@@ -216,7 +216,8 @@ class TestStats:
             )
             printer.info(line_width * '-')
             printer.info(f"FAILURE INFO for {r['unique_name']} {retry_info}")
-            printer.info(f"  * Test Description: {r['description']}")
+            printer.info(f"  * Expanded name: {r['display_name']}")
+            printer.info(f"  * Description: {r['description']}")
             printer.info(f"  * System partition: {r['system']}")
             printer.info(f"  * Environment: {r['environment']}")
             printer.info(f"  * Stage directory: {r['stagedir']}")
@@ -301,7 +302,7 @@ class TestStats:
             if t.check.perfvalues.keys():
                 if t.check.unique_name != previous_name:
                     report_body.append(line_width * '-')
-                    report_body.append(t.check.unique_name)
+                    report_body.append(t.check.display_name)
                     previous_name = t.check.unique_name
 
                 if t.check.current_partition.fullname != previous_part:
