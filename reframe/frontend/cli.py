@@ -136,10 +136,13 @@ def describe_checks(testcases, printer):
                     rec['pipeline_hooks'][stage].append(hk.__name__)
 
             for attr in list(rec.keys()):
-                if attr == '__rfm_class__' or attr == '__rfm_file__':
-                    continue
-
-                if attr.startswith('_'):
+                if attr == '__rfm_class__':
+                    rec['@class'] = rec[attr]
+                    del rec[attr]
+                elif attr == '__rfm_file__':
+                    rec['@file'] = rec[attr]
+                    del rec[attr]
+                elif attr.startswith('_'):
                     del rec[attr]
 
             # List all required variables
@@ -148,7 +151,7 @@ def describe_checks(testcases, printer):
                 if not tc.check._rfm_var_space[var].is_defined():
                     required.append(var)
 
-            rec['__rfm_required__'] = required
+            rec['@required'] = required
             records.append(dict(sorted(rec.items())))
 
     printer.info(jsonext.dumps(records, indent=2))
