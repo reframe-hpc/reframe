@@ -1,13 +1,13 @@
 version: 2
 updates:
   # Update ReFrame requirements
-  - package-ecosystem: "pip" 
+  - package-ecosystem: "pip"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
 
   # Update ReFrame documentation requirements
-  - package-ecosystem: "pip" 
+  - package-ecosystem: "pip"
     directory: "/docs"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
