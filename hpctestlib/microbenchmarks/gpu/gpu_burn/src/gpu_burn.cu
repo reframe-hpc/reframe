@@ -227,12 +227,16 @@ class BurnTracker
 public:
     std::mutex mtx;
     size_t iters, reps, err;
+    float devTemp;
     std::chrono::system_clock::time_point start, end;
+    std::chrono::duration<double> total_time;
 
     BurnTracker()
     {
         std::lock_guard<std::mutex> lg(mtx);
         err = 0; iters = 0; reps = 0;
+        devTemp = 0.0;
+        total_time = std::chrono::duration<double>::zero();
     };
 
     void set_iters(size_t it)
@@ -247,12 +251,36 @@ public:
         start = std::chrono::system_clock::now();
     }
 
-    void log(size_t e)
+    void stop_timer()
     {
         std::lock_guard<std::mutex> lg(mtx);
         end = std::chrono::system_clock::now();
+        total_time += end-start;
+    }
+
+    void read_temp(Smi *smi_handle, int devId)
+    {
+        float temp;
+        std::lock_guard<std::mutex> lg(mtx);
+        smi_handle->getGpuTemp(devId, &temp);
+        if (temp > devTemp) {
+            devTemp = temp;
+        }
+    }
+
+    void log(size_t e)
+    {
+        std::lock_guard<std::mutex> lg(mtx);
         reps++;
         err += e;
+    }
+
+    float getTemp()
+    {
+        std::lock_guard<std::mutex> lg(mtx);
+        float temp = devTemp;
+        devTemp = 0.0;
+        return temp;
     }
 
     double read()
@@ -264,12 +292,14 @@ public:
             return -1;
 
         // Get the time difference and return the flops
-        std::chrono::duration<double> diff = end-start;
-        double Gflops = 1e-9 * iters * reps * OPS_PER_MUL / diff.count();
+        if (reps == 0) {
+            printf("Warning: duration is to short, didn't finish a single repetition\n");
+        }
+        double Gflops = 1e-9 * iters * reps * OPS_PER_MUL / total_time.count();
 
         // Reset the counters
         err = 0; reps = 0;
-        start = end;
+        total_time = std::chrono::duration<double>::zero();
 
         return Gflops;
     }
@@ -287,9 +317,13 @@ int devCount;
 template<class T>
 void startBurn(int devId,
                Smi * smi_handle, T *A, T *B,
-               BurnTracker * bt
+               BurnTracker * bt,
+               char *hostname
                )
 {
+    std::chrono::system_clock::time_point warmup_start, warmup_end;
+    std::chrono::duration<double> warmup_diff;
+
     GemmTest<T> test(devId, smi_handle);
     test.initBuffers(A, B);
 
@@ -297,7 +331,14 @@ void startBurn(int devId,
     bt->set_iters(test.getIters());
 
     // Warmup burn
+    warmup_start = std::chrono::system_clock::now();
     test.compute();
+    test.compare();
+    test.getErrors();
+    warmup_end = std::chrono::system_clock::now();
+    warmup_diff = warmup_end-warmup_start;
+    printf("[%s] GPU %2d: Warmup takes %g seconds, duration must be larger than that to get any results\n", hostname, devId, warmup_diff.count());
+    fflush(stdout);
     XDeviceSynchronize();
     {
         // Flag that this thread is done with the warmup.
@@ -311,11 +352,13 @@ void startBurn(int devId,
         std::unique_lock<std::mutex> lk(cv_m);
         cv.wait(lk, []{return burn;});
     }
-    bt->start_timer();
 
     // The actual work
     while (burn) {
+        bt->start_timer();
         test.compute();
+        bt->stop_timer();
+        bt->read_temp(smi_handle, devId);
         test.compare();
 
         // Update the results
@@ -361,7 +404,8 @@ template<class T> void launch(int duration)
         threads.push_back(std::thread(startBurn<T>,
                                       i, &smi_handle,
                                       A, B,
-                                      trackThreads[i]
+                                      trackThreads[i],
+                                      hostname
                           )
         );
     }
@@ -384,8 +428,7 @@ template<class T> void launch(int duration)
     for (int i = 0; i < devCount; i++)
     {
         double flops = trackThreads[i]->read();
-        float devTemp;
-        smi_handle.getGpuTemp(i, &devTemp);
+        float devTemp = trackThreads[i]->getTemp();
         printf("[%s] GPU %2d(%s): %4.0f GF/s  %d Celsius\n", hostname, i, flops < 0.0 ? "FAULTY" : "OK", flops, (int)devTemp);
     }
 
