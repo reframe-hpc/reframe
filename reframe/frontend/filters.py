@@ -19,7 +19,13 @@ def have_name(patt):
     regex = re_compile(patt)
 
     def _fn(case):
-        return regex.match(case.check.unique_name)
+        # Match pattern, but remove spaces from the `display_name`
+        display_name = case.check.display_name.replace(' ', '')
+        if '@' in patt:
+            # Do an exact match on the unique name
+            return patt.replace('@', '_') == case.check.unique_name
+        else:
+            return regex.match(display_name)
 
     return _fn
 
