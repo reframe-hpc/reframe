@@ -135,10 +135,6 @@ class RegressionCheckLoader:
                     # Treat special values
                     if val == '@none':
                         val = None
-                    elif val == '@true':
-                        val = True
-                    elif val == '@false':
-                        val = False
                     else:
                         val = fields.make_convertible(val)
 
