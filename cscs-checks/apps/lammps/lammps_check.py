@@ -9,13 +9,16 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-class LAMMPSBaseCheck(rfm.RunOnlyRegressionTest):
+class LAMMPSCheck(rfm.RunOnlyRegressionTest):
+    scale = parameter(['small', 'large'])
+    variant = parameter(['maint', 'prod'])
+
     def __init__(self):
         if self.current_system.name in ['eiger', 'pilatus']:
             self.valid_prog_environs = ['cpeGNU']
         else:
             self.valid_prog_environs = ['builtin']
-        self.modules = ['LAMMPS']
+        self.modules = ['cray-python', 'LAMMPS']
 
         # Reset sources dir relative to the SCS apps prefix
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
@@ -41,21 +44,21 @@ class LAMMPSBaseCheck(rfm.RunOnlyRegressionTest):
         }
 
         self.tags = {'scs', 'external-resources'}
-        self.maintainers = ['VH']
+        self.maintainers = ['LM']
 
 
-@rfm.parameterized_test(*([s, v]
-                          for s in ['small', 'large']
-                          for v in ['prod', 'maint']))
-class LAMMPSGPUCheck(LAMMPSBaseCheck):
-    def __init__(self, scale, variant):
+@rfm.simple_test
+class LAMMPSGPUCheck(LAMMPSCheck):
+    def __init__(self):
         super().__init__()
+        self.descr = (f'LAMMPS GPU check (version: {self.scale}, '
+                      f'{self.variant})')
         self.valid_systems = ['daint:gpu']
         self.executable = 'lmp_mpi'
         self.executable_opts = ['-sf gpu', '-pk gpu 1', '-in in.lj.gpu']
         self.variables = {'CRAY_CUDA_MPS': '1'}
         self.num_gpus_per_node = 1
-        if scale == 'small':
+        if self.scale == 'small':
             self.valid_systems += ['dom:gpu']
             self.num_tasks = 12
             self.num_tasks_per_node = 2
@@ -83,16 +86,18 @@ class LAMMPSGPUCheck(LAMMPSBaseCheck):
                 }
             },
         }
-        self.reference = references[variant][scale]
-        self.tags |= {'maintenance' if variant == 'maint' else 'production'}
+        self.reference = references[self.variant][self.scale]
+        self.tags |= {
+            'maintenance' if self.variant == 'maint' else 'production'
+        }
 
 
-@rfm.parameterized_test(*([s, v]
-                          for s in ['small', 'large']
-                          for v in ['prod']))
-class LAMMPSCPUCheck(LAMMPSBaseCheck):
-    def __init__(self, scale, variant):
+@rfm.simple_test
+class LAMMPSCPUCheck(LAMMPSCheck):
+    def __init__(self):
         super().__init__()
+        self.descr = (f'LAMMPS CPU check (version: {self.scale}, '
+                      f'{self.variant})')
         self.valid_systems = ['daint:mc', 'eiger:mc', 'pilatus:mc']
         if self.current_system.name in ['eiger', 'pilatus']:
             self.executable = 'lmp_mpi'
@@ -101,8 +106,7 @@ class LAMMPSCPUCheck(LAMMPSBaseCheck):
             self.executable = 'lmp_omp'
             self.executable_opts = ['-sf omp', '-pk omp 1', '-in in.lj.cpu']
 
-        self.scale = scale
-        if scale == 'small':
+        if self.scale == 'small':
             self.valid_systems += ['dom:mc']
             self.num_tasks = 216
             self.num_tasks_per_node = 36
@@ -115,7 +119,7 @@ class LAMMPSCPUCheck(LAMMPSBaseCheck):
             self.num_tasks = 256 if self.scale == 'small' else 512
 
         references = {
-            'prod': {
+            'maint': {
                 'small': {
                     'dom:mc': {'perf': (4394, -0.05, None, 'timesteps/s')},
                     'daint:mc': {'perf': (3824, -0.10, None, 'timesteps/s')},
@@ -128,6 +132,21 @@ class LAMMPSCPUCheck(LAMMPSBaseCheck):
                     'pilatus:mc': {'perf': (7500, -0.10, None, 'timesteps/s')}
                 }
             },
+            'prod': {
+                'small': {
+                    'dom:mc': {'perf': (4394, -0.05, None, 'timesteps/s')},
+                    'daint:mc': {'perf': (3824, -0.10, None, 'timesteps/s')},
+                    'eiger:mc': {'perf': (4500, -0.10, None, 'timesteps/s')},
+                    'pilatus:mc': {'perf': (5000, -0.10, None, 'timesteps/s')}
+                },
+                'large': {
+                    'daint:mc': {'perf': (5310, -0.65, None, 'timesteps/s')},
+                    'eiger:mc': {'perf': (6500, -0.10, None, 'timesteps/s')},
+                    'pilatus:mc': {'perf': (7500, -0.10, None, 'timesteps/s')}
+                }
+            }
         }
-        self.reference = references[variant][scale]
-        self.tags |= {'maintenance' if variant == 'maint' else 'production'}
+        self.reference = references[self.variant][self.scale]
+        self.tags |= {
+            'maintenance' if self.variant == 'maint' else 'production'
+        }
