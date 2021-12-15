@@ -34,6 +34,12 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         self.descr = f'Jacobi (without tool) {self.lang} check'
         self.name = f'{type(self).__name__}_{self.lang.replace("+", "p")}'
 
+    @run_after('init')
+    def remove_buggy_prgenv(self):
+        # FIXME: skipping to avoid "Fatal error in PMPI_Init_thread"
+        if self.current_system.name in ('eiger', 'pilatus'):
+            self.valid_prog_environs.remove('PrgEnv-nvidia')
+
     @run_before('compile')
     def set_sources_dir(self):
         self.sourcesdir = os.path.join('src', self.lang)
@@ -47,11 +53,30 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
     @run_before('compile')
     def set_env_variables(self):
         self.variables = {
-            'OMP_NUM_THREADS': str(self.num_cpus_per_task),
-            'ITERATIONS': str(self.num_iterations),
-            'OMP_PROC_BIND': 'true',
             'CRAYPE_LINK_TYPE': 'dynamic',
+            'ITERATIONS': str(self.num_iterations),
+            'OMP_NUM_THREADS': str(self.num_cpus_per_task),
+            'OMP_PROC_BIND': 'true',
         }
+
+    @run_before('compile')
+    def set_flags(self):
+        self.prebuild_cmds += ['module list']
+        self.prgenv_flags = {
+            'PrgEnv-aocc': ['-O2', '-g', '-fopenmp'],
+            'PrgEnv-cray': ['-O2', '-g',
+                            '-homp' if self.lang == 'F90' else '-fopenmp'],
+            'PrgEnv-gnu': ['-O2', '-g', '-fopenmp'],
+            'PrgEnv-intel': ['-O2', '-g', '-qopenmp'],
+            'PrgEnv-pgi': ['-O2', '-g', '-mp'],
+            'PrgEnv-nvidia': ['-O2', '-g', '-mp']
+        }
+        envname = self.current_environ.name
+        # if generic, falls back to -g:
+        prgenv_flags = self.prgenv_flags.get(envname, ['-g'])
+        self.build_system.cflags = prgenv_flags
+        self.build_system.cxxflags = prgenv_flags
+        self.build_system.fflags = prgenv_flags
 
     @run_before('run')
     def set_prerun_cmds(self):
@@ -76,66 +101,6 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         )
         self.postrun_cmds += [f'echo "{readme_str}"']
 
-
-
-    @run_before('compile')
-    def prgEnv_nvidia_workaround(self):
-        # {{{ CRAY_MPICH_VERSION
-        # cdt/20.08 cray-mpich/7.7.15 cray, crayclang, gnu, intel, pgi
-        # cdt/21.02 cray-mpich/7.7.16 cray, crayclang, gnu, intel, pgi
-        # cdt/21.05 cray-mpich/7.7.17 crayclang, gnu, intel, pgi, *nvidia*
-        #
-        # cpe/21.04 cray-mpich/8.1.4 AOCC, CRAY, CRAYCLANG, GNU, INTEL, NVIDIA
-        # cpe/21.05 cray-mpich/8.1.5 AOCC, CRAY, CRAYCLANG, GNU, INTEL, NVIDIA
-        # cpe/21.06 cray-mpich/8.1.6 AOCC, CRAY, CRAYCLANG, GNU, INTEL, NVIDIA
-        # cpe/21.08 cray-mpich/8.1.8 AOCC, CRAY, CRAYCLANG, GNU, INTEL, NVIDIA
-        # }}}
-        envname = self.current_environ.name
-        sysname = self.current_system.name
-        self.cppflags = ''
-        if (sysname in ['dom', 'daint'] and envname == 'PrgEnv-nvidia'):
-            mpi_version = int(os.getenv('CRAY_MPICH_VERSION').replace('.', ''))
-            self.skip_if(
-                mpi_version <= 7716,
-                (f'PrgEnv-nvidia not supported with cray-mpich<=7.7.16 '
-                 f'(CRAY_MPICH_VERSION={mpi_version})'))
-            # NOTE: occasionally, the wrapper fails to find the mpich dir
-            mpich_pkg_config_path = '$CRAY_MPICH_PREFIX/lib/pkgconfig'
-            self.variables = {
-                'PKG_CONFIG_PATH': f'$PKG_CONFIG_PATH:{mpich_pkg_config_path}'
-            }
-            self.cppflags = ('`pkg-config --cflags mpich` '
-                             '`pkg-config --libs mpich`')
-        elif sysname in ['pilatus', 'eiger']:
-            self.skip_if(self.current_environ.name == 'PrgEnv-nvidia', '')
-
-    @run_before('compile')
-    def set_flags(self):
-        # FIXME: workaround for C4KCUST-308
-        self.modules += ['cray-mpich']
-        self.prgenv_flags = {
-            'PrgEnv-aocc': ['-O2', '-g', '-fopenmp'],
-            'PrgEnv-cray': ['-O2', '-g',
-                            '-homp' if self.lang == 'F90' else '-fopenmp'],
-            'PrgEnv-gnu': ['-O2', '-g', '-fopenmp'],
-            'PrgEnv-intel': ['-O2', '-g', '-qopenmp'],
-            'PrgEnv-pgi': ['-O2', '-g', '-mp'],
-            'PrgEnv-nvidia': ['-O2', '-g', '-mp', self.cppflags]
-        }
-        envname = self.current_environ.name
-        # if generic, falls back to -g:
-        prgenv_flags = self.prgenv_flags.get(envname, ['-g'])
-        self.build_system.cflags = prgenv_flags
-        self.build_system.cxxflags = prgenv_flags
-        self.build_system.fflags = prgenv_flags
-        self.build_system.ldflags = ['-lm']
-
-    @run_before('compile')
-    def alps_fix_aocc(self):
-        self.prebuild_cmds += ['module list']
-        if self.current_partition.fullname in ['eiger:mc', 'pilatus:mc']:
-            self.prebuild_cmds += ['module rm cray-libsci']
-
     @sanity_function
     def assert_success(self):
         envname = self.current_environ.name
@@ -156,7 +121,7 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         # }}}
 
         intel_type = sn.extractsingle(r'INTEL_COMPILER_TYPE=(\S*)', rptf, 1)
-        # print(f'intel_type={intel_type}')
+        # {{{ print(f'intel_type={intel_type}')
         # intel/19.1.1.217        icpc openmp/201611
         # intel/19.1.3.304        icpc openmp/201611
         # intel/2021.2.0          icpc openmp/201611
@@ -167,8 +132,15 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         # INTEL_VERSION 2021.2.0 INTEL_COMPILER_TYPE ONEAPI      201811
         # INTEL_VERSION 2021.2.0 INTEL_COMPILER_TYPE RECOMMENDED
         # INTEL_VERSION 2021.2.0 INTEL_COMPILER_TYPE CLASSIC     201611
-
+        # }}}
         # OpenMP support varies between compilers:
+        #            c++ - f90
+        #  aocc - 201511 - 201307
+        #   cce - 201511 - 201511
+        #   gnu - 201511 - 201511
+        # intel - 201811 - 201611
+        #   pgi - 201307 - 201307
+        #    nv - 201307 - 201307
         openmp_versions = {
             # 'PrgEnv-aocc': {'C++': 201511, 'F90': 201307},
             'PrgEnv-aocc': {

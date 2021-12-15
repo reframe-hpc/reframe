@@ -1480,9 +1480,9 @@ General Configuration
    :required: No
    :default: 0
 
-   Increase the verbosity level of the output.
+   Set the verbosity level of the output.
    The higher the number, the more verbose the output will be.
-   If specified from the command line, the command line option must be specified multiple times to increase the verbosity level more than once.
+   If set to a negative number, this will decrease the verbosity level.
 
 
 Module Objects
