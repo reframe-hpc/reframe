@@ -28,7 +28,7 @@ class CPMDCheck(rfm.RunOnlyRegressionTest):
         }
     }
 
-    @run_before('run')
+    @run_after('init')
     def set_something(self):
         if self.scale == 'small':
             self.num_tasks = 9
