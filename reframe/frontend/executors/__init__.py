@@ -67,7 +67,9 @@ class TestCase:
                 self.partition.fullname == other.partition.fullname)
 
     def __repr__(self):
-        c, p, e = self.check.unique_name, self.partition.fullname, self.environ.name
+        c = self.check.unique_name if self.check else None
+        p = self.partition.fullname  if self.partition else None
+        e = self.environ.name if self.environ else None
         return f'({c!r}, {p!r}, {e!r})'
 
     @property

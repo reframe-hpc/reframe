@@ -16,20 +16,11 @@ import reframe.core.parameters as parameters
 import reframe.core.variables as variables
 import reframe.core.fixtures as fixtures
 import reframe.core.hooks as hooks
-import reframe.core.runtime as rt
 import reframe.utility as utils
 
 from reframe.core.exceptions import ReframeSyntaxError
 from reframe.core.deferrable import deferrable, _DeferredPerformanceExpression
-
-
-def _use_compact_names():
-    try:
-        return getattr(_use_compact_names, '_cached')
-    except AttributeError:
-        ret = rt.runtime().get_option('general/0/compact_test_names')
-        _use_compact_names._cached = ret
-        return ret
+from reframe.core.runtime import runtime
 
 
 class RegressionTestMeta(type):
@@ -849,7 +840,7 @@ class RegressionTestMeta(type):
         if variant_num is None:
             return name
 
-        if _use_compact_names():
+        if runtime().get_option('general/0/compact_test_names'):
             if cls.num_variants > 1:
                 width = utils.count_digits(cls.num_variants)
                 name += f'_{variant_num:0{width}}'
