@@ -368,7 +368,7 @@ class Bool(metaclass=_BuiltinType):
 
     @classmethod
     def __rfm_cast_int__(cls, i):
-        return Bool(True) if i !=0 else Bool(False)
+        return Bool(True) if i != 0 else Bool(False)
 
 
 class Dict(metaclass=_MappingType):
