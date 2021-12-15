@@ -29,7 +29,7 @@ class CPMDCheck(rfm.RunOnlyRegressionTest):
     }
 
     @run_after('init')
-    def set_something(self):
+    def setup_by_system(self):
         if self.scale == 'small':
             self.num_tasks = 9
             self.valid_systems += ['dom:gpu']
