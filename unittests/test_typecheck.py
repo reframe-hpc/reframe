@@ -18,6 +18,30 @@ def assert_type_hierarchy(builtin_type, ctype):
     assert not issubclass(ctype[int], ctype[ctype[int]])
 
 
+def test_bool_type():
+    t = True
+    f = False
+    assert isinstance(t, types.Bool)
+    assert isinstance(f, types.Bool)
+    assert not isinstance('foo', types.Bool)
+
+    # Test invalid arguments
+    with pytest.raises(TypeError):
+        types.Bool('foo')
+
+    # Test type conversions
+    assert types.Bool('True') == True
+    assert types.Bool('YEs') == True
+    assert types.Bool('1') == True
+    assert types.Bool('False') == False
+    assert types.Bool('No') == False
+    assert types.Bool('0') == False
+
+    # Test hash functions
+    assert hash(types.Bool('True')) == hash(types.Bool('YES'))
+    assert hash(types.Bool('False')) == hash(types.Bool('No'))
+
+
 def test_list_type():
     l = [1, 2]
     ll = [[1, 2], [3, 4]]

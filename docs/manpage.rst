@@ -389,11 +389,6 @@ Options controlling ReFrame execution
    ``VAL`` can take one of the following special values:
 
    - ``@none``: sets the variable to :obj:`None`
-   - ``@true``: sets the variable to :class:`True`
-   - ``@false``: sets the variable to :class:`False`
-
-   .. note::
-      Trying to set a boolean variable using a value different from ``@true`` or ``@false``, will be interpreted as :class:`True` since ReFrame will try to implicitly convert the given string to a boolean, which is a valid Python operation.
 
    Sequence and mapping types can also be set from the command line by using the following syntax:
 
@@ -448,13 +443,7 @@ Options controlling ReFrame execution
         class my_test(rfm.RegressionTest):
             num_tasks = required
 
-   .. note::
-      Trying to set a boolean variable using a value different from ``@true`` or ``@false`` will be interpreted as :class:`True` since ReFrame will try to implicitly convert the given string to a boolean, which is a valid Python operation.
-
    .. versionadded:: 3.8.0
-
-   .. versionchanged:: 3.9.3
-      Accept the ``@true`` and ``@false`` special values.
 
 .. option:: --skip-performance-check
 

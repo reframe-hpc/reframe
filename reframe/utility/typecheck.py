@@ -342,6 +342,35 @@ class _StrType(_SequenceType):
         return s
 
 
+class Bool(metaclass=_BuiltinType):
+    _type = bool
+
+    def __init__(self, val):
+        self._val = val
+
+    def __bool__(self):
+        return self._val
+
+    def __eq__(self, other):
+        return bool(self) == other
+
+    def __hash__(self):
+        return hash(self._val)
+
+    @classmethod
+    def __rfm_cast_str__(cls, s):
+        if s.lower() in {'1', 'true', 'yes'}:
+            return Bool(True)
+        elif s.lower() in {'0', 'false', 'no'}:
+            return Bool(False)
+
+        raise TypeError(f'cannot convert {s!r} to Bool')
+
+    @classmethod
+    def __rfm_cast_int__(cls, i):
+        return Bool(True) if i !=0 else Bool(False)
+
+
 class Dict(metaclass=_MappingType):
     _type = dict
 
