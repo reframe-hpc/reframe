@@ -8,16 +8,27 @@ import reframe.utility.sanity as sn
 
 
 class Cp2kCheck(rfm.RunOnlyRegressionTest):
-    def __init__(self):
+    modules = ['CP2K']
+    executable = 'cp2k.psmp'
+    executable_opts = ['H2O-256.inp']
+    maintainers = ['LM']
+    tags = {'scs'}
+    strict_check = False
+    extra_resources = {
+        'switches': {
+            'num_switches': 1
+        }
+    }
+
+    @run_after('init')
+    def set_prgenv(self):
         if self.current_system.name in ['eiger', 'pilatus']:
             self.valid_prog_environs = ['cpeGNU']
         else:
             self.valid_prog_environs = ['builtin']
 
-        self.modules = ['CP2K']
-        self.executable = 'cp2k.psmp'
-        self.executable_opts = ['H2O-256.inp']
-
+    @sanity_function
+    def assert_energy_diff(self):
         energy = sn.extractsingle(
             r'\s+ENERGY\| Total FORCE_EVAL \( QS \) '
             r'energy [\[\(]a\.u\.[\]\)]:\s+(?P<energy>\S+)',
@@ -25,7 +36,7 @@ class Cp2kCheck(rfm.RunOnlyRegressionTest):
         )
         energy_reference = -4404.2323
         energy_diff = sn.abs(energy-energy_reference)
-        self.sanity_patterns = sn.all([
+        return sn.all([
             sn.assert_found(r'PROGRAM STOPPED IN', self.stdout),
             sn.assert_eq(sn.count(sn.extractall(
                 r'(?i)(?P<step_count>STEP NUMBER)',
@@ -33,30 +44,24 @@ class Cp2kCheck(rfm.RunOnlyRegressionTest):
             sn.assert_lt(energy_diff, 1e-4)
         ])
 
-        self.perf_patterns = {
-            'time': sn.extractsingle(r'^ CP2K(\s+[\d\.]+){4}\s+(?P<perf>\S+)',
-                                     self.stdout, 'perf', float)
-        }
-
-        self.maintainers = ['LM']
-        self.tags = {'scs'}
-        self.strict_check = False
-        self.extra_resources = {
-            'switches': {
-                'num_switches': 1
-            }
-        }
+    @performance_function('s')
+    def time(self):
+        return sn.extractsingle(r'^ CP2K(\s+[\d\.]+){4}\s+(?P<perf>\S+)',
+                                self.stdout, 'perf', float)
 
 
-@rfm.parameterized_test(*([s, v]
-                          for s in ['small', 'large']
-                          for v in ['maint', 'prod']))
+@rfm.simple_test
 class Cp2kCpuCheck(Cp2kCheck):
-    def __init__(self, scale, variant):
-        super().__init__()
-        self.descr = 'CP2K CPU check (version: %s, %s)' % (scale, variant)
-        self.valid_systems = ['daint:mc', 'eiger:mc', 'pilatus:mc']
-        if scale == 'small':
+    scale = parameter(['small', 'large'])
+    variant = parameter(['maint', 'prod'])
+    valid_systems = ['daint:mc', 'eiger:mc', 'pilatus:mc']
+
+    @run_after('init')
+    def setup_by_variant_and_scale(self):
+        self.descr = f'CP2K CPU check (version: {self.scale}, {self.variant})'
+        self.tags |= {'maintenance'
+                      if self.variant == 'maint' else 'production'}
+        if self.scale == 'small':
             self.valid_systems += ['dom:mc']
             if self.current_system.name in ['daint', 'dom']:
                 self.num_tasks = 216
@@ -90,7 +95,6 @@ class Cp2kCpuCheck(Cp2kCheck):
                     'OMP_PLACES': 'cores',
                     'OMP_PROC_BIND': 'close'
                 }
-
         references = {
             'maint': {
                 'small': {
@@ -119,9 +123,7 @@ class Cp2kCpuCheck(Cp2kCheck):
                 }
             }
         }
-
-        self.reference = references[variant][scale]
-        self.tags |= {'maintenance' if variant == 'maint' else 'production'}
+        self.reference = references[self.variant][self.scale]
 
     @run_before('run')
     def set_task_distribution(self):
@@ -132,27 +134,28 @@ class Cp2kCpuCheck(Cp2kCheck):
         self.job.launcher.options = ['--cpu-bind=cores']
 
 
-@rfm.parameterized_test(*([s, v]
-                          for s in ['small', 'large']
-                          for v in ['maint', 'prod']))
+@rfm.simple_test
 class Cp2kGpuCheck(Cp2kCheck):
-    def __init__(self, scale, variant):
-        super().__init__()
-        self.descr = 'CP2K GPU check (version: %s, %s)' % (scale, variant)
-        self.valid_systems = ['daint:gpu']
-        self.num_gpus_per_node = 1
-        if scale == 'small':
+    scale = parameter(['small', 'large'])
+    variant = parameter(['maint', 'prod'])
+    valid_systems = ['daint:gpu']
+    num_gpus_per_node = 1
+    num_tasks_per_node = 6
+    num_cpus_per_task = 2
+    variables = {
+        'CRAY_CUDA_MPS': '1',
+        'OMP_NUM_THREADS': str(num_cpus_per_task)
+    }
+
+    @run_after('init')
+    def setup_by_variant_and_scale(self):
+        self.descr = f'CP2K GPU check (version: {self.scale}, {self.variant})'
+        if self.scale == 'small':
             self.valid_systems += ['dom:gpu']
             self.num_tasks = 36
         else:
             self.num_tasks = 96
 
-        self.num_tasks_per_node = 6
-        self.num_cpus_per_task = 2
-        self.variables = {
-            'CRAY_CUDA_MPS': '1',
-            'OMP_NUM_THREADS': str(self.num_cpus_per_task)
-        }
         references = {
             'maint': {
                 'small': {
@@ -173,5 +176,6 @@ class Cp2kGpuCheck(Cp2kCheck):
                 }
             }
         }
-        self.reference = references[variant][scale]
-        self.tags |= {'maintenance' if variant == 'maint' else 'production'}
+        self.reference = references[self.variant][self.scale]
+        self.tags |= {'maintenance'
+                      if self.variant == 'maint' else 'production'}
