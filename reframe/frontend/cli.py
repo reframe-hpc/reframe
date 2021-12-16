@@ -176,6 +176,11 @@ def logfiles_message():
     return msg
 
 
+def calc_verbosity(site_config, quiesce):
+    curr_verbosity = site_config.get('general/0/verbose')
+    return curr_verbosity - quiesce
+
+
 def main():
     # Setup command line options
     argparser = argparse.ArgumentParser()
@@ -510,6 +515,10 @@ def main():
         help='Increase verbosity level of output',
         envvar='RFM_VERBOSE', configvar='general/verbose'
     )
+    misc_options.add_argument(
+        '-q', '--quiet', action='count', default=0,
+        help='Decrease verbosity level of output',
+    )
 
     # Options not associated with command-line arguments
     argparser.add_argument(
@@ -624,7 +633,7 @@ def main():
     printer = PrettyPrinter()
     printer.colorize = site_config.get('general/0/colorize')
     if not restrict_logging():
-        printer.inc_verbosity(site_config.get('general/0/verbose'))
+        printer.adjust_verbosity(calc_verbosity(site_config, options.quiet))
 
     if os.getenv('RFM_GRAYLOG_SERVER'):
         printer.warning(
@@ -697,7 +706,7 @@ def main():
 
     printer.colorize = site_config.get('general/0/colorize')
     if not restrict_logging():
-        printer.inc_verbosity(site_config.get('general/0/verbose'))
+        printer.adjust_verbosity(calc_verbosity(site_config, options.quiet))
 
     try:
         printer.debug('Initializing runtime')

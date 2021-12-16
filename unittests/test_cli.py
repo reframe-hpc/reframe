@@ -646,6 +646,18 @@ def test_verbosity_with_check(run_reframe):
     assert 0 == returncode
 
 
+def test_quiesce_with_check(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        more_options=['-v', '-qqq'],    # Show only errors
+        system='testsys',
+        action='list',
+        checkpath=['unittests/resources/checks/hellocheck.py']
+    )
+    assert stdout == ''
+    assert 'Traceback' not in stderr
+    assert 0 == returncode
+
+
 def test_load_user_modules(run_reframe, user_exec_ctx):
     with rt.module_use('unittests/modules'):
         returncode, stdout, stderr = run_reframe(

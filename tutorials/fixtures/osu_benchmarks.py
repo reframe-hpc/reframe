@@ -3,11 +3,13 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+# rfmdocstart: fixtures-test
 import os
 import reframe as rfm
 import reframe.utility.sanity as sn
 
 
+# rfmdocstart: fetch-osu-benchmarks
 class fetch_osu_benchmarks(rfm.RunOnlyRegressionTest):
     descr = 'Fetch OSU benchmarks'
     version = variable(str, value='5.6.2')
@@ -20,13 +22,17 @@ class fetch_osu_benchmarks(rfm.RunOnlyRegressionTest):
     @sanity_function
     def validate_download(self):
         return sn.assert_eq(self.job.exitcode, 0)
+# rfmdocend: fetch-osu-benchmarks
 
 
+# rfmdocstart: build-osu-benchmarks
 class build_osu_benchmarks(rfm.CompileOnlyRegressionTest):
     descr = 'Build OSU benchmarks'
     build_system = 'Autotools'
     build_prefix = variable(str)
+    # rfmdocstart: osu-benchmarks
     osu_benchmarks = fixture(fetch_osu_benchmarks, scope='session')
+    # rfmdocend: osu-benchmarks
 
     @run_before('compile')
     def prepare_build(self):
@@ -46,6 +52,7 @@ class build_osu_benchmarks(rfm.CompileOnlyRegressionTest):
         # If compilation fails, the test would fail in any case, so nothing to
         # further validate here.
         return True
+# rfmdocend: build-osu-benchmarks
 
 
 class OSUBenchmarkTestBase(rfm.RunOnlyRegressionTest):
@@ -55,7 +62,9 @@ class OSUBenchmarkTestBase(rfm.RunOnlyRegressionTest):
     valid_prog_environs = ['gnu', 'pgi', 'intel']
     num_tasks = 2
     num_tasks_per_node = 1
+    # rfmdocstart: osu-binaries
     osu_binaries = fixture(build_osu_benchmarks, scope='environment')
+    # rfmdocend: osu-binaries
 
     @sanity_function
     def validate_test(self):
@@ -66,6 +75,7 @@ class OSUBenchmarkTestBase(rfm.RunOnlyRegressionTest):
 class osu_latency_test(OSUBenchmarkTestBase):
     descr = 'OSU latency test'
 
+    # rfmdocstart: prepare-run
     @run_before('run')
     def prepare_run(self):
         self.executable = os.path.join(
@@ -74,6 +84,7 @@ class osu_latency_test(OSUBenchmarkTestBase):
             'mpi', 'pt2pt', 'osu_latency'
         )
         self.executable_opts = ['-x', '100', '-i', '1000']
+    # rfmdocend: prepare-run
 
     @performance_function('us')
     def latency(self):
@@ -117,3 +128,4 @@ class osu_allreduce_test(OSUBenchmarkTestBase):
     @performance_function('us')
     def latency(self):
         return sn.extractsingle(r'^8\s+(\S+)', self.stdout, 1, float)
+# rfmdocend: fixtures-test
