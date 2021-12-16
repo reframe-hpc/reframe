@@ -4,21 +4,36 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import reframe as rfm
+from reframe.core.decorators import run_before
 import reframe.utility.sanity as sn
 
 
 @rfm.simple_test
 class DGEMMTest(rfm.RegressionTest):
-    def __init__(self):
-        self.descr = 'DGEMM performance test'
-        self.sourcepath = 'dgemm.c'
-        self.sanity_patterns = self.eval_sanity()
+    descr = 'DGEMM performance test'
+    sourcepath = 'dgemm.c'
+    valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+                            'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn',
+                            'eiger:mc', 'pilatus:mc']
+    num_tasks = 0
+    use_multithreading = False
+    executable_opts = ['6144', '12288', '3072']
+    build_system = 'SingleSource'
+    sys_reference = {
+        'daint:gpu': (300.0, -0.15, None, 'Gflop/s'),
+        'daint:mc': (1040.0, -0.15, None, 'Gflop/s'),
+        'dom:gpu': (300.0, -0.15, None, 'Gflop/s'),
+        'dom:mc': (1040.0, -0.15, None, 'Gflop/s'),
+        'eiger:mc': (3200.0, -0.15, None, 'Gflop/s'),
+        'pilatus:mc': (3200.0, -0.15, None, 'Gflop/s'),
+    }
+    # the perf patterns are automaticaly generated inside sanity
+    perf_patterns = {}
+    maintainers = ['AJ', 'VH']
+    tags = {'benchmark', 'diagnostic', 'craype'}
 
-        # the perf patterns are automaticaly generated inside sanity
-        self.perf_patterns = {}
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn',
-                              'eiger:mc', 'pilatus:mc']
+    @run_after('init')
+    def set_prog_environs(self):
         if self.current_system.name in ['daint', 'dom']:
             self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel']
         elif self.current_system.name in ['arolla', 'tsa']:
@@ -28,24 +43,9 @@ class DGEMMTest(rfm.RegressionTest):
         else:
             self.valid_prog_environs = []
 
-        self.num_tasks = 0
-        self.use_multithreading = False
-        self.executable_opts = ['6144', '12288', '3072']
-        self.build_system = 'SingleSource'
-        self.build_system.cflags = ['-O3']
-        self.sys_reference = {
-            'daint:gpu': (300.0, -0.15, None, 'Gflop/s'),
-            'daint:mc': (1040.0, -0.15, None, 'Gflop/s'),
-            'dom:gpu': (300.0, -0.15, None, 'Gflop/s'),
-            'dom:mc': (1040.0, -0.15, None, 'Gflop/s'),
-            'eiger:mc': (3200.0, -0.15, None, 'Gflop/s'),
-            'pilatus:mc': (3200.0, -0.15, None, 'Gflop/s'),
-        }
-        self.maintainers = ['AJ', 'VH']
-        self.tags = {'benchmark', 'diagnostic', 'craype'}
-
     @run_before('compile')
     def setflags(self):
+        self.build_system.cflags = ['-O3']
         if self.current_environ.name.startswith('PrgEnv-gnu'):
             self.build_system.cflags += ['-fopenmp']
         elif self.current_environ.name.startswith('PrgEnv-intel'):
@@ -84,7 +84,11 @@ class DGEMMTest(rfm.RegressionTest):
                 'OMP_SCHEDULE': 'static'
             }
 
-    @sn.sanity_function
+    @run_before('sanity')
+    def set_sanity(self):
+        self.sanity_patterns = self.eval_sanity()
+
+    @deferrable
     def eval_sanity(self):
         all_tested_nodes = sn.evaluate(sn.extractall(
             r'(?P<hostname>\S+):\s+Time for \d+ DGEMM operations',
