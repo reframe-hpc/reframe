@@ -13,8 +13,8 @@ class DGEMMTest(rfm.RegressionTest):
     descr = 'DGEMM performance test'
     sourcepath = 'dgemm.c'
     valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                            'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn',
-                            'eiger:mc', 'pilatus:mc']
+                     'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn',
+                     'eiger:mc', 'pilatus:mc']
     num_tasks = 0
     use_multithreading = False
     executable_opts = ['6144', '12288', '3072']
