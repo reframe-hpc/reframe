@@ -595,9 +595,8 @@ def _read_timestamps(tasks):
     return begin_stamps, end_stamps
 
 
-def test_concurrency_unlimited(async_runner, make_cases, make_exec_ctx):
+def test_concurrency_unlimited(async_runner, make_cases):
     num_checks = 3
-    # make_exec_ctx(options=max_jobs_opts(num_checks))
 
     runner, monitor = async_runner
     runner.policy._max_jobs = {
@@ -624,10 +623,9 @@ def test_concurrency_unlimited(async_runner, make_cases, make_exec_ctx):
         pytest.skip('the system seems too much loaded.')
 
 
-def test_concurrency_limited(async_runner, make_cases, make_exec_ctx):
+def test_concurrency_limited(async_runner, make_cases):
     # The number of checks must be <= 2*max_jobs.
     num_checks, max_jobs = 5, 3
-    # make_exec_ctx(options=max_jobs_opts(max_jobs))
 
     runner, monitor = async_runner
     runner.policy._max_jobs = {
@@ -669,9 +667,8 @@ def test_concurrency_limited(async_runner, make_cases, make_exec_ctx):
         pytest.skip('the system seems too loaded.')
 
 
-def test_concurrency_none(async_runner, make_cases, make_exec_ctx):
+def test_concurrency_none(async_runner, make_cases):
     num_checks = 3
-    # make_exec_ctx(options=max_jobs_opts(1))
 
     runner, monitor = async_runner
     runner.policy._max_jobs = {
