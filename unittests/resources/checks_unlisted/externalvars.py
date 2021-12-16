@@ -8,7 +8,7 @@ class external_x(rfm.RunOnlyRegressionTest):
     valid_systems = ['*']
     valid_prog_environs = ['*']
     foo = variable(int, value=1)
-    ham = variable(Bool, value=False)
+    ham = variable(typ.Bool, value=False)
     executable = 'echo'
 
     @sanity_function
@@ -23,7 +23,7 @@ class external_x(rfm.RunOnlyRegressionTest):
 class external_y(external_x):
     foolist = variable(typ.List[int])
     bar = variable(type(None), str)
-    baz = variable(Bool, value=True)
+    baz = variable(typ.Bool, value=True)
 
     @sanity_function
     def assert_foolist(self):

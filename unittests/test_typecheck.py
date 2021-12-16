@@ -19,10 +19,8 @@ def assert_type_hierarchy(builtin_type, ctype):
 
 
 def test_bool_type():
-    t = True
-    f = False
-    assert isinstance(t, types.Bool)
-    assert isinstance(f, types.Bool)
+    assert isinstance(True, types.Bool)
+    assert isinstance(False, types.Bool)
     assert not isinstance('foo', types.Bool)
 
     # Test invalid arguments
@@ -33,13 +31,23 @@ def test_bool_type():
     assert types.Bool('True')
     assert types.Bool('YEs')
     assert types.Bool('1')
+    assert types.Bool(True)
     assert not types.Bool('False')
     assert not types.Bool('No')
     assert not types.Bool('0')
+    assert not types.Bool(False)
 
     # Test hash functions
     assert hash(types.Bool('True')) == hash(types.Bool('YES'))
     assert hash(types.Bool('False')) == hash(types.Bool('No'))
+    assert hash(types.Bool(1)) == hash(True)
+    assert hash(types.Bool(0)) == hash(False)
+
+    # Test for equality
+    assert types.Bool(1) == True    # noqa: E712
+    assert True == types.Bool(1)    # noqa: E712
+    assert types.Bool(0) == False   # noqa: E712
+    assert False == types.Bool(0)   # noqa: E712
 
 
 def test_list_type():

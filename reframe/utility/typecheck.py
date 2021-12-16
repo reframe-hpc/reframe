@@ -344,18 +344,19 @@ class _StrType(_SequenceType):
 
 class Bool(metaclass=_BuiltinType):
     _type = bool
+    __slots__ = ('__val',)
 
     def __init__(self, val):
-        self._val = val
+        self.__val = val
 
     def __bool__(self):
-        return self._val
+        return self.__val
 
     def __eq__(self, other):
         return bool(self) == other
 
     def __hash__(self):
-        return hash(self._val)
+        return hash(self.__val)
 
     @classmethod
     def __rfm_cast_str__(cls, s):
