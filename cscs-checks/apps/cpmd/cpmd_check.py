@@ -29,14 +29,10 @@ class CPMDCheck(rfm.RunOnlyRegressionTest):
     }
 
     @run_after('init')
-    def setup_by_system(self):
+    def setup_by_scale(self):
         if self.scale == 'small':
             self.num_tasks = 9
             self.valid_systems += ['dom:gpu']
-        else:
-            self.num_tasks = 16
-
-        if self.scale == 'small':
             self.reference = {
                 'daint:gpu': {
                     'time': (285.5, None, 0.20, 's')
@@ -46,6 +42,7 @@ class CPMDCheck(rfm.RunOnlyRegressionTest):
                 }
             }
         else:
+            self.num_tasks = 16
             self.reference = {
                 'daint:gpu': {
                     'time': (245.0, None, 0.59, 's')
