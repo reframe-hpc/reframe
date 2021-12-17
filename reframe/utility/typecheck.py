@@ -360,7 +360,6 @@ class Bool(metaclass=_BuiltinType):
     to make the conversion to the boolean type.
     '''
 
-
     _type = bool
     __slots__ = ('__val',)
 
