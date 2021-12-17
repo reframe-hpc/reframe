@@ -600,7 +600,7 @@ def test_concurrency_unlimited(async_runner, make_cases):
 
     runner, monitor = async_runner
     runner.policy._max_jobs = {
-        '_rfm_local' : num_checks
+        '_rfm_local': num_checks
     }
     runner.runall(make_cases([SleepCheck(.5) for i in range(num_checks)]))
 
@@ -629,7 +629,7 @@ def test_concurrency_limited(async_runner, make_cases):
 
     runner, monitor = async_runner
     runner.policy._max_jobs = {
-        '_rfm_local' : 3
+        '_rfm_local': 3
     }
     runner.runall(make_cases([SleepCheck(.5) for i in range(num_checks)]))
 
@@ -672,7 +672,7 @@ def test_concurrency_none(async_runner, make_cases):
 
     runner, monitor = async_runner
     runner.policy._max_jobs = {
-        '_rfm_local' : 1
+        '_rfm_local': 1
     }
     runner.runall(make_cases([SleepCheck(.5) for i in range(num_checks)]))
 

@@ -507,7 +507,7 @@ class Runner:
 
         self._policy.exit()
         self._printer.separator('short single line',
-                               'all spawned checks have finished\n')
+                                'all spawned checks have finished\n')
 
 
 class ExecutionPolicy(abc.ABC):
