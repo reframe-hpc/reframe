@@ -233,40 +233,40 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
 ######################### Stages of the pipeline #########################
 #
-# Each test starts from the `wait` stage and in the last step of the
+# Each test starts from the `startup` stage and in the last step of the
 # policy there a loop where all tests are bumped to the next phase
 # if possible.
 #
-#           +--------------------[ wait ]
+#           +-------------------[ startup ]
 #           |                        |
 #           |               if all deps finished and
 #           |                 test is not RunOnly
 #           |                        |
 #           |                        ↓
-#           |               [ ready_to_compile ]
+#           |                    [ setup ]
 #           |                        |
 #           |              if there are available
 #           |                      slots
 #  if all deps finished and          |
 #     test is RunOnly                ↓
-#           |                  [ compiling ]--------------+
+#           |                   [ compile ]---------------+
 #           |                        |                    |
 #           |         if compilation has finished and     |
 #           |            test is not CompileOnly          |
 #           |                        |                    |
 #           |                        ↓                    |
-#           +--------------->[ ready_to_run ]             |
+#           +---------------->[ compile_wait ]            |
 #                                    |                    |
 #                          if there are available         |
 #                                  slots                  |
 #                                    |      if compilation has finished and
 #                                    ↓           test is CompileOnly
-#                               [ running ]               |
+#                                 [ run ]                 |
 #                                    |                    |
 #                          if job has finished            |
 #   tests can exit the               |                    |
 #  pipeline at any point             ↓                    |
-#     if they fail             [ completed ]<-------------+
+#     if they fail             [ run_wait ]<--------------+
 #          :                         |
 #          :              if sanity and performance
 #          |                      succeed
@@ -299,7 +299,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
         # Job limit per partition
         self._max_jobs = {
-            '_rfm_local': rt.runtime().get_option(f'systems/0/rfm_max_jobs')
+            '_rfm_local': rt.runtime().get_option(f'systems/0/max_local_jobs')
         }
 
         self.task_listeners.append(self)
@@ -327,7 +327,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             try:
                 self._poll_tasks()
                 num_running = sum(
-                    1 if t.policy_stage in ('running', 'compiling') else 0
+                    1 if t._current_stage in ('run', 'compile') else 0
                     for t in self._current_tasks
                 )
                 self.advance_all(self._current_tasks)
@@ -342,18 +342,18 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         for part in self._partitions:
             jobs = []
             for t in self._scheduler_tasks[part.fullname]:
-                if t.policy_stage == 'compiling':
+                if t._current_stage == 'compile':
                     jobs.append(t.check.build_job)
-                elif t.policy_stage == 'running':
+                elif t._current_stage == 'run':
                     jobs.append(t.check.job)
 
             part.scheduler.poll(*jobs)
 
         jobs = []
         for t in self._scheduler_tasks['_rfm_local']:
-            if t.policy_stage == 'compiling':
+            if t._current_stage == 'compile':
                 jobs.append(t.check.build_job)
-            elif t.policy_stage == 'running':
+            elif t._current_stage == 'run':
                 jobs.append(t.check.job)
 
         self.local_scheduler.poll(*jobs)
@@ -365,7 +365,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         getlogger().debug2(f"Current tests: {len(tasks)}")
         # progress might remove the tasks that retire or fail
         for t in list(tasks):
-            bump_state = getattr(self, f'advance_{t.policy_stage}')
+            bump_state = getattr(self, f'advance_{t._current_stage}')
             num_progressed += bump_state(t)
             t_elapsed = time.time() - t_init
             if timeout and t_elapsed > timeout and num_progressed:
@@ -373,7 +373,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
         getlogger().debug2(f"Bumped {num_progressed} test(s).")
 
-    def advance_wait(self, task):
+    def advance_startup(self, task):
         if self.deps_skipped(task):
             try:
                 raise SkipTestError('skipped due to skipped dependencies')
@@ -399,16 +399,13 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             if isinstance(task.check, RunOnlyRegressionTest):
                 try:
                     task.compile()
+                    task.compile_complete()
                     task.compile_wait()
                 except TaskExit:
                     # Run and run_wait are no-ops for
                     # CompileOnlyRegressionTest. This shouldn't fail.
                     self._current_tasks.remove(task)
                     return 1
-
-                task.policy_stage = 'ready_to_run'
-            else:
-                task.policy_stage = 'ready_to_compile'
 
             return 1
         elif self.deps_failed(task):
@@ -420,7 +417,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             # Not all dependencies have finished yet
             return 0
 
-    def advance_ready_to_compile(self, task):
+    def advance_setup(self, task):
         partname = (
             '_rfm_local' if task.check.local or task.check.build_locally
             else task.check.current_partition.fullname
@@ -428,7 +425,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         if len(self._scheduler_tasks[partname]) < self._max_jobs[partname]:
             try:
                 task.compile()
-                task.policy_stage = 'compiling'
                 self._scheduler_tasks[partname].add(task)
             except TaskExit:
                 self._current_tasks.remove(task)
@@ -437,7 +433,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
         return 0
 
-    def advance_compiling(self, task):
+    def advance_compile(self, task):
         partname = (
             '_rfm_local' if task.check.local or task.check.build_locally
             else task.check.current_partition.fullname
@@ -450,16 +446,13 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 if isinstance(task.check, CompileOnlyRegressionTest):
                     try:
                         task.run()
+                        task.run_complete()
                         task.run_wait()
                     except TaskExit:
                         # Run and run_wait are no-ops for
                         # CompileOnlyRegressionTest. This shouldn't fail.
                         self._current_tasks.remove(task)
                         return 1
-
-                    task.policy_stage = 'completed'
-                else:
-                    task.policy_stage = 'ready_to_run'
 
                 return 1
             else:
@@ -470,7 +463,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             self._current_tasks.remove(task)
             return 1
 
-    def advance_ready_to_run(self, task):
+    def advance_compile_wait(self, task):
         partname = (
             '_rfm_local' if task.check.local
             else task.check.current_partition.fullname
@@ -478,7 +471,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         if len(self._scheduler_tasks[partname]) < self._max_jobs[partname]:
             try:
                 task.run()
-                task.policy_stage = 'running'
                 self._scheduler_tasks[partname].add(task)
             except TaskExit:
                 self._current_tasks.remove(task)
@@ -487,7 +479,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
         return 0
 
-    def advance_running(self, task):
+    def advance_run(self, task):
         partname = (
             '_rfm_local' if task.check.local
             else task.check.current_partition.fullname
@@ -497,7 +489,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 task.run_wait()
                 self._scheduler_tasks[partname].remove(task)
 
-                task.policy_stage = 'completed'
                 return 1
             else:
                 return 0
@@ -507,7 +498,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             self._current_tasks.remove(task)
             return 1
 
-    def advance_completed(self, task):
+    def advance_run_wait(self, task):
         try:
             if not self.skip_sanity_check:
                 task.sanity()

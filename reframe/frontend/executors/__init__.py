@@ -128,7 +128,6 @@ class RegressionTask:
         self._case = case
         self._failed_stage = None
         self._current_stage = 'startup'
-        self.policy_stage = 'wait'
         self._exc_info = (None, None, None)
         self._listeners = list(listeners)
         self._skipped = False
@@ -217,6 +216,10 @@ class RegressionTask:
                 not self._aborted and not self._skipped)
 
     @property
+    def current_stage(self):
+        return self._current_stage
+
+    @property
     def failed_stage(self):
         return self._failed_stage
 
@@ -249,7 +252,11 @@ class RegressionTask:
             # we don't want to masquerade the self argument of our containing
             # function
             def __enter__(this):
-                if fn.__name__ != 'poll':
+                if (
+                    fn.__name__ != 'poll' and
+                    fn.__name__ != 'run_complete' and
+                    fn.__name__ != 'compile_complete'
+                ):
                     stage = self._current_stage
                     self._timestamps[f'{stage}_start'] = time.time()
 
@@ -258,7 +265,11 @@ class RegressionTask:
                 self._timestamps[f'{stage}_finish'] = time.time()
                 self._timestamps['pipeline_end'] = time.time()
 
-        if fn.__name__ != 'poll':
+        if (
+            fn.__name__ != 'poll' and
+            fn.__name__ != 'run_complete' and
+            fn.__name__ != 'compile_complete'
+        ):
             self._current_stage = fn.__name__
 
         try:
