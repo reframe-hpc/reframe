@@ -9,8 +9,8 @@
 
 __all__ = [
     'CompileOnlyRegressionTest', 'RegressionTest', 'RunOnlyRegressionTest',
-    'DEPEND_BY_ENV', 'DEPEND_EXACT', 'DEPEND_FULLY', 'final', 'RegressionMixin',
-    'make_test'
+    'DEPEND_BY_ENV', 'DEPEND_EXACT', 'DEPEND_FULLY', 'final',
+    'RegressionMixin', 'make_test'
 ]
 
 
@@ -1034,7 +1034,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     def __setattr__(self, name, value):
         if name == 'name':
             user_deprecation_warning(
-                'setting the name of the test is deprecated; see for XXX for details',
+                "setting the name of the test is deprecated; "
+                "see the documentation of the 'name' attribute for details",
                 from_version='3.10.0'
             )
             self._rfm_unique_name = value

@@ -722,8 +722,9 @@ def assert_interrupted_run(runner):
             assert t.exc_info[0] == AbortTaskError
 
 
-def test_kbd_interrupt_in_wait_with_concurrency(async_runner, make_cases,
-                                                make_sleep_check, make_exec_ctx):
+def test_kbd_interrupt_in_wait_with_concurrency(
+        async_runner, make_cases, make_sleep_check, make_exec_ctx
+):
     make_exec_ctx(options=max_jobs_opts(4))
     runner, _ = async_runner
     with pytest.raises(KeyboardInterrupt):

@@ -486,7 +486,8 @@ class Runner:
         self._printer.reset_progress(len(testcases))
         last_check = None
         for t in testcases:
-            if last_check is None or last_check.unique_name != t.check.unique_name:
+            if (last_check is None or
+                last_check.unique_name != t.check.unique_name):
                 if last_check is not None:
                     print_separator(last_check, 'finished processing')
                     self._printer.info('')

@@ -70,7 +70,8 @@ class TestStats:
                     environ_name = t.check.current_environ.name
 
                 # Overwrite entry from previous run if available
-                messages[f"{t.check.unique_name}:{partition_name}:{environ_name}"] = (
+                key = f"{t.check.unique_name}:{partition_name}:{environ_name}"
+                messages[key] = (
                     f"  * Test {t.check.info()} was retried {run} time(s) and "
                     f"{'failed' if t.failed else 'passed'}."
                 )
@@ -96,7 +97,8 @@ class TestStats:
                     'build_stderr': None,
                     'build_stdout': None,
                     'dependencies_actual': [
-                        (d.check.unique_name, d.partition.fullname, d.environ.name)
+                        (d.check.unique_name,
+                         d.partition.fullname, d.environ.name)
                         for d in t.testcase.deps
                     ],
                     'dependencies_conceptual': [

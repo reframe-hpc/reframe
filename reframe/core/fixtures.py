@@ -662,7 +662,8 @@ class FixtureSpace(namespaces.Namespace):
             prog_envs = tuple(obj.valid_prog_environs)
         except AttributeError:
             raise ReframeSyntaxError(
-                f"'valid_prog_environs' is undefined in test {obj.unique_name!r}"
+                f"'valid_prog_environs' is undefined "
+                f"in test {obj.unique_name!r}"
             )
         else:
             if '*' in prog_envs:
