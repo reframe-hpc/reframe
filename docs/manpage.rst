@@ -422,9 +422,24 @@ Options controlling ReFrame execution
    - Sequence types: ``-S seqvar=1,2,3,4``
    - Mapping types: ``-S mapvar=a:1,b:2,c:3``
 
+   For boolean variables that need to be set using this command line option, the :class:`~reframe.utility.typecheck.Bool` type should be used:
+
+   .. code-block:: python
+
+      import reframe.utility.typecheck as type
+
+      @rfm.simple_test
+      class my_test(rfm.RegressionTest):
+          my_bool = variable(type.Bool, value=True)
+
+   The following values can be passed when using the :class:`~reframe.utility.typecheck.Bool` type:
+
+   - ``True``, ``Yes``, and ``1`` are converted to :class:`True`
+   - ``False``, ``No``, and ``0`` are converted to :class:`False`
+   - Using any other string will raise a :py:class:`TypeError`
+
    Conversions to arbitrary objects are also supported.
    See :class:`~reframe.utility.typecheck.ConvertibleType` for more details.
-
 
    The optional ``TEST.`` prefix refers to the test class name, *not* the test name.
 
@@ -471,6 +486,10 @@ Options controlling ReFrame execution
             num_tasks = required
 
    .. versionadded:: 3.8.0
+
+   .. versionchanged:: 3.9.3
+
+      Document usage of the :class:`~reframe.utility.typecheck.Bool` type.
 
 .. option:: --skip-performance-check
 

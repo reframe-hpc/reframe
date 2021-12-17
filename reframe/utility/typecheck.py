@@ -343,6 +343,24 @@ class _StrType(_SequenceType):
 
 
 class Bool(metaclass=_BuiltinType):
+    '''A class representing a boolean type.
+
+    This is a class that allows conversions from :class:`str` and :class:`int`
+    instances to a boolean:
+
+    - Strings ``Yes``, ``True`, ``1`` and integers ``!= 0`` are
+      converted to :class:`True`.
+    - Strings ``No``, ``False`, ``0`` and integer ``0`` are
+      converted to :class:`True`.
+    - :class:`True` and :class:`False` represent the corresponding
+      :class:`bool`.
+    - All other strings values will raise a :class:`TypeError`.
+
+    For the string values listed above, a case insensitive comparison is made,
+    to make the conversion to the boolean type.
+    '''
+
+
     _type = bool
     __slots__ = ('__val',)
 
