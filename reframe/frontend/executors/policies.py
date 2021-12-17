@@ -231,6 +231,49 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         _cleanup_all(self._retired_tasks, not self.keep_stage_files)
 
 
+######################### Stages of the pipeline #########################
+#
+# Each test starts from the `wait` stage and in the last step of the
+# policy there a loop where all tests are bumped to the next phase
+# if possible.
+#
+#           +--------------------[ wait ]
+#           |                        |
+#           |               if all deps finished and
+#           |                 test is not RunOnly
+#           |                        |
+#           |                        ↓
+#           |               [ ready_to_compile ]
+#           |                        |
+#           |              if there are available
+#           |                      slots
+#  if all deps finished and          |
+#     test is RunOnly                ↓
+#           |                  [ compiling ]--------------+
+#           |                        |                    |
+#           |         if compilation has finished and     |
+#           |            test is not CompileOnly          |
+#           |                        |                    |
+#           |                        ↓                    |
+#           +--------------->[ ready_to_run ]             |
+#                                    |                    |
+#                          if there are available         |
+#                                  slots                  |
+#                                    |      if compilation has finished and
+#                                    ↓           test is CompileOnly
+#                               [ running ]               |
+#                                    |                    |
+#                          if job has finished            |
+#   tests can exit the               |                    |
+#  pipeline at any point             ↓                    |
+#     if they fail             [ completed ]<-------------+
+#          :                         |
+#          :              if sanity and performance
+#          |                      succeed
+#          |                         |
+#          ↓                         ↓
+#      ( failed )               ( retired )
+
 class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def __init__(self):
         super().__init__()
@@ -274,7 +317,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._task_index[case] = task
         self.stats.add_task(task)
         getlogger().debug2(
-            f'==> added {check.name} on {partition.fullname} '
+            f'Added {check.name} on {partition.fullname} '
             f'using {environ.name}'
         )
         self._current_tasks.add(task)
@@ -319,6 +362,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         t_init = time.time()
         num_progressed = 0
 
+        getlogger().debug2(f"Current tests: {len(tasks)}")
         # progress might remove the tasks that retire or fail
         for t in list(tasks):
             bump_state = getattr(self, f'advance_{t.policy_stage}')
@@ -326,6 +370,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             t_elapsed = time.time() - t_init
             if timeout and t_elapsed > timeout and num_progressed:
                 break
+
+        getlogger().debug2(f"Bumped {num_progressed} test(s).")
 
     def advance_wait(self, task):
         if self.deps_skipped(task):
