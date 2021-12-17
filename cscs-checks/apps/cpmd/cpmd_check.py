@@ -61,7 +61,7 @@ class CPMDCheck(rfm.RunOnlyRegressionTest):
         with contextlib.suppress(KeyError):
             self.reference = {
                 pname: {
-                    'perf': self.allref[self.num_nodes][arch][self.benchmark]
+                    'perf': self.allref[self.num_tasks][arch][self.benchmark]
                 }
             }
 
