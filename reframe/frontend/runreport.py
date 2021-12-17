@@ -13,7 +13,7 @@ import re
 import reframe as rfm
 import reframe.core.exceptions as errors
 import reframe.utility.jsonext as jsonext
-import reframe.utility.versioning as versioning
+
 
 # The schema data version
 # Major version bumps are expected to break the validation of previous schemas

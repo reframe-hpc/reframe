@@ -12,7 +12,6 @@ import socket
 import sys
 import time
 
-import reframe as rfm
 import reframe.core.runtime as rt
 import reframe.frontend.dependencies as dependencies
 import reframe.frontend.executors as executors
