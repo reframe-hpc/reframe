@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import contextlib
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -27,25 +28,40 @@ class CPMDCheck(rfm.RunOnlyRegressionTest):
             'num_switches': 1
         }
     }
+    allref = {
+        '9': {
+            'p100': {
+                'time': (285.5, None, 0.20, 's')
+            },
+        },
+        '16': {
+            'p100': {
+                'time': (245.0, None, 0.59, 's')
+            }
+        }
+    }
 
     @run_after('init')
     def setup_by_scale(self):
         if self.scale == 'small':
-            self.num_tasks = 9
             self.valid_systems += ['dom:gpu']
-            self.reference = {
-                'daint:gpu': {
-                    'time': (285.5, None, 0.20, 's')
-                },
-                'dom:gpu': {
-                    'time': (332.0, None, 0.15, 's')
-                }
-            }
+            self.num_tasks = 9
         else:
             self.num_tasks = 16
+
+    @run_before('performance')
+    def set_perf_reference(self):
+        proc = self.current_partition.processor
+        pname = self.current_partition.fullname
+        if pname in ('daint:gpu', 'dom:gpu'):
+            arch = 'p100'
+        else:
+            arch = proc.arch
+
+        with contextlib.suppress(KeyError):
             self.reference = {
-                'daint:gpu': {
-                    'time': (245.0, None, 0.59, 's')
+                pname: {
+                    'perf': self.allref[self.num_nodes][arch][self.benchmark]
                 }
             }
 
