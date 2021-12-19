@@ -98,10 +98,11 @@ class TypedField(Field):
                     return
 
             # Conversion failed
+            typenames = [t.__name__ for t in self._types]
             raise TypeError(
                 f'failed to set field {self._name!r}: '
                 f'could not convert to any of the supported types: '
-                f'{self._types}'
+                f'{typenames}'
             )
         else:
             super().__set__(obj, value)
