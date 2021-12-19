@@ -343,50 +343,32 @@ class _StrType(_SequenceType):
 
 
 class Bool(metaclass=_BuiltinType):
-    '''A class representing a boolean type.
+    '''A boolean type accepting implicit conversions from strings.
 
-    This is a class that allows conversions from :class:`str` and :class:`int`
-    instances to a boolean:
+    This type represents a boolean value but allows implicit conversions from
+    :class:`str`. More specifically, the following conversions are supported:
 
-    - Strings ``Yes``, ``True`, ``1`` and integers ``!= 0`` are
-      converted to :class:`True`.
-    - Strings ``No``, ``False`, ``0`` and integer ``0`` are
-      converted to :class:`True`.
-    - :class:`True` and :class:`False` represent the corresponding
-      :class:`bool`.
-    - All other strings values will raise a :class:`TypeError`.
+    - The strings ``'yes'``, ``'true'`` and ``'1'`` are converted to ``True``.
+    - The strings ``'no'``, ``'false'`` and ``'0'`` are converted to
+      ``False``.
 
-    For the string values listed above, a case insensitive comparison is made,
-    to make the conversion to the boolean type.
+    The built-in :class:`bool` type is registered as a subclass of this type.
+
+    Boolean test variables that are meant to be set properly from the command
+    line must be declared of this type and not :class:`bool`.
+
     '''
 
     _type = bool
-    __slots__ = ('__val',)
-
-    def __init__(self, val):
-        self.__val = val
-
-    def __bool__(self):
-        return self.__val
-
-    def __eq__(self, other):
-        return bool(self) == other
-
-    def __hash__(self):
-        return hash(self.__val)
 
     @classmethod
     def __rfm_cast_str__(cls, s):
-        if s.lower() in {'1', 'true', 'yes'}:
-            return Bool(True)
-        elif s.lower() in {'0', 'false', 'no'}:
-            return Bool(False)
+        if s in ('true', 'yes', '1'):
+            return True
+        elif s in ('false', 'no', '0'):
+            return False
 
-        raise TypeError(f'cannot convert {s!r} to Bool')
-
-    @classmethod
-    def __rfm_cast_int__(cls, i):
-        return Bool(True) if i != 0 else Bool(False)
+        raise TypeError(f'cannot convert {s!r} to bool')
 
 
 class Dict(metaclass=_MappingType):

@@ -416,27 +416,22 @@ Options controlling ReFrame execution
    ReFrame will try to convert ``VAL`` to the type of the variable.
    If it does not succeed, a warning will be issued and the variable will not be set.
    ``VAL`` can take the special value ``@none`` to denote that the variable must be set to :obj:`None`.
+   Boolean variables can be set in one of the following ways:
+
+   - By passing ``true``, ``yes`` or ``1`` to set them to :class:`True`.
+   - By passing ``false``, ``no`` or ``0`` to set them to :class:`False`.
+
+   Passing any other value will issue an error.
+
+   .. note::
+
+      Boolean variables in a test must be declared of type :class:`~reframe.utility.typecheck.Bool` and *not* of the built-in :class:`bool` type, in order to adhere to the aforementioned behaviour.
+      If a variable is defined as :class:`bool` there is no way you can set it to :obj:`False`, since all strings in Python evaluate to :obj:`True`.
 
    Sequence and mapping types can also be set from the command line by using the following syntax:
 
    - Sequence types: ``-S seqvar=1,2,3,4``
    - Mapping types: ``-S mapvar=a:1,b:2,c:3``
-
-   For boolean variables that need to be set using this command line option, the :class:`~reframe.utility.typecheck.Bool` type should be used:
-
-   .. code-block:: python
-
-      import reframe.utility.typecheck as type
-
-      @rfm.simple_test
-      class my_test(rfm.RegressionTest):
-          my_bool = variable(type.Bool, value=True)
-
-   The following values can be passed when using the :class:`~reframe.utility.typecheck.Bool` type:
-
-   - ``True``, ``Yes``, and ``1`` are converted to :class:`True`
-   - ``False``, ``No``, and ``0`` are converted to :class:`False`
-   - Using any other string will raise a :py:class:`TypeError`
 
    Conversions to arbitrary objects are also supported.
    See :class:`~reframe.utility.typecheck.ConvertibleType` for more details.
@@ -489,7 +484,8 @@ Options controlling ReFrame execution
 
    .. versionchanged:: 3.9.3
 
-      Document usage of the :class:`~reframe.utility.typecheck.Bool` type.
+      Proper handling of boolean variables.
+
 
 .. option:: --skip-performance-check
 
