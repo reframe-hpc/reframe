@@ -291,7 +291,7 @@ site_configuration = {
                         },
                         {
                             'type': 'Singularity',
-                            'modules': ['singularity/3.6.4-daint']
+                            'modules': ['singularity/3.8.0-daint']
                         }
                     ],
                     'modules': ['daint-gpu'],
@@ -327,7 +327,7 @@ site_configuration = {
                         },
                         {
                             'type': 'Singularity',
-                            'modules': ['singularity/3.6.4-daint']
+                            'modules': ['singularity/3.8.0-daint']
                         }
                     ],
                     'modules': ['daint-mc'],
