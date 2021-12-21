@@ -20,6 +20,16 @@ from reframe.frontend.executors import (ExecutionPolicy, RegressionTask,
                                         TaskEventListener, ABORT_REASONS)
 
 
+def _get_partition_name(task, phase='run'):
+    if (
+        task.check.local or
+        phase == 'build' and task.check.build_locally
+    ):
+        return '_rfm_local'
+    else:
+        return task.check.current_partition.fullname
+
+
 def _cleanup_all(tasks, *args, **kwargs):
     for task in tasks:
         if task.ref_count == 0:
@@ -419,10 +429,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             return 0
 
     def advance_ready_compile(self, task):
-        partname = (
-            '_rfm_local' if task.check.local or task.check.build_locally
-            else task.check.current_partition.fullname
-        )
+        partname = _get_partition_name(task, phase='build')
         if len(self._scheduler_tasks[partname]) < self._max_jobs[partname]:
             if self._execute_stage(task, [task.compile]):
                 self._scheduler_tasks[partname].add(task)
@@ -433,10 +440,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         return 0
 
     def advance_compiling(self, task):
-        partname = (
-            '_rfm_local' if task.check.local or task.check.build_locally
-            else task.check.current_partition.fullname
-        )
+        partname = _get_partition_name(task, phase='build')
         try:
             if task.compile_complete():
                 task.compile_wait()
@@ -459,10 +463,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             return 1
 
     def advance_ready_run(self, task):
-        partname = (
-            '_rfm_local' if task.check.local
-            else task.check.current_partition.fullname
-        )
+        partname = _get_partition_name(task, phase='run')
         if len(self._scheduler_tasks[partname]) < self._max_jobs[partname]:
             if self._execute_stage(task, [task.run]):
                 self._scheduler_tasks[partname].add(task)
@@ -473,10 +474,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         return 0
 
     def advance_running(self, task):
-        partname = (
-            '_rfm_local' if task.check.local
-            else task.check.current_partition.fullname
-        )
+        partname = _get_partition_name(task, phase='run')
         try:
             if task.run_complete():
                 if self._execute_stage(task, [task.run_wait]):

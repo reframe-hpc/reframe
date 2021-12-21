@@ -262,11 +262,9 @@ class RegressionTask:
             # we don't want to masquerade the self argument of our containing
             # function
             def __enter__(this):
-                if (
-                    fn.__name__ != 'poll' and
-                    fn.__name__ != 'run_complete' and
-                    fn.__name__ != 'compile_complete'
-                ):
+                if fn.__name__ in ('poll',
+                                   'run_complete',
+                                   'compile_complete'):
                     stage = self._current_stage
                     self._timestamps[f'{stage}_start'] = time.time()
 
@@ -275,11 +273,7 @@ class RegressionTask:
                 self._timestamps[f'{stage}_finish'] = time.time()
                 self._timestamps['pipeline_end'] = time.time()
 
-        if (
-            fn.__name__ != 'poll' and
-            fn.__name__ != 'run_complete' and
-            fn.__name__ != 'compile_complete'
-        ):
+        if fn.__name__ in ('poll', 'run_complete', 'compile_complete'):
             self._current_stage = fn.__name__
 
         try:
