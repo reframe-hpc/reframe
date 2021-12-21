@@ -257,7 +257,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
 #                          if job has finished            |
 #   tests can exit the               |                    |
 #  pipeline at any point             v                    |
-#     if they fail             [ completed ]<-------------+
+#     if they fail             [ completing ]<------------+
 #          :                         |
 #          :              if sanity and performance
 #          |                      succeed
@@ -491,7 +491,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             self._current_tasks.remove(task)
             return 1
 
-    def advance_completed(self, task):
+    def advance_completing(self, task):
         try:
             if not self.skip_sanity_check:
                 task.sanity()

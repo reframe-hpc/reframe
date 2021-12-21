@@ -223,9 +223,9 @@ class RegressionTask:
             'compile': 'compiling',
             'compile_wait': 'ready_run',
             'run': 'running',
-            'run_wait': 'completed',
+            'run_wait': 'completing',
             'finalize': 'retired',
-            'cleanup': 'finished',
+            'cleanup': 'completed',
         }
         return states[self._current_stage]
 
