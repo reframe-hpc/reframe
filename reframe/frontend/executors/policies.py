@@ -257,7 +257,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
 #                          if job has finished            |
 #   tests can exit the               |                    |
 #  pipeline at any point             v                    |
-#     if they fail             [ completed ]<--------------+
+#     if they fail             [ completed ]<-------------+
 #          :                         |
 #          :              if sanity and performance
 #          |                      succeed
@@ -319,7 +319,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             try:
                 self._poll_tasks()
                 num_running = sum(
-                    1 if t._current_stage in ('run', 'compile') else 0
+                    1 if t.policy_state in ('running', 'compiling') else 0
                     for t in self._current_tasks
                 )
                 self.advance_all(self._current_tasks, self._policy_timeout)
@@ -336,9 +336,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         for partname, sched in pairs:
             jobs = []
             for t in self._scheduler_tasks[partname]:
-                if t._current_stage == 'compile':
+                if t.policy_state == 'compiling':
                     jobs.append(t.check.build_job)
-                elif t._current_stage == 'run':
+                elif t.policy_state == 'running':
                     jobs.append(t.check.job)
 
             sched.poll(*jobs)
@@ -366,7 +366,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         getlogger().debug2(f"Current tests: {len(tasks)}")
         # progress might remove the tasks that retire or fail
         for t in list(tasks):
-            bump_state = getattr(self, f'advance_{t._current_stage}')
+            bump_state = getattr(self, f'advance_{t.policy_state}')
             num_progressed += bump_state(t)
             t_elapsed = time.time() - t_init
             if timeout and t_elapsed > timeout and num_progressed:
@@ -415,7 +415,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             getlogger().debug2(f'{task.check.info()} waiting for dependencies')
             return 0
 
-    def advance_setup(self, task):
+    def advance_ready_compile(self, task):
         partname = (
             '_rfm_local' if task.check.local or task.check.build_locally
             else task.check.current_partition.fullname
@@ -429,7 +429,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         getlogger().debug2(f'Hit the max job limit of {partname}')
         return 0
 
-    def advance_compile(self, task):
+    def advance_compiling(self, task):
         partname = (
             '_rfm_local' if task.check.local or task.check.build_locally
             else task.check.current_partition.fullname
@@ -453,7 +453,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             self._current_tasks.remove(task)
             return 1
 
-    def advance_compile_wait(self, task):
+    def advance_ready_run(self, task):
         partname = (
             '_rfm_local' if task.check.local
             else task.check.current_partition.fullname
@@ -467,7 +467,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         getlogger().debug2(f'Hit the max job limit of {partname}')
         return 0
 
-    def advance_run(self, task):
+    def advance_running(self, task):
         partname = (
             '_rfm_local' if task.check.local
             else task.check.current_partition.fullname
@@ -486,7 +486,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             self._current_tasks.remove(task)
             return 1
 
-    def advance_run_wait(self, task):
+    def advance_completed(self, task):
         try:
             if not self.skip_sanity_check:
                 task.sanity()

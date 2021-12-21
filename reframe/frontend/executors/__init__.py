@@ -216,8 +216,18 @@ class RegressionTask:
                 not self._aborted and not self._skipped)
 
     @property
-    def current_stage(self):
-        return self._current_stage
+    def policy_state(self):
+        states = {
+            'startup': 'startup',
+            'setup': 'ready_compile',
+            'compile': 'compiling',
+            'compile_wait': 'ready_run',
+            'run': 'running',
+            'run_wait': 'completed',
+            'finalize': 'retired',
+            'cleanup': 'finished',
+        }
+        return states[self._current_stage]
 
     @property
     def failed_stage(self):
