@@ -20,15 +20,6 @@ from reframe.frontend.executors import (ExecutionPolicy, RegressionTask,
                                         TaskEventListener, ABORT_REASONS)
 
 
-def countall(d):
-    res = 0
-    for (q1, q2) in d.values():
-        res += len(q1)
-        res += len(q2)
-
-    return res
-
-
 def _cleanup_all(tasks, *args, **kwargs):
     for task in tasks:
         if task.ref_count == 0:
@@ -242,36 +233,36 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
 #           |               if all deps finished and
 #           |                 test is not RunOnly
 #           |                        |
-#           |                        ↓
-#           |                    [ setup ]
+#           |                        v
+#           |                [ ready_compile ]
 #           |                        |
 #           |              if there are available
 #           |                      slots
 #  if all deps finished and          |
-#     test is RunOnly                ↓
-#           |                   [ compile ]---------------+
+#     test is RunOnly                v
+#           |                  [ compiling ]--------------+
 #           |                        |                    |
 #           |         if compilation has finished and     |
 #           |            test is not CompileOnly          |
 #           |                        |                    |
-#           |                        ↓                    |
-#           +---------------->[ compile_wait ]            |
+#           |                        v                    |
+#           +----------------->[ ready_run ]              |
 #                                    |                    |
 #                          if there are available         |
 #                                  slots                  |
 #                                    |      if compilation has finished and
-#                                    ↓           test is CompileOnly
-#                                 [ run ]                 |
+#                                    v           test is CompileOnly
+#                               [ running ]               |
 #                                    |                    |
 #                          if job has finished            |
 #   tests can exit the               |                    |
-#  pipeline at any point             ↓                    |
-#     if they fail             [ run_wait ]<--------------+
+#  pipeline at any point             v                    |
+#     if they fail             [ completed ]<--------------+
 #          :                         |
 #          :              if sanity and performance
 #          |                      succeed
 #          |                         |
-#          ↓                         ↓
+#          v                         v
 #      ( failed )               ( retired )
 
 class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
