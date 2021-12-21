@@ -416,6 +416,17 @@ Options controlling ReFrame execution
    ReFrame will try to convert ``VAL`` to the type of the variable.
    If it does not succeed, a warning will be issued and the variable will not be set.
    ``VAL`` can take the special value ``@none`` to denote that the variable must be set to :obj:`None`.
+   Boolean variables can be set in one of the following ways:
+
+   - By passing ``true``, ``yes`` or ``1`` to set them to :class:`True`.
+   - By passing ``false``, ``no`` or ``0`` to set them to :class:`False`.
+
+   Passing any other value will issue an error.
+
+   .. note::
+
+      Boolean variables in a test must be declared of type :class:`~reframe.utility.typecheck.Bool` and *not* of the built-in :class:`bool` type, in order to adhere to the aforementioned behaviour.
+      If a variable is defined as :class:`bool` there is no way you can set it to :obj:`False`, since all strings in Python evaluate to :obj:`True`.
 
    Sequence and mapping types can also be set from the command line by using the following syntax:
 
@@ -424,7 +435,6 @@ Options controlling ReFrame execution
 
    Conversions to arbitrary objects are also supported.
    See :class:`~reframe.utility.typecheck.ConvertibleType` for more details.
-
 
    The optional ``TEST.`` prefix refers to the test class name, *not* the test name.
 
@@ -471,6 +481,11 @@ Options controlling ReFrame execution
             num_tasks = required
 
    .. versionadded:: 3.8.0
+
+   .. versionchanged:: 3.9.3
+
+      Proper handling of boolean variables.
+
 
 .. option:: --skip-performance-check
 

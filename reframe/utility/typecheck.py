@@ -342,6 +342,35 @@ class _StrType(_SequenceType):
         return s
 
 
+class Bool(metaclass=_BuiltinType):
+    '''A boolean type accepting implicit conversions from strings.
+
+    This type represents a boolean value but allows implicit conversions from
+    :class:`str`. More specifically, the following conversions are supported:
+
+    - The strings ``'yes'``, ``'true'`` and ``'1'`` are converted to ``True``.
+    - The strings ``'no'``, ``'false'`` and ``'0'`` are converted to
+      ``False``.
+
+    The built-in :class:`bool` type is registered as a subclass of this type.
+
+    Boolean test variables that are meant to be set properly from the command
+    line must be declared of this type and not :class:`bool`.
+
+    '''
+
+    _type = bool
+
+    @classmethod
+    def __rfm_cast_str__(cls, s):
+        if s in ('true', 'yes', '1'):
+            return True
+        elif s in ('false', 'no', '0'):
+            return False
+
+        raise TypeError(f'cannot convert {s!r} to bool')
+
+
 class Dict(metaclass=_MappingType):
     _type = dict
 
