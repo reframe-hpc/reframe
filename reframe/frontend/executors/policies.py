@@ -232,50 +232,9 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         _cleanup_all(self._retired_tasks, not self.keep_stage_files)
 
 
-######################### Stages of the pipeline #########################
-#
-# Each test starts from the `startup` stage and in the last step of the
-# policy there a loop where all tests are bumped to the next phase
-# if possible.
-#
-#           +-------------------[ startup ]
-#           |                        |
-#           |               if all deps finished and
-#           |                 test is not RunOnly
-#           |                        |
-#           |                        v
-#           |                [ ready_compile ]
-#           |                        |
-#           |              if there are available
-#           |                      slots
-#  if all deps finished and          |
-#     test is RunOnly                v
-#           |                  [ compiling ]--------------+
-#           |                        |                    |
-#           |         if compilation has finished and     |
-#           |            test is not CompileOnly          |
-#           |                        |                    |
-#           |                        v                    |
-#           +----------------->[ ready_run ]              |
-#                                    |                    |
-#                          if there are available         |
-#                                  slots                  |
-#                                    |      if compilation has finished and
-#                                    v           test is CompileOnly
-#                               [ running ]               |
-#                                    |                    |
-#                          if job has finished            |
-#   tests can exit the               |                    |
-#  pipeline at any point             v                    |
-#     if they fail             [ completing ]<------------+
-#          :                         |
-#          :              if sanity and performance
-#          |                      succeed
-#          |                         |
-#          v                         v
-#      ( failed )               ( retired )
-
 class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
+    '''The asynchronous execution policy.'''
+
     def __init__(self):
         super().__init__()
 

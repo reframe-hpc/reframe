@@ -101,10 +101,10 @@ Execution Policies
 
 All regression tests in ReFrame will execute the pipeline stages described above.
 However, how exactly this pipeline will be executed is responsibility of the test execution policy.
-There are two execution policies in ReFrame: the serial and the asynchronous one.
+There are two execution policies in ReFrame: the serial and the asynchronous execution policy.
 
 In the serial execution policy, a new test gets into the pipeline after the previous one has exited.
-As the figure below shows, this can lead to long idling times in the run phase, since the execution blocks until the associated test job finishes.
+As the figure below shows, this can lead to long idling times in the build and run phases, since the execution blocks until the associated test job finishes.
 
 
 .. figure:: _static/img/serial-exec-policy.svg
@@ -133,6 +133,33 @@ ReFrame tries to keep concurrency high by maintaining as many test cases as poss
 When the `concurrency limit <config_reference.html#.systems[].partitions[].max_jobs>`__ is reached, ReFrame will first try to free up execution slots by checking if any of the spawned jobs have finished, and it will fill that slots first before throttling execution.
 
 ReFrame uses polling to check the status of the spawned jobs, but it does so in a dynamic way, in order to ensure both responsiveness and avoid overloading the system job scheduler with excessive polling.
+
+
+ReFrame's runtime internally encapsulates each test in a task, which is scheduled for execution.
+This task can be in different states and is responsible for executing the test's pipeline.
+The following state diagram shows how test tasks are scheduled, as well as when the various test pipeline stages are executed.
+
+.. figure:: _static/img/regression-task-state-machine.svg
+  :align: center
+  :alt: State diagram of the execution of test tasks.
+
+  :sub:`State diagram of the execution of test tasks with annotations for the execution of the actual pipeline stages.`
+
+There are a number of things to notice in this diagram:
+
+- If a test encounters an exception it is marked as a failure.
+  Even normal failures, such as dependency failures and sanity of performance failures are also exceptions raised explicitly by the framework during a pipeline stage.
+- The pipeline stages that are executed asynchronously, namely the ``compile`` and ``run`` stages, are split in sub-stages for submitting the corresponding job and for checking or waiting its completion.
+  This is why in ReFrame error messages you may see ``compile_complete``  or ``run_complete`` being reported as the failing stage.
+- The execution of a test may be stalled if there are not enough execution slots available for submitting compile or run jobs on the target partition.
+- Although a test is officially marked as "completed" only when its cleanup phase is executed, it is reported as success or failure as soon as it is "retired," i.e., as soon as its performance stage has passed successfully.
+- For successful tests, the ``cleanup`` stage is executed *after* the test is reported as a "success," since a test may not clean up its resources until all of its immediate dependencies finish also successfully.
+  If the ``cleanup`` phase fails, the test is not marked as a failure, but this condition is marked as an error.
+
+
+.. versionchanged:: 3.9.3
+   The ``compile`` stage is now also executed asynchronously.
+
 
 Timing the Test Pipeline
 ------------------------
