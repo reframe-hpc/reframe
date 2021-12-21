@@ -301,6 +301,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._max_jobs = {
             '_rfm_local': rt.runtime().get_option(f'systems/0/max_local_jobs')
         }
+        self._policy_timeout = rt.runtime().get_option(f'systems/0/policy_timeout')
 
         self.task_listeners.append(self)
 
@@ -330,7 +331,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                     1 if t._current_stage in ('run', 'compile') else 0
                     for t in self._current_tasks
                 )
-                self.advance_all(self._current_tasks)
+                self.advance_all(self._current_tasks, self._policy_timeout)
                 _cleanup_all(self._retired_tasks, not self.keep_stage_files)
                 if num_running:
                     self._pollctl.running_tasks(num_running).snooze()
@@ -339,24 +340,33 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 raise
 
     def _poll_tasks(self):
-        for part in self._partitions:
+        pairs = [(p.fullname, p.scheduler) for p in self._partitions]
+        pairs.append(('_rfm_local', self.local_scheduler))
+        for partname, sched in pairs:
             jobs = []
-            for t in self._scheduler_tasks[part.fullname]:
+            for t in self._scheduler_tasks[partname]:
                 if t._current_stage == 'compile':
                     jobs.append(t.check.build_job)
                 elif t._current_stage == 'run':
                     jobs.append(t.check.job)
 
-            part.scheduler.poll(*jobs)
+            sched.poll(*jobs)
 
-        jobs = []
-        for t in self._scheduler_tasks['_rfm_local']:
-            if t._current_stage == 'compile':
-                jobs.append(t.check.build_job)
-            elif t._current_stage == 'run':
-                jobs.append(t.check.job)
+    def _execute_stage(self, task, methods):
+        try:
+            for m in methods:
+                m()
 
-        self.local_scheduler.poll(*jobs)
+            return True
+        except TaskExit:
+            self._current_tasks.remove(task)
+            with contextlib.suppress(KeyError, AttributeError):
+                self._scheduler_tasks[task.check.current_partition.fullname].remove(task)
+
+            with contextlib.suppress(KeyError):
+                self._scheduler_tasks['_rfm_local'].remove(task)
+
+            return False
 
     def advance_all(self, tasks, timeout=None):
         t_init = time.time()
@@ -371,7 +381,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             if timeout and t_elapsed > timeout and num_progressed:
                 break
 
-        getlogger().debug2(f"Bumped {num_progressed} test(s).")
+        getlogger().debug2(f'Bumped {num_progressed} test(s)')
 
     def advance_startup(self, task):
         if self.deps_skipped(task):
@@ -397,15 +407,11 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 return 1
 
             if isinstance(task.check, RunOnlyRegressionTest):
-                try:
-                    task.compile()
-                    task.compile_complete()
-                    task.compile_wait()
-                except TaskExit:
-                    # Run and run_wait are no-ops for
-                    # CompileOnlyRegressionTest. This shouldn't fail.
-                    self._current_tasks.remove(task)
-                    return 1
+                # All tests should pass from all the pipeline stages, even if
+                # they are no-ops
+                self._execute_stage(task, [task.compile,
+                                           task.compile_complete,
+                                           task.compile_wait])
 
             return 1
         elif self.deps_failed(task):
@@ -415,6 +421,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             return 1
         else:
             # Not all dependencies have finished yet
+            getlogger().debug2(f'{task.check.info()} waiting for dependencies')
             return 0
 
     def advance_setup(self, task):
@@ -423,14 +430,12 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             else task.check.current_partition.fullname
         )
         if len(self._scheduler_tasks[partname]) < self._max_jobs[partname]:
-            try:
-                task.compile()
+            if self._execute_stage(task, [task.compile]):
                 self._scheduler_tasks[partname].add(task)
-            except TaskExit:
-                self._current_tasks.remove(task)
 
             return 1
 
+        getlogger().debug2(f'Hit the max job limit of {partname}')
         return 0
 
     def advance_compile(self, task):
@@ -444,15 +449,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 self._scheduler_tasks[partname].remove(task)
 
                 if isinstance(task.check, CompileOnlyRegressionTest):
-                    try:
-                        task.run()
-                        task.run_complete()
-                        task.run_wait()
-                    except TaskExit:
-                        # Run and run_wait are no-ops for
-                        # CompileOnlyRegressionTest. This shouldn't fail.
-                        self._current_tasks.remove(task)
-                        return 1
+                    # All tests should pass from all the pipeline stages,
+                    # even if they are no-ops
+                    self._execute_stage(task, [task.run, task.run_complete, task.run_wait])
 
                 return 1
             else:
@@ -469,14 +468,12 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             else task.check.current_partition.fullname
         )
         if len(self._scheduler_tasks[partname]) < self._max_jobs[partname]:
-            try:
-                task.run()
+            if self._execute_stage(task, [task.run]):
                 self._scheduler_tasks[partname].add(task)
-            except TaskExit:
-                self._current_tasks.remove(task)
 
             return 1
 
+        getlogger().debug2(f'Hit the max job limit of {partname}')
         return 0
 
     def advance_run(self, task):
@@ -486,8 +483,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         )
         try:
             if task.run_complete():
-                task.run_wait()
-                self._scheduler_tasks[partname].remove(task)
+                if self._execute_stage(task, [task.run_wait]):
+                    self._scheduler_tasks[partname].remove(task)
 
                 return 1
             else:
@@ -536,7 +533,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             with contextlib.suppress(FailureLimitError):
                 task.abort(cause)
 
-    # TODO all this prints have to obviously leave from here...
+    # These function can be useful for tracking statistics of the framework
+    # like number of tests that have finished setup etc, so we will keep them
+    # for now.
     def on_task_setup(self, task):
         pass
 

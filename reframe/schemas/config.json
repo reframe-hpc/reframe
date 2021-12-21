@@ -237,6 +237,7 @@
                     "stagedir": {"type": "string"},
                     "outputdir": {"type": "string"},
                     "resourcesdir": {"type": "string"},
+                    "policy_timeout": {"type": "number"},
                     "max_local_jobs": {"type": "number"},
                     "partitions": {
                         "type": "array",
@@ -568,6 +569,7 @@
         "systems/partitions/processor": {},
         "systems/partitions/devices": [],
         "systems/partitions/extras": {},
+        "systems/policy_timeout": 10,
         "systems/max_local_jobs": 8
     }
 }
