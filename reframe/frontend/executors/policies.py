@@ -290,9 +290,11 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
         # Job limit per partition
         self._max_jobs = {
-            '_rfm_local': rt.runtime().get_option(f'systems/0/max_local_jobs')
+            '_rfm_local': rt.runtime().get_option('systems/0/max_local_jobs')
         }
-        self._policy_timeout = rt.runtime().get_option(f'systems/0/policy_timeout')
+        self._policy_timeout = rt.runtime().get_option(
+            'systems/0/policy_timeout'
+        )
 
         self.task_listeners.append(self)
 
@@ -352,7 +354,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         except TaskExit:
             self._current_tasks.remove(task)
             with contextlib.suppress(KeyError, AttributeError):
-                self._scheduler_tasks[task.check.current_partition.fullname].remove(task)
+                partname = task.check.current_partition.fullname
+                self._scheduler_tasks[partname].remove(task)
 
             with contextlib.suppress(KeyError):
                 self._scheduler_tasks['_rfm_local'].remove(task)
@@ -442,7 +445,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 if isinstance(task.check, CompileOnlyRegressionTest):
                     # All tests should pass from all the pipeline stages,
                     # even if they are no-ops
-                    self._execute_stage(task, [task.run, task.run_complete, task.run_wait])
+                    self._execute_stage(task, [task.run,
+                                               task.run_complete,
+                                               task.run_wait])
 
                 return 1
             else:
