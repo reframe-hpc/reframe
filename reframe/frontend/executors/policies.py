@@ -341,8 +341,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             return True
 
     def _advance_all(self, tasks, timeout=None):
-        print(tasks)
-
         t_init = time.time()
         num_progressed = 0
 
