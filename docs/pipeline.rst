@@ -161,6 +161,40 @@ There are a number of things to notice in this diagram:
    The ``compile`` stage is now also executed asynchronously.
 
 
+--------------------------------------
+Where each pipeline stage is executed?
+--------------------------------------
+
+There are two executions contexts where a pipeline stage can be executed: the ReFrame execution context and the partition execution context.
+The *ReFrame execution context* is where ReFrame executes.
+This is always the local host.
+The *partition execution context* can either be local or remote depending on how the partition is configured.
+The following table show in which context each pipeline stage executes:
+
+.. table::
+   :align: center
+
+   ============== =================
+   Pipeline Stage Execution Context
+   ============== =================
+   *Setup*        ReFrame
+   *Compile*      ReFrame if :attr:`~reframe.core.pipeline.RegressionTest.build_locally` is :obj:`True`, partition otherwise.
+   *Run*          ReFrame if :attr:`~reframe.core.pipeline.RegressionTest.local` is :obj:`True` or if :option:`--force-local` is passed, partition otherwise.
+   *Sanity*       ReFrame
+   *Performance*  ReFrame
+   *Cleanup*      ReFrame
+   ============== =================
+
+It should be noted that even if the partition execution context is local, it is treated differently from the ReFrame execution context.
+For example, a test executing in the ReFrame context will not respect the :js:attr:`max_jobs` partition configuration option, even if the partition is local.
+To control the concurrency of the ReFrame execution context, users should set the :js:attr:`.systems[].max_local_jobs` option instead.
+
+
+.. versionchanged:: 3.9.3
+
+   Execution contexts were formalized.
+
+
 Timing the Test Pipeline
 ------------------------
 
