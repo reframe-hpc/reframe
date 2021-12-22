@@ -148,7 +148,7 @@ The following state diagram shows how test tasks are scheduled, as well as when 
 There are a number of things to notice in this diagram:
 
 - If a test encounters an exception it is marked as a failure.
-  Even normal failures, such as dependency failures and sanity of performance failures are also exceptions raised explicitly by the framework during a pipeline stage.
+  Even normal failures, such as dependency failures and sanity or performance failures are also exceptions raised explicitly by the framework during a pipeline stage.
 - The pipeline stages that are executed asynchronously, namely the ``compile`` and ``run`` stages, are split in sub-stages for submitting the corresponding job and for checking or waiting its completion.
   This is why in ReFrame error messages you may see ``compile_complete``  or ``run_complete`` being reported as the failing stage.
 - The execution of a test may be stalled if there are not enough execution slots available for submitting compile or run jobs on the target partition.

@@ -9,6 +9,7 @@ import sys
 import time
 
 import reframe.core.runtime as rt
+import reframe.utility as util
 from reframe.core.exceptions import (FailureLimitError,
                                      SkipTestError,
                                      TaskDependencyError,
@@ -21,10 +22,8 @@ from reframe.frontend.executors import (ExecutionPolicy, RegressionTask,
 
 
 def _get_partition_name(task, phase='run'):
-    if (
-        task.check.local or
-        phase == 'build' and task.check.build_locally
-    ):
+    if (task.check.local or
+        (phase == 'build' and task.check.build_locally)):
         return '_rfm_local'
     else:
         return task.check.current_partition.fullname
@@ -243,15 +242,19 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         # Index tasks by test cases
         self._task_index = {}
 
-        # A set of all the current tasks
-        self._current_tasks = set()
+        # A set of all the current tasks. We use an ordered set here, because
+        # we want to preserve the order of the tasks.
+        self._current_tasks = util.OrderedSet()
 
-        # Keep a reference to all the partitions
-        self._partitions = set()
+        # Quick look up for the partition schedulers including the
+        # `_rfm_local` pseudo-partition
+        self._schedulers = {
+            '_rfm_local': self.local_scheduler
+        }
 
-        # Sets of the jobs that should be polled for each partition
-        self._scheduler_tasks = {
-            '_rfm_local': set()
+        # Tasks per partition
+        self._partition_tasks = {
+            '_rfm_local': util.OrderedSet()
         }
 
         # Retired tasks that need to be cleaned up
@@ -261,19 +264,15 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._max_jobs = {
             '_rfm_local': rt.runtime().get_option('systems/0/max_local_jobs')
         }
-        self._policy_timeout = rt.runtime().get_option(
-            'systems/0/policy_timeout'
-        )
-
         self.task_listeners.append(self)
 
     def runcase(self, case):
         super().runcase(case)
         check, partition, environ = case
-        self._partitions.add(partition)
+        self._schedulers[partition.fullname] = partition.scheduler
 
         # Set partition-based counters, if not set already
-        self._scheduler_tasks.setdefault(partition.fullname, set())
+        self._partition_tasks.setdefault(partition.fullname, util.OrderedSet())
         self._max_jobs.setdefault(partition.fullname, partition.max_jobs)
 
         task = RegressionTask(case, self.task_listeners)
@@ -290,10 +289,13 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             try:
                 self._poll_tasks()
                 num_running = sum(
-                    1 if t.policy_state in ('running', 'compiling') else 0
+                    1 if t.state in ('running', 'compiling') else 0
                     for t in self._current_tasks
                 )
-                self.advance_all(self._current_tasks, self._policy_timeout)
+                timeout = rt.runtime().get_option(
+                    'general/pipeline_timeout'
+                )
+                self._advance_all(self._current_tasks, timeout)
                 _cleanup_all(self._retired_tasks, not self.keep_stage_files)
                 if num_running:
                     self._pollctl.running_tasks(num_running).snooze()
@@ -302,43 +304,54 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 raise
 
     def _poll_tasks(self):
-        pairs = [(p.fullname, p.scheduler) for p in self._partitions]
-        pairs.append(('_rfm_local', self.local_scheduler))
-        for partname, sched in pairs:
+        for partname, sched in self._schedulers.items():
             jobs = []
-            for t in self._scheduler_tasks[partname]:
-                if t.policy_state == 'compiling':
+            for t in self._partition_tasks[partname]:
+                if t.state == 'compiling':
                     jobs.append(t.check.build_job)
-                elif t.policy_state == 'running':
+                elif t.state == 'running':
                     jobs.append(t.check.job)
 
             sched.poll(*jobs)
 
-    def _execute_stage(self, task, methods):
-        try:
-            for m in methods:
-                m()
+    def _exec_stage(self, task, stage_methods):
+        '''Execute a series of pipeline stages.
 
-            return True
+        Return True on success, False otherwise.
+        '''
+
+        try:
+            for stage in stage_methods:
+                stage()
         except TaskExit:
             self._current_tasks.remove(task)
-            with contextlib.suppress(KeyError, AttributeError):
+            if task.check.current_partition:
                 partname = task.check.current_partition.fullname
-                self._scheduler_tasks[partname].remove(task)
+            else:
+                partname = None
 
+            # Remove tasks from the partition tasks if there
             with contextlib.suppress(KeyError):
-                self._scheduler_tasks['_rfm_local'].remove(task)
+                self._partition_tasks['_rfm_local'].remove(task)
+                if partname:
+                    self._partition_tasks[partname].remove(task)
 
             return False
+        else:
+            return True
 
-    def advance_all(self, tasks, timeout=None):
+    def _advance_all(self, tasks, timeout=None):
+        print(tasks)
+
         t_init = time.time()
         num_progressed = 0
 
-        getlogger().debug2(f"Current tests: {len(tasks)}")
-        # progress might remove the tasks that retire or fail
+        getlogger().debug2(f'Current tests: {len(tasks)}')
+
+        # We take a snapshot of the tasks to advance by doing a shallow copy,
+        # since the tasks may removed by the individual advance functions.
         for t in list(tasks):
-            bump_state = getattr(self, f'advance_{t.policy_state}')
+            bump_state = getattr(self, f'_advance_{t.state}')
             num_progressed += bump_state(t)
             t_elapsed = time.time() - t_init
             if timeout and t_elapsed > timeout and num_progressed:
@@ -346,7 +359,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
         getlogger().debug2(f'Bumped {num_progressed} test(s)')
 
-    def advance_startup(self, task):
+    def _advance_startup(self, task):
         if self.deps_skipped(task):
             try:
                 raise SkipTestError('skipped due to skipped dependencies')
@@ -370,11 +383,11 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 return 1
 
             if isinstance(task.check, RunOnlyRegressionTest):
-                # All tests should pass from all the pipeline stages, even if
+                # All tests should execute all the pipeline stages, even if
                 # they are no-ops
-                self._execute_stage(task, [task.compile,
-                                           task.compile_complete,
-                                           task.compile_wait])
+                self._exec_stage(task, [task.compile,
+                                        task.compile_complete,
+                                        task.compile_wait])
 
             return 1
         elif self.deps_failed(task):
@@ -387,68 +400,68 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             getlogger().debug2(f'{task.check.info()} waiting for dependencies')
             return 0
 
-    def advance_ready_compile(self, task):
+    def _advance_ready_compile(self, task):
         partname = _get_partition_name(task, phase='build')
-        if len(self._scheduler_tasks[partname]) < self._max_jobs[partname]:
-            if self._execute_stage(task, [task.compile]):
-                self._scheduler_tasks[partname].add(task)
+        max_jobs = self._max_jobs[partname]
+        if len(self._partition_tasks[partname]) < max_jobs:
+            if self._exec_stage(task, [task.compile]):
+                self._partition_tasks[partname].add(task)
 
             return 1
 
-        getlogger().debug2(f'Hit the max job limit of {partname}')
+        getlogger().debug2(f'Hit the max job limit of {partname}: {max_jobs}')
         return 0
 
-    def advance_compiling(self, task):
+    def _advance_compiling(self, task):
         partname = _get_partition_name(task, phase='build')
         try:
             if task.compile_complete():
                 task.compile_wait()
-                self._scheduler_tasks[partname].remove(task)
-
+                self._partition_tasks[partname].remove(task)
                 if isinstance(task.check, CompileOnlyRegressionTest):
                     # All tests should pass from all the pipeline stages,
                     # even if they are no-ops
-                    self._execute_stage(task, [task.run,
-                                               task.run_complete,
-                                               task.run_wait])
+                    self._exec_stage(task, [task.run,
+                                            task.run_complete,
+                                            task.run_wait])
 
                 return 1
             else:
                 return 0
-
         except TaskExit:
-            self._scheduler_tasks[partname].remove(task)
+            self._partition_tasks[partname].remove(task)
             self._current_tasks.remove(task)
             return 1
 
-    def advance_ready_run(self, task):
+    def _advance_ready_run(self, task):
         partname = _get_partition_name(task, phase='run')
-        if len(self._scheduler_tasks[partname]) < self._max_jobs[partname]:
-            if self._execute_stage(task, [task.run]):
-                self._scheduler_tasks[partname].add(task)
+        max_jobs = self._max_jobs[partname]
+        if len(self._partition_tasks[partname]) < max_jobs:
+            if self._exec_stage(task, [task.run]):
+                self._partition_tasks[partname].add(task)
 
             return 1
 
-        getlogger().debug2(f'Hit the max job limit of {partname}')
+        getlogger().debug2(f'Hit the max job limit of {partname}: {max_jobs}')
         return 0
 
-    def advance_running(self, task):
+    def _advance_running(self, task):
         partname = _get_partition_name(task, phase='run')
         try:
             if task.run_complete():
-                if self._execute_stage(task, [task.run_wait]):
-                    self._scheduler_tasks[partname].remove(task)
+                if self._exec_stage(task, [task.run_wait]):
+                    self._partition_tasks[partname].remove(task)
 
                 return 1
             else:
                 return 0
 
         except TaskExit:
-            self._scheduler_tasks[partname].remove(task)
+            self._partition_tasks[partname].remove(task)
             self._current_tasks.remove(task)
             return 1
 
-    def advance_completing(self, task):
+    def _advance_completing(self, task):
         try:
             if not self.skip_sanity_check:
                 task.sanity()
@@ -486,9 +499,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             with contextlib.suppress(FailureLimitError):
                 task.abort(cause)
 
-    # These function can be useful for tracking statistics of the framework
-    # like number of tests that have finished setup etc, so we will keep them
-    # for now.
+    # These function can be useful for tracking statistics of the framework,
+    # such as number of tests that have finished setup etc.
     def on_task_setup(self, task):
         pass
 

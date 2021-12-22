@@ -101,6 +101,18 @@ System Configuration
    A list of hostname regular expression patterns in Python `syntax <https://docs.python.org/3.8/library/re.html>`__, which will be used by the framework in order to automatically select a system configuration.
    For the auto-selection process, see `here <configure.html#picking-a-system-configuration>`__.
 
+.. js:attribute:: .systems[].max_local_jobs
+
+   The maximum number of forced local build or run jobs allowed.
+
+   Forced local jobs run within the execution context of ReFrame.
+
+   :required: No
+   :default: ``8``
+
+   .. versionadded:: 3.9.3
+
+
 .. js:attribute:: .systems[].modules_system
 
    :required: No
@@ -1287,6 +1299,19 @@ General Configuration
   :default: 5
 
   Timeout value in seconds used when checking if a git repository exists.
+
+
+.. js:attribute:: .general[].pipeline_timeout
+
+   Timeout in seconds for advancing the pipeline in the asynchronous execution policy.
+
+   ReFrame's asynchronous execution policy will try to advance as many tests as possible in their pipeline, but some tests may take too long to proceed (e.g., due to copying of large files) blocking the advancement of previously started tests.
+   If this timeout value is exceeded and at least one test has progressed, ReFrame will stop processing new tests and it will try to further advance tests that have already started.
+
+   :required: No
+   :default: ``10``
+
+   .. versionadded:: 3.9.3
 
 
 .. js:attribute:: .general[].remote_detect

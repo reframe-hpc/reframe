@@ -216,7 +216,7 @@ class RegressionTask:
                 not self._aborted and not self._skipped)
 
     @property
-    def policy_state(self):
+    def state(self):
         states = {
             'startup': 'startup',
             'setup': 'ready_compile',
