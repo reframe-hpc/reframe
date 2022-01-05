@@ -40,7 +40,8 @@ class NvidiaResolveTest(LibSciResolveBaseTest):
 
     @run_after('setup')
     def set_modules(self):
-        self.modules += [f'craype-accel-nvidia{self.accel_nvidia_version}']
+        # FIXME: https://jira.cscs.ch/browse/PROGENV-24
+        self.modules += [f'craype-accel-nvidia{self.accel_nvidia_version}','cray-libsci_acc']
 
     @sanity_function
     def libsci_acc_resolve(self):
