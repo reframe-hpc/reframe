@@ -13,7 +13,8 @@ class LibsciAccBaseCheck(rfm.RegressionTest):
         self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
         self.prebuild_cmds = ['module list']
-        self.modules = ['craype-accel-nvidia60']
+        # FIXME: https://jira.cscs.ch/browse/PROGENV-24
+        self.modules = ['craype-accel-nvidia60', 'cray-libsci_acc']
         self.maintainers = ['JG']
         self.tags = {'scs', 'production', 'maintenance'}
 
