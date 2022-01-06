@@ -56,9 +56,9 @@ int totalErrors = 0;
 std::mutex mtx;
 
 
-
 #define BLOCK_SIZE 128
-void xgemm<T>(int device)
+template<class T> 
+void xgemm_test(int device)
 {
     XSetDevice(device);
 
@@ -83,7 +83,8 @@ void xgemm<T>(int device)
     XblasSetStream(blas_handle, stream);
 
     // Warmup call
-    XblasDgemm(blas_handle,
+    // define either as XblasDgemm or XblasSgemm
+    XBLAS_GEMM(blas_handle,
                XBLAS_OP_N, XBLAS_OP_N,
                SIZE, SIZE, SIZE,
                &alpha,
@@ -98,7 +99,8 @@ void xgemm<T>(int device)
     t.start();
     for (int i = 0; i < REPEAT; i++)
     {
-        XblasDgemm(blas_handle,
+        // define either as XblasDgemm or XblasSgemm
+        XBLAS_GEMM(blas_handle,
                    XBLAS_OP_N, XBLAS_OP_N,
                    SIZE, SIZE, SIZE,
                    &alpha,
@@ -147,10 +149,11 @@ int main(int argc, char **argv)
     // Create vector of threads.
     std::vector<std::thread> threads;
 
+
     // Do the dgemm for all devices in the node.
     for (int device = 0; device < num_devices; device++)
     {
-        threads.push_back(std::thread(xgemm<double>,device));
+        threads.push_back(std::thread(xgemm_test<GEMM_TYPE>,device));
     }
 
     // Join all threads
