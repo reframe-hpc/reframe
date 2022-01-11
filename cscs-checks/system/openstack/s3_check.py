@@ -18,14 +18,14 @@ class S3apiCheck(rfm.RunOnlyRegressionTest):
     maintainers = ['VH', 'GLR']
     username = getpass.getuser()
 
-    @run_before('setup')
-    def set_description(self):
-        self.descr = f'S3API check for ({self.endpoint})'
-
-    @run_after('setup')
+    @run_after('init')
     def add_production_tag(self):
         if self.current_system.name in {'dom'}:
             self.tags |= {'production'}
+
+    @run_after('init')
+    def set_description(self):
+        self.descr = f'S3API check for ({self.endpoint})'
 
 
 @rfm.simple_test
