@@ -266,6 +266,35 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         }
         self.task_listeners.append(self)
 
+    def _init_pipeline_history(self, num_tasks):
+        self._pipeline_history = [
+            {
+                'startup': num_tasks,
+                'ready_compile': 0,
+                'compiling': 0,
+                'ready_run': 0,
+                'running': 0,
+                'completing': 0,
+                'retired': 0,
+                'completed': 0,
+                'fail': 0,
+                'skip': 0
+            }
+        ]
+
+    def _update_pipeline_history(self, old_state, new_state, num_tasks=1):
+        prev_step = self._pipeline_history[-1]
+        next_step = {**prev_step}
+        next_step[old_state] -= num_tasks
+        next_step[new_state] += num_tasks
+        self._pipeline_history.append(next_step)
+
+    def _dump_pipeline_history(self, filename):
+        import json
+
+        with open(filename, 'w') as fp:
+            json.dump(self._pipeline_history, fp, indent=2)
+
     def runcase(self, case):
         super().runcase(case)
         check, partition, environ = case
@@ -285,6 +314,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._current_tasks.add(task)
 
     def exit(self):
+        self._init_pipeline_history(len(self._current_tasks))
         while self._current_tasks:
             try:
                 self._poll_tasks()
@@ -296,12 +326,17 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                     'general/pipeline_timeout'
                 )
                 self._advance_all(self._current_tasks, timeout)
+                num_retired = len(self._retired_tasks)
                 _cleanup_all(self._retired_tasks, not self.keep_stage_files)
+                self._update_pipeline_history('retired', 'completed',
+                                              num_retired)
                 if num_running:
                     self._pollctl.running_tasks(num_running).snooze()
             except ABORT_REASONS as e:
                 self._failall(e)
                 raise
+
+        self._dump_pipeline_history('pipeline-history.json')
 
     def _poll_tasks(self):
         for partname, sched in self._schedulers.items():
@@ -349,11 +384,21 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         # We take a snapshot of the tasks to advance by doing a shallow copy,
         # since the tasks may removed by the individual advance functions.
         for t in list(tasks):
+            old_state = t.state
             bump_state = getattr(self, f'_advance_{t.state}')
             num_progressed += bump_state(t)
+            if t.failed:
+                new_state = 'fail'
+            elif t.skipped:
+                new_state = 'skip'
+            else:
+                new_state = t.state
+
             t_elapsed = time.time() - t_init
             if timeout and t_elapsed > timeout and num_progressed:
                 break
+
+            self._update_pipeline_history(old_state, new_state, 1)
 
         getlogger().debug2(f'Bumped {num_progressed} test(s)')
 
