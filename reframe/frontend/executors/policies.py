@@ -293,7 +293,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         import json
 
         with open(filename, 'w') as fp:
-            json.dump(self._pipeline_history, fp, indent=2)
+            json.dump(self._pipeline_history, fp)
 
     def runcase(self, case):
         super().runcase(case)
