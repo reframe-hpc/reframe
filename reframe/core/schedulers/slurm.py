@@ -422,7 +422,8 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         job_info = {}
         for s in state_match:
-            jobid = s.group('jobid').split('_')[0]
+            # Take into account both job arrays and heterogeneous jobs
+            jobid = re.split(r'_|\+', s.group('jobid'))[0]
             job_info.setdefault(jobid, []).append(s)
 
         for job in jobs:
@@ -431,7 +432,7 @@ class SlurmJobScheduler(sched.JobScheduler):
             except KeyError:
                 continue
 
-            # Join the states with ',' in case of job arrays
+            # Join the states with ',' in case of job arrays|heterogeneous jobs
             job._state = ','.join(m.group('state') for m in jobarr_info)
 
             if not self._update_state_count % self.SACCT_SQUEUE_RATIO:
