@@ -31,8 +31,6 @@ if __name__ == '__main__':
         step_values = [s[0] for s in x]
         y_values.append(step_values)
 
-    print(x_values)
-    print(y_values)
     fig, ax = plt.subplots()
     ax.stackplot(x_values, y_values, labels=raw_data.keys(), alpha=0.8)
     ax.legend(loc='upper left')
