@@ -130,6 +130,8 @@ def describe_checks(testcases, printer):
             rec['display_name'] = tc.check.display_name
             rec['pipeline_hooks'] = {}
             rec['perf_variables'] = list(rec['perf_variables'].keys())
+            rec['prefix'] = tc.check.prefix
+            rec['variant_num'] = tc.check.variant_num
             for stage, hooks in tc.check.pipeline_hooks().items():
                 for hk in hooks:
                     rec['pipeline_hooks'].setdefault(stage, [])
