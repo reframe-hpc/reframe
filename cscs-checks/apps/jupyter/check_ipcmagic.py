@@ -12,7 +12,14 @@ from hpctestlib.interactive.jupyter.ipcmagic import ipcmagic_check
 class cscs_ipcmagic_check(ipcmagic_check):
     valid_systems = ['daint:gpu', 'dom:gpu']
     valid_prog_environs = ['builtin']
-    modules = ['JuliaExtensions', 'jupyterlab', 'Horovod']
+
+    @run_after('init')
+    def set_modules(self):
+        if self.current_system.name == 'dom':
+            self.modules = ['Horovod', 'JuliaExtensions', 'jupyterlab']
+        else:
+            self.modules = ['Horovod', 'jupyterlab']
+
     maintainers = ['RS', 'TR']
     tags = {'production'}
     reference = {
