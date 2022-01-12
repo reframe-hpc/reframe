@@ -32,7 +32,6 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
     @run_after('init')
     def set_descr_name(self):
         self.descr = f'Jacobi (without tool) {self.lang} check'
-        self.name = f'{type(self).__name__}_{self.lang.replace("+", "p")}'
 
     @run_after('init')
     def remove_buggy_prgenv(self):
