@@ -1,5 +1,6 @@
 import json
 import matplotlib.pyplot as plt
+import os
 import sys
 
 
@@ -10,11 +11,34 @@ if __name__ == '__main__':
     for state, steps in raw_data.items():
         print(state, len(steps))
 
+    try:
+        mode = sys.argv[2]
+        if mode not in ('steps', 'time'):
+            print(f'unknown mode: {mode}')
+            sys.exit(1)
+    except IndexError:
+        mode = 'steps'
+
+    if mode == 'steps':
+        x_label = '# Steps'
+        x_values = range(len(raw_data['startup']))
+    else:
+        x_label = 'Time (s)'
+        x_values = [x[1] for x in raw_data['startup']]
+
+    y_values = []
+    for x in raw_data.values():
+        step_values = [s[0] for s in x]
+        y_values.append(step_values)
+
+    print(x_values)
+    print(y_values)
     fig, ax = plt.subplots()
-    steps = range(len(raw_data['startup']))
-    ax.stackplot(steps, raw_data.values(), labels=raw_data.keys(), alpha=0.8)
+    ax.stackplot(x_values, y_values, labels=raw_data.keys(), alpha=0.8)
     ax.legend(loc='upper left')
     ax.set_title('Pipeline progress')
-    ax.set_xlabel('Step')
+    ax.set_xlabel(x_label)
     ax.set_ylabel('Number of tasks')
+    figname = os.path.splitext(sys.argv[1])[0] + '.png'
+    plt.savefig(figname)
     plt.show()

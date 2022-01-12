@@ -268,37 +268,39 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def _init_pipeline_progress(self, num_tasks):
         self._pipeline_progress = {
-            'startup': [num_tasks],
-            'ready_compile': [0],
-            'compiling': [0],
-            'ready_run': [0],
-            'running': [0],
-            'completing': [0],
-            'retired': [0],
-            'completed': [0],
-            'fail': [0],
-            'skip': [0]
+            'startup': [(num_tasks, 0)],
+            'ready_compile': [(0, 0)],
+            'compiling': [(0, 0)],
+            'ready_run': [(0, 0)],
+            'running': [(0, 0)],
+            'completing': [(0, 0)],
+            'retired': [(0, 0)],
+            'completed': [(0, 0)],
+            'fail': [(0, 0)],
+            'skip': [(0, 0)]
         }
         self._pipeline_step = 0
+        self._t_pipeline_start = time.time()
 
     def _update_pipeline_progress(self, old_state, new_state, num_tasks=1):
+        timestamp = time.time() - self._t_pipeline_start
         for state in self._pipeline_progress:
-            count = self._pipeline_progress[state][self._pipeline_step]
+            count = self._pipeline_progress[state][self._pipeline_step][0]
             if old_state != new_state:
                 if state == old_state:
                     count -= num_tasks
                 elif state == new_state:
                     count += num_tasks
 
-            self._pipeline_progress[state].append(count)
+            self._pipeline_progress[state].append((count, timestamp))
 
         self._pipeline_step += 1
 
     def _dump_pipeline_progress(self, filename):
-        import json
+        import reframe.utility.jsonext as jsonext
 
         with open(filename, 'w') as fp:
-            json.dump(self._pipeline_progress, fp, indent=2)
+            jsonext.dump(self._pipeline_progress, fp, indent=2)
 
     def runcase(self, case):
         super().runcase(case)
