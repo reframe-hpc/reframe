@@ -16,9 +16,9 @@ class HeterogenousSlurmJobTest(rfm.RegressionTest):
     num_tasks = 12
     num_tasks_per_node = 3
     num_cpus_per_task = 4
-    num_tasks2 = 1
-    num_tasks_per_node2 = 1
-    num_cpus_per_task2 = 6
+    num_tasks_het = 1
+    num_tasks_per_node_het = 1
+    num_cpus_per_task_het = 6
     build_system = 'SingleSource'
     maintainers = ['TM', 'VH']
     tags = {'slurm'}
@@ -34,8 +34,8 @@ class HeterogenousSlurmJobTest(rfm.RegressionTest):
     @run_before('run')
     def setup_heterogeneous_job(self):
         self.job.options += [
-            f'#SBATCH hetjob', f'--ntasks={self.num_tasks2}',
-            f'--ntasks-per-node={self.num_tasks_per_node2}',
+            f'#SBATCH hetjob', f'--ntasks={self.num_tasks_het}',
+            f'--ntasks-per-node={self.num_tasks_per_node_het}',
             f'--cpus-per-task={self.num_cpus_per_task}',
             f'--threads-per-core=1',
             # The second constraint has to be passed using the #SBATCH prefix
@@ -58,8 +58,8 @@ class HeterogenousSlurmJobTest(rfm.RegressionTest):
             # of the total ranks of the MPI_COMM_WORLD communicator
             *[sn.assert_found(f'Hello from rank {rank + self.num_tasks} '
                               f'running omp thread '
-                              f'{thread}/{self.num_cpus_per_task2}',
+                              f'{thread}/{self.num_cpus_per_task_het}',
                               self.stdout)
-              for rank in range(self.num_tasks2)
-              for thread in range(self.num_cpus_per_task2)],
+              for rank in range(self.num_tasks_het)
+              for thread in range(self.num_cpus_per_task_het)],
         ])
