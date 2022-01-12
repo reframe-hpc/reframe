@@ -330,10 +330,14 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                     for t in self._current_tasks
                 )
 
-                # FIXME: Always convert due to #GH 2246
-                timeout = float(rt.runtime().get_option(
+                timeout = rt.runtime().get_option(
                     'general/0/pipeline_timeout'
-                ))
+                )
+
+                # FIXME: Always convert due to #GH 2246
+                if timeout is not None:
+                    timeout = float(timeout)
+
                 self._advance_all(self._current_tasks, timeout)
                 num_retired = len(self._retired_tasks)
                 _cleanup_all(self._retired_tasks, not self.keep_stage_files)
