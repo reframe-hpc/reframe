@@ -335,8 +335,11 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 self._advance_all(self._current_tasks, timeout)
                 num_retired = len(self._retired_tasks)
                 _cleanup_all(self._retired_tasks, not self.keep_stage_files)
+                new_num_retired = len(self._retired_tasks)
+                # Some tests might not be cleaned up because they are waiting
+                # for dependencies or because their dependencies have failed.
                 self._update_pipeline_progress('retired', 'completed',
-                                               num_retired)
+                                               num_retired - new_num_retired)
                 if num_running:
                     self._pollctl.running_tasks(num_running).snooze()
             except ABORT_REASONS as e:
@@ -394,12 +397,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             old_state = t.state
             bump_state = getattr(self, f'_advance_{t.state}')
             num_progressed += bump_state(t)
-            if t.failed:
-                new_state = 'fail'
-            elif t.skipped:
-                new_state = 'skip'
-            else:
-                new_state = t.state
+            new_state = t.state
 
             t_elapsed = time.time() - t_init
             if timeout and t_elapsed > timeout and num_progressed:

@@ -217,6 +217,12 @@ class RegressionTask:
 
     @property
     def state(self):
+        if self.failed:
+            return 'fail'
+
+        if self.skipped:
+            return 'skip'
+
         states = {
             'startup': 'startup',
             'setup': 'ready_compile',
