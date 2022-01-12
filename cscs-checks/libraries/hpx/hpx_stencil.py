@@ -47,7 +47,6 @@ class Stencil4HPXCheck(rfm.RunOnlyRegressionTest):
             },
         }
 
-        self.tags = {'production'}
         self.maintainers = ['VH', 'JG']
 
     @run_after('setup')
@@ -134,7 +133,6 @@ class Stencil8HPXCheck(rfm.RunOnlyRegressionTest):
             },
         }
 
-        self.tags = {'production'}
         self.maintainers = ['VH', 'JG']
 
     @run_after('setup')
