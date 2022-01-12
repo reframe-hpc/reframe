@@ -5,7 +5,6 @@
 
 import getpass
 import os
-import re
 
 import reframe as rfm
 import reframe.utility.sanity as sn
