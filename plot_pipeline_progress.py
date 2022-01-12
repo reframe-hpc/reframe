@@ -32,7 +32,7 @@ if __name__ == '__main__':
         y_values.append(step_values)
 
     fig, ax = plt.subplots()
-    ax.stackplot(x_values, y_values, labels=raw_data.keys(), alpha=0.9)
+    ax.stackplot(x_values, y_values, labels=raw_data.keys(), alpha=1)
     ax.legend(loc='upper right')
     ax.set_title('Pipeline progress')
     ax.set_xlabel(x_label)
