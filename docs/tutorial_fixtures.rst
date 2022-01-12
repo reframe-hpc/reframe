@@ -51,7 +51,7 @@ The individual benchmarks do exactly that:
 
 Here we construct the final executable path by accessing the standard :attr:`~reframe.core.pipeline.RegressionTest.stagedir` attribute of the test as well as the custom-defined :attr:`build_prefix` variable of the :class:`build_osu_benchmarks` fixture.
 
-Let's inspect now the :class:`osu_benchmarks` fixture in the :class:`build_osu_benchmarks` class:
+Let's inspect now the :class:`build_osu_benchmarks` fixture:
 
 .. literalinclude:: ../tutorials/fixtures/osu_benchmarks.py
    :start-after: # rfmdocstart: build-osu-benchmarks
