@@ -329,9 +329,11 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                     1 if t.state in ('running', 'compiling') else 0
                     for t in self._current_tasks
                 )
-                timeout = rt.runtime().get_option(
+
+                # FIXME: Always convert due to #GH 2246
+                timeout = float(rt.runtime().get_option(
                     'general/0/pipeline_timeout'
-                )
+                ))
                 self._advance_all(self._current_tasks, timeout)
                 num_retired = len(self._retired_tasks)
                 _cleanup_all(self._retired_tasks, not self.keep_stage_files)
