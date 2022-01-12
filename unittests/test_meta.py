@@ -497,8 +497,14 @@ def test_get_variant_nums(MyMeta):
         q = parameter(range(10))
 
     variants = Foo.get_variant_nums(p=lambda x: x < 5, q=lambda x: x > 3)
-    for variant in variants:
-        assert Foo.get_variant_info(variant)['params']['p'] < 5
-        assert Foo.get_variant_info(variant)['params']['q'] > 3
+    for v in variants:
+        assert Foo.get_variant_info(v)['params']['p'] < 5
+        assert Foo.get_variant_info(v)['params']['q'] > 3
 
     assert Foo.get_variant_nums() == list(range(Foo.num_variants))
+
+    # Check condensed syntax
+    variants = Foo.get_variant_nums(p=5, q=4)
+    for v in variants:
+        assert Foo.get_variant_info(v)['params']['p'] == 5
+        assert Foo.get_variant_info(v)['params']['q'] == 4

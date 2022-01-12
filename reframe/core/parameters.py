@@ -281,6 +281,10 @@ class ParamSpace(namespaces.Namespace):
         The conditions are passed as key-value pairs, where the keys are the
         parameter names to apply the filtering on and the values are functions
         that expect the parameter's value as the sole argument.
+
+        :returns: the indices of the matching parameters in the parameter
+            space.
+
         '''
         candidates = range(len(self))
         if not conditions:
@@ -292,6 +296,12 @@ class ParamSpace(namespaces.Namespace):
                 raise NameError(
                     f'no such parameter: {param!r}'
                 )
+            elif not callable(cond):
+                # Convert it to the identity function
+                val = cond
+
+                def cond(x):
+                    return x == val
             elif not utils.is_trivially_callable(cond, non_def_args=1):
                 raise ValueError(
                     f'condition on {param!r} must be a callable accepting a '
