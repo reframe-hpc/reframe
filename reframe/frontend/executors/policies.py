@@ -330,7 +330,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                     for t in self._current_tasks
                 )
                 timeout = rt.runtime().get_option(
-                    'general/pipeline_timeout'
+                    'general/0/pipeline_timeout'
                 )
                 self._advance_all(self._current_tasks, timeout)
                 num_retired = len(self._retired_tasks)
