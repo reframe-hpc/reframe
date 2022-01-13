@@ -94,11 +94,11 @@ class SlurmJobScheduler(sched.JobScheduler):
     # as well as job arrays.
     # For heterogeneous jobs, the job_id has the following format:
     # <het_job_id>+<het_job_offset>
-    # See (`Heterogeneous Job Support<https://slurm.schedmd.com/heterogeneous_jobs.html>`__)  # noqa: E501
+    # (https://slurm.schedmd.com/heterogeneous_jobs.html)
     # For job arrays the job_id has one of the following formats:
     #   * <job_id>_<array_task_id>
     #   * <job_id>_[<array_task_id_start>-<array_task_id_end>]
-    # See (`Job Array Support<https://slurm.schedmd.com/job_array.html`__)
+    # (https://slurm.schedmd.com/job_array.html)
     _jobid_patt = r'\d+(?:\+\d+|_\d+|_\[\d+-\d+\])?'
 
     def __init__(self):
