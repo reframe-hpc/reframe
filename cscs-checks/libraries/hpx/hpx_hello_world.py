@@ -20,7 +20,6 @@ class HelloWorldHPXCheck(rfm.RunOnlyRegressionTest):
 
         self.use_multithreading = None
 
-        self.tags = {'production'}
         self.maintainers = ['VH', 'JG']
 
     @run_after('setup')

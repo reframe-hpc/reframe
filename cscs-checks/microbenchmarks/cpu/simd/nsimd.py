@@ -7,7 +7,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.parameterized_test(['mul.avx2.f32.cpp'], ['mul.avx2.f64.cpp'])
+@rfm.simple_test
 class NsimdTest(rfm.RegressionTest):
     '''
     Testing https://github.com/agenium-scale/nsimd.git
@@ -32,20 +32,37 @@ class NsimdTest(rfm.RegressionTest):
           * num_tasks: 1
           * speedup: 12.306 x (ns)
     '''
-    def __init__(self, testname):
-        self.valid_systems = ['dom:mc', 'dom:gpu', 'eiger:mc']
-        self.valid_prog_environs = ['builtin']
-        self.descr = f'testing {testname}'
-        self.build_system = 'SingleSource'
-        self.testname = testname
-        # c++ test code generated with:
-        #   python3 egg/hatch.py --benches --simd avx2 -m mul
-        # and benches.hpp copied from:
-        #   https://github.com/agenium-scale/nsimd/blob/master/benches/
-        self.sourcesdir = 'benches'
-        self.sourcepath = testname
-        self.executable = f'{testname}.exe'
-        self.modules = ['nsimd', 'googlebenchmark', 'sleef', 'MIPP']
+    bench_name = parameter(['mul.avx2.f32.cpp', 'mul.avx2.f64.cpp'])
+
+    valid_systems = ['dom:mc', 'dom:gpu', 'eiger:mc']
+    valid_prog_environs = ['PrgEnv-gnu']
+    build_system = 'SingleSource'
+
+    # c++ test code generated with:
+    #   python3 egg/hatch.py --benches --simd avx2 -m mul
+    # and benches.hpp copied from:
+    #   https://github.com/agenium-scale/nsimd/blob/master/benches/
+    sourcesdir = 'benches'
+    modules = ['nsimd', 'googlebenchmark', 'sleef', 'MIPP']
+    maintainers = ['JG']
+    exclusive = True
+    num_tasks = 1
+    num_tasks_per_node = 1
+    num_cpus_per_task = 1
+    num_tasks_per_core = 1
+    use_multithreading = False
+
+    allrefs = {'haswell': {'mul.avx2.f32.cpp': 7.8, 'mul.avx2.f64.cpp': 4.6},
+               'broadwell': {'mul.avx2.f32.cpp': 7.4, 'mul.avx2.f64.cpp': 3.7},
+               'zen2': {'mul.avx2.f32.cpp': 12., 'mul.avx2.f64.cpp': 7.6}}
+
+    @run_after('init')
+    def set_descr(self):
+        self.descr = f'testing {self.bench_name}'
+
+    @run_before('compile')
+    def setup_build(self):
+        self.sourcepath = self.bench_name
         self.build_system.cxxflags = [
             '-std=c++14', '-O3', '-DNDEBUG', '-dynamic',
             '-mavx2', '-DAVX2', '-mfma', '-DFMA',
@@ -57,42 +74,27 @@ class NsimdTest(rfm.RegressionTest):
             '-L$EBROOTSLEEF/lib', '-lnsimd_avx2', '-lbenchmark', '-lpthread',
             '-lsleef'
         ]
-        self.maintainers = ['JG']
-        self.exclusive = True
-        self.num_tasks = 1
-        self.num_tasks_per_node = 1
-        self.num_cpus_per_task = 1
-        self.num_tasks_per_core = 1
-        self.use_multithreading = False
+
+    @run_before('run')
+    def prepare_run(self):
+        self.skip_if_no_procinfo()
+        self.executable = f'NsimdTest_{self.bench_name}'.replace('.', '_')
         self.variables = {
             'CRAYPE_LINK_TYPE': 'dynamic',
             'OMP_NUM_THREADS': str(self.num_cpus_per_task),
         }
-        self.sanity_patterns = sn.assert_found('^Running %s' % self.executable,
-                                               self.stderr)
-        self.perf_patterns = {
-            'speedup': self.speedup,
-        }
-        reference = {'hwl': {'mul.avx2.f32.cpp': 7.8, 'mul.avx2.f64.cpp': 4.6},
-                     'bwl': {'mul.avx2.f32.cpp': 7.4, 'mul.avx2.f64.cpp': 3.7},
-                     'eig': {'mul.avx2.f32.cpp': 12., 'mul.avx2.f64.cpp': 7.6}}
-        self.reference = {
-            'dom:gpu': {
-                'speedup': (reference['hwl'][testname], -0.2, None, 'x (ns)')
-            },
-            'dom:mc': {
-                'speedup': (reference['bwl'][testname], -0.2, None, 'x (ns)')
-            },
-            'eiger:mc': {
-                'speedup': (reference['eig'][testname], -0.2, None, 'x (ns)')
-            },
-            '*': {
-                'speedup': (1.0, None, None, 'x (ns)')
-            }
-        }
 
-    @property
-    @sn.sanity_function
+        # Setup the reference
+        proc = self.current_partition.processor
+        if proc.info:
+            perf_var = self.allrefs[proc.arch][self.bench_name]
+            self.reference['*'] = (perf_var, -0.2, None)
+
+    @sanity_function
+    def validate_benchmark(self):
+        return sn.assert_found(f'^Running {self.executable}', self.stderr)
+
+    @performance_function('n/a')
     def speedup(self):
         regex = r'^\S+(f32|f64)\s+(\S+) ns\s+'
         slowest = sn.max(sn.extractall(regex, self.stdout, 2, float))

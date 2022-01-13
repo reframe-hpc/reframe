@@ -472,7 +472,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: boolean
     #: :default: :class:`True`
-    strict_check = variable(bool, value=True)
+    strict_check = variable(typ.Bool, value=True)
 
     #: Number of tasks required by this test.
     #:
@@ -547,7 +547,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: boolean or :class:`None`
     #: :default: :class:`None`
-    use_multithreading = variable(bool, type(None), value=None)
+    use_multithreading = variable(typ.Bool, type(None), value=None)
 
     #: .. versionadded:: 3.0
     #:
@@ -564,13 +564,13 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: boolean
     #: :default: :class:`False`
-    exclusive_access = variable(bool, value=False)
+    exclusive_access = variable(typ.Bool, value=False)
 
     #: Always execute this test locally.
     #:
     #: :type: boolean
     #: :default: :class:`False`
-    local = variable(bool, value=False)
+    local = variable(typ.Bool, value=False)
 
     #: The set of reference values for this test.
     #:
@@ -830,7 +830,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: appropriate sanity check.
     #:
     #: :type: boolean : :default: :class:`True`
-    build_locally = variable(bool, value=True)
+    build_locally = variable(typ.Bool, value=True)
 
     def __new__(cls, *args, **kwargs):
         obj = super().__new__(cls)

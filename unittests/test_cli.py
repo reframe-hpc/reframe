@@ -624,6 +624,18 @@ def test_verbosity_with_check(run_reframe):
     assert 0 == returncode
 
 
+def test_quiesce_with_check(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        more_options=['-v', '-qqq'],    # Show only errors
+        system='testsys',
+        action='list',
+        checkpath=['unittests/resources/checks/hellocheck.py']
+    )
+    assert stdout == ''
+    assert 'Traceback' not in stderr
+    assert 0 == returncode
+
+
 def test_load_user_modules(run_reframe, user_exec_ctx):
     with rt.module_use('unittests/modules'):
         returncode, stdout, stderr = run_reframe(
@@ -793,9 +805,12 @@ def test_external_vars(run_reframe):
     returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks_unlisted/externalvars.py'],
         more_options=['-S', 'external_x.foo=3', '-S', 'external_y.foo=2',
-                      '-S', 'foolist=3,4', '-S', 'bar=@none']
+                      '-S', 'foolist=3,4', '-S', 'bar=@none',
+                      '-S', 'external_x.ham=true',
+                      '-S', 'external_y.baz=false']
     )
     assert 'Traceback' not in stdout
+    assert 'Ran 2/2 test case(s)' in stdout
     assert 'Traceback' not in stderr
     assert returncode == 0
 
