@@ -1784,6 +1784,10 @@ def test_nodelist_abbrev():
     assert nodelist([]) == ''
     assert nodelist(['nid001']) == 'nid001'
 
+    # Test host names with numbers in their basename (see GH #2357)
+    nodes = [f'c2-01-{n:02}' for n in range(100)]
+    assert nodelist(nodes) == 'c2-01-[00-99]'
+
     # Test node duplicates
     assert nodelist(['nid001', 'nid001', 'nid002']) == 'nid001,nid00[1-2]'
 
