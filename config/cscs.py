@@ -560,6 +560,7 @@ site_configuration = {
                 {
                     'name': 'login',
                     'scheduler': 'local',
+                    'time_limit': '10m',
                     'environs': [
                         'builtin',
                         'PrgEnv-aocc',
@@ -638,6 +639,7 @@ site_configuration = {
                 {
                     'name': 'login',
                     'scheduler': 'local',
+                    'time_limit': '10m',
                     'environs': [
                         'builtin',
                         'PrgEnv-aocc',
