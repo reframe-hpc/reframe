@@ -9,23 +9,19 @@ import getpass
 
 
 class S3apiCheck(rfm.RunOnlyRegressionTest):
-    endpoint = 'object.cscs.ch'
-    tags = {'ops', 'object_store'}
+    descr = 'S3API check for (object.cscs.ch)'
     valid_systems = ['dom:gpu', 'daint:gpu']
     valid_prog_environs = ['builtin']
     time_limit = '5m'
     executable = 's3_test.sh'
-    maintainers = ['VH', 'GLR']
     username = getpass.getuser()
+    maintainers = ['VH', 'GLR']
+    tags = {'ops', 'object_store'}
 
     @run_after('init')
     def add_production_tag(self):
         if self.current_system.name in {'dom'}:
             self.tags |= {'production'}
-
-    @run_after('init')
-    def set_description(self):
-        self.descr = f'S3API check for ({self.endpoint})'
 
 
 @rfm.simple_test
@@ -37,7 +33,7 @@ class S3apiCreateBucket(S3apiCheck):
         }
     }
 
-    @run_before('run')
+    @run_after('init')
     def set_exec_opts(self):
         self.executable_opts = ['s3_create_bucket.py',
                                 self.current_system.name,
@@ -65,11 +61,8 @@ class S3apiCreateSmallObject(S3apiCheck):
     }
 
     @run_after('init')
-    def set_dependencies(self):
+    def set_deps_and_exec_opts(self):
         self.depends_on('S3apiCreateBucket')
-
-    @run_before('run')
-    def set_exec_opts(self):
         self.executable_opts = ['s3_create_small_object.py',
                                 self.current_system.name,
                                 self.username]
@@ -96,11 +89,8 @@ class S3apiUploadLargeObject(S3apiCheck):
     }
 
     @run_after('init')
-    def set_dependencies(self):
+    def set_deps_and_exec_opts(self):
         self.depends_on('S3apiCreateBucket')
-
-    @run_before('run')
-    def set_exec_opts(self):
         self.executable_opts = ['s3_upload_large_object.py',
                                 self.current_system.name,
                                 self.username]
@@ -127,11 +117,8 @@ class S3apiDownloadLargeObject(S3apiCheck):
     }
 
     @run_after('init')
-    def set_dependencies(self):
+    def set_deps_and_exec_opts(self):
         self.depends_on('S3apiUploadLargeObject')
-
-    @run_before('run')
-    def set_exec_opts(self):
         self.executable_opts = ['s3_download_large_object.py',
                                 self.current_system.name,
                                 self.username]
@@ -158,12 +145,9 @@ class S3apiDeleteBucketObject(S3apiCheck):
     }
 
     @run_after('init')
-    def set_dependencies(self):
+    def set_deps_and_exec_opts(self):
         self.depends_on('S3apiCreateSmallObject')
         self.depends_on('S3apiDownloadLargeObject')
-
-    @run_before('run')
-    def set_exec_opts(self):
         self.executable_opts = ['s3_delete.py',
                                 self.current_system.name,
                                 self.username]
