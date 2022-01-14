@@ -275,6 +275,28 @@ class _SiteConfig:
             f'Looking for a matching configuration entry '
             f'for system {hostname!r}'
         )
+        
+        # May need to find a better way to do this for clusters on Azure
+        # Host names can be quite random
+        if os.path.exists('/etc/waagent.conf'):
+            try:
+                cmd = "curl -H Metadata:true \"http://169.254.169.254/metadata/instance?api-version=2019-06-04\""
+                results = util.osext.run_command(cmd)
+                vm_data = json.loads(results.stdout)
+                pp_results = json.dumps(vm_data, indent=4)
+                vm_type = vm_data['compute']['vmSize'][9:]
+                img_ref = vm_data['compute']['storageProfile']['imageReference']
+                sysname = "{}_{}_{}_{}".format(vm_type.lower(),
+                                               img_ref['offer'].lower(),
+                                               img_ref['sku'].lower(),
+                                               img_ref['version'].lower())
+                # If on Azure return generated sysname
+                return sysname
+            except Exception as e:
+                raise ConfigError(f"\nError {pp_results}"
+                                  f"\nError {e} "
+                                  f"for the current system: '{hostname}'.")
+                
         for system in self._site_config['systems']:
             for patt in system['hostnames']:
                 if re.match(patt, hostname):
