@@ -10,47 +10,57 @@ import reframe.utility.sanity as sn
 class QuantumESPRESSOCheck(rfm.RunOnlyRegressionTest):
     scale = parameter(['small', 'large'])
     variant = parameter(['maint', 'prod'])
+    modules = ['QuantumESPRESSO']
+    executable = 'pw.x'
+    executable_opts = ['-in', 'ausurf.in', '-pd', '.true.']
+    extra_resources = {
+        'switches': {
+            'num_switches': 1
+        }
+    }
+    strict_check = False
+    maintainers = ['LM']
+    tags = {'scs'}
 
-    def __init__(self):
+    @run_after('init')
+    def set_prog_envs_and_tags(self):
         if self.current_system.name in ['eiger', 'pilatus']:
             self.valid_prog_environs = ['cpeIntel']
         else:
             self.valid_prog_environs = ['builtin']
 
-        self.modules = ['QuantumESPRESSO']
-        self.executable = 'pw.x'
-        self.executable_opts = ['-in', 'ausurf.in',
-                                '-pd', '.true.']
+        self.tags |= {
+            'maintenance' if self.variant == 'maint' else 'production'
+        }
 
-        self.sanity_patterns = sn.all([
+    @sanity_function
+    def assert_simulation_successful(self):
+        energy = sn.extractsingle(r'!\s+total energy\s+=\s+(?P<energy>\S+) Ry',
+                                  self.stdout, 'energy', float)
+        energy_diff = sn.abs(energy-self.energy_reference)
+        return sn.all([
             sn.assert_found(r'convergence has been achieved', self.stdout),
+            sn.assert_lt(energy_diff, self.energy_tolerance)
         ])
 
-        self.perf_patterns = {
-            'time': sn.extractsingle(r'electrons.+\s(?P<wtime>\S+)s WALL',
-                                     self.stdout, 'wtime', float)
-        }
-
-        self.maintainers = ['LM']
-        self.tags = {'scs'}
-        self.strict_check = False
-        self.extra_resources = {
-            'switches': {
-                'num_switches': 1
-            }
-        }
+    @performance_function('s')
+    def time(self):
+        return sn.extractsingle(r'electrons.+\s(?P<wtime>\S+)s WALL',
+                                self.stdout, 'wtime', float)
 
 
 @rfm.simple_test
 class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
-    def __init__(self):
-        super().__init__()
+    valid_systems = ['daint:mc', 'eiger:mc', 'pilatus:mc']
+    energy_tolerance = 1.0e-6
+
+    @run_after('init')
+    def setup_test(self):
         self.descr = (f'QuantumESPRESSO CPU check (version: {self.scale}, '
                       f'{self.variant})')
-        self.valid_systems = ['daint:mc', 'eiger:mc', 'pilatus:mc']
         if self.scale == 'small':
             self.valid_systems += ['dom:mc']
-            energy_reference = -11427.09017218
+            self.energy_reference = -11427.09017218
             if self.current_system.name in ['daint', 'dom']:
                 self.num_tasks = 216
                 self.num_tasks_per_node = 36
@@ -65,8 +75,9 @@ class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
                     'OMP_PLACES': 'cores',
                     'OMP_PROC_BIND': 'close'
                 }
+
         else:
-            energy_reference = -11427.09017152
+            self.energy_reference = -11427.09017152
             if self.current_system.name in ['daint']:
                 self.num_tasks = 576
                 self.num_tasks_per_node = 36
@@ -82,14 +93,8 @@ class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
                     'OMP_PROC_BIND': 'close'
                 }
 
-        energy = sn.extractsingle(r'!\s+total energy\s+=\s+(?P<energy>\S+) Ry',
-                                  self.stdout, 'energy', float)
-        energy_diff = sn.abs(energy-energy_reference)
-        self.sanity_patterns = sn.all([
-            self.sanity_patterns,
-            sn.assert_lt(energy_diff, 1e-6)
-        ])
-
+    @run_before('performance')
+    def set_reference(self):
         references = {
             'maint': {
                 'small': {
@@ -99,7 +104,7 @@ class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
                     'pilatus:mc': {'time': (66.0, None, 0.10, 's')}
                 },
                 'large': {
-                    'daint:mc': {'time': (115.0, None, 0.10, 's')},
+                    'daint:mc': {'time': (150.0, None, 0.10, 's')},
                     'eiger:mc': {'time': (53.0, None, 0.10, 's')},
                     'pilatus:mc': {'time': (53.0, None, 0.10, 's')}
                 }
@@ -112,7 +117,7 @@ class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
                     'pilatus:mc': {'time': (66.0, None, 0.10, 's')}
                 },
                 'large': {
-                    'daint:mc': {'time': (115.0, None, 0.10, 's')},
+                    'daint:mc': {'time': (150.0, None, 0.10, 's')},
                     'eiger:mc': {'time': (53.0, None, 0.10, 's')},
                     'pilatus:mc': {'time': (53.0, None, 0.10, 's')}
                 }
@@ -120,9 +125,6 @@ class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
         }
 
         self.reference = references[self.variant][self.scale]
-        self.tags |= {
-            'maintenance' if self.variant == 'maint' else 'production'
-        }
 
     @run_before('run')
     def set_task_distribution(self):
@@ -135,31 +137,26 @@ class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
 
 @rfm.simple_test
 class QuantumESPRESSOGpuCheck(QuantumESPRESSOCheck):
-    def __init__(self):
-        super().__init__()
+    valid_systems = ['daint:gpu']
+    num_gpus_per_node = 1
+    num_tasks_per_node = 1
+    num_cpus_per_task = 12
+    energy_tolerance = 1.0e-7
+
+    @run_after('init')
+    def setup_test(self):
         self.descr = (f'QuantumESPRESSO GPU check (version: {self.scale}, '
                       f'{self.variant})')
-        self.valid_systems = ['daint:gpu']
-        self.num_gpus_per_node = 1
         if self.scale == 'small':
             self.valid_systems += ['dom:gpu']
             self.num_tasks = 6
-            energy_reference = -11427.09017168
+            self.energy_reference = -11427.09017168
         else:
             self.num_tasks = 16
-            energy_reference = -11427.09017179
+            self.energy_reference = -11427.09017179
 
-        self.num_tasks_per_node = 1
-        self.num_cpus_per_task = 12
-
-        energy = sn.extractsingle(r'!\s+total energy\s+=\s+(?P<energy>\S+) Ry',
-                                  self.stdout, 'energy', float)
-        energy_diff = sn.abs(energy-energy_reference)
-        self.sanity_patterns = sn.all([
-            self.sanity_patterns,
-            sn.assert_lt(energy_diff, 1e-7)
-        ])
-
+    @run_before('performance')
+    def set_reference(self):
         references = {
             'maint': {
                 'small': {
@@ -180,8 +177,4 @@ class QuantumESPRESSOGpuCheck(QuantumESPRESSOCheck):
                 }
             }
         }
-
         self.reference = references[self.variant][self.scale]
-        self.tags |= {
-            'maintenance' if self.variant == 'maint' else 'production'
-        }
