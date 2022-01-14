@@ -7,6 +7,7 @@
 # LSF backend
 #
 # - Initial version submitted by Ryan Goodner, UNM (based on PBS backend)
+# - Extended and fixed by Jonathan Frawley and Mark Turner, ARC Durham University
 #
 
 import functools
@@ -76,14 +77,8 @@ class LsfJobScheduler(PbsJobScheduler):
         return preamble
 
     def submit(self, job):
-        #cmd = f'bsub < {job.script_filename}'
-        cmd = f'bsub < {job.script_filename}'
         with open(job.script_filename, 'r') as f:
-            #completed = subprocess.Popen(args='bsub', stdin=f, stdout=subprocess.PIPE)
             completed = subprocess.run(args='bsub', stdin=f, capture_output=True)
-        print(f'stdout: {completed.stdout}')
-        print(f'stderr: {completed.stderr}')
-        #completed = _run_strict(cmd, timeout=self._submit_timeout, shell=True)
         jobid_match = re.search(r'^Job <(?P<jobid>\S+)> is submitted',
                                 completed.stdout.decode('utf-8'))
         if not jobid_match:
@@ -91,21 +86,6 @@ class LsfJobScheduler(PbsJobScheduler):
                                     'of the submitted job')
         job._jobid = jobid_match.group('jobid')
         job._submit_time = time.time()
-
-
-        """
-        with open(job.script_filename, 'r') as f:
-            completed = subprocess.run(args='bsub', stdin=f, capture_output=True)
-        
-        jobid_match = re.search(r'^Job <(?P<jobid>\S+)> is submitted',
-                                completed.stdout.decode('utf-8'))
-        if not jobid_match:
-            raise JobSchedulerError('could not retrieve the job id '
-                                    'of the submitted job')
-
-        job._jobid = jobid_match.group('jobid')
-        job._submit_time = time.time()
-        """
 
     def poll(self, *jobs):
         if jobs:
