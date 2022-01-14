@@ -11,6 +11,7 @@
 
 import functools
 import re
+import subprocess
 import time
 
 import reframe.core.runtime as rt
@@ -31,14 +32,11 @@ class LsfJobScheduler(PbsJobScheduler):
         )
 
     def emit_preamble(self, job):
-        num_tasks_per_node = job.num_tasks_per_node or 1
-        num_nodes = job.num_tasks // num_tasks_per_node
-
         preamble = [
             self._format_option(f'-J {job.name}'),
             self._format_option(f'-o {job.stdout}'),
             self._format_option(f'-e {job.stderr}'),
-            self._format_option(f'-nnodes {num_nodes}')
+            self._format_option(f'-n {job.num_tasks}')
         ]
 
         # add job time limit in minutes
@@ -61,10 +59,17 @@ class LsfJobScheduler(PbsJobScheduler):
         return preamble
 
     def submit(self, job):
-        cmd = f'bsub {job.script_filename}'
-        completed = _run_strict(cmd, timeout=self._submit_timeout)
+        #cmd = f'bsub < {job.script_filename}'
+        cmd = f'bsub < {job.script_filename}'
+        with open(job.script_filename, 'r') as f:
+            #completed = subprocess.Popen(args='bsub', stdin=f, stdout=subprocess.PIPE)
+            completed = subprocess.run(args='bsub', stdin=f, capture_output=True)
+        print(f'stdout: {completed.stdout}')
+        print(f'stderr: {completed.stderr}')
+
+        #completed = _run_strict(cmd, timeout=self._submit_timeout, shell=True)
         jobid_match = re.search(r'^Job <(?P<jobid>\S+)> is submitted',
-                                completed.stdout)
+                                completed.stdout.decode('utf-8'))
         if not jobid_match:
             raise JobSchedulerError('could not retrieve the job id '
                                     'of the submitted job')
