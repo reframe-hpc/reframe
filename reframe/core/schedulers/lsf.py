@@ -31,19 +31,34 @@ class LsfJobScheduler(PbsJobScheduler):
             f'schedulers/@{self.registered_name}/job_submit_timeout'
         )
 
+    def _format_option(self, var, option):
+        if var is not None:
+            return self._prefix + ' ' + option.format(var)
+        else:
+            return ''
+
     def emit_preamble(self, job):
+
         preamble = [
-            self._format_option(f'-J {job.name}'),
-            self._format_option(f'-o {job.stdout}'),
-            self._format_option(f'-e {job.stderr}'),
-            self._format_option(f'-n {job.num_tasks}')
+            self._format_option(job.name, '-J "{0}"'),
+            self._format_option(job.stdout, '-o {0}'),
+            self._format_option(job.stderr, '-e {0}'),
+            self._format_option(job.num_tasks, '-n {0}'),
+            self._format_option(
+                min(job.num_tasks * job.num_cpus_per_task,
+                    job.num_tasks_per_node * job.num_cpus_per_task),
+                '-R "span[ptile={0}]"'
+            ),
         ]
 
         # add job time limit in minutes
         if job.time_limit is not None:
             preamble.append(
-                self._format_option(f'-W {int(job.time_limit // 60)}')
+                f'{self._prefix} -W {int(job.time_limit // 60)}'
             )
+
+        for opt in job.sched_access:
+            preamble.append('%s %s' % (self._prefix, opt))
 
         # emit the rest of the options
         options = job.options + job.cli_options
@@ -51,10 +66,12 @@ class LsfJobScheduler(PbsJobScheduler):
             if opt.startswith('#'):
                 preamble.append(opt)
             else:
-                preamble.append(self._format_option(opt))
+                preamble.append(self._prefix + ' ' + opt)
 
-        # change to working dir with cd
-        preamble.append(f'cd {job.workdir}')
+        if job.sched_exclusive_access:
+            preamble.append(
+                preamble.append(f'{self._prefix} -x')
+            )
 
         return preamble
 
@@ -66,8 +83,20 @@ class LsfJobScheduler(PbsJobScheduler):
             completed = subprocess.run(args='bsub', stdin=f, capture_output=True)
         print(f'stdout: {completed.stdout}')
         print(f'stderr: {completed.stderr}')
-
         #completed = _run_strict(cmd, timeout=self._submit_timeout, shell=True)
+        jobid_match = re.search(r'^Job <(?P<jobid>\S+)> is submitted',
+                                completed.stdout.decode('utf-8'))
+        if not jobid_match:
+            raise JobSchedulerError('could not retrieve the job id '
+                                    'of the submitted job')
+        job._jobid = jobid_match.group('jobid')
+        job._submit_time = time.time()
+
+
+        """
+        with open(job.script_filename, 'r') as f:
+            completed = subprocess.run(args='bsub', stdin=f, capture_output=True)
+        
         jobid_match = re.search(r'^Job <(?P<jobid>\S+)> is submitted',
                                 completed.stdout.decode('utf-8'))
         if not jobid_match:
@@ -76,6 +105,7 @@ class LsfJobScheduler(PbsJobScheduler):
 
         job._jobid = jobid_match.group('jobid')
         job._submit_time = time.time()
+        """
 
     def poll(self, *jobs):
         if jobs:
