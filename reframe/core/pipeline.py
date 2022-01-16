@@ -215,17 +215,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         return ret
 
-    #: The name of the test.
-    #:
-    #: :type: string that can contain any character except ``/``
-    #: :default: For non-parameterised tests, the default name is the test
-    #:   class name. For parameterised tests, the default name is constructed
-    #:   by concatenating the test class name and the string representations
-    #:   of every test parameter: ``TestClassName_<param1>_<param2>``.
-    #:   Any non-alphanumeric value in a parameter's representation is
-    #:   converted to ``_``.
-    # name = variable(typ.Str[r'[^\/]+'])
-
     #: List of programming environments supported by this test.
     #:
     #: If ``*`` is in the list then all programming environments are supported
@@ -369,7 +358,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: :default: :class:`required`
     #:
     #: .. versionchanged:: 3.7.3
-    #:    Default value changed from ``os.path.join('.', self.name)`` to
+    #:    Default value changed from ``os.path.join('.', self.unique_name)`` to
     #:    :class:`required`.
     executable = variable(str)
 
@@ -1038,6 +1027,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 "see the documentation of the 'name' attribute for details",
                 from_version='3.10.0'
             )
+            name_type = typ.Str[r'[^\/]+']
+            if not isinstance(value, name_type):
+                raise TypeError(
+                    f'attribute {name!r} must be of type {name_type.__name__}'
+                )
+
             self._rfm_unique_name = value
         else:
             super().__setattr__(name, value)
@@ -1047,6 +1042,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     @property
     def unique_name(self):
         '''The unique name of this test.
+
+        :type: :class:`str`
 
         .. versionadded:: 3.10.0
         '''
@@ -1059,10 +1056,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         This name contains a string representation of the various parameters
         of this specific test variant.
 
-        .. versionadded;: 3.10.0
+        :type: :class:`str`
 
         .. note::
            The display name may not be unique.
+
+        .. versionadded:: 3.10.0
 
         '''
         def _format_params(cls, info, prefix=' %'):
@@ -1107,7 +1106,15 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     @property
     def name(self):
-        # For backward compatibility
+        '''The name of the test.
+
+        This is an alias of :attr:`unique_name`.
+
+        .. versionchanged:: 3.10.0
+           Setting this field is deprecated.
+
+        '''
+
         return self.unique_name
 
     @property

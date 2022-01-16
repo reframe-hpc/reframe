@@ -1524,3 +1524,21 @@ def test_make_test_with_builtins(local_exec_ctx):
     hello_cls.setvar('message', 'hello')
     assert hello_cls.__name__ == 'HelloTest'
     _run(hello_cls(), *local_exec_ctx)
+
+
+def test_set_name_deprecation():
+    from reframe.core.warnings import ReframeDeprecationWarning
+
+    with pytest.warns(ReframeDeprecationWarning):
+        class _X(rfm.RegressionTest):
+            @run_after('init')
+            def set_name(self):
+                self.name = 'foo'
+
+        _X()
+
+    with pytest.warns(ReframeDeprecationWarning):
+        class _X(rfm.RegressionTest):
+            name = 'foo'
+
+        _X()

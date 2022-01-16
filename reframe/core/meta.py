@@ -51,7 +51,6 @@ class RegressionTestMeta(type):
                 # Override the regular class attribute (if present) and return
                 self._namespace.pop(key, None)
                 return
-
             elif isinstance(value, parameters.TestParam):
                 # Insert the attribute in the parameter namespace
                 try:
@@ -64,7 +63,6 @@ class RegressionTestMeta(type):
                 # Override the regular class attribute (if present) and return
                 self._namespace.pop(key, None)
                 return
-
             elif isinstance(value, fixtures.TestFixture):
                 # Insert the attribute in the fixture namespace
                 self['_rfm_local_fixture_space'][key] = value
@@ -72,7 +70,6 @@ class RegressionTestMeta(type):
                 # Override the regular class attribute (if present)
                 self._namespace.pop(key, None)
                 return
-
             elif key in self['_rfm_local_param_space']:
                 raise ReframeSyntaxError(
                     f'cannot redefine parameter {key!r}'
