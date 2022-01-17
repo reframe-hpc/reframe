@@ -454,3 +454,35 @@ def test_other_numerical_operators():
         assert math.trunc(npi) == -3
         assert math.floor(npi) == -4
         assert math.ceil(npi) == -3
+
+
+def test_var_deprecation():
+    from reframe.core.variables import DEPRECATE_RD, DEPRECATE_WR
+    from reframe.core.warnings import ReframeDeprecationWarning
+
+    # Check read deprecation
+    class A(rfm.RegressionMixin):
+        x = deprecate(variable(int, value=3),
+                      'accessing x is deprecated', DEPRECATE_RD)
+        y = deprecate(variable(int, value=5),
+                      'setting y is deprecated', DEPRECATE_WR)
+
+    class B(A):
+        z = variable(int, value=y)
+
+    with pytest.warns(ReframeDeprecationWarning):
+        class C(A):
+            w = variable(int, value=x)
+
+    with pytest.warns(ReframeDeprecationWarning):
+        class D(A):
+            y = 3
+
+    # Check that deprecation warnings are raised properly after instantiation
+    a = A()
+    with pytest.warns(ReframeDeprecationWarning):
+        c = a.x
+
+    c = a.y
+    with pytest.warns(ReframeDeprecationWarning):
+        a.y = 10

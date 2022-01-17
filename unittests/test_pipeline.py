@@ -1535,10 +1535,16 @@ def test_set_name_deprecation():
             def set_name(self):
                 self.name = 'foo'
 
-        _X()
+        x = _X()
+
+    assert x.name == 'foo'
+    assert x.unique_name == 'foo'
 
     with pytest.warns(ReframeDeprecationWarning):
         class _X(rfm.RegressionTest):
             name = 'foo'
 
-        _X()
+        x = _X()
+
+    assert x.name == 'foo'
+    assert x.unique_name == 'foo'

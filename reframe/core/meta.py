@@ -124,7 +124,6 @@ class RegressionTestMeta(type):
                 try:
                     # Handle variable access
                     return self['_rfm_local_var_space'][key]
-
                 except KeyError:
                     # Handle parameter access
                     if key in self['_rfm_local_param_space']:
@@ -229,6 +228,7 @@ class RegressionTestMeta(type):
         # Directives to add/modify a regression test variable
         namespace['variable'] = variables.TestVar
         namespace['required'] = variables.Undefined
+        namespace['deprecate'] = variables.TestVar.create_deprecated
 
         # Regression test fixture space
         namespace['_rfm_local_fixture_space'] = namespaces.LocalNamespace()

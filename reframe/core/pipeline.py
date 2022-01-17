@@ -44,6 +44,7 @@ from reframe.core.exceptions import (BuildError, DependencyError,
                                      ReframeSyntaxError)
 from reframe.core.meta import RegressionTestMeta
 from reframe.core.schedulers import Job
+from reframe.core.variables import DEPRECATE_WR
 from reframe.core.warnings import user_deprecation_warning
 
 
@@ -214,6 +215,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                     ret[stage] = [hook.fn]
 
         return ret
+
+    name = deprecate(variable(typ.Str[r'[^\/]+'], attr_name='_rfm_unique_name'),
+                     "setting the 'name' attribute is deprecated and "
+                     "will be disabled in the future", DEPRECATE_WR)
 
     #: List of programming environments supported by this test.
     #:
@@ -896,7 +901,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     @deferrable
     def __rfm_init__(self, *args, prefix=None, **kwargs):
-        if not self.is_fixture():
+        if not self.is_fixture() and not hasattr(self, '_rfm_unique_name'):
             self._rfm_unique_name = type(self).variant_name(self.variant_num)
 
             # Add the parameters from the parameterized_test decorator.
@@ -1020,7 +1025,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 f'{type(self).__qualname__!r} object has no attribute {name!r}'
             )
 
-    def __setattr__(self, name, value):
+    def r__setattr__(self, name, value):
         if name == 'name':
             user_deprecation_warning(
                 "setting the name of the test is deprecated; "
@@ -1105,7 +1110,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         return self._rfm_display_name
 
     @property
-    def name(self):
+    def r_name(self):
         '''The name of the test.
 
         This is an alias of :attr:`unique_name`.
