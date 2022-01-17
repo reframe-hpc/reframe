@@ -7,7 +7,7 @@
 # LSF backend
 #
 # - Initial version submitted by Ryan Goodner, UNM (based on PBS backend)
-# - Extended and fixed by Jonathan Frawley and Mark Turner, ARC Durham University
+# - Extended and fixed by Jonathan Frawley and Mark Turner
 #
 
 import functools
