@@ -426,4 +426,15 @@ The following listing shows how the actual test cases dependencies are formed wh
 
    < ... omitted ... >
 
+
 For more information on test dependencies, you can have a look at :doc:`dependencies`.
+
+
+Depending on Parameterized Tests
+--------------------------------
+
+As shown earlier in this section, tests define their dependencies by referencing the target tests by their unique name.
+This is straightforward when referring to regular tests, where their name matches the class name, but it becomes cumbersome trying to refer to a parameterized tests, since no safe assumption should be as of the variant number of the test.
+In order to safely and reliably refer to parameterized test, you should use the :func:`get_variant_nums` and :func:`variant_name` class methods as shown in the following example:
+
+.. literalinclude:: ../tutorials/deps/parameterized.py

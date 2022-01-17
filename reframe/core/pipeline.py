@@ -216,6 +216,21 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         return ret
 
+    #: The name of the test.
+    #:
+    #: This is an alias of :attr:`unique_name`.
+    #:
+    #: .. warning::
+    #:
+    #:   Setting the name of a test is deprecated and will be disabled in the
+    #:   future. If you were setting the name of a test to circumvent the old
+    #:   long parameterized test names in order to reference them in
+    #:   dependency chains, please refer to :doc:`xxx` for more details on how
+    #:   to achieve this.
+    #:
+    #: .. versionchanged:: 3.10.0
+    #:    Setting the :attr:`name` attribute is deprecated.
+    #:
     name = deprecate(variable(typ.Str[r'[^\/]+'], attr_name='_rfm_unique_name'),
                      "setting the 'name' attribute is deprecated and "
                      "will be disabled in the future", DEPRECATE_WR)
@@ -1025,23 +1040,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 f'{type(self).__qualname__!r} object has no attribute {name!r}'
             )
 
-    def r__setattr__(self, name, value):
-        if name == 'name':
-            user_deprecation_warning(
-                "setting the name of the test is deprecated; "
-                "see the documentation of the 'name' attribute for details",
-                from_version='3.10.0'
-            )
-            name_type = typ.Str[r'[^\/]+']
-            if not isinstance(value, name_type):
-                raise TypeError(
-                    f'attribute {name!r} must be of type {name_type.__name__}'
-                )
-
-            self._rfm_unique_name = value
-        else:
-            super().__setattr__(name, value)
-
     # Export read-only views to interesting fields
 
     @property
@@ -1108,19 +1106,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             self._rfm_display_name += suffix
 
         return self._rfm_display_name
-
-    @property
-    def r_name(self):
-        '''The name of the test.
-
-        This is an alias of :attr:`unique_name`.
-
-        .. versionchanged:: 3.10.0
-           Setting this field is deprecated.
-
-        '''
-
-        return self.unique_name
 
     @property
     def current_environ(self):
