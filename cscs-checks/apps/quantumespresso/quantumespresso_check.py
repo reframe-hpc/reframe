@@ -104,7 +104,7 @@ class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
                     'pilatus:mc': {'time': (66.0, None, 0.10, 's')}
                 },
                 'large': {
-                    'daint:mc': {'time': (150.0, None, 0.10, 's')},
+                    'daint:mc': {'time': (150.0, None, 0.20, 's')},
                     'eiger:mc': {'time': (53.0, None, 0.10, 's')},
                     'pilatus:mc': {'time': (53.0, None, 0.10, 's')}
                 }
@@ -117,7 +117,7 @@ class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
                     'pilatus:mc': {'time': (66.0, None, 0.10, 's')}
                 },
                 'large': {
-                    'daint:mc': {'time': (150.0, None, 0.10, 's')},
+                    'daint:mc': {'time': (150.0, None, 0.20, 's')},
                     'eiger:mc': {'time': (53.0, None, 0.10, 's')},
                     'pilatus:mc': {'time': (53.0, None, 0.10, 's')}
                 }
