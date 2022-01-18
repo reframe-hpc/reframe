@@ -12,7 +12,7 @@ nobjects = 10
 print(conn.get_all_buckets())
 bkt_name = '{system}_{username}_reframe_s3_bucket_0'
 bkt = conn.get_bucket(bkt_name)
-print(f'Working in bucket: {bkt_name}' % bkt.name)
+print(f'Working in bucket: {bkt_name}')
 print(f'Content of this bucket: {bkt.list()}')
 test_file = tempfile.NamedTemporaryFile(dir='/tmp', delete=False)
 start = time.time()
