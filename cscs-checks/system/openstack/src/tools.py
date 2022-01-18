@@ -1,6 +1,5 @@
 import os
 import re
-import time
 import boto.s3.connection
 
 
