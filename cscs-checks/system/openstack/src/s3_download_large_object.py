@@ -10,7 +10,7 @@ username = sys.argv[2]
 conn = tools.get_connection()
 nobjects = 10
 print(conn.get_all_buckets())
-bkt_name = '{system}_{username}_reframe_s3_bucket_0'
+bkt_name = f'{system}_{username}_reframe_s3_bucket_0'
 bkt = conn.get_bucket(bkt_name)
 print(f'Working in bucket: {bkt_name}')
 print(f'Content of this bucket: {bkt.list()}')
