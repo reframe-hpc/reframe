@@ -434,7 +434,36 @@ Depending on Parameterized Tests
 --------------------------------
 
 As shown earlier in this section, tests define their dependencies by referencing the target tests by their unique name.
-This is straightforward when referring to regular tests, where their name matches the class name, but it becomes cumbersome trying to refer to a parameterized tests, since no safe assumption should be as of the variant number of the test.
+This is straightforward when referring to regular tests, where their name matches the class name, but it becomes cumbersome trying to refer to a parameterized tests, since no safe assumption should be as of the variant number of the test or how the parameters are encoded in the name.
 In order to safely and reliably refer to parameterized test, you should use the :func:`get_variant_nums` and :func:`variant_name` class methods as shown in the following example:
 
 .. literalinclude:: ../tutorials/deps/parameterized.py
+   :emphasize-lines: 37-
+
+In this example, :class:`TestB` depends only on selected variants of :class:`TestA`.
+The :func:`get_variant_nums` method accepts a set of key-value pairs representing the target test parameters and selector functions and returns the list of the variant numbers that correspond to these variants.
+Using the :func:`variant_name` subsequently, we can get the actual name of the variant.
+Listing the tests using the `new naming scheme <xxx>`__ we can easily see the dependency graph:
+
+
+.. code-block:: console
+
+   export RFM_COMPACT_TEST_NAMES=y
+   ./bin/reframe -c tutorials/deps/parameterized.py -l
+
+
+.. code-block:: console
+
+   [List of matched checks]
+   - TestB
+       ^TestA %z=9
+       ^TestA %z=8
+       ^TestA %z=7
+       ^TestA %z=6
+   - TestA %z=5
+   - TestA %z=4
+   - TestA %z=3
+   - TestA %z=2
+   - TestA %z=1
+   - TestA %z=0
+   Found 11 check(s)

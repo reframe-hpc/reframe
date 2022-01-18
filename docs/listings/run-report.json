@@ -1,0 +1,65 @@
+{
+  "session_info": {
+    "cmdline": "./bin/reframe -c tutorials/basics/hello/hello1.py -r",
+    "config_file": "<builtin>",
+    "data_version": "2.0",
+    "hostname": "tresa.local",
+    "prefix_output": "/Users/user/Repositories/reframe/output",
+    "prefix_stage": "/Users/user/Repositories/reframe/stage",
+    "user": "user",
+    "version": "3.10.0-dev.2+072543f3",
+    "workdir": "/Users/user/Repositories/reframe",
+    "time_start": "2022-01-18T23:57:17+0100",
+    "time_end": "2022-01-18T23:57:17+0100",
+    "time_elapsed": 0.5832219123840332,
+    "num_cases": 1,
+    "num_failures": 0
+  },
+  "runs": [
+    {
+      "num_cases": 1,
+      "num_failures": 0,
+      "num_aborted": 0,
+      "num_skipped": 0,
+      "runid": 0,
+      "testcases": [
+        {
+          "build_stderr": "rfm_HelloTest_build.err",
+          "build_stdout": "rfm_HelloTest_build.out",
+          "dependencies_actual": [],
+          "dependencies_conceptual": [],
+          "description": "HelloTest",
+          "display_name": "HelloTest",
+          "filename": "/Users/user/Repositories/reframe/tutorials/basics/hello/hello1.py",
+          "environment": "builtin",
+          "fail_phase": null,
+          "fail_reason": null,
+          "jobid": "27101",
+          "job_stderr": "rfm_HelloTest_job.err",
+          "job_stdout": "rfm_HelloTest_job.out",
+          "maintainers": [],
+          "name": "HelloTest",
+          "nodelist": [
+            "tresa.local"
+          ],
+          "outputdir": "/Users/user/Repositories/reframe/output/generic/default/builtin/HelloTest",
+          "perfvars": null,
+          "prefix": "/Users/user/Repositories/reframe/tutorials/basics/hello",
+          "result": "success",
+          "stagedir": "/Users/user/Repositories/reframe/stage/generic/default/builtin/HelloTest",
+          "scheduler": "local",
+          "system": "generic:default",
+          "tags": [],
+          "time_compile": 0.367156982421875,
+          "time_performance": 8.7738037109375e-05,
+          "time_run": 0.1748819351196289,
+          "time_sanity": 0.0006799697875976562,
+          "time_setup": 0.009120941162109375,
+          "time_total": 0.5680220127105713,
+          "unique_name": "HelloTest"
+        }
+      ]
+    }
+  ],
+  "restored_cases": []
+}

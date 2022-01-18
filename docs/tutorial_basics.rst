@@ -98,32 +98,8 @@ Now it's time to run our first test:
    ./bin/reframe -c tutorials/basics/hello/hello1.py -r
 
 
-.. code-block:: none
-
-   [ReFrame Setup]
-     version:           3.3-dev0 (rev: 5d246bff)
-     command:           './bin/reframe -c tutorials/basics/hello/hello1.py -r'
-     launched by:       user@tresa.local
-     working directory: '/Users/user/Repositories/reframe'
-     settings file:     '<builtin>'
-     check search path: '/Users/user/Repositories/reframe/tutorials/basics/hello/hello1.py'
-     stage directory:   '/Users/user/Repositories/reframe/stage'
-     output directory:  '/Users/user/Repositories/reframe/output'
-
-   [==========] Running 1 check(s)
-   [==========] Started on Mon Oct 12 18:23:30 2020
-
-   [----------] started processing HelloTest (HelloTest)
-   [ RUN      ] HelloTest on generic:default using builtin
-   [----------] finished processing HelloTest (HelloTest)
-
-   [----------] waiting for spawned checks to finish
-   [       OK ] (1/1) HelloTest on generic:default using builtin [compile: 0.389s run: 0.406s total: 0.811s]
-   [----------] all spawned checks have finished
-
-   [  PASSED  ] Ran 1 test case(s) from 1 check(s) (0 failure(s))
-   [==========] Finished on Mon Oct 12 18:23:31 2020
-   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-00lf_tbi.log'
+.. literalinclude:: listings/hello1.txt
+   :language: console
 
 
 Perfect! We have verified that we have a functioning C compiler in our system.
@@ -155,64 +131,7 @@ Here are the contents of the report file for our first ReFrame run:
 
    cat ~/.reframe/reports/run-report.json
 
-.. code-block:: javascript
-
-   {
-     "session_info": {
-       "cmdline": "./bin/reframe -c tutorials/basics/hello/hello1.py -r",
-       "config_file": "<builtin>",
-       "data_version": "1.0",
-       "hostname": "dhcp-133-44.cscs.ch",
-       "prefix_output": "/Users/user/Repositories/reframe/output",
-       "prefix_stage": "/Users/user/Repositories/reframe/stage",
-       "user": "user",
-       "version": "3.1-dev2 (rev: 272e1aae)",
-       "workdir": "/Users/user/Repositories/reframe",
-       "time_start": "2020-07-24T11:05:46+0200",
-       "time_end": "2020-07-24T11:05:47+0200",
-       "time_elapsed": 0.7293069362640381,
-       "num_cases": 1,
-       "num_failures": 0
-     },
-     "runs": [
-       {
-         "num_cases": 1,
-         "num_failures": 0,
-         "runid": 0,
-         "testcases": [
-           {
-             "build_stderr": "rfm_HelloTest_build.err",
-             "build_stdout": "rfm_HelloTest_build.out",
-             "description": "HelloTest",
-             "environment": "builtin",
-             "fail_reason": null,
-             "fail_phase": null,
-             "jobid": 85063,
-             "job_stderr": "rfm_HelloTest_job.err",
-             "job_stdout": "rfm_HelloTest_job.out",
-             "name": "HelloTest",
-             "maintainers": [],
-             "nodelist": [
-               "dhcp-133-44.cscs.ch"
-             ],
-             "outputdir": "/Users/user/Repositories/reframe/output/generic/default/builtin/HelloTest",
-             "perfvars": null,
-             "result": "success",
-             "stagedir": null,
-             "scheduler": "local",
-             "system": "generic:default",
-             "tags": [],
-             "time_compile": 0.3776402473449707,
-             "time_performance": 4.506111145019531e-05,
-             "time_run": 0.2992382049560547,
-             "time_sanity": 0.0005609989166259766,
-             "time_setup": 0.0031709671020507812,
-             "time_total": 0.7213571071624756
-           }
-         ]
-       }
-     ]
-   }
+.. literalinclude:: listings/run-report.json
 
 
 More of "Hello, World!"
