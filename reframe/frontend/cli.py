@@ -518,6 +518,13 @@ def main():
         help='Use a compact test naming scheme'
     )
     argparser.add_argument(
+        dest='pipeline_statistics',
+        envvar='RFM_PIPELINE_STATISTICS',
+        configvar='general/pipeline_statistics',
+        action='store_true',
+        help='Gather statistics for the async execution'
+    )
+    argparser.add_argument(
         dest='pipeline_timeout',
         envvar='RFM_PIPELINE_TIMEOUT',
         configvar='general/pipeline_timeout',
@@ -1066,6 +1073,9 @@ def main():
         exec_policy.skip_performance_check = options.skip_performance_check
         exec_policy.keep_stage_files = site_config.get(
             'general/0/keep_stage_files'
+        )
+        exec_policy.pipeline_statistics = site_config.get(
+            'general/0/pipeline_statistics'
         )
         try:
             errmsg = "invalid option for --flex-alloc-nodes: '{0}'"

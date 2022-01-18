@@ -110,7 +110,7 @@ System Configuration
    :required: No
    :default: ``8``
 
-   .. versionadded:: 3.9.3
+   .. versionadded:: 3.10
 
 
 .. js:attribute:: .systems[].modules_system
@@ -1301,6 +1301,16 @@ General Configuration
   Timeout value in seconds used when checking if a git repository exists.
 
 
+.. js:attribute:: .general[].pipeline_statistics
+
+   A boolean value indicating whether we want to collect statistic information for the execution of the asynchronous pipeline.
+
+   :required: No
+   :default: ``False``
+
+   .. versionadded:: 3.10
+
+
 .. js:attribute:: .general[].pipeline_timeout
 
    Timeout in seconds for advancing the pipeline in the asynchronous execution policy.
@@ -1311,7 +1321,7 @@ General Configuration
    :required: No
    :default: ``10``
 
-   .. versionadded:: 3.9.3
+   .. versionadded:: 3.10
 
 
 .. js:attribute:: .general[].remote_detect

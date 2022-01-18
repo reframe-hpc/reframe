@@ -264,6 +264,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._max_jobs = {
             '_rfm_local': rt.runtime().get_option('systems/0/max_local_jobs')
         }
+        self._pipeline_statistics = rt.runtime().get_option('systems/0/pipeline_statistics')
         self.task_listeners.append(self)
 
     def _init_pipeline_progress(self, num_tasks):
@@ -321,7 +322,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._current_tasks.add(task)
 
     def exit(self):
-        self._init_pipeline_progress(len(self._current_tasks))
+        if self._pipeline_statistics:
+            self._init_pipeline_progress(len(self._current_tasks))
+
         while self._current_tasks:
             try:
                 self._poll_tasks()
@@ -339,20 +342,27 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                     timeout = float(timeout)
 
                 self._advance_all(self._current_tasks, timeout)
-                num_retired = len(self._retired_tasks)
+                if self._pipeline_statistics:
+                    num_retired = len(self._retired_tasks)
+
                 _cleanup_all(self._retired_tasks, not self.keep_stage_files)
-                new_num_retired = len(self._retired_tasks)
-                # Some tests might not be cleaned up because they are waiting
-                # for dependencies or because their dependencies have failed.
-                self._update_pipeline_progress('retired', 'completed',
-                                               num_retired - new_num_retired)
+                if self._pipeline_statistics:
+                    new_num_retired = len(self._retired_tasks)
+                    # Some tests might not be cleaned up because they are
+                    # waiting for dependencies or because their dependencies
+                    # have failed.
+                    self._update_pipeline_progress(
+                        'retired', 'completed', num_retired - new_num_retired
+                    )
+
                 if num_running:
                     self._pollctl.running_tasks(num_running).snooze()
             except ABORT_REASONS as e:
                 self._failall(e)
                 raise
 
-        self._dump_pipeline_progress('pipeline-progress.json')
+        if self._pipeline_statistics:
+            self._dump_pipeline_progress('pipeline-progress.json')
 
     def _poll_tasks(self):
         for partname, sched in self._schedulers.items():
@@ -409,7 +419,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             if timeout and t_elapsed > timeout and num_progressed:
                 break
 
-            self._update_pipeline_progress(old_state, new_state, 1)
+            if self._pipeline_statistics:
+                self._update_pipeline_progress(old_state, new_state, 1)
 
         getlogger().debug2(f'Bumped {num_progressed} test(s)')
 
