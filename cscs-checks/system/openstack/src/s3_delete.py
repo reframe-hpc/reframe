@@ -13,4 +13,4 @@ end = time.time()
 nobjects = 30  # 10 buckets + 10 small + 10 large objects
 elapsed_secs = end - start
 avg_deletion_time = elapsed_secs / nobjects
-print('Average deletion time (s): {avg_deletion_time}')
+print(f'Average deletion time (s): {avg_deletion_time}')
