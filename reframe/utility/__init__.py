@@ -20,6 +20,7 @@ import weakref
 import reframe
 
 from collections import UserDict
+from hashlib import sha256
 from . import typecheck as typ
 
 
@@ -54,7 +55,9 @@ def _get_module_name(filename):
 
 
 def _do_import_module_from_file(filename, module_name=None):
+    module_hash = sha256(filename.encode('utf-8')).hexdigest()[:8]
     module_name = module_name or _get_module_name(filename)
+    module_name = f'{module_name}_{module_hash}'
     if module_name in sys.modules:
         return sys.modules[module_name]
 
