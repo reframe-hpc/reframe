@@ -3,7 +3,7 @@
   command:           './bin/reframe -c tutorials/basics/hellomp/hellomp2.py -r'
   launched by:       user@host
   working directory: '/Users/user/Repositories/reframe'
-  settings file:     'tutorials/config/settings.py'
+  settings file:     'tutorials/config/mysettings.py'
   check search path: '/Users/user/Repositories/reframe/tutorials/basics/hellomp/hellomp2.py'
   stage directory:   '/Users/user/Repositories/reframe/stage'
   output directory:  '/Users/user/Repositories/reframe/output'

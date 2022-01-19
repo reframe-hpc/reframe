@@ -1,0 +1,142 @@
+[ReFrame Setup]
+  version:           3.10.0-dev.2+b7a6e14a
+  command:           './bin/reframe -c tutorials/basics/ -R -n HelloMultiLangTest|HelloThreadedExtended2Test|StreamWithRefTest --performance-report -r'
+  launched by:       user@host
+  working directory: '/users/user/Devel/reframe'
+  settings file:     '/users/user/Devel/reframe/tutorials/config/settings.py'
+  check search path: (R) '/users/user/Devel/reframe/tutorials/basics'
+  stage directory:   '/users/user/Devel/reframe/stage'
+  output directory:  '/users/user/Devel/reframe/output'
+
+[==========] Running 4 check(s)
+[==========] Started on Wed Jan 19 18:20:56 2022 
+
+[----------] started processing HelloMultiLangTest_cpp (HelloMultiLangTest %lang=cpp)
+[ RUN      ] HelloMultiLangTest_cpp on daint:login using builtin
+[ RUN      ] HelloMultiLangTest_cpp on daint:login using gnu
+[ RUN      ] HelloMultiLangTest_cpp on daint:login using intel
+[ RUN      ] HelloMultiLangTest_cpp on daint:login using pgi
+[ RUN      ] HelloMultiLangTest_cpp on daint:login using cray
+[ RUN      ] HelloMultiLangTest_cpp on daint:gpu using gnu
+[ RUN      ] HelloMultiLangTest_cpp on daint:gpu using intel
+[ RUN      ] HelloMultiLangTest_cpp on daint:gpu using pgi
+[ RUN      ] HelloMultiLangTest_cpp on daint:gpu using cray
+[ RUN      ] HelloMultiLangTest_cpp on daint:mc using gnu
+[ RUN      ] HelloMultiLangTest_cpp on daint:mc using intel
+[ RUN      ] HelloMultiLangTest_cpp on daint:mc using pgi
+[ RUN      ] HelloMultiLangTest_cpp on daint:mc using cray
+[----------] finished processing HelloMultiLangTest_cpp (HelloMultiLangTest %lang=cpp)
+
+[----------] started processing HelloMultiLangTest_c (HelloMultiLangTest %lang=c)
+[ RUN      ] HelloMultiLangTest_c on daint:login using builtin
+[ RUN      ] HelloMultiLangTest_c on daint:login using gnu
+[ RUN      ] HelloMultiLangTest_c on daint:login using intel
+[ RUN      ] HelloMultiLangTest_c on daint:login using pgi
+[ RUN      ] HelloMultiLangTest_c on daint:login using cray
+[ RUN      ] HelloMultiLangTest_c on daint:gpu using gnu
+[ RUN      ] HelloMultiLangTest_c on daint:gpu using intel
+[ RUN      ] HelloMultiLangTest_c on daint:gpu using pgi
+[ RUN      ] HelloMultiLangTest_c on daint:gpu using cray
+[ RUN      ] HelloMultiLangTest_c on daint:mc using gnu
+[ RUN      ] HelloMultiLangTest_c on daint:mc using intel
+[ RUN      ] HelloMultiLangTest_c on daint:mc using pgi
+[ RUN      ] HelloMultiLangTest_c on daint:mc using cray
+[----------] finished processing HelloMultiLangTest_c (HelloMultiLangTest %lang=c)
+
+[----------] started processing HelloThreadedExtended2Test (HelloThreadedExtended2Test)
+[ RUN      ] HelloThreadedExtended2Test on daint:login using builtin
+[ RUN      ] HelloThreadedExtended2Test on daint:login using gnu
+[ RUN      ] HelloThreadedExtended2Test on daint:login using intel
+[ RUN      ] HelloThreadedExtended2Test on daint:login using pgi
+[ RUN      ] HelloThreadedExtended2Test on daint:login using cray
+[ RUN      ] HelloThreadedExtended2Test on daint:gpu using gnu
+[ RUN      ] HelloThreadedExtended2Test on daint:gpu using intel
+[ RUN      ] HelloThreadedExtended2Test on daint:gpu using pgi
+[ RUN      ] HelloThreadedExtended2Test on daint:gpu using cray
+[ RUN      ] HelloThreadedExtended2Test on daint:mc using gnu
+[ RUN      ] HelloThreadedExtended2Test on daint:mc using intel
+[ RUN      ] HelloThreadedExtended2Test on daint:mc using pgi
+[ RUN      ] HelloThreadedExtended2Test on daint:mc using cray
+[----------] finished processing HelloThreadedExtended2Test (HelloThreadedExtended2Test)
+
+[----------] started processing StreamWithRefTest (StreamWithRefTest)
+[ RUN      ] StreamWithRefTest on daint:login using gnu
+[ RUN      ] StreamWithRefTest on daint:gpu using gnu
+[ RUN      ] StreamWithRefTest on daint:mc using gnu
+[----------] finished processing StreamWithRefTest (StreamWithRefTest)
+
+[----------] waiting for spawned checks to finish
+[       OK ] ( 1/42) HelloThreadedExtended2Test @daint:login+cray [compile: 0.869s run: 105.884s total: 106.789s]
+[       OK ] ( 2/42) HelloThreadedExtended2Test @daint:login+intel [compile: 2.418s run: 111.171s total: 121.396s]
+[       OK ] ( 3/42) HelloMultiLangTest %lang=c @daint:login+cray [compile: 0.194s run: 176.455s total: 176.687s]
+[       OK ] ( 4/42) HelloMultiLangTest %lang=cpp @daint:login+pgi [compile: 2.373s run: 238.350s total: 240.758s]
+[       OK ] ( 5/42) HelloThreadedExtended2Test @daint:gpu+pgi [compile: 3.084s run: 90.799s total: 93.923s]
+[       OK ] ( 6/42) HelloThreadedExtended2Test @daint:gpu+gnu [compile: 2.380s run: 103.562s total: 105.977s]
+[       OK ] ( 7/42) HelloMultiLangTest %lang=c @daint:gpu+pgi [compile: 1.614s run: 163.384s total: 165.042s]
+[       OK ] ( 8/42) HelloMultiLangTest %lang=c @daint:gpu+gnu [compile: 1.571s run: 174.946s total: 176.552s]
+[       OK ] ( 9/42) HelloMultiLangTest %lang=cpp @daint:gpu+intel [compile: 2.124s run: 229.839s total: 231.999s]
+[       OK ] (10/42) HelloMultiLangTest %lang=c @daint:mc+pgi [compile: 1.626s run: 136.895s total: 138.567s]
+[       OK ] (11/42) HelloMultiLangTest %lang=c @daint:mc+gnu [compile: 1.540s run: 147.386s total: 148.961s]
+[       OK ] (12/42) HelloMultiLangTest %lang=cpp @daint:mc+intel [compile: 2.158s run: 209.736s total: 211.936s]
+[       OK ] (13/42) HelloThreadedExtended2Test @daint:login+builtin [compile: 0.825s run: 124.587s total: 125.455s]
+[       OK ] (14/42) HelloMultiLangTest %lang=c @daint:login+pgi [compile: 1.599s run: 177.615s total: 179.539s]
+[       OK ] (15/42) HelloMultiLangTest %lang=c @daint:login+builtin [compile: 0.163s run: 184.760s total: 184.963s]
+[       OK ] (16/42) HelloMultiLangTest %lang=cpp @daint:login+gnu [compile: 1.874s run: 244.668s total: 246.575s]
+[       OK ] (17/42) HelloMultiLangTest %lang=cpp @daint:gpu+pgi [compile: 2.239s run: 224.340s total: 226.619s]
+[       OK ] (18/42) HelloMultiLangTest %lang=cpp @daint:gpu+gnu [compile: 1.884s run: 235.554s total: 237.470s]
+[       OK ] (19/42) HelloMultiLangTest %lang=cpp @daint:mc+pgi [compile: 2.121s run: 191.871s total: 194.032s]
+[       OK ] (20/42) HelloMultiLangTest %lang=cpp @daint:mc+gnu [compile: 1.788s run: 215.189s total: 217.017s]
+[       OK ] (21/42) HelloMultiLangTest %lang=c @daint:login+gnu [compile: 1.571s run: 183.268s total: 184.878s]
+[       OK ] (22/42) HelloMultiLangTest %lang=cpp @daint:login+cray [compile: 0.516s run: 237.593s total: 238.140s]
+[       OK ] (23/42) HelloMultiLangTest %lang=cpp @daint:login+intel [compile: 2.124s run: 242.000s total: 244.157s]
+[       OK ] (24/42) HelloMultiLangTest %lang=cpp @daint:login+builtin [compile: 0.517s run: 246.791s total: 247.343s]
+[       OK ] (25/42) HelloThreadedExtended2Test @daint:login+pgi [compile: 3.005s run: 108.904s total: 111.944s]
+[       OK ] (26/42) HelloMultiLangTest %lang=c @daint:login+intel [compile: 2.135s run: 181.436s total: 183.606s]
+[       OK ] (27/42) HelloThreadedExtended2Test @daint:gpu+cray [compile: 0.886s run: 87.642s total: 88.565s]
+[       OK ] (28/42) HelloMultiLangTest %lang=c @daint:gpu+cray [compile: 0.170s run: 153.574s total: 153.780s]
+[       OK ] (29/42) HelloMultiLangTest %lang=cpp @daint:gpu+cray [compile: 0.519s run: 220.703s total: 221.262s]
+[       OK ] (30/42) HelloMultiLangTest %lang=c @daint:mc+cray [compile: 0.271s run: 133.432s total: 133.746s]
+[       OK ] (31/42) HelloMultiLangTest %lang=cpp @daint:mc+cray [compile: 0.504s run: 188.941s total: 189.483s]
+[       OK ] (32/42) HelloThreadedExtended2Test @daint:login+gnu [compile: 2.138s run: 124.264s total: 126.440s]
+[       OK ] (33/42) HelloMultiLangTest %lang=c @daint:gpu+intel [compile: 2.186s run: 170.732s total: 172.956s]
+[       OK ] (34/42) HelloMultiLangTest %lang=c @daint:mc+intel [compile: 2.097s run: 143.858s total: 145.996s]
+[       OK ] (35/42) StreamWithRefTest @daint:login+gnu [compile: 1.923s run: 16.452s total: 18.410s]
+[       OK ] (36/42) HelloThreadedExtended2Test @daint:gpu+intel [compile: 2.447s run: 99.826s total: 102.307s]
+[       OK ] (37/42) HelloThreadedExtended2Test @daint:mc+pgi [compile: 2.723s run: 172.072s total: 174.835s]
+[       OK ] (38/42) HelloThreadedExtended2Test @daint:mc+gnu [compile: 2.187s run: 216.338s total: 218.569s]
+[       OK ] (39/42) HelloThreadedExtended2Test @daint:mc+intel [compile: 2.351s run: 210.326s total: 212.711s]
+[       OK ] (40/42) HelloThreadedExtended2Test @daint:mc+cray [compile: 0.827s run: 243.227s total: 244.100s]
+[       OK ] (41/42) StreamWithRefTest @daint:mc+gnu [compile: 1.797s run: 228.275s total: 230.113s]
+[       OK ] (42/42) StreamWithRefTest @daint:gpu+gnu [compile: 1.887s run: 400.080s total: 402.012s]
+[----------] all spawned checks have finished
+
+[  PASSED  ] Ran 42/42 test case(s) from 4 check(s) (0 failure(s), 0 skipped)
+[==========] Finished on Wed Jan 19 18:31:31 2022 
+==============================================================================
+PERFORMANCE REPORT
+------------------------------------------------------------------------------
+StreamWithRefTest
+- daint:login
+   - gnu
+      * num_tasks: 1
+      * Copy: 65583.2 MB/s
+      * Scale: 36908.7 MB/s
+      * Add: 38514.7 MB/s
+      * Triad: 38648.2 MB/s
+- daint:gpu
+   - gnu
+      * num_tasks: 1
+      * Copy: 50946.8 MB/s
+      * Scale: 35096.1 MB/s
+      * Add: 38841.5 MB/s
+      * Triad: 38729.8 MB/s
+- daint:mc
+   - gnu
+      * num_tasks: 1
+      * Copy: 48686.5 MB/s
+      * Scale: 31394.5 MB/s
+      * Add: 33423.7 MB/s
+      * Triad: 33520.9 MB/s
+------------------------------------------------------------------------------
+Run report saved in '/users/user/.reframe/reports/run-report.json'
+Log file(s) saved in '/tmp/rfm-63nptdxz.log'

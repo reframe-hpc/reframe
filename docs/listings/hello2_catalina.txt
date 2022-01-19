@@ -1,9 +1,9 @@
 [ReFrame Setup]
   version:           3.10.0-dev.2+bf404ae1
-  command:           './bin/reframe -C tutorials/config/settings.py -c tutorials/basics/hello/hello2.py -r'
+  command:           './bin/reframe -C tutorials/config/mysettings.py -c tutorials/basics/hello/hello2.py -r'
   launched by:       user@host
   working directory: '/Users/user/Repositories/reframe'
-  settings file:     'tutorials/config/settings.py'
+  settings file:     'tutorials/config/mysettings.py'
   check search path: '/Users/user/Repositories/reframe/tutorials/basics/hello/hello2.py'
   stage directory:   '/Users/user/Repositories/reframe/stage'
   output directory:  '/Users/user/Repositories/reframe/output'
