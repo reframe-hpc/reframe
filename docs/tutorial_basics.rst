@@ -187,56 +187,8 @@ Let's run the test now:
 
    ./bin/reframe -c tutorials/basics/hello/hello2.py -r
 
-.. code-block:: none
-
-   [ReFrame Setup]
-     version:           3.6.0-dev.0+a3d0b0cd
-     command:           './bin/reframe -c tutorials/basics/hello/hello2.py -r'
-     launched by:       user@tresa.local
-     working directory: '/Users/user/Repositories/reframe'
-     settings file:     '<builtin>'
-     check search path: '/Users/user/Repositories/reframe/tutorials/basics/hello/hello2.py'
-     stage directory:   '/Users/user/Repositories/reframe/stage'
-     output directory:  '/Users/user/Repositories/reframe/output'
-
-   [==========] Running 2 check(s)
-   [==========] Started on Tue Mar  9 23:25:22 2021
-
-   [----------] started processing HelloMultiLangTest_c (HelloMultiLangTest_c)
-   [ RUN      ] HelloMultiLangTest_c on generic:default using builtin
-   [----------] finished processing HelloMultiLangTest_c (HelloMultiLangTest_c)
-
-   [----------] started processing HelloMultiLangTest_cpp (HelloMultiLangTest_cpp)
-   [ RUN      ] HelloMultiLangTest_cpp on generic:default using builtin
-   [     FAIL ] (1/2) HelloMultiLangTest_cpp on generic:default using builtin [compile: 0.006s run: n/a total: 0.023s]
-   ==> test failed during 'compile': test staged in '/Users/user/Repositories/reframe/stage/generic/default/builtin/HelloMultiLangTest_cpp'
-   [----------] finished processing HelloMultiLangTest_cpp (HelloMultiLangTest_cpp)
-
-   [----------] waiting for spawned checks to finish
-   [       OK ] (2/2) HelloMultiLangTest_c on generic:default using builtin [compile: 0.981s run: 0.468s total: 1.475s]
-   [----------] all spawned checks have finished
-
-   [  FAILED  ] Ran 2/2 test case(s) from 2 check(s) (1 failure(s))
-   [==========] Finished on Tue Mar  9 23:25:23 2021
-
-   ==============================================================================
-   SUMMARY OF FAILURES
-   ------------------------------------------------------------------------------
-   FAILURE INFO for HelloMultiLangTest_cpp
-     * Test Description: HelloMultiLangTest_cpp
-     * System partition: generic:default
-     * Environment: builtin
-     * Stage directory: /Users/user/Repositories/reframe/stage/generic/default/builtin/HelloMultiLangTest_cpp
-     * Node list: None
-     * Job type: local (id=None)
-     * Dependencies (conceptual): []
-     * Dependencies (actual): []
-     * Maintainers: []
-     * Failing phase: compile
-     * Rerun with '-n HelloMultiLangTest_cpp -p builtin --system generic:default -r'
-     * Reason: build system error: I do not know how to compile a C++ program
-   ------------------------------------------------------------------------------
-   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-wemvsvs2.log'
+.. literalinclude:: listings/hello2.txt
+   :language: console
 
 
 Oops! The C++ test has failed.
@@ -301,42 +253,8 @@ Let's now rerun our "Hello, World!" tests:
    ./bin/reframe -C tutorials/config/mysettings.py -c tutorials/basics/hello/hello2.py -r
 
 
-.. code-block:: none
-
-   [ReFrame Setup]
-     version:           3.6.0-dev.0+a3d0b0cd
-     command:           './bin/reframe -C tutorials/config/mysettings.py -c tutorials/basics/hello/hello2.py -r'
-     launched by:       user@tresa.local
-     working directory: '/Users/user/Repositories/reframe'
-     settings file:     'tutorials/config/settings.py'
-     check search path: '/Users/user/Repositories/reframe/tutorials/basics/hello/hello2.py'
-     stage directory:   '/Users/user/Repositories/reframe/stage'
-     output directory:  '/Users/user/Repositories/reframe/output'
-
-   [==========] Running 2 check(s)
-   [==========] Started on Tue Mar  9 23:28:00 2021
-
-   [----------] started processing HelloMultiLangTest_c (HelloMultiLangTest_c)
-   [ RUN      ] HelloMultiLangTest_c on catalina:default using gnu
-   [ RUN      ] HelloMultiLangTest_c on catalina:default using clang
-   [----------] finished processing HelloMultiLangTest_c (HelloMultiLangTest_c)
-
-   [----------] started processing HelloMultiLangTest_cpp (HelloMultiLangTest_cpp)
-   [ RUN      ] HelloMultiLangTest_cpp on catalina:default using gnu
-   [ RUN      ] HelloMultiLangTest_cpp on catalina:default using clang
-   [----------] finished processing HelloMultiLangTest_cpp (HelloMultiLangTest_cpp)
-
-   [----------] waiting for spawned checks to finish
-   [       OK ] (1/4) HelloMultiLangTest_cpp on catalina:default using gnu [compile: 0.768s run: 1.115s total: 1.909s]
-   [       OK ] (2/4) HelloMultiLangTest_c on catalina:default using gnu [compile: 0.600s run: 2.230s total: 2.857s]
-   [       OK ] (3/4) HelloMultiLangTest_c on catalina:default using clang [compile: 0.238s run: 2.129s total: 2.393s]
-   [       OK ] (4/4) HelloMultiLangTest_cpp on catalina:default using clang [compile: 1.006s run: 0.427s total: 1.456s]
-   [----------] all spawned checks have finished
-
-   [  PASSED  ] Ran 4/4 test case(s) from 2 check(s) (0 failure(s))
-   [==========] Finished on Tue Mar  9 23:28:03 2021
-   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-dnubkvfi.log'
-
+.. literalinclude:: listings/hello2_catalina.txt
+   :language: console
 
 Notice how the same tests are now tried with both the ``gnu`` and ``clang`` programming environments, without having to touch them at all!
 That's one of the powerful features of ReFrame and we shall see later on, how easily we can port our tests to an HPC cluster with minimal changes.
@@ -403,34 +321,8 @@ Let's run the test now:
    ./bin/reframe -c tutorials/basics/hellomp/hellomp1.py -r
 
 
-.. code-block:: none
-
-   [ReFrame Setup]
-     version:           3.3-dev0 (rev: 5d246bff)
-     command:           './bin/reframe -c tutorials/basics/hellomp/hellomp1.py -r'
-     launched by:       user@tresa.local
-     working directory: '/Users/user/Repositories/reframe'
-     settings file:     '/Users/user/Repositories/reframe/tutorials/config/settings.py'
-     check search path: '/Users/user/Repositories/reframe/tutorials/basics/hellomp/hellomp1.py'
-     stage directory:   '/Users/user/Repositories/reframe/stage'
-     output directory:  '/Users/user/Repositories/reframe/output'
-
-   [==========] Running 1 check(s)
-   [==========] Started on Mon Oct 12 20:02:37 2020
-
-   [----------] started processing HelloThreadedTest (HelloThreadedTest)
-   [ RUN      ] HelloThreadedTest on catalina:default using gnu
-   [ RUN      ] HelloThreadedTest on catalina:default using clang
-   [----------] finished processing HelloThreadedTest (HelloThreadedTest)
-
-   [----------] waiting for spawned checks to finish
-   [       OK ] (1/2) HelloThreadedTest on catalina:default using gnu [compile: 1.591s run: 1.205s total: 2.816s]
-   [       OK ] (2/2) HelloThreadedTest on catalina:default using clang [compile: 1.141s run: 0.309s total: 1.465s]
-   [----------] all spawned checks have finished
-
-   [  PASSED  ] Ran 2 test case(s) from 1 check(s) (0 failure(s))
-   [==========] Finished on Mon Oct 12 20:02:40 2020
-   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-h_itoc1k.log'
+.. literalinclude:: listings/hellomp1.txt
+   :language: console
 
 
 Everything looks fine, but let's inspect the actual output of one of the tests:
@@ -496,63 +388,8 @@ Let's run this version of the test now and see if it fails:
 
    ./bin/reframe -c tutorials/basics/hellomp/hellomp2.py -r
 
-.. code-block:: none
-
-   [ReFrame Setup]
-     version:           3.3-dev0 (rev: 5d246bff)
-     command:           './bin/reframe -c tutorials/basics/hellomp/hellomp2.py -r'
-     launched by:       user@tresa.local
-     working directory: '/Users/user/Repositories/reframe'
-     settings file:     '/Users/user/Repositories/reframe/tutorials/config/settings.py'
-     check search path: '/Users/user/Repositories/reframe/tutorials/basics/hellomp/hellomp2.py'
-     stage directory:   '/Users/user/Repositories/reframe/stage'
-     output directory:  '/Users/user/Repositories/reframe/output'
-
-   [==========] Running 1 check(s)
-   [==========] Started on Mon Oct 12 20:04:59 2020
-
-   [----------] started processing HelloThreadedExtendedTest (HelloThreadedExtendedTest)
-   [ RUN      ] HelloThreadedExtendedTest on catalina:default using gnu
-   [ RUN      ] HelloThreadedExtendedTest on catalina:default using clang
-   [----------] finished processing HelloThreadedExtendedTest (HelloThreadedExtendedTest)
-
-   [----------] waiting for spawned checks to finish
-   [     FAIL ] (1/2) HelloThreadedExtendedTest on catalina:default using gnu [compile: 1.222s run: 0.891s total: 2.130s]
-   [     FAIL ] (2/2) HelloThreadedExtendedTest on catalina:default using clang [compile: 0.835s run: 0.167s total: 1.018s]
-   [----------] all spawned checks have finished
-
-   [  FAILED  ] Ran 2 test case(s) from 1 check(s) (2 failure(s))
-   [==========] Finished on Mon Oct 12 20:05:02 2020
-
-   ==============================================================================
-   SUMMARY OF FAILURES
-   ------------------------------------------------------------------------------
-   FAILURE INFO for HelloThreadedExtendedTest
-     * Test Description: HelloThreadedExtendedTest
-     * System partition: catalina:default
-     * Environment: gnu
-     * Stage directory: /Users/user/Repositories/reframe/stage/catalina/default/gnu/HelloThreadedExtendedTest
-     * Node list: tresa.local
-     * Job type: local (id=60355)
-     * Maintainers: []
-     * Failing phase: sanity
-     * Rerun with '-n HelloThreadedExtendedTest -p gnu --system catalina:default'
-     * Reason: sanity error: 12 != 16
-   ------------------------------------------------------------------------------
-   FAILURE INFO for HelloThreadedExtendedTest
-     * Test Description: HelloThreadedExtendedTest
-     * System partition: catalina:default
-     * Environment: clang
-     * Stage directory: /Users/user/Repositories/reframe/stage/catalina/default/clang/HelloThreadedExtendedTest
-     * Node list: tresa.local
-     * Job type: local (id=60366)
-     * Maintainers: []
-     * Failing phase: sanity
-     * Rerun with '-n HelloThreadedExtendedTest -p clang --system catalina:default'
-     * Reason: sanity error: 6 != 16
-   ------------------------------------------------------------------------------
-   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-zz7x_5c8.log'
-
+.. literalinclude:: listings/hellomp2.txt
+   :language: console
 
 As expected, only some of lines are printed correctly which makes the test fail.
 To fix this test, we need to compile with ``-DSYNC_MESSAGES``, which will synchronize the printing of messages.
@@ -622,44 +459,8 @@ Let's run the test now:
 The :option:`--performance-report` will generate a short report at the end for each performance test that has run.
 
 
-.. code-block:: none
-
-   [ReFrame Setup]
-     version:           3.3-dev0 (rev: 5d246bff)
-     command:           './bin/reframe -c tutorials/basics/stream/stream1.py -r --performance-report'
-     launched by:       user@tresa.local
-     working directory: '/Users/user/Repositories/reframe'
-     settings file:     '/Users/user/Repositories/reframe/tutorials/config/settings.py'
-     check search path: '/Users/user/Repositories/reframe/tutorials/basics/stream/stream1.py'
-     stage directory:   '/Users/user/Repositories/reframe/stage'
-     output directory:  '/Users/user/Repositories/reframe/output'
-
-   [==========] Running 1 check(s)
-   [==========] Started on Mon Oct 12 20:06:09 2020
-
-   [----------] started processing StreamTest (StreamTest)
-   [ RUN      ] StreamTest on catalina:default using gnu
-   [----------] finished processing StreamTest (StreamTest)
-
-   [----------] waiting for spawned checks to finish
-   [       OK ] (1/1) StreamTest on catalina:default using gnu [compile: 1.386s run: 2.377s total: 3.780s]
-   [----------] all spawned checks have finished
-
-   [  PASSED  ] Ran 1 test case(s) from 1 check(s) (0 failure(s))
-   [==========] Finished on Mon Oct 12 20:06:13 2020
-   ==============================================================================
-   PERFORMANCE REPORT
-   ------------------------------------------------------------------------------
-   StreamTest
-   - catalina:default
-      - gnu
-         * num_tasks: 1
-         * Copy: 24326.7 MB/s
-         * Scale: 16664.2 MB/s
-         * Add: 18398.7 MB/s
-         * Triad: 18930.6 MB/s
-   ------------------------------------------------------------------------------
-   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-gczplnic.log'
+.. literalinclude:: listings/stream1.txt
+   :language: console
 
 
 ---------------------------------------------------
@@ -737,20 +538,8 @@ If any obtained performance value is beyond its respective thresholds, the test 
 
    ./bin/reframe -c tutorials/basics/stream/stream3.py -r --performance-report
 
-
-.. code-block:: none
-
-   FAILURE INFO for StreamWithRefTest
-     * Test Description: StreamWithRefTest
-     * System partition: catalina:default
-     * Environment: gnu
-     * Stage directory: /Users/user/Repositories/reframe/stage/catalina/default/gnu/StreamWithRefTest
-     * Node list: tresa.local
-     * Job type: local (id=62114)
-     * Maintainers: []
-     * Failing phase: performance
-     * Rerun with '-n StreamWithRefTest -p gnu --system catalina:default'
-     * Reason: performance error: failed to meet reference: Copy=24586.5, expected 55200 (l=52440.0, u=57960.0)
+.. literalinclude:: listings/stream3_failure_only.txt
+   :language: console
 
 ------------------------------
 Examining the performance logs
@@ -776,17 +565,8 @@ Let's inspect the log file from our last test:
 
    tail perflogs/catalina/default/StreamWithRefTest.log
 
-
-.. code-block:: none
-
-   2020-06-24T00:27:06|reframe 3.1-dev0 (rev: 9d92d0ec)|StreamWithRefTest on catalina:default using gnu|jobid=58384|Copy=24762.2|ref=25200 (l=-0.05, u=0.05)|MB/s
-   2020-06-24T00:27:06|reframe 3.1-dev0 (rev: 9d92d0ec)|StreamWithRefTest on catalina:default using gnu|jobid=58384|Scale=16784.6|ref=16800 (l=-0.05, u=0.05)|MB/s
-   2020-06-24T00:27:06|reframe 3.1-dev0 (rev: 9d92d0ec)|StreamWithRefTest on catalina:default using gnu|jobid=58384|Add=18553.8|ref=18500 (l=-0.05, u=0.05)|MB/s
-   2020-06-24T00:27:06|reframe 3.1-dev0 (rev: 9d92d0ec)|StreamWithRefTest on catalina:default using gnu|jobid=58384|Triad=18679.0|ref=18800 (l=-0.05, u=0.05)|MB/s
-   2020-06-24T12:42:07|reframe 3.1-dev0 (rev: 138cbd68)|StreamWithRefTest on catalina:default using gnu|jobid=62114|Copy=24586.5|ref=55200 (l=-0.05, u=0.05)|MB/s
-   2020-06-24T12:42:07|reframe 3.1-dev0 (rev: 138cbd68)|StreamWithRefTest on catalina:default using gnu|jobid=62114|Scale=16880.6|ref=16800 (l=-0.05, u=0.05)|MB/s
-   2020-06-24T12:42:07|reframe 3.1-dev0 (rev: 138cbd68)|StreamWithRefTest on catalina:default using gnu|jobid=62114|Add=18570.4|ref=18500 (l=-0.05, u=0.05)|MB/s
-   2020-06-24T12:42:07|reframe 3.1-dev0 (rev: 138cbd68)|StreamWithRefTest on catalina:default using gnu|jobid=62114|Triad=19048.3|ref=18800 (l=-0.05, u=0.05)|MB/s
+.. literalinclude:: listings/perflogs.txt
+   :language: console
 
 Several information are printed for each run, such as the performance variables, their value, their references and thresholds etc.
 The default format is in a form suitable for easy parsing, but you may fully control not only the format, but also what is being logged from the configuration file.

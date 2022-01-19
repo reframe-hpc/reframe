@@ -23,7 +23,7 @@ class StreamWithRefTest(rfm.RegressionTest):
     }
     reference = {
         'catalina': {
-            'Copy':  (25200, -0.05, 0.05, 'MB/s'),
+            'Copy':  (55200, -0.05, 0.05, 'MB/s'),
             'Scale': (16800, -0.05, 0.05, 'MB/s'),
             'Add':   (18500, -0.05, 0.05, 'MB/s'),
             'Triad': (18800, -0.05, 0.05, 'MB/s')

@@ -1,0 +1,50 @@
+[ReFrame Setup]
+  version:           3.10.0-dev.2+bf404ae1
+  command:           './bin/reframe -c tutorials/basics/hello/hello2.py -r'
+  launched by:       karakasv@vpn-39.cscs.ch
+  working directory: '/Users/karakasv/Repositories/reframe'
+  settings file:     '<builtin>'
+  check search path: '/Users/karakasv/Repositories/reframe/tutorials/basics/hello/hello2.py'
+  stage directory:   '/Users/karakasv/Repositories/reframe/stage'
+  output directory:  '/Users/karakasv/Repositories/reframe/output'
+
+[==========] Running 2 check(s)
+[==========] Started on Wed Jan 19 14:50:11 2022 
+
+[----------] started processing HelloMultiLangTest_cpp (HelloMultiLangTest %lang=cpp)
+[ RUN      ] HelloMultiLangTest_cpp on generic:default using builtin
+[     FAIL ] (1/2) HelloMultiLangTest %lang=cpp @generic:default+builtin [compile: 0.011s run: n/a total: 0.028s]
+==> test failed during 'compile': test staged in '/Users/karakasv/Repositories/reframe/stage/generic/default/builtin/HelloMultiLangTest_cpp'
+[----------] finished processing HelloMultiLangTest_cpp (HelloMultiLangTest %lang=cpp)
+
+[----------] started processing HelloMultiLangTest_c (HelloMultiLangTest %lang=c)
+[ RUN      ] HelloMultiLangTest_c on generic:default using builtin
+[----------] finished processing HelloMultiLangTest_c (HelloMultiLangTest %lang=c)
+
+[----------] waiting for spawned checks to finish
+[       OK ] (2/2) HelloMultiLangTest %lang=c @generic:default+builtin [compile: 0.437s run: 0.434s total: 0.896s]
+[----------] all spawned checks have finished
+
+[  FAILED  ] Ran 2/2 test case(s) from 2 check(s) (1 failure(s), 0 skipped)
+[==========] Finished on Wed Jan 19 14:50:12 2022 
+
+==============================================================================
+SUMMARY OF FAILURES
+------------------------------------------------------------------------------
+FAILURE INFO for HelloMultiLangTest_cpp 
+  * Expanded name: HelloMultiLangTest %lang=cpp
+  * Description: HelloMultiLangTest %lang=cpp
+  * System partition: generic:default
+  * Environment: builtin
+  * Stage directory: /Users/karakasv/Repositories/reframe/stage/generic/default/builtin/HelloMultiLangTest_cpp
+  * Node list: 
+  * Job type: local (id=None)
+  * Dependencies (conceptual): []
+  * Dependencies (actual): []
+  * Maintainers: []
+  * Failing phase: compile
+  * Rerun with '-n HelloMultiLangTest_cpp -p builtin --system generic:default -r'
+  * Reason: build system error: I do not know how to compile a C++ program
+------------------------------------------------------------------------------
+Run report saved in '/Users/karakasv/.reframe/reports/run-report.json'
+Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-82sxn1an.log'
