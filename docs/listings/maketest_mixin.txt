@@ -1,0 +1,18 @@
+[ReFrame Setup]
+  version:           3.10.0-dev.2+4cd9d2e9
+  command:           './bin/reframe -c tutorials/advanced/makefiles/maketest_mixin.py -l'
+  launched by:       user@host
+  working directory: '/Users/user/Repositories/reframe'
+  settings file:     'tutorials/config/settings.py'
+  check search path: '/Users/user/Repositories/reframe/tutorials/advanced/makefiles/maketest_mixin.py'
+  stage directory:   '/Users/user/Repositories/reframe/stage'
+  output directory:  '/Users/user/Repositories/reframe/output'
+
+[List of matched checks]
+- MakeOnlyTestAlt %elem_type=double
+- MakeOnlyTestAlt %elem_type=float
+- MakefileTestAlt %elem_type=double
+- MakefileTestAlt %elem_type=float
+Found 4 check(s)
+
+Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-xv130jbu.log'

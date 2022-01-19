@@ -44,36 +44,13 @@ Let's try listing the generated tests:
    ./bin/reframe -c tutorials/advanced/parameterized/stream.py -l
 
 
-.. code-block:: none
+.. literalinclude:: listings/stream_params.txt
+   :language: console
 
-   [ReFrame Setup]
-     version:           3.6.0-dev.0+2f8e5b3b
-     command:           './bin/reframe -c tutorials/advanced/parameterized/stream.py -l'
-     launched by:       user@tresa.local
-     working directory: '/Users/user/Repositories/reframe'
-     settings file:     'tutorials/config/settings.py'
-     check search path: '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py'
-     stage directory:   '/Users/user/Repositories/reframe/stage'
-     output directory:  '/Users/user/Repositories/reframe/output'
-
-   [List of matched checks]
-   - StreamMultiSysTest_2097152 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
-   - StreamMultiSysTest_67108864 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
-   - StreamMultiSysTest_1048576 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
-   - StreamMultiSysTest_536870912 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
-   - StreamMultiSysTest_4194304 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
-   - StreamMultiSysTest_33554432 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
-   - StreamMultiSysTest_8388608 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
-   - StreamMultiSysTest_268435456 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
-   - StreamMultiSysTest_16777216 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
-   - StreamMultiSysTest_524288 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
-   - StreamMultiSysTest_134217728 (found in '/Users/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py')
-   Found 11 check(s)
-
-   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-s_ty1l50.log'
-
-
-ReFrame generates 11 tests from the single parameterized test that we have written and names them by appending a string representation of the parameter value.
+ReFrame generates 11 tests from the single parameterized test.
+When listing parameterized tests, ReFrame adds the list of parameters after the base test name using the notation ``%<param>=<value>``.
+Each generated test gets also a unique name.
+For more details on how the test names are generated for various types of tests, please refer to :doc:`test-naming-scheme`.
 
 Test parameterization in ReFrame is very powerful since you can parameterize your tests on anything and you can create complex parameterization spaces.
 A common pattern is to parameterize a test on the environment module that loads a software in order to test different versions of it.
@@ -316,27 +293,8 @@ Notice how the parameters are expanded in each of the individual tests:
 
    ./bin/reframe -c tutorials/advanced/makefiles/maketest_mixin.py -l
 
-
-.. code-block:: none
-
-   [ReFrame Setup]
-     version:           3.6.0-dev.0+2f8e5b3b
-     command:           './bin/reframe -c tutorials/advanced/makefiles/maketest_mixin.py -l'
-     launched by:       user@tresa.local
-     working directory: '/Users/user/Repositories/reframe'
-     settings file:     'tutorials/config/settings.py'
-     check search path: '/Users/user/Repositories/reframe/tutorials/advanced/makefiles/maketest_mixin.py'
-     stage directory:   '/Users/user/Repositories/reframe/stage'
-     output directory:  '/Users/user/Repositories/reframe/output'
-
-   [List of matched checks]
-   - MakeOnlyTestAlt_double (found in '/Users/user/Repositories/reframe/tutorials/advanced/makefiles/maketest_mixin.py')
-   - MakeOnlyTestAlt_float (found in '/Users/user/Repositories/reframe/tutorials/advanced/makefiles/maketest_mixin.py')
-   - MakefileTestAlt_double (found in '/Users/user/Repositories/reframe/tutorials/advanced/makefiles/maketest_mixin.py')
-   - MakefileTestAlt_float (found in '/Users/user/Repositories/reframe/tutorials/advanced/makefiles/maketest_mixin.py')
-   Found 4 check(s)
-
-   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-e384bvkd.log'
+.. literalinclude:: listings/maketest_mixin.txt
+   :language: console
 
 
 
