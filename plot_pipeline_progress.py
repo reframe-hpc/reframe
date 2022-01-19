@@ -33,10 +33,10 @@ if __name__ == '__main__':
 
     fig, ax = plt.subplots()
     ax.stackplot(x_values, y_values, labels=raw_data.keys(), alpha=1)
-    ax.legend(loc='upper right')
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     ax.set_title('Pipeline progress')
     ax.set_xlabel(x_label)
     ax.set_ylabel('Number of tasks')
-    figname = os.path.splitext(sys.argv[1])[0] + '.png'
-    plt.savefig(figname)
+    figname = os.path.splitext(sys.argv[1])[0] + '_' + mode + '.png'
+    plt.savefig(figname, bbox_inches='tight')
     plt.show()
