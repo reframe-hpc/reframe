@@ -83,8 +83,8 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
         return lines
 
     # We need the leaf test cases to be printed at the leftmost
-    testcases = list(t for t in testcases if t.in_degree == 0)
-    for t in testcases:
+    leaf_testcases = list(t for t in testcases if t.in_degree == 0)
+    for t in leaf_testcases:
         tc_info = ''
         details = ''
         if concretized:
