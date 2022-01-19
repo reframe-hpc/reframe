@@ -110,7 +110,7 @@ System Configuration
    :required: No
    :default: ``8``
 
-   .. versionadded:: 3.10
+   .. versionadded:: 3.10.0
 
 
 .. js:attribute:: .systems[].modules_system
@@ -1308,7 +1308,7 @@ General Configuration
    :required: No
    :default: ``False``
 
-   .. versionadded:: 3.10
+   .. versionadded:: 3.10.0
 
 
 .. js:attribute:: .general[].pipeline_timeout
@@ -1321,7 +1321,7 @@ General Configuration
    :required: No
    :default: ``10``
 
-   .. versionadded:: 3.10
+   .. versionadded:: 3.10.0
 
 
 .. js:attribute:: .general[].remote_detect

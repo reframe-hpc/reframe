@@ -157,7 +157,7 @@ There are a number of things to notice in this diagram:
   If the ``cleanup`` phase fails, the test is not marked as a failure, but this condition is marked as an error.
 
 
-.. versionchanged:: 3.10
+.. versionchanged:: 3.10.0
    The ``compile`` stage is now also executed asynchronously.
 
 
@@ -190,7 +190,7 @@ For example, a test executing in the ReFrame context will not respect the :js:at
 To control the concurrency of the ReFrame execution context, users should set the :js:attr:`.systems[].max_local_jobs` option instead.
 
 
-.. versionchanged:: 3.10
+.. versionchanged:: 3.10.0
 
    Execution contexts were formalized.
 
