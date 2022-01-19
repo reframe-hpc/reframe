@@ -765,7 +765,7 @@ def _rl_encode(seq):
 
 
 def _parse_node(nodename):
-    m = re.search(r'(^\D+)(\d+)', nodename)
+    m = re.search(r'(.*\D)(\d+)', nodename)
     if m is None:
         basename = nodename
         width = 0
