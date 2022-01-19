@@ -18,6 +18,8 @@ import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 import unittests.utility as test_util
 
+from hashlib import sha256
+
 from reframe.core.exceptions import (ConfigError,
                                      SpawnedProcessError,
                                      SpawnedProcessTimeout)
@@ -485,6 +487,16 @@ def test_import_from_file_load_unknown_path():
         pytest.fail()
     except ImportError as e:
         assert 'foo' == e.name
+        assert '/foo' == e.path
+
+
+def test_import_from_file_load_unknown_path_unique_name():
+    try:
+        util.import_module_from_file('/foo', unique_name=True)
+        pytest.fail()
+    except ImportError as e:
+        module_hash = sha256('/foo'.encode('utf-8')).hexdigest()[:8]
+        assert f'rfm_foo_{module_hash}' == e.name
         assert '/foo' == e.path
 
 
