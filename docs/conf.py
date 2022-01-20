@@ -75,7 +75,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'ReFrame'
-copyright = '2016-2021, CSCS/ETH Zurich'
+copyright = '2016-2022, CSCS/ETH Zurich'
 author = 'ReFrame Project Developers'
 
 # The version info for the project you're documenting, acts as replacement for
