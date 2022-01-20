@@ -143,7 +143,7 @@ As a result, its immediate dependency :class:`OSUBuildTest` will be skipped, whi
 
    ./bin/reframe -c tutorials/deps/osu_benchmarks.py --system=daint:gpu -n OSULatencyTest -l
 
-.. literalinclude:: docs/osu_latency_res_error.txt
+.. literalinclude:: docs/osu_latency_unresolved_deps.txt
    :language: console
 
 
