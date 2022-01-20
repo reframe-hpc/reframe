@@ -488,6 +488,7 @@ def main():
         dest='git_timeout',
         envvar='RFM_GIT_TIMEOUT',
         configvar='general/git_timeout',
+        action='store_float',
         help=('Timeout in seconds when checking if the url is a '
               'valid repository.')
     )

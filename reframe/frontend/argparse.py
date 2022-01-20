@@ -99,6 +99,13 @@ class _Namespace:
                         raise ValueError(
                             f'environment variable {envvar!r} not a boolean'
                         ) from None
+                elif action == 'store_float':
+                    try:
+                        ret = float(ret)
+                    except ValueError:
+                        raise ValueError(
+                            f'environment variable {envvar!r} not a float'
+                        ) from None
 
         return ret
 
