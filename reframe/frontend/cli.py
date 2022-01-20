@@ -53,7 +53,7 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
             lines = []
 
         if printed is None:
-            printed = set()
+            printed = set(unique_checks)
 
         adj = u.deps
         for v in adj:
