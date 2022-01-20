@@ -209,19 +209,5 @@ Using the :func:`variant_name` subsequently, we can get the actual name of the v
 
    ./bin/reframe -c tutorials/deps/parameterized.py -l
 
-
-.. code-block:: console
-
-   [List of matched checks]
-   - TestB
-       ^TestA %z=9
-       ^TestA %z=8
-       ^TestA %z=7
-       ^TestA %z=6
-   - TestA %z=5
-   - TestA %z=4
-   - TestA %z=3
-   - TestA %z=2
-   - TestA %z=1
-   - TestA %z=0
-   Found 11 check(s)
+.. literalinclude:: listings/param_deps_list.txt
+   :language: console
