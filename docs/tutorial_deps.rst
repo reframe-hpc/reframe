@@ -131,7 +131,7 @@ For example, if we select only the :class:`OSULatencyTest` for running, ReFrame 
 
    ./bin/reframe -c tutorials/deps/osu_benchmarks.py -n OSULatencyTest -l
 
-.. literalinclude:: docs/osu_latency_list.txt
+.. literalinclude:: listings/osu_latency_list.txt
    :language: console
 
 Finally, when ReFrame cannot resolve a dependency of a test, it will issue a warning and skip completely all the test cases that recursively depend on this one.
@@ -143,7 +143,7 @@ As a result, its immediate dependency :class:`OSUBuildTest` will be skipped, whi
 
    ./bin/reframe -c tutorials/deps/osu_benchmarks.py --system=daint:gpu -n OSULatencyTest -l
 
-.. literalinclude:: docs/osu_latency_unresolved_deps.txt
+.. literalinclude:: listings/osu_latency_unresolved_deps.txt
    :language: console
 
 
@@ -159,7 +159,7 @@ ReFrame generates multiple test cases from each test depending on the target sys
 We have seen in the :doc:`tutorial_basics` already how the STREAM benchmark generated many more test cases when it was run in a HPC system with multiple partitions and programming environments.
 These are the *actual* depedencies and form the actual test case graph that will be executed by the runtime.
 The mapping of a test to its concrete test cases that will be executed on a system is called *test concretization*.
-You can view the exact concretization of the selected tests with :option:`--list=concretized` or simply :option:`-lC`.
+You can view the exact concretization of the selected tests with ``--list=concretized`` or simply ``-lC``.
 Here is how the OSU benchmarks of this tutorial are concretized on the system ``daint``:
 
 
@@ -184,7 +184,8 @@ If we scope our programming environments to ``gnu`` and ``builtin`` only, ReFram
 
    ./bin/reframe -c tutorials/deps/osu_benchmarks.py -n OSULatencyTest -L -p builtin -p gnu
 
-.. literalinclude:: docs/listings/osu_bench_list_concretized_gnu.txt
+.. literalinclude:: listings/osu_bench_list_concretized_gnu.txt
+   :language: console
 
 
 To gain a deeper understanding on how test dependencies work in Reframe, please refer to :doc:`dependencies`.

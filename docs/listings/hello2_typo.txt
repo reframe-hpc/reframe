@@ -1,0 +1,18 @@
+[ReFrame Setup]
+  version:           3.10.0-dev.2+cb5edd8b
+  command:           './bin/reframe -c tutorials/basics/hello -R -l'
+  launched by:       user@host
+  working directory: '/Users/user/Repositories/reframe'
+  settings file:     'tutorials/config/settings.py'
+  check search path: (R) '/Users/user/Repositories/reframe/tutorials/basics/hello'
+  stage directory:   '/Users/user/Repositories/reframe/stage'
+  output directory:  '/Users/user/Repositories/reframe/output'
+
+./bin/reframe: skipping test file '/Users/user/Repositories/reframe/tutorials/basics/hello/hello2.py': name error: tutorials/basics/hello/hello2.py:13: name 'paramter' is not defined
+    lang = paramter(['c', 'cpp'])
+ (rerun with '-v' for more information)
+[List of matched checks]
+- HelloTest
+Found 1 check(s)
+
+Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-rt_ds_vp.log'

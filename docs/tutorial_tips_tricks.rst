@@ -19,14 +19,8 @@ In the following, we have inserted a small typo in the ``hello2.py`` tutorial ex
 
    ./bin/reframe -c tutorials/basics/hello -R -l
 
-.. code-block:: none
-
-   ./bin/reframe: skipping test file '/Users/user/Repositories/reframe/tutorials/basics/hello/hello2.py': name error: tutorials/basics/hello/hello2.py:17: name 's' is not defined
-       sanity_patterns = s.assert_found(r'Hello, World\!', 'hello.out')
-    (rerun with '-v' for more information)
-   [List of matched checks]
-   - HelloTest (found in '/Users/user/Repositories/reframe/tutorials/basics/hello/hello1.py')
-   Found 1 check(s)
+.. literalinclude:: listings/hello2_typo.txt
+   :language: console
 
 Notice how ReFrame prints also the source code line that caused the error.
 This is not always the case, however.
@@ -48,40 +42,8 @@ As suggested by the warning message, passing :option:`-v` will give you the stac
 
    ./bin/reframe -c tutorials/basics/hello -R -lv
 
-.. code-block:: none
-
-   ./bin/reframe: skipping test file '/Users/user/Repositories/reframe/tutorials/basics/hello/hello2.py': name error: tutorials/basics/hello/hello2.py:17: name 's' is not defined
-       sanity_patterns = s.assert_found(r'Hello, World\!', 'hello.out')
-    (rerun with '-v' for more information)
-   Traceback (most recent call last):
-     File "/Users/user/Repositories/reframe/reframe/frontend/loader.py", line 172, in load_from_file
-       util.import_module_from_file(filename, force)
-     File "/Users/user/Repositories/reframe/reframe/utility/__init__.py", line 101, in import_module_from_file
-       return importlib.import_module(module_name)
-     File "/usr/local/Cellar/python@3.9/3.9.1_6/Frameworks/Python.framework/Versions/3.9/lib/python3.9/importlib/__init__.py", line 127, in import_module
-       return _bootstrap._gcd_import(name[level:], package, level)
-     File "<frozen importlib._bootstrap>", line 1030, in _gcd_import
-     File "<frozen importlib._bootstrap>", line 1007, in _find_and_load
-     File "<frozen importlib._bootstrap>", line 986, in _find_and_load_unlocked
-     File "<frozen importlib._bootstrap>", line 680, in _load_unlocked
-     File "<frozen importlib._bootstrap_external>", line 790, in exec_module
-     File "<frozen importlib._bootstrap>", line 228, in _call_with_frames_removed
-     File "/Users/user/Repositories/reframe/tutorials/basics/hello/hello2.py", line 11, in <module>
-       class HelloMultiLangTest(rfm.RegressionTest):
-     File "/Users/user/Repositories/reframe/tutorials/basics/hello/hello2.py", line 17, in HelloMultiLangTest
-       sanity_patterns = s.assert_found(r'Hello, World\!', 'hello.out')
-   NameError: name 's' is not defined
-
-   Loaded 1 test(s)
-   Generated 1 test case(s)
-   Filtering test cases(s) by name: 1 remaining
-   Filtering test cases(s) by tags: 1 remaining
-   Filtering test cases(s) by other attributes: 1 remaining
-   Final number of test cases: 1
-   [List of matched checks]
-   - HelloTest (found in '/Users/user/Repositories/reframe/tutorials/basics/hello/hello1.py')
-   Found 1 check(s)
-
+.. literalinclude:: listings/hello2_typo_stacktrace.txt
+   :language: console
 
 .. tip::
    The :option:`-v` option can be given multiple times to increase the verbosity level further.

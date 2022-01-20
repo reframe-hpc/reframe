@@ -136,11 +136,10 @@ The following listing and figure show how the test dependency DAG is concretized
 
    reframe -c tutorials/fixtures/osu_benchmarks.py -n osu_bandwidth_test -lC -p pgi
 
-.. literalinclude:: listings/osu_bandwidth_concretized_pgi_daint.txt
+.. literalinclude:: listings/osu_bandwidth_concretized_daint_pgi.txt
    :language: console
 
 .. figure:: _static/img/fixtures-actual-deps-scoped.svg
-
   :align: center
 
   :sub:`The dependency graph concretized for the 'pgi' environment only.`
