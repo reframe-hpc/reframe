@@ -518,11 +518,11 @@ def main():
         help='Use a compact test naming scheme'
     )
     argparser.add_argument(
-        dest='pipeline_statistics',
-        envvar='RFM_PIPELINE_STATISTICS',
-        configvar='general/pipeline_statistics',
+        dest='dump_pipeline_progress',
+        envvar='RFM_DUMP_PIPELINE_PROGRESS',
+        configvar='general/dump_pipeline_progress',
         action='store_true',
-        help='Gather statistics for the async execution'
+        help='Dump progress information for the async execution'
     )
     argparser.add_argument(
         dest='pipeline_timeout',

@@ -265,7 +265,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             '_rfm_local': rt.runtime().get_option('systems/0/max_local_jobs')
         }
         self._pipeline_statistics = rt.runtime().get_option(
-            'systems/0/pipeline_statistics'
+            'systems/0/dump_pipeline_progress'
         )
         self.task_listeners.append(self)
 
@@ -350,6 +350,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 _cleanup_all(self._retired_tasks, not self.keep_stage_files)
                 if self._pipeline_statistics:
                     new_num_retired = len(self._retired_tasks)
+
                     # Some tests might not be cleaned up because they are
                     # waiting for dependencies or because their dependencies
                     # have failed.

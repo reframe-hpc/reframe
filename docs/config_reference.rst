@@ -1301,9 +1301,10 @@ General Configuration
   Timeout value in seconds used when checking if a git repository exists.
 
 
-.. js:attribute:: .general[].pipeline_statistics
+.. js:attribute:: .general[].dump_pipeline_progress
 
-   A boolean value indicating whether we want to collect statistic information for the execution of the asynchronous pipeline.
+   Dump pipeline progress for the asynchronous execution policy in ``pipeline-progress.json``.
+   This option is meant for debug purposes only.
 
    :required: No
    :default: ``False``

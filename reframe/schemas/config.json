@@ -465,7 +465,7 @@
                         "items": {"type": "string"}
                     },
                     "non_default_craype": {"type": "boolean"},
-                    "pipeline_statistics": {"type": "boolean"},
+                    "dump_pipeline_progress": {"type": "boolean"},
                     "pipeline_timeout": {"type": ["number", "null"]},
                     "purge_environment": {"type": "boolean"},
                     "remote_detect": {"type": "boolean"},
@@ -500,7 +500,7 @@
         "environments/ldflags": [],
         "environments/extras": {},
         "environments/target_systems": ["*"],
-        "general/pipeline_statistics": false,
+        "general/dump_pipeline_progress": false,
         "general/pipeline_timeout": null,
         "general/check_search_path": ["${RFM_INSTALL_PREFIX}/checks/"],
         "general/check_search_recursive": false,
