@@ -90,7 +90,6 @@ def test_load_fixtures(loader):
 
 
 def test_existing_module_name(loader, tmp_path):
-    print(type(tmp_path))
     test_file = tmp_path / 'os.py'
     shutil.copyfile('unittests/resources/checks/emptycheck.py', test_file)
     checks = loader.load_from_file(test_file)

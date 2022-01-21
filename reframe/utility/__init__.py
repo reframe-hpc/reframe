@@ -88,10 +88,12 @@ def import_module_from_file(filename, force=False):
     module_name = _get_module_name(rel_filename)
     if rel_filename.startswith('..'):
         # We cannot use the standard Python import mechanism here, because the
-        # module to import is outside the top-level package
+        # module to import is outside the top-level package. We also mangle
+        # the name that we assign to the module, in order to avoid clashes
+        # with other modules loaded with a standard `import` or with multiple
+        # test files with the same name that reside in different directories.
         module_hash = sha256(filename.encode('utf-8')).hexdigest()[:8]
-        module_name = f'rfm_{module_name}_{module_hash}'
-
+        module_name = f'{module_name}@{module_hash}'
         return _do_import_module_from_file(filename, module_name)
 
     # Extract module name if `filename` is under `site-packages/` or the

@@ -486,8 +486,8 @@ def test_import_from_file_existing_module_name(tmp_path):
 
     module = util.import_module_from_file(test_file)
     assert module.var == 1
-    assert not hasattr(module, 'abc')
-    assert hasattr(os, 'abc')
+    assert not hasattr(module, 'path')
+    assert hasattr(os, 'path')
 
 
 def test_import_from_file_load_directory_relative():
