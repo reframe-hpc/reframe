@@ -18,8 +18,6 @@ import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 import unittests.utility as test_util
 
-from hashlib import sha256
-
 from reframe.core.exceptions import (ConfigError,
                                      SpawnedProcessError,
                                      SpawnedProcessTimeout)
@@ -481,23 +479,15 @@ def test_import_from_file_load_abspath():
     assert module is sys.modules.get('reframe')
 
 
-def test_import_from_file_load_unknown_path():
-    try:
-        util.import_module_from_file('/foo')
-        pytest.fail()
-    except ImportError as e:
-        assert 'foo' == e.name
-        assert '/foo' == e.path
+def test_import_from_file_existing_module_name(tmp_path):
+    test_file = tmp_path / 'os.py'
+    with open(test_file, 'w') as fp:
+        print('var = 1', file=fp)
 
-
-def test_import_from_file_load_unknown_path_unique_name():
-    try:
-        util.import_module_from_file('/foo', unique_name=True)
-        pytest.fail()
-    except ImportError as e:
-        module_hash = sha256('/foo'.encode('utf-8')).hexdigest()[:8]
-        assert f'rfm_foo_{module_hash}' == e.name
-        assert '/foo' == e.path
+    module = util.import_module_from_file(test_file)
+    assert module.var == 1
+    assert not hasattr(module, 'abc')
+    assert hasattr(os, 'abc')
 
 
 def test_import_from_file_load_directory_relative():
@@ -520,17 +510,6 @@ def test_import_from_file_load_relative():
         module = util.import_module_from_file('utility/osext.py')
         assert 'reframe.utility.osext' == module.__name__
         assert module is sys.modules.get('reframe.utility.osext')
-
-
-def test_import_from_file_load_outside_pkg():
-    module = util.import_module_from_file(os.path.__file__)
-
-    # os imports the OS-specific path libraries under the name `path`. Our
-    # importer will import the actual file, thus the module name should be
-    # the real one.
-    assert (module is sys.modules.get('posixpath') or
-            module is sys.modules.get('ntpath') or
-            module is sys.modules.get('macpath'))
 
 
 def test_import_from_file_load_twice():

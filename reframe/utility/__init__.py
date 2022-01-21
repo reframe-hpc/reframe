@@ -54,12 +54,8 @@ def _get_module_name(filename):
         return barename.replace(os.sep, '.')
 
 
-def _do_import_module_from_file(filename, module_name=None, unique_name=False):
+def _do_import_module_from_file(filename, module_name=None):
     module_name = module_name or _get_module_name(filename)
-    if unique_name:
-        module_hash = sha256(filename.encode('utf-8')).hexdigest()[:8]
-        module_name = f'rfm_{module_name}_{module_hash}'
-
     if module_name in sys.modules:
         return sys.modules[module_name]
 
@@ -74,7 +70,7 @@ def _do_import_module_from_file(filename, module_name=None, unique_name=False):
     return module
 
 
-def import_module_from_file(filename, force=False, unique_name=False):
+def import_module_from_file(filename, force=False):
     '''Import module from file.
 
     :arg filename: The path to the filename of a Python module.
@@ -93,7 +89,10 @@ def import_module_from_file(filename, force=False, unique_name=False):
     if rel_filename.startswith('..'):
         # We cannot use the standard Python import mechanism here, because the
         # module to import is outside the top-level package
-        return _do_import_module_from_file(filename, module_name, unique_name)
+        module_hash = sha256(filename.encode('utf-8')).hexdigest()[:8]
+        module_name = f'rfm_{module_name}_{module_hash}'
+
+        return _do_import_module_from_file(filename, module_name)
 
     # Extract module name if `filename` is under `site-packages/` or the
     # Debian specific `dist-packages/`
