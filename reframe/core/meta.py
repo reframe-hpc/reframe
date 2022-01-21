@@ -662,7 +662,7 @@ class RegressionTestMeta(type):
 
     @property
     def num_variants(cls):
-        '''Number of unique tests that can be instantiated from this class.'''
+        '''Total number of variants of the test.'''
         return len(cls._rfm_param_space) * len(cls._rfm_fixture_space)
 
     def _map_variant_num(cls, variant_num=None):
@@ -689,15 +689,32 @@ class RegressionTestMeta(type):
         '''Get the variant numbers that meet the specified conditions.
 
         The given conditions enable filtering the parameter space of the test.
-        These can be specified by passing key-value pairs with the parameter
-        name to filter and an associated callable that returns ``True`` when
-        the filtering condition is met. Multiple conditions are supported.
-        However, filtering the fixture space is not allowed.
+        Filtering the fixture space is not allowed.
 
         .. code-block:: python
 
            # Filter out the test variants where my_param is greater than 3
            cls.get_variant_nums(my_param=lambda x: x < 4)
+
+        The returned list of variant numbers can be passed to
+        :func:`variant_name` in order to retrieve the actual test name.
+
+        :param conditions: keyword arguments where the key is the test
+            parameter name and the value is either a single value or a unary
+            function that evaluates to :obj:`True` if the parameter point must
+            be kept, :obj:`False` otherwise. If a single value is passed this
+            is implicitly converted to the equality function, such that
+
+            .. code-block:: python
+
+               get_variant_nums(p=10)
+
+            is equivalent to
+
+            .. code-block:: python
+
+               get_variant_nums(p=lambda x: x == 10)
+
         '''
         if not conditions:
             return list(range(cls.num_variants))
@@ -766,6 +783,12 @@ class RegressionTestMeta(type):
           #     }
           # }
 
+        :param variant_num: An integer in the range of [0, cls.num_variants).
+        :param recurse: Flag to control the recursion through the fixture
+            space.
+        :param max_depth: Set the recursion limit. When the ``recurse``
+            argument is set to ``False``, this option has no effect.
+
         '''
 
         pid, fid = cls._map_variant_num(variant_num)
@@ -823,15 +846,9 @@ class RegressionTestMeta(type):
         return cls.num_variants == 0
 
     def variant_name(cls, variant_num=None):
-        '''Return the name of a test variant for a given variant number.
+        '''Return the name of the test variant with a specific variant number.
 
-        This function returns a unique name for each of the provided variant
-        numbers. If no ``variant_num`` is provided, this function returns the
-        qualified class name.
-
-        :param variant_num: An integer in the range of [0, cls.num_variants).
-
-        :meta private:
+        :param variant_num: An integer in the range of ``[0, cls.num_variants)``.
         '''
 
         name = cls.__name__

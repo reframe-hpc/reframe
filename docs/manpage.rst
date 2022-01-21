@@ -114,10 +114,24 @@ This happens recursively so that if test ``T1`` depends on ``T2`` and ``T2`` dep
    Filter tests by name.
 
    ``NAME`` is interpreted as a `Python Regular Expression <https://docs.python.org/3/library/re.html>`__;
-   any test whose name matches ``NAME`` will be selected.
+   any test whose *display name* matches ``NAME`` will be selected.
+   The display name of a test encodes also any parameterization information.
+   See XXX for more details on the test naming scheme.
+
+   Before matching, any whitespace will be removed from the display name of the test.
 
    This option may be specified multiple times, in which case tests with *any* of the specified names will be selected:
    ``-n NAME1 -n NAME2`` is therefore equivalent to ``-n 'NAME1|NAME2'``.
+
+   If the special notation ``<test_name>@<variant_num>`` is passed as the ``NAME`` argument, then an exact match will be performed selecting the variant ``variant_num`` of the test ``test_name``.
+
+   .. note::
+
+      Fixtures cannot be selected.
+
+   .. versionchanged:: 3.10.0
+
+      The option's behaviour was adapted and extended in order to work with the updated test naming scheme.
 
 .. option:: -p, --prgenv=NAME
 
@@ -189,15 +203,42 @@ An action must always be specified.
 
    .. versionadded:: 3.4.1
 
-.. option:: -L, --list-detailed
+.. option:: --describe
 
-   List selected tests providing detailed information per test.
+   Print a detailed description of the `selected tests <#test-filtering>`__ in JSON format and exit.
 
-.. option:: -l, --list
+   .. note::
+      The generated test description corresponds to its state after it has been initialized.
+      If any of its attributes are changed or set during its execution, their updated values will not be shown by this listing.
 
-   List selected tests.
+   .. versionadded:: 3.10.0
 
-   A single line per test is printed.
+
+.. option:: -L, --list-detailed[=T|C]
+
+   List selected tests providing more details for each test.
+
+   The unique id of each test (see also :attr:`~reframe.core.pipeline.RegressionTest.unique_name`) as well as the file where each test is defined are printed.
+
+   This option accepts optionally a single argument denoting what type of listing is requested.
+   Please refer to :option:`-l` for an explanation of this argument.
+
+   .. versionadded:: 3.10.0
+      Support for different types of listing is added.
+
+.. option:: -l, --list[=T|C]
+
+   List selected tests and their dependencies.
+
+   This option accepts optionally a single argument denoting what type of listing is requested.
+   There are two types of possible listings:
+
+   - *Regular test listing* (``T``, the default): This type of listing lists the tests and their dependencies or fixtures using their :attr:`~reframe.core.pipeline.RegressionTest.display_name`. A test that is listed as a dependency of another test will not be listed separately.
+   - *Concretized test case listing* (``C``): This type of listing lists the exact test cases and their dependencies as they have been concretized for the current system and environment combinations.
+     This listing shows practically the exact test DAG that will be executed.
+
+   .. versionadded:: 3.10.0
+      Support for different types of listing is added.
 
 .. option:: --list-tags
 
@@ -211,7 +252,11 @@ An action must always be specified.
 
    Execute the selected tests.
 
-If more than one action options are specified, :option:`-l` precedes :option:`-L`, which in turn precedes :option:`-r`.
+If more than one action options are specified, the precedence order is the following:
+
+   .. code-block:: console
+
+      --describe > --list-detailed > --list > --list-tags > --ci-generate
 
 
 ----------------------------------
