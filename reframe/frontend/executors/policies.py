@@ -349,13 +349,13 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
                 _cleanup_all(self._retired_tasks, not self.keep_stage_files)
                 if self._pipeline_statistics:
-                    new_num_retired = len(self._retired_tasks)
+                    num_retired_actual = len(self._retired_tasks)
 
                     # Some tests might not be cleaned up because they are
                     # waiting for dependencies or because their dependencies
                     # have failed.
                     self._update_pipeline_progress(
-                        'retired', 'completed', num_retired - new_num_retired
+                        'retired', 'completed', num_retired - num_retired_actual
                     )
 
                 if num_running:
