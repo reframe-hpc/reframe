@@ -218,7 +218,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:    Setting the name of a test is deprecated and will be disabled in the
     #:    future. If you were setting the name of a test to circumvent the old
     #:    long parameterized test names in order to reference them in
-    #:    dependency chains, please refer to :doc:`xxx` for more details on how
+    #:    dependency chains, please refer to :ref:`param_deps` for more details on how
     #:    to achieve this.
     #:
     #: .. versionchanged:: 3.10.0

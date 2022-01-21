@@ -50,7 +50,7 @@ Let's try listing the generated tests:
 ReFrame generates 11 tests from the single parameterized test.
 When listing parameterized tests, ReFrame adds the list of parameters after the base test name using the notation ``%<param>=<value>``.
 Each generated test gets also a unique name.
-For more details on how the test names are generated for various types of tests, please refer to :doc:`test-naming-scheme`.
+For more details on how the test names are generated for various types of tests, please refer to :ref:`test_naming_scheme`.
 
 Test parameterization in ReFrame is very powerful since you can parameterize your tests on anything and you can create complex parameterization spaces.
 A common pattern is to parameterize a test on the environment module that loads a software in order to test different versions of it.

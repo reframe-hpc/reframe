@@ -116,7 +116,7 @@ This happens recursively so that if test ``T1`` depends on ``T2`` and ``T2`` dep
    ``NAME`` is interpreted as a `Python Regular Expression <https://docs.python.org/3/library/re.html>`__;
    any test whose *display name* matches ``NAME`` will be selected.
    The display name of a test encodes also any parameterization information.
-   See XXX for more details on the test naming scheme.
+   See :ref:`test_naming_scheme` for more details on how the tests are automatically named by the framework.
 
    Before matching, any whitespace will be removed from the display name of the test.
 
@@ -796,6 +796,121 @@ Miscellaneous options
    This option can also be set using the :envvar:`RFM_VERBOSE` environment variable or the :js:attr:`verbose` general configuration parameter.
 
 
+.. _test_naming_scheme:
+
+Test Naming Scheme
+------------------
+
+.. versionadded:: 3.10.0
+
+This section describes the new test naming scheme which will replace the current one in ReFrame 4.0.
+It can be enabled by setting the :envvar:`RFM_COMPACT_TEST_NAMES` environment variable.
+
+Each ReFrame test is assigned a unique name, which will be used internally by the framework to reference the test.
+Any test-specific path component will use that name, too.
+It is formed as follows for the various types of tests:
+
+- *Regular tests*: The unique name is simply the test class name.
+  This implies that you cannot load two tests with the same class name within the same run session even if these tests reside in separate directories.
+- *Parameterized tests*: The unique name is formed by the test class name followed by an ``_`` and the variant number of the test.
+  Each point in the parameter space of the test is assigned a unique variant number.
+- *Fixtures*: The unique name is formed by the test class name followed by an ``_`` and a hash.
+  The hash is constructed by combining the information of the fixture variant (if the fixture is parameterized), the fixture's scope and any fixture variables that were explicitly set.
+
+Since unique names can be cryptic, they are not listed by the :option:`-l` option, but are listed when a detailed listing is requested by using the :option:`-L` option.
+
+A human readable version of the test name, which is called the *display name*, is also constructed for each test.
+This name encodes all the parameterization information as well as the fixture-specific information (scopes, variables).
+The format of the display name is the following in BNF notation:
+
+.. code-block:: bnf
+
+   <display_name> ::= <test_class_name> (<params>)* (<scope>)?
+   <params> ::= "%" <parametrization> "=" <pvalue>
+   <parametrization> ::= (<fname> ".")* <pname>
+   <scope> ::= "~" <scope_descr>
+   <scope_descr> ::= <first> ("+" <second>)*
+
+   <test_class_name> ::= (* as in Python *)
+   <fname> ::= (* string *)
+   <pname> ::= (* string *)
+   <pvalue> ::= (* string *)
+   <first> ::= (* string *)
+   <second> ::= (* string *)
+
+The following is an example of a fictitious complex test that is itself parameterized and depends on parameterized fixtures as well.
+
+.. code-block:: python
+
+   import reframe as rfm
+
+
+   class MyFixture(rfm.RunOnlyRegressionTest):
+       p = parameter([1, 2])
+
+
+   class X(rfm.RunOnlyRegressionTest):
+       foo = variable(int, value=1)
+
+
+   @rfm.simple_test
+   class TestA(rfm.RunOnlyRegressionTest):
+       f = fixture(MyFixture, scope='test', action='join')
+       x = parameter([3, 4])
+       t = fixture(MyFixture, scope='test')
+       l = fixture(X, scope='environment', variables={'foo': 10})
+       valid_systems = ['*']
+       valid_prog_environs = ['*']
+
+
+Here is how this test is listed where the various components of the display name can be seen:
+
+.. code-block:: console
+
+   - TestA %x=4 %l.foo=10 %t.p=2
+       ^MyFixture %p=1 ~TestA_4_1
+       ^MyFixture %p=2 ~TestA_4_1
+       ^X %foo=10 ~generic:default+builtin
+   - TestA %x=3 %l.foo=10 %t.p=2
+       ^MyFixture %p=1 ~TestA_3_1
+       ^MyFixture %p=2 ~TestA_3_1
+       ^X %foo=10 ~generic:default+builtin
+   - TestA %x=4 %l.foo=10 %t.p=1
+       ^MyFixture %p=2 ~TestA_4_0
+       ^MyFixture %p=1 ~TestA_4_0
+       ^X %foo=10 ~generic:default+builtin
+   - TestA %x=3 %l.foo=10 %t.p=1
+       ^MyFixture %p=2 ~TestA_3_0
+       ^MyFixture %p=1 ~TestA_3_0
+       ^X %foo=10 ~generic:default+builtin
+   Found 4 check(s)
+
+Display names may not always be unique.
+In the following example:
+
+.. code-block:: python
+
+   class MyTest(RegressionTest):
+       p = parameter([1, 1, 1])
+
+This generates three different tests with different unique names, but their display name is the same for all: ``MyTest %p=1``.
+Notice that this example leads to a name conflict with the old naming scheme, since all tests would be named ``MyTest_1``.
+
+
+--------------------------------------
+Differences from the old naming scheme
+--------------------------------------
+
+Prior to version 3.10, ReFrame used to encode the parameter values of an instance of parameterized test in its name.
+It did so by taking the string representation of the value and replacing any non-alphanumeric character with an underscore.
+This could lead to very large and hard to read names when a test defined multiple parameters or the parameter type was more complex.
+Very large test names meant also very large path names which could also lead to problems and random failures.
+Fixtures followed a similar naming pattern making them hard to debug.
+
+The old naming scheme is still the default for parameterized tests (but not for fixtures) and will remain so until ReFrame 4.0, in order to ensure backward compatibility.
+However, users are advised to enable the new naming scheme by setting the :envvar:`RFM_COMPACT_TEST_NAMES` environment variable.
+
+
 Environment
 -----------
 
@@ -867,7 +982,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
 .. envvar:: RFM_COMPACT_TEST_NAMES
 
-   Enable the compact test naming scheme.
+   Enable the new test naming scheme.
 
    .. table::
       :align: left

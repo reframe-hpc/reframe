@@ -51,7 +51,7 @@ In essence, these builtins exert control over the test creation, and they allow 
         p1 = [parameter([1, 2])] # Undefined behavior
 
 
-.. py:function:: RegressionMixin.parameter(values=None, inherit_params=False, filter_params=None)
+.. py:function:: RegressionMixin.parameter(values=None, inherit_params=False, filter_params=None, fmt=None)
 
   Inserts or modifies a regression test parameter.
   At the class level, these parameters are stored in a separate namespace referred to as the *parameter space*.
@@ -125,6 +125,12 @@ In essence, these builtins exert control over the test creation, and they allow 
      This function must accept a single iterable argument and return an iterable.
      It will be called with the inherited parameter values and it must return the filtered set of parameter values.
      This function will only have an effect if used with ``inherit_params=True``.
+  :param fmt: A formatting function that will be used to format the values of this parameter in the test's :attr:`~reframe.core.pipeline.RegressionTest.display_name`.
+    This function should take as argument the parameter value and return a string representation of the value.
+    If the returned value is not a string, it will be converted using the :py:func:`str` function.
+
+  .. versionadded:: 3.10.0
+     The ``fmt`` argument is added.
 
 
 .. py:function:: RegressionMixin.variable(*types, value=None, field=None, **kwargs)

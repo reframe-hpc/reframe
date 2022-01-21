@@ -191,12 +191,14 @@ If we scope our programming environments to ``gnu`` and ``builtin`` only, ReFram
 To gain a deeper understanding on how test dependencies work in Reframe, please refer to :doc:`dependencies`.
 
 
+.. _param_deps:
+
 Depending on Parameterized Tests
 --------------------------------
 
 As shown earlier in this section, tests define their dependencies by referencing the target tests by their unique name.
 This is straightforward when referring to regular tests, where their name matches the class name, but it becomes cumbersome trying to refer to a parameterized tests, since no safe assumption should be made as of the variant number of the test or how the parameters are encoded in the name.
-In order to safely and reliably refer to a parameterized test, you should use the :func:`get_variant_nums` and :func:`variant_name` class methods as shown in the following example:
+In order to safely and reliably refer to a parameterized test, you should use the :func:`~reframe.core.pipeline.RegressionMixin.get_variant_nums` and :func:`~reframe.core.pipeline.RegressionMixin.variant_name` class methods as shown in the following example:
 
 .. literalinclude:: ../tutorials/deps/parameterized.py
    :emphasize-lines: 37-
