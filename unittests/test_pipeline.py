@@ -18,6 +18,7 @@ from reframe.core.containers import _STAGEDIR_MOUNT
 from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
                                      PerformanceError, SanityError,
                                      SkipTestError, ReframeSyntaxError)
+from reframe.core.meta import make_test
 
 
 def _run(test, partition, prgenv):
@@ -140,9 +141,9 @@ def container_local_exec_ctx(local_user_exec_ctx):
 
 
 def test_eq():
-    T0 = rfm.make_test('T0', (rfm.RegressionTest,), {})
-    T1 = rfm.make_test('T1', (rfm.RegressionTest,), {})
-    T2 = rfm.make_test('T1', (rfm.RegressionTest,), {})
+    T0 = make_test('T0', (rfm.RegressionTest,), {})
+    T1 = make_test('T1', (rfm.RegressionTest,), {})
+    T2 = make_test('T1', (rfm.RegressionTest,), {})
 
     t0, t1, t2 = T0(), T1(), T2()
     assert t0 != t1
@@ -1491,7 +1492,7 @@ def test_skip_if_no_topo(HelloTest, local_exec_ctx):
 
 
 def test_make_test_without_builtins(local_exec_ctx):
-    hello_cls = rfm.make_test(
+    hello_cls = make_test(
         'HelloTest', (rfm.RunOnlyRegressionTest,),
         {
             'valid_systems': ['*'],
@@ -1520,7 +1521,7 @@ def test_make_test_with_builtins(local_exec_ctx):
         def validate(self):
             return sn.assert_found(self.message, self.stdout)
 
-    hello_cls = rfm.make_test('HelloTest', (_X,), {})
+    hello_cls = make_test('HelloTest', (_X,), {})
     hello_cls.setvar('message', 'hello')
     assert hello_cls.__name__ == 'HelloTest'
     _run(hello_cls(), *local_exec_ctx)

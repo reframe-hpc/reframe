@@ -13,6 +13,7 @@ import reframe.frontend.executors as executors
 import reframe.utility as util
 import reframe.utility.sanity as sn
 import reframe.utility.udeps as udeps
+import unittests.utility as test_util
 
 from reframe.core.environments import Environment
 from reframe.core.exceptions import DependencyError
@@ -515,21 +516,14 @@ def test_build_deps_empty(default_exec_ctx):
     assert {} == dependencies.build_deps([])[0]
 
 
-@pytest.fixture
-def make_test():
-    def _make_test(test_name):
-        class _Test(rfm.RegressionTest):
-            valid_systems = ['*']
-            valid_prog_environs = ['*']
-            executable = 'echo'
-            executable_opts = [test_name]
-
-        return rfm.make_test(test_name, (_Test,), {})()
-
-    return _make_test
+def make_test(name):
+    return test_util.make_check(rfm.RegressionTest,
+                                alt_name=name,
+                                valid_systems=['*'],
+                                valid_prog_environs=['*'])
 
 
-def test_valid_deps(make_test, default_exec_ctx):
+def test_valid_deps(default_exec_ctx):
     #
     #       t0       +-->t5<--+
     #       ^        |        |
@@ -567,7 +561,7 @@ def test_valid_deps(make_test, default_exec_ctx):
     )
 
 
-def test_cyclic_deps(make_test, default_exec_ctx):
+def test_cyclic_deps(default_exec_ctx):
     #
     #       t0       +-->t5<--+
     #       ^        |        |
@@ -613,7 +607,7 @@ def test_cyclic_deps(make_test, default_exec_ctx):
             't3->t1->t4->t3' in str(exc_info.value))
 
 
-def test_cyclic_deps_by_env(make_test, default_exec_ctx):
+def test_cyclic_deps_by_env(default_exec_ctx):
     t0 = make_test('t0')
     t1 = make_test('t1')
     t1.depends_on('t0', udeps.env_is('e0'))
@@ -632,7 +626,7 @@ def test_validate_deps_empty(default_exec_ctx):
     dependencies.validate_deps({})
 
 
-def test_skip_unresolved_deps(make_test, make_exec_ctx):
+def test_skip_unresolved_deps(make_exec_ctx):
     #
     #       t0    t4
     #      ^  ^   ^
@@ -698,7 +692,7 @@ def assert_topological_order(cases, graph):
     assert cases_order in valid_orderings
 
 
-def test_prune_deps(make_test, default_exec_ctx):
+def test_prune_deps(default_exec_ctx):
     #
     #       t0       +-->t5<--+
     #       ^        |        |
@@ -753,7 +747,7 @@ def test_prune_deps(make_test, default_exec_ctx):
             assert len(pruned_deps[node('t0')]) == 0
 
 
-def test_toposort(make_test, default_exec_ctx):
+def test_toposort(default_exec_ctx):
     #
     #       t0       +-->t5<--+
     #       ^        |        |
@@ -803,7 +797,7 @@ def test_toposort(make_test, default_exec_ctx):
     assert cases_by_level[4] == {'t4'}
 
 
-def test_toposort_subgraph(make_test, default_exec_ctx):
+def test_toposort_subgraph(default_exec_ctx):
     #
     #       t0
     #       ^

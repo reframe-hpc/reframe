@@ -10,7 +10,7 @@
 __all__ = [
     'CompileOnlyRegressionTest', 'RegressionTest', 'RunOnlyRegressionTest',
     'DEPEND_BY_ENV', 'DEPEND_EXACT', 'DEPEND_FULLY', 'final',
-    'RegressionMixin', 'make_test'
+    'RegressionMixin'
 ]
 
 
@@ -116,51 +116,6 @@ def final(fn):
 _RFM_TEST_KIND_MIXIN = 0
 _RFM_TEST_KIND_COMPILE = 1
 _RFM_TEST_KIND_RUN = 2
-
-
-def make_test(name, bases, body, **kwargs):
-    '''Define a new test class programmatically.
-
-    Using this method is completely equivalent to using the :keyword:`class`
-    to define the test class. More specifically, the following:
-
-    .. code-block:: python
-
-       hello_cls = rfm.make_test(
-           'HelloTest', (rfm.RunOnlyRegressionTest,),
-           {
-               'valid_systems': ['*'],
-               'valid_prog_environs': ['*'],
-               'executable': 'echo',
-               'sanity_patterns': sn.assert_true(1)
-           }
-       )
-
-    is completely equivalent to
-
-    .. code-block:: python
-
-       class HelloTest(rfm.RunOnlyRegressionTest):
-           valid_systems = ['*']
-           valid_prog_environs = ['*']
-           executable = 'echo',
-           sanity_patterns: sn.assert_true(1)
-
-       hello_cls = HelloTest
-
-    :param name: The name of the new test class.
-    :param bases: A tuple of the base classes of the class that is being
-        created.
-    :param body: A mapping of key/value pairs that will be inserted as class
-        attributes in the newly created class.
-    :param kwargs: Any keyword arguments to be passed to the
-        :class:`RegressionTestMeta` metaclass.
-
-    '''
-    namespace = RegressionTestMeta.__prepare__(name, bases, **kwargs)
-    namespace.update(body)
-    cls = RegressionTestMeta(name, bases, namespace, **kwargs)
-    return cls
 
 
 class RegressionMixin(metaclass=RegressionTestMeta):

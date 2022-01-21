@@ -16,6 +16,7 @@ import reframe as rfm
 import reframe.core.config as config
 import reframe.core.modules as modules
 import reframe.core.runtime as rt
+from reframe.core.meta import make_test
 
 
 TEST_RESOURCES = os.path.join(
@@ -171,7 +172,7 @@ def make_check(cls, *, alt_name=None, **vars):
     '''
 
     if alt_name:
-        cls = rfm.make_test(alt_name, (cls,), {})
+        cls = make_test(alt_name, (cls,), {})
 
     for k, v in vars.items():
         cls.setvar(k, v)
