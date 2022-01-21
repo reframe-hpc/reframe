@@ -113,11 +113,8 @@ Now it's time to run our first test:
    [==========] Running 1 check(s)
    [==========] Started on Mon Oct 12 18:23:30 2020
 
-   [----------] started processing HelloTest (HelloTest)
+   [----------] start processing checks
    [ RUN      ] HelloTest on generic:default using builtin
-   [----------] finished processing HelloTest (HelloTest)
-
-   [----------] waiting for spawned checks to finish
    [       OK ] (1/1) HelloTest on generic:default using builtin [compile: 0.389s run: 0.406s total: 0.811s]
    [----------] all spawned checks have finished
 
@@ -283,17 +280,11 @@ Let's run the test now:
    [==========] Running 2 check(s)
    [==========] Started on Tue Mar  9 23:25:22 2021
 
-   [----------] started processing HelloMultiLangTest_c (HelloMultiLangTest_c)
+   [----------] start processing checks
    [ RUN      ] HelloMultiLangTest_c on generic:default using builtin
-   [----------] finished processing HelloMultiLangTest_c (HelloMultiLangTest_c)
-
-   [----------] started processing HelloMultiLangTest_cpp (HelloMultiLangTest_cpp)
    [ RUN      ] HelloMultiLangTest_cpp on generic:default using builtin
    [     FAIL ] (1/2) HelloMultiLangTest_cpp on generic:default using builtin [compile: 0.006s run: n/a total: 0.023s]
    ==> test failed during 'compile': test staged in '/Users/user/Repositories/reframe/stage/generic/default/builtin/HelloMultiLangTest_cpp'
-   [----------] finished processing HelloMultiLangTest_cpp (HelloMultiLangTest_cpp)
-
-   [----------] waiting for spawned checks to finish
    [       OK ] (2/2) HelloMultiLangTest_c on generic:default using builtin [compile: 0.981s run: 0.468s total: 1.475s]
    [----------] all spawned checks have finished
 
@@ -397,17 +388,11 @@ Let's now rerun our "Hello, World!" tests:
    [==========] Running 2 check(s)
    [==========] Started on Tue Mar  9 23:28:00 2021
 
-   [----------] started processing HelloMultiLangTest_c (HelloMultiLangTest_c)
+   [----------] start processing checks
    [ RUN      ] HelloMultiLangTest_c on catalina:default using gnu
    [ RUN      ] HelloMultiLangTest_c on catalina:default using clang
-   [----------] finished processing HelloMultiLangTest_c (HelloMultiLangTest_c)
-
-   [----------] started processing HelloMultiLangTest_cpp (HelloMultiLangTest_cpp)
    [ RUN      ] HelloMultiLangTest_cpp on catalina:default using gnu
    [ RUN      ] HelloMultiLangTest_cpp on catalina:default using clang
-   [----------] finished processing HelloMultiLangTest_cpp (HelloMultiLangTest_cpp)
-
-   [----------] waiting for spawned checks to finish
    [       OK ] (1/4) HelloMultiLangTest_cpp on catalina:default using gnu [compile: 0.768s run: 1.115s total: 1.909s]
    [       OK ] (2/4) HelloMultiLangTest_c on catalina:default using gnu [compile: 0.600s run: 2.230s total: 2.857s]
    [       OK ] (3/4) HelloMultiLangTest_c on catalina:default using clang [compile: 0.238s run: 2.129s total: 2.393s]
@@ -499,12 +484,9 @@ Let's run the test now:
    [==========] Running 1 check(s)
    [==========] Started on Mon Oct 12 20:02:37 2020
 
-   [----------] started processing HelloThreadedTest (HelloThreadedTest)
+   [----------] start processing checks
    [ RUN      ] HelloThreadedTest on catalina:default using gnu
    [ RUN      ] HelloThreadedTest on catalina:default using clang
-   [----------] finished processing HelloThreadedTest (HelloThreadedTest)
-
-   [----------] waiting for spawned checks to finish
    [       OK ] (1/2) HelloThreadedTest on catalina:default using gnu [compile: 1.591s run: 1.205s total: 2.816s]
    [       OK ] (2/2) HelloThreadedTest on catalina:default using clang [compile: 1.141s run: 0.309s total: 1.465s]
    [----------] all spawned checks have finished
@@ -592,12 +574,9 @@ Let's run this version of the test now and see if it fails:
    [==========] Running 1 check(s)
    [==========] Started on Mon Oct 12 20:04:59 2020
 
-   [----------] started processing HelloThreadedExtendedTest (HelloThreadedExtendedTest)
+   [----------] start processing checks
    [ RUN      ] HelloThreadedExtendedTest on catalina:default using gnu
    [ RUN      ] HelloThreadedExtendedTest on catalina:default using clang
-   [----------] finished processing HelloThreadedExtendedTest (HelloThreadedExtendedTest)
-
-   [----------] waiting for spawned checks to finish
    [     FAIL ] (1/2) HelloThreadedExtendedTest on catalina:default using gnu [compile: 1.222s run: 0.891s total: 2.130s]
    [     FAIL ] (2/2) HelloThreadedExtendedTest on catalina:default using clang [compile: 0.835s run: 0.167s total: 1.018s]
    [----------] all spawned checks have finished
@@ -718,11 +697,8 @@ The :option:`--performance-report` will generate a short report at the end for e
    [==========] Running 1 check(s)
    [==========] Started on Mon Oct 12 20:06:09 2020
 
-   [----------] started processing StreamTest (StreamTest)
+   [----------] start processing checks
    [ RUN      ] StreamTest on catalina:default using gnu
-   [----------] finished processing StreamTest (StreamTest)
-
-   [----------] waiting for spawned checks to finish
    [       OK ] (1/1) StreamTest on catalina:default using gnu [compile: 1.386s run: 2.377s total: 3.780s]
    [----------] all spawned checks have finished
 
@@ -967,7 +943,7 @@ We will only do so with the final versions of the tests from the previous sectio
    [==========] Running 4 check(s)
    [==========] Started on Mon Jan 25 00:34:32 2021
 
-   [----------] started processing HelloMultiLangTest_c (HelloMultiLangTest_c)
+   [----------] start processing checks
    [ RUN      ] HelloMultiLangTest_c on daint:login using builtin
    [ RUN      ] HelloMultiLangTest_c on daint:login using gnu
    [ RUN      ] HelloMultiLangTest_c on daint:login using intel
@@ -981,9 +957,6 @@ We will only do so with the final versions of the tests from the previous sectio
    [ RUN      ] HelloMultiLangTest_c on daint:mc using intel
    [ RUN      ] HelloMultiLangTest_c on daint:mc using pgi
    [ RUN      ] HelloMultiLangTest_c on daint:mc using cray
-   [----------] finished processing HelloMultiLangTest_c (HelloMultiLangTest_c)
-
-   [----------] started processing HelloMultiLangTest_cpp (HelloMultiLangTest_cpp)
    [ RUN      ] HelloMultiLangTest_cpp on daint:login using builtin
    [ RUN      ] HelloMultiLangTest_cpp on daint:login using gnu
    [ RUN      ] HelloMultiLangTest_cpp on daint:login using intel
@@ -997,9 +970,6 @@ We will only do so with the final versions of the tests from the previous sectio
    [ RUN      ] HelloMultiLangTest_cpp on daint:mc using intel
    [ RUN      ] HelloMultiLangTest_cpp on daint:mc using pgi
    [ RUN      ] HelloMultiLangTest_cpp on daint:mc using cray
-   [----------] finished processing HelloMultiLangTest_cpp (HelloMultiLangTest_cpp)
-
-   [----------] started processing HelloThreadedExtended2Test (HelloThreadedExtended2Test)
    [ RUN      ] HelloThreadedExtended2Test on daint:login using builtin
    [ RUN      ] HelloThreadedExtended2Test on daint:login using gnu
    [ RUN      ] HelloThreadedExtended2Test on daint:login using intel
@@ -1013,15 +983,9 @@ We will only do so with the final versions of the tests from the previous sectio
    [ RUN      ] HelloThreadedExtended2Test on daint:mc using intel
    [ RUN      ] HelloThreadedExtended2Test on daint:mc using pgi
    [ RUN      ] HelloThreadedExtended2Test on daint:mc using cray
-   [----------] finished processing HelloThreadedExtended2Test (HelloThreadedExtended2Test)
-
-   [----------] started processing StreamWithRefTest (StreamWithRefTest)
    [ RUN      ] StreamWithRefTest on daint:login using gnu
    [ RUN      ] StreamWithRefTest on daint:gpu using gnu
    [ RUN      ] StreamWithRefTest on daint:mc using gnu
-   [----------] finished processing StreamWithRefTest (StreamWithRefTest)
-
-   [----------] waiting for spawned checks to finish
    [       OK ] ( 1/42) HelloThreadedExtended2Test on daint:login using cray [compile: 0.959s run: 56.203s total: 57.189s]
    [       OK ] ( 2/42) HelloThreadedExtended2Test on daint:login using intel [compile: 2.096s run: 61.438s total: 64.062s]
    [       OK ] ( 3/42) HelloMultiLangTest_cpp on daint:login using cray [compile: 0.479s run: 98.909s total: 99.406s]
@@ -1205,7 +1169,7 @@ Let's run our adapted test now:
    [==========] Running 1 check(s)
    [==========] Started on Mon Oct 12 20:16:03 2020
 
-   [----------] started processing StreamMultiSysTest (StreamMultiSysTest)
+   [----------] start processing checks
    [ RUN      ] StreamMultiSysTest on daint:login using gnu
    [ RUN      ] StreamMultiSysTest on daint:login using intel
    [ RUN      ] StreamMultiSysTest on daint:login using pgi
@@ -1218,9 +1182,6 @@ Let's run our adapted test now:
    [ RUN      ] StreamMultiSysTest on daint:mc using intel
    [ RUN      ] StreamMultiSysTest on daint:mc using pgi
    [ RUN      ] StreamMultiSysTest on daint:mc using cray
-   [----------] finished processing StreamMultiSysTest (StreamMultiSysTest)
-
-   [----------] waiting for spawned checks to finish
    [       OK ] ( 1/12) StreamMultiSysTest on daint:gpu using pgi [compile: 2.092s run: 11.201s total: 13.307s]
    [       OK ] ( 2/12) StreamMultiSysTest on daint:gpu using gnu [compile: 2.349s run: 17.140s total: 19.509s]
    [       OK ] ( 3/12) StreamMultiSysTest on daint:login using pgi [compile: 2.230s run: 20.946s total: 23.189s]

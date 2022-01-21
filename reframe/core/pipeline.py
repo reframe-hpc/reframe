@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -1684,6 +1684,23 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         # Update num_tasks if test is flexible
         if self.job.sched_flex_alloc_nodes:
             self.num_tasks = self.job.num_tasks
+
+    @final
+    def compile_complete(self):
+        '''Check if the build phase has completed.
+
+        :returns: :class:`True` if the associated build job has finished,
+            :class:`False` otherwise.
+
+            If no job descriptor is yet associated with this test,
+            :class:`True` is returned.
+        :raises reframe.core.exceptions.ReframeError: In case of errors.
+
+        '''
+        if not self._build_job:
+            return True
+
+        return self._build_job.finished()
 
     @final
     def run_complete(self):

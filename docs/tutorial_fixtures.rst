@@ -171,102 +171,51 @@ The following listing shows the output of running the tutorial examples.
    [==========] Running 10 check(s)
    [==========] Started on Sun Oct 31 22:00:28 2021
 
-   [----------] started processing fetch_osu_benchmarks~daint (Fetch OSU benchmarks)
+   [----------] start processing checks
    [ RUN      ] fetch_osu_benchmarks~daint on daint:gpu using gnu
-   [----------] finished processing fetch_osu_benchmarks~daint (Fetch OSU benchmarks)
-
-   [----------] started processing build_osu_benchmarks~daint:gpu+gnu (Build OSU benchmarks)
-   [ RUN      ] build_osu_benchmarks~daint:gpu+gnu on daint:gpu using gnu
-   [      DEP ] build_osu_benchmarks~daint:gpu+gnu on daint:gpu using gnu
-   [----------] finished processing build_osu_benchmarks~daint:gpu+gnu (Build OSU benchmarks)
-
-   [----------] started processing build_osu_benchmarks~daint:gpu+intel (Build OSU benchmarks)
+   [       OK ] ( 1/22) fetch_osu_benchmarks~daint on daint:gpu using gnu [compile: 0.007s run: 2.960s total: 2.988s]
    [ RUN      ] build_osu_benchmarks~daint:gpu+intel on daint:gpu using intel
-   [      DEP ] build_osu_benchmarks~daint:gpu+intel on daint:gpu using intel
-   [----------] finished processing build_osu_benchmarks~daint:gpu+intel (Build OSU benchmarks)
-
-   [----------] started processing build_osu_benchmarks~daint:gpu+pgi (Build OSU benchmarks)
    [ RUN      ] build_osu_benchmarks~daint:gpu+pgi on daint:gpu using pgi
-   [      DEP ] build_osu_benchmarks~daint:gpu+pgi on daint:gpu using pgi
-   [----------] finished processing build_osu_benchmarks~daint:gpu+pgi (Build OSU benchmarks)
-
-   [----------] started processing osu_allreduce_test_16 (OSU Allreduce test)
+   [ RUN      ] build_osu_benchmarks~daint:gpu+gnu on daint:gpu using gnu
+   [       OK ] ( 2/22) build_osu_benchmarks~daint:gpu+gnu on daint:gpu using gnu [compile: 26.322s run: 2.609s total: 30.214s]
    [ RUN      ] osu_allreduce_test_16 on daint:gpu using gnu
-   [      DEP ] osu_allreduce_test_16 on daint:gpu using gnu
-   [ RUN      ] osu_allreduce_test_16 on daint:gpu using intel
-   [      DEP ] osu_allreduce_test_16 on daint:gpu using intel
-   [ RUN      ] osu_allreduce_test_16 on daint:gpu using pgi
-   [      DEP ] osu_allreduce_test_16 on daint:gpu using pgi
-   [----------] finished processing osu_allreduce_test_16 (OSU Allreduce test)
-
-   [----------] started processing osu_allreduce_test_8 (OSU Allreduce test)
-   [ RUN      ] osu_allreduce_test_8 on daint:gpu using gnu
-   [      DEP ] osu_allreduce_test_8 on daint:gpu using gnu
-   [ RUN      ] osu_allreduce_test_8 on daint:gpu using intel
-   [      DEP ] osu_allreduce_test_8 on daint:gpu using intel
-   [ RUN      ] osu_allreduce_test_8 on daint:gpu using pgi
-   [      DEP ] osu_allreduce_test_8 on daint:gpu using pgi
-   [----------] finished processing osu_allreduce_test_8 (OSU Allreduce test)
-
-   [----------] started processing osu_allreduce_test_4 (OSU Allreduce test)
-   [ RUN      ] osu_allreduce_test_4 on daint:gpu using gnu
-   [      DEP ] osu_allreduce_test_4 on daint:gpu using gnu
-   [ RUN      ] osu_allreduce_test_4 on daint:gpu using intel
-   [      DEP ] osu_allreduce_test_4 on daint:gpu using intel
-   [ RUN      ] osu_allreduce_test_4 on daint:gpu using pgi
-   [      DEP ] osu_allreduce_test_4 on daint:gpu using pgi
-   [----------] finished processing osu_allreduce_test_4 (OSU Allreduce test)
-
-   [----------] started processing osu_allreduce_test_2 (OSU Allreduce test)
-   [ RUN      ] osu_allreduce_test_2 on daint:gpu using gnu
-   [      DEP ] osu_allreduce_test_2 on daint:gpu using gnu
-   [ RUN      ] osu_allreduce_test_2 on daint:gpu using intel
-   [      DEP ] osu_allreduce_test_2 on daint:gpu using intel
-   [ RUN      ] osu_allreduce_test_2 on daint:gpu using pgi
-   [      DEP ] osu_allreduce_test_2 on daint:gpu using pgi
-   [----------] finished processing osu_allreduce_test_2 (OSU Allreduce test)
-
-   [----------] started processing osu_bandwidth_test (OSU bandwidth test)
    [ RUN      ] osu_bandwidth_test on daint:gpu using gnu
-   [      DEP ] osu_bandwidth_test on daint:gpu using gnu
-   [ RUN      ] osu_bandwidth_test on daint:gpu using intel
-   [      DEP ] osu_bandwidth_test on daint:gpu using intel
-   [ RUN      ] osu_bandwidth_test on daint:gpu using pgi
-   [      DEP ] osu_bandwidth_test on daint:gpu using pgi
-   [----------] finished processing osu_bandwidth_test (OSU bandwidth test)
-
-   [----------] started processing osu_latency_test (OSU latency test)
    [ RUN      ] osu_latency_test on daint:gpu using gnu
-   [      DEP ] osu_latency_test on daint:gpu using gnu
+   [ RUN      ] osu_allreduce_test_2 on daint:gpu using gnu
+   [ RUN      ] osu_allreduce_test_8 on daint:gpu using gnu
+   [ RUN      ] osu_allreduce_test_4 on daint:gpu using gnu
+   [       OK ] ( 3/22) build_osu_benchmarks~daint:gpu+intel on daint:gpu using intel [compile: 53.068s run: 0.650s total: 53.773s]
+   [ RUN      ] osu_allreduce_test_2 on daint:gpu using intel
    [ RUN      ] osu_latency_test on daint:gpu using intel
-   [      DEP ] osu_latency_test on daint:gpu using intel
+   [ RUN      ] osu_allreduce_test_4 on daint:gpu using intel
+   [ RUN      ] osu_allreduce_test_16 on daint:gpu using intel
+   [ RUN      ] osu_allreduce_test_8 on daint:gpu using intel
+   [       OK ] ( 4/22) build_osu_benchmarks~daint:gpu+pgi on daint:gpu using pgi [compile: 52.482s run: 0.803s total: 53.981s]
+   [ RUN      ] osu_allreduce_test_4 on daint:gpu using pgi
+   [ RUN      ] osu_bandwidth_test on daint:gpu using intel
+   [       OK ] ( 5/22) osu_allreduce_test_16 on daint:gpu using gnu [compile: 0.015s run: 23.535s total: 23.922s]
    [ RUN      ] osu_latency_test on daint:gpu using pgi
-   [      DEP ] osu_latency_test on daint:gpu using pgi
-   [----------] finished processing osu_latency_test (OSU latency test)
-
-   [----------] waiting for spawned checks to finish
-   [       OK ] ( 1/22) fetch_osu_benchmarks~daint on daint:gpu using gnu [compile: 0.009s run: 2.761s total: 2.802s]
-   [       OK ] ( 2/22) build_osu_benchmarks~daint:gpu+gnu on daint:gpu using gnu [compile: 25.758s run: 0.056s total: 104.626s]
-   [       OK ] ( 3/22) build_osu_benchmarks~daint:gpu+pgi on daint:gpu using pgi [compile: 33.936s run: 70.452s total: 104.473s]
-   [       OK ] ( 4/22) build_osu_benchmarks~daint:gpu+intel on daint:gpu using intel [compile: 44.565s run: 65.010s total: 143.664s]
-   [       OK ] ( 5/22) osu_allreduce_test_4 on daint:gpu using gnu [compile: 0.011s run: 78.717s total: 101.428s]
-   [       OK ] ( 6/22) osu_allreduce_test_2 on daint:gpu using pgi [compile: 0.014s run: 88.060s total: 101.409s]
-   [       OK ] ( 7/22) osu_latency_test on daint:gpu using pgi [compile: 0.009s run: 101.325s total: 101.375s]
-   [       OK ] ( 8/22) osu_allreduce_test_8 on daint:gpu using pgi [compile: 0.013s run: 76.031s total: 102.005s]
-   [       OK ] ( 9/22) osu_allreduce_test_2 on daint:gpu using gnu [compile: 0.011s run: 85.525s total: 101.974s]
-   [       OK ] (10/22) osu_allreduce_test_4 on daint:gpu using pgi [compile: 0.011s run: 82.847s total: 102.407s]
-   [       OK ] (11/22) osu_allreduce_test_8 on daint:gpu using gnu [compile: 0.010s run: 77.818s total: 106.993s]
-   [       OK ] (12/22) osu_latency_test on daint:gpu using gnu [compile: 0.012s run: 103.641s total: 106.858s]
-   [       OK ] (13/22) osu_bandwidth_test on daint:gpu using pgi [compile: 0.011s run: 157.129s total: 164.087s]
-   [       OK ] (14/22) osu_bandwidth_test on daint:gpu using gnu [compile: 0.010s run: 154.343s total: 164.540s]
-   [       OK ] (15/22) osu_allreduce_test_8 on daint:gpu using intel [compile: 0.010s run: 194.643s total: 207.980s]
-   [       OK ] (16/22) osu_allreduce_test_2 on daint:gpu using intel [compile: 0.013s run: 201.145s total: 207.983s]
-   [       OK ] (17/22) osu_allreduce_test_4 on daint:gpu using intel [compile: 0.016s run: 198.143s total: 208.335s]
-   [       OK ] (18/22) osu_latency_test on daint:gpu using intel [compile: 0.010s run: 208.271s total: 208.312s]
-   [       OK ] (19/22) osu_allreduce_test_16 on daint:gpu using pgi [compile: 0.013s run: 215.854s total: 248.101s]
-   [       OK ] (20/22) osu_allreduce_test_16 on daint:gpu using gnu [compile: 0.010s run: 213.190s total: 248.731s]
-   [       OK ] (21/22) osu_allreduce_test_16 on daint:gpu using intel [compile: 0.010s run: 194.339s total: 210.962s]
-   [       OK ] (22/22) osu_bandwidth_test on daint:gpu using intel [compile: 0.022s run: 267.171s total: 270.475s]
+   [ RUN      ] osu_bandwidth_test on daint:gpu using pgi
+   [ RUN      ] osu_allreduce_test_2 on daint:gpu using pgi
+   [ RUN      ] osu_allreduce_test_16 on daint:gpu using pgi
+   [ RUN      ] osu_allreduce_test_8 on daint:gpu using pgi
+   [       OK ] ( 6/22) osu_latency_test on daint:gpu using gnu [compile: 0.010s run: 47.016s total: 54.703s]
+   [       OK ] ( 7/22) osu_allreduce_test_2 on daint:gpu using intel [compile: 0.009s run: 41.732s total: 42.313s]
+   [       OK ] ( 8/22) osu_allreduce_test_2 on daint:gpu using gnu [compile: 0.012s run: 54.571s total: 65.684s]
+   [       OK ] ( 9/22) osu_allreduce_test_8 on daint:gpu using gnu [compile: 0.011s run: 51.414s total: 65.712s]
+   [       OK ] (10/22) osu_allreduce_test_4 on daint:gpu using gnu [compile: 0.010s run: 48.378s total: 65.741s]
+   [       OK ] (11/22) osu_latency_test on daint:gpu using intel [compile: 0.008s run: 39.131s total: 42.877s]
+   [       OK ] (12/22) osu_allreduce_test_4 on daint:gpu using intel [compile: 0.009s run: 35.861s total: 42.898s]
+   [       OK ] (13/22) osu_allreduce_test_16 on daint:gpu using intel [compile: 0.008s run: 32.300s total: 42.901s]
+   [       OK ] (14/22) osu_allreduce_test_8 on daint:gpu using intel [compile: 0.009s run: 29.237s total: 42.914s]
+   [       OK ] (15/22) osu_allreduce_test_4 on daint:gpu using pgi [compile: 0.009s run: 26.134s total: 42.904s]
+   [       OK ] (16/22) osu_latency_test on daint:gpu using pgi [compile: 0.009s run: 23.085s total: 47.232s]
+   [       OK ] (17/22) osu_allreduce_test_2 on daint:gpu using pgi [compile: 0.008s run: 17.401s total: 41.728s]
+   [       OK ] (18/22) osu_allreduce_test_16 on daint:gpu using pgi [compile: 0.008s run: 15.895s total: 36.613s]
+   [       OK ] (19/22) osu_allreduce_test_8 on daint:gpu using pgi [compile: 0.009s run: 13.485s total: 34.296s]
+   [       OK ] (20/22) osu_bandwidth_test on daint:gpu using gnu [compile: 0.011s run: 80.564s total: 85.070s]
+   [       OK ] (21/22) osu_bandwidth_test on daint:gpu using intel [compile: 0.008s run: 76.772s total: 97.828s]
+   [       OK ] (22/22) osu_bandwidth_test on daint:gpu using pgi [compile: 0.009s run: 83.003s total: 110.656s]
    [----------] all spawned checks have finished
 
    [  PASSED  ] Ran 22/22 test case(s) from 10 check(s) (0 failure(s), 0 skipped)

@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -90,7 +90,7 @@ class S3apiUploadLargeObject(S3apiCheck):
 
     @run_after('init')
     def set_deps_and_exec_opts(self):
-        self.depends_on('S3apiCreateBucket')
+        self.depends_on('S3apiCreateSmallObject')
         self.executable_opts = ['s3_upload_large_object.py',
                                 self.current_system.name,
                                 self.username]
@@ -146,7 +146,6 @@ class S3apiDeleteBucketObject(S3apiCheck):
 
     @run_after('init')
     def set_deps_and_exec_opts(self):
-        self.depends_on('S3apiCreateSmallObject')
         self.depends_on('S3apiDownloadLargeObject')
         self.executable_opts = ['s3_delete.py',
                                 self.current_system.name,
