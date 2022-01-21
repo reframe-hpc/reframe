@@ -518,6 +518,20 @@ def main():
         help='Use a compact test naming scheme'
     )
     argparser.add_argument(
+        dest='dump_pipeline_progress',
+        envvar='RFM_DUMP_PIPELINE_PROGRESS',
+        configvar='general/dump_pipeline_progress',
+        action='store_true',
+        help='Dump progress information for the async execution'
+    )
+    argparser.add_argument(
+        dest='pipeline_timeout',
+        envvar='RFM_PIPELINE_TIMEOUT',
+        configvar='general/pipeline_timeout',
+        action='store',
+        help='Timeout for advancing the pipeline'
+    )
+    argparser.add_argument(
         dest='remote_detect',
         envvar='RFM_REMOTE_DETECT',
         configvar='general/remote_detect',

@@ -1686,6 +1686,23 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             self.num_tasks = self.job.num_tasks
 
     @final
+    def compile_complete(self):
+        '''Check if the build phase has completed.
+
+        :returns: :class:`True` if the associated build job has finished,
+            :class:`False` otherwise.
+
+            If no job descriptor is yet associated with this test,
+            :class:`True` is returned.
+        :raises reframe.core.exceptions.ReframeError: In case of errors.
+
+        '''
+        if not self._build_job:
+            return True
+
+        return self._build_job.finished()
+
+    @final
     def run_complete(self):
         '''Check if the run phase has completed.
 
