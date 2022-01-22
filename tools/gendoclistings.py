@@ -15,7 +15,7 @@ def print_usage():
 
 ListingInfo = collections.namedtuple(
     'ListingInfo',
-    ['command', 'filename', 'tags', 'filters', 'env', 'xfail']
+    ['command', 'tags', 'filters', 'env', 'xfail']
 )
 
 
@@ -48,7 +48,6 @@ DEFAULT_FILTERS = [remove_nocolor_opt, remove_system_opt,
 LISTINGS = {
     'hello1': ListingInfo(
         './bin/reframe -c tutorials/basics/hello/hello1.py -r',
-        'docs/listings/hello1.txt',
         {'local', 'tutorial-basics'},
         DEFAULT_FILTERS,
         env={'RFM_COLORIZE': 'n'},
@@ -56,7 +55,6 @@ LISTINGS = {
     ),
     'run-report': ListingInfo(
         f'cat {os.getenv("HOME")}/.reframe/reports/run-report.json',
-        'docs/listings/run-report.json',
         {'local', 'tutorial-basics'},
         DEFAULT_FILTERS,
         env=None,
@@ -64,7 +62,6 @@ LISTINGS = {
     ),
     'hello2': ListingInfo(
         './bin/reframe -c tutorials/basics/hello/hello2.py -r',
-        'docs/listings/hello2.txt',
         {'local', 'tutorial-basics'},
         DEFAULT_FILTERS,
         env={'RFM_COLORIZE': 'n'},
@@ -72,7 +69,6 @@ LISTINGS = {
     ),
     'hello2_catalina': ListingInfo(
         './bin/reframe -C tutorials/config/settings.py --system=catalina -c tutorials/basics/hello/hello2.py -r',
-        'docs/listings/hello2_catalina.txt',
         {'local', 'tutorial-basics'},
         DEFAULT_FILTERS,
         env={'RFM_COLORIZE': 'n'},
@@ -80,7 +76,6 @@ LISTINGS = {
     ),
     'hellomp1': ListingInfo(
         './bin/reframe --system=catalina -c tutorials/basics/hellomp/hellomp1.py -r',
-        'docs/listings/hellomp1.txt',
         {'local', 'tutorial-basics'},
         DEFAULT_FILTERS,
         env={
@@ -91,7 +86,6 @@ LISTINGS = {
     ),
     'hellomp2': ListingInfo(
         './bin/reframe --system=catalina -c tutorials/basics/hellomp/hellomp2.py -r',
-        'docs/listings/hellomp2.txt',
         {'local', 'tutorial-basics'},
         DEFAULT_FILTERS,
         env={
@@ -102,7 +96,6 @@ LISTINGS = {
     ),
     'alltests_daint': ListingInfo(
         './bin/reframe -c tutorials/basics/ -R -n "HelloMultiLangTest|HelloThreadedExtended2Test|StreamWithRefTest" --performance-report -r',
-        'docs/listings/alltests_daint.txt',
         {'remote', 'tutorial-basics'},
         DEFAULT_FILTERS,
         env={
@@ -113,7 +106,6 @@ LISTINGS = {
     ),
     'stream4_daint': ListingInfo(
         './bin/reframe -c tutorials/basics/stream/stream4.py -r --performance-report',
-        'docs/listings/stream4_daint.txt',
         {'remote', 'tutorial-basics'},
         DEFAULT_FILTERS,
         env={
@@ -124,7 +116,6 @@ LISTINGS = {
     ),
     'osu_bench_deps': ListingInfo(
         './bin/reframe -c tutorials/deps/osu_benchmarks.py -r',
-        'docs/listings/osu_bench_deps.txt',
         {'remote', 'tutorial-deps'},
         DEFAULT_FILTERS,
         env={
@@ -135,7 +126,6 @@ LISTINGS = {
     ),
     'osu_latency_list': ListingInfo(
         './bin/reframe -c tutorials/deps/osu_benchmarks.py -n OSULatencyTest -l',
-        'docs/listings/osu_latency_list.txt',
         {'remote', 'tutorial-deps'},
         DEFAULT_FILTERS,
         env={
@@ -146,7 +136,6 @@ LISTINGS = {
     ),
     'osu_latency_unresolved_deps': ListingInfo(
         './bin/reframe -c tutorials/deps/osu_benchmarks.py -n OSULatencyTest --system=daint:gpu -l',
-        'docs/listings/osu_latency_unresolved_deps.txt',
         {'remote', 'tutorial-deps'},
         DEFAULT_FILTERS,
         env={
@@ -157,7 +146,6 @@ LISTINGS = {
     ),
     'osu_bench_list_concretized': ListingInfo(
         './bin/reframe -c tutorials/deps/osu_benchmarks.py -lC',
-        'docs/listings/osu_bench_list_concretized.txt',
         {'remote', 'tutorial-deps'},
         DEFAULT_FILTERS,
         env={
@@ -168,7 +156,6 @@ LISTINGS = {
     ),
     'osu_bench_list_concretized_gnu': ListingInfo(
         './bin/reframe -c tutorials/deps/osu_benchmarks.py -n OSULatencyTest -L -p builtin -p gnu',
-        'docs/listings/osu_bench_list_concretized_gnu.txt',
         {'remote', 'tutorial-deps'},
         DEFAULT_FILTERS,
         env={
@@ -179,7 +166,6 @@ LISTINGS = {
     ),
     'param_deps_list': ListingInfo(
         './bin/reframe -c tutorials/deps/parameterized.py -l',
-        'docs/listings/param_deps_list.txt',
         {'local', 'tutorial-deps'},
         DEFAULT_FILTERS,
         env=None,
@@ -187,7 +173,6 @@ LISTINGS = {
     ),
     'osu_bench_fixtures_list': ListingInfo(
         './bin/reframe -c tutorials/fixtures/osu_benchmarks.py -l',
-        'docs/listings/osu_bench_fixtures_list.txt',
         {'remote', 'tutorial-fixtures'},
         DEFAULT_FILTERS,
         env={
@@ -197,7 +182,6 @@ LISTINGS = {
     ),
     'osu_bandwidth_concretized_daint': ListingInfo(
         './bin/reframe -c tutorials/fixtures/osu_benchmarks.py -n osu_bandwidth_test -lC',
-        'docs/listings/osu_bandwidth_concretized_daint.txt',
         {'remote', 'tutorial-fixtures'},
         DEFAULT_FILTERS,
         env={
@@ -208,7 +192,6 @@ LISTINGS = {
     ),
     'osu_bandwidth_concretized_daint_pgi': ListingInfo(
         './bin/reframe -c tutorials/fixtures/osu_benchmarks.py -n osu_bandwidth_test -lC -p pgi',
-        'docs/listings/osu_bandwidth_concretized_daint_pgi.txt',
         {'remote', 'tutorial-fixtures'},
         DEFAULT_FILTERS,
         env={
@@ -219,8 +202,27 @@ LISTINGS = {
     ),
     'osu_bench_fixtures_run': ListingInfo(
         './bin/reframe -c tutorials/fixtures/osu_benchmarks.py -r',
-        'docs/listings/osu_bench_fixtures_run.txt',
         {'remote', 'tutorial-fixtures'},
+        DEFAULT_FILTERS,
+        env={
+            'RFM_CONFIG_FILE': os.path.join(os.getcwd(), 'tutorials/config/settings.py'),
+            'RFM_COLORIZE': 'n'
+        },
+        xfail=False
+    ),
+    'stream_params': ListingInfo(
+        './bin/reframe --system=catalina -c tutorials/advanced/parameterized/stream.py -l',
+        {'local', 'tutorial-advanced'},
+        DEFAULT_FILTERS,
+        env={
+            'RFM_CONFIG_FILE': os.path.join(os.getcwd(), 'tutorials/config/settings.py'),
+            'RFM_COLORIZE': 'n'
+        },
+        xfail=False
+    ),
+    'maketest_mixin': ListingInfo(
+        './bin/reframe --system=catalina -c tutorials/advanced/makefiles/maketest_mixin.py -l',
+        {'local', 'tutorial-advanced'},
         DEFAULT_FILTERS,
         env={
             'RFM_CONFIG_FILE': os.path.join(os.getcwd(), 'tutorials/config/settings.py'),
@@ -261,5 +263,6 @@ if __name__ == '__main__':
             output = f(output)
 
         # Write the listing
-        with open(info.filename, 'w') as fp:
+        filename = os.path.join('docs/listings', f'{name}.txt')
+        with open(filename, 'w') as fp:
             fp.write(output)
