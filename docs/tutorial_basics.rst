@@ -218,6 +218,10 @@ Note that you should *not* edit this configuration file in place.
    cp reframe/core/settings.py tutorials/config/mysettings.py
 
 
+.. note::
+   You may also use edit directly the supplied ``tutorials/config/settings.py`` file, which is the actual configuration file against which the various tutorials have been evaluated.
+
+
 Here is how the new configuration file looks like with the needed additions highlighted:
 
 .. literalinclude:: ../tutorials/config/settings.py
@@ -249,7 +253,7 @@ Let's now rerun our "Hello, World!" tests:
 
 .. code-block:: console
 
-   ./bin/reframe -C tutorials/config/mysettings.py -c tutorials/basics/hello/hello2.py -r
+   ./bin/reframe -C tutorials/config/settings.py -c tutorials/basics/hello/hello2.py -r
 
 
 .. literalinclude:: listings/hello2_catalina.txt
@@ -262,7 +266,7 @@ Since we don't want to type it throughout the tutorial, we will now set it in th
 
 .. code-block:: console
 
-   export RFM_CONFIG_FILE=$(pwd)/tutorials/config/mysettings.py
+   export RFM_CONFIG_FILE=$(pwd)/tutorials/config/settings.py
 
 
 A Multithreaded "Hello, World!"
@@ -646,7 +650,7 @@ We will only do so with the final versions of the tests from the previous sectio
 
 .. code-block:: console
 
-   export RFM_CONFIG_FILE=$(pwd)/tutorials/config/mysettings.py
+   export RFM_CONFIG_FILE=$(pwd)/tutorials/config/settings.py
    ./bin/reframe -c tutorials/basics/ -R -n 'HelloMultiLangTest|HelloThreadedExtended2Test|StreamWithRefTest' --performance-report -r
 
 .. literalinclude:: listings/alltests_daint.txt

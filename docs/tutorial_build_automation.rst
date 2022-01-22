@@ -5,12 +5,6 @@ Tutorial 5: Using Build Automation Tools As a Build System
 In this tutorial we will present how to use `Easybuild <https://easybuild.io/>`__ and `Spack <https://spack.io/>`__ as a build system for a ReFrame test.
 The example uses the configuration file presented in :doc:`tutorial_basics`, which you can find in ``tutorials/config/settings.py``.
 We also assume that the reader is already familiar with the concepts presented in the basic tutorial and has a working knowledge of EasyBuild and Spack.
-Finally, to avoid specifying the tutorial configuration file each time you run the test, make sure to export it here:
-
-.. code:: bash
-
-   export RFM_CONFIG_FILE=$(pwd)/tutorials/config/mysettings.py
-
 
 
 Using EasyBuild to Build the Test Code
