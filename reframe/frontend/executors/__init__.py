@@ -389,6 +389,13 @@ class RegressionTask:
         else:
             self.fail((type(exc), exc, None))
 
+    def info(self):
+        '''Return an info string about this task.'''
+        name = self.check.display_name
+        part = self.testcase.partition.fullname
+        env  = self.testcase.environ.name
+        return f'{name} @{part}+{env}'
+
 
 class TaskEventListener(abc.ABC):
     @abc.abstractmethod
