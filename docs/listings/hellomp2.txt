@@ -1,30 +1,27 @@
 [ReFrame Setup]
-  version:           3.10.0-dev.2+bf404ae1
+  version:           3.10.0-dev.3+c22440c1
   command:           './bin/reframe -c tutorials/basics/hellomp/hellomp2.py -r'
   launched by:       user@host
-  working directory: '/Users/user/Repositories/reframe'
-  settings file:     'tutorials/config/mysettings.py'
-  check search path: '/Users/user/Repositories/reframe/tutorials/basics/hellomp/hellomp2.py'
-  stage directory:   '/Users/user/Repositories/reframe/stage'
-  output directory:  '/Users/user/Repositories/reframe/output'
+  working directory: '/path/to/reframe'
+  settings file:     '/path/to/reframe/tutorials/config/settings.py'
+  check search path: '/path/to/reframe/tutorials/basics/hellomp/hellomp2.py'
+  stage directory:   '/path/to/reframe/stage'
+  output directory:  '/path/to/reframe/output'
 
 [==========] Running 1 check(s)
-[==========] Started on Wed Jan 19 17:06:19 2022 
+[==========] Started on Sat Jan 22 13:21:56 2022 
 
-[----------] started processing HelloThreadedExtendedTest (HelloThreadedExtendedTest)
-[ RUN      ] HelloThreadedExtendedTest on catalina:default using gnu
-[ RUN      ] HelloThreadedExtendedTest on catalina:default using clang
-[----------] finished processing HelloThreadedExtendedTest (HelloThreadedExtendedTest)
-
-[----------] waiting for spawned checks to finish
-[     FAIL ] (1/2) HelloThreadedExtendedTest @catalina:default+gnu [compile: 1.259s run: 0.904s total: 2.190s]
-==> test failed during 'sanity': test staged in '/Users/user/Repositories/reframe/stage/catalina/default/gnu/HelloThreadedExtendedTest'
-[     FAIL ] (2/2) HelloThreadedExtendedTest @catalina:default+clang [compile: 0.827s run: 0.296s total: 1.148s]
-==> test failed during 'sanity': test staged in '/Users/user/Repositories/reframe/stage/catalina/default/clang/HelloThreadedExtendedTest'
+[----------] start processing checks
+[ RUN      ] HelloThreadedExtendedTest @catalina:default+gnu
+[ RUN      ] HelloThreadedExtendedTest @catalina:default+clang
+[     FAIL ] (1/2) HelloThreadedExtendedTest @catalina:default+clang [compile: 0.761s run: 0.413s total: 1.401s]
+==> test failed during 'sanity': test staged in '/path/to/reframe/stage/catalina/default/clang/HelloThreadedExtendedTest'
+[     FAIL ] (2/2) HelloThreadedExtendedTest @catalina:default+gnu [compile: 0.962s run: 0.412s total: 1.538s]
+==> test failed during 'sanity': test staged in '/path/to/reframe/stage/catalina/default/gnu/HelloThreadedExtendedTest'
 [----------] all spawned checks have finished
 
 [  FAILED  ] Ran 2/2 test case(s) from 1 check(s) (2 failure(s), 0 skipped)
-[==========] Finished on Wed Jan 19 17:06:21 2022 
+[==========] Finished on Sat Jan 22 13:21:58 2022 
 
 ==============================================================================
 SUMMARY OF FAILURES
@@ -34,30 +31,30 @@ FAILURE INFO for HelloThreadedExtendedTest
   * Description: HelloThreadedExtendedTest
   * System partition: catalina:default
   * Environment: gnu
-  * Stage directory: /Users/user/Repositories/reframe/stage/catalina/default/gnu/HelloThreadedExtendedTest
-  * Node list: vpn-39
-  * Job type: local (id=34268)
+  * Stage directory: /path/to/reframe/stage/catalina/default/gnu/HelloThreadedExtendedTest
+  * Node list: tresa.localNone
+  * Job type: local (id=43387)
   * Dependencies (conceptual): []
   * Dependencies (actual): []
   * Maintainers: []
   * Failing phase: sanity
   * Rerun with '-n HelloThreadedExtendedTest -p gnu --system catalina:default -r'
-  * Reason: sanity error: 10 != 16
+  * Reason: sanity error: 7 != 16
 ------------------------------------------------------------------------------
 FAILURE INFO for HelloThreadedExtendedTest 
   * Expanded name: HelloThreadedExtendedTest
   * Description: HelloThreadedExtendedTest
   * System partition: catalina:default
   * Environment: clang
-  * Stage directory: /Users/user/Repositories/reframe/stage/catalina/default/clang/HelloThreadedExtendedTest
-  * Node list: vpn-39
-  * Job type: local (id=34279)
+  * Stage directory: /path/to/reframe/stage/catalina/default/clang/HelloThreadedExtendedTest
+  * Node list: tresa.localNone
+  * Job type: local (id=43384)
   * Dependencies (conceptual): []
   * Dependencies (actual): []
   * Maintainers: []
   * Failing phase: sanity
   * Rerun with '-n HelloThreadedExtendedTest -p clang --system catalina:default -r'
-  * Reason: sanity error: 13 != 16
+  * Reason: sanity error: 11 != 16
 ------------------------------------------------------------------------------
-Run report saved in '/Users/user/.reframe/reports/run-report.json'
-Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-uoew5foo.log'
+Run report saved in '/home/user/.reframe/reports/run-report.json'
+Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-31lkxfie.log'

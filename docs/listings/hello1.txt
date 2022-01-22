@@ -1,25 +1,22 @@
 [ReFrame Setup]
-  version:           3.10.0-dev.2+072543f3
+  version:           3.10.0-dev.3+c22440c1
   command:           './bin/reframe -c tutorials/basics/hello/hello1.py -r'
   launched by:       user@host
-  working directory: '/Users/user/Repositories/reframe'
+  working directory: '/path/to/reframe'
   settings file:     '<builtin>'
-  check search path: '/Users/user/Repositories/reframe/tutorials/basics/hello/hello1.py'
-  stage directory:   '/Users/user/Repositories/reframe/stage'
-  output directory:  '/Users/user/Repositories/reframe/output'
+  check search path: '/path/to/reframe/tutorials/basics/hello/hello1.py'
+  stage directory:   '/path/to/reframe/stage'
+  output directory:  '/path/to/reframe/output'
 
 [==========] Running 1 check(s)
-[==========] Started on Tue Jan 18 23:54:45 2022 
+[==========] Started on Sat Jan 22 13:21:50 2022 
 
-[----------] started processing HelloTest (HelloTest)
-[ RUN      ] HelloTest on generic:default using builtin
-[----------] finished processing HelloTest (HelloTest)
-
-[----------] waiting for spawned checks to finish
-[       OK ] (1/1) HelloTest @generic:default+builtin [compile: 0.149s run: 0.163s total: 0.338s]
+[----------] start processing checks
+[ RUN      ] HelloTest @generic:default+builtin
+[       OK ] (1/1) HelloTest @generic:default+builtin [compile: 0.272s run: 0.359s total: 0.784s]
 [----------] all spawned checks have finished
 
 [  PASSED  ] Ran 1/1 test case(s) from 1 check(s) (0 failure(s), 0 skipped)
-[==========] Finished on Tue Jan 18 23:54:45 2022 
-Run report saved in '/Users/user/.reframe/reports/run-report.json'
-Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-nv8jqh00.log'
+[==========] Finished on Sat Jan 22 13:21:51 2022 
+Run report saved in '/home/user/.reframe/reports/run-report.json'
+Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-8c6ybdvg.log'

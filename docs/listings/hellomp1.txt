@@ -1,27 +1,24 @@
 [ReFrame Setup]
-  version:           3.10.0-dev.2+bf404ae1
+  version:           3.10.0-dev.3+c22440c1
   command:           './bin/reframe -c tutorials/basics/hellomp/hellomp1.py -r'
   launched by:       user@host
-  working directory: '/Users/user/Repositories/reframe'
-  settings file:     'tutorials/config/mysettings.py'
-  check search path: '/Users/user/Repositories/reframe/tutorials/basics/hellomp/hellomp1.py'
-  stage directory:   '/Users/user/Repositories/reframe/stage'
-  output directory:  '/Users/user/Repositories/reframe/output'
+  working directory: '/path/to/reframe'
+  settings file:     '/path/to/reframe/tutorials/config/settings.py'
+  check search path: '/path/to/reframe/tutorials/basics/hellomp/hellomp1.py'
+  stage directory:   '/path/to/reframe/stage'
+  output directory:  '/path/to/reframe/output'
 
 [==========] Running 1 check(s)
-[==========] Started on Wed Jan 19 17:04:06 2022 
+[==========] Started on Sat Jan 22 13:21:54 2022 
 
-[----------] started processing HelloThreadedTest (HelloThreadedTest)
-[ RUN      ] HelloThreadedTest on catalina:default using gnu
-[ RUN      ] HelloThreadedTest on catalina:default using clang
-[----------] finished processing HelloThreadedTest (HelloThreadedTest)
-
-[----------] waiting for spawned checks to finish
-[       OK ] (1/2) HelloThreadedTest @catalina:default+gnu [compile: 1.764s run: 1.566s total: 3.355s]
-[       OK ] (2/2) HelloThreadedTest @catalina:default+clang [compile: 1.481s run: 0.469s total: 1.975s]
+[----------] start processing checks
+[ RUN      ] HelloThreadedTest @catalina:default+gnu
+[ RUN      ] HelloThreadedTest @catalina:default+clang
+[       OK ] (1/2) HelloThreadedTest @catalina:default+gnu [compile: 0.963s run: 0.296s total: 1.418s]
+[       OK ] (2/2) HelloThreadedTest @catalina:default+clang [compile: 0.760s run: 0.434s total: 1.421s]
 [----------] all spawned checks have finished
 
 [  PASSED  ] Ran 2/2 test case(s) from 1 check(s) (0 failure(s), 0 skipped)
-[==========] Finished on Wed Jan 19 17:04:09 2022 
-Run report saved in '/Users/user/.reframe/reports/run-report.json'
-Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-r26o0go9.log'
+[==========] Finished on Sat Jan 22 13:21:56 2022 
+Run report saved in '/home/user/.reframe/reports/run-report.json'
+Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-chq08zds.log'
