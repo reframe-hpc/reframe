@@ -190,7 +190,6 @@ Let's run the test now:
 .. literalinclude:: listings/hello2.txt
    :language: console
 
-
 Oops! The C++ test has failed.
 ReFrame complains that it does not know how to compile a C++ program.
 Remember our discussion above that the default configuration of ReFrame defines a minimal programming environment named ``builtin`` which only knows of a ``cc`` compiler.

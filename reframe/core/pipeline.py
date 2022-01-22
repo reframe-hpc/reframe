@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -483,7 +483,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: boolean
     #: :default: :class:`True`
-    strict_check = variable(bool, value=True)
+    strict_check = variable(typ.Bool, value=True)
 
     #: Number of tasks required by this test.
     #:
@@ -558,7 +558,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: boolean or :class:`None`
     #: :default: :class:`None`
-    use_multithreading = variable(bool, type(None), value=None)
+    use_multithreading = variable(typ.Bool, type(None), value=None)
 
     #: .. versionadded:: 3.0
     #:
@@ -575,13 +575,13 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: boolean
     #: :default: :class:`False`
-    exclusive_access = variable(bool, value=False)
+    exclusive_access = variable(typ.Bool, value=False)
 
     #: Always execute this test locally.
     #:
     #: :type: boolean
     #: :default: :class:`False`
-    local = variable(bool, value=False)
+    local = variable(typ.Bool, value=False)
 
     #: The set of reference values for this test.
     #:
@@ -841,7 +841,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: appropriate sanity check.
     #:
     #: :type: boolean : :default: :class:`True`
-    build_locally = variable(bool, value=True)
+    build_locally = variable(typ.Bool, value=True)
 
     def __new__(cls, *args, **kwargs):
         obj = super().__new__(cls)
@@ -1762,6 +1762,23 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         # Update num_tasks if test is flexible
         if self.job.sched_flex_alloc_nodes:
             self.num_tasks = self.job.num_tasks
+
+    @final
+    def compile_complete(self):
+        '''Check if the build phase has completed.
+
+        :returns: :class:`True` if the associated build job has finished,
+            :class:`False` otherwise.
+
+            If no job descriptor is yet associated with this test,
+            :class:`True` is returned.
+        :raises reframe.core.exceptions.ReframeError: In case of errors.
+
+        '''
+        if not self._build_job:
+            return True
+
+        return self._build_job.finished()
 
     @final
     def run_complete(self):

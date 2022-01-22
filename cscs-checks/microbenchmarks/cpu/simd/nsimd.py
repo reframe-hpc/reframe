@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -35,7 +35,7 @@ class NsimdTest(rfm.RegressionTest):
     bench_name = parameter(['mul.avx2.f32.cpp', 'mul.avx2.f64.cpp'])
 
     valid_systems = ['dom:mc', 'dom:gpu', 'eiger:mc']
-    valid_prog_environs = ['builtin']
+    valid_prog_environs = ['PrgEnv-gnu']
     build_system = 'SingleSource'
 
     # c++ test code generated with:
@@ -78,7 +78,7 @@ class NsimdTest(rfm.RegressionTest):
     @run_before('run')
     def prepare_run(self):
         self.skip_if_no_procinfo()
-        self.executable = f'{bench_name}.exe'
+        self.executable = f'NsimdTest_{self.bench_name}'.replace('.', '_')
         self.variables = {
             'CRAYPE_LINK_TYPE': 'dynamic',
             'OMP_NUM_THREADS': str(self.num_cpus_per_task),
@@ -87,9 +87,8 @@ class NsimdTest(rfm.RegressionTest):
         # Setup the reference
         proc = self.current_partition.processor
         if proc.info:
-            self.reference = {
-                '*': (allrefs[proc.arch][bench_name], -0.2, None)
-            }
+            perf_var = self.allrefs[proc.arch][self.bench_name]
+            self.reference['*'] = (perf_var, -0.2, None)
 
     @sanity_function
     def validate_benchmark(self):

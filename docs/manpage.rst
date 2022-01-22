@@ -389,13 +389,13 @@ Options controlling ReFrame execution
    - ``async``: Tests will be executed asynchronously.
      This is the default policy.
 
-     The ``async`` execution policy executes the run phase of tests asynchronously by submitting their associated jobs in a non-blocking way.
-     ReFrame's runtime monitors the progress of each test and will resume the pipeline execution of an asynchronously spawned test as soon as its run phase has finished.
+     The ``async`` execution policy executes the build and run phases of tests asynchronously by submitting their associated jobs in a non-blocking way.
+     ReFrame's runtime monitors the progress of each test and will resume the pipeline execution of an asynchronously spawned test as soon as its build or run phase have finished.
      Note that the rest of the pipeline stages are still executed sequentially in this policy.
 
      Concurrency can be controlled by setting the :js:attr:`max_jobs` system partition configuration parameter.
      As soon as the concurrency limit is reached, ReFrame will first poll the status of all its pending tests to check if any execution slots have been freed up.
-     If there are tests that have finished their run phase, ReFrame will keep pushing tests for execution until the concurrency limit is reached again.
+     If there are tests that have finished their build or run phase, ReFrame will keep pushing tests for execution until the concurrency limit is reached again.
      If no execution slots are available, ReFrame will throttle job submission.
 
 .. option:: --force-local
@@ -461,6 +461,17 @@ Options controlling ReFrame execution
    ReFrame will try to convert ``VAL`` to the type of the variable.
    If it does not succeed, a warning will be issued and the variable will not be set.
    ``VAL`` can take the special value ``@none`` to denote that the variable must be set to :obj:`None`.
+   Boolean variables can be set in one of the following ways:
+
+   - By passing ``true``, ``yes`` or ``1`` to set them to :class:`True`.
+   - By passing ``false``, ``no`` or ``0`` to set them to :class:`False`.
+
+   Passing any other value will issue an error.
+
+   .. note::
+
+      Boolean variables in a test must be declared of type :class:`~reframe.utility.typecheck.Bool` and *not* of the built-in :class:`bool` type, in order to adhere to the aforementioned behaviour.
+      If a variable is defined as :class:`bool` there is no way you can set it to :obj:`False`, since all strings in Python evaluate to :obj:`True`.
 
    Sequence and mapping types can also be set from the command line by using the following syntax:
 
@@ -469,7 +480,6 @@ Options controlling ReFrame execution
 
    Conversions to arbitrary objects are also supported.
    See :class:`~reframe.utility.typecheck.ConvertibleType` for more details.
-
 
    The optional ``TEST.`` prefix refers to the test class name, *not* the test name.
 
@@ -516,6 +526,11 @@ Options controlling ReFrame execution
             num_tasks = required
 
    .. versionadded:: 3.8.0
+
+   .. versionchanged:: 3.9.3
+
+      Proper handling of boolean variables.
+
 
 .. option:: --skip-performance-check
 

@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -90,12 +90,16 @@ class SlurmJobScheduler(sched.JobScheduler):
     # standard job state polling using sacct.
     SACCT_SQUEUE_RATIO = 10
 
-    # This matches the format for both normal jobs as well as job arrays.
+    # This matches the format for both normal and heterogeneous jobs,
+    # as well as job arrays.
+    # For heterogeneous jobs, the job_id has the following format:
+    # <het_job_id>+<het_job_offset>
+    # (https://slurm.schedmd.com/heterogeneous_jobs.html)
     # For job arrays the job_id has one of the following formats:
     #   * <job_id>_<array_task_id>
     #   * <job_id>_[<array_task_id_start>-<array_task_id_end>]
-    # See (`Job Array Support<https://slurm.schedmd.com/job_array.html`__)
-    _state_patt = r'\d+(?:_\d+|_\[\d+-\d+\])?'
+    # (https://slurm.schedmd.com/job_array.html)
+    _jobid_patt = r'\d+(?:\+\d+|_\d+|_\[\d+-\d+\])?'
 
     def __init__(self):
         self._prefix = '#SBATCH'
@@ -406,7 +410,7 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         # We need the match objects, so we have to use finditer()
         state_match = list(re.finditer(
-            fr'^(?P<jobid>{self._state_patt})\|(?P<state>\S+)([^\|]*)\|'
+            fr'^(?P<jobid>{self._jobid_patt})\|(?P<state>\S+)([^\|]*)\|'
             fr'(?P<exitcode>\d+)\:(?P<signal>\d+)\|(?P<end>\S+)\|'
             fr'(?P<nodespec>.*)', completed.stdout, re.MULTILINE)
         )
@@ -418,7 +422,8 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         job_info = {}
         for s in state_match:
-            jobid = s.group('jobid').split('_')[0]
+            # Take into account both job arrays and heterogeneous jobs
+            jobid = re.split(r'_|\+', s.group('jobid'))[0]
             job_info.setdefault(jobid, []).append(s)
 
         for job in jobs:
@@ -427,7 +432,7 @@ class SlurmJobScheduler(sched.JobScheduler):
             except KeyError:
                 continue
 
-            # Join the states with ',' in case of job arrays
+            # Join the states with ',' in case of job arrays|heterogeneous jobs
             job._state = ','.join(m.group('state') for m in jobarr_info)
 
             if not self._update_state_count % self.SACCT_SQUEUE_RATIO:
@@ -574,7 +579,7 @@ class SqueueJobScheduler(SlurmJobScheduler):
 
         # We need the match objects, so we have to use finditer()
         state_match = list(re.finditer(
-            fr'^(?P<jobid>{self._state_patt})\|(?P<state>\S+)\|'
+            fr'^(?P<jobid>{self._jobid_patt})\|(?P<state>\S+)\|'
             fr'(?P<nodespec>\S*)\|(?P<reason>.+)',
             completed.stdout, re.MULTILINE)
         )

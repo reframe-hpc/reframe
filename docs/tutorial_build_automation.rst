@@ -79,7 +79,7 @@ Packaging the installation
 --------------------------
 
 The EasyBuild build system offers a way of packaging the installation via EasyBuild's packaging support.
-To use this feature, `the FPM package manager <https://fpm.readthedocs.io/en/latest/intro.html>`__ must be available.
+To use this feature, `the FPM package manager <https://fpm.readthedocs.io/en/latest/>`__ must be available.
 By setting the dictionary :attr:`~reframe.core.buildsystems.Easybuild.package_opts` in the test, ReFrame will pass ``--package-{key}={val}`` to the EasyBuild invocation.
 For instance, the following can be set to package the installations as an rpm file:
 

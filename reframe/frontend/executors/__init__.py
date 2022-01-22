@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -218,6 +218,26 @@ class RegressionTask:
                 not self._aborted and not self._skipped)
 
     @property
+    def state(self):
+        if self.failed:
+            return 'fail'
+
+        if self.skipped:
+            return 'skip'
+
+        states = {
+            'startup': 'startup',
+            'setup': 'ready_compile',
+            'compile': 'compiling',
+            'compile_wait': 'ready_run',
+            'run': 'running',
+            'run_wait': 'completing',
+            'finalize': 'retired',
+            'cleanup': 'completed',
+        }
+        return states[self._current_stage]
+
+    @property
     def failed_stage(self):
         return self._failed_stage
 
@@ -250,7 +270,9 @@ class RegressionTask:
             # we don't want to masquerade the self argument of our containing
             # function
             def __enter__(this):
-                if fn.__name__ != 'poll':
+                if fn.__name__ not in ('poll',
+                                       'run_complete',
+                                       'compile_complete'):
                     stage = self._current_stage
                     self._timestamps[f'{stage}_start'] = time.time()
 
@@ -259,7 +281,7 @@ class RegressionTask:
                 self._timestamps[f'{stage}_finish'] = time.time()
                 self._timestamps['pipeline_end'] = time.time()
 
-        if fn.__name__ != 'poll':
+        if fn.__name__ not in ('poll', 'run_complete', 'compile_complete'):
             self._current_stage = fn.__name__
 
         try:
@@ -286,6 +308,7 @@ class RegressionTask:
 
     def compile(self):
         self._safe_call(self.check.compile)
+        self._notify_listeners('on_task_compile')
 
     def compile_wait(self):
         self._safe_call(self.check.compile_wait)
@@ -299,6 +322,13 @@ class RegressionTask:
         if done:
             self.zombie = True
             self._notify_listeners('on_task_exit')
+
+        return done
+
+    def compile_complete(self):
+        done = self._safe_call(self.check.compile_complete)
+        if done:
+            self._notify_listeners('on_task_compile_exit')
 
         return done
 
@@ -370,8 +400,17 @@ class TaskEventListener(abc.ABC):
         '''Called whenever the run() method of a RegressionTask is called.'''
 
     @abc.abstractmethod
+    def on_task_compile(self, task):
+        '''Called whenever the compile() method of a RegressionTask is
+        called.'''
+
+    @abc.abstractmethod
     def on_task_exit(self, task):
         '''Called whenever a RegressionTask finishes.'''
+
+    @abc.abstractmethod
+    def on_task_compile_exit(self, task):
+        '''Called whenever a RegressionTask compilation phase finishes.'''
 
     @abc.abstractmethod
     def on_task_skip(self, task):
@@ -482,27 +521,16 @@ class Runner:
                 '%s %s (%s)' % (prefix, check.unique_name, check.descr)
             )
 
+        self._printer.separator('short single line',
+                                'start processing checks')
         self._policy.enter()
         self._printer.reset_progress(len(testcases))
-        last_check = None
         for t in testcases:
-            if (last_check is None or
-                last_check.unique_name != t.check.unique_name):
-                if last_check is not None:
-                    print_separator(last_check, 'finished processing')
-                    self._printer.info('')
-
-                print_separator(t.check, 'started processing')
-                last_check = t.check
-
             self._policy.runcase(t)
 
-        # Close the last visual box
-        if last_check is not None:
-            print_separator(last_check, 'finished processing')
-            self._printer.info('')
-
         self._policy.exit()
+        self._printer.separator('short single line',
+                                'all spawned checks have finished\n')
 
 
 class ExecutionPolicy(abc.ABC):

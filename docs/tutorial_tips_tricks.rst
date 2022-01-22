@@ -91,7 +91,6 @@ If we run the test, we can see that the correct standard output filename will be
 
 .. code-block:: none
 
-   [----------] waiting for spawned checks to finish
    rfm_HelloMultiLangTest_cpp_job.out
    [       OK ] (1/4) HelloMultiLangTest_cpp on catalina:default using gnu [compile: 0.677s run: 0.700s total: 1.394s]
    rfm_HelloMultiLangTest_c_job.out
@@ -379,7 +378,6 @@ Let's run the whole test DAG:
 
    <output omitted>
 
-   [----------] waiting for spawned checks to finish
    [       OK ] ( 1/10) T0 on generic:default using builtin [compile: 0.014s run: 0.297s total: 0.337s]
    [       OK ] ( 2/10) T4 on generic:default using builtin [compile: 0.010s run: 0.171s total: 0.207s]
    [       OK ] ( 3/10) T5 on generic:default using builtin [compile: 0.010s run: 0.192s total: 0.225s]
@@ -440,11 +438,8 @@ Notice how only the :class:`T6` test was rerun and none of its dependencies, sin
    [==========] Running 1 check(s)
    [==========] Started on Thu Jan 21 14:27:18 2021
 
-   [----------] started processing T6 (T6)
+   [----------] start processing checks
    [ RUN      ] T6 on generic:default using builtin
-   [----------] finished processing T6 (T6)
-
-   [----------] waiting for spawned checks to finish
    [       OK ] (1/1) T6 on generic:default using builtin [compile: 0.012s run: 0.428s total: 0.464s]
    [----------] all spawned checks have finished
 
@@ -460,7 +455,6 @@ If we tried to run :class:`T6` without restoring the session, we would have to r
 
 .. code-block:: none
 
-   [----------] waiting for spawned checks to finish
    [       OK ] (1/5) T0 on generic:default using builtin [compile: 0.012s run: 0.424s total: 0.464s]
    [       OK ] (2/5) T4 on generic:default using builtin [compile: 0.011s run: 0.348s total: 0.381s]
    [       OK ] (3/5) T5 on generic:default using builtin [compile: 0.007s run: 0.225s total: 0.248s]

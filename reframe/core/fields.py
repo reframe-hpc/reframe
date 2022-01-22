@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -104,10 +104,11 @@ class TypedField(Field):
                     return
 
             # Conversion failed
+            typenames = [t.__name__ for t in self._types]
             raise TypeError(
                 f'failed to set field {self._name!r}: '
                 f'could not convert to any of the supported types: '
-                f'{self._types}'
+                f'{typenames}'
             )
         else:
             super().__set__(obj, value)

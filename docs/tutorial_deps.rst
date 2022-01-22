@@ -117,7 +117,7 @@ Here is the output when running the OSU tests with the asynchronous execution po
 Before starting running the tests, ReFrame topologically sorts them based on their dependencies and schedules them for running using the selected execution policy.
 With the serial execution policy, ReFrame simply executes the tests to completion as they "arrive," since the tests are already topologically sorted.
 In the asynchronous execution policy, tests are spawned and not waited for.
-If a test's dependencies have not yet completed, it will not start its execution and a ``DEP`` message will be printed to denote this.
+If a test's dependencies have not yet completed, it will not start its execution immediately.
 
 ReFrame's runtime takes care of properly cleaning up the resources of the tests respecting dependencies.
 Normally when an individual test finishes successfully, its stage directory is cleaned up.
