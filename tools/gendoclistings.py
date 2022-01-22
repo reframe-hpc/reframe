@@ -229,11 +229,67 @@ LISTINGS = {
             'RFM_COLORIZE': 'n'
         },
         xfail=False
+    ),
+    'hello2_typo': ListingInfo(
+        'sed -ie "s/parameter/paramter/g" tutorials/basics/hello/hello2.py && '
+        './bin/reframe -c tutorials/basics/hello -R -l && '
+        'mv tutorials/basics/hello/hello2.pye tutorials/basics/hello/hello2.py',
+        {'local', 'tutorial-tips-n-tricks'},
+        DEFAULT_FILTERS,
+        env={'RFM_COLORIZE': 'n'},
+        xfail=False
+    ),
+    'hello2_typo_stacktrace': ListingInfo(
+        'sed -ie "s/parameter/paramter/g" tutorials/basics/hello/hello2.py && '
+        './bin/reframe -c tutorials/basics/hello -R -l -v && '
+        'mv tutorials/basics/hello/hello2.pye tutorials/basics/hello/hello2.py',
+        {'local', 'tutorial-tips-n-tricks'},
+        DEFAULT_FILTERS,
+        env={'RFM_COLORIZE': 'n'},
+        xfail=False
+    ),
+    'hello2_print_stdout': ListingInfo(
+        'sed -ie "s/self\.stdout/sn.print(self.stdout)/g" tutorials/basics/hello/hello2.py && '
+        './bin/reframe --system=catalina -C tutorials/config/settings.py -c tutorials/basics/hello/hello2.py -r && '
+        'mv tutorials/basics/hello/hello2.pye tutorials/basics/hello/hello2.py',
+        {'local', 'tutorial-tips-n-tricks'},
+        DEFAULT_FILTERS,
+        env={'RFM_COLORIZE': 'n'},
+        xfail=False
+    ),
+    'hello2_list_verbose': ListingInfo(
+        './bin/reframe -C tutorials/config/settings.py -c tutorials/basics/hello/hello2.py -l -vv',
+        {'local', 'tutorial-tips-n-tricks'},
+        DEFAULT_FILTERS,
+        env={'RFM_COLORIZE': 'n'},
+        xfail=False
+    ),
+    'deps_complex_run': ListingInfo(
+        './bin/reframe -c unittests/resources/checks_unlisted/deps_complex.py -r',
+        {'local', 'tutorial-tips-n-tricks'},
+        DEFAULT_FILTERS,
+        env={'RFM_COLORIZE': 'n'},
+        xfail=True
+    ),
+    'deps_rerun_t6': ListingInfo(
+        './bin/reframe -c unittests/resources/checks_unlisted/deps_complex.py --keep-stage-files -r > /dev/null || '
+        './bin/reframe --restore-session --keep-stage-files -n T6 -r',
+        {'local', 'tutorial-tips-n-tricks'},
+        DEFAULT_FILTERS,
+        env={'RFM_COLORIZE': 'n'},
+        xfail=False
+    ),
+    'deps_run_t6': ListingInfo(
+        './bin/reframe -c unittests/resources/checks_unlisted/deps_complex.py -n T6 -r',
+        {'local', 'tutorial-tips-n-tricks'},
+        DEFAULT_FILTERS,
+        env={'RFM_COLORIZE': 'n'},
+        xfail=False
     )
 }
 
 
-runcmd = functools.partial(osext.run_command, log=False)
+runcmd = functools.partial(osext.run_command, log=False, shell=True)
 
 if __name__ == '__main__':
     try:

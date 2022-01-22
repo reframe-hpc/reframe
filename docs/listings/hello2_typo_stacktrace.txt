@@ -1,20 +1,20 @@
 [ReFrame Setup]
-  version:           3.10.0-dev.2+cb5edd8b
+  version:           3.10.0-dev.3+149af549
   command:           './bin/reframe -c tutorials/basics/hello -R -l -v'
   launched by:       user@host
-  working directory: '/Users/user/Repositories/reframe'
-  settings file:     'tutorials/config/settings.py'
-  check search path: (R) '/Users/user/Repositories/reframe/tutorials/basics/hello'
-  stage directory:   '/Users/user/Repositories/reframe/stage'
-  output directory:  '/Users/user/Repositories/reframe/output'
+  working directory: '/home/user/Repositories/reframe'
+  settings file:     '<builtin>'
+  check search path: (R) '/home/user/Repositories/reframe/tutorials/basics/hello'
+  stage directory:   '/home/user/Repositories/reframe/stage'
+  output directory:  '/home/user/Repositories/reframe/output'
 
-./bin/reframe: skipping test file '/Users/user/Repositories/reframe/tutorials/basics/hello/hello2.py': name error: tutorials/basics/hello/hello2.py:13: name 'paramter' is not defined
+./bin/reframe: skipping test file '/home/user/Repositories/reframe/tutorials/basics/hello/hello2.py': name error: tutorials/basics/hello/hello2.py:13: name 'paramter' is not defined
     lang = paramter(['c', 'cpp'])
  (rerun with '-v' for more information)
 Traceback (most recent call last):
-  File "/Users/user/Repositories/reframe/reframe/frontend/loader.py", line 237, in load_from_file
+  File "/home/user/Repositories/reframe/reframe/frontend/loader.py", line 237, in load_from_file
     util.import_module_from_file(filename, force)
-  File "/Users/user/Repositories/reframe/reframe/utility/__init__.py", line 103, in import_module_from_file
+  File "/home/user/Repositories/reframe/reframe/utility/__init__.py", line 109, in import_module_from_file
     return importlib.import_module(module_name)
   File "/usr/local/Cellar/python@3.9/3.9.1_6/Frameworks/Python.framework/Versions/3.9/lib/python3.9/importlib/__init__.py", line 127, in import_module
     return _bootstrap._gcd_import(name[level:], package, level)
@@ -24,9 +24,9 @@ Traceback (most recent call last):
   File "<frozen importlib._bootstrap>", line 680, in _load_unlocked
   File "<frozen importlib._bootstrap_external>", line 790, in exec_module
   File "<frozen importlib._bootstrap>", line 228, in _call_with_frames_removed
-  File "/Users/user/Repositories/reframe/tutorials/basics/hello/hello2.py", line 12, in <module>
+  File "/home/user/Repositories/reframe/tutorials/basics/hello/hello2.py", line 12, in <module>
     class HelloMultiLangTest(rfm.RegressionTest):
-  File "/Users/user/Repositories/reframe/tutorials/basics/hello/hello2.py", line 13, in HelloMultiLangTest
+  File "/home/user/Repositories/reframe/tutorials/basics/hello/hello2.py", line 13, in HelloMultiLangTest
     lang = paramter(['c', 'cpp'])
 NameError: name 'paramter' is not defined
 
@@ -40,4 +40,4 @@ Final number of test cases: 1
 - HelloTest
 Found 1 check(s)
 
-Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-do69ki6t.log'
+Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-l21cjjas.log'

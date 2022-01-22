@@ -40,7 +40,7 @@ As suggested by the warning message, passing :option:`-v` will give you the stac
 
 .. code:: bash
 
-   ./bin/reframe -c tutorials/basics/hello -R -lv
+   ./bin/reframe -c tutorials/basics/hello -R -l -v
 
 .. literalinclude:: listings/hello2_typo_stacktrace.txt
    :language: console
@@ -89,20 +89,8 @@ If we run the test, we can see that the correct standard output filename will be
 
    ./bin/reframe -C tutorials/config/settings.py -c tutorials/basics/hello/hello2.py -r
 
-.. code-block:: none
-
-   rfm_HelloMultiLangTest_cpp_job.out
-   [       OK ] (1/4) HelloMultiLangTest_cpp on catalina:default using gnu [compile: 0.677s run: 0.700s total: 1.394s]
-   rfm_HelloMultiLangTest_c_job.out
-   [       OK ] (2/4) HelloMultiLangTest_c on catalina:default using gnu [compile: 0.451s run: 1.788s total: 2.258s]
-   rfm_HelloMultiLangTest_c_job.out
-   [       OK ] (3/4) HelloMultiLangTest_c on catalina:default using clang [compile: 0.329s run: 1.585s total: 1.934s]
-   rfm_HelloMultiLangTest_cpp_job.out
-   [       OK ] (4/4) HelloMultiLangTest_cpp on catalina:default using clang [compile: 0.609s run: 0.373s total: 1.004s]
-   [----------] all spawned checks have finished
-
-   [  PASSED  ] Ran 4 test case(s) from 2 check(s) (0 failure(s))
-   [==========] Finished on Wed Jan 20 17:19:01 2021
+.. literalinclude:: listings/hello2_print_stdout.txt
+   :language: console
 
 
 Debugging sanity and performance patterns
@@ -157,79 +145,10 @@ Let's try loading the ``tutorials/basics/hello/hello2.py`` file:
 
 .. code:: bash
 
-   ./bin/reframe -C tutorials/config/settings.py -c tutorials/basics/hello/hello2.py -lvv
+   ./bin/reframe -C tutorials/config/settings.py -c tutorials/basics/hello/hello2.py -l -vv
 
-
-.. code-block:: none
-
-   Loading user configuration
-   Loading configuration file: 'tutorials/config/settings.py'
-   Detecting system
-   Looking for a matching configuration entry for system 'dhcp-133-191.cscs.ch'
-   Configuration found: picking system 'generic'
-   Selecting subconfig for 'generic'
-   Initializing runtime
-   Selecting subconfig for 'generic:default'
-   Initializing system partition 'default'
-   Selecting subconfig for 'generic'
-   Initializing system 'generic'
-   Initializing modules system 'nomod'
-   [ReFrame Environment]
-     RFM_CHECK_SEARCH_PATH=<not set>
-     RFM_CHECK_SEARCH_RECURSIVE=<not set>
-     RFM_CLEAN_STAGEDIR=<not set>
-     RFM_COLORIZE=<not set>
-     RFM_CONFIG_FILE=/Users/user/Repositories/reframe/tutorials/config/settings.py
-     RFM_GRAYLOG_ADDRESS=<not set>
-     RFM_IGNORE_CHECK_CONFLICTS=<not set>
-     RFM_IGNORE_REQNODENOTAVAIL=<not set>
-     RFM_INSTALL_PREFIX=/Users/user/Repositories/reframe
-     RFM_KEEP_STAGE_FILES=<not set>
-     RFM_MODULE_MAPPINGS=<not set>
-     RFM_MODULE_MAP_FILE=<not set>
-     RFM_NON_DEFAULT_CRAYPE=<not set>
-     RFM_OUTPUT_DIR=<not set>
-     RFM_PERFLOG_DIR=<not set>
-     RFM_PREFIX=<not set>
-     RFM_PURGE_ENVIRONMENT=<not set>
-     RFM_REPORT_FILE=<not set>
-     RFM_SAVE_LOG_FILES=<not set>
-     RFM_STAGE_DIR=<not set>
-     RFM_SYSLOG_ADDRESS=<not set>
-     RFM_SYSTEM=<not set>
-     RFM_TIMESTAMP_DIRS=<not set>
-     RFM_UNLOAD_MODULES=<not set>
-     RFM_USER_MODULES=<not set>
-     RFM_USE_LOGIN_SHELL=<not set>
-     RFM_VERBOSE=<not set>
-   [ReFrame Setup]
-     version:           3.4-dev2 (rev: 33a97c81)
-     command:           './bin/reframe -C tutorials/config/settings.py -c tutorials/basics/hello/hello2.py -lvv'
-     launched by:       user@dhcp-133-191.cscs.ch
-     working directory: '/Users/user/Repositories/reframe'
-     settings file:     'tutorials/config/settings.py'
-     check search path: '/Users/user/Repositories/reframe/tutorials/basics/hello/hello2.py'
-     stage directory:   '/Users/user/Repositories/reframe/stage'
-     output directory:  '/Users/user/Repositories/reframe/output'
-
-   Looking for tests in '/Users/user/Repositories/reframe/tutorials/basics/hello/hello2.py'
-   Validating '/Users/user/Repositories/reframe/tutorials/basics/hello/hello2.py': OK
-     > Loaded 2 test(s)
-   Loaded 2 test(s)
-   Generated 2 test case(s)
-   Filtering test cases(s) by name: 2 remaining
-   Filtering test cases(s) by tags: 2 remaining
-   Filtering test cases(s) by other attributes: 2 remaining
-   Building and validating the full test DAG
-   Full test DAG:
-     ('HelloMultiLangTest_c', 'generic:default', 'builtin') -> []
-     ('HelloMultiLangTest_cpp', 'generic:default', 'builtin') -> []
-   Final number of test cases: 2
-   [List of matched checks]
-   - HelloMultiLangTest_c (found in '/Users/user/Repositories/reframe/tutorials/basics/hello/hello2.py')
-   - HelloMultiLangTest_cpp (found in '/Users/user/Repositories/reframe/tutorials/basics/hello/hello2.py')
-   Found 2 check(s)
-   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-3956_dlu.log'
+.. literalinclude:: listings/hello2_list_verbose.txt
+   :language: console
 
 You can see all the different phases ReFrame's frontend goes through when loading a test.
 The first "strange" thing to notice in this log is that ReFrame picked the generic system configuration.
@@ -374,30 +293,8 @@ Let's run the whole test DAG:
 
    ./bin/reframe -c unittests/resources/checks_unlisted/deps_complex.py -r
 
-.. code-block:: none
-
-   <output omitted>
-
-   [       OK ] ( 1/10) T0 on generic:default using builtin [compile: 0.014s run: 0.297s total: 0.337s]
-   [       OK ] ( 2/10) T4 on generic:default using builtin [compile: 0.010s run: 0.171s total: 0.207s]
-   [       OK ] ( 3/10) T5 on generic:default using builtin [compile: 0.010s run: 0.192s total: 0.225s]
-   [       OK ] ( 4/10) T1 on generic:default using builtin [compile: 0.008s run: 0.198s total: 0.226s]
-   [     FAIL ] ( 5/10) T8 on generic:default using builtin [compile: n/a run: n/a total: 0.003s]
-   ==> test failed during 'setup': test staged in '/Users/user/Repositories/reframe/stage/generic/default/builtin/T8'
-   [     FAIL ] ( 6/10) T9 [compile: n/a run: n/a total: n/a]
-   ==> test failed during 'startup': test staged in '<not available>'
-   [       OK ] ( 7/10) T6 on generic:default using builtin [compile: 0.007s run: 0.224s total: 0.262s]
-   [       OK ] ( 8/10) T3 on generic:default using builtin [compile: 0.007s run: 0.211s total: 0.235s]
-   [     FAIL ] ( 9/10) T2 on generic:default using builtin [compile: 0.011s run: 0.318s total: 0.389s]
-   ==> test failed during 'sanity': test staged in '/Users/user/Repositories/reframe/stage/generic/default/builtin/T2'
-   [     FAIL ] (10/10) T7 [compile: n/a run: n/a total: n/a]
-   ==> test failed during 'startup': test staged in '<not available>'
-   [----------] all spawned checks have finished
-
-   [  FAILED  ] Ran 10 test case(s) from 10 check(s) (4 failure(s))
-   [==========] Finished on Thu Jan 21 13:58:43 2021
-
-   <output omitted>
+.. literalinclude:: listings/deps_complex_run.txt
+   :language: console
 
 You can restore the run session and run only the failed test cases as follows:
 
@@ -433,18 +330,8 @@ Let's try to rerun the :class:`T6` test from the previous test dependency chain:
 
 Notice how only the :class:`T6` test was rerun and none of its dependencies, since they were simply restored:
 
-.. code-block:: none
-
-   [==========] Running 1 check(s)
-   [==========] Started on Thu Jan 21 14:27:18 2021
-
-   [----------] start processing checks
-   [ RUN      ] T6 on generic:default using builtin
-   [       OK ] (1/1) T6 on generic:default using builtin [compile: 0.012s run: 0.428s total: 0.464s]
-   [----------] all spawned checks have finished
-
-   [  PASSED  ] Ran 1 test case(s) from 1 check(s) (0 failure(s))
-   [==========] Finished on Thu Jan 21 14:27:19 2021
+.. literalinclude:: listings/deps_rerun_t6.txt
+   :language: console
 
 
 If we tried to run :class:`T6` without restoring the session, we would have to rerun also the whole dependency chain, i.e., also :class:`T5`, :class:`T1`, :class:`T4` and :class:`T0`.
@@ -453,18 +340,8 @@ If we tried to run :class:`T6` without restoring the session, we would have to r
 
    ./bin/reframe -c unittests/resources/checks_unlisted/deps_complex.py -n T6 -r
 
-.. code-block:: none
-
-   [       OK ] (1/5) T0 on generic:default using builtin [compile: 0.012s run: 0.424s total: 0.464s]
-   [       OK ] (2/5) T4 on generic:default using builtin [compile: 0.011s run: 0.348s total: 0.381s]
-   [       OK ] (3/5) T5 on generic:default using builtin [compile: 0.007s run: 0.225s total: 0.248s]
-   [       OK ] (4/5) T1 on generic:default using builtin [compile: 0.009s run: 0.235s total: 0.267s]
-   [       OK ] (5/5) T6 on generic:default using builtin [compile: 0.010s run: 0.265s total: 0.297s]
-   [----------] all spawned checks have finished
-
-
-   [  PASSED  ] Ran 5 test case(s) from 5 check(s) (0 failure(s))
-   [==========] Finished on Thu Jan 21 14:32:09 2021
+.. literalinclude:: listings/deps_run_t6.txt
+   :language: console
 
 
 .. _generate-ci-pipeline:
