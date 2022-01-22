@@ -1,48 +1,45 @@
 [ReFrame Setup]
-  version:           3.10.0-dev.2+2a281443
+  version:           3.10.0-dev.3+605af31a
   command:           './bin/reframe -c tutorials/basics/stream/stream4.py -r --performance-report'
   launched by:       user@host
-  working directory: '/users/user/Devel/reframe'
-  settings file:     '/users/user/Devel/reframe/tutorials/config/settings.py'
-  check search path: '/users/user/Devel/reframe/tutorials/basics/stream/stream4.py'
-  stage directory:   '/users/user/Devel/reframe/stage'
-  output directory:  '/users/user/Devel/reframe/output'
+  working directory: '/home/user/Devel/reframe'
+  settings file:     '/home/user/Devel/reframe/tutorials/config/settings.py'
+  check search path: '/home/user/Devel/reframe/tutorials/basics/stream/stream4.py'
+  stage directory:   '/home/user/Devel/reframe/stage'
+  output directory:  '/home/user/Devel/reframe/output'
 
 [==========] Running 1 check(s)
-[==========] Started on Wed Jan 19 18:40:59 2022 
+[==========] Started on Sat Jan 22 22:47:28 2022 
 
-[----------] started processing StreamMultiSysTest (StreamMultiSysTest)
-[ RUN      ] StreamMultiSysTest on daint:login using gnu
-[ RUN      ] StreamMultiSysTest on daint:login using intel
-[ RUN      ] StreamMultiSysTest on daint:login using pgi
-[ RUN      ] StreamMultiSysTest on daint:login using cray
-[ RUN      ] StreamMultiSysTest on daint:gpu using gnu
-[ RUN      ] StreamMultiSysTest on daint:gpu using intel
-[ RUN      ] StreamMultiSysTest on daint:gpu using pgi
-[ RUN      ] StreamMultiSysTest on daint:gpu using cray
-[ RUN      ] StreamMultiSysTest on daint:mc using gnu
-[ RUN      ] StreamMultiSysTest on daint:mc using intel
-[ RUN      ] StreamMultiSysTest on daint:mc using pgi
-[ RUN      ] StreamMultiSysTest on daint:mc using cray
-[----------] finished processing StreamMultiSysTest (StreamMultiSysTest)
-
-[----------] waiting for spawned checks to finish
-[       OK ] ( 1/12) StreamMultiSysTest @daint:login+pgi [compile: 10.793s run: 49.861s total: 60.881s]
-[       OK ] ( 2/12) StreamMultiSysTest @daint:login+gnu [compile: 1.928s run: 72.907s total: 74.867s]
-[       OK ] ( 3/12) StreamMultiSysTest @daint:login+intel [compile: 7.659s run: 63.146s total: 71.139s]
-[       OK ] ( 4/12) StreamMultiSysTest @daint:login+cray [compile: 0.582s run: 48.996s total: 49.614s]
-[       OK ] ( 5/12) StreamMultiSysTest @daint:mc+pgi [compile: 1.969s run: 71.561s total: 73.560s]
-[       OK ] ( 6/12) StreamMultiSysTest @daint:mc+gnu [compile: 1.962s run: 87.247s total: 89.240s]
-[       OK ] ( 7/12) StreamMultiSysTest @daint:mc+intel [compile: 2.176s run: 78.063s total: 80.268s]
-[       OK ] ( 8/12) StreamMultiSysTest @daint:mc+cray [compile: 0.564s run: 68.645s total: 69.238s]
-[       OK ] ( 9/12) StreamMultiSysTest @daint:gpu+pgi [compile: 2.529s run: 244.848s total: 247.413s]
-[       OK ] (10/12) StreamMultiSysTest @daint:gpu+gnu [compile: 3.108s run: 257.580s total: 260.723s]
-[       OK ] (11/12) StreamMultiSysTest @daint:gpu+intel [compile: 2.348s run: 251.428s total: 253.808s]
-[       OK ] (12/12) StreamMultiSysTest @daint:gpu+cray [compile: 0.802s run: 241.325s total: 242.159s]
+[----------] start processing checks
+[ RUN      ] StreamMultiSysTest @daint:login+gnu
+[ RUN      ] StreamMultiSysTest @daint:login+intel
+[ RUN      ] StreamMultiSysTest @daint:login+pgi
+[ RUN      ] StreamMultiSysTest @daint:login+cray
+[ RUN      ] StreamMultiSysTest @daint:gpu+gnu
+[ RUN      ] StreamMultiSysTest @daint:gpu+intel
+[ RUN      ] StreamMultiSysTest @daint:gpu+pgi
+[ RUN      ] StreamMultiSysTest @daint:gpu+cray
+[ RUN      ] StreamMultiSysTest @daint:mc+gnu
+[ RUN      ] StreamMultiSysTest @daint:mc+intel
+[ RUN      ] StreamMultiSysTest @daint:mc+pgi
+[ RUN      ] StreamMultiSysTest @daint:mc+cray
+[       OK ] ( 1/12) StreamMultiSysTest @daint:login+gnu [compile: 4.024s run: 21.615s total: 28.185s]
+[       OK ] ( 2/12) StreamMultiSysTest @daint:login+intel [compile: 3.410s run: 20.976s total: 28.208s]
+[       OK ] ( 3/12) StreamMultiSysTest @daint:login+pgi [compile: 2.734s run: 20.235s total: 28.226s]
+[       OK ] ( 4/12) StreamMultiSysTest @daint:login+cray [compile: 2.104s run: 19.571s total: 28.242s]
+[       OK ] ( 5/12) StreamMultiSysTest @daint:gpu+gnu [compile: 2.102s run: 30.129s total: 38.813s]
+[       OK ] ( 6/12) StreamMultiSysTest @daint:gpu+pgi [compile: 8.695s run: 22.117s total: 38.826s]
+[       OK ] ( 7/12) StreamMultiSysTest @daint:gpu+cray [compile: 8.083s run: 19.050s total: 38.852s]
+[       OK ] ( 8/12) StreamMultiSysTest @daint:gpu+intel [compile: 9.369s run: 37.641s total: 50.212s]
+[       OK ] ( 9/12) StreamMultiSysTest @daint:mc+gnu [compile: 7.970s run: 28.955s total: 52.297s]
+[       OK ] (10/12) StreamMultiSysTest @daint:mc+cray [compile: 20.508s run: 30.812s total: 65.951s]
+[       OK ] (11/12) StreamMultiSysTest @daint:mc+pgi [compile: 21.186s run: 34.898s total: 66.325s]
+[       OK ] (12/12) StreamMultiSysTest @daint:mc+intel [compile: 21.890s run: 62.451s total: 90.626s]
 [----------] all spawned checks have finished
 
 [  PASSED  ] Ran 12/12 test case(s) from 1 check(s) (0 failure(s), 0 skipped)
-[==========] Finished on Wed Jan 19 18:45:47 2022 
+[==========] Finished on Sat Jan 22 22:48:59 2022 
 ==============================================================================
 PERFORMANCE REPORT
 ------------------------------------------------------------------------------
@@ -50,78 +47,78 @@ StreamMultiSysTest
 - daint:login
    - gnu
       * num_tasks: 1
-      * Copy: 101679.8 MB/s
-      * Scale: 45191.5 MB/s
-      * Add: 54368.5 MB/s
-      * Triad: 60150.7 MB/s
+      * Copy: 108525.7 MB/s
+      * Scale: 76882.1 MB/s
+      * Add: 81155.7 MB/s
+      * Triad: 82433.2 MB/s
    - intel
       * num_tasks: 1
-      * Copy: 91599.9 MB/s
-      * Scale: 84242.4 MB/s
-      * Add: 106380.9 MB/s
-      * Triad: 108751.1 MB/s
+      * Copy: 82341.7 MB/s
+      * Scale: 81330.6 MB/s
+      * Add: 72076.0 MB/s
+      * Triad: 101808.5 MB/s
    - pgi
       * num_tasks: 1
-      * Copy: 34313.7 MB/s
-      * Scale: 27147.5 MB/s
-      * Add: 40151.0 MB/s
-      * Triad: 40265.4 MB/s
+      * Copy: 94336.0 MB/s
+      * Scale: 69096.9 MB/s
+      * Add: 73484.2 MB/s
+      * Triad: 73243.6 MB/s
    - cray
       * num_tasks: 1
-      * Copy: 44660.8 MB/s
-      * Scale: 24224.9 MB/s
-      * Add: 32372.7 MB/s
-      * Triad: 42503.4 MB/s
+      * Copy: 114374.2 MB/s
+      * Scale: 76205.6 MB/s
+      * Add: 82184.5 MB/s
+      * Triad: 76086.3 MB/s
 - daint:gpu
    - gnu
       * num_tasks: 1
-      * Copy: 42720.5 MB/s
-      * Scale: 38430.6 MB/s
-      * Add: 43645.7 MB/s
-      * Triad: 43969.6 MB/s
+      * Copy: 42963.4 MB/s
+      * Scale: 38504.8 MB/s
+      * Add: 43650.2 MB/s
+      * Triad: 43876.5 MB/s
    - intel
       * num_tasks: 1
-      * Copy: 52676.1 MB/s
-      * Scale: 54405.8 MB/s
-      * Add: 59010.5 MB/s
-      * Triad: 59135.5 MB/s
+      * Copy: 52505.4 MB/s
+      * Scale: 54131.1 MB/s
+      * Add: 58918.8 MB/s
+      * Triad: 59048.6 MB/s
    - pgi
       * num_tasks: 1
-      * Copy: 50671.7 MB/s
-      * Scale: 39562.9 MB/s
-      * Add: 43926.7 MB/s
-      * Triad: 44044.7 MB/s
+      * Copy: 50472.9 MB/s
+      * Scale: 39545.5 MB/s
+      * Add: 43881.6 MB/s
+      * Triad: 43972.4 MB/s
    - cray
       * num_tasks: 1
-      * Copy: 50864.0 MB/s
-      * Scale: 39099.2 MB/s
-      * Add: 43314.9 MB/s
-      * Triad: 43936.4 MB/s
+      * Copy: 50610.2 MB/s
+      * Scale: 38990.9 MB/s
+      * Add: 43158.9 MB/s
+      * Triad: 43792.9 MB/s
 - daint:mc
    - gnu
       * num_tasks: 1
-      * Copy: 48660.2 MB/s
-      * Scale: 38660.2 MB/s
-      * Add: 43688.1 MB/s
-      * Triad: 44030.3 MB/s
+      * Copy: 48650.7 MB/s
+      * Scale: 38618.4 MB/s
+      * Add: 43504.1 MB/s
+      * Triad: 44044.1 MB/s
    - intel
       * num_tasks: 1
-      * Copy: 52582.7 MB/s
-      * Scale: 48775.1 MB/s
-      * Add: 57207.5 MB/s
-      * Triad: 57349.3 MB/s
+      * Copy: 52500.5 MB/s
+      * Scale: 48545.9 MB/s
+      * Add: 57150.3 MB/s
+      * Triad: 57272.4 MB/s
    - pgi
       * num_tasks: 1
-      * Copy: 46134.0 MB/s
-      * Scale: 40549.6 MB/s
-      * Add: 44189.3 MB/s
-      * Triad: 44531.3 MB/s
+      * Copy: 46123.6 MB/s
+      * Scale: 40552.5 MB/s
+      * Add: 44147.7 MB/s
+      * Triad: 44521.9 MB/s
    - cray
       * num_tasks: 1
-      * Copy: 46567.1 MB/s
-      * Scale: 39779.5 MB/s
-      * Add: 43429.1 MB/s
-      * Triad: 43814.4 MB/s
+      * Copy: 47094.0 MB/s
+      * Scale: 40080.4 MB/s
+      * Add: 43659.8 MB/s
+      * Triad: 44078.0 MB/s
 ------------------------------------------------------------------------------
-Run report saved in '/users/user/.reframe/reports/run-report.json'
-Log file(s) saved in '/tmp/rfm-fuzfkpeh.log'
+Run report saved in '/home/user/.reframe/reports/run-report.json'
+Log file(s) saved in '/tmp/rfm-sua0bogo.log'
