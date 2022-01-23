@@ -279,7 +279,7 @@ def test_runall(make_runner, make_cases, common_exec_ctx, tmp_path):
         runreport.load_report(tmp_path / 'invalid.json')
 
     # Generate a report that does not comply to the schema
-    del report['session_info']['hostname']
+    del report['session_info']['data_version']
     with open(tmp_path / 'invalid-version.json', 'w') as fp:
         jsonext.dump(report, fp)
 
