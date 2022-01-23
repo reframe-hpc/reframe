@@ -3,14 +3,13 @@
 import collections
 import functools
 import os
-import re
 import socket
 import sys
 import reframe.utility.osext as osext
 
 
 def print_usage():
-    print(f'Usage: {sys.argv[0]} [local|remote|all|<listing>]')
+    print(f'Usage: {sys.argv[0]} [all|<tag>|<listing>]')
 
 
 ListingInfo = collections.namedtuple(
@@ -68,48 +67,52 @@ LISTINGS = {
         xfail=True
     ),
     'hello2_catalina': ListingInfo(
-        './bin/reframe -C tutorials/config/settings.py --system=catalina -c tutorials/basics/hello/hello2.py -r',
+        './bin/reframe -C tutorials/config/settings.py --system=catalina -c tutorials/basics/hello/hello2.py -r',   # noqa: E501
         {'local', 'tutorial-basics'},
         DEFAULT_FILTERS,
         env={'RFM_COLORIZE': 'n'},
         xfail=False
     ),
     'hellomp1': ListingInfo(
-        './bin/reframe --system=catalina -c tutorials/basics/hellomp/hellomp1.py -r',
+        './bin/reframe --system=catalina -c tutorials/basics/hellomp/hellomp1.py -r',   # noqa: E501
         {'local', 'tutorial-basics'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILE': os.path.join(os.getcwd(), 'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
+                                            'tutorials/config/settings.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
     ),
     'hellomp2': ListingInfo(
-        './bin/reframe --system=catalina -c tutorials/basics/hellomp/hellomp2.py -r',
+        './bin/reframe --system=catalina -c tutorials/basics/hellomp/hellomp2.py -r',   # noqa: E501
         {'local', 'tutorial-basics'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILE': os.path.join(os.getcwd(), 'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
+                                            'tutorials/config/settings.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=True
     ),
     'alltests_daint': ListingInfo(
-        './bin/reframe -c tutorials/basics/ -R -n "HelloMultiLangTest|HelloThreadedExtended2Test|StreamWithRefTest" --performance-report -r',
+        './bin/reframe -c tutorials/basics/ -R -n "HelloMultiLangTest|HelloThreadedExtended2Test|StreamWithRefTest" --performance-report -r',   # noqa: E501
         {'remote', 'tutorial-basics'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILE': os.path.join(os.getcwd(), 'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
+                                            'tutorials/config/settings.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
     ),
     'stream4_daint': ListingInfo(
-        './bin/reframe -c tutorials/basics/stream/stream4.py -r --performance-report',
+        './bin/reframe -c tutorials/basics/stream/stream4.py -r --performance-report',  # noqa: E501
         {'remote', 'tutorial-basics'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILE': os.path.join(os.getcwd(), 'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
+                                            'tutorials/config/settings.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
@@ -119,27 +122,30 @@ LISTINGS = {
         {'remote', 'tutorial-deps'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILE': os.path.join(os.getcwd(), 'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
+                                            'tutorials/config/settings.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
     ),
     'osu_latency_list': ListingInfo(
-        './bin/reframe -c tutorials/deps/osu_benchmarks.py -n OSULatencyTest -l',
+        './bin/reframe -c tutorials/deps/osu_benchmarks.py -n OSULatencyTest -l',   # noqa: E501
         {'remote', 'tutorial-deps'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILE': os.path.join(os.getcwd(), 'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
+                                            'tutorials/config/settings.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
     ),
     'osu_latency_unresolved_deps': ListingInfo(
-        './bin/reframe -c tutorials/deps/osu_benchmarks.py -n OSULatencyTest --system=daint:gpu -l',
+        './bin/reframe -c tutorials/deps/osu_benchmarks.py -n OSULatencyTest --system=daint:gpu -l',    # noqa: E501
         {'remote', 'tutorial-deps'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILE': os.path.join(os.getcwd(), 'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
+                                            'tutorials/config/settings.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
@@ -149,17 +155,19 @@ LISTINGS = {
         {'remote', 'tutorial-deps'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILE': os.path.join(os.getcwd(), 'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
+                                            'tutorials/config/settings.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
     ),
     'osu_bench_list_concretized_gnu': ListingInfo(
-        './bin/reframe -c tutorials/deps/osu_benchmarks.py -n OSULatencyTest -L -p builtin -p gnu',
+        './bin/reframe -c tutorials/deps/osu_benchmarks.py -n OSULatencyTest -L -p builtin -p gnu',  # noqa: E501
         {'remote', 'tutorial-deps'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILE': os.path.join(os.getcwd(), 'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
+                                            'tutorials/config/settings.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
@@ -176,26 +184,29 @@ LISTINGS = {
         {'remote', 'tutorial-fixtures'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILE': os.path.join(os.getcwd(), 'tutorials/config/settings.py')
+            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
+                                            'tutorials/config/settings.py')
         },
         xfail=False
     ),
     'osu_bandwidth_concretized_daint': ListingInfo(
-        './bin/reframe -c tutorials/fixtures/osu_benchmarks.py -n osu_bandwidth_test -lC',
+        './bin/reframe -c tutorials/fixtures/osu_benchmarks.py -n osu_bandwidth_test -lC',  # noqa: E501
         {'remote', 'tutorial-fixtures'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILE': os.path.join(os.getcwd(), 'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
+                                            'tutorials/config/settings.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
     ),
     'osu_bandwidth_concretized_daint_pgi': ListingInfo(
-        './bin/reframe -c tutorials/fixtures/osu_benchmarks.py -n osu_bandwidth_test -lC -p pgi',
+        './bin/reframe -c tutorials/fixtures/osu_benchmarks.py -n osu_bandwidth_test -lC -p pgi',   # noqa: E501
         {'remote', 'tutorial-fixtures'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILE': os.path.join(os.getcwd(), 'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
+                                            'tutorials/config/settings.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
@@ -205,27 +216,30 @@ LISTINGS = {
         {'remote', 'tutorial-fixtures'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILE': os.path.join(os.getcwd(), 'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
+                                            'tutorials/config/settings.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
     ),
     'stream_params': ListingInfo(
-        './bin/reframe --system=catalina -c tutorials/advanced/parameterized/stream.py -l',
+        './bin/reframe --system=catalina -c tutorials/advanced/parameterized/stream.py -l',  # noqa: E501
         {'local', 'tutorial-advanced'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILE': os.path.join(os.getcwd(), 'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
+                                            'tutorials/config/settings.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
     ),
     'maketest_mixin': ListingInfo(
-        './bin/reframe --system=catalina -c tutorials/advanced/makefiles/maketest_mixin.py -l',
+        './bin/reframe --system=catalina -c tutorials/advanced/makefiles/maketest_mixin.py -l',  # noqa: E501
         {'local', 'tutorial-advanced'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILE': os.path.join(os.getcwd(), 'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
+                                            'tutorials/config/settings.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
@@ -233,7 +247,7 @@ LISTINGS = {
     'hello2_typo': ListingInfo(
         'sed -ie "s/parameter/paramter/g" tutorials/basics/hello/hello2.py && '
         './bin/reframe -c tutorials/basics/hello -R -l && '
-        'mv tutorials/basics/hello/hello2.pye tutorials/basics/hello/hello2.py',
+        'mv tutorials/basics/hello/hello2.pye tutorials/basics/hello/hello2.py',    # noqa: E501
         {'local', 'tutorial-tips-n-tricks'},
         DEFAULT_FILTERS,
         env={'RFM_COLORIZE': 'n'},
@@ -242,37 +256,37 @@ LISTINGS = {
     'hello2_typo_stacktrace': ListingInfo(
         'sed -ie "s/parameter/paramter/g" tutorials/basics/hello/hello2.py && '
         './bin/reframe -c tutorials/basics/hello -R -l -v && '
-        'mv tutorials/basics/hello/hello2.pye tutorials/basics/hello/hello2.py',
+        'mv tutorials/basics/hello/hello2.pye tutorials/basics/hello/hello2.py',    # noqa: E501
         {'local', 'tutorial-tips-n-tricks'},
         DEFAULT_FILTERS,
         env={'RFM_COLORIZE': 'n'},
         xfail=False
     ),
     'hello2_print_stdout': ListingInfo(
-        'sed -ie "s/self\.stdout/sn.print(self.stdout)/g" tutorials/basics/hello/hello2.py && '
-        './bin/reframe --system=catalina -C tutorials/config/settings.py -c tutorials/basics/hello/hello2.py -r && '
-        'mv tutorials/basics/hello/hello2.pye tutorials/basics/hello/hello2.py',
+        'sed -ie "s/self\.stdout/sn.print(self.stdout)/g" tutorials/basics/hello/hello2.py && '  # noqa: E501
+        './bin/reframe --system=catalina -C tutorials/config/settings.py -c tutorials/basics/hello/hello2.py -r && '    # noqa: E501
+        'mv tutorials/basics/hello/hello2.pye tutorials/basics/hello/hello2.py',    # noqa: E501
         {'local', 'tutorial-tips-n-tricks'},
         DEFAULT_FILTERS,
         env={'RFM_COLORIZE': 'n'},
         xfail=False
     ),
     'hello2_list_verbose': ListingInfo(
-        './bin/reframe -C tutorials/config/settings.py -c tutorials/basics/hello/hello2.py -l -vv',
+        './bin/reframe -C tutorials/config/settings.py -c tutorials/basics/hello/hello2.py -l -vv',  # noqa: E501
         {'local', 'tutorial-tips-n-tricks'},
         DEFAULT_FILTERS,
         env={'RFM_COLORIZE': 'n'},
         xfail=False
     ),
     'deps_complex_run': ListingInfo(
-        './bin/reframe -c unittests/resources/checks_unlisted/deps_complex.py -r',
+        './bin/reframe -c unittests/resources/checks_unlisted/deps_complex.py -r',  # noqa: E501
         {'local', 'tutorial-tips-n-tricks'},
         DEFAULT_FILTERS,
         env={'RFM_COLORIZE': 'n'},
         xfail=True
     ),
     'deps_rerun_t6': ListingInfo(
-        './bin/reframe -c unittests/resources/checks_unlisted/deps_complex.py --keep-stage-files -r > /dev/null || '
+        './bin/reframe -c unittests/resources/checks_unlisted/deps_complex.py --keep-stage-files -r > /dev/null || '    # noqa: E501
         './bin/reframe --restore-session --keep-stage-files -n T6 -r',
         {'local', 'tutorial-tips-n-tricks'},
         DEFAULT_FILTERS,
@@ -280,7 +294,7 @@ LISTINGS = {
         xfail=False
     ),
     'deps_run_t6': ListingInfo(
-        './bin/reframe -c unittests/resources/checks_unlisted/deps_complex.py -n T6 -r',
+        './bin/reframe -c unittests/resources/checks_unlisted/deps_complex.py -n T6 -r',    # noqa: E501
         {'local', 'tutorial-tips-n-tricks'},
         DEFAULT_FILTERS,
         env={'RFM_COLORIZE': 'n'},
@@ -310,7 +324,8 @@ if __name__ == '__main__':
 
         completed = runcmd(info.command, check=not info.xfail)
         if info.xfail and completed.returncode == 0:
-            print(f'{info.command} should have failed, but it did not; skipping...')
+            print(f'{info.command} should have failed, but it did not; '
+                  f'skipping...')
             continue
 
         # Apply filters
