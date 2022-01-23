@@ -482,9 +482,6 @@ class RegressionTestMeta(type):
         if not isinstance(fixt_vars, collections.abc.Mapping):
             raise TypeError("'fixt_vars' argument must be a mapping")
 
-        # Intercept is_fixture argument to flag an instance as a fixture
-        # is_fixture = kwargs.pop('is_fixture', False)
-
         obj = cls.__new__(cls, *args, **kwargs)
 
         # Insert the var and param spaces

@@ -50,7 +50,6 @@ def test_abstract_param():
     class MyTest(Abstract):
         pass
 
-    print(MyTest.param_space)
     assert MyTest.param_space['P0'] == ()
     assert MyTest.param_space['P1'] == ('b',)
 

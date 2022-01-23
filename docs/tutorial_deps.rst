@@ -150,7 +150,7 @@ As a result, its immediate dependency :class:`OSUBuildTest` will be skipped, whi
 Listing Dependencies
 --------------------
 
-As shown in the listing of :class:`OSULatencyTest` before, the full dependency chain of the test is listed along with test.
+As shown in the listing of :class:`OSULatencyTest` before, the full dependency chain of the test is listed along with the test.
 Each target dependency is printed in a new line prefixed by the ``^`` character and indented proportionally to its level.
 If a target dependency appears in multiple paths, it will only be listed once.
 
