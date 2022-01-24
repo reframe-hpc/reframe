@@ -470,6 +470,12 @@ class Logger(logging.Logger):
     def setLevel(self, level):
         self.level = _check_level(level)
 
+        if sys.version_info[:2] >= (3, 7):
+            # Clear the internal cache of the base logger, otherwise the
+            # logger will remain disabled if its level is raised and then
+            # lowered again
+            self._cache.clear()
+
     def makeRecord(self, name, level, fn, lno, msg, args, exc_info,
                    func=None, extra=None, sinfo=None):
         record = super().makeRecord(name, level, fn, lno, msg, args, exc_info,

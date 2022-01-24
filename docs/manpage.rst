@@ -114,10 +114,24 @@ This happens recursively so that if test ``T1`` depends on ``T2`` and ``T2`` dep
    Filter tests by name.
 
    ``NAME`` is interpreted as a `Python Regular Expression <https://docs.python.org/3/library/re.html>`__;
-   any test whose name matches ``NAME`` will be selected.
+   any test whose *display name* matches ``NAME`` will be selected.
+   The display name of a test encodes also any parameterization information.
+   See :ref:`test_naming_scheme` for more details on how the tests are automatically named by the framework.
+
+   Before matching, any whitespace will be removed from the display name of the test.
 
    This option may be specified multiple times, in which case tests with *any* of the specified names will be selected:
    ``-n NAME1 -n NAME2`` is therefore equivalent to ``-n 'NAME1|NAME2'``.
+
+   If the special notation ``<test_name>@<variant_num>`` is passed as the ``NAME`` argument, then an exact match will be performed selecting the variant ``variant_num`` of the test ``test_name``.
+
+   .. note::
+
+      Fixtures cannot be selected.
+
+   .. versionchanged:: 3.10.0
+
+      The option's behaviour was adapted and extended in order to work with the updated test naming scheme.
 
 .. option:: -p, --prgenv=NAME
 
@@ -189,15 +203,42 @@ An action must always be specified.
 
    .. versionadded:: 3.4.1
 
-.. option:: -L, --list-detailed
+.. option:: --describe
 
-   List selected tests providing detailed information per test.
+   Print a detailed description of the `selected tests <#test-filtering>`__ in JSON format and exit.
 
-.. option:: -l, --list
+   .. note::
+      The generated test description corresponds to its state after it has been initialized.
+      If any of its attributes are changed or set during its execution, their updated values will not be shown by this listing.
 
-   List selected tests.
+   .. versionadded:: 3.10.0
 
-   A single line per test is printed.
+
+.. option:: -L, --list-detailed[=T|C]
+
+   List selected tests providing more details for each test.
+
+   The unique id of each test (see also :attr:`~reframe.core.pipeline.RegressionTest.unique_name`) as well as the file where each test is defined are printed.
+
+   This option accepts optionally a single argument denoting what type of listing is requested.
+   Please refer to :option:`-l` for an explanation of this argument.
+
+   .. versionadded:: 3.10.0
+      Support for different types of listing is added.
+
+.. option:: -l, --list[=T|C]
+
+   List selected tests and their dependencies.
+
+   This option accepts optionally a single argument denoting what type of listing is requested.
+   There are two types of possible listings:
+
+   - *Regular test listing* (``T``, the default): This type of listing lists the tests and their dependencies or fixtures using their :attr:`~reframe.core.pipeline.RegressionTest.display_name`. A test that is listed as a dependency of another test will not be listed separately.
+   - *Concretized test case listing* (``C``): This type of listing lists the exact test cases and their dependencies as they have been concretized for the current system and environment combinations.
+     This listing shows practically the exact test DAG that will be executed.
+
+   .. versionadded:: 3.10.0
+      Support for different types of listing is added.
 
 .. option:: --list-tags
 
@@ -211,7 +252,11 @@ An action must always be specified.
 
    Execute the selected tests.
 
-If more than one action options are specified, :option:`-l` precedes :option:`-L`, which in turn precedes :option:`-r`.
+If more than one action options are specified, the precedence order is the following:
+
+   .. code-block:: console
+
+      --describe > --list-detailed > --list > --list-tags > --ci-generate
 
 
 ----------------------------------
@@ -766,6 +811,121 @@ Miscellaneous options
    This option can also be set using the :envvar:`RFM_VERBOSE` environment variable or the :js:attr:`verbose` general configuration parameter.
 
 
+.. _test_naming_scheme:
+
+Test Naming Scheme
+------------------
+
+.. versionadded:: 3.10.0
+
+This section describes the new test naming scheme which will replace the current one in ReFrame 4.0.
+It can be enabled by setting the :envvar:`RFM_COMPACT_TEST_NAMES` environment variable.
+
+Each ReFrame test is assigned a unique name, which will be used internally by the framework to reference the test.
+Any test-specific path component will use that name, too.
+It is formed as follows for the various types of tests:
+
+- *Regular tests*: The unique name is simply the test class name.
+  This implies that you cannot load two tests with the same class name within the same run session even if these tests reside in separate directories.
+- *Parameterized tests*: The unique name is formed by the test class name followed by an ``_`` and the variant number of the test.
+  Each point in the parameter space of the test is assigned a unique variant number.
+- *Fixtures*: The unique name is formed by the test class name followed by an ``_`` and a hash.
+  The hash is constructed by combining the information of the fixture variant (if the fixture is parameterized), the fixture's scope and any fixture variables that were explicitly set.
+
+Since unique names can be cryptic, they are not listed by the :option:`-l` option, but are listed when a detailed listing is requested by using the :option:`-L` option.
+
+A human readable version of the test name, which is called the *display name*, is also constructed for each test.
+This name encodes all the parameterization information as well as the fixture-specific information (scopes, variables).
+The format of the display name is the following in BNF notation:
+
+.. code-block:: bnf
+
+   <display_name> ::= <test_class_name> (<params>)* (<scope>)?
+   <params> ::= "%" <parametrization> "=" <pvalue>
+   <parametrization> ::= (<fname> ".")* <pname>
+   <scope> ::= "~" <scope_descr>
+   <scope_descr> ::= <first> ("+" <second>)*
+
+   <test_class_name> ::= (* as in Python *)
+   <fname> ::= (* string *)
+   <pname> ::= (* string *)
+   <pvalue> ::= (* string *)
+   <first> ::= (* string *)
+   <second> ::= (* string *)
+
+The following is an example of a fictitious complex test that is itself parameterized and depends on parameterized fixtures as well.
+
+.. code-block:: python
+
+   import reframe as rfm
+
+
+   class MyFixture(rfm.RunOnlyRegressionTest):
+       p = parameter([1, 2])
+
+
+   class X(rfm.RunOnlyRegressionTest):
+       foo = variable(int, value=1)
+
+
+   @rfm.simple_test
+   class TestA(rfm.RunOnlyRegressionTest):
+       f = fixture(MyFixture, scope='test', action='join')
+       x = parameter([3, 4])
+       t = fixture(MyFixture, scope='test')
+       l = fixture(X, scope='environment', variables={'foo': 10})
+       valid_systems = ['*']
+       valid_prog_environs = ['*']
+
+
+Here is how this test is listed where the various components of the display name can be seen:
+
+.. code-block:: console
+
+   - TestA %x=4 %l.foo=10 %t.p=2
+       ^MyFixture %p=1 ~TestA_4_1
+       ^MyFixture %p=2 ~TestA_4_1
+       ^X %foo=10 ~generic:default+builtin
+   - TestA %x=3 %l.foo=10 %t.p=2
+       ^MyFixture %p=1 ~TestA_3_1
+       ^MyFixture %p=2 ~TestA_3_1
+       ^X %foo=10 ~generic:default+builtin
+   - TestA %x=4 %l.foo=10 %t.p=1
+       ^MyFixture %p=2 ~TestA_4_0
+       ^MyFixture %p=1 ~TestA_4_0
+       ^X %foo=10 ~generic:default+builtin
+   - TestA %x=3 %l.foo=10 %t.p=1
+       ^MyFixture %p=2 ~TestA_3_0
+       ^MyFixture %p=1 ~TestA_3_0
+       ^X %foo=10 ~generic:default+builtin
+   Found 4 check(s)
+
+Display names may not always be unique.
+In the following example:
+
+.. code-block:: python
+
+   class MyTest(RegressionTest):
+       p = parameter([1, 1, 1])
+
+This generates three different tests with different unique names, but their display name is the same for all: ``MyTest %p=1``.
+Notice that this example leads to a name conflict with the old naming scheme, since all tests would be named ``MyTest_1``.
+
+
+--------------------------------------
+Differences from the old naming scheme
+--------------------------------------
+
+Prior to version 3.10, ReFrame used to encode the parameter values of an instance of parameterized test in its name.
+It did so by taking the string representation of the value and replacing any non-alphanumeric character with an underscore.
+This could lead to very large and hard to read names when a test defined multiple parameters or the parameter type was more complex.
+Very large test names meant also very large path names which could also lead to problems and random failures.
+Fixtures followed a similar naming pattern making them hard to debug.
+
+The old naming scheme is still the default for parameterized tests (but not for fixtures) and will remain so until ReFrame 4.0, in order to ensure backward compatibility.
+However, users are advised to enable the new naming scheme by setting the :envvar:`RFM_COMPACT_TEST_NAMES` environment variable.
+
+
 Environment
 -----------
 
@@ -837,7 +997,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
 .. envvar:: RFM_COMPACT_TEST_NAMES
 
-   Enable the compact test naming scheme.
+   Enable the new test naming scheme.
 
    .. table::
       :align: left

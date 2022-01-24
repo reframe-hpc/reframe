@@ -18,21 +18,18 @@ from reframe.core.exceptions import ReframeError, PerformanceError
 
 
 class BaseFrontendCheck(rfm.RunOnlyRegressionTest):
-    def __init__(self):
-        self.local = True
-        self.executable = 'echo hello && echo perf: 10 Gflop/s'
-        self.sanity_patterns = sn.assert_found('hello', self.stdout)
-        self.tags = {type(self).__name__}
-        self.maintainers = ['VK']
+    valid_systems = ['*']
+    valid_prog_environs = ['*']
+    executable = 'echo hello && echo perf: 10 Gflop/s'
+    local = True
+
+    @sanity_function
+    def validate_output(self):
+        return sn.assert_found('hello', self.stdout)
 
 
 @rfm.simple_test
 class BadSetupCheck(BaseFrontendCheck):
-    def __init__(self):
-        super().__init__()
-        self.valid_systems = ['*']
-        self.valid_prog_environs = ['*']
-
     @run_after('setup')
     def raise_error(self):
         raise ReframeError('Setup failure')
@@ -40,12 +37,6 @@ class BadSetupCheck(BaseFrontendCheck):
 
 @rfm.simple_test
 class BadSetupCheckEarly(BaseFrontendCheck):
-    def __init__(self):
-        super().__init__()
-        self.valid_systems = ['*']
-        self.valid_prog_environs = ['*']
-        self.local = False
-
     @run_before('setup')
     def raise_error_early(self):
         raise ReframeError('Setup failure')
@@ -53,54 +44,39 @@ class BadSetupCheckEarly(BaseFrontendCheck):
 
 @rfm.simple_test
 class NoSystemCheck(BaseFrontendCheck):
-    def __init__(self):
-        super().__init__()
-        self.valid_systems = []
-        self.valid_prog_environs = ['*']
+    valid_systems = []
 
 
 @rfm.simple_test
 class NoPrgEnvCheck(BaseFrontendCheck):
-    def __init__(self):
-        super().__init__()
-        self.valid_systems = ['*']
-        self.valid_prog_environs = []
+    valid_prog_environs = []
 
 
 @rfm.simple_test
 class SanityFailureCheck(BaseFrontendCheck):
-    def __init__(self):
-        super().__init__()
-        self.valid_systems = ['*']
-        self.valid_prog_environs = ['*']
-        self.sanity_patterns = sn.assert_found('foo', self.stdout)
+    @sanity_function
+    def validate_output(self):
+        return sn.assert_found('foo', self.stdout)
 
 
 @rfm.simple_test
 class PerformanceFailureCheck(BaseFrontendCheck):
-    def __init__(self):
-        super().__init__()
-        self.valid_systems = ['*']
-        self.valid_prog_environs = ['*']
-        self.perf_patterns = {
-            'perf': sn.extractsingle(r'perf: (\d+)', self.stdout, 1, int)
+    reference = {
+        '*': {
+            'perf': (20, -0.1, 0.1, 'Gflop/s')
         }
-        self.reference = {
-            '*': {
-                'perf': (20, -0.1, 0.1, 'Gflop/s')
-            }
-        }
+    }
+
+    @performance_function('Gflop/s')
+    def perf(self):
+        return sn.extractsingle(r'perf: (\d+)', self.stdout, 1, int)
 
 
 @rfm.simple_test
 class CustomPerformanceFailureCheck(BaseFrontendCheck, special=True):
     '''Simulate a performance check that ignores completely logging'''
 
-    def __init__(self):
-        super().__init__()
-        self.valid_systems = ['*']
-        self.valid_prog_environs = ['*']
-        self.strict_check = False
+    strict_check = False
 
     def check_performance(self):
         raise PerformanceError('performance failure')
@@ -109,12 +85,8 @@ class CustomPerformanceFailureCheck(BaseFrontendCheck, special=True):
 class KeyboardInterruptCheck(BaseFrontendCheck, special=True):
     '''Simulate keyboard interrupt during test's execution.'''
 
-    def __init__(self, phase='wait'):
-        super().__init__()
-        self.executable = 'sleep 1'
-        self.valid_systems = ['*']
-        self.valid_prog_environs = ['*']
-        self.phase = phase
+    executable = 'sleep 1'
+    phase = variable(str)
 
     @run_before('setup')
     def raise_before_setup(self):
@@ -126,16 +98,11 @@ class KeyboardInterruptCheck(BaseFrontendCheck, special=True):
         if self.phase == 'wait':
             raise KeyboardInterrupt
         else:
-            super().wait()
+            return super().run_wait()
 
 
 class SystemExitCheck(BaseFrontendCheck, special=True):
     '''Simulate system exit from within a check.'''
-
-    def __init__(self):
-        super().__init__()
-        self.valid_systems = ['*']
-        self.valid_prog_environs = ['*']
 
     def run_wait(self):
         # We do our nasty stuff in wait() to make things more complicated
@@ -143,81 +110,71 @@ class SystemExitCheck(BaseFrontendCheck, special=True):
 
 
 @rfm.simple_test
-class CleanupFailTest(rfm.RunOnlyRegressionTest):
-    def __init__(self):
-        self.valid_systems = ['*']
-        self.valid_prog_environs = ['*']
-        self.sourcesdir = None
-        self.executable = 'echo foo'
-        self.sanity_patterns = sn.assert_found(r'foo', self.stdout)
-
+class CleanupFailTest(BaseFrontendCheck):
     @run_before('cleanup')
     def fail(self):
         # Make this test fail on purpose
         raise Exception
 
 
-class SleepCheck(BaseFrontendCheck):
-    _next_id = 0
+class SleepCheck(rfm.RunOnlyRegressionTest, special=True):
+    sleep_time = variable(float, int)
+    poll_fail = variable(str, type(None), value=None)
+    print_timestamp = (
+        'python3 -c "import time; print(time.time(), flush=True)"'
+    )
+    executable = 'python3'
+    prerun_cmds = [print_timestamp]
+    postrun_cmds = [print_timestamp]
+    sanity_patterns = sn.assert_true(1)
+    valid_systems = ['*']
+    valid_prog_environs = ['*']
 
-    def __init__(self, sleep_time):
-        super().__init__()
-        self.name = '%s_%s' % (self.name, SleepCheck._next_id)
-        self.sourcesdir = None
-        self.sleep_time = sleep_time
-        self.executable = 'python3'
+    @run_before('run')
+    def set_sleep_time(self):
         self.executable_opts = [
-            '-c "from time import sleep; sleep(%s)"' % sleep_time
+            f'-c "import time; time.sleep({self.sleep_time})"'
         ]
-        print_timestamp = (
-            "python3 -c \"from datetime import datetime; "
-            "print(datetime.today().strftime('%s.%f'), flush=True)\"")
-        self.prerun_cmds = [print_timestamp]
-        self.postrun_cmds = [print_timestamp]
-        self.sanity_patterns = sn.assert_found(r'.*', self.stdout)
-        self.valid_systems = ['*']
-        self.valid_prog_environs = ['*']
-        SleepCheck._next_id += 1
-
-
-class SleepCheckPollFail(SleepCheck, special=True):
-    '''Emulate a test failing in the polling phase.'''
 
     def run_complete(self):
-        raise ValueError
-
-
-class SleepCheckPollFailLate(SleepCheck, special=True):
-    '''Emulate a test failing in the polling phase
-    after the test has finished.'''
-
-    def run_complete(self):
-        if self._job.finished():
+        if self.poll_fail == 'early':
+            # Emulate a test failing in the polling phase.
+            raise ValueError
+        elif self.poll_fail == 'late' and self.job.finished():
+            # Emulate a test failing in the polling phase after the test has
+            # finished
             raise ValueError
 
+        return super().run_complete()
 
-class RetriesCheck(BaseFrontendCheck):
-    def __init__(self, run_to_pass, filename):
-        super().__init__()
-        self.sourcesdir = None
-        self.valid_systems = ['*']
-        self.valid_prog_environs = ['*']
-        self.prerun_cmds = ['current_run=$(cat %s)' % filename]
-        self.executable = 'echo $current_run'
-        self.postrun_cmds = ['((current_run++))',
-                             'echo $current_run > %s' % filename]
-        self.sanity_patterns = sn.assert_found('%d' % run_to_pass, self.stdout)
+
+class RetriesCheck(rfm.RunOnlyRegressionTest):
+    filename = variable(str)
+    num_runs = variable(int)
+
+    local = True
+    valid_systems = ['*']
+    valid_prog_environs = ['*']
+
+    @run_before('run')
+    def set_exec(self):
+        self.executable = f'''
+current_run=$(cat {self.filename})
+echo $current_run
+((current_run++))
+echo $current_run > {self.filename}'''
+
+    @sanity_function
+    def validate(self):
+        return sn.assert_found(str(self.num_runs), self.stdout)
 
 
 class SelfKillCheck(rfm.RunOnlyRegressionTest, special=True):
-    def __init__(self):
-        self.local = True
-        self.valid_systems = ['*']
-        self.valid_prog_environs = ['*']
-        self.executable = 'echo hello'
-        self.sanity_patterns = sn.assert_found('hello', self.stdout)
-        self.tags = {type(self).__name__}
-        self.maintainers = ['TM']
+    valid_systems = ['*']
+    valid_prog_environs = ['*']
+    local = True
+    executable = 'echo'
+    sanity_patterns = sn.assert_true(1)
 
     def run(self):
         super().run()
@@ -226,13 +183,12 @@ class SelfKillCheck(rfm.RunOnlyRegressionTest, special=True):
 
 
 class CompileFailureCheck(rfm.RegressionTest):
-    def __init__(self):
-        self.valid_systems = ['*']
-        self.valid_prog_environs = ['*']
-        self.sanity_patterns = sn.assert_found(r'hello', self.stdout)
-        self.sourcesdir = None
-        self.sourcepath = 'x.c'
-        self.prebuild_cmds = ['echo foo > x.c']
+    valid_systems = ['*']
+    valid_prog_environs = ['*']
+    sanity_patterns = sn.assert_true(1)
+    sourcesdir = None
+    sourcepath = 'x.c'
+    prebuild_cmds = ['echo foo > x.c']
 
 
 # The following tests do not validate and should not be loaded
@@ -241,23 +197,26 @@ class CompileFailureCheck(rfm.RegressionTest):
 class TestWithGenerator(rfm.RunOnlyRegressionTest):
     '''This test is invalid in ReFrame and the loader must not load it'''
 
-    def __init__(self):
-        self.valid_systems = ['*']
-        self.valid_prog_environs = ['*']
+    valid_systems = ['*']
+    valid_prog_environs = ['*']
 
+    @run_after('init')
+    def post_init(self):
         def foo():
             yield True
 
-        self.sanity_patterns = sn.defer(foo())
+        self.x = foo()
 
 
 @rfm.simple_test
 class TestWithFileObject(rfm.RunOnlyRegressionTest):
     '''This test is invalid in ReFrame and the loader must not load it'''
 
-    def __init__(self):
-        self.valid_systems = ['*']
-        self.valid_prog_environs = ['*']
+    valid_systems = ['*']
+    valid_prog_environs = ['*']
+
+    @run_after('init')
+    def file_handler(self):
         with open(__file__) as fp:
             pass
 

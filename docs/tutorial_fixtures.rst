@@ -90,71 +90,54 @@ It is now time to run the new tests, but let us first list them:
 
 .. code-block:: bash
 
-   export RFM_CONFIG_FILE=$(pwd)/tutorials/config/settings.py
    reframe -c tutorials/fixtures/osu_benchmarks.py -l
 
-.. code-block:: console
-
-   [ReFrame Setup]
-     version:           3.9.0
-     command:           'reframe -c tutorials/fixtures/osu_benchmarks.py -l'
-     launched by:       user@daint106
-     working directory: '/users/user/Devel/reframe'
-     settings file:     '/users/user/Devel/reframe/tutorials/config/settings.py'
-     check search path: '/users/user/Devel/reframe/tutorials/fixtures/osu_benchmarks.py'
-     stage directory:   '/users/user/Devel/reframe/stage'
-     output directory:  '/users/user/Devel/reframe/output'
-
-   [List of matched checks]
-   - osu_latency_test (found in '/users/user/Devel/reframe/tutorials/fixtures/osu_benchmarks.py')
-   - osu_allreduce_test_8 (found in '/users/user/Devel/reframe/tutorials/fixtures/osu_benchmarks.py')
-   - osu_allreduce_test_2 (found in '/users/user/Devel/reframe/tutorials/fixtures/osu_benchmarks.py')
-   - osu_allreduce_test_4 (found in '/users/user/Devel/reframe/tutorials/fixtures/osu_benchmarks.py')
-   - osu_bandwidth_test (found in '/users/user/Devel/reframe/tutorials/fixtures/osu_benchmarks.py')
-   - osu_allreduce_test_16 (found in '/users/user/Devel/reframe/tutorials/fixtures/osu_benchmarks.py')
-   Found 6 check(s)
-
-   Log file(s) saved in '/tmp/rfm-dlkc1vb_.log'
-
-Notice that only the leaf tests are listed and not their fixtures.
-Listing the tests in detailed mode, however, using the :option:`-L` option, you will see all the generated fixtures:
+.. literalinclude:: listings/osu_bench_fixtures_list.txt
+   :language: console
 
 
-.. code-block:: bash
-
-   reframe -c tutorials/fixtures/osu_benchmarks.py -n osu_bandwidth_test -L
-
-ReFrame will generate 4 fixtures for this test based on the partition and environment configurations for the current system.
-The following figure shows the generated fixtures as well as their conceptual dependencies.
+Notice how the :class:`build_osu_benchmarks` fixture is populated three times, once for each partition and environment combination, and the :class:`fetch_osu_benchmarks` is generated only once.
+The following figure shows visually the conceptual dependencies of the :class:`osu_bandwidth_test`.
 
 .. figure:: _static/img/fixtures-conceptual-deps.svg
   :align: center
 
   :sub:`Expanded fixtures and dependencies for the OSU benchmarks example.`
 
-Notice how the :class:`build_osu_benchmarks` fixture is populated three times, once for each partition and environment combination, and the :class:`fetch_osu_benchmarks` is generated only once.
-Tests in a single ReFrame session must have unique names, so the fixture class name is mangled by the framework to generate a unique name in the test dependency DAG.
 A *scope* part is added to the base name of the fixture, which in this figure is indicated with red color.
 
 Under the hood, fixtures use the test dependency mechanism which is described in :doc:`dependencies`.
-The dependencies shown in the previous figure are conceptual.
-A single test in ReFrame generates a series of test cases for all the combinations of valid systems and valid programming environments and the actual dependencies are expressed in this more fine-grained layer, which is also the layer at which the execution of tests is scheduled.
+The dependencies listed by default and shown in the previous figure are conceptual.
+Depending on the available partitions and environments, tests and fixtures can be concretized differently.
+Fixtures in particular are also more flexible in the way they can be concretized depending on their scope.
+The following listing and figure show the concretization of the :class:`osu_bandwidth_test`:
 
-The following figure shows how the above graph translates into the actual DAG of test cases.
+.. code-block:: bash
+
+   reframe -c tutorials/fixtures/osu_benchmarks.py -n osu_bandwidth_test -lC
+
+.. literalinclude:: listings/osu_bandwidth_concretized_daint.txt
+   :language: console
+
 
 .. figure:: _static/img/fixtures-actual-deps.svg
   :align: center
 
   :sub:`The actual dependencies for the OSU benchmarks example using fixtures.`
 
-
 The first thing to notice here is how the individual test cases of :class:`osu_bandwidth_test` depend only the specific fixtures for their scope:
 when :class:`osu_bandwidth_test` runs on the ``daint:gpu`` partition using the ``gnu`` compiler it will only depend on the :class:`build_osu_benchmarks~daint:gpu+gnu` fixture.
 The second thing to notice is where the :class:`fetch_osu_benchmarks~daint` fixture will run.
 Since this is a *session* fixture, ReFrame has arbitrarily chosen to run it on ``daint:gpu`` using the ``gnu`` environment.
 A session fixture can run on any combination of valid partitions and environments.
-The following figure shows how the test dependency DAG is concretized when we scope the valid programming environments from the command line using ``-p pgi``.
+The following listing and figure show how the test dependency DAG is concretized when we scope the valid programming environments from the command line using ``-p pgi``.
 
+.. code-block:: bash
+
+   reframe -c tutorials/fixtures/osu_benchmarks.py -n osu_bandwidth_test -lC -p pgi
+
+.. literalinclude:: listings/osu_bandwidth_concretized_daint_pgi.txt
+   :language: console
 
 .. figure:: _static/img/fixtures-actual-deps-scoped.svg
   :align: center
@@ -163,66 +146,13 @@ The following figure shows how the test dependency DAG is concretized when we sc
 
 
 Notice how the :class:`fetch_osu_benchmarks~daint` fixture is selected to run in the only valid partition/environment combination.
+This is an important difference compared to the same example written using raw dependencies in :doc:`dependencies`, in which case in order not to have unresolved dependencies, we would need to specify the valid programming environment of the test that fetches the sources.
+Fixtures do not need that, since you can impose less strict constraints by setting their scope accordingly.
 
-The following listing shows the output of running the tutorial examples.
+Finally, let's run all the benchmarks at once:
 
-.. code-block:: console
-
-   [==========] Running 10 check(s)
-   [==========] Started on Sun Oct 31 22:00:28 2021
-
-   [----------] start processing checks
-   [ RUN      ] fetch_osu_benchmarks~daint on daint:gpu using gnu
-   [       OK ] ( 1/22) fetch_osu_benchmarks~daint on daint:gpu using gnu [compile: 0.007s run: 2.960s total: 2.988s]
-   [ RUN      ] build_osu_benchmarks~daint:gpu+intel on daint:gpu using intel
-   [ RUN      ] build_osu_benchmarks~daint:gpu+pgi on daint:gpu using pgi
-   [ RUN      ] build_osu_benchmarks~daint:gpu+gnu on daint:gpu using gnu
-   [       OK ] ( 2/22) build_osu_benchmarks~daint:gpu+gnu on daint:gpu using gnu [compile: 26.322s run: 2.609s total: 30.214s]
-   [ RUN      ] osu_allreduce_test_16 on daint:gpu using gnu
-   [ RUN      ] osu_bandwidth_test on daint:gpu using gnu
-   [ RUN      ] osu_latency_test on daint:gpu using gnu
-   [ RUN      ] osu_allreduce_test_2 on daint:gpu using gnu
-   [ RUN      ] osu_allreduce_test_8 on daint:gpu using gnu
-   [ RUN      ] osu_allreduce_test_4 on daint:gpu using gnu
-   [       OK ] ( 3/22) build_osu_benchmarks~daint:gpu+intel on daint:gpu using intel [compile: 53.068s run: 0.650s total: 53.773s]
-   [ RUN      ] osu_allreduce_test_2 on daint:gpu using intel
-   [ RUN      ] osu_latency_test on daint:gpu using intel
-   [ RUN      ] osu_allreduce_test_4 on daint:gpu using intel
-   [ RUN      ] osu_allreduce_test_16 on daint:gpu using intel
-   [ RUN      ] osu_allreduce_test_8 on daint:gpu using intel
-   [       OK ] ( 4/22) build_osu_benchmarks~daint:gpu+pgi on daint:gpu using pgi [compile: 52.482s run: 0.803s total: 53.981s]
-   [ RUN      ] osu_allreduce_test_4 on daint:gpu using pgi
-   [ RUN      ] osu_bandwidth_test on daint:gpu using intel
-   [       OK ] ( 5/22) osu_allreduce_test_16 on daint:gpu using gnu [compile: 0.015s run: 23.535s total: 23.922s]
-   [ RUN      ] osu_latency_test on daint:gpu using pgi
-   [ RUN      ] osu_bandwidth_test on daint:gpu using pgi
-   [ RUN      ] osu_allreduce_test_2 on daint:gpu using pgi
-   [ RUN      ] osu_allreduce_test_16 on daint:gpu using pgi
-   [ RUN      ] osu_allreduce_test_8 on daint:gpu using pgi
-   [       OK ] ( 6/22) osu_latency_test on daint:gpu using gnu [compile: 0.010s run: 47.016s total: 54.703s]
-   [       OK ] ( 7/22) osu_allreduce_test_2 on daint:gpu using intel [compile: 0.009s run: 41.732s total: 42.313s]
-   [       OK ] ( 8/22) osu_allreduce_test_2 on daint:gpu using gnu [compile: 0.012s run: 54.571s total: 65.684s]
-   [       OK ] ( 9/22) osu_allreduce_test_8 on daint:gpu using gnu [compile: 0.011s run: 51.414s total: 65.712s]
-   [       OK ] (10/22) osu_allreduce_test_4 on daint:gpu using gnu [compile: 0.010s run: 48.378s total: 65.741s]
-   [       OK ] (11/22) osu_latency_test on daint:gpu using intel [compile: 0.008s run: 39.131s total: 42.877s]
-   [       OK ] (12/22) osu_allreduce_test_4 on daint:gpu using intel [compile: 0.009s run: 35.861s total: 42.898s]
-   [       OK ] (13/22) osu_allreduce_test_16 on daint:gpu using intel [compile: 0.008s run: 32.300s total: 42.901s]
-   [       OK ] (14/22) osu_allreduce_test_8 on daint:gpu using intel [compile: 0.009s run: 29.237s total: 42.914s]
-   [       OK ] (15/22) osu_allreduce_test_4 on daint:gpu using pgi [compile: 0.009s run: 26.134s total: 42.904s]
-   [       OK ] (16/22) osu_latency_test on daint:gpu using pgi [compile: 0.009s run: 23.085s total: 47.232s]
-   [       OK ] (17/22) osu_allreduce_test_2 on daint:gpu using pgi [compile: 0.008s run: 17.401s total: 41.728s]
-   [       OK ] (18/22) osu_allreduce_test_16 on daint:gpu using pgi [compile: 0.008s run: 15.895s total: 36.613s]
-   [       OK ] (19/22) osu_allreduce_test_8 on daint:gpu using pgi [compile: 0.009s run: 13.485s total: 34.296s]
-   [       OK ] (20/22) osu_bandwidth_test on daint:gpu using gnu [compile: 0.011s run: 80.564s total: 85.070s]
-   [       OK ] (21/22) osu_bandwidth_test on daint:gpu using intel [compile: 0.008s run: 76.772s total: 97.828s]
-   [       OK ] (22/22) osu_bandwidth_test on daint:gpu using pgi [compile: 0.009s run: 83.003s total: 110.656s]
-   [----------] all spawned checks have finished
-
-   [  PASSED  ] Ran 22/22 test case(s) from 10 check(s) (0 failure(s), 0 skipped)
-   [==========] Finished on Sun Oct 31 22:07:25 2021
-   Run report saved in '/users/user/.reframe/reports/run-report.json'
-   Log file(s) saved in '/tmp/rfm-qst7lvou.log'
-
+.. literalinclude:: listings/osu_bench_fixtures_run.txt
+   :language: console
 
 .. tip::
    A reasonable question is how to choose between fixtures and dependencies?

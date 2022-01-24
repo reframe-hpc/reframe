@@ -98,29 +98,8 @@ Now it's time to run our first test:
    ./bin/reframe -c tutorials/basics/hello/hello1.py -r
 
 
-.. code-block:: none
-
-   [ReFrame Setup]
-     version:           3.3-dev0 (rev: 5d246bff)
-     command:           './bin/reframe -c tutorials/basics/hello/hello1.py -r'
-     launched by:       user@tresa.local
-     working directory: '/Users/user/Repositories/reframe'
-     settings file:     '<builtin>'
-     check search path: '/Users/user/Repositories/reframe/tutorials/basics/hello/hello1.py'
-     stage directory:   '/Users/user/Repositories/reframe/stage'
-     output directory:  '/Users/user/Repositories/reframe/output'
-
-   [==========] Running 1 check(s)
-   [==========] Started on Mon Oct 12 18:23:30 2020
-
-   [----------] start processing checks
-   [ RUN      ] HelloTest on generic:default using builtin
-   [       OK ] (1/1) HelloTest on generic:default using builtin [compile: 0.389s run: 0.406s total: 0.811s]
-   [----------] all spawned checks have finished
-
-   [  PASSED  ] Ran 1 test case(s) from 1 check(s) (0 failure(s))
-   [==========] Finished on Mon Oct 12 18:23:31 2020
-   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-00lf_tbi.log'
+.. literalinclude:: listings/hello1.txt
+   :language: console
 
 
 Perfect! We have verified that we have a functioning C compiler in our system.
@@ -152,64 +131,7 @@ Here are the contents of the report file for our first ReFrame run:
 
    cat ~/.reframe/reports/run-report.json
 
-.. code-block:: javascript
-
-   {
-     "session_info": {
-       "cmdline": "./bin/reframe -c tutorials/basics/hello/hello1.py -r",
-       "config_file": "<builtin>",
-       "data_version": "1.0",
-       "hostname": "dhcp-133-44.cscs.ch",
-       "prefix_output": "/Users/user/Repositories/reframe/output",
-       "prefix_stage": "/Users/user/Repositories/reframe/stage",
-       "user": "user",
-       "version": "3.1-dev2 (rev: 272e1aae)",
-       "workdir": "/Users/user/Repositories/reframe",
-       "time_start": "2020-07-24T11:05:46+0200",
-       "time_end": "2020-07-24T11:05:47+0200",
-       "time_elapsed": 0.7293069362640381,
-       "num_cases": 1,
-       "num_failures": 0
-     },
-     "runs": [
-       {
-         "num_cases": 1,
-         "num_failures": 0,
-         "runid": 0,
-         "testcases": [
-           {
-             "build_stderr": "rfm_HelloTest_build.err",
-             "build_stdout": "rfm_HelloTest_build.out",
-             "description": "HelloTest",
-             "environment": "builtin",
-             "fail_reason": null,
-             "fail_phase": null,
-             "jobid": 85063,
-             "job_stderr": "rfm_HelloTest_job.err",
-             "job_stdout": "rfm_HelloTest_job.out",
-             "name": "HelloTest",
-             "maintainers": [],
-             "nodelist": [
-               "dhcp-133-44.cscs.ch"
-             ],
-             "outputdir": "/Users/user/Repositories/reframe/output/generic/default/builtin/HelloTest",
-             "perfvars": null,
-             "result": "success",
-             "stagedir": null,
-             "scheduler": "local",
-             "system": "generic:default",
-             "tags": [],
-             "time_compile": 0.3776402473449707,
-             "time_performance": 4.506111145019531e-05,
-             "time_run": 0.2992382049560547,
-             "time_sanity": 0.0005609989166259766,
-             "time_setup": 0.0031709671020507812,
-             "time_total": 0.7213571071624756
-           }
-         ]
-       }
-     ]
-   }
+.. literalinclude:: listings/run-report.json
 
 
 More of "Hello, World!"
@@ -265,51 +187,8 @@ Let's run the test now:
 
    ./bin/reframe -c tutorials/basics/hello/hello2.py -r
 
-.. code-block:: none
-
-   [ReFrame Setup]
-     version:           3.6.0-dev.0+a3d0b0cd
-     command:           './bin/reframe -c tutorials/basics/hello/hello2.py -r'
-     launched by:       user@tresa.local
-     working directory: '/Users/user/Repositories/reframe'
-     settings file:     '<builtin>'
-     check search path: '/Users/user/Repositories/reframe/tutorials/basics/hello/hello2.py'
-     stage directory:   '/Users/user/Repositories/reframe/stage'
-     output directory:  '/Users/user/Repositories/reframe/output'
-
-   [==========] Running 2 check(s)
-   [==========] Started on Tue Mar  9 23:25:22 2021
-
-   [----------] start processing checks
-   [ RUN      ] HelloMultiLangTest_c on generic:default using builtin
-   [ RUN      ] HelloMultiLangTest_cpp on generic:default using builtin
-   [     FAIL ] (1/2) HelloMultiLangTest_cpp on generic:default using builtin [compile: 0.006s run: n/a total: 0.023s]
-   ==> test failed during 'compile': test staged in '/Users/user/Repositories/reframe/stage/generic/default/builtin/HelloMultiLangTest_cpp'
-   [       OK ] (2/2) HelloMultiLangTest_c on generic:default using builtin [compile: 0.981s run: 0.468s total: 1.475s]
-   [----------] all spawned checks have finished
-
-   [  FAILED  ] Ran 2/2 test case(s) from 2 check(s) (1 failure(s))
-   [==========] Finished on Tue Mar  9 23:25:23 2021
-
-   ==============================================================================
-   SUMMARY OF FAILURES
-   ------------------------------------------------------------------------------
-   FAILURE INFO for HelloMultiLangTest_cpp
-     * Test Description: HelloMultiLangTest_cpp
-     * System partition: generic:default
-     * Environment: builtin
-     * Stage directory: /Users/user/Repositories/reframe/stage/generic/default/builtin/HelloMultiLangTest_cpp
-     * Node list: None
-     * Job type: local (id=None)
-     * Dependencies (conceptual): []
-     * Dependencies (actual): []
-     * Maintainers: []
-     * Failing phase: compile
-     * Rerun with '-n HelloMultiLangTest_cpp -p builtin --system generic:default -r'
-     * Reason: build system error: I do not know how to compile a C++ program
-   ------------------------------------------------------------------------------
-   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-wemvsvs2.log'
-
+.. literalinclude:: listings/hello2.txt
+   :language: console
 
 Oops! The C++ test has failed.
 ReFrame complains that it does not know how to compile a C++ program.
@@ -337,6 +216,10 @@ Note that you should *not* edit this configuration file in place.
 .. code-block:: console
 
    cp reframe/core/settings.py tutorials/config/mysettings.py
+
+
+.. note::
+   You may also use edit directly the supplied ``tutorials/config/settings.py`` file, which is the actual configuration file against which the various tutorials have been evaluated.
 
 
 Here is how the new configuration file looks like with the needed additions highlighted:
@@ -370,39 +253,11 @@ Let's now rerun our "Hello, World!" tests:
 
 .. code-block:: console
 
-   ./bin/reframe -C tutorials/config/mysettings.py -c tutorials/basics/hello/hello2.py -r
+   ./bin/reframe -C tutorials/config/settings.py -c tutorials/basics/hello/hello2.py -r
 
 
-.. code-block:: none
-
-   [ReFrame Setup]
-     version:           3.6.0-dev.0+a3d0b0cd
-     command:           './bin/reframe -C tutorials/config/mysettings.py -c tutorials/basics/hello/hello2.py -r'
-     launched by:       user@tresa.local
-     working directory: '/Users/user/Repositories/reframe'
-     settings file:     'tutorials/config/settings.py'
-     check search path: '/Users/user/Repositories/reframe/tutorials/basics/hello/hello2.py'
-     stage directory:   '/Users/user/Repositories/reframe/stage'
-     output directory:  '/Users/user/Repositories/reframe/output'
-
-   [==========] Running 2 check(s)
-   [==========] Started on Tue Mar  9 23:28:00 2021
-
-   [----------] start processing checks
-   [ RUN      ] HelloMultiLangTest_c on catalina:default using gnu
-   [ RUN      ] HelloMultiLangTest_c on catalina:default using clang
-   [ RUN      ] HelloMultiLangTest_cpp on catalina:default using gnu
-   [ RUN      ] HelloMultiLangTest_cpp on catalina:default using clang
-   [       OK ] (1/4) HelloMultiLangTest_cpp on catalina:default using gnu [compile: 0.768s run: 1.115s total: 1.909s]
-   [       OK ] (2/4) HelloMultiLangTest_c on catalina:default using gnu [compile: 0.600s run: 2.230s total: 2.857s]
-   [       OK ] (3/4) HelloMultiLangTest_c on catalina:default using clang [compile: 0.238s run: 2.129s total: 2.393s]
-   [       OK ] (4/4) HelloMultiLangTest_cpp on catalina:default using clang [compile: 1.006s run: 0.427s total: 1.456s]
-   [----------] all spawned checks have finished
-
-   [  PASSED  ] Ran 4/4 test case(s) from 2 check(s) (0 failure(s))
-   [==========] Finished on Tue Mar  9 23:28:03 2021
-   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-dnubkvfi.log'
-
+.. literalinclude:: listings/hello2_catalina.txt
+   :language: console
 
 Notice how the same tests are now tried with both the ``gnu`` and ``clang`` programming environments, without having to touch them at all!
 That's one of the powerful features of ReFrame and we shall see later on, how easily we can port our tests to an HPC cluster with minimal changes.
@@ -411,7 +266,7 @@ Since we don't want to type it throughout the tutorial, we will now set it in th
 
 .. code-block:: console
 
-   export RFM_CONFIG_FILE=$(pwd)/tutorials/config/mysettings.py
+   export RFM_CONFIG_FILE=$(pwd)/tutorials/config/settings.py
 
 
 A Multithreaded "Hello, World!"
@@ -469,31 +324,8 @@ Let's run the test now:
    ./bin/reframe -c tutorials/basics/hellomp/hellomp1.py -r
 
 
-.. code-block:: none
-
-   [ReFrame Setup]
-     version:           3.3-dev0 (rev: 5d246bff)
-     command:           './bin/reframe -c tutorials/basics/hellomp/hellomp1.py -r'
-     launched by:       user@tresa.local
-     working directory: '/Users/user/Repositories/reframe'
-     settings file:     '/Users/user/Repositories/reframe/tutorials/config/settings.py'
-     check search path: '/Users/user/Repositories/reframe/tutorials/basics/hellomp/hellomp1.py'
-     stage directory:   '/Users/user/Repositories/reframe/stage'
-     output directory:  '/Users/user/Repositories/reframe/output'
-
-   [==========] Running 1 check(s)
-   [==========] Started on Mon Oct 12 20:02:37 2020
-
-   [----------] start processing checks
-   [ RUN      ] HelloThreadedTest on catalina:default using gnu
-   [ RUN      ] HelloThreadedTest on catalina:default using clang
-   [       OK ] (1/2) HelloThreadedTest on catalina:default using gnu [compile: 1.591s run: 1.205s total: 2.816s]
-   [       OK ] (2/2) HelloThreadedTest on catalina:default using clang [compile: 1.141s run: 0.309s total: 1.465s]
-   [----------] all spawned checks have finished
-
-   [  PASSED  ] Ran 2 test case(s) from 1 check(s) (0 failure(s))
-   [==========] Finished on Mon Oct 12 20:02:40 2020
-   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-h_itoc1k.log'
+.. literalinclude:: listings/hellomp1.txt
+   :language: console
 
 
 Everything looks fine, but let's inspect the actual output of one of the tests:
@@ -559,60 +391,8 @@ Let's run this version of the test now and see if it fails:
 
    ./bin/reframe -c tutorials/basics/hellomp/hellomp2.py -r
 
-.. code-block:: none
-
-   [ReFrame Setup]
-     version:           3.3-dev0 (rev: 5d246bff)
-     command:           './bin/reframe -c tutorials/basics/hellomp/hellomp2.py -r'
-     launched by:       user@tresa.local
-     working directory: '/Users/user/Repositories/reframe'
-     settings file:     '/Users/user/Repositories/reframe/tutorials/config/settings.py'
-     check search path: '/Users/user/Repositories/reframe/tutorials/basics/hellomp/hellomp2.py'
-     stage directory:   '/Users/user/Repositories/reframe/stage'
-     output directory:  '/Users/user/Repositories/reframe/output'
-
-   [==========] Running 1 check(s)
-   [==========] Started on Mon Oct 12 20:04:59 2020
-
-   [----------] start processing checks
-   [ RUN      ] HelloThreadedExtendedTest on catalina:default using gnu
-   [ RUN      ] HelloThreadedExtendedTest on catalina:default using clang
-   [     FAIL ] (1/2) HelloThreadedExtendedTest on catalina:default using gnu [compile: 1.222s run: 0.891s total: 2.130s]
-   [     FAIL ] (2/2) HelloThreadedExtendedTest on catalina:default using clang [compile: 0.835s run: 0.167s total: 1.018s]
-   [----------] all spawned checks have finished
-
-   [  FAILED  ] Ran 2 test case(s) from 1 check(s) (2 failure(s))
-   [==========] Finished on Mon Oct 12 20:05:02 2020
-
-   ==============================================================================
-   SUMMARY OF FAILURES
-   ------------------------------------------------------------------------------
-   FAILURE INFO for HelloThreadedExtendedTest
-     * Test Description: HelloThreadedExtendedTest
-     * System partition: catalina:default
-     * Environment: gnu
-     * Stage directory: /Users/user/Repositories/reframe/stage/catalina/default/gnu/HelloThreadedExtendedTest
-     * Node list: tresa.local
-     * Job type: local (id=60355)
-     * Maintainers: []
-     * Failing phase: sanity
-     * Rerun with '-n HelloThreadedExtendedTest -p gnu --system catalina:default'
-     * Reason: sanity error: 12 != 16
-   ------------------------------------------------------------------------------
-   FAILURE INFO for HelloThreadedExtendedTest
-     * Test Description: HelloThreadedExtendedTest
-     * System partition: catalina:default
-     * Environment: clang
-     * Stage directory: /Users/user/Repositories/reframe/stage/catalina/default/clang/HelloThreadedExtendedTest
-     * Node list: tresa.local
-     * Job type: local (id=60366)
-     * Maintainers: []
-     * Failing phase: sanity
-     * Rerun with '-n HelloThreadedExtendedTest -p clang --system catalina:default'
-     * Reason: sanity error: 6 != 16
-   ------------------------------------------------------------------------------
-   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-zz7x_5c8.log'
-
+.. literalinclude:: listings/hellomp2.txt
+   :language: console
 
 As expected, only some of lines are printed correctly which makes the test fail.
 To fix this test, we need to compile with ``-DSYNC_MESSAGES``, which will synchronize the printing of messages.
@@ -682,41 +462,8 @@ Let's run the test now:
 The :option:`--performance-report` will generate a short report at the end for each performance test that has run.
 
 
-.. code-block:: none
-
-   [ReFrame Setup]
-     version:           3.3-dev0 (rev: 5d246bff)
-     command:           './bin/reframe -c tutorials/basics/stream/stream1.py -r --performance-report'
-     launched by:       user@tresa.local
-     working directory: '/Users/user/Repositories/reframe'
-     settings file:     '/Users/user/Repositories/reframe/tutorials/config/settings.py'
-     check search path: '/Users/user/Repositories/reframe/tutorials/basics/stream/stream1.py'
-     stage directory:   '/Users/user/Repositories/reframe/stage'
-     output directory:  '/Users/user/Repositories/reframe/output'
-
-   [==========] Running 1 check(s)
-   [==========] Started on Mon Oct 12 20:06:09 2020
-
-   [----------] start processing checks
-   [ RUN      ] StreamTest on catalina:default using gnu
-   [       OK ] (1/1) StreamTest on catalina:default using gnu [compile: 1.386s run: 2.377s total: 3.780s]
-   [----------] all spawned checks have finished
-
-   [  PASSED  ] Ran 1 test case(s) from 1 check(s) (0 failure(s))
-   [==========] Finished on Mon Oct 12 20:06:13 2020
-   ==============================================================================
-   PERFORMANCE REPORT
-   ------------------------------------------------------------------------------
-   StreamTest
-   - catalina:default
-      - gnu
-         * num_tasks: 1
-         * Copy: 24326.7 MB/s
-         * Scale: 16664.2 MB/s
-         * Add: 18398.7 MB/s
-         * Triad: 18930.6 MB/s
-   ------------------------------------------------------------------------------
-   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-gczplnic.log'
+.. literalinclude:: listings/stream1.txt
+   :language: console
 
 
 ---------------------------------------------------
@@ -794,20 +541,8 @@ If any obtained performance value is beyond its respective thresholds, the test 
 
    ./bin/reframe -c tutorials/basics/stream/stream3.py -r --performance-report
 
-
-.. code-block:: none
-
-   FAILURE INFO for StreamWithRefTest
-     * Test Description: StreamWithRefTest
-     * System partition: catalina:default
-     * Environment: gnu
-     * Stage directory: /Users/user/Repositories/reframe/stage/catalina/default/gnu/StreamWithRefTest
-     * Node list: tresa.local
-     * Job type: local (id=62114)
-     * Maintainers: []
-     * Failing phase: performance
-     * Rerun with '-n StreamWithRefTest -p gnu --system catalina:default'
-     * Reason: performance error: failed to meet reference: Copy=24586.5, expected 55200 (l=52440.0, u=57960.0)
+.. literalinclude:: listings/stream3_failure_only.txt
+   :language: console
 
 ------------------------------
 Examining the performance logs
@@ -833,17 +568,8 @@ Let's inspect the log file from our last test:
 
    tail perflogs/catalina/default/StreamWithRefTest.log
 
-
-.. code-block:: none
-
-   2020-06-24T00:27:06|reframe 3.1-dev0 (rev: 9d92d0ec)|StreamWithRefTest on catalina:default using gnu|jobid=58384|Copy=24762.2|ref=25200 (l=-0.05, u=0.05)|MB/s
-   2020-06-24T00:27:06|reframe 3.1-dev0 (rev: 9d92d0ec)|StreamWithRefTest on catalina:default using gnu|jobid=58384|Scale=16784.6|ref=16800 (l=-0.05, u=0.05)|MB/s
-   2020-06-24T00:27:06|reframe 3.1-dev0 (rev: 9d92d0ec)|StreamWithRefTest on catalina:default using gnu|jobid=58384|Add=18553.8|ref=18500 (l=-0.05, u=0.05)|MB/s
-   2020-06-24T00:27:06|reframe 3.1-dev0 (rev: 9d92d0ec)|StreamWithRefTest on catalina:default using gnu|jobid=58384|Triad=18679.0|ref=18800 (l=-0.05, u=0.05)|MB/s
-   2020-06-24T12:42:07|reframe 3.1-dev0 (rev: 138cbd68)|StreamWithRefTest on catalina:default using gnu|jobid=62114|Copy=24586.5|ref=55200 (l=-0.05, u=0.05)|MB/s
-   2020-06-24T12:42:07|reframe 3.1-dev0 (rev: 138cbd68)|StreamWithRefTest on catalina:default using gnu|jobid=62114|Scale=16880.6|ref=16800 (l=-0.05, u=0.05)|MB/s
-   2020-06-24T12:42:07|reframe 3.1-dev0 (rev: 138cbd68)|StreamWithRefTest on catalina:default using gnu|jobid=62114|Add=18570.4|ref=18500 (l=-0.05, u=0.05)|MB/s
-   2020-06-24T12:42:07|reframe 3.1-dev0 (rev: 138cbd68)|StreamWithRefTest on catalina:default using gnu|jobid=62114|Triad=19048.3|ref=18800 (l=-0.05, u=0.05)|MB/s
+.. literalinclude:: listings/perflogs.txt
+   :language: console
 
 Several information are printed for each run, such as the performance variables, their value, their references and thresholds etc.
 The default format is in a form suitable for easy parsing, but you may fully control not only the format, but also what is being logged from the configuration file.
@@ -924,142 +650,11 @@ We will only do so with the final versions of the tests from the previous sectio
 
 .. code-block:: console
 
-   export RFM_CONFIG_FILE=$(pwd)/tutorials/config/mysettings.py
+   export RFM_CONFIG_FILE=$(pwd)/tutorials/config/settings.py
    ./bin/reframe -c tutorials/basics/ -R -n 'HelloMultiLangTest|HelloThreadedExtended2Test|StreamWithRefTest' --performance-report -r
 
-
-.. code-block:: none
-
-   [ReFrame Setup]
-     version:           3.4-dev2 (rev: f102d4bb)
-     command:           './bin/reframe -c tutorials/basics/ -R -n HelloMultiLangTest|HelloThreadedExtended2Test|StreamWithRefTest --performance-report -r'
-     launched by:       user@dom101
-     working directory: '/users/user/Devel/reframe'
-     settings file:     '/users/user/Devel/reframe/tutorials/config/settings.py'
-     check search path: (R) '/users/user/Devel/reframe/tutorials/basics'
-     stage directory:   '/users/user/Devel/reframe/stage'
-     output directory:  '/users/user/Devel/reframe/output'
-
-   [==========] Running 4 check(s)
-   [==========] Started on Mon Jan 25 00:34:32 2021
-
-   [----------] start processing checks
-   [ RUN      ] HelloMultiLangTest_c on daint:login using builtin
-   [ RUN      ] HelloMultiLangTest_c on daint:login using gnu
-   [ RUN      ] HelloMultiLangTest_c on daint:login using intel
-   [ RUN      ] HelloMultiLangTest_c on daint:login using pgi
-   [ RUN      ] HelloMultiLangTest_c on daint:login using cray
-   [ RUN      ] HelloMultiLangTest_c on daint:gpu using gnu
-   [ RUN      ] HelloMultiLangTest_c on daint:gpu using intel
-   [ RUN      ] HelloMultiLangTest_c on daint:gpu using pgi
-   [ RUN      ] HelloMultiLangTest_c on daint:gpu using cray
-   [ RUN      ] HelloMultiLangTest_c on daint:mc using gnu
-   [ RUN      ] HelloMultiLangTest_c on daint:mc using intel
-   [ RUN      ] HelloMultiLangTest_c on daint:mc using pgi
-   [ RUN      ] HelloMultiLangTest_c on daint:mc using cray
-   [ RUN      ] HelloMultiLangTest_cpp on daint:login using builtin
-   [ RUN      ] HelloMultiLangTest_cpp on daint:login using gnu
-   [ RUN      ] HelloMultiLangTest_cpp on daint:login using intel
-   [ RUN      ] HelloMultiLangTest_cpp on daint:login using pgi
-   [ RUN      ] HelloMultiLangTest_cpp on daint:login using cray
-   [ RUN      ] HelloMultiLangTest_cpp on daint:gpu using gnu
-   [ RUN      ] HelloMultiLangTest_cpp on daint:gpu using intel
-   [ RUN      ] HelloMultiLangTest_cpp on daint:gpu using pgi
-   [ RUN      ] HelloMultiLangTest_cpp on daint:gpu using cray
-   [ RUN      ] HelloMultiLangTest_cpp on daint:mc using gnu
-   [ RUN      ] HelloMultiLangTest_cpp on daint:mc using intel
-   [ RUN      ] HelloMultiLangTest_cpp on daint:mc using pgi
-   [ RUN      ] HelloMultiLangTest_cpp on daint:mc using cray
-   [ RUN      ] HelloThreadedExtended2Test on daint:login using builtin
-   [ RUN      ] HelloThreadedExtended2Test on daint:login using gnu
-   [ RUN      ] HelloThreadedExtended2Test on daint:login using intel
-   [ RUN      ] HelloThreadedExtended2Test on daint:login using pgi
-   [ RUN      ] HelloThreadedExtended2Test on daint:login using cray
-   [ RUN      ] HelloThreadedExtended2Test on daint:gpu using gnu
-   [ RUN      ] HelloThreadedExtended2Test on daint:gpu using intel
-   [ RUN      ] HelloThreadedExtended2Test on daint:gpu using pgi
-   [ RUN      ] HelloThreadedExtended2Test on daint:gpu using cray
-   [ RUN      ] HelloThreadedExtended2Test on daint:mc using gnu
-   [ RUN      ] HelloThreadedExtended2Test on daint:mc using intel
-   [ RUN      ] HelloThreadedExtended2Test on daint:mc using pgi
-   [ RUN      ] HelloThreadedExtended2Test on daint:mc using cray
-   [ RUN      ] StreamWithRefTest on daint:login using gnu
-   [ RUN      ] StreamWithRefTest on daint:gpu using gnu
-   [ RUN      ] StreamWithRefTest on daint:mc using gnu
-   [       OK ] ( 1/42) HelloThreadedExtended2Test on daint:login using cray [compile: 0.959s run: 56.203s total: 57.189s]
-   [       OK ] ( 2/42) HelloThreadedExtended2Test on daint:login using intel [compile: 2.096s run: 61.438s total: 64.062s]
-   [       OK ] ( 3/42) HelloMultiLangTest_cpp on daint:login using cray [compile: 0.479s run: 98.909s total: 99.406s]
-   [       OK ] ( 4/42) HelloMultiLangTest_c on daint:login using pgi [compile: 1.342s run: 137.250s total: 138.609s]
-   [       OK ] ( 5/42) HelloThreadedExtended2Test on daint:gpu using cray [compile: 0.792s run: 33.748s total: 34.558s]
-   [       OK ] ( 6/42) HelloThreadedExtended2Test on daint:gpu using intel [compile: 2.257s run: 48.545s total: 50.825s]
-   [       OK ] ( 7/42) HelloMultiLangTest_cpp on daint:gpu using cray [compile: 0.469s run: 85.383s total: 85.873s]
-   [       OK ] ( 8/42) HelloMultiLangTest_c on daint:gpu using cray [compile: 0.132s run: 124.678s total: 124.827s]
-   [       OK ] ( 9/42) HelloThreadedExtended2Test on daint:mc using cray [compile: 0.775s run: 15.569s total: 16.362s]
-   [       OK ] (10/42) HelloThreadedExtended2Test on daint:mc using intel [compile: 2.814s run: 24.600s total: 27.438s]
-   [       OK ] (11/42) HelloMultiLangTest_cpp on daint:mc using cray [compile: 0.474s run: 70.035s total: 70.528s]
-   [       OK ] (12/42) HelloMultiLangTest_c on daint:mc using cray [compile: 0.138s run: 110.807s total: 110.963s]
-   [       OK ] (13/42) HelloThreadedExtended2Test on daint:login using builtin [compile: 0.790s run: 67.313s total: 68.124s]
-   [       OK ] (14/42) HelloMultiLangTest_cpp on daint:login using pgi [compile: 1.799s run: 100.490s total: 102.683s]
-   [       OK ] (15/42) HelloMultiLangTest_cpp on daint:login using builtin [compile: 0.497s run: 108.380s total: 108.895s]
-   [       OK ] (16/42) HelloMultiLangTest_c on daint:login using gnu [compile: 1.337s run: 142.017s total: 143.373s]
-   [       OK ] (17/42) HelloMultiLangTest_cpp on daint:gpu using pgi [compile: 1.851s run: 88.935s total: 90.805s]
-   [       OK ] (18/42) HelloMultiLangTest_cpp on daint:gpu using gnu [compile: 1.640s run: 97.855s total: 99.513s]
-   [       OK ] (19/42) HelloMultiLangTest_c on daint:gpu using intel [compile: 1.578s run: 131.689s total: 133.287s]
-   [       OK ] (20/42) HelloMultiLangTest_cpp on daint:mc using pgi [compile: 1.917s run: 73.276s total: 75.213s]
-   [       OK ] (21/42) HelloMultiLangTest_cpp on daint:mc using gnu [compile: 1.727s run: 82.213s total: 83.960s]
-   [       OK ] (22/42) HelloMultiLangTest_c on daint:mc using intel [compile: 1.573s run: 117.806s total: 119.402s]
-   [       OK ] (23/42) HelloMultiLangTest_cpp on daint:login using gnu [compile: 1.644s run: 106.956s total: 108.618s]
-   [       OK ] (24/42) HelloMultiLangTest_c on daint:login using cray [compile: 0.146s run: 137.301s total: 137.466s]
-   [       OK ] (25/42) HelloMultiLangTest_c on daint:login using intel [compile: 1.613s run: 140.058s total: 141.689s]
-   [       OK ] (26/42) HelloMultiLangTest_c on daint:login using builtin [compile: 0.122s run: 143.692s total: 143.833s]
-   [       OK ] (27/42) HelloMultiLangTest_c on daint:gpu using pgi [compile: 1.361s run: 127.958s total: 129.341s]
-   [       OK ] (28/42) HelloMultiLangTest_c on daint:gpu using gnu [compile: 1.337s run: 136.031s total: 137.386s]
-   [       OK ] (29/42) HelloMultiLangTest_c on daint:mc using pgi [compile: 1.410s run: 113.998s total: 115.428s]
-   [       OK ] (30/42) HelloMultiLangTest_c on daint:mc using gnu [compile: 1.344s run: 122.086s total: 123.453s]
-   [       OK ] (31/42) HelloThreadedExtended2Test on daint:login using pgi [compile: 2.733s run: 60.105s total: 62.951s]
-   [       OK ] (32/42) HelloMultiLangTest_cpp on daint:login using intel [compile: 2.780s run: 104.916s total: 107.716s]
-   [       OK ] (33/42) HelloThreadedExtended2Test on daint:gpu using pgi [compile: 2.373s run: 39.144s total: 41.545s]
-   [       OK ] (34/42) HelloMultiLangTest_cpp on daint:gpu using intel [compile: 1.835s run: 95.042s total: 96.896s]
-   [       OK ] (35/42) HelloThreadedExtended2Test on daint:mc using pgi [compile: 2.686s run: 20.751s total: 23.457s]
-   [       OK ] (36/42) HelloMultiLangTest_cpp on daint:mc using intel [compile: 1.862s run: 79.275s total: 81.170s]
-   [       OK ] (37/42) HelloThreadedExtended2Test on daint:login using gnu [compile: 2.106s run: 67.284s total: 69.409s]
-   [       OK ] (38/42) HelloThreadedExtended2Test on daint:gpu using gnu [compile: 2.471s run: 56.360s total: 58.871s]
-   [       OK ] (39/42) HelloThreadedExtended2Test on daint:mc using gnu [compile: 2.007s run: 32.300s total: 34.330s]
-   [       OK ] (40/42) StreamWithRefTest on daint:login using gnu [compile: 1.941s run: 14.373s total: 16.337s]
-   [       OK ] (41/42) StreamWithRefTest on daint:gpu using gnu [compile: 1.954s run: 11.815s total: 13.791s]
-   [       OK ] (42/42) StreamWithRefTest on daint:mc using gnu [compile: 2.513s run: 10.672s total: 13.213s]
-   [----------] all spawned checks have finished
-
-   [  PASSED  ] Ran 42 test case(s) from 4 check(s) (0 failure(s))
-   [==========] Finished on Mon Jan 25 00:37:02 2021
-   ==============================================================================
-   PERFORMANCE REPORT
-   ------------------------------------------------------------------------------
-   StreamWithRefTest
-   - daint:login
-      - gnu
-         * num_tasks: 1
-         * Copy: 72923.3 MB/s
-         * Scale: 45663.4 MB/s
-         * Add: 49417.7 MB/s
-         * Triad: 49426.4 MB/s
-   - daint:gpu
-      - gnu
-         * num_tasks: 1
-         * Copy: 50638.7 MB/s
-         * Scale: 35186.0 MB/s
-         * Add: 38564.4 MB/s
-         * Triad: 38771.1 MB/s
-   - daint:mc
-      - gnu
-         * num_tasks: 1
-         * Copy: 19072.5 MB/s
-         * Scale: 10395.6 MB/s
-         * Add: 11041.0 MB/s
-         * Triad: 11079.2 MB/s
-   ------------------------------------------------------------------------------
-   Log file(s) saved in: '/tmp/rfm-r4yjva71.log'
-
+.. literalinclude:: listings/alltests_daint.txt
+   :language: console
 
 There it is!
 Without any change in our tests, we could simply run them in a HPC cluster with all of its intricacies.
@@ -1154,132 +749,8 @@ Let's run our adapted test now:
    ./bin/reframe -c tutorials/basics/stream/stream4.py -r --performance-report
 
 
-.. code-block:: none
-
-   [ReFrame Setup]
-     version:           3.3-dev0 (rev: cb974c13)
-     command:           './bin/reframe -C tutorials/config/settings.py -c tutorials/basics/stream/stream4.py -r --performance-report'
-     launched by:       user@dom101
-     working directory: '/users/user/Devel/reframe'
-     settings file:     'tutorials/config/settings.py'
-     check search path: '/users/user/Devel/reframe/tutorials/basics/stream/stream4.py'
-     stage directory:   '/users/user/Devel/reframe/stage'
-     output directory:  '/users/user/Devel/reframe/output'
-
-   [==========] Running 1 check(s)
-   [==========] Started on Mon Oct 12 20:16:03 2020
-
-   [----------] start processing checks
-   [ RUN      ] StreamMultiSysTest on daint:login using gnu
-   [ RUN      ] StreamMultiSysTest on daint:login using intel
-   [ RUN      ] StreamMultiSysTest on daint:login using pgi
-   [ RUN      ] StreamMultiSysTest on daint:login using cray
-   [ RUN      ] StreamMultiSysTest on daint:gpu using gnu
-   [ RUN      ] StreamMultiSysTest on daint:gpu using intel
-   [ RUN      ] StreamMultiSysTest on daint:gpu using pgi
-   [ RUN      ] StreamMultiSysTest on daint:gpu using cray
-   [ RUN      ] StreamMultiSysTest on daint:mc using gnu
-   [ RUN      ] StreamMultiSysTest on daint:mc using intel
-   [ RUN      ] StreamMultiSysTest on daint:mc using pgi
-   [ RUN      ] StreamMultiSysTest on daint:mc using cray
-   [       OK ] ( 1/12) StreamMultiSysTest on daint:gpu using pgi [compile: 2.092s run: 11.201s total: 13.307s]
-   [       OK ] ( 2/12) StreamMultiSysTest on daint:gpu using gnu [compile: 2.349s run: 17.140s total: 19.509s]
-   [       OK ] ( 3/12) StreamMultiSysTest on daint:login using pgi [compile: 2.230s run: 20.946s total: 23.189s]
-   [       OK ] ( 4/12) StreamMultiSysTest on daint:login using gnu [compile: 2.161s run: 27.093s total: 29.266s]
-   [       OK ] ( 5/12) StreamMultiSysTest on daint:mc using gnu [compile: 1.954s run: 7.904s total: 9.870s]
-   [       OK ] ( 6/12) StreamMultiSysTest on daint:gpu using intel [compile: 2.286s run: 14.686s total: 16.984s]
-   [       OK ] ( 7/12) StreamMultiSysTest on daint:login using intel [compile: 2.520s run: 24.427s total: 26.960s]
-   [       OK ] ( 8/12) StreamMultiSysTest on daint:mc using intel [compile: 2.312s run: 5.350s total: 7.678s]
-   [       OK ] ( 9/12) StreamMultiSysTest on daint:gpu using cray [compile: 0.672s run: 10.791s total: 11.476s]
-   [       OK ] (10/12) StreamMultiSysTest on daint:login using cray [compile: 0.706s run: 20.505s total: 21.229s]
-   [       OK ] (11/12) StreamMultiSysTest on daint:mc using cray [compile: 0.674s run: 2.763s total: 3.453s]
-   [       OK ] (12/12) StreamMultiSysTest on daint:mc using pgi [compile: 2.088s run: 5.124s total: 7.224s]
-   [----------] all spawned checks have finished
-
-   [  PASSED  ] Ran 12 test case(s) from 1 check(s) (0 failure(s))
-   [==========] Finished on Mon Oct 12 20:16:36 2020
-   ==============================================================================
-   PERFORMANCE REPORT
-   ------------------------------------------------------------------------------
-   StreamMultiSysTest
-   - daint:login
-      - gnu
-         * num_tasks: 1
-         * Copy: 95784.6 MB/s
-         * Scale: 73747.3 MB/s
-         * Add: 79138.3 MB/s
-         * Triad: 81253.3 MB/s
-      - intel
-         * num_tasks: 1
-         * Copy: 103540.5 MB/s
-         * Scale: 109257.6 MB/s
-         * Add: 112189.8 MB/s
-         * Triad: 113440.8 MB/s
-      - pgi
-         * num_tasks: 1
-         * Copy: 99071.7 MB/s
-         * Scale: 74721.3 MB/s
-         * Add: 81206.4 MB/s
-         * Triad: 78328.9 MB/s
-      - cray
-         * num_tasks: 1
-         * Copy: 96664.5 MB/s
-         * Scale: 75637.4 MB/s
-         * Add: 74759.3 MB/s
-         * Triad: 73450.6 MB/s
-   - daint:gpu
-      - gnu
-         * num_tasks: 1
-         * Copy: 42293.7 MB/s
-         * Scale: 38095.1 MB/s
-         * Add: 43080.7 MB/s
-         * Triad: 43719.2 MB/s
-      - intel
-         * num_tasks: 1
-         * Copy: 52563.0 MB/s
-         * Scale: 54316.5 MB/s
-         * Add: 59044.5 MB/s
-         * Triad: 59165.5 MB/s
-      - pgi
-         * num_tasks: 1
-         * Copy: 50710.5 MB/s
-         * Scale: 39639.5 MB/s
-         * Add: 44104.5 MB/s
-         * Triad: 44143.7 MB/s
-      - cray
-         * num_tasks: 1
-         * Copy: 51159.8 MB/s
-         * Scale: 39176.0 MB/s
-         * Add: 43588.8 MB/s
-         * Triad: 43866.8 MB/s
-   - daint:mc
-      - gnu
-         * num_tasks: 1
-         * Copy: 48744.5 MB/s
-         * Scale: 38774.7 MB/s
-         * Add: 43760.0 MB/s
-         * Triad: 44143.1 MB/s
-      - intel
-         * num_tasks: 1
-         * Copy: 52707.0 MB/s
-         * Scale: 49011.8 MB/s
-         * Add: 57513.3 MB/s
-         * Triad: 57678.3 MB/s
-      - pgi
-         * num_tasks: 1
-         * Copy: 46274.3 MB/s
-         * Scale: 40628.6 MB/s
-         * Add: 44352.4 MB/s
-         * Triad: 44630.2 MB/s
-      - cray
-         * num_tasks: 1
-         * Copy: 46912.5 MB/s
-         * Scale: 40076.9 MB/s
-         * Add: 43639.0 MB/s
-         * Triad: 44068.3 MB/s
-   ------------------------------------------------------------------------------
-   Log file(s) saved in: '/tmp/rfm-odx7qewe.log'
-
+.. literalinclude:: listings/stream4_daint.txt
+   :language: console
 
 Notice the improved performance of the benchmark in all partitions and the differences in performance between the different compilers.
 

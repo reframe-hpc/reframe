@@ -97,7 +97,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
         self.printer.status(
             'RUN',
-            f'{check.name} on {partition.fullname} using {environ.name}'
+            f'{check.name} @{partition.fullname}+{environ.name}'
         )
         task = RegressionTask(case, self.task_listeners)
         self._task_index[case] = task
@@ -437,11 +437,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 return 1
         elif self.deps_succeeded(task):
             try:
-                self.printer.status(
-                    'RUN', f'{task.check.name} on '
-                    f'{task.testcase.partition.fullname} using '
-                    f'{task.testcase.environ.name}'
-                )
+                part = task.testcase.partition
+                env  = task.testcase.environ.name
+                self.printer.status('RUN', task.info())
                 task.setup(task.testcase.partition,
                            task.testcase.environ,
                            sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
@@ -592,7 +590,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         timings = task.pipeline_timings(['compile_complete',
                                          'run_complete',
                                          'total'])
-        msg = f'{task.check.info()} [{timings}]'
+        msg = f'{task.info()} [{timings}]'
         if task.failed_stage == 'cleanup':
             self.printer.status('ERROR', msg, just='right')
         else:
@@ -616,7 +614,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         timings = task.pipeline_timings(['compile_complete',
                                          'run_complete',
                                          'total'])
-        msg = f'{task.check.info()} [{timings}]'
+        msg = f'{task.info()} [{timings}]'
         self.printer.status('OK', msg, just='right')
         timings = task.pipeline_timings(['setup',
                                          'compile_complete',

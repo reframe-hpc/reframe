@@ -64,7 +64,7 @@ def make_exec_ctx(tmp_path):
 
 @pytest.fixture
 def make_exec_ctx_g(make_exec_ctx):
-    '''Same as ``make_exec_ctx_g`` except that it is a generator.
+    '''Same as ``make_exec_ctx`` except that it is a generator.
 
     You should use this fixture if you want to pass it to ``yield from``
     expressions.
