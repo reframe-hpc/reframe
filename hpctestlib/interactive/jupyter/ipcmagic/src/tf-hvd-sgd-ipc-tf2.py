@@ -31,7 +31,8 @@ import socket
 
 
 print(os.popen("ps -u $USER | grep ip").read())
-socket.gethostname()
+hostname = socket.gethostname()
+print('Running on node:', hostname)
 """)
 
 get_ipython().run_cell_magic('px', '',
