@@ -12,14 +12,14 @@ site_configuration = {
         {
             'name': 'hb120rs_v3_centos-hpc_8_1-gen2_latest',
             'descr': 'Azure HBv3x CentOS-HPC 8.1',
-            'hostnames': ['headnode'],
+            'hostnames': [''],
             'modules_system': 'tmod4',
             'partitions': [
                 {
                     'name': 'default',
                     'scheduler': 'local',
                     'launcher': 'local',
-                    'environs': ['gnu'],
+                    'environs': ['gnu-azure-hpc'],
                 }
             ]
         },
@@ -35,7 +35,7 @@ site_configuration = {
                     'environs': ['builtin']
                 }
             ]
-        },
+        }
     ],
     'environments': [
         {
@@ -45,12 +45,11 @@ site_configuration = {
             'ftn': ''
         },
         {
-            'name': 'gnu',
+            'name': 'gnu-azure-hpc',
             'modules': ['gcc-9.2.0'],
             'cc': 'gcc',
             'cxx': 'g++',
-            'ftn': 'gfortran',
-            'target_systems': ['hb120rs_v3_centos-hpc_8_1-gen2_latest']
+            'ftn': 'gfortran'
         },
     ],
     'logging': [

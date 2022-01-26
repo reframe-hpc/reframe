@@ -291,7 +291,15 @@ class _SiteConfig:
                                                img_ref['sku'].lower(),
                                                img_ref['version'].lower())
                 # If on Azure return generated sysname
-                return sysname
+                getlogger().debug(f'generated azure system {sysname}')
+                getlogger().debug(f'{self._site_config["systems"]}')
+
+                for system in self._site_config['systems']:
+                    if sysname == system["name"]:
+                        getlogger().debug(f'system {sysname} found in {system}')
+                        return sysname
+                else:
+                    getlogger().debug(f'Did not find system {sysname} in the config file')
             except Exception as e:
                 raise ConfigError(f"\nError {pp_results}"
                                   f"\nError {e} "
@@ -299,7 +307,11 @@ class _SiteConfig:
                 
         for system in self._site_config['systems']:
             for patt in system['hostnames']:
-                if re.match(patt, hostname):
+                getlogger().debug(
+                    f'{patt!r} , {hostname!r}'
+                )
+
+                if patt is not "" and re.match(patt, hostname):
                     sysname = system['name']
                     getlogger().debug(
                         f'Configuration found: picking system {sysname!r}'
