@@ -34,7 +34,7 @@ class QuantumESPRESSOCheck(rfm.RunOnlyRegressionTest):
         }
 
     @sanity_function
-    def assert_simulation_successful(self):
+    def assert_simulation_success(self):
         energy = sn.extractsingle(r'!\s+total energy\s+=\s+(?P<energy>\S+) Ry',
                                   self.stdout, 'energy', float)
         energy_diff = sn.abs(energy-self.energy_reference)
