@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -9,7 +9,8 @@
 
 __all__ = [
     'CompileOnlyRegressionTest', 'RegressionTest', 'RunOnlyRegressionTest',
-    'DEPEND_BY_ENV', 'DEPEND_EXACT', 'DEPEND_FULLY', 'final', 'RegressionMixin'
+    'DEPEND_BY_ENV', 'DEPEND_EXACT', 'DEPEND_FULLY', 'final',
+    'RegressionMixin'
 ]
 
 
@@ -43,6 +44,7 @@ from reframe.core.exceptions import (BuildError, DependencyError,
                                      ReframeSyntaxError)
 from reframe.core.meta import RegressionTestMeta
 from reframe.core.schedulers import Job
+from reframe.core.variables import DEPRECATE_WR
 from reframe.core.warnings import user_deprecation_warning
 
 
@@ -209,14 +211,22 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     #: The name of the test.
     #:
-    #: :type: string that can contain any character except ``/``
-    #: :default: For non-parameterised tests, the default name is the test
-    #:   class name. For parameterised tests, the default name is constructed
-    #:   by concatenating the test class name and the string representations
-    #:   of every test parameter: ``TestClassName_<param1>_<param2>``.
-    #:   Any non-alphanumeric value in a parameter's representation is
-    #:   converted to ``_``.
-    name = variable(typ.Str[r'[^\/]+'])
+    #: This is an alias of :attr:`unique_name`.
+    #:
+    #: .. warning::
+    #:
+    #:    Setting the name of a test is deprecated and will be disabled in the
+    #:    future. If you were setting the name of a test to circumvent the old
+    #:    long parameterized test names in order to reference them in
+    #:    dependency chains, please refer to :ref:`param_deps` for more details on how
+    #:    to achieve this.
+    #:
+    #: .. versionchanged:: 3.10.0
+    #:    Setting the :attr:`name` attribute is deprecated.
+    #:
+    name = deprecate(variable(typ.Str[r'[^\/]+'], attr_name='_rfm_unique_name'),
+                     "setting the 'name' attribute is deprecated and "
+                     "will be disabled in the future", DEPRECATE_WR)
 
     #: List of programming environments supported by this test.
     #:
@@ -258,7 +268,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: A detailed description of the test.
     #:
     #: :type: :class:`str`
-    #: :default: ``self.name``
+    #: :default: ``self.display_name``
     descr = variable(str)
 
     #: The path to the source file or source directory of the test.
@@ -353,14 +363,15 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: The name of the executable to be launched during the run phase.
     #:
     #: If this variable is undefined when entering the compile pipeline
-    #: stage, it will be set to ``os.path.join('.', self.name)``. Classes
-    #: that override the compile stage may leave this variable undefined.
+    #: stage, it will be set to ``os.path.join('.', self.unique_name)``.
+    #: Classes that override the compile stage may leave this variable
+    #: undefined.
     #:
     #: :type: :class:`str`
     #: :default: :class:`required`
     #:
     #: .. versionchanged:: 3.7.3
-    #:    Default value changed from ``os.path.join('.', self.name)`` to
+    #:    Default value changed from ``os.path.join('.', self.unique_name)`` to
     #:    :class:`required`.
     executable = variable(str)
 
@@ -898,18 +909,19 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     @deferrable
     def __rfm_init__(self, *args, prefix=None, **kwargs):
-        if not hasattr(self, 'name'):
-            self.name = type(self).fullname(self.variant_num)
+        if not self.is_fixture() and not hasattr(self, '_rfm_unique_name'):
+            self._rfm_unique_name = type(self).variant_name(self.variant_num)
 
             # Add the parameters from the parameterized_test decorator.
             if args or kwargs:
                 arg_names = map(lambda x: util.toalphanum(str(x)),
                                 itertools.chain(args, kwargs.values()))
-                self.name += '_' + '_'.join(arg_names)
+                self._rfm_unique_name += '_' + '_'.join(arg_names)
+                self._rfm_old_style_params = True
 
         # Pass if descr is a required variable.
         if not hasattr(self, 'descr'):
-            self.descr = self.name
+            self.descr = self.display_name
 
         self._perfvalues = {}
 
@@ -1022,6 +1034,71 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             )
 
     # Export read-only views to interesting fields
+
+    @property
+    def unique_name(self):
+        '''The unique name of this test.
+
+        :type: :class:`str`
+
+        .. versionadded:: 3.10.0
+        '''
+        return self._rfm_unique_name
+
+    @property
+    def display_name(self):
+        '''A human-readable version of the name this test.
+
+        This name contains a string representation of the various parameters
+        of this specific test variant.
+
+        :type: :class:`str`
+
+        .. note::
+           The display name may not be unique.
+
+        .. versionadded:: 3.10.0
+
+        '''
+        def _format_params(cls, info, prefix=' %'):
+            name = ''
+            for p, v in info['params'].items():
+                format_fn = cls.raw_params[p].format
+                name += f'{prefix}{p}={format_fn(v)}'
+
+            for f, v in info['fixtures'].items():
+                if isinstance(v, tuple):
+                    # This is join fixture
+                    continue
+
+                fixt = cls.fixture_space[f]
+                name += _format_params(fixt.cls, v, f'{prefix}{f}.')
+
+                # Append any variables set for the fixtures
+                for var, val in fixt.variables.items():
+                    name += f'{prefix}{f}.{var}={val}'
+
+            return name
+
+        if hasattr(self, '_rfm_old_style_params'):
+            return self.unique_name
+
+        if hasattr(self, '_rfm_display_name'):
+            return self._rfm_display_name
+
+        cls = type(self)
+        basename = cls.__name__
+        variant_info = cls.get_variant_info(self.variant_num, recurse=True)
+        self._rfm_display_name = basename + _format_params(cls, variant_info)
+        if self.is_fixture():
+            # Add the variable info and scope
+            fixt_data = self._rfm_fixt_data
+            suffix = ''.join(f' %{k}={v}' for k,
+                             v in fixt_data.variables.items())
+            suffix += f' ~{fixt_data.scope_enc}'
+            self._rfm_display_name += suffix
+
+        return self._rfm_display_name
 
     @property
     def current_environ(self):
@@ -1206,12 +1283,13 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
            you use the :class:`RegressionTest`'s attributes, because this
            method may be called at any point of the test's lifetime.
         '''
-        ret = self.name
+
+        ret = self.display_name
         if self.current_partition:
-            ret += ' on %s' % self.current_partition.fullname
+            ret += f' @{self.current_partition.fullname}'
 
         if self.current_environ:
-            ret += ' using %s' % self.current_environ.name
+            ret += f'+{self.current_environ.name}'
 
         return ret
 
@@ -1334,11 +1412,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             runtime = rt.runtime()
             self._stagedir = runtime.make_stagedir(
                 self.current_system.name, self._current_partition.name,
-                self._current_environ.name, self.name
+                self._current_environ.name, self.unique_name
             )
             self._outputdir = runtime.make_outputdir(
                 self.current_system.name, self._current_partition.name,
-                self._current_environ.name, self.name
+                self._current_environ.name, self.unique_name
             )
         except OSError as e:
             raise PipelineError('failed to set up paths') from e
@@ -1399,10 +1477,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self._current_environ = environ
         self._setup_paths()
         self._resolve_fixtures()
-        self._job = self._setup_job(f'rfm_{self.name}_job',
+        self._job = self._setup_job(f'rfm_{self.unique_name}_job',
                                     self.local,
                                     **job_opts)
-        self._build_job = self._setup_job(f'rfm_{self.name}_build',
+        self._build_job = self._setup_job(f'rfm_{self.unique_name}_build',
                                           self.local or self.build_locally,
                                           **job_opts)
 
@@ -1470,7 +1548,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         # Set executable (only if hasn't been provided)
         if not hasattr(self, 'executable'):
-            self.executable = os.path.join('.', self.name)
+            self.executable = os.path.join('.', self.unique_name)
 
         # Verify the sourcepath and determine the sourcepath in the stagedir
         if (os.path.isabs(self.sourcepath) or
@@ -1684,6 +1762,23 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         # Update num_tasks if test is flexible
         if self.job.sched_flex_alloc_nodes:
             self.num_tasks = self.job.num_tasks
+
+    @final
+    def compile_complete(self):
+        '''Check if the build phase has completed.
+
+        :returns: :class:`True` if the associated build job has finished,
+            :class:`False` otherwise.
+
+            If no job descriptor is yet associated with this test,
+            :class:`True` is returned.
+        :raises reframe.core.exceptions.ReframeError: In case of errors.
+
+        '''
+        if not self._build_job:
+            return True
+
+        return self._build_job.finished()
 
     @final
     def run_complete(self):
@@ -2174,7 +2269,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             raise DependencyError('no test case is associated with this test')
 
         for d in self._case().deps:
-            mask = int(d.check.name == target)
+            mask = int(d.check.unique_name == target)
             mask |= (int(d.partition.name == part) | int(part == '*')) << 1
             mask |= (int(d.environ.name == environ) | int(environ == '*')) << 2
             if mask == 7:
@@ -2224,17 +2319,16 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self.skip_if(not proc.info, msg)
 
     def __str__(self):
-        return "%s(name='%s', prefix='%s')" % (type(self).__name__,
-                                               self.name, self.prefix)
+        return f'{self.unique_name} [{self.display_name}]'
 
     def __eq__(self, other):
         if not isinstance(other, RegressionTest):
             return NotImplemented
 
-        return self.name == other.name
+        return self.unique_name == other.unique_name
 
     def __hash__(self):
-        return hash(self.name)
+        return hash(self.unique_name)
 
     def __rfm_json_decode__(self, json):
         # 'tags' are decoded as list, so we convert them to a set
@@ -2259,9 +2353,8 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
         self._current_partition = partition
         self._current_environ = environ
         self._setup_paths()
-        self._job = self._setup_job(f'rfm_{self.name}_job',
-                                    self.local,
-                                    **job_opts)
+        self._job = self._setup_job(f'rfm_{self.unique_name}_job',
+                                    self.local, **job_opts)
         self._resolve_fixtures()
 
     def compile(self):
@@ -2317,7 +2410,7 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
         self._current_partition = partition
         self._current_environ = environ
         self._setup_paths()
-        self._build_job = self._setup_job(f'rfm_{self.name}_build',
+        self._build_job = self._setup_job(f'rfm_{self.unique_name}_build',
                                           self.local or self.build_locally,
                                           **job_opts)
         self._resolve_fixtures()

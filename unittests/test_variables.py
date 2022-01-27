@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -155,7 +155,8 @@ def test_require_var(OneVarTest):
     class MyTest(OneVarTest):
         foo = required
 
-        def __init__(self):
+        @run_after('init')
+        def print_foo(self):
             print(self.foo)
 
     with pytest.raises(AttributeError):
@@ -165,9 +166,6 @@ def test_require_var(OneVarTest):
 def test_required_var_not_present(OneVarTest):
     class MyTest(OneVarTest):
         foo = required
-
-        def __init__(self):
-            pass
 
     MyTest()
 
@@ -456,3 +454,35 @@ def test_other_numerical_operators():
         assert math.trunc(npi) == -3
         assert math.floor(npi) == -4
         assert math.ceil(npi) == -3
+
+
+def test_var_deprecation():
+    from reframe.core.variables import DEPRECATE_RD, DEPRECATE_WR
+    from reframe.core.warnings import ReframeDeprecationWarning
+
+    # Check read deprecation
+    class A(rfm.RegressionMixin):
+        x = deprecate(variable(int, value=3),
+                      'accessing x is deprecated', DEPRECATE_RD)
+        y = deprecate(variable(int, value=5),
+                      'setting y is deprecated', DEPRECATE_WR)
+
+    class B(A):
+        z = variable(int, value=y)
+
+    with pytest.warns(ReframeDeprecationWarning):
+        class C(A):
+            w = variable(int, value=x)
+
+    with pytest.warns(ReframeDeprecationWarning):
+        class D(A):
+            y = 3
+
+    # Check that deprecation warnings are raised properly after instantiation
+    a = A()
+    with pytest.warns(ReframeDeprecationWarning):
+        c = a.x
+
+    c = a.y
+    with pytest.warns(ReframeDeprecationWarning):
+        a.y = 10

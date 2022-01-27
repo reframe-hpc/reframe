@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -13,6 +13,7 @@ import reframe.frontend.executors as executors
 import reframe.utility as util
 import reframe.utility.sanity as sn
 import reframe.utility.udeps as udeps
+import unittests.utility as test_util
 
 from reframe.core.environments import Environment
 from reframe.core.exceptions import DependencyError
@@ -320,12 +321,10 @@ def test_dependecies_how_functions_undoc():
 
 def test_build_deps_deprecated_syntax(loader, default_exec_ctx):
     class Test0(rfm.RegressionTest):
-        def __init__(self):
-            self.valid_systems = ['sys0:p0', 'sys0:p1']
-            self.valid_prog_environs = ['e0', 'e1']
-            self.executable = 'echo'
-            self.executable_opts = [self.name]
-            self.sanity_patterns = sn.assert_found(self.name, self.stdout)
+        valid_systems = ['sys0:p0', 'sys0:p1']
+        valid_prog_environs = ['e0', 'e1']
+        executable = 'echo'
+        sanity_patterns = sn.assert_true(1)
 
     class Test1_deprecated(rfm.RunOnlyRegressionTest):
         kind = parameter([rfm.DEPEND_FULLY,
@@ -517,23 +516,14 @@ def test_build_deps_empty(default_exec_ctx):
     assert {} == dependencies.build_deps([])[0]
 
 
-@pytest.fixture
-def make_test():
-    class MyTest(rfm.RegressionTest):
-        def __init__(self, name):
-            self.name = name
-            self.valid_systems = ['*']
-            self.valid_prog_environs = ['*']
-            self.executable = 'echo'
-            self.executable_opts = [name]
-
-    def _make_test(name):
-        return MyTest(name)
-
-    return _make_test
+def make_test(name):
+    return test_util.make_check(rfm.RegressionTest,
+                                alt_name=name,
+                                valid_systems=['*'],
+                                valid_prog_environs=['*'])
 
 
-def test_valid_deps(make_test, default_exec_ctx):
+def test_valid_deps(default_exec_ctx):
     #
     #       t0       +-->t5<--+
     #       ^        |        |
@@ -571,7 +561,7 @@ def test_valid_deps(make_test, default_exec_ctx):
     )
 
 
-def test_cyclic_deps(make_test, default_exec_ctx):
+def test_cyclic_deps(default_exec_ctx):
     #
     #       t0       +-->t5<--+
     #       ^        |        |
@@ -617,7 +607,7 @@ def test_cyclic_deps(make_test, default_exec_ctx):
             't3->t1->t4->t3' in str(exc_info.value))
 
 
-def test_cyclic_deps_by_env(make_test, default_exec_ctx):
+def test_cyclic_deps_by_env(default_exec_ctx):
     t0 = make_test('t0')
     t1 = make_test('t1')
     t1.depends_on('t0', udeps.env_is('e0'))
@@ -636,7 +626,7 @@ def test_validate_deps_empty(default_exec_ctx):
     dependencies.validate_deps({})
 
 
-def test_skip_unresolved_deps(make_test, make_exec_ctx):
+def test_skip_unresolved_deps(make_exec_ctx):
     #
     #       t0    t4
     #      ^  ^   ^
@@ -702,7 +692,7 @@ def assert_topological_order(cases, graph):
     assert cases_order in valid_orderings
 
 
-def test_prune_deps(make_test, default_exec_ctx):
+def test_prune_deps(default_exec_ctx):
     #
     #       t0       +-->t5<--+
     #       ^        |        |
@@ -757,7 +747,7 @@ def test_prune_deps(make_test, default_exec_ctx):
             assert len(pruned_deps[node('t0')]) == 0
 
 
-def test_toposort(make_test, default_exec_ctx):
+def test_toposort(default_exec_ctx):
     #
     #       t0       +-->t5<--+
     #       ^        |        |
@@ -807,7 +797,7 @@ def test_toposort(make_test, default_exec_ctx):
     assert cases_by_level[4] == {'t4'}
 
 
-def test_toposort_subgraph(make_test, default_exec_ctx):
+def test_toposort_subgraph(default_exec_ctx):
     #
     #       t0
     #       ^

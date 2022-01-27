@@ -1,10 +1,11 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
 import os
 import pytest
+import shutil
 
 import reframe as rfm
 from reframe.core.exceptions import ReframeSyntaxError
@@ -21,6 +22,21 @@ def loader():
 def loader_with_path():
     return RegressionCheckLoader(
         ['unittests/resources/checks', 'unittests/foobar']
+    )
+
+
+@pytest.fixture
+def loader_with_path_tmpdir(tmp_path):
+    test_dir_a = tmp_path / 'a'
+    test_dir_b = tmp_path / 'b'
+    os.mkdir(test_dir_a)
+    os.mkdir(test_dir_b)
+    test_a = 'unittests/resources/checks/emptycheck.py'
+    test_b = 'unittests/resources/checks/hellocheck.py'
+    shutil.copyfile(test_a, test_dir_a / 'test.py')
+    shutil.copyfile(test_b, test_dir_b / 'test.py')
+    return RegressionCheckLoader(
+        [test_dir_a.as_posix(), test_dir_b.as_posix()]
     )
 
 
@@ -73,6 +89,19 @@ def test_load_fixtures(loader):
     assert 5 == len(tests)
 
 
+def test_existing_module_name(loader, tmp_path):
+    test_file = tmp_path / 'os.py'
+    shutil.copyfile('unittests/resources/checks/emptycheck.py', test_file)
+    checks = loader.load_from_file(test_file)
+    assert 1 == len(checks)
+    assert checks[0].name == 'EmptyTest'
+
+
+def test_same_filename_different_path(loader_with_path_tmpdir):
+    checks = loader_with_path_tmpdir.load_all()
+    assert 3 == len(checks)
+
+
 def test_special_test():
     with pytest.raises(ReframeSyntaxError):
         @rfm.simple_test
@@ -94,56 +123,34 @@ def test_special_test():
 
     @rfm.simple_test
     class TestSimple(rfm.RegressionTest):
-        def __init__(self):
-            pass
+        pass
 
     @rfm.simple_test
     class TestSpecial(rfm.RegressionTest, special=True):
-        def __init__(self):
-            pass
-
         def setup(self, partition, environ, **job_opts):
             super().setup(partition, environ, **job_opts)
 
     @rfm.simple_test
     class TestSpecialRunOnly(rfm.RunOnlyRegressionTest,
                              special=True):
-        def __init__(self):
-            pass
-
         def setup(self, partition, environ, **job_opts):
             super().setup(partition, environ, **job_opts)
-
-        def run(self):
-            super().run()
 
     @rfm.simple_test
     class TestSpecialCompileOnly(rfm.CompileOnlyRegressionTest,
                                  special=True):
-        def __init__(self):
-            pass
-
         def setup(self, partition, environ, **job_opts):
             super().setup(partition, environ, **job_opts)
-
-        def run(self):
-            super().run()
 
     with pytest.raises(ReframeSyntaxError):
         @rfm.simple_test
         class TestSpecialDerived(TestSpecial):
-            def __init__(self):
-                pass
-
             def setup(self, partition, environ, **job_opts):
                 super().setup(partition, environ, **job_opts)
 
     with pytest.warns(ReframeDeprecationWarning):
         @rfm.simple_test
         class TestFinal(rfm.RegressionTest):
-            def __init__(self):
-                pass
-
             @rfm.final
             def my_new_final(self):
                 pass

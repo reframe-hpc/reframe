@@ -6,7 +6,9 @@
 ![GitHub commits since latest release](https://img.shields.io/github/commits-since/eth-cscs/reframe/latest)
 ![GitHub contributors](https://img.shields.io/github/contributors-anon/eth-cscs/reframe)<br/>
 [![PyPI version](https://badge.fury.io/py/ReFrame-HPC.svg)](https://badge.fury.io/py/ReFrame-HPC)
-![PyPI - Python Version](https://img.shields.io/pypi/pyversions/reframe-hpc)<br/>
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/reframe-hpc)
+[![Downloads](https://pepy.tech/badge/reframe-hpc)](https://pepy.tech/project/reframe-hpc)
+[![Downloads](https://pepy.tech/badge/reframe-hpc/month)](https://pepy.tech/project/reframe-hpc)<br/>
 [![Slack](https://reframe-slack.herokuapp.com/badge.svg)](https://reframe-slack.herokuapp.com/)<br/>
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 [![DOI](https://zenodo.org/badge/89384186.svg)](https://zenodo.org/badge/latestdoi/89384186)<br/>

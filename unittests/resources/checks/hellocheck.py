@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -8,30 +8,33 @@ import reframe.utility.sanity as sn
 
 
 @rfm.simple_test
-class HelloTest(rfm.RegressionTest):
-    def __init__(self):
-        self.name = 'hellocheck'
-        self.descr = 'C Hello World test'
+class HelloTest(rfm.RegressionTest, pin_prefix=True):
+    descr = 'C Hello World test'
 
-        # All available systems are supported
-        self.valid_systems = ['*']
-        self.valid_prog_environs = ['*']
-        self.sourcepath = 'hello.c'
-        self.tags = {'foo', 'bar'}
-        self.sanity_patterns = sn.assert_found(r'Hello, World\!', self.stdout)
-        self.maintainers = ['VK']
+    # All available systems are supported
+    valid_systems = ['*']
+    valid_prog_environs = ['*']
+    sourcepath = 'hello.c'
+    tags = {'foo', 'bar'}
+    maintainers = ['VK']
+
+    @sanity_function
+    def validate(self):
+        return sn.assert_found(r'Hello, World\!', self.stdout)
 
 
 @rfm.simple_test
 class CompileOnlyHelloTest(rfm.CompileOnlyRegressionTest):
-    def __init__(self):
-        self.descr = 'Compile-only C Hello World test'
+    descr = 'Compile-only C Hello World test'
 
-        # All available systems are supported
-        self.valid_systems = ['*']
-        self.valid_prog_environs = ['*']
-        self.sourcepath = 'hello.c'
-        self.sanity_patterns = sn.assert_not_found(r'(?i)error', self.stdout)
+    # All available systems are supported
+    valid_systems = ['*']
+    valid_prog_environs = ['*']
+    sourcepath = 'hello.c'
+
+    @sanity_function
+    def validate(self):
+        return sn.assert_not_found(r'(?i)error', self.stdout)
 
 
 @rfm.simple_test
@@ -41,5 +44,6 @@ class SkipTest(rfm.RunOnlyRegressionTest):
     valid_prog_environs = ['*']
     sanity_patterns = sn.assert_true(1)
 
-    def __init__(self):
+    @run_after('init')
+    def foo(self):
         self.skip_if(True, 'unsupported')

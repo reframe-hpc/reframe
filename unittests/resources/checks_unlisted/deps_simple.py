@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -10,12 +10,10 @@ import reframe.utility.udeps as udeps
 
 @rfm.simple_test
 class Test0(rfm.RunOnlyRegressionTest):
-    def __init__(self):
-        self.valid_systems = ['sys0:p0', 'sys0:p1']
-        self.valid_prog_environs = ['e0', 'e1']
-        self.executable = 'echo'
-        self.executable_opts = [self.name]
-        self.sanity_patterns = sn.assert_found(self.name, self.stdout)
+    valid_systems = ['sys0:p0', 'sys0:p1']
+    valid_prog_environs = ['e0', 'e1']
+    executable = 'echo'
+    sanity_patterns = sn.assert_true(1)
 
 
 @rfm.simple_test
@@ -23,7 +21,8 @@ class Test1(rfm.RunOnlyRegressionTest):
     kind = parameter(['default', 'fully', 'by_part', 'by_case',
                       'custom', 'any', 'all', 'nodeps'])
 
-    def __init__(self):
+    @run_after('init')
+    def setup_deps(self):
         def custom_deps(src, dst):
             return (
                 src[0] == 'p0' and
