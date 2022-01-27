@@ -1459,7 +1459,7 @@ def modules_system(user_exec_ctx, monkeypatch, tmp_path):
     # Create a symlink to testmod_foo to check for unique module names
     # found by `find_modules`
     (tmp_path / 'testmod_foo').symlink_to(
-            os.path.join(test_util.TEST_MODULES, 'testmod_foo')
+        os.path.join(test_util.TEST_MODULES, 'testmod_foo')
     )
 
     ms = rt.runtime().system.modules_system
@@ -1475,6 +1475,7 @@ def test_find_modules(modules_system):
     # environments in the current system
     current_system = rt.runtime().system
     ntimes = sum(len(p.environs) for p in current_system.partitions)
+
     found_modules = [m[2] for m in util.find_modules('testmod')]
     if modules_system.name == 'nomod':
         assert found_modules == []
