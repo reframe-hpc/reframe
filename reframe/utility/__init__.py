@@ -594,6 +594,8 @@ def find_modules(substr, environ_mapping=None):
     This function is a generator and will yield tuples of partition,
     environment and module combinations for each partition of the current
     system and for each environment of a partition.
+    In case of multiple module entries sharing the same name, only the first
+    one is considered.
 
     The ``environ_mapping`` argument allows you to map module name patterns to
     ReFrame environments. This is useful for flat module name schemes, in
@@ -678,7 +680,7 @@ def find_modules(substr, environ_mapping=None):
     for p in current_system.partitions:
         for e in p.environs:
             rt.loadenv(p.local_env, e)
-            modules = ms.available_modules(substr)
+            modules = OrderedSet(ms.available_modules(substr))
             snap0.restore()
             for m in modules:
                 if _is_valid_for_env(m, e.name):

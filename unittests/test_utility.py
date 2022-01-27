@@ -1450,16 +1450,24 @@ def user_exec_ctx(request, make_exec_ctx_g):
 
 
 @pytest.fixture
-def modules_system(user_exec_ctx, monkeypatch):
+def modules_system(user_exec_ctx, monkeypatch, tmp_path):
     # Pretend to be on a clean modules environment
     monkeypatch.setenv('MODULEPATH', '')
     monkeypatch.setenv('LOADEDMODULES', '')
     monkeypatch.setenv('_LMFILES_', '')
 
+    # Create a symlink to testmod_foo to check for unique module names
+    # found by `find_modules`
+    (tmp_path / 'testmod_foo').symlink_to(
+            os.path.join(test_util.TEST_MODULES, 'testmod_foo')
+    )
+
     ms = rt.runtime().system.modules_system
+    ms.searchpath_add(str(tmp_path))
     ms.searchpath_add(test_util.TEST_MODULES)
     yield ms
     ms.searchpath_remove(test_util.TEST_MODULES)
+    ms.searchpath_remove(str(tmp_path))
 
 
 def test_find_modules(modules_system):
@@ -1467,7 +1475,6 @@ def test_find_modules(modules_system):
     # environments in the current system
     current_system = rt.runtime().system
     ntimes = sum(len(p.environs) for p in current_system.partitions)
-
     found_modules = [m[2] for m in util.find_modules('testmod')]
     if modules_system.name == 'nomod':
         assert found_modules == []
