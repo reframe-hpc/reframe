@@ -339,10 +339,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                     'general/0/pipeline_timeout'
                 )
 
-                # FIXME: Always convert due to #GH 2246
-                if timeout is not None:
-                    timeout = float(timeout)
-
                 self._advance_all(self._current_tasks, timeout)
                 if self._pipeline_statistics:
                     num_retired = len(self._retired_tasks)

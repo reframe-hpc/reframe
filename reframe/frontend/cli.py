@@ -570,7 +570,8 @@ def main():
         envvar='RFM_PIPELINE_TIMEOUT',
         configvar='general/pipeline_timeout',
         action='store',
-        help='Timeout for advancing the pipeline'
+        help='Timeout for advancing the pipeline',
+        type=float
     )
     argparser.add_argument(
         dest='remote_detect',
