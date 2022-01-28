@@ -583,7 +583,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         pass
 
     def on_task_skip(self, task):
-        pass
+        msg = str(task.exc_info[1])
+        self.printer.status('SKIP', msg, just='right')
 
     def on_task_failure(self, task):
         self._num_failed_tasks += 1
