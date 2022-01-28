@@ -146,7 +146,7 @@ def _expected_lsf_directives(job):
         f'#BSUB -n {num_tasks}',
         f'#BSUB -W {int(job.time_limit // 60)}',
         f'#BSUB -R "span[ptile={ptile}]"',
-        '#BSUB -x',
+        f'#BSUB -x',
         f'#BSUB --account=spam',
         f'#BSUB --gres=gpu:4',
         f'#DW jobdw capacity=100GB',
