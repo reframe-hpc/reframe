@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -6,6 +6,7 @@
 import os
 import reframe as rfm
 import reframe.utility.sanity as sn
+import reframe.utility.typecheck as typ
 
 #
 # The following tests implement the dependency graph below:
@@ -35,19 +36,19 @@ import reframe.utility.sanity as sn
 
 
 class BaseTest(rfm.RunOnlyRegressionTest):
-    def __init__(self):
-        self.valid_systems = ['*']
-        self.valid_prog_environs = ['*']
-        self.sourcesdir = None
-        self.executable = 'echo'
-        self._count = int(type(self).__name__[1:])
-        self.sanity_patterns = sn.defer(True)
-        self.keep_files = ['out.txt']
+    valid_systems = ['*']
+    valid_prog_environs = ['*']
+    sourcesdir = None
+    executable = 'echo'
+    keep_files = ['out.txt']
+    count = variable(int)
+    deps = variable(typ.List[str], value=[])
 
-    @property
-    @deferrable
-    def count(self):
-        return self._count
+    @run_after('init')
+    def init_deps(self):
+        self.count = int(self.unique_name[1:])
+        for d in self.deps:
+            self.depends_on(d)
 
     @run_before('run')
     def write_count(self):
@@ -59,115 +60,119 @@ class BaseTest(rfm.RunOnlyRegressionTest):
 
 @rfm.simple_test
 class T0(BaseTest):
-    pass
+    sanity_patterns = sn.assert_true(1)
 
 
 @rfm.simple_test
 class T1(BaseTest):
-    def __init__(self):
-        super().__init__()
-        self.depends_on('T4')
-        self.depends_on('T5')
-        self.sanity_patterns = sn.assert_eq(self.count, 14)
+    deps = ['T4', 'T5']
+
+    @sanity_function
+    def validate(self):
+        return sn.assert_eq(self.count, 14)
 
     @require_deps
     def prepend_output(self, T4, T5):
         with open(os.path.join(T4().stagedir, 'out.txt')) as fp:
-            self._count += int(fp.read())
+            self.count += int(fp.read())
 
         with open(os.path.join(T5().stagedir, 'out.txt')) as fp:
-            self._count += int(fp.read())
+            self.count += int(fp.read())
 
 
 @rfm.simple_test
 class T2(BaseTest):
-    def __init__(self):
-        super().__init__()
-        self.depends_on('T6')
+    deps = ['T6']
 
+    @sanity_function
+    def validate(self):
         # Make this test fail on purpose: expected value is 31 normally
-        self.sanity_patterns = sn.assert_eq(self.count, 30)
+        return sn.assert_eq(self.count, 30)
 
     @require_deps
     def prepend_output(self, T6):
         with open(os.path.join(T6().stagedir, 'out.txt')) as fp:
-            self._count += int(fp.read())
+            self.count += int(fp.read())
 
 
 @rfm.simple_test
 class T3(T2):
-    def __init__(self):
-        super().__init__()
-        self.sanity_patterns = sn.assert_eq(self.count, 32)
+    @sanity_function
+    def validate(self):
+        return sn.assert_eq(self.count, 32)
 
 
 @rfm.simple_test
 class T4(BaseTest):
-    def __init__(self):
-        super().__init__()
-        self.depends_on('T0')
-        self.sanity_patterns = sn.assert_eq(self.count, 4)
+    deps = ['T0']
+
+    @sanity_function
+    def validate(self):
+        return sn.assert_eq(self.count, 4)
 
     @require_deps
     def prepend_output(self, T0):
         with open(os.path.join(T0().stagedir, 'out.txt')) as fp:
-            self._count += int(fp.read())
+            self.count += int(fp.read())
 
 
 @rfm.simple_test
 class T5(BaseTest):
-    def __init__(self):
-        super().__init__()
-        self.depends_on('T4')
-        self.sanity_patterns = sn.assert_eq(self.count, 9)
+    deps = ['T4']
+
+    @sanity_function
+    def validate(self):
+        return sn.assert_eq(self.count, 9)
 
     @require_deps
     def prepend_output(self, T4):
         with open(os.path.join(T4().stagedir, 'out.txt')) as fp:
-            self._count += int(fp.read())
+            self.count += int(fp.read())
 
 
 @rfm.simple_test
 class T6(BaseTest):
-    def __init__(self):
-        super().__init__()
-        self.depends_on('T1')
-        self.depends_on('T5')
-        self.sanity_patterns = sn.assert_eq(self.count, 29)
+    deps = ['T1', 'T5']
+
+    @sanity_function
+    def validate(self):
+        return sn.assert_eq(self.count, 29)
 
     @require_deps
     def prepend_output(self, T1, T5):
         with open(os.path.join(T1().stagedir, 'out.txt')) as fp:
-            self._count += int(fp.read())
+            self.count += int(fp.read())
 
         with open(os.path.join(T5().stagedir, 'out.txt')) as fp:
-            self._count += int(fp.read())
+            self.count += int(fp.read())
 
 
 @rfm.simple_test
 class T7(BaseTest):
-    def __init__(self):
-        super().__init__()
-        self.depends_on('T2')
-        self.sanity_patterns = sn.assert_eq(self.count, 38)
+    deps = ['T2']
+
+    @sanity_function
+    def validate(self):
+        return sn.assert_eq(self.count, 38)
 
     @require_deps
     def prepend_output(self, T2):
         with open(os.path.join(T2().stagedir, 'out.txt')) as fp:
-            self._count += int(fp.read())
+            self.count += int(fp.read())
 
 
 @rfm.simple_test
 class T8(BaseTest):
-    def __init__(self):
-        super().__init__()
-        self.depends_on('T1')
-        self.sanity_patterns = sn.assert_eq(self.count, 22)
+    deps = ['T1']
+
+    @sanity_function
+    def validate(self):
+        return sn.assert_eq(self.count, 22)
 
     @require_deps
     def prepend_output(self, T1):
         with open(os.path.join(T1().stagedir, 'out.txt')) as fp:
-            self._count += int(fp.read())
+            self.count += int(fp.read())
 
     @run_after('setup')
     def fail(self):
@@ -180,12 +185,13 @@ class T9(BaseTest):
     # This tests fails because of T8. It is added to make sure that
     # all tests are accounted for in the summary.
 
-    def __init__(self):
-        super().__init__()
-        self.depends_on('T8')
-        self.sanity_patterns = sn.assert_eq(self.count, 31)
+    deps = ['T8']
+
+    @sanity_function
+    def validate(self):
+        return sn.assert_eq(self.count, 31)
 
     @require_deps
     def prepend_output(self, T8):
         with open(os.path.join(T8().stagedir, 'out.txt')) as fp:
-            self._count += int(fp.read())
+            self.count += int(fp.read())

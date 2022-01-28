@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -64,7 +64,7 @@ def make_exec_ctx(tmp_path):
 
 @pytest.fixture
 def make_exec_ctx_g(make_exec_ctx):
-    '''Same as ``make_exec_ctx_g`` except that it is a generator.
+    '''Same as ``make_exec_ctx`` except that it is a generator.
 
     You should use this fixture if you want to pass it to ``yield from``
     expressions.

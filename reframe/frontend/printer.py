@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -75,3 +75,11 @@ class PrettyPrinter:
     def __getattr__(self, attr):
         # delegate all other attribute lookup to the underlying logger
         return getattr(logging.getlogger(), attr)
+
+    def __setattr__(self, attr, value):
+        # Delegate colorize setting to the backend logger
+        if attr == 'colorize':
+            logging.getlogger().colorize = value
+            self.__dict__['colorize'] = value
+        else:
+            super().__setattr__(attr, value)

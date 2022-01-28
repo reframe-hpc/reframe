@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -20,6 +20,7 @@ import weakref
 import reframe
 
 from collections import UserDict
+from hashlib import sha256
 from . import typecheck as typ
 
 
@@ -87,7 +88,12 @@ def import_module_from_file(filename, force=False):
     module_name = _get_module_name(rel_filename)
     if rel_filename.startswith('..'):
         # We cannot use the standard Python import mechanism here, because the
-        # module to import is outside the top-level package
+        # module to import is outside the top-level package. We also mangle
+        # the name that we assign to the module, in order to avoid clashes
+        # with other modules loaded with a standard `import` or with multiple
+        # test files with the same name that reside in different directories.
+        module_hash = sha256(filename.encode('utf-8')).hexdigest()[:8]
+        module_name = f'{module_name}@{module_hash}'
         return _do_import_module_from_file(filename, module_name)
 
     # Extract module name if `filename` is under `site-packages/` or the
@@ -783,8 +789,11 @@ def _parse_node(nodename):
     return basename, width, nodeid
 
 
-def _count_digits(n):
-    '''Count digits of a decimal number.'''
+def count_digits(n):
+    '''Count the digits of a decimal number.
+
+    :meta private:
+    '''
 
     num_digits = 1
     while n > 10:
@@ -841,7 +850,7 @@ class _NodeGroup:
                     abbrev.append(f'{self.name}{s_start}')
             else:
                 last = start + delta*(size-1)
-                digits_last = _count_digits(last)
+                digits_last = count_digits(last)
                 pad = self.width - digits_last
                 nd_range = self.name
                 if pad > 0:

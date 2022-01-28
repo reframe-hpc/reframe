@@ -1,0 +1,25 @@
+[ReFrame Setup]
+  version:           3.10.0-dev.3+4fc5b12c
+  command:           './bin/reframe -c tutorials/advanced/parameterized/stream.py -l'
+  launched by:       user@host
+  working directory: '/home/user/Repositories/reframe'
+  settings file:     '/home/user/Repositories/reframe/tutorials/config/settings.py'
+  check search path: '/home/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py'
+  stage directory:   '/home/user/Repositories/reframe/stage'
+  output directory:  '/home/user/Repositories/reframe/output'
+
+[List of matched checks]
+- StreamMultiSysTest %num_bytes=536870912
+- StreamMultiSysTest %num_bytes=268435456
+- StreamMultiSysTest %num_bytes=134217728
+- StreamMultiSysTest %num_bytes=67108864
+- StreamMultiSysTest %num_bytes=33554432
+- StreamMultiSysTest %num_bytes=16777216
+- StreamMultiSysTest %num_bytes=8388608
+- StreamMultiSysTest %num_bytes=4194304
+- StreamMultiSysTest %num_bytes=2097152
+- StreamMultiSysTest %num_bytes=1048576
+- StreamMultiSysTest %num_bytes=524288
+Found 11 check(s)
+
+Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-ka9llk6d.log'

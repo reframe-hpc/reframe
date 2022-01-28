@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -31,7 +31,7 @@ def build_deps(cases, default_cases=None):
 
         ret = {}
         for c in cases:
-            cname = c.check.name
+            cname = c.check.unique_name
             ret.setdefault(cname, [])
             ret[cname].append(c)
 
@@ -130,11 +130,11 @@ def _reduce_deps(graph):
     '''Reduce test case graph to a test-only graph.'''
     ret = {}
     for case, deps in graph.items():
-        test_deps = util.OrderedSet(d.check.name for d in deps)
+        test_deps = util.OrderedSet(d.check.unique_name for d in deps)
         try:
-            ret[case.check.name] |= test_deps
+            ret[case.check.unique_name] |= test_deps
         except KeyError:
-            ret[case.check.name] = test_deps
+            ret[case.check.unique_name] = test_deps
 
     return ret
 
@@ -251,11 +251,11 @@ def toposort(graph, is_subgraph=False):
     # Index test cases by test name
     cases_by_name = {}
     for c in graph.keys():
-        c.level = levels[c.check.name]
+        c.level = levels[c.check.unique_name]
         try:
-            cases_by_name[c.check.name].append(c)
+            cases_by_name[c.check.unique_name].append(c)
         except KeyError:
-            cases_by_name[c.check.name] = [c]
+            cases_by_name[c.check.unique_name] = [c]
 
     return list(itertools.chain(*(retrieve(cases_by_name, n, [])
                                   for n in visited)))

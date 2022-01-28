@@ -1,0 +1,25 @@
+[ReFrame Setup]
+  version:           3.10.0-dev.3+605af31a
+  command:           './bin/reframe -c tutorials/deps/parameterized.py -l'
+  launched by:       user@host
+  working directory: '/home/user/Devel/reframe'
+  settings file:     '/home/user/Devel/reframe/tutorials/config/settings.py'
+  check search path: '/home/user/Devel/reframe/tutorials/deps/parameterized.py'
+  stage directory:   '/home/user/Devel/reframe/stage'
+  output directory:  '/home/user/Devel/reframe/output'
+
+[List of matched checks]
+- TestB
+    ^TestA %z=9
+    ^TestA %z=8
+    ^TestA %z=7
+    ^TestA %z=6
+- TestA %z=5
+- TestA %z=4
+- TestA %z=3
+- TestA %z=2
+- TestA %z=1
+- TestA %z=0
+Found 11 check(s)
+
+Log file(s) saved in '/tmp/rfm-iey58chw.log'

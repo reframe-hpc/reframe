@@ -63,3 +63,11 @@ def test_random_warning_formatting():
         'deprecated', UserWarning, 'file', 10, 'a = 1'
     )
     assert message == 'file:10: UserWarning: deprecated\n  a = 1\n'
+
+
+def test_suppress_deprecations():
+    with warn.suppress_deprecations():
+        warn.user_deprecation_warning('warning 1')
+
+    with pytest.warns(warn.ReframeDeprecationWarning):
+        warn.user_deprecation_warning('warning 2')

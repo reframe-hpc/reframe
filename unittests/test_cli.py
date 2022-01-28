@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -90,6 +90,10 @@ def run_reframe(tmp_path, perflogdir, monkeypatch):
             argv += ['-l']
         elif action == 'list_detailed':
             argv += ['-L']
+        elif action == 'list_concretized':
+            argv += ['-lC']
+        elif action == 'list_detailed_concretized':
+            argv += ['-LC']
         elif action == 'list_tags':
             argv += ['--list-tags']
         elif action == 'help':
@@ -244,7 +248,7 @@ def test_check_submit_success(run_reframe, remote_exec_ctx):
 def test_check_failure(run_reframe):
     returncode, stdout, _ = run_reframe(
         checkpath=['unittests/resources/checks/frontend_checks.py'],
-        more_options=['-t', 'BadSetupCheck']
+        more_options=['-n', 'BadSetupCheck$']
     )
     assert 'FAILED' in stdout
     assert returncode != 0
@@ -253,7 +257,7 @@ def test_check_failure(run_reframe):
 def test_check_setup_failure(run_reframe):
     returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks/frontend_checks.py'],
-        more_options=['-t', 'BadSetupCheckEarly'],
+        more_options=['-n', 'BadSetupCheckEarly'],
         local=False,
 
     )
@@ -268,7 +272,7 @@ def test_check_kbd_interrupt(run_reframe):
         checkpath=[
             'unittests/resources/checks_unlisted/kbd_interrupt.py'
         ],
-        more_options=['-t', 'KeyboardInterruptCheck'],
+        more_options=['-n', 'KeyboardInterruptCheck'],
         local=False,
     )
     assert 'Traceback' not in stdout
@@ -280,7 +284,7 @@ def test_check_kbd_interrupt(run_reframe):
 def test_check_sanity_failure(run_reframe, tmp_path):
     returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks/frontend_checks.py'],
-        more_options=['-t', 'SanityFailureCheck']
+        more_options=['-n', 'SanityFailureCheck']
     )
     assert 'FAILED' in stdout
 
@@ -297,7 +301,7 @@ def test_check_sanity_failure(run_reframe, tmp_path):
 def test_dont_restage(run_reframe, tmp_path):
     run_reframe(
         checkpath=['unittests/resources/checks/frontend_checks.py'],
-        more_options=['-t', 'SanityFailureCheck']
+        more_options=['-n', 'SanityFailureCheck']
     )
 
     # Place a random file in the test's stage directory and rerun with
@@ -307,7 +311,7 @@ def test_dont_restage(run_reframe, tmp_path):
     (stagedir / 'foobar').touch()
     returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks/frontend_checks.py'],
-        more_options=['-t', 'SanityFailureCheck',
+        more_options=['-n', 'SanityFailureCheck',
                       '--dont-restage', '--max-retries=1']
     )
     assert os.path.exists(stagedir / 'foobar')
@@ -340,7 +344,7 @@ def test_checkpath_symlink(run_reframe, tmp_path):
 def test_performance_check_failure(run_reframe, tmp_path, perflogdir):
     returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks/frontend_checks.py'],
-        more_options=['-t', 'PerformanceFailureCheck']
+        more_options=['-n', 'PerformanceFailureCheck']
     )
     assert 'FAILED' in stdout
 
@@ -360,7 +364,7 @@ def test_perflogdir_from_env(run_reframe, tmp_path, monkeypatch):
     monkeypatch.setenv('FOODIR', str(tmp_path / 'perflogs'))
     returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks/frontend_checks.py'],
-        more_options=['-t', 'PerformanceFailureCheck'],
+        more_options=['-n', 'PerformanceFailureCheck'],
         perflogdir='$FOODIR'
     )
     assert returncode == 1
@@ -373,7 +377,7 @@ def test_perflogdir_from_env(run_reframe, tmp_path, monkeypatch):
 def test_performance_report(run_reframe):
     returncode, stdout, _ = run_reframe(
         checkpath=['unittests/resources/checks/frontend_checks.py'],
-        more_options=['-t', 'PerformanceFailureCheck', '--performance-report']
+        more_options=['-n', 'PerformanceFailureCheck', '--performance-report']
     )
     assert r'PERFORMANCE REPORT' in stdout
     assert r'perf: 10 Gflop/s' in stdout
@@ -382,7 +386,7 @@ def test_performance_report(run_reframe):
 def test_skip_system_check_option(run_reframe):
     returncode, stdout, _ = run_reframe(
         checkpath=['unittests/resources/checks/frontend_checks.py'],
-        more_options=['--skip-system-check', '-t', 'NoSystemCheck']
+        more_options=['--skip-system-check', '-n', 'NoSystemCheck']
     )
     assert 'PASSED' in stdout
     assert returncode == 0
@@ -391,7 +395,7 @@ def test_skip_system_check_option(run_reframe):
 def test_skip_prgenv_check_option(run_reframe):
     returncode, stdout, _ = run_reframe(
         checkpath=['unittests/resources/checks/frontend_checks.py'],
-        more_options=['--skip-prgenv-check', '-t', 'NoPrgEnvCheck']
+        more_options=['--skip-prgenv-check', '-n', 'NoPrgEnvCheck']
     )
     assert 'PASSED' in stdout
     assert returncode == 0
@@ -539,6 +543,24 @@ def test_list_with_details(run_reframe):
     assert returncode == 0
 
 
+def test_list_concretized(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        checkpath=['unittests/resources/checks/frontend_checks.py'],
+        action='list_concretized'
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert returncode == 0
+
+    returncode, stdout, stderr = run_reframe(
+        checkpath=['unittests/resources/checks/frontend_checks.py'],
+        action='list_detailed_concretized'
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert returncode == 0
+
+
 def test_list_tags(run_reframe):
     returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks/hellocheck.py',
@@ -556,7 +578,7 @@ def test_filtering_multiple_criteria(run_reframe):
     returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks'],
         action='list',
-        more_options=['-t', 'foo', '-n', 'hellocheck']
+        more_options=['-t', 'foo', '-n', 'HelloTest']
     )
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
@@ -729,7 +751,7 @@ def test_overwrite_module_path(run_reframe, user_exec_ctx):
 def test_failure_stats(run_reframe):
     returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks/frontend_checks.py'],
-        more_options=['-t', 'SanityFailureCheck', '--failure-stats']
+        more_options=['-n', 'SanityFailureCheck', '--failure-stats']
     )
     assert r'FAILURE STATISTICS' in stdout
     assert r'sanity        1     [SanityFailureCheck' in stdout

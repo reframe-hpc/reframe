@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -38,8 +38,13 @@ def remove_convertible(value):
 class Field:
     '''Base class for attribute validators.'''
 
+    def __init__(self, attr_name=None):
+        if attr_name is not None:
+            self._name = attr_name
+
     def __set_name__(self, owner, name):
-        self._name = name
+        if not hasattr(self, '_name'):
+            self._name = name
 
     def __get__(self, obj, objtype):
         if obj is None:
@@ -60,7 +65,8 @@ class Field:
 class TypedField(Field):
     '''Stores a field of predefined type'''
 
-    def __init__(self, main_type, *other_types):
+    def __init__(self, main_type, *other_types, attr_name=None):
+        super().__init__(attr_name)
         self._types = (main_type,) + other_types
         if not all(isinstance(t, type) for t in self._types):
             raise TypeError('{0} is not a sequence of types'.
@@ -134,8 +140,8 @@ class ConstantField(Field):
 class TimerField(TypedField):
     '''Stores a timer in the form of a :class:`datetime.timedelta` object'''
 
-    def __init__(self, *other_types):
-        super().__init__(str, int, float, *other_types)
+    def __init__(self, *other_types, attr_name=None):
+        super().__init__(str, int, float, *other_types, attr_name=attr_name)
 
     def __set__(self, obj, value):
         value = remove_convertible(value)
@@ -165,9 +171,9 @@ class ScopedDictField(TypedField):
 
     It also handles implicit conversions from ordinary dicts.'''
 
-    def __init__(self, valuetype, *other_types):
+    def __init__(self, valuetype, *other_types, attr_name=None):
         super().__init__(types.Dict[str, types.Dict[str, valuetype]],
-                         ScopedDict, *other_types)
+                         ScopedDict, *other_types, attr_name=attr_name)
 
     def __set__(self, obj, value):
         value = remove_convertible(value)
@@ -181,9 +187,21 @@ class ScopedDictField(TypedField):
 class DeprecatedField(Field):
     '''Field wrapper for deprecating fields.'''
 
-    OP_SET = 1
-    OP_GET = 2
+    OP_GET = 1
+    OP_SET = 2
     OP_ALL = OP_SET | OP_GET
+
+    @property
+    def message(self):
+        return self._message
+
+    @property
+    def op(self):
+        return self._op
+
+    @property
+    def from_version(self):
+        return self._from_version
 
     def __set_name__(self, owner, name):
         self._target_field.__set_name__(owner, name)
