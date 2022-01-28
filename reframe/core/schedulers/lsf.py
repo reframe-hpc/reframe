@@ -59,7 +59,7 @@ class LsfJobScheduler(PbsJobScheduler):
             )
 
         for opt in job.sched_access:
-            preamble.append('%s %s' % (self._prefix, opt))
+            preamble.append(f'{self._prefix} {opt}')
 
         # emit the rest of the options
         options = job.options + job.cli_options
