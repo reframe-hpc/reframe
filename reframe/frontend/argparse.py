@@ -82,7 +82,7 @@ class _Namespace:
         if name not in self.__option_map:
             return ret
 
-        envvar, _, action = self.__option_map[name]
+        envvar, _, action, cast_type = self.__option_map[name]
         if ret is None and envvar is not None:
             # Try the environment variable
             envvar, *delim = envvar.split(maxsplit=2)
@@ -99,12 +99,13 @@ class _Namespace:
                         raise ValueError(
                             f'environment variable {envvar!r} not a boolean'
                         ) from None
-                elif action == 'store_float':
+                elif action == 'store' and cast_type != str:
                     try:
-                        ret = float(ret)
+                        ret = cast_type(ret)
                     except ValueError:
                         raise ValueError(
-                            f'environment variable {envvar!r} not a float'
+                            f'environment variable {envvar!r} not a '
+                            f'{cast_type}'
                         ) from None
 
         return ret
@@ -114,7 +115,7 @@ class _Namespace:
         namespace'''
         errors = []
         for option, spec in self.__option_map.items():
-            _, confvar, action = spec
+            _, confvar, action, _ = spec
             if action == 'version' or confvar is None:
                 continue
 
@@ -181,7 +182,8 @@ class _ArgumentHolder:
         self._option_map[opt_name] = (
             kwargs.get('envvar', None),
             kwargs.get('configvar', None),
-            kwargs.get('action', 'store')
+            kwargs.get('action', 'store'),
+            kwargs.get('type', str)
         )
         # Remove envvar and configvar keyword arguments and force dest
         # argument, even if we guessed it, in order to guard against changes
