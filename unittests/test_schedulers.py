@@ -138,7 +138,8 @@ def _expected_lsf_directives(job):
     num_tasks_per_node = job.num_tasks_per_node or 1
     ptile = min(
         num_tasks * job.num_cpus_per_task,
-        num_tasks_per_node * job.num_cpus_per_task)
+        num_tasks_per_node * job.num_cpus_per_task
+    )
     return set([
         f'#BSUB -J testjob',
         f'#BSUB -o {job.stdout}',
