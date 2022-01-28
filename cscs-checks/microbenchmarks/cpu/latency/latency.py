@@ -12,7 +12,7 @@ class CPULatencyTest(rfm.RegressionTest):
     sourcepath = 'latency.cpp'
     build_system = 'SingleSource'
     valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                     'ault:intel', 'ault:amdvega', 'tave:compute']
+            'ault:intel', 'ault:amdvega', 'eiger:mc', 'pilatus:mc']
     valid_prog_environs = ['PrgEnv-gnu']
     num_tasks = 0
     num_tasks_per_node = 1
@@ -54,11 +54,17 @@ class CPULatencyTest(rfm.RegressionTest):
             'latencyL3':  (14.4, -0.01, 0.26, 'ns'),
             'latencyMem': (90.0, -0.01, 0.05, 'ns')
         },
-        'tave:compute': {
-            'latencyL1':  (2.86, -0.01, 0.05, 'ns'),
-            'latencyL2':  (12.15, -0.01, 0.05, 'ns'),
-            'latencyL3':  (137, -0.01, 0.05, 'ns'),
-            'latencyMem': (150, -0.05, 0.05, 'ns')
+        'eiger:mc': {
+            'latencyL1':  (1.19, -0.02, 0.05, 'ns'),
+            'latencyL2':  (3.40, -0.03, 0.05, 'ns'),
+            'latencyL3':  (11.5, -0.05, 0.05, 'ns'),
+            'latencyMem': (105, -0.05, 0.05, 'ns')
+        },
+        'pilatus:mc': {
+            'latencyL1':  (1.19, -0.02, 0.05, 'ns'),
+            'latencyL2':  (3.40, -0.03, 0.05, 'ns'),
+            'latencyL3':  (11.5, -0.05, 0.05, 'ns'),
+            'latencyMem': (105, -0.05, 0.05, 'ns')
         },
     }
     maintainers = ['SK']
@@ -68,8 +74,6 @@ class CPULatencyTest(rfm.RegressionTest):
     def set_modules(self):
         if self.current_system.name in {'daint', 'dom'}:
             self.modules = ['craype-hugepages1G']
-        if self.current_system.name in {'tave'}:
-            self.modules = ['craype-hugepages512M']
 
     @run_before('compile')
     def set_flags(self):
