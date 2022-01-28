@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import io
 import os
 import pytest
 import random
@@ -58,6 +59,16 @@ def test_command_timeout():
 
     # Try to get the string repr. of the exception: see bug #658
     str(exc_info.value)
+
+
+def test_command_stdin(tmp_path):
+    with open(tmp_path / 'in.txt', 'w') as fp:
+        fp.write('hello')
+
+    with open(tmp_path / 'in.txt') as fp:
+        completed = osext.run_command('cat', stdin=fp)
+
+    assert completed.stdout == 'hello'
 
 
 def test_command_async():
