@@ -39,9 +39,6 @@ def test_custom_variable(OneVarTest):
     assert OneVarTest.foo == 10
     assert hasattr(inst, 'foo')
     assert inst.foo == 10
-    assert OneVarTest.is_var_defined('foo')
-    with pytest.raises(ValueError):
-        assert OneVarTest.is_var_defined('bar')
 
 
 def test_redeclare_builtin_var_clash(NoVarsTest):

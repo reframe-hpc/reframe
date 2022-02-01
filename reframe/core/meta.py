@@ -829,22 +829,6 @@ class RegressionTestMeta(type):
         '''Expose the fixture space.'''
         return cls._rfm_fixture_space
 
-    def is_var_defined(cls, name):
-        '''Check if variable ``name`` is defined.
-
-        A variable is undefined if it is declared and required and no value is
-        yet assigned to it.
-
-        :param name: The name of the variable to check if it is defined.
-        :returns: :obj:`True` if the variable is defined, :obj:`False` otherwise.
-
-        .. versionadded:: 3.10.1
-        '''
-        try:
-            return cls.var_space[name].is_defined()
-        except KeyError:
-            raise ValueError(f'no such variable: {name!r}')
-
     def is_abstract(cls):
         '''Check if the class is an abstract test.
 

@@ -670,20 +670,6 @@ Therefore, classes that derive from the base :class:`~reframe.core.pipeline.Regr
 .. automethod:: reframe.core.pipeline.RegressionMixin.variant_name
 
 
----------------------
-Class-level utilities
----------------------
-
-.. versionadded:: 3.10.1
-
-
-The :class:`~reframe.core.pipeline.RegressionMixin` and the provides various utilities methods that give access the metadata related to the test class.
-This is usually useful when you need to inspect test class properties, such as the parameter or variable space of the test.
-
-.. automethod:: reframe.core.pipeline.RegressionMixin.is_abstract
-
-.. automethod:: reframe.core.pipeline.RegressionMixin.is_var_defined
-
 ------------------------
 Environments and Systems
 ------------------------
