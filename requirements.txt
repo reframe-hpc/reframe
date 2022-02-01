@@ -11,7 +11,7 @@ pytest-parallel==0.1.1
 PyYAML==6.0
 requests==2.26.0
 semver==2.13.0
-setuptools==59.6.0
+setuptools==60.6.0
 wcwidth==0.2.5
 # rfmdocend: required-packages
 #+pygelf%pygelf==0.4.0
