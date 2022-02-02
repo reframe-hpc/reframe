@@ -1527,6 +1527,24 @@ def test_make_test_with_builtins(local_exec_ctx):
     _run(hello_cls(), *local_exec_ctx)
 
 
+def test_set_var_default():
+    class _X(rfm.RunOnlyRegressionTest):
+        foo = variable(int, value=10)
+        bar = variable(int)
+
+        @run_after('init')
+        def set_defaults(self):
+            self.set_var_default('foo', 100)
+            self.set_var_default('bar', 100)
+
+            with pytest.raises(ValueError):
+                self.set_var_default('foobar', 10)
+
+    x = _X()
+    assert x.foo == 10
+    assert x.bar == 100
+
+
 def test_set_name_deprecation():
     from reframe.core.warnings import ReframeDeprecationWarning
 

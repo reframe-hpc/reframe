@@ -1166,6 +1166,26 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         '''
         return getattr(self, '_rfm_fixt_variant', None)
 
+    def set_var_default(self, name, value):
+        '''Set the default value of a variable if variable is undefined.
+
+        A variable is undefined if it is declared and required and no value is
+        yet assigned to it.
+
+        :param name: The name of the variable.
+        :param value: The value to set the variable to.
+        :raises ValueError: If the variable does not exist
+
+        .. versionadded:: 3.10.1
+
+        '''
+        var_space = type(self).var_space
+        if name not in var_space:
+            raise ValueError(f'no such variable: {name!r}')
+
+        if not var_space[name].is_defined():
+            setattr(self, name, value)
+
     @property
     def perfvalues(self):
         return util.MappingView(self._perfvalues)
