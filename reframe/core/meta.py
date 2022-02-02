@@ -832,13 +832,12 @@ class RegressionTestMeta(type):
     def is_abstract(cls):
         '''Check if the class is an abstract test.
 
-        This is the case when some parameters are undefined, which results in
-        the length of the parameter space being 0.
+        A test is considered abstract if any of its direct or indirect
+        parameters (inherited from a base class or from a fixture) is
+        undefined.
 
-        :return: bool indicating whether the test or any of its fixtures has
-          undefined parameters.
+        :returns: :obj:`True` if the test is abstract, :obj:`False` otherwise.
 
-        :meta private:
         '''
         return cls.num_variants == 0
 
@@ -907,6 +906,8 @@ def make_test(name, bases, body, **kwargs):
         attributes in the newly created class.
     :param kwargs: Any keyword arguments to be passed to the
         :class:`RegressionTestMeta` metaclass.
+
+    .. versionadded:: 3.10.0
 
     '''
     namespace = RegressionTestMeta.__prepare__(name, bases, **kwargs)

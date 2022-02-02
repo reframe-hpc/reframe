@@ -678,7 +678,7 @@ def find_modules(substr, environ_mapping=None):
     for p in current_system.partitions:
         for e in p.environs:
             rt.loadenv(p.local_env, e)
-            modules = ms.available_modules(substr)
+            modules = OrderedSet(ms.available_modules(substr))
             snap0.restore()
             for m in modules:
                 if _is_valid_for_env(m, e.name):
