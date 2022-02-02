@@ -670,7 +670,6 @@ Therefore, classes that derive from the base :class:`~reframe.core.pipeline.Regr
 .. automethod:: reframe.core.pipeline.RegressionMixin.variant_name
 
 
-
 ------------------------
 Environments and Systems
 ------------------------
