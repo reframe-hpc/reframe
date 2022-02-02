@@ -391,11 +391,11 @@ def main():
     run_options.add_argument(
         '--max-retries', metavar='NUM', action='store', default=0,
         help='Set the maximum number of times a failed regression test '
-             'may be retried (default: 0)'
+             'may be retried (default: 0)', type=int
     )
     run_options.add_argument(
         '--maxfail', metavar='NUM', action='store', default=sys.maxsize,
-        help='Exit after first NUM failures'
+        help='Exit after first NUM failures', type=int
     )
     run_options.add_argument(
         '--mode', action='store', help='Execution mode to use'
@@ -1175,24 +1175,14 @@ def main():
                 parsed_job_options.append(f'--{optstr} {valstr}')
 
         exec_policy.sched_options = parsed_job_options
-        try:
-            max_retries = int(options.max_retries)
-        except ValueError:
-            raise errors.ConfigError(
-                f'--max-retries is not a valid integer: {max_retries}'
-            ) from None
+        max_retries = int(options.max_retries)
 
-        try:
-            max_failures = int(options.maxfail)
-            if max_failures < 0:
-                raise errors.ConfigError(
-                    f'--maxfail should be a non-negative integer: '
-                    f'{options.maxfail!r}'
-                )
-        except ValueError:
+        max_failures = int(options.maxfail)
+        if max_failures < 0:
             raise errors.ConfigError(
-                f'--maxfail is not a valid integer: {options.maxfail!r}'
-            ) from None
+                f'--maxfail should be a non-negative integer: '
+                f'{options.maxfail!r}'
+            )
 
         runner = Runner(exec_policy, printer, max_retries, max_failures)
         try:
