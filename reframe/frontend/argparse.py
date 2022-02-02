@@ -82,7 +82,7 @@ class _Namespace:
         if name not in self.__option_map:
             return ret
 
-        envvar, _, action, cast_type = self.__option_map[name]
+        envvar, _, action, arg_type = self.__option_map[name]
         if ret is None and envvar is not None:
             # Try the environment variable
             envvar, *delim = envvar.split(maxsplit=2)
@@ -99,14 +99,14 @@ class _Namespace:
                         raise ValueError(
                             f'environment variable {envvar!r} not a boolean'
                         ) from None
-                elif action == 'store' and cast_type != str:
+                elif action == 'store' and arg_type != str:
                     try:
-                        ret = cast_type(ret)
-                    except ValueError:
+                        ret = arg_type(ret)
+                    except ValueError as err:
                         raise ValueError(
-                            f'environment variable {envvar!r} not a '
-                            f'{cast_type}'
-                        ) from None
+                            f'cannot convert environment variable {envvar!r} '
+                            f'to {arg_type.__name__!r}'
+                        ) from err
 
         return ret
 
@@ -115,7 +115,7 @@ class _Namespace:
         namespace'''
         errors = []
         for option, spec in self.__option_map.items():
-            _, confvar, action, _ = spec
+            confvar, action = spec[1:3]
             if action == 'version' or confvar is None:
                 continue
 
