@@ -769,8 +769,8 @@ def main():
         if config_param == 'all':
             printer.info(str(rt.site_config))
         else:
-            # Create a unique value to check against configuration parameters with
-            # value `None` and invalid ones
+            # Create a unique value to differentiate between configuration
+            # parameters with value `None` and invalid ones
             default = time.time()
             value = rt.get_option(config_param, default)
             if value == default:
