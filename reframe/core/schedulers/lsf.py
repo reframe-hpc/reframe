@@ -85,7 +85,7 @@ class LsfJobScheduler(PbsJobScheduler):
         with open(job.script_filename, 'r') as fp:
             completed = _run_strict('bsub', stdin=fp)
         jobid_match = re.search(r'^Job <(?P<jobid>\S+)> is submitted',
-                                completed.stdout.decode('utf-8'))
+                                completed.stdout)
         if not jobid_match:
             raise JobSchedulerError('could not retrieve the job id '
                                     'of the submitted job')
