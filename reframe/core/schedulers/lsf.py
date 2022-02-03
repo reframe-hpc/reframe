@@ -39,15 +39,21 @@ class LsfJobScheduler(PbsJobScheduler):
             return ''
 
     def emit_preamble(self, job):
+        try:
+            n_physical_cores = min(
+                   job.num_tasks * job.num_cpus_per_task,
+                   job.num_tasks_per_node * job.num_cpus_per_task
+            )
+        except TypeError:
+            n_physical_cores = None
 
         preamble = [
-            self._format_option(job.name, '-J "{0}"'),
+            self._format_option(job.name, '-J {0}'),
             self._format_option(job.stdout, '-o {0}'),
             self._format_option(job.stderr, '-e {0}'),
             self._format_option(job.num_tasks, '-n {0}'),
             self._format_option(
-                min(job.num_tasks * job.num_cpus_per_task,
-                    job.num_tasks_per_node * job.num_cpus_per_task),
+                n_physical_cores,
                 '-R "span[ptile={0}]"'
             ),
         ]
