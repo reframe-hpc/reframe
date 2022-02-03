@@ -75,9 +75,8 @@ class LsfJobScheduler(PbsJobScheduler):
         return preamble
 
     def submit(self, job):
-        with open(job.script_filename, 'r') as f:
-            completed = subprocess.run(
-                args='bsub', stdin=f, capture_output=True)
+        with open(job.script_filename, 'r') as fp:
+            completed = _run_strict('bsub', stdin=fp)
         jobid_match = re.search(r'^Job <(?P<jobid>\S+)> is submitted',
                                 completed.stdout.decode('utf-8'))
         if not jobid_match:
