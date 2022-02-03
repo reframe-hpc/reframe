@@ -771,9 +771,9 @@ def main():
         else:
             # Create a unique value to differentiate between configuration
             # parameters with value `None` and invalid ones
-            default = time.time()
+            default = {'token'}
             value = rt.get_option(config_param, default)
-            if value == default:
+            if value is default:
                 printer.error(
                     f'no such configuration parameter found: {config_param}'
                 )
