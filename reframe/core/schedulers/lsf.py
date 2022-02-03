@@ -78,7 +78,8 @@ class LsfJobScheduler(PbsJobScheduler):
         if job.sched_exclusive_access:
             preamble.append(f'{self._prefix} -x')
 
-        return preamble
+        # Filter out empty statements before returning
+        return list(filter(None, preamble))
 
     def submit(self, job):
         with open(job.script_filename, 'r') as fp:
