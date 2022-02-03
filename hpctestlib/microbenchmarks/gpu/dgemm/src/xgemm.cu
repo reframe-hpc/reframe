@@ -55,23 +55,25 @@ double tflops = SIZE*SIZE*SIZE*2.0 * 1E-12;
 int totalErrors = 0;
 std::mutex mtx;
 
+
 #define BLOCK_SIZE 128
-void dgemm(int device)
+template<class T> 
+void xgemm_test(int device)
 {
     XSetDevice(device);
 
-    double * A;
-    double * B;
-    double * C;
-    const double alpha = 1.0;
-    const double beta = 0.0;
+    T * A;
+    T * B;
+    T * C;
+    const T alpha = 1.0;
+    const T beta = 0.0;
 
-    XMalloc((void**)&A, sizeof(double)*SIZE*SIZE);
-    XMalloc((void**)&B, sizeof(double)*SIZE*SIZE);
-    XMalloc((void**)&C, sizeof(double)*SIZE*SIZE);
+    XMalloc((void**)&A, sizeof(T)*SIZE*SIZE);
+    XMalloc((void**)&B, sizeof(T)*SIZE*SIZE);
+    XMalloc((void**)&C, sizeof(T)*SIZE*SIZE);
 
-    kernels::init_as_ones<double><<<(SIZE*SIZE+BLOCK_SIZE-1)/BLOCK_SIZE, BLOCK_SIZE>>>(A, SIZE*SIZE);
-    kernels::init_as_ones<double><<<(SIZE*SIZE+BLOCK_SIZE-1)/BLOCK_SIZE, BLOCK_SIZE>>>(B, SIZE*SIZE);
+    kernels::init_as_ones<T><<<(SIZE*SIZE+BLOCK_SIZE-1)/BLOCK_SIZE, BLOCK_SIZE>>>(A, SIZE*SIZE);
+    kernels::init_as_ones<T><<<(SIZE*SIZE+BLOCK_SIZE-1)/BLOCK_SIZE, BLOCK_SIZE>>>(B, SIZE*SIZE);
     XDeviceSynchronize();
 
     XStream_t stream;
@@ -81,12 +83,13 @@ void dgemm(int device)
     XblasSetStream(blas_handle, stream);
 
     // Warmup call
-    XblasDgemm(blas_handle,
+    // define either as XblasDgemm or XblasSgemm
+    XBLAS_GEMM(blas_handle,
                XBLAS_OP_N, XBLAS_OP_N,
                SIZE, SIZE, SIZE,
                &alpha,
-               (const double*)A, SIZE,
-               (const double*)B, SIZE,
+               (const T*)A, SIZE,
+               (const T*)B, SIZE,
                &beta,
                C, SIZE);
     XDeviceSynchronize();
@@ -96,12 +99,13 @@ void dgemm(int device)
     t.start();
     for (int i = 0; i < REPEAT; i++)
     {
-        XblasDgemm(blas_handle,
+        // define either as XblasDgemm or XblasSgemm
+        XBLAS_GEMM(blas_handle,
                    XBLAS_OP_N, XBLAS_OP_N,
                    SIZE, SIZE, SIZE,
                    &alpha,
-                   (const double*)A, SIZE,
-                   (const double*)B, SIZE,
+                   (const T*)A, SIZE,
+                   (const T*)B, SIZE,
                    &beta,
                    C, SIZE);
     }
@@ -116,7 +120,7 @@ void dgemm(int device)
     int * err, h_err = 0;
     XMalloc((void**)&err, sizeof(int));
     XMemcpy( err, &h_err, sizeof(int), XMemcpyHostToDevice);
-    kernels::verify<double><<<(SIZE+BLOCK_SIZE-1)/BLOCK_SIZE, BLOCK_SIZE>>>(C, SIZE*SIZE, err);
+    kernels::verify<T><<<(SIZE+BLOCK_SIZE-1)/BLOCK_SIZE, BLOCK_SIZE>>>(C, SIZE*SIZE, err);
     XMemcpy(&h_err, err, sizeof(int), XMemcpyDeviceToHost);
     {
       std::lock_guard<std::mutex> lg(mtx);
@@ -145,10 +149,11 @@ int main(int argc, char **argv)
     // Create vector of threads.
     std::vector<std::thread> threads;
 
+
     // Do the dgemm for all devices in the node.
     for (int device = 0; device < num_devices; device++)
     {
-        threads.push_back(std::thread(dgemm,device));
+        threads.push_back(std::thread(xgemm_test<GEMM_TYPE>,device));
     }
 
     // Join all threads

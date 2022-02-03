@@ -1,2 +1,6 @@
+all: dgemm sgemm
 dgemm:
-	nvcc $@.cu -o $@.x ${CXXFLAGS} -lnvidia-ml -lcublas -std=c++14
+	nvcc xgemm.cu -o $@.x -DGEMM_TYPE=double -DXBLAS_GEMM=XblasDgemm ${CXXFLAGS} -lnvidia-ml -lcublas -std=c++14
+sgemm:
+	nvcc xgemm.cu -o $@.x -DGEMM_TYPE=float -DXBLAS_GEMM=XblasSgemm ${CXXFLAGS} -lnvidia-ml -lcublas -std=c++14
+
