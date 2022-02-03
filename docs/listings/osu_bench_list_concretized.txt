@@ -1,0 +1,68 @@
+[ReFrame Setup]
+  version:           3.10.0-dev.3+605af31a
+  command:           './bin/reframe -c tutorials/deps/osu_benchmarks.py -lC'
+  launched by:       user@host
+  working directory: '/home/user/Devel/reframe'
+  settings file:     '/home/user/Devel/reframe/tutorials/config/settings.py'
+  check search path: '/home/user/Devel/reframe/tutorials/deps/osu_benchmarks.py'
+  stage directory:   '/home/user/Devel/reframe/stage'
+  output directory:  '/home/user/Devel/reframe/output'
+
+[List of matched checks]
+- OSUAllreduceTest %mpi_tasks=16 @daint:gpu+gnu
+    ^OSUBuildTest @daint:gpu+gnu
+      ^OSUDownloadTest @daint:login+builtin
+- OSUAllreduceTest %mpi_tasks=16 @daint:gpu+intel
+    ^OSUBuildTest @daint:gpu+intel
+      ^OSUDownloadTest @daint:login+builtin
+- OSUAllreduceTest %mpi_tasks=16 @daint:gpu+pgi
+    ^OSUBuildTest @daint:gpu+pgi
+      ^OSUDownloadTest @daint:login+builtin
+- OSUAllreduceTest %mpi_tasks=8 @daint:gpu+gnu
+    ^OSUBuildTest @daint:gpu+gnu
+      ^OSUDownloadTest @daint:login+builtin
+- OSUAllreduceTest %mpi_tasks=8 @daint:gpu+intel
+    ^OSUBuildTest @daint:gpu+intel
+      ^OSUDownloadTest @daint:login+builtin
+- OSUAllreduceTest %mpi_tasks=8 @daint:gpu+pgi
+    ^OSUBuildTest @daint:gpu+pgi
+      ^OSUDownloadTest @daint:login+builtin
+- OSUAllreduceTest %mpi_tasks=4 @daint:gpu+gnu
+    ^OSUBuildTest @daint:gpu+gnu
+      ^OSUDownloadTest @daint:login+builtin
+- OSUAllreduceTest %mpi_tasks=4 @daint:gpu+intel
+    ^OSUBuildTest @daint:gpu+intel
+      ^OSUDownloadTest @daint:login+builtin
+- OSUAllreduceTest %mpi_tasks=4 @daint:gpu+pgi
+    ^OSUBuildTest @daint:gpu+pgi
+      ^OSUDownloadTest @daint:login+builtin
+- OSUAllreduceTest %mpi_tasks=2 @daint:gpu+gnu
+    ^OSUBuildTest @daint:gpu+gnu
+      ^OSUDownloadTest @daint:login+builtin
+- OSUAllreduceTest %mpi_tasks=2 @daint:gpu+intel
+    ^OSUBuildTest @daint:gpu+intel
+      ^OSUDownloadTest @daint:login+builtin
+- OSUAllreduceTest %mpi_tasks=2 @daint:gpu+pgi
+    ^OSUBuildTest @daint:gpu+pgi
+      ^OSUDownloadTest @daint:login+builtin
+- OSUBandwidthTest @daint:gpu+gnu
+    ^OSUBuildTest @daint:gpu+gnu
+      ^OSUDownloadTest @daint:login+builtin
+- OSUBandwidthTest @daint:gpu+intel
+    ^OSUBuildTest @daint:gpu+intel
+      ^OSUDownloadTest @daint:login+builtin
+- OSUBandwidthTest @daint:gpu+pgi
+    ^OSUBuildTest @daint:gpu+pgi
+      ^OSUDownloadTest @daint:login+builtin
+- OSULatencyTest @daint:gpu+gnu
+    ^OSUBuildTest @daint:gpu+gnu
+      ^OSUDownloadTest @daint:login+builtin
+- OSULatencyTest @daint:gpu+intel
+    ^OSUBuildTest @daint:gpu+intel
+      ^OSUDownloadTest @daint:login+builtin
+- OSULatencyTest @daint:gpu+pgi
+    ^OSUBuildTest @daint:gpu+pgi
+      ^OSUDownloadTest @daint:login+builtin
+Concretized 22 test case(s)
+
+Log file(s) saved in '/tmp/rfm-l3eamaiy.log'

@@ -13,6 +13,8 @@ import copy
 import reframe.core.fields as fields
 import reframe.core.namespaces as namespaces
 from reframe.core.exceptions import ReframeSyntaxError
+from reframe.core.warnings import (user_deprecation_warning,
+                                   suppress_deprecations)
 
 
 class _UndefinedType:
@@ -24,6 +26,10 @@ class _UndefinedType:
 
 
 Undefined = _UndefinedType()
+
+DEPRECATE_RD = 1
+DEPRECATE_WR = 2
+DEPRECATE_RDWR = DEPRECATE_RD | DEPRECATE_WR
 
 
 class TestVar:
@@ -53,6 +59,20 @@ class TestVar:
 
         self._field = field_type(*args, **kwargs)
 
+    @classmethod
+    def create_deprecated(cls, var, message,
+                          kind=DEPRECATE_RDWR, from_version='0.0.0'):
+        ret = TestVar.__new__(TestVar)
+        ret._field = fields.DeprecatedField(var.field, message,
+                                            kind, from_version)
+        ret._default_value = var._default_value
+        return ret
+
+    def _check_deprecation(self, kind):
+        if isinstance(self.field, fields.DeprecatedField):
+            if self.field.op & kind:
+                user_deprecation_warning(self.field.message)
+
     def is_defined(self):
         return self._default_value is not Undefined
 
@@ -60,6 +80,19 @@ class TestVar:
         self._default_value = Undefined
 
     def define(self, value):
+        if value != self._default_value:
+            # We only issue a deprecation warning if the write attempt changes
+            # the value. This is a workaround to the fact that if a variable
+            # defined in parent classes is accessed by the current class, then
+            # the definition of the variable is "copied" in the class body as
+            # an assignment (see `MetaNamespace.__getitem__()`). The
+            # `VarSpace.extend()` method then checks all local class body
+            # assignments and if they refer to a variable (inherited or not),
+            # they call `define()` on it. So, practically, in this case, the
+            # `_default_value` is set redundantly once per class in the
+            # hierarchy.
+            self._check_deprecation(DEPRECATE_WR)
+
         self._default_value = value
 
     @property
@@ -67,6 +100,7 @@ class TestVar:
         # Variables must be returned by-value to prevent an instance from
         # modifying the class variable space.
         self._check_is_defined()
+        self._check_deprecation(DEPRECATE_RD)
         return copy.deepcopy(self._default_value)
 
     @property
@@ -81,7 +115,7 @@ class TestVar:
         self._name = name
 
     def __setattr__(self, name, value):
-        '''Set any additional variable attribute into __attrs__.'''
+        '''Set any additional variable attribute into the default value.'''
         if name in self.__slots__:
             super().__setattr__(name, value)
         else:
@@ -528,6 +562,14 @@ class VarSpace(namespaces.Namespace):
         :param cls: The test class.
         '''
 
+        # Attribute injection is a special operation; the actual attribute
+        # descriptor fields will be created and they will be assigned their
+        # value; deprecations have been checked already during the class
+        # construction, so we don't want to trigger them also here.
+        with suppress_deprecations():
+            self._inject(obj, cls)
+
+    def _inject(self, obj, cls):
         for name, var in self.items():
             setattr(cls, name, var.field)
             getattr(cls, name).__set_name__(obj, name)

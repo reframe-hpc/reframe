@@ -5,7 +5,6 @@
 
 import getpass
 import os
-import re
 
 import reframe as rfm
 import reframe.utility.sanity as sn
@@ -173,5 +172,6 @@ class IorReadCheck(IorCheck):
         }
 
     @run_after('init')
-    def set_dependency(self):
-        self.depends_on(re.sub(r'IorReadCheck', 'IorWriteCheck', self.name))
+    def set_deps(self):
+        variant = IorWriteCheck.get_variant_nums(base_dir=self.base_dir)[0]
+        self.depends_on(IorWriteCheck.variant_name(variant))

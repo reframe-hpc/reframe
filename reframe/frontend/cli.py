@@ -36,69 +36,6 @@ from reframe.frontend.executors.policies import (SerialExecutionPolicy,
 from reframe.frontend.executors import Runner, generate_testcases
 
 
-def format_check(check, check_deps, detailed=False):
-    def fmt_list(x):
-        if not x:
-            return '<none>'
-
-        return ', '.join(x)
-
-    def fmt_deps():
-        no_deps = True
-        lines = []
-        for t, deps in check_deps:
-            for d in deps:
-                lines.append(f'- {t} -> {d}')
-
-        if lines:
-            return '\n      '.join(lines)
-        else:
-            return '<none>'
-
-    location = inspect.getfile(type(check))
-    if not detailed:
-        return f'- {check.name} (found in {location!r})'
-
-    if check.num_tasks > 0:
-        node_alloc_scheme = (f'standard ({check.num_tasks} task(s) -- '
-                             f'may be set differently in hooks)')
-    elif check.num_tasks == 0:
-        node_alloc_scheme = 'flexible'
-    else:
-        node_alloc_scheme = f'flexible (minimum {-check.num_tasks} task(s))'
-
-    check_info = {
-        'Description': check.descr,
-        'Environment modules': fmt_list(check.modules),
-        'Location': location,
-        'Maintainers': fmt_list(check.maintainers),
-        'Node allocation': node_alloc_scheme,
-        'Pipeline hooks': {
-            k: fmt_list(fn.__name__ for fn in v)
-            for k, v in check.pipeline_hooks().items()
-        },
-        'Tags': fmt_list(check.tags),
-        'Valid environments': fmt_list(check.valid_prog_environs),
-        'Valid systems': fmt_list(check.valid_systems),
-        'Dependencies (conceptual)': fmt_list(
-            [d[0] for d in check.user_deps()]
-        ),
-        'Dependencies (actual)': fmt_deps()
-    }
-    lines = [f'- {check.name}:']
-    for prop, val in check_info.items():
-        lines.append(f'    {prop}:')
-        if isinstance(val, dict):
-            for k, v in val.items():
-                lines.append(f'      - {k}: {v}')
-        else:
-            lines.append(f'      {val}')
-
-        lines.append('')
-
-    return '\n'.join(lines)
-
-
 def format_env(envvars):
     ret = '[ReFrame Environment]\n'
     notset = '<not set>'
@@ -107,23 +44,119 @@ def format_env(envvars):
     return ret
 
 
-def list_checks(testcases, printer, detailed=False):
+def list_checks(testcases, printer, detailed=False, concretized=False):
     printer.info('[List of matched checks]')
+    unique_checks = set()
 
-    # Collect dependencies per test
-    deps = {}
-    for t in testcases:
-        deps.setdefault(t.check.name, [])
-        deps[t.check.name].append((t, t.deps))
+    def dep_lines(u, *, prefix, depth=0, lines=None, printed=None):
+        if lines is None:
+            lines = []
 
-    checks = set(
-        t.check for t in testcases
-        if detailed or not t.check.is_fixture()
-    )
-    printer.info(
-        '\n'.join(format_check(c, deps[c.name], detailed) for c in checks)
-    )
-    printer.info(f'Found {len(checks)} check(s)\n')
+        if printed is None:
+            printed = set(unique_checks)
+
+        adj = u.deps
+        for v in adj:
+            if concretized or (not concretized and
+                               v.check.unique_name not in printed):
+                dep_lines(v, prefix=prefix + 2*' ', depth=depth+1,
+                          lines=lines, printed=printed)
+
+            printed.add(v.check.unique_name)
+            if not v.check.is_fixture():
+                unique_checks.add(v.check.unique_name)
+
+        if depth:
+            tc_info = ''
+            details = ''
+            if concretized:
+                tc_info = f' @{u.partition.fullname}+{u.environ.name}'
+
+            location = inspect.getfile(type(u.check))
+            if detailed:
+                details = f' [id: {u.check.unique_name}, file: {location!r}]'
+
+            lines.append(
+                f'{prefix}^{u.check.display_name}{tc_info}{details}'
+            )
+
+        return lines
+
+    # We need the leaf test cases to be printed at the leftmost
+    leaf_testcases = list(t for t in testcases if t.in_degree == 0)
+    for t in leaf_testcases:
+        tc_info = ''
+        details = ''
+        if concretized:
+            tc_info = f' @{t.partition.fullname}+{t.environ.name}'
+
+        location = inspect.getfile(type(t.check))
+        if detailed:
+            details = f' [id: {t.check.unique_name}, file: {location!r}]'
+
+        # if not concretized and t.check.name not in unique_checks:
+        if concretized or (not concretized and
+                           t.check.unique_name not in unique_checks):
+            printer.info(f'- {t.check.display_name}{tc_info}{details}')
+
+        if not t.check.is_fixture():
+            unique_checks.add(t.check.unique_name)
+
+        for l in reversed(dep_lines(t, prefix='  ')):
+            printer.info(l)
+
+    if concretized:
+        printer.info(f'Concretized {len(testcases)} test case(s)\n')
+    else:
+        printer.info(f'Found {len(unique_checks)} check(s)\n')
+
+
+def describe_checks(testcases, printer):
+    records = []
+    unique_names = set()
+    for tc in testcases:
+        if tc.check.is_fixture():
+            continue
+
+        if tc.check.name not in unique_names:
+            unique_names.add(tc.check.name)
+            rec = json.loads(jsonext.dumps(tc.check))
+
+            # Now manipulate the record to be more user-friendly
+            #
+            # 1. Add other fields that are relevant for users
+            # 2. Remove all private fields
+            rec['unique_name'] = tc.check.unique_name
+            rec['display_name'] = tc.check.display_name
+            rec['pipeline_hooks'] = {}
+            rec['perf_variables'] = list(rec['perf_variables'].keys())
+            rec['prefix'] = tc.check.prefix
+            rec['variant_num'] = tc.check.variant_num
+            for stage, hooks in tc.check.pipeline_hooks().items():
+                for hk in hooks:
+                    rec['pipeline_hooks'].setdefault(stage, [])
+                    rec['pipeline_hooks'][stage].append(hk.__name__)
+
+            for attr in list(rec.keys()):
+                if attr == '__rfm_class__':
+                    rec['@class'] = rec[attr]
+                    del rec[attr]
+                elif attr == '__rfm_file__':
+                    rec['@file'] = rec[attr]
+                    del rec[attr]
+                elif attr.startswith('_'):
+                    del rec[attr]
+
+            # List all required variables
+            required = []
+            for var in tc.check._rfm_var_space:
+                if not tc.check._rfm_var_space[var].is_defined():
+                    required.append(var)
+
+            rec['@required'] = required
+            records.append(dict(sorted(rec.items())))
+
+    printer.info(jsonext.dumps(records, indent=2))
 
 
 def list_tags(testcases, printer):
@@ -308,13 +341,19 @@ def main():
         help=('Generate into FILE a Gitlab CI pipeline '
               'for the selected tests and exit'),
     )
+
     action_options.add_argument(
-        '-L', '--list-detailed', action='store_true',
-        help='List the selected checks providing details for each test'
+        '--describe', action='store_true',
+        help='Give full details on the selected tests'
     )
     action_options.add_argument(
-        '-l', '--list', action='store_true',
-        help='List the selected checks'
+        '-L', '--list-detailed', nargs='?', const='T', choices=['C', 'T'],
+        help=('List the selected tests (T) or the concretized test cases (C) '
+              'providing more details')
+    )
+    action_options.add_argument(
+        '-l', '--list', nargs='?', const='T', choices=['C', 'T'],
+        help='List the selected tests (T) or the concretized test cases (C)'
     )
     action_options.add_argument(
         '--list-tags', action='store_true',
@@ -518,6 +557,20 @@ def main():
         help='Use a compact test naming scheme'
     )
     argparser.add_argument(
+        dest='dump_pipeline_progress',
+        envvar='RFM_DUMP_PIPELINE_PROGRESS',
+        configvar='general/dump_pipeline_progress',
+        action='store_true',
+        help='Dump progress information for the async execution'
+    )
+    argparser.add_argument(
+        dest='pipeline_timeout',
+        envvar='RFM_PIPELINE_TIMEOUT',
+        configvar='general/pipeline_timeout',
+        action='store',
+        help='Timeout for advancing the pipeline'
+    )
+    argparser.add_argument(
         dest='remote_detect',
         envvar='RFM_REMOTE_DETECT',
         configvar='general/remote_detect',
@@ -559,6 +612,25 @@ def main():
         help='Use a login shell for job scripts'
     )
 
+    def restrict_logging():
+        '''Restrict logging to errors only.
+
+        This is done when specific options are passed, which generate JSON
+        output and we don't want to pollute the output with other logging
+        output.
+
+        :returns: :obj:`True` if the logging was restricted, :obj:`False`
+            otherwise.
+
+        '''
+
+        if (options.show_config or
+            options.detect_host_topology or options.describe):
+            logging.getlogger().setLevel(logging.ERROR)
+            return True
+        else:
+            return False
+
     # Parse command line
     options = argparser.parse_args()
     if len(sys.argv) == 1:
@@ -574,10 +646,11 @@ def main():
     site_config.select_subconfig('generic')
     options.update_config(site_config)
     logging.configure_logging(site_config)
-    logging.getlogger().colorize = site_config.get('general/0/colorize')
     printer = PrettyPrinter()
     printer.colorize = site_config.get('general/0/colorize')
-    printer.adjust_verbosity(calc_verbosity(site_config, options.quiet))
+    if not restrict_logging():
+        printer.adjust_verbosity(calc_verbosity(site_config, options.quiet))
+
     if os.getenv('RFM_GRAYLOG_SERVER'):
         printer.warning(
             'RFM_GRAYLOG_SERVER environment variable is deprecated; '
@@ -647,9 +720,10 @@ def main():
         printer.error(logfiles_message())
         sys.exit(1)
 
-    logging.getlogger().colorize = site_config.get('general/0/colorize')
     printer.colorize = site_config.get('general/0/colorize')
-    printer.adjust_verbosity(calc_verbosity(site_config, options.quiet))
+    if not restrict_logging():
+        printer.adjust_verbosity(calc_verbosity(site_config, options.quiet))
+
     try:
         printer.debug('Initializing runtime')
         runtime.init_runtime(site_config)
@@ -689,6 +763,8 @@ def main():
 
     # Show configuration after everything is set up
     if options.show_config:
+        # Restore logging level
+        printer.setLevel(logging.INFO)
         config_param = options.show_config
         if config_param == 'all':
             printer.info(str(rt.site_config))
@@ -706,14 +782,17 @@ def main():
     if options.detect_host_topology:
         from reframe.utility.cpuinfo import cpuinfo
 
+        s_cpuinfo = cpuinfo()
+
+        # Restore logging level
+        printer.setLevel(logging.INFO)
         topofile = options.detect_host_topology
         if topofile == '-':
-            json.dump(cpuinfo(), sys.stdout, indent=2)
-            sys.stdout.write('\n')
+            printer.info(json.dumps(s_cpuinfo, indent=2))
         else:
             try:
                 with open(topofile, 'w') as fp:
-                    json.dump(cpuinfo(), fp, indent=2)
+                    json.dump(s_cpuinfo, fp, indent=2)
                     fp.write('\n')
             except OSError as e:
                 getlogger().error(
@@ -938,8 +1017,17 @@ def main():
                 tc.check.disable_hook(h)
 
         # Act on checks
+        if options.describe:
+            # Restore logging level
+            printer.setLevel(logging.INFO)
+            describe_checks(testcases, printer)
+            sys.exit(0)
+
         if options.list or options.list_detailed:
-            list_checks(testcases, printer, options.list_detailed)
+            concretized = (options.list == 'C' or
+                           options.list_detailed == 'C')
+            detailed = options.list_detailed is not None
+            list_checks(testcases, printer, detailed, concretized)
             sys.exit(0)
 
         if options.list_tags:
@@ -1209,4 +1297,5 @@ def main():
             printer.error(f'could not save log file: {e}')
             sys.exit(1)
         finally:
-            printer.info(logfiles_message())
+            if not restrict_logging():
+                printer.info(logfiles_message())

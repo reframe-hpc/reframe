@@ -27,10 +27,10 @@ def _emit_gitlab_pipeline(testcases):
         else:
             config_opt = ''
 
-        report_file = f'{testcase.check.name}-report.json'
+        report_file = f'{testcase.check.unique_name}-report.json'
         if testcase.level:
             restore_files = ','.join(
-                f'{t.check.name}-report.json' for t in tc.deps
+                f'{t.check.unique_name}-report.json' for t in tc.deps
             )
         else:
             restore_files = None
@@ -42,9 +42,9 @@ def _emit_gitlab_pipeline(testcases):
             f'-R' if recurse else '',
             f'--report-file={report_file}',
             f'--restore-session={restore_files}' if restore_files else '',
-            f'--report-junit={testcase.check.name}-report.xml',
+            f'--report-junit={testcase.check.unique_name}-report.xml',
             f'{"".join("-" + verbosity)}' if verbosity else '',
-            '-n', f"'^{testcase.check.name}$'", '-r'
+            '-n', f"'^{testcase.check.unique_name}$'", '-r'
         ])
 
     max_level = 0   # We need the maximum level to generate the stages section
@@ -63,13 +63,13 @@ def _emit_gitlab_pipeline(testcases):
         json['image'] = image_name
 
     for tc in testcases:
-        json[f'{tc.check.name}'] = {
+        json[f'{tc.check.unique_name}'] = {
             'stage': f'rfm-stage-{tc.level}',
             'script': [rfm_command(tc)],
             'artifacts': {
-                'paths': [f'{tc.check.name}-report.json']
+                'paths': [f'{tc.check.unique_name}-report.json']
             },
-            'needs': [t.check.name for t in tc.deps]
+            'needs': [t.check.unique_name for t in tc.deps]
         }
         max_level = max(max_level, tc.level)
 

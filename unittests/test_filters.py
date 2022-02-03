@@ -5,51 +5,73 @@
 
 import pytest
 
+import reframe as rfm
 import reframe.core.exceptions as errors
 import reframe.frontend.executors as executors
 import reframe.frontend.filters as filters
 import reframe.utility.sanity as sn
+import unittests.utility as test_util
 
 
 def count_checks(filter_fn, checks):
     return sn.count(filter(filter_fn, checks))
 
 
-def make_case(attrs):
-    class _MyTest:
-        def __init__(self):
-            self.valid_systems = ['*']
-            self.valid_prog_environs = ['*']
-
-    test = _MyTest()
-    for k, v in attrs.items():
-        setattr(test, k, v)
-
+def make_case(*args, **kwargs):
+    test = test_util.make_check(*args, **kwargs)
     return executors.TestCase(test, None, None)
 
 
 @pytest.fixture
 def sample_cases():
+    class _X(rfm.RegressionTest):
+        valid_systems = ['*']
+        valid_prog_environs = ['*']
+
     return [
-        make_case({
-            'name': 'check1',
-            'tags': {'a', 'b', 'c', 'd'},
-            'num_gpus_per_node': 1,
-            'maintainers': {'A', 'B', 'C', 'D'}
-        }),
-        make_case({
-            'name': 'check2',
-            'tags': {'x', 'y', 'z'},
-            'num_gpus_per_node': 0,
-            'maintainers': {'X', 'Y', 'Z'}
-        }),
-        make_case({
-            'name': 'check3',
-            'tags': {'a', 'z'},
-            'num_gpus_per_node': 1,
-            'maintainers': {'A', 'Z'}
-        })
+        make_case(_X, alt_name='check1',
+                  tags={'a', 'b', 'c', 'd'},
+                  num_gpus_per_node=1,
+                  maintainers=['A', 'B', 'C', 'D']),
+        make_case(_X, alt_name='check2',
+                  tags={'x', 'y', 'z'},
+                  num_gpus_per_node=0,
+                  maintainers=['X', 'Y', 'Z']),
+        make_case(_X, alt_name='check3',
+                  tags={'a', 'z'},
+                  num_gpus_per_node=1,
+                  maintainers=['A', 'Z'])
     ]
+
+
+@pytest.fixture
+def use_compact_names(make_exec_ctx_g):
+    yield from make_exec_ctx_g(options={'general/compact_test_names': True})
+
+
+@pytest.fixture
+def sample_param_cases(use_compact_names):
+    class _X(rfm.RegressionTest):
+        p = parameter([1, 1, 3])
+        valid_systems = ['*']
+        valid_prog_environs = ['*']
+
+    return [executors.TestCase(_X(variant_num=v), None, None)
+            for v in range(_X.num_variants)]
+
+
+@pytest.fixture
+def sample_param_cases_compat():
+    # Param cases with the old naming scheme; i.e., with
+    # `general/compact_test_names=False`
+
+    class _X(rfm.RegressionTest):
+        p = parameter([1, 1, 3])
+        valid_systems = ['*']
+        valid_prog_environs = ['*']
+
+    return [executors.TestCase(_X(variant_num=v), None, None)
+            for v in range(_X.num_variants)]
 
 
 def test_have_name(sample_cases):
@@ -60,6 +82,23 @@ def test_have_name(sample_cases):
     assert 3 == count_checks(filters.have_name('(?i)Check'), sample_cases)
     assert 2 == count_checks(filters.have_name('(?i)check1|CHECK2'),
                              sample_cases)
+
+
+def test_have_name_param_test(sample_param_cases):
+    assert 2 == count_checks(filters.have_name('.*%p=1'), sample_param_cases)
+    assert 1 == count_checks(filters.have_name('_X%p=3'), sample_param_cases)
+    assert 1 == count_checks(filters.have_name('_X@2'), sample_param_cases)
+
+
+def test_have_name_param_test_compat(sample_param_cases_compat):
+    assert 0 == count_checks(filters.have_name('.*%p=1'),
+                             sample_param_cases_compat)
+    assert 0 == count_checks(filters.have_name('_X%p=3'),
+                             sample_param_cases_compat)
+    assert 0 == count_checks(filters.have_name('_X@2'),
+                             sample_param_cases_compat)
+    assert 2 == count_checks(filters.have_name('_X_1'),
+                             sample_param_cases_compat)
 
 
 def test_have_not_name(sample_cases):

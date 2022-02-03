@@ -111,122 +111,13 @@ Here is the output when running the OSU tests with the asynchronous execution po
 
    ./bin/reframe -c tutorials/deps/osu_benchmarks.py -r
 
-.. code-block:: none
-
-   [ReFrame Setup]
-     version:           3.6.0-dev.0+4de0fee1
-     command:           './bin/reframe -c tutorials/deps/osu_benchmarks.py -r'
-     launched by:       user@daint101
-     working directory: '/users/user/Devel/reframe'
-     settings file:     'tutorials/config/settings.py'
-     check search path: '/users/user/Devel/reframe/tutorials/deps/osu_benchmarks.py'
-     stage directory:   '/users/user/Devel/reframe/stage'
-     output directory:  '/users/user/Devel/reframe/output'
-
-   [==========] Running 8 check(s)
-   [==========] Started on Wed Mar 10 20:53:56 2021
-
-   [----------] started processing OSUDownloadTest (OSU benchmarks download sources)
-   [ RUN      ] OSUDownloadTest on daint:login using builtin
-   [----------] finished processing OSUDownloadTest (OSU benchmarks download sources)
-
-   [----------] started processing OSUBuildTest (OSU benchmarks build test)
-   [ RUN      ] OSUBuildTest on daint:gpu using gnu
-   [      DEP ] OSUBuildTest on daint:gpu using gnu
-   [ RUN      ] OSUBuildTest on daint:gpu using intel
-   [      DEP ] OSUBuildTest on daint:gpu using intel
-   [ RUN      ] OSUBuildTest on daint:gpu using pgi
-   [      DEP ] OSUBuildTest on daint:gpu using pgi
-   [----------] finished processing OSUBuildTest (OSU benchmarks build test)
-
-   [----------] started processing OSULatencyTest (OSU latency test)
-   [ RUN      ] OSULatencyTest on daint:gpu using gnu
-   [      DEP ] OSULatencyTest on daint:gpu using gnu
-   [ RUN      ] OSULatencyTest on daint:gpu using intel
-   [      DEP ] OSULatencyTest on daint:gpu using intel
-   [ RUN      ] OSULatencyTest on daint:gpu using pgi
-   [      DEP ] OSULatencyTest on daint:gpu using pgi
-   [----------] finished processing OSULatencyTest (OSU latency test)
-
-   [----------] started processing OSUBandwidthTest (OSU bandwidth test)
-   [ RUN      ] OSUBandwidthTest on daint:gpu using gnu
-   [      DEP ] OSUBandwidthTest on daint:gpu using gnu
-   [ RUN      ] OSUBandwidthTest on daint:gpu using intel
-   [      DEP ] OSUBandwidthTest on daint:gpu using intel
-   [ RUN      ] OSUBandwidthTest on daint:gpu using pgi
-   [      DEP ] OSUBandwidthTest on daint:gpu using pgi
-   [----------] finished processing OSUBandwidthTest (OSU bandwidth test)
-
-   [----------] started processing OSUAllreduceTest_2 (OSU Allreduce test)
-   [ RUN      ] OSUAllreduceTest_2 on daint:gpu using gnu
-   [      DEP ] OSUAllreduceTest_2 on daint:gpu using gnu
-   [ RUN      ] OSUAllreduceTest_2 on daint:gpu using intel
-   [      DEP ] OSUAllreduceTest_2 on daint:gpu using intel
-   [ RUN      ] OSUAllreduceTest_2 on daint:gpu using pgi
-   [      DEP ] OSUAllreduceTest_2 on daint:gpu using pgi
-   [----------] finished processing OSUAllreduceTest_2 (OSU Allreduce test)
-
-   [----------] started processing OSUAllreduceTest_4 (OSU Allreduce test)
-   [ RUN      ] OSUAllreduceTest_4 on daint:gpu using gnu
-   [      DEP ] OSUAllreduceTest_4 on daint:gpu using gnu
-   [ RUN      ] OSUAllreduceTest_4 on daint:gpu using intel
-   [      DEP ] OSUAllreduceTest_4 on daint:gpu using intel
-   [ RUN      ] OSUAllreduceTest_4 on daint:gpu using pgi
-   [      DEP ] OSUAllreduceTest_4 on daint:gpu using pgi
-   [----------] finished processing OSUAllreduceTest_4 (OSU Allreduce test)
-
-   [----------] started processing OSUAllreduceTest_8 (OSU Allreduce test)
-   [ RUN      ] OSUAllreduceTest_8 on daint:gpu using gnu
-   [      DEP ] OSUAllreduceTest_8 on daint:gpu using gnu
-   [ RUN      ] OSUAllreduceTest_8 on daint:gpu using intel
-   [      DEP ] OSUAllreduceTest_8 on daint:gpu using intel
-   [ RUN      ] OSUAllreduceTest_8 on daint:gpu using pgi
-   [      DEP ] OSUAllreduceTest_8 on daint:gpu using pgi
-   [----------] finished processing OSUAllreduceTest_8 (OSU Allreduce test)
-
-   [----------] started processing OSUAllreduceTest_16 (OSU Allreduce test)
-   [ RUN      ] OSUAllreduceTest_16 on daint:gpu using gnu
-   [      DEP ] OSUAllreduceTest_16 on daint:gpu using gnu
-   [ RUN      ] OSUAllreduceTest_16 on daint:gpu using intel
-   [      DEP ] OSUAllreduceTest_16 on daint:gpu using intel
-   [ RUN      ] OSUAllreduceTest_16 on daint:gpu using pgi
-   [      DEP ] OSUAllreduceTest_16 on daint:gpu using pgi
-   [----------] finished processing OSUAllreduceTest_16 (OSU Allreduce test)
-
-   [----------] waiting for spawned checks to finish
-   [       OK ] ( 1/22) OSUDownloadTest on daint:login using builtin [compile: 0.007s run: 2.033s total: 2.078s]
-   [       OK ] ( 2/22) OSUBuildTest on daint:gpu using gnu [compile: 20.531s run: 0.039s total: 83.089s]
-   [       OK ] ( 3/22) OSUBuildTest on daint:gpu using pgi [compile: 27.193s run: 55.871s total: 83.082s]
-   [       OK ] ( 4/22) OSUAllreduceTest_16 on daint:gpu using gnu [compile: 0.007s run: 30.713s total: 33.470s]
-   [       OK ] ( 5/22) OSUBuildTest on daint:gpu using intel [compile: 35.256s run: 54.218s total: 116.712s]
-   [       OK ] ( 6/22) OSULatencyTest on daint:gpu using pgi [compile: 0.011s run: 23.738s total: 51.190s]
-   [       OK ] ( 7/22) OSUAllreduceTest_2 on daint:gpu using gnu [compile: 0.008s run: 31.879s total: 51.187s]
-   [       OK ] ( 8/22) OSUAllreduceTest_4 on daint:gpu using gnu [compile: 0.006s run: 37.447s total: 51.194s]
-   [       OK ] ( 9/22) OSUAllreduceTest_8 on daint:gpu using gnu [compile: 0.007s run: 42.914s total: 51.202s]
-   [       OK ] (10/22) OSUAllreduceTest_16 on daint:gpu using pgi [compile: 0.006s run: 51.172s total: 51.197s]
-   [       OK ] (11/22) OSULatencyTest on daint:gpu using gnu [compile: 0.007s run: 21.500s total: 51.730s]
-   [       OK ] (12/22) OSUAllreduceTest_2 on daint:gpu using pgi [compile: 0.007s run: 35.083s total: 51.700s]
-   [       OK ] (13/22) OSUAllreduceTest_8 on daint:gpu using pgi [compile: 0.007s run: 46.187s total: 51.681s]
-   [       OK ] (14/22) OSUAllreduceTest_4 on daint:gpu using pgi [compile: 0.007s run: 41.060s total: 52.030s]
-   [       OK ] (15/22) OSUAllreduceTest_2 on daint:gpu using intel [compile: 0.008s run: 27.401s total: 35.900s]
-   [       OK ] (16/22) OSUBandwidthTest on daint:gpu using gnu [compile: 0.008s run: 82.553s total: 107.334s]
-   [       OK ] (17/22) OSUBandwidthTest on daint:gpu using pgi [compile: 0.009s run: 87.559s total: 109.613s]
-   [       OK ] (18/22) OSUAllreduceTest_16 on daint:gpu using intel [compile: 0.006s run: 99.899s total: 99.924s]
-   [       OK ] (19/22) OSUBandwidthTest on daint:gpu using intel [compile: 0.007s run: 116.771s total: 128.125s]
-   [       OK ] (20/22) OSULatencyTest on daint:gpu using intel [compile: 0.008s run: 114.236s total: 128.398s]
-   [       OK ] (21/22) OSUAllreduceTest_8 on daint:gpu using intel [compile: 0.008s run: 125.541s total: 128.387s]
-   [       OK ] (22/22) OSUAllreduceTest_4 on daint:gpu using intel [compile: 0.007s run: 123.079s total: 128.651s]
-   [----------] all spawned checks have finished
-
-   [  PASSED  ] Ran 22/22 test case(s) from 8 check(s) (0 failure(s))
-   [==========] Finished on Wed Mar 10 20:58:03 2021
-   Log file(s) saved in: '/tmp/rfm-q0gd9y6v.log'
-
+.. literalinclude:: listings/osu_bench_deps.txt
+   :language: console
 
 Before starting running the tests, ReFrame topologically sorts them based on their dependencies and schedules them for running using the selected execution policy.
 With the serial execution policy, ReFrame simply executes the tests to completion as they "arrive," since the tests are already topologically sorted.
 In the asynchronous execution policy, tests are spawned and not waited for.
-If a test's dependencies have not yet completed, it will not start its execution and a ``DEP`` message will be printed to denote this.
+If a test's dependencies have not yet completed, it will not start its execution immediately.
 
 ReFrame's runtime takes care of properly cleaning up the resources of the tests respecting dependencies.
 Normally when an individual test finishes successfully, its stage directory is cleaned up.
@@ -240,27 +131,8 @@ For example, if we select only the :class:`OSULatencyTest` for running, ReFrame 
 
    ./bin/reframe -c tutorials/deps/osu_benchmarks.py -n OSULatencyTest -l
 
-
-.. code-block:: none
-
-   $ ./bin/reframe -C -c tutorials/deps/osu_benchmarks.py -n OSULatencyTest -l
-   [ReFrame Setup]
-     version:           3.3-dev2 (rev: 8ded20cd)
-     command:           './bin/reframe -C tutorials/config/settings.py -c tutorials/deps/osu_benchmarks.py -n OSULatencyTest -l'
-     launched by:       user@daint101
-     working directory: '/users/user/Devel/reframe'
-     settings file:     'tutorials/config/settings.py'
-     check search path: '/users/user/Devel/reframe/tutorials/deps/osu_benchmarks.py'
-     stage directory:   '/users/user/Devel/reframe/stage'
-     output directory:  '/users/user/Devel/reframe/output'
-
-   [List of matched checks]
-   - OSUDownloadTest (found in '/users/user/Devel/reframe/tutorials/deps/osu_benchmarks.py')
-   - OSUBuildTest (found in '/users/user/Devel/reframe/tutorials/deps/osu_benchmarks.py')
-   - OSULatencyTest (found in '/users/user/Devel/reframe/tutorials/deps/osu_benchmarks.py')
-   Found 3 check(s)
-   Log file(s) saved in: '/tmp/rfm-4c15g820.log'
-
+.. literalinclude:: listings/osu_latency_list.txt
+   :language: console
 
 Finally, when ReFrame cannot resolve a dependency of a test, it will issue a warning and skip completely all the test cases that recursively depend on this one.
 In the following example, we restrict the run of the :class:`OSULatencyTest` to the ``daint:gpu`` partition.
@@ -271,109 +143,37 @@ As a result, its immediate dependency :class:`OSUBuildTest` will be skipped, whi
 
    ./bin/reframe -c tutorials/deps/osu_benchmarks.py --system=daint:gpu -n OSULatencyTest -l
 
-.. code-block:: none
-
-   [ReFrame Setup]
-     version:           3.6.0-dev.0+4de0fee1
-     command:           './bin/reframe -c tutorials/deps/osu_benchmarks.py --system=daint:gpu -n OSULatencyTest -l'
-     launched by:       user@daint101
-     working directory: '/users/user/Devel/reframe'
-     settings file:     'tutorials/config/settings.py'
-     check search path: '/users/user/Devel/reframe/tutorials/deps/osu_benchmarks.py'
-     stage directory:   '/users/user/Devel/reframe/stage'
-     output directory:  '/users/user/Devel/reframe/output'
-
-   ./bin/reframe: could not resolve dependency: ('OSUBuildTest', 'daint:gpu', 'gnu') -> 'OSUDownloadTest'
-   ./bin/reframe: could not resolve dependency: ('OSUBuildTest', 'daint:gpu', 'intel') -> 'OSUDownloadTest'
-   ./bin/reframe: could not resolve dependency: ('OSUBuildTest', 'daint:gpu', 'pgi') -> 'OSUDownloadTest'
-   ./bin/reframe: skipping all dependent test cases
-     - ('OSUBuildTest', 'daint:gpu', 'intel')
-     - ('OSUAllreduceTest_2', 'daint:gpu', 'intel')
-     - ('OSUBuildTest', 'daint:gpu', 'pgi')
-     - ('OSULatencyTest', 'daint:gpu', 'pgi')
-     - ('OSUAllreduceTest_8', 'daint:gpu', 'intel')
-     - ('OSUAllreduceTest_4', 'daint:gpu', 'pgi')
-     - ('OSULatencyTest', 'daint:gpu', 'intel')
-     - ('OSUAllreduceTest_4', 'daint:gpu', 'intel')
-     - ('OSUAllreduceTest_8', 'daint:gpu', 'pgi')
-     - ('OSUAllreduceTest_16', 'daint:gpu', 'pgi')
-     - ('OSUAllreduceTest_16', 'daint:gpu', 'intel')
-     - ('OSUBandwidthTest', 'daint:gpu', 'pgi')
-     - ('OSUBuildTest', 'daint:gpu', 'gnu')
-     - ('OSUBandwidthTest', 'daint:gpu', 'intel')
-     - ('OSUBandwidthTest', 'daint:gpu', 'gnu')
-     - ('OSUAllreduceTest_2', 'daint:gpu', 'pgi')
-     - ('OSUAllreduceTest_16', 'daint:gpu', 'gnu')
-     - ('OSUAllreduceTest_2', 'daint:gpu', 'gnu')
-     - ('OSULatencyTest', 'daint:gpu', 'gnu')
-     - ('OSUAllreduceTest_4', 'daint:gpu', 'gnu')
-     - ('OSUAllreduceTest_8', 'daint:gpu', 'gnu')
-
-   [List of matched checks]
-
-   Found 0 check(s)
-
-   Log file(s) saved in: '/tmp/rfm-6cxeil6h.log'
-
+.. literalinclude:: listings/osu_latency_unresolved_deps.txt
+   :language: console
 
 
 Listing Dependencies
 --------------------
 
-You can view the dependencies of a test by using the :option:`-L` option:
+As shown in the listing of :class:`OSULatencyTest` before, the full dependency chain of the test is listed along with the test.
+Each target dependency is printed in a new line prefixed by the ``^`` character and indented proportionally to its level.
+If a target dependency appears in multiple paths, it will only be listed once.
+
+The default test listing will list the dependencies at the test level or the *conceptual* dependencies.
+ReFrame generates multiple test cases from each test depending on the target system configuration.
+We have seen in the :doc:`tutorial_basics` already how the STREAM benchmark generated many more test cases when it was run in a HPC system with multiple partitions and programming environments.
+These are the *actual* depedencies and form the actual test case graph that will be executed by the runtime.
+The mapping of a test to its concrete test cases that will be executed on a system is called *test concretization*.
+You can view the exact concretization of the selected tests with ``--list=concretized`` or simply ``-lC``.
+Here is how the OSU benchmarks of this tutorial are concretized on the system ``daint``:
 
 
 .. code-block:: console
 
-   ./bin/reframe -c tutorials/deps/osu_benchmarks.py -n OSULatencyTest -L
+   ./bin/reframe -c tutorials/deps/osu_benchmarks.py -lC
 
+.. literalinclude:: listings/osu_bench_list_concretized.txt
+   :language: console
 
-.. code-block:: none
+Notice how the various test cases of the run benchmarks depend on the corresponding test cases of the build tests.
 
-   < ... omitted ... >
-
-   - OSULatencyTest:
-       Description:
-         OSU latency test
-
-       Environment modules:
-         <none>
-
-       Location:
-         /users/user/Devel/reframe/tutorials/deps/osu_benchmarks.py
-
-       Maintainers:
-         <none>
-
-       Node allocation:
-         standard (2 task(s))
-
-       Pipeline hooks:
-         - post_setup: set_executable
-
-       Tags:
-         <none>
-
-       Valid environments:
-         gnu, pgi, intel
-
-       Valid systems:
-         daint:gpu
-
-       Dependencies (conceptual):
-         OSUBuildTest
-
-       Dependencies (actual):
-         - ('OSULatencyTest', 'daint:gpu', 'gnu') -> ('OSUBuildTest', 'daint:login', 'gnu')
-         - ('OSULatencyTest', 'daint:gpu', 'intel') -> ('OSUBuildTest', 'daint:login', 'intel')
-         - ('OSULatencyTest', 'daint:gpu', 'pgi') -> ('OSUBuildTest', 'daint:login', 'pgi')
-
-   < ... omitted ... >
-
-
-Dependencies are not only listed conceptually, e.g., "test A depends on test B," but also in a way that shows how they are actually interpreted between the different test cases of the tests.
-The test dependencies do not change conceptually, but their actual interpretation might change from system to system or from programming environment to programming environment.
-The following listing shows how the actual test cases dependencies are formed when we select only the ``gnu`` and ``builtin`` programming environment for running:
+The concretization of test cases changes if a specifc partition or programming environment is passed from the command line or, of course, if the test is run on a different system.
+If we scope our programming environments to ``gnu`` and ``builtin`` only, ReFrame will generate 8 test cases only instead of 22:
 
 .. note::
 
@@ -384,46 +184,33 @@ The following listing shows how the actual test cases dependencies are formed wh
 
    ./bin/reframe -c tutorials/deps/osu_benchmarks.py -n OSULatencyTest -L -p builtin -p gnu
 
+.. literalinclude:: listings/osu_bench_list_concretized_gnu.txt
+   :language: console
 
-.. code-block:: none
-   :emphasize-lines: 35
 
-   < ... omitted ... >
+To gain a deeper understanding on how test dependencies work in Reframe, please refer to :doc:`dependencies`.
 
-   - OSULatencyTest:
-       Description:
-         OSU latency test
 
-       Environment modules:
-         <none>
+.. _param_deps:
 
-       Location:
-         /users/user/Devel/reframe/tutorials/deps/osu_benchmarks.py
+Depending on Parameterized Tests
+--------------------------------
 
-       Maintainers:
-         <none>
+As shown earlier in this section, tests define their dependencies by referencing the target tests by their unique name.
+This is straightforward when referring to regular tests, where their name matches the class name, but it becomes cumbersome trying to refer to a parameterized tests, since no safe assumption should be made as of the variant number of the test or how the parameters are encoded in the name.
+In order to safely and reliably refer to a parameterized test, you should use the :func:`~reframe.core.pipeline.RegressionMixin.get_variant_nums` and :func:`~reframe.core.pipeline.RegressionMixin.variant_name` class methods as shown in the following example:
 
-       Node allocation:
-         standard (2 task(s))
+.. literalinclude:: ../tutorials/deps/parameterized.py
+   :emphasize-lines: 37-
 
-       Pipeline hooks:
-         - post_setup: set_executable
+In this example, :class:`TestB` depends only on selected variants of :class:`TestA`.
+The :func:`get_variant_nums` method accepts a set of key-value pairs representing the target test parameters and selector functions and returns the list of the variant numbers that correspond to these variants.
+Using the :func:`variant_name` subsequently, we can get the actual name of the variant.
 
-       Tags:
-         <none>
 
-       Valid environments:
-         gnu, pgi, intel
+.. code-block:: console
 
-       Valid systems:
-         daint:gpu
+   ./bin/reframe -c tutorials/deps/parameterized.py -l
 
-       Dependencies (conceptual):
-         OSUBuildTest
-
-       Dependencies (actual):
-         - ('OSULatencyTest', 'daint:gpu', 'gnu') -> ('OSUBuildTest', 'daint:login', 'gnu')
-
-   < ... omitted ... >
-
-For more information on test dependencies, you can have a look at :doc:`dependencies`.
+.. literalinclude:: listings/param_deps_list.txt
+   :language: console

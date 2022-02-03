@@ -259,13 +259,14 @@ def test_fixture_inject_bad_index():
 def test_fixture_data():
     '''Test the structure that holds the raw fixture data in the registry.'''
 
-    d = fixtures.FixtureData(1, 2, 3, 4, 5)
-    assert d.data == (1, 2, 3, 4, 5)
+    d = fixtures.FixtureData(1, 2, 3, 4, 5, 'foo')
+    assert d.data == (1, 2, 3, 4, 5, 'foo')
     assert d.variant_num == 1
     assert d.environments == 2
     assert d.partitions == 3
     assert d.variables == 4
     assert d.scope == 5
+    assert d.scope_enc == 'foo'
 
 
 @pytest.fixture

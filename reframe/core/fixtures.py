@@ -33,28 +33,46 @@ class FixtureData:
     This data is required to instantiate the fixture.
     '''
 
-    def __init__(self, variant_num, envs, parts, variables, scope):
-        self.data = (variant_num, envs, parts, variables, scope,)
+    __slots__ = ('__data',)
+
+    def __init__(self, variant, envs, parts, variables, scope, scope_enc):
+        self.__data = (variant, envs, parts, variables, scope, scope_enc)
+
+    @property
+    def data(self):
+        return self.__data
 
     @property
     def variant_num(self):
-        return self.data[0]
+        return self.__data[0]
 
     @property
     def environments(self):
-        return self.data[1]
+        return self.__data[1]
 
     @property
     def partitions(self):
-        return self.data[2]
+        return self.__data[2]
 
     @property
     def variables(self):
-        return self.data[3]
+        return self.__data[3]
 
     @property
     def scope(self):
-        return self.data[4]
+        return self.__data[4]
+
+    @property
+    def scope_enc(self):
+        return self.__data[5]
+
+    def mashup(self):
+        s = f'{self.variant_num}/{self.scope_enc}'
+        if self.variables:
+            s += '/' + '&'.join(f'{k}={self.variables[k]}'
+                                for k in sorted(self.variables))
+
+        return sha256(s.encode('utf-8')).hexdigest()[:8]
 
 
 class FixtureRegistry:
@@ -152,7 +170,7 @@ class FixtureRegistry:
 
         cls = fixture.cls
         scope = fixture.scope
-        fname = fixture.get_name(variant_num)
+        fname = fixture.cls.variant_name(variant_num)
         variables = fixture.variables
         reg_names = []
         self._registry.setdefault(cls, dict())
@@ -164,7 +182,7 @@ class FixtureRegistry:
                  in sorted(variables.items()))
             )
             if self._hash:
-                vname = '%' + sha256(vname.encode('utf-8')).hexdigest()[:8]
+                vname = '_' + sha256(vname.encode('utf-8')).hexdigest()[:8]
 
             fname += vname
 
@@ -178,8 +196,6 @@ class FixtureRegistry:
         # Register the fixture
         if scope == 'session':
             # The name is mangled with the system name
-            name = f'{fname}~{self._sys_name}'
-
             # Select a valid environment supported by a partition
             for part in valid_partitions:
                 valid_envs = self._filter_valid_environs(part, prog_envs)
@@ -189,14 +205,14 @@ class FixtureRegistry:
                 return []
 
             # Register the fixture
-            self._registry[cls][name] = FixtureData(
-                variant_num, [valid_envs[0]], [part], variables, scope
-            )
+            fixt_data = FixtureData(variant_num, [valid_envs[0]], [part],
+                                    variables, scope, self._sys_name)
+            name = f'{cls.__name__}_{fixt_data.mashup()}'
+            self._registry[cls][name] = fixt_data
             reg_names.append(name)
         elif scope == 'partition':
             for part in valid_partitions:
                 # The mangled name contains the full partition name
-                name = f'{fname}~{part}'
 
                 # Select an environment supported by the partition
                 valid_envs = self._filter_valid_environs(part, prog_envs)
@@ -204,31 +220,30 @@ class FixtureRegistry:
                     continue
 
                 # Register the fixture
-                self._registry[cls][name] = FixtureData(
-                    variant_num, [valid_envs[0]], [part], variables, scope
-                )
+                fixt_data = FixtureData(variant_num, [valid_envs[0]], [part],
+                                        variables, scope, part)
+                name = f'{cls.__name__}_{fixt_data.mashup()}'
+                self._registry[cls][name] = fixt_data
                 reg_names.append(name)
         elif scope == 'environment':
             for part in valid_partitions:
                 for env in self._filter_valid_environs(part, prog_envs):
                     # The mangled name contains the full part and env names
-                    ext = f'{part}+{env}'
-                    name = f'{fname}~{ext}'
-
                     # Register the fixture
-                    self._registry[cls][name] = FixtureData(
-                        variant_num, [env], [part], variables, scope
-                    )
+                    fixt_data = FixtureData(variant_num, [env], [part],
+                                            variables, scope, f'{part}+{env}')
+                    name = f'{cls.__name__}_{fixt_data.mashup()}'
+                    self._registry[cls][name] = fixt_data
                     reg_names.append(name)
         elif scope == 'test':
             # The mangled name contains the parent test name.
-            name = f'{fname}~{parent_name}'
 
             # Register the fixture
-            self._registry[cls][name] = FixtureData(
-                variant_num, list(prog_envs), list(valid_partitions),
-                variables, scope
-            )
+            fixt_data = FixtureData(variant_num, list(prog_envs),
+                                    list(valid_partitions),
+                                    variables, scope, parent_name)
+            name = f'{cls.__name__}_{fixt_data.mashup()}'
+            self._registry[cls][name] = fixt_data
             reg_names.append(name)
 
         return reg_names
@@ -276,13 +291,12 @@ class FixtureRegistry:
         ret = []
         for cls, variants in self._registry.items():
             for name, args in variants.items():
-                varnum, penv, part, variables, _ = args.data
+                varnum, penv, part, variables, *_ = args.data
 
                 # Set the fixture name and stolen env and part from the parent,
                 # alongside the other variables specified during the fixture's
                 # declaration.
                 fixtvars = {
-                    'name': name,
                     'valid_prog_environs': penv,
                     'valid_systems': part,
                     **variables
@@ -290,8 +304,8 @@ class FixtureRegistry:
 
                 try:
                     # Instantiate the fixture
-                    inst = cls(variant_num=varnum, variables=fixtvars,
-                               is_fixture=True)
+                    inst = cls(variant_num=varnum, fixt_name=name,
+                               fixt_data=args, fixt_vars=fixtvars)
                 except Exception:
                     exc_info = sys.exc_info()
                     getlogger().warning(
@@ -460,10 +474,6 @@ class TestFixture:
         '''The fixture scope.'''
         return self._scope
 
-    def get_name(self, variant_num=None):
-        '''Utility to retrieve the full name of a given fixture variant.'''
-        return self.cls.fullname(variant_num)
-
     @property
     def action(self):
         '''Action specified on this fixture.'''
@@ -513,7 +523,7 @@ class TestFixture:
 
 
 class FixtureSpace(namespaces.Namespace):
-    ''' Regression test fixture space.
+    '''Regression test fixture space.
 
     The fixture space is first built by joining the available fixture spaces
     in the base classes, and later extended by the locally defined fixtures
@@ -641,7 +651,7 @@ class FixtureSpace(namespaces.Namespace):
             part = tuple(obj.valid_systems)
         except AttributeError:
             raise ReframeSyntaxError(
-                f"'valid_systems' is undefined in test {obj.name}"
+                f"'valid_systems' is undefined in test {obj.unique_name!r}"
             )
         else:
             rt = runtime.runtime()
@@ -652,7 +662,8 @@ class FixtureSpace(namespaces.Namespace):
             prog_envs = tuple(obj.valid_prog_environs)
         except AttributeError:
             raise ReframeSyntaxError(
-                f"'valid_prog_environs' is undefined in test {obj.name}"
+                f"'valid_prog_environs' is undefined "
+                f"in test {obj.unique_name!r}"
             )
         else:
             if '*' in prog_envs:
@@ -686,7 +697,7 @@ class FixtureSpace(namespaces.Namespace):
         underlying fixture object with that name.
         '''
         if isinstance(key, int):
-            ret = dict()
+            ret = {}
             f_ids = self.__variant_combinations[key]
             for i, f in enumerate(self.fixtures):
                 ret[f] = f_ids[i]

@@ -55,11 +55,12 @@ class ipcmagic_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
 
     @sanity_function
     def assert_successful_execution(self):
-        '''Checks that the program is running on 2 different nodes (nids
+        '''Checks that the program is running on 2 different nodes (hostnames
         are different), that IPCMagic is configured and returns the correct
         end-of-program message (returns the slope parameter in the end).'''
 
-        nids = sn.extractall(r'nid(?P<nid>\d+)', self.stdout, 'nid', str)
+        nids = sn.extractall(r'Running on node: (?P<node>\S+)', self.stdout,
+                             'node', str)
         return sn.all([
             sn.assert_eq(sn.len(nids), 2),
             sn.assert_ne(nids[0], nids[1]),

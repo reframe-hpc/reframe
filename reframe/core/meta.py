@@ -16,20 +16,11 @@ import reframe.core.parameters as parameters
 import reframe.core.variables as variables
 import reframe.core.fixtures as fixtures
 import reframe.core.hooks as hooks
-import reframe.core.runtime as rt
 import reframe.utility as utils
 
 from reframe.core.exceptions import ReframeSyntaxError
 from reframe.core.deferrable import deferrable, _DeferredPerformanceExpression
-
-
-def _use_compact_names():
-    try:
-        return getattr(_use_compact_names, '_cached')
-    except AttributeError:
-        ret = rt.runtime().get_option('general/0/compact_test_names')
-        _use_compact_names._cached = ret
-        return ret
+from reframe.core.runtime import runtime
 
 
 class RegressionTestMeta(type):
@@ -60,7 +51,6 @@ class RegressionTestMeta(type):
                 # Override the regular class attribute (if present) and return
                 self._namespace.pop(key, None)
                 return
-
             elif isinstance(value, parameters.TestParam):
                 # Insert the attribute in the parameter namespace
                 try:
@@ -73,7 +63,6 @@ class RegressionTestMeta(type):
                 # Override the regular class attribute (if present) and return
                 self._namespace.pop(key, None)
                 return
-
             elif isinstance(value, fixtures.TestFixture):
                 # Insert the attribute in the fixture namespace
                 self['_rfm_local_fixture_space'][key] = value
@@ -81,7 +70,6 @@ class RegressionTestMeta(type):
                 # Override the regular class attribute (if present)
                 self._namespace.pop(key, None)
                 return
-
             elif key in self['_rfm_local_param_space']:
                 raise ReframeSyntaxError(
                     f'cannot redefine parameter {key!r}'
@@ -136,7 +124,6 @@ class RegressionTestMeta(type):
                 try:
                     # Handle variable access
                     return self['_rfm_local_var_space'][key]
-
                 except KeyError:
                     # Handle parameter access
                     if key in self['_rfm_local_param_space']:
@@ -241,6 +228,7 @@ class RegressionTestMeta(type):
         # Directives to add/modify a regression test variable
         namespace['variable'] = variables.TestVar
         namespace['required'] = variables.Undefined
+        namespace['deprecate'] = variables.TestVar.create_deprecated
 
         # Regression test fixture space
         namespace['_rfm_local_fixture_space'] = namespaces.LocalNamespace()
@@ -486,14 +474,13 @@ class RegressionTestMeta(type):
         # respective points in the parameter and fixture spaces.
         variant_num = kwargs.pop('variant_num', None)
         param_index, fixt_index = cls._map_variant_num(variant_num)
+        fixt_name = kwargs.pop('fixt_name', None)
+        fixt_data = kwargs.pop('fixt_data', None)
 
         # Intercept variables to be set before initialization
-        variables = kwargs.pop('variables', {})
-        if not isinstance(variables, collections.abc.Mapping):
-            raise TypeError("'variables' argument must be a mapping")
-
-        # Intercept is_fixture argument to flag an instance as a fixture
-        is_fixture = kwargs.pop('is_fixture', False)
+        fixt_vars = kwargs.pop('fixt_vars', {})
+        if not isinstance(fixt_vars, collections.abc.Mapping):
+            raise TypeError("'fixt_vars' argument must be a mapping")
 
         obj = cls.__new__(cls, *args, **kwargs)
 
@@ -508,11 +495,13 @@ class RegressionTestMeta(type):
             obj._rfm_fixt_variant = fixt_index
 
         # Flag the instance as fixture
-        if is_fixture:
+        if fixt_name:
+            obj._rfm_unique_name = fixt_name
+            obj._rfm_fixt_data = fixt_data
             obj._rfm_is_fixture = True
 
         # Set the variables passed to the constructor
-        for k, v in variables.items():
+        for k, v in fixt_vars.items():
             if k in cls.var_space:
                 setattr(obj, k, v)
 
@@ -670,7 +659,7 @@ class RegressionTestMeta(type):
 
     @property
     def num_variants(cls):
-        '''Number of unique tests that can be instantiated from this class.'''
+        '''Total number of variants of the test.'''
         return len(cls._rfm_param_space) * len(cls._rfm_fixture_space)
 
     def _map_variant_num(cls, variant_num=None):
@@ -697,15 +686,32 @@ class RegressionTestMeta(type):
         '''Get the variant numbers that meet the specified conditions.
 
         The given conditions enable filtering the parameter space of the test.
-        These can be specified by passing key-value pairs with the parameter
-        name to filter and an associated callable that returns ``True`` when
-        the filtering condition is met. Multiple conditions are supported.
-        However, filtering the fixture space is not allowed.
+        Filtering the fixture space is not allowed.
 
         .. code-block:: python
 
            # Filter out the test variants where my_param is greater than 3
            cls.get_variant_nums(my_param=lambda x: x < 4)
+
+        The returned list of variant numbers can be passed to
+        :func:`variant_name` in order to retrieve the actual test name.
+
+        :param conditions: keyword arguments where the key is the test
+            parameter name and the value is either a single value or a unary
+            function that evaluates to :obj:`True` if the parameter point must
+            be kept, :obj:`False` otherwise. If a single value is passed this
+            is implicitly converted to the equality function, such that
+
+            .. code-block:: python
+
+               get_variant_nums(p=10)
+
+            is equivalent to
+
+            .. code-block:: python
+
+               get_variant_nums(p=lambda x: x == 10)
+
         '''
         if not conditions:
             return list(range(cls.num_variants))
@@ -773,28 +779,40 @@ class RegressionTestMeta(type):
           #         'f1': 0,
           #     }
           # }
+
+        :param variant_num: An integer in the range of [0, cls.num_variants).
+        :param recurse: Flag to control the recursion through the fixture
+            space.
+        :param max_depth: Set the recursion limit. When the ``recurse``
+            argument is set to ``False``, this option has no effect.
+
         '''
 
         pid, fid = cls._map_variant_num(variant_num)
-        ret = dict()
-        ret['params'] = cls.param_space[pid]
-        ret['fixtures'] = cls.fixture_space[fid]
+        ret = {
+            'params': cls.param_space[pid] if pid is not None else {},
+            'fixtures': cls.fixture_space[fid] if fid is not None else {}
+        }
 
         # Get current recursion level
         rdepth = kwargs.get('_current_depth', 0)
-
         if recurse and (max_depth is None or rdepth < max_depth):
-            for fix, variant in ret['fixtures'].items():
+            for fname, variant in ret['fixtures'].items():
                 if len(variant) > 1:
                     continue
 
-                fcls = cls.fixture_space[fix].cls
-                ret['fixtures'][fix] = fcls.get_variant_info(
+                fixt = cls.fixture_space[fname]
+                ret['fixtures'][fname] = fixt.cls.get_variant_info(
                     variant[0], recurse=recurse, max_depth=max_depth,
                     _current_depth=rdepth+1
                 )
 
         return ret
+
+    @property
+    def raw_params(cls):
+        '''Expose the raw parameters.'''
+        return cls.param_space.params
 
     @property
     def param_space(cls):
@@ -814,35 +832,29 @@ class RegressionTestMeta(type):
     def is_abstract(cls):
         '''Check if the class is an abstract test.
 
-        This is the case when some parameters are undefined, which results in
-        the length of the parameter space being 0.
+        A test is considered abstract if any of its direct or indirect
+        parameters (inherited from a base class or from a fixture) is
+        undefined.
 
-        :return: bool indicating whether the test or any of its fixtures has
-          undefined parameters.
+        :returns: :obj:`True` if the test is abstract, :obj:`False` otherwise.
 
-        :meta private:
         '''
         return cls.num_variants == 0
 
-    def fullname(cls, variant_num=None):
-        '''Return the full name of a test for a given test variant number.
+    def variant_name(cls, variant_num=None):
+        '''Return the name of the test variant with a specific variant number.
 
-        This function returns a unique name for each of the provided variant
-        numbers. If no ``variant_num`` is provided, this function returns the
-        qualified class name.
-
-        :param variant_num: An integer in the range of [0, cls.num_variants).
-
-        :meta private:
+        :param variant_num: An integer in the range of ``[0, cls.num_variants)``.
         '''
 
-        name = cls.__qualname__
+        name = cls.__name__
         if variant_num is None:
             return name
 
-        if _use_compact_names():
+        if runtime().get_option('general/0/compact_test_names'):
             if cls.num_variants > 1:
-                name += f'@{variant_num}'
+                width = utils.count_digits(cls.num_variants)
+                name += f'_{variant_num:0{width}}'
         else:
             pid, fid = cls._map_variant_num(variant_num)
 
@@ -852,6 +864,53 @@ class RegressionTestMeta(type):
                                        for v in cls.param_space[pid].values())
 
             if len(cls.fixture_space) > 1:
-                name += f'@{fid}'
+                name += f'_{fid}'
 
         return name
+
+
+def make_test(name, bases, body, **kwargs):
+    '''Define a new test class programmatically.
+
+    Using this method is completely equivalent to using the :keyword:`class`
+    to define the test class. More specifically, the following:
+
+    .. code-block:: python
+
+       hello_cls = rfm.make_test(
+           'HelloTest', (rfm.RunOnlyRegressionTest,),
+           {
+               'valid_systems': ['*'],
+               'valid_prog_environs': ['*'],
+               'executable': 'echo',
+               'sanity_patterns': sn.assert_true(1)
+           }
+       )
+
+    is completely equivalent to
+
+    .. code-block:: python
+
+       class HelloTest(rfm.RunOnlyRegressionTest):
+           valid_systems = ['*']
+           valid_prog_environs = ['*']
+           executable = 'echo',
+           sanity_patterns: sn.assert_true(1)
+
+       hello_cls = HelloTest
+
+    :param name: The name of the new test class.
+    :param bases: A tuple of the base classes of the class that is being
+        created.
+    :param body: A mapping of key/value pairs that will be inserted as class
+        attributes in the newly created class.
+    :param kwargs: Any keyword arguments to be passed to the
+        :class:`RegressionTestMeta` metaclass.
+
+    .. versionadded:: 3.10.0
+
+    '''
+    namespace = RegressionTestMeta.__prepare__(name, bases, **kwargs)
+    namespace.update(body)
+    cls = RegressionTestMeta(name, bases, namespace, **kwargs)
+    return cls
