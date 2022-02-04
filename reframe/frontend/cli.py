@@ -1175,16 +1175,14 @@ def main():
                 parsed_job_options.append(f'--{optstr} {valstr}')
 
         exec_policy.sched_options = parsed_job_options
-        max_retries = int(options.max_retries)
-
-        max_failures = int(options.maxfail)
-        if max_failures < 0:
+        if options.maxfail < 0:
             raise errors.ConfigError(
                 f'--maxfail should be a non-negative integer: '
                 f'{options.maxfail!r}'
             )
 
-        runner = Runner(exec_policy, printer, max_retries, max_failures)
+        runner = Runner(exec_policy, printer, options.max_retries,
+                        options.maxfail)
         try:
             time_start = time.time()
             session_info['time_start'] = time.strftime(
