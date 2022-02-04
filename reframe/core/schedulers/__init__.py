@@ -159,6 +159,12 @@ class Job(jsonext.JSONSerializable):
     #: :type: :class:`reframe.core.launchers.JobLauncher`
     launcher = fields.TypedField(JobLauncher)
 
+    #: Pin nodes for the job
+    #:
+    #: :type: :class:`str` or :class:`None`
+    #: :default: :class:`None`
+    pin_nodes = fields.TypedField(str, type(None))
+
     # The sched_* arguments are exposed also to the frontend
     def __init__(self,
                  name,
@@ -182,6 +188,7 @@ class Job(jsonext.JSONSerializable):
         self.time_limit = None
         self.cli_options = list(sched_options) if sched_options else []
         self.options = []
+        self.pin_nodes = None
 
         self._name = name
         self._workdir = workdir
@@ -422,6 +429,7 @@ class Job(jsonext.JSONSerializable):
         return len(available_nodes) * num_tasks_per_node
 
     def submit(self):
+        print(self.scheduler.allnodes())
         return self.scheduler.submit(self)
 
     def wait(self):

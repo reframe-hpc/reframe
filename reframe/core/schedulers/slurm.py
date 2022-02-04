@@ -192,6 +192,9 @@ class SlurmJobScheduler(sched.JobScheduler):
         else:
             hint = 'multithread' if job.use_smt else 'nomultithread'
 
+        if job.pin_nodes:
+            preamble.append(self._format_option(job.pin_nodes, '--nodelist={0}'))
+
         for opt in job.sched_access:
             if not opt.strip().startswith(('-C', '--constraint')):
                 preamble.append('%s %s' % (self._prefix, opt))
