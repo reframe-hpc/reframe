@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -20,7 +20,7 @@ import reframe.core.schedulers as sched
 import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
 from reframe.core.exceptions import JobError, JobSchedulerError
-from reframe.utility import seconds_to_hms
+from reframe.utility import seconds_to_hms, toalphanum
 
 
 # Time to wait after a job is finished for its standard output/error to be
@@ -113,10 +113,13 @@ class PbsJobScheduler(sched.JobScheduler):
         return _PbsJob(*args, **kwargs)
 
     def emit_preamble(self, job):
+        # The job name is a string of up to 15 alphanumeric characters
+        # where the first character is alphabetic
+        job_name = toalphanum(job.name)[:15]
         preamble = [
-            self._format_option('-N "%s"' % job.name),
-            self._format_option('-o %s' % job.stdout),
-            self._format_option('-e %s' % job.stderr),
+            self._format_option(f'-N {job_name}'),
+            self._format_option(f'-o {job.stdout}'),
+            self._format_option(f'-e {job.stderr}'),
         ]
 
         if job.time_limit is not None:
@@ -127,7 +130,7 @@ class PbsJobScheduler(sched.JobScheduler):
         preamble += self._emit_lselect_option(job)
 
         # PBS starts the job in the home directory by default
-        preamble.append('cd %s' % job.workdir)
+        preamble.append(f'cd {job.workdir}')
         return preamble
 
     def allnodes(self):

@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -11,8 +11,8 @@ from reframe.core.schedulers import Job, JobScheduler
 
 
 @pytest.fixture(params=[
-    'alps', 'launcherwrapper', 'local', 'mpiexec',
-    'mpirun', 'srun', 'srunalloc', 'ssh', 'upcrun', 'upcxx-run'
+    'alps', 'launcherwrapper', 'local', 'mpiexec', 'mpirun',
+    'srun', 'srunalloc', 'ssh', 'upcrun', 'upcxx-run', 'lrun', 'lrun-gpu'
 ])
 def launcher(request):
     if request.param == 'launcherwrapper':
@@ -139,6 +139,10 @@ def test_run_command(job):
         assert command == 'upcrun -N 2 -n 4 --foo'
     elif launcher_name == 'upcxx-run':
         assert command == 'upcxx-run -N 2 -n 4 --foo'
+    elif launcher_name == 'lrun':
+        assert command == 'lrun -N 2 -T 2 --foo'
+    elif launcher_name == 'lrun-gpu':
+        assert command == 'lrun -N 2 -T 2 -M "-gpu" --foo'
 
 
 def test_run_command_minimal(minimal_job):
@@ -169,3 +173,7 @@ def test_run_command_minimal(minimal_job):
         assert command == 'upcrun -n 1 --foo'
     elif launcher_name == 'upcxx-run':
         assert command == 'upcxx-run -n 1 --foo'
+    elif launcher_name == 'lrun':
+        assert command == 'lrun -N 1 -T 1 --foo'
+    elif launcher_name == 'lrun-gpu':
+        assert command == 'lrun -N 1 -T 1 -M "-gpu" --foo'

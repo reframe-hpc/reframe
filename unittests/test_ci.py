@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -31,7 +31,9 @@ def test_ci_gitlab_pipeline():
 
     # Fetch the latest Gitlab CI JSON schema
     try:
-        response = requests.get('https://json.schemastore.org/gitlab-ci')
+        response = requests.get(
+            'https://gitlab.com/gitlab-org/gitlab/-/raw/master/app/assets/javascripts/editor/schema/ci.json'    # noqa: E501
+        )
     except requests.exceptions.ConnectionError as e:
         pytest.skip(f'could not reach URL: {e}')
     else:

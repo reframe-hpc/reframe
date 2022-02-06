@@ -1,8 +1,10 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+
+# rfmdocstart: maketestmixin
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -24,9 +26,9 @@ class MakefileTestAlt(rfm.RegressionTest, ElemTypeParam):
     def set_compiler_flags(self):
         self.build_system.cppflags = [f'-DELEM_TYPE={self.elem_type}']
 
-    @run_before('sanity')
-    def set_sanity_patterns(self):
-        self.sanity_patterns = sn.assert_found(
+    @sanity_function
+    def validate_test(self):
+        return sn.assert_found(
             rf'Result \({self.elem_type}\):', self.stdout
         )
 
@@ -42,6 +44,7 @@ class MakeOnlyTestAlt(rfm.CompileOnlyRegressionTest, ElemTypeParam):
     def set_compiler_flags(self):
         self.build_system.cppflags = [f'-DELEM_TYPE={self.elem_type}']
 
-    @run_before('sanity')
-    def set_sanity_patterns(self):
-        self.sanity_patterns = sn.assert_not_found(r'warning', self.stdout)
+    @sanity_function
+    def validate_build(self):
+        return sn.assert_not_found(r'warning', self.stdout)
+# rfmdocend: maketestmixin

@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -21,12 +21,14 @@ class BuildHip(rfm.RegressionTest):
     valid_prog_environs = ['PrgEnv-gnu']
     sourcesdir = 'https://github.com/ROCm-Developer-Tools/HIP.git'
     build_system = 'CMake'
-    prebuild_cmds = ['git checkout main']
+
+    # Checkout the latest tag - git describe doesn't work here
+    prebuild_cmds = ['git tag | tail -1 | xargs git checkout $1']
+
     postbuild_cmds = ['make install']
     executable = f'{hip_path}/bin/hipcc'
     executable_opts = ['--version']
     maintainers = ['JO']
-    tags = {'production'}
 
     @run_before('compile')
     def set_compile_options(self):
@@ -61,7 +63,6 @@ class HelloHip(rfm.RegressionTest):
     build_system = 'Make'
     executable = f'{sample_dir}/{sample}/{sample}'
     maintainers = ['JO']
-    tags = {'production'}
 
     @run_after('init')
     def set_deps(self):

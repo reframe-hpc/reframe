@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -124,3 +124,22 @@ class SrunAllocationLauncher(JobLauncher):
             ret.append(opt)
 
         return ret
+
+
+@register_launcher('lrun')
+class LrunLauncher(JobLauncher):
+    '''LLNL's custom parallel job launcher'''
+
+    def command(self, job):
+        num_tasks_per_node = job.num_tasks_per_node or 1
+        num_nodes = job.num_tasks // num_tasks_per_node
+        return ['lrun', '-N', str(num_nodes),
+                '-T', str(num_tasks_per_node)]
+
+
+@register_launcher('lrun-gpu')
+class LrungpuLauncher(LrunLauncher):
+    '''LLNL's custom parallel job launcher w/ CUDA aware Spectum MPI'''
+
+    def command(self, job):
+        return super().command(job) + ['-M "-gpu"']

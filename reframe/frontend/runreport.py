@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -13,9 +13,12 @@ import re
 import reframe as rfm
 import reframe.core.exceptions as errors
 import reframe.utility.jsonext as jsonext
-import reframe.utility.versioning as versioning
 
-DATA_VERSION = '1.3.0'
+
+# The schema data version
+# Major version bumps are expected to break the validation of previous schemas
+
+DATA_VERSION = '2.0'
 _SCHEMA = os.path.join(rfm.INSTALL_PREFIX, 'reframe/schemas/runreport.json')
 
 
@@ -31,12 +34,12 @@ class _RunReport:
         self._cases_index = {}
         for run in self._report['runs']:
             for tc in run['testcases']:
-                c, p, e = tc['name'], tc['system'], tc['environment']
+                c, p, e = tc['unique_name'], tc['system'], tc['environment']
                 self._cases_index[c, p, e] = tc
 
         # Index also the restored cases
         for tc in self._report['restored_cases']:
-            c, p, e = tc['name'], tc['system'], tc['environment']
+            c, p, e = tc['unique_name'], tc['system'], tc['environment']
             self._cases_index[c, p, e] = tc
 
     def __getitem__(self, key):
@@ -71,7 +74,7 @@ class _RunReport:
                 yield val
 
     def case(self, check, part, env):
-        c, p, e = check.name, part.fullname, env.name
+        c, p, e = check.unique_name, part.fullname, env.name
         ret = self._cases_index.get((c, p, e))
         if ret is None:
             # Look up the case in the fallback reports
@@ -151,18 +154,15 @@ def _load_report(filename):
     try:
         jsonschema.validate(report, schema)
     except jsonschema.ValidationError as e:
-        raise errors.ReframeError(f'invalid report {filename!r}') from e
+        try:
+            found_ver = report['session_info']['data_version']
+        except KeyError:
+            found_ver = 'n/a'
 
-    # Check if the report data is compatible
-    found_ver = versioning.parse(
-        report['session_info']['data_version']
-    )
-    required_ver = versioning.parse(DATA_VERSION)
-    if found_ver.major != required_ver.major or found_ver < required_ver:
         raise errors.ReframeError(
-            f'incompatible report data versions: '
-            f'found {found_ver}, required >= {required_ver}'
-        )
+            f'invalid report {filename!r} '
+            f'(required data version: {DATA_VERSION}), found: {found_ver})'
+        ) from e
 
     return _RunReport(report)
 
@@ -202,7 +202,7 @@ def junit_xml_report(json_report):
         testsuite_properties = etree.SubElement(xml_testsuite, 'properties')
         for tc in rfm_run['testcases']:
             casename = (
-                f"{tc['name']}[{tc['system']}, {tc['environment']}]"
+                f"{tc['unique_name']}[{tc['system']}, {tc['environment']}]"
             )
             testcase = etree.SubElement(
                 xml_testsuite, 'testcase',

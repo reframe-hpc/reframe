@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -111,12 +111,11 @@ def _register_parameterized_test(cls, args=None):
     '''
     def _instantiate(cls, args):
         if isinstance(args, collections.abc.Sequence):
-            return cls(*args, _rfm_use_params=True)
+            return cls(*args)
         elif isinstance(args, collections.abc.Mapping):
-            args['_rfm_use_params'] = True
             return cls(**args)
         elif args is None:
-            return cls(_rfm_use_params=True)
+            return cls()
 
     def _instantiate_all():
         ret = []
@@ -179,14 +178,14 @@ def simple_test(cls):
     '''Class decorator for registering tests with ReFrame.
 
     The decorated class must derive from
-    :class:`reframe.core.pipeline.RegressionTest`.  This decorator is also
+    :class:`reframe.core.pipeline.RegressionTest`. This decorator is also
     available directly under the :mod:`reframe` module.
 
     .. versionadded:: 2.13
     '''
     if _validate_test(cls):
-        for _ in cls.param_space:
-            _register_test(cls, _rfm_use_params=True)
+        for n in range(cls.num_variants):
+            _register_test(cls, variant_num=n)
 
     return cls
 
@@ -267,6 +266,10 @@ def required_version(*versions):
        versioning <https://semver.org/>`__ specification is deprecated.
        Examples of non-compliant version numbers are ``3.5`` and ``3.5-dev0``.
        These should be written as ``3.5.0`` and ``3.5.0-dev.0``.
+
+    .. deprecated:: 3.5.0
+       Please set the ``require_version`` parameter in the class definition
+       instead.
 
     '''
     warn.user_deprecation_warning(

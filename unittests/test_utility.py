@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -479,13 +479,15 @@ def test_import_from_file_load_abspath():
     assert module is sys.modules.get('reframe')
 
 
-def test_import_from_file_load_unknown_path():
-    try:
-        util.import_module_from_file('/foo')
-        pytest.fail()
-    except ImportError as e:
-        assert 'foo' == e.name
-        assert '/foo' == e.path
+def test_import_from_file_existing_module_name(tmp_path):
+    test_file = tmp_path / 'os.py'
+    with open(test_file, 'w') as fp:
+        print('var = 1', file=fp)
+
+    module = util.import_module_from_file(test_file)
+    assert module.var == 1
+    assert not hasattr(module, 'path')
+    assert hasattr(os, 'path')
 
 
 def test_import_from_file_load_directory_relative():
@@ -508,17 +510,6 @@ def test_import_from_file_load_relative():
         module = util.import_module_from_file('utility/osext.py')
         assert 'reframe.utility.osext' == module.__name__
         assert module is sys.modules.get('reframe.utility.osext')
-
-
-def test_import_from_file_load_outside_pkg():
-    module = util.import_module_from_file(os.path.__file__)
-
-    # os imports the OS-specific path libraries under the name `path`. Our
-    # importer will import the actual file, thus the module name should be
-    # the real one.
-    assert (module is sys.modules.get('posixpath') or
-            module is sys.modules.get('ntpath') or
-            module is sys.modules.get('macpath'))
 
 
 def test_import_from_file_load_twice():
@@ -1459,16 +1450,24 @@ def user_exec_ctx(request, make_exec_ctx_g):
 
 
 @pytest.fixture
-def modules_system(user_exec_ctx, monkeypatch):
+def modules_system(user_exec_ctx, monkeypatch, tmp_path):
     # Pretend to be on a clean modules environment
     monkeypatch.setenv('MODULEPATH', '')
     monkeypatch.setenv('LOADEDMODULES', '')
     monkeypatch.setenv('_LMFILES_', '')
 
+    # Create a symlink to testmod_foo to check for unique module names
+    # found by `find_modules`
+    (tmp_path / 'testmod_foo').symlink_to(
+        os.path.join(test_util.TEST_MODULES, 'testmod_foo')
+    )
+
     ms = rt.runtime().system.modules_system
+    ms.searchpath_add(str(tmp_path))
     ms.searchpath_add(test_util.TEST_MODULES)
     yield ms
     ms.searchpath_remove(test_util.TEST_MODULES)
+    ms.searchpath_remove(str(tmp_path))
 
 
 def test_find_modules(modules_system):
@@ -1565,12 +1564,23 @@ class _Z(_D):
     pass
 
 
+class _T(jsonext.JSONSerializable):
+    __slots__ = ('t',)
+
+    def __eq__(self, other):
+        if not isinstance(other, _T):
+            return NotImplemented
+
+        return self.t == other.t
+
+
 class _C(jsonext.JSONSerializable):
     def __init__(self, x, y):
         self.x = x
         self.y = y
         self.z = None
         self.w = {1, 2}
+        self.t = None
 
         # Dump dict with tuples as keys
         self.v = {(1, 2): 1}
@@ -1587,7 +1597,8 @@ class _C(jsonext.JSONSerializable):
         return (self.x == other.x and
                 self.y == other.y and
                 self.z == other.z and
-                self.w == other.w)
+                self.w == other.w and
+                self.t == other.t)
 
 
 def test_jsonext_load(tmp_path):
@@ -1597,10 +1608,15 @@ def test_jsonext_load(tmp_path):
     c.z = _Z()
     c.z.a += 1
     c.z.b = 'barfoo'
+    c.t = _T()
+    c.t.t = 5
 
     json_dump = tmp_path / 'test.json'
     with open(json_dump, 'w') as fp:
         jsonext.dump(c, fp, indent=2)
+
+    with open(json_dump, 'r') as fp:
+        print(fp.read())
 
     with open(json_dump, 'r') as fp:
         c_restored = jsonext.load(fp)
@@ -1766,6 +1782,10 @@ def test_nodelist_abbrev():
     assert nodelist(['nid01', 'nid10', 'nid20']) == 'nid01,nid10,nid20'
     assert nodelist([]) == ''
     assert nodelist(['nid001']) == 'nid001'
+
+    # Test host names with numbers in their basename (see GH #2357)
+    nodes = [f'c2-01-{n:02}' for n in range(100)]
+    assert nodelist(nodes) == 'c2-01-[00-99]'
 
     # Test node duplicates
     assert nodelist(['nid001', 'nid001', 'nid002']) == 'nid001,nid00[1-2]'

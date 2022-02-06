@@ -1,5 +1,5 @@
 ===========================
-Tutorial 4: Tips and Tricks
+Tutorial 6: Tips and Tricks
 ===========================
 
 .. versionadded:: 3.4
@@ -19,14 +19,8 @@ In the following, we have inserted a small typo in the ``hello2.py`` tutorial ex
 
    ./bin/reframe -c tutorials/basics/hello -R -l
 
-.. code-block:: none
-
-   ./bin/reframe: skipping test file '/Users/user/Repositories/reframe/tutorials/basics/hello/hello2.py': name error: tutorials/basics/hello/hello2.py:17: name 's' is not defined
-       sanity_patterns = s.assert_found(r'Hello, World\!', 'hello.out')
-    (rerun with '-v' for more information)
-   [List of matched checks]
-   - HelloTest (found in '/Users/user/Repositories/reframe/tutorials/basics/hello/hello1.py')
-   Found 1 check(s)
+.. literalinclude:: listings/hello2_typo.txt
+   :language: console
 
 Notice how ReFrame prints also the source code line that caused the error.
 This is not always the case, however.
@@ -46,42 +40,10 @@ As suggested by the warning message, passing :option:`-v` will give you the stac
 
 .. code:: bash
 
-   ./bin/reframe -c tutorials/basics/hello -R -lv
+   ./bin/reframe -c tutorials/basics/hello -R -l -v
 
-.. code-block:: none
-
-   ./bin/reframe: skipping test file '/Users/user/Repositories/reframe/tutorials/basics/hello/hello2.py': name error: tutorials/basics/hello/hello2.py:17: name 's' is not defined
-       sanity_patterns = s.assert_found(r'Hello, World\!', 'hello.out')
-    (rerun with '-v' for more information)
-   Traceback (most recent call last):
-     File "/Users/user/Repositories/reframe/reframe/frontend/loader.py", line 172, in load_from_file
-       util.import_module_from_file(filename, force)
-     File "/Users/user/Repositories/reframe/reframe/utility/__init__.py", line 101, in import_module_from_file
-       return importlib.import_module(module_name)
-     File "/usr/local/Cellar/python@3.9/3.9.1_6/Frameworks/Python.framework/Versions/3.9/lib/python3.9/importlib/__init__.py", line 127, in import_module
-       return _bootstrap._gcd_import(name[level:], package, level)
-     File "<frozen importlib._bootstrap>", line 1030, in _gcd_import
-     File "<frozen importlib._bootstrap>", line 1007, in _find_and_load
-     File "<frozen importlib._bootstrap>", line 986, in _find_and_load_unlocked
-     File "<frozen importlib._bootstrap>", line 680, in _load_unlocked
-     File "<frozen importlib._bootstrap_external>", line 790, in exec_module
-     File "<frozen importlib._bootstrap>", line 228, in _call_with_frames_removed
-     File "/Users/user/Repositories/reframe/tutorials/basics/hello/hello2.py", line 11, in <module>
-       class HelloMultiLangTest(rfm.RegressionTest):
-     File "/Users/user/Repositories/reframe/tutorials/basics/hello/hello2.py", line 17, in HelloMultiLangTest
-       sanity_patterns = s.assert_found(r'Hello, World\!', 'hello.out')
-   NameError: name 's' is not defined
-
-   Loaded 1 test(s)
-   Generated 1 test case(s)
-   Filtering test cases(s) by name: 1 remaining
-   Filtering test cases(s) by tags: 1 remaining
-   Filtering test cases(s) by other attributes: 1 remaining
-   Final number of test cases: 1
-   [List of matched checks]
-   - HelloTest (found in '/Users/user/Repositories/reframe/tutorials/basics/hello/hello1.py')
-   Found 1 check(s)
-
+.. literalinclude:: listings/hello2_typo_stacktrace.txt
+   :language: console
 
 .. tip::
    The :option:`-v` option can be given multiple times to increase the verbosity level further.
@@ -90,7 +52,7 @@ As suggested by the warning message, passing :option:`-v` will give you the stac
 Debugging deferred expressions
 ==============================
 
-Although deferred expression that are used in :attr:`sanity_patterns` and :attr:`perf_patterns` behave similarly to normal Python expressions, you need to understand their `implicit evaluation rules <deferrable_functions_reference.html#implicit-evaluation-of-sanity-functions>`__.
+Although deferred expressions that are used in sanity and performance functions behave similarly to normal Python expressions, you need to understand their `implicit evaluation rules <deferrable_functions_reference.html#implicit-evaluation-of-sanity-functions>`__.
 One of the rules is that :func:`str` triggers the implicit evaluation, so trying to use the standard :func:`print` function with a deferred expression, you might get unexpected results if that expression is not yet to be evaluated.
 For this reason, ReFrame offers a sanity function counterpart of :func:`print`, which allows you to safely print deferred expressions.
 
@@ -116,9 +78,9 @@ Trying to use the standard print here :func:`print` function here would be of li
        def set_sourcepath(self):
            self.sourcepath = f'hello.{self.lang}'
 
-       @run_before('sanity')
-       def set_sanity_patterns(self):
-           self.sanity_patterns = sn.assert_found(r'Hello, World\!', sn.print(self.stdout))
+       @sanity_function
+       def validate_output(self):
+           return sn.assert_found(r'Hello, World\!', sn.print(self.stdout))
 
 
 If we run the test, we can see that the correct standard output filename will be printed after sanity:
@@ -127,26 +89,13 @@ If we run the test, we can see that the correct standard output filename will be
 
    ./bin/reframe -C tutorials/config/settings.py -c tutorials/basics/hello/hello2.py -r
 
-.. code-block:: none
-
-   [----------] waiting for spawned checks to finish
-   rfm_HelloMultiLangTest_cpp_job.out
-   [       OK ] (1/4) HelloMultiLangTest_cpp on catalina:default using gnu [compile: 0.677s run: 0.700s total: 1.394s]
-   rfm_HelloMultiLangTest_c_job.out
-   [       OK ] (2/4) HelloMultiLangTest_c on catalina:default using gnu [compile: 0.451s run: 1.788s total: 2.258s]
-   rfm_HelloMultiLangTest_c_job.out
-   [       OK ] (3/4) HelloMultiLangTest_c on catalina:default using clang [compile: 0.329s run: 1.585s total: 1.934s]
-   rfm_HelloMultiLangTest_cpp_job.out
-   [       OK ] (4/4) HelloMultiLangTest_cpp on catalina:default using clang [compile: 0.609s run: 0.373s total: 1.004s]
-   [----------] all spawned checks have finished
-
-   [  PASSED  ] Ran 4 test case(s) from 2 check(s) (0 failure(s))
-   [==========] Finished on Wed Jan 20 17:19:01 2021
+.. literalinclude:: listings/hello2_print_stdout.txt
+   :language: console
 
 
 Debugging sanity and performance patterns
 =========================================
-When creating a new test that requires a complex output parsing for either the sanity or performance stages, setting the :attr:`sanity_patterns` and :attr:`perf_patterns` may involve some trial and error to debug the complex regular expressions required.
+When creating a new test that requires a complex output parsing for either the ``sanity`` or ``performance`` pipeline stages, tuning the functions decorated by :attr:`@sanity_function<reframe.core.pipeline.RegressionMixin.sanity_function>` or :attr:`@performance_function<reframe.core.pipeline.RegressionMixin.performance_function>` may involve some trial and error to debug the complex regular expressions required.
 For lightweight tests which execute in a few seconds, this trial and error may not be an issue at all.
 However, when dealing with tests which take longer to run, this method can quickly become tedious and inefficient.
 
@@ -154,7 +103,7 @@ However, when dealing with tests which take longer to run, this method can quick
    When dealing with ``make``-based projects which take a long time to compile, you can use the command line option :option:`--dont-restage` in order to speed up the compile stage in subsequent runs.
 
 When a test fails, ReFrame will keep the test output in the stage directory after its execution, which means that one can load this output into a Python shell or another helper script without having to rerun the expensive test again.
-If the test is not failing but the user still wants to experiment or modify the existing :attr:`~reframe.core.pipeline.RegressionTest.sanity_patterns` or :attr:`~reframe.core.pipeline.RegressionTest.perf_patterns`, the command line option :option:`--keep-stage-files` can be used when running ReFrame to avoid deleting the stage directory.
+If the test is not failing but the user still wants to experiment or modify the existing sanity or performance functions, the command line option :option:`--keep-stage-files` can be used when running ReFrame to avoid deleting the stage directory.
 With the executable's output available in the stage directory, one can simply use the `re <https://docs.python.org/3/library/re.html>`_ module to debug regular expressions as shown below.
 
 .. code-block:: python
@@ -168,7 +117,7 @@ With the executable's output available in the stage directory, one can simply us
     >>> # Evaluate the regular expression
     >>> re.find(the_regex_pattern, test_output)
 
-Alternatively to using the `re <https://docs.python.org/3/library/re.html>`_ module, one could use all the sanity functions provided by ReFrame directly from the Python shell.
+Alternatively to using the `re <https://docs.python.org/3/library/re.html>`_ module, one could use all the :mod:`~reframe.utility.sanity` utility provided by ReFrame directly from the Python shell.
 In order to do so, if ReFrame was installed manually using the ``bootstrap.sh`` script, one will have to make all the Python modules from the ``external`` directory accessible to the Python shell as shown below.
 
 .. code-block:: python
@@ -190,85 +139,16 @@ Debugging test loading
 ======================
 
 If you are new to ReFrame, you might wonder sometimes why your tests are not loading or why your tests are not running on the partition they were supposed to run.
-This can be due to ReFrame picking the wrong configuration entry or that your test is not written properly (not decorated, no :attr:`valid_systems` etc.).
+This can be due to ReFrame picking the wrong configuration entry or that your test is not written properly (not decorated, no :attr:`~reframe.core.pipeline.RegressionTest.valid_systems` etc.).
 If you try to load a test file and list its tests by increasing twice the verbosity level, you will get enough output to help you debug such issues.
 Let's try loading the ``tutorials/basics/hello/hello2.py`` file:
 
 .. code:: bash
 
-   ./bin/reframe -C tutorials/config/settings.py -c tutorials/basics/hello/hello2.py -lvv
+   ./bin/reframe -C tutorials/config/settings.py -c tutorials/basics/hello/hello2.py -l -vv
 
-
-.. code-block:: none
-
-   Loading user configuration
-   Loading configuration file: 'tutorials/config/settings.py'
-   Detecting system
-   Looking for a matching configuration entry for system 'dhcp-133-191.cscs.ch'
-   Configuration found: picking system 'generic'
-   Selecting subconfig for 'generic'
-   Initializing runtime
-   Selecting subconfig for 'generic:default'
-   Initializing system partition 'default'
-   Selecting subconfig for 'generic'
-   Initializing system 'generic'
-   Initializing modules system 'nomod'
-   [ReFrame Environment]
-     RFM_CHECK_SEARCH_PATH=<not set>
-     RFM_CHECK_SEARCH_RECURSIVE=<not set>
-     RFM_CLEAN_STAGEDIR=<not set>
-     RFM_COLORIZE=<not set>
-     RFM_CONFIG_FILE=/Users/user/Repositories/reframe/tutorials/config/settings.py
-     RFM_GRAYLOG_ADDRESS=<not set>
-     RFM_IGNORE_CHECK_CONFLICTS=<not set>
-     RFM_IGNORE_REQNODENOTAVAIL=<not set>
-     RFM_INSTALL_PREFIX=/Users/user/Repositories/reframe
-     RFM_KEEP_STAGE_FILES=<not set>
-     RFM_MODULE_MAPPINGS=<not set>
-     RFM_MODULE_MAP_FILE=<not set>
-     RFM_NON_DEFAULT_CRAYPE=<not set>
-     RFM_OUTPUT_DIR=<not set>
-     RFM_PERFLOG_DIR=<not set>
-     RFM_PREFIX=<not set>
-     RFM_PURGE_ENVIRONMENT=<not set>
-     RFM_REPORT_FILE=<not set>
-     RFM_SAVE_LOG_FILES=<not set>
-     RFM_STAGE_DIR=<not set>
-     RFM_SYSLOG_ADDRESS=<not set>
-     RFM_SYSTEM=<not set>
-     RFM_TIMESTAMP_DIRS=<not set>
-     RFM_UNLOAD_MODULES=<not set>
-     RFM_USER_MODULES=<not set>
-     RFM_USE_LOGIN_SHELL=<not set>
-     RFM_VERBOSE=<not set>
-   [ReFrame Setup]
-     version:           3.4-dev2 (rev: 33a97c81)
-     command:           './bin/reframe -C tutorials/config/settings.py -c tutorials/basics/hello/hello2.py -lvv'
-     launched by:       user@dhcp-133-191.cscs.ch
-     working directory: '/Users/user/Repositories/reframe'
-     settings file:     'tutorials/config/settings.py'
-     check search path: '/Users/user/Repositories/reframe/tutorials/basics/hello/hello2.py'
-     stage directory:   '/Users/user/Repositories/reframe/stage'
-     output directory:  '/Users/user/Repositories/reframe/output'
-
-   Looking for tests in '/Users/user/Repositories/reframe/tutorials/basics/hello/hello2.py'
-   Validating '/Users/user/Repositories/reframe/tutorials/basics/hello/hello2.py': OK
-     > Loaded 2 test(s)
-   Loaded 2 test(s)
-   Generated 2 test case(s)
-   Filtering test cases(s) by name: 2 remaining
-   Filtering test cases(s) by tags: 2 remaining
-   Filtering test cases(s) by other attributes: 2 remaining
-   Building and validating the full test DAG
-   Full test DAG:
-     ('HelloMultiLangTest_c', 'generic:default', 'builtin') -> []
-     ('HelloMultiLangTest_cpp', 'generic:default', 'builtin') -> []
-   Final number of test cases: 2
-   [List of matched checks]
-   - HelloMultiLangTest_c (found in '/Users/user/Repositories/reframe/tutorials/basics/hello/hello2.py')
-   - HelloMultiLangTest_cpp (found in '/Users/user/Repositories/reframe/tutorials/basics/hello/hello2.py')
-   Found 2 check(s)
-   Log file(s) saved in: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-3956_dlu.log'
+.. literalinclude:: listings/hello2_list_verbose.txt
+   :language: console
 
 You can see all the different phases ReFrame's frontend goes through when loading a test.
 The first "strange" thing to notice in this log is that ReFrame picked the generic system configuration.
@@ -413,31 +293,8 @@ Let's run the whole test DAG:
 
    ./bin/reframe -c unittests/resources/checks_unlisted/deps_complex.py -r
 
-.. code-block:: none
-
-   <output omitted>
-
-   [----------] waiting for spawned checks to finish
-   [       OK ] ( 1/10) T0 on generic:default using builtin [compile: 0.014s run: 0.297s total: 0.337s]
-   [       OK ] ( 2/10) T4 on generic:default using builtin [compile: 0.010s run: 0.171s total: 0.207s]
-   [       OK ] ( 3/10) T5 on generic:default using builtin [compile: 0.010s run: 0.192s total: 0.225s]
-   [       OK ] ( 4/10) T1 on generic:default using builtin [compile: 0.008s run: 0.198s total: 0.226s]
-   [     FAIL ] ( 5/10) T8 on generic:default using builtin [compile: n/a run: n/a total: 0.003s]
-   ==> test failed during 'setup': test staged in '/Users/user/Repositories/reframe/stage/generic/default/builtin/T8'
-   [     FAIL ] ( 6/10) T9 [compile: n/a run: n/a total: n/a]
-   ==> test failed during 'startup': test staged in '<not available>'
-   [       OK ] ( 7/10) T6 on generic:default using builtin [compile: 0.007s run: 0.224s total: 0.262s]
-   [       OK ] ( 8/10) T3 on generic:default using builtin [compile: 0.007s run: 0.211s total: 0.235s]
-   [     FAIL ] ( 9/10) T2 on generic:default using builtin [compile: 0.011s run: 0.318s total: 0.389s]
-   ==> test failed during 'sanity': test staged in '/Users/user/Repositories/reframe/stage/generic/default/builtin/T2'
-   [     FAIL ] (10/10) T7 [compile: n/a run: n/a total: n/a]
-   ==> test failed during 'startup': test staged in '<not available>'
-   [----------] all spawned checks have finished
-
-   [  FAILED  ] Ran 10 test case(s) from 10 check(s) (4 failure(s))
-   [==========] Finished on Thu Jan 21 13:58:43 2021
-
-   <output omitted>
+.. literalinclude:: listings/deps_complex_run.txt
+   :language: console
 
 You can restore the run session and run only the failed test cases as follows:
 
@@ -473,21 +330,8 @@ Let's try to rerun the :class:`T6` test from the previous test dependency chain:
 
 Notice how only the :class:`T6` test was rerun and none of its dependencies, since they were simply restored:
 
-.. code-block:: none
-
-   [==========] Running 1 check(s)
-   [==========] Started on Thu Jan 21 14:27:18 2021
-
-   [----------] started processing T6 (T6)
-   [ RUN      ] T6 on generic:default using builtin
-   [----------] finished processing T6 (T6)
-
-   [----------] waiting for spawned checks to finish
-   [       OK ] (1/1) T6 on generic:default using builtin [compile: 0.012s run: 0.428s total: 0.464s]
-   [----------] all spawned checks have finished
-
-   [  PASSED  ] Ran 1 test case(s) from 1 check(s) (0 failure(s))
-   [==========] Finished on Thu Jan 21 14:27:19 2021
+.. literalinclude:: listings/deps_rerun_t6.txt
+   :language: console
 
 
 If we tried to run :class:`T6` without restoring the session, we would have to rerun also the whole dependency chain, i.e., also :class:`T5`, :class:`T1`, :class:`T4` and :class:`T0`.
@@ -496,19 +340,8 @@ If we tried to run :class:`T6` without restoring the session, we would have to r
 
    ./bin/reframe -c unittests/resources/checks_unlisted/deps_complex.py -n T6 -r
 
-.. code-block:: none
-
-   [----------] waiting for spawned checks to finish
-   [       OK ] (1/5) T0 on generic:default using builtin [compile: 0.012s run: 0.424s total: 0.464s]
-   [       OK ] (2/5) T4 on generic:default using builtin [compile: 0.011s run: 0.348s total: 0.381s]
-   [       OK ] (3/5) T5 on generic:default using builtin [compile: 0.007s run: 0.225s total: 0.248s]
-   [       OK ] (4/5) T1 on generic:default using builtin [compile: 0.009s run: 0.235s total: 0.267s]
-   [       OK ] (5/5) T6 on generic:default using builtin [compile: 0.010s run: 0.265s total: 0.297s]
-   [----------] all spawned checks have finished
-
-
-   [  PASSED  ] Ran 5 test case(s) from 5 check(s) (0 failure(s))
-   [==========] Finished on Thu Jan 21 14:32:09 2021
+.. literalinclude:: listings/deps_run_t6.txt
+   :language: console
 
 
 .. _generate-ci-pipeline:
@@ -552,8 +385,11 @@ The following is an example of ``.gitlab-ci.yml`` file that does exactly that:
 It defines two stages.
 The first one, called ``generate``, will call ReFrame to generate the pipeline specification for the desired tests.
 All the usual `test selection options <manpage.html#test-filtering>`__ can be used to select specific tests.
-ReFrame will process them as usual, but instead of running the selected tests, it will generate the correct steps for running each test individually as a Gitlab job.
-We then pass the generated CI pipeline file to second phase as an artifact and we are done!
+ReFrame will process them as usual, but instead of running the selected tests, it will generate the correct steps
+for running each test individually as a Gitlab job. We then pass the generated CI pipeline file to second phase as
+an artifact and we are done! If ``image`` keyword is defined in ``.gitlab-ci.yml``, the emitted pipeline will use
+the same image as the one defined in the parent pipeline.
+Besides, each job in the generated pipeline will output a separate junit report which can be used to create GitLab badges.
 
 The following figure shows one part of the automatically generated pipeline for the test graph depicted `above <#fig-deps-complex>`__.
 

@@ -33,6 +33,21 @@ jobs:
       with:
         fail_ci_if_error: true
 
+  unittest-macos:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+    - name: Install dependencies
+      run: |
+        ./bootstrap.sh
+    - name: Generic Unittests
+      run: |
+        ./test_reframe.py
+
   modulestest:
     runs-on: ubuntu-latest
     strategy:
@@ -47,6 +62,17 @@ jobs:
       run: |
         docker run reframe:${{ matrix.modules-version }}
 
+  tutorialtest:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build Image for Tutorial Tests
+      run: |
+        docker build -f ci-scripts/dockerfiles/tutorials.dockerfile -t reframe:tutorials .
+    - name: Run Tutorial Tests
+      run: |
+        docker run reframe:tutorials
+
   unusedimports:
     runs-on: ubuntu-latest
     steps:
@@ -54,7 +80,7 @@ jobs:
       with:
         fetch-depth: 0
     - name: Lint Code Base
-      uses: github/super-linter@v3
+      uses: github/super-linter@v4
       env:
         VALIDATE_ALL_CODEBASE: false
         VALIDATE_PYTHON_FLAKE8: true

@@ -1,8 +1,9 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+# rfmdocstart: hellothreaded
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -22,6 +23,7 @@ class HelloThreadedTest(rfm.RegressionTest):
         if environ in {'clang', 'gnu'}:
             self.build_system.cxxflags += ['-pthread']
 
-    @run_before('sanity')
-    def set_sanity_patterns(self):
-        self.sanity_patterns = sn.assert_found(r'Hello, World\!', self.stdout)
+    @sanity_function
+    def assert_hello(self):
+        return sn.assert_found(r'Hello, World\!', self.stdout)
+# rfmdocend: hellothreaded

@@ -1,4 +1,4 @@
-[![ReFrame Logo](https://github.com/eth-cscs/reframe/blob/master/docs/_static/img/reframe_logo-width400p.png)](https://github.com/eth-cscs/reframe)<br/>
+[![ReFrame Logo](https://raw.githubusercontent.com/eth-cscs/reframe/master/docs/_static/img/reframe_logo-width400p.png)](https://github.com/eth-cscs/reframe)<br/>
 [![Build Status](https://github.com/eth-cscs/reframe/workflows/ReFrame%20CI/badge.svg)](https://github.com/eth-cscs/reframe/actions?query=workflow%3A%22ReFrame+CI%22)
 [![Documentation Status](https://readthedocs.org/projects/reframe-hpc/badge/?version=latest)](https://reframe-hpc.readthedocs.io/en/latest/?badge=latest)
 [![codecov.io](https://codecov.io/gh/eth-cscs/reframe/branch/master/graph/badge.svg)](https://codecov.io/github/eth-cscs/reframe)<br/>
@@ -6,7 +6,9 @@
 ![GitHub commits since latest release](https://img.shields.io/github/commits-since/eth-cscs/reframe/latest)
 ![GitHub contributors](https://img.shields.io/github/contributors-anon/eth-cscs/reframe)<br/>
 [![PyPI version](https://badge.fury.io/py/ReFrame-HPC.svg)](https://badge.fury.io/py/ReFrame-HPC)
-![PyPI - Python Version](https://img.shields.io/pypi/pyversions/reframe-hpc)<br/>
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/reframe-hpc)
+[![Downloads](https://pepy.tech/badge/reframe-hpc)](https://pepy.tech/project/reframe-hpc)
+[![Downloads](https://pepy.tech/badge/reframe-hpc/month)](https://pepy.tech/project/reframe-hpc)<br/>
 [![Slack](https://reframe-slack.herokuapp.com/badge.svg)](https://reframe-slack.herokuapp.com/)<br/>
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 [![DOI](https://zenodo.org/badge/89384186.svg)](https://zenodo.org/badge/latestdoi/89384186)<br/>
@@ -14,16 +16,14 @@
 
 # ReFrame in a Nutshell
 
-ReFrame is a framework for writing regression tests for HPC systems.
-The goal of this framework is to abstract away the complexity of the interactions with the system, separating the logic of a regression test from the low-level details, which pertain to the system configuration and setup.
-This allows users to write easily portable regression tests, focusing only on the functionality.
+ReFrame is a powerful framework for writing system regression tests and benchmarks, specifically targeted to HPC systems.
+The goal of the framework is to abstract away the complexity of the interactions with the system, separating the logic of a test from the low-level details, which pertain to the system configuration and setup.
+This allows users to write portable tests in a declarative way that describes only the test's functionality.
 
-Regression tests in ReFrame are simple Python classes that specify the basic parameters of the test.
-The framework will load the test and will send it down a well-defined pipeline that will take care of its execution.
+Tests in ReFrame are simple Python classes that specify the basic variables and parameters of the test.
+ReFrame offers an intuitive and very powerful syntax that allows users to create test libraries, test factories, as well as complete test workflows using other tests as fixtures.
+ReFrame will load the tests and send them down a well-defined pipeline that will execute them in parallel.
 The stages of this pipeline take care of all the system interaction details, such as programming environment switching, compilation, job submission, job status query, sanity checking and performance assessment.
-
-Writing system regression tests in a high-level modern programming language, like Python, poses a great advantage in organizing and maintaining the tests.
-Users can create their own test hierarchies, create test factories for generating multiple tests at the same time and also customize them in a simple and expressive way.
 
 Please visit the project's documentation [page](https://reframe-hpc.readthedocs.io/) for all the details!
 
@@ -51,9 +51,7 @@ You can optionally run the framework's unit tests with the following command:
 ./test_reframe.py -v
 ```
 
-NOTE: Unit tests require a functional C compiler, available through the `cc` command, that is also able to recognize the ``-O2`` option.
-The [GNU Make](https://www.gnu.org/software/make/) build tool is also needed.
-
+NOTE: Unit tests require a POSIX-compliant C compiler (available through the `cc` command), as well as the `make` utility.
 
 ### Building the documentation locally
 

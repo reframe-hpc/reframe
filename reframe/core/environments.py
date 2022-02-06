@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -37,13 +37,14 @@ class Environment(jsonext.JSONSerializable):
        Users may not create :class:`Environment` objects directly.
     '''
 
-    def __init__(self, name, modules=None, variables=None):
+    def __init__(self, name, modules=None, variables=None, extras=None):
         modules = modules or []
         variables = variables or []
         self._name = name
         self._modules = normalize_module_list(modules)
         self._module_names = [m['name'] for m in self._modules]
         self._variables = collections.OrderedDict(variables)
+        self._extras = extras or {}
 
     @property
     def name(self):
@@ -88,6 +89,17 @@ class Environment(jsonext.JSONSerializable):
         :type: :class:`OrderedDict[str, str]`
         '''
         return util.MappingView(self._variables)
+
+    @property
+    def extras(self):
+        '''User defined properties defined in the configuration.
+
+        .. versionadded:: 3.9.1
+
+        :type: :class:`Dict[str, object]`
+        '''
+
+        return self._extras
 
     def __eq__(self, other):
         if not isinstance(other, type(self)):
@@ -161,6 +173,7 @@ class ProgEnvironment(Environment):
                  name,
                  modules=None,
                  variables=None,
+                 extras=None,
                  cc='cc',
                  cxx='CC',
                  ftn='ftn',
@@ -171,7 +184,7 @@ class ProgEnvironment(Environment):
                  fflags=None,
                  ldflags=None,
                  **kwargs):
-        super().__init__(name, modules, variables)
+        super().__init__(name, modules, variables, extras)
         self._cc = cc
         self._cxx = cxx
         self._ftn = ftn

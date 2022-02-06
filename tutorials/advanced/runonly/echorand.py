@@ -1,8 +1,9 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+# rfmdocstart: echorand
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -20,11 +21,12 @@ class EchoRandTest(rfm.RunOnlyRegressionTest):
         f'$((RANDOM%({upper}+1-{lower})+{lower}))'
     ]
 
-    @run_before('sanity')
-    def set_sanity_patterns(self):
-        self.sanity_patterns = sn.assert_bounded(
+    @sanity_function
+    def assert_solution(self):
+        return sn.assert_bounded(
             sn.extractsingle(
                 r'Random: (?P<number>\S+)', self.stdout, 'number', float
             ),
             self.lower, self.upper
         )
+# rfmdocend: echorand

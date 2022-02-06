@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -195,7 +195,7 @@ def _sysfs_topo():
 
 def _sysctl_topo():
     try:
-        exec_output = osext.run_command('sysctl hw machdep.cpu.cache',
+        exec_output = osext.run_command('sysctl hw machdep.cpu',
                                         check=True)
     except (FileNotFoundError, SpawnedProcessError):
         return {}

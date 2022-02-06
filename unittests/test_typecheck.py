@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -16,6 +16,28 @@ def assert_type_hierarchy(builtin_type, ctype):
     assert not issubclass(ctype[int], ctype[float])
     assert not issubclass(ctype[ctype[int]], ctype[int])
     assert not issubclass(ctype[int], ctype[ctype[int]])
+
+
+def test_bool_type():
+    assert isinstance(True, types.Bool)
+    assert isinstance(False, types.Bool)
+    assert not isinstance('foo', types.Bool)
+
+    # Test invalid arguments
+    with pytest.raises(TypeError):
+        types.Bool('foo')
+
+    with pytest.raises(TypeError):
+        types.Bool('True')
+
+    with pytest.raises(TypeError):
+        types.Bool('False')
+
+    # Test for boolean conversion
+    assert types.Bool('true') is True
+    assert types.Bool('yes') is True
+    assert types.Bool('false') is False
+    assert types.Bool('no') is False
 
 
 def test_list_type():

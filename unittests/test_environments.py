@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -52,7 +52,8 @@ def user_runtime(make_exec_ctx_g):
 def env0():
     return env.Environment(
         'TestEnv1', ['testmod_foo'],
-        [('_var0', 'val1'), ('_var2', '$_var0'), ('_var3', '${_var1}')]
+        [('_var0', 'val1'), ('_var2', '$_var0'), ('_var3', '${_var1}')],
+        {'foo': 1, 'bar': 2}
     )
 
 
@@ -74,8 +75,22 @@ def test_env_construction(base_environ, env0):
     assert env0.variables['_var0'] == 'val1'
 
     # No variable expansion, if environment is not loaded
-    env0.variables['_var2'] == '$_var0'
-    env0.variables['_var3'] == '${_var1}'
+    assert env0.variables['_var2'] == '$_var0'
+    assert env0.variables['_var3'] == '${_var1}'
+
+    # Assert extras
+    assert env0.extras == {'foo': 1, 'bar': 2}
+
+
+def test_progenv_construction():
+    environ = env.ProgEnvironment('myenv',
+                                  modules=['modfoo'],
+                                  variables=[('var', 'val')],
+                                  extras={'foo': 'bar'})
+    assert environ.name == 'myenv'
+    assert environ.modules == ['modfoo']
+    assert environ.variables == {'var': 'val'}
+    assert environ.extras == {'foo': 'bar'}
 
 
 def test_env_snapshot(base_environ, env0, env1):

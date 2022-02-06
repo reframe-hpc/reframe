@@ -84,3 +84,18 @@ def user_deprecation_warning(message, from_version='0.0.0'):
     if _RAISE_DEPRECATION_ALWAYS or version >= min_version:
         warnings.warn(message, ReframeDeprecationWarning,
                       stacklevel=stack_level)
+
+
+class suppress_deprecations:
+    '''Temporarily suprress ReFrame deprecation warnings.'''
+
+    def __init__(self, *args, **kwargs):
+        self._ctxmgr = warnings.catch_warnings(*args, **kwargs)
+
+    def __enter__(self):
+        ret = self._ctxmgr.__enter__()
+        warnings.simplefilter('ignore', ReframeDeprecationWarning)
+        return ret
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return self._ctxmgr.__exit__(exc_type, exc_val, exc_tb)

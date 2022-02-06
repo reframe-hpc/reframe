@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -15,6 +15,7 @@ import sys
 import reframe.core.config as config
 import reframe.core.modules as modules
 import reframe.core.runtime as rt
+from reframe.core.meta import make_test
 
 
 TEST_RESOURCES = os.path.join(
@@ -159,3 +160,20 @@ def dispatch(argname, suffix=None):
         return _wrapped
 
     return _dispatch_deco
+
+
+def make_check(cls, *, alt_name=None, **vars):
+    '''Create a new test from class `cls`.
+
+    :arg cls: the class of the test.
+    'arg alt_name: an alternative name to be given to the test class
+    :arg vars: variables to set in the test upon creation
+    '''
+
+    if alt_name:
+        cls = make_test(alt_name, (cls,), {})
+
+    for k, v in vars.items():
+        cls.setvar(k, v)
+
+    return cls()

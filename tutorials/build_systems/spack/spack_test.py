@@ -1,8 +1,9 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+# rfmdocstart: spack-test
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -18,8 +19,9 @@ class BZip2SpackCheck(rfm.RegressionTest):
 
     @run_before('compile')
     def setup_build_system(self):
-        self.build_system.environment = 'myenv'
+        self.build_system.specs = ['bzip2@1.0.6']
 
     @sanity_function
     def assert_version(self):
         return sn.assert_found(r'Version 1.0.6', self.stderr)
+# rfmdocend: spack-test

@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -364,7 +364,7 @@ def _create_httpjson_handler(site_config, config_prefix):
             pass
     except OSError as e:
         getlogger().warning(
-            f'httpjson: could not connect to server'
+            f'httpjson: could not connect to server '
             f'{parsed_url.hostname}:{parsed_url.port}: {e}'
         )
         return None
@@ -469,6 +469,12 @@ class Logger(logging.Logger):
 
     def setLevel(self, level):
         self.level = _check_level(level)
+
+        if sys.version_info[:2] >= (3, 7):
+            # Clear the internal cache of the base logger, otherwise the
+            # logger will remain disabled if its level is raised and then
+            # lowered again
+            self._cache.clear()
 
     def makeRecord(self, name, level, fn, lno, msg, args, exc_info,
                    func=None, extra=None, sinfo=None):
@@ -659,16 +665,19 @@ class LoggerAdapter(logging.LoggerAdapter):
 
         super().error(message, *args, **kwargs)
 
-    def inc_verbosity(self, num_steps):
-        '''Convenience function for increasing the verbosity
+    def adjust_verbosity(self, num_steps):
+        '''Convenience function for increasing or decreasing the verbosity
         of the logger step-wise.'''
         log_levels = sorted(_log_level_names.keys())[1:]
         for h in self.std_stream_handlers:
             level_idx = log_levels.index(h.level)
-            if level_idx - num_steps < 0:
+            new_level_idx = level_idx - num_steps
+            if new_level_idx < 0:
                 new_level = log_levels[0]
+            elif new_level_idx >= len(log_levels):
+                new_level = log_levels[-1]
             else:
-                new_level = log_levels[level_idx - num_steps]
+                new_level = log_levels[new_level_idx]
 
             h.setLevel(new_level)
 

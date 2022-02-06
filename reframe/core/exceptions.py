@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -10,8 +10,8 @@
 import contextlib
 import inspect
 import os
-import sys
 
+import reframe
 import reframe.utility as utility
 
 
@@ -305,7 +305,7 @@ def user_frame(exc_type, exc_value, tb):
         return None
 
     for finfo in reversed(inspect.getinnerframes(tb)):
-        relpath = os.path.relpath(finfo.filename, sys.path[0])
+        relpath = os.path.relpath(finfo.filename, reframe.INSTALL_PREFIX)
         if relpath.split(os.sep)[0] != 'reframe':
             return finfo
 

@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -9,15 +9,18 @@
 
 import functools
 import types
+import collections
 
 import reframe.core.namespaces as namespaces
 import reframe.core.parameters as parameters
 import reframe.core.variables as variables
+import reframe.core.fixtures as fixtures
 import reframe.core.hooks as hooks
 import reframe.utility as utils
 
 from reframe.core.exceptions import ReframeSyntaxError
 from reframe.core.deferrable import deferrable, _DeferredPerformanceExpression
+from reframe.core.runtime import runtime
 
 
 class RegressionTestMeta(type):
@@ -48,7 +51,6 @@ class RegressionTestMeta(type):
                 # Override the regular class attribute (if present) and return
                 self._namespace.pop(key, None)
                 return
-
             elif isinstance(value, parameters.TestParam):
                 # Insert the attribute in the parameter namespace
                 try:
@@ -61,10 +63,20 @@ class RegressionTestMeta(type):
                 # Override the regular class attribute (if present) and return
                 self._namespace.pop(key, None)
                 return
+            elif isinstance(value, fixtures.TestFixture):
+                # Insert the attribute in the fixture namespace
+                self['_rfm_local_fixture_space'][key] = value
 
+                # Override the regular class attribute (if present)
+                self._namespace.pop(key, None)
+                return
             elif key in self['_rfm_local_param_space']:
                 raise ReframeSyntaxError(
-                    f'cannot override parameter {key!r}'
+                    f'cannot redefine parameter {key!r}'
+                )
+            elif key in self['_rfm_local_fixture_space']:
+                raise ReframeSyntaxError(
+                    f'cannot redefine fixture {key!r}'
                 )
             else:
                 # Insert the items manually to overide the namespace clash
@@ -96,7 +108,7 @@ class RegressionTestMeta(type):
 
             # Register the hooks - if a value does not meet the conditions
             # it will be simply ignored
-            self['_rfm_hook_registry'].add(value)
+            self['_rfm_local_hook_registry'].add(value)
 
         def __getitem__(self, key):
             '''Expose and control access to the local namespaces.
@@ -112,13 +124,17 @@ class RegressionTestMeta(type):
                 try:
                     # Handle variable access
                     return self['_rfm_local_var_space'][key]
-
                 except KeyError:
                     # Handle parameter access
                     if key in self['_rfm_local_param_space']:
                         raise ReframeSyntaxError(
                             'accessing a test parameter from the class '
                             'body is disallowed'
+                        ) from None
+                    elif key in self['_rfm_local_fixture_space']:
+                        raise ReframeSyntaxError(
+                            'accessing a fixture from the class body is '
+                            'disallowed'
                         ) from None
                     else:
                         # As the last resource, look if key is a variable in
@@ -200,20 +216,25 @@ class RegressionTestMeta(type):
         ]
 
         # Regression test parameter space defined at the class level
-        local_param_space = namespaces.LocalNamespace()
-        namespace['_rfm_local_param_space'] = local_param_space
+        namespace['_rfm_local_param_space'] = namespaces.LocalNamespace()
 
         # Directive to insert a regression test parameter directly in the
         # class body as: `P0 = parameter([0,1,2,3])`.
         namespace['parameter'] = parameters.TestParam
 
         # Regression test var space defined at the class level
-        local_var_space = namespaces.LocalNamespace()
-        namespace['_rfm_local_var_space'] = local_var_space
+        namespace['_rfm_local_var_space'] = namespaces.LocalNamespace()
 
         # Directives to add/modify a regression test variable
         namespace['variable'] = variables.TestVar
         namespace['required'] = variables.Undefined
+        namespace['deprecate'] = variables.TestVar.create_deprecated
+
+        # Regression test fixture space
+        namespace['_rfm_local_fixture_space'] = namespaces.LocalNamespace()
+
+        # Directive to add a fixture
+        namespace['fixture'] = fixtures.TestFixture
 
         # Utility decorators
         namespace['_rfm_ext_bound'] = set()
@@ -273,6 +294,7 @@ class RegressionTestMeta(type):
         namespace['run_after'] = run_after
         namespace['require_deps'] = hooks.require_deps
         namespace['_rfm_hook_registry'] = hooks.HookRegistry()
+        namespace['_rfm_local_hook_registry'] = hooks.HookRegistry()
 
         # Machinery to add a sanity function
         def sanity_function(fn):
@@ -341,10 +363,10 @@ class RegressionTestMeta(type):
         directives = [
             'parameter', 'variable', 'bind', 'run_before', 'run_after',
             'require_deps', 'required', 'deferrable', 'sanity_function',
-            'final', 'performance_function'
+            'final', 'performance_function', 'fixture'
         ]
         for b in directives:
-            namespace.pop(b, None)
+            namespace.pop(b)
 
         # Reset the external functions imported through the bind directive.
         for item in namespace.pop('_rfm_ext_bound'):
@@ -360,23 +382,31 @@ class RegressionTestMeta(type):
         for base in (b for b in bases if hasattr(b, '_rfm_dir')):
             cls._rfm_dir.update(base._rfm_dir)
 
-        used_attribute_names = set(cls._rfm_dir)
+        used_attribute_names = set(cls._rfm_dir).union(
+            {h.__name__ for h in cls._rfm_local_hook_registry}
+        )
 
-        # Build the var space and extend the target namespace
-        variables.VarSpace(cls, used_attribute_names)
-        used_attribute_names.update(cls._rfm_var_space.vars)
-
-        # Build the parameter space
-        parameters.ParamSpace(cls, used_attribute_names)
+        # Build the different global class namespaces
+        namespace_types = (variables.VarSpace,
+                           parameters.ParamSpace,
+                           fixtures.FixtureSpace)
+        for ns_type in namespace_types:
+            ns = ns_type(cls, used_attribute_names)
+            setattr(cls, ns.namespace_name, ns)
+            used_attribute_names.update(ns.data())
 
         # Update used names set with the local __dict__
         cls._rfm_dir.update(cls.__dict__)
 
-        # Update the hook registry with the bases
-        for base in cls._rfm_bases:
-            cls._rfm_hook_registry.update(
-                base._rfm_hook_registry, denied_hooks=namespace
-            )
+        # Populate the global hook registry with the hook registries of the
+        # parent classes in reverse MRO order
+        for c in list(reversed(cls.mro()))[:-1]:
+            if hasattr(c, '_rfm_local_hook_registry'):
+                cls._rfm_hook_registry.update(
+                    c._rfm_local_hook_registry, denied_hooks=namespace
+                )
+
+        cls._rfm_hook_registry.update(cls._rfm_local_hook_registry)
 
         # Search the bases if no local sanity functions exist.
         if '_rfm_sanity' not in namespace:
@@ -420,27 +450,68 @@ class RegressionTestMeta(type):
                     raise ReframeSyntaxError(msg)
 
     def __call__(cls, *args, **kwargs):
-        '''Inject parameter and variable spaces during object construction.
+        '''Inject test builtins during object construction.
 
         When a class is instantiated, this method intercepts the arguments
-        associated to the parameter and variable spaces. This prevents both
+        associated to the builtin  namespaces. This prevents both
         :func:`__new__` and :func:`__init__` methods from ever seing these
         arguments.
 
         The parameter and variable spaces are injected into the object after
         construction and before initialization.
+
+        Fixtures must be injected after initialization. These are registered
+        in the object (not the class) and they require certain attributes in
+        the root test to be set before the fixture can be registered.
+
+        :param variant_num: The test variant number. This must be an integer
+          in the range of [0, cls.num_variants).
+        :param variables: Mapping containing variables to be set during
+          instantiation, but before initialization.
         '''
 
-        # Intercept constructor arguments
-        _rfm_use_params = kwargs.pop('_rfm_use_params', False)
+        # Intercept the requested variant number (if any) and map it to the
+        # respective points in the parameter and fixture spaces.
+        variant_num = kwargs.pop('variant_num', None)
+        param_index, fixt_index = cls._map_variant_num(variant_num)
+        fixt_name = kwargs.pop('fixt_name', None)
+        fixt_data = kwargs.pop('fixt_data', None)
+
+        # Intercept variables to be set before initialization
+        fixt_vars = kwargs.pop('fixt_vars', {})
+        if not isinstance(fixt_vars, collections.abc.Mapping):
+            raise TypeError("'fixt_vars' argument must be a mapping")
 
         obj = cls.__new__(cls, *args, **kwargs)
 
-        # Insert the var & param spaces
+        # Insert the var and param spaces
         cls._rfm_var_space.inject(obj, cls)
-        cls._rfm_param_space.inject(obj, cls, _rfm_use_params)
+        cls._rfm_param_space.inject(obj, cls, param_index)
+
+        # Inject the variant numbers (if any present)
+        if variant_num is not None:
+            obj._rfm_variant_num = variant_num
+            obj._rfm_param_variant = param_index
+            obj._rfm_fixt_variant = fixt_index
+
+        # Flag the instance as fixture
+        if fixt_name:
+            obj._rfm_unique_name = fixt_name
+            obj._rfm_fixt_data = fixt_data
+            obj._rfm_is_fixture = True
+
+        # Set the variables passed to the constructor
+        for k, v in fixt_vars.items():
+            if k in cls.var_space:
+                setattr(obj, k, v)
 
         obj.__init__(*args, **kwargs)
+
+        # Register the fixtures
+        # Fixtures must be injected after the object's initialisation because
+        # they require the valid_systems and valid_prog_environs attributes
+        # from the object.
+        cls._rfm_fixture_space.inject(obj, cls, fixt_index)
         return obj
 
     def __getattribute__(cls, name):
@@ -479,6 +550,7 @@ class RegressionTestMeta(type):
         retrieve the requested class attribute.
         '''
 
+        # Variable space lookup
         try:
             var_space = super().__getattribute__('_rfm_var_space')
             return var_space.vars[name]
@@ -487,6 +559,7 @@ class RegressionTestMeta(type):
         except KeyError:
             '''Requested name not in variable space.'''
 
+        # Parameter space lookup
         try:
             param_space = super().__getattribute__('_rfm_param_space')
             return param_space.params[name]
@@ -494,6 +567,15 @@ class RegressionTestMeta(type):
             '''Catch early access attempt to the parameter space.'''
         except KeyError:
             '''Requested name not in parameter space.'''
+
+        # Fixture space lookup
+        try:
+            fixture_space = super().__getattribute__('_rfm_fixture_space')
+            return fixture_space.fixtures[name]
+        except AttributeError:
+            '''Catch early access attempt to the fixture space.'''
+        except KeyError:
+            '''Requested name not in fixture space.'''
 
         raise AttributeError(
             f'class {cls.__qualname__!r} has no attribute {name!r}'
@@ -563,22 +645,272 @@ class RegressionTestMeta(type):
         except AttributeError:
             '''Catch early access attempt to the parameter space.'''
 
+        # Catch attempts to override a test fixture
+        try:
+            fixture_space = super().__getattribute__('_rfm_fixture_space')
+            if name in fixture_space.fixtures:
+                raise ReframeSyntaxError(f'cannot override fixture {name!r}')
+
+        except AttributeError:
+            '''Catch early access attempt to the fixture space.'''
+
         # Treat `name` as normal class attribute
         super().__setattr__(name, value)
 
     @property
+    def num_variants(cls):
+        '''Total number of variants of the test.'''
+        return len(cls._rfm_param_space) * len(cls._rfm_fixture_space)
+
+    def _map_variant_num(cls, variant_num=None):
+        '''Map the global variant number into its sub-components.
+
+        These are the coordinates for the parameter and fixture spaces.
+        The parameter space index is the fast running one.
+        '''
+
+        if variant_num is None:
+            return None, None
+
+        # Bounds-check the variant number
+        if variant_num >= cls.num_variants or variant_num < 0:
+            raise ValueError(
+                f'the provided variant number {variant_num} is out of bounds '
+                f'[0, {cls.num_variants})'
+            )
+
+        p_space_size = len(cls._rfm_param_space)
+        return variant_num % p_space_size, variant_num // p_space_size
+
+    def get_variant_nums(cls, **conditions):
+        '''Get the variant numbers that meet the specified conditions.
+
+        The given conditions enable filtering the parameter space of the test.
+        Filtering the fixture space is not allowed.
+
+        .. code-block:: python
+
+           # Filter out the test variants where my_param is greater than 3
+           cls.get_variant_nums(my_param=lambda x: x < 4)
+
+        The returned list of variant numbers can be passed to
+        :func:`variant_name` in order to retrieve the actual test name.
+
+        :param conditions: keyword arguments where the key is the test
+            parameter name and the value is either a single value or a unary
+            function that evaluates to :obj:`True` if the parameter point must
+            be kept, :obj:`False` otherwise. If a single value is passed this
+            is implicitly converted to the equality function, such that
+
+            .. code-block:: python
+
+               get_variant_nums(p=10)
+
+            is equivalent to
+
+            .. code-block:: python
+
+               get_variant_nums(p=lambda x: x == 10)
+
+        '''
+        if not conditions:
+            return list(range(cls.num_variants))
+
+        # Filter the parameter indices - only for [0, len(cls.param_space))
+        inner_variants = cls.param_space.get_variant_nums(**conditions)
+
+        # The full variant space is of size param_space * fixture_space, and
+        # the parameter space is the inner-most index in this coordinate
+        # system. The inner_variants only contain the variants filtered in the
+        # range of [0, len(cls.param_space)), so we use this "mask" to compute
+        # the full variant indices in the range [0, cls.num_variants).
+        outer_variants = []
+        param_space_size = len(cls.param_space)
+        for i in range(cls.num_variants // param_space_size):
+            outer_variants += map(lambda x: x + param_space_size*i,
+                                  inner_variants)
+
+        return outer_variants
+
+    def get_variant_info(cls, variant_num, *, recurse=False, max_depth=None,
+                         **kwargs):
+        '''Get the information from a given variant.
+
+        This function returns a dictionary with the variant data on
+        the different subspaces, such as the parameter values and the
+        fixture variants.
+
+        The parameter sub-dictionary contains the values for each parameter
+        associated to the given variant number.
+
+        The fixture sub-dictionary, by default, will return the variant number
+        associated to each of the fixtures. However, if ``recurse`` is set to
+        ``True``, each fixture entry will contain the full variant information
+        for the given variant number. By default, the recursion will traverse
+        the full fixture tree, but this recursion depth can be limited with the
+        ``max_depth`` argument.
+
+        See the example below:
+
+        .. code:: python
+
+          class Foo(rfm.RegressionTest):
+              p0 = parameter(range(2))
+              ...
+
+          class Bar(rfm.RegressionTest):
+              ...
+
+          class MyTest(rfm.RegressionTest):
+              p1 = parameter(['a', 'b'])
+              f0 = fixture(Foo)
+              f1 = fixture(Bar)
+              ...
+
+          # Get the raw info for variant 0
+          MyTest.get_variant_info(0, recursive=True)
+          # {
+          #     'params': {'p1': 'a'},
+          #     'fixtures': {
+          #         'f0': {
+          #             'params': {'p0': 0},
+          #             'fixtures': {}
+          #         },
+          #         'f1': 0,
+          #     }
+          # }
+
+        :param variant_num: An integer in the range of [0, cls.num_variants).
+        :param recurse: Flag to control the recursion through the fixture
+            space.
+        :param max_depth: Set the recursion limit. When the ``recurse``
+            argument is set to ``False``, this option has no effect.
+
+        '''
+
+        pid, fid = cls._map_variant_num(variant_num)
+        ret = {
+            'params': cls.param_space[pid] if pid is not None else {},
+            'fixtures': cls.fixture_space[fid] if fid is not None else {}
+        }
+
+        # Get current recursion level
+        rdepth = kwargs.get('_current_depth', 0)
+        if recurse and (max_depth is None or rdepth < max_depth):
+            for fname, variant in ret['fixtures'].items():
+                if len(variant) > 1:
+                    continue
+
+                fixt = cls.fixture_space[fname]
+                ret['fixtures'][fname] = fixt.cls.get_variant_info(
+                    variant[0], recurse=recurse, max_depth=max_depth,
+                    _current_depth=rdepth+1
+                )
+
+        return ret
+
+    @property
+    def raw_params(cls):
+        '''Expose the raw parameters.'''
+        return cls.param_space.params
+
+    @property
     def param_space(cls):
-        ''' Make the parameter space available as read-only.'''
+        '''Expose the parameter space.'''
         return cls._rfm_param_space
+
+    @property
+    def var_space(cls):
+        '''Expose the variable space.'''
+        return cls._rfm_var_space
+
+    @property
+    def fixture_space(cls):
+        '''Expose the fixture space.'''
+        return cls._rfm_fixture_space
 
     def is_abstract(cls):
         '''Check if the class is an abstract test.
 
-        This is the case when some parameters are undefined, which results in
-        the length of the parameter space being 0.
+        A test is considered abstract if any of its direct or indirect
+        parameters (inherited from a base class or from a fixture) is
+        undefined.
 
-        :return: bool indicating whether the test has undefined parameters.
+        :returns: :obj:`True` if the test is abstract, :obj:`False` otherwise.
 
-        :meta private:
         '''
-        return len(cls.param_space) == 0
+        return cls.num_variants == 0
+
+    def variant_name(cls, variant_num=None):
+        '''Return the name of the test variant with a specific variant number.
+
+        :param variant_num: An integer in the range of ``[0, cls.num_variants)``.
+        '''
+
+        name = cls.__name__
+        if variant_num is None:
+            return name
+
+        if runtime().get_option('general/0/compact_test_names'):
+            if cls.num_variants > 1:
+                width = utils.count_digits(cls.num_variants)
+                name += f'_{variant_num:0{width}}'
+        else:
+            pid, fid = cls._map_variant_num(variant_num)
+
+            # Append the parameters to the name
+            if cls.param_space.params:
+                name += '_' + '_'.join(utils.toalphanum(str(v))
+                                       for v in cls.param_space[pid].values())
+
+            if len(cls.fixture_space) > 1:
+                name += f'_{fid}'
+
+        return name
+
+
+def make_test(name, bases, body, **kwargs):
+    '''Define a new test class programmatically.
+
+    Using this method is completely equivalent to using the :keyword:`class`
+    to define the test class. More specifically, the following:
+
+    .. code-block:: python
+
+       hello_cls = rfm.make_test(
+           'HelloTest', (rfm.RunOnlyRegressionTest,),
+           {
+               'valid_systems': ['*'],
+               'valid_prog_environs': ['*'],
+               'executable': 'echo',
+               'sanity_patterns': sn.assert_true(1)
+           }
+       )
+
+    is completely equivalent to
+
+    .. code-block:: python
+
+       class HelloTest(rfm.RunOnlyRegressionTest):
+           valid_systems = ['*']
+           valid_prog_environs = ['*']
+           executable = 'echo',
+           sanity_patterns: sn.assert_true(1)
+
+       hello_cls = HelloTest
+
+    :param name: The name of the new test class.
+    :param bases: A tuple of the base classes of the class that is being
+        created.
+    :param body: A mapping of key/value pairs that will be inserted as class
+        attributes in the newly created class.
+    :param kwargs: Any keyword arguments to be passed to the
+        :class:`RegressionTestMeta` metaclass.
+
+    .. versionadded:: 3.10.0
+
+    '''
+    namespace = RegressionTestMeta.__prepare__(name, bases, **kwargs)
+    namespace.update(body)
+    cls = RegressionTestMeta(name, bases, namespace, **kwargs)
+    return cls

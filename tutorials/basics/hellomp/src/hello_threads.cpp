@@ -1,8 +1,9 @@
-// Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+// Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 // ReFrame Project Developers. See the top-level LICENSE file for details.
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
+// rfmdocstart: hello_threads
 #include <iomanip>
 #include <iostream>
 #include <mutex>
@@ -47,3 +48,4 @@ int main(int argc, char *argv[])
 
     return 0;
 }
+// rfmdocend: hello_threads

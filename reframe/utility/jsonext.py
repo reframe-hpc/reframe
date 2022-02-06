@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -12,12 +12,20 @@ import reframe.utility as util
 
 
 class JSONSerializable:
+    __slots__ = ()
+
     def __rfm_json_encode__(self):
         ret = {
             '__rfm_class__': type(self).__qualname__,
             '__rfm_file__': inspect.getfile(type(self))
         }
-        ret.update(self.__dict__)
+        if hasattr(self, '__dict__'):
+            ret.update(self.__dict__)
+
+        # Set the slots attribute
+        for attr in self.__slots__:
+            ret[attr] = getattr(self, attr)
+
         encoded_ret = encode_dict(ret, recursive=True)
         return encoded_ret if encoded_ret else ret
 
@@ -90,7 +98,12 @@ def _object_hook(json):
     mod = util.import_module_from_file(filename)
     cls = getattr(mod, typename)
     obj = cls.__new__(cls)
-    obj.__dict__.update(json)
+    if hasattr(obj, '__dict__'):
+        obj.__dict__.update(json)
+    else:
+        for attr, value in json.items():
+            setattr(obj, attr, value)
+
     if hasattr(obj, '__rfm_json_decode__'):
         obj.__rfm_json_decode__(json)
 

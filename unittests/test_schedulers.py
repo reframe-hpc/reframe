@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -26,7 +26,8 @@ def launcher():
     return getlauncher('local')
 
 
-@pytest.fixture(params=['sge', 'slurm', 'squeue', 'local', 'pbs', 'torque'])
+@pytest.fixture(params=['local', 'lsf', 'oar', 'pbs',
+                        'sge', 'slurm', 'squeue', 'torque'])
 def scheduler(request):
     return getscheduler(request.param)
 
@@ -132,6 +133,23 @@ def assert_job_script_sanity(job):
                 'echo postrun'] == matches
 
 
+def _expected_lsf_directives(job):
+    num_tasks = job.num_tasks or 1
+    num_tasks_per_node = job.num_tasks_per_node or 1
+    num_nodes = int(num_tasks // num_tasks_per_node)
+    return set([
+        f'#BSUB -J testjob',
+        f'#BSUB -o {job.stdout}',
+        f'#BSUB -e {job.stderr}',
+        f'#BSUB -nnodes {num_nodes}',
+        f'#BSUB -W {int(job.time_limit // 60)}',
+        f'#BSUB --account=spam',
+        f'#BSUB --gres=gpu:4',
+        f'#DW jobdw capacity=100GB',
+        f'#DW stage_in source=/foo',
+    ])
+
+
 def _expected_sge_directives(job):
     num_nodes = job.num_tasks // job.num_tasks_per_node
     num_cpus_per_node = job.num_cpus_per_task * job.num_tasks_per_node
@@ -176,7 +194,7 @@ def _expected_pbs_directives(job):
     num_nodes = job.num_tasks // job.num_tasks_per_node
     num_cpus_per_node = job.num_cpus_per_task * job.num_tasks_per_node
     return set([
-        '#PBS -N "testjob"',
+        '#PBS -N testjob',
         '#PBS -l walltime=0:5:0',
         '#PBS -o %s' % job.stdout,
         '#PBS -e %s' % job.stderr,
@@ -195,7 +213,7 @@ def _expected_torque_directives(job):
     num_nodes = job.num_tasks // job.num_tasks_per_node
     num_cpus_per_node = job.num_cpus_per_task * job.num_tasks_per_node
     return set([
-        '#PBS -N "testjob"',
+        '#PBS -N testjob',
         '#PBS -l walltime=0:5:0',
         '#PBS -o %s' % job.stdout,
         '#PBS -e %s' % job.stderr,
@@ -205,6 +223,21 @@ def _expected_torque_directives(job):
         '#PBS --gres=gpu:4',
         '#DW jobdw capacity=100GB',
         '#DW stage_in source=/foo'
+    ])
+
+
+def _expected_oar_directives(job):
+    num_nodes = job.num_tasks // job.num_tasks_per_node
+    num_tasks_per_node = job.num_tasks_per_node
+    return set([
+        f'#OAR -n "testjob"',
+        f'#OAR -O {job.stdout}',
+        f'#OAR -E {job.stderr}',
+        f'#OAR -l /host={num_nodes}/core={num_tasks_per_node},walltime=0:5:0',
+        f'#OAR --account=spam',
+        f'#OAR --gres=gpu:4',
+        f'#DW jobdw capacity=100GB',
+        f'#DW stage_in source=/foo'
     ])
 
 

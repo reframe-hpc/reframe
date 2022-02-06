@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -415,20 +415,23 @@ def is_url(s):
     return parsed.scheme != '' and parsed.netloc != ''
 
 
-def git_clone(url, targetdir=None):
+def git_clone(url, targetdir=None, opts=None, timeout=5):
     '''Clone a git repository from a URL.
 
     :arg url: The URL to clone from.
-
+    :arg opts: List of options to be passed to the `git clone` command
+    :arg timeout: Timeout in seconds when checking if the url is a valid
+         repository.
     :arg targetdir: The directory where the repository will be cloned to. If
         :class:`None`, a new directory will be created with the repository
         name as if ``git clone {url}`` was issued.
     '''
-    if not git_repo_exists(url):
+    if not git_repo_exists(url, timeout=timeout):
         raise ReframeError('git repository does not exist')
 
     targetdir = targetdir or ''
-    run_command('git clone %s %s' % (url, targetdir), check=True)
+    opts = ' '.join(opts) if opts is not None else ''
+    run_command(f'git clone {opts} {url} {targetdir}', check=True)
 
 
 def git_repo_exists(url, timeout=5):

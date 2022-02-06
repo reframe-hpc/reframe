@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -253,6 +253,24 @@ class Job(jsonext.JSONSerializable):
 
     @property
     def completion_time(self):
+        '''The completion time of this job as a floating point number
+        expressed in seconds since the epoch, in UTC.
+
+        This attribute is :class:`None` if the job hasn't been finished yet,
+        or if ReFrame runtime hasn't perceived it yet.
+
+        The accuracy of this timestamp depends on the backend scheduler.
+        The ``slurm`` scheduler backend relies on job accounting and returns
+        the actual termination time of the job. The rest of the backends
+        report as completion time the moment when the framework realizes that
+        the spawned job has finished. In this case, the accuracy depends on
+        the execution policy used. If tests are executed with the serial
+        execution policy, this is close to the real completion time, but
+        if the asynchronous execution policy is used, it can differ
+        significantly.
+
+        :type: :class:`float` or :class:`None`
+        '''
         return self._completion_time
 
     @property
@@ -328,6 +346,17 @@ class Job(jsonext.JSONSerializable):
 
     @property
     def submit_time(self):
+        '''The submission time of this job as a floating point number
+        expressed in seconds since the epoch, in UTC.
+
+        This attribute is :class:`None` if the job hasn't been submitted yet.
+
+        This attribute is set right after the job is submitted and can vary
+        significantly from the time the jobs starts running, depending on the
+        scheduler.
+
+        :type: :class:`float` or :class:`None`
+        '''
         return self._submit_time
 
     def prepare(self, commands, environs=None, prepare_cmds=None, **gen_opts):

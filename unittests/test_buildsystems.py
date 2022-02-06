@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -288,6 +288,9 @@ def test_spack_no_env(environ, tmp_path):
             f'spack config add "config:install_tree:root:opt/spack"',
             f'spack install'
         ]
+
+    assert build_system.environment == 'rfm_spack_env'
+
 
 def test_easybuild(environ, tmp_path):
     build_system = bs.EasyBuild()

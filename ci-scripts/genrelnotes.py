@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -42,10 +42,10 @@ if __name__ == '__main__':
     titles = {
         'feat': '## New features and enhancements',
         'bugfix': '## Bug fixes',
-        'test': '## Regression tests'
+        'testlib': '## Test library'
     }
     sections = collections.OrderedDict()
-    for tag in ['feat', 'bugfix', 'test', 'ci', 'doc']:
+    for tag in ['feat', 'bugfix', 'testlib', 'ci', 'doc']:
         title_line = titles.get(tag, '## Other')
         sections.setdefault(title_line, [])
         for pr, descr in extract_release_notes(completed.stdout, tag):

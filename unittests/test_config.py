@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -252,13 +252,17 @@ def test_select_subconfig():
     assert site_config.get('systems/0/partitions/0/modules') == []
     assert site_config.get('systems/0/partitions/0/variables') == []
     assert site_config.get('systems/0/partitions/0/max_jobs') == 8
-    assert len(site_config['environments']) == 5
+    assert len(site_config['environments']) == 7
     assert site_config.get('environments/@PrgEnv-gnu/cc') == 'gcc'
     assert site_config.get('environments/0/cxx') == 'g++'
     assert site_config.get('environments/@PrgEnv-cray/cc') == 'cc'
     assert site_config.get('environments/1/cxx') == 'CC'
     assert (site_config.get('environments/@PrgEnv-cray/modules') ==
             [{'name': 'PrgEnv-cray', 'collection': False, 'path': None}])
+    assert site_config.get('environments/@PrgEnv-gnu/extras') == {'foo': 1,
+                                                                  'bar': 'x'}
+    assert site_config.get('environments/@PrgEnv-cray/extras') == {}
+
     assert len(site_config.get('general')) == 1
     assert site_config.get('general/0/check_search_path') == ['a:b']
 
@@ -277,7 +281,6 @@ def test_select_subconfig():
     assert (site_config.get('systems/0/partitions/0/variables') ==
             [['FOO_GPU', 'yes']])
     assert site_config.get('systems/0/partitions/0/max_jobs') == 10
-    assert len(site_config['environments']) == 5
     assert site_config.get('environments/@PrgEnv-gnu/cc') == 'cc'
     assert site_config.get('environments/0/cxx') == 'CC'
     assert site_config.get('general/0/check_search_path') == ['c:d']
@@ -304,6 +307,7 @@ def test_select_subconfig_optional_section_absent():
     site_config = config.load_config('reframe/core/settings.py')
     site_config.select_subconfig()
     assert site_config.get('general/0/colorize') is True
+    assert site_config.get('general/0/git_timeout') == 5
     assert site_config.get('general/verbose') == 0
 
 
@@ -358,6 +362,7 @@ def test_system_create():
     assert len(partition.environs) == 2
     assert partition.environment('PrgEnv-gnu').cc == 'cc'
     assert partition.environment('PrgEnv-gnu').cflags == []
+    assert partition.environment('PrgEnv-gnu').extras == {'foo': 2, 'bar': 'y'}
 
     # Check resource instantiation
     resource_spec = partition.get_resource('gpu', num_gpus_per_node=16)

@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -40,7 +40,9 @@ class NvidiaResolveTest(LibSciResolveBaseTest):
 
     @run_after('setup')
     def set_modules(self):
-        self.modules += [f'craype-accel-nvidia{self.accel_nvidia_version}']
+        # FIXME: https://jira.cscs.ch/browse/PROGENV-24
+        self.modules += [f'craype-accel-nvidia{self.accel_nvidia_version}',
+                         'cray-libsci_acc']
 
     @sanity_function
     def libsci_acc_resolve(self):
