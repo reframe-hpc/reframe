@@ -162,13 +162,17 @@ class RuntimeContext:
         '''
         return self._system.modules_system
 
-    def get_option(self, option):
+    def get_option(self, option, default=None):
         '''Get a configuration option.
 
         :arg option: The option to be retrieved.
+        :arg default: The value to return if ``option`` cannot be retrieved.
         :returns: The value of the option.
+
+        .. versionchanged:: 3.11.0
+          Add ``default`` named argument.
         '''
-        return self._site_config.get(option)
+        return self._site_config.get(option, default=default)
 
 
 # Global resources for the current host
