@@ -103,6 +103,10 @@ def extended_parser():
         dest='keep_stage_files', action='store_true',
         envvar='RFM_KEEP_STAGE_FILES', configvar='general/keep_stage_files'
     )
+    parser.add_argument(
+        '--git-timeout', envvar='RFM_GIT_TIMEOUT', action='store',
+        configvar='general/git_timeout', type=float
+    )
     foo_options.add_argument(
         '--timestamp', action='store',
         envvar='RFM_TIMESTAMP_DIRS', configvar='general/timestamp_dirs'
@@ -154,7 +158,8 @@ def test_option_with_config(default_exec_ctx, extended_parser, tmp_path):
             'RFM_TIMESTAMP': '%F',
             'RFM_NON_DEFAULT_CRAYPE': 'yes',
             'RFM_MODULES_PRELOAD': 'a,b,c',
-            'RFM_KEEP_STAGE_FILES': 'no'
+            'RFM_KEEP_STAGE_FILES': 'no',
+            'RFM_GIT_TIMEOUT': '0.3'
     }):
         site_config = rt.runtime().site_config
         options = extended_parser.parse_args(
@@ -167,6 +172,7 @@ def test_option_with_config(default_exec_ctx, extended_parser, tmp_path):
         assert site_config.get('systems/0/prefix') == str(tmp_path)
         assert site_config.get('general/0/colorize') is False
         assert site_config.get('general/0/keep_stage_files') is False
+        assert site_config.get('general/0/git_timeout') == 0.3
 
         # Defaults specified in parser override those in configuration file
         assert site_config.get('systems/0/stagedir') == '/foo'
@@ -175,8 +181,9 @@ def test_option_with_config(default_exec_ctx, extended_parser, tmp_path):
 def test_option_envvar_conversion_error(default_exec_ctx, extended_parser):
     with rt.temp_environment(variables={
             'RFM_NON_DEFAULT_CRAYPE': 'foo',
+            'RFM_GIT_TIMEOUT': 'non-float'
     }):
         site_config = rt.runtime().site_config
         options = extended_parser.parse_args(['--nocolor'])
         errors = options.update_config(site_config)
-        assert len(errors) == 1
+        assert len(errors) == 2
