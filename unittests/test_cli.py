@@ -620,6 +620,17 @@ def test_show_config_unknown_param(run_reframe):
     assert returncode == 0
 
 
+def test_show_config_null_param(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        more_options=['--show-config=general/report_junit'],
+        system='testsys'
+    )
+    assert 'null' in stdout
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert returncode == 0
+
+
 def test_verbosity(run_reframe):
     returncode, stdout, stderr = run_reframe(
         more_options=['-vvvvv'],
