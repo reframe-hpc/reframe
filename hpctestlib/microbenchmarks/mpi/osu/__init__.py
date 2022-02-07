@@ -16,7 +16,7 @@ __all__ = ['Alltoall', 'FlexAlltoall', 'Allreduce',
 class fetch_osu_benchmarks(rfm.RunOnlyRegressionTest):
     descr = 'Fetch OSU benchmarks'
     version = variable(str, value='5.6.2')
-    executable = 'cp'
+    executable = 'wget'
     executable_opts = [
         f'http://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-{version}.tar.gz'  # noqa: E501
     ]
