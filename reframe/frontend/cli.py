@@ -391,11 +391,11 @@ def main():
     run_options.add_argument(
         '--max-retries', metavar='NUM', action='store', default=0,
         help='Set the maximum number of times a failed regression test '
-             'may be retried (default: 0)'
+             'may be retried (default: 0)', type=int
     )
     run_options.add_argument(
         '--maxfail', metavar='NUM', action='store', default=sys.maxsize,
-        help='Exit after first NUM failures'
+        help='Exit after first NUM failures', type=int
     )
     run_options.add_argument(
         '--mode', action='store', help='Execution mode to use'
@@ -527,8 +527,10 @@ def main():
         dest='git_timeout',
         envvar='RFM_GIT_TIMEOUT',
         configvar='general/git_timeout',
+        action='store',
         help=('Timeout in seconds when checking if the url is a '
-              'valid repository.')
+              'valid repository.'),
+        type=float
     )
     argparser.add_argument(
         dest='graylog_server',
@@ -568,7 +570,8 @@ def main():
         envvar='RFM_PIPELINE_TIMEOUT',
         configvar='general/pipeline_timeout',
         action='store',
-        help='Timeout for advancing the pipeline'
+        help='Timeout for advancing the pipeline',
+        type=float
     )
     argparser.add_argument(
         dest='remote_detect',
@@ -1175,26 +1178,14 @@ def main():
                 parsed_job_options.append(f'--{optstr} {valstr}')
 
         exec_policy.sched_options = parsed_job_options
-        try:
-            max_retries = int(options.max_retries)
-        except ValueError:
+        if options.maxfail < 0:
             raise errors.ConfigError(
-                f'--max-retries is not a valid integer: {max_retries}'
-            ) from None
+                f'--maxfail should be a non-negative integer: '
+                f'{options.maxfail!r}'
+            )
 
-        try:
-            max_failures = int(options.maxfail)
-            if max_failures < 0:
-                raise errors.ConfigError(
-                    f'--maxfail should be a non-negative integer: '
-                    f'{options.maxfail!r}'
-                )
-        except ValueError:
-            raise errors.ConfigError(
-                f'--maxfail is not a valid integer: {options.maxfail!r}'
-            ) from None
-
-        runner = Runner(exec_policy, printer, max_retries, max_failures)
+        runner = Runner(exec_policy, printer, options.max_retries,
+                        options.maxfail)
         try:
             time_start = time.time()
             session_info['time_start'] = time.strftime(
