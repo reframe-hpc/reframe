@@ -6,18 +6,16 @@
 import reframe as rfm
 import reframe.utility.sanity as sn
 
-from hpctestlib.microbenchmarks.mpi.osu import (Alltoall,
-                                                Allreduce,
-                                                FlexAlltoall,
-                                                P2PCPUBandwidth,
-                                                P2PCPULatency,
-                                                G2GBandwidth,
-                                                G2GLatency,
+from hpctestlib.microbenchmarks.mpi.osu import (alltoall,
+                                                allreduce,
+                                                flex_alltoall,
+                                                p2p_bandwidth,
+                                                p2p_latency,
                                                 build_osu_benchmarks)
 
 
 @rfm.simple_test
-class allreduce_check(Allreduce):
+class allreduce_check(allreduce):
     variant = parameter(['small'], ['large'])
     strict_check = False
     valid_systems = ['daint:gpu', 'daint:mc']
@@ -69,7 +67,7 @@ class allreduce_check(Allreduce):
 
 
 @rfm.simple_test
-class alltoall_check(Alltoall):
+class alltoall_check(alltoall):
     valid_systems = ['daint:gpu', 'dom:gpu']
     valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                            'PrgEnv-intel', 'PrgEnv-nvidia']
@@ -101,7 +99,7 @@ class alltoall_check(Alltoall):
 
 
 @rfm.simple_test
-class alltoall_flex_check(FlexAlltoall):
+class alltoall_flex_check(flex_alltoall):
     valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                      'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn']
     valid_prog_environs = ['PrgEnv-cray']
@@ -119,9 +117,9 @@ class alltoall_flex_check(FlexAlltoall):
         return sn.assert_found(r'^1048576', self.stdout)
 
 
-class P2PPrgEnvsCSCS(rfm.RegressionMixin):
+class p2p_config_cscs(rfm.RegressionMixin):
     @run_after('init')
-    def add_valid_prog_environs(self):
+    def cscs_config(self):
         if self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-pgi']
@@ -129,20 +127,24 @@ class P2PPrgEnvsCSCS(rfm.RegressionMixin):
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                         'PrgEnv-intel', 'PrgEnv-nvidia']
 
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn']
+        if not self.device:
+            self.valid_systems += ['daint:mc', 'dom:mc',
+                                   'eiger:mc', 'pilatus:mc']
+
+        self.exclusive_access = True
+        self.strict_check = False
+        self.maintainers = ['RS', 'AJ']
+        self.tags = {'production', 'benchmark', 'craype'}
+        self.extra_resources = {
+            'switches': {
+                'num_switches': 1
+            }
+        }
+
 
 @rfm.simple_test
-class p2p_bandwidth_cpu_test(P2PCPUBandwidth, P2PPrgEnvsCSCS):
-    exclusive_access = True
-    strict_check = False
-    maintainers = ['RS', 'AJ']
-    tags = {'production', 'benchmark', 'craype'}
-    extra_resources = {
-        'switches': {
-            'num_switches': 1
-        }
-    }
-    valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                     'arolla:cn', 'tsa:cn', 'eiger:mc', 'pilatus:mc']
+class p2p_bandwidth_cpu_test(p2p_bandwidth, p2p_config_cscs):
     reference = {
         'daint:gpu': {
             'bw': (9607.0, -0.10, None, 'MB/s')
@@ -170,9 +172,7 @@ class p2p_bandwidth_cpu_test(P2PCPUBandwidth, P2PPrgEnvsCSCS):
 
 
 @rfm.simple_test
-class p2p_latency_cpu_test(P2PCPULatency, P2PPrgEnvsCSCS):
-    valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                     'arolla:cn', 'tsa:cn', 'eiger:mc', 'pilatus:mc']
+class p2p_latency_cpu_test(p2p_latency, p2p_config_cscs):
     reference = {
         'daint:gpu': {
             'latency': (1.30, None, 0.70, 'us')
@@ -221,7 +221,7 @@ class build_osu_benchmarks_gpu(build_osu_benchmarks):
             self.modules = ['cuda/10.1.243']
 
 
-class G2GRDMACSCS(rfm.RegressionMixin):
+class g2g_rdma_cscs(rfm.RegressionMixin):
     @run_before('run')
     def set_rdma_daint(self):
         if self.current_system.name in ['daint', 'dom']:
@@ -230,9 +230,9 @@ class G2GRDMACSCS(rfm.RegressionMixin):
 
 
 @rfm.simple_test
-class p2p_bandwidth_gpu_test(G2GBandwidth, P2PPrgEnvsCSCS, G2GRDMACSCS):
+class p2p_bandwidth_gpu_test(p2p_bandwidth, p2p_config_cscs, g2g_rdma_cscs):
+    device = 'cuda'
     osu_binaries = fixture(build_osu_benchmarks_gpu, scope='environment')
-    valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn']
     reference = {
         'dom:gpu': {
             'bw': (8813.09, -0.05, None, 'MB/s')
@@ -245,17 +245,13 @@ class p2p_bandwidth_gpu_test(G2GBandwidth, P2PPrgEnvsCSCS, G2GRDMACSCS):
         }
     }
 
-    # @run_before('run')
-    # def set_rdma_daint(self):
-    #     if self.current_system.name in ['daint', 'dom']:
-    #         self.num_gpus_per_node  = 1
-    #         self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
-
 
 @rfm.simple_test
-class p2p_latency_gpu_test(G2GLatency, P2PPrgEnvsCSCS, G2GRDMACSCS):
-    osu_binaries = fixture(build_osu_benchmarks_gpu, scope='environment')
-    valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn']
+class p2p_latency_gpu_test(p2p_latency, p2p_config_cscs, g2g_rdma_cscs):
+    device = 'cuda'
+    version = '5.8'
+    osu_binaries = fixture(build_osu_benchmarks_gpu, scope='environment',
+                           variables={'version': f'{version}'})
     reference = {
         'dom:gpu': {
             'latency': (5.56, None, 0.1, 'us')
@@ -263,10 +259,7 @@ class p2p_latency_gpu_test(G2GLatency, P2PPrgEnvsCSCS, G2GRDMACSCS):
         'daint:gpu': {
             'latency': (6.8, None, 0.65, 'us')
         },
+        '*': {
+            'latency': (0, None, None, 'MB/s')
+        }
     }
-
-    # @run_before('run')
-    # def set_rdma_daint(self):
-    #     if self.current_system.name in ['daint', 'dom']:
-    #         self.num_gpus_per_node  = 1
-    #         self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
