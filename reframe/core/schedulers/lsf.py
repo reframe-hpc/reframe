@@ -46,12 +46,19 @@ class LsfJobScheduler(PbsJobScheduler):
         except TypeError:
             num_physical_cores = None
 
+        if num_physical_cores is None:
+            num_tasks_per_node = job.num_tasks_per_node or 1
+            num_nodes = job.num_tasks // num_tasks_per_node
+        else:
+            num_nodes = None
+
         preamble = [
             self._format_option(job.name, '-J {0}'),
             self._format_option(job.stdout, '-o {0}'),
             self._format_option(job.stderr, '-e {0}'),
             self._format_option(job.num_tasks, '-n {0}'),
-            self._format_option(num_physical_cores, '-R "span[ptile={0}]"')
+            self._format_option(num_physical_cores, '-R "span[ptile={0}]"'),
+            self._format_option(num_nodes, '-nnodes {0}')
         ]
 
         # add job time limit in minutes
