@@ -34,7 +34,7 @@ class VASPCheck(rfm.RunOnlyRegressionTest):
 
     @performance_function('s')
     def time(self):
-        return sn.extractsingle(r'Total CPU time used \(sec\):'
+        return sn.extractsingle(r'Elapsed time \(sec\):'
                                 r'\s+(?P<time>\S+)', 'OUTCAR',
                                 'time', float)
 
@@ -119,8 +119,10 @@ class VASPGpuCheck(VASPCheck):
     def setup_by_variant(self):
         self.descr = f'VASP GPU check (variant: {self.variant})'
         if self.current_system.name == 'dom':
+            self.executable = 'vasp_std'
             self.num_tasks = 6
             self.num_tasks_per_node = 1
+            self.num_cpus_per_task = 12
         else:
             self.num_tasks = 16
             self.num_tasks_per_node = 1
