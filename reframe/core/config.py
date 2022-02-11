@@ -67,6 +67,7 @@ class _SiteConfig:
         self._local_config = {}
         self._local_system = None
         self._sticky_options = {}
+        self.vm_info = {}
 
         # Open and store the JSON schema for later validation
         schema_filename = os.path.join(reframe.INSTALL_PREFIX, 'reframe',
@@ -78,6 +79,9 @@ class _SiteConfig:
                 raise ReframeFatalError(
                     f"invalid configuration schema: '{schema_filename}'"
                 ) from e
+
+    def get_vm_info(self):
+        return self.vm_info
 
     def _pick_config(self):
         return self._local_config if self._local_config else self._site_config
@@ -259,6 +263,73 @@ class _SiteConfig:
 
         return _SiteConfig(config, filename)
 
+    def _get_azure_vm_info(self):
+        # May need to find a better way to do this for clusters on Azure
+        # Host names can be quite random
+        if os.path.exists('/etc/waagent.conf'):
+            try:
+                cmd = "curl -H Metadata:true \"http://169.254.169.254/metadata/instance?api-version=2019-06-04\""
+                results = util.osext.run_command(cmd)
+                vm_data = json.loads(results.stdout)
+                pp_results = json.dumps(vm_data, indent=4)
+                pref_idx = vm_data['compute']['vmSize'].find('_')
+                vm_size = vm_data['compute']['vmSize'][pref_idx+1:]
+                img_ref = vm_data['compute']['storageProfile']['imageReference']
+                vm_os = "{}".format(img_ref['offer'].lower())
+                vm_os_version = "{}".format(img_ref['sku'].lower())
+                vm_image = "{}_{}_{}".format(img_ref['offer'].lower(),
+                                               img_ref['sku'].lower(),
+                                               img_ref['version'].lower())
+                # Read in the json file and search
+                tmp_data = re.split('[0-9]*',vm_size,1)
+                vm_series = "".join(tmp_data)
+                vm_series = vm_series.lower()
+
+                sysname = "{}".format(vm_series)
+
+                # If on Azure return generated sysname
+                getlogger().debug(f'generated azure system {sysname}')
+                getlogger().debug(f'{self._site_config["systems"]}')
+
+                for idx,system in enumerate(self._site_config['systems']):
+#                for idx,system in self._site_config['systems'].items():
+                    if sysname == system["name"]:
+                        # Update system variables for the Azure VM
+                        getlogger().debug(f'idx: {idx}, system {sysname} found in {system}')
+                        getlogger().debug(f'system {sysname} found in {system}')
+                        getlogger().debug(f'{self._site_config["systems"]}')
+                        self._site_config['systems'][idx]['vm_size'] = vm_size
+                        self._site_config['systems'][idx]['vm_image'] = vm_image
+                        self._site_config['systems'][idx]['vm_os'] = vm_os
+                        self._site_config['systems'][idx]['vm_os_version'] = vm_os_version
+                        self._site_config['systems'][idx]['cloud_provider'] = 'azure'
+                        getlogger().debug(f'{self._site_config["systems"][idx]}')
+
+                        # Get information from data file and add it to the vm_info
+                        self.vm_info['vm_series'] = vm_series.lower()
+                        self.vm_info['vm_size'] = vm_size
+                        self.vm_info['vm_os'] = vm_os 
+                        self.vm_info['vm_os_version'] = vm_os_version 
+                        self.vm_info['vm_image'] = vm_image
+                        vm_data_file = open(self._site_config['systems'][idx]['vm_data_file'])
+                        vm_data = {}
+                        vm_data = json.load(vm_data_file)
+                        for vm in vm_data.keys():
+                            if vm_data[vm]['series'] == self.vm_info['vm_series']:
+                                self.vm_info['nhc_values'] = vm_data[vm]['nhc_values'] 
+                                self.vm_info['vm_data'] = vm_data[vm] 
+                         
+                        #_SiteConfig.vm_info = vm_info
+
+                        return sysname
+                else:
+                    getlogger().debug(f'Did not find system {sysname} in the config file')
+            except Exception as e:
+                raise ConfigError(f"\nError {pp_results}"
+                                  f"\nError {e} "
+                                  f"for the current system: '{sysname}'.")
+        return False
+
     def _detect_system(self):
         getlogger().debug('Detecting system')
         if os.path.exists('/etc/xthostname'):
@@ -275,36 +346,14 @@ class _SiteConfig:
             f'Looking for a matching configuration entry '
             f'for system {hostname!r}'
         )
-        
-        # May need to find a better way to do this for clusters on Azure
-        # Host names can be quite random
-        if os.path.exists('/etc/waagent.conf'):
-            try:
-                cmd = "curl -H Metadata:true \"http://169.254.169.254/metadata/instance?api-version=2019-06-04\""
-                results = util.osext.run_command(cmd)
-                vm_data = json.loads(results.stdout)
-                pp_results = json.dumps(vm_data, indent=4)
-                vm_type = vm_data['compute']['vmSize'][9:]
-                img_ref = vm_data['compute']['storageProfile']['imageReference']
-                sysname = "{}_{}_{}_{}".format(vm_type.lower(),
-                                               img_ref['offer'].lower(),
-                                               img_ref['sku'].lower(),
-                                               img_ref['version'].lower())
-                # If on Azure return generated sysname
-                getlogger().debug(f'generated azure system {sysname}')
-                getlogger().debug(f'{self._site_config["systems"]}')
 
-                for system in self._site_config['systems']:
-                    if sysname == system["name"]:
-                        getlogger().debug(f'system {sysname} found in {system}')
-                        return sysname
-                else:
-                    getlogger().debug(f'Did not find system {sysname} in the config file')
-            except Exception as e:
-                raise ConfigError(f"\nError {pp_results}"
-                                  f"\nError {e} "
-                                  f"for the current system: '{hostname}'.")
-                
+        # Check if machine is an azure machine
+        vm_series = self._get_azure_vm_info()
+        if vm_series != False:
+            sysname = vm_series
+            return sysname
+
+        
         for system in self._site_config['systems']:
             for patt in system['hostnames']:
                 getlogger().debug(

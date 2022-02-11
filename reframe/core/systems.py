@@ -444,6 +444,7 @@ class System(jsonext.JSONSerializable):
         self._resourcesdir = resourcesdir
         self._stagedir = stagedir
         self._partitions = partitions
+#        self._vm_size = vm_size
 
     @classmethod
     def create(cls, site_config):
@@ -534,6 +535,7 @@ class System(jsonext.JSONSerializable):
             resourcesdir=site_config.get('systems/0/resourcesdir'),
             stagedir=site_config.get('systems/0/stagedir'),
             partitions=partitions
+            #vm_size=vm_size
         )
 
     @property

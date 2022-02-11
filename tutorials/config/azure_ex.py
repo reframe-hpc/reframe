@@ -10,8 +10,13 @@
 site_configuration = {
     'systems': [
         {
-            'name': 'hb120rs_v3_centos-hpc_8_1-gen2_latest',
-            'descr': 'Azure HBv3x CentOS-HPC 8.1',
+            'name': 'hbrs_v3',
+            'descr': 'Azure HBv3',
+            'vm_size': '',
+            'vm_os': '',
+            'vm_os_version': '',
+            'vm_image': '',
+            'vm_data_file': '/share/home/hpcuser/jshelley/github/reframe/azure_nhc/vm_info/azure_vm_info_processed_w_addons.json',
             'hostnames': [''],
             'modules_system': 'tmod4',
             'partitions': [
@@ -19,7 +24,7 @@ site_configuration = {
                     'name': 'default',
                     'scheduler': 'local',
                     'launcher': 'local',
-                    'environs': ['gnu-azure-hpc'],
+                    'environs': ['gnu-azhpc'],
                 }
             ]
         },
@@ -45,7 +50,7 @@ site_configuration = {
             'ftn': ''
         },
         {
-            'name': 'gnu-azure-hpc',
+            'name': 'gnu-azhpc',
             'modules': ['gcc-9.2.0'],
             'cc': 'gcc',
             'cxx': 'g++',
