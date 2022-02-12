@@ -239,6 +239,9 @@ class RegressionTestMeta(type):
         # Utility decorators
         namespace['_rfm_ext_bound'] = set()
 
+        # Loggable attributes and properties
+        namespace['_rfm_loggable_props'] = []
+
         def bind(fn, name=None):
             '''Directive to bind a free function to a class.
 
@@ -271,8 +274,28 @@ class RegressionTestMeta(type):
             fn._rfm_final = True
             return fn
 
+        def loggable_as(name):
+            '''Mark a property as loggable
+
+            :param name: An alternative name that will be used for logging
+                this property.
+
+            '''
+            def _loggable(fn):
+                if not hasattr(fn, 'fget'):
+                    raise ValueError('decorated function does not '
+                                     'look like a property')
+
+                prop_name = fn.fget.__name__
+                namespace['_rfm_loggable_props'].append((prop_name, name))
+                return fn
+
+            return _loggable
+
         namespace['bind'] = bind
         namespace['final'] = final
+        namespace['loggable'] = loggable_as(None)
+        namespace['loggable_as'] = loggable_as
         namespace['_rfm_final_methods'] = set()
 
         # Hook-related functionality
@@ -867,6 +890,12 @@ class RegressionTestMeta(type):
                 name += f'_{fid}'
 
         return name
+
+    def loggable_attrs(cls):
+        '''Get the loggable attributes of this class.'''
+        loggable_attrs = [(name, None) for name, var in cls.var_space.items()
+                          if var.is_loggable()]
+        return sorted(cls._rfm_loggable_props + loggable_attrs)
 
 
 def make_test(name, bases, body, **kwargs):

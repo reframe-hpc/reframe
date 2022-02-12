@@ -568,6 +568,10 @@ class LoggerAdapter(logging.LoggerAdapter):
         if self.check is None:
             return
 
+        # for attr, alt_name in self.check.loggable_attrs():
+        #     extra_name  = alt_name or attr
+        #     self.extra[f'check_{extra_name}'] = getattr(self.check, attr)
+
         for attr, val in util.attrs(self.check).items():
             if not attr.startswith('_') and attr not in exclude_check_attrs:
                 self.extra[f'check_{attr}'] = val

@@ -508,3 +508,28 @@ def test_get_variant_nums(MyMeta):
     for v in variants:
         assert Foo.get_variant_info(v)['params']['p'] == 5
         assert Foo.get_variant_info(v)['params']['q'] == 4
+
+
+def test_loggable_attrs():
+    class T(metaclass=meta.RegressionTestMeta):
+        x = variable(int, value=3, loggable=True)
+        y = variable(int)
+
+        @loggable
+        @property
+        def foo(self):
+            return 10
+
+        @loggable_as('z')
+        @property
+        def bar(self):
+            return 10
+
+    assert T.loggable_attrs() == [('bar', 'z'), ('foo', None), ('x', None)]
+
+    # Test error conditions
+    with pytest.raises(ValueError):
+        class T(metaclass=meta.RegressionTestMeta):
+            @loggable
+            def foo(self):
+                pass
