@@ -28,7 +28,11 @@ from reframe.core.schedulers import Job
 @pytest.fixture
 def fake_check():
     class _FakeCheck(rfm.RegressionTest):
-        pass
+        custom = variable(str, value='hello extras', loggable=True)
+        custom_list = variable(list,
+                               value=['custom', 3.0, ['hello', 'world']],
+                               loggable=True)
+        custom_dict = variable(dict, value={'a': 1, 'b': 2}, loggable=True)
 
     @sn.deferrable
     def error():
@@ -42,11 +46,6 @@ def fake_check():
     test.job._completion_time = time.time()
     test.job._jobid = 12345
     test.job._nodelist = ['localhost']
-    test.custom = 'hello extras'
-    test.custom_list = ['custom', 3.0, ['hello', 'world']]
-    test.custom_dict = {'a': 1, 'b': 2}
-    test.deferred = sn.defer('hello')
-    test.deferred_error = error()
     return test
 
 
@@ -170,20 +169,6 @@ def test_logger_dynamic_attributes(logfile, logger_with_check):
     )
 
 
-def test_logger_dynamic_attributes_deferrables(logfile, logger_with_check):
-    formatter = rlog.RFC3339Formatter(
-        '%(check_deferred)s|%(check_deferred_error)s'
-    )
-    logger_with_check.logger.handlers[0].setFormatter(formatter)
-    logger_with_check.info('xxx')
-    assert _pattern_in_logfile(r'null\|null', logfile)
-
-    # Evaluate the deferrable and log again
-    logger_with_check.check.deferred.evaluate()
-    logger_with_check.info('xxx')
-    assert _pattern_in_logfile(r'"hello"\|null', logfile)
-
-
 def test_rfc3339_timezone_extension(logfile, logger_with_check,
                                     logger_without_check):
     formatter = rlog.RFC3339Formatter(
@@ -210,7 +195,7 @@ def test_rfc3339_timezone_wrong_directive(logfile, logger_without_check):
 
 def test_logger_job_attributes(logfile, logger_with_check):
     formatter = rlog.RFC3339Formatter(
-        '%(check_job_jobid)s %(check_job_nodelist)s')
+        '%(check_jobid)s %(check_job_nodelist)s')
     logger_with_check.logger.handlers[0].setFormatter(formatter)
     logger_with_check.info('xxx')
     assert _pattern_in_logfile(r'12345 localhost', logfile)

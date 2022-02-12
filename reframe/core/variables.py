@@ -67,6 +67,7 @@ class TestVar:
         ret._field = fields.DeprecatedField(var.field, message,
                                             kind, from_version)
         ret._default_value = var._default_value
+        ret._loggable = var._loggable
         return ret
 
     def _check_deprecation(self, kind):

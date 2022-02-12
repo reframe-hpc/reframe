@@ -513,19 +513,22 @@ def test_get_variant_nums(MyMeta):
 def test_loggable_attrs():
     class T(metaclass=meta.RegressionTestMeta):
         x = variable(int, value=3, loggable=True)
-        y = variable(int)
+        y = variable(int, loggable=True)    # loggable but undefined
+        z = variable(int)
 
         @loggable
         @property
         def foo(self):
             return 10
 
-        @loggable_as('z')
+        @loggable_as('w')
         @property
         def bar(self):
             return 10
 
-    assert T.loggable_attrs() == [('bar', 'z'), ('foo', None), ('x', None)]
+    assert T.loggable_attrs() == [('bar', 'w'), ('foo', None), ('x', None)]
+    assert T().foo == 10
+    assert T().bar == 10
 
     # Test error conditions
     with pytest.raises(ValueError):
@@ -533,3 +536,19 @@ def test_loggable_attrs():
             @loggable
             def foo(self):
                 pass
+
+
+def test_inherited_loggable_attrs():
+    class T(rfm.RegressionTest):
+        pass
+
+    attrs = [x[0] for x in T.loggable_attrs()]
+    assert 'num_tasks' in attrs
+    assert 'prefix' in attrs
+
+
+def test_deprecated_loggable_attrs():
+    class T(metaclass=meta.RegressionTestMeta):
+        x = deprecate(variable(int, value=3, loggable=True), 'deprecated')
+
+    assert T.loggable_attrs() == [('x', None)]
