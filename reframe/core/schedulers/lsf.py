@@ -38,28 +38,21 @@ class LsfJobScheduler(PbsJobScheduler):
             return ''
 
     def emit_preamble(self, job):
-        try:
-            num_physical_cores = min(
-                job.num_tasks * job.num_cpus_per_task,
-                job.num_tasks_per_node * job.num_cpus_per_task
-            )
-        except TypeError:
-            num_physical_cores = None
-
-        if num_physical_cores is None:
-            num_tasks_per_node = job.num_tasks_per_node or 1
-            num_nodes = job.num_tasks // num_tasks_per_node
-        else:
-            num_nodes = None
-
         preamble = [
             self._format_option(job.name, '-J {0}'),
             self._format_option(job.stdout, '-o {0}'),
             self._format_option(job.stderr, '-e {0}'),
-            self._format_option(job.num_tasks, '-n {0}'),
-            self._format_option(num_physical_cores, '-R "span[ptile={0}]"'),
-            self._format_option(num_nodes, '-nnodes {0}')
         ]
+
+        if job.num_tasks_per_node is not None:
+            num_nodes = job.num_tasks // job.num_tasks_per_node
+            preamble.append(self._format_option(num_nodes, '-nnodes {0}'))
+        else:
+            preamble.append(self._format_option(job.num_tasks, '-n {0}'))
+
+        if job.num_cpus_per_task is not None:
+            num_physical_cores = job.num_tasks * job.num_cpus_per_task
+            preamble.append(self._format_option(num_physical_cores, '-R "span[ptile={0}]"'))
 
         # add job time limit in minutes
         if job.time_limit is not None:
