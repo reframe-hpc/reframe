@@ -28,18 +28,15 @@ from reframe.core.schedulers import Job
 @pytest.fixture
 def fake_check():
     class _FakeCheck(rfm.RegressionTest):
+        param = parameter(range(3), loggable=True, fmt=lambda x: 10*x)
         custom = variable(str, value='hello extras', loggable=True)
         custom_list = variable(list,
                                value=['custom', 3.0, ['hello', 'world']],
                                loggable=True)
         custom_dict = variable(dict, value={'a': 1, 'b': 2}, loggable=True)
 
-    @sn.deferrable
-    def error():
-        raise BaseException
-
     # A bit hacky, but we don't want to run a full test every time
-    test = _FakeCheck()
+    test = _FakeCheck(variant_num=1)
     test._job = Job.create(getscheduler('local')(),
                            getlauncher('local')(),
                            'fakejob')
@@ -158,14 +155,16 @@ def test_logger_levels(logfile, logger_with_check):
     assert _pattern_in_logfile('foo', logfile)
 
 
-def test_logger_dynamic_attributes(logfile, logger_with_check):
-    formatter = rlog.RFC3339Formatter('%(check_custom)s|%(check_custom_list)s|'
-                                      '%(check_foo)s|%(check_custom_dict)s')
+def test_logger_loggable_attributes(logfile, logger_with_check):
+    formatter = rlog.RFC3339Formatter(
+        '%(check_custom)s|%(check_custom_list)s|'
+        '%(check_foo)s|%(check_custom_dict)s|%(check_param)s'
+    )
     logger_with_check.logger.handlers[0].setFormatter(formatter)
     logger_with_check.info('xxx')
     assert _pattern_in_logfile(
         r'hello extras\|custom,3.0,\["hello", "world"\]\|null\|'
-        r'{"a": 1, "b": 2}', logfile
+        r'{"a": 1, "b": 2}\|10', logfile
     )
 
 
@@ -463,10 +462,12 @@ def test_logging_context_check(default_exec_ctx, logfile, fake_check):
         rlog.getlogger().error('error from context')
 
     rlog.getlogger().error('error outside context')
-    assert _found_in_logfile(f'_FakeCheck: {sys.argv[0]}: error from context',
-                             logfile)
-    assert _found_in_logfile(f'reframe: {sys.argv[0]}: error outside context',
-                             logfile)
+    assert _found_in_logfile(
+        f'_FakeCheck_1: {sys.argv[0]}: error from context', logfile
+    )
+    assert _found_in_logfile(
+        f'reframe: {sys.argv[0]}: error outside context', logfile
+    )
 
 
 def test_logging_context_error(default_exec_ctx, logfile):

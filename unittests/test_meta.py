@@ -515,6 +515,7 @@ def test_loggable_attrs():
         x = variable(int, value=3, loggable=True)
         y = variable(int, loggable=True)    # loggable but undefined
         z = variable(int)
+        p = parameter(range(3), loggable=True)
 
         @loggable
         @property
@@ -526,9 +527,10 @@ def test_loggable_attrs():
         def bar(self):
             return 10
 
-    assert T.loggable_attrs() == [('bar', 'w'), ('foo', None), ('x', None)]
-    assert T().foo == 10
-    assert T().bar == 10
+    assert T.loggable_attrs() == [('bar', 'w'), ('foo', None),
+                                  ('p', None), ('x', None)]
+    assert T(variant_num=0).foo == 10
+    assert T(variant_num=0).bar == 10
 
     # Test error conditions
     with pytest.raises(ValueError):

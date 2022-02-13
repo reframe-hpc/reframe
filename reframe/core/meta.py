@@ -893,14 +893,18 @@ class RegressionTestMeta(type):
 
     def loggable_attrs(cls):
         '''Get the loggable attributes of this class.'''
-        loggable_attrs = [(name, None) for name, var in cls.var_space.items()
-                          if var.is_defined() and var.is_loggable()]
+        loggable_vars = [(name, None) for name, var in cls.var_space.items()
+                         if var.is_defined() and var.is_loggable()]
+        loggable_params = [
+            (name, None) for name, param in cls.param_space.items()
+            if param.is_loggable()
+        ]
         loggable_props = []
         for c in cls.mro():
             if hasattr(c, '_rfm_loggable_props'):
                 loggable_props += c._rfm_loggable_props
 
-        return sorted(loggable_props + loggable_attrs)
+        return sorted(loggable_props + loggable_vars + loggable_params)
 
 
 def make_test(name, bases, body, **kwargs):
