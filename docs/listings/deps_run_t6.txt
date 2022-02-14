@@ -9,22 +9,22 @@
   output directory:  '/home/user/Repositories/reframe/output'
 
 [==========] Running 5 check(s)
-[==========] Started on Sat Jan 22 23:44:25 2022 
+[==========] Started on Sat Jan 22 23:44:25 2022
 
 [----------] start processing checks
 [ RUN      ] T0 @generic:default+builtin
-[       OK ] (1/5) T0 @generic:default+builtin [compile: 0.017s run: 0.289s total: 0.331s]
+[       OK ] (1/5) T0 @generic:default+builtin
 [ RUN      ] T4 @generic:default+builtin
-[       OK ] (2/5) T4 @generic:default+builtin [compile: 0.018s run: 0.330s total: 0.374s]
+[       OK ] (2/5) T4 @generic:default+builtin
 [ RUN      ] T5 @generic:default+builtin
-[       OK ] (3/5) T5 @generic:default+builtin [compile: 0.018s run: 0.384s total: 0.442s]
+[       OK ] (3/5) T5 @generic:default+builtin
 [ RUN      ] T1 @generic:default+builtin
-[       OK ] (4/5) T1 @generic:default+builtin [compile: 0.018s run: 0.452s total: 0.494s]
+[       OK ] (4/5) T1 @generic:default+builtin
 [ RUN      ] T6 @generic:default+builtin
-[       OK ] (5/5) T6 @generic:default+builtin [compile: 0.018s run: 0.525s total: 0.582s]
+[       OK ] (5/5) T6 @generic:default+builtin
 [----------] all spawned checks have finished
 
 [  PASSED  ] Ran 5/5 test case(s) from 5 check(s) (0 failure(s), 0 skipped)
-[==========] Finished on Sat Jan 22 23:44:28 2022 
+[==========] Finished on Sat Jan 22 23:44:28 2022
 Run report saved in '/home/user/.reframe/reports/run-report.json'
 Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-ktylyaqk.log'

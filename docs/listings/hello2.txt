@@ -9,29 +9,29 @@
   output directory:  '/path/to/reframe/output'
 
 [==========] Running 2 check(s)
-[==========] Started on Sat Jan 22 13:21:51 2022 
+[==========] Started on Sat Jan 22 13:21:51 2022
 
 [----------] start processing checks
 [ RUN      ] HelloMultiLangTest %lang=cpp @generic:default+builtin
 [ RUN      ] HelloMultiLangTest %lang=c @generic:default+builtin
-[     FAIL ] (1/2) HelloMultiLangTest %lang=cpp @generic:default+builtin [compile: 0.006s run: n/a total: 0.043s]
+[     FAIL ] (1/2) HelloMultiLangTest %lang=cpp @generic:default+builtin
 ==> test failed during 'compile': test staged in '/path/to/reframe/stage/generic/default/builtin/HelloMultiLangTest_cpp'
-[       OK ] (2/2) HelloMultiLangTest %lang=c @generic:default+builtin [compile: 0.268s run: 0.368s total: 0.813s]
+[       OK ] (2/2) HelloMultiLangTest %lang=c @generic:default+builtin
 [----------] all spawned checks have finished
 
 [  FAILED  ] Ran 2/2 test case(s) from 2 check(s) (1 failure(s), 0 skipped)
-[==========] Finished on Sat Jan 22 13:21:52 2022 
+[==========] Finished on Sat Jan 22 13:21:52 2022
 
 ==============================================================================
 SUMMARY OF FAILURES
 ------------------------------------------------------------------------------
-FAILURE INFO for HelloMultiLangTest_cpp 
+FAILURE INFO for HelloMultiLangTest_cpp
   * Expanded name: HelloMultiLangTest %lang=cpp
   * Description: HelloMultiLangTest %lang=cpp
   * System partition: generic:default
   * Environment: builtin
   * Stage directory: /path/to/reframe/stage/generic/default/builtin/HelloMultiLangTest_cpp
-  * Node list: 
+  * Node list:
   * Job type: local (id=None)
   * Dependencies (conceptual): []
   * Dependencies (actual): []
