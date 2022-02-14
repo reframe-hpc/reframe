@@ -181,10 +181,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def on_task_failure(self, task):
         self._num_failed_tasks += 1
-        timings = task.pipeline_timings(['compile_complete',
-                                         'run_complete',
-                                         'total'])
-        msg = f'{task.check.info()} [{timings}]'
+        msg = f'{task.check.info()}'
         if task.failed_stage == 'cleanup':
             self.printer.status('ERROR', msg, just='right')
         else:
@@ -205,10 +202,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
             )
 
     def on_task_success(self, task):
-        timings = task.pipeline_timings(['compile_complete',
-                                         'run_complete',
-                                         'total'])
-        msg = f'{task.check.info()} [{timings}]'
+        msg = f'{task.check.info()}'
         self.printer.status('OK', msg, just='right')
         timings = task.pipeline_timings(['setup',
                                          'compile_complete',
@@ -584,10 +578,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def on_task_failure(self, task):
         self._num_failed_tasks += 1
-        timings = task.pipeline_timings(['compile_complete',
-                                         'run_complete',
-                                         'total'])
-        msg = f'{task.info()} [{timings}]'
+        msg = f'{task.info()}'
         if task.failed_stage == 'cleanup':
             self.printer.status('ERROR', msg, just='right')
         else:
@@ -608,10 +599,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             )
 
     def on_task_success(self, task):
-        timings = task.pipeline_timings(['compile_complete',
-                                         'run_complete',
-                                         'total'])
-        msg = f'{task.info()} [{timings}]'
+        msg = f'{task.info()}'
         self.printer.status('OK', msg, just='right')
         timings = task.pipeline_timings(['setup',
                                          'compile_complete',
