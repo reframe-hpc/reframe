@@ -527,8 +527,12 @@ def test_loggable_attrs():
         def bar(self):
             return 10
 
+        @run_after('init')
+        def set_z(self):
+            self.z = 20
+
     assert T.loggable_attrs() == [('bar', 'w'), ('foo', None),
-                                  ('p', None), ('x', None)]
+                                  ('p', None), ('x', None), ('y', None)]
     assert T(variant_num=0).foo == 10
     assert T(variant_num=0).bar == 10
 

@@ -569,7 +569,10 @@ class LoggerAdapter(logging.LoggerAdapter):
         check_type = type(self.check)
         for attr, alt_name in check_type.loggable_attrs():
             extra_name  = alt_name or attr
-            val = getattr(self.check, attr)
+
+            # In case of AttributeError, i.e., the variable is undefined, we
+            # set the value to None
+            val = getattr(self.check, attr, None)
             if attr in check_type.raw_params:
                 # Attribute is parameter, so format it
                 val = check_type.raw_params[attr].format(val)

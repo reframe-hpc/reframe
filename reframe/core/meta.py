@@ -894,7 +894,7 @@ class RegressionTestMeta(type):
     def loggable_attrs(cls):
         '''Get the loggable attributes of this class.'''
         loggable_vars = [(name, None) for name, var in cls.var_space.items()
-                         if var.is_defined() and var.is_loggable()]
+                         if var.is_loggable()]
         loggable_params = [
             (name, None) for name, param in cls.param_space.items()
             if param.is_loggable()

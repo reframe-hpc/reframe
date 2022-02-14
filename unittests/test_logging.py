@@ -35,6 +35,11 @@ def fake_check():
                                loggable=True)
         custom_dict = variable(dict, value={'a': 1, 'b': 2}, loggable=True)
 
+        # x is a variable that is loggable, but is left undefined. We want to
+        # make sure that logging does not crash and simply reports is as
+        # undefined
+        x = variable(str, loggable=True)
+
     # A bit hacky, but we don't want to run a full test every time
     test = _FakeCheck(variant_num=1)
     test._job = Job.create(getscheduler('local')(),
@@ -158,13 +163,13 @@ def test_logger_levels(logfile, logger_with_check):
 def test_logger_loggable_attributes(logfile, logger_with_check):
     formatter = rlog.RFC3339Formatter(
         '%(check_custom)s|%(check_custom_list)s|'
-        '%(check_foo)s|%(check_custom_dict)s|%(check_param)s'
+        '%(check_foo)s|%(check_custom_dict)s|%(check_param)s|%(check_x)s'
     )
     logger_with_check.logger.handlers[0].setFormatter(formatter)
     logger_with_check.info('xxx')
     assert _pattern_in_logfile(
         r'hello extras\|custom,3.0,\["hello", "world"\]\|null\|'
-        r'{"a": 1, "b": 2}\|10', logfile
+        r'{"a": 1, "b": 2}\|10\|null', logfile
     )
 
 
