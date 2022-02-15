@@ -8,8 +8,8 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-__all__ = ['alltoall', 'flex_alltoall', 'allreduce',
-           'p2p_bandwidth', 'p2p_latency']
+__all__ = ['fetch_osu_benchmarks', 'build_osu_benchmarks',
+           'osu_benchmark_test_base', 'osu_bandwidth', 'osu_latency']
 
 
 class fetch_osu_benchmarks(rfm.RunOnlyRegressionTest):
@@ -21,10 +21,15 @@ class fetch_osu_benchmarks(rfm.RunOnlyRegressionTest):
 
     descr = 'Fetch OSU benchmarks'
     local = True
-    executable = 'wget'
-    executable_opts = [
-        f'http://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-{version}.tar.gz'  # noqa: E501
-    ]
+    # executable = 'wget'
+    executable = 'cp'
+
+    @run_after('init')
+    def set_executable_opts(self):
+        self.executable_opts = [
+            # f'http://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-{self.version}.tar.gz'  # noqa: E501
+            f'/users/sarafael/git/reframe/osu-micro-benchmarks-{self.version}.tar.gz .'
+        ]
 
     @sanity_function
     def validate_download(self):
@@ -32,29 +37,40 @@ class fetch_osu_benchmarks(rfm.RunOnlyRegressionTest):
 
 
 class build_osu_benchmarks(rfm.CompileOnlyRegressionTest):
-    #: The version of OSU benchmarks to use.
+    #: Option to build with support for accelerators
     #:
     #: :type: :class:`str`
-    #: :default: ``'5.6.2'``
-    version = variable(str, value='5.6.2')
+    #: :default: ``'cpu'``
+    build_type = parameter(['cpu', 'cuda', 'rocm', 'openacc'])
+
+    #: Install directory of the accelerator libraries
+    #:
+    #: :type: :class:`str`
+    #: :default: ``None``
+    gpu_lib_dir = variable(str, type(None), value=None)
 
     descr = 'Build OSU benchmarks'
     build_system = 'Autotools'
     build_prefix = variable(str)
-    osu_benchmarks = fixture(fetch_osu_benchmarks, scope='session',
-                             variables={'version': f'{version}'})
+    osu_benchmarks = fixture(fetch_osu_benchmarks, scope='session')
+    build_flags = {
+        'cpu': [],
+        'cuda': ['--enable-cuda'],
+        'rocm': ['--enable-rocm'],
+        'openacc': ['--enable-openacc'],
+    }
 
     @run_before('compile')
     def prepare_build(self):
         tarball = f'osu-micro-benchmarks-{self.osu_benchmarks.version}.tar.gz'
         self.build_prefix = tarball[:-7]  # remove .tar.gz extension
-
         fullpath = os.path.join(self.osu_benchmarks.stagedir, tarball)
-        self.prebuild_cmds = [
+        self.prebuild_cmds += [
             f'cp {fullpath} {self.stagedir}',
             f'tar xzf {tarball}',
             f'cd {self.build_prefix}'
         ]
+        self.build_system.config_opts = self.build_flags[self.build_type]
         self.build_system.make_opts = ['-C', 'mpi']
         self.build_system.max_concurrency = 8
 
@@ -65,111 +81,37 @@ class build_osu_benchmarks(rfm.CompileOnlyRegressionTest):
 
 class osu_benchmark_test_base(rfm.RunOnlyRegressionTest):
     '''Base class of OSU benchmarks runtime tests'''
-    #: The version of OSU benchmarks to use.
-    #:
-    #: :type: :class:`str`
-    #: :default: ``'5.6.2'``
-    version = variable(str, value='5.6.2')
-
-    #: Maximum message size
-    #: This value is passed to the excutable through the -m option
-    #:
-    #: :type: :class:`int`
-    #: :default: ``8``
-    max_message_size = variable(int, value=8)
-
     #: Number of warmup iterations
+    #:
     #: This value is passed to the excutable through the -x option
     #:
     #: :type: :class:`int`
     #: :default: ``1000``
     num_warmup_iters = variable(int, value=1000)
 
-    #: Number of warmup iterations
+    #: Number of iterations
     #: This value is passed to the excutable through the -i option
     #:
     #: :type: :class:`int`
     #: :default: ``20000``
     num_iters = variable(int, value=20000)
 
-    osu_binaries = fixture(build_osu_benchmarks, scope='environment',
-                           variables={'version': f'{version}'})
+    #: Control message size
+    #:
+    #: When this value is present on the stdout, the check can be considered successful
+    #:
+    #: :type: :class:`int`
+    #: :default: ``8``
+    ctrl_msg_size = variable(int, value=8)
 
-    @sanity_function
-    def validate_test(self):
-        return sn.assert_found(r'^8', self.stdout)
+    #: Performance message size
+    #:
+    #: This value is used for the performance checks
+    #:
+    #: :type: :class:`int`
+    #: :default: ``8``
+    perf_msg_size = variable(int, value=8)
 
-    @run_after('setup')
-    def set_mpi_tests_dir(self):
-        self.mpi_tests_dir = os.path.join(
-            self.osu_binaries.stagedir,
-            self.osu_binaries.build_prefix,
-            'mpi'
-        )
-
-
-class alltoall(osu_benchmark_test_base):
-    descr = 'Alltoall OSU microbenchmark'
-    num_tasks_per_node = 1
-    num_gpus_per_node  = 1
-
-    @run_before('run')
-    def set_executable(self):
-        self.executable = os.path.join(
-            self.mpi_tests_dir, 'collective', 'osu_alltoall',
-        )
-        self.executable_opts = ['-m', f'{self.max_message_size}',
-                                '-x', f'{self.num_warmup_iters}',
-                                '-i', f'{self.num_iters}']
-
-    @sanity_function
-    def assert_found_8MB_latency(self):
-        return sn.assert_found(r'^8', self.stdout)
-
-    @run_before('performance')
-    def set_performance_patterns(self):
-        self.perf_patterns = {
-            'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
-                                        self.stdout, 'latency', float)
-        }
-
-
-class flex_alltoall(osu_benchmark_test_base):
-    descr = 'Flexible Alltoall OSU test'
-    num_tasks_per_node = 1
-    num_tasks = 0
-
-    @run_before('run')
-    def set_executable(self):
-        self.executable = os.path.join(
-            self.mpi_tests_dir, 'collective', 'osu_alltoall',
-        )
-
-    @sanity_function
-    def assert_found_1KB_bw(self):
-        return sn.assert_found(r'^1048576', self.stdout)
-
-
-class allreduce(osu_benchmark_test_base):
-    descr = 'Allreduce OSU microbenchmark'
-    num_tasks_per_node = 1
-    num_gpus_per_node  = 1
-
-    @run_before('run')
-    def set_executable(self):
-        self.executable = os.path.join(
-            self.mpi_tests_dir, 'collective', 'osu_allreduce',
-        )
-        self.executable_opts = ['-m', f'{self.max_message_size}',
-                                '-x', f'{self.num_warmup_iters}',
-                                '-i', f'{self.num_iters}']
-
-    @sanity_function
-    def assert_found_8MB_latency(self):
-        return sn.assert_found(r'^8', self.stdout)
-
-
-class p2p_test_base(osu_benchmark_test_base):
     #: Accelerator device type
     #:
     #: Use accelerator device buffers, i.e cuda, openacc or rocm
@@ -178,49 +120,53 @@ class p2p_test_base(osu_benchmark_test_base):
     #: :default: ``None``
     device = variable(str, type(None), value=None)
 
-    descr = 'P2P microbenchmark'
-    num_warmup_iters = 100
-    num_iters = 1000
-    num_tasks = 2
-    num_tasks_per_node = 1
+    osu_binaries = fixture(build_osu_benchmarks, scope='environment')
+    executables = {
+        'collective': ['osu_alltoall', 'osu_allreduce'],
+        'pt2pt': ['osu_bw', 'osu_latency']
+    }
 
-    @run_before('run')
-    def set_executable_opts(self):
-        self.executable_opts = ['-x', f'{self.num_warmup_iters}',
+    @run_after('setup')
+    def set_executable(self):
+        if self.executable in self.executables['collective']:
+            benchmark_type = 'collective'
+        elif self.executable in self.executables['pt2pt']:
+            benchmark_type = 'pt2pt'
+
+        self.executable = os.path.join(
+            self.osu_binaries.stagedir, self.osu_binaries.build_prefix,
+            'mpi', benchmark_type, self.executable
+        )
+        max_message_size = max(self.ctrl_msg_size, self.perf_msg_size)
+        self.executable_opts = ['-m', f'{max_message_size}',
+                                '-x', f'{self.num_warmup_iters}',
                                 '-i', f'{self.num_iters}']
         if self.device:
-            self.executable_opts += ['-d', f'{self.device}', 'D', 'D']
+            self.executable_opts += ['-d', f'{self.device}']
+
+        if benchmark_type == 'pt2pt':
+            self.executable_opts += ['D', 'D']
 
     @sanity_function
-    def assert_found_4KB_bw(self):
-        return sn.assert_found(r'^4194304', self.stdout)
+    def validate_test(self):
+        return sn.assert_found(rf'^{self.ctrl_msg_size}', self.stdout)
 
 
-class p2p_bandwidth(p2p_test_base):
-    @run_before('run')
-    def set_executable(self):
-        self.executable = os.path.join(
-            self.mpi_tests_dir, 'pt2pt', 'osu_bw'
-        )
-
+class osu_bandwidth(osu_benchmark_test_base):
     @run_before('performance')
     def set_performance_patterns(self):
         self.perf_patterns = {
-            'bw': sn.extractsingle(r'^4194304\s+(?P<bw>\S+)',
+            'bw': sn.extractsingle(rf'^{self.perf_msg_size}\s+(?P<bw>\S+)',
                                    self.stdout, 'bw', float)
         }
 
 
-class p2p_latency(p2p_test_base):
-    @run_before('run')
-    def set_executable(self):
-        self.executable = os.path.join(
-            self.mpi_tests_dir, 'pt2pt', 'osu_latency'
-        )
-
+class osu_latency(osu_benchmark_test_base):
     @run_before('performance')
     def set_performance_patterns(self):
         self.perf_patterns = {
-            'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
-                                        self.stdout, 'latency', float)
+            'latency': sn.extractsingle(
+                rf'^{self.perf_msg_size}\s+(?P<latency>\S+)',
+                self.stdout, 'latency', float
+            )
         }

@@ -6,17 +6,51 @@
 import reframe as rfm
 import reframe.utility.sanity as sn
 
-from hpctestlib.microbenchmarks.mpi.osu import (alltoall,
-                                                allreduce,
-                                                flex_alltoall,
-                                                p2p_bandwidth,
-                                                p2p_latency,
+from hpctestlib.microbenchmarks.mpi.osu import (osu_latency,
+                                                osu_bandwidth,
                                                 build_osu_benchmarks)
 
 
+class build_osu_benchmarks_gpu(build_osu_benchmarks):
+    # @run_before('compile')
+    @run_after('setup')
+    def set_modules(self):
+        if self.current_system.name in ['daint', 'dom']:
+            self.modules = ['cudatoolkit/21.3_11.2']
+            if self.current_system.name == 'dom':
+                if self.current_environ.name == 'PrgEnv-cray':
+                    self.prebuild_cmds += ['module sw cce cce/10.0.2']
+
+                if self.current_environ.name == 'PrgEnv-gnu':
+                    print('xxx', self.prebuild_cmds)
+                    self.prebuild_cmds += ['module sw gcc gcc/10.3.0']
+                    print('xxx', self.prebuild_cmds)
+
+                if self.current_environ.name == 'PrgEnv-intel':
+                    self.prebuild_cmds += ['module sw intel intel/19.1.1.217']
+
+        elif self.current_system.name in ['arolla', 'tsa']:
+            self.modules = ['cuda/10.1.243']
+
+
+cpu_build_variant = build_osu_benchmarks.get_variant_nums(
+    build_type='cpu'
+)
+cuda_build_variant = build_osu_benchmarks_gpu.get_variant_nums(
+    build_type='cuda'
+)
+
+
 @rfm.simple_test
-class allreduce_check(allreduce):
+class allreduce_check(osu_latency):
     variant = parameter(['small'], ['large'])
+    ctrl_msg_size = 8
+    perf_msg_size = 8
+    executable = 'osu_allreduce'
+    num_tasks_per_node = 1
+    num_gpus_per_node  = 1
+    osu_binaries = fixture(build_osu_benchmarks, scope='environment',
+                           variants=cpu_build_variant)
     strict_check = False
     valid_systems = ['daint:gpu', 'daint:mc']
     valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-nvidia']
@@ -67,7 +101,12 @@ class allreduce_check(allreduce):
 
 
 @rfm.simple_test
-class alltoall_check(alltoall):
+class alltoall_check(osu_latency):
+    ctrl_msg_size = 8
+    perf_msg_size = 8
+    executable = 'osu_alltoall'
+    osu_binaries = fixture(build_osu_benchmarks, scope='environment',
+                           variants=cpu_build_variant)
     valid_systems = ['daint:gpu', 'dom:gpu']
     valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                            'PrgEnv-intel', 'PrgEnv-nvidia']
@@ -99,7 +138,14 @@ class alltoall_check(alltoall):
 
 
 @rfm.simple_test
-class alltoall_flex_check(flex_alltoall):
+class alltoall_flex_check(osu_latency):
+    descr = 'Flexible Alltoall OSU test'
+    executable = 'osu_alltoall'
+    ctrl_msg_size = 1048576
+    num_tasks_per_node = 1
+    num_tasks = 0
+    osu_binaries = fixture(build_osu_benchmarks, scope='environment',
+                           variants=cpu_build_variant)
     valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                      'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn']
     valid_prog_environs = ['PrgEnv-cray']
@@ -112,14 +158,15 @@ class alltoall_flex_check(flex_alltoall):
             self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-pgi']
 
-    @sanity_function
-    def assert_found_1KB_bw(self):
-        return sn.assert_found(r'^1048576', self.stdout)
-
 
 class p2p_config_cscs(rfm.RegressionMixin):
     @run_after('init')
     def cscs_config(self):
+        self.num_warmup_iters = 100
+        self.num_iters = 1000
+        self.num_tasks = 2
+        self.num_tasks_per_node = 1
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn']
         if self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-pgi']
@@ -127,7 +174,6 @@ class p2p_config_cscs(rfm.RegressionMixin):
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                         'PrgEnv-intel', 'PrgEnv-nvidia']
 
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn']
         if not self.device:
             self.valid_systems += ['daint:mc', 'dom:mc',
                                    'eiger:mc', 'pilatus:mc']
@@ -144,7 +190,13 @@ class p2p_config_cscs(rfm.RegressionMixin):
 
 
 @rfm.simple_test
-class p2p_bandwidth_cpu_test(p2p_bandwidth, p2p_config_cscs):
+class p2p_bandwidth_cpu_test(osu_bandwidth, p2p_config_cscs):
+    descr = 'P2P bandwidth microbenchmark'
+    ctrl_msg_size = 4194304
+    perf_msg_size = 4194304
+    executable = 'osu_bw'
+    osu_binaries = fixture(build_osu_benchmarks, scope='environment',
+                           variants=cpu_build_variant)
     reference = {
         'daint:gpu': {
             'bw': (9607.0, -0.10, None, 'MB/s')
@@ -172,7 +224,13 @@ class p2p_bandwidth_cpu_test(p2p_bandwidth, p2p_config_cscs):
 
 
 @rfm.simple_test
-class p2p_latency_cpu_test(p2p_latency, p2p_config_cscs):
+class p2p_latency_cpu_test(osu_latency, p2p_config_cscs):
+    descr = 'P2P latency microbenchmark'
+    ctrl_msg_size = 8
+    perf_msg_size = 8
+    executable = 'osu_latency'
+    osu_binaries = fixture(build_osu_benchmarks, scope='environment',
+                           variants=cpu_build_variant)
     reference = {
         'daint:gpu': {
             'latency': (1.30, None, 0.70, 'us')
@@ -199,28 +257,6 @@ class p2p_latency_cpu_test(p2p_latency, p2p_config_cscs):
     }
 
 
-class build_osu_benchmarks_gpu(build_osu_benchmarks):
-    @run_before('compile')
-    def set_modules(self):
-        self.build_system.config_opts = [
-            '--enable-cuda',
-        ]
-        if self.current_system.name in ['daint', 'dom']:
-            self.modules = ['cudatoolkit/21.3_11.2']
-            if self.current_system.name == 'dom':
-                if self.current_environ.name == 'PrgEnv-cray':
-                    self.prebuild_cmds += ['module sw cce cce/10.0.2']
-
-                if self.current_environ.name == 'PrgEnv-gnu':
-                    self.prebuild_cmds += ['module sw gcc gcc/10.3.0']
-
-                if self.current_environ.name == 'PrgEnv-intel':
-                    self.prebuild_cmds += ['module sw intel intel/19.1.1.217']
-
-        elif self.current_system.name in ['arolla', 'tsa']:
-            self.modules = ['cuda/10.1.243']
-
-
 class g2g_rdma_cscs(rfm.RegressionMixin):
     @run_before('run')
     def set_rdma_daint(self):
@@ -230,9 +266,14 @@ class g2g_rdma_cscs(rfm.RegressionMixin):
 
 
 @rfm.simple_test
-class p2p_bandwidth_gpu_test(p2p_bandwidth, p2p_config_cscs, g2g_rdma_cscs):
+class p2p_bandwidth_gpu_test(osu_bandwidth, p2p_config_cscs, g2g_rdma_cscs):
+    descr = 'G2G bandwidth microbenchmark'
     device = 'cuda'
-    osu_binaries = fixture(build_osu_benchmarks_gpu, scope='environment')
+    ctrl_msg_size = 4194304
+    perf_msg_size = 4194304
+    executable = 'osu_bw'
+    osu_binaries = fixture(build_osu_benchmarks_gpu, scope='environment',
+                           variants=cuda_build_variant)
     reference = {
         'dom:gpu': {
             'bw': (8813.09, -0.05, None, 'MB/s')
@@ -247,11 +288,14 @@ class p2p_bandwidth_gpu_test(p2p_bandwidth, p2p_config_cscs, g2g_rdma_cscs):
 
 
 @rfm.simple_test
-class p2p_latency_gpu_test(p2p_latency, p2p_config_cscs, g2g_rdma_cscs):
+class p2p_latency_gpu_test(osu_latency, p2p_config_cscs, g2g_rdma_cscs):
+    descr = 'G2G latency microbenchmark'
     device = 'cuda'
-    version = '5.8'
+    ctrl_msg_size = 8
+    perf_msg_size = 8
+    executable = 'osu_latency'
     osu_binaries = fixture(build_osu_benchmarks_gpu, scope='environment',
-                           variables={'version': f'{version}'})
+                           variants=cuda_build_variant)
     reference = {
         'dom:gpu': {
             'latency': (5.56, None, 0.1, 'us')
