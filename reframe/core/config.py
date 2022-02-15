@@ -317,9 +317,12 @@ class _SiteConfig:
                         for vm in vm_data.keys():
                             if vm_data[vm]['series'] == self.vm_info['vm_series']:
                                 self.vm_info['nhc_values'] = vm_data[vm]['nhc_values'] 
+                                vm_data[vm]['vm_series'] = vm_data[vm]['series']
                                 self.vm_info['vm_data'] = vm_data[vm] 
                          
-                        #_SiteConfig.vm_info = vm_info
+                                self._site_config['systems'][idx]['vm_data'] = vm_data[vm]
+                                #self._site_config['systems'][idx]['vm_data'] = vm_data[vm]['nhc_values']
+                                break
 
                         return sysname
                 else:
@@ -472,6 +475,7 @@ class _SiteConfig:
                 else:
                     self._local_config.setdefault(name, [])
                     self._local_config[name].append(val)
+        #print("Local Config: {}".format(self._local_config))
 
         required_sections = self._schema['required']
         for name in required_sections:

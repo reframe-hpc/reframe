@@ -237,6 +237,12 @@
                     "stagedir": {"type": "string"},
                     "outputdir": {"type": "string"},
                     "resourcesdir": {"type": "string"},
+		    "cloud_provider": {"type": "string"},
+		    "vm_size": {"type": "string"},
+		    "vm_os": {"type": "string"},
+		    "vm_os_version": {"type": "string"},
+		    "vm_image": {"type": "string"},
+		    "vm_data_file": {"type": "string"},
                     "partitions": {
                         "type": "array",
                         "items": {

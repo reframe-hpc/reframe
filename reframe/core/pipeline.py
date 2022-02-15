@@ -217,6 +217,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:   Any non-alphanumeric value in a parameter's representation is
     #:   converted to ``_``.
     name = variable(typ.Str[r'[^\/]+'])
+#    vm_size = variable(typ.Str[r'[^\/]+'])
 
     #: List of programming environments supported by this test.
     #:
@@ -923,6 +924,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self._current_partition = None
         self._current_environ = None
 
+        # Runtime information of the system VMs 
+        self._current_vm_data = None
+
         # Associated job
         self._job = None
 
@@ -1022,6 +1026,17 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             )
 
     # Export read-only views to interesting fields
+
+    @property
+    def current_vm_data(self):
+        '''The programming environment that the regression test is currently
+        executing with.
+
+        This is set by the framework during the :func:`setup` phase.
+
+        :type: :class:`dict`.
+        '''
+        return self._current_vm_data
 
     @property
     def current_environ(self):

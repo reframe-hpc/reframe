@@ -432,7 +432,7 @@ class System(jsonext.JSONSerializable):
 
     def __init__(self, name, descr, hostnames, modules_system,
                  preload_env, prefix, outputdir,
-                 resourcesdir, stagedir, partitions):
+                 resourcesdir, stagedir, partitions, vm_data=None):
         getlogger().debug(f'Initializing system {name!r}')
         self._name = name
         self._descr = descr
@@ -444,7 +444,7 @@ class System(jsonext.JSONSerializable):
         self._resourcesdir = resourcesdir
         self._stagedir = stagedir
         self._partitions = partitions
-#        self._vm_size = vm_size
+        self._vm_data = vm_data
 
     @classmethod
     def create(cls, site_config):
@@ -534,8 +534,8 @@ class System(jsonext.JSONSerializable):
             outputdir=site_config.get('systems/0/outputdir'),
             resourcesdir=site_config.get('systems/0/resourcesdir'),
             stagedir=site_config.get('systems/0/stagedir'),
-            partitions=partitions
-            #vm_size=vm_size
+            partitions=partitions,
+            vm_data=site_config.get('systems/0/vm_data'),
         )
 
     @property
@@ -545,6 +545,14 @@ class System(jsonext.JSONSerializable):
         :type: :class:`str`
         '''
         return self._name
+
+    @property
+    def vm_data(self):
+        '''The vm data for the system
+
+        :type: :class:`dict`
+        '''
+        return self._vm_data
 
     @property
     def descr(self):
@@ -651,7 +659,8 @@ class System(jsonext.JSONSerializable):
             'outputdir': self._outputdir,
             'stagedir': self._stagedir,
             'resourcesdir': self._resourcesdir,
-            'partitions': [p.json() for p in self._partitions]
+            'partitions': [p.json() for p in self._partitions],
+            'vm_data': self._vm_data
         }
 
     def __str__(self):
@@ -666,5 +675,6 @@ class System(jsonext.JSONSerializable):
             f'preload_env={self._preload_env!r}, prefix={self._prefix!r}, '
             f'outputdir={self._outputdir!r}, '
             f'resourcesdir={self._resourcesdir!r}, '
-            f'stagedir={self._stagedir!r}, partitions={self._partitions!r})'
+            f'stagedir={self._stagedir!r}, partitions={self._partitions!r}),'
+            f'vmdata={self._vm_data!r})'
         )
