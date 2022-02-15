@@ -134,19 +134,13 @@ def assert_job_script_sanity(job):
 
 
 def _expected_lsf_directives(job):
-    num_tasks = job.num_tasks or 1
-    num_tasks_per_node = job.num_tasks_per_node or 1
-    ptile = min(
-        num_tasks * job.num_cpus_per_task,
-        num_tasks_per_node * job.num_cpus_per_task
-    )
     return set([
         f'#BSUB -J testjob',
         f'#BSUB -o {job.stdout}',
         f'#BSUB -e {job.stderr}',
-        f'#BSUB -n {num_tasks}',
+        f'#BSUB -nnodes {job.num_tasks // job.num_tasks_per_node}',
         f'#BSUB -W {int(job.time_limit // 60)}',
-        f'#BSUB -R "span[ptile={ptile}]"',
+        f'#BSUB -R "span[ptile={job.num_cpus_per_task}]"',
         f'#BSUB -x',
         f'#BSUB --account=spam',
         f'#BSUB --gres=gpu:4',
