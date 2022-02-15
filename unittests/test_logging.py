@@ -19,7 +19,6 @@ import reframe.core.logging as rlog
 import reframe.core.runtime as rt
 import reframe.core.settings as settings
 import reframe.utility as util
-import reframe.utility.sanity as sn
 from reframe.core.exceptions import ConfigError, ReframeError
 from reframe.core.backends import (getlauncher, getscheduler)
 from reframe.core.schedulers import Job

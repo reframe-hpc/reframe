@@ -16,7 +16,6 @@ import socket
 import time
 import urllib
 
-import reframe.utility as util
 import reframe.utility.color as color
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
