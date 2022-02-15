@@ -47,5 +47,3 @@ class SkipTest(rfm.RunOnlyRegressionTest):
     @run_after('init')
     def foo(self):
         self.skip_if(True, 'unsupported')
-
-print(HelloTest.loggable_attrs())
