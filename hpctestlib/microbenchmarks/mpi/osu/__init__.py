@@ -21,14 +21,12 @@ class fetch_osu_benchmarks(rfm.RunOnlyRegressionTest):
 
     descr = 'Fetch OSU benchmarks'
     local = True
-    # executable = 'wget'
-    executable = 'cp'
+    executable = 'wget'
 
     @run_after('init')
     def set_executable_opts(self):
         self.executable_opts = [
-            # f'http://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-{self.version}.tar.gz'  # noqa: E501
-            f'/users/sarafael/git/reframe/osu-micro-benchmarks-{self.version}.tar.gz .'
+            f'http://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-{self.version}.tar.gz'  # noqa: E501
         ]
 
     @sanity_function
