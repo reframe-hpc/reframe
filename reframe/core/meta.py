@@ -275,10 +275,16 @@ class RegressionTestMeta(type):
             return fn
 
         def loggable_as(name):
-            '''Mark a property as loggable
+            '''Mark a property loggable.
 
             :param name: An alternative name that will be used for logging
-                this property.
+                this property. If :obj:`None`, the name of the decorated
+                property will be used.
+            :raises ValueError: if the decorated function is not a property.
+
+            .. versionadded:: 3.10.2
+
+            :meta private:
 
             '''
             def _loggable(fn):
