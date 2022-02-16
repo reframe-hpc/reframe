@@ -101,8 +101,7 @@ class VASPCpuCheck(VASPCheck):
 class VASPGpuCheck(VASPCheck):
     variant = parameter(['maint', 'prod'])
     valid_systems = ['daint:gpu', 'dom:gpu']
-    executable = 'vasp_gpu'
-    variables = {'CRAY_CUDA_MPS': '1'}
+    executable = 'vasp_std'
     num_gpus_per_node = 1
     references_by_variant = {
         'maint': {
@@ -119,7 +118,6 @@ class VASPGpuCheck(VASPCheck):
     def setup_by_variant(self):
         self.descr = f'VASP GPU check (variant: {self.variant})'
         if self.current_system.name == 'dom':
-            self.executable = 'vasp_std'
             self.num_tasks = 6
             self.num_tasks_per_node = 1
             self.num_cpus_per_task = 12
