@@ -9,46 +9,46 @@
   output directory:  '/home/user/Repositories/reframe/output'
 
 [==========] Running 10 check(s)
-[==========] Started on Sat Jan 22 23:44:18 2022 
+[==========] Started on Sat Jan 22 23:44:18 2022
 
 [----------] start processing checks
 [ RUN      ] T0 @generic:default+builtin
-[       OK ] ( 1/10) T0 @generic:default+builtin [compile: 0.018s run: 0.292s total: 0.336s]
+[       OK ] ( 1/10) T0 @generic:default+builtin
 [ RUN      ] T4 @generic:default+builtin
-[       OK ] ( 2/10) T4 @generic:default+builtin [compile: 0.016s run: 0.336s total: 0.380s]
+[       OK ] ( 2/10) T4 @generic:default+builtin
 [ RUN      ] T5 @generic:default+builtin
-[       OK ] ( 3/10) T5 @generic:default+builtin [compile: 0.016s run: 0.389s total: 0.446s]
+[       OK ] ( 3/10) T5 @generic:default+builtin
 [ RUN      ] T1 @generic:default+builtin
-[       OK ] ( 4/10) T1 @generic:default+builtin [compile: 0.016s run: 0.459s total: 0.501s]
+[       OK ] ( 4/10) T1 @generic:default+builtin
 [ RUN      ] T8 @generic:default+builtin
-[     FAIL ] ( 5/10) T8 @generic:default+builtin [compile: n/a run: n/a total: 0.006s]
+[     FAIL ] ( 5/10) T8 @generic:default+builtin
 ==> test failed during 'setup': test staged in '/home/user/Repositories/reframe/stage/generic/default/builtin/T8'
-[     FAIL ] ( 6/10) T9 @generic:default+builtin [compile: n/a run: n/a total: n/a]
+[     FAIL ] ( 6/10) T9 @generic:default+builtin
 ==> test failed during 'startup': test staged in None
 [ RUN      ] T6 @generic:default+builtin
-[       OK ] ( 7/10) T6 @generic:default+builtin [compile: 0.016s run: 0.530s total: 0.584s]
+[       OK ] ( 7/10) T6 @generic:default+builtin
 [ RUN      ] T2 @generic:default+builtin
 [ RUN      ] T3 @generic:default+builtin
-[     FAIL ] ( 8/10) T2 @generic:default+builtin [compile: 0.019s run: 0.324s total: 0.424s]
+[     FAIL ] ( 8/10) T2 @generic:default+builtin
 ==> test failed during 'sanity': test staged in '/home/user/Repositories/reframe/stage/generic/default/builtin/T2'
-[     FAIL ] ( 9/10) T7 @generic:default+builtin [compile: n/a run: n/a total: n/a]
+[     FAIL ] ( 9/10) T7 @generic:default+builtin
 ==> test failed during 'startup': test staged in None
-[       OK ] (10/10) T3 @generic:default+builtin [compile: 0.017s run: 0.328s total: 0.403s]
+[       OK ] (10/10) T3 @generic:default+builtin
 [----------] all spawned checks have finished
 
 [  FAILED  ] Ran 10/10 test case(s) from 10 check(s) (4 failure(s), 0 skipped)
-[==========] Finished on Sat Jan 22 23:44:21 2022 
+[==========] Finished on Sat Jan 22 23:44:21 2022
 
 ==============================================================================
 SUMMARY OF FAILURES
 ------------------------------------------------------------------------------
-FAILURE INFO for T8 
+FAILURE INFO for T8
   * Expanded name: T8
   * Description: T8
   * System partition: generic:default
   * Environment: builtin
   * Stage directory: /home/user/Repositories/reframe/stage/generic/default/builtin/T8
-  * Node list: 
+  * Node list:
   * Job type: local (id=None)
   * Dependencies (conceptual): ['T1']
   * Dependencies (actual): [('T1', 'generic:default', 'builtin')]
@@ -68,13 +68,13 @@ Traceback (most recent call last):
 Exception
 
 ------------------------------------------------------------------------------
-FAILURE INFO for T9 
+FAILURE INFO for T9
   * Expanded name: T9
   * Description: T9
   * System partition: generic:default
   * Environment: builtin
   * Stage directory: None
-  * Node list: 
+  * Node list:
   * Job type: local (id=None)
   * Dependencies (conceptual): ['T8']
   * Dependencies (actual): [('T8', 'generic:default', 'builtin')]
@@ -83,7 +83,7 @@ FAILURE INFO for T9
   * Rerun with '-n T9 -p builtin --system generic:default -r'
   * Reason: task dependency error: dependencies failed
 ------------------------------------------------------------------------------
-FAILURE INFO for T2 
+FAILURE INFO for T2
   * Expanded name: T2
   * Description: T2
   * System partition: generic:default
@@ -98,13 +98,13 @@ FAILURE INFO for T2
   * Rerun with '-n T2 -p builtin --system generic:default -r'
   * Reason: sanity error: 31 != 30
 ------------------------------------------------------------------------------
-FAILURE INFO for T7 
+FAILURE INFO for T7
   * Expanded name: T7
   * Description: T7
   * System partition: generic:default
   * Environment: builtin
   * Stage directory: None
-  * Node list: 
+  * Node list:
   * Job type: local (id=None)
   * Dependencies (conceptual): ['T2']
   * Dependencies (actual): [('T2', 'generic:default', 'builtin')]

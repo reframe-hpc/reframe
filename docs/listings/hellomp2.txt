@@ -9,24 +9,24 @@
   output directory:  '/path/to/reframe/output'
 
 [==========] Running 1 check(s)
-[==========] Started on Sat Jan 22 13:21:56 2022 
+[==========] Started on Sat Jan 22 13:21:56 2022
 
 [----------] start processing checks
 [ RUN      ] HelloThreadedExtendedTest @catalina:default+gnu
 [ RUN      ] HelloThreadedExtendedTest @catalina:default+clang
-[     FAIL ] (1/2) HelloThreadedExtendedTest @catalina:default+clang [compile: 0.761s run: 0.413s total: 1.401s]
+[     FAIL ] (1/2) HelloThreadedExtendedTest @catalina:default+clang
 ==> test failed during 'sanity': test staged in '/path/to/reframe/stage/catalina/default/clang/HelloThreadedExtendedTest'
-[     FAIL ] (2/2) HelloThreadedExtendedTest @catalina:default+gnu [compile: 0.962s run: 0.412s total: 1.538s]
+[     FAIL ] (2/2) HelloThreadedExtendedTest @catalina:default+gnu
 ==> test failed during 'sanity': test staged in '/path/to/reframe/stage/catalina/default/gnu/HelloThreadedExtendedTest'
 [----------] all spawned checks have finished
 
 [  FAILED  ] Ran 2/2 test case(s) from 1 check(s) (2 failure(s), 0 skipped)
-[==========] Finished on Sat Jan 22 13:21:58 2022 
+[==========] Finished on Sat Jan 22 13:21:58 2022
 
 ==============================================================================
 SUMMARY OF FAILURES
 ------------------------------------------------------------------------------
-FAILURE INFO for HelloThreadedExtendedTest 
+FAILURE INFO for HelloThreadedExtendedTest
   * Expanded name: HelloThreadedExtendedTest
   * Description: HelloThreadedExtendedTest
   * System partition: catalina:default
@@ -41,7 +41,7 @@ FAILURE INFO for HelloThreadedExtendedTest
   * Rerun with '-n HelloThreadedExtendedTest -p gnu --system catalina:default -r'
   * Reason: sanity error: 7 != 16
 ------------------------------------------------------------------------------
-FAILURE INFO for HelloThreadedExtendedTest 
+FAILURE INFO for HelloThreadedExtendedTest
   * Expanded name: HelloThreadedExtendedTest
   * Description: HelloThreadedExtendedTest
   * System partition: catalina:default

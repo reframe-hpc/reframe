@@ -505,25 +505,25 @@ class SlurmJobScheduler(sched.JobScheduler):
                 if node_match:
                     node_names = node_match['node_names']
                     if node_names:
-                        # Retrieve the info of the unavailable nodes
-                        # and check if they are indeed down
+                        # Retrieve the info of the unavailable nodes and check
+                        # if they are indeed down. According to Slurm's docs
+                        # this should not be necessary, but we check anyways
+                        # to be on the safe side.
                         self.log(f'Checking if nodes {node_names!r} '
                                  f'are indeed unavailable')
                         nodes = self._get_nodes_by_name(node_names)
                         if not any(n.is_down() for n in nodes):
                             return
-                    else:
-                        # List of unavailable nodes is empty; assume job
-                        # is pending
-                        return
 
-            self.cancel(job)
-            reason_msg = ('job cancelled because it was blocked due to '
-                          'a perhaps non-recoverable reason: ' + reason)
-            if reason_details is not None:
-                reason_msg += ', ' + reason_details
+                        self.cancel(job)
+                        reason_msg = (
+                            'job cancelled because it was blocked due to '
+                            'a perhaps non-recoverable reason: ' + reason
+                        )
+                        if reason_details is not None:
+                            reason_msg += ', ' + reason_details
 
-            job._exception = JobBlockedError(reason_msg, job.jobid)
+                        job._exception = JobBlockedError(reason_msg, job.jobid)
 
     def wait(self, job):
         # Quickly return in case we have finished already

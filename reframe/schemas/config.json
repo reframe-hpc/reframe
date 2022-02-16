@@ -571,6 +571,7 @@
         "systems/partitions/max_jobs": 8,
         "systems/partitions/prepare_cmds": [],
         "systems/partitions/processor": {},
+        "systems/partitions/time_limit": null,
         "systems/partitions/devices": [],
         "systems/partitions/extras": {}
     }

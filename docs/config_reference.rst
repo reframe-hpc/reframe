@@ -148,6 +148,7 @@ System Configuration
    :default: ``[]``
 
    A list of environment variables to be set always when running on this system.
+   These variables modify the ReFrame environment.
    Each environment variable is specified as a two-element list containing the variable name and its value.
    You may reference other environment variables when defining an environment variable here.
    ReFrame will expand its value.

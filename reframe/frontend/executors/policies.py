@@ -181,10 +181,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def on_task_failure(self, task):
         self._num_failed_tasks += 1
-        timings = task.pipeline_timings(['compile_complete',
-                                         'run_complete',
-                                         'total'])
-        msg = f'{task.check.info()} [{timings}]'
+        msg = f'{task.info()}'
         if task.failed_stage == 'cleanup':
             self.printer.status('ERROR', msg, just='right')
         else:
@@ -205,10 +202,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
             )
 
     def on_task_success(self, task):
-        timings = task.pipeline_timings(['compile_complete',
-                                         'run_complete',
-                                         'total'])
-        msg = f'{task.check.info()} [{timings}]'
+        msg = f'{task.info()}'
         self.printer.status('OK', msg, just='right')
         timings = task.pipeline_timings(['setup',
                                          'compile_complete',
@@ -339,10 +333,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                     'general/0/pipeline_timeout'
                 )
 
-                # FIXME: Always convert due to #GH 2246
-                if timeout is not None:
-                    timeout = float(timeout)
-
                 self._advance_all(self._current_tasks, timeout)
                 if self._pipeline_statistics:
                     num_retired = len(self._retired_tasks)
@@ -437,8 +427,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 return 1
         elif self.deps_succeeded(task):
             try:
-                part = task.testcase.partition
-                env  = task.testcase.environ.name
                 self.printer.status('RUN', task.info())
                 task.setup(task.testcase.partition,
                            task.testcase.environ,
@@ -463,7 +451,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             return 1
         else:
             # Not all dependencies have finished yet
-            getlogger().debug2(f'{task.check.info()} waiting for dependencies')
+            getlogger().debug2(f'{task.info()} waiting for dependencies')
             return 0
 
     def _advance_ready_compile(self, task):
@@ -588,10 +576,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def on_task_failure(self, task):
         self._num_failed_tasks += 1
-        timings = task.pipeline_timings(['compile_complete',
-                                         'run_complete',
-                                         'total'])
-        msg = f'{task.info()} [{timings}]'
+        msg = f'{task.info()}'
         if task.failed_stage == 'cleanup':
             self.printer.status('ERROR', msg, just='right')
         else:
@@ -612,10 +597,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             )
 
     def on_task_success(self, task):
-        timings = task.pipeline_timings(['compile_complete',
-                                         'run_complete',
-                                         'total'])
-        msg = f'{task.info()} [{timings}]'
+        msg = f'{task.info()}'
         self.printer.status('OK', msg, just='right')
         timings = task.pipeline_timings(['setup',
                                          'compile_complete',
