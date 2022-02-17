@@ -429,7 +429,6 @@ class Job(jsonext.JSONSerializable):
         return len(available_nodes) * num_tasks_per_node
 
     def submit(self):
-        print(self.scheduler.allnodes())
         return self.scheduler.submit(self)
 
     def wait(self):
