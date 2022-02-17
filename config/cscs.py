@@ -133,7 +133,7 @@ site_configuration = {
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
-                        'PrgEnv-nvidia',
+                        'PrgEnv-nvidia'
                     ],
                     'descr': 'Login nodes',
                     'max_jobs': 4,
