@@ -879,8 +879,10 @@ class Spack(BuildSystem):
     def prepare_cmds(self):
         cmds = self._create_env_cmds()
         if self.specs and self.emit_load_cmds:
-            cmds.append(f'eval `spack -e {self.environment} load --sh ' +
-                        ' '.join(s for s in self.specs) + '`')
+            cmds.append(
+                f'eval `spack -e {self.environment} load '
+                f'--sh {" ".join(self.specs)}`'
+            )
 
         return cmds
 
