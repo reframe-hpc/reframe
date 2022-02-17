@@ -67,7 +67,6 @@ class _SiteConfig:
         self._local_config = {}
         self._local_system = None
         self._sticky_options = {}
-        self.vm_info = {}
 
         # Open and store the JSON schema for later validation
         schema_filename = os.path.join(reframe.INSTALL_PREFIX, 'reframe',
@@ -79,9 +78,6 @@ class _SiteConfig:
                 raise ReframeFatalError(
                     f"invalid configuration schema: '{schema_filename}'"
                 ) from e
-
-    def get_vm_info(self):
-        return self.vm_info
 
     def _pick_config(self):
         return self._local_config if self._local_config else self._site_config
@@ -298,30 +294,21 @@ class _SiteConfig:
                         getlogger().debug(f'idx: {idx}, system {sysname} found in {system}')
                         getlogger().debug(f'system {sysname} found in {system}')
                         getlogger().debug(f'{self._site_config["systems"]}')
-                        self._site_config['systems'][idx]['vm_size'] = vm_size
-                        self._site_config['systems'][idx]['vm_image'] = vm_image
-                        self._site_config['systems'][idx]['vm_os'] = vm_os
-                        self._site_config['systems'][idx]['vm_os_version'] = vm_os_version
-                        self._site_config['systems'][idx]['cloud_provider'] = 'azure'
                         getlogger().debug(f'{self._site_config["systems"][idx]}')
 
-                        # Get information from data file and add it to the vm_info
-                        self.vm_info['vm_series'] = vm_series.lower()
-                        self.vm_info['vm_size'] = vm_size
-                        self.vm_info['vm_os'] = vm_os 
-                        self.vm_info['vm_os_version'] = vm_os_version 
-                        self.vm_info['vm_image'] = vm_image
+                        # Get information from data file and add it to the vm_data
                         vm_data_file = open(self._site_config['systems'][idx]['vm_data_file'])
                         vm_data = {}
                         vm_data = json.load(vm_data_file)
                         for vm in vm_data.keys():
-                            if vm_data[vm]['series'] == self.vm_info['vm_series']:
-                                self.vm_info['nhc_values'] = vm_data[vm]['nhc_values'] 
+                            if vm_data[vm]['series'] == vm_series.lower():
                                 vm_data[vm]['vm_series'] = vm_data[vm]['series']
-                                self.vm_info['vm_data'] = vm_data[vm] 
-                         
-                                self._site_config['systems'][idx]['vm_data'] = vm_data[vm]
-                                #self._site_config['systems'][idx]['vm_data'] = vm_data[vm]['nhc_values']
+                                vm_data[vm]['vm_size'] = vm_size
+                                vm_data[vm]['vm_os'] = vm_os
+                                vm_data[vm]['vm_os_version'] = vm_os_version
+                                vm_data[vm]['vm_image'] = vm_image
+                                vm_data[vm]['cloud_provider'] = 'azure'
+                                self._site_config['systems'][idx]['node_data'] = vm_data[vm]
                                 break
 
                         return sysname
