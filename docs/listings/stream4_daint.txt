@@ -9,7 +9,7 @@
   output directory:  '/home/user/Devel/reframe/output'
 
 [==========] Running 1 check(s)
-[==========] Started on Sat Jan 22 22:47:28 2022 
+[==========] Started on Sat Jan 22 22:47:28 2022
 
 [----------] start processing checks
 [ RUN      ] StreamMultiSysTest @daint:login+gnu
@@ -24,22 +24,22 @@
 [ RUN      ] StreamMultiSysTest @daint:mc+intel
 [ RUN      ] StreamMultiSysTest @daint:mc+pgi
 [ RUN      ] StreamMultiSysTest @daint:mc+cray
-[       OK ] ( 1/12) StreamMultiSysTest @daint:login+gnu [compile: 4.024s run: 21.615s total: 28.185s]
-[       OK ] ( 2/12) StreamMultiSysTest @daint:login+intel [compile: 3.410s run: 20.976s total: 28.208s]
-[       OK ] ( 3/12) StreamMultiSysTest @daint:login+pgi [compile: 2.734s run: 20.235s total: 28.226s]
-[       OK ] ( 4/12) StreamMultiSysTest @daint:login+cray [compile: 2.104s run: 19.571s total: 28.242s]
-[       OK ] ( 5/12) StreamMultiSysTest @daint:gpu+gnu [compile: 2.102s run: 30.129s total: 38.813s]
-[       OK ] ( 6/12) StreamMultiSysTest @daint:gpu+pgi [compile: 8.695s run: 22.117s total: 38.826s]
-[       OK ] ( 7/12) StreamMultiSysTest @daint:gpu+cray [compile: 8.083s run: 19.050s total: 38.852s]
-[       OK ] ( 8/12) StreamMultiSysTest @daint:gpu+intel [compile: 9.369s run: 37.641s total: 50.212s]
-[       OK ] ( 9/12) StreamMultiSysTest @daint:mc+gnu [compile: 7.970s run: 28.955s total: 52.297s]
-[       OK ] (10/12) StreamMultiSysTest @daint:mc+cray [compile: 20.508s run: 30.812s total: 65.951s]
-[       OK ] (11/12) StreamMultiSysTest @daint:mc+pgi [compile: 21.186s run: 34.898s total: 66.325s]
-[       OK ] (12/12) StreamMultiSysTest @daint:mc+intel [compile: 21.890s run: 62.451s total: 90.626s]
+[       OK ] ( 1/12) StreamMultiSysTest @daint:login+gnu
+[       OK ] ( 2/12) StreamMultiSysTest @daint:login+intel
+[       OK ] ( 3/12) StreamMultiSysTest @daint:login+pgi
+[       OK ] ( 4/12) StreamMultiSysTest @daint:login+cray
+[       OK ] ( 5/12) StreamMultiSysTest @daint:gpu+gnu
+[       OK ] ( 6/12) StreamMultiSysTest @daint:gpu+pgi
+[       OK ] ( 7/12) StreamMultiSysTest @daint:gpu+cray
+[       OK ] ( 8/12) StreamMultiSysTest @daint:gpu+intel
+[       OK ] ( 9/12) StreamMultiSysTest @daint:mc+gnu
+[       OK ] (10/12) StreamMultiSysTest @daint:mc+cray
+[       OK ] (11/12) StreamMultiSysTest @daint:mc+pgi
+[       OK ] (12/12) StreamMultiSysTest @daint:mc+intel
 [----------] all spawned checks have finished
 
 [  PASSED  ] Ran 12/12 test case(s) from 1 check(s) (0 failure(s), 0 skipped)
-[==========] Finished on Sat Jan 22 22:48:59 2022 
+[==========] Finished on Sat Jan 22 22:48:59 2022
 ==============================================================================
 PERFORMANCE REPORT
 ------------------------------------------------------------------------------
