@@ -25,6 +25,21 @@ site_configuration = {
             ]
         },
         {
+            'name': 'ndamsr_a100_v4',
+            'descr': 'Azure NDm v4',
+            'vm_data_file': '/share/home/hpcuser/jshelley/github/reframe/azure_nhc/vm_info/azure_vms_dataset.json',
+            'hostnames': [''],
+            'modules_system': 'tmod4',
+            'partitions': [
+                {
+                    'name': 'default',
+                    'scheduler': 'local',
+                    'launcher': 'local',
+                    'environs': ['gnu-azhpc'],
+                }
+            ]
+        },
+        {
             'name': 'generic',
             'descr': 'Generic example system',
             'hostnames': ['.*'],
