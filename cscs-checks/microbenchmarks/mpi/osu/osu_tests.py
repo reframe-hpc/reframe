@@ -12,22 +12,18 @@ from hpctestlib.microbenchmarks.mpi.osu import (osu_latency,
 
 
 class build_osu_benchmarks_gpu(build_osu_benchmarks):
-    # @run_before('compile')
     @run_after('setup')
     def set_modules(self):
         if self.current_system.name in ['daint', 'dom']:
             self.modules = ['cudatoolkit/21.3_11.2']
-            if self.current_system.name == 'dom':
-                if self.current_environ.name == 'PrgEnv-cray':
-                    self.prebuild_cmds += ['module sw cce cce/10.0.2']
+            if self.current_environ.name == 'PrgEnv-cray':
+                self.prebuild_cmds += ['module sw cce cce/10.0.2']
 
-                if self.current_environ.name == 'PrgEnv-gnu':
-                    print('xxx', self.prebuild_cmds)
-                    self.prebuild_cmds += ['module sw gcc gcc/10.3.0']
-                    print('xxx', self.prebuild_cmds)
+            if self.current_environ.name == 'PrgEnv-gnu':
+                self.prebuild_cmds += ['module sw gcc gcc/10.3.0']
 
-                if self.current_environ.name == 'PrgEnv-intel':
-                    self.prebuild_cmds += ['module sw intel intel/19.1.1.217']
+            if self.current_environ.name == 'PrgEnv-intel':
+                self.prebuild_cmds += ['module sw intel intel/19.1.1.217']
 
         elif self.current_system.name in ['arolla', 'tsa']:
             self.modules = ['cuda/10.1.243']

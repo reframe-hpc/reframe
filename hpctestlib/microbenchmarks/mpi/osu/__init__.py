@@ -41,12 +41,6 @@ class build_osu_benchmarks(rfm.CompileOnlyRegressionTest):
     #: :default: ``'cpu'``
     build_type = parameter(['cpu', 'cuda', 'rocm', 'openacc'])
 
-    #: Install directory of the accelerator libraries
-    #:
-    #: :type: :class:`str`
-    #: :default: ``None``
-    gpu_lib_dir = variable(str, type(None), value=None)
-
     descr = 'Build OSU benchmarks'
     build_system = 'Autotools'
     build_prefix = variable(str)
@@ -96,7 +90,8 @@ class osu_benchmark_test_base(rfm.RunOnlyRegressionTest):
 
     #: Control message size
     #:
-    #: When this value is present on the stdout, the check can be considered successful
+    #: When this value is present on the stdout, the check can be
+    #: considered successful
     #:
     #: :type: :class:`int`
     #: :default: ``8``
