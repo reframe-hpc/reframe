@@ -45,11 +45,12 @@ class TestVar:
     :meta private:
     '''
 
-    __slots__ = ('_field', '_default_value', '_name',)
+    __slots__ = ('_default_value', '_field', '_loggable', '_name')
 
     def __init__(self, *args, **kwargs):
         field_type = kwargs.pop('field', fields.TypedField)
         self._default_value = kwargs.pop('value', Undefined)
+        self._loggable = kwargs.pop('loggable', False)
 
         if not issubclass(field_type, fields.Field):
             raise TypeError(
@@ -66,12 +67,16 @@ class TestVar:
         ret._field = fields.DeprecatedField(var.field, message,
                                             kind, from_version)
         ret._default_value = var._default_value
+        ret._loggable = var._loggable
         return ret
 
     def _check_deprecation(self, kind):
         if isinstance(self.field, fields.DeprecatedField):
             if self.field.op & kind:
                 user_deprecation_warning(self.field.message)
+
+    def is_loggable(self):
+        return self._loggable
 
     def is_defined(self):
         return self._default_value is not Undefined

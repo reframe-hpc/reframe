@@ -27,8 +27,8 @@ class TestParam:
     :meta private:
     '''
 
-    def __init__(self, values=None,
-                 inherit_params=False, filter_params=None, fmt=None):
+    def __init__(self, values=None, inherit_params=False,
+                 filter_params=None, fmt=None, loggable=False):
         if values is None:
             values = []
 
@@ -64,6 +64,7 @@ class TestParam:
                             "accepting a single argument")
 
         self.__fmt_fn = fmt
+        self.__loggable = loggable
 
     @property
     def format(self):
@@ -90,6 +91,9 @@ class TestParam:
 
     def is_abstract(self):
         return len(self.values) == 0
+
+    def is_loggable(self):
+        return self.__loggable
 
 
 class ParamSpace(namespaces.Namespace):
