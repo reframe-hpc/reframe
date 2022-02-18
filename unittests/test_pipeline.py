@@ -831,6 +831,21 @@ def test_overriden_hooks(HelloTest, local_exec_ctx):
     assert test.foo == 10
 
 
+def test_overriden_hook_different_stages(HelloTest, local_exec_ctx):
+    @test_util.custom_prefix('unittests/resources/checks')
+    class MyTest(HelloTest):
+        @run_after('init')
+        def check(self):
+            pass
+
+        @run_after('setup')
+        def check(self):
+            pass
+
+    test = MyTest()
+    assert test.pipeline_hooks() == {'post_setup': [MyTest.check]}
+
+
 def test_disabled_hooks(HelloTest, local_exec_ctx):
     @test_util.custom_prefix('unittests/resources/checks')
     class BaseTest(HelloTest):

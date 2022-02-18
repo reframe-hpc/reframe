@@ -74,6 +74,7 @@ def attach_hooks(hooks):
 
         @functools.wraps(func)
         def _fn(obj, *args, **kwargs):
+
             for h in select_hooks(obj, 'pre_'):
                 getattr(obj, h.__name__)()
 
@@ -151,7 +152,10 @@ class HookRegistry:
         '''
 
         if hasattr(v, '_rfm_attach'):
-            self.__hooks.add(Hook(v))
+            h = Hook(v)
+            # Always override hooks with the same name
+            self.__hooks.discard(h)
+            self.__hooks.add(h)
         elif hasattr(v, '_rfm_resolve_deps'):
             v._rfm_attach = ['post_setup']
             self.__hooks.add(Hook(v))
