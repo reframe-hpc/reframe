@@ -24,6 +24,27 @@ site_configuration = {
             ]
         },
         {
+            'name': 'generic2',
+            'descr': 'Generic example system',
+            'hostnames': ['.*'],
+            'partitions': [
+                {
+                    'name': 'part1',
+                    'descr': 'Login nodes',
+                    'scheduler': 'local',
+                    'launcher': 'local',
+                    'environs': ['builtin']
+                },
+                {
+                    'name': 'part2',
+                    'descr': 'Login nodes',
+                    'scheduler': 'local',
+                    'launcher': 'local',
+                    'environs': ['builtin']
+                }
+            ]
+        },
+        {
             'name': 'testsys',
             'descr': 'Fake system for unit tests',
             'hostnames': ['testsys'],
@@ -273,6 +294,14 @@ site_configuration = {
         {
             'compact_test_names': True,
             'target_systems': ['sys1']
+        },
+        {
+            'git_timeout': 10,
+            'target_systems': ['generic2:part1']
+        },
+        {
+            'git_timeout': 20,
+            'target_systems': ['generic2:part2']
         }
     ]
 }
