@@ -32,7 +32,7 @@ class IBCardCheck(rfm.RunOnlyRegressionTest):
         #print("=====================")
         #pprint.pprint(vars(self.current_system))
         #print("=========------------============")
-        if "ib_cards" in vm_info['nhc_values']:
+        if vm_info['nhc_values'] != None and "ib_cards" in vm_info['nhc_values']:
             return sn.assert_eq(sn.count(ib_cards), vm_info['nhc_values']['ib_cards'])
         else:
             print("ib_cards not found in vm_info['nhc_values']")
