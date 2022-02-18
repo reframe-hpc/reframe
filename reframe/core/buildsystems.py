@@ -850,38 +850,39 @@ class Spack(BuildSystem):
         self._auto_env = False
 
     def emit_build_commands(self, environ):
-        ret = self._env_activate_cmds()
+        ret = self._create_env_cmds()
 
         if self._auto_env:
             install_tree = self.install_tree or 'opt/spack'
-            ret.append(f'spack config add '
+            ret.append(f'spack -e {self.environment} config add '
                        f'"config:install_tree:root:{install_tree}"')
 
         if self.specs:
             specs_str = ' '.join(self.specs)
-            ret.append(f'spack add {specs_str}')
+            ret.append(f'spack -e {self.environment} add {specs_str}')
 
-        install_cmd = 'spack install'
+        install_cmd = f'spack -e {self.environment} install'
         if self.install_opts:
             install_cmd += ' ' + ' '.join(self.install_opts)
 
         ret.append(install_cmd)
         return ret
 
-    def _env_activate_cmds(self):
-        cmds = ['. "$(spack location --spack-root)/share/spack/setup-env.sh"']
-        if not self.environment:
-            self.environment = 'rfm_spack_env'
-            cmds.append(f'spack env create -d {self.environment}')
-            self._auto_env = True
+    def _create_env_cmds(self):
+        if self.environment:
+            return []
 
-        cmds.append(f'spack env activate -V -d {self.environment}')
-        return cmds
+        self.environment = 'rfm_spack_env'
+        self._auto_env = True
+        return [f'spack env create -d {self.environment}']
 
     def prepare_cmds(self):
-        cmds = self._env_activate_cmds()
+        cmds = self._create_env_cmds()
         if self.specs and self.emit_load_cmds:
-            cmds.append('spack load ' + ' '.join(s for s in self.specs))
+            cmds.append(
+                f'eval `spack -e {self.environment} load '
+                f'--sh {" ".join(self.specs)}`'
+            )
 
         return cmds
 

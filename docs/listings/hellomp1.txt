@@ -9,16 +9,16 @@
   output directory:  '/path/to/reframe/output'
 
 [==========] Running 1 check(s)
-[==========] Started on Sat Jan 22 13:21:54 2022 
+[==========] Started on Sat Jan 22 13:21:54 2022
 
 [----------] start processing checks
 [ RUN      ] HelloThreadedTest @catalina:default+gnu
 [ RUN      ] HelloThreadedTest @catalina:default+clang
-[       OK ] (1/2) HelloThreadedTest @catalina:default+gnu [compile: 0.963s run: 0.296s total: 1.418s]
-[       OK ] (2/2) HelloThreadedTest @catalina:default+clang [compile: 0.760s run: 0.434s total: 1.421s]
+[       OK ] (1/2) HelloThreadedTest @catalina:default+gnu
+[       OK ] (2/2) HelloThreadedTest @catalina:default+clang
 [----------] all spawned checks have finished
 
 [  PASSED  ] Ran 2/2 test case(s) from 1 check(s) (0 failure(s), 0 skipped)
-[==========] Finished on Sat Jan 22 13:21:56 2022 
+[==========] Finished on Sat Jan 22 13:21:56 2022
 Run report saved in '/home/user/.reframe/reports/run-report.json'
 Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-chq08zds.log'
