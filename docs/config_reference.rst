@@ -809,51 +809,72 @@ All logging handlers share the following set of common attributes:
    Log record format string.
    ReFrame accepts all log record attributes from Python's `logging <https://docs.python.org/3.8/library/logging.html#logrecord-attributes>`__ mechanism and adds the following:
 
-   - ``%(check_environ)s``: The name of the `environment <#environment-configuration>`__ that the current test is being executing for.
-   - ``%(check_info)s``: General information of the currently executing check.
-     By default this field has the form ``%(check_name)s on %(check_system)s:%(check_partition)s using %(check_environ)s``.
-     It can be configured on a per test basis by overriding the :func:`info <reframe.core.pipeline.RegressionTest.info>` method of a specific regression test.
-   - ``%(check_jobid)s``: The job or process id of the job or process associated with the currently executing regression test.
-     If a job or process is not yet created, ``-1`` will be printed.
-   - ``%(check_job_completion_time)s``: The completion time of the job spawned by this regression test.
-     This timestamp will be formatted according to |datefmt|_ handler property.
-     The accuracy of this timestamp depends on the backend scheduler.
-     The ``slurm`` scheduler `backend <#.systems[].partitions[].scheduler>`__ relies on job accounting and returns the actual termination time of the job.
-     The rest of the backends report as completion time the moment when the framework realizes that the spawned job has finished.
-     In this case, the accuracy depends on the execution policy used.
-     If tests are executed with the serial execution policy, this is close to the real completion time, but if the asynchronous execution policy is used, it can differ significantly.
-     If the job completion time cannot be retrieved, ``None`` will be printed.
-   - ``%(check_job_completion_time_unix)s``: The completion time of the job spawned by this regression test expressed as UNIX time.
-     This is a raw time field and will not be formatted according to ``datefmt``.
-     If specific formatting is desired, the ``check_job_completion_time`` should be used instead.
-   - ``%(check_name)s``: The name of the regression test on behalf of which ReFrame is currently executing.
-     If ReFrame is not executing in the context of a regression test, ``reframe`` will be printed instead.
-   - ``%(check_partition)s``: The system partition where this test is currently executing.
-   - ``%(check_system)s``: The system where this test is currently executing.
-   - ``%(check_perf_lower_thres)s``: The lower threshold of the performance difference from the reference value expressed as a fractional value.
-     See the :attr:`reframe.core.pipeline.RegressionTest.reference` attribute of regression tests for more details.
-   - ``%(check_perf_ref)s``: The reference performance value of a certain performance variable.
-   - ``%(check_perf_unit)s``: The unit of measurement for the measured performance variable.
-   - ``%(check_perf_upper_thres)s``: The upper threshold of the performance difference from the reference value expressed as a fractional value.
-     See the :attr:`reframe.core.pipeline.RegressionTest.reference` attribute of regression tests for more details.
-   - ``%(check_perf_value)s``: The performance value obtained for a certain performance variable.
-   - ``%(check_perf_var)s``: The name of the `performance variable <tutorial_basics.html#writing-a-performance-test>`__ being logged.
-   - ``%(check_ATTR)s``: This will log the value of the attribute ``ATTR`` of the currently executing regression test.
-     Dictionaries will be logged in JSON format and all other iterables, except strings, will be logged as comma-separated lists.
-     If ``ATTR`` is not an attribute of the test, ``%(check_ATTR)s`` will be logged as ``null``.
-     This allows users to log arbitrary attributes of their tests.
-     For the complete list of test attributes, please refer to :doc:`regression_test_api`.
-   - ``%(check_job_ATTR)s``: This will log the value of the attribute ``ATTR`` of the :class:`job <reframe.core.schedulers.Job>` associated to the currently executing regression test.
-   - ``%(osuser)s``: The name of the OS user running ReFrame.
-   - ``%(osgroup)s``: The name of the OS group running ReFrame.
-   - ``%(version)s``: The ReFrame version.
+   .. csv-table::
+      :header: "Log record attribute", "Description"
 
+      ``%(check_build_locally)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.build_locally` attribute.
+      ``%(check_build_time_limit)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.build_time_limit` attribute.
+      ``%(check_descr)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.descr` attribute.
+      ``%(check_display_name)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.display_name` attribute.
+      ``%(check_environ)s``, The name of the test's :attr:`~reframe.core.pipeline.RegressionTest.current_environ`.
+      ``%(check_exclusive_access)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.exclusive_access` attribute.
+      ``%(check_executable)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.executable` attribute.
+      ``%(check_executable_opts)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.executable_opts` attribute.
+      ``%(check_extra_resources)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.extra_resources` attribute.
+      ``%(check_job_completion_time_unix)s``, The completion time of the associated run job (see :attr:`reframe.core.schedulers.Job.completion_time`).
+      ``%(check_job_completion_time)s``, Same as the ``(check_job_completion_time_unix)s`` but formatted according to ``datefmt``.
+      ``%(check_job_exitcode)s``, The exit code of the associated run job.
+      ``%(check_job_nodelist)s``, The list of nodes that the associated run job has run on.
+      ``%(check_jobid)s``, The ID of the associated run job.
+      ``%(check_keep_files)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.keep_files` attribute.
+      ``%(check_local)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.local` attribute.
+      ``%(check_maintainers)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.maintainers` attribute.
+      ``%(check_max_pending_time)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.max_pending_time` attribute.
+      ``%(check_modules)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.modules` attribute.
+      ``%(check_name)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.name` attribute.
+      ``%(check_num_cpus_per_task)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.num_cpus_per_task` attribute.
+      ``%(check_num_gpus_per_node)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.num_gpus_per_node` attribute.
+      ``%(check_num_tasks)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.num_tasks` attribute.
+      ``%(check_num_tasks_per_core)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.num_tasks_per_core` attribute.
+      ``%(check_num_tasks_per_node)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.num_tasks_per_node` attribute.
+      ``%(check_num_tasks_per_socket)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.num_tasks_per_socket` attribute.
+      ``%(check_outputdir)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.outputdir` attribute.
+      ``%(check_partition)s``, The name of the test's :attr:`~reframe.core.pipeline.RegressionTest.current_partition`.
+      ``%(check_perfvalues)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.perfvalues` attribute.
+      ``%(check_postbuild_cmds)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.postbuild_cmds` attribute.
+      ``%(check_postrun_cmds)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.postrun_cmds` attribute.
+      ``%(check_prebuild_cmds)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.prebuild_cmds` attribute.
+      ``%(check_prefix)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.prefix` attribute.
+      ``%(check_prerun_cmds)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.prerun_cmds` attribute.
+      ``%(check_readonly_files)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.readonly_files` attribute.
+      ``%(check_sourcepath)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.sourcepath` attribute.
+      ``%(check_sourcesdir)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.sourcesdir` attribute.
+      ``%(check_stagedir)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.stagedir` attribute.
+      ``%(check_strict_check)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.strict_check` attribute.
+      ``%(check_system)s``, The name of the test's :attr:`~reframe.core.pipeline.RegressionTest.current_system`.
+      ``%(check_tags)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.tags` attribute.
+      ``%(check_time_limit)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.time_limit` attribute.
+      ``%(check_unique_name)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.unique_name` attribute.
+      ``%(check_use_multithreading)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.use_multithreading` attribute.
+      ``%(check_valid_prog_environs)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.valid_prog_environs` attribute.
+      ``%(check_valid_systems)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.valid_systems` attribute.
+      ``%(check_variables)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.variables` attribute.
+      ``%(osuser)s``, The name of the OS user running ReFrame.
+      ``%(osgroup)s``, The name of the OS group running ReFrame.
+      ``%(version)s``, The ReFrame version.
+
+   ReFrame allows you to log any test variable, parameter or property if they are marked as "loggable".
+   The log record attribute will have the form ``%(check_NAME)s`` where ``NAME`` is the variable name, the parameter name or the property name that is marked as loggable.
 
 .. versionadded:: 3.3
    Allow arbitrary test attributes to be logged.
 
 .. versionadded:: 3.4.2
    Allow arbitrary job attributes to be logged.
+
+.. versionchanged:: 3.10.2
+   Limit the number of attributes that can be logged. User attributes or properties must be explicitly marked as "loggable" in order to be selectable for logging.
+
 
 .. js:attribute:: .logging[].handlers[].datefmt
 

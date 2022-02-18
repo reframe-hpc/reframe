@@ -239,6 +239,9 @@ class RegressionTestMeta(type):
         # Utility decorators
         namespace['_rfm_ext_bound'] = set()
 
+        # Loggable attributes and properties
+        namespace['_rfm_loggable_props'] = []
+
         def bind(fn, name=None):
             '''Directive to bind a free function to a class.
 
@@ -271,8 +274,34 @@ class RegressionTestMeta(type):
             fn._rfm_final = True
             return fn
 
+        def loggable_as(name):
+            '''Mark a property loggable.
+
+            :param name: An alternative name that will be used for logging
+                this property. If :obj:`None`, the name of the decorated
+                property will be used.
+            :raises ValueError: if the decorated function is not a property.
+
+            .. versionadded:: 3.10.2
+
+            :meta private:
+
+            '''
+            def _loggable(fn):
+                if not hasattr(fn, 'fget'):
+                    raise ValueError('decorated function does not '
+                                     'look like a property')
+
+                prop_name = fn.fget.__name__
+                namespace['_rfm_loggable_props'].append((prop_name, name))
+                return fn
+
+            return _loggable
+
         namespace['bind'] = bind
         namespace['final'] = final
+        namespace['loggable'] = loggable_as(None)
+        namespace['loggable_as'] = loggable_as
         namespace['_rfm_final_methods'] = set()
 
         # Hook-related functionality
@@ -867,6 +896,21 @@ class RegressionTestMeta(type):
                 name += f'_{fid}'
 
         return name
+
+    def loggable_attrs(cls):
+        '''Get the loggable attributes of this class.'''
+        loggable_vars = [(name, None) for name, var in cls.var_space.items()
+                         if var.is_loggable()]
+        loggable_params = [
+            (name, None) for name, param in cls.param_space.items()
+            if param.is_loggable()
+        ]
+        loggable_props = []
+        for c in cls.mro():
+            if hasattr(c, '_rfm_loggable_props'):
+                loggable_props += c._rfm_loggable_props
+
+        return sorted(loggable_props + loggable_vars + loggable_params)
 
 
 def make_test(name, bases, body, **kwargs):
