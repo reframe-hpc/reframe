@@ -262,6 +262,7 @@ class _SiteConfig:
     def _get_azure_vm_info(self):
         # May need to find a better way to do this for clusters on Azure
         # Host names can be quite random
+        print("Checking if this is an azure vm")
         if os.path.exists('/etc/waagent.conf'):
             try:
                 cmd = "curl -H Metadata:true \"http://169.254.169.254/metadata/instance?api-version=2019-06-04\""
@@ -277,8 +278,14 @@ class _SiteConfig:
                                                img_ref['sku'].lower(),
                                                img_ref['version'].lower())
                 # Read in the json file and search
-                tmp_data = re.split('[0-9]*',vm_size,1)
-                vm_series = "".join(tmp_data)
+                tmp_data = re.split('([0-9]+(-[0-9]+)?)',vm_size,1)
+                if len(tmp_data) < 4:
+                    vm_series = "vm_data[vm]['size']"
+                    print("Tmp data not as expected: {}".format(tmp_data))
+                else:
+                    vm_series = tmp_data[0] + tmp_data[-1]
+                #tmp_data = re.split('[0-9]*',vm_size,1)
+                #vm_series = "".join(tmp_data)
                 vm_series = vm_series.lower()
 
                 sysname = "{}".format(vm_series)

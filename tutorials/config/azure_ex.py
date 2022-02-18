@@ -12,11 +12,7 @@ site_configuration = {
         {
             'name': 'hbrs_v3',
             'descr': 'Azure HBv3',
-            'vm_size': '',
-            'vm_os': '',
-            'vm_os_version': '',
-            'vm_image': '',
-            'vm_data_file': '/share/home/hpcuser/jshelley/github/reframe/azure_nhc/vm_info/azure_vm_info_processed_w_addons.json',
+            'vm_data_file': '/share/home/hpcuser/jshelley/github/reframe/azure_nhc/vm_info/azure_vms_dataset.json',
             'hostnames': [''],
             'modules_system': 'tmod4',
             'partitions': [
