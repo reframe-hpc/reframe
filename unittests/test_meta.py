@@ -508,3 +508,53 @@ def test_get_variant_nums(MyMeta):
     for v in variants:
         assert Foo.get_variant_info(v)['params']['p'] == 5
         assert Foo.get_variant_info(v)['params']['q'] == 4
+
+
+def test_loggable_attrs():
+    class T(metaclass=meta.RegressionTestMeta):
+        x = variable(int, value=3, loggable=True)
+        y = variable(int, loggable=True)    # loggable but undefined
+        z = variable(int)
+        p = parameter(range(3), loggable=True)
+
+        @loggable
+        @property
+        def foo(self):
+            return 10
+
+        @loggable_as('w')
+        @property
+        def bar(self):
+            return 10
+
+        @run_after('init')
+        def set_z(self):
+            self.z = 20
+
+    assert T.loggable_attrs() == [('bar', 'w'), ('foo', None),
+                                  ('p', None), ('x', None), ('y', None)]
+    assert T(variant_num=0).foo == 10
+    assert T(variant_num=0).bar == 10
+
+    # Test error conditions
+    with pytest.raises(ValueError):
+        class T(metaclass=meta.RegressionTestMeta):
+            @loggable
+            def foo(self):
+                pass
+
+
+def test_inherited_loggable_attrs():
+    class T(rfm.RegressionTest):
+        pass
+
+    attrs = [x[0] for x in T.loggable_attrs()]
+    assert 'num_tasks' in attrs
+    assert 'prefix' in attrs
+
+
+def test_deprecated_loggable_attrs():
+    class T(metaclass=meta.RegressionTestMeta):
+        x = deprecate(variable(int, value=3, loggable=True), 'deprecated')
+
+    assert T.loggable_attrs() == [('x', None)]
