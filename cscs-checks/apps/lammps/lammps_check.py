@@ -57,31 +57,19 @@ class LAMMPSGPUCheck(LAMMPSCheck):
     executable_opts = ['-sf gpu', '-pk gpu 1', '-in in.lj.gpu']
     variables = {'CRAY_CUDA_MPS': '1'}
     num_gpus_per_node = 1
-    references_by_variant = {
-        'maint': {
-            'small': {
-                'dom:gpu': {'perf': (3457, -0.10, None, 'timesteps/s')},
-                'daint:gpu': {'perf': (2524, -0.10, None, 'timesteps/s')}
-            },
-            'large': {
-                'daint:gpu': {'perf': (3832, -0.05, None, 'timesteps/s')}
-            }
+    refs_by_scale = {
+        'small': {
+            'dom:gpu': {'perf': (3132, -0.05, None, 'timesteps/s')},
+            'daint:gpu': {'perf': (2660, -0.35, None, 'timesteps/s')}
         },
-        'prod': {
-            'small': {
-                'dom:gpu': {'perf': (3132, -0.05, None, 'timesteps/s')},
-                'daint:gpu': {'perf': (2400, -0.40, None, 'timesteps/s')}
-            },
-            'large': {
-                'daint:gpu': {'perf': (3260, -0.50, None, 'timesteps/s')}
-            }
-        },
+        'large': {
+            'daint:gpu': {'perf': (3430, -0.50, None, 'timesteps/s')}
+        }
     }
 
     @run_after('init')
-    def setup_by_variant(self):
-        self.descr = (f'LAMMPS GPU check (version: {self.scale}, '
-                      f'{self.variant})')
+    def setup_by_scale(self):
+        self.descr = f'LAMMPS GPU check (version: {self.scale})'
         if self.scale == 'small':
             self.valid_systems += ['dom:gpu']
             self.num_tasks = 12
@@ -91,47 +79,29 @@ class LAMMPSGPUCheck(LAMMPSCheck):
             self.num_tasks_per_node = 2
 
         self.reference = self.references_by_variant[self.variant][self.scale]
-        self.tags |= {
-            'maintenance' if self.variant == 'maint' else 'production'
-        }
+        self.tags |= {'maintenance', 'production'}
 
 
 @rfm.simple_test
 class LAMMPSCPUCheck(LAMMPSCheck):
     valid_systems = ['daint:mc', 'eiger:mc', 'pilatus:mc']
-    references_by_variant = {
-        'maint': {
-            'small': {
-                'dom:mc': {'perf': (4394, -0.05, None, 'timesteps/s')},
-                'daint:mc': {'perf': (3824, -0.10, None, 'timesteps/s')},
-                'eiger:mc': {'perf': (4500, -0.10, None, 'timesteps/s')},
-                'pilatus:mc': {'perf': (5000, -0.10, None, 'timesteps/s')}
-            },
-            'large': {
-                'daint:mc': {'perf': (5310, -0.65, None, 'timesteps/s')},
-                'eiger:mc': {'perf': (6500, -0.10, None, 'timesteps/s')},
-                'pilatus:mc': {'perf': (7500, -0.10, None, 'timesteps/s')}
-            }
+    res_by_scale = {
+        'small': {
+            'dom:mc': {'perf': (4394, -0.05, None, 'timesteps/s')},
+            'daint:mc': {'perf': (3350, -0.30, None, 'timesteps/s')},
+            'eiger:mc': {'perf': (4500, -0.10, None, 'timesteps/s')},
+            'pilatus:mc': {'perf': (5000, -0.10, None, 'timesteps/s')}
         },
-        'prod': {
-            'small': {
-                'dom:mc': {'perf': (4394, -0.05, None, 'timesteps/s')},
-                'daint:mc': {'perf': (3824, -0.10, None, 'timesteps/s')},
-                'eiger:mc': {'perf': (4500, -0.10, None, 'timesteps/s')},
-                'pilatus:mc': {'perf': (5000, -0.10, None, 'timesteps/s')}
-            },
-            'large': {
-                'daint:mc': {'perf': (5310, -0.65, None, 'timesteps/s')},
-                'eiger:mc': {'perf': (6500, -0.10, None, 'timesteps/s')},
-                'pilatus:mc': {'perf': (7500, -0.10, None, 'timesteps/s')}
-            }
+        'large': {
+            'daint:mc': {'perf': (5360, -0.30, None, 'timesteps/s')},
+            'eiger:mc': {'perf': (6500, -0.10, None, 'timesteps/s')},
+            'pilatus:mc': {'perf': (7500, -0.10, None, 'timesteps/s')}
         }
     }
 
     @run_after('init')
-    def setup_by_variant(self):
-        self.descr = (f'LAMMPS CPU check (version: {self.scale}, '
-                      f'{self.variant})')
+    def setup_by_scale(self):
+        self.descr = f'LAMMPS CPU check (version: {self.scale})'
         if self.current_system.name in ['eiger', 'pilatus']:
             self.executable = 'lmp_mpi'
             self.executable_opts = ['-in in.lj.cpu']
@@ -152,6 +122,4 @@ class LAMMPSCPUCheck(LAMMPSCheck):
             self.num_tasks = 256 if self.scale == 'small' else 512
 
         self.reference = self.references_by_variant[self.variant][self.scale]
-        self.tags |= {
-            'maintenance' if self.variant == 'maint' else 'production'
-        }
+        self.tags |= {'maintenance', 'production'}

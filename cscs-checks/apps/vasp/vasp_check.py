@@ -41,28 +41,18 @@ class VASPCheck(rfm.RunOnlyRegressionTest):
 
 @rfm.simple_test
 class VASPCpuCheck(VASPCheck):
-    variant = parameter(['maint', 'prod'])
     valid_systems = ['daint:mc', 'dom:mc', 'eiger:mc', 'pilatus:mc']
     executable = 'vasp_std'
-    references_by_variant = {
-        'maint': {
-            'dom:mc': {'time': (148.7, None, 0.05, 's')},
-            'daint:mc': {'time': (105.3, None, 0.20, 's')},
-            'eiger:mc': {'time': (100.0, None, 0.10, 's')},
-            'pilatus:mc': {'time': (100.0, None, 0.10, 's')}
-        },
-        'prod': {
-            'dom:mc': {'time': (148.7, None, 0.05, 's')},
-            'daint:mc': {'time': (105.3, None, 0.20, 's')},
-            'eiger:mc': {'time': (100.0, None, 0.10, 's')},
-            'pilatus:mc': {'time': (100.0, None, 0.10, 's')}
-        }
+    reference = {
+        'dom:mc': {'time': (138.0, None, 0.15, 's')},
+        'daint:mc': {'time': (138.0, None, 0.15, 's')},
+        'eiger:mc': {'time': (100.0, None, 0.10, 's')},
+        'pilatus:mc': {'time': (100.0, None, 0.10, 's')}
     }
 
     @run_after('init')
-    def setup_by_variant(self):
-        self.descr = f'VASP CPU check (variant: {self.variant})'
-
+    def setup_by_scale(self):
+        self.descr = f'VASP CPU check'
         if self.current_system.name == 'dom':
             self.num_tasks = 72
             self.num_tasks_per_node = 12
@@ -85,8 +75,7 @@ class VASPCpuCheck(VASPCheck):
             self.use_multithreading = True
 
         self.reference = self.references_by_variant[self.variant]
-        self.tags |= {'maintenance'
-                      if self.variant == 'maint' else 'production'}
+        self.tags |= {'maintenance', 'production'}
 
     @run_before('run')
     def set_task_distribution(self):
@@ -103,15 +92,9 @@ class VASPGpuCheck(VASPCheck):
     valid_systems = ['daint:gpu', 'dom:gpu']
     executable = 'vasp_std'
     num_gpus_per_node = 1
-    references_by_variant = {
-        'maint': {
-            'dom:gpu': {'time': (61.0, None, 0.10, 's')},
-            'daint:gpu': {'time': (46.7, None, 0.20, 's')},
-        },
-        'prod': {
-            'dom:gpu': {'time': (61.0, None, 0.10, 's')},
-            'daint:gpu': {'time': (46.7, None, 0.20, 's')},
-        }
+    reference = {
+        'dom:gpu': {'time': (45.0, None, 0.15, 's')},
+        'daint:gpu': {'time': (45.0, None, 0.15, 's')},
     }
 
     @run_after('init')
@@ -125,6 +108,4 @@ class VASPGpuCheck(VASPCheck):
             self.num_tasks = 16
             self.num_tasks_per_node = 1
 
-        self.reference = self.references_by_variant[self.variant]
-        self.tags |= {'maintenance'
-                      if self.variant == 'maint' else 'production'}
+        self.tags |= {'maintenance', 'production'}
