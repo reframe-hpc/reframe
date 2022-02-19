@@ -53,42 +53,25 @@ class Cp2kCheck(rfm.RunOnlyRegressionTest):
 @rfm.simple_test
 class Cp2kCpuCheck(Cp2kCheck):
     scale = parameter(['small', 'large'])
-    variant = parameter(['maint', 'prod'])
     valid_systems = ['daint:mc', 'eiger:mc', 'pilatus:mc']
-    references_by_variant = {
-        'maint': {
-            'small': {
-                'dom:mc': {'time': (202.2, None, 0.05, 's')},
-                'daint:mc': {'time': (180.9, None, 0.08, 's')},
-                'eiger:mc': {'time': (70.0, None, 0.08, 's')},
-                'pilatus:mc': {'time': (70.0, None, 0.08, 's')}
-            },
-            'large': {
-                'daint:mc': {'time': (141.0, None, 0.05, 's')},
-                'eiger:mc': {'time': (46.0, None, 0.05, 's')},
-                'pilatus:mc': {'time': (46.0, None, 0.05, 's')}
-            }
+    refs_by_scale = {
+        'small': {
+            'dom:mc': {'time': (164, None, 0.07, 's')},
+            'daint:mc': {'time': (164, None, 0.07, 's')},
+            'eiger:mc': {'time': (70.0, None, 0.08, 's')},
+            'pilatus:mc': {'time': (70.0, None, 0.08, 's')}
         },
-        'prod': {
-            'small': {
-                'dom:mc': {'time': (202.2, None, 0.05, 's')},
-                'daint:mc': {'time': (180.9, None, 0.08, 's')},
-                'eiger:mc': {'time': (70.0, None, 0.08, 's')},
-                'pilatus:mc': {'time': (70.0, None, 0.08, 's')}
-            },
-            'large': {
-                'daint:mc': {'time': (113.0, None, 0.05, 's')},
-                'eiger:mc': {'time': (46.0, None, 0.05, 's')},
-                'pilatus:mc': {'time': (46.0, None, 0.05, 's')}
-            }
+        'large': {
+            'daint:mc': {'time': (120, None, 0.15, 's')},
+            'eiger:mc': {'time': (46.0, None, 0.05, 's')},
+            'pilatus:mc': {'time': (46.0, None, 0.05, 's')}
         }
     }
 
     @run_after('init')
-    def setup_by_variant_and_scale(self):
-        self.descr = f'CP2K CPU check (version: {self.scale}, {self.variant})'
-        self.tags |= {'maintenance'
-                      if self.variant == 'maint' else 'production'}
+    def setup_by__scale(self):
+        self.descr = f'CP2K CPU check (version: {self.scale})'
+        self.tags |= {'maintenance', 'production'}
         if self.scale == 'small':
             self.valid_systems += ['dom:mc']
             if self.current_system.name in ['daint', 'dom']:
@@ -106,7 +89,6 @@ class Cp2kCpuCheck(Cp2kCheck):
                     'OMP_PLACES': 'cores',
                     'OMP_PROC_BIND': 'close'
                 }
-
         else:
             if self.current_system.name in ['daint', 'dom']:
                 self.num_tasks = 576
@@ -124,7 +106,7 @@ class Cp2kCpuCheck(Cp2kCheck):
                     'OMP_PROC_BIND': 'close'
                 }
 
-        self.reference = self.references_by_variant[self.variant][self.scale]
+        self.reference = self.refs_by_scale[self.scale]
 
     @run_before('run')
     def set_task_distribution(self):
@@ -138,7 +120,6 @@ class Cp2kCpuCheck(Cp2kCheck):
 @rfm.simple_test
 class Cp2kGpuCheck(Cp2kCheck):
     scale = parameter(['small', 'large'])
-    variant = parameter(['maint', 'prod'])
     valid_systems = ['daint:gpu']
     num_gpus_per_node = 1
     num_tasks_per_node = 6
@@ -147,36 +128,24 @@ class Cp2kGpuCheck(Cp2kCheck):
         'CRAY_CUDA_MPS': '1',
         'OMP_NUM_THREADS': str(num_cpus_per_task)
     }
-    references_by_variant = {
-        'maint': {
-            'small': {
-                'dom:gpu': {'time': (251.8, None, 0.15, 's')},
-                'daint:gpu': {'time': (241.3, None, 0.05, 's')}
-            },
-            'large': {
-                'daint:gpu': {'time': (199.6, None, 0.06, 's')}
-            }
+    refs_by_scale = {
+        'small': {
+            'dom:gpu': {'time': (234, None, 0.05, 's')},
+            'daint:gpu': {'time': (234, None, 0.05, 's')}
         },
-        'prod': {
-            'small': {
-                'dom:gpu': {'time': (240.0, None, 0.05, 's')},
-                'daint:gpu': {'time': (241.3, None, 0.05, 's')}
-            },
-            'large': {
-                'daint:gpu': {'time': (199.6, None, 0.06, 's')}
-            }
+        'large': {
+            'daint:gpu': {'time': (147, None, 0.05, 's')}
         }
     }
 
     @run_after('init')
-    def setup_by_variant_and_scale(self):
-        self.descr = f'CP2K GPU check (version: {self.scale}, {self.variant})'
+    def setup_by_scale(self):
+        self.descr = f'CP2K GPU check (version: {self.scale})'
         if self.scale == 'small':
             self.valid_systems += ['dom:gpu']
             self.num_tasks = 36
         else:
             self.num_tasks = 96
 
-        self.reference = self.references_by_variant[self.variant][self.scale]
-        self.tags |= {'maintenance'
-                      if self.variant == 'maint' else 'production'}
+        self.reference = self.refs_by_scale[self.scale]
+        self.tags |= {'maintenance', 'production'}
