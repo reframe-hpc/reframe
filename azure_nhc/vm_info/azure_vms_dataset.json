@@ -77682,7 +77682,22 @@
         "restrictions": [],
         "size": "ND96asr_v4",
         "tier": "Standard",
-        "series": "ndasr_v4"
+        "series": "ndasr_v4",
+        "nhc_values": {
+            "processor": "amd",
+            "vm_ram": 880,
+            "stream_triad": 320000,
+            "sriov_enabled": true,
+            "ib_state": "PORT_ACTIVE",
+            "ib_phys_state": "LINK_UP",
+            "ib_cards": 8,
+            "ib_speed": "50.0 Gbps",
+            "ib_rate": "4X",
+            "ib_cutoff_8b_latency": "2.5",
+            "ib_cutoff_4Mb_bibw": "20000",
+            "ib_link_layer": "InfiniBand",
+            "ngpus": 8
+        }
     },
     "Standard_NP10s": {
         "apiVersions": null,
