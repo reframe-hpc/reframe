@@ -51,7 +51,7 @@ In essence, these builtins exert control over the test creation, and they allow 
         p1 = [parameter([1, 2])] # Undefined behavior
 
 
-.. py:function:: RegressionMixin.parameter(values=None, inherit_params=False, filter_params=None, fmt=None)
+.. py:function:: RegressionMixin.parameter(values=None, inherit_params=False, filter_params=None, fmt=None, loggable=False)
 
   Inserts or modifies a regression test parameter.
   At the class level, these parameters are stored in a separate namespace referred to as the *parameter space*.
@@ -126,11 +126,17 @@ In essence, these builtins exert control over the test creation, and they allow 
      It will be called with the inherited parameter values and it must return the filtered set of parameter values.
      This function will only have an effect if used with ``inherit_params=True``.
   :param fmt: A formatting function that will be used to format the values of this parameter in the test's :attr:`~reframe.core.pipeline.RegressionTest.display_name`.
-    This function should take as argument the parameter value and return a string representation of the value.
-    If the returned value is not a string, it will be converted using the :py:func:`str` function.
+     This function should take as argument the parameter value and return a string representation of the value.
+     If the returned value is not a string, it will be converted using the :py:func:`str` function.
+  :param loggable: Mark this parameter as loggable.
+     If :obj:`True`, this parameter will become a log record attribute under the name ``check_NAME``, where ``NAME`` is the name of the parameter.
+
 
   .. versionadded:: 3.10.0
      The ``fmt`` argument is added.
+
+  .. versionadded:: 3.10.2
+     The ``loggable`` argument is added.
 
 
 .. py:function:: RegressionMixin.variable(*types, value=None, field=None, **kwargs)
@@ -240,7 +246,12 @@ In essence, these builtins exert control over the test creation, and they allow 
   :param field: the field validator to be used for this variable.
       If no field argument is provided, it defaults to :attr:`reframe.core.fields.TypedField`.
       The provided field validator by this argument must derive from :attr:`reframe.core.fields.Field`.
+  :param loggable: Mark this variable as loggable.
+     If :obj:`True`, this variable will become a log record attribute under the name ``check_NAME``, where ``NAME`` is the name of the variable.
   :param `**kwargs`: *kwargs* to be forwarded to the constructor of the field validator.
+
+  .. versionadded:: 3.10.2
+     The ``loggable`` argument is added.
 
 
 .. py:function:: RegressionMixin.fixture(cls, *, scope='test', action='fork', variants='all', variables=None)
@@ -509,17 +520,14 @@ ReFrame provides the following built-in functions, which are only available in t
 
   .. versionadded:: 3.7.0
 
-.. py:function:: RegressionMixin.bind(func, name=None)
+.. autodecorator:: reframe.core.pipeline.RegressionMixin.loggable_as(name)
 
-  Bind a free function to a regression test.
+.. py:decorator:: reframe.core.pipeline.RegressionMixin.loggable
 
-  By default, the function is bound with the same name as the free function.
-  However, the function can be bound using a different name with the ``name`` argument.
+   Equivalent to :func:`@loggable_as(None) <reframe.core.pipeline.RegressionMixin.loggable_as>`.
 
-  :param func: external function to be bound to a class.
-  :param name: bind the function under a different name.
+   .. versionadded:: 3.10.2
 
-  .. versionadded:: 3.6.2
 
 .. py:decorator:: RegressionMixin.require_deps(func)
 
@@ -539,6 +547,19 @@ ReFrame provides the following built-in functions, which are only available in t
      .. versionchanged:: 3.7.0
         Using this function from the :py:mod:`reframe` or :py:mod:`reframe.core.decorators` modules is now deprecated.
         You should use the built-in function described here.
+
+.. py:function:: RegressionMixin.bind(func, name=None)
+
+  Bind a free function to a regression test.
+
+  By default, the function is bound with the same name as the free function.
+  However, the function can be bound using a different name with the ``name`` argument.
+
+  :param func: external function to be bound to a class.
+  :param name: bind the function under a different name.
+
+  .. versionadded:: 3.6.2
+
 
 
 --------------

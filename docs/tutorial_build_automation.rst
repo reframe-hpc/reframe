@@ -120,12 +120,10 @@ Here is what ReFrame generates as a build script for this example:
 
 .. code:: bash
 
-   . "$(spack location --spack-root)/share/spack/setup-env.sh"
    spack env create -d rfm_spack_env
-   spack env activate -V -d rfm_spack_env
-   spack config add "config:install_tree:root:opt/spack"
-   spack add bzip2@1.0.6
-   spack install
+   spack -e rfm_spack_env config add "config:install_tree:root:opt/spack"
+   spack -e rfm_spack_env add bzip2@1.0.6
+   spack -e rfm_spack_env install
 
 As you might have noticed ReFrame expects that Spack is already installed on the system.
 The packages specified in the environment and the tests will be installed in the test's stage directory, where the environment is copied before building.
@@ -155,10 +153,8 @@ Finally, here is the generated run script that ReFrame uses to run the test, onc
 .. code-block:: bash
 
    #!/bin/bash
-   . "$(spack location --spack-root)/share/spack/setup-env.sh"
    spack env create -d rfm_spack_env
-   spack env activate -V -d rfm_spack_env
-   spack load bzip2@1.0.6
+   eval `spack -e rfm_spack_env load --sh bzip2@1.0.6`
    bzip2 --help
 
 From this point on, sanity and performance checking are exactly identical to any other ReFrame test.
