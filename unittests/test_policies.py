@@ -938,8 +938,9 @@ def generic2_exec_ctx(request, make_exec_ctx_g):
 
 
 def test_config_params(make_runner, make_exec_ctx):
-    '''Test that configuration parameters are properly retrieved with the various
-    execution policies'''
+    '''Test that configuration parameters are properly retrieved with the
+    various execution policies.
+    '''
 
     class T(rfm.RunOnlyRegressionTest):
         valid_systems = ['generic2']
