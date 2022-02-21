@@ -45,6 +45,12 @@ def local_only(scheduler):
 
 
 @pytest.fixture
+def lsf_only(scheduler):
+    if scheduler.registered_name != 'lsf':
+        pytest.skip('test is relevant only for the LSF backend')
+
+
+@pytest.fixture
 def exec_ctx(make_exec_ctx, scheduler):
     if test_util.USER_CONFIG_FILE and scheduler.registered_name != 'local':
         make_exec_ctx(test_util.USER_CONFIG_FILE, test_util.USER_SYSTEM)
@@ -146,6 +152,15 @@ def _expected_lsf_directives(job):
         f'#BSUB --gres=gpu:4',
         f'#DW jobdw capacity=100GB',
         f'#DW stage_in source=/foo',
+    ])
+
+
+def _expected_lsf_directives_minimal(job):
+    return set([
+        f'#BSUB -J testjob',
+        f'#BSUB -o {job.stdout}',
+        f'#BSUB -e {job.stderr}',
+        f'#BSUB -n {job.num_tasks}'
     ])
 
 
@@ -259,6 +274,20 @@ def test_prepare(fake_job):
     expected_directives = globals()[f'_expected_{sched_name}_directives']
     assert_job_script_sanity(fake_job)
     assert expected_directives(fake_job) == found_directives
+
+
+def test_prepare_num_tasks_only(minimal_job, lsf_only):
+    prepare_job(minimal_job)
+    with open(minimal_job.script_filename) as fp:
+        found_directives = set(re.findall(r'^\#\S+ .*', fp.read(),
+                                          re.MULTILINE))
+
+    sched_name = minimal_job.scheduler.registered_name
+    expected_directives = globals()[
+        f'_expected_{sched_name}_directives_minimal'
+    ]
+    assert_job_script_sanity(minimal_job)
+    assert expected_directives(minimal_job) == found_directives
 
 
 def test_prepare_no_exclusive(make_job, slurm_only):

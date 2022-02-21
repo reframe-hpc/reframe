@@ -51,8 +51,8 @@ class LsfJobScheduler(PbsJobScheduler):
             preamble.append(self._format_option(job.num_tasks, '-n {0}'))
 
         if job.num_cpus_per_task is not None:
-            num_physical_cores = job.num_tasks * job.num_cpus_per_task
-            preamble.append(self._format_option(num_physical_cores, '-R "span[ptile={0}]"'))
+            preamble.append(self._format_option(job.num_cpus_per_task,
+                                                '-R "span[ptile={0}]"'))
 
         # add job time limit in minutes
         if job.time_limit is not None:
