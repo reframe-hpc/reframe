@@ -151,7 +151,10 @@ class HookRegistry:
         '''
 
         if hasattr(v, '_rfm_attach'):
-            self.__hooks.add(Hook(v))
+            # Always override hooks with the same name
+            h = Hook(v)
+            self.__hooks.discard(h)
+            self.__hooks.add(h)
         elif hasattr(v, '_rfm_resolve_deps'):
             v._rfm_attach = ['post_setup']
             self.__hooks.add(Hook(v))
