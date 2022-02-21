@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import reframe as rfm
-import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 
 
@@ -77,14 +76,6 @@ class MKLResolveTest(LibSciResolveBaseTest):
     @run_before('compile')
     def set_fflags(self):
         self.build_system.fflags = ['-mkl']
-
-    @run_before('compile')
-    def cdt_2105_workaround(self):
-        # FIXME: The mkl libraries are not found in cdt 21.05, CASE #285117
-        if osext.cray_cdt_version() == '21.05':
-            self.build_system.ldflags += [
-                '-L/opt/intel/oneapi/mkl/latest/lib/intel64/'
-            ]
 
     @sanity_function
     def libmkl_resolve(self):
