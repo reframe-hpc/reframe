@@ -283,6 +283,20 @@ class temp_environment:
         self._environ_save.restore()
 
 
+class temp_config:
+    '''Context manager to temporarily switch to specific configuration.'''
+
+    def __init__(self, system):
+        self.__to = system
+        self.__from = runtime().system.name
+
+    def __enter__(self):
+        runtime().site_config.select_subconfig(self.__to)
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        runtime().site_config.select_subconfig(self.__from)
+
+
 # The following utilities are useful only for the unit tests
 
 class temp_runtime:
