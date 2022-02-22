@@ -140,7 +140,7 @@ def _expected_lsf_directives(job):
         f'#BSUB -e {job.stderr}',
         f'#BSUB -nnodes {job.num_tasks // job.num_tasks_per_node}',
         f'#BSUB -W {int(job.time_limit // 60)}',
-        f'#BSUB -R "span[ptile={job.num_cpus_per_task}]"',
+        f'#BSUB -R "affinity[core({job.num_cpus_per_task})]"',
         f'#BSUB -x',
         f'#BSUB --account=spam',
         f'#BSUB --gres=gpu:4',
