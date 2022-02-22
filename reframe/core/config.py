@@ -11,7 +11,6 @@ import json
 import jsonschema
 import os
 import re
-import socket
 import tempfile
 
 import reframe
