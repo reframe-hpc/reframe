@@ -8,7 +8,6 @@ import itertools
 import json
 import os
 import shlex
-import socket
 import sys
 import time
 import traceback
