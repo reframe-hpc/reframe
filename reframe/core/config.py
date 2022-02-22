@@ -20,7 +20,7 @@ import reframe.utility as util
 from reframe.core.environments import normalize_module_list
 from reframe.core.exceptions import ConfigError, ReframeFatalError
 from reframe.core.logging import getlogger
-from reframe.utility import ScopedDict
+from reframe.utility import ScopedDict, get_hostname_cmd
 
 
 def _match_option(opt, opt_map):
@@ -261,16 +261,13 @@ class _SiteConfig:
 
     def _detect_system(self):
         getlogger().debug('Detecting system')
-        if os.path.exists('/etc/xthostname'):
-            # Get the cluster name on Cray systems
-            getlogger().debug(
-                "Found '/etc/xthostname': will use this to get the system name"
-            )
-            with open('/etc/xthostname') as fp:
-                hostname = fp.read()
-        else:
-            hostname = socket.getfqdn()
+        try:
+            hostname_cmd = self._site_config['general'][0].get('hostname_cmd',
+                                                               'hostname')
+        except (KeyError, IndexError):
+            hostname_cmd = 'hostname'
 
+        hostname = get_hostname_cmd(hostname_cmd, getlogger())
         getlogger().debug(
             f'Looking for a matching configuration entry '
             f'for system {hostname!r}'

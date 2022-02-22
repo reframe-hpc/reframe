@@ -34,6 +34,7 @@ from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
 from reframe.frontend.executors import Runner, generate_testcases
+from reframe.utility import get_hostname_cmd
 
 
 def format_env(envvars):
@@ -877,7 +878,9 @@ def main():
         'cmdline': ' '.join(sys.argv),
         'config_file': rt.site_config.filename,
         'data_version': runreport.DATA_VERSION,
-        'hostname': socket.getfqdn(),
+        'hostname': get_hostname_cmd(
+            site_config.get('general/0/hostname_cmd')
+        ),
         'prefix_output': rt.output_prefix,
         'prefix_stage': rt.stage_prefix,
         'user': osext.osuser(),

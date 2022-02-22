@@ -456,8 +456,11 @@
                     "colorize": {"type": "boolean"},
                     "compact_test_names": {"type": "boolean"},
                     "git_timeout": {"type": "number"},
+                    "hostname_cmd": {
+                        "type": "string",
+                        "enum": ["fqdn", "hostname", "xthostname"]
+                    },
                     "ignore_check_conflicts": {"type": "boolean"},
-                    "trap_job_errors": {"type": "boolean"},
                     "keep_stage_files": {"type": "boolean"},
                     "module_map_file": {"type": "string"},
                     "module_mappings": {
@@ -476,6 +479,7 @@
                     "save_log_files": {"type": "boolean"},
                     "target_systems": {"$ref": "#/defs/system_ref"},
                     "timestamp_dirs": {"type": "string"},
+                    "trap_job_errors": {"type": "boolean"},
                     "unload_modules": {"$ref": "#/defs/modules_list"},
                     "use_login_shell": {"type": "boolean"},
                     "user_modules": {"$ref": "#/defs/modules_list"},
@@ -508,8 +512,8 @@
         "general/colorize": true,
         "general/compact_test_names": false,
         "general/git_timeout": 5,
+        "general/hostname_cmd": "hostname",
         "general/ignore_check_conflicts": false,
-        "general/trap_job_errors": false,
         "general/keep_stage_files": false,
         "general/module_map_file": "",
         "general/module_mappings": [],
@@ -523,6 +527,7 @@
         "general/save_log_files": false,
         "general/target_systems": ["*"],
         "general/timestamp_dirs": "",
+        "general/trap_job_errors": false,
         "general/unload_modules": [],
         "general/use_login_shell": false,
         "general/user_modules": [],
