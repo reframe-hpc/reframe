@@ -359,6 +359,7 @@ def test_system_create():
     }]
     assert partition.local_env.variables == {'FOO_GPU': 'yes'}
     assert partition.max_jobs == 10
+    assert partition.time_limit is None
     assert len(partition.environs) == 2
     assert partition.environment('PrgEnv-gnu').cc == 'cc'
     assert partition.environment('PrgEnv-gnu').cflags == []
