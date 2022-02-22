@@ -45,12 +45,6 @@ def local_only(scheduler):
 
 
 @pytest.fixture
-def lsf_only(scheduler):
-    if scheduler.registered_name != 'lsf':
-        pytest.skip('test is relevant only for the LSF backend')
-
-
-@pytest.fixture
 def exec_ctx(make_exec_ctx, scheduler):
     if test_util.USER_CONFIG_FILE and scheduler.registered_name != 'local':
         make_exec_ctx(test_util.USER_CONFIG_FILE, test_util.USER_SYSTEM)
@@ -180,6 +174,15 @@ def _expected_sge_directives(job):
     ])
 
 
+def _expected_sge_directives_minimal(job):
+    return set([
+        f'#$ -N "testjob"',
+        f'#$ -o {job.stdout}',
+        f'#$ -e {job.stderr}',
+        f'#$ -wd {job.workdir}'
+    ])
+
+
 def _expected_slurm_directives(job):
     return set([
         '#SBATCH --job-name="testjob"',
@@ -201,25 +204,41 @@ def _expected_slurm_directives(job):
     ])
 
 
+def _expected_slurm_directives_minimal(job):
+    return set([
+        '#SBATCH --job-name="testjob"',
+        '#SBATCH --output=%s' % job.stdout,
+        '#SBATCH --error=%s' % job.stderr,
+        '#SBATCH --ntasks=%s' % job.num_tasks
+    ])
+
+
 _expected_squeue_directives = _expected_slurm_directives
+_expected_squeue_directives_minimal = _expected_slurm_directives_minimal
 
 
 def _expected_pbs_directives(job):
     num_nodes = job.num_tasks // job.num_tasks_per_node
     num_cpus_per_node = job.num_cpus_per_task * job.num_tasks_per_node
     return set([
-        '#PBS -N testjob',
-        '#PBS -l walltime=0:5:0',
-        '#PBS -o %s' % job.stdout,
-        '#PBS -e %s' % job.stderr,
-        '#PBS -l select=%s:mpiprocs=%s:ncpus=%s'
-        ':mem=100GB:cpu_type=haswell' % (num_nodes,
-                                         job.num_tasks_per_node,
-                                         num_cpus_per_node),
-        '#PBS --account=spam',
-        '#PBS --gres=gpu:4',
-        '#DW jobdw capacity=100GB',
-        '#DW stage_in source=/foo'
+        f'#PBS -N testjob',
+        f'#PBS -l walltime=0:5:0',
+        f'#PBS -o {job.stdout}',
+        f'#PBS -e {job.stderr}',
+        f'#PBS -l select={num_nodes}:mpiprocs={job.num_tasks_per_node}:ncpus={num_cpus_per_node}:mem=100GB:cpu_type=haswell',    # noqa: E501
+        f'#PBS --account=spam',
+        f'#PBS --gres=gpu:4',
+        f'#DW jobdw capacity=100GB',
+        f'#DW stage_in source=/foo'
+    ])
+
+
+def _expected_pbs_directives_minimal(job):
+    return set([
+        f'#PBS -N testjob',
+        f'#PBS -o {job.stdout}',
+        f'#PBS -e {job.stderr}',
+        f'#PBS -l select=1:mpiprocs=1:ncpus=1'
     ])
 
 
@@ -227,16 +246,25 @@ def _expected_torque_directives(job):
     num_nodes = job.num_tasks // job.num_tasks_per_node
     num_cpus_per_node = job.num_cpus_per_task * job.num_tasks_per_node
     return set([
-        '#PBS -N testjob',
-        '#PBS -l walltime=0:5:0',
-        '#PBS -o %s' % job.stdout,
-        '#PBS -e %s' % job.stderr,
-        '#PBS -l nodes=%s:ppn=%s:haswell' % (num_nodes, num_cpus_per_node),
-        '#PBS -l mem=100GB',
-        '#PBS --account=spam',
-        '#PBS --gres=gpu:4',
-        '#DW jobdw capacity=100GB',
-        '#DW stage_in source=/foo'
+        f'#PBS -N testjob',
+        f'#PBS -l walltime=0:5:0',
+        f'#PBS -o {job.stdout}',
+        f'#PBS -e {job.stderr}',
+        f'#PBS -l nodes={num_nodes}:ppn={num_cpus_per_node}:haswell',
+        f'#PBS -l mem=100GB',
+        f'#PBS --account=spam',
+        f'#PBS --gres=gpu:4',
+        f'#DW jobdw capacity=100GB',
+        f'#DW stage_in source=/foo'
+    ])
+
+
+def _expected_torque_directives_minimal(job):
+    return set([
+        f'#PBS -N testjob',
+        f'#PBS -o {job.stdout}',
+        f'#PBS -e {job.stderr}',
+        f'#PBS -l nodes=1:ppn=1'
     ])
 
 
@@ -255,7 +283,20 @@ def _expected_oar_directives(job):
     ])
 
 
+def _expected_oar_directives_minimal(job):
+    return set([
+        f'#OAR -n "testjob"',
+        f'#OAR -O {job.stdout}',
+        f'#OAR -E {job.stderr}',
+        f'#OAR -l /host=1/core=1'
+    ])
+
+
 def _expected_local_directives(job):
+    return set()
+
+
+def _expected_local_directives_minimal(job):
     return set()
 
 
@@ -276,7 +317,7 @@ def test_prepare(fake_job):
     assert expected_directives(fake_job) == found_directives
 
 
-def test_prepare_num_tasks_only(minimal_job, lsf_only):
+def test_prepare_minimal(minimal_job):
     prepare_job(minimal_job)
     with open(minimal_job.script_filename) as fp:
         found_directives = set(re.findall(r'^\#\S+ .*', fp.read(),
