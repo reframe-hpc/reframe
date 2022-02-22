@@ -31,12 +31,12 @@ class CPMDCheck(rfm.RunOnlyRegressionTest):
     allref = {
         '9': {
             'p100': {
-                'time': (285.5, None, 0.20, 's')
+                'time': (284, None, 0.15, 's')
             },
         },
         '16': {
             'p100': {
-                'time': (245.0, None, 0.59, 's')
+                'time': (226, None, 0.15, 's')
             }
         }
     }

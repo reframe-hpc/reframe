@@ -224,7 +224,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: .. versionchanged:: 3.10.0
     #:    Setting the :attr:`name` attribute is deprecated.
     #:
-    name = deprecate(variable(typ.Str[r'[^\/]+'], attr_name='_rfm_unique_name'),
+    name = deprecate(variable(typ.Str[r'[^\/]+'],
+                              attr_name='_rfm_unique_name', loggable=True),
                      "setting the 'name' attribute is deprecated and "
                      "will be disabled in the future", DEPRECATE_WR)
 
@@ -248,7 +249,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #:     .. versionchanged:: 3.6
     #:        Default value changed from ``None`` to ``required``.
-    valid_prog_environs = variable(typ.List[str])
+    valid_prog_environs = variable(typ.List[str], loggable=True)
 
     #: List of systems supported by this test.
     #: The general syntax for systems is ``<sysname>[:<partname>]``.
@@ -263,13 +264,13 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #:     .. versionchanged:: 3.6
     #:        Default value changed from ``None`` to ``required``.
-    valid_systems = variable(typ.List[str])
+    valid_systems = variable(typ.List[str], loggable=True)
 
     #: A detailed description of the test.
     #:
     #: :type: :class:`str`
     #: :default: ``self.display_name``
-    descr = variable(str)
+    descr = variable(str, loggable=True)
 
     #: The path to the source file or source directory of the test.
     #:
@@ -287,7 +288,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`str`
     #: :default: ``''``
-    sourcepath = variable(str, value='')
+    sourcepath = variable(str, value='', loggable=True)
 
     #: The directory containing the test's resources.
     #:
@@ -317,7 +318,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:     .. versionchanged:: 3.0
     #:        Default value is now conditionally set to either ``'src'`` or
     #:        :class:`None`.
-    sourcesdir = variable(str, type(None), value='src')
+    sourcesdir = variable(str, type(None), value='src', loggable=True)
 
     #: .. versionadded:: 2.14
     #:
@@ -346,7 +347,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    prebuild_cmds = variable(typ.List[str], value=[])
+    prebuild_cmds = variable(typ.List[str], value=[], loggable=True)
 
     #: .. versionadded:: 3.0
     #:
@@ -358,7 +359,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    postbuild_cmds = variable(typ.List[str], value=[])
+    postbuild_cmds = variable(typ.List[str], value=[], loggable=True)
 
     #: The name of the executable to be launched during the run phase.
     #:
@@ -373,13 +374,13 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: .. versionchanged:: 3.7.3
     #:    Default value changed from ``os.path.join('.', self.unique_name)`` to
     #:    :class:`required`.
-    executable = variable(str)
+    executable = variable(str, loggable=True)
 
     #: List of options to be passed to the :attr:`executable`.
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    executable_opts = variable(typ.List[str], value=[])
+    executable_opts = variable(typ.List[str], value=[], loggable=True)
 
     #: .. versionadded:: 2.20
     #:
@@ -416,7 +417,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    prerun_cmds = variable(typ.List[str], value=[])
+    prerun_cmds = variable(typ.List[str], value=[], loggable=True)
 
     #: .. versionadded:: 3.0
     #:
@@ -427,7 +428,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    postrun_cmds = variable(typ.List[str], value=[])
+    postrun_cmds = variable(typ.List[str], value=[], loggable=True)
 
     #: List of files to be kept after the test finishes.
     #:
@@ -447,7 +448,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: .. versionchanged:: 3.3
     #:    This field accepts now also file glob patterns.
     #:
-    keep_files = variable(typ.List[str], value=[])
+    keep_files = variable(typ.List[str], value=[], loggable=True)
 
     #: List of files or directories (relative to the :attr:`sourcesdir`) that
     #: will be symlinked in the stage directory and not copied.
@@ -457,7 +458,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    readonly_files = variable(typ.List[str], value=[])
+    readonly_files = variable(typ.List[str], value=[], loggable=True)
 
     #: Set of tags associated with this test.
     #:
@@ -465,7 +466,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`Set[str]`
     #: :default: an empty set
-    tags = variable(typ.Set[str], value=set())
+    tags = variable(typ.Set[str], value=set(), loggable=True)
 
     #: List of people responsible for this test.
     #:
@@ -473,7 +474,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    maintainers = variable(typ.List[str], value=[])
+    maintainers = variable(typ.List[str], value=[], loggable=True)
 
     #: Mark this test as a strict performance test.
     #:
@@ -483,7 +484,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: boolean
     #: :default: :class:`True`
-    strict_check = variable(typ.Bool, value=True)
+    strict_check = variable(typ.Bool, value=True, loggable=True)
 
     #: Number of tasks required by this test.
     #:
@@ -509,7 +510,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: .. |--flex-alloc-nodes| replace:: :attr:`--flex-alloc-nodes`
     #: .. _--flex-alloc-nodes: manpage.html#cmdoption-flex-alloc-nodes
-    num_tasks = variable(int, value=1)
+    num_tasks = variable(int, value=1, loggable=True)
 
     #: Number of tasks per node required by this test.
     #:
@@ -517,7 +518,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: integral or :class:`None`
     #: :default: :class:`None`
-    num_tasks_per_node = variable(int, type(None), value=None)
+    num_tasks_per_node = variable(int, type(None), value=None, loggable=True)
 
     #: Number of GPUs per node required by this test.
     #: This attribute is translated internally to the ``_rfm_gpu`` resource.
@@ -526,7 +527,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: integral
     #: :default: ``0``
-    num_gpus_per_node = variable(int, value=0)
+    num_gpus_per_node = variable(int, value=0, loggable=True)
 
     #: Number of CPUs per task required by this test.
     #:
@@ -534,7 +535,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: integral or :class:`None`
     #: :default: :class:`None`
-    num_cpus_per_task = variable(int, type(None), value=None)
+    num_cpus_per_task = variable(int, type(None), value=None, loggable=True)
 
     #: Number of tasks per core required by this test.
     #:
@@ -542,7 +543,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: integral or :class:`None`
     #: :default: :class:`None`
-    num_tasks_per_core = variable(int, type(None), value=None)
+    num_tasks_per_core = variable(int, type(None), value=None, loggable=True)
 
     #: Number of tasks per socket required by this test.
     #:
@@ -550,7 +551,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: integral or :class:`None`
     #: :default: :class:`None`
-    num_tasks_per_socket = variable(int, type(None), value=None)
+    num_tasks_per_socket = variable(int, type(None), value=None, loggable=True)
 
     #: Specify whether this tests needs simultaneous multithreading enabled.
     #:
@@ -558,7 +559,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: boolean or :class:`None`
     #: :default: :class:`None`
-    use_multithreading = variable(typ.Bool, type(None), value=None)
+    use_multithreading = variable(
+        typ.Bool, type(None), value=None, loggable=True)
 
     #: .. versionadded:: 3.0
     #:
@@ -569,19 +571,20 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: :type: :class:`str` or :class:`datetime.timedelta`
     #: :default: :class:`None`
     max_pending_time = variable(
-        type(None), field=fields.TimerField, value=None)
+        type(None), field=fields.TimerField, value=None, loggable=True
+    )
 
     #: Specify whether this test needs exclusive access to nodes.
     #:
     #: :type: boolean
     #: :default: :class:`False`
-    exclusive_access = variable(typ.Bool, value=False)
+    exclusive_access = variable(typ.Bool, value=False, loggable=True)
 
     #: Always execute this test locally.
     #:
     #: :type: boolean
     #: :default: :class:`False`
-    local = variable(typ.Bool, value=False)
+    local = variable(typ.Bool, value=False, loggable=True)
 
     #: The set of reference values for this test.
     #:
@@ -704,7 +707,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: :type: :class:`List[str]`
     #: :default: ``[]``
     modules = variable(typ.List[str], typ.List[typ.Dict[str, object]],
-                       value=[])
+                       value=[], loggable=True)
 
     #: Environment variables to be set before running this test.
     #:
@@ -712,7 +715,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`Dict[str, str]`
     #: :default: ``{}``
-    variables = variable(typ.Dict[str, str], value={})
+    variables = variable(typ.Dict[str, str], value={}, loggable=True)
 
     #: Time limit for this test.
     #:
@@ -743,7 +746,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #:    .. |time_limit| replace:: :attr:`time_limit`
     #:    .. _time_limit: #.systems[].partitions[].time_limit
-    time_limit = variable(type(None), field=fields.TimerField, value=None)
+    time_limit = variable(type(None), field=fields.TimerField,
+                          value=None, loggable=True)
 
     #: .. versionadded:: 3.5.1
     #:
@@ -754,7 +758,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: :type: :class:`str` or :class:`float` or :class:`int`
     #: :default: :class:`None`
     build_time_limit = variable(type(None), field=fields.TimerField,
-                                value=None)
+                                value=None, loggable=True)
 
     #: .. versionadded:: 2.8
     #:
@@ -826,7 +830,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:    .. versionchanged:: 2.9
     #:       A new more powerful syntax was introduced
     #:       that allows also custom job script directive prefixes.
-    extra_resources = variable(typ.Dict[str, typ.Dict[str, object]], value={})
+    extra_resources = variable(typ.Dict[str, typ.Dict[str, object]],
+                               value={}, loggable=True)
 
     #: .. versionadded:: 3.3
     #:
@@ -841,7 +846,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: appropriate sanity check.
     #:
     #: :type: boolean : :default: :class:`True`
-    build_locally = variable(typ.Bool, value=True)
+    build_locally = variable(typ.Bool, value=True, loggable=True)
 
     def __new__(cls, *args, **kwargs):
         obj = super().__new__(cls)
@@ -1035,6 +1040,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     # Export read-only views to interesting fields
 
+    @loggable
     @property
     def unique_name(self):
         '''The unique name of this test.
@@ -1045,6 +1051,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         '''
         return self._rfm_unique_name
 
+    @loggable
     @property
     def display_name(self):
         '''A human-readable version of the name this test.
@@ -1186,6 +1193,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         if not var_space[name].is_defined():
             setattr(self, name, value)
 
+    @loggable
     @property
     def perfvalues(self):
         return util.MappingView(self._perfvalues)
@@ -1208,6 +1216,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         '''
         return logging.getlogger()
 
+    @loggable
     @property
     def prefix(self):
         '''The prefix directory of the test.
@@ -1216,6 +1225,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         '''
         return self._prefix
 
+    @loggable
     @property
     def stagedir(self):
         '''The stage directory of the test.
@@ -1226,6 +1236,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         '''
         return self._stagedir
 
+    @loggable
     @property
     def outputdir(self):
         '''The output directory of the test.
@@ -1281,6 +1292,49 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     @deferrable
     def build_stderr(self):
         return self.build_job.stderr if self.build_job else None
+
+    # Various properties useful only for logging
+
+    @loggable_as('system')
+    @property
+    def _system_name(self):
+        return self.current_system.name
+
+    @loggable_as('partition')
+    @property
+    def _partition_name(self):
+        if self.current_partition:
+            return self.current_partition.name
+
+    @loggable_as('environ')
+    @property
+    def _environ_name(self):
+        if self.current_environ:
+            return self.current_environ.name
+
+    @loggable_as('jobid')
+    @property
+    def _jobid(self):
+        if self.job:
+            return self.job.jobid
+
+    @loggable_as('job_completion_time_unix')
+    @property
+    def _job_completion_time(self):
+        if self.job:
+            return self.job.completion_time
+
+    @loggable_as('job_exitcode')
+    @property
+    def _job_exitcode(self):
+        if self.job:
+            return self.job.exitcode
+
+    @loggable_as('job_nodelist')
+    @property
+    def _job_nodelist(self):
+        if self.job:
+            return self.job.nodelist
 
     def info(self):
         '''Provide live information for this test.

@@ -12,7 +12,6 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class NamdCheck(rfm.RunOnlyRegressionTest):
     scale = parameter(['small', 'large'])
-    variant = parameter(['maint', 'prod'])
     arch = parameter(['gpu', 'cpu'])
 
     valid_prog_environs = ['builtin', 'cpeGNU']
@@ -30,10 +29,8 @@ class NamdCheck(rfm.RunOnlyRegressionTest):
 
     @run_after('init')
     def adapt_description(self):
-        self.descr = f'NAMD check ({self.arch}, {self.variant})'
-        self.tags |= {
-            'maintenance' if self.variant == 'maint' else 'production'
-        }
+        self.descr = f'NAMD check ({self.arch})'
+        self.tags |= {'maintenance', 'production'}
 
     @run_after('init')
     def adapt_valid_systems(self):
@@ -106,24 +103,24 @@ class NamdCheck(rfm.RunOnlyRegressionTest):
         if self.arch == 'gpu':
             if self.scale == 'small':
                 self.reference = {
-                    'dom:gpu': {'days_ns': (0.15, None, 0.05, 'days/ns')},
-                    'daint:gpu': {'days_ns': (0.15, None, 0.05, 'days/ns')}
+                    'dom:gpu': {'days_ns': (0.147, None, 0.10, 'days/ns')},
+                    'daint:gpu': {'days_ns': (0.147, None, 0.10, 'days/ns')}
                 }
             else:
                 self.reference = {
-                    'daint:gpu': {'days_ns': (0.07, None, 0.05, 'days/ns')}
+                    'daint:gpu': {'days_ns': (0.074, None, 0.10, 'days/ns')}
                 }
         else:
             if self.scale == 'small':
                 self.reference = {
-                    'dom:mc': {'days_ns': (0.51, None, 0.05, 'days/ns')},
-                    'daint:mc': {'days_ns': (0.51, None, 0.05, 'days/ns')},
+                    'dom:mc': {'days_ns': (0.52, None, 0.05, 'days/ns')},
+                    'daint:mc': {'days_ns': (0.52, None, 0.05, 'days/ns')},
                     'eiger:mc': {'days_ns': (0.12, None, 0.05, 'days/ns')},
                     'pilatus:mc': {'days_ns': (0.12, None, 0.05, 'days/ns')},
                 }
             else:
                 self.reference = {
-                    'daint:mc': {'days_ns': (0.28, None, 0.05, 'days/ns')},
+                    'daint:mc': {'days_ns': (0.272, None, 0.05, 'days/ns')},
                     'eiger:mc': {'days_ns': (0.05, None, 0.05, 'days/ns')},
                     'pilatus:mc': {'days_ns': (0.05, None, 0.05, 'days/ns')}
                 }
