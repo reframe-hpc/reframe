@@ -235,9 +235,14 @@ Picking a System Configuration
 
 As discussed previously, ReFrame's configuration file can store the configurations for multiple systems.
 When launched, ReFrame will pick the first matching configuration and load it.
-This process is performed as follows:
-ReFrame first tries to obtain the hostname from ``/etc/xthostname``, which provides the unqualified *machine name* in Cray systems.
-If this cannot be found, the hostname will be obtained from the standard ``hostname`` command.
+
+There are three ways in which the system name can be determined.
+They can be specified in the configuration through the ``hostname_cmd`` option which can take one of the three values ``'hostname'``, ``fqdn`` or ``'xthostname'``.
+When ``hostname_cmd`` is set to ``'hostname'``, which is the default value, ReFrame will detect the system using Python's ``socket.gethostname()``.
+Similarly, with ``'hostname'``, ReFrame will use ``socket.getfqdn()``.
+With ``'xthostname'``, ReFrame first tries to obtain the hostname from ``/etc/xthostname``, which provides the unqualified *machine name* in Cray systems.
+If this cannot be found, ReFrame falls back to the ``'hostname'`` option.
+
 Having retrieved the hostname, ReFrame goes through all the systems in its configuration and tries to match the hostname against any of the patterns defined in each system's ``hostnames`` property.
 The detection process stops at the first match found, and that system's configuration is selected.
 

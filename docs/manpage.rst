@@ -784,7 +784,6 @@ Miscellaneous options
    If this option is not specified, ReFrame will try to pick the correct configuration entry automatically.
    It does so by trying to match the hostname of the current machine again the hostname patterns defined in the :js:attr:`hostnames` system configuration parameter.
    The system with the first match becomes the current system.
-   For Cray systems, ReFrame will first look for the *unqualified machine name* in ``/etc/xthostname`` before trying retrieving the hostname of the current machine.
 
    This option can also be set using the :envvar:`RFM_SYSTEM` environment variable.
 

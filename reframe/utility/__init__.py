@@ -27,7 +27,7 @@ from . import typecheck as typ
 
 def get_hostname_cmd(hostname_cmd, logger=None):
     if hostname_cmd == 'xthostname':
-        if os.path.exists('/etc/xthostnamex'):
+        if os.path.exists('/etc/xthostname'):
             # Get the cluster name on Cray systems
             with open('/etc/xthostname') as fp:
                 return fp.read()
