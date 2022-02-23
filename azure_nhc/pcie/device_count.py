@@ -67,9 +67,9 @@ class IBCardCheck(rfm.RunOnlyRegressionTest):
             if 'ngpus' in vm_info['nhc_values']:
                 num_gpus = vm_info['nhc_values']['ngpus']
 
-            print("IB Devices: {} : expected {}".format(sn.count(ib_devices), num_ib_cards))
-            print("NVMe Disks: {} : expected {}".format(sn.count(nvme_devices), num_nvme_disks))
-            print("GPUs {} : expected {}".format(sn.count(gpu_devices), num_gpus))
+            print("IB Devices : {} : expected {}".format(sn.count(ib_devices), num_ib_cards))
+            print("NVMe Disks : {} : expected {}".format(sn.count(nvme_devices), num_nvme_disks))
+            print("GPUs       : {} : expected {}".format(sn.count(gpu_devices), num_gpus))
 
             return sn.all([
                 sn.assert_eq(sn.count(ib_devices), num_ib_cards),
