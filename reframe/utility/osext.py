@@ -28,7 +28,7 @@ from reframe.core.exceptions import (ReframeError, SpawnedProcessError,
 from . import OrderedSet
 
 
-def run_command(cmd, check=False, timeout=None, shell=False, log=True):
+def run_command(cmd, check=False, timeout=None, **kwargs):
     '''Run command synchronously.
 
     This function will block until the command executes or the timeout is
@@ -39,9 +39,7 @@ def run_command(cmd, check=False, timeout=None, shell=False, log=True):
         :func:`run_command_async` for more details.
     :arg check: Raise an error if the command exits with a non-zero exit code.
     :arg timeout: Timeout in seconds.
-    :arg shell: Spawn a new shell to execute the command.
-    :arg log: Log the execution of the command through ReFrame's logging
-        facility.
+    :arg kwargs: Keyword arguments to be passed :func:`run_command_async`.
     :returns: A :py:class:`subprocess.CompletedProcess` object with
         information about the command's outcome.
     :raises reframe.core.exceptions.SpawnedProcessError: If ``check``
@@ -52,8 +50,7 @@ def run_command(cmd, check=False, timeout=None, shell=False, log=True):
     '''
 
     try:
-        proc = run_command_async(cmd, shell=shell, start_new_session=True,
-                                 log=log)
+        proc = run_command_async(cmd, start_new_session=True, **kwargs)
         proc_stdout, proc_stderr = proc.communicate(timeout=timeout)
     except subprocess.TimeoutExpired as e:
         os.killpg(proc.pid, signal.SIGKILL)
@@ -112,7 +109,6 @@ def run_command_async(cmd,
     return subprocess.Popen(args=cmd,
                             stdout=stdout,
                             stderr=stderr,
-                            stdin=subprocess.DEVNULL,
                             universal_newlines=True,
                             shell=shell,
                             **popen_args)
