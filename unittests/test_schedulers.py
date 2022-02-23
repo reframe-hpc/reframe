@@ -134,19 +134,27 @@ def assert_job_script_sanity(job):
 
 
 def _expected_lsf_directives(job):
-    num_tasks = job.num_tasks or 1
-    num_tasks_per_node = job.num_tasks_per_node or 1
-    num_nodes = int(num_tasks // num_tasks_per_node)
     return set([
         f'#BSUB -J testjob',
         f'#BSUB -o {job.stdout}',
         f'#BSUB -e {job.stderr}',
-        f'#BSUB -nnodes {num_nodes}',
+        f'#BSUB -nnodes {job.num_tasks // job.num_tasks_per_node}',
         f'#BSUB -W {int(job.time_limit // 60)}',
+        f'#BSUB -R "affinity[core({job.num_cpus_per_task})]"',
+        f'#BSUB -x',
         f'#BSUB --account=spam',
         f'#BSUB --gres=gpu:4',
         f'#DW jobdw capacity=100GB',
         f'#DW stage_in source=/foo',
+    ])
+
+
+def _expected_lsf_directives_minimal(job):
+    return set([
+        f'#BSUB -J testjob',
+        f'#BSUB -o {job.stdout}',
+        f'#BSUB -e {job.stderr}',
+        f'#BSUB -n {job.num_tasks}'
     ])
 
 
@@ -163,6 +171,15 @@ def _expected_sge_directives(job):
         f'#$ --account=spam',
         f'#DW jobdw capacity=100GB',
         f'#DW stage_in source=/foo'
+    ])
+
+
+def _expected_sge_directives_minimal(job):
+    return set([
+        f'#$ -N "testjob"',
+        f'#$ -o {job.stdout}',
+        f'#$ -e {job.stderr}',
+        f'#$ -wd {job.workdir}'
     ])
 
 
@@ -187,25 +204,41 @@ def _expected_slurm_directives(job):
     ])
 
 
+def _expected_slurm_directives_minimal(job):
+    return set([
+        '#SBATCH --job-name="testjob"',
+        '#SBATCH --output=%s' % job.stdout,
+        '#SBATCH --error=%s' % job.stderr,
+        '#SBATCH --ntasks=%s' % job.num_tasks
+    ])
+
+
 _expected_squeue_directives = _expected_slurm_directives
+_expected_squeue_directives_minimal = _expected_slurm_directives_minimal
 
 
 def _expected_pbs_directives(job):
     num_nodes = job.num_tasks // job.num_tasks_per_node
     num_cpus_per_node = job.num_cpus_per_task * job.num_tasks_per_node
     return set([
-        '#PBS -N testjob',
-        '#PBS -l walltime=0:5:0',
-        '#PBS -o %s' % job.stdout,
-        '#PBS -e %s' % job.stderr,
-        '#PBS -l select=%s:mpiprocs=%s:ncpus=%s'
-        ':mem=100GB:cpu_type=haswell' % (num_nodes,
-                                         job.num_tasks_per_node,
-                                         num_cpus_per_node),
-        '#PBS --account=spam',
-        '#PBS --gres=gpu:4',
-        '#DW jobdw capacity=100GB',
-        '#DW stage_in source=/foo'
+        f'#PBS -N testjob',
+        f'#PBS -l walltime=0:5:0',
+        f'#PBS -o {job.stdout}',
+        f'#PBS -e {job.stderr}',
+        f'#PBS -l select={num_nodes}:mpiprocs={job.num_tasks_per_node}:ncpus={num_cpus_per_node}:mem=100GB:cpu_type=haswell',    # noqa: E501
+        f'#PBS --account=spam',
+        f'#PBS --gres=gpu:4',
+        f'#DW jobdw capacity=100GB',
+        f'#DW stage_in source=/foo'
+    ])
+
+
+def _expected_pbs_directives_minimal(job):
+    return set([
+        f'#PBS -N testjob',
+        f'#PBS -o {job.stdout}',
+        f'#PBS -e {job.stderr}',
+        f'#PBS -l select=1:mpiprocs=1:ncpus=1'
     ])
 
 
@@ -213,16 +246,25 @@ def _expected_torque_directives(job):
     num_nodes = job.num_tasks // job.num_tasks_per_node
     num_cpus_per_node = job.num_cpus_per_task * job.num_tasks_per_node
     return set([
-        '#PBS -N testjob',
-        '#PBS -l walltime=0:5:0',
-        '#PBS -o %s' % job.stdout,
-        '#PBS -e %s' % job.stderr,
-        '#PBS -l nodes=%s:ppn=%s:haswell' % (num_nodes, num_cpus_per_node),
-        '#PBS -l mem=100GB',
-        '#PBS --account=spam',
-        '#PBS --gres=gpu:4',
-        '#DW jobdw capacity=100GB',
-        '#DW stage_in source=/foo'
+        f'#PBS -N testjob',
+        f'#PBS -l walltime=0:5:0',
+        f'#PBS -o {job.stdout}',
+        f'#PBS -e {job.stderr}',
+        f'#PBS -l nodes={num_nodes}:ppn={num_cpus_per_node}:haswell',
+        f'#PBS -l mem=100GB',
+        f'#PBS --account=spam',
+        f'#PBS --gres=gpu:4',
+        f'#DW jobdw capacity=100GB',
+        f'#DW stage_in source=/foo'
+    ])
+
+
+def _expected_torque_directives_minimal(job):
+    return set([
+        f'#PBS -N testjob',
+        f'#PBS -o {job.stdout}',
+        f'#PBS -e {job.stderr}',
+        f'#PBS -l nodes=1:ppn=1'
     ])
 
 
@@ -241,7 +283,20 @@ def _expected_oar_directives(job):
     ])
 
 
+def _expected_oar_directives_minimal(job):
+    return set([
+        f'#OAR -n "testjob"',
+        f'#OAR -O {job.stdout}',
+        f'#OAR -E {job.stderr}',
+        f'#OAR -l /host=1/core=1'
+    ])
+
+
 def _expected_local_directives(job):
+    return set()
+
+
+def _expected_local_directives_minimal(job):
     return set()
 
 
@@ -260,6 +315,20 @@ def test_prepare(fake_job):
     expected_directives = globals()[f'_expected_{sched_name}_directives']
     assert_job_script_sanity(fake_job)
     assert expected_directives(fake_job) == found_directives
+
+
+def test_prepare_minimal(minimal_job):
+    prepare_job(minimal_job)
+    with open(minimal_job.script_filename) as fp:
+        found_directives = set(re.findall(r'^\#\S+ .*', fp.read(),
+                                          re.MULTILINE))
+
+    sched_name = minimal_job.scheduler.registered_name
+    expected_directives = globals()[
+        f'_expected_{sched_name}_directives_minimal'
+    ]
+    assert_job_script_sanity(minimal_job)
+    assert expected_directives(minimal_job) == found_directives
 
 
 def test_prepare_no_exclusive(make_job, slurm_only):

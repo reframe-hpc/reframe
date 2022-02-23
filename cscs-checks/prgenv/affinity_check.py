@@ -13,12 +13,6 @@ import reframe.utility.osext as osext
 from reframe.core.exceptions import SanityError
 
 
-def add_prgenv_nvidia(self):
-    cs = self.current_system.name
-    if cs in {'daint', 'dom'}:
-        self.valid_prog_environs += ['PrgEnv-nvidia']
-
-
 @rfm.simple_test
 class CompileAffinityTool(rfm.CompileOnlyRegressionTest):
     valid_systems = [
@@ -27,7 +21,7 @@ class CompileAffinityTool(rfm.CompileOnlyRegressionTest):
         'ault:amdv100'
     ]
     valid_prog_environs = [
-        'PrgEnv-gnu', 'PrgEnv-cray', 'PrgEnv-intel', 'PrgEnv-pgi'
+        'PrgEnv-gnu', 'PrgEnv-cray', 'PrgEnv-intel', 'PrgEnv-nvidia'
     ]
     build_system = 'Make'
 
@@ -40,8 +34,6 @@ class CompileAffinityTool(rfm.CompileOnlyRegressionTest):
     maintainers = ['RS', 'SK']
     tags = {'production', 'scs', 'maintenance', 'craype'}
 
-    run_after('init')(bind(add_prgenv_nvidia))
-
     @run_before('compile')
     def set_build_opts(self):
         self.build_system.options = ['-C affinity', 'MPI=1']
@@ -50,7 +42,7 @@ class CompileAffinityTool(rfm.CompileOnlyRegressionTest):
     def prgenv_nvidia_workaround(self):
         cs = self.current_system.name
         ce = self.current_environ.name
-        if ce == 'PrgEnv-nvidia' and cs == 'dom':
+        if ce == 'PrgEnv-nvidia':
             self.build_system.cppflags = [
                 '-D__GCC_ATOMIC_TEST_AND_SET_TRUEVAL'
             ]
@@ -103,7 +95,7 @@ class AffinityTestBase(rfm.RunOnlyRegressionTest):
         'ault:amdv100'
     ]
     valid_prog_environs = [
-        'PrgEnv-gnu', 'PrgEnv-cray', 'PrgEnv-intel', 'PrgEnv-pgi'
+        'PrgEnv-gnu', 'PrgEnv-cray', 'PrgEnv-intel', 'PrgEnv-nvidia'
     ]
 
     # Dict with the partition's topology - output of "lscpu -e"
@@ -122,8 +114,6 @@ class AffinityTestBase(rfm.RunOnlyRegressionTest):
 
     maintainers = ['RS', 'SK']
     tags = {'production', 'scs', 'maintenance', 'craype'}
-
-    run_after('init')(bind(add_prgenv_nvidia))
 
     @run_after('init')
     def set_deps(self):

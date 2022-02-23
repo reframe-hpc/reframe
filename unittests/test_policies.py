@@ -12,6 +12,7 @@ import socket
 import sys
 import time
 
+import reframe as rfm
 import reframe.core.runtime as rt
 import reframe.frontend.dependencies as dependencies
 import reframe.frontend.executors as executors
@@ -929,3 +930,36 @@ def test_restore_session(report_file, make_runner,
 
     with pytest.raises(ReframeError, match=r'could not restore testcase'):
         report.restore_dangling(testgraph)
+
+
+@pytest.fixture
+def generic2_exec_ctx(request, make_exec_ctx_g):
+    yield from make_exec_ctx_g(system='generic2')
+
+
+def test_config_params(make_runner, make_exec_ctx):
+    '''Test that configuration parameters are properly retrieved with the
+    various execution policies.
+    '''
+
+    class T(rfm.RunOnlyRegressionTest):
+        valid_systems = ['generic2']
+        valid_prog_environs = ['*']
+        executable = 'echo'
+
+        @sanity_function
+        def validate(self):
+            return True
+
+        @run_after('setup')
+        def assert_git_timeout(self):
+            expected = 10 if self.current_partition.name == 'part1' else 20
+            timeout = rt.runtime().get_option('general/0/git_timeout')
+            assert timeout == expected
+
+    make_exec_ctx(system='generic2')
+    runner = make_runner()
+    testcases = executors.generate_testcases([T()])
+    runner.runall(testcases)
+    assert runner.stats.num_cases() == 2
+    assert not runner.stats.failed()
