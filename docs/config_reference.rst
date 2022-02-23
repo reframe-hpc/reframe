@@ -240,6 +240,9 @@ System Partition Configuration
    .. versionadded:: 3.8.2
       Support for the OAR scheduler is added.
 
+   .. versionadded:: 3.11.0
+      Support for the LSF scheduler is added.
+
    .. note::
 
       The way that multiple node jobs are submitted using the SGE scheduler can be very site-specific.
@@ -873,7 +876,7 @@ All logging handlers share the following set of common attributes:
 .. versionadded:: 3.4.2
    Allow arbitrary job attributes to be logged.
 
-.. versionchanged:: 3.10.2
+.. versionchanged:: 3.11.0
    Limit the number of attributes that can be logged. User attributes or properties must be explicitly marked as "loggable" in order to be selectable for logging.
 
 
