@@ -23,6 +23,9 @@ class IBCardCheck(rfm.RunOnlyRegressionTest):
         # Get node_data
         vm_info = self.current_system.node_data
 
+        # Ideas for refactoring:
+        # - get each name from ibstat -l and then check each one with ibstatus
+        #   to see if the link_layer is InfiniBand or Ethernet (AccelNet)
         ib_cards = sn.extractall(
             r'(mlx5_ib[0-9]+)', self.stdout
             #r'(?P<name>\S+)', self.stdout

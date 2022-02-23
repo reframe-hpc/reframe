@@ -65438,6 +65438,10 @@
             "ib_cutoff_8b_latency": 2.3,
             "ib_cutoff_4Mb_bibw": 20000,
             "ib_link_layer": "InfiniBand",
+            "nvme_disks": 2,
+            "pcie_ib_name": "Infiniband controller: Mellanox Technologies MT28908 Family",
+            "pcie_nvme_name": "Non-Volatile memory controller: Microsoft Corporation Device b111",
+            "pcie_accel_net_name": "Ethernet controller: Mellanox Technologies MT27710 Family",
             "vm_ram": 448,
             "sriov_enabled": true,
             "stream_triad": 320000
@@ -65591,6 +65595,10 @@
             "ib_cutoff_8b_latency": 2.3,
             "ib_cutoff_4Mb_bibw": 20000,
             "ib_link_layer": "InfiniBand",
+            "nvme_disks": 2,
+            "pcie_ib_name": "Infiniband controller: Mellanox Technologies MT28908 Family",
+            "pcie_nvme_name": "Non-Volatile memory controller: Microsoft Corporation Device b111",
+            "pcie_accel_net_name": "Ethernet controller: Mellanox Technologies MT27710 Family",
             "vm_ram": 448,
             "sriov_enabled": true,
             "stream_triad": 320000
@@ -65744,6 +65752,10 @@
             "ib_cutoff_8b_latency": 2.3,
             "ib_cutoff_4Mb_bibw": 20000,
             "ib_link_layer": "InfiniBand",
+            "nvme_disks": 2,
+            "pcie_ib_name": "Infiniband controller: Mellanox Technologies MT28908 Family",
+            "pcie_nvme_name": "Non-Volatile memory controller: Microsoft Corporation Device b111",
+            "pcie_accel_net_name": "Ethernet controller: Mellanox Technologies MT27710 Family",
             "vm_ram": 448,
             "sriov_enabled": true,
             "stream_triad": 320000
@@ -65897,6 +65909,10 @@
             "ib_cutoff_8b_latency": 2.3,
             "ib_cutoff_4Mb_bibw": 20000,
             "ib_link_layer": "InfiniBand",
+            "nvme_disks": 2,
+            "pcie_ib_name": "Infiniband controller: Mellanox Technologies MT28908 Family",
+            "pcie_nvme_name": "Non-Volatile memory controller: Microsoft Corporation Device b111",
+            "pcie_accel_net_name": "Ethernet controller: Mellanox Technologies MT27710 Family",
             "vm_ram": 448,
             "sriov_enabled": true,
             "stream_triad": 320000
@@ -66180,6 +66196,10 @@
             "ib_cutoff_8b_latency": 2.3,
             "ib_cutoff_4Mb_bibw": 20000,
             "ib_link_layer": "InfiniBand",
+            "nvme_disks": 2,
+            "pcie_ib_name": "Infiniband controller: Mellanox Technologies MT28908 Family",
+            "pcie_nvme_name": "Non-Volatile memory controller: Microsoft Corporation Device b111",
+            "pcie_accel_net_name": "Ethernet controller: Mellanox Technologies MT27710 Family",
             "vm_ram": 448,
             "sriov_enabled": true,
             "stream_triad": 320000
@@ -66329,6 +66349,8 @@
             "ib_cutoff_8b_latency": 2.5,
             "ib_cutoff_4Mb_bibw": 10000,
             "ib_link_layer": "InfiniBand",
+            "pcie_ib_name": "Infiniband controller: Mellanox Technologies MT27800 Family",
+            "pcie_accel_net_name": "Ethernet controller: Mellanox Technologies MT27710 Family",
             "vm_ram": 224,
             "sriov_enabled": true,
             "stream_triad": 240000
@@ -66478,6 +66500,8 @@
             "ib_cutoff_8b_latency": 2.5,
             "ib_cutoff_4Mb_bibw": 10000,
             "ib_link_layer": "InfiniBand",
+            "pcie_ib_name": "Infiniband controller: Mellanox Technologies MT27800 Family",
+            "pcie_accel_net_name": "Ethernet controller: Mellanox Technologies MT27710 Family",
             "vm_ram": 224,
             "sriov_enabled": true,
             "stream_triad": 240000
@@ -66627,6 +66651,8 @@
             "ib_cutoff_8b_latency": 2.5,
             "ib_cutoff_4Mb_bibw": 10000,
             "ib_link_layer": "InfiniBand",
+            "pcie_ib_name": "Infiniband controller: Mellanox Technologies MT27800 Family",
+            "pcie_accel_net_name": "Ethernet controller: Mellanox Technologies MT27710 Family",
             "vm_ram": 224,
             "sriov_enabled": true,
             "stream_triad": 240000
@@ -66740,6 +66766,8 @@
             "ib_cutoff_8b_latency": 2.5,
             "ib_cutoff_4Mb_bibw": 10000,
             "ib_link_layer": "InfiniBand",
+            "pcie_ib_name": "Infiniband controller: Mellanox Technologies MT27800 Family",
+            "pcie_accel_net_name": "Ethernet controller: Mellanox Technologies MT27710 Family",
             "vm_ram": 224,
             "sriov_enabled": true,
             "stream_triad": 240000
@@ -66898,6 +66926,8 @@
             "ib_cutoff_8b_latency": 2.5,
             "ib_cutoff_4Mb_bibw": 10000,
             "ib_link_layer": "InfiniBand",
+            "pcie_ib_name": "Infiniband controller: Mellanox Technologies MT27800 Family",
+            "pcie_accel_net_name": "Ethernet controller: Mellanox Technologies MT27710 Family",
             "vm_ram": 346,
             "sriov_enabled": true,
             "stream_triad": 180000
@@ -67056,6 +67086,8 @@
             "ib_cutoff_8b_latency": 2.5,
             "ib_cutoff_4Mb_bibw": 10000,
             "ib_link_layer": "InfiniBand",
+            "pcie_ib_name": "Infiniband controller: Mellanox Technologies MT27800 Family",
+            "pcie_accel_net_name": "Ethernet controller: Mellanox Technologies MT27710 Family",
             "vm_ram": 346,
             "sriov_enabled": true,
             "stream_triad": 180000
@@ -67178,6 +67210,8 @@
             "ib_cutoff_8b_latency": 2.5,
             "ib_cutoff_4Mb_bibw": 10000,
             "ib_link_layer": "InfiniBand",
+            "pcie_ib_name": "Infiniband controller: Mellanox Technologies MT27800 Family",
+            "pcie_accel_net_name": "Ethernet controller: Mellanox Technologies MT27710 Family",
             "vm_ram": 346,
             "sriov_enabled": true,
             "stream_triad": 180000
@@ -77559,9 +77593,6 @@
         "series": "ndamsr_a100_v4",
         "nhc_values": {
             "processor": "amd",
-            "vm_ram": 1770,
-            "stream_triad": 320000,
-            "sriov_enabled": true,
             "ib_state": "PORT_ACTIVE",
             "ib_phys_state": "LINK_UP",
             "ib_cards": 8,
@@ -77570,7 +77601,15 @@
             "ib_cutoff_8b_latency": "2.5",
             "ib_cutoff_4Mb_bibw": "20000",
             "ib_link_layer": "InfiniBand",
-            "ngpus": 8
+            "ngpus": 8,
+            "nvme_disks": 8,
+            "pcie_ib_name": "Infiniband controller: Mellanox Technologies MT28908 Family",
+            "pcie_nvme_name": "Non-Volatile memory controller: Microsoft Corporation Device b111",
+            "pcie_accel_net_name": "Ethernet controller: Mellanox Technologies MT27710 Family",
+            "pcie_gpu_name": "3D controller: NVIDIA Corporation Device",
+            "vm_ram": 1770,
+            "sriov_enabled": true,
+            "stream_triad": 320000
         }
     },
     "Standard_ND96asr_v4": {
