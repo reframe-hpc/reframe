@@ -18,7 +18,7 @@ class OpenaccCudaCpp(rfm.RegressionTest):
         self.build_system = 'Make'
         self.build_system.fflags = ['-O2']
 
-        #FIXME Temporary workaround reducing the MPI tasks per node
+        # FIXME Temporary workaround reducing the MPI tasks per node
         # See https://jira.cscs.ch/browse/PROGENV-8 for Cray case
         if self.current_system.name in ['daint', 'dom']:
             self.num_tasks = 12
