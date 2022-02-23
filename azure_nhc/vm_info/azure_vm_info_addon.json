@@ -119,7 +119,14 @@
             "ib_cutoff_8b_latency": "2.5",
             "ib_cutoff_4Mb_bibw": "20000",
             "ib_link_layer": "InfiniBand",
-            "ngpus": 8
+            "ngpus": 8,
+	    "nvme_disks": 8,
+	    "pcie_ib_name": "Infiniband controller: Mellanox Technologies MT28908 Family",
+	    "pcie_nvme_name": "Non-Volatile memory controller: Microsoft Corporation Device b111",
+	    "pcie_accel_net_name": "Ethernet controller: Mellanox Technologies MT27710 Family",
+	    "pcie_gpu_name": "3D controller: NVIDIA Corporation Device",
+            "sriov_enabled": true,
+            "stream_triad": 320000
         },
         "standard NDAMSv4_A100Family": {
             "processor": "amd",
