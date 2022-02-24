@@ -124,8 +124,8 @@ class amber_nve_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
 
         self.prerun_cmds = [
             f'curl -LJO https://github.com/victorusu/amber_benchmark_suite'
-            f'/raw/main/amber_16_benchmark_suite/PME/{self.benchmark}.tar.bz2',
-            f'tar xf {self.benchmark}.tar.bz2'
+            f'/raw/main/amber_16_benchmark_suite/PME/{self.bench_name}.tar.bz2',
+            f'tar xf {self.bench_name}.tar.bz2'
         ]
         self.executable_opts = ['-O',
                                 '-i', self.input_file,
