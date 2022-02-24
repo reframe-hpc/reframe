@@ -109,7 +109,7 @@ class amber_nve_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
     @run_after('init')
     def prepare_test(self):
         self.__bench, self.__nrg_ref, self.__nrg_tol = self.benchmark_info
-        self.descr = f'Amber NVE {self.benchmark} benchmark ({self.variant})'
+        self.descr = f'Amber NVE {self.bench_name} benchmark ({self.variant})'
 
         params = {
             'mpi':  ('mdin.CPU', 'pmemd.MPI'),
