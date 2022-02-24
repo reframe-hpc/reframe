@@ -31,15 +31,15 @@ class IBCardCheck(rfm.RunOnlyRegressionTest):
             nvme_devices = []
             gpu_devices = []
             an_devices = []
-            if "ib_cards" in vm_info['nhc_values'] and "pcie_ib_name" in vm_info['nhc_values']:
+            if "ib_count" in vm_info['nhc_values'] and "pcie_ib_name" in vm_info['nhc_values']:
                 ib_devices = sn.extractall(
                     r'({})'.format(vm_info["nhc_values"]["pcie_ib_name"]), self.stdout
                 )
-            if "nvme_disks" in vm_info['nhc_values'] and "pcie_nvme_name" in vm_info['nhc_values']:
+            if "nvme_count" in vm_info['nhc_values'] and "pcie_nvme_name" in vm_info['nhc_values']:
                 nvme_devices = sn.extractall(
                     r'({})'.format(vm_info["nhc_values"]["pcie_nvme_name"]), self.stdout
                 )
-            if "ngpus" in vm_info['nhc_values'] and "pcie_gpu_name" in vm_info['nhc_values']:
+            if "gpu_count" in vm_info['nhc_values'] and "pcie_gpu_name" in vm_info['nhc_values']:
                 gpu_devices = sn.extractall(
                     r'({})'.format(vm_info["nhc_values"]["pcie_gpu_name"]), self.stdout
                 )
@@ -56,24 +56,24 @@ class IBCardCheck(rfm.RunOnlyRegressionTest):
             #print("Count: {}".format(sn.count(gpu_devices)))
             #print("PCIe Accel Net Cards: {}".format(an_devices))
         
-            num_ib_cards = 0
-            num_an_cards = 0
+            num_ib_count = 0
+            num_an_count = 0
             num_gpus = 0
-            num_nvme_disks = 0
-            if 'ib_cards' in vm_info['nhc_values']:
-                num_ib_cards = vm_info['nhc_values']['ib_cards']
-            if 'nvme_disks' in vm_info['nhc_values']:
-                num_nvme_disks = vm_info['nhc_values']['nvme_disks']
-            if 'ngpus' in vm_info['nhc_values']:
-                num_gpus = vm_info['nhc_values']['ngpus']
+            num_nvme_count = 0
+            if 'ib_count' in vm_info['nhc_values']:
+                num_ib_count = vm_info['nhc_values']['ib_count']
+            if 'nvme_count' in vm_info['nhc_values']:
+                num_nvme_count = vm_info['nhc_values']['nvme_count']
+            if 'gpu_count' in vm_info['nhc_values']:
+                num_gpus = vm_info['nhc_values']['gpu_count']
 
-            print("IB Devices : {} : expected {}".format(sn.count(ib_devices), num_ib_cards))
-            print("NVMe Disks : {} : expected {}".format(sn.count(nvme_devices), num_nvme_disks))
+            print("IB Devices : {} : expected {}".format(sn.count(ib_devices), num_ib_count))
+            print("NVMe Disks : {} : expected {}".format(sn.count(nvme_devices), num_nvme_count))
             print("GPUs       : {} : expected {}".format(sn.count(gpu_devices), num_gpus))
 
             return sn.all([
-                sn.assert_eq(sn.count(ib_devices), num_ib_cards),
-                sn.assert_eq(sn.count(nvme_devices), num_nvme_disks),
+                sn.assert_eq(sn.count(ib_devices), num_ib_count),
+                sn.assert_eq(sn.count(nvme_devices), num_nvme_count),
                 sn.assert_eq(sn.count(gpu_devices), num_gpus)
             ])    
 

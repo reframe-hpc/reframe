@@ -12,7 +12,7 @@ site_configuration = {
         {
             'name': 'hbrs_v3',
             'descr': 'Azure HBv3',
-            'vm_data_file': '/share/home/hpcuser/jshelley/github/reframe/azure_nhc/vm_info/azure_vms_dataset.json',
+            'vm_data_file': 'azure_nhc/vm_info/azure_vms_dataset.json',
             'hostnames': [''],
             'modules_system': 'tmod4',
             'partitions': [
@@ -27,7 +27,7 @@ site_configuration = {
         {
             'name': 'hcrs',
             'descr': 'Azure HC',
-            'vm_data_file': '/share/home/hpcuser/jshelley/github/reframe/azure_nhc/vm_info/azure_vms_dataset.json',
+            'vm_data_file': 'azure_nhc/vm_info/azure_vms_dataset.json',
             'hostnames': [''],
             'modules_system': 'tmod4',
             'partitions': [
@@ -42,12 +42,12 @@ site_configuration = {
         {
             'name': 'ndamsr_a100_v4',
             'descr': 'Azure NDm v4',
-            'vm_data_file': '/share/home/hpcuser/jshelley/github/reframe/azure_nhc/vm_info/azure_vms_dataset.json',
+            'vm_data_file': 'azure_nhc/vm_info/azure_vms_dataset.json',
             'hostnames': [''],
             'modules_system': 'tmod4',
             'partitions': [
                 {
-                    'name': 'default',
+                    'name': 'gpu',
                     'scheduler': 'local',
                     'launcher': 'local',
                     'environs': ['gnu-azhpc'],
@@ -57,12 +57,12 @@ site_configuration = {
         {
             'name': 'ndasr_v4',
             'descr': 'Azure ND v4',
-            'vm_data_file': '/share/home/hpcuser/jshelley/github/reframe/azure_nhc/vm_info/azure_vms_dataset.json',
+            'vm_data_file': 'azure_nhc/vm_info/azure_vms_dataset.json',
             'hostnames': [''],
             'modules_system': 'tmod4',
             'partitions': [
                 {
-                    'name': 'default',
+                    'name': 'gpu',
                     'scheduler': 'local',
                     'launcher': 'local',
                     'environs': ['gnu-azhpc'],
@@ -93,6 +93,12 @@ site_configuration = {
         {
             'name': 'gnu-azhpc',
             'modules': ['gcc-9.2.0'],
+            'cc': 'gcc',
+            'cxx': 'g++',
+            'ftn': 'gfortran'
+        },
+        {
+            'name': 'gnu',
             'cc': 'gcc',
             'cxx': 'g++',
             'ftn': 'gfortran'

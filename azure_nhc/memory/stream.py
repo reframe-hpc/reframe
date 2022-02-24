@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-# rfmdocstart: streamtest4
+# rfmdocstart: stream
 import reframe as rfm
 import reframe.utility.sanity as sn
 import inspect
@@ -34,75 +34,34 @@ class StreamMultiSysTest(rfm.RegressionTest):
         'OMP_NUM_THREADS': '4',
         'OMP_PLACES': 'cores'
     }
-    reference = {
-        'catalina': {
-            'Copy':  (37800, -0.05, 0.05, 'MB/s'),
-            'Scale': (35000, -0.05, 0.05, 'MB/s'),
-            'Add':   (37000, -0.05, 0.05, 'MB/s'),
-            'Triad': (18800, -0.05, 0.05, 'MB/s')
-        }
-    }
 
     # Flags per programming environment
     flags = variable(dict, value={
-        'cray':  ['-fopenmp', '-O3', '-Wall'],
-        'gnu-azhpc':   ['-fopenmp', '-O3', '-Wall'],
-        'intel': ['-qopenmp', '-O3', '-Wall'],
-        'pgi':   ['-mp', '-O3']
+        'gnu-azhpc':   ['-fopenmp', '-O3', '-Wall']
     })
 
-    # Number of cores for each system
-    cores = variable(dict, value={
-        'hbrs_v3:default': 120,
-        'daint:gpu': 12,
-        'daint:mc': 36,
-        'daint:login': 10
-    })
 
     @run_before('compile')
     def set_compiler_flags(self):
         self.build_system.cppflags = ['-DSTREAM_ARRAY_SIZE=$((1 << 25))']
         self.build_system.cflags = ['-fopenmp', '-O3', '-Wall']
         environ = self.current_environ.name
-        print("Name: {}".format(self.current_system.name))
-        print("variables: {}".format(self.variables))
-#        print("self.current_system: {}".format(self.current_system.json()))
-#        print("self.current_environment: {}".format(self.current_environ))
-#        print("self: {}".format(self))
-
-#        site_config = ''
-#        filename = ''
-#        vm_info = {}
-#        temp_test = cfg._SiteConfig(site_config, filename)
-#        vm_info =  temp_test._rep_azure_vm_info()
-#        print("vm_info: {}".format(vm_info))
-        print("=====================")
-        pprint.pprint(vars(self.current_system))
-        print("=========------------============")
-        vm_info = self.current_system.vm_data
-        #vm_info = cfg._SiteConfig.get_vm_info()
-        print("vm_info: {}".format(vm_info))
-        #print("vm_series: {}".format(vm_info['vm_series']))
-        self.reference = {
-            vm_info['vm_series']: {
-                'Copy':  (850000, None, None, 'MB/s'),
-                'Scale': (870000, None, None, 'MB/s'),
-                'Add':   (880000, None, None, 'MB/s'),
-                'Triad': (vm_info['nhc_values']['stream_triad'], -0.05, 0.05, 'MB/s')
-            }
-        }
-#       self.reference[vm_info['vm_series']] = {} # {'Triad': (16800, -0.05, 0.05, 'MB/s')}
-        print("reference: {}".format(self.reference))
-        print("current partition name: {}".format(self.current_partition.fullname))
-        print("build system: {}".format(self.build_system))
-#        print(rfm.core.systems.System.name)
-#        method_list = [method for method in dir(cfg._SiteConfig) if method.startswith('__') is False]
-#        method_list = [method for method in dir(self.build_system) if method.startswith('__') is False]
-#        print("this: {}".format(method_list))
 
     @run_before('run')
     def set_num_threads(self):
-        num_threads = self.cores.get(self.current_partition.fullname, 1)
+        #print("Name: {}".format(self.current_system.name))
+        #print("variables: {}".format(self.variables))
+        #print("=====================")
+        #pprint.pprint(vars(self.current_system))
+        #print("=========------------============")
+        vm_info = self.current_system.node_data
+        #print("vm_info: {}".format(vm_info))
+        core_count = 1
+        if vm_info != None and 'capabilities' in vm_info:
+            vcpus = int(vm_info['capabilities']['vCPUs'])
+            vcpus_per_core = int(vm_info['capabilities']['vCPUsPerCore'])
+            cores = int(vcpus/vcpus_per_core)
+        num_threads = cores
         self.num_cpus_per_task = num_threads
         self.variables = {
             'OMP_NUM_THREADS': str(num_threads),
@@ -123,10 +82,34 @@ class StreamMultiSysTest(rfm.RegressionTest):
 
     @run_before('performance')
     def set_perf_variables(self):
-        self.perf_variables = {
-            'Copy': self.extract_bw(),
-            'Scale': self.extract_bw('Scale'),
-            'Add': self.extract_bw('Add'),
-            'Triad': self.extract_bw('Triad'),
-        }
-# rfmdocend: streamtest4
+        #print("Name: {}".format(self.current_system.name))
+        #print("variables: {}".format(self.variables))
+        #print("=====================")
+        #pprint.pprint(vars(self.current_system))
+        #print("=========------------============")
+        
+        vm_info = self.current_system.node_data
+        #print("vm_info: {}".format(vm_info))
+        if vm_info != None and 'nhc_values' in vm_info:
+            self.reference = {
+                vm_info['vm_series']: {
+                    'Triad': (
+                        vm_info['nhc_values']['stream_triad'],
+                        vm_info['nhc_values']['stream_triad_limits'][0],
+                        vm_info['nhc_values']['stream_triad_limits'][1],
+                        'MB/s'
+                    )
+                }
+            }
+            #print("reference: {}".format(self.reference))
+            #print("current partition name: {}".format(self.current_partition.fullname))
+            #print("build system: {}".format(self.build_system))
+            self.perf_variables = {
+                'Copy': self.extract_bw(),
+                'Scale': self.extract_bw('Scale'),
+                'Add': self.extract_bw('Add'),
+                'Triad': self.extract_bw('Triad'),
+            }
+        else:
+            print("vm_info == None or nhc_values is not a key")
+# rfmdocend: stream
