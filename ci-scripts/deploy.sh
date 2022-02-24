@@ -47,7 +47,7 @@ cd $tmpdir
 git clone https://${_gh_creds_prefix}github.com/eth-cscs/reframe.git
 cd reframe
 ./bootstrap.sh
-found_version=$(./bin/reframe -V | sed -e 's/ (.*)//g')
+found_version=$(./bin/reframe -V | sed -e 's/\(.*\)\+.*/\1/g')
 if [ $found_version != $version ]; then
     echo "$0: version mismatch: found $found_version, but required $version" >&2
     exit 1
