@@ -123,8 +123,7 @@ class amber_nve_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
             ) from None
 
         self.prerun_cmds = [
-            f'curl -LJO https://github.com/victorusu/amber_benchmark_suite'
-            f'/raw/main/amber_16_benchmark_suite/PME/{self.bench_name}.tar.bz2',
+            f'curl -LJO https://github.com/victorusu/amber_benchmark_suite/raw/main/amber_16_benchmark_suite/PME/{self.bench_name}.tar.bz2',    # noqa: E501
             f'tar xf {self.bench_name}.tar.bz2'
         ]
         self.executable_opts = ['-O',
