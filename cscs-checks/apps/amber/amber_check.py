@@ -119,6 +119,6 @@ class cscs_amber_check(amber_nve_check):
         with contextlib.suppress(KeyError):
             self.reference = {
                 pname: {
-                    'perf': self.allref[self.num_nodes][arch][self.benchmark]
+                    'perf': self.allref[self.num_nodes][arch][self.bench_name]
                 }
             }
