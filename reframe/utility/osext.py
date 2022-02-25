@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -28,7 +28,7 @@ from reframe.core.exceptions import (ReframeError, SpawnedProcessError,
 from . import OrderedSet
 
 
-def run_command(cmd, check=False, timeout=None, shell=False, log=True):
+def run_command(cmd, check=False, timeout=None, **kwargs):
     '''Run command synchronously.
 
     This function will block until the command executes or the timeout is
@@ -39,9 +39,7 @@ def run_command(cmd, check=False, timeout=None, shell=False, log=True):
         :func:`run_command_async` for more details.
     :arg check: Raise an error if the command exits with a non-zero exit code.
     :arg timeout: Timeout in seconds.
-    :arg shell: Spawn a new shell to execute the command.
-    :arg log: Log the execution of the command through ReFrame's logging
-        facility.
+    :arg kwargs: Keyword arguments to be passed :func:`run_command_async`.
     :returns: A :py:class:`subprocess.CompletedProcess` object with
         information about the command's outcome.
     :raises reframe.core.exceptions.SpawnedProcessError: If ``check``
@@ -52,8 +50,7 @@ def run_command(cmd, check=False, timeout=None, shell=False, log=True):
     '''
 
     try:
-        proc = run_command_async(cmd, shell=shell, start_new_session=True,
-                                 log=log)
+        proc = run_command_async(cmd, start_new_session=True, **kwargs)
         proc_stdout, proc_stderr = proc.communicate(timeout=timeout)
     except subprocess.TimeoutExpired as e:
         os.killpg(proc.pid, signal.SIGKILL)
@@ -112,7 +109,6 @@ def run_command_async(cmd,
     return subprocess.Popen(args=cmd,
                             stdout=stdout,
                             stderr=stderr,
-                            stdin=subprocess.DEVNULL,
                             universal_newlines=True,
                             shell=shell,
                             **popen_args)
@@ -415,10 +411,11 @@ def is_url(s):
     return parsed.scheme != '' and parsed.netloc != ''
 
 
-def git_clone(url, targetdir=None, timeout=5):
+def git_clone(url, targetdir=None, opts=None, timeout=5):
     '''Clone a git repository from a URL.
 
     :arg url: The URL to clone from.
+    :arg opts: List of options to be passed to the `git clone` command
     :arg timeout: Timeout in seconds when checking if the url is a valid
          repository.
     :arg targetdir: The directory where the repository will be cloned to. If
@@ -429,7 +426,8 @@ def git_clone(url, targetdir=None, timeout=5):
         raise ReframeError('git repository does not exist')
 
     targetdir = targetdir or ''
-    run_command(f'git clone {url} {targetdir}', check=True)
+    opts = ' '.join(opts) if opts is not None else ''
+    run_command(f'git clone {opts} {url} {targetdir}', check=True)
 
 
 def git_repo_exists(url, timeout=5):

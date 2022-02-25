@@ -47,7 +47,7 @@ In essence, these builtins exert control over the test creation, and they allow 
         p1 = [parameter([1, 2])] # Undefined behavior
 
 
-.. py:function:: RegressionMixin.parameter(values=None, inherit_params=False, filter_params=None)
+.. py:function:: RegressionMixin.parameter(values=None, inherit_params=False, filter_params=None, fmt=None, loggable=False)
 
   Inserts or modifies a regression test parameter.
   At the class level, these parameters are stored in a separate namespace referred to as the *parameter space*.
@@ -121,6 +121,18 @@ In essence, these builtins exert control over the test creation, and they allow 
      This function must accept a single iterable argument and return an iterable.
      It will be called with the inherited parameter values and it must return the filtered set of parameter values.
      This function will only have an effect if used with ``inherit_params=True``.
+  :param fmt: A formatting function that will be used to format the values of this parameter in the test's :attr:`~reframe.core.pipeline.RegressionTest.display_name`.
+     This function should take as argument the parameter value and return a string representation of the value.
+     If the returned value is not a string, it will be converted using the :py:func:`str` function.
+  :param loggable: Mark this parameter as loggable.
+     If :obj:`True`, this parameter will become a log record attribute under the name ``check_NAME``, where ``NAME`` is the name of the parameter.
+
+
+  .. versionadded:: 3.10.0
+     The ``fmt`` argument is added.
+
+  .. versionadded:: 3.11.0
+     The ``loggable`` argument is added.
 
 
 .. py:function:: RegressionMixin.variable(*types, value=None, field=None, **kwargs)
@@ -230,7 +242,12 @@ In essence, these builtins exert control over the test creation, and they allow 
   :param field: the field validator to be used for this variable.
       If no field argument is provided, it defaults to :attr:`reframe.core.fields.TypedField`.
       The provided field validator by this argument must derive from :attr:`reframe.core.fields.Field`.
+  :param loggable: Mark this variable as loggable.
+     If :obj:`True`, this variable will become a log record attribute under the name ``check_NAME``, where ``NAME`` is the name of the variable.
   :param `**kwargs`: *kwargs* to be forwarded to the constructor of the field validator.
+
+  .. versionadded:: 3.10.2
+     The ``loggable`` argument is added.
 
 
 .. py:function:: RegressionMixin.fixture(cls, *, scope='test', action='fork', variants='all', variables=None)
@@ -499,17 +516,14 @@ ReFrame provides the following built-in functions, which are only available in t
 
   .. versionadded:: 3.7.0
 
-.. py:function:: RegressionMixin.bind(func, name=None)
+.. autodecorator:: reframe.core.pipeline.RegressionMixin.loggable_as(name)
 
-  Bind a free function to a regression test.
+.. py:decorator:: reframe.core.pipeline.RegressionMixin.loggable
 
-  By default, the function is bound with the same name as the free function.
-  However, the function can be bound using a different name with the ``name`` argument.
+   Equivalent to :func:`@loggable_as(None) <reframe.core.pipeline.RegressionMixin.loggable_as>`.
 
-  :param func: external function to be bound to a class.
-  :param name: bind the function under a different name.
+   .. versionadded:: 3.11.0
 
-  .. versionadded:: 3.6.2
 
 .. py:decorator:: RegressionMixin.require_deps(func)
 
@@ -534,6 +548,19 @@ ReFrame provides the following built-in functions, which are only available in t
         This function can only be used as a built-in.
 
 
+.. py:function:: RegressionMixin.bind(func, name=None)
+
+  Bind a free function to a regression test.
+
+  By default, the function is bound with the same name as the free function.
+  However, the function can be bound using a different name with the ``name`` argument.
+
+  :param func: external function to be bound to a class.
+  :param name: bind the function under a different name.
+
+  .. versionadded:: 3.6.2
+
+
 --------------
 Pipeline Hooks
 --------------
@@ -545,7 +572,7 @@ Pipeline hooks attached to multiple stages will be executed on each pipeline sta
 Pipeline stages with multiple hooks attached will execute these hooks in the order in which they were attached to the given pipeline stage.
 A derived class will inherit all the pipeline hooks defined in its bases, except for those whose hook function is overridden by the derived class.
 A function that overrides a pipeline hook from any of the base classes will not be a pipeline hook unless the overriding function is explicitly reattached to any pipeline stage.
-In the event of a name clash arising from multiple inheritance, the inherited pipeline hook will be chosen following Python's `MRO <https://docs.python.org/3/library/stdtypes.html#class.__mro__>`_.
+In the event of a name clash arising from multiple inheritance, the inherited pipeline hook will be chosen following Python's `MRO <https://docs.python.org/3/library/stdtypes.html#class.__mro__>`__.
 
 A function may be attached to any of the following stages (listed in order of execution): ``init``, ``setup``, ``compile``, ``run``, ``sanity``, ``performance`` and ``cleanup``.
 The ``init`` stage refers to the test's instantiation and it runs before entering the execution pipeline.
@@ -554,6 +581,22 @@ Hooks attached to any other stage will run exactly before or after this stage ex
 So although a "post-init" and a "pre-setup" hook will both run *after* a test has been initialized and *before* the test goes through the first pipeline stage, they will execute in different times:
 the post-init hook will execute *right after* the test is initialized.
 The framework will then continue with other activities and it will execute the pre-setup hook *just before* it schedules the test for executing its setup stage.
+
+Pipeline hooks are executed in reverse MRO order, i.e., the hooks of the least specialized class will be executed first.
+In the following example, :func:`BaseTest.x` will execute before :func:`DerivedTest.y`:
+
+.. code:: python
+
+   class BaseTest(rfm.RegressionTest):
+       @run_after('setup')
+       def x(self):
+           '''Hook x'''
+
+   class DerivedTest(BaseTeset):
+       @run_after('setup')
+       def y(self):
+           '''Hook y'''
+
 
 .. note::
    Pipeline hooks do not execute in the test's stage directory.
@@ -577,6 +620,16 @@ The framework will then continue with other activities and it will execute the p
       You should use the built-in functions described in this section instead.
    .. versionchanged:: 4.0.0
       Pipeline hooks can only be defined through the built-in functions described in this section.
+
+.. warning::
+   .. versionchanged:: 3.9.2
+
+      Execution of pipeline hooks until this version was implementation-defined.
+      In practice, hooks of a derived class were executed before those of its parents.
+
+      This version defines the execution order of hooks, which now follows a strict reverse MRO order, so that parent hooks will execute before those of derived classes.
+      Tests that relied on the execution order of hooks might break with this change.
+
 
 .. py:decorator:: RegressionMixin.run_before(stage)
 
@@ -632,86 +685,11 @@ Therefore, classes that derive from the base :class:`~reframe.core.pipeline.Regr
 
 .. py:attribute:: RegressionMixin.num_variants
 
-  Total number of unique test variants in a class.
+   Total number of variants of the test.
 
+.. automethod:: reframe.core.pipeline.RegressionMixin.get_variant_nums
 
-.. py:function:: RegressionMixin.get_variant_info(cls, variant_num, *, recurse=False, max_depth=None)
-
-  Get the raw variant data for a given variant index.
-  This function returns a dictionary with the variant data such as the parameter values and the fixture variants.
-  The parameter space information is presented in a sub-dictionary under the ``'params'`` key, gathering all the parameter values associated with the given variant number.
-  Similarly, the information on the test's fixtures is gathered in another sub-dictionary under the ``'fixtures'`` key.
-  By default, this sub-dictionary shows a tuple for each fixture, containing the respective fixture variants associated with the given  ``variant_num``.
-  These tuples may only contain more than one fixture variant index if the fixture was declared with a `join` action (see the :func:`~RegressionMixin.fixture` documentation for more information).
-  However, when ``recurse`` is set to ``True``, each fixture entry with a single-element tuple will be expanded to show the full fixture variant information.
-  By default, the recursion will traverse the full fixture tree, but this recursion depth can be limited with the ``max_depth`` argument.
-  See the example below.
-
-  .. code:: python
-
-     class Foo(rfm.RegressionTest):
-         p0 = parameter(range(2))
-         ...
-
-     class Bar(rfm.RegressionTest):
-         p0 = parameter(range(3))
-         ...
-
-     class MyTest(rfm.RegressionTest):
-         p1 = parameter(['a', 'b'])
-         f0 = fixture(Foo, action='fork')
-         f1 = fixture(Bar, action='join')
-         ...
-
-     # Get the raw info for variant 0 - without recursion
-     MyTest.get_variant_info(0, recursive=False)
-     # {
-     #     'params': {'p1': 'a'},
-     #     'fixtures': {
-     #         'f0': (0,),
-     #         'f1': (0, 1, 2,)
-     #     }
-     # }
-
-     # Get the raw info for variant 0 - show the full tree
-     MyTest.get_variant_info(0, recursive=True)
-     # {
-     #     'params': {'p1': 'a'},
-     #     'fixtures': {
-     #         'f0': {
-     #             'params': {'p0': 0},
-     #             'fixtures': {}
-     #         },
-     #         'f1': (0, 1, 2,)
-     #     }
-     # }
-
-  :param variant_num: An integer in the range of [0, cls.num_variants).
-  :param recurse: Flag to control the recursion through the fixture space.
-  :param max_depth: Set the recursion limit. When the ``recurse`` argument is set to ``False``, this option has no effect.
-
-
-.. py:function:: RegressionMixin.get_variant_nums(cls, **conditions)
-
-  Get the variant numbers that meet the specified conditions.
-  The given conditions enable filtering the parameter space of the test.
-  These can be specified by passing key-value pairs with the parameter name to filter and an associated callable that returns ``True`` when the filtering condition is met. Multiple conditions are supported.
-  However, filtering the fixture space is not allowed.
-
-  .. code-block:: python
-
-    # Get the variant numbers where my_param is lower than 4
-    cls.get_variant_nums(my_param=lambda x: x < 4)
-
-  :param conditions: keyword arguments where the key is the test parameter name and the value is a unary function that evaluates a bool condition on the parameter value.
-
-
-.. py:function:: RegressionMixin.fullname(cls, variant_num=None)
-
-  Return the full unique name of a test for a given test variant number.
-  If no ``variant_num`` is provided, this function returns the qualified class name.
-
-  :param variant_num: An integer in the range of [0, cls.num_variants).
+.. automethod:: reframe.core.pipeline.RegressionMixin.variant_name
 
 
 ------------------------

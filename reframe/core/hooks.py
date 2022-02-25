@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -151,20 +151,27 @@ class HookRegistry:
         '''
 
         if hasattr(v, '_rfm_attach'):
-            self.__hooks.add(Hook(v))
+            # Always override hooks with the same name
+            h = Hook(v)
+            self.__hooks.discard(h)
+            self.__hooks.add(h)
         elif hasattr(v, '_rfm_resolve_deps'):
             v._rfm_attach = ['post_setup']
             self.__hooks.add(Hook(v))
 
-    def update(self, hooks, *, denied_hooks=None):
+    def update(self, other, *, denied_hooks=None):
         '''Update the hook registry with the hooks from another hook registry.
 
         The optional ``denied_hooks`` argument takes a set of disallowed
         hook names, preventing their inclusion into the current hook registry.
         '''
+
+        assert isinstance(other, HookRegistry)
         denied_hooks = denied_hooks or set()
-        for h in hooks:
+        for h in other:
             if h.__name__ not in denied_hooks:
+                # Hooks in `other` override ours
+                self.__hooks.discard(h)
                 self.__hooks.add(h)
 
     def __repr__(self):

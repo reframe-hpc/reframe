@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -27,37 +27,73 @@ class TestParam:
     :meta private:
     '''
 
-    def __init__(self, values=None,
-                 inherit_params=False, filter_params=None):
+    def __init__(self, values=None, inherit_params=False,
+                 filter_params=None, fmt=None, loggable=False):
         if values is None:
             values = []
 
-        # By default, filter out all the parameter values defined in the
-        # base classes.
         if not inherit_params:
+            # By default, filter out all the parameter values defined in the
+            # base classes.
             def filter_params(x):
                 return ()
-
-        # If inherit_params==True, inherit all the parameter values from the
-        # base classes as default behaviour.
         elif filter_params is None:
+            # If inherit_params==True, inherit all the parameter values from
+            # the base classes as default behaviour.
             def filter_params(x):
                 return x
 
         self.values = tuple(values)
 
-        # Validate the filter_param argument
-        try:
-            valid = utils.is_trivially_callable(filter_params, non_def_args=1)
-        except TypeError:
-            raise TypeError(
-                'the provided parameter filter is not a callable'
-            ) from None
-        else:
-            if not valid:
-                raise TypeError('filter function must take a single argument')
+        # Validate and set the filter_params function
+        if (not callable(filter_params) or
+            not utils.is_trivially_callable(filter_params, non_def_args=1)):
+            raise TypeError("'filter_params' argument must be a callable "
+                            "accepting a single argument")
 
         self.filter_params = filter_params
+
+        # Validate and set the alternative function
+        if fmt is None:
+            def fmt(x):
+                return x
+
+        if (not callable(fmt) or
+            not utils.is_trivially_callable(fmt, non_def_args=1)):
+            raise TypeError("'fmt' argument must be a callable "
+                            "accepting a single argument")
+
+        self.__fmt_fn = fmt
+        self.__loggable = loggable
+
+    @property
+    def format(self):
+        return self.__fmt_fn
+
+    def update(self, other):
+        '''Update this parameter from another one.
+
+        The values from the other parameter will be filtered according to the
+        filter function of this one and prepended to this parameter's values.
+        '''
+
+        try:
+            filt_vals = self.filter_params(other.values)
+        except Exception:
+            raise
+        else:
+            try:
+                self.values = tuple(filt_vals) + self.values
+            except TypeError:
+                raise ReframeSyntaxError(
+                    f"'filter_param' must return an iterable"
+                ) from None
+
+    def is_abstract(self):
+        return len(self.values) == 0
+
+    def is_loggable(self):
+        return self.__loggable
 
 
 class ParamSpace(namespaces.Namespace):
@@ -83,7 +119,7 @@ class ParamSpace(namespaces.Namespace):
         # Store all param combinations to allow random access.
         self.__param_combinations = tuple(
             itertools.product(
-                *(copy.deepcopy(p) for p in self.params.values())
+                *(copy.deepcopy(p.values) for p in self.params.values())
             )
         )
 
@@ -102,41 +138,30 @@ class ParamSpace(namespaces.Namespace):
         :param other: instance of the ParamSpace class.
         :param cls: the target class.
         '''
-        for key in other.params:
+        for name in other.params:
             # With multiple inheritance, a single parameter
             # could be doubly defined and lead to repeated
             # values
-            if (key in self.params and
-                self.params[key] != () and
-                other.params[key] != ()):
-
+            if self.defines(name) and other.defines(name):
                 raise ReframeSyntaxError(
                     f'parameter space conflict: '
-                    f'parameter {key!r} is defined in more than '
+                    f'parameter {name!r} is defined in more than '
                     f'one base class of class {cls.__qualname__!r}'
                 )
 
-            self.params[key] = (
-                other.params.get(key, ()) + self.params.get(key, ())
-            )
+            if not self.defines(name):
+                # If we do not define the parameter, take it from other
+                self.params[name] = other.params[name]
 
     def extend(self, cls):
         '''Extend the parameter space with the local parameter space.'''
 
         local_param_space = getattr(cls, self.local_namespace_name, dict())
         for name, p in local_param_space.items():
-            try:
-                filt_vals = p.filter_params(self.params.get(name, ()))
-            except Exception:
-                raise
-            else:
-                try:
-                    self.params[name] = (tuple(filt_vals) + p.values)
-                except TypeError:
-                    raise ReframeSyntaxError(
-                        f"'filter_param' must return an iterable "
-                        f"(parameter {name!r})"
-                    ) from None
+            if name in self.params:
+                p.update(self.params[name])
+
+            self.params[name] = p
 
         # Clear the local param space
         local_param_space.clear()
@@ -184,6 +209,18 @@ class ParamSpace(namespaces.Namespace):
             for key in self.params:
                 setattr(obj, key, None)
 
+    @property
+    def params(self):
+        return self._namespace
+
+    def defines(self, name):
+        '''Return True if parameter is defined.
+
+        A parameter is defined if it exists in the namespace and it is not
+        abstract.
+        '''
+        return name in self.params and not self.params[name].is_abstract()
+
     def __iter__(self):
         '''Create a generator object to iterate over the parameter space
 
@@ -193,10 +230,6 @@ class ParamSpace(namespaces.Namespace):
         :return: generator object to iterate over the parameter space.
         '''
         yield from self.__param_combinations
-
-    @property
-    def params(self):
-        return self._namespace
 
     def __len__(self):
         '''Returns the number of all possible parameter combinations.
@@ -220,22 +253,28 @@ class ParamSpace(namespaces.Namespace):
     def __getitem__(self, key):
         '''Access an element in the parameter space.
 
-        If the key is an integer, this function will retrieve a given point in
-        the parameter space. If the key is a parameter name, it will instead
-        return all the values assigned to that parameter.
+        If the key is an integer, this will be interpreted as a point in the
+        parameter space and this function will return a mapping of the
+        parameter names and their corresponding values. If the key is a
+        parameter name, it will instead return all the values assigned to that
+        parameter.
 
         If the key is an integer, this function will raise an
         :class:`IndexError` if the key is out of bounds.
+
         '''
         if isinstance(key, int):
-            ret = dict()
+            ret = {}
             val = self.__param_combinations[key]
-            for i, key in enumerate(self.params):
-                ret[key] = val[i]
+            for i, name in enumerate(self.params):
+                ret[name] = val[i]
 
             return ret
 
-        return self.params.get(key, ())
+        try:
+            return self.params[key].values
+        except KeyError:
+            return ()
 
     def is_empty(self):
         return self.params == {}
@@ -246,6 +285,10 @@ class ParamSpace(namespaces.Namespace):
         The conditions are passed as key-value pairs, where the keys are the
         parameter names to apply the filtering on and the values are functions
         that expect the parameter's value as the sole argument.
+
+        :returns: the indices of the matching parameters in the parameter
+            space.
+
         '''
         candidates = range(len(self))
         if not conditions:
@@ -257,6 +300,12 @@ class ParamSpace(namespaces.Namespace):
                 raise NameError(
                     f'no such parameter: {param!r}'
                 )
+            elif not callable(cond):
+                # Convert it to the identity function
+                val = cond
+
+                def cond(x):
+                    return x == val
             elif not utils.is_trivially_callable(cond, non_def_args=1):
                 raise ValueError(
                     f'condition on {param!r} must be a callable accepting a '

@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -39,10 +39,10 @@ import os
 
 
 def _convert_to_bool(s):
-    if s.lower() in ('true', 'yes', 'y'):
+    if s.lower() in ('true', 'yes', 'y', '1'):
         return True
 
-    if s.lower() in ('false', 'no', 'n'):
+    if s.lower() in ('false', 'no', 'n', '0'):
         return False
 
     raise ValueError
@@ -82,7 +82,7 @@ class _Namespace:
         if name not in self.__option_map:
             return ret
 
-        envvar, _, action = self.__option_map[name]
+        envvar, _, action, arg_type = self.__option_map[name]
         if ret is None and envvar is not None:
             # Try the environment variable
             envvar, *delim = envvar.split(maxsplit=2)
@@ -99,6 +99,14 @@ class _Namespace:
                         raise ValueError(
                             f'environment variable {envvar!r} not a boolean'
                         ) from None
+                elif action == 'store' and arg_type != str:
+                    try:
+                        ret = arg_type(ret)
+                    except ValueError as err:
+                        raise ValueError(
+                            f'cannot convert environment variable {envvar!r} '
+                            f'to {arg_type.__name__!r}'
+                        ) from err
 
         return ret
 
@@ -107,7 +115,7 @@ class _Namespace:
         namespace'''
         errors = []
         for option, spec in self.__option_map.items():
-            _, confvar, action = spec
+            confvar, action = spec[1:3]
             if action == 'version' or confvar is None:
                 continue
 
@@ -174,7 +182,8 @@ class _ArgumentHolder:
         self._option_map[opt_name] = (
             kwargs.get('envvar', None),
             kwargs.get('configvar', None),
-            kwargs.get('action', 'store')
+            kwargs.get('action', 'store'),
+            kwargs.get('type', str)
         )
         # Remove envvar and configvar keyword arguments and force dest
         # argument, even if we guessed it, in order to guard against changes

@@ -1,8 +1,9 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+# rfmdocstart: containertest
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -23,7 +24,10 @@ class ContainerTest(rfm.RunOnlyRegressionTest):
             "bash -c 'cat /etc/os-release | tee /rfm_workdir/release.txt'"
         )
 
+    # rfmdocstart: assert_release
     @sanity_function
     def assert_release(self):
         os_release_pattern = r'18.04.\d+ LTS \(Bionic Beaver\)'
         return sn.assert_found(os_release_pattern, 'release.txt')
+    # rfmdocend: assert_release
+# rfmdocend: containertest

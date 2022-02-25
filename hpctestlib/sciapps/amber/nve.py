@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -86,7 +86,7 @@ class amber_nve_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
         ('FactorIX_production_NVE', -234188.0, 1.0E-04),
         ('JAC_production_NVE_4fs', -44810.0, 1.0E-03),
         ('JAC_production_NVE', -58138.0, 5.0E-04)
-    ])
+    ], fmt=lambda x: x[0])
 
     # Parameter encoding the variant of the test.
     #

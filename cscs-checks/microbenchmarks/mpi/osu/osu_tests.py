@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -140,10 +140,10 @@ class AllreduceTest(rfm.RegressionTest):
                     'latency': (5.67, None, 0.05, 'us')
                 },
                 'daint:gpu': {
-                    'latency': (9.30, None, 0.75, 'us')
+                    'latency': (8.66, None, 0.85, 'us')
                 },
                 'daint:mc': {
-                    'latency': (11.74, None, 1.51, 'us')
+                    'latency': (10.90, None, 1.90, 'us')
                 }
             }
         else:
@@ -202,10 +202,10 @@ class P2PCPUBandwidthTest(P2PBaseTest):
     executable_opts = ['-x', '100', '-i', '1000']
     reference = {
         'daint:gpu': {
-            'bw': (9607.0, -0.10, None, 'MB/s')
+            'bw': (9481.0, -0.10, None, 'MB/s')
         },
         'daint:mc': {
-            'bw': (9649.0, -0.10, None, 'MB/s')
+            'bw': (8507, -0.15, None, 'MB/s')
         },
         'dom:gpu': {
             'bw': (9476.3, -0.05, None, 'MB/s')
@@ -240,10 +240,10 @@ class P2PCPULatencyTest(P2PBaseTest):
     executable = './p2p_osu_latency'
     reference = {
         'daint:gpu': {
-            'latency': (1.30, None, 0.70, 'us')
+            'latency': (1.40, None, 0.80, 'us')
         },
         'daint:mc': {
-            'latency': (1.61, None, 0.85, 'us')
+            'latency': (1.61, None, 0.70, 'us')
         },
         'dom:gpu': {
             'latency': (1.138, None, 0.10, 'us')
@@ -282,13 +282,12 @@ class G2GBandwidthTest(P2PBaseTest):
     executable = './p2p_osu_bw'
     executable_opts = ['-x', '100', '-i', '1000', '-d',
                        'cuda', 'D', 'D']
-
     reference = {
         'dom:gpu': {
             'bw': (8813.09, -0.05, None, 'MB/s')
         },
         'daint:gpu': {
-            'bw': (8765.65, -0.1, None, 'MB/s')
+            'bw': (8560, -0.10, None, 'MB/s')
         },
         '*': {
             'bw': (0, None, None, 'MB/s')
@@ -334,7 +333,7 @@ class G2GLatencyTest(P2PBaseTest):
             'latency': (5.56, None, 0.1, 'us')
         },
         'daint:gpu': {
-            'latency': (6.8, None, 0.65, 'us')
+            'latency': (6.82, None, 0.50, 'us')
         },
     }
 

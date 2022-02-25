@@ -1,0 +1,37 @@
+[ReFrame Setup]
+  version:           3.10.0-dev.2+bf404ae1
+  command:           './bin/reframe -c tutorials/basics/stream/stream1.py -r --performance-report'
+  launched by:       user@host
+  working directory: '/Users/user/Repositories/reframe'
+  settings file:     'tutorials/config/mysettings.py'
+  check search path: '/Users/user/Repositories/reframe/tutorials/basics/stream/stream1.py'
+  stage directory:   '/Users/user/Repositories/reframe/stage'
+  output directory:  '/Users/user/Repositories/reframe/output'
+
+[==========] Running 1 check(s)
+[==========] Started on Wed Jan 19 17:13:35 2022
+
+[----------] started processing StreamTest (StreamTest)
+[ RUN      ] StreamTest on catalina:default using gnu
+[----------] finished processing StreamTest (StreamTest)
+
+[----------] waiting for spawned checks to finish
+[       OK ] (1/1) StreamTest @catalina:default+gnu
+[----------] all spawned checks have finished
+
+[  PASSED  ] Ran 1/1 test case(s) from 1 check(s) (0 failure(s), 0 skipped)
+[==========] Finished on Wed Jan 19 17:13:39 2022
+==============================================================================
+PERFORMANCE REPORT
+------------------------------------------------------------------------------
+StreamTest
+- catalina:default
+   - gnu
+      * num_tasks: 1
+      * Copy: 23864.2 MB/s
+      * Scale: 16472.6 MB/s
+      * Add: 18265.5 MB/s
+      * Triad: 18632.3 MB/s
+------------------------------------------------------------------------------
+Run report saved in '/Users/user/.reframe/reports/run-report.json'
+Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-o1wls55_.log'

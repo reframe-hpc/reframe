@@ -226,6 +226,7 @@
                         "type": "array",
                         "items": {"type": "string"}
                     },
+                    "max_local_jobs": {"type": "number"},
                     "modules_system": {
                         "type": "string",
                         "enum": ["tmod", "tmod31", "tmod32", "tmod4",
@@ -464,6 +465,8 @@
                         "items": {"type": "string"}
                     },
                     "non_default_craype": {"type": "boolean"},
+                    "dump_pipeline_progress": {"type": "boolean"},
+                    "pipeline_timeout": {"type": ["number", "null"]},
                     "purge_environment": {"type": "boolean"},
                     "remote_detect": {"type": "boolean"},
                     "remote_workdir": {"type": "string"},
@@ -497,6 +500,8 @@
         "environments/ldflags": [],
         "environments/extras": {},
         "environments/target_systems": ["*"],
+        "general/dump_pipeline_progress": false,
+        "general/pipeline_timeout": null,
         "general/check_search_path": ["${RFM_INSTALL_PREFIX}/checks/"],
         "general/check_search_recursive": false,
         "general/clean_stagedir": true,
@@ -545,6 +550,7 @@
         "schedulers/target_systems": ["*"],
         "schedulers/use_nodes_option": false,
         "systems/descr": "",
+        "systems/max_local_jobs": 8,
         "systems/modules_system": "nomod",
         "systems/modules": [],
         "systems/variables": [],
@@ -565,6 +571,7 @@
         "systems/partitions/max_jobs": 8,
         "systems/partitions/prepare_cmds": [],
         "systems/partitions/processor": {},
+        "systems/partitions/time_limit": null,
         "systems/partitions/devices": [],
         "systems/partitions/extras": {}
     }

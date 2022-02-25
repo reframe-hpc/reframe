@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -73,8 +73,8 @@ class OarJobScheduler(PbsJobScheduler):
         # avoid writing them in the working dir
         preamble = [
             self._format_option(f'-n "{job.name}"'),
-            self._format_option(f'-O {os.path.join(job.workdir, job.stdout)}'),
-            self._format_option(f'-E {os.path.join(job.workdir, job.stderr)}'),
+            self._format_option(f'-O {job.stdout}'),
+            self._format_option(f'-E {job.stderr}'),
         ]
 
         if job.time_limit is not None:
@@ -98,14 +98,10 @@ class OarJobScheduler(PbsJobScheduler):
             else:
                 preamble.append(self._format_option(opt))
 
-        # OAR starts the job in the home directory by default
-        preamble.append(f'cd {job.workdir}')
         return preamble
 
     def submit(self, job):
-        # For some reason OAR job manager says that job launching dir is
-        # working dir of the repo and not stage dir. A workaround is to give
-        # full path of script to oarsub
+        # OAR batch submission mode needs full path to the job script
         job_script_fullpath = os.path.join(job.workdir, job.script_filename)
 
         # OAR needs -S to submit job in batch mode

@@ -1,9 +1,7 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
-
-from datetime import datetime
 
 import re
 import reframe as rfm
@@ -16,12 +14,22 @@ class HelloWorldBaseTest(rfm.RegressionTest):
     prgenv_flags = {}
     sourcepath = 'hello_world'
     build_system = 'SingleSource'
+    prebuild_cmds = ['_rfm_build_time="$(date +%s%N)"']
+    postbuild_cmds = [
+        '_rfm_build_time="$(($(date +%s%N)-_rfm_build_time))"',
+        'echo "Compilations time (ns): $_rfm_build_time"'
+    ]
     valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                      'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn']
     valid_prog_environs = ['PrgEnv-aocc', 'PrgEnv-cray',
                            'PrgEnv-cray_classic', 'PrgEnv-gnu',
                            'PrgEnv-intel', 'PrgEnv-pgi',
                            'PrgEnv-gnu-nocuda', 'PrgEnv-pgi-nocuda']
+    reference = {
+        '*': {
+            'compilation_time': (60, None, 0.1, 's')
+        }
+    }
     exclusive_access = True
     maintainers = ['VH', 'EK']
     tags = {'production', 'craype'}
@@ -93,25 +101,10 @@ class HelloWorldBaseTest(rfm.RegressionTest):
             )
         )
 
-    @run_before('performance')
-    def capture_build_time(self):
-        self.perf_patterns = {
-            'compilation_time': sn.getattr(self, 'compilation_time_seconds')
-        }
-        self.reference = {
-            '*': {
-                'compilation_time': (60, None, 0.1, 's')
-            }
-        }
-
-    @run_before('compile')
-    def compile_timer_start(self):
-        self.compilation_time_seconds = datetime.now()
-
-    @run_after('compile')
-    def compile_timer_end(self):
-        elapsed = datetime.now() - self.compilation_time_seconds
-        self.compilation_time_seconds = elapsed.total_seconds()
+    @performance_function('s')
+    def compilation_time(self):
+        return sn.extractsingle(r'Compilations time \(ns\): (\d+)',
+                                self.build_stdout, 1, float) * 1.0e-9
 
 
 @rfm.simple_test

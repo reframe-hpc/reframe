@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -12,6 +12,7 @@ import socket
 import sys
 import time
 
+import reframe as rfm
 import reframe.core.runtime as rt
 import reframe.frontend.dependencies as dependencies
 import reframe.frontend.executors as executors
@@ -35,11 +36,9 @@ from unittests.resources.checks.frontend_checks import (
     CompileFailureCheck,
     KeyboardInterruptCheck,
     RetriesCheck,
-    SelfKillCheck,
     SleepCheck,
-    SleepCheckPollFail,
-    SleepCheckPollFailLate,
-    SystemExitCheck,
+    SelfKillCheck,
+    SystemExitCheck
 )
 
 
@@ -78,6 +77,26 @@ def common_exec_ctx(make_exec_ctx_g):
 @pytest.fixture
 def testsys_exec_ctx(make_exec_ctx_g):
     yield from make_exec_ctx_g(system='testsys:gpu')
+
+
+def make_kbd_check(phase='wait'):
+    return test_util.make_check(KeyboardInterruptCheck, phase=phase)
+
+
+@pytest.fixture
+def make_sleep_check():
+    test_id = 0
+
+    def _do_make_check(sleep_time, poll_fail=None):
+        nonlocal test_id
+        test = test_util.make_check(SleepCheck,
+                                    sleep_time=sleep_time,
+                                    poll_fail=poll_fail,
+                                    alt_name=f'SleepCheck_{test_id}')
+        test_id += 1
+        return test
+
+    return _do_make_check
 
 
 @pytest.fixture(params=[policies.SerialExecutionPolicy,
@@ -143,7 +162,7 @@ def make_cases_for_skipping(request):
             sanity_patterns = sn.assert_true(1)
 
             def __init__(self):
-                self.depends_on(_T0.__qualname__)
+                self.depends_on('_T0')
 
         cases = executors.generate_testcases([_T0(), _T1()])
         depgraph, _ = dependencies.build_deps(cases)
@@ -260,13 +279,13 @@ def test_runall(make_runner, make_cases, common_exec_ctx, tmp_path):
     with pytest.raises(ReframeError, match=r'is not a valid JSON file'):
         runreport.load_report(tmp_path / 'invalid.json')
 
-    # Generate a report with an incorrect data version
-    report['session_info']['data_version'] = '10.0.0'
+    # Generate a report that does not comply to the schema
+    del report['session_info']['data_version']
     with open(tmp_path / 'invalid-version.json', 'w') as fp:
         jsonext.dump(report, fp)
 
     with pytest.raises(ReframeError,
-                       match=r'incompatible report data versions'):
+                       match=r'invalid report'):
         runreport.load_report(tmp_path / 'invalid-version.json')
 
 
@@ -403,7 +422,7 @@ def test_force_local_execution(make_runner, make_cases, testsys_exec_ctx):
 def test_kbd_interrupt_within_test(make_runner, make_cases, common_exec_ctx):
     runner = make_runner()
     with pytest.raises(KeyboardInterrupt):
-        runner.runall(make_cases([KeyboardInterruptCheck()]))
+        runner.runall(make_cases([make_kbd_check()]))
 
     stats = runner.stats
     assert 1 == len(stats.failed())
@@ -447,14 +466,15 @@ def test_pass_in_retries(make_runner, make_cases, tmp_path, common_exec_ctx):
     tmpfile = tmp_path / 'out.txt'
     tmpfile.write_text('0\n')
     runner = make_runner(max_retries=3)
-    pass_run_no = 2
-    runner.runall(make_cases([RetriesCheck(pass_run_no, tmpfile)]))
+    runner.runall(make_cases([
+        test_util.make_check(RetriesCheck, filename=str(tmpfile), num_runs=2)
+    ]))
 
     # Ensure that the test passed after retries in run `pass_run_no`
     assert 1 == runner.stats.num_cases()
     assert_runall(runner)
     assert 1 == len(runner.stats.failed(run=0))
-    assert pass_run_no == rt.runtime().current_run
+    assert 2 == rt.runtime().current_run
     assert 0 == len(runner.stats.failed())
 
 
@@ -545,6 +565,12 @@ class _TaskEventMonitor(executors.TaskEventListener):
         last = self.num_tasks[-1]
         self.num_tasks.append(last - 1)
 
+    def on_task_compile(self, task):
+        pass
+
+    def on_task_compile_exit(self, task):
+        pass
+
     def on_task_success(self, task):
         pass
 
@@ -559,16 +585,24 @@ class _TaskEventMonitor(executors.TaskEventListener):
 
 
 def max_jobs_opts(n):
-    return {'systems/partitions/max_jobs': n}
+    return {'systems/partitions/max_jobs': n,
+            'systems/max_local_jobs': n}
 
 
 @pytest.fixture
-def async_runner():
-    evt_monitor = _TaskEventMonitor()
-    ret = executors.Runner(policies.AsynchronousExecutionPolicy())
-    ret.policy.keep_stage_files = True
-    ret.policy.task_listeners.append(evt_monitor)
-    return ret, evt_monitor
+def make_async_runner():
+    # We need to have control in the unit tests where the policy is created,
+    # because in some cases we need it to be initialized after the execution
+    # context. For this reason, we use a constructor fixture here.
+
+    def _make_runner():
+        evt_monitor = _TaskEventMonitor()
+        ret = executors.Runner(policies.AsynchronousExecutionPolicy())
+        ret.policy.keep_stage_files = True
+        ret.policy.task_listeners.append(evt_monitor)
+        return ret, evt_monitor
+
+    return _make_runner
 
 
 def _read_timestamps(tasks):
@@ -589,12 +623,13 @@ def _read_timestamps(tasks):
     return begin_stamps, end_stamps
 
 
-def test_concurrency_unlimited(async_runner, make_cases, make_exec_ctx):
+def test_concurrency_unlimited(make_async_runner, make_cases,
+                               make_sleep_check, make_exec_ctx):
     num_checks = 3
     make_exec_ctx(options=max_jobs_opts(num_checks))
-
-    runner, monitor = async_runner
-    runner.runall(make_cases([SleepCheck(.5) for i in range(num_checks)]))
+    runner, monitor = make_async_runner()
+    runner.runall(make_cases([make_sleep_check(.5)
+                              for i in range(num_checks)]))
 
     # Ensure that all tests were run and without failures.
     assert num_checks == runner.stats.num_cases()
@@ -615,13 +650,15 @@ def test_concurrency_unlimited(async_runner, make_cases, make_exec_ctx):
         pytest.skip('the system seems too much loaded.')
 
 
-def test_concurrency_limited(async_runner, make_cases, make_exec_ctx):
+def test_concurrency_limited(make_async_runner, make_cases,
+                             make_sleep_check, make_exec_ctx):
     # The number of checks must be <= 2*max_jobs.
     num_checks, max_jobs = 5, 3
     make_exec_ctx(options=max_jobs_opts(max_jobs))
 
-    runner, monitor = async_runner
-    runner.runall(make_cases([SleepCheck(.5) for i in range(num_checks)]))
+    runner, monitor = make_async_runner()
+    runner.runall(make_cases([make_sleep_check(.5)
+                              for i in range(num_checks)]))
 
     # Ensure that all tests were run and without failures.
     assert num_checks == runner.stats.num_cases()
@@ -642,13 +679,13 @@ def test_concurrency_limited(async_runner, make_cases, make_exec_ctx):
                                              end_stamps[:-max_jobs]))
     assert all(begin_after_end)
 
-    # NOTE: to ensure that these remaining jobs were also run
-    # in parallel one could do the command hereafter; however, it would
-    # require to substantially increase the sleep time (in SleepCheck),
-    # because of the delays in rescheduling (1s, 2s, 3s, 1s, 2s,...).
-    # We currently prefer not to do this last concurrency test to avoid an
-    # important prolongation of the unit test execution time.
-    # self.assertTrue(self.begin_stamps[-1] < self.end_stamps[max_jobs])
+    # NOTE: to ensure that these remaining jobs were also run in parallel one
+    # could do the command hereafter; however, it would require to
+    # substantially increase the sleep time, because of the delays in
+    # rescheduling (1s, 2s, 3s, 1s, 2s,...). We currently prefer not to do
+    # this last concurrency test to avoid an important prolongation of the
+    # unit test execution time. self.assertTrue(self.begin_stamps[-1] <
+    # self.end_stamps[max_jobs])
 
     # Warn if the first #max_jobs jobs were not run in parallel; the
     # corresponding strict check would be:
@@ -657,12 +694,14 @@ def test_concurrency_limited(async_runner, make_cases, make_exec_ctx):
         pytest.skip('the system seems too loaded.')
 
 
-def test_concurrency_none(async_runner, make_cases, make_exec_ctx):
+def test_concurrency_none(make_async_runner, make_cases,
+                          make_sleep_check, make_exec_ctx):
     num_checks = 3
     make_exec_ctx(options=max_jobs_opts(1))
 
-    runner, monitor = async_runner
-    runner.runall(make_cases([SleepCheck(.5) for i in range(num_checks)]))
+    runner, monitor = make_async_runner()
+    runner.runall(make_cases([make_sleep_check(.5)
+                              for i in range(num_checks)]))
 
     # Ensure that all tests were run and without failures.
     assert num_checks == runner.stats.num_cases()
@@ -697,21 +736,22 @@ def assert_interrupted_run(runner):
             assert t.exc_info[0] == AbortTaskError
 
 
-def test_kbd_interrupt_in_wait_with_concurrency(async_runner, make_cases,
-                                                make_exec_ctx):
+def test_kbd_interrupt_in_wait_with_concurrency(
+        make_async_runner, make_cases, make_sleep_check, make_exec_ctx
+):
     make_exec_ctx(options=max_jobs_opts(4))
-    runner, _ = async_runner
+    runner, _ = make_async_runner()
     with pytest.raises(KeyboardInterrupt):
         runner.runall(make_cases([
-            KeyboardInterruptCheck(), SleepCheck(10),
-            SleepCheck(10), SleepCheck(10)
+            make_kbd_check(), make_sleep_check(10),
+            make_sleep_check(10), make_sleep_check(10)
         ]))
 
     assert_interrupted_run(runner)
 
 
 def test_kbd_interrupt_in_wait_with_limited_concurrency(
-        async_runner, make_cases, make_exec_ctx
+        make_async_runner, make_cases, make_sleep_check, make_exec_ctx
 ):
     # The general idea for this test is to allow enough time for all the
     # four checks to be submitted and at the same time we need the
@@ -719,85 +759,89 @@ def test_kbd_interrupt_in_wait_with_limited_concurrency(
     # trigger the failure), so as to make the framework kill the remaining
     # three.
     make_exec_ctx(options=max_jobs_opts(2))
-    runner, _ = async_runner
+    runner, _ = make_async_runner()
     with pytest.raises(KeyboardInterrupt):
         runner.runall(make_cases([
-            KeyboardInterruptCheck(), SleepCheck(10),
-            SleepCheck(10), SleepCheck(10)
+            make_kbd_check(), make_sleep_check(10),
+            make_sleep_check(10), make_sleep_check(10)
         ]))
 
     assert_interrupted_run(runner)
 
 
-def test_kbd_interrupt_in_setup_with_concurrency(async_runner, make_cases,
-                                                 make_exec_ctx):
+def test_kbd_interrupt_in_setup_with_concurrency(
+        make_async_runner, make_cases, make_sleep_check, make_exec_ctx
+):
     make_exec_ctx(options=max_jobs_opts(4))
-    runner, _ = async_runner
+    runner, _ = make_async_runner()
     with pytest.raises(KeyboardInterrupt):
         runner.runall(make_cases([
-            SleepCheck(1), SleepCheck(1), SleepCheck(1),
-            KeyboardInterruptCheck(phase='setup')
+            make_sleep_check(1), make_sleep_check(1), make_sleep_check(1),
+            make_kbd_check(phase='setup')
         ]))
 
     assert_interrupted_run(runner)
 
 
 def test_kbd_interrupt_in_setup_with_limited_concurrency(
-        async_runner, make_cases, make_exec_ctx
+        make_async_runner, make_sleep_check, make_cases, make_exec_ctx
 ):
     make_exec_ctx(options=max_jobs_opts(2))
-    runner, _ = async_runner
+    runner, _ = make_async_runner()
     with pytest.raises(KeyboardInterrupt):
         runner.runall(make_cases([
-            SleepCheck(1), SleepCheck(1), SleepCheck(1),
-            KeyboardInterruptCheck(phase='setup')
+            make_sleep_check(1), make_sleep_check(1), make_sleep_check(1),
+            make_kbd_check(phase='setup')
         ]))
 
     assert_interrupted_run(runner)
 
 
-def test_run_complete_fails_main_loop(async_runner, make_cases,
-                                      make_exec_ctx):
+def test_run_complete_fails_main_loop(make_async_runner, make_cases,
+                                      make_sleep_check, make_exec_ctx):
     make_exec_ctx(options=max_jobs_opts(1))
-    runner, _ = async_runner
+    runner, _ = make_async_runner()
     num_checks = 3
-    runner.runall(make_cases([SleepCheckPollFail(10),
-                              SleepCheck(0.1), SleepCheckPollFail(10)]))
+    runner.runall(make_cases([make_sleep_check(10, poll_fail='early'),
+                              make_sleep_check(0.1),
+                              make_sleep_check(10, poll_fail='early')]))
     assert_runall(runner)
     stats = runner.stats
     assert stats.num_cases() == num_checks
     assert len(stats.failed()) == 2
 
-    # Verify that the succeeded test is the SleepCheck
+    # Verify that the succeeded test is a SleepCheck
     for t in stats.tasks():
         if not t.failed:
-            assert isinstance(t.check, SleepCheck)
+            assert t.check.name.startswith('SleepCheck')
 
 
-def test_run_complete_fails_busy_loop(async_runner, make_cases,
-                                      make_exec_ctx):
+def test_run_complete_fails_busy_loop(make_async_runner, make_cases,
+                                      make_sleep_check, make_exec_ctx):
     make_exec_ctx(options=max_jobs_opts(1))
-    runner, _ = async_runner
+    runner, _ = make_async_runner()
     num_checks = 3
-    runner.runall(make_cases([SleepCheckPollFailLate(1),
-                              SleepCheck(0.1), SleepCheckPollFailLate(0.5)]))
+    runner.runall(make_cases([make_sleep_check(1, poll_fail='late'),
+                              make_sleep_check(0.1),
+                              make_sleep_check(0.5, poll_fail='late')]))
     assert_runall(runner)
     stats = runner.stats
     assert stats.num_cases() == num_checks
     assert len(stats.failed()) == 2
 
-    # Verify that the succeeded test is the SleepCheck
+    # Verify that the succeeded test is a SleepCheck
     for t in stats.tasks():
         if not t.failed:
-            assert isinstance(t.check, SleepCheck)
+            assert t.check.name.startswith('SleepCheck')
 
 
-def test_compile_fail_reschedule_main_loop(async_runner, make_cases,
-                                           make_exec_ctx):
+def test_compile_fail_reschedule_main_loop(make_async_runner, make_cases,
+                                           make_sleep_check, make_exec_ctx):
     make_exec_ctx(options=max_jobs_opts(1))
-    runner, _ = async_runner
+    runner, _ = make_async_runner()
     num_checks = 2
-    runner.runall(make_cases([SleepCheckPollFail(.1), CompileFailureCheck()]))
+    runner.runall(make_cases([make_sleep_check(.1, poll_fail='early'),
+                              CompileFailureCheck()]))
 
     stats = runner.stats
     assert num_checks == stats.num_cases()
@@ -805,13 +849,14 @@ def test_compile_fail_reschedule_main_loop(async_runner, make_cases,
     assert num_checks == len(stats.failed())
 
 
-def test_compile_fail_reschedule_busy_loop(async_runner, make_cases,
-                                           make_exec_ctx):
+def test_compile_fail_reschedule_busy_loop(make_async_runner, make_cases,
+                                           make_sleep_check, make_exec_ctx):
     make_exec_ctx(options=max_jobs_opts(1))
-    runner, _ = async_runner
+    runner, _ = make_async_runner()
     num_checks = 2
     runner.runall(
-        make_cases([SleepCheckPollFailLate(1.5), CompileFailureCheck()])
+        make_cases([make_sleep_check(1.5, poll_fail='late'),
+                    CompileFailureCheck()])
     )
     stats = runner.stats
     assert num_checks == stats.num_cases()
@@ -885,3 +930,36 @@ def test_restore_session(report_file, make_runner,
 
     with pytest.raises(ReframeError, match=r'could not restore testcase'):
         report.restore_dangling(testgraph)
+
+
+@pytest.fixture
+def generic2_exec_ctx(request, make_exec_ctx_g):
+    yield from make_exec_ctx_g(system='generic2')
+
+
+def test_config_params(make_runner, make_exec_ctx):
+    '''Test that configuration parameters are properly retrieved with the
+    various execution policies.
+    '''
+
+    class T(rfm.RunOnlyRegressionTest):
+        valid_systems = ['generic2']
+        valid_prog_environs = ['*']
+        executable = 'echo'
+
+        @sanity_function
+        def validate(self):
+            return True
+
+        @run_after('setup')
+        def assert_git_timeout(self):
+            expected = 10 if self.current_partition.name == 'part1' else 20
+            timeout = rt.runtime().get_option('general/0/git_timeout')
+            assert timeout == expected
+
+    make_exec_ctx(system='generic2')
+    runner = make_runner()
+    testcases = executors.generate_testcases([T()])
+    runner.runall(testcases)
+    assert runner.stats.num_cases() == 2
+    assert not runner.stats.failed()

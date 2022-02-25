@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -26,24 +26,25 @@ class cscs_tensorflow_horovod_check(tensorflow_cnn_check):
         8: {
             'sm_60': {
                 'throughput_total': (1712, -0.05, None, 'images/s'),
-                'throughput_iteration': (214, -0.05, None, 'images/s')
+                'throughput_per_gpu': (214, -0.05, None, 'images/s')
             }
         },
-        16: {
+        32: {
             'sm_60': {
                 'throughput_total': (6848, -0.05, None, 'images/s'),
-                'throughput_iteration': (214, -0.05, None, 'images/s')
+                'throughput_per_gpu': (214, -0.05, None, 'images/s')
             }
         },
     }
 
     @run_after('init')
     def setup_filtering_criteria(self):
-        if self.num_nodes == 32:
+        if self.num_nodes == 8:
             self.valid_systems += ['dom:gpu']
 
     @run_before('run')
     def setup_run(self):
+        self.skip_if_no_procinfo()
         proc = self.current_partition.processor
         self.num_tasks = self.num_nodes * self.num_tasks_per_node
         self.num_cpus_per_task = proc.num_cores

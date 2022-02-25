@@ -5,12 +5,6 @@ Tutorial 5: Using Build Automation Tools As a Build System
 In this tutorial we will present how to use `Easybuild <https://easybuild.io/>`__ and `Spack <https://spack.io/>`__ as a build system for a ReFrame test.
 The example uses the configuration file presented in :doc:`tutorial_basics`, which you can find in ``tutorials/config/settings.py``.
 We also assume that the reader is already familiar with the concepts presented in the basic tutorial and has a working knowledge of EasyBuild and Spack.
-Finally, to avoid specifying the tutorial configuration file each time you run the test, make sure to export it here:
-
-.. code:: bash
-
-   export RFM_CONFIG_FILE=$(pwd)/tutorials/config/mysettings.py
-
 
 
 Using EasyBuild to Build the Test Code
@@ -23,8 +17,10 @@ Let's consider a simple ReFrame test that installs ``bzip2-1.0.6`` given the eas
 The following code block shows the check, highlighting the lines specific to this tutorial:
 
 .. literalinclude:: ../tutorials/build_systems/easybuild/eb_test.py
-   :lines: 6-
+   :start-after: # rfmdocstart: eb-test
+   :end-before: # rfmdocend: eb-test
    :emphasize-lines: 12,14-17,19-21
+
 
 The test looks pretty standard except for the highlighted blocks.
 Let's have a look first to the block in the :class:`BZip2Check` class.
@@ -77,7 +73,7 @@ Packaging the installation
 --------------------------
 
 The EasyBuild build system offers a way of packaging the installation via EasyBuild's packaging support.
-To use this feature, `the FPM package manager <https://fpm.readthedocs.io/en/latest/intro.html>`__ must be available.
+To use this feature, `the FPM package manager <https://fpm.readthedocs.io/en/latest/>`__ must be available.
 By setting the dictionary :attr:`~reframe.core.buildsystems.Easybuild.package_opts` in the test, ReFrame will pass ``--package-{key}={val}`` to the EasyBuild invocation.
 For instance, the following can be set to package the installations as an rpm file:
 
@@ -104,12 +100,17 @@ This example is the equivalent to the previous one, except that it uses Spack to
 Here is the test's code:
 
 .. literalinclude:: ../tutorials/build_systems/spack/spack_test.py
-   :lines: 6-
+   :start-after: # rfmdocstart: spack-test
+   :end-before: # rfmdocend: spack-test
    :emphasize-lines: 12,14-16
 
 
 When :attr:`~reframe.core.pipeline.RegressionTest.build_system` is set to ``'Spack'``, ReFrame will leverage Spack environments in order to build the test code.
 By default, ReFrame will create a new Spack environment in the test's stage directory and add the requested :attr:`~reframe.core.buildsystems.Spack.specs` to it.
+
+.. note::
+   Optional spec attributes, such as ``target`` and ``os``, should be specified in :attr:`~reframe.core.buildsystems.Spack.specs` and not as install options in :attr:`~reframe.core.buildsystems.Spack.install_opts`.
+
 Users may also specify an existing Spack environment by setting the :attr:`~reframe.core.buildsystems.Spack.environment` attribute.
 In this case, ReFrame treats the environment as a *test resource* so it expects to find it under the test's :attr:`~reframe.core.pipeline.RegressionTest.sourcesdir`, which defaults to ``'src'``.
 
@@ -119,12 +120,10 @@ Here is what ReFrame generates as a build script for this example:
 
 .. code:: bash
 
-   . "$(spack location --spack-root)/share/spack/setup-env.sh"
    spack env create -d rfm_spack_env
-   spack env activate -V -d rfm_spack_env
-   spack config add "config:install_tree:root:opt/spack"
-   spack add bzip2@1.0.6
-   spack install
+   spack -e rfm_spack_env config add "config:install_tree:root:opt/spack"
+   spack -e rfm_spack_env add bzip2@1.0.6
+   spack -e rfm_spack_env install
 
 As you might have noticed ReFrame expects that Spack is already installed on the system.
 The packages specified in the environment and the tests will be installed in the test's stage directory, where the environment is copied before building.
@@ -154,10 +153,8 @@ Finally, here is the generated run script that ReFrame uses to run the test, onc
 .. code-block:: bash
 
    #!/bin/bash
-   . "$(spack location --spack-root)/share/spack/setup-env.sh"
    spack env create -d rfm_spack_env
-   spack env activate -V -d rfm_spack_env
-   spack load bzip2@1.0.6
+   eval `spack -e rfm_spack_env load --sh bzip2@1.0.6`
    bzip2 --help
 
 From this point on, sanity and performance checking are exactly identical to any other ReFrame test.
