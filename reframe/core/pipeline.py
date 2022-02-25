@@ -42,7 +42,6 @@ from reframe.core.exceptions import (BuildError, DependencyError,
                                      ReframeSyntaxError)
 from reframe.core.meta import RegressionTestMeta
 from reframe.core.schedulers import Job
-from reframe.core.variables import DEPRECATE_WR
 
 
 _PIPELINE_STAGES = (
