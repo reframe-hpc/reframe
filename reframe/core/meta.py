@@ -940,7 +940,7 @@ def make_test(name, bases, body, **kwargs):
        class HelloTest(rfm.RunOnlyRegressionTest):
            valid_systems = ['*']
            valid_prog_environs = ['*']
-           executable = 'echo',
+           executable = 'echo'
            sanity_patterns: sn.assert_true(1)
 
        hello_cls = HelloTest
