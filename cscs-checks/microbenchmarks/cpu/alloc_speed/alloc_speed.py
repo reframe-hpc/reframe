@@ -47,16 +47,16 @@ class AllocSpeedTest(rfm.RegressionTest):
         sys_reference = {
             'no': {
                 'dom:gpu': {
-                    'time': (1.22, -0.20, 0.15, 's')
+                    'time': (1.32, -0.20, 0.15, 's')
                 },
                 'dom:mc': {
-                    'time': (1.41, -0.20, 0.10, 's')
+                    'time': (1.51, -0.20, 0.10, 's')
                 },
                 'daint:gpu': {
-                    'time': (1.22, -0.20, 0.05, 's')
+                    'time': (1.32, -0.20, 0.05, 's')
                 },
                 'daint:mc': {
-                    'time': (1.41, -0.20, 0.05, 's')
+                    'time': (1.51, -0.20, 0.05, 's')
                 },
                 'eiger:mc': {
                     'time': (0.12, -0.20, 0.05, 's')
