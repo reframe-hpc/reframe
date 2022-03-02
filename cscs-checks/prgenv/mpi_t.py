@@ -48,6 +48,10 @@ class mpit_check(rfm.RegressionTest):
                 'control': 'ref/mpit_control_vars_8.1.5.ref',
                 'categories': 'ref/mpit_categories_8.1.5.ref',
             },
+            '8.1.12': {
+                'control': 'ref/mpit_control_vars_8.1.12.ref',
+                'categories': 'ref/mpit_categories_8.1.12.ref',
+            },
         }
         # {{{ 0/ MPICH version:
         # MPI VERSION  : CRAY MPICH version 7.7.15 (ANL base 3.2)
@@ -61,6 +65,8 @@ class mpit_check(rfm.RegressionTest):
         # cpe/21.04 cray-mpich/8.1.4
         # cpe/21.05 cray-mpich/8.1.5
         # cpe/21.06 cray-mpich/8.1.6
+        # cpe/21.08 cray-mpich/8.1.8
+        # cpe/21.12 cray-mpich/8.1.12
         regex = r'^MPI VERSION\s+: CRAY MPICH version (\S+) \(ANL base \S+\)'
         mpich_version_major = sn.extractsingle_s(
             r'^(\d+)\.\d+\.\d+', sn.extractsingle(regex, rpt_file, 1), 1

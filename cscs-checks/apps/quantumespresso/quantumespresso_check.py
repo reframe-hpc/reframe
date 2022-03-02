@@ -96,35 +96,19 @@ class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
     @run_before('performance')
     def set_reference(self):
         references = {
-            'maint': {
-                'small': {
-                    'dom:mc': {'time': (115.0, None, 0.05, 's')},
-                    'daint:mc': {'time': (115.0, None, 0.10, 's')},
-                    'eiger:mc': {'time': (66.0, None, 0.10, 's')},
-                    'pilatus:mc': {'time': (66.0, None, 0.10, 's')}
-                },
-                'large': {
-                    'daint:mc': {'time': (150.0, None, 0.20, 's')},
-                    'eiger:mc': {'time': (53.0, None, 0.10, 's')},
-                    'pilatus:mc': {'time': (53.0, None, 0.10, 's')}
-                }
+            'small': {
+                'dom:mc': {'time': (110.0, None, 0.05, 's')},
+                'daint:mc': {'time': (110.0, None, 0.20, 's')},
+                'eiger:mc': {'time': (66.0, None, 0.10, 's')},
+                'pilatus:mc': {'time': (66.0, None, 0.10, 's')}
             },
-            'prod': {
-                'small': {
-                    'dom:mc': {'time': (115.0, None, 0.05, 's')},
-                    'daint:mc': {'time': (115.0, None, 0.10, 's')},
-                    'eiger:mc': {'time': (66.0, None, 0.10, 's')},
-                    'pilatus:mc': {'time': (66.0, None, 0.10, 's')}
-                },
-                'large': {
-                    'daint:mc': {'time': (150.0, None, 0.20, 's')},
-                    'eiger:mc': {'time': (53.0, None, 0.10, 's')},
-                    'pilatus:mc': {'time': (53.0, None, 0.10, 's')}
-                }
+            'large': {
+                'daint:mc': {'time': (145.0, None, 0.30, 's')},
+                'eiger:mc': {'time': (53.0, None, 0.10, 's')},
+                'pilatus:mc': {'time': (53.0, None, 0.10, 's')}
             }
         }
-
-        self.reference = references[self.variant][self.scale]
+        self.reference = references[self.scale]
 
     @run_before('run')
     def set_task_distribution(self):
@@ -158,23 +142,12 @@ class QuantumESPRESSOGpuCheck(QuantumESPRESSOCheck):
     @run_before('performance')
     def set_reference(self):
         references = {
-            'maint': {
-                'small': {
-                    'dom:gpu': {'time': (61.0, None, 0.05, 's')},
-                    'daint:gpu': {'time': (61.0, None, 0.05, 's')}
-                },
-                'large': {
-                    'daint:gpu': {'time': (54.0, None, 0.05, 's')}
-                }
+            'small': {
+                'dom:gpu': {'time': (59.0, None, 0.05, 's')},
+                'daint:gpu': {'time': (59.0, None, 0.05, 's')}
             },
-            'prod': {
-                'small': {
-                    'dom:gpu': {'time': (61.0, None, 0.05, 's')},
-                    'daint:gpu': {'time': (61.0, None, 0.05, 's')}
-                },
-                'large': {
-                    'daint:gpu': {'time': (54.0, None, 0.05, 's')}
-                }
+            'large': {
+                'daint:gpu': {'time': (39.0, None, 0.05, 's')}
             }
         }
-        self.reference = references[self.variant][self.scale]
+        self.reference = references[self.scale]

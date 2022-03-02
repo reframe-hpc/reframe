@@ -302,7 +302,9 @@ class RegressionTask:
             with logging.logging_context(self.check) as logger:
                 logger.debug(f'Entering stage: {self._current_stage}')
                 with update_timestamps():
-                    return fn(*args, **kwargs)
+                    # Pick the configuration of the current partition
+                    with runtime.temp_config(self.testcase.partition.fullname):
+                        return fn(*args, **kwargs)
         except SkipTestError as e:
             if not self.succeeded:
                 # Only skip a test if it hasn't finished yet;
@@ -592,10 +594,6 @@ class ExecutionPolicy(abc.ABC):
     def runcase(self, case):
         '''Run a test case.'''
 
-        # Pick the right subconfig for the current partition
-        rt = runtime.runtime()
-        _, partition, _ = case
-        rt.site_config.select_subconfig(partition.fullname)
         if self.strict_check:
             case.check.strict_check = True
 
