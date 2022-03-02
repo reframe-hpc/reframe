@@ -250,3 +250,13 @@ def detect_topology():
 
         if not found_devinfo:
             getlogger().debug(f'> device auto-detection is not supported')
+
+
+def getallnodes(parts):
+    rt = runtime.runtime()
+    nodes = {}
+    for part in rt.system.partitions:
+        # TODO keep only partitions that the user asks for
+        nodes[part.fullname] = [n.name for n in part.scheduler.allnodes()]
+
+    return nodes

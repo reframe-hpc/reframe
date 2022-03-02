@@ -13,6 +13,7 @@ import itertools
 import reframe.core.namespaces as namespaces
 import reframe.utility as utils
 from reframe.core.exceptions import ReframeSyntaxError
+from reframe.frontend.autodetect import getallnodes
 
 
 class TestParam:
@@ -90,6 +91,23 @@ class TestParam:
 
     def is_abstract(self):
         return len(self.values) == 0
+
+
+class NodeTestParam(TestParam):
+    def __init__(self, values=None,
+                 inherit_params=False, filter_params=None, fmt=None):
+        # TODO choose which nodes to get
+        self._node_map = getallnodes(['*'])
+        node_values = list(itertools.chain(*self._node_map.values()))
+        # Remove duplicates of nodes from different partitions
+        node_values = list(set(node_values))
+
+        super().__init__(values=node_values, inherit_params=inherit_params,
+                         filter_params=filter_params, fmt=fmt)
+
+    @property
+    def node_map(self):
+        return self._node_map
 
 
 class ParamSpace(namespaces.Namespace):

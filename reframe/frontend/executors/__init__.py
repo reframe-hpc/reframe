@@ -21,6 +21,7 @@ from reframe.core.exceptions import (AbortTaskError,
                                      ForceExitError,
                                      SkipTestError,
                                      TaskExit)
+from reframe.core.parameters import NodeTestParam
 from reframe.core.schedulers.local import LocalJobScheduler
 from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.statistics import TestStats
@@ -108,11 +109,24 @@ def generate_testcases(checks,
     def supports_environ(c, e):
         return skip_environ_check or c.supports_environ(e.name)
 
+    def support_node_parameter(c, part):
+        cls = type(c)
+        variant_info = cls.get_variant_info(c.variant_num)
+        for param, v in variant_info['params'].items():
+            param_object = cls.raw_params[param]
+            if isinstance(param_object, NodeTestParam):
+                return v in param_object.node_map[part.fullname]
+
+        return True
+
     rt = runtime.runtime()
     cases = []
     for c in checks:
         for p in rt.system.partitions:
-            if not supports_partition(c, p):
+            if (
+                not supports_partition(c, p) or
+                not support_node_parameter(c, p)
+            ):
                 continue
 
             for e in p.environs:

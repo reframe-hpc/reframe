@@ -222,6 +222,8 @@ class RegressionTestMeta(type):
         # class body as: `P0 = parameter([0,1,2,3])`.
         namespace['parameter'] = parameters.TestParam
 
+        namespace['nodeparameter'] = parameters.NodeTestParam
+
         # Regression test var space defined at the class level
         namespace['_rfm_local_var_space'] = namespaces.LocalNamespace()
 
@@ -363,7 +365,7 @@ class RegressionTestMeta(type):
         directives = [
             'parameter', 'variable', 'bind', 'run_before', 'run_after',
             'require_deps', 'required', 'deferrable', 'sanity_function',
-            'final', 'performance_function', 'fixture'
+            'final', 'performance_function', 'fixture', 'nodeparameter'
         ]
         for b in directives:
             namespace.pop(b)
@@ -768,7 +770,7 @@ class RegressionTestMeta(type):
               ...
 
           # Get the raw info for variant 0
-          MyTest.get_variant_info(0, recursive=True)
+          MyTest.get_variant_info(0, recurse=True)
           # {
           #     'params': {'p1': 'a'},
           #     'fixtures': {
