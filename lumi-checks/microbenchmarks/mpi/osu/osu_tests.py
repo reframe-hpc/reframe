@@ -23,7 +23,7 @@ class alltoall_check(osu_latency):
     strict_check = False
     reference = {
         'lumi:small': {
-            'latency': (8.23, None, 0.1, 'us')
+            'latency': (5.97, None, 0.1, 'us')
         },
     }
     num_tasks_per_node = 1
@@ -67,7 +67,7 @@ class p2p_bandwidth_cpu_test(osu_bandwidth, p2p_config_cscs):
                            variants=cpu_build_variant)
     reference = {
         'lumi:small': {
-            'bw': (9607.0, -0.10, None, 'MB/s')
+            'bw': (12242.1, -0.10, None, 'MB/s')
         }
     }
 
