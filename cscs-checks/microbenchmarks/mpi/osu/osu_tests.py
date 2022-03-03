@@ -6,9 +6,9 @@
 import reframe as rfm
 import reframe.utility.sanity as sn
 
-from hpctestlib.microbenchmarks.mpi.osu import (osu_latency,
-                                                osu_bandwidth,
-                                                build_osu_benchmarks)
+from hpctestlib.microbenchmarks.mpi.osu.mpi import (osu_latency,
+                                                    osu_bandwidth,
+                                                    build_osu_benchmarks)
 
 
 class build_osu_benchmarks_gpu(build_osu_benchmarks):
@@ -17,13 +17,13 @@ class build_osu_benchmarks_gpu(build_osu_benchmarks):
         if self.current_system.name in ['daint', 'dom']:
             self.modules = ['cudatoolkit/21.3_11.2']
             if self.current_environ.name == 'PrgEnv-cray':
-                self.prebuild_cmds += ['module sw cce cce/10.0.2']
+                self.modules += ['cce/10.0.2']
 
             if self.current_environ.name == 'PrgEnv-gnu':
-                self.prebuild_cmds += ['module sw gcc gcc/10.3.0']
+                self.modules += ['gcc/10.3.0']
 
             if self.current_environ.name == 'PrgEnv-intel':
-                self.prebuild_cmds += ['module sw intel intel/19.1.1.217']
+                self.modules += ['intel/19.1.1.217']
 
         elif self.current_system.name in ['arolla', 'tsa']:
             self.modules = ['cuda/10.1.243']
@@ -39,15 +39,12 @@ cuda_build_variant = build_osu_benchmarks_gpu.get_variant_nums(
 
 @rfm.simple_test
 class allreduce_check(osu_latency):
-    variant = parameter(['small'], ['large'])
-    ctrl_msg_size = 8
-    perf_msg_size = 8
+    number_of_nodes = parameter([6], [16])
+    message_size = 8
     executable = 'osu_allreduce'
     num_tasks_per_node = 1
-    num_gpus_per_node  = 1
     osu_binaries = fixture(build_osu_benchmarks, scope='environment',
                            variants=cpu_build_variant)
-    strict_check = False
     valid_systems = ['daint:gpu', 'daint:mc']
     valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-nvidia']
     maintainers = ['RS', 'AJ']
@@ -60,16 +57,16 @@ class allreduce_check(osu_latency):
 
     @run_after('init')
     def add_valid_systems(self):
-        if self.variant == 'small':
+        if self.number_of_nodes == 6:
             self.valid_systems += ['dom:gpu', 'dom:mc']
 
     @run_before('run')
     def set_num_tasks(self):
-        self.num_tasks = 6 if self.variant == 'small' else 16
+        self.num_tasks = self.number_of_nodes
 
     @run_before('performance')
     def set_performance_patterns(self):
-        if self.variant == 'small':
+        if self.number_of_nodes == 6:
             self.reference = {
                 'dom:gpu': {
                     'latency': (5.67, None, 0.05, 'us')
@@ -98,15 +95,13 @@ class allreduce_check(osu_latency):
 
 @rfm.simple_test
 class alltoall_check(osu_latency):
-    ctrl_msg_size = 8
-    perf_msg_size = 8
+    message_size = 8
     executable = 'osu_alltoall'
     osu_binaries = fixture(build_osu_benchmarks, scope='environment',
                            variants=cpu_build_variant)
     valid_systems = ['daint:gpu', 'dom:gpu']
     valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                            'PrgEnv-intel', 'PrgEnv-nvidia']
-    strict_check = False
     reference = {
         'dom:gpu': {
             'latency': (8.23, None, 0.1, 'us')
@@ -116,7 +111,6 @@ class alltoall_check(osu_latency):
         }
     }
     num_tasks_per_node = 1
-    num_gpus_per_node  = 1
     extra_resources = {
         'switches': {
             'num_switches': 1
@@ -131,28 +125,6 @@ class alltoall_check(osu_latency):
             self.num_tasks = 16
         else:
             self.num_tasks = 6
-
-
-@rfm.simple_test
-class alltoall_flex_check(osu_latency):
-    descr = 'Flexible Alltoall OSU test'
-    executable = 'osu_alltoall'
-    ctrl_msg_size = 1048576
-    num_tasks_per_node = 1
-    num_tasks = 0
-    osu_binaries = fixture(build_osu_benchmarks, scope='environment',
-                           variants=cpu_build_variant)
-    valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                     'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn']
-    valid_prog_environs = ['PrgEnv-cray']
-    tags = {'diagnostic', 'ops', 'benchmark', 'craype'}
-    maintainers = ['RS', 'AJ']
-
-    @run_after('init')
-    def add_prog_environ(self):
-        if self.current_system.name in ['arolla', 'tsa']:
-            self.exclusive_access = True
-            self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-pgi']
 
 
 class p2p_config_cscs(rfm.RegressionMixin):
@@ -170,12 +142,11 @@ class p2p_config_cscs(rfm.RegressionMixin):
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                         'PrgEnv-intel', 'PrgEnv-nvidia']
 
-        if not self.device:
+        if not self.device_buffers:
             self.valid_systems += ['daint:mc', 'dom:mc',
                                    'eiger:mc', 'pilatus:mc']
 
         self.exclusive_access = True
-        self.strict_check = False
         self.maintainers = ['RS', 'AJ']
         self.tags = {'production', 'benchmark', 'craype'}
         self.extra_resources = {
@@ -188,8 +159,7 @@ class p2p_config_cscs(rfm.RegressionMixin):
 @rfm.simple_test
 class p2p_bandwidth_cpu_test(osu_bandwidth, p2p_config_cscs):
     descr = 'P2P bandwidth microbenchmark'
-    ctrl_msg_size = 4194304
-    perf_msg_size = 4194304
+    message_size = 4194304
     executable = 'osu_bw'
     osu_binaries = fixture(build_osu_benchmarks, scope='environment',
                            variants=cpu_build_variant)
@@ -222,8 +192,7 @@ class p2p_bandwidth_cpu_test(osu_bandwidth, p2p_config_cscs):
 @rfm.simple_test
 class p2p_latency_cpu_test(osu_latency, p2p_config_cscs):
     descr = 'P2P latency microbenchmark'
-    ctrl_msg_size = 8
-    perf_msg_size = 8
+    message_size = 8
     executable = 'osu_latency'
     osu_binaries = fixture(build_osu_benchmarks, scope='environment',
                            variants=cpu_build_variant)
@@ -264,9 +233,8 @@ class g2g_rdma_cscs(rfm.RegressionMixin):
 @rfm.simple_test
 class p2p_bandwidth_gpu_test(osu_bandwidth, p2p_config_cscs, g2g_rdma_cscs):
     descr = 'G2G bandwidth microbenchmark'
-    device = 'cuda'
-    ctrl_msg_size = 4194304
-    perf_msg_size = 4194304
+    device_buffers = 'cuda'
+    message_size = 4194304
     executable = 'osu_bw'
     osu_binaries = fixture(build_osu_benchmarks_gpu, scope='environment',
                            variants=cuda_build_variant)
@@ -276,9 +244,6 @@ class p2p_bandwidth_gpu_test(osu_bandwidth, p2p_config_cscs, g2g_rdma_cscs):
         },
         'daint:gpu': {
             'bw': (8765.65, -0.1, None, 'MB/s')
-        },
-        '*': {
-            'bw': (0, None, None, 'MB/s')
         }
     }
 
@@ -286,9 +251,8 @@ class p2p_bandwidth_gpu_test(osu_bandwidth, p2p_config_cscs, g2g_rdma_cscs):
 @rfm.simple_test
 class p2p_latency_gpu_test(osu_latency, p2p_config_cscs, g2g_rdma_cscs):
     descr = 'G2G latency microbenchmark'
-    device = 'cuda'
-    ctrl_msg_size = 8
-    perf_msg_size = 8
+    device_buffers = 'cuda'
+    message_size = 8
     executable = 'osu_latency'
     osu_binaries = fixture(build_osu_benchmarks_gpu, scope='environment',
                            variants=cuda_build_variant)
@@ -298,8 +262,5 @@ class p2p_latency_gpu_test(osu_latency, p2p_config_cscs, g2g_rdma_cscs):
         },
         'daint:gpu': {
             'latency': (6.8, None, 0.65, 'us')
-        },
-        '*': {
-            'latency': (0, None, None, 'MB/s')
         }
     }
