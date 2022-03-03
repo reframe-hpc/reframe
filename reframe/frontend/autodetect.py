@@ -257,6 +257,14 @@ def getallnodes(parts):
     nodes = {}
     for part in rt.system.partitions:
         # TODO keep only partitions that the user asks for
-        nodes[part.fullname] = [n.name for n in part.scheduler.allnodes()]
+
+        # This job will not be submitted, it's used only to filter
+        # the nodes based on the partition configuration
+        job = Job.create(part.scheduler,
+                         part.launcher_type(),
+                         name='placeholder-job',
+                         sched_access=part.access)
+        filtered = part.scheduler.filternodes(job, part.scheduler.allnodes())
+        nodes[part.fullname] = [n.name for n in filtered]
 
     return nodes
