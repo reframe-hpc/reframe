@@ -24,7 +24,8 @@ This can be expressed inside :class:`T1` using the :func:`depends_on` method:
        valid_systems = ['P0', 'P1']
        valid_prog_environs = ['E0', 'E1']
 
-       def __init__(self):
+       @run_after('init')
+       def setup_deps(self):
            self.depends_on('T0')
 
 Conceptually, this dependency can be viewed at the test level as follows:
@@ -58,8 +59,9 @@ You can achieve this as follows:
 
    @rfm.simple_test
    class T1(rfm.RegressionTest):
-       def __init__(self):
-           ...
+       ...
+       @run_after('init')
+       def setup_deps(self):
            self.depends_on('T0', how=udeps.fully)
 
 
@@ -154,8 +156,9 @@ The following code will create dependencies only if the source partition is ``P0
 
    @rfm.simple_test
    class T1(rfm.RegressionTest):
-       def __init__(self):
-           ...
+       ...
+       @run_after('init')
+       def setup_deps(self):
            self.depends_on('T0', how=myway)
 
 
