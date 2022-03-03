@@ -379,6 +379,13 @@ def main():
         dest='flex_alloc_nodes', metavar='{all|STATE|NUM}', default=None,
         help='Set strategy for the flexible node allocation (default: "idle").'
     )
+    # TODO Decide the functionality of the option
+    # Now ReFrame parametirizes the test in all nodes of the partition
+    run_options.add_argument(
+        '--flex-alloc-singlenode', action='store_true',
+        dest='flex_alloc_singlenode',
+        help='Submit single node job automatically on every node of a partition'
+    )
     run_options.add_argument(
         '--force-local', action='store_true',
         help='Force local execution of checks'
@@ -884,6 +891,8 @@ def main():
         'version': osext.reframe_version(),
         'workdir': os.getcwd(),
     }
+
+    rt.flex_alloc_singlenode = options.flex_alloc_singlenode or False
 
     # Print command line
     printer.info(f"[ReFrame Setup]")

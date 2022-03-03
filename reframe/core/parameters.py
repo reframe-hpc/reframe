@@ -98,8 +98,9 @@ class TestParam:
 
 
 class NodeTestParam(TestParam):
-    def __init__(self, values=None,
-                 inherit_params=False, filter_params=None, fmt=None):
+    def __init__(self, values=None, inherit_params=False,
+                 filter_params=None, fmt=None, loggable=False):
+        # TODO check which arguments makes sence to keep
         # TODO choose which nodes to get
         self._node_map = getallnodes(['*'])
         node_values = list(itertools.chain(*self._node_map.values()))
@@ -107,7 +108,7 @@ class NodeTestParam(TestParam):
         node_values = list(set(node_values))
 
         super().__init__(values=node_values, inherit_params=inherit_params,
-                         filter_params=filter_params, fmt=fmt)
+                         filter_params=filter_params, fmt=fmt, loggable=loggable)
 
     @property
     def node_map(self):

@@ -18,8 +18,8 @@ import reframe.core.fixtures as fixtures
 import reframe.core.hooks as hooks
 import reframe.utility as utils
 
-from reframe.core.exceptions import ReframeSyntaxError
 from reframe.core.deferrable import deferrable, _DeferredPerformanceExpression
+from reframe.core.exceptions import ReframeSyntaxError, ReframeFatalError
 from reframe.core.runtime import runtime
 
 
@@ -216,7 +216,15 @@ class RegressionTestMeta(type):
         ]
 
         # Regression test parameter space defined at the class level
-        namespace['_rfm_local_param_space'] = namespaces.LocalNamespace()
+        localns =  namespaces.LocalNamespace()
+        try:
+            rt = runtime()
+            if rt.flex_alloc_singlenode:
+                localns['_rfm_node'] = parameters.NodeTestParam()
+        except ReframeFatalError:
+            pass
+
+        namespace['_rfm_local_param_space'] = localns
 
         # Directive to insert a regression test parameter directly in the
         # class body as: `P0 = parameter([0,1,2,3])`.
