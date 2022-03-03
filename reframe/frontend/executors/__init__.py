@@ -115,7 +115,8 @@ def generate_testcases(checks,
         for param, v in variant_info['params'].items():
             param_object = cls.raw_params[param]
             if isinstance(param_object, NodeTestParam):
-                return v in param_object.node_map[part.fullname]
+                if v not in param_object.node_map[part.fullname]:
+                    return False
 
         return True
 
