@@ -4,34 +4,79 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import reframe as rfm
+import reframe.utility as util
 import reframe.utility.sanity as sn
 
 
+@rfm.simple_test
 class VASPCheck(rfm.RunOnlyRegressionTest):
-    scale = parameter(['small', 'large'])
-    variant = parameter(['maint', 'prod'])
+    descr = f'VASP check '
     modules = ['VASP']
     executable = 'vasp_std'
-    keep_files = ['OUTCAR']
     extra_resources = {
         'switches': {
             'num_switches': 1
         }
     }
+    keep_files = ['OUTCAR']
     strict_check = False
+    use_multithreading = False
+    tags = {'maintenance', 'production'}
     maintainers = ['LM']
-    tags = {'scs'}
+
+    num_nodes = parameter([6, 16], loggable=True)
+    references = {
+        6: {
+            'sm_60': {
+                'dom:gpu': {'time': (56.0, None, 0.10, 's')},
+                'daint:gpu': {'time': (65.0, None, 0.15, 's')},
+            },
+            'broadwell': {
+                'dom:mc': {'time': (58.0, None, 0.10, 's')},
+                'daint:mc': {'time': (65.0, None, 0.15, 's')},
+            },
+            'zen2': {
+                'eiger:mc': {'time': (100.0, None, 0.10, 's')},
+                'pilatus:mc': {'time': (100.0, None, 0.10, 's')},
+            },
+        },
+        16: {
+            'sm_60': {
+                'daint:gpu': {'time': (55.0, None, 0.15, 's')},
+            },
+            'broadwell': {
+                'daint:mc': {'time': (55.0, None, 0.15, 's')},
+            },
+            'zen2': {
+                'eiger:mc': {'time': (100.0, None, 0.10, 's')},
+                'pilatus:mc': {'time': (100.0, None, 0.10, 's')}
+            }
+        }
+    }
+
 
     @run_after('init')
-    def setup_by_system(self):
+    def setup_system_filtering(self):
+        self.descr += f' ({self.num_nodes} node(s))'
+
+        # setup system filter
+        valid_systems = {
+            6: ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+                'eiger:mc', 'pilatus:mc'],
+            16: ['daint:gpu', 'daint:mc', 'eiger:mc']
+        }
+
+        try:
+            self.valid_systems = valid_systems[self.num_nodes]
+        except KeyError:
+            self.valid_systems = []
+
+        # setup programming environment filter
         if self.current_system.name in ['eiger', 'pilatus']:
             self.valid_prog_environs = ['cpeIntel']
         else:
             self.valid_prog_environs = ['builtin']
 
-        self.tags |= {
-            'maintenance' if self.variant == 'maint' else 'production'
-        }
 
     @sanity_function
     def assert_reference(self):
@@ -45,92 +90,42 @@ class VASPCheck(rfm.RunOnlyRegressionTest):
                                 r'\s+(?P<time>\S+)', 'OUTCAR',
                                 'time', float)
 
+    @run_before('run')
+    def setup_run(self):
+        # set auto-detected architecture
+        proc = self.current_partition.processor 
+        arch = proc.arch
+        # set architecture for GPU partition (no auto-detection) 
+        if self.current_partition.fullname in ('daint:gpu', 'dom:gpu'):
+            arch = 'sm_60'
 
-@rfm.simple_test
-class VASPCpuCheck(VASPCheck):
-    valid_systems = ['daint:mc', 'eiger:mc', 'pilatus:mc']
-    use_multithreading = False
+        try:
+            found = self.references[self.num_nodes][arch]
+        except KeyError:
+            self.skip(f'Configuration with {self.num_nodes} node(s) '
+                      f'is not supported on {arch!r}')
 
-    @run_after('init')
-    def setup_by_scale(self):
-        self.descr = (f'VASP CPU check (version: {self.scale}, '
-                      f'{self.variant})')
-        if self.scale == 'small':
-            self.valid_systems += ['dom:mc']
-            if self.current_system.name in ['daint', 'dom']:
-                self.num_tasks = 12
-                self.num_tasks_per_node = 2
-                self.num_cpus_per_task = 18
-            elif self.current_system.name in ['eiger', 'pilatus']:
-                self.num_tasks = 64
-                self.num_tasks_per_node = 4
-                self.num_cpus_per_task = 8
-                self.num_tasks_per_core = 1
-                self.variables = {
-                    'MPICH_OFI_STARTUP_CONNECT': '1',
-                    'OMP_NUM_THREADS': str(self.num_cpus_per_task),
-                    'OMP_PLACES': 'cores',
-                    'OMP_PROC_BIND': 'close'
-                }
-        else:
-            if self.current_system.name in ['daint']:
-                self.num_tasks = 32
-                self.num_tasks_per_node = 2
-                self.num_cpus_per_task = 18
-
-    @run_before('performance')
-    def set_reference(self):
-        references = {
-            'small': {
-                'dom:mc': {'time': (65.0, None, 0.15, 's')},
-                'daint:mc': {'time': (65.0, None, 0.15, 's')},
-                'eiger:mc': {'time': (100.0, None, 0.10, 's')},
-                'pilatus:mc': {'time': (100.0, None, 0.10, 's')}
-            },
-            'large': {
-                'daint:mc': {'time': (55.0, None, 0.15, 's')},
-                'eiger:mc': {'time': (100.0, None, 0.10, 's')},
-                'pilatus:mc': {'time': (100.0, None, 0.10, 's')}
+        # custom settings for each architecture
+        if arch == 'sm_60':
+            self.num_tasks_per_node = 1
+        elif arch == 'broadwell':
+            self.num_tasks_per_node = 2
+        elif arch == 'zen2':
+            self.num_tasks_per_node = 4
+            self.variables = {
+                'MPICH_OFI_STARTUP_CONNECT': '1'
             }
-        }
-        self.reference = references[self.scale]
 
-    @run_before('run')
-    def set_task_distribution(self):
-        self.job.options = ['--distribution=block:block']
-
-    @run_before('run')
-    def set_cpu_binding(self):
+        # common setup for every architecture
         self.job.launcher.options = ['--cpu-bind=cores']
-
-
-@rfm.simple_test
-class VASPGpuCheck(VASPCheck):
-    valid_systems = ['daint:gpu']
-    num_gpus_per_node = 1
-    num_tasks_per_node = 1
-    num_cpus_per_task = 12
-    use_multithreading = False
-
-    @run_after('init')
-    def setup_test(self):
-        self.descr = (f'VASP GPU check (version: {self.scale}, '
-                      f'{self.variant})')
-        if self.scale == 'small':
-            self.valid_systems += ['dom:gpu']
-            self.num_tasks = 6
-        else:
-            self.num_tasks = 16
-
-    @run_before('performance')
-    def set_reference(self):
-        references = {
-            'small': {
-                'dom:gpu': {'time': (65.0, None, 0.15, 's')},
-                'daint:gpu': {'time': (65.0, None, 0.15, 's')}
-            },
-            'large': {
-                'daint:gpu': {'time': (55.0, None, 0.15, 's')}
-            }
+        self.job.options = ['--distribution=block:block']
+        self.num_cpus_per_task = int(proc.num_cores / self.num_tasks_per_node)
+        self.num_tasks = self.num_nodes * self.num_tasks_per_node
+        self.variables = {
+            'OMP_NUM_THREADS': str(self.num_cpus_per_task),
+            'OMP_PLACES': 'cores',
+            'OMP_PROC_BIND': 'close'
         }
-        self.reference = references[self.scale]
+
+        # setup performance references
+        self.reference = self.references[self.num_nodes][arch]
