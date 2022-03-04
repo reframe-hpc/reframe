@@ -53,6 +53,18 @@ class VASPCheck(rfm.RunOnlyRegressionTest):
         }
     }
 
+    @performance_function('s')
+    def time(self):
+        return sn.extractsingle(r'Elapsed time \(sec\):'
+                                r'\s+(?P<time>\S+)', 'OUTCAR',
+                                'time', float)
+
+    @sanity_function
+    def assert_reference(self):
+        force = sn.extractsingle(r'1 F=\s+(?P<result>\S+)',
+                                 self.stdout, 'result', float)
+        return sn.assert_reference(force, -.85026214E+03, -1e-5, 1e-5)
+
 
     @run_after('init')
     def setup_system_filtering(self):
@@ -76,18 +88,6 @@ class VASPCheck(rfm.RunOnlyRegressionTest):
         else:
             self.valid_prog_environs = ['builtin']
 
-
-    @sanity_function
-    def assert_reference(self):
-        force = sn.extractsingle(r'1 F=\s+(?P<result>\S+)',
-                                 self.stdout, 'result', float)
-        return sn.assert_reference(force, -.85026214E+03, -1e-5, 1e-5)
-
-    @performance_function('s')
-    def time(self):
-        return sn.extractsingle(r'Elapsed time \(sec\):'
-                                r'\s+(?P<time>\S+)', 'OUTCAR',
-                                'time', float)
 
     @run_before('run')
     def setup_run(self):
