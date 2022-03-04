@@ -11,9 +11,8 @@ import reframe.utility.sanity as sn
 
 class LAMMPSCheck(rfm.RunOnlyRegressionTest):
     scale = parameter(['small', 'large'])
-    variant = parameter(['maint', 'prod'])
     modules = ['cray-python', 'LAMMPS']
-    tags = {'scs', 'external-resources'}
+    tags = {'external-resources', 'maintenance', 'production'}
     maintainers = ['LM']
     strict_check = False
     extra_resources = {
@@ -78,14 +77,13 @@ class LAMMPSGPUCheck(LAMMPSCheck):
             self.num_tasks = 32
             self.num_tasks_per_node = 2
 
-        self.reference = self.references_by_variant[self.variant][self.scale]
-        self.tags |= {'maintenance', 'production'}
+        self.reference = self.refs_by_scale[self.scale]
 
 
 @rfm.simple_test
 class LAMMPSCPUCheck(LAMMPSCheck):
     valid_systems = ['daint:mc', 'eiger:mc', 'pilatus:mc']
-    res_by_scale = {
+    refs_by_scale = {
         'small': {
             'dom:mc': {'perf': (4394, -0.05, None, 'timesteps/s')},
             'daint:mc': {'perf': (3350, -0.30, None, 'timesteps/s')},
@@ -121,5 +119,4 @@ class LAMMPSCPUCheck(LAMMPSCheck):
             self.num_tasks_per_node = 128
             self.num_tasks = 256 if self.scale == 'small' else 512
 
-        self.reference = self.references_by_variant[self.variant][self.scale]
-        self.tags |= {'maintenance', 'production'}
+        self.reference = self.refs_by_scale[self.scale]
