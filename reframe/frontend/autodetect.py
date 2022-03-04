@@ -252,19 +252,31 @@ def detect_topology():
             getlogger().debug(f'> device auto-detection is not supported')
 
 
-def getallnodes(parts):
+def getallnodes(state='all'):
     rt = runtime.runtime()
     nodes = {}
     for part in rt.system.partitions:
-        # TODO keep only partitions that the user asks for
-
         # This job will not be submitted, it's used only to filter
         # the nodes based on the partition configuration
         job = Job.create(part.scheduler,
                          part.launcher_type(),
                          name='placeholder-job',
                          sched_access=part.access)
-        filtered = part.scheduler.filternodes(job, part.scheduler.allnodes())
-        nodes[part.fullname] = [n.name for n in filtered]
+
+        available_nodes = part.scheduler.allnodes()
+        available_nodes = part.scheduler.filternodes(job, available_nodes)
+        getlogger().debug(
+            f'Total available nodes for {part.name}: {len(available_nodes)}'
+        )
+
+        if state.casefold() != 'all':
+            available_nodes = {n for n in available_nodes
+                               if n.in_state(state)}
+            getlogger().debug(
+                f'[F] Selecting nodes in state {state!r}: '
+                f'available nodes now: {len(available_nodes)}'
+            )
+
+        nodes[part.fullname] = [n.name for n in available_nodes]
 
     return nodes

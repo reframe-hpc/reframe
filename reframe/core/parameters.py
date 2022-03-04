@@ -98,11 +98,11 @@ class TestParam:
 
 
 class NodeTestParam(TestParam):
-    def __init__(self, values=None, inherit_params=False,
+    def __init__(self, state='all', inherit_params=False,
                  filter_params=None, fmt=None, loggable=False):
         # TODO check which arguments makes sence to keep
         # TODO choose which nodes to get
-        self._node_map = getallnodes(['*'])
+        self._node_map = getallnodes(state)
         node_values = list(itertools.chain(*self._node_map.values()))
         # Remove duplicates of nodes from different partitions
         node_values = list(set(node_values))

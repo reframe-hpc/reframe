@@ -32,7 +32,11 @@ class RuntimeContext:
         self._system = System.create(site_config)
         self._current_run = 0
         self._timestamp = datetime.now()
-        self.flex_alloc_singlenode = False
+
+        # Necessary information for flex-alloc-singlenode
+        self.flex_alloc_singlenode_state = None
+        self.flex_alloc_singlenode_tests = None
+        self.jobs_cli_options = []
 
     def _makedir(self, *dirs, wipeout=False):
         ret = os.path.join(*dirs)

@@ -382,9 +382,10 @@ def main():
     # TODO Decide the functionality of the option
     # Now ReFrame parametirizes the test in all nodes of the partition
     run_options.add_argument(
-        '--flex-alloc-singlenode', action='store_true',
-        dest='flex_alloc_singlenode',
-        help='Submit single node job automatically on every node of a partition'
+        '--flex-alloc-singlenode', action='store', default=None,
+        dest='flex_alloc_singlenode', metavar='{all|STATE}[:TEST1,TEST2]',
+        help=('Submit single node jobs automatically on every node of a '
+              'partition in STATE')
     )
     run_options.add_argument(
         '--force-local', action='store_true',
@@ -892,7 +893,19 @@ def main():
         'workdir': os.getcwd(),
     }
 
-    rt.flex_alloc_singlenode = options.flex_alloc_singlenode or False
+    if options.flex_alloc_singlenode:
+        state, *tests = options.flex_alloc_singlenode.split(':')
+        if len(tests) == 0:
+            rt.flex_alloc_singlenode_state = state
+            rt.flex_alloc_singlenode_tests = None
+        elif len(tests) == 1:
+            rt.flex_alloc_singlenode_state = state
+            rt.flex_alloc_singlenode_tests = tests[0].split(',')
+        else:
+            printer.error(f'argument {options.flex_alloc_singlenode} for '
+                          f'--flex-alloc-singlenode is not in format '
+                          f'{{all|STATE}}[:TEST1,TEST2]')
+            sys.exit(1)
 
     # Print command line
     printer.info(f"[ReFrame Setup]")

@@ -219,9 +219,17 @@ class RegressionTestMeta(type):
         localns =  namespaces.LocalNamespace()
         try:
             rt = runtime()
-            if rt.flex_alloc_singlenode:
-                localns['_rfm_node'] = parameters.NodeTestParam()
+            if rt.flex_alloc_singlenode_state:
+                if (rt.flex_alloc_singlenode_tests is None
+                    or name in rt.flex_alloc_singlenode_tests):
+                    localns['_rfm_node'] = (
+                        parameters.NodeTestParam(
+                            state=rt.flex_alloc_singlenode_state
+                        )
+                    )
         except ReframeFatalError:
+            # ReFrame context might not be configured for classes like
+            # BuildSystem etc
             pass
 
         namespace['_rfm_local_param_space'] = localns
