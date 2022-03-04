@@ -597,6 +597,15 @@ class Autotools(ConfigureBasedBuildSystem):
     3. Issue ``make`` to compile the code.
     '''
 
+    #: The directory of the configure script.
+    #:
+    #: This can be changed to do an out of source build without copying the
+    #: entire source tree.
+    #:
+    #: :type: :class:`str`
+    #: :default: ``"."``
+    configuredir = variable(str, value='.')
+
     def emit_build_commands(self, environ):
         prepare_cmd = []
         if self.srcdir:
@@ -608,9 +617,9 @@ class Autotools(ConfigureBasedBuildSystem):
 
         if self.builddir:
             configure_cmd = [os.path.join(
-                os.path.relpath('.', self.builddir), 'configure')]
+                os.path.relpath(self.configuredir, self.builddir), 'configure')]
         else:
-            configure_cmd = ['./configure']
+            configure_cmd = [os.path.join(self.configuredir, 'configure')]
 
         cc = self._cc(environ)
         cxx = self._cxx(environ)
