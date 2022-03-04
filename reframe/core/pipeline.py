@@ -1666,9 +1666,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 f'systems/0/partitions/@{self.current_partition.name}'
                 f'/time_limit')
         )
-        if (not self.local and not self.build_locally
-            and rt.runtime().flex_alloc_singlenode_state
-            and hasattr(self, '_rfm_node')):
+        if (not self.local and not self.build_locally and
+            rt.runtime().flex_alloc_singlenode_state and
+            hasattr(self, '_rfm_node')):
             self._build_job.pin_nodes = self._rfm_node
 
         with osext.change_dir(self._stagedir):
@@ -1773,8 +1773,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self.job.time_limit = (self.time_limit or rt.runtime().get_option(
             f'systems/0/partitions/@{self.current_partition.name}/time_limit')
         )
-        if (not self.local and rt.runtime().flex_alloc_singlenode_state
-            and hasattr(self, '_rfm_node')):
+        if (not self.local and rt.runtime().flex_alloc_singlenode_state and
+            hasattr(self, '_rfm_node')):
             self.job.pin_nodes = self._rfm_node
 
         exec_cmd = [self.job.launcher.run_command(self.job),

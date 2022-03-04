@@ -108,7 +108,8 @@ class NodeTestParam(TestParam):
         node_values = list(set(node_values))
 
         super().__init__(values=node_values, inherit_params=inherit_params,
-                         filter_params=filter_params, fmt=fmt, loggable=loggable)
+                         filter_params=filter_params, fmt=fmt,
+                         loggable=loggable)
 
     @property
     def node_map(self):

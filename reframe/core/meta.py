@@ -216,12 +216,12 @@ class RegressionTestMeta(type):
         ]
 
         # Regression test parameter space defined at the class level
-        localns =  namespaces.LocalNamespace()
+        localns = namespaces.LocalNamespace()
         try:
             rt = runtime()
             if rt.flex_alloc_singlenode_state:
-                if (rt.flex_alloc_singlenode_tests is None
-                    or name in rt.flex_alloc_singlenode_tests):
+                if (rt.flex_alloc_singlenode_tests is None or
+                    name in rt.flex_alloc_singlenode_tests):
                     localns['_rfm_node'] = (
                         parameters.NodeTestParam(
                             state=rt.flex_alloc_singlenode_state
