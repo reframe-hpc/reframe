@@ -263,6 +263,7 @@ def getallnodes(state='all'):
                          name='placeholder-job',
                          sched_access=part.access)
 
+        job.cli_options = rt.jobs_cli_options
         available_nodes = part.scheduler.allnodes()
         available_nodes = part.scheduler.filternodes(job, available_nodes)
         getlogger().debug(

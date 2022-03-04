@@ -924,6 +924,21 @@ def main():
     print_infoline('output directory', repr(session_info['prefix_output']))
     printer.info('')
     try:
+        # Need to parse the cli options before loading the tests
+        parsed_job_options = []
+        for opt in options.job_options:
+            opt_split = opt.split('=', maxsplit=1)
+            optstr = opt_split[0]
+            valstr = opt_split[1] if len(opt_split) > 1 else ''
+            if opt.startswith('-') or opt.startswith('#'):
+                parsed_job_options.append(opt)
+            elif len(optstr) == 1:
+                parsed_job_options.append(f'-{optstr} {valstr}')
+            else:
+                parsed_job_options.append(f'--{optstr} {valstr}')
+
+        rt.jobs_cli_options = parsed_job_options
+
         # Locate and load checks
         checks_found = loader.load_all()
         printer.verbose(f'Loaded {len(checks_found)} test(s)')
@@ -1187,18 +1202,6 @@ def main():
             sched_flex_alloc_nodes = options.flex_alloc_nodes
 
         exec_policy.sched_flex_alloc_nodes = sched_flex_alloc_nodes
-        parsed_job_options = []
-        for opt in options.job_options:
-            opt_split = opt.split('=', maxsplit=1)
-            optstr = opt_split[0]
-            valstr = opt_split[1] if len(opt_split) > 1 else ''
-            if opt.startswith('-') or opt.startswith('#'):
-                parsed_job_options.append(opt)
-            elif len(optstr) == 1:
-                parsed_job_options.append(f'-{optstr} {valstr}')
-            else:
-                parsed_job_options.append(f'--{optstr} {valstr}')
-
         exec_policy.sched_options = parsed_job_options
         if options.maxfail < 0:
             raise errors.ConfigError(
