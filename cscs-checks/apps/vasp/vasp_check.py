@@ -93,9 +93,9 @@ class VASPCheck(rfm.RunOnlyRegressionTest):
     @run_before('run')
     def setup_run(self):
         # set auto-detected architecture
-        proc = self.current_partition.processor 
+        proc = self.current_partition.processor
         arch = proc.arch
-        # set architecture for GPU partition (no auto-detection) 
+        # set architecture for GPU partition (no auto-detection)
         if self.current_partition.fullname in ('daint:gpu', 'dom:gpu'):
             arch = 'sm_60'
 
