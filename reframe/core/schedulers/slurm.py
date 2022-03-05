@@ -178,9 +178,9 @@ class SlurmJobScheduler(sched.JobScheduler):
                 self._format_option('%d:%d:%d' % (h, m, s), '--time={0}')
             )
 
-        if job.sched_exclusive_access:
+        if job.exclusive_access:
             preamble.append(
-                self._format_option(job.sched_exclusive_access, '--exclusive')
+                self._format_option(job.exclusive_access, '--exclusive')
             )
 
         if self._use_nodes_opt:

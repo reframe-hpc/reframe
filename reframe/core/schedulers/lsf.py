@@ -71,7 +71,7 @@ class LsfJobScheduler(PbsJobScheduler):
             else:
                 preamble.append(self._prefix + ' ' + opt)
 
-        if job.sched_exclusive_access:
+        if job.exclusive_access:
             preamble.append(f'{self._prefix} -x')
 
         # Filter out empty statements before returning

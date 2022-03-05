@@ -18,6 +18,11 @@ import reframe.utility.typecheck as typ
 from reframe.core.exceptions import JobError, JobNotStartedError
 from reframe.core.launchers import JobLauncher
 from reframe.core.logging import getlogger, DEBUG2
+from reframe.core.meta import RegressionTestMeta
+
+
+class JobMeta(RegressionTestMeta, abc.ABCMeta):
+    '''Job metaclass.'''
 
 
 class JobScheduler(abc.ABC):
@@ -112,7 +117,7 @@ class JobScheduler(abc.ABC):
         getlogger().log(level, f'[S] {self.registered_name}: {message}')
 
 
-class Job(jsonext.JSONSerializable):
+class Job(jsonext.JSONSerializable, metaclass=JobMeta):
     '''A job descriptor.
 
     A job descriptor is created by the framework after the "setup" phase and
@@ -123,19 +128,22 @@ class Job(jsonext.JSONSerializable):
 
     '''
 
-    num_tasks = fields.TypedField(int)
-    num_tasks_per_node = fields.TypedField(int, type(None))
-    num_tasks_per_core = fields.TypedField(int, type(None))
-    num_tasks_per_socket = fields.TypedField(int, type(None))
-    num_cpus_per_task = fields.TypedField(int, type(None))
-    use_smt = fields.TypedField(bool, type(None))
-    time_limit = fields.TimerField(type(None))
+    num_tasks = variable(int, value=1)
+    num_tasks_per_node = variable(int, type(None), value=None)
+    num_tasks_per_core = variable(int, type(None), value=None)
+    num_tasks_per_socket = variable(int, type(None), value=None)
+    num_cpus_per_task = variable(int, type(None), value=None)
+    use_smt = variable(bool, type(None), value=None)
+    exclusive_access = variable(bool, value=False)
+    time_limit = variable(type(None), field=fields.TimerField, value=None)
+    max_pending_time = variable(type(None),
+                                field=fields.TimerField, value=None)
 
     #: Options to be passed to the backend job scheduler.
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    options = fields.TypedField(typ.List[str])
+    options = variable(typ.List[str], value=[])
 
     #: The (parallel) program launcher that will be used to launch the
     #: (parallel) executable of this job.
@@ -157,7 +165,7 @@ class Job(jsonext.JSONSerializable):
     #:        self.job.launcher = getlauncher('local')()
     #:
     #: :type: :class:`reframe.core.launchers.JobLauncher`
-    launcher = fields.TypedField(JobLauncher)
+    launcher = variable(JobLauncher)
 
     # The sched_* arguments are exposed also to the frontend
     def __init__(self,
@@ -166,34 +174,20 @@ class Job(jsonext.JSONSerializable):
                  script_filename=None,
                  stdout=None,
                  stderr=None,
-                 max_pending_time=None,
                  sched_flex_alloc_nodes=None,
                  sched_access=[],
-                 sched_exclusive_access=None,
                  sched_options=None):
 
-        # Mutable fields
-        self.num_tasks = 1
-        self.num_tasks_per_node = None
-        self.num_tasks_per_core = None
-        self.num_tasks_per_socket = None
-        self.num_cpus_per_task = None
-        self.use_smt = None
-        self.time_limit = None
-        self.cli_options = list(sched_options) if sched_options else []
-        self.options = []
-
+        self._cli_options = list(sched_options) if sched_options else []
         self._name = name
         self._workdir = workdir
         self._script_filename = script_filename or '%s.sh' % name
         self._stdout = stdout or '%s.out' % name
         self._stderr = stderr or '%s.err' % name
-        self._max_pending_time = max_pending_time
 
         # Backend scheduler related information
         self._sched_flex_alloc_nodes = sched_flex_alloc_nodes
         self._sched_access = sched_access
-        self._sched_exclusive_access = sched_exclusive_access
 
         # Live job information; to be filled during job's lifetime by the
         # scheduler
@@ -224,8 +218,8 @@ class Job(jsonext.JSONSerializable):
         return self._workdir
 
     @property
-    def max_pending_time(self):
-        return self._max_pending_time
+    def cli_options(self):
+        return self._cli_options
 
     @property
     def script_filename(self):
@@ -246,10 +240,6 @@ class Job(jsonext.JSONSerializable):
     @property
     def sched_access(self):
         return self._sched_access
-
-    @property
-    def sched_exclusive_access(self):
-        return self._sched_exclusive_access
 
     @property
     def completion_time(self):
