@@ -128,18 +128,116 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
 
     '''
 
+    #: Number of tasks for this job.
+    #:
+    #: :type: integral
+    #: :default: ``1``
+    #:
+    #: .. note::
+    #:    This attribute is set by the framework just before submitting the job
+    #:    based on the test information.
+    #:
+    #: .. versionadded:: 3.11.0
     num_tasks = variable(int, value=1)
+
+    #: Number of tasks per node for this job.
+    #:
+    #: :type: integral or :class:`NoneType`
+    #: :default: ``None``
+    #:
+    #: .. note::
+    #:    This attribute is set by the framework just before submitting the job
+    #:    based on the test information.
+    #:
+    #: .. versionadded:: 3.11.0
     num_tasks_per_node = variable(int, type(None), value=None)
+
+    #: Number of tasks per core for this job.
+    #:
+    #: :type: integral or :class:`NoneType`
+    #: :default: ``None``
+    #:
+    #: .. note::
+    #:    This attribute is set by the framework just before submitting the job
+    #:    based on the test information.
+    #:
+    #: .. versionadded:: 3.11.0
     num_tasks_per_core = variable(int, type(None), value=None)
+
+    #: Number of tasks per socket for this job.
+    #:
+    #: :type: integral or :class:`NoneType`
+    #: :default: ``None``
+    #:
+    #: .. note::
+    #:    This attribute is set by the framework just before submitting the job
+    #:    based on the test information.
+    #:
+    #: .. versionadded:: 3.11.0
     num_tasks_per_socket = variable(int, type(None), value=None)
+
+    #: Number of processing elements associated with each task for this job.
+    #:
+    #: :type: integral or :class:`NoneType`
+    #: :default: ``None``
+    #:
+    #: .. note::
+    #:    This attribute is set by the framework just before submitting the job
+    #:    based on the test information.
+    #:
+    #: .. versionadded:: 3.11.0
     num_cpus_per_task = variable(int, type(None), value=None)
+
+    #: Enable SMT for this job.
+    #:
+    #: :type: :class:`bool` or :class:`NoneType`
+    #: :default: ``None``
+    #:
+    #: .. note::
+    #:    This attribute is set by the framework just before submitting the job
+    #:    based on the test information.
+    #:
+    #: .. versionadded:: 3.11.0
     use_smt = variable(bool, type(None), value=None)
+
+    #: Request exclusive access on the nodes for this job.
+    #:
+    #: :type: :class:`bool`
+    #: :default: ``false``
+    #:
+    #: .. note::
+    #:    This attribute is set by the framework just before submitting the job
+    #:    based on the test information.
+    #:
+    #: .. versionadded:: 3.11.0
     exclusive_access = variable(bool, value=False)
+
+    #: Time limit for this job.
+    #:
+    #: See :attr:`reframe.core.pipeline.RegressionTest.time_limit` for more
+    #: details.
+    #:
+    #: .. note::
+    #:    This attribute is set by the framework just before submitting the job
+    #:    based on the test information.
+    #:
+    #: .. versionadded:: 3.11.0
     time_limit = variable(type(None), field=fields.TimerField, value=None)
+
+    #: Maximum pending time for this job.
+    #:
+    #: See :attr:`reframe.core.pipeline.RegressionTest.max_pending_time` for
+    #: more details.
+    #:
+    #: .. note::
+    #:    This attribute is set by the framework just before submitting the job
+    #:    based on the test information.
+    #:
+    #: .. versionadded:: 3.11.0
     max_pending_time = variable(type(None),
                                 field=fields.TimerField, value=None)
 
-    #: Options to be passed to the backend job scheduler.
+    #: Arbitrary options to be passed to the backend job scheduler.
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
