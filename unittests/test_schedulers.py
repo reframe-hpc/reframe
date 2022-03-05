@@ -90,8 +90,7 @@ def minimal_job(make_job):
 
 @pytest.fixture
 def fake_job(make_job):
-    ret = make_job(sched_exclusive_access=True,
-                   sched_options=['--account=spam'])
+    ret = make_job(sched_options=['--account=spam'])
     ret.time_limit = '5m'
     ret.num_tasks = 16
     ret.num_tasks_per_node = 2
@@ -99,6 +98,7 @@ def fake_job(make_job):
     ret.num_tasks_per_socket = 1
     ret.num_cpus_per_task = 18
     ret.use_smt = True
+    ret.exclusive_access = True
     ret.options += ['--gres=gpu:4',
                     '#DW jobdw capacity=100GB',
                     '#DW stage_in source=/foo']
@@ -332,7 +332,8 @@ def test_prepare_minimal(minimal_job):
 
 
 def test_prepare_no_exclusive(make_job, slurm_only):
-    job = make_job(sched_exclusive_access=False)
+    job = make_job()
+    job.exclusive_access = False
     prepare_job(job)
     with open(job.script_filename) as fp:
         assert re.search(r'--exclusive', fp.read()) is None
