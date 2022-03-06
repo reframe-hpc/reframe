@@ -567,8 +567,8 @@ def test_submit_max_pending_time(make_job, exec_ctx, scheduler):
         pytest.skip(f"max_pending_time not supported by the "
                     f"'{scheduler.registered_name}' scheduler")
 
-    minimal_job = make_job(sched_access=exec_ctx.access,
-                           max_pending_time=0.05)
+    minimal_job = make_job(sched_access=exec_ctx.access)
+    minimal_job.max_pending_time = 0.05
 
     # Monkey-patch the Job's state property to pretend that the job is always
     # pending
