@@ -64,7 +64,6 @@ class VASPCheck(rfm.RunOnlyRegressionTest):
                                  self.stdout, 'result', float)
         return sn.assert_reference(force, -.85026214E+03, -1e-5, 1e-5)
 
-
     @run_after('init')
     def setup_system_filtering(self):
         self.descr = f'VASP check ({self.num_nodes} node(s))'
@@ -76,8 +75,8 @@ class VASPCheck(rfm.RunOnlyRegressionTest):
             16: ['daint:gpu', 'daint:mc', 'eiger:mc']
         }
 
-        self.skip_if(self.num_nodes not in valid_systems, 
-                f'No valid systems found for {self.num_nodes}(s)')
+        self.skip_if(self.num_nodes not in valid_systems,
+                     f'No valid systems found for {self.num_nodes}(s)')
         self.valid_systems = valid_systems[self.num_nodes]
 
         # setup programming environment filter
