@@ -6,9 +6,9 @@
 import reframe as rfm
 import reframe.utility.sanity as sn
 
-from hpctestlib.microbenchmarks.mpi.osu.mpi import (osu_latency,
-                                                    osu_bandwidth,
-                                                    build_osu_benchmarks)
+from hpctestlib.microbenchmarks.mpi.osu import (osu_latency,
+                                                osu_bandwidth,
+                                                build_osu_benchmarks)
 
 
 class build_osu_benchmarks_gpu(build_osu_benchmarks):
