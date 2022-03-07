@@ -9,7 +9,6 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class VASPCheck(rfm.RunOnlyRegressionTest):
-    descr = f'VASP check '
     modules = ['VASP']
     executable = 'vasp_std'
     extra_resources = {
@@ -54,7 +53,7 @@ class VASPCheck(rfm.RunOnlyRegressionTest):
     }
 
     @performance_function('s')
-    def time(self):
+    def elapsed_time(self):
         return sn.extractsingle(r'Elapsed time \(sec\):'
                                 r'\s+(?P<time>\S+)', 'OUTCAR',
                                 'time', float)
@@ -68,7 +67,7 @@ class VASPCheck(rfm.RunOnlyRegressionTest):
 
     @run_after('init')
     def setup_system_filtering(self):
-        self.descr += f' ({self.num_nodes} node(s))'
+        self.descr = f'VASP check ({self.num_nodes} node(s))'
 
         # setup system filter
         valid_systems = {
@@ -77,10 +76,9 @@ class VASPCheck(rfm.RunOnlyRegressionTest):
             16: ['daint:gpu', 'daint:mc', 'eiger:mc']
         }
 
-        try:
-            self.valid_systems = valid_systems[self.num_nodes]
-        except KeyError:
-            self.valid_systems = []
+        self.skip_if(self.num_nodes not in valid_systems, 
+                f'No valid systems found for {self.num_nodes}(s)')
+        self.valid_systems = valid_systems[self.num_nodes]
 
         # setup programming environment filter
         if self.current_system.name in ['eiger', 'pilatus']:
@@ -92,8 +90,10 @@ class VASPCheck(rfm.RunOnlyRegressionTest):
     @run_before('run')
     def setup_run(self):
         # set auto-detected architecture
+        self.skip_if_no_procinfo()
         proc = self.current_partition.processor
         arch = proc.arch
+
         # set architecture for GPU partition (no auto-detection)
         if self.current_partition.fullname in ('daint:gpu', 'dom:gpu'):
             arch = 'sm_60'
@@ -104,27 +104,25 @@ class VASPCheck(rfm.RunOnlyRegressionTest):
             self.skip(f'Configuration with {self.num_nodes} node(s) '
                       f'is not supported on {arch!r}')
 
-        # custom settings for each architecture
-        if arch == 'sm_60':
-            self.num_tasks_per_node = 1
-        elif arch == 'broadwell':
-            self.num_tasks_per_node = 2
-        elif arch == 'zen2':
-            self.num_tasks_per_node = 4
-            self.variables = {
-                'MPICH_OFI_STARTUP_CONNECT': '1'
-            }
-
         # common setup for every architecture
         self.job.launcher.options = ['--cpu-bind=cores']
         self.job.options = ['--distribution=block:block']
-        self.num_cpus_per_task = int(proc.num_cores / self.num_tasks_per_node)
+        self.num_tasks_per_node = proc.num_sockets
+        self.num_cpus_per_task = proc.num_cores // self.num_tasks_per_node
         self.num_tasks = self.num_nodes * self.num_tasks_per_node
         self.variables = {
             'OMP_NUM_THREADS': str(self.num_cpus_per_task),
             'OMP_PLACES': 'cores',
             'OMP_PROC_BIND': 'close'
         }
+
+        # custom settings for selected architectures
+        if arch == 'sm_60':
+            self.num_gpus_per_node = 1
+        elif arch == 'zen2':
+            self.variables += {
+                'MPICH_OFI_STARTUP_CONNECT': '1'
+            }
 
         # setup performance references
         self.reference = self.references[self.num_nodes][arch]
