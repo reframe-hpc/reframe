@@ -1767,7 +1767,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             f'systems/0/partitions/@{self.current_partition.name}/time_limit')
         )
         self.job.max_pending_time = self.max_pending_time
-        self.exclusive_access = self.exclusive_access
+        self.job.exclusive_access = self.exclusive_access
         exec_cmd = [self.job.launcher.run_command(self.job),
                     self.executable, *self.executable_opts]
 
