@@ -6,8 +6,9 @@
 # ReFrame CSCS settings
 #
 
-import reframe.utility.osext as osext
+project       = 'project_462000008'
 
+environs =  ['builtin', 'PrgEnv-cray', 'PrgEnv-gnu']
 
 site_configuration = {
     'systems': [
@@ -16,7 +17,7 @@ site_configuration = {
             'descr': 'LUMI Cray EX Supercomputer',
             'hostnames': ['ln\d+-nmn', 'uan\d+-nmn.local', '\S+'],
             'modules_system': 'lmod',
-            'resourcesdir': '/users/rafaelsarmiento/reframe_resources',
+            'resourcesdir': '/users/$USER/reframe_resources',
             'partitions': [
                 {
                     'name': 'login',
@@ -24,14 +25,11 @@ site_configuration = {
                     'time_limit': '10m',
                     'environs': [
                         'builtin',
-                        'PrgEnv-aocc',
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
-                        'PrgEnv-intel',
-                        'cpeAMD',
+                        'cpeAOCC',
                         'cpeCray',
                         'cpeGNU',
-                        'cpeIntel'
                     ],
                     'descr': 'Login nodes',
                     'max_jobs': 4,
@@ -39,7 +37,7 @@ site_configuration = {
                 },
                 {
                     'name': 'small',
-                    'descr': 'Multicore nodes (AMD EPYC 7742, 256|512GB/cn)',
+                    'descr': 'Multicore nodes (AMD EPYC 7763, 256|512|1024GB/cn)',
                     'scheduler': 'slurm',
                     'container_platforms': [
                         {
@@ -49,19 +47,15 @@ site_configuration = {
                     ],
                     'environs': [
                         'builtin',
-                        'PrgEnv-aocc',
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
-                        'PrgEnv-intel',
-                        'cpeAMD',
+                        'cpeAOCC',
                         'cpeCray',
                         'cpeGNU',
-                        'cpeIntel'
                     ],
-                    'max_jobs': 100,
-                    'modules': ['LUMI'],
-                    'access': ['--partition small',
-                               '--account=project_462000008'],
+                    'max_jobs': 200,
+                    'access': ['--partition=small',
+                               '--account=%s' % project],
                     'resources': [
                         {
                             'name': 'switches',
@@ -73,10 +67,10 @@ site_configuration = {
                         },
                     ],
                     'launcher': 'srun'
-                    },
-                    {
+                },
+                {
                     'name': 'standard',
-                    'descr': 'Multicore nodes (AMD EPYC 7742, 256|512GB/cn)',
+                    'descr': 'Multicore nodes (AMD EPYC 7763, 256GB/cn)',
                     'scheduler': 'slurm',
                     'container_platforms': [
                         {
@@ -86,19 +80,15 @@ site_configuration = {
                     ],
                     'environs': [
                         'builtin',
-                        'PrgEnv-aocc',
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
-                        'PrgEnv-intel',
-                        'cpeAMD',
+                        'cpeAOCC',
                         'cpeCray',
                         'cpeGNU',
-                        'cpeIntel'
                     ],
                     'max_jobs': 100,
-                    'modules': ['LUMI'],
-                    'access': ['--partition standard',
-                               '--account=project_462000008'],
+                    'access': ['--partition=standard',
+                               '--account=%s' % project],
                     'resources': [
                         {
                             'name': 'switches',
@@ -132,27 +122,22 @@ site_configuration = {
         {
             'name': 'PrgEnv-aocc',
             'target_systems': ['lumi'],
-            'modules': ['cpeAMD']
+            'modules': ['PrgEnv-aocc']
         },
         {
             'name': 'PrgEnv-cray',
             'target_systems': ['lumi'],
-            'modules': ['cpeCray']
+            'modules': ['PrgEnv-cray']
         },
         {
             'name': 'PrgEnv-gnu',
             'target_systems': ['lumi'],
-            'modules': ['cpeCray']
+            'modules': ['PrgEnv-gnu']
         },
-       #  {
-       #      'name': 'PrgEnv-intel',
-       #      'target_systems': ['lumi'],
-       #      'modules': ['PrgEnv-intel']
-       #  },
         {
-            'name': 'cpeAMD',
+            'name': 'cpeAOCC',
             'target_systems': ['lumi'],
-            'modules': ['cpeAMD']
+            'modules': ['cpeAOCC']
         },
         {
             'name': 'cpeCray',
@@ -165,25 +150,12 @@ site_configuration = {
             'modules': ['cpeGNU']
         },
         {
-            'name': 'cpeIntel',
-            'target_systems': ['lumi'],
-            'modules': ['cpeIntel']
-        },
-        {
             'name': 'PrgEnv-cray',
             'modules': ['PrgEnv-cray']
         },
         {
             'name': 'PrgEnv-gnu',
             'modules': ['PrgEnv-gnu']
-        },
-        {
-            'name': 'PrgEnv-intel',
-            'modules': ['PrgEnv-intel']
-        },
-        {
-            'name': 'PrgEnv-pgi',
-            'modules': ['PrgEnv-pgi']
         },
         {
             'name': 'builtin',
@@ -231,15 +203,6 @@ site_configuration = {
                     'datefmt': '%FT%T%:z',
                     'append': True
                 },
-                {
-                    'type': 'httpjson',
-                    'url': 'http://httpjson-server:12345/rfm',
-                    'level': 'info',
-                    'extras': {
-                        'facility': 'reframe',
-                        'data-version': '1.0',
-                    }
-                }
             ]
         }
     ],
@@ -250,10 +213,10 @@ site_configuration = {
                 '--unload-module=reframe',
                 '--exec-policy=async',
                 '--strict',
-                '--output=$APPS/UES/$USER/regression/maintenance',
-                '--perflogdir=$APPS/UES/$USER/regression/maintenance/logs',
-                '--stage=$SCRATCH/regression/maintenance/stage',
-                '--report-file=$APPS/UES/$USER/regression/maintenance/reports/maint_report_{sessionid}.json',
+                '--output=/project/%s/$USER/regression/maintenance' % project,
+                '--perflogdir=/project/%s/$USER/regression/maintenance/logs' % project,
+                '--stage=/scratch/%s/regression/maintenance/stage' % project,
+                '--report-file=/project/%s/$USER/regression/maintenance/reports/maint_report_{sessionid}.json' % project,
                 '-Jreservation=maintenance',
                 '--save-log-files',
                 '--tag=maintenance',
@@ -266,10 +229,10 @@ site_configuration = {
                 '--unload-module=reframe',
                 '--exec-policy=async',
                 '--strict',
-                '--output=$APPS/UES/$USER/regression/production',
-                '--perflogdir=$APPS/UES/$USER/regression/production/logs',
-                '--stage=$SCRATCH/regression/production/stage',
-                '--report-file=$APPS/UES/$USER/regression/production/reports/prod_report_{sessionid}.json',
+                '--output=/project/%s/$USER/regression/production' % project,
+                '--perflogdir=/project/%s/$USER/regression/production/logs' % project,
+                '--stage=/scratch/%s/regression/production/stage' % project,
+                '--report-file=/project/%s/$USER/regression/production/reports/prod_report_{sessionid}.json' % project,
                 '--save-log-files',
                 '--tag=production',
                 '--timestamp=%F_%H-%M-%S'
