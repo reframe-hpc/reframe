@@ -1,6 +1,9 @@
+import os
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
+from packaging import version
 from hpctestlib.microbenchmarks.mpi.osu import (osu_latency,
                                                 osu_bandwidth,
                                                 build_osu_benchmarks)
@@ -10,6 +13,16 @@ cpu_build_variant = build_osu_benchmarks.get_variant_nums(
     build_type='cpu'
 )
 
+stack_name    =  os.getenv('LUMI_STACK_NAME', None)
+stack_version =  os.getenv('LUMI_STACK_VERSION', None)
+
+environs = ['PrgEnv-gnu', 'PrgEnv-cray']
+
+if stack_name and stack_name == 'LUMI':
+    environs += ['cpeGNU', 'cpeCray']
+
+    if version.parse(stack_version) > version.parse('21.08'):
+        environs += ['cpeAOCC']
 
 @rfm.simple_test
 class alltoall_check(osu_latency):
@@ -19,7 +32,7 @@ class alltoall_check(osu_latency):
     osu_binaries = fixture(build_osu_benchmarks, scope='environment',
                            variants=cpu_build_variant)
     valid_systems = ['lumi:small']
-    valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-cray']
+    valid_prog_environs = environs
     strict_check = False
     reference = {
         'lumi:small': {
@@ -46,7 +59,7 @@ class p2p_config_cscs(rfm.RegressionMixin):
         self.num_tasks = 2
         self.num_tasks_per_node = 1
         self.valid_systems = ['lumi:small']
-        self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-cray']
+        self.valid_prog_environs = environs
         self.exclusive_access = True
         self.maintainers = ['RS', 'AJ']
         self.tags = {'benchmark'}
