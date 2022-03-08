@@ -110,7 +110,7 @@ class SrunAllocationLauncher(JobLauncher):
         if job.num_cpus_per_task:
             ret += ['--cpus-per-task=%s' % str(job.num_cpus_per_task)]
 
-        if job.sched_exclusive_access:
+        if job.exclusive_access:
             ret += ['--exclusive']
 
         if job.use_smt is not None:
