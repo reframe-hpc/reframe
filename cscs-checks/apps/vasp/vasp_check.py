@@ -94,7 +94,7 @@ class VASPCheck(rfm.RunOnlyRegressionTest):
         arch = proc.arch
 
         # set architecture for GPU partition (no auto-detection)
-        if self.current_partition.fullname in ('daint:gpu', 'dom:gpu'):
+        if self.current_partition.fullname in ['daint:gpu', 'dom:gpu']:
             arch = 'sm_60'
 
         try:
