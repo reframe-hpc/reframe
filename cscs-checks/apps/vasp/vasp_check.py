@@ -119,9 +119,9 @@ class VASPCheck(rfm.RunOnlyRegressionTest):
         if arch == 'sm_60':
             self.num_gpus_per_node = 1
         elif arch == 'zen2':
-            self.variables += {
+            self.variables.update({
                 'MPICH_OFI_STARTUP_CONNECT': '1'
-            }
+            })
 
         # setup performance references
         self.reference = self.references[self.num_nodes][arch]
