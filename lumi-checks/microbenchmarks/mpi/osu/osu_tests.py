@@ -32,7 +32,7 @@ class alltoall_check(osu_latency):
     osu_binaries = fixture(build_osu_benchmarks, scope='environment',
                            variants=cpu_build_variant)
     valid_systems = ['lumi:small']
-    valid_prog_environs = environs
+    valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-cray']
     strict_check = False
     reference = {
         'lumi:small': {
@@ -59,7 +59,7 @@ class p2p_config_cscs(rfm.RegressionMixin):
         self.num_tasks = 2
         self.num_tasks_per_node = 1
         self.valid_systems = ['lumi:small']
-        self.valid_prog_environs = environs
+        self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-cray']
         self.exclusive_access = True
         self.maintainers = ['RS', 'AJ']
         self.tags = {'benchmark'}

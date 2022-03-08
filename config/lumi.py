@@ -54,6 +54,7 @@ site_configuration = {
                         'cpeGNU',
                     ],
                     'max_jobs': 200,
+                    'modules': ['LUMI'],
                     'access': ['--partition=small',
                                '--account=%s' % project],
                     'resources': [
@@ -87,6 +88,7 @@ site_configuration = {
                         'cpeGNU',
                     ],
                     'max_jobs': 100,
+                    'modules': ['LUMI'],
                     'access': ['--partition=standard',
                                '--account=%s' % project],
                     'resources': [
