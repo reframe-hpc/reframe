@@ -67,6 +67,7 @@ class gromacs_check(rfm.RunOnlyRegressionTest):
         ]
         self.executable_opts += ['-nb', self.nb_impl, '-s benchmark.tpr']
 
+    @loggable
     @property
     def bench_name(self):
         '''The benchmark name.
