@@ -116,9 +116,7 @@ class VASPCheck(rfm.RunOnlyRegressionTest):
         }
 
         # custom settings for selected architectures
-        if arch == 'sm_60':
-            self.num_gpus_per_node = 1
-        elif arch == 'zen2':
+        if arch == 'zen2':
             self.variables.update({
                 'MPICH_OFI_STARTUP_CONNECT': '1'
             })
