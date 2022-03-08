@@ -13,17 +13,6 @@ cpu_build_variant = build_osu_benchmarks.get_variant_nums(
     build_type='cpu'
 )
 
-stack_name    =  os.getenv('LUMI_STACK_NAME', None)
-stack_version =  os.getenv('LUMI_STACK_VERSION', None)
-
-environs = ['PrgEnv-gnu', 'PrgEnv-cray']
-
-if stack_name and stack_name == 'LUMI':
-    environs += ['cpeGNU', 'cpeCray']
-
-    if version.parse(stack_version) > version.parse('21.08'):
-        environs += ['cpeAOCC']
-
 @rfm.simple_test
 class alltoall_check(osu_latency):
     ctrl_msg_size = 8
