@@ -674,7 +674,6 @@ def main():
     # configuration later
     site_config = config.load_config(
         os.path.join(reframe.INSTALL_PREFIX, 'reframe/core/settings.py'),
-        autodetect_opts=autodetect_opts
     )
     site_config.select_subconfig('generic')
     options.update_config(site_config)

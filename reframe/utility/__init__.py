@@ -32,22 +32,19 @@ def get_hostname_cmd(autodetect_opts, logger=None):
             with open('/etc/xthostname') as fp:
                 return fp.read()
 
-        elif autodetect_opts['autodetect_fqdn']:
-            if logger:
-                logger.debug("Did not find '/etc/xthostname': will use "
-                             "'socket.getfqdn' to get the system name")
+        elif logger:
+            logger.debug("Did not find '/etc/xthostname')")
 
-            return socket.getfqdn()
-        else:
-            if logger:
-                logger.debug("Did not find '/etc/xthostname': will use "
-                             "'socket.gethostname' to get the system name")
+    if autodetect_opts['autodetect_fqdn']:
+        if logger:
+            logger.debug("Will use 'socket.getfqdn' to get the system name")
 
-            return socket.gethostname()
-
-    elif autodetect_opts['autodetect_fqdn']:
         return socket.getfqdn()
     else:
+        if logger:
+            logger.debug("Will use 'socket.gethostname' "
+                         "to get the system name")
+
         return socket.gethostname()
 
 

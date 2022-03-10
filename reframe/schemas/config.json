@@ -456,10 +456,6 @@
                     "colorize": {"type": "boolean"},
                     "compact_test_names": {"type": "boolean"},
                     "git_timeout": {"type": "number"},
-                    "hostname_cmd": {
-                        "type": "string",
-                        "enum": ["fqdn", "hostname", "xthostname"]
-                    },
                     "ignore_check_conflicts": {"type": "boolean"},
                     "keep_stage_files": {"type": "boolean"},
                     "module_map_file": {"type": "string"},
@@ -512,7 +508,6 @@
         "general/colorize": true,
         "general/compact_test_names": false,
         "general/git_timeout": 5,
-        "general/hostname_cmd": "hostname",
         "general/ignore_check_conflicts": false,
         "general/keep_stage_files": false,
         "general/module_map_file": "",
