@@ -9,7 +9,7 @@ import reframe.utility.sanity as sn
 
 
 __all__ = ['fetch_osu_benchmarks', 'build_osu_benchmarks',
-           'osu_benchmark_test_base', 'osu_bandwidth', 'osu_latency']
+           'osu_benchmark_test_base', 'osu_bandwidth', 'osu_latency', 'osu_init']
 
 
 class fetch_osu_benchmarks(rfm.RunOnlyRegressionTest):
@@ -116,7 +116,8 @@ class osu_benchmark_test_base(rfm.RunOnlyRegressionTest):
     osu_binaries = fixture(build_osu_benchmarks, scope='environment')
     executables = {
         'collective': ['osu_alltoall', 'osu_allreduce'],
-        'pt2pt': ['osu_bw', 'osu_latency']
+        'pt2pt': ['osu_bw', 'osu_latency'],
+        'startup': ['osu_init']
     }
 
     @run_after('setup')
@@ -125,6 +126,8 @@ class osu_benchmark_test_base(rfm.RunOnlyRegressionTest):
             benchmark_type = 'collective'
         elif self.executable in self.executables['pt2pt']:
             benchmark_type = 'pt2pt'
+        elif self.executable in self.executables['startup']:
+            benchmark_type = 'startup'
 
         self.executable = os.path.join(
             self.osu_binaries.stagedir, self.osu_binaries.build_prefix,
@@ -142,7 +145,7 @@ class osu_benchmark_test_base(rfm.RunOnlyRegressionTest):
 
     @sanity_function
     def validate_test(self):
-        return sn.assert_found(rf'^{self.ctrl_msg_size}', self.stdout)
+         return sn.assert_found(rf'^{self.ctrl_msg_size}', self.stdout)
 
 
 class osu_bandwidth(osu_benchmark_test_base):
@@ -163,3 +166,15 @@ class osu_latency(osu_benchmark_test_base):
                 self.stdout, 'latency', float
             )
         }
+
+class osu_init(osu_benchmark_test_base):
+    @sanity_function
+    def validate_test(self):
+        #return sn.assert_eq(self.job.exitcode, 0)
+        return sn.assert_found(rf'^nprocs: {self.num_tasks}', self.stdout)
+    #@run_before('performance')
+    #def set_performance_patterns(self):
+    #    self.perf_patterns = {
+    #        'bw': sn.extractsingle(rf'^{self.perf_msg_size}\s+(?P<bw>\S+)',
+    #                               self.stdout, 'bw', float)
+    #    }

@@ -4,7 +4,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 from packaging import version
-from hpctestlib.microbenchmarks.mpi.osu import (osu_latency,
+from hpctestlib.microbenchmarks.mpi.osu import (osu_init,osu_latency,
                                                 osu_bandwidth,
                                                 build_osu_benchmarks)
 
@@ -12,6 +12,20 @@ from hpctestlib.microbenchmarks.mpi.osu import (osu_latency,
 cpu_build_variant = build_osu_benchmarks.get_variant_nums(
     build_type='cpu'
 )
+
+@rfm.simple_test
+class startup_test(osu_init):
+    executable = 'osu_init'
+    osu_binaries = fixture(build_osu_benchmarks, scope='environment',
+                           variants=cpu_build_variant)
+    valid_systems = ['lumi:small']
+    valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-cray']
+    strict_check = False
+    num_tasks_per_node = 1
+    num_gpus_per_node  = 0 
+    num_tasks = 4
+    tags = {'benchmark'}
+    maintainers = ['mszpindler']
 
 @rfm.simple_test
 class alltoall_check(osu_latency):
@@ -31,11 +45,12 @@ class alltoall_check(osu_latency):
     num_tasks_per_node = 1
     num_gpus_per_node  = 1
     num_tasks = 4
-    extra_resources = {
-        'switches': {
-            'num_switches': 1
-        }
-    }
+    # mszpindler: this seems to be irrelevant for LUMI 
+    #extra_resources = {
+    #    'switches': {
+    #        'num_switches': 1
+    #    }
+    #}
     tags = {'benchmark'}
     maintainers = ['RS', 'AJ']
 
@@ -52,11 +67,12 @@ class p2p_config_cscs(rfm.RegressionMixin):
         self.exclusive_access = True
         self.maintainers = ['RS', 'AJ']
         self.tags = {'benchmark'}
-        self.extra_resources = {
-            'switches': {
-                'num_switches': 1
-            }
-        }
+        # mszpindler: this seems to be irrelevant for LUMI 
+        #self.extra_resources = {
+        #    'switches': {
+        #        'num_switches': 1
+        #    }
+        #}
 
 
 @rfm.simple_test
