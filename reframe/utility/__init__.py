@@ -25,18 +25,27 @@ from hashlib import sha256
 from . import typecheck as typ
 
 
-def get_hostname_cmd(hostname_cmd, logger=None):
-    if hostname_cmd == 'xthostname':
+def get_hostname_cmd(autodetect_opts, logger=None):
+    if autodetect_opts['autodetect_xthostname']:
         if os.path.exists('/etc/xthostname'):
             # Get the cluster name on Cray systems
             with open('/etc/xthostname') as fp:
                 return fp.read()
-        elif logger:
-            logger.debug("Did not find '/etc/xthostname': will use "
-                         "'socket.gethostname' to get the system name")
-        return socket.gethostname()
 
-    elif hostname_cmd == 'fqdn':
+        elif autodetect_opts['autodetect_fqdn']:
+            if logger:
+                logger.debug("Did not find '/etc/xthostname': will use "
+                             "'socket.getfqdn' to get the system name")
+
+            return socket.getfqdn()
+        else:
+            if logger:
+                logger.debug("Did not find '/etc/xthostname': will use "
+                             "'socket.gethostname' to get the system name")
+
+            return socket.gethostname()
+
+    elif autodetect_opts['autodetect_fqdn']:
         return socket.getfqdn()
     else:
         return socket.gethostname()

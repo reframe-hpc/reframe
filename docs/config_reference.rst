@@ -1316,19 +1316,6 @@ General Configuration
    .. versionadded:: 3.9.0
 
 
-.. js:attribute:: .general[].hostname_cmd
-
-   :required: No
-   :default: ``'hostname'``
-
-   Command to determine the systems name.
-   There are three values available: ``'hostname'``, ``fqdn`` and ``'xthostname'``.
-   The values ``'hostname'`` and ``'fqdn'`` can be specified to detect the system using Python's ``socket.gethostname()`` or ``socket.getfqdn()`` respectively.
-   With the ``'xthostname'`` option, ReFrame first tries to obtain the hostname from ``/etc/xthostname``, which provides the unqualified machine name in Cray systems.
-   If this cannot be found, ReFrame falls back to the ``'hostname'`` option.
-
-   .. versionadded:: 3.11.0
-
 .. js:attribute:: .general[].git_timeout
 
   :required: No

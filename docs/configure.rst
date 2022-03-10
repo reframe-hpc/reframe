@@ -236,12 +236,12 @@ Picking a System Configuration
 As discussed previously, ReFrame's configuration file can store the configurations for multiple systems.
 When launched, ReFrame will pick the first matching configuration and load it.
 
-There are three ways in which the system name can be determined.
-They can be specified in the configuration through the ``hostname_cmd`` option which can take one of the three values ``'hostname'``, ``fqdn`` or ``'xthostname'``.
-When ``hostname_cmd`` is set to ``'hostname'``, which is the default value, ReFrame will detect the system using Python's ``socket.gethostname()``.
-Similarly, with ``'hostname'``, ReFrame will use ``socket.getfqdn()``.
-With ``'xthostname'``, ReFrame first tries to obtain the hostname from ``/etc/xthostname``, which provides the unqualified *machine name* in Cray systems.
-If this cannot be found, ReFrame falls back to the ``'hostname'`` option.
+The way in which the system name is determined can be controlled by the environment variables ``RFM_AUTODETECT_METHOD``, ``RFM_AUTODETECT_FQDN`` and ``RFM_AUTODETECT_XTHOSTNAME``.
+``RFM_AUTODETECT_METHOD`` is a string that specifies the method used to detect the system name.
+Its default value is ``'hostname'``, which currently is the only supported option.
+The host name will be determined by ``socket.gethostname()``, unless the boolean ``RFM_AUTODETECT_FQDN`` is set, which make ReFrame use ``socket.getfqdn()`` instead.
+The last option, ``RFM_AUTODETECT_XTHOSTNAME`` is a boolean and when set, ReFrame first tries to obtain the hostname from ``/etc/xthostname``, which provides the unqualified *machine name* in Cray systems.
+If this cannot be found, ReFrame falls back to the one of the two options set by ``RFM_AUTODETECT_FQDN``.
 
 Having retrieved the hostname, ReFrame goes through all the systems in its configuration and tries to match the hostname against any of the patterns defined in each system's ``hostnames`` property.
 The detection process stops at the first match found, and that system's configuration is selected.

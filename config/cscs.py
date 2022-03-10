@@ -1008,7 +1008,6 @@ site_configuration = {
         {
             'check_search_path': ['checks/'],
             'check_search_recursive': True,
-            'hostname_cmd': 'xthostname',
             'remote_detect': True
         }
     ]

@@ -213,14 +213,18 @@ class _SiteConfig:
         return self._local_system
 
     @classmethod
-    def create(cls, filename):
+    def create(cls, filename, autodetect_opts):
         _, ext = os.path.splitext(filename)
         if ext == '.py':
-            return cls._create_from_python(filename)
+            ret = cls._create_from_python(filename)
         elif ext == '.json':
-            return cls._create_from_json(filename)
+            ret = cls._create_from_json(filename)
         else:
             raise ConfigError(f"unknown configuration file type: '{filename}'")
+
+        ret.autodetect_opts = autodetect_opts
+
+        return ret
 
     @classmethod
     def _create_from_python(cls, filename):
@@ -263,13 +267,7 @@ class _SiteConfig:
 
     def _detect_system(self):
         getlogger().debug('Detecting system')
-        try:
-            hostname_cmd = self._site_config['general'][0].get('hostname_cmd',
-                                                               'hostname')
-        except (KeyError, IndexError):
-            hostname_cmd = 'hostname'
-
-        hostname = get_hostname_cmd(hostname_cmd, getlogger())
+        hostname = get_hostname_cmd(self.autodetect_opts, getlogger())
         getlogger().debug(
             f'Looking for a matching configuration entry '
             f'for system {hostname!r}'
@@ -621,7 +619,14 @@ def _find_config_file():
     return None
 
 
-def load_config(filename=None):
+def load_config(filename=None, autodetect_opts=None):
+    if not autodetect_opts:
+        autodetect_opts = {
+            'autodetect_method': 'hostname',
+            'autodetect_xthostname': True,
+            'autodetect_fqdn': True,
+        }
+
     if filename is None:
         filename = _find_config_file()
         if filename is None:
@@ -631,4 +636,4 @@ def load_config(filename=None):
             return _SiteConfig(settings.site_configuration, '<builtin>')
 
     getlogger().debug(f'Loading configuration file: {filename!r}')
-    return _SiteConfig.create(filename)
+    return _SiteConfig.create(filename, autodetect_opts)

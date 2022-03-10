@@ -524,6 +524,32 @@ def main():
 
     # Options not associated with command-line arguments
     argparser.add_argument(
+        dest='use_login_shell',
+        envvar='RFM_USE_LOGIN_SHELL',
+        configvar='general/use_login_shell',
+        action='store_true',
+        help='Use a login shell for job scripts'
+    )
+    argparser.add_argument(
+        dest='autodetect_method',
+        envvar='RFM_AUTODETECT_METHOD',
+        action='store',
+        help='Method to detect the system'
+    )
+    argparser.add_argument(
+        dest='autodetect_fqdn',
+        envvar='RFM_AUTODETECT_FQDN',
+        action='store_true',
+        help='Use FQDN as host name'
+    )
+    argparser.add_argument(
+        dest='autodetect_xthostname',
+        envvar='RFM_AUTODETECT_XTHOSTNAME',
+        action='store_false',
+        default=True,
+        help="Use Cray's xthostname file to find the host name"
+    )
+    argparser.add_argument(
         dest='git_timeout',
         envvar='RFM_GIT_TIMEOUT',
         configvar='general/git_timeout',
@@ -607,13 +633,6 @@ def main():
         action='store_true',
         help='Trap job errors in job scripts and fail tests automatically'
     )
-    argparser.add_argument(
-        dest='use_login_shell',
-        envvar='RFM_USE_LOGIN_SHELL',
-        configvar='general/use_login_shell',
-        action='store_true',
-        help='Use a login shell for job scripts'
-    )
 
     def restrict_logging():
         '''Restrict logging to errors only.
@@ -640,11 +659,22 @@ def main():
         argparser.print_help()
         sys.exit(1)
 
+    autodetect_opts = {
+        'autodetect_method': options.autodetect_method or 'hostname',
+        'autodetect_xthostname': (options.autodetect_xthostname
+                                  if options.autodetect_xthostname is not None
+                                  else True),
+        'autodetect_fqdn': (options.autodetect_fqdn
+                            if options.autodetect_fqdn is not None
+                            else True),
+    }
+
     # First configure logging with our generic configuration so as to be able
     # to print pretty messages; logging will be reconfigured by user's
     # configuration later
     site_config = config.load_config(
-        os.path.join(reframe.INSTALL_PREFIX, 'reframe/core/settings.py')
+        os.path.join(reframe.INSTALL_PREFIX, 'reframe/core/settings.py'),
+        autodetect_opts=autodetect_opts
     )
     site_config.select_subconfig('generic')
     options.update_config(site_config)
@@ -679,11 +709,17 @@ def main():
         )
         sys.exit(0)
 
+    if autodetect_opts['autodetect_method'] not in ['hostname']:
+        printer.error('unknown autodetect method '
+                      f"`{options.autodetect_method}': Exiting...")
+        sys.exit(1)
+
     # Now configure ReFrame according to the user configuration file
     try:
         try:
             printer.debug('Loading user configuration')
-            site_config = config.load_config(options.config_file)
+            site_config = config.load_config(options.config_file,
+                                             autodetect_opts)
         except warnings.ReframeDeprecationWarning as e:
             printer.warning(e)
             converted = config.convert_old_config(options.config_file)
@@ -691,7 +727,7 @@ def main():
                 f"configuration file has been converted "
                 f"to the new syntax here: '{converted}'"
             )
-            site_config = config.load_config(converted)
+            site_config = config.load_config(converted, autodetect_opts)
 
         site_config.validate()
 
@@ -877,9 +913,7 @@ def main():
         'cmdline': ' '.join(sys.argv),
         'config_file': rt.site_config.filename,
         'data_version': runreport.DATA_VERSION,
-        'hostname': get_hostname_cmd(
-            site_config.get('general/0/hostname_cmd')
-        ),
+        'hostname': get_hostname_cmd(autodetect_opts),
         'prefix_output': rt.output_prefix,
         'prefix_stage': rt.stage_prefix,
         'user': osext.osuser(),

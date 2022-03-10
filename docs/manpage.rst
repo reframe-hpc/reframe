@@ -1022,6 +1022,58 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
 
 
+.. envvar:: RFM_AUTODETECT_METHOD
+
+   Method to detect the system.
+
+   There is only one method defined
+
+   - ``hostname``: The system will be detected by finding its hostname.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter N/A
+      ================================== ==================
+
+
+   .. versionadded:: 3.12.0
+
+
+.. envvar:: RFM_AUTODETECT_FQDN
+
+   Use FQDN as host name.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter N/A
+      ================================== ==================
+
+
+   .. versionadded:: 3.12.0
+
+
+.. envvar:: RFM_AUTODETECT_XTHOSTNAME
+
+   Use Cray's xthostname file to find the host name.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter N/A
+      ================================== ==================
+
+
+   .. versionadded:: 3.12.0
+
+
 .. envvar:: RFM_GIT_TIMEOUT
 
    Timeout value in seconds used when checking if a git repository exists.
