@@ -8,28 +8,16 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-__all__ = ['fetch_osu_benchmarks', 'build_osu_benchmarks',
-           'osu_benchmark_test_base', 'osu_bandwidth', 'osu_latency']
-
-
 class fetch_osu_benchmarks(rfm.RunOnlyRegressionTest):
     #: The version of OSU benchmarks to use.
     #:
     #: :type: :class:`str`
-    #: :default: ``'5.6.2'``
+    #: :default: ``'5.9'``
     version = variable(str, value='5.9')
 
-    descr = 'Fetch OSU benchmarks'
     local = True
-    executable = 'curl'
-
-    @run_after('init')
-    def set_executable_opts(self):
-        osu_file_name = f'osu-micro-benchmarks-{self.version}.tar.gz'
-        self.executable_opts = [
-            f'http://mvapich.cse.ohio-state.edu/download/mvapich/{osu_file_name}',  # noqa: E501
-            '--output', f'{osu_file_name}'
-        ]
+    osu_file_name = f'osu-micro-benchmarks-{version}.tar.gz'
+    executable = f'curl -LJO http://mvapich.cse.ohio-state.edu/download/mvapich/{osu_file_name}'  # noqa: E501
 
     @sanity_function
     def validate_download(self):
@@ -43,7 +31,6 @@ class build_osu_benchmarks(rfm.CompileOnlyRegressionTest):
     #: :default: ``'cpu'``
     build_type = parameter(['cpu', 'cuda', 'rocm', 'openacc'])
 
-    descr = 'Build OSU benchmarks'
     build_system = 'Autotools'
     build_prefix = variable(str)
     osu_benchmarks = fixture(fetch_osu_benchmarks, scope='session')
@@ -95,33 +82,31 @@ class osu_benchmark_test_base(rfm.RunOnlyRegressionTest):
     #: :default: ``8``
     message_size = variable(int, value=8)
 
-    #: Performance message size
-    #:
-    #: This value is used for the performance checks
-    #:
-    #: :type: :class:`int`
-    #: :default: ``8``
-    perf_msg_size = variable(int, value=8)
-
-    #: Accelerator device type
+    #: Device buffers 
     #:
     #: Use accelerator device buffers, i.e cuda, openacc or rocm
     #:
     #: :type: :class:`str`
     #: :default: ``None``
-    device_buffers = variable(str, type(None), value=None)
+    device_buffers = variable(str, type(None), value='cpu')
 
-    executables = {
+    executable = ''
+    microbenchmarks = {
         'collective': ['osu_alltoall', 'osu_allreduce'],
         'pt2pt': ['osu_bw', 'osu_latency']
     }
-    osu_binaries = fixture(build_osu_benchmarks, scope='environment')
+    # build_variant = build_osu_benchmarks.get_variant_nums(
+    #     build_type=f'{device_buffers}'
+    # )
+    # osu_binaries = fixture(build_osu_benchmarks, scope='environment'
+    #     variants=build_variant
+    # )
 
     @run_after('setup')
     def set_executable(self):
-        if self.executable in self.executables['collective']:
+        if self.executable in self.microbenchmarks['collective']:
             benchmark_type = 'collective'
-        elif self.executable in self.executables['pt2pt']:
+        elif self.executable in self.microbenchmarks['pt2pt']:
             benchmark_type = 'pt2pt'
 
         self.executable = os.path.join(
@@ -145,8 +130,11 @@ class osu_benchmark_test_base(rfm.RunOnlyRegressionTest):
 
 @rfm.simple_test
 class osu_bandwidth(osu_benchmark_test_base):
+    valid_systems = ['*']
+    valid_prog_environs = ['*']
+
     @performance_function('MB/s', perf_key='bw')
-    def set_performance_patterns(self):
+    def bandwidth(self):
         """Bandwidth for the message size `message_size`."""
 
         return sn.extractsingle(rf'^{self.message_size}\s+(?P<bw>\S+)',
@@ -155,8 +143,24 @@ class osu_bandwidth(osu_benchmark_test_base):
 
 @rfm.simple_test
 class osu_latency(osu_benchmark_test_base):
+    device_buffers = 'cuda'
+    valid_systems = ['*']
+    valid_prog_environs = ['*']
+    build_variant = build_osu_benchmarks.get_variant_nums(
+        build_type=f'{device_buffers}'
+    )
+    osu_binaries = fixture(build_osu_benchmarks, scope='environment',
+        variants=build_variant
+    )
+
+    @run_after('init')
+    def set_deaults(self):
+        self.executable = self.executable or 'osu_latency'
+        self.num_tasks = self.num_tasks or 2
+        self.num_tasks_per_node = self.num_tasks_per_node or 1
+ 
     @performance_function('us', perf_key='latency')
-    def set_performance_patterns(self):
+    def latency(self):
         """Latency for the message size `message_size`."""
 
         return sn.extractsingle(rf'^{self.message_size}\s+(?P<latency>\S+)',
