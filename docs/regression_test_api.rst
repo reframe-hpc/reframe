@@ -135,7 +135,7 @@ In essence, these builtins exert control over the test creation, and they allow 
   .. versionadded:: 3.10.0
      The ``fmt`` argument is added.
 
-  .. versionadded:: 3.10.2
+  .. versionadded:: 3.11.0
      The ``loggable`` argument is added.
 
 
@@ -526,7 +526,7 @@ ReFrame provides the following built-in functions, which are only available in t
 
    Equivalent to :func:`@loggable_as(None) <reframe.core.pipeline.RegressionMixin.loggable_as>`.
 
-   .. versionadded:: 3.10.2
+   .. versionadded:: 3.11.0
 
 
 .. py:decorator:: RegressionMixin.require_deps(func)
