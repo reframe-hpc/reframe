@@ -66,6 +66,11 @@ class _SiteConfig:
         self._subconfigs = {}
         self._local_system = None
         self._sticky_options = {}
+        self.autodetect_opts = {
+            'autodetect_method': 'hostname',
+            'autodetect_xthostname': True,
+            'autodetect_fqdn': True,
+        }
 
         # Open and store the JSON schema for later validation
         schema_filename = os.path.join(reframe.INSTALL_PREFIX, 'reframe',
@@ -222,7 +227,8 @@ class _SiteConfig:
         else:
             raise ConfigError(f"unknown configuration file type: '{filename}'")
 
-        ret.autodetect_opts = autodetect_opts
+        if autodetect_opts:
+            ret.autodetect_opts = autodetect_opts
 
         return ret
 
@@ -620,13 +626,6 @@ def _find_config_file():
 
 
 def load_config(filename=None, autodetect_opts=None):
-    if not autodetect_opts:
-        autodetect_opts = {
-            'autodetect_method': 'hostname',
-            'autodetect_xthostname': True,
-            'autodetect_fqdn': True,
-        }
-
     if filename is None:
         filename = _find_config_file()
         if filename is None:
