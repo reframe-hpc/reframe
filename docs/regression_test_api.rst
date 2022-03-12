@@ -185,6 +185,15 @@ Therefore, classes that derive from the base :class:`~reframe.core.pipeline.Regr
 
 .. automethod:: reframe.core.pipeline.RegressionMixin.variant_name
 
+-------------------------
+Dynamic Creation of Tests
+-------------------------
+
+.. versionadded:: 3.10.0
+
+
+.. autofunction:: reframe.core.meta.make_test
+
 
 ------------------------
 Environments and Systems

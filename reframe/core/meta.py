@@ -838,13 +838,45 @@ def make_test(name, bases, body, methods=None, **kwargs):
 
        hello_cls = HelloTest
 
+    Test :ref:`builtins <builtins>` can also be used when defining the body of
+    the test by accessing them through the :obj:`reframe.core.builtins`.
+    Methods can also be bound to the newly created tests using the ``methods``
+    argument. The following is an example:
+
+    .. code-block:: python
+
+       import reframe.core.builtins as builtins
+
+
+       def set_message(obj):
+           obj.executable_opts = [obj.message]
+
+       def validate(obj):
+           return sn.assert_found(obj.message, obj.stdout)
+
+       hello_cls = rfm.make_test(
+           'HelloTest', (rfm.RunOnlyRegressionTest,),
+           {
+               'valid_systems': ['*'],
+               'valid_prog_environs': ['*'],
+               'executable': 'echo',
+               'message': builtins.variable(str)
+           },
+           methods=[
+               builtins.run_before('run')(set_message),
+               builtins.sanity_function(validate)
+           ]
+       )
+
+
     :param name: The name of the new test class.
     :param bases: A tuple of the base classes of the class that is being
         created.
     :param body: A mapping of key/value pairs that will be inserted as class
         attributes in the newly created class.
-    :param methods: A list of functions to be added as methods to the class
-        that is being created.
+    :param methods: A list of functions to be bound as methods to the class
+        that is being created. The functions will be bound with their original
+        name.
     :param kwargs: Any keyword arguments to be passed to the
         :class:`RegressionTestMeta` metaclass.
 
