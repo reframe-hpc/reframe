@@ -434,10 +434,18 @@ class TestFixture:
        class TestA(rfm.RegressionTest):
            valid_systems = ['p1', 'p2']
            valid_prog_environs = ['e1', 'e2']
-           f1 = fixture(MyFixture, scope='session')     # Shared throughout the full session
-           f2 = fixture(MyFixture, scope='partition')   # Shared for each supported partition
-           f3 = fixture(MyFixture, scope='environment') # Shared for each supported part+environ
-           f4 = fixture(MyFixture, scope='test')        # Private evaluation of MyFixture
+
+           # Fixture shared throughout the full session
+           f1 = fixture(MyFixture, scope='session')
+
+           # Fixture shared for each supported partition
+           f2 = fixture(MyFixture, scope='partition')
+
+           # Fixture shared for each supported part+environ
+           f3 = fixture(MyFixture, scope='environment')
+
+           # Fixture private evaluation of MyFixture
+           f4 = fixture(MyFixture, scope='test')
            ...
 
 
@@ -445,9 +453,15 @@ class TestFixture:
        class TestB(rfm.RegressionTest):
            valid_systems = ['p1']
            valid_prog_environs = ['e1']
-           f1 = fixture(MyFixture, scope='test')        # Another private instance of MyFixture
-           f2 = fixture(MyFixture, scope='environment') # Same as f3 in TestA for p1 + e1
-           f3 = fixture(MyFixture, scope='session')     # Same as f1 in TestA
+
+           # Another private instance of MyFixture
+           f1 = fixture(MyFixture, scope='test')
+
+           # Same as f3 in TestA for p1 + e1
+           f2 = fixture(MyFixture, scope='environment')
+
+           # Same as f1 in TestA
+           f3 = fixture(MyFixture, scope='session')
            ...
 
            @run_after('setup')
@@ -531,7 +545,8 @@ class TestFixture:
            @run_after('setup')
            def reduce_range(self):
                # Sum all the values of p for each fixture variant
-               res = functools.reduce(lambda x, y: x+y, (fix.p for fix in self.f))
+               res = functools.reduce(lambda x, y: x+y,
+                                      (fix.p for fix in self.f))
                n = len(self.f)-1
                assert res == (n*n + n)/2
 

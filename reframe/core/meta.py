@@ -19,7 +19,7 @@ import reframe.core.fixtures as fixtures
 import reframe.core.hooks as hooks
 import reframe.utility as utils
 
-from reframe.core.exceptions import ReframeSyntaxError, ReframeFatalError
+from reframe.core.exceptions import ReframeSyntaxError
 from reframe.core.runtime import runtime
 
 

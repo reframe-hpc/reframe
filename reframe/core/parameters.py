@@ -31,7 +31,9 @@ class TestParam:
 
         class Foo(rfm.RegressionTest):
             variant = parameter(['A', 'B'])
-            # print(variant) # Error: a parameter may only be accessed from the class instance.
+
+            # print(variant)
+            # Error: a parameter may only be accessed from the class instance
 
             @run_after('init')
             def do_something(self):
@@ -67,11 +69,13 @@ class TestParam:
     .. code:: python
 
        class ExtendVariant(Bar):
-           # Extend the full set of inherited variant parameter values to ['A', 'B', 'C']
+           # Extend the full set of inherited variant parameter values
+           # to ['A', 'B', 'C']
            variant = parameter(['C'], inherit_params=True)
 
        class PartiallyExtendVariant(Bar):
-           # Extend a subset of the inherited variant parameter values to ['A', 'D']
+           # Extend a subset of the inherited variant parameter values
+           # to ['A', 'D']
            variant = parameter(['D'], inherit_params=True,
                                filter_params=lambda x: x[:1])
 

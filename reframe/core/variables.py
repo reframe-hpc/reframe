@@ -55,8 +55,8 @@ class TestVar:
            @run_after('init')
            def access_vars(self):
                print(self.my_var) # prints 8.
-               # self.my_var = 'override' # Error: my_var must be an int!
-               self.not_a_var = 'override' # However, this would work. Dangerous!
+               # self.my_var = 'override'  # Error: my_var must be an int!
+               self.not_a_var = 'override' # This will work, but is dangerous!
                self.my_var = 10 # tests may also assign values the standard way
 
     Here, the argument ``value`` in the :func:`variable` built-in sets the
@@ -78,7 +78,8 @@ class TestVar:
            # Since my_var is available, we can also update its value:
            my_var = 4
 
-           # Bar inherits the full declaration of my_var with the original type-checking.
+           # Bar inherits the full declaration of my_var with the original
+           # type-checking.
            # my_var = 'override' # Wrong type error again!
 
            @run_after('init')
