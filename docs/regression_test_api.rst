@@ -1,6 +1,6 @@
-===================
-Regression Test API
-===================
+==================
+Test API Reference
+==================
 
 This page provides a reference guide of the ReFrame API for writing regression tests covering all the relevant details.
 Internal data structures and APIs are covered only to the extent that this might be helpful to the final user of the framework.
