@@ -38,17 +38,48 @@ def final(fn):
 # Hook-related builtins
 
 def run_before(stage):
-    '''Decorator for attaching a test method to a given stage.
+    '''Attach the decorated function before a certain pipeline stage.
 
-    See online docs for more information.
+    The function will run just before the specified pipeline stage and it
+    cannot accept any arguments except ``self``. This decorator can be
+    stacked, in which case the function will be attached to multiple pipeline
+    stages. See above for the valid ``stage`` argument values.
+
+    :param stage: The pipeline stage where this function will be attached to.
+        See :ref:`pipeline-hooks` for the list of valid stage values.
     '''
     return hooks.attach_to('pre_' + stage)
 
 
 def run_after(stage):
-    '''Decorator for attaching a test method to a given stage.
+    '''Attach the decorated function after a certain pipeline stage.
 
-    See online docs for more information.
+    This is analogous to :func:`~RegressionMixin.run_before`, except that the
+    hook will execute right after the stage it was attached to. This decorator
+    also supports ``'init'`` as a valid ``stage`` argument, where in this
+    case, the hook will execute right after the test is initialized (i.e.
+    after the :func:`__init__` method is called) and before entering the
+    test's pipeline. In essence, a post-init hook is equivalent to defining
+    additional :func:`__init__` functions in the test. The following code
+
+    .. code-block:: python
+
+       class MyTest(rfm.RegressionTest):
+           @run_after('init')
+           def foo(self):
+               self.x = 1
+
+    is equivalent to
+
+    .. code-block:: python
+
+       class MyTest(rfm.RegressionTest):
+           def __init__(self):
+               self.x = 1
+
+    .. versionchanged:: 3.5.2
+       Add support for post-init hooks.
+
     '''
     return hooks.attach_to('post_' + stage)
 
@@ -59,10 +90,24 @@ require_deps = hooks.require_deps
 # Sanity and performance function builtins
 
 def sanity_function(fn):
-    '''Mark a function as the test's sanity function.
+    '''Decorate a test member function to mark it as a sanity check.
 
-    Decorated functions must be unary and they will be converted into
-    deferred expressions.
+    This decorator will convert the given function into a
+    :func:`~RegressionMixin.deferrable` and mark it to be executed during the
+    test's sanity stage. When this decorator is used, manually assigning a
+    value to :attr:`~RegressionTest.sanity_patterns` in the test is not
+    allowed.
+
+    Decorated functions may be overridden by derived classes, and derived
+    classes may also decorate a different method as the test's sanity
+    function. Decorating multiple member functions in the same class is not
+    allowed. However, a :class:`RegressionTest` may inherit from multiple
+    :class:`RegressionMixin` classes with their own sanity functions. In this
+    case, the derived class will follow Python's `MRO
+    <https://docs.python.org/3/library/stdtypes.html#class.__mro__>`_ to find
+    a suitable sanity function.
+
+    .. versionadded:: 3.7.0
     '''
 
     _def_fn = deferrable(fn)
@@ -70,17 +115,43 @@ def sanity_function(fn):
     return _def_fn
 
 
-def performance_function(units, *, perf_key=None):
-    '''Decorate a function to extract a performance variable.
+def performance_function(unit, *, perf_key=None):
+    '''Decorate a test member function to mark it as a performance metric
+    function.
 
-    The ``units`` argument indicates the units of the performance
-    variable to be extracted.
-    The ``perf_key`` optional arg will be used as the name of the
-    performance variable. If not provided, the function name will
-    be used as the performance variable name.
+    This decorator converts the decorated method into a performance deferrable
+    function (see ":ref:`deferrable-performance-functions`" for more details)
+    whose evaluation is deferred to the performance stage of the regression
+    test. The decorated function must take a single argument without a default
+    value (i.e. ``self``) and any number of arguments with default values. A
+    test may decorate multiple member functions as performance functions,
+    where each of the decorated functions must be provided with the unit of
+    the performance quantity to be extracted from the test. Any performance
+    function may be overridden in a derived class and multiple bases may
+    define their own performance functions. In the event of a name conflict,
+    the derived class will follow Python's `MRO
+    <https://docs.python.org/3/library/stdtypes.html#class.__mro__>`_ to
+    choose the appropriate performance function. However, defining more than
+    one performance function with the same name in the same class is
+    disallowed.
+
+    The full set of performance functions of a regression test is stored under
+    :attr:`~reframe.core.pipeline.RegressionTest.perf_variables` as key-value
+    pairs, where, by default, the key is the name of the decorated member
+    function, and the value is the deferred performance function itself.
+    Optionally, the key under which a performance function is stored in
+    :attr:`~reframe.core.pipeline.RegressionTest.perf_variables` can be
+    customised by passing the desired key as the ``perf_key`` argument to this
+    decorator.
+
+    :param unit: A string representing the measurement unit of this metric.
+
+    .. versionadded:: 3.8.0
+
     '''
-    if not isinstance(units, str):
-        raise TypeError('performance units must be a string')
+
+    if not isinstance(unit, str):
+        raise TypeError('performance unit must be a string')
 
     if perf_key and not isinstance(perf_key, str):
         raise TypeError("'perf_key' must be a string")
@@ -95,7 +166,7 @@ def performance_function(units, *, perf_key=None):
         @functools.wraps(func)
         def _perf_fn(*args, **kwargs):
             return _DeferredPerformanceExpression(
-                func, units, *args, **kwargs
+                func, unit, *args, **kwargs
             )
 
         _perf_key = perf_key if perf_key else func.__name__
@@ -135,3 +206,4 @@ def loggable_as(name):
 
 
 loggable = loggable_as(None)
+loggable.__doc__ = '''Equivalent to :func:`loggable_as(None) <loggable_as>`.'''
