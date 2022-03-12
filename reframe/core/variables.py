@@ -168,8 +168,8 @@ class TestVar:
     :param loggable: Mark this variable as loggable. If :obj:`True`, this
         variable will become a log record attribute under the name
         ``check_NAME``, where ``NAME`` is the name of the variable.
-    :param `kwargs`: keyword arguments to be forwarded to the constructor of the
-        field validator.
+    :param `kwargs`: keyword arguments to be forwarded to the constructor of
+        the field validator.
     :returns: A new test variable.
 
     .. versionadded:: 3.10.2

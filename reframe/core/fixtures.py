@@ -586,7 +586,8 @@ class TestFixture:
        class TestE(rfm.RegressionTest):
            # Select the fixture variants with boolean conditions
            foo = fixture(ComplexFixture,
-                         variants={'p0': lambda x: x<10, 'p1': lambda x: x=='d'})
+                         variants={'p0': lambda x: x<10,
+                                   'p1': lambda x: x=='d'})
 
            # Select the fixture variants by index
            bar = fixture(ComplexFixture, variants=range(300,310))
