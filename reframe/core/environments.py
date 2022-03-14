@@ -37,7 +37,8 @@ class Environment(jsonext.JSONSerializable):
        Users may not create :class:`Environment` objects directly.
     '''
 
-    def __init__(self, name, modules=None, variables=None, extras=None):
+    def __init__(self, name, modules=None, variables=None,
+                 extras=None, features=None):
         modules = modules or []
         variables = variables or []
         self._name = name
@@ -45,6 +46,7 @@ class Environment(jsonext.JSONSerializable):
         self._module_names = [m['name'] for m in self._modules]
         self._variables = collections.OrderedDict(variables)
         self._extras = extras or {}
+        self._features = features or []
 
     @property
     def name(self):
@@ -92,7 +94,7 @@ class Environment(jsonext.JSONSerializable):
 
     @property
     def extras(self):
-        '''User defined properties defined in the configuration.
+        '''User defined properties specified in the configuration.
 
         .. versionadded:: 3.9.1
 
@@ -100,6 +102,16 @@ class Environment(jsonext.JSONSerializable):
         '''
 
         return self._extras
+
+    @property
+    def features(self):
+        '''Used defined features specified in the configuration.
+
+        .. versionadded:: 3.11.0
+
+        :type: :class:`List[str]`
+        '''
+        return self._features
 
     def __eq__(self, other):
         if not isinstance(other, type(self)):
@@ -116,7 +128,8 @@ class Environment(jsonext.JSONSerializable):
         return (f'{type(self).__name__}('
                 f'name={self._name!r}, '
                 f'modules={self._modules!r}, '
-                f'variables={list(self._variables.items())!r})')
+                f'variables={list(self._variables.items())!r}, '
+                f'extras={self._extras!r}, features={self._features})')
 
 
 class _EnvironmentSnapshot(Environment):
@@ -174,6 +187,7 @@ class ProgEnvironment(Environment):
                  modules=None,
                  variables=None,
                  extras=None,
+                 features=None,
                  cc='cc',
                  cxx='CC',
                  ftn='ftn',
@@ -184,7 +198,7 @@ class ProgEnvironment(Environment):
                  fflags=None,
                  ldflags=None,
                  **kwargs):
-        super().__init__(name, modules, variables, extras)
+        super().__init__(name, modules, variables, extras, features)
         self._cc = cc
         self._cxx = cxx
         self._ftn = ftn

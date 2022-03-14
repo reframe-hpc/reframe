@@ -300,6 +300,10 @@
                                  },
                                 "processor": {"$ref": "#/defs/processor_info"},
                                 "devices": {"$ref": "#/defs/devices"},
+                                "features": {
+                                    "type": "array",
+                                    "items": {"type": "string"}
+                                },
                                 "extras": {"type": "object"},
                                 "resources": {
                                     "type": "array",
@@ -359,6 +363,10 @@
                         "items": {"type": "string"}
                     },
                     "extras": {"type": "object"},
+                    "features": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
                     "target_systems": {"$ref": "#/defs/system_ref"}
                 },
                 "required": ["name"],
@@ -499,6 +507,7 @@
         "environments/fflags": [],
         "environments/ldflags": [],
         "environments/extras": {},
+        "environments/features": [],
         "environments/target_systems": ["*"],
         "general/dump_pipeline_progress": false,
         "general/pipeline_timeout": null,
@@ -564,6 +573,7 @@
         "systems/partitions/container_platforms": [],
         "systems/partitions/container_platforms/*modules": [],
         "systems/partitions/container_platforms/*variables": [],
+        "systems/partitions/features": [],
         "systems/partitions/resources": [],
         "systems/partitions/resources/options": [],
         "systems/partitions/modules": [],

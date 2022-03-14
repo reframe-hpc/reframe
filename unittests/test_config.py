@@ -261,7 +261,10 @@ def test_select_subconfig():
             [{'name': 'PrgEnv-cray', 'collection': False, 'path': None}])
     assert site_config.get('environments/@PrgEnv-gnu/extras') == {'foo': 1,
                                                                   'bar': 'x'}
+    assert site_config.get('environments/@PrgEnv-gnu/features') == ['cxx14']
     assert site_config.get('environments/@PrgEnv-cray/extras') == {}
+    assert site_config.get('environments/@PrgEnv-cray/features') == ['cxx14',
+                                                                     'mpi']
 
     assert len(site_config.get('general')) == 1
     assert site_config.get('general/0/check_search_path') == ['a:b']

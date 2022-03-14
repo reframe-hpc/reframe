@@ -82,6 +82,16 @@ DEPEND_BY_ENV = 2
 DEPEND_FULLY = 3
 
 
+#
+# Example matches valid_systems syntax:
+#
+# '*', '*:*', 'foo:*', '*:foo', 'foo:bar', 'foo-bar'
+# '+foo', '-bar', '%foo=bar', '+foo -bar', '+foo -bar %foo=bar'
+#
+_VALID_ENV_SYNTAX = r'^((\*|\w[-\w]*)|([+-]\w+|%\w+=\w+)(\s+([+-]\w+|%\w+=\w+))*)$'  # noqa: E501
+_VALID_SYS_SYNTAX = r'^((\*|\w[-\w]*)(:(\*|\w[-\w]*))*|([+-]\w+|%\w+=\w+)(\s+([+-]\w+|%\w+=\w+))*)$'  # noqa: E501
+
+
 _PIPELINE_STAGES = (
     '__init__',
     'setup',
@@ -249,7 +259,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #:     .. versionchanged:: 3.6
     #:        Default value changed from ``None`` to ``required``.
-    valid_prog_environs = variable(typ.List[str], loggable=True)
+    valid_prog_environs = variable(typ.List[typ.Str[_VALID_ENV_SYNTAX]],
+                                   loggable=True)
 
     #: List of systems supported by this test.
     #: The general syntax for systems is ``<sysname>[:<partname>]``.
@@ -264,7 +275,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #:     .. versionchanged:: 3.6
     #:        Default value changed from ``None`` to ``required``.
-    valid_systems = variable(typ.List[str], loggable=True)
+    valid_systems = variable(typ.List[typ.Str[_VALID_SYS_SYNTAX]],
+                             loggable=True)
 
     #: A detailed description of the test.
     #:
@@ -1368,22 +1380,81 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         return ret
 
     def supports_system(self, part):
-        name = part.fullname
-        if name.find(':') != -1:
-            system, partition = name.split(':')
-        else:
-            system, partition = self.current_system.name, name
+        for spec in self.valid_systems:
+            if spec[0] not in ('+', '-', '%'):
+                # This is the classical case
+                sysname, partname = part.fullname.split(':')
+                valid_matches = ['*', '*:*', sysname, f'{sysname}:*',
+                                 f'*:{partname}', f'{part.fullname}']
+                if spec in valid_matches:
+                    return True
+            else:
+                plus_feats = []
+                minus_feats = []
+                props = {}
+                for subspec in spec.split(' '):
+                    if subspec.startswith('+'):
+                        plus_feats.append(subspec[1:])
+                    elif subspec.startswith('-'):
+                        minus_feats.append(subspec[1:])
+                    elif subspec.startswith('%'):
+                        key, val = subspec[1:].split('=')
+                        props[key] = val
 
-        valid_matches = ['*', '*:*', system, f'{system}:*',
-                         f'*:{partition}', f'{system}:{partition}']
+                have_plus_feats = all(
+                    ft in part.features or ft in part.resources
+                    for ft in plus_feats
+                )
+                have_minus_feats = any(
+                    ft in part.features or ft in part.resources
+                    for ft in minus_feats
+                )
+                try:
+                    have_props = all(part.extras[k] == v
+                                     for k, v in props.items())
+                except KeyError:
+                    have_props = False
 
-        return any(n in self.valid_systems for n in valid_matches)
+                if have_plus_feats and not have_minus_feats and have_props:
+                    return True
+
+        return False
 
     def supports_environ(self, env):
         if '*' in self.valid_prog_environs:
             return True
 
-        return env.name in self.valid_prog_environs
+        for spec in self.valid_prog_environs:
+            if spec[0] not in ('+', '-', '%'):
+                # This is the classical case
+                if env.name == spec:
+                    return True
+            else:
+                plus_feats = []
+                minus_feats = []
+                props = {}
+                for subspec in spec.split(' '):
+                    if subspec.startswith('+'):
+                        plus_feats.append(subspec[1:])
+                    elif subspec.startswith('-'):
+                        minus_feats.append(subspec[1:])
+                    elif subspec.startswith('%'):
+                        key, val = subspec[1:].split('=')
+                        props[key] = val
+
+                have_plus_feats = all(ft in env.features for ft in plus_feats)
+                have_minus_feats = any(ft in env.features
+                                       for ft in minus_feats)
+                try:
+                    have_props = all(env.extras[k] == v
+                                     for k, v in props.items())
+                except KeyError:
+                    have_props = False
+
+                if have_plus_feats and not have_minus_feats and have_props:
+                    return True
+
+        return False
 
     def is_local(self):
         '''Check if the test will execute locally.

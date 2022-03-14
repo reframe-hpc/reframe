@@ -15,7 +15,7 @@ import reframe.utility.sanity as sn
 import unittests.utility as test_util
 
 from reframe.core.containers import _STAGEDIR_MOUNT
-from reframe.core.environments import Environment
+from reframe.core.environments import ProgEnvironment
 from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
                                      PerformanceError, SanityError,
                                      SkipTestError, ReframeSyntaxError)
@@ -338,57 +338,257 @@ def test_pinned_test(pinnedtest, local_exec_ctx):
     assert pinned._prefix == expected_prefix
 
 
+def test_valid_systems_syntax(hellotest):
+    hellotest.valid_systems = ['*']
+    hellotest.valid_systems = ['*:*']
+    hellotest.valid_systems = ['sys:*']
+    hellotest.valid_systems = ['*:part']
+    hellotest.valid_systems = ['sys']
+    hellotest.valid_systems = ['sys:part']
+    hellotest.valid_systems = ['sys-0']
+    hellotest.valid_systems = ['sys:part-0']
+    hellotest.valid_systems = ['+x0']
+    hellotest.valid_systems = ['-y0']
+    hellotest.valid_systems = ['%z0=w0']
+    hellotest.valid_systems = ['+x0 -y0 %z0=w0']
+    hellotest.valid_systems = ['-y0 +x0 %z0=w0']
+    hellotest.valid_systems = ['%z0=w0 +x0 -y0']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = ['']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = ['   sys:part']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = [' sys:part   ']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = [':']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = [':foo']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = ['foo:']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = ['+']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = ['-']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = ['%']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = ['%foo']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = ['%foo=']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = ['+x0 -y0 %z0']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = ['+x0 - %z0=w0']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = ['%']
+
+    for sym in '!@#$^&()=<>':
+        with pytest.raises(TypeError):
+            hellotest.valid_systems = [f'{sym}foo']
+
+    for sym in '!@#$%^&*()+=<>':
+        with pytest.raises(TypeError):
+            hellotest.valid_systems = [f'foo{sym}']
+
+
+def test_valid_prog_environs_syntax(hellotest):
+    hellotest.valid_prog_environs = ['*']
+    hellotest.valid_prog_environs = ['env']
+    hellotest.valid_prog_environs = ['env-0']
+    hellotest.valid_prog_environs = ['+x0']
+    hellotest.valid_prog_environs = ['-y0']
+    hellotest.valid_prog_environs = ['%z0=w0']
+    hellotest.valid_prog_environs = ['+x0 -y0 %z0=w0']
+    hellotest.valid_prog_environs = ['-y0 +x0 %z0=w0']
+    hellotest.valid_prog_environs = ['%z0=w0 +x0 -y0']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_prog_environs = ['']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_prog_environs = ['  env0']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_prog_environs = ['env0  ']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_prog_environs = [':']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_prog_environs = [':foo']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_prog_environs = ['foo:']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_prog_environs = ['+']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_prog_environs = ['-']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_prog_environs = ['%']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_prog_environs = ['%foo']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_prog_environs = ['%foo=']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_prog_environs = ['+x0 -y0 %z0']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_prog_environs = ['+x0 - %z0=w0']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_prog_environs = ['%']
+
+    for sym in '!@#$^&()=<>:':
+        with pytest.raises(TypeError):
+            hellotest.valid_prog_environs = [f'{sym}foo']
+
+    for sym in '!@#$%^&*()+=<>:':
+        with pytest.raises(TypeError):
+            hellotest.valid_prog_environs = [f'foo{sym}']
+
+
 def test_supports_system(hellotest, testsys_exec_ctx):
     system = rt.runtime().system
+
+    def _assert_supported(systems):
+        for p in system.partitions:
+            if p.fullname in systems:
+                assert hellotest.supports_system(p)
+            else:
+                assert not hellotest.supports_system(p)
+
     hellotest.valid_systems = ['*']
-    for p in system.partitions:
-        assert hellotest.supports_system(p)
+    _assert_supported(['testsys:login', 'testsys:gpu'])
 
     hellotest.valid_systems = ['*:*']
-    for p in system.partitions:
-        assert hellotest.supports_system(p)
+    _assert_supported(['testsys:login', 'testsys:gpu'])
 
     hellotest.valid_systems = ['testsys']
-    for p in system.partitions:
-        assert hellotest.supports_system(p)
+    _assert_supported(['testsys:login', 'testsys:gpu'])
 
     hellotest.valid_systems = ['testsys:gpu']
-    for p in system.partitions:
-        if p.fullname == 'testsys:gpu':
-            assert hellotest.supports_system(p)
-        else:
-            assert not hellotest.supports_system(p)
+    _assert_supported(['testsys:gpu'])
 
     hellotest.valid_systems = ['testsys:login']
-    for p in system.partitions:
-        if p.fullname == 'testsys:login':
-            assert hellotest.supports_system(p)
-        else:
-            assert not hellotest.supports_system(p)
+    _assert_supported(['testsys:login'])
 
     hellotest.valid_systems = ['foo']
-    for p in system.partitions:
-        assert not hellotest.supports_system(p)
+    _assert_supported([])
 
     hellotest.valid_systems = ['*:gpu']
-    for p in system.partitions:
-        if p.fullname.endswith('gpu'):
-            assert hellotest.supports_system(p)
-        else:
-            assert not hellotest.supports_system(p)
+    _assert_supported(['testsys:gpu'])
 
     hellotest.valid_systems = ['testsys:*']
-    for p in system.partitions:
-        assert hellotest.supports_system(p)
+    _assert_supported(['testsys:login', 'testsys:gpu'])
+
+    # Check feature support
+    hellotest.valid_systems = ['+cuda']
+    _assert_supported(['testsys:gpu'])
+
+    # Check AND in features and extras
+    hellotest.valid_systems = ['+cuda +mpi %gpu_arch=v100']
+    _assert_supported([])
+
+    hellotest.valid_systems = ['+cuda -mpi']
+    _assert_supported([])
+
+    # Check OR in features ad extras
+    hellotest.valid_systems = ['+cuda +mpi', '%gpu_arch=v100']
+    _assert_supported(['testsys:gpu'])
+
+    # Check that resources are taken into account
+    hellotest.valid_systems = ['+gpu +datawarp']
+    _assert_supported(['testsys:gpu'])
+
+    # Check negation
+    hellotest.valid_systems = ['-mpi -gpu']
+    _assert_supported(['testsys:login'])
+
+    hellotest.valid_systems = ['-mpi -foo']
+    _assert_supported(['testsys:login'])
+
+    hellotest.valid_systems = ['+gpu -datawarp']
+    _assert_supported([])
+
+    # Check mutual exclusive features
+    hellotest.valid_systems = ['+gpu -gpu']
+    _assert_supported([])
 
 
-def test_supports_environ(hellotest, generic_system):
-    foo1 = Environment('foo1')
-    foo_env = Environment('foo-env')
+def test_supports_environ(hellotest):
+    environs = [
+        ProgEnvironment('builtin'),
+        ProgEnvironment('cray',
+                        features=['cxx14', 'mpi'],
+                        extras={
+                            'family': 'cce',
+                            'mpi_abi': 'mpich'
+                        }),
+        ProgEnvironment('gnu',
+                        features=['cxx14'],
+                        extras={
+                            'family': 'gcc',
+                            'foo': 1,
+                            'bar': 'x'
+                        })
+    ]
+
+    def _assert_supported(supported_envs):
+        for e in environs:
+            if e.name in supported_envs:
+                assert hellotest.supports_environ(e)
+            else:
+                assert not hellotest.supports_environ(e)
 
     hellotest.valid_prog_environs = ['*']
-    assert hellotest.supports_environ(foo1)
-    assert hellotest.supports_environ(foo_env)
+    _assert_supported(['builtin', 'cray', 'gnu'])
+
+    hellotest.valid_prog_environs = ['cray']
+    _assert_supported(['cray'])
+
+    hellotest.valid_prog_environs = ['cray']
+    _assert_supported(['cray'])
+
+    hellotest.valid_prog_environs = ['+cxx14']
+    _assert_supported(['cray', 'gnu'])
+
+    hellotest.valid_prog_environs = ['+cxx14 -cxx14']
+    _assert_supported([])
+
+    hellotest.valid_prog_environs = ['+cxx14', '-cxx14']
+    _assert_supported(['builtin', 'cray', 'gnu'])
+
+    hellotest.valid_prog_environs = ['+cxx14 %mpi_abi=mpich']
+    _assert_supported(['cray'])
+
+    hellotest.valid_prog_environs = ['%foo=1 %mpi_abi=mpich']
+    _assert_supported([])
+
+    hellotest.valid_prog_environs = ['%foo=1 %mpi_abi=mpich']
+    _assert_supported([])
+
+    hellotest.valid_prog_environs = ['-cxx14']
+    _assert_supported(['builtin'])
 
 
 def test_sourcesdir_none(local_exec_ctx):
