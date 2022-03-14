@@ -51,7 +51,6 @@ class CPMDCheck(rfm.RunOnlyRegressionTest):
 
     @sanity_function
     def assert_energy_diff(self):
-        # OpenMP version of CPMD segfaults
         energy = sn.extractsingle(
             r'CLASSICAL ENERGY\s+-(?P<result>\S+)',
             self.stdout, 'result', float)
