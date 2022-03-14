@@ -103,10 +103,10 @@ def generate_testcases(checks,
     '''Generate concrete test cases from checks.'''
 
     def supports_partition(c, p):
-        return skip_system_check or c.supports_system(p.fullname)
+        return skip_system_check or c.supports_system(p)
 
     def supports_environ(c, e):
-        return skip_environ_check or c.supports_environ(e.name)
+        return skip_environ_check or c.supports_environ(e)
 
     rt = runtime.runtime()
     cases = []

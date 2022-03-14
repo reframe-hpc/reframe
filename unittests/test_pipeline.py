@@ -15,6 +15,7 @@ import reframe.utility.sanity as sn
 import unittests.utility as test_util
 
 from reframe.core.containers import _STAGEDIR_MOUNT
+from reframe.core.environments import Environment
 from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
                                      PerformanceError, SanityError,
                                      SkipTestError, ReframeSyntaxError)
@@ -64,7 +65,7 @@ def generic_system(make_exec_ctx_g):
 
 
 @pytest.fixture
-def testsys_system(make_exec_ctx_g):
+def testsys_exec_ctx(make_exec_ctx_g):
     yield from make_exec_ctx_g(test_util.TEST_CONFIG_FILE, 'testsys')
 
 
@@ -337,60 +338,57 @@ def test_pinned_test(pinnedtest, local_exec_ctx):
     assert pinned._prefix == expected_prefix
 
 
-def test_supports_system(hellotest, testsys_system):
+def test_supports_system(hellotest, testsys_exec_ctx):
+    system = rt.runtime().system
     hellotest.valid_systems = ['*']
-    assert hellotest.supports_system('gpu')
-    assert hellotest.supports_system('login')
-    assert hellotest.supports_system('testsys:gpu')
-    assert hellotest.supports_system('testsys:login')
+    for p in system.partitions:
+        assert hellotest.supports_system(p)
 
     hellotest.valid_systems = ['*:*']
-    assert hellotest.supports_system('gpu')
-    assert hellotest.supports_system('login')
-    assert hellotest.supports_system('testsys:gpu')
-    assert hellotest.supports_system('testsys:login')
+    for p in system.partitions:
+        assert hellotest.supports_system(p)
 
     hellotest.valid_systems = ['testsys']
-    assert hellotest.supports_system('gpu')
-    assert hellotest.supports_system('login')
-    assert hellotest.supports_system('testsys:gpu')
-    assert hellotest.supports_system('testsys:login')
+    for p in system.partitions:
+        assert hellotest.supports_system(p)
 
     hellotest.valid_systems = ['testsys:gpu']
-    assert hellotest.supports_system('gpu')
-    assert not hellotest.supports_system('login')
-    assert hellotest.supports_system('testsys:gpu')
-    assert not hellotest.supports_system('testsys:login')
+    for p in system.partitions:
+        if p.fullname == 'testsys:gpu':
+            assert hellotest.supports_system(p)
+        else:
+            assert not hellotest.supports_system(p)
 
     hellotest.valid_systems = ['testsys:login']
-    assert not hellotest.supports_system('gpu')
-    assert hellotest.supports_system('login')
-    assert not hellotest.supports_system('testsys:gpu')
-    assert hellotest.supports_system('testsys:login')
+    for p in system.partitions:
+        if p.fullname == 'testsys:login':
+            assert hellotest.supports_system(p)
+        else:
+            assert not hellotest.supports_system(p)
 
     hellotest.valid_systems = ['foo']
-    assert not hellotest.supports_system('gpu')
-    assert not hellotest.supports_system('login')
-    assert not hellotest.supports_system('testsys:gpu')
-    assert not hellotest.supports_system('testsys:login')
+    for p in system.partitions:
+        assert not hellotest.supports_system(p)
 
     hellotest.valid_systems = ['*:gpu']
-    assert hellotest.supports_system('testsys:gpu')
-    assert hellotest.supports_system('foo:gpu')
-    assert not hellotest.supports_system('testsys:cpu')
-    assert not hellotest.supports_system('testsys:login')
+    for p in system.partitions:
+        if p.fullname.endswith('gpu'):
+            assert hellotest.supports_system(p)
+        else:
+            assert not hellotest.supports_system(p)
 
     hellotest.valid_systems = ['testsys:*']
-    assert hellotest.supports_system('testsys:login')
-    assert hellotest.supports_system('gpu')
-    assert not hellotest.supports_system('foo:gpu')
+    for p in system.partitions:
+        assert hellotest.supports_system(p)
 
 
 def test_supports_environ(hellotest, generic_system):
+    foo1 = Environment('foo1')
+    foo_env = Environment('foo-env')
+
     hellotest.valid_prog_environs = ['*']
-    assert hellotest.supports_environ('foo1')
-    assert hellotest.supports_environ('foo-env')
-    assert hellotest.supports_environ('*')
+    assert hellotest.supports_environ(foo1)
+    assert hellotest.supports_environ(foo_env)
 
 
 def test_sourcesdir_none(local_exec_ctx):
@@ -507,7 +505,7 @@ def test_sourcepath_non_existent(local_exec_ctx):
         test.compile_wait()
 
 
-def test_extra_resources(HelloTest, testsys_system):
+def test_extra_resources(HelloTest, testsys_exec_ctx):
     @test_util.custom_prefix('unittests/resources/checks')
     class MyTest(HelloTest):
         local = True
@@ -1015,7 +1013,7 @@ def _run_sanity(test, *exec_ctx, skip_perf=False):
 
 
 @pytest.fixture
-def dummy_gpu_exec_ctx(testsys_system):
+def dummy_gpu_exec_ctx(testsys_exec_ctx):
     partition = test_util.partition_by_name('gpu')
     environ = test_util.environment_by_name('builtin', partition)
     yield partition, environ
@@ -1035,7 +1033,7 @@ def sanity_file(tmp_path):
 # should not change to the `@performance_function` syntax`
 
 @pytest.fixture
-def dummytest(testsys_system, perf_file, sanity_file):
+def dummytest(testsys_exec_ctx, perf_file, sanity_file):
     class MyTest(rfm.RunOnlyRegressionTest):
         def __init__(self):
             self.perf_file = perf_file
@@ -1263,7 +1261,7 @@ def test_perf_patterns_evaluation(dummytest, sanity_file,
 
 
 @pytest.fixture
-def perftest(testsys_system, perf_file, sanity_file):
+def perftest(testsys_exec_ctx, perf_file, sanity_file):
     class MyTest(rfm.RunOnlyRegressionTest):
         sourcesdir = None
 

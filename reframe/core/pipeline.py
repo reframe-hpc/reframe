@@ -1367,7 +1367,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         return ret
 
-    def supports_system(self, name):
+    def supports_system(self, part):
+        name = part.fullname
         if name.find(':') != -1:
             system, partition = name.split(':')
         else:
@@ -1378,11 +1379,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         return any(n in self.valid_systems for n in valid_matches)
 
-    def supports_environ(self, env_name):
+    def supports_environ(self, env):
         if '*' in self.valid_prog_environs:
             return True
 
-        return env_name in self.valid_prog_environs
+        return env.name in self.valid_prog_environs
 
     def is_local(self):
         '''Check if the test will execute locally.
