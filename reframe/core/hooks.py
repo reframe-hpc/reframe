@@ -37,9 +37,28 @@ def attach_to(phase):
 
 
 def require_deps(func):
-    '''Denote that the decorated test method will use the test dependencies.
+    '''Decorator to denote that a function will use the test dependencies.
 
-    See online docs for more information.
+    The arguments of the decorated function must be named after the
+    dependencies that the function intends to use. The decorator will bind the
+    arguments to a partial realization of the
+    :func:`~reframe.core.pipeline.RegressionTest.getdep` function, such that
+    conceptually the new function arguments will be the following:
+
+    .. code-block:: python
+
+       new_arg = functools.partial(getdep, orig_arg_name)
+
+    The converted arguments are essentially functions accepting a single
+    argument, which is the target test's programming environment.
+    Additionally, this decorator will attach the function to run *after* the
+    test's setup phase, but *before* any other "post-setup" pipeline hook.
+
+    .. warning::
+       .. versionchanged:: 3.7.0
+          Using this functionality from the :py:mod:`reframe` or
+          :py:mod:`reframe.core.decorators` modules is now deprecated. You
+          should use the built-in function described here.
     '''
 
     tests = inspect.getfullargspec(func).args[1:]
