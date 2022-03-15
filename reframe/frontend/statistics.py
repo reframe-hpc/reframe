@@ -263,7 +263,8 @@ class TestStats:
             partfullname = partition.fullname if partition else 'None'
             environ_name = (check.current_environ.name
                             if check.current_environ else 'None')
-            f = f'[{check.unique_name}, {environ_name}, {partfullname}]'
+            f = (f'[{check.display_name} (uid: {check.unique_name}), '
+                 f'{environ_name}, {partfullname}]')
             if tf.failed_stage not in failures:
                 failures[tf.failed_stage] = []
 
