@@ -236,13 +236,13 @@ class TestStats:
             printer.info(f"  * Maintainers: {r['maintainers']}")
             printer.info(f"  * Failing phase: {r['fail_phase']}")
             if rt.runtime().get_option('general/0/compact_test_names'):
-                class_name = r['display_name'].split(' ')[0]
-                id = r['unique_name'].replace(class_name, '').replace('_', '@')
-                rerun_name = class_name + id
+                cls = r['display_name'].split(' ')[0]
+                variant = r['unique_name'].replace(cls, '').replace('_', '@')
+                nameoptarg = cls + variant
             else:
-                rerun_name = r['unique_name']
+                nameoptarg = r['unique_name']
 
-            printer.info(f"  * Rerun with '-n {rerun_name}"
+            printer.info(f"  * Rerun with '-n {nameoptarg}"
                          f" -p {r['environment']} --system {r['system']} -r'")
             printer.info(f"  * Reason: {r['fail_reason']}")
 
