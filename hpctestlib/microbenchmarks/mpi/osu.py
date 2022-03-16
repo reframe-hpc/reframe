@@ -82,7 +82,7 @@ class osu_benchmark_test_base(rfm.RunOnlyRegressionTest):
     #: :default: ``8``
     message_size = variable(int, value=8)
 
-    #: Device buffers 
+    #: Device buffers
     #:
     #: Use accelerator device buffers, i.e cuda, openacc or rocm
     #:
@@ -95,12 +95,7 @@ class osu_benchmark_test_base(rfm.RunOnlyRegressionTest):
         'collective': ['osu_alltoall', 'osu_allreduce'],
         'pt2pt': ['osu_bw', 'osu_latency']
     }
-    # build_variant = build_osu_benchmarks.get_variant_nums(
-    #     build_type=f'{device_buffers}'
-    # )
-    # osu_binaries = fixture(build_osu_benchmarks, scope='environment'
-    #     variants=build_variant
-    # )
+    osu_binaries = fixture(build_osu_benchmarks, scope='environment')
 
     @run_after('setup')
     def set_executable(self):
@@ -117,22 +112,18 @@ class osu_benchmark_test_base(rfm.RunOnlyRegressionTest):
         self.executable_opts = ['-m', f'{max_message_size}',
                                 '-x', f'{self.num_warmup_iters}',
                                 '-i', f'{self.num_iters}']
-        if self.device_buffers:
+        if self.device_buffers  and f'{self.device_buffers}' != 'cpu':
             self.executable_opts += ['-d', f'{self.device_buffers}']
 
-        if benchmark_type == 'pt2pt':
-            self.executable_opts += ['D', 'D']
+            if benchmark_type == 'pt2pt':
+                self.executable_opts += ['D', 'D']
 
     @sanity_function
     def validate_test(self):
         return sn.assert_found(rf'^{self.message_size}', self.stdout)
 
 
-@rfm.simple_test
 class osu_bandwidth(osu_benchmark_test_base):
-    valid_systems = ['*']
-    valid_prog_environs = ['*']
-
     @performance_function('MB/s', perf_key='bw')
     def bandwidth(self):
         """Bandwidth for the message size `message_size`."""
@@ -141,27 +132,37 @@ class osu_bandwidth(osu_benchmark_test_base):
                                 self.stdout, 'bw', float)
 
 
-@rfm.simple_test
 class osu_latency(osu_benchmark_test_base):
-    device_buffers = 'cuda'
-    valid_systems = ['*']
-    valid_prog_environs = ['*']
-    build_variant = build_osu_benchmarks.get_variant_nums(
-        build_type=f'{device_buffers}'
-    )
-    osu_binaries = fixture(build_osu_benchmarks, scope='environment',
-        variants=build_variant
-    )
-
-    @run_after('init')
-    def set_deaults(self):
-        self.executable = self.executable or 'osu_latency'
-        self.num_tasks = self.num_tasks or 2
-        self.num_tasks_per_node = self.num_tasks_per_node or 1
- 
     @performance_function('us', perf_key='latency')
     def latency(self):
         """Latency for the message size `message_size`."""
 
         return sn.extractsingle(rf'^{self.message_size}\s+(?P<latency>\S+)',
                                 self.stdout, 'latency', float)
+
+
+@rfm.simple_test
+class osu_cpu_latency_pt2pt(osu_latency):
+    @run_after('init')
+    def set_job_options(self):
+        self.executable = 'osu_latency'
+        self.num_tasks = 2
+        self.num_tasks_per_node = 1
+
+
+@rfm.simple_test
+class osu_cpu_bandwidth_pt2pt(osu_bandwidth):
+    @run_after('init')
+    def set_job_options(self):
+        self.executable = 'osu_latency'
+        self.num_tasks = 2
+        self.num_tasks_per_node = 1
+
+
+@rfm.simple_test
+class osu_allreduce(osu_latency):
+    @run_after('init')
+    def set_job_options(self):
+        self.executable = 'osu_allreduce'
+        self.num_tasks = 4
+        self.num_tasks_per_node = 1

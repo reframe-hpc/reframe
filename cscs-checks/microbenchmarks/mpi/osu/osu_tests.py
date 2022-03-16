@@ -87,10 +87,6 @@ class allreduce_check(osu_latency):
                     'latency': (19.07, None, 1.64, 'us')
                 }
             }
-        self.perf_patterns = {
-            'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
-                                        self.stdout, 'latency', float)
-        }
 
 
 @rfm.simple_test
@@ -235,7 +231,7 @@ class p2p_bandwidth_gpu_test(osu_bandwidth, p2p_config_cscs, g2g_rdma_cscs):
     descr = 'G2G bandwidth microbenchmark'
     device_buffers = 'cuda'
     message_size = 4194304
-    # executable = 'osu_bw'
+    executable = 'osu_bw'
     osu_binaries = fixture(build_osu_benchmarks_gpu, scope='environment',
                            variants=cuda_build_variant)
     reference = {
