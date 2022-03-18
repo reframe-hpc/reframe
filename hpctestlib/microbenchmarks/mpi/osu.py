@@ -54,7 +54,7 @@ class build_osu_benchmarks(rfm.CompileOnlyRegressionTest):
         return True
 
 
-class osu_benchmark_test_base(rfm.RunOnlyRegressionTest):
+class osu_benchmark(rfm.RunOnlyRegressionTest):
     '''Base class of OSU benchmarks runtime tests'''
 
     #: Number of warmup iterations
@@ -62,8 +62,8 @@ class osu_benchmark_test_base(rfm.RunOnlyRegressionTest):
     #: This value is passed to the excutable through the -x option.
     #:
     #: :type: :class:`int`
-    #: :default: ``1000``
-    num_warmup_iters = variable(int, value=1000)
+    #: :default: ``100``
+    num_warmup_iters = variable(int, value=100)
 
     #: Number of iterations
     #:
@@ -88,9 +88,13 @@ class osu_benchmark_test_base(rfm.RunOnlyRegressionTest):
     #:
     #: :type: :class:`str`
     #: :default: ``None``
-    device_buffers = variable(str, type(None), value='cpu')
+    device_buffers = variable(str, value='cpu')
 
-    executable = ''
+    #: See :attr:`~reframe.core.pipeline.RegressionTest.num_tasks`.
+    #:
+    #: :required: Yes
+    num_tasks = required
+
     microbenchmarks = {
         'collective': ['osu_alltoall', 'osu_allreduce'],
         'pt2pt': ['osu_bw', 'osu_latency']
@@ -112,7 +116,7 @@ class osu_benchmark_test_base(rfm.RunOnlyRegressionTest):
         self.executable_opts = ['-m', f'{max_message_size}',
                                 '-x', f'{self.num_warmup_iters}',
                                 '-i', f'{self.num_iters}']
-        if self.device_buffers  and f'{self.device_buffers}' != 'cpu':
+        if f'{self.device_buffers}' != 'cpu':
             self.executable_opts += ['-d', f'{self.device_buffers}']
 
             if benchmark_type == 'pt2pt':
@@ -123,7 +127,7 @@ class osu_benchmark_test_base(rfm.RunOnlyRegressionTest):
         return sn.assert_found(rf'^{self.message_size}', self.stdout)
 
 
-class osu_bandwidth(osu_benchmark_test_base):
+class osu_bandwidth(osu_benchmark):
     @performance_function('MB/s', perf_key='bw')
     def bandwidth(self):
         """Bandwidth for the message size `message_size`."""
@@ -132,7 +136,7 @@ class osu_bandwidth(osu_benchmark_test_base):
                                 self.stdout, 'bw', float)
 
 
-class osu_latency(osu_benchmark_test_base):
+class osu_latency(osu_benchmark):
     @performance_function('us', perf_key='latency')
     def latency(self):
         """Latency for the message size `message_size`."""
@@ -142,27 +146,28 @@ class osu_latency(osu_benchmark_test_base):
 
 
 @rfm.simple_test
-class osu_cpu_latency_pt2pt(osu_latency):
-    @run_after('init')
-    def set_job_options(self):
-        self.executable = 'osu_latency'
-        self.num_tasks = 2
-        self.num_tasks_per_node = 1
+class osu_latency_pt2pt_check(osu_latency):
+    executable = 'osu_latency'
+    num_tasks = 2
+    num_tasks_per_node = 1
 
 
 @rfm.simple_test
-class osu_cpu_bandwidth_pt2pt(osu_bandwidth):
-    @run_after('init')
-    def set_job_options(self):
-        self.executable = 'osu_latency'
-        self.num_tasks = 2
-        self.num_tasks_per_node = 1
+class osu_bandwidth_pt2pt_check(osu_bandwidth):
+    executable = 'osu_latency'
+    num_tasks = 2
+    num_tasks_per_node = 1
 
 
 @rfm.simple_test
-class osu_allreduce(osu_latency):
-    @run_after('init')
-    def set_job_options(self):
-        self.executable = 'osu_allreduce'
-        self.num_tasks = 4
-        self.num_tasks_per_node = 1
+class osu_allreduce_check(osu_latency):
+    executable = 'osu_allreduce'
+    num_tasks = 4
+    num_tasks_per_node = 1
+
+
+@rfm.simple_test
+class osu_alltoall_check(osu_latency):
+    executable = 'osu_alltoall'
+    num_tasks = 4
+    num_tasks_per_node = 1
