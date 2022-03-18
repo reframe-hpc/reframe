@@ -93,10 +93,10 @@ class CPMDCheck(rfm.RunOnlyRegressionTest):
         # common setup for every architecture
         self.job.launcher.options = ['--cpu-bind=cores']
         self.job.options = ['--distribution=block:block']
-        # FIXME: the current test case does not scale beyond 72 MPI tasks,
-        # so the last node in 16-nodes jobs will be used only partially.
-        # The test case needs to be updated (warning about XC_DRIVER IN &DFT)
-        self.num_tasks = 72
+        # FIXME: the current test case does not scale beyond 72 MPI tasks
+        # and needs to be updated (see the warning about XC_DRIVER IN &DFT)
+        self.num_tasks_per_node = 72 // self.num_nodes
+        self.num_tasks = self.num_nodes * self.num_tasks_per_node
 
         try:
             found = self.references[self.num_nodes][arch]
