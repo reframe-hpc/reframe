@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import reframe as rfm
-import reframe.utility.sanity as sn
 
 from hpctestlib.microbenchmarks.mpi.osu import (osu_latency_pt2pt_check,
                                                 osu_bandwidth_pt2pt_check,
