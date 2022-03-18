@@ -1514,9 +1514,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                           launcher,
                           name=name,
                           workdir=self._stagedir,
-                          max_pending_time=self.max_pending_time,
                           sched_access=self._current_partition.access,
-                          sched_exclusive_access=self.exclusive_access,
                           **job_opts)
 
     def _setup_perf_logging(self):
@@ -1773,10 +1771,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self.job.time_limit = (self.time_limit or rt.runtime().get_option(
             f'systems/0/partitions/@{self.current_partition.name}/time_limit')
         )
-        if (not self.local and rt.runtime().flex_alloc_singlenode_state and
-            hasattr(self, '_rfm_node')):
-            self.job.pin_nodes = self._rfm_node
-
+        self.job.max_pending_time = self.max_pending_time
+        self.job.exclusive_access = self.exclusive_access
         exec_cmd = [self.job.launcher.run_command(self.job),
                     self.executable, *self.executable_opts]
 

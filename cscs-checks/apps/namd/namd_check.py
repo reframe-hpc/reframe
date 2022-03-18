@@ -120,7 +120,7 @@ class NamdCheck(rfm.RunOnlyRegressionTest):
                 }
             else:
                 self.reference = {
-                    'daint:mc': {'days_ns': (0.272, None, 0.05, 'days/ns')},
+                    'daint:mc': {'days_ns': (0.35, None, 0.10, 'days/ns')},
                     'eiger:mc': {'days_ns': (0.05, None, 0.05, 'days/ns')},
                     'pilatus:mc': {'days_ns': (0.05, None, 0.05, 'days/ns')}
                 }
