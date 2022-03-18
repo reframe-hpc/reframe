@@ -917,3 +917,13 @@ def test_fixture_resolution(run_reframe):
         action='run'
     )
     assert returncode == 0
+
+
+def test_check_stdin_not_a_tty(run_reframe, tmp_path):
+    returncode, stdout, stderr = run_reframe(
+        checkpath=[
+            'unittests/resources/checks_unlisted/test_stdin_not_a_tty.py'
+        ])
+    assert 'PASSED' in stdout
+    assert 'FAILED' not in stdout
+    assert returncode == 0
