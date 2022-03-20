@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import copy
 import inspect
 import itertools
 import json
@@ -14,6 +15,7 @@ import time
 import traceback
 
 import reframe
+import reframe.core.builtins as builtins
 import reframe.core.config as config
 import reframe.core.exceptions as errors
 import reframe.core.logging as logging
@@ -29,6 +31,9 @@ import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 
 
+
+from reframe.core.decorators import TestRegistry
+from reframe.core.meta import make_test
 from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
@@ -182,6 +187,65 @@ def calc_verbosity(site_config, quiesce):
     curr_verbosity = site_config.get('general/0/verbose')
     return curr_verbosity - quiesce
 
+
+def distribute_tests(state, testcases, skip_system_check, skip_prgenv_check):
+    node_map = autodetect.getallnodes(state)
+
+    # Create extra tests
+    temporary_registry = None
+    new_checks = []
+    for t in testcases:
+        if not t.check.is_fixture():
+            cls = type(t.check)
+            basename = cls.__name__
+            original_var_info = cls.get_variant_info(
+                t.check.variant_num, recurse=True
+            )
+
+            def _rfm_distributed_set_run_nodes(obj):
+                if not obj.local:
+                    obj.job.pin_nodes = obj._rfm_nodelist
+
+            def _rfm_distributed_set_build_nodes(obj):
+                if not obj.local and not obj.build_locally:
+                    obj.build_job.pin_nodes = obj._rfm_nodelist
+
+            # We re-set the valid system and environment in a hook to
+            # make sure that it will not be overwriten by a parent
+            # post-init hook
+            def _rfm_distributed_set_valid_sys_env(obj):
+                obj.valid_systems = [t._partition.fullname]
+                obj.valid_prog_environs = [t._environ.name]
+            class BaseTest(t.check.__class__):
+                _rfm_nodelist = builtins.parameter(node_map[t._partition.fullname])
+
+            nc = make_test(
+                f'__D_{t._partition.name}_{t._environ.name}_{basename}',
+                (BaseTest, ),
+                {},
+                methods=[
+                    builtins.run_before('run')(_rfm_distributed_set_run_nodes),
+                    builtins.run_before('compile')(_rfm_distributed_set_build_nodes),
+                    builtins.run_after('init')(_rfm_distributed_set_valid_sys_env),
+                ]
+            )
+
+            for i in range(nc.num_variants):
+                # Check if this variant should be instantiated
+                var_info = copy.deepcopy(nc.get_variant_info(i, recurse=True))
+                var_info['params'].pop('_rfm_nodelist')
+                if var_info == original_var_info:
+                    if temporary_registry is None:
+                        temporary_registry = TestRegistry.create(nc, variant_num=i)
+                    else:
+                        temporary_registry.add(nc, variant_num=i)
+
+    if temporary_registry:
+        new_checks = temporary_registry.instantiate_all()
+        return generate_testcases(new_checks, skip_system_check,
+                                  skip_prgenv_check)
+    else:
+        return []
 
 def main():
     # Setup command line options
@@ -379,11 +443,10 @@ def main():
         dest='flex_alloc_nodes', metavar='{all|STATE|NUM}', default=None,
         help='Set strategy for the flexible node allocation (default: "idle").'
     )
-    # TODO Decide the functionality of the option
-    # Now ReFrame parametirizes the test in all nodes of the partition
+    # TODO Decide the exact functionality of the option
     run_options.add_argument(
         '--flex-alloc-singlenode', action='store', default=None,
-        dest='flex_alloc_singlenode', metavar='{all|STATE}[:TEST1,TEST2]',
+        dest='flex_alloc_singlenode', metavar='{all|STATE}',
         help=('Submit single node jobs automatically on every node of a '
               'partition in STATE')
     )
@@ -1021,6 +1084,13 @@ def main():
                 f'Filtering successful test case(s): '
                 f'{len(testcases)} remaining'
             )
+
+        if options.flex_alloc_singlenode:
+            testcases = distribute_tests(
+                options.flex_alloc_singlenode, testcases,
+                options.skip_system_check, options.skip_prgenv_check,
+            )
+            testcases_all += testcases
 
         # Prepare for running
         printer.debug('Building and validating the full test DAG')

@@ -13,7 +13,6 @@ import itertools
 import reframe.core.namespaces as namespaces
 import reframe.utility as utils
 from reframe.core.exceptions import ReframeSyntaxError
-from reframe.frontend.autodetect import getallnodes
 
 
 class TestParam:
@@ -202,24 +201,6 @@ class TestParam:
 
     def is_loggable(self):
         return self.__loggable
-
-
-class NodeTestParam(TestParam):
-    def __init__(self, state='all', inherit_params=False,
-                 filter_params=None, fmt=None, loggable=False):
-        # TODO check which arguments makes sence to keep
-        self._node_map = getallnodes(state)
-        node_values = list(itertools.chain(*self._node_map.values()))
-        # Remove duplicates of nodes from different partitions
-        node_values = list(set(node_values))
-
-        super().__init__(values=node_values, inherit_params=inherit_params,
-                         filter_params=filter_params, fmt=fmt,
-                         loggable=loggable)
-
-    @property
-    def node_map(self):
-        return self._node_map
 
 
 class ParamSpace(namespaces.Namespace):

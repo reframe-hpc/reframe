@@ -19,8 +19,7 @@ import reframe.core.fixtures as fixtures
 import reframe.core.hooks as hooks
 import reframe.utility as utils
 
-from reframe.core.deferrable import deferrable, _DeferredPerformanceExpression
-from reframe.core.exceptions import ReframeSyntaxError, ReframeFatalError
+from reframe.core.exceptions import ReframeSyntaxError
 from reframe.core.runtime import runtime
 
 
@@ -220,23 +219,7 @@ class RegressionTestMeta(type):
         ]
 
         # Regression test parameter space defined at the class level
-        localns = namespaces.LocalNamespace()
-        try:
-            rt = runtime()
-            if rt.flex_alloc_singlenode_state:
-                if (rt.flex_alloc_singlenode_tests is None or
-                    name in rt.flex_alloc_singlenode_tests):
-                    localns['_rfm_node'] = (
-                        parameters.NodeTestParam(
-                            state=rt.flex_alloc_singlenode_state
-                        )
-                    )
-        except ReframeFatalError:
-            # ReFrame context might not be configured for classes like
-            # BuildSystem etc
-            pass
-
-        namespace['_rfm_local_param_space'] = localns
+        namespace['_rfm_local_param_space'] = namespaces.LocalNamespace()
 
         # Regression test var space defined at the class level
         namespace['_rfm_local_var_space'] = namespaces.LocalNamespace()
