@@ -229,6 +229,8 @@ def distribute_tests(state, testcases, skip_system_check, skip_prgenv_check):
                     builtins.run_after('init')(_rfm_distributed_set_valid_sys_env),
                 ]
             )
+            # We have to set the prefix manually
+            nc._rfm_dynamic_test_prefix = t.check.prefix
 
             for i in range(nc.num_variants):
                 # Check if this variant should be instantiated

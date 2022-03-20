@@ -861,9 +861,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 try:
                     prefix = cls._rfm_pinned_prefix
                 except AttributeError:
-                    prefix = os.path.abspath(
-                        os.path.dirname(inspect.getfile(cls))
-                    )
+                    try:
+                        prefix = cls._rfm_dynamic_test_prefix
+                    except AttributeError:
+                        prefix = os.path.abspath(
+                            os.path.dirname(inspect.getfile(cls))
+                        )
 
         # Prepare initialization of test defaults (variables and parameters are
         # injected after __new__ has returned, so we schedule this function
