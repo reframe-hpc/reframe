@@ -106,6 +106,7 @@ def run_command_async(cmd,
     if isinstance(cmd, str) and not shell:
         cmd = shlex.split(cmd)
 
+    popen_args.setdefault('stdin', subprocess.DEVNULL)
     return subprocess.Popen(args=cmd,
                             stdout=stdout,
                             stderr=stderr,
