@@ -35,6 +35,7 @@ site_configuration = {
                     ],
                     'descr': 'Login nodes',
                     'max_jobs': 4,
+                    'modules': ['LUMI', 'partition/L'],
                     'launcher': 'local'
                 },
                 {
@@ -59,7 +60,7 @@ site_configuration = {
 #                        'cpeIntel'
                     ],
                     'max_jobs': 100,
-                    'modules': ['LUMI'],
+                    'modules': ['LUMI', 'partition/C'],
                     'access': ['--partition small',
                                '--account=project_462000008'],
                     'resources': [
@@ -96,7 +97,7 @@ site_configuration = {
  #                       'cpeIntel'
                     ],
                     'max_jobs': 100,
-                    'modules': ['LUMI'],
+                    'modules': ['LUMI', 'partition/C'],
                     'access': ['--partition standard',
                                '--account=project_462000008'],
                     'resources': [
