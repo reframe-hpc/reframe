@@ -49,10 +49,10 @@ class cscs_allreduce_latency_check(osu_allreduce_latency_check):
                 'latency': (5.67, None, 0.05, 'us')
             },
             'daint:gpu': {
-                'latency': (9.30, None, 0.75, 'us')
+                'latency': (8.66, None, 0.85, 'us')
             },
             'daint:mc': {
-                'latency': (11.74, None, 1.51, 'us')
+                'latency': (10.90, None, 1.90, 'us')
             }
         },
         16: {
@@ -222,7 +222,7 @@ class cscs_p2p_bandwidth_gpu_test(osu_pt2pt_bandwidth_check, p2p_config_cscs,
             'bw': (8813.09, -0.05, None, 'MB/s')
         },
         'daint:gpu': {
-            'bw': (8765.65, -0.1, None, 'MB/s')
+            'bw': (8560, -0.10, None, 'MB/s')
         }
     }
 
@@ -240,6 +240,6 @@ class cscs_p2p_latency_gpu_test(osu_pt2pt_latency_check, p2p_config_cscs,
             'latency': (5.56, None, 0.1, 'us')
         },
         'daint:gpu': {
-            'latency': (6.8, None, 0.65, 'us')
+            'latency': (6.82, None, 0.50, 'us')
         }
     }
