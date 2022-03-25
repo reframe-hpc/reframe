@@ -104,6 +104,15 @@ class osu_benchmark(rfm.RunOnlyRegressionTest):
     @run_after('init')
     def setup_per_benchmark(self):
         bench, bench_metric = self.benchmark_info
+        if bench_metric == 'latency':
+            self.message_size = 8
+            unit = 'us'
+        elif bench_metric == 'bandwidth':
+            self.message_size = 4194304
+            unit = 'MB/s'
+        else:
+            raise ValueError(f'unknown benchmark metric: {bench_metric}')
+
         self.executable = bench.split('.')[-1]
         self.executable_opts = ['-m', f'{self.message_size}',
                                 '-x', f'{self.num_warmup_iters}',
@@ -114,15 +123,6 @@ class osu_benchmark(rfm.RunOnlyRegressionTest):
         if bench.startswith('mpi.pt2pt'):
             self.executable_opts += ['D', 'D']
             self.num_tasks = 2
-
-        if bench_metric == 'latency':
-            self.message_size = 8
-            unit = 'us'
-        elif bench_metric == 'bandwidth':
-            self.message_size = 4194304
-            unit = 'MB/s'
-        else:
-            raise ValueError(f'unknown benchmark metric: {bench_metric}')
 
         self.perf_variables = {
             bench_metric: sn.make_performance_function(
@@ -154,4 +154,4 @@ class osu_build_run(osu_benchmark):
         bench_path = self.benchmark_info[0].replace('.', '/')
         self.executable = os.path.join(self.osu_binaries.stagedir,
                                        self.osu_binaries.build_prefix,
-                                       self.bench_path)
+                                       bench_path)
