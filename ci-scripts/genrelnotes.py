@@ -52,7 +52,7 @@ if __name__ == '__main__':
             descr_line = '- %s (%s)' % (descr, pr)
             sections[title_line].append(descr_line)
 
-    print('# ReFrame %s Release Notes' % curr_release)
+    print('# Release Notes')
     for sec_title, sec_lines in sections.items():
         print()
         print(sec_title)

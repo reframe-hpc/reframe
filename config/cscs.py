@@ -133,7 +133,7 @@ site_configuration = {
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
-                        'PrgEnv-pgi'
+                        'PrgEnv-nvidia'
                     ],
                     'descr': 'Login nodes',
                     'max_jobs': 4,
@@ -163,7 +163,7 @@ site_configuration = {
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
-                        'PrgEnv-pgi'
+                        'PrgEnv-nvidia'
                     ],
                     'descr': 'Hybrid nodes (Haswell/P100)',
                     'max_jobs': 100,
@@ -203,7 +203,7 @@ site_configuration = {
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
-                        'PrgEnv-pgi'
+                        'PrgEnv-nvidia'
                     ],
                     'descr': 'Multicore nodes (Broadwell)',
                     'max_jobs': 100,
@@ -375,6 +375,18 @@ site_configuration = {
                         f'--account={osext.osgroup()}'
                     ],
                     'descr': 'JupyterHub multicore nodes',
+                    'max_jobs': 10,
+                    'launcher': 'srun'
+                },
+                {
+                    'name': 'xfer',
+                    'scheduler': 'slurm',
+                    'environs': ['builtin'],
+                    'access': [
+                        f'--partition=xfer',
+                        f'--account={osext.osgroup()}'
+                    ],
+                    'descr': 'Dedicated nodes for internal transfers',
                     'max_jobs': 10,
                     'launcher': 'srun'
                 }
@@ -896,17 +908,10 @@ site_configuration = {
         },
         {
             'name': 'PrgEnv-nvidia',
-            'target_systems': ['daint'],
+            'target_systems': ['daint', 'dom'],
             'modules': [
                 'PrgEnv-nvidia',
-                # FIXME: We should not be forcing a cdt version
-                'cdt/21.05'
             ]
-        },
-        {
-            'name': 'PrgEnv-nvidia',
-            'target_systems': ['dom'],
-            'modules': ['PrgEnv-nvidia']
         },
         {
             'name': 'builtin',
@@ -1003,6 +1008,7 @@ site_configuration = {
         {
             'check_search_path': ['checks/'],
             'check_search_recursive': True,
+            'compact_test_names': True,
             'remote_detect': True
         }
     ]

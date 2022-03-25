@@ -235,7 +235,14 @@ class TestStats:
                          f"{r['dependencies_actual']}")
             printer.info(f"  * Maintainers: {r['maintainers']}")
             printer.info(f"  * Failing phase: {r['fail_phase']}")
-            printer.info(f"  * Rerun with '-n {r['unique_name']}"
+            if rt.runtime().get_option('general/0/compact_test_names'):
+                cls = r['display_name'].split(' ')[0]
+                variant = r['unique_name'].replace(cls, '').replace('_', '@')
+                nameoptarg = cls + variant
+            else:
+                nameoptarg = r['unique_name']
+
+            printer.info(f"  * Rerun with '-n {nameoptarg}"
                          f" -p {r['environment']} --system {r['system']} -r'")
             printer.info(f"  * Reason: {r['fail_reason']}")
 
@@ -256,7 +263,8 @@ class TestStats:
             partfullname = partition.fullname if partition else 'None'
             environ_name = (check.current_environ.name
                             if check.current_environ else 'None')
-            f = f'[{check.unique_name}, {environ_name}, {partfullname}]'
+            f = (f'[{check.display_name} (uid: {check.unique_name}), '
+                 f'{environ_name}, {partfullname}]')
             if tf.failed_stage not in failures:
                 failures[tf.failed_stage] = []
 

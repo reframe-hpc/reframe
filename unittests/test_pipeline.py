@@ -9,6 +9,7 @@ import re
 import sys
 
 import reframe as rfm
+import reframe.core.builtins as builtins
 import reframe.core.runtime as rt
 import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
@@ -831,6 +832,21 @@ def test_overriden_hooks(HelloTest, local_exec_ctx):
     assert test.foo == 10
 
 
+def test_overriden_hook_different_stages(HelloTest, local_exec_ctx):
+    @test_util.custom_prefix('unittests/resources/checks')
+    class MyTest(HelloTest):
+        @run_after('init')
+        def foo(self):
+            pass
+
+        @run_after('setup')
+        def foo(self):
+            pass
+
+    test = MyTest()
+    assert test.pipeline_hooks() == {'post_setup': [MyTest.foo]}
+
+
 def test_disabled_hooks(HelloTest, local_exec_ctx):
     @test_util.custom_prefix('unittests/resources/checks')
     class BaseTest(HelloTest):
@@ -1522,6 +1538,31 @@ def test_make_test_with_builtins(local_exec_ctx):
             return sn.assert_found(self.message, self.stdout)
 
     hello_cls = make_test('HelloTest', (_X,), {})
+    hello_cls.setvar('message', 'hello')
+    assert hello_cls.__name__ == 'HelloTest'
+    _run(hello_cls(), *local_exec_ctx)
+
+
+def test_make_test_with_builtins_inline(local_exec_ctx):
+    def set_message(obj):
+        obj.executable_opts = [obj.message]
+
+    def validate(obj):
+        return sn.assert_found(obj.message, obj.stdout)
+
+    hello_cls = make_test(
+        'HelloTest', (rfm.RunOnlyRegressionTest,),
+        {
+            'valid_systems': ['*'],
+            'valid_prog_environs': ['*'],
+            'executable': 'echo',
+            'message': builtins.variable(str),
+        },
+        methods=[
+            builtins.run_before('run')(set_message),
+            builtins.sanity_function(validate)
+        ]
+    )
     hello_cls.setvar('message', 'hello')
     assert hello_cls.__name__ == 'HelloTest'
     _run(hello_cls(), *local_exec_ctx)

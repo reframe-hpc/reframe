@@ -8,8 +8,12 @@ import functools
 
 
 def deferrable(func):
-    '''Function decorator for converting a function to a deferred
-    expression.'''
+    '''Convert the decorated function to a deferred expression.
+
+    See :ref:`deferrable-functions` for further information on deferrable
+    functions.
+    '''
+
     @functools.wraps(func)
     def _deferred(*args, **kwargs):
         return _DeferredExpression(func, *args, **kwargs)

@@ -144,10 +144,10 @@ class cscs_p2p_bandwidth_cpu_test(osu_pt2pt_bandwidth_check, p2p_config_cscs):
                            variants=cpu_build_variant)
     reference = {
         'daint:gpu': {
-            'bw': (9607.0, -0.10, None, 'MB/s')
+            'bw': (9481.0, -0.10, None, 'MB/s')
         },
         'daint:mc': {
-            'bw': (9649.0, -0.10, None, 'MB/s')
+            'bw': (8507, -0.15, None, 'MB/s')
         },
         'dom:gpu': {
             'bw': (9476.3, -0.05, None, 'MB/s')
@@ -176,10 +176,10 @@ class cscs_p2p_latency_cpu_test(osu_latency_pt2pt_check, p2p_config_cscs):
                            variants=cpu_build_variant)
     reference = {
         'daint:gpu': {
-            'latency': (1.30, None, 0.70, 'us')
+            'latency': (1.40, None, 0.80, 'us')
         },
         'daint:mc': {
-            'latency': (1.61, None, 0.85, 'us')
+            'latency': (1.61, None, 0.70, 'us')
         },
         'dom:gpu': {
             'latency': (1.138, None, 0.10, 'us')
