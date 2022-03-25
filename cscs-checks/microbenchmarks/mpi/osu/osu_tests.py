@@ -5,25 +5,18 @@
 
 import reframe as rfm
 
-from hpctestlib.microbenchmarks.mpi.osu import (osu_latency_pt2pt_check,
-                                                osu_bandwidth_pt2pt_check,
-                                                osu_allreduce_check,
-                                                osu_alltoall_check,
+from hpctestlib.microbenchmarks.mpi.osu import (osu_pt2pt_latency_check,
+                                                osu_pt2pt_bandwidth_check,
+                                                osu_allreduce_latency_check,
+                                                osu_alltoall_latency_check,
                                                 build_osu_benchmarks)
 
 
-class build_osu_benchmarks_gpu(build_osu_benchmarks):
-    @run_after('setup')
-    def set_modules(self):
+class cscs_build_osu_benchmarks_cuda(build_osu_benchmarks):
+    @run_after('init')
+    def setup_environment(self):
         if self.current_system.name in ['daint', 'dom']:
             self.modules = ['cudatoolkit/21.3_11.2']
-            if self.current_environ.name == 'PrgEnv-cray':
-                self.modules += ['cce/10.0.2']
-            elif self.current_environ.name == 'PrgEnv-gnu':
-                self.modules += ['gcc/10.3.0']
-            elif self.current_environ.name == 'PrgEnv-intel':
-                self.modules += ['intel/19.1.1.217']
-
         elif self.current_system.name in ['arolla', 'tsa']:
             self.modules = ['cuda/10.1.243']
 
@@ -31,64 +24,58 @@ class build_osu_benchmarks_gpu(build_osu_benchmarks):
 cpu_build_variant = build_osu_benchmarks.get_variant_nums(
     build_type='cpu'
 )
-cuda_build_variant = build_osu_benchmarks_gpu.get_variant_nums(
+cuda_build_variant = cscs_build_osu_benchmarks_cuda.get_variant_nums(
     build_type='cuda'
 )
 
 
 @rfm.simple_test
-class cscs_allreduce_check(osu_alltoall_check):
-    num_nodes = parameter([6], [16])
-    executable = 'osu_allreduce'
+class cscs_allreduce_latency_check(osu_allreduce_latency_check):
+    num_nodes = parameter([6, 16])
     osu_binaries = fixture(build_osu_benchmarks, scope='environment',
                            variants=cpu_build_variant)
-    valid_systems = ['daint:gpu', 'daint:mc']
-    valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-nvidia']
-    maintainers = ['RS', 'AJ']
+    valid_systems = ['dom:gpu', 'dom:mc']
+    valid_prog_environs = ['PrgEnv-gnu']
+    maintainers = ['@rsarm', '@ajocksch']
     tags = {'production', 'benchmark', 'craype'}
     extra_resources = {
         'switches': {
             'num_switches': 1
         }
     }
-
-    @run_after('init')
-    def add_valid_systems(self):
-        if self.num_nodes == 6:
-            self.valid_systems += ['dom:gpu', 'dom:mc']
-
-    @run_before('run')
-    def set_num_tasks(self):
-        self.num_tasks = self.num_nodes
-
-    @run_before('performance')
-    def set_performance_patterns(self):
-        allref = {
-            6: {
-                'dom:gpu': {
-                    'latency': (5.67, None, 0.05, 'us')
-                },
-                'daint:gpu': {
-                    'latency': (9.30, None, 0.75, 'us')
-                },
-                'daint:mc': {
-                    'latency': (11.74, None, 1.51, 'us')
-                }
+    allref = {
+        6: {
+            'dom:gpu': {
+                'latency': (5.67, None, 0.05, 'us')
             },
-            16: {
-                'daint:gpu': {
-                    'latency': (13.62, None, 1.16, 'us')
-                },
-                'daint:mc': {
-                    'latency': (19.07, None, 1.64, 'us')
-                }
+            'daint:gpu': {
+                'latency': (9.30, None, 0.75, 'us')
+            },
+            'daint:mc': {
+                'latency': (11.74, None, 1.51, 'us')
+            }
+        },
+        16: {
+            'daint:gpu': {
+                'latency': (13.62, None, 1.16, 'us')
+            },
+            'daint:mc': {
+                'latency': (19.07, None, 1.64, 'us')
             }
         }
-        self.reference = allref[self.num_nodes]
+    }
+
+    @run_after('init')
+    def setup_from_params(self):
+        if self.num_nodes == 16:
+            self.valid_systems += ['daint:gpu', 'daint:mc']
+
+        self.num_tasks = self.num_nodes
+        self.reference = self.allref[self.num_nodes]
 
 
 @rfm.simple_test
-class cscs_alltoall_check(osu_alltoall_check):
+class cscs_alltoall_check(osu_alltoall_latency_check):
     executable = 'osu_alltoall'
     osu_binaries = fixture(build_osu_benchmarks, scope='environment',
                            variants=cpu_build_variant)
@@ -149,7 +136,7 @@ class p2p_config_cscs(rfm.RegressionMixin):
 
 
 @rfm.simple_test
-class cscs_p2p_bandwidth_cpu_test(osu_bandwidth_pt2pt_check, p2p_config_cscs):
+class cscs_p2p_bandwidth_cpu_test(osu_pt2pt_bandwidth_check, p2p_config_cscs):
     descr = 'P2P bandwidth microbenchmark'
     message_size = 4194304
     executable = 'osu_bw'
@@ -222,7 +209,7 @@ class g2g_rdma_cscs(rfm.RegressionMixin):
 
 
 @rfm.simple_test
-class cscs_p2p_bandwidth_gpu_test(osu_bandwidth_pt2pt_check, p2p_config_cscs,
+class cscs_p2p_bandwidth_gpu_test(osu_pt2pt_bandwidth_check, p2p_config_cscs,
                                   g2g_rdma_cscs):
     descr = 'G2G bandwidth microbenchmark'
     device_buffers = 'cuda'
@@ -241,7 +228,7 @@ class cscs_p2p_bandwidth_gpu_test(osu_bandwidth_pt2pt_check, p2p_config_cscs,
 
 
 @rfm.simple_test
-class cscs_p2p_latency_gpu_test(osu_latency_pt2pt_check, p2p_config_cscs,
+class cscs_p2p_latency_gpu_test(osu_pt2pt_latency_check, p2p_config_cscs,
                                 g2g_rdma_cscs):
     descr = 'G2G latency microbenchmark'
     device_buffers = 'cuda'
