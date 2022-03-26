@@ -409,12 +409,15 @@ def test_valid_prog_environs_syntax(hellotest):
     hellotest.valid_prog_environs = ['*']
     hellotest.valid_prog_environs = ['env']
     hellotest.valid_prog_environs = ['env-0']
+    hellotest.valid_prog_environs = ['env.0']
     hellotest.valid_prog_environs = ['+x0']
     hellotest.valid_prog_environs = ['-y0']
     hellotest.valid_prog_environs = ['%z0=w0']
     hellotest.valid_prog_environs = ['+x0 -y0 %z0=w0']
     hellotest.valid_prog_environs = ['-y0 +x0 %z0=w0']
     hellotest.valid_prog_environs = ['%z0=w0 +x0 -y0']
+    hellotest.valid_prog_environs = ['+foo.bar']
+    hellotest.valid_prog_environs = ['%foo.bar=a$xx']
 
     with pytest.raises(TypeError):
         hellotest.valid_prog_environs = ['']

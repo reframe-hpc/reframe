@@ -82,14 +82,17 @@ DEPEND_BY_ENV = 2
 DEPEND_FULLY = 3
 
 
-#
-# Example matches valid_systems syntax:
-#
-# '*', '*:*', 'foo:*', '*:foo', 'foo:bar', 'foo-bar'
-# '+foo', '-bar', '%foo=bar', '+foo -bar', '+foo -bar %foo=bar'
-#
-_VALID_ENV_SYNTAX = r'^((\*|\w[-\w]*)|([+-]\w+|%\w+=\w+)(\s+([+-]\w+|%\w+=\w+))*)$'  # noqa: E501
-_VALID_SYS_SYNTAX = r'^((\*|\w[-\w]*)(:(\*|\w[-\w]*))*|([+-]\w+|%\w+=\w+)(\s+([+-]\w+|%\w+=\w+))*)$'  # noqa: E501
+# Valid systems/environments mini-language
+_N = r'(\w[-.\w]*)'         # name
+_NW = rf'(\*|{_N})'         # name or wildcard
+_F = rf'([+-]{_N})'         # feature
+_OP = r'([=<>]|!=|>=|<=)'   # relational operator (unused for the moment)
+_KV = rf'(%{_N}=\S+)'       # key/value pair
+_FKV = rf'({_F}|{_KV})'     # feature | key/value pair
+_VALID_ENV_SYNTAX = rf'^({_NW}|{_FKV}(\s+{_FKV})*)$'
+
+_S = rf'({_NW}(:{_NW})?)'   # system/partition
+_VALID_SYS_SYNTAX = rf'^({_S}|{_FKV}(\s+{_FKV})*)$'
 
 
 _PIPELINE_STAGES = (
