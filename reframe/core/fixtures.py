@@ -822,6 +822,16 @@ class TestFixture:
         return self._variables
 
 
+class FixtureProxy:
+    def __init__(self, fixture_info):
+        for k, v in fixture_info['params'].items():
+            setattr(self, k, v)
+
+        for k, v in fixture_info['fixtures'].items():
+            if not isinstance(v, tuple):
+                setattr(self, k, FixtureProxy(v))
+
+
 class FixtureSpace(namespaces.Namespace):
     '''Regression test fixture space.
 
@@ -929,8 +939,8 @@ class FixtureSpace(namespaces.Namespace):
                 # Register all the variants and track the fixture names
                 dep_names += obj._rfm_fixture_registry.add(fixture,
                                                            variant,
-                                                           obj.name, part,
-                                                           prog_envs)
+                                                           obj.unique_name,
+                                                           part, prog_envs)
 
             # Add dependencies
             if fixture.scope == 'session':
