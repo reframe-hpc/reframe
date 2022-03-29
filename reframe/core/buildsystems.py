@@ -617,7 +617,8 @@ class Autotools(ConfigureBasedBuildSystem):
 
         if self.builddir:
             configure_cmd = [os.path.join(
-                os.path.relpath(self.configuredir, self.builddir), 'configure')]
+                os.path.relpath(self.configuredir, self.builddir), 'configure'
+            )]
         else:
             configure_cmd = [os.path.join(self.configuredir, 'configure')]
 
