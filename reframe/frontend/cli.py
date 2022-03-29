@@ -216,8 +216,11 @@ def distribute_tests(state, testcases, skip_system_check, skip_prgenv_check):
             def _rfm_distributed_set_valid_sys_env(obj):
                 obj.valid_systems = [t._partition.fullname]
                 obj.valid_prog_environs = [t._environ.name]
+
             class BaseTest(t.check.__class__):
                 _rfm_nodelist = builtins.parameter(node_map[t._partition.fullname])
+                valid_systems = [t._partition.fullname]
+                valid_prog_environs = [t._environ.name]
 
             nc = make_test(
                 f'__D_{t._partition.name}_{t._environ.name}_{basename}',
@@ -226,7 +229,8 @@ def distribute_tests(state, testcases, skip_system_check, skip_prgenv_check):
                 methods=[
                     builtins.run_before('run')(_rfm_distributed_set_run_nodes),
                     builtins.run_before('compile')(_rfm_distributed_set_build_nodes),
-                    builtins.run_after('init')(_rfm_distributed_set_valid_sys_env),
+                    # TODO this hook is not working properly
+                    # builtins.run_after('init')(_rfm_distributed_set_valid_sys_env),
                 ]
             )
             # We have to set the prefix manually
@@ -1092,7 +1096,7 @@ def main():
                 options.flex_alloc_singlenode, testcases,
                 options.skip_system_check, options.skip_prgenv_check,
             )
-            testcases_all += testcases
+            testcases_all = testcases
 
         # Prepare for running
         printer.debug('Building and validating the full test DAG')
