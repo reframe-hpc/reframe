@@ -578,11 +578,11 @@ def test_filtering_multiple_criteria(run_reframe):
     returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks'],
         action='list',
-        more_options=['-t', 'foo', '-n', 'HelloTest']
+        more_options=['-t', 'foo', '-n', 'HelloTest', '-n', 'HelloCheckMake']
     )
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
-    assert 'Found 1 check(s)' in stdout
+    assert 'Found 2 check(s)' in stdout
     assert returncode == 0
 
 

@@ -920,9 +920,19 @@ def main():
                 testcases = filter(filters.have_not_name(name), testcases)
 
         if options.names:
-            testcases = filter(
-                filters.have_name('|'.join(options.names)), testcases
-            )
+            def _filter_multiple_names(names):
+                def _fn(case):
+                    return any(filters.have_name(n)(case) for n in names)
+
+                return _fn
+
+            # Differentiate between exact names and regexes since
+            # exact names cannot be combined in a single regex
+            exact_names = [n for n in options.names if '@' in n]
+            regex_names = [n for n in options.names if '@' not in n]
+
+            names = exact_names + ['|'.join(regex_names)]
+            testcases = filter(_filter_multiple_names(names), testcases)
 
         testcases = list(testcases)
         printer.verbose(
