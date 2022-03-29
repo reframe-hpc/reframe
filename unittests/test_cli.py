@@ -917,3 +917,16 @@ def test_fixture_resolution(run_reframe):
         action='run'
     )
     assert returncode == 0
+
+
+def test_dynamic_tests(run_reframe, tmp_path):
+    returncode, stdout, _ = run_reframe(
+        system='sys0',
+        environs=[],
+        checkpath=['unittests/resources/checks_unlisted/alloc_check.py'],
+        action='run',
+        more_options=['-n', 'Complex', '--flex-alloc-singlenode=idle']
+    )
+    assert returncode == 0
+    assert 'Ran 5/5 test case(s) from 5 check(s)' in stdout
+    assert 'FAILED' not in stdout

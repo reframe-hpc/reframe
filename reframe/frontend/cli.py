@@ -188,10 +188,8 @@ def calc_verbosity(site_config, quiesce):
     return curr_verbosity - quiesce
 
 
-def distribute_tests(state, testcases, skip_system_check, skip_prgenv_check):
-    node_map = autodetect.getallnodes(state)
-
-    # Create extra tests
+def distribute_tests(testcases, skip_system_check, skip_prgenv_check,
+                     node_map):
     temporary_registry = None
     new_checks = []
     for t in testcases:
@@ -1092,9 +1090,10 @@ def main():
             )
 
         if options.flex_alloc_singlenode:
+            node_map = autodetect.getallnodes(options.flex_alloc_singlenode)
             testcases = distribute_tests(
-                options.flex_alloc_singlenode, testcases,
-                options.skip_system_check, options.skip_prgenv_check,
+                testcases, options.skip_system_check,
+                options.skip_prgenv_check, node_map
             )
             testcases_all = testcases
 
