@@ -22,6 +22,7 @@
                     "items": {"type": "string"}
                 },
                 "description": {"type": "string"},
+                "display_name": {"type": "string"},
                 "environment": {"type": ["string", "null"]},
                 "fail_info": {
                     "type": ["object", "null"],
@@ -94,11 +95,10 @@
                 "time_run": {"type": ["number", "null"]},
                 "time_sanity": {"type": ["number", "null"]},
                 "time_setup": {"type": ["number", "null"]},
-                "time_total": {"type": ["number", "null"]}
+                "time_total": {"type": ["number", "null"]},
+                "unique_name": {"type": "string"}
             },
-            "required": [
-                "environment", "name", "result", "system", "filename"
-            ]
+            "required": ["environment", "stagedir", "system", "unique_name"]
         }
     },
     "type": "object",
@@ -142,9 +142,7 @@
                         "items": {"$ref": "#/defs/testcase_type"}
                     }
                 },
-                "required": [
-                    "num_cases", "num_failures", "num_aborted", "runid", "testcases"
-                ]
+                "required": ["testcases"]
             }
         }
     },

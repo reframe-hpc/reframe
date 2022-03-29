@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -21,8 +21,6 @@ def set_gpu_arch(self):
         self.gpu_arch = '60'
         if self.current_environ.name not in {'PrgEnv-nvidia'}:
             self.modules = ['craype-accel-nvidia60', 'cdt-cuda']
-        else:
-            self.modules = ['cdt-cuda/21.05']
 
     elif cs in {'arola', 'tsa'}:
         self.gpu_arch = '70'

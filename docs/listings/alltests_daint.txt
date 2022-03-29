@@ -1,0 +1,130 @@
+[ReFrame Setup]
+  version:           3.10.0-dev.3+605af31a
+  command:           './bin/reframe -c tutorials/basics/ -R -n HelloMultiLangTest|HelloThreadedExtended2Test|StreamWithRefTest --performance-report -r'
+  launched by:       user@host
+  working directory: '/home/user/Devel/reframe'
+  settings file:     '/home/user/Devel/reframe/tutorials/config/settings.py'
+  check search path: (R) '/home/user/Devel/reframe/tutorials/basics'
+  stage directory:   '/home/user/Devel/reframe/stage'
+  output directory:  '/home/user/Devel/reframe/output'
+
+[==========] Running 4 check(s)
+[==========] Started on Sat Jan 22 22:43:38 2022
+
+[----------] start processing checks
+[ RUN      ] HelloMultiLangTest %lang=cpp @daint:login+builtin
+[ RUN      ] HelloMultiLangTest %lang=cpp @daint:login+gnu
+[ RUN      ] HelloMultiLangTest %lang=cpp @daint:login+intel
+[ RUN      ] HelloMultiLangTest %lang=cpp @daint:login+pgi
+[ RUN      ] HelloMultiLangTest %lang=cpp @daint:login+cray
+[ RUN      ] HelloMultiLangTest %lang=cpp @daint:gpu+gnu
+[ RUN      ] HelloMultiLangTest %lang=cpp @daint:gpu+intel
+[ RUN      ] HelloMultiLangTest %lang=cpp @daint:gpu+pgi
+[ RUN      ] HelloMultiLangTest %lang=cpp @daint:gpu+cray
+[ RUN      ] HelloMultiLangTest %lang=cpp @daint:mc+gnu
+[ RUN      ] HelloMultiLangTest %lang=cpp @daint:mc+intel
+[ RUN      ] HelloMultiLangTest %lang=cpp @daint:mc+pgi
+[ RUN      ] HelloMultiLangTest %lang=cpp @daint:mc+cray
+[ RUN      ] HelloMultiLangTest %lang=c @daint:login+builtin
+[ RUN      ] HelloMultiLangTest %lang=c @daint:login+gnu
+[ RUN      ] HelloMultiLangTest %lang=c @daint:login+intel
+[ RUN      ] HelloMultiLangTest %lang=c @daint:login+pgi
+[ RUN      ] HelloMultiLangTest %lang=c @daint:login+cray
+[ RUN      ] HelloMultiLangTest %lang=c @daint:gpu+gnu
+[ RUN      ] HelloMultiLangTest %lang=c @daint:gpu+intel
+[ RUN      ] HelloMultiLangTest %lang=c @daint:gpu+pgi
+[ RUN      ] HelloMultiLangTest %lang=c @daint:gpu+cray
+[ RUN      ] HelloMultiLangTest %lang=c @daint:mc+gnu
+[ RUN      ] HelloMultiLangTest %lang=c @daint:mc+intel
+[ RUN      ] HelloMultiLangTest %lang=c @daint:mc+pgi
+[ RUN      ] HelloMultiLangTest %lang=c @daint:mc+cray
+[ RUN      ] HelloThreadedExtended2Test @daint:login+builtin
+[ RUN      ] HelloThreadedExtended2Test @daint:login+gnu
+[ RUN      ] HelloThreadedExtended2Test @daint:login+intel
+[ RUN      ] HelloThreadedExtended2Test @daint:login+pgi
+[ RUN      ] HelloThreadedExtended2Test @daint:login+cray
+[ RUN      ] HelloThreadedExtended2Test @daint:gpu+gnu
+[ RUN      ] HelloThreadedExtended2Test @daint:gpu+intel
+[ RUN      ] HelloThreadedExtended2Test @daint:gpu+pgi
+[ RUN      ] HelloThreadedExtended2Test @daint:gpu+cray
+[ RUN      ] HelloThreadedExtended2Test @daint:mc+gnu
+[ RUN      ] HelloThreadedExtended2Test @daint:mc+intel
+[ RUN      ] HelloThreadedExtended2Test @daint:mc+pgi
+[ RUN      ] HelloThreadedExtended2Test @daint:mc+cray
+[ RUN      ] StreamWithRefTest @daint:login+gnu
+[ RUN      ] StreamWithRefTest @daint:gpu+gnu
+[ RUN      ] StreamWithRefTest @daint:mc+gnu
+[       OK ] ( 1/42) HelloMultiLangTest %lang=cpp @daint:login+builtin
+[       OK ] ( 2/42) HelloMultiLangTest %lang=cpp @daint:login+gnu
+[       OK ] ( 3/42) HelloMultiLangTest %lang=cpp @daint:login+intel
+[       OK ] ( 4/42) HelloMultiLangTest %lang=cpp @daint:login+pgi
+[       OK ] ( 5/42) HelloMultiLangTest %lang=cpp @daint:login+cray
+[       OK ] ( 6/42) HelloMultiLangTest %lang=cpp @daint:gpu+gnu
+[       OK ] ( 7/42) HelloMultiLangTest %lang=cpp @daint:gpu+intel
+[       OK ] ( 8/42) HelloMultiLangTest %lang=c @daint:login+builtin
+[       OK ] ( 9/42) HelloMultiLangTest %lang=c @daint:login+gnu
+[       OK ] (10/42) HelloMultiLangTest %lang=c @daint:login+intel
+[       OK ] (11/42) HelloMultiLangTest %lang=c @daint:login+pgi
+[       OK ] (12/42) HelloMultiLangTest %lang=c @daint:login+cray
+[       OK ] (13/42) HelloThreadedExtended2Test @daint:login+builtin
+[       OK ] (14/42) HelloThreadedExtended2Test @daint:login+gnu
+[       OK ] (15/42) HelloThreadedExtended2Test @daint:login+intel
+[       OK ] (16/42) HelloThreadedExtended2Test @daint:login+pgi
+[       OK ] (17/42) HelloThreadedExtended2Test @daint:login+cray
+[       OK ] (18/42) HelloMultiLangTest %lang=cpp @daint:mc+intel
+[       OK ] (19/42) HelloMultiLangTest %lang=cpp @daint:mc+pgi
+[       OK ] (20/42) HelloMultiLangTest %lang=cpp @daint:mc+cray
+[       OK ] (21/42) HelloMultiLangTest %lang=c @daint:mc+pgi
+[       OK ] (22/42) HelloMultiLangTest %lang=c @daint:mc+cray
+[       OK ] (23/42) HelloMultiLangTest %lang=cpp @daint:gpu+pgi
+[       OK ] (24/42) HelloMultiLangTest %lang=cpp @daint:gpu+cray
+[       OK ] (25/42) HelloMultiLangTest %lang=c @daint:gpu+gnu
+[       OK ] (26/42) HelloMultiLangTest %lang=c @daint:gpu+cray
+[       OK ] (27/42) HelloMultiLangTest %lang=c @daint:mc+gnu
+[       OK ] (28/42) HelloMultiLangTest %lang=c @daint:gpu+intel
+[       OK ] (29/42) HelloMultiLangTest %lang=c @daint:gpu+pgi
+[       OK ] (30/42) HelloThreadedExtended2Test @daint:gpu+gnu
+[       OK ] (31/42) HelloThreadedExtended2Test @daint:gpu+pgi
+[       OK ] (32/42) HelloThreadedExtended2Test @daint:gpu+cray
+[       OK ] (33/42) HelloThreadedExtended2Test @daint:mc+gnu
+[       OK ] (34/42) HelloThreadedExtended2Test @daint:mc+intel
+[       OK ] (35/42) StreamWithRefTest @daint:login+gnu
+[       OK ] (36/42) HelloMultiLangTest %lang=c @daint:mc+intel
+[       OK ] (37/42) HelloMultiLangTest %lang=cpp @daint:mc+gnu
+[       OK ] (38/42) HelloThreadedExtended2Test @daint:gpu+intel
+[       OK ] (39/42) HelloThreadedExtended2Test @daint:mc+pgi
+[       OK ] (40/42) HelloThreadedExtended2Test @daint:mc+cray
+[       OK ] (41/42) StreamWithRefTest @daint:gpu+gnu
+[       OK ] (42/42) StreamWithRefTest @daint:mc+gnu
+[----------] all spawned checks have finished
+
+[  PASSED  ] Ran 42/42 test case(s) from 4 check(s) (0 failure(s), 0 skipped)
+[==========] Finished on Sat Jan 22 22:47:28 2022
+==============================================================================
+PERFORMANCE REPORT
+------------------------------------------------------------------------------
+StreamWithRefTest
+- daint:login
+   - gnu
+      * num_tasks: 1
+      * Copy: 67915.3 MB/s
+      * Scale: 37485.6 MB/s
+      * Add: 39545.5 MB/s
+      * Triad: 39906.2 MB/s
+- daint:gpu
+   - gnu
+      * num_tasks: 1
+      * Copy: 50553.4 MB/s
+      * Scale: 34780.1 MB/s
+      * Add: 38043.6 MB/s
+      * Triad: 38522.2 MB/s
+- daint:mc
+   - gnu
+      * num_tasks: 1
+      * Copy: 48200.9 MB/s
+      * Scale: 31370.4 MB/s
+      * Add: 33000.2 MB/s
+      * Triad: 33205.5 MB/s
+------------------------------------------------------------------------------
+Run report saved in '/home/user/.reframe/reports/run-report.json'
+Log file(s) saved in '/tmp/rfm-n3d18lq9.log'

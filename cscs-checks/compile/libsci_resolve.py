@@ -1,10 +1,9 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
 import reframe as rfm
-import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 
 
@@ -40,7 +39,9 @@ class NvidiaResolveTest(LibSciResolveBaseTest):
 
     @run_after('setup')
     def set_modules(self):
-        self.modules += [f'craype-accel-nvidia{self.accel_nvidia_version}']
+        # FIXME: https://jira.cscs.ch/browse/PROGENV-24
+        self.modules += [f'craype-accel-nvidia{self.accel_nvidia_version}',
+                         'cray-libsci_acc']
 
     @sanity_function
     def libsci_acc_resolve(self):
@@ -75,14 +76,6 @@ class MKLResolveTest(LibSciResolveBaseTest):
     @run_before('compile')
     def set_fflags(self):
         self.build_system.fflags = ['-mkl']
-
-    @run_before('compile')
-    def cdt_2105_workaround(self):
-        # FIXME: The mkl libraries are not found in cdt 21.05, CASE #285117
-        if osext.cray_cdt_version() == '21.05':
-            self.build_system.ldflags += [
-                '-L/opt/intel/oneapi/mkl/latest/lib/intel64/'
-            ]
 
     @sanity_function
     def libmkl_resolve(self):

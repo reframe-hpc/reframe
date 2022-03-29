@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -22,9 +22,14 @@ import reframe.utility.osext as osext
 import reframe.core.warnings as warn
 import reframe.core.hooks as hooks
 from reframe.core.exceptions import ReframeSyntaxError, SkipTestError, what
+from reframe.core.fixtures import FixtureRegistry
 from reframe.core.logging import getlogger
 from reframe.core.pipeline import RegressionTest
 from reframe.utility.versioning import VersionValidator
+
+
+# NOTE: we should consider renaming this module in 4.0; it practically takes
+# care of the registration and instantiation of the tests.
 
 
 class TestRegistry:
@@ -61,14 +66,20 @@ class TestRegistry:
 
     def instantiate_all(self):
         '''Instantiate all the registered tests.'''
-        ret = []
+
+        # We first instantiate the leaf tests and then walk up their
+        # dependencies to instantiate all the fixtures. Fixtures can only
+        # establish their exact dependencies at instantiation time, so the
+        # dependency graph grows dynamically.
+
+        leaf_tests = []
         for test, variants in self._tests.items():
             if test in self._skip_tests:
                 continue
 
             for args, kwargs in variants:
                 try:
-                    ret.append(test(*args, **kwargs))
+                    leaf_tests.append(test(*args, **kwargs))
                 except SkipTestError as e:
                     getlogger().warning(
                         f'skipping test {test.__qualname__!r}: {e}'
@@ -82,7 +93,30 @@ class TestRegistry:
                     )
                     getlogger().verbose(traceback.format_exc())
 
-        return ret
+        # Instantiate fixtures
+
+        # Do a level-order traversal of the fixture registries of all leaf
+        # tests, instantiate all fixtures and generate the final set of
+        # candidate tests; the leaf tests are consumed at the end of the
+        # traversal and all instantiated tests (including fixtures) are stored
+        # in `final_tests`.
+        final_tests = []
+        fixture_registry = FixtureRegistry()
+        while leaf_tests:
+            tmp_registry = FixtureRegistry()
+            while leaf_tests:
+                c = leaf_tests.pop()
+                reg = getattr(c, '_rfm_fixture_registry', None)
+                final_tests.append(c)
+                if reg:
+                    tmp_registry.update(reg)
+
+            # Instantiate the new fixtures and update the registry
+            new_fixtures = tmp_registry.difference(fixture_registry)
+            leaf_tests = new_fixtures.instantiate_all()
+            fixture_registry.update(new_fixtures)
+
+        return final_tests
 
     def __iter__(self):
         '''Iterate over the registered test classes.'''

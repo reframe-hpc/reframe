@@ -48,11 +48,12 @@ The :attr:`current_partition` and :attr:`current_environ` test attributes will b
 A `job descriptor <regression_test_api.html#reframe.core.pipeline.RegressionTest.job>`__ will also be created for the test case containing information about the job to be submitted later in the pipeline.
 
 
----------------
-The Build Phase
----------------
+-----------------
+The Compile Phase
+-----------------
 
-During this phase the source code associated with the test is compiled using the current programming environment.
+During this phase a job script for the compilation of the test will be created and it will be submitted for execution.
+The source code associated with the test is compiled using the current programming environment.
 If the test is `"run-only," <regression_test_api.html#reframe.core.pipeline.RunOnlyRegressionTest>`__ this phase is a no-op.
 
 Before building the test, all the `resources <regression_test_api.html#reframe.core.pipeline.RegressionTest.sourcesdir>`__ associated with it are copied to the test case's stage directory.
@@ -100,10 +101,10 @@ Execution Policies
 
 All regression tests in ReFrame will execute the pipeline stages described above.
 However, how exactly this pipeline will be executed is responsibility of the test execution policy.
-There are two execution policies in ReFrame: the serial and the asynchronous one.
+There are two execution policies in ReFrame: the serial and the asynchronous execution policy.
 
 In the serial execution policy, a new test gets into the pipeline after the previous one has exited.
-As the figure below shows, this can lead to long idling times in the run phase, since the execution blocks until the associated test job finishes.
+As the figure below shows, this can lead to long idling times in the build and run phases, since the execution blocks until the associated test job finishes.
 
 
 .. figure:: _static/img/serial-exec-policy.svg
@@ -114,7 +115,7 @@ As the figure below shows, this can lead to long idling times in the run phase, 
 
 
 In the asynchronous execution policy, multiple tests can be simultaneously on-the-fly.
-When a test enters the run phase, ReFrame does not block, but continues by picking the next test case to run.
+When a test enters the build or run phase, ReFrame does not block, but continues by picking the next test case to run.
 This continues until no more test cases are left for execution or until a maximum concurrency limit is reached.
 At the end, ReFrame enters a busy-wait loop monitoring the spawned test cases.
 As soon as test case finishes, it resumes its pipeline and runs it to completion.
@@ -132,6 +133,67 @@ ReFrame tries to keep concurrency high by maintaining as many test cases as poss
 When the `concurrency limit <config_reference.html#.systems[].partitions[].max_jobs>`__ is reached, ReFrame will first try to free up execution slots by checking if any of the spawned jobs have finished, and it will fill that slots first before throttling execution.
 
 ReFrame uses polling to check the status of the spawned jobs, but it does so in a dynamic way, in order to ensure both responsiveness and avoid overloading the system job scheduler with excessive polling.
+
+
+ReFrame's runtime internally encapsulates each test in a task, which is scheduled for execution.
+This task can be in different states and is responsible for executing the test's pipeline.
+The following state diagram shows how test tasks are scheduled, as well as when the various test pipeline stages are executed.
+
+.. figure:: _static/img/regression-task-state-machine.svg
+  :align: center
+  :alt: State diagram of the execution of test tasks.
+
+  :sub:`State diagram of the execution of test tasks with annotations for the execution of the actual pipeline stages.`
+
+There are a number of things to notice in this diagram:
+
+- If a test encounters an exception it is marked as a failure.
+  Even normal failures, such as dependency failures and sanity or performance failures are also exceptions raised explicitly by the framework during a pipeline stage.
+- The pipeline stages that are executed asynchronously, namely the ``compile`` and ``run`` stages, are split in sub-stages for submitting the corresponding job and for checking or waiting its completion.
+  This is why in ReFrame error messages you may see ``compile_complete``  or ``run_complete`` being reported as the failing stage.
+- The execution of a test may be stalled if there are not enough execution slots available for submitting compile or run jobs on the target partition.
+- Although a test is officially marked as "completed" only when its cleanup phase is executed, it is reported as success or failure as soon as it is "retired," i.e., as soon as its performance stage has passed successfully.
+- For successful tests, the ``cleanup`` stage is executed *after* the test is reported as a "success," since a test may not clean up its resources until all of its immediate dependencies finish also successfully.
+  If the ``cleanup`` phase fails, the test is not marked as a failure, but this condition is marked as an error.
+
+
+.. versionchanged:: 3.10.0
+   The ``compile`` stage is now also executed asynchronously.
+
+
+--------------------------------------
+Where each pipeline stage is executed?
+--------------------------------------
+
+There are two executions contexts where a pipeline stage can be executed: the ReFrame execution context and the partition execution context.
+The *ReFrame execution context* is where ReFrame executes.
+This is always the local host.
+The *partition execution context* can either be local or remote depending on how the partition is configured.
+The following table show in which context each pipeline stage executes:
+
+.. table::
+   :align: center
+
+   ============== =================
+   Pipeline Stage Execution Context
+   ============== =================
+   *Setup*        ReFrame
+   *Compile*      ReFrame if :attr:`~reframe.core.pipeline.RegressionTest.build_locally` or :attr:`~reframe.core.pipeline.RegressionTest.local` is :obj:`True` or if :option:`--force-local` is passed, partition otherwise.
+   *Run*          ReFrame if :attr:`~reframe.core.pipeline.RegressionTest.local` is :obj:`True` or if :option:`--force-local` is passed, partition otherwise.
+   *Sanity*       ReFrame
+   *Performance*  ReFrame
+   *Cleanup*      ReFrame
+   ============== =================
+
+It should be noted that even if the partition execution context is local, it is treated differently from the ReFrame execution context.
+For example, a test executing in the ReFrame context will not respect the :js:attr:`max_jobs` partition configuration option, even if the partition is local.
+To control the concurrency of the ReFrame execution context, users should set the :js:attr:`.systems[].max_local_jobs` option instead.
+
+
+.. versionchanged:: 3.10.0
+
+   Execution contexts were formalized.
+
 
 Timing the Test Pipeline
 ------------------------

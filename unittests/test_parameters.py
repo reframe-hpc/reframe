@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -312,7 +312,7 @@ def test_override_regular_attribute():
         p = 4
         p = parameter([1, 2])
 
-    assert Foo.p == (1, 2,)
+    assert Foo.p.values == (1, 2,)
 
 
 def test_override_parameter():
@@ -353,7 +353,7 @@ def test_class_attr_access():
     class MyTest(rfm.RegressionTest):
         p = parameter([1, 2, 3])
 
-    assert MyTest.p == (1, 2, 3,)
+    assert MyTest.p.values == (1, 2, 3,)
     with pytest.raises(ReframeSyntaxError, match='cannot override parameter'):
         MyTest.p = (4, 5,)
 

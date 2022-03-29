@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -163,10 +163,10 @@ class SystemPartition(jsonext.JSONSerializable):
        Users may not create :class:`SystemPartition` objects directly.
     '''
 
-    def __init__(self, parent, name, sched_type, launcher_type,
+    def __init__(self, *, parent, name, sched_type, launcher_type,
                  descr, access, container_environs, resources,
                  local_env, environs, max_jobs, prepare_cmds,
-                 processor, devices, extras):
+                 processor, devices, extras, time_limit):
         getlogger().debug(f'Initializing system partition {name!r}')
         self._parent_system = parent
         self._name = name
@@ -184,6 +184,7 @@ class SystemPartition(jsonext.JSONSerializable):
         self._processor = ProcessorInfo(processor)
         self._devices = [DeviceInfo(d) for d in devices]
         self._extras = extras
+        self._time_limit = time_limit
 
     @property
     def access(self):
@@ -245,6 +246,17 @@ class SystemPartition(jsonext.JSONSerializable):
         :type: integral
         '''
         return self._max_jobs
+
+    @property
+    def time_limit(self):
+        '''The time limit that will be used when submitting jobs to this
+        partition.
+
+        :type: :class:`str` or :obj:`None`
+
+        .. versionadded:: 3.11.0
+        '''
+        return self._time_limit
 
     @property
     def prepare_cmds(self):
@@ -511,7 +523,8 @@ class System(jsonext.JSONSerializable):
                     prepare_cmds=site_config.get(f'{partid}/prepare_cmds'),
                     processor=site_config.get(f'{partid}/processor'),
                     devices=site_config.get(f'{partid}/devices'),
-                    extras=site_config.get(f'{partid}/extras')
+                    extras=site_config.get(f'{partid}/extras'),
+                    time_limit=site_config.get(f'{partid}/time_limit')
                 )
             )
 

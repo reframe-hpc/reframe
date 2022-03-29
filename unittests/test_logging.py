@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -19,7 +19,6 @@ import reframe.core.logging as rlog
 import reframe.core.runtime as rt
 import reframe.core.settings as settings
 import reframe.utility as util
-import reframe.utility.sanity as sn
 from reframe.core.exceptions import ConfigError, ReframeError
 from reframe.core.backends import (getlauncher, getscheduler)
 from reframe.core.schedulers import Job
@@ -28,25 +27,26 @@ from reframe.core.schedulers import Job
 @pytest.fixture
 def fake_check():
     class _FakeCheck(rfm.RegressionTest):
-        pass
+        param = parameter(range(3), loggable=True, fmt=lambda x: 10*x)
+        custom = variable(str, value='hello extras', loggable=True)
+        custom_list = variable(list,
+                               value=['custom', 3.0, ['hello', 'world']],
+                               loggable=True)
+        custom_dict = variable(dict, value={'a': 1, 'b': 2}, loggable=True)
 
-    @sn.deferrable
-    def error():
-        raise BaseException
+        # x is a variable that is loggable, but is left undefined. We want to
+        # make sure that logging does not crash and simply reports is as
+        # undefined
+        x = variable(str, loggable=True)
 
     # A bit hacky, but we don't want to run a full test every time
-    test = _FakeCheck()
+    test = _FakeCheck(variant_num=1)
     test._job = Job.create(getscheduler('local')(),
                            getlauncher('local')(),
                            'fakejob')
     test.job._completion_time = time.time()
     test.job._jobid = 12345
     test.job._nodelist = ['localhost']
-    test.custom = 'hello extras'
-    test.custom_list = ['custom', 3.0, ['hello', 'world']]
-    test.custom_dict = {'a': 1, 'b': 2}
-    test.deferred = sn.defer('hello')
-    test.deferred_error = error()
     return test
 
 
@@ -159,29 +159,17 @@ def test_logger_levels(logfile, logger_with_check):
     assert _pattern_in_logfile('foo', logfile)
 
 
-def test_logger_dynamic_attributes(logfile, logger_with_check):
-    formatter = rlog.RFC3339Formatter('%(check_custom)s|%(check_custom_list)s|'
-                                      '%(check_foo)s|%(check_custom_dict)s')
+def test_logger_loggable_attributes(logfile, logger_with_check):
+    formatter = rlog.RFC3339Formatter(
+        '%(check_custom)s|%(check_custom_list)s|'
+        '%(check_foo)s|%(check_custom_dict)s|%(check_param)s|%(check_x)s'
+    )
     logger_with_check.logger.handlers[0].setFormatter(formatter)
     logger_with_check.info('xxx')
     assert _pattern_in_logfile(
         r'hello extras\|custom,3.0,\["hello", "world"\]\|null\|'
-        r'{"a": 1, "b": 2}', logfile
+        r'{"a": 1, "b": 2}\|10\|null', logfile
     )
-
-
-def test_logger_dynamic_attributes_deferrables(logfile, logger_with_check):
-    formatter = rlog.RFC3339Formatter(
-        '%(check_deferred)s|%(check_deferred_error)s'
-    )
-    logger_with_check.logger.handlers[0].setFormatter(formatter)
-    logger_with_check.info('xxx')
-    assert _pattern_in_logfile(r'null\|null', logfile)
-
-    # Evaluate the deferrable and log again
-    logger_with_check.check.deferred.evaluate()
-    logger_with_check.info('xxx')
-    assert _pattern_in_logfile(r'"hello"\|null', logfile)
 
 
 def test_rfc3339_timezone_extension(logfile, logger_with_check,
@@ -210,7 +198,7 @@ def test_rfc3339_timezone_wrong_directive(logfile, logger_without_check):
 
 def test_logger_job_attributes(logfile, logger_with_check):
     formatter = rlog.RFC3339Formatter(
-        '%(check_job_jobid)s %(check_job_nodelist)s')
+        '%(check_jobid)s %(check_job_nodelist)s')
     logger_with_check.logger.handlers[0].setFormatter(formatter)
     logger_with_check.info('xxx')
     assert _pattern_in_logfile(r'12345 localhost', logfile)
@@ -478,10 +466,12 @@ def test_logging_context_check(default_exec_ctx, logfile, fake_check):
         rlog.getlogger().error('error from context')
 
     rlog.getlogger().error('error outside context')
-    assert _found_in_logfile(f'_FakeCheck: {sys.argv[0]}: error from context',
-                             logfile)
-    assert _found_in_logfile(f'reframe: {sys.argv[0]}: error outside context',
-                             logfile)
+    assert _found_in_logfile(
+        f'_FakeCheck_1: {sys.argv[0]}: error from context', logfile
+    )
+    assert _found_in_logfile(
+        f'reframe: {sys.argv[0]}: error outside context', logfile
+    )
 
 
 def test_logging_context_error(default_exec_ctx, logfile):

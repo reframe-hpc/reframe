@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -162,13 +162,17 @@ class RuntimeContext:
         '''
         return self._system.modules_system
 
-    def get_option(self, option):
+    def get_option(self, option, default=None):
         '''Get a configuration option.
 
         :arg option: The option to be retrieved.
+        :arg default: The value to return if ``option`` cannot be retrieved.
         :returns: The value of the option.
+
+        .. versionchanged:: 3.11.0
+          Add ``default`` named argument.
         '''
-        return self._site_config.get(option)
+        return self._site_config.get(option, default=default)
 
 
 # Global resources for the current host
@@ -277,6 +281,20 @@ class temp_environment:
 
     def __exit__(self, exc_type, exc_value, traceback):
         self._environ_save.restore()
+
+
+class temp_config:
+    '''Context manager to temporarily switch to specific configuration.'''
+
+    def __init__(self, system):
+        self.__to = system
+        self.__from = runtime().system.name
+
+    def __enter__(self):
+        runtime().site_config.select_subconfig(self.__to)
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        runtime().site_config.select_subconfig(self.__from)
 
 
 # The following utilities are useful only for the unit tests

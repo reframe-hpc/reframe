@@ -1,0 +1,64 @@
+[ReFrame Setup]
+  version:           3.10.0-dev.3+605af31a
+  command:           './bin/reframe -c tutorials/deps/osu_benchmarks.py -r'
+  launched by:       user@host
+  working directory: '/home/user/Devel/reframe'
+  settings file:     '/home/user/Devel/reframe/tutorials/config/settings.py'
+  check search path: '/home/user/Devel/reframe/tutorials/deps/osu_benchmarks.py'
+  stage directory:   '/home/user/Devel/reframe/stage'
+  output directory:  '/home/user/Devel/reframe/output'
+
+[==========] Running 8 check(s)
+[==========] Started on Sat Jan 22 22:49:00 2022
+
+[----------] start processing checks
+[ RUN      ] OSUDownloadTest @daint:login+builtin
+[       OK ] ( 1/22) OSUDownloadTest @daint:login+builtin
+[ RUN      ] OSUBuildTest @daint:gpu+gnu
+[ RUN      ] OSUBuildTest @daint:gpu+intel
+[ RUN      ] OSUBuildTest @daint:gpu+pgi
+[       OK ] ( 2/22) OSUBuildTest @daint:gpu+gnu
+[ RUN      ] OSUAllreduceTest %mpi_tasks=16 @daint:gpu+gnu
+[ RUN      ] OSUAllreduceTest %mpi_tasks=8 @daint:gpu+gnu
+[ RUN      ] OSUAllreduceTest %mpi_tasks=4 @daint:gpu+gnu
+[ RUN      ] OSUAllreduceTest %mpi_tasks=2 @daint:gpu+gnu
+[ RUN      ] OSUBandwidthTest @daint:gpu+gnu
+[ RUN      ] OSULatencyTest @daint:gpu+gnu
+[       OK ] ( 3/22) OSUBuildTest @daint:gpu+intel
+[       OK ] ( 4/22) OSUBuildTest @daint:gpu+pgi
+[ RUN      ] OSUAllreduceTest %mpi_tasks=16 @daint:gpu+intel
+[ RUN      ] OSUAllreduceTest %mpi_tasks=16 @daint:gpu+pgi
+[ RUN      ] OSUAllreduceTest %mpi_tasks=8 @daint:gpu+intel
+[ RUN      ] OSUAllreduceTest %mpi_tasks=8 @daint:gpu+pgi
+[ RUN      ] OSUAllreduceTest %mpi_tasks=4 @daint:gpu+intel
+[ RUN      ] OSUAllreduceTest %mpi_tasks=4 @daint:gpu+pgi
+[ RUN      ] OSUAllreduceTest %mpi_tasks=2 @daint:gpu+intel
+[ RUN      ] OSUAllreduceTest %mpi_tasks=2 @daint:gpu+pgi
+[ RUN      ] OSUBandwidthTest @daint:gpu+intel
+[ RUN      ] OSUBandwidthTest @daint:gpu+pgi
+[ RUN      ] OSULatencyTest @daint:gpu+intel
+[ RUN      ] OSULatencyTest @daint:gpu+pgi
+[       OK ] ( 5/22) OSUAllreduceTest %mpi_tasks=8 @daint:gpu+gnu
+[       OK ] ( 6/22) OSUAllreduceTest %mpi_tasks=16 @daint:gpu+gnu
+[       OK ] ( 7/22) OSUAllreduceTest %mpi_tasks=4 @daint:gpu+gnu
+[       OK ] ( 8/22) OSULatencyTest @daint:gpu+gnu
+[       OK ] ( 9/22) OSUAllreduceTest %mpi_tasks=2 @daint:gpu+gnu
+[       OK ] (10/22) OSUAllreduceTest %mpi_tasks=16 @daint:gpu+intel
+[       OK ] (11/22) OSUAllreduceTest %mpi_tasks=16 @daint:gpu+pgi
+[       OK ] (12/22) OSUAllreduceTest %mpi_tasks=8 @daint:gpu+intel
+[       OK ] (13/22) OSUAllreduceTest %mpi_tasks=8 @daint:gpu+pgi
+[       OK ] (14/22) OSUBandwidthTest @daint:gpu+gnu
+[       OK ] (15/22) OSUAllreduceTest %mpi_tasks=4 @daint:gpu+intel
+[       OK ] (16/22) OSUAllreduceTest %mpi_tasks=2 @daint:gpu+pgi
+[       OK ] (17/22) OSUAllreduceTest %mpi_tasks=2 @daint:gpu+intel
+[       OK ] (18/22) OSULatencyTest @daint:gpu+pgi
+[       OK ] (19/22) OSULatencyTest @daint:gpu+intel
+[       OK ] (20/22) OSUAllreduceTest %mpi_tasks=4 @daint:gpu+pgi
+[       OK ] (21/22) OSUBandwidthTest @daint:gpu+intel
+[       OK ] (22/22) OSUBandwidthTest @daint:gpu+pgi
+[----------] all spawned checks have finished
+
+[  PASSED  ] Ran 22/22 test case(s) from 8 check(s) (0 failure(s), 0 skipped)
+[==========] Finished on Sat Jan 22 22:54:26 2022
+Run report saved in '/home/user/.reframe/reports/run-report.json'
+Log file(s) saved in '/tmp/rfm-15ghvao1.log'

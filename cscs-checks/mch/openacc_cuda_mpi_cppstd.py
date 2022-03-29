@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -18,9 +18,11 @@ class OpenaccCudaCpp(rfm.RegressionTest):
         self.build_system = 'Make'
         self.build_system.fflags = ['-O2']
 
+        # FIXME Temporary workaround reducing the MPI tasks per node
+        # See https://jira.cscs.ch/browse/PROGENV-8 for Cray case
         if self.current_system.name in ['daint', 'dom']:
             self.num_tasks = 12
-            self.num_tasks_per_node = 12
+            self.num_tasks_per_node = 11
             self.num_gpus_per_node = 1
             self.build_system.options = ['NVCC_FLAGS="-arch=compute_60"']
             self.variables = {

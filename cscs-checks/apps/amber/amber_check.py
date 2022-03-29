@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -19,7 +19,7 @@ class cscs_amber_check(amber_nve_check):
     }
     tags |= {'maintenance', 'production'}
     maintainers = ['VH', 'SO']
-    num_nodes = parameter([1, 4, 6, 8, 16])
+    num_nodes = parameter([1, 4, 6, 8, 16], loggable=True)
     allref = {
         1: {
             'p100': {
@@ -119,6 +119,6 @@ class cscs_amber_check(amber_nve_check):
         with contextlib.suppress(KeyError):
             self.reference = {
                 pname: {
-                    'perf': self.allref[self.num_nodes][arch][self.benchmark]
+                    'perf': self.allref[self.num_nodes][arch][self.bench_name]
                 }
             }

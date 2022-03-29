@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -18,7 +18,6 @@ import reframe.utility as util
 import reframe.utility.osext as osext
 from reframe.core.exceptions import NameConflictError, is_severe, what
 from reframe.core.logging import getlogger
-from reframe.core.fixtures import FixtureRegistry
 
 
 class RegressionCheckValidator(ast.NodeVisitor):
@@ -100,8 +99,8 @@ class RegressionCheckLoader:
             getlogger().warning(
                 f'{checkfile}: {attr!r} is not copyable; '
                 f'not copyable attributes are not '
-                f'allowed inside the __init__() method; '
-                f'consider setting them in a pipeline hook instead'
+                f'allowed inside the __init__() method or post-init hooks; '
+                f'consider setting them in another pipeline hook instead'
             )
             return False
 
@@ -171,7 +170,7 @@ class RegressionCheckLoader:
             return []
 
         self._set_defaults(registry)
-        test_pool = registry.instantiate_all() if registry else []
+        candidate_tests = registry.instantiate_all() if registry else []
         legacy_tests = legacy_registry() if legacy_registry else []
         if self._external_vars and legacy_tests:
             getlogger().warning(
@@ -180,32 +179,11 @@ class RegressionCheckLoader:
                 "please use the 'parameter' builtin in your tests"
             )
 
-        # Merge registries
-        test_pool += legacy_tests
-
-        # Do a level-order traversal of the fixture registries of all tests in
-        # the test pool, instantiate all fixtures and generate the final set
-        # of candidate tests to load; the test pool is consumed at the end of
-        # the traversal and all instantiated tests (including fixtures) are
-        # stored in `candidate_tests`.
-        candidate_tests = []
-        fixture_registry = FixtureRegistry()
-        while test_pool:
-            tmp_registry = FixtureRegistry()
-            while test_pool:
-                c = test_pool.pop()
-                reg = getattr(c, '_rfm_fixture_registry', None)
-                candidate_tests.append(c)
-                if reg:
-                    tmp_registry.update(reg)
-
-            # Instantiate the new fixtures and update the registry
-            new_fixtures = tmp_registry.difference(fixture_registry)
-            test_pool = new_fixtures.instantiate_all()
-            fixture_registry.update(new_fixtures)
+        # Merge tests
+        candidate_tests += legacy_tests
 
         # Post-instantiation validation of the candidate tests
-        tests = []
+        final_tests = []
         for c in candidate_tests:
             if not isinstance(c, RegressionTest):
                 continue
@@ -215,18 +193,18 @@ class RegressionCheckLoader:
 
             testfile = module.__file__
             try:
-                conflicted = self._loaded[c.name]
+                conflicted = self._loaded[c.unique_name]
             except KeyError:
-                self._loaded[c.name] = testfile
-                tests.append(c)
+                self._loaded[c.unique_name] = testfile
+                final_tests.append(c)
             else:
                 raise NameConflictError(
-                    f'test {c.name!r} from {testfile!r} '
+                    f'test {c.unique_name!r} from {testfile!r} '
                     f'is already defined in {conflicted!r}'
                 )
 
-        getlogger().debug(f'  > Loaded {len(tests)} test(s)')
-        return tests
+        getlogger().debug(f'  > Loaded {len(final_tests)} test(s)')
+        return final_tests
 
     def load_from_file(self, filename, force=False):
         if not self._validate_source(filename):

@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -15,8 +15,8 @@ class SlurmSimpleBaseCheck(rfm.RunOnlyRegressionTest):
                      'dom:gpu', 'dom:mc',
                      'arolla:cn', 'arolla:pn',
                      'tsa:cn', 'tsa:pn',
-                     'daint:xfer', 'eiger:mc',
-                     'pilatus:mc']
+                     'daint:xfer', 'dom:xfer',
+                     'eiger:mc', 'pilatus:mc']
     valid_prog_environs = ['PrgEnv-cray']
     tags = {'slurm', 'maintenance', 'ops',
             'production', 'single-node'}
@@ -56,6 +56,7 @@ class HostnameCheck(SlurmSimpleBaseCheck):
         'daint:xfer': r'^datamover\d{2}.cscs.ch$',
         'dom:gpu': r'^nid\d{5}$',
         'dom:mc': r'^nid\d{5}$',
+        'dom:xfer': r'^nid\d{5}$',
         'eiger:mc': r'^nid\d{6}$',
         'pilatus:mc': r'^nid\d{6}$'
     }

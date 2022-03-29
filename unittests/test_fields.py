@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -24,6 +24,24 @@ def test_not_set_attribute():
 
     with pytest.raises(AttributeError):
         getattr(c, 'var')
+
+
+def test_alt_attr_name():
+    class FieldTester:
+        var = fields.Field(attr_name='foo')
+
+    c = FieldTester()
+    c.var = 5
+
+    assert c.var == 5
+    assert c.foo == 5
+
+    c.foo = 6
+    assert c.var == 6
+    assert c.foo == 6
+
+    assert 'var' not in c.__dict__
+    assert 'foo' in c.__dict__
 
 
 def test_constant_field():

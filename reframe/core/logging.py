@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -16,7 +16,6 @@ import socket
 import time
 import urllib
 
-import reframe.utility as util
 import reframe.utility.color as color
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
@@ -470,6 +469,12 @@ class Logger(logging.Logger):
     def setLevel(self, level):
         self.level = _check_level(level)
 
+        if sys.version_info[:2] >= (3, 7):
+            # Clear the internal cache of the base logger, otherwise the
+            # logger will remain disabled if its level is raised and then
+            # lowered again
+            self._cache.clear()
+
     def makeRecord(self, name, level, fn, lno, msg, args, exc_info,
                    func=None, extra=None, sinfo=None):
         record = super().makeRecord(name, level, fn, lno, msg, args, exc_info,
@@ -557,51 +562,32 @@ class LoggerAdapter(logging.LoggerAdapter):
     def _update_check_extras(self):
         '''Return a dictionary with all the check-specific information.'''
 
-        exclude_check_attrs = {'build_job', 'current_environ',
-                               'current_partition', 'current_system', 'job'}
         if self.check is None:
             return
 
-        for attr, val in util.attrs(self.check).items():
-            if not attr.startswith('_') and attr not in exclude_check_attrs:
-                self.extra[f'check_{attr}'] = val
+        check_type = type(self.check)
+        for attr, alt_name in check_type.loggable_attrs():
+            extra_name  = alt_name or attr
 
+            # In case of AttributeError, i.e., the variable is undefined, we
+            # set the value to None
+            val = getattr(self.check, attr, None)
+            if attr in check_type.raw_params:
+                # Attribute is parameter, so format it
+                val = check_type.raw_params[attr].format(val)
+
+            self.extra[f'check_{extra_name}'] = val
+
+        # Add special extras
+
+        # FIXME: As soon as `name` becomes a read-only property in 4.0, the
+        # following assignment will not be needed.
+        self.extra['check_name'] = self.extra['check_unique_name']
         self.extra['check_info'] = self.check.info()
-
-        # Treat special cases
-        if self.check.current_system:
-            self.extra['check_system'] = self.check.current_system.name
-
-        if self.check.current_partition:
-            cp = self.check.current_partition.fullname
-            self.extra['check_partition'] = self.check.current_partition.name
-
-            # When logging performance references, we need only those of the
-            # current system
-            self.extra['check_reference'] = jsonext.dumps(
-                self.check.reference.scope(cp)
-            )
-
-        if self.check.current_environ:
-            self.extra['check_environ'] = self.check.current_environ.name
-
-        if self.check.job:
-            # Create extras for job attributes
-            for attr, val in util.attrs(self.check.job).items():
-                if not attr.startswith('_'):
-                    self.extra[f'check_job_{attr}'] = val
-
-            # Treat aliases
-            self.extra['check_jobid'] = self.extra['check_job_jobid']
-            if self.check.job.completion_time:
-                # Here we preformat the `check_job_completion_time`, because
-                # the Graylog handler does not use a formatter
-                ct = self.check.job.completion_time
-                ct_formatted = _format_time_rfc3339(
-                    time.localtime(ct), '%FT%T%:z'
-                )
-                self.extra['check_job_completion_time_unix'] = ct
-                self.extra['check_job_completion_time'] = ct_formatted
+        self.extra['check_job_completion_time'] = _format_time_rfc3339(
+            time.localtime(self.extra['check_job_completion_time_unix']),
+            '%FT%T%:z'
+        )
 
     def log_performance(self, level, tag, value, ref,
                         low_thres, upper_thres, unit=None, *, msg=None):

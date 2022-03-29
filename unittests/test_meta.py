@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -381,13 +381,13 @@ def test_setting_variables_on_instantiation(MyMeta):
         v = variable(int, value=1)
 
     assert Foo().v == 1
-    assert Foo(variables={'v': 10}).v == 10
+    assert Foo(fixt_vars={'v': 10}).v == 10
 
     # Non-variables are silently ignored
-    assert not hasattr(Foo(variables={'vv': 10}), 'vv')
+    assert not hasattr(Foo(fixt_vars={'vv': 10}), 'vv')
 
     with pytest.raises(TypeError):
-        Foo(variables='not a mapping')
+        Foo(fixt_vars='not a mapping')
 
 
 def test_variants(MyMeta):
@@ -497,8 +497,64 @@ def test_get_variant_nums(MyMeta):
         q = parameter(range(10))
 
     variants = Foo.get_variant_nums(p=lambda x: x < 5, q=lambda x: x > 3)
-    for variant in variants:
-        assert Foo.get_variant_info(variant)['params']['p'] < 5
-        assert Foo.get_variant_info(variant)['params']['q'] > 3
+    for v in variants:
+        assert Foo.get_variant_info(v)['params']['p'] < 5
+        assert Foo.get_variant_info(v)['params']['q'] > 3
 
     assert Foo.get_variant_nums() == list(range(Foo.num_variants))
+
+    # Check condensed syntax
+    variants = Foo.get_variant_nums(p=5, q=4)
+    for v in variants:
+        assert Foo.get_variant_info(v)['params']['p'] == 5
+        assert Foo.get_variant_info(v)['params']['q'] == 4
+
+
+def test_loggable_attrs():
+    class T(metaclass=meta.RegressionTestMeta):
+        x = variable(int, value=3, loggable=True)
+        y = variable(int, loggable=True)    # loggable but undefined
+        z = variable(int)
+        p = parameter(range(3), loggable=True)
+
+        @loggable
+        @property
+        def foo(self):
+            return 10
+
+        @loggable_as('w')
+        @property
+        def bar(self):
+            return 10
+
+        @run_after('init')
+        def set_z(self):
+            self.z = 20
+
+    assert T.loggable_attrs() == [('bar', 'w'), ('foo', None),
+                                  ('p', None), ('x', None), ('y', None)]
+    assert T(variant_num=0).foo == 10
+    assert T(variant_num=0).bar == 10
+
+    # Test error conditions
+    with pytest.raises(ValueError):
+        class T(metaclass=meta.RegressionTestMeta):
+            @loggable
+            def foo(self):
+                pass
+
+
+def test_inherited_loggable_attrs():
+    class T(rfm.RegressionTest):
+        pass
+
+    attrs = [x[0] for x in T.loggable_attrs()]
+    assert 'num_tasks' in attrs
+    assert 'prefix' in attrs
+
+
+def test_deprecated_loggable_attrs():
+    class T(metaclass=meta.RegressionTestMeta):
+        x = deprecate(variable(int, value=3, loggable=True), 'deprecated')
+
+    assert T.loggable_attrs() == [('x', None)]

@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -21,7 +21,7 @@ class cscs_gromacs_check(gromacs_check):
     valid_prog_environs = ['builtin']
 
     # CSCS-specific parameterization
-    num_nodes = parameter([1, 2, 4, 6, 8, 16])
+    num_nodes = parameter([1, 2, 4, 6, 8, 16], loggable=True)
     allref = {
         1: {
             'sm_60': {

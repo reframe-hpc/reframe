@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -64,7 +64,7 @@ class _SiteConfig:
     def __init__(self, site_config, filename):
         self._site_config = copy.deepcopy(site_config)
         self._filename = filename
-        self._local_config = {}
+        self._subconfigs = {}
         self._local_system = None
         self._sticky_options = {}
 
@@ -76,15 +76,18 @@ class _SiteConfig:
                 self._schema = json.loads(fp.read())
             except json.JSONDecodeError as e:
                 raise ReframeFatalError(
-                    f"invalid configuration schema: '{schema_filename}'"
+                    f'invalid configuration schema: {schema_filename!r}'
                 ) from e
 
     def _pick_config(self):
-        return self._local_config if self._local_config else self._site_config
+        if self._local_system:
+            return self._subconfigs[self._local_system]
+        else:
+            return self._site_config
 
     def __repr__(self):
         return (f'{type(self).__name__}(site_config={self._site_config!r}, '
-                'filename={self._filename!r})')
+                f'filename={self._filename!r})')
 
     def __str__(self):
         return json.dumps(self._pick_config(), indent=2)
@@ -316,12 +319,15 @@ class _SiteConfig:
 
     def select_subconfig(self, system_fullname=None,
                          ignore_resolve_errors=False):
-        if (self._local_system is not None and
-            self._local_system == system_fullname):
-            return
-
+        # First look for the current subconfig in the cache; if not found,
+        # generate it and cache it
         system_fullname = system_fullname or self._detect_system()
         getlogger().debug(f'Selecting subconfig for {system_fullname!r}')
+
+        self._local_system = system_fullname
+        if system_fullname in self._subconfigs:
+            return self._subconfigs[system_fullname]
+
         try:
             system_name, part_name = system_fullname.split(':', maxsplit=1)
         except ValueError:
@@ -331,7 +337,7 @@ class _SiteConfig:
         # Start from a fresh copy of the site_config, because we will be
         # modifying it
         site_config = copy.deepcopy(self._site_config)
-        self._local_config = {}
+        local_config = {}
         systems = list(
             filter(lambda x: x['name'] == system_name, site_config['systems'])
         )
@@ -356,7 +362,7 @@ class _SiteConfig:
             )
 
         # Create local configuration for the current or the requested system
-        self._local_config['systems'] = systems
+        local_config['systems'] = systems
         for name, section in site_config.items():
             if name == 'systems':
                 # The systems sections has already been treated
@@ -387,12 +393,12 @@ class _SiteConfig:
                 except KeyError:
                     pass
                 else:
-                    self._local_config.setdefault(name, [])
-                    self._local_config[name].append(val)
+                    local_config.setdefault(name, [])
+                    local_config[name].append(val)
 
         required_sections = self._schema['required']
         for name in required_sections:
-            if name not in self._local_config.keys():
+            if name not in local_config.keys():
                 if not ignore_resolve_errors:
                     raise ConfigError(
                         f"section '{name}' not defined "
@@ -407,7 +413,7 @@ class _SiteConfig:
                                    for p in systems[0]['partitions']))
             }
             found_environs = {
-                e['name'] for e in self._local_config['environments']
+                e['name'] for e in local_config['environments']
             }
             undefined_environs = sys_environs - found_environs
             if undefined_environs:
@@ -417,7 +423,7 @@ class _SiteConfig:
                     f"are not defined for '{system_fullname}'"
                 )
 
-        self._local_system = system_fullname
+        self._subconfigs[system_fullname] = local_config
 
 
 def convert_old_config(filename, newfilename=None):

@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -13,7 +13,8 @@ class LibsciAccBaseCheck(rfm.RegressionTest):
         self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
         self.prebuild_cmds = ['module list']
-        self.modules = ['craype-accel-nvidia60']
+        # FIXME: https://jira.cscs.ch/browse/PROGENV-24
+        self.modules = ['craype-accel-nvidia60', 'cray-libsci_acc']
         self.maintainers = ['JG']
         self.tags = {'scs', 'production', 'maintenance'}
 

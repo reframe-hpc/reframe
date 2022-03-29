@@ -1,4 +1,4 @@
-# Copyright 2016-2021 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -76,7 +76,6 @@ def job(make_job, launcher):
                    stdout='fake_stdout',
                    stderr='fake_stderr',
                    sched_access=access,
-                   sched_exclusive_access='fake_exclude_access',
                    sched_options=['--fake'])
     job.num_tasks = 4
     job.num_tasks_per_node = 2
@@ -85,6 +84,7 @@ def job(make_job, launcher):
     job.num_cpus_per_task = 2
     job.use_smt = True
     job.time_limit = '10m'
+    job.exclusive_access = True
     job.options = ['--gres=gpu:4', '#DW jobdw anything']
     job.launcher.options = ['--foo']
     return job
