@@ -603,7 +603,7 @@ class Autotools(ConfigureBasedBuildSystem):
     #: entire source tree.
     #:
     #: :type: :class:`str`
-    #: :default: ``"."``
+    #: :default: ``'.'``
     configuredir = variable(str, value='.')
 
     def emit_build_commands(self, environ):
