@@ -242,42 +242,92 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                      "setting the 'name' attribute is deprecated and "
                      "will be disabled in the future", DEPRECATE_WR)
 
-    #: List of programming environments supported by this test.
+    #: List of environments or environment features or environment properties
+    #: required by this test.
     #:
-    #: If ``*`` is in the list then all programming environments are supported
-    #: by this test.
+    #: The syntax of this attribute is exactly the same as of the
+    #: :attr:`valid_systems` except that the ``a:b`` entries are invalid.
     #:
     #: :type: :class:`List[str]`
     #: :default: ``required``
     #:
-    #: .. note::
-    #:     .. versionchanged:: 2.12
-    #:        Programming environments can now be specified using wildcards.
+    #: .. seealso::
+    #:    - `Environment features
+    #:      <config_reference.html#environments-.features>`__
+    #:    - `Environment extras
+    #:      <config_reference.html#environments-.extras>`__
     #:
-    #:     .. versionchanged:: 2.17
-    #:        Support for wildcards is dropped.
+    #: .. versionchanged:: 2.12
+    #:    Programming environments can now be specified using wildcards.
     #:
-    #:     .. versionchanged:: 3.3
-    #:        Default value changed from ``[]`` to ``None``.
+    #: .. versionchanged:: 2.17
+    #:    Support for wildcards is dropped.
     #:
-    #:     .. versionchanged:: 3.6
-    #:        Default value changed from ``None`` to ``required``.
+    #: .. versionchanged:: 3.3
+    #:    Default value changed from ``[]`` to ``None``.
+    #:
+    #: .. versionchanged:: 3.6
+    #:    Default value changed from ``None`` to ``required``.
+    #:
+    #: .. versionchanged:: 3.11.0
+    #:    Extend syntax to support features and key/value pairs.
     valid_prog_environs = variable(typ.List[typ.Str[_VALID_ENV_SYNTAX]],
                                    loggable=True)
 
-    #: List of systems supported by this test.
-    #: The general syntax for systems is ``<sysname>[:<partname>]``.
-    #: Both <sysname> and <partname> accept the value ``*`` to mean any value.
-    #: ``*`` is an alias of ``*:*``
+    #: List of systems or system features or system properties required by this
+    #: test.
+    #:
+    #: Each entry in this list is a requirement and can have one of the
+    #: following forms:
+    #:
+    #: - ``sysname``: The test is valid for system named ``sysname``.
+    #: - ``sysname:partname``: The test is valid for the partition ``partname``
+    #:   of system ``sysname``.
+    #: - ``*``: The test is valid for any system.
+    #: - ``*:partname``: The test is valid for any partition named ``partname``
+    #:   in any system.
+    #: - ``+feat``: The test is valid for all partitions that define feature
+    #:   ``feat`` as a feature.
+    #: - ``-feat``: The test is valid for all partitions that do not define
+    #:   feature ``feat`` as a feature.
+    #: - ``%key=val``: The test is valid for all partitions that define the
+    #:   extra property ``key`` with the value ``val``.
+    #:
+    #: Multiple features and key/value pairs can be included in a single entry
+    #: of the :attr:`valid_systems` list, in which case an AND operation on
+    #: these constraints is implied. For example, the test defining the
+    #: following will be valid for all systems that have define both ``feat1``
+    #: and ``feat2`` and set ``foo=bar``
+    #:
+    #: .. code-block:: python
+    #:
+    #:    valid_systems = ['+feat1 +feat2 %foo=bar']
+    #:
+    #: Multiple entries in the :attr:`valid_systems` list are implicitly ORed,
+    #: such that the following example implies that the test is valid for
+    #: either ``sys1`` or for any other system that does not define ``feat``.
+    #:
+    #: .. code-block:: python
+    #:
+    #:    valid_systems = ['sys1', '-feat']
     #:
     #: :type: :class:`List[str]`
     #: :default: ``None``
     #:
-    #:     .. versionchanged:: 3.3
-    #:        Default value changed from ``[]`` to ``None``.
+    #: .. seealso::
+    #:    - `System partition features
+    #:      <config_reference.html#systems-.partitions-.features>`__
+    #:    - `System partition extras
+    #:      <config_reference.html#systems-.partitions-.extras>`__
     #:
-    #:     .. versionchanged:: 3.6
-    #:        Default value changed from ``None`` to ``required``.
+    #: .. versionchanged:: 3.3
+    #:    Default value changed from ``[]`` to ``None``.
+    #:
+    #: .. versionchanged:: 3.6
+    #:    Default value changed from ``None`` to ``required``.
+    #:
+    #:  .. versionchanged:: 3.11.0
+    #:     Extend syntax to support features and key/value pairs.
     valid_systems = variable(typ.List[typ.Str[_VALID_SYS_SYNTAX]],
                              loggable=True)
 

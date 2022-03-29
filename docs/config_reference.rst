@@ -428,15 +428,24 @@ System Partition Configuration
    .. versionadded:: 3.5.0
 
 
+.. js:attribute:: .systems[].partitions[].features
+
+   :required: No
+   :default: ``{}``
+
+   User defined features of the partition. These are accessible through the :attr:`~reframe.core.systems.SystemPartition.features` attribute of the :attr:`~reframe.core.pipeline.RegressionTest.current_partition` and can also be selected through the extended syntax of :attr:`~reframe.core.pipeline.RegressionTest.valid_systems`.
+
+   .. versionadded:: 3.11.0
+
+
 .. js:attribute:: .systems[].partitions[].extras
 
    :required: No
    :default: ``{}``
 
-   User defined attributes of the partition. This will be accessible through the :attr:`~reframe.core.systems.SystemPartition.extras` attribute of the :attr:`~reframe.core.pipeline.RegressionTest.current_partition`.
+   User defined attributes of the partition. These are accessible through the :attr:`~reframe.core.systems.SystemPartition.extras` attribute of the :attr:`~reframe.core.pipeline.RegressionTest.current_partition` and can also be selected through the extended syntax of :attr:`~reframe.core.pipeline.RegressionTest.valid_systems`.
 
    .. versionadded:: 3.5.0
-
 
 .. _container-platform-configuration:
 
@@ -598,12 +607,22 @@ They are associated with `system partitions <#system-partition-configuration>`__
    Variables are set after the environment modules are loaded.
 
 
+.. js:attribute:: .environments[].features
+
+   :required: No
+   :default: ``{}``
+
+   User defined features of the environment. These are accessible through the :attr:`~reframe.core.environments.Environment.features` attribute of the :attr:`~reframe.core.pipeline.RegressionTest.current_environ` and can also be selected through the extended syntax of :attr:`~reframe.core.pipeline.RegressionTest.valid_prog_environs`.
+
+   .. versionadded:: 3.11.0
+
+
 .. js:attribute:: .environments[].extras
 
    :required: No
    :default: ``{}``
 
-   User defined attributes of the environment. This will be accessible through the :attr:`~reframe.core.environments.Environment.extras` attribute of the :attr:`~reframe.core.pipeline.RegressionTest.current_environ`.
+   User defined attributes of the environment. These are accessible through the :attr:`~reframe.core.environments.Environment.extras` attribute of the :attr:`~reframe.core.pipeline.RegressionTest.current_environ` and can also be selected through the extended syntax of :attr:`~reframe.core.pipeline.RegressionTest.valid_prog_environs`.
 
    .. versionadded:: 3.9.1
 
