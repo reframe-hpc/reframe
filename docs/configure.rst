@@ -239,7 +239,8 @@ When launched, ReFrame will pick the first matching configuration and load it.
 The way in which the system name is determined can be controlled by the environment variables ``RFM_AUTODETECT_METHOD``, ``RFM_AUTODETECT_FQDN`` and ``RFM_AUTODETECT_XTHOSTNAME``.
 ``RFM_AUTODETECT_METHOD`` is a string that specifies the method used to detect the system name.
 Its default value is ``'hostname'``, which currently is the only supported option.
-The host name will be determined by ``socket.gethostname()``, unless the boolean ``RFM_AUTODETECT_FQDN`` is set, which make ReFrame use ``socket.getfqdn()`` instead.
+By default, the host name is determined by ``socket.getfqdn()``.
+Setting the boolean ``RFM_AUTODETECT_FQDN`` to ``false`` makes ReFrame use ``socket.gethostname()`` instead.
 The last option, ``RFM_AUTODETECT_XTHOSTNAME`` is a boolean and when set, ReFrame first tries to obtain the hostname from ``/etc/xthostname``, which provides the unqualified *machine name* in Cray systems.
 If this cannot be found, ReFrame falls back to the one of the two options set by ``RFM_AUTODETECT_FQDN``.
 

@@ -1026,9 +1026,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
    Method to detect the system.
 
-   There is only one method defined
-
-   - ``hostname``: The system will be detected by finding its hostname.
+   - ``hostname``: The `hostname` command will be used to detect the current system.
 
    .. table::
       :align: left
@@ -1044,7 +1042,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
 .. envvar:: RFM_AUTODETECT_FQDN
 
-   Use FQDN as host name.
+   Use the fully qualified domain name as the host name.
 
    .. table::
       :align: left
@@ -1060,7 +1058,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
 .. envvar:: RFM_AUTODETECT_XTHOSTNAME
 
-   Use Cray's xthostname file to find the host name.
+   If present, use Cray's `/etc/xthostname` file to retrieve the current system's name
 
    .. table::
       :align: left
