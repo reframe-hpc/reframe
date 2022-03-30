@@ -38,9 +38,8 @@
 #define SIZE 2048ul // Matrices are SIZE*SIZE..  2048^2 should be efficiently implemented in CUBLAS
 #define USEMEM 0.9 // Try to allocate 90% of memory
 
-// Used to report op/s, measured through Visual Profiler, CUBLAS from CUDA 7.5
-// (Seems that they indeed take the naive dim^3 approach)
-#define OPS_PER_MUL 17188257792ul
+// Operations per matrix multiply
+#define OPS_PER_MUL (2*SIZE*SIZE*SIZE-SIZE*SIZE)
 
 #include <iostream>
 #include <cstdlib>
@@ -227,12 +226,15 @@ class BurnTracker
 public:
     std::mutex mtx;
     size_t iters, reps, err;
-    std::chrono::system_clock::time_point start, end;
+    float devTemp;
+    std::chrono::high_resolution_clock::time_point start, end;
+    std::chrono::duration<double> compare_time;
 
     BurnTracker()
     {
         std::lock_guard<std::mutex> lg(mtx);
         err = 0; iters = 0; reps = 0;
+        devTemp = 0.0;
     };
 
     void set_iters(size_t it)
@@ -241,18 +243,41 @@ public:
         iters = it;
     }
 
+    void set_compare_time(std::chrono::duration<double> t)
+    {
+        std::lock_guard<std::mutex> lg(mtx);
+        compare_time = t;
+    }
+
     void start_timer()
     {
         std::lock_guard<std::mutex> lg(mtx);
-        start = std::chrono::system_clock::now();
+        start = std::chrono::high_resolution_clock::now();
     }
 
-    void log(size_t e)
+    void log(size_t e, Smi *smi_handle, int devId)
     {
+        float temp;
+
         std::lock_guard<std::mutex> lg(mtx);
-        end = std::chrono::system_clock::now();
+
+        end = std::chrono::high_resolution_clock::now();
+
+        smi_handle->getGpuTemp(devId, &temp);
+        if (temp > devTemp) {
+            devTemp = temp;
+        }
+
         reps++;
         err += e;
+    }
+
+    float getTemp()
+    {
+        std::lock_guard<std::mutex> lg(mtx);
+        float temp = devTemp;
+        devTemp = 0.0;
+        return temp;
     }
 
     double read()
@@ -263,9 +288,14 @@ public:
         if (err)
             return -1;
 
+        if (reps == 0) {
+            printf("Warning: duration is to short, didn't finish a single repetition\n");
+            return -1;
+        }
+
         // Get the time difference and return the flops
         std::chrono::duration<double> diff = end-start;
-        double Gflops = 1e-9 * iters * reps * OPS_PER_MUL / diff.count();
+        double Gflops = 1e-9 * iters * reps * OPS_PER_MUL / (diff - compare_time*reps).count();
 
         // Reset the counters
         err = 0; reps = 0;
@@ -287,9 +317,13 @@ int devCount;
 template<class T>
 void startBurn(int devId,
                Smi * smi_handle, T *A, T *B,
-               BurnTracker * bt
+               BurnTracker * bt,
+               char *hostname
                )
 {
+    std::chrono::high_resolution_clock::time_point warmup_start, warmup_end;
+    std::chrono::duration<double> warmup_diff;
+
     GemmTest<T> test(devId, smi_handle);
     test.initBuffers(A, B);
 
@@ -297,7 +331,22 @@ void startBurn(int devId,
     bt->set_iters(test.getIters());
 
     // Warmup burn
+    warmup_start = std::chrono::high_resolution_clock::now();
     test.compute();
+    XDeviceSynchronize();
+    warmup_end = std::chrono::high_resolution_clock::now();
+    warmup_diff = warmup_end-warmup_start;
+    printf("[%s] GPU %2d: Warmup computation takes %g seconds, duration must be larger than that to get any results\n", hostname, devId, warmup_diff.count());
+    fflush(stdout);
+    warmup_start = std::chrono::high_resolution_clock::now();
+    for (int i=0; i < 100; i++) {
+        test.compare();
+        test.getErrors();
+    }
+    warmup_end = std::chrono::high_resolution_clock::now();
+    warmup_diff = (warmup_end-warmup_start)/100;
+    bt->set_compare_time(warmup_diff);
+
     XDeviceSynchronize();
     {
         // Flag that this thread is done with the warmup.
@@ -319,7 +368,7 @@ void startBurn(int devId,
         test.compare();
 
         // Update the results
-        bt->log(test.getErrors());
+        bt->log(test.getErrors(), smi_handle, devId);
     }
 }
 
@@ -361,7 +410,8 @@ template<class T> void launch(int duration)
         threads.push_back(std::thread(startBurn<T>,
                                       i, &smi_handle,
                                       A, B,
-                                      trackThreads[i]
+                                      trackThreads[i],
+                                      hostname
                           )
         );
     }
@@ -384,8 +434,7 @@ template<class T> void launch(int duration)
     for (int i = 0; i < devCount; i++)
     {
         double flops = trackThreads[i]->read();
-        float devTemp;
-        smi_handle.getGpuTemp(i, &devTemp);
+        float devTemp = trackThreads[i]->getTemp();
         printf("[%s] GPU %2d(%s): %4.0f GF/s  %d Celsius\n", hostname, i, flops < 0.0 ? "FAULTY" : "OK", flops, (int)devTemp);
     }
 
