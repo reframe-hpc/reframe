@@ -8,6 +8,7 @@ import itertools
 import json
 import os
 import shlex
+import socket
 import sys
 import time
 import traceback
@@ -33,7 +34,6 @@ from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
 from reframe.frontend.executors import Runner, generate_testcases
-from reframe.utility import get_hostname_cmd
 
 
 def format_env(envvars):
@@ -524,13 +524,6 @@ def main():
 
     # Options not associated with command-line arguments
     argparser.add_argument(
-        dest='use_login_shell',
-        envvar='RFM_USE_LOGIN_SHELL',
-        configvar='general/use_login_shell',
-        action='store_true',
-        help='Use a login shell for job scripts'
-    )
-    argparser.add_argument(
         dest='autodetect_method',
         envvar='RFM_AUTODETECT_METHOD',
         action='store',
@@ -539,13 +532,13 @@ def main():
     argparser.add_argument(
         dest='autodetect_fqdn',
         envvar='RFM_AUTODETECT_FQDN',
-        action='store_true',
+        action='store_false',
         help='Use FQDN as host name'
     )
     argparser.add_argument(
         dest='autodetect_xthostname',
         envvar='RFM_AUTODETECT_XTHOSTNAME',
-        action='store_false',
+        action='store_true',
         default=True,
         help="Use Cray's xthostname file to find the host name"
     )
@@ -633,6 +626,13 @@ def main():
         action='store_true',
         help='Trap job errors in job scripts and fail tests automatically'
     )
+    argparser.add_argument(
+        dest='use_login_shell',
+        envvar='RFM_USE_LOGIN_SHELL',
+        configvar='general/use_login_shell',
+        action='store_true',
+        help='Use a login shell for job scripts'
+    )
 
     def restrict_logging():
         '''Restrict logging to errors only.
@@ -660,7 +660,6 @@ def main():
         sys.exit(1)
 
     autodetect_opts = {
-        'autodetect_method': options.autodetect_method or 'hostname',
         'autodetect_xthostname': (options.autodetect_xthostname
                                   if options.autodetect_xthostname is not None
                                   else True),
@@ -673,7 +672,7 @@ def main():
     # to print pretty messages; logging will be reconfigured by user's
     # configuration later
     site_config = config.load_config(
-        os.path.join(reframe.INSTALL_PREFIX, 'reframe/core/settings.py'),
+        os.path.join(reframe.INSTALL_PREFIX, 'reframe/core/settings.py')
     )
     site_config.select_subconfig('generic')
     options.update_config(site_config)
@@ -708,7 +707,10 @@ def main():
         )
         sys.exit(0)
 
-    if autodetect_opts['autodetect_method'] not in ['hostname']:
+    if not options.autodetect_method:
+        options.autodetect_method = 'hostname'
+
+    if options.autodetect_method not in ['hostname']:
         printer.error('unknown autodetect method '
                       f"`{options.autodetect_method}': Exiting...")
         sys.exit(1)
@@ -718,7 +720,8 @@ def main():
         try:
             printer.debug('Loading user configuration')
             site_config = config.load_config(options.config_file,
-                                             autodetect_opts)
+                                             options.autodetect_method,
+                                             autodetect_opts=autodetect_opts)
         except warnings.ReframeDeprecationWarning as e:
             printer.warning(e)
             converted = config.convert_old_config(options.config_file)
@@ -726,7 +729,9 @@ def main():
                 f"configuration file has been converted "
                 f"to the new syntax here: '{converted}'"
             )
-            site_config = config.load_config(converted, autodetect_opts)
+            site_config = config.load_config(converted,
+                                             options.autodetect_method,
+                                             autodetect_opts=autodetect_opts)
 
         site_config.validate()
 
@@ -912,7 +917,7 @@ def main():
         'cmdline': ' '.join(sys.argv),
         'config_file': rt.site_config.filename,
         'data_version': runreport.DATA_VERSION,
-        'hostname': get_hostname_cmd(autodetect_opts),
+        'hostname': socket.gethostname(),
         'prefix_output': rt.output_prefix,
         'prefix_stage': rt.stage_prefix,
         'user': osext.osuser(),

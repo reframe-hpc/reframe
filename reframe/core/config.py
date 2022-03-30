@@ -66,8 +66,7 @@ class _SiteConfig:
         self._subconfigs = {}
         self._local_system = None
         self._sticky_options = {}
-        self.autodetect_opts = {
-            'autodetect_method': 'hostname',
+        self._autodetect_opts = {
             'autodetect_xthostname': True,
             'autodetect_fqdn': True,
         }
@@ -218,7 +217,7 @@ class _SiteConfig:
         return self._local_system
 
     @classmethod
-    def create(cls, filename, autodetect_opts):
+    def create(cls, filename, autodetect_method, **autodetect_opts):
         _, ext = os.path.splitext(filename)
         if ext == '.py':
             ret = cls._create_from_python(filename)
@@ -227,8 +226,9 @@ class _SiteConfig:
         else:
             raise ConfigError(f"unknown configuration file type: '{filename}'")
 
+        ret._autodetect_method = autodetect_method
         if autodetect_opts:
-            ret.autodetect_opts = autodetect_opts
+            ret._autodetect_opts = autodetect_opts
 
         return ret
 
@@ -273,7 +273,7 @@ class _SiteConfig:
 
     def _detect_system(self):
         getlogger().debug('Detecting system')
-        hostname = get_hostname_cmd(self.autodetect_opts, getlogger())
+        hostname = get_hostname_cmd(self._autodetect_opts, getlogger())
         getlogger().debug(
             f'Looking for a matching configuration entry '
             f'for system {hostname!r}'
@@ -625,7 +625,8 @@ def _find_config_file():
     return None
 
 
-def load_config(filename=None, autodetect_opts=None):
+def load_config(filename=None, autodetect_method='hostname',
+                **autodetect_opts):
     if filename is None:
         filename = _find_config_file()
         if filename is None:
@@ -635,4 +636,4 @@ def load_config(filename=None, autodetect_opts=None):
             return _SiteConfig(settings.site_configuration, '<builtin>')
 
     getlogger().debug(f'Loading configuration file: {filename!r}')
-    return _SiteConfig.create(filename, autodetect_opts)
+    return _SiteConfig.create(filename, autodetect_method, **autodetect_opts)
