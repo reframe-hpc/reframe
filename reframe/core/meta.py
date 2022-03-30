@@ -429,6 +429,13 @@ class RegressionTestMeta(type):
             if k in cls.var_space:
                 setattr(obj, k, v)
 
+        # Inject fixture proxies to give access to fixture parameters during
+        # the init phase
+        varinfo = cls.get_variant_info(variant_num, recurse=True)
+        for fname, finfo in varinfo['fixtures'].items():
+            if not isinstance(finfo, tuple):
+                setattr(obj, fname, fixtures.FixtureProxy(finfo))
+
         obj.__init__(*args, **kwargs)
 
         # Register the fixtures
