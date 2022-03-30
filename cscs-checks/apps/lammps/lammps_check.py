@@ -91,7 +91,7 @@ class LAMMPSCPUCheck(LAMMPSCheck):
             'pilatus:mc': {'perf': (5000, -0.10, None, 'timesteps/s')}
         },
         'large': {
-            'daint:mc': {'perf': (5360, -0.30, None, 'timesteps/s')},
+            'daint:mc': {'perf': (3477, -0.30, None, 'timesteps/s')},
             'eiger:mc': {'perf': (6500, -0.10, None, 'timesteps/s')},
             'pilatus:mc': {'perf': (7500, -0.10, None, 'timesteps/s')}
         }
