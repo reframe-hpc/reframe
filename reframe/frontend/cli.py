@@ -922,17 +922,31 @@ def main():
         if options.names:
             def _filter_multiple_names(names):
                 def _fn(case):
-                    return any(filters.have_name(n)(case) for n in names)
+                    if names:
+                        return any(filters.have_exact_name(n)(case) for n in names)
+
+                    return False
 
                 return _fn
 
+            compact_test_names = rt.get_option('general/0/compact_test_names')
+
             # Differentiate between exact names and regexes since
             # exact names cannot be combined in a single regex
-            exact_names = [n for n in options.names if '@' in n]
-            regex_names = [n for n in options.names if '@' not in n]
+            exact_names = []
+            regex_names = []
+            for n in options.names:
+                if compact_test_names and '@' in n:
+                    exact_names += [n.replace('@', '_')]
+                else:
+                    regex_names += [n]
 
-            names = exact_names + ['|'.join(regex_names)]
-            testcases = filter(_filter_multiple_names(names), testcases)
+            regex_names = '|'.join(regex_names) if regex_names else None
+            testcases = filter(
+                lambda t: ((filters.have_name(regex_names)(t) if regex_names
+                            else False) or
+                           _filter_multiple_names(exact_names)(t)),
+                testcases)
 
         testcases = list(testcases)
         printer.verbose(

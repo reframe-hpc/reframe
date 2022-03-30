@@ -578,11 +578,58 @@ def test_filtering_multiple_criteria(run_reframe):
     returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks'],
         action='list',
-        more_options=['-t', 'foo', '-n', 'HelloTest', '-n', 'HelloMakeTest']
+        more_options=['-t', 'foo', '-n', 'HelloTest']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert 'Found 1 check(s)' in stdout
+    assert returncode == 0
+
+
+def test_filtering_multiple_exact_compact_names(run_reframe, monkeypatch):
+    monkeypatch.setenv('RFM_COMPACT_TEST_NAMES', 'True')
+    returncode, stdout, stderr = run_reframe(
+        checkpath=[
+            'unittests/resources/checks_unlisted/parameterized_echo.py'
+        ],
+        action='list',
+        more_options=['-n', 'ParameterizedEchoTest@0',
+                      '-n', 'ParameterizedEchoTest@1']
     )
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert 'Found 2 check(s)' in stdout
+    assert returncode == 0
+
+
+def test_filtering_exact_no_compact_names(run_reframe, monkeypatch):
+    monkeypatch.setenv('RFM_COMPACT_TEST_NAMES', 'False')
+    returncode, stdout, stderr = run_reframe(
+        checkpath=[
+            'unittests/resources/checks_unlisted/parameterized_echo.py'
+        ],
+        action='list',
+        more_options=['-n', 'ParameterizedEchoTest@0']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert 'Found 0 check(s)' in stdout
+    assert returncode == 0
+
+
+def test_filtering_regex_exact_compact_names(run_reframe, monkeypatch):
+    monkeypatch.setenv('RFM_COMPACT_TEST_NAMES', 'True')
+    returncode, stdout, stderr = run_reframe(
+        checkpath=[
+            'unittests/resources/checks_unlisted/parameterized_echo.py'
+        ],
+        action='list',
+        more_options=['-n', 'ParameterizedEchoTest.*',
+                      '-n', 'ParameterizedEchoTest@1']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert 'Found 3 check(s)' in stdout
     assert returncode == 0
 
 

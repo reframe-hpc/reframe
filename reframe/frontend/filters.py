@@ -26,11 +26,14 @@ def have_name(patt):
         if not rt.get_option('general/0/compact_test_names'):
             return regex.match(case.check.unique_name)
         else:
-            if '@' in patt:
-                # Do an exact match on the unique name
-                return patt.replace('@', '_') == case.check.unique_name
-            else:
-                return regex.match(display_name)
+            return regex.match(display_name)
+
+    return _fn
+
+
+def have_exact_name(name):
+    def _fn(case):
+        return name == case.check.unique_name
 
     return _fn
 
