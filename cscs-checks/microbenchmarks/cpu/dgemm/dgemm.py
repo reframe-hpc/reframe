@@ -8,13 +8,19 @@ import reframe.utility.sanity as sn
 
 
 @rfm.simple_test
-class dgemm_Test(rfm.RegressionTest):
+class DGEMMTest(rfm.RegressionTest):
+    descr = 'DGEMM performance test'
+    sourcepath = 'dgemm.c'
+
+    # the perf patterns are automaticaly generated inside sanity
+    perf_patterns = {}
     valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                      'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn',
                      'eiger:mc', 'pilatus:mc']
     num_tasks = 0
     use_multithreading = False
     executable_opts = ['6144', '12288', '3072']
+    build_system = 'SingleSource'
     arch_refs = {
         'haswell@12c': (300.0, -0.15, None, 'Gflop/s'),
         'broadwell@36c': (1040.0, -0.15, None, 'Gflop/s'),
