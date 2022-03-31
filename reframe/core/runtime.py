@@ -267,6 +267,103 @@ def is_env_loaded(environ):
                 for k, v in environ.variables.items()))
 
 
+def _is_valid_part(part, valid_systems):
+    for spec in valid_systems:
+        if spec[0] not in ('+', '-', '%'):
+            # This is the classical case
+            sysname, partname = part.fullname.split(':')
+            valid_matches = ['*', '*:*', sysname, f'{sysname}:*',
+                             f'*:{partname}', f'{part.fullname}']
+            if spec in valid_matches:
+                return True
+        else:
+            plus_feats = []
+            minus_feats = []
+            props = {}
+            for subspec in spec.split(' '):
+                if subspec.startswith('+'):
+                    plus_feats.append(subspec[1:])
+                elif subspec.startswith('-'):
+                    minus_feats.append(subspec[1:])
+                elif subspec.startswith('%'):
+                    key, val = subspec[1:].split('=')
+                    props[key] = val
+
+            have_plus_feats = all(
+                ft in part.features or ft in part.resources
+                for ft in plus_feats
+            )
+            have_minus_feats = any(
+                ft in part.features or ft in part.resources
+                for ft in minus_feats
+            )
+            try:
+                have_props = all(part.extras[k] == v
+                                 for k, v in props.items())
+            except KeyError:
+                have_props = False
+
+            if have_plus_feats and not have_minus_feats and have_props:
+                return True
+
+    return False
+
+
+def _is_valid_env(env, valid_prog_environs):
+    if '*' in valid_prog_environs:
+        return True
+
+    for spec in valid_prog_environs:
+        if spec[0] not in ('+', '-', '%'):
+            # This is the classical case
+            if env.name == spec:
+                return True
+        else:
+            plus_feats = []
+            minus_feats = []
+            props = {}
+            for subspec in spec.split(' '):
+                if subspec.startswith('+'):
+                    plus_feats.append(subspec[1:])
+                elif subspec.startswith('-'):
+                    minus_feats.append(subspec[1:])
+                elif subspec.startswith('%'):
+                    key, val = subspec[1:].split('=')
+                    props[key] = val
+
+            have_plus_feats = all(ft in env.features for ft in plus_feats)
+            have_minus_feats = any(ft in env.features
+                                   for ft in minus_feats)
+            try:
+                have_props = all(env.extras[k] == v
+                                 for k, v in props.items())
+            except KeyError:
+                have_props = False
+
+            if have_plus_feats and not have_minus_feats and have_props:
+                return True
+
+    return False
+
+
+def valid_sysenv_combos(valid_systems, valid_prog_environs,
+                        check_systems=True, check_environs=True):
+    ret = {}
+    curr_sys = runtime().system
+    for part in curr_sys.partitions:
+        if check_systems and not _is_valid_part(part, valid_systems):
+            continue
+
+        ret[part] = []
+        for env in part.environs:
+            if check_environs and not _is_valid_env(env, valid_prog_environs):
+                continue
+
+            ret[part].append(env)
+
+    return ret
+
+
 class temp_environment:
     '''Context manager to temporarily change the environment.'''
 

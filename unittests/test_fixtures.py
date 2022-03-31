@@ -275,6 +275,11 @@ def fixture_exec_ctx(make_exec_ctx_g):
 
 
 @pytest.fixture
+def testsys_exec_ctx(make_exec_ctx_g):
+    yield from make_exec_ctx_g(test_util.TEST_CONFIG_FILE, 'testsys')
+
+
+@pytest.fixture
 def ctx_sys(fixture_exec_ctx):
     yield rt.runtime().system
 
@@ -588,7 +593,7 @@ def test_bad_fixture_inst(ctx_part_env):
     reg.instantiate_all()
 
 
-def test_expand_part_env(fixture_exec_ctx, simple_fixture):
+def test_expand_part_env(testsys_exec_ctx, simple_fixture):
     '''Test expansion of partitions and environments.'''
 
     class MyTest(rfm.RegressionTest):
@@ -601,7 +606,7 @@ def test_expand_part_env(fixture_exec_ctx, simple_fixture):
     with pytest.raises(ReframeSyntaxError, match="'valid_systems'"):
         MyTest(variant_num=0)
 
-    MyTest.valid_systems = ['sys1']
+    MyTest.valid_systems = ['testsys']
     with pytest.raises(ReframeSyntaxError, match="'valid_prog_environs'"):
         MyTest(variant_num=0)
 
@@ -617,15 +622,25 @@ def test_expand_part_env(fixture_exec_ctx, simple_fixture):
             )[simple_fixture().cls].values()
         )[0]
 
+    def _assert_fixture_partitions(expected):
+        d = get_fixt_data(MyTest(variant_num=0))
+        assert all(part in d.partitions for part in expected)
+
+    def _assert_fixture_environs(expected):
+        d = get_fixt_data(MyTest(variant_num=0))
+        assert all(env in d.environments for env in expected)
+
     MyTest.valid_prog_environs = ['*']
-    d = get_fixt_data(MyTest(variant_num=0))
-    assert all(env in d.environments for env in ('e0', 'e1', 'e2', 'e3'))
-    assert all(part in d.partitions for part in ('sys1:p0', 'sys1:p1'))
+    _assert_fixture_partitions(['testsys:login', 'testsys:gpu'])
+    _assert_fixture_environs(['builtin', 'PrgEnv-cray', 'PrgEnv-gnu'])
 
     # Repeat now using * for the valid_systems
     MyTest.valid_systems = ['*']
-    d = get_fixt_data(MyTest(variant_num=0))
-    assert all(part in d.partitions for part in ('sys1:p0', 'sys1:p1'))
+    _assert_fixture_partitions(['testsys:login', 'testsys:gpu'])
+
+    # Test the extended syntax of valid_systems and valid_prog_environs
+    # MyTest.valid_systems = ['+cuda']
+    # _assert_fixture_partitions(['testsys:gpu'])
 
 
 def test_fixture_injection(fixture_exec_ctx, simple_fixture, param_fixture):

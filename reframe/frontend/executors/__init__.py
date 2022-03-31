@@ -103,21 +103,29 @@ def generate_testcases(checks,
     '''Generate concrete test cases from checks.'''
 
     def supports_partition(c, p):
-        return skip_system_check or c.supports_system(p)
+        if skip_system_check:
+            return True
+
+        return p.fullname in runtime.expand_valid_systems(c.valid_systems)
 
     def supports_environ(c, e):
-        return skip_environ_check or c.supports_environ(e)
+        if skip_environ_check:
+            return True
+
+        return e.name in runtime.expand_valid_prog_environs(
+            c.valid_prog_environs
+        )
 
     rt = runtime.runtime()
     cases = []
     for c in checks:
-        for p in rt.system.partitions:
-            if not supports_partition(c, p):
-                continue
-
-            for e in p.environs:
-                if supports_environ(c, e):
-                    cases.append(TestCase(c, p, e))
+        valid_combos = runtime.valid_sysenv_combos(c.valid_systems,
+                                                   c.valid_prog_environs,
+                                                   not skip_system_check,
+                                                   not skip_environ_check)
+        for part, environs in valid_combos.items():
+            for env in environs:
+                cases.append(TestCase(c, part, env))
 
     return cases
 

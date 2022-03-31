@@ -470,128 +470,235 @@ def test_valid_prog_environs_syntax(hellotest):
             hellotest.valid_prog_environs = [f'foo{sym}']
 
 
-def test_supports_system(hellotest, testsys_exec_ctx):
-    system = rt.runtime().system
+def test_supports_sysenv(testsys_exec_ctx):
+    def _named_combos(valid_sysenv):
+        ret = {}
+        for part, environs in valid_sysenv.items():
+            ret[part.fullname] = [env.name for env in environs]
 
-    def _assert_supported(systems):
-        for p in system.partitions:
-            if p.fullname in systems:
-                assert hellotest.supports_system(p)
-            else:
-                assert not hellotest.supports_system(p)
+        return ret
 
-    hellotest.valid_systems = ['*']
-    _assert_supported(['testsys:login', 'testsys:gpu'])
+    def _assert_supported(valid_systems, valid_prog_environs,
+                          expected, **kwargs):
+        valid_combos = _named_combos(
+            rt.valid_sysenv_combos(valid_systems,
+                                   valid_prog_environs, **kwargs)
+        )
+        assert expected == valid_combos
 
-    hellotest.valid_systems = ['*:*']
-    _assert_supported(['testsys:login', 'testsys:gpu'])
-
-    hellotest.valid_systems = ['testsys']
-    _assert_supported(['testsys:login', 'testsys:gpu'])
-
-    hellotest.valid_systems = ['testsys:gpu']
-    _assert_supported(['testsys:gpu'])
-
-    hellotest.valid_systems = ['testsys:login']
-    _assert_supported(['testsys:login'])
-
-    hellotest.valid_systems = ['foo']
-    _assert_supported([])
-
-    hellotest.valid_systems = ['*:gpu']
-    _assert_supported(['testsys:gpu'])
-
-    hellotest.valid_systems = ['testsys:*']
-    _assert_supported(['testsys:login', 'testsys:gpu'])
+    _assert_supported(
+        valid_systems=['*'],
+        valid_prog_environs=['*'],
+        expected={
+            'testsys:login': ['PrgEnv-cray', 'PrgEnv-gnu'],
+            'testsys:gpu': ['PrgEnv-gnu', 'builtin']
+        }
+    )
+    _assert_supported(
+        valid_systems=['*:*'],
+        valid_prog_environs=['*'],
+        expected={
+            'testsys:login': ['PrgEnv-cray', 'PrgEnv-gnu'],
+            'testsys:gpu': ['PrgEnv-gnu', 'builtin']
+        }
+    )
+    _assert_supported(
+        valid_systems=['testsys'],
+        valid_prog_environs=['*'],
+        expected={
+            'testsys:login': ['PrgEnv-cray', 'PrgEnv-gnu'],
+            'testsys:gpu': ['PrgEnv-gnu', 'builtin']
+        }
+    )
+    _assert_supported(
+        valid_systems=['testsys:*'],
+        valid_prog_environs=['*'],
+        expected={
+            'testsys:login': ['PrgEnv-cray', 'PrgEnv-gnu'],
+            'testsys:gpu': ['PrgEnv-gnu', 'builtin']
+        }
+    )
+    _assert_supported(
+        valid_systems=['testsys:gpu'],
+        valid_prog_environs=['*'],
+        expected={
+            'testsys:gpu': ['PrgEnv-gnu', 'builtin']
+        }
+    )
+    _assert_supported(
+        valid_systems=['testsys:login'],
+        valid_prog_environs=['*'],
+        expected={
+            'testsys:login': ['PrgEnv-cray', 'PrgEnv-gnu'],
+        }
+    )
+    _assert_supported(
+        valid_systems=['foo'],
+        valid_prog_environs=['*'],
+        expected={}
+    )
+    _assert_supported(
+        valid_systems=['*:gpu'],
+        valid_prog_environs=['*'],
+        expected={
+            'testsys:gpu': ['PrgEnv-gnu', 'builtin']
+        }
+    )
 
     # Check feature support
-    hellotest.valid_systems = ['+cuda']
-    _assert_supported(['testsys:gpu'])
+    _assert_supported(
+        valid_systems=['+cuda'],
+        valid_prog_environs=['*'],
+        expected={
+            'testsys:gpu': ['PrgEnv-gnu', 'builtin']
+        }
+    )
 
     # Check AND in features and extras
-    hellotest.valid_systems = ['+cuda +mpi %gpu_arch=v100']
-    _assert_supported([])
-
-    hellotest.valid_systems = ['+cuda -mpi']
-    _assert_supported([])
+    _assert_supported(
+        valid_systems=['+cuda +mpi %gpu_arch=v100'],
+        valid_prog_environs=['*'],
+        expected={}
+    )
+    _assert_supported(
+        valid_systems=['+cuda -mpi'],
+        valid_prog_environs=['*'],
+        expected={}
+    )
 
     # Check OR in features ad extras
-    hellotest.valid_systems = ['+cuda +mpi', '%gpu_arch=v100']
-    _assert_supported(['testsys:gpu'])
+    _assert_supported(
+        valid_systems=['+cuda +mpi', '%gpu_arch=v100'],
+        valid_prog_environs=['*'],
+        expected={
+            'testsys:gpu': ['PrgEnv-gnu', 'builtin']
+        }
+    )
 
     # Check that resources are taken into account
-    hellotest.valid_systems = ['+gpu +datawarp']
-    _assert_supported(['testsys:gpu'])
+    _assert_supported(
+        valid_systems=['+gpu +datawarp'],
+        valid_prog_environs=['*'],
+        expected={
+            'testsys:gpu': ['PrgEnv-gnu', 'builtin']
+        }
+    )
 
     # Check negation
-    hellotest.valid_systems = ['-mpi -gpu']
-    _assert_supported(['testsys:login'])
+    _assert_supported(
+        valid_systems=['-mpi -gpu'],
+        valid_prog_environs=['*'],
+        expected={
+            'testsys:login': ['PrgEnv-cray', 'PrgEnv-gnu']
+        }
+    )
+    _assert_supported(
+        valid_systems=['-mpi -foo'],
+        valid_prog_environs=['*'],
+        expected={
+            'testsys:login': ['PrgEnv-cray', 'PrgEnv-gnu']
+        }
+    )
+    _assert_supported(
+        valid_systems=['+gpu -datawarp'],
+        valid_prog_environs=['*'],
+        expected={}
+    )
 
-    hellotest.valid_systems = ['-mpi -foo']
-    _assert_supported(['testsys:login'])
+    # Test environment scoping
+    _assert_supported(
+        valid_systems=['*'],
+        valid_prog_environs=['PrgEnv-cray'],
+        expected={
+            'testsys:gpu': [],
+            'testsys:login': ['PrgEnv-cray']
+        }
+    )
+    _assert_supported(
+        valid_systems=['*'],
+        valid_prog_environs=['+cxx14'],
+        expected={
+            'testsys:gpu': [],
+            'testsys:login': ['PrgEnv-cray', 'PrgEnv-gnu']
+        }
+    )
+    _assert_supported(
+        valid_systems=['*'],
+        valid_prog_environs=['+cxx14 -cxx14'],
+        expected={
+            'testsys:gpu': [],
+            'testsys:login': []
+        }
+    )
+    _assert_supported(
+        valid_systems=['*'],
+        valid_prog_environs=['+cxx14', '-cxx14'],
+        expected={
+            'testsys:gpu': ['PrgEnv-gnu', 'builtin'],
+            'testsys:login': ['PrgEnv-cray', 'PrgEnv-gnu']
+        }
+    )
+    _assert_supported(
+        valid_systems=['*'],
+        valid_prog_environs=['%bar=x'],
+        expected={
+            'testsys:gpu': [],
+            'testsys:login': ['PrgEnv-gnu']
+        }
+    )
+    _assert_supported(
+        valid_systems=['*'],
+        valid_prog_environs=['%bar=y'],
+        expected={
+            'testsys:gpu': ['PrgEnv-gnu'],
+            'testsys:login': []
+        }
+    )
+    _assert_supported(
+        valid_systems=['*'],
+        valid_prog_environs=['-cxx14'],
+        expected={
+            'testsys:gpu': ['PrgEnv-gnu', 'builtin'],
+            'testsys:login': []
+        }
+    )
 
-    hellotest.valid_systems = ['+gpu -datawarp']
-    _assert_supported([])
+    # Check valid_systems / valid_prog_environs combinations
+    _assert_supported(
+        valid_systems=['testsys:login'],
+        valid_prog_environs=['-cxx14'],
+        expected={
+            'testsys:login': []
+        }
+    )
+    _assert_supported(
+        valid_systems=['+cross_compile'],
+        valid_prog_environs=['-cxx14'],
+        expected={
+            'testsys:login': []
+        }
+    )
 
-    # Check mutual exclusive features
-    hellotest.valid_systems = ['+gpu -gpu']
-    _assert_supported([])
-
-
-def test_supports_environ(hellotest):
-    environs = [
-        ProgEnvironment('builtin'),
-        ProgEnvironment('cray',
-                        features=['cxx14', 'mpi'],
-                        extras={
-                            'family': 'cce',
-                            'mpi_abi': 'mpich'
-                        }),
-        ProgEnvironment('gnu',
-                        features=['cxx14'],
-                        extras={
-                            'family': 'gcc',
-                            'foo': 1,
-                            'bar': 'x'
-                        })
-    ]
-
-    def _assert_supported(supported_envs):
-        for e in environs:
-            if e.name in supported_envs:
-                assert hellotest.supports_environ(e)
-            else:
-                assert not hellotest.supports_environ(e)
-
-    hellotest.valid_prog_environs = ['*']
-    _assert_supported(['builtin', 'cray', 'gnu'])
-
-    hellotest.valid_prog_environs = ['cray']
-    _assert_supported(['cray'])
-
-    hellotest.valid_prog_environs = ['cray']
-    _assert_supported(['cray'])
-
-    hellotest.valid_prog_environs = ['+cxx14']
-    _assert_supported(['cray', 'gnu'])
-
-    hellotest.valid_prog_environs = ['+cxx14 -cxx14']
-    _assert_supported([])
-
-    hellotest.valid_prog_environs = ['+cxx14', '-cxx14']
-    _assert_supported(['builtin', 'cray', 'gnu'])
-
-    hellotest.valid_prog_environs = ['+cxx14 %mpi_abi=mpich']
-    _assert_supported(['cray'])
-
-    hellotest.valid_prog_environs = ['%foo=1 %mpi_abi=mpich']
-    _assert_supported([])
-
-    hellotest.valid_prog_environs = ['%foo=1 %mpi_abi=mpich']
-    _assert_supported([])
-
-    hellotest.valid_prog_environs = ['-cxx14']
-    _assert_supported(['builtin'])
+    # Test skipping validity checks
+    _assert_supported(
+        valid_systems=['foo'],
+        valid_prog_environs=['*'],
+        expected={
+            'testsys:login': ['PrgEnv-cray', 'PrgEnv-gnu'],
+            'testsys:gpu': ['PrgEnv-gnu', 'builtin']
+        },
+        check_systems=False
+    )
+    _assert_supported(
+        valid_systems=['foo'],
+        valid_prog_environs=['xxx'],
+        expected={
+            'testsys:login': ['PrgEnv-cray', 'PrgEnv-gnu'],
+            'testsys:gpu': ['PrgEnv-gnu', 'builtin']
+        },
+        check_systems=False,
+        check_environs=False
+    )
 
 
 def test_sourcesdir_none(local_exec_ctx):
