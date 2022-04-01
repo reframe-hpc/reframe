@@ -923,7 +923,8 @@ def main():
             def _filter_multiple_names(names):
                 def _fn(case):
                     if names:
-                        return any(filters.have_exact_name(n)(case) for n in names)
+                        return any(
+                            filters.have_exact_name(n)(case) for n in names)
 
                     return False
 
