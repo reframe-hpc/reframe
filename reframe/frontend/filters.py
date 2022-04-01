@@ -42,6 +42,37 @@ def have_not_name(patt):
     return _fn
 
 
+def have_any_name(names):
+    rt = runtime()
+    has_compact_names = rt.get_option('general/0/compact_test_names')
+    exact_matches = []
+    regex_matches = []
+    for n in names:
+        if has_compact_names and '@' in n:
+            exact_matches.append(n.replace('@', '_'))
+        else:
+            regex_matches.append(n)
+
+    if regex_matches:
+        regex = re_compile('|'.join(regex_matches))
+    else:
+        regex = None
+
+    def _fn(case):
+        # Check if we have an exact match
+        for m in exact_matches:
+            if m == case.check.unique_name:
+                return True
+
+        display_name = case.check.display_name.replace(' ', '')
+        if regex:
+            return regex.match(display_name)
+
+        return False
+
+    return _fn
+
+
 def have_tag(patt):
     regex = re_compile(patt)
 
