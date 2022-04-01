@@ -253,13 +253,11 @@ class _SiteConfig:
     def create(cls, filename):
         _, ext = os.path.splitext(filename)
         if ext == '.py':
-            ret = cls._create_from_python(filename)
+            return cls._create_from_python(filename)
         elif ext == '.json':
-            ret = cls._create_from_json(filename)
+            return cls._create_from_json(filename)
         else:
             raise ConfigError(f"unknown configuration file type: '{filename}'")
-
-        return ret
 
     @classmethod
     def _create_from_python(cls, filename):

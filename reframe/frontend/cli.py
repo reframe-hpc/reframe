@@ -664,15 +664,6 @@ def main():
         argparser.print_help()
         sys.exit(1)
 
-    autodetect_opts = {
-        'autodetect_xthostname': (options.autodetect_xthostname
-                                  if options.autodetect_xthostname is not None
-                                  else True),
-        'autodetect_fqdn': (options.autodetect_fqdn
-                            if options.autodetect_fqdn is not None
-                            else True),
-    }
-
     # First configure logging with our generic configuration so as to be able
     # to print pretty messages; logging will be reconfigured by user's
     # configuration later
