@@ -27,6 +27,7 @@ import reframe.frontend.filters as filters
 import reframe.frontend.runreport as runreport
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
+import reframe.utility.typecheck as typ
 
 
 from reframe.frontend.printer import PrettyPrinter
@@ -524,22 +525,26 @@ def main():
 
     # Options not associated with command-line arguments
     argparser.add_argument(
+        dest='autodetect_fqdn',
+        envvar='RFM_AUTODETECT_FQDN',
+        action='store',
+        default=True,
+        type=typ.Bool,
+        help='Use FQDN as host name'
+    )
+    argparser.add_argument(
         dest='autodetect_method',
         envvar='RFM_AUTODETECT_METHOD',
         action='store',
+        default='hostname',
         help='Method to detect the system'
-    )
-    argparser.add_argument(
-        dest='autodetect_fqdn',
-        envvar='RFM_AUTODETECT_FQDN',
-        action='store_false',
-        help='Use FQDN as host name'
     )
     argparser.add_argument(
         dest='autodetect_xthostname',
         envvar='RFM_AUTODETECT_XTHOSTNAME',
-        action='store_true',
+        action='store',
         default=True,
+        type=typ.Bool,
         help="Use Cray's xthostname file to find the host name"
     )
     argparser.add_argument(
@@ -707,21 +712,11 @@ def main():
         )
         sys.exit(0)
 
-    if not options.autodetect_method:
-        options.autodetect_method = 'hostname'
-
-    if options.autodetect_method not in ['hostname']:
-        printer.error('unknown autodetect method '
-                      f"`{options.autodetect_method}': Exiting...")
-        sys.exit(1)
-
     # Now configure ReFrame according to the user configuration file
     try:
         try:
             printer.debug('Loading user configuration')
-            site_config = config.load_config(options.config_file,
-                                             options.autodetect_method,
-                                             autodetect_opts=autodetect_opts)
+            site_config = config.load_config(options.config_file)
         except warnings.ReframeDeprecationWarning as e:
             printer.warning(e)
             converted = config.convert_old_config(options.config_file)
@@ -729,11 +724,14 @@ def main():
                 f"configuration file has been converted "
                 f"to the new syntax here: '{converted}'"
             )
-            site_config = config.load_config(converted,
-                                             options.autodetect_method,
-                                             autodetect_opts=autodetect_opts)
+            site_config = config.load_config(converted)
 
         site_config.validate()
+        site_config.set_autodetect_meth(
+            options.autodetect_method,
+            use_fqdn=options.autodetect_fqdn,
+            use_xthostname=options.autodetect_xthostname
+        )
 
         # We ignore errors about unresolved sections or configuration
         # parameters here, because they might be defined at the individual

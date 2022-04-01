@@ -13,7 +13,6 @@ import inspect
 import itertools
 import os
 import re
-import socket
 import sys
 import types
 import weakref
@@ -23,29 +22,6 @@ import reframe
 from collections import UserDict
 from hashlib import sha256
 from . import typecheck as typ
-
-
-def get_hostname_cmd(autodetect_opts, logger=None):
-    if autodetect_opts['autodetect_xthostname']:
-        if os.path.exists('/etc/xthostname'):
-            # Get the cluster name on Cray systems
-            with open('/etc/xthostname') as fp:
-                return fp.read()
-
-        elif logger:
-            logger.debug("Did not find '/etc/xthostname')")
-
-    if autodetect_opts['autodetect_fqdn']:
-        if logger:
-            logger.debug("Will use 'socket.getfqdn' to get the system name")
-
-        return socket.getfqdn()
-    else:
-        if logger:
-            logger.debug("Will use 'socket.gethostname' "
-                         "to get the system name")
-
-        return socket.gethostname()
 
 
 def seconds_to_hms(seconds):
