@@ -366,7 +366,7 @@ def what(exc_type, exc_value, tb):
     elif is_user_error(exc_type, exc_value, tb):
         frame = user_frame(exc_type, exc_value, tb)
         relpath = os.path.relpath(frame.filename)
-        source = ''.join(frame.code_context)
+        source = ''.join(frame.code_context or '<n/a>')
         reason += f': {relpath}:{frame.lineno}: {exc_value}\n{source}'
     else:
         if str(exc_value):
