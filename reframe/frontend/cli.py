@@ -924,7 +924,7 @@ def main():
                 def _fn(case):
                     if names:
                         return any(
-                            filters.have_exact_name(n)(case) for n in names)
+                            filters.have_name(n)(case) for n in names)
 
                     return False
 
@@ -938,7 +938,7 @@ def main():
             regex_names = []
             for n in options.names:
                 if compact_test_names and '@' in n:
-                    exact_names += [n.replace('@', '_')]
+                    exact_names += [n]
                 else:
                     regex_names += [n]
 
