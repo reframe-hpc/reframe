@@ -107,6 +107,14 @@ def extended_parser():
         '--git-timeout', envvar='RFM_GIT_TIMEOUT', action='store',
         configvar='general/git_timeout', type=float
     )
+
+    # Option that is only associated with an environment variable
+    parser.add_argument(
+        dest='env_option',
+        envvar='RFM_ENV_OPT',
+        action='store',
+        default='bar'
+    )
     foo_options.add_argument(
         '--timestamp', action='store',
         envvar='RFM_TIMESTAMP_DIRS', configvar='general/timestamp_dirs'
@@ -187,3 +195,14 @@ def test_option_envvar_conversion_error(default_exec_ctx, extended_parser):
         options = extended_parser.parse_args(['--nocolor'])
         errors = options.update_config(site_config)
         assert len(errors) == 2
+
+
+def test_envvar_option(default_exec_ctx, extended_parser):
+    with rt.temp_environment(variables={'RFM_ENV_OPT': 'BAR'}):
+        options = extended_parser.parse_args([])
+        assert options.env_option == 'BAR'
+
+
+def test_envvar_option_default_val(default_exec_ctx, extended_parser):
+    options = extended_parser.parse_args([])
+    assert options.env_option == 'bar'
