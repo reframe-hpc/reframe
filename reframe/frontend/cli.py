@@ -27,6 +27,7 @@ import reframe.frontend.filters as filters
 import reframe.frontend.runreport as runreport
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
+import reframe.utility.typecheck as typ
 
 
 from reframe.frontend.printer import PrettyPrinter
@@ -524,6 +525,29 @@ def main():
 
     # Options not associated with command-line arguments
     argparser.add_argument(
+        dest='autodetect_fqdn',
+        envvar='RFM_AUTODETECT_FQDN',
+        action='store',
+        default=True,
+        type=typ.Bool,
+        help='Use FQDN as host name'
+    )
+    argparser.add_argument(
+        dest='autodetect_method',
+        envvar='RFM_AUTODETECT_METHOD',
+        action='store',
+        default='hostname',
+        help='Method to detect the system'
+    )
+    argparser.add_argument(
+        dest='autodetect_xthostname',
+        envvar='RFM_AUTODETECT_XTHOSTNAME',
+        action='store',
+        default=True,
+        type=typ.Bool,
+        help="Use Cray's xthostname file to find the host name"
+    )
+    argparser.add_argument(
         dest='git_timeout',
         envvar='RFM_GIT_TIMEOUT',
         configvar='general/git_timeout',
@@ -694,6 +718,11 @@ def main():
             site_config = config.load_config(converted)
 
         site_config.validate()
+        site_config.set_autodetect_meth(
+            options.autodetect_method,
+            use_fqdn=options.autodetect_fqdn,
+            use_xthostname=options.autodetect_xthostname
+        )
 
         # We ignore errors about unresolved sections or configuration
         # parameters here, because they might be defined at the individual
@@ -877,7 +906,7 @@ def main():
         'cmdline': ' '.join(sys.argv),
         'config_file': rt.site_config.filename,
         'data_version': runreport.DATA_VERSION,
-        'hostname': socket.getfqdn(),
+        'hostname': socket.gethostname(),
         'prefix_output': rt.output_prefix,
         'prefix_stage': rt.stage_prefix,
         'user': osext.osuser(),

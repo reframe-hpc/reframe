@@ -387,3 +387,17 @@ def test_system_create():
     assert partition.processor.num_cores_per_socket == 4
     assert partition.processor.num_numa_nodes == 1
     assert partition.processor.num_cores_per_numa_node == 4
+
+
+def test_hostname_autodetection():
+    # This exercises only the various execution paths
+
+    # We set the autodetection method and we call `select_subconfig()` in
+    # order to trigger the auto-detection
+    site_config = config.load_config('unittests/resources/settings.py')
+    for use_xthostname in (True, False):
+        for use_fqdn in (True, False):
+            site_config.set_autodetect_meth('hostname',
+                                            use_fqdn=use_fqdn,
+                                            use_xthostname=use_xthostname)
+            site_config.select_subconfig()
