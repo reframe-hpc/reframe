@@ -9,7 +9,9 @@ import reframe.utility.sanity as sn
 
 
 class fetch_osu_benchmarks(rfm.RunOnlyRegressionTest):
-    #: The version of OSU benchmarks to use.
+    '''Fixture for fetching the OSU benchmarks.'''
+
+    #: The version of the benchmarks to fetch.
     #:
     #: :type: :class:`str`
     #: :default: ``'5.9'``
@@ -25,6 +27,8 @@ class fetch_osu_benchmarks(rfm.RunOnlyRegressionTest):
 
 
 class build_osu_benchmarks(rfm.CompileOnlyRegressionTest):
+    '''Fixture for building the OSU benchmarks'''
+
     #: Build variant parameter.
     #:
     #: :type: :class:`str`
@@ -33,6 +37,11 @@ class build_osu_benchmarks(rfm.CompileOnlyRegressionTest):
 
     build_system = 'Autotools'
     build_prefix = variable(str)
+
+    #: The fixture object that retrieves the benchmarks
+    #:
+    #: :type: :class:`fetch_osu_benchmarks`
+    #: :scope: *session*
     osu_benchmarks = fixture(fetch_osu_benchmarks, scope='session')
 
     @run_before('compile')
@@ -56,7 +65,7 @@ class build_osu_benchmarks(rfm.CompileOnlyRegressionTest):
 
 
 class osu_benchmark(rfm.RunOnlyRegressionTest):
-    '''Base class of OSU benchmarks runtime tests'''
+    '''OSU benchmark test base class.'''
 
     #: Number of warmup iterations.
     #:
@@ -77,10 +86,12 @@ class osu_benchmark(rfm.RunOnlyRegressionTest):
     #: Maximum message size.
     #:
     #: Both the performance and the sanity checks will be done
-    #: for this message size
+    #: for this message size.
+    #:
+    #: This value is set to ``8`` for latency benchmarks and to ``4194304`` for
+    #: bandwidth benchmarks.
     #:
     #: :type: :class:`int`
-    #: :required:
     message_size = variable(int)
 
     #: Device buffers.
@@ -91,9 +102,27 @@ class osu_benchmark(rfm.RunOnlyRegressionTest):
     #: :type: :class:`str`
     #: :default: ``'cpu'``
     device_buffers = variable(str, value='cpu')
+
+    #: Number of tasks to use.
+    #:
+    #: This variable is required.
+    #: It is set to ``2`` for point to point benchmarks, but it is undefined
+    #: for collective benchmarks
+    #:
+    #: :required: Yes
     num_tasks = required
     num_tasks_per_node = 1
 
+    #: Parameter indicating the available benchmark to execute.
+    #:
+    #: :type: 2-element tuple containing the benchmark name and whether latency
+    #:   or bandwidth is to be measured.
+    #:
+    #: :values:
+    #:   ``mpi.collective.osu_alltoall``,
+    #:   ``mpi.collective.osu_allreduce``,
+    #:   ``mpi.pt2pt.osu_bw``,
+    #:   ``mpi.pt2pt.osu_latency``
     benchmark_info = parameter([
         ('mpi.collective.osu_alltoall', 'latency'),
         ('mpi.collective.osu_allreduce', 'latency'),
@@ -142,11 +171,17 @@ class osu_benchmark(rfm.RunOnlyRegressionTest):
 
 @rfm.simple_test
 class osu_run(osu_benchmark):
-    pass
+    '''Run-only OSU benchmark test'''
 
 
 @rfm.simple_test
 class osu_build_run(osu_benchmark):
+    '''OSU benchmark test (build and run)'''
+
+    #: The fixture object that builds the OSU binaries
+    #:
+    #: :type: :class:`build_osu_benchmarks`
+    #: :scope: *environment*
     osu_binaries = fixture(build_osu_benchmarks, scope='environment')
 
     @run_before('run')
