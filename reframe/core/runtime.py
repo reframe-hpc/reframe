@@ -346,8 +346,8 @@ def _is_valid_env(env, valid_prog_environs):
     return False
 
 
-def valid_sysenv_combos(valid_systems, valid_prog_environs,
-                        check_systems=True, check_environs=True):
+def valid_sysenv_comb(valid_systems, valid_prog_environs,
+                      check_systems=True, check_environs=True):
     ret = {}
     curr_sys = runtime().system
     for part in curr_sys.partitions:

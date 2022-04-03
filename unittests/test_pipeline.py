@@ -471,7 +471,7 @@ def test_valid_prog_environs_syntax(hellotest):
 
 
 def test_supports_sysenv(testsys_exec_ctx):
-    def _named_combos(valid_sysenv):
+    def _named_comb(valid_sysenv):
         ret = {}
         for part, environs in valid_sysenv.items():
             ret[part.fullname] = [env.name for env in environs]
@@ -480,11 +480,10 @@ def test_supports_sysenv(testsys_exec_ctx):
 
     def _assert_supported(valid_systems, valid_prog_environs,
                           expected, **kwargs):
-        valid_combos = _named_combos(
-            rt.valid_sysenv_combos(valid_systems,
-                                   valid_prog_environs, **kwargs)
+        valid_comb = _named_comb(
+            rt.valid_sysenv_comb(valid_systems, valid_prog_environs, **kwargs)
         )
-        assert expected == valid_combos
+        assert expected == valid_comb
 
     _assert_supported(
         valid_systems=['*'],
