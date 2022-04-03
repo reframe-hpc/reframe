@@ -397,6 +397,7 @@ class RegressionTestMeta(type):
         # Intercept the requested variant number (if any) and map it to the
         # respective points in the parameter and fixture spaces.
         variant_num = kwargs.pop('variant_num', None)
+        reset_sysenv = kwargs.pop('reset_sysenv', 0)
         param_index, fixt_index = cls._map_variant_num(variant_num)
         fixt_name = kwargs.pop('fixt_name', None)
         fixt_data = kwargs.pop('fixt_data', None)
@@ -437,6 +438,11 @@ class RegressionTestMeta(type):
                 setattr(obj, fname, fixtures.FixtureProxy(finfo))
 
         obj.__init__(*args, **kwargs)
+        if reset_sysenv & 1:
+            obj.valid_systems = ['*']
+
+        if reset_sysenv & 2:
+            obj.valid_prog_environs = ['*']
 
         # Register the fixtures
         # Fixtures must be injected after the object's initialisation because

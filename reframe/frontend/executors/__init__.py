@@ -119,10 +119,14 @@ def generate_testcases(checks,
     rt = runtime.runtime()
     cases = []
     for c in checks:
+        if skip_system_check:
+            c.valid_systems = ['*']
+
+        if skip_environ_check:
+            c.valid_prog_environs = ['*']
+
         valid_comb = runtime.valid_sysenv_comb(c.valid_systems,
-                                               c.valid_prog_environs,
-                                               not skip_system_check,
-                                               not skip_environ_check)
+                                               c.valid_prog_environs)
         for part, environs in valid_comb.items():
             for env in environs:
                 cases.append(TestCase(c, part, env))

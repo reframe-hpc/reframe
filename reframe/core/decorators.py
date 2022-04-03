@@ -64,8 +64,13 @@ class TestRegistry:
         '''Add a test to the skip set.'''
         self._skip_tests.add(test)
 
-    def instantiate_all(self):
-        '''Instantiate all the registered tests.'''
+    def instantiate_all(self, reset_sysenv=0):
+        '''Instantiate all the registered tests.
+
+        :param reset_sysenv: Reset valid_systems and valid_prog_environs after
+            instantiating the tests. Bit 0 resets the valid_systems, bit 1
+            resets the valid_prog_environs.
+        '''
 
         # We first instantiate the leaf tests and then walk up their
         # dependencies to instantiate all the fixtures. Fixtures can only
@@ -79,6 +84,7 @@ class TestRegistry:
 
             for args, kwargs in variants:
                 try:
+                    kwargs['reset_sysenv'] = reset_sysenv
                     leaf_tests.append(test(*args, **kwargs))
                 except SkipTestError as e:
                     getlogger().warning(

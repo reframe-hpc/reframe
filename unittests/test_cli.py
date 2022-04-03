@@ -764,6 +764,7 @@ def test_failure_stats(run_reframe):
         checkpath=['unittests/resources/checks/frontend_checks.py'],
         more_options=['-n', 'SanityFailureCheck', '--failure-stats']
     )
+    print(stdout)
     assert r'FAILURE STATISTICS' in stdout
     assert r'sanity        1     [SanityFailureCheck' in stdout
     assert 'Traceback' not in stdout

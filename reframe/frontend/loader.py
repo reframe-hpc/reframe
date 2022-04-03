@@ -40,7 +40,8 @@ class RegressionCheckValidator(ast.NodeVisitor):
 
 
 class RegressionCheckLoader:
-    def __init__(self, load_path, recurse=False, external_vars=None):
+    def __init__(self, load_path, recurse=False, external_vars=None,
+                 skip_system_check=False, skip_prgenv_check=False):
         # Expand any environment variables and symlinks
         load_path = [os.path.realpath(osext.expandvars(p)) for p in load_path]
         self._load_path = osext.unique_abs_paths(load_path, recurse)
@@ -51,6 +52,8 @@ class RegressionCheckLoader:
 
         # Variables set in the command line
         self._external_vars = external_vars or {}
+        self._skip_system_check = bool(skip_system_check)
+        self._skip_prgenv_check = bool(skip_prgenv_check)
 
     def _module_name(self, filename):
         '''Figure out a module name from filename.
@@ -122,6 +125,12 @@ class RegressionCheckLoader:
         if test_registry is None:
             return
 
+        if self._skip_system_check:
+            self._external_vars['valid_systems'] = '*'
+
+        if self._skip_prgenv_check:
+            self._external_vars['valid_prog_environs'] = '*'
+
         unset_vars = {}
         for test in test_registry:
             for name, val in self._external_vars.items():
@@ -170,7 +179,12 @@ class RegressionCheckLoader:
             return []
 
         self._set_defaults(registry)
-        candidate_tests = registry.instantiate_all() if registry else []
+        reset_sysenv = self._skip_prgenv_check << 1 | self._skip_system_check
+        if registry:
+            candidate_tests = registry.instantiate_all(reset_sysenv)
+        else:
+            candidate_tests = []
+
         legacy_tests = legacy_registry() if legacy_registry else []
         if self._external_vars and legacy_tests:
             getlogger().warning(
@@ -178,6 +192,15 @@ class RegressionCheckLoader:
                 "'@parameterized_test' decorator cannot be set externally; "
                 "please use the 'parameter' builtin in your tests"
             )
+
+        # Reset valid_systems and valid_prog_environs in all legacy tests
+        if reset_sysenv:
+            for t in legacy_tests:
+                if self._skip_system_check:
+                    t.valid_systems = ['*']
+
+                if self._skip_prgenv_check:
+                    t.valid_prog_environs = ['*']
 
         # Merge tests
         candidate_tests += legacy_tests
