@@ -1093,11 +1093,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             raise AttributeError(
                 f'required variable {name!r} has not been set'
             ) from None
-        elif name in self._rfm_fixture_space:
-            raise AttributeError(
-                f'fixture {name!r} has not yet been resolved: '
-                f'fixtures are resolved during the setup stage'
-            )
         else:
             raise AttributeError(
                 f'{type(self).__qualname__!r} object has no attribute {name!r}'

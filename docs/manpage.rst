@@ -784,7 +784,6 @@ Miscellaneous options
    If this option is not specified, ReFrame will try to pick the correct configuration entry automatically.
    It does so by trying to match the hostname of the current machine again the hostname patterns defined in the :js:attr:`hostnames` system configuration parameter.
    The system with the first match becomes the current system.
-   For Cray systems, ReFrame will first look for the *unqualified machine name* in ``/etc/xthostname`` before trying retrieving the hostname of the current machine.
 
    This option can also be set using the :envvar:`RFM_SYSTEM` environment variable.
 
@@ -939,6 +938,64 @@ Boolean environment variables can have any value of ``true``, ``yes``, ``y`` (ca
 
 
 Here is an alphabetical list of the environment variables recognized by ReFrame:
+
+
+.. envvar:: RFM_AUTODETECT_FQDN
+
+   Use the fully qualified domain name as the hostname.
+   This is a boolean variable and defaults to ``1``.
+
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter N/A
+      ================================== ==================
+
+
+   .. versionadded:: 3.11.0
+
+
+.. envvar:: RFM_AUTODETECT_METHOD
+
+   Method to use for detecting the current system and pick the right configuration.
+   The following values can be used:
+
+   - ``hostname``: The ``hostname`` command will be used to detect the current system.
+     This is the default value, if not specified.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter N/A
+      ================================== ==================
+
+
+   .. versionadded:: 3.11.0
+
+
+.. envvar:: RFM_AUTODETECT_XTHOSTNAME
+
+   Use ``/etc/xthostname`` file, if present, to retrieve the current system's name.
+   If the file cannot be found, the hostname will be retrieved using the ``hostname`` command.
+   This is a boolean variable and defaults to ``1``.
+
+   This option meaningful for Cray systems.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter N/A
+      ================================== ==================
+
+
+   .. versionadded:: 3.11.0
 
 
 .. envvar:: RFM_CHECK_SEARCH_PATH

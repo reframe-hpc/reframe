@@ -193,19 +193,27 @@ def test_fixture_access_in_class_body():
 
 
 def test_fixture_early_access():
-    class Foo(rfm.RegressionTest):
-        pass
+    class FooA(rfm.RegressionTest):
+        x = parameter([1])
+
+    class FooB(rfm.RegressionTest):
+        foo = fixture(FooA)
+        y = parameter([2])
 
     class Bar(rfm.RegressionTest):
-        f = fixture(Foo)
+        f = fixture(FooB, variables={'z': 5})
+        w = fixture(FooB, action='join')
+
+        valid_systems = ['*']
+        valid_prog_environs = ['*']
 
         @run_after('init')
-        def trigger_fixture_error(self):
-            print(self.f)
+        def early_access(self):
+            assert self.f.foo.x == 1
+            assert self.f.y == 2
+            assert self.w.y == 2
 
-    msg = "fixture 'f' has not yet been resolved"
-    with pytest.raises(AttributeError, match=msg):
-        Bar()
+    Bar(variant_num=0)
 
 
 def test_fixture_space_access():

@@ -33,16 +33,148 @@ DEPRECATE_RDWR = DEPRECATE_RD | DEPRECATE_WR
 
 
 class TestVar:
-    '''Regression test variable class.
+    '''Insert a new  test variable.
 
-    Stores the attributes of a variable when defined directly in the class
-    body. Instances of this class are injected into the regression test
-    during class instantiation.
+    Declaring a test variable through the :func:`variable` built-in allows for
+    a more robust test implementation than if the variables were just defined
+    as regular test attributes (e.g. ``self.a = 10``). Using variables
+    declared through the :func:`variable` built-in guarantees that these
+    regression test variables will not be redeclared by any child class, while
+    also ensuring that any values that may be assigned to such variables
+    comply with its original declaration. In essence, declaring test variables
+    with the :func:`variable` built-in removes any potential test errors that
+    might be caused by accidentally overriding a class attribute. See the
+    example below.
 
-    To support injecting attributes into the variable, this class implements a
-    separate dict `__attrs__` where these will be stored.
+    .. code:: python
 
-    :meta private:
+       class Foo(rfm.RegressionTest):
+           my_var = variable(int, value=8)
+           not_a_var = my_var - 4
+
+           @run_after('init')
+           def access_vars(self):
+               print(self.my_var) # prints 8.
+               # self.my_var = 'override'  # Error: my_var must be an int!
+               self.not_a_var = 'override' # This will work, but is dangerous!
+               self.my_var = 10 # tests may also assign values the standard way
+
+    Here, the argument ``value`` in the :func:`variable` built-in sets the
+    default value for the variable. This value may be accessed directly from
+    the class body, as long as it was assigned before either in the same class
+    body or in the class body of a parent class. This behavior extends the
+    standard Python data model, where a regular class attribute from a parent
+    class is never available in the class body of a child class. Hence, using
+    the :func:`variable` built-in enables us to directly use or modify any
+    variables that may have been declared upstream the class inheritance
+    chain, without altering their original value at the parent class level.
+
+    .. code:: python
+
+       class Bar(Foo):
+           print(my_var) # prints 8
+           # print(not_a_var) # This is standard Python and raises a NameError
+
+           # Since my_var is available, we can also update its value:
+           my_var = 4
+
+           # Bar inherits the full declaration of my_var with the original
+           # type-checking.
+           # my_var = 'override' # Wrong type error again!
+
+           @run_after('init')
+           def access_vars(self):
+               print(self.my_var) # prints 4
+               print(self.not_a_var) # prints 4
+
+
+       print(Foo.my_var) # prints 8
+       print(Bar.my_var) # prints 4
+
+
+    Here, :class:`Bar` inherits the variables from :class:`Foo` and can see
+    that ``my_var`` has already been declared in the parent class. Therefore,
+    the value of ``my_var`` is updated ensuring that the new value complies to
+    the original variable declaration. However, the value of ``my_var`` at
+    :class:`Foo` remains unchanged.
+
+    These examples above assumed that a default value can be provided to the
+    variables in the bases tests, but that might not always be the case. For
+    example, when writing a test library, one might want to leave some
+    variables undefined and force the user to set these when using the test.
+    As shown in the example below, imposing such requirement is as simple as
+    not passing any ``value`` to the :func:`variable` built-in, which marks
+    the given variable as *required*.
+
+    .. code:: python
+
+       # Test as written in the library
+       class EchoBaseTest(rfm.RunOnlyRegressionTest):
+           what = variable(str)
+
+           valid_systems = ['*']
+           valid_prog_environs = ['*']
+
+         @run_before('run')
+         def set_executable(self):
+             self.executable = f'echo {self.what}'
+
+         @sanity_function
+         def assert_what(self):
+             return sn.assert_found(fr'{self.what}')
+
+
+       # Test as written by the user
+       @rfm.simple_test
+       class HelloTest(EchoBaseTest):
+           what = 'Hello'
+
+
+       # A parameterized test with type-checking
+       @rfm.simple_test
+       class FoodTest(EchoBaseTest):
+           param = parameter(['Bacon', 'Eggs'])
+
+         @run_after('init')
+         def set_vars_with_params(self):
+             self.what = self.param
+
+
+    Similarly to a variable with a value already assigned to it, the value of
+    a required variable may be set either directly in the class body, on the
+    :func:`__init__` method, or in any other hook before it is referenced.
+    Otherwise an error will be raised indicating that a required variable has
+    not been set. Conversely, a variable with a default value already assigned
+    to it can be made required by assigning it the ``required`` keyword.
+    However, this ``required`` keyword is only available in the class body.
+
+    .. code:: python
+
+       class MyRequiredTest(HelloTest):
+         what = required
+
+
+    Running the above test will cause the :func:`set_exec_and_sanity` hook
+    from :class:`EchoBaseTest` to throw an error indicating that the variable
+    ``what`` has not been set.
+
+    :param `types`: the supported types for the variable.
+    :param value: the default value assigned to the variable. If no value is
+        provided, the variable is set as ``required``.
+    :param field: the field validator to be used for this variable. If no
+        field argument is provided, it defaults to
+        :attr:`reframe.core.fields.TypedField`. The provided field validator
+        by this argument must derive from :attr:`reframe.core.fields.Field`.
+    :param loggable: Mark this variable as loggable. If :obj:`True`, this
+        variable will become a log record attribute under the name
+        ``check_NAME``, where ``NAME`` is the name of the variable.
+    :param `kwargs`: keyword arguments to be forwarded to the constructor of
+        the field validator.
+    :returns: A new test variable.
+
+    .. versionadded:: 3.10.2
+       The ``loggable`` argument is added.
+
     '''
 
     __slots__ = ('_default_value', '_field', '_loggable', '_name')
