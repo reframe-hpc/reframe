@@ -16,7 +16,7 @@ def re_compile(patt):
         raise ReframeError(f'invalid regex: {patt!r}')
 
 
-def have_name(patt):
+def _have_name(patt):
     regex = re_compile(patt)
 
     def _fn(case):
@@ -37,7 +37,7 @@ def have_name(patt):
 
 def have_not_name(patt):
     def _fn(case):
-        return not have_name(patt)(case)
+        return not _have_name(patt)(case)
 
     return _fn
 
@@ -66,7 +66,10 @@ def have_any_name(names):
 
         display_name = case.check.display_name.replace(' ', '')
         if regex:
-            return regex.match(display_name)
+            if has_compact_names:
+                return regex.match(display_name)
+            else:
+                return regex.match(case.check.unique_name)
 
         return False
 
