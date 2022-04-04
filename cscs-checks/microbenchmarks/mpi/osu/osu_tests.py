@@ -3,139 +3,142 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import contextlib
 import reframe as rfm
-import reframe.utility.sanity as sn
+
+from hpctestlib.microbenchmarks.mpi.osu import (build_osu_benchmarks,
+                                                osu_build_run)
 
 
-@rfm.simple_test
-class AlltoallTest(rfm.RegressionTest):
-    variant = parameter(['production'])
-    strict_check = False
-    valid_systems = ['daint:gpu', 'dom:gpu']
-    descr = 'Alltoall OSU microbenchmark'
-    build_system = 'Make'
-    executable = './osu_alltoall'
-    # The -m option sets the maximum message size
-    # The -x option sets the number of warm-up iterations
-    # The -i option sets the number of iterations
-    executable_opts = ['-m', '8', '-x', '1000', '-i', '20000']
-    valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
-                           'PrgEnv-intel', 'PrgEnv-nvidia']
-    maintainers = ['RS', 'AJ']
-    reference = {
-        'dom:gpu': {
-            'latency': (8.23, None, 0.1, 'us')
-        },
-        'daint:gpu': {
-            'latency': (20.73, None, 2.0, 'us')
-        }
-    }
-    num_tasks_per_node = 1
-    num_gpus_per_node  = 1
-    extra_resources = {
-        'switches': {
-            'num_switches': 1
-        }
-    }
+class cscs_build_osu_benchmarks(build_osu_benchmarks):
+    build_type = parameter(['cpu', 'cuda'])
 
     @run_after('init')
-    def set_tags(self):
-        self.tags = {self.variant, 'benchmark', 'craype'}
+    def setup_modules(self):
+        if self.build_type != 'cuda':
+            return
 
-    @run_before('compile')
-    def set_makefile(self):
-        self.build_system.makefile = 'Makefile_alltoall'
-
-    @run_before('run')
-    def set_num_tasks(self):
-        if self.current_system.name == 'daint':
-            self.num_tasks = 16
-        else:
-            self.num_tasks = 6
-
-    @sanity_function
-    def assert_found_8MB_latency(self):
-        return sn.assert_found(r'^8', self.stdout)
-
-    @run_before('performance')
-    def set_performance_patterns(self):
-        self.perf_patterns = {
-            'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
-                                        self.stdout, 'latency', float)
-        }
+        if self.current_system.name in ('daint', 'dom'):
+            self.modules = ['cudatoolkit/21.3_11.2']
+        elif self.current_system.name in ('arolla', 'tsa'):
+            self.modules = ['cuda/10.1.243']
+            self.build_system.ldflags = ['-L$EBROOTCUDA/lib64',
+                                         '-lcudart', '-lcuda']
 
 
-@rfm.simple_test
-class FlexAlltoallTest(rfm.RegressionTest):
-    valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                     'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn']
-    valid_prog_environs = ['PrgEnv-cray']
-    descr = 'Flexible Alltoall OSU test'
-    build_system = 'Make'
-    executable = './osu_alltoall'
-    maintainers = ['RS', 'AJ']
-    num_tasks_per_node = 1
-    num_tasks = 0
-    tags = {'diagnostic', 'ops', 'benchmark', 'craype'}
-
-    @run_after('init')
-    def add_prog_environ(self):
-        if self.current_system.name in ['arolla', 'tsa']:
-            self.exclusive_access = True
-            self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-pgi']
-
-    @run_before('compile')
-    def set_makefile(self):
-        self.build_system.makefile = 'Makefile_alltoall'
-
-    @sanity_function
-    def assert_found_1KB_bw(self):
-        return sn.assert_found(r'^1048576', self.stdout)
-
-
-@rfm.simple_test
-class AllreduceTest(rfm.RegressionTest):
-    variant = parameter(['small'], ['large'])
-    strict_check = False
-    valid_systems = ['daint:gpu', 'daint:mc']
-    descr = 'Allreduce OSU microbenchmark'
-    build_system = 'Make'
-    executable = './osu_allreduce'
-    # The -x option controls the number of warm-up iterations
-    # The -i option controls the number of iterations
-    executable_opts = ['-m', '8', '-x', '1000', '-i', '20000']
-    valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-nvidia']
-    maintainers = ['RS', 'AJ']
+class cscs_osu_benchmarks(osu_build_run):
+    exclusive_access = True
     tags = {'production', 'benchmark', 'craype'}
-    num_tasks_per_node = 1
-    num_gpus_per_node  = 1
+    maintainers = ['@rsarm', '@vkarak']
+
+
+@rfm.simple_test
+class cscs_osu_pt2pt_check(cscs_osu_benchmarks):
+    valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+                     'eiger:mc', 'pilatus:mc', 'arolla:cn', 'tsa:cn']
+    valid_prog_environs = ['PrgEnv-gnu']
+    benchmark_info = parameter([
+        ('mpi.pt2pt.osu_bw', 'bandwidth'),
+        ('mpi.pt2pt.osu_latency', 'latency')
+    ], fmt=lambda x: x[0], loggable=True)
+    osu_binaries = fixture(cscs_build_osu_benchmarks, scope='environment')
+    allref = {
+        'mpi.pt2pt.osu_bw': {
+            'cpu': {
+                'daint:gpu': {
+                    'bandwidth': (9481.0, -0.10, None, 'MB/s')
+                },
+                'daint:mc': {
+                    'bandwidth': (8507, -0.15, None, 'MB/s')
+                },
+                'dom:gpu': {
+                    'bandwidth': (9476.3, -0.05, None, 'MB/s')
+                },
+                'dom:mc': {
+                    'bandwidth': (9528.0, -0.20, None, 'MB/s')
+                },
+                'eiger:mc': {
+                    'bandwidth': (12240.0, -0.10, None, 'MB/s')
+                },
+                'pilatus:mc': {
+                    'bandwidth': (12240.0, -0.10, None, 'MB/s')
+                }
+            },
+            'cuda': {
+                'daint:gpu': {
+                    'bandwidth': (8560, -0.10, None, 'MB/s')
+                },
+                'dom:gpu': {
+                    'bandwidth': (8813.09, -0.05, None, 'MB/s')
+                }
+            }
+        },
+        'mpi.pt2pt.osu_latency': {
+            'cpu': {
+                'daint:gpu': {
+                    'latency': (1.40, None, 0.80, 'us')
+                },
+                'daint:mc': {
+                    'latency': (1.61, None, 0.70, 'us')
+                },
+                'dom:gpu': {
+                    'latency': (1.138, None, 0.10, 'us')
+                },
+                'dom:mc': {
+                    'latency': (1.47, None, 0.10, 'us')
+                },
+                'eiger:mc': {
+                    'latency': (2.33, None, 0.15, 'us')
+                },
+                'pilatus:mc': {
+                    'latency': (2.33, None, 0.15, 'us')
+                }
+            },
+            'cuda': {
+                'daint:gpu': {
+                    'latency': (6.82, None, 0.50, 'us')
+                },
+                'dom:gpu': {
+                    'latency': (5.56, None, 0.1, 'us')
+                },
+            }
+        }
+    }
+
+    @run_after('init')
+    def setup_per_build_type(self):
+        build_type = self.osu_binaries.build_type
+        if build_type == 'cuda':
+            self.device_buffers = 'cuda'
+            self.num_gpus_per_node = 1
+            self.valid_systems = ['daint:gpu',
+                                  'dom:gpu', 'arolla:cn', 'tsa:cn']
+            if self.current_system.name in ('daint', 'dom'):
+                self.valid_prog_environs = ['PrgEnv-nvidia']
+                self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
+
+        with contextlib.suppress(KeyError):
+            self.reference = self.allref[self.benchmark_info[0]][build_type]
+
+
+@rfm.simple_test
+class cscs_osu_collective_check(cscs_osu_benchmarks):
+    benchmark_info = parameter([
+        ('mpi.collective.osu_alltoall', 'latency'),
+        ('mpi.collective.osu_allreduce', 'latency'),
+    ], fmt=lambda x: x[0], loggable=True)
+    num_nodes = parameter([6, 16])
     extra_resources = {
         'switches': {
             'num_switches': 1
         }
     }
-
-    @run_after('init')
-    def add_valid_systems(self):
-        if self.variant == 'small':
-            self.valid_systems += ['dom:gpu', 'dom:mc']
-
-    @run_before('compile')
-    def set_makefile(self):
-        self.build_system.makefile = 'Makefile_allreduce'
-
-    @run_before('run')
-    def set_num_tasks(self):
-        self.num_tasks = 6 if self.variant == 'small' else 16
-
-    @sanity_function
-    def assert_found_8MB_latency(self):
-        return sn.assert_found(r'^8', self.stdout)
-
-    @run_before('performance')
-    def set_performance_patterns(self):
-        if self.variant == 'small':
-            self.reference = {
+    valid_systems = ['daint:gpu', 'daint:mc']
+    valid_prog_environs = ['PrgEnv-gnu']
+    osu_binaries = fixture(cscs_build_osu_benchmarks, scope='environment')
+    allref = {
+        'mpi.collective.osu_allreduce': {
+            6: {
                 'dom:gpu': {
                     'latency': (5.67, None, 0.05, 'us')
                 },
@@ -145,9 +148,8 @@ class AllreduceTest(rfm.RegressionTest):
                 'daint:mc': {
                     'latency': (10.90, None, 1.90, 'us')
                 }
-            }
-        else:
-            self.reference = {
+            },
+            16: {
                 'daint:gpu': {
                     'latency': (13.62, None, 1.16, 'us')
                 },
@@ -155,209 +157,43 @@ class AllreduceTest(rfm.RegressionTest):
                     'latency': (19.07, None, 1.64, 'us')
                 }
             }
-        self.perf_patterns = {
-            'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
-                                        self.stdout, 'latency', float)
-        }
-
-
-class P2PBaseTest(rfm.RegressionTest):
-    exclusive_access = True
-    strict_check = False
-    num_tasks = 2
-    num_tasks_per_node = 1
-    descr = 'P2P microbenchmark'
-    build_system = 'Make'
-    maintainers = ['RS', 'AJ']
-    tags = {'production', 'benchmark', 'craype'}
-    extra_resources = {
-        'switches': {
-            'num_switches': 1
+        },
+        'mpi.collective.osu_alltoall': {
+            6: {
+                'dom:gpu': {
+                    'latency': (8.23, None, 0.1, 'us')
+                },
+                'daint:gpu': {
+                    'latency': (20.73, None, 2.0, 'us')
+                },
+                'dom:mc': {
+                    'latency': (0, None, None, 'us')
+                },
+                'daint:mc': {
+                    'latency': (0, None, None, 'us')
+                }
+            },
+            16: {
+                'daint:gpu': {
+                    'latency': (0, None, None, 'us')
+                },
+                'daint:mc': {
+                    'latency': (0, None, None, 'us')
+                }
+            }
         }
     }
 
     @run_after('init')
-    def add_valid_prog_environs(self):
-        if self.current_system.name in ['arolla', 'tsa']:
-            self.exclusive_access = True
-            self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-pgi']
-        else:
-            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
-                                        'PrgEnv-intel', 'PrgEnv-nvidia']
+    def setup_by_scale(self):
+        if self.osu_binaries.build_type == 'cuda':
+            # Filter out CUDA-aware versions
+            self.valid_systems = []
+            return
 
-    @run_before('compile')
-    def set_makefile(self):
-        self.build_system.makefile = 'Makefile_p2p'
+        self.num_tasks = self.num_nodes
+        if self.num_nodes == 6:
+            self.valid_systems += ['dom:gpu', 'dom:mc']
 
-    @sanity_function
-    def assert_found_4KB_bw(self):
-        return sn.assert_found(r'^4194304', self.stdout)
-
-
-@rfm.simple_test
-class P2PCPUBandwidthTest(P2PBaseTest):
-    valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                     'arolla:cn', 'tsa:cn', 'eiger:mc', 'pilatus:mc']
-    executable = './p2p_osu_bw'
-    executable_opts = ['-x', '100', '-i', '1000']
-    reference = {
-        'daint:gpu': {
-            'bw': (9481.0, -0.10, None, 'MB/s')
-        },
-        'daint:mc': {
-            'bw': (8507, -0.15, None, 'MB/s')
-        },
-        'dom:gpu': {
-            'bw': (9476.3, -0.05, None, 'MB/s')
-        },
-        'dom:mc': {
-            'bw': (9528.0, -0.20, None, 'MB/s')
-        },
-        'eiger:mc': {
-            'bw': (12240.0, -0.10, None, 'MB/s')
-        },
-        'pilatus:mc': {
-            'bw': (12240.0, -0.10, None, 'MB/s')
-        },
-        # keeping as reference:
-        # 'monch:compute': {
-        #     'bw': (6317.84, -0.15, None, 'MB/s')
-        # },
-    }
-
-    @run_before('performance')
-    def set_performance_patterns(self):
-        self.perf_patterns = {
-            'bw': sn.extractsingle(r'^4194304\s+(?P<bw>\S+)',
-                                   self.stdout, 'bw', float)
-        }
-
-
-@rfm.simple_test
-class P2PCPULatencyTest(P2PBaseTest):
-    valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                     'arolla:cn', 'tsa:cn', 'eiger:mc', 'pilatus:mc']
-    executable = './p2p_osu_latency'
-    reference = {
-        'daint:gpu': {
-            'latency': (1.40, None, 0.80, 'us')
-        },
-        'daint:mc': {
-            'latency': (1.61, None, 0.70, 'us')
-        },
-        'dom:gpu': {
-            'latency': (1.138, None, 0.10, 'us')
-        },
-        'dom:mc': {
-            'latency': (1.47, None, 0.10, 'us')
-        },
-        'eiger:mc': {
-            'latency': (2.33, None, 0.15, 'us')
-        },
-        'pilatus:mc': {
-            'latency': (2.33, None, 0.15, 'us')
-        },
-        # keeping as reference:
-        # 'monch:compute': {
-        #     'latency': (1.27, None, 0.1, 'us')
-        # },
-    }
-
-    @run_before('performance')
-    def set_performance_patterns(self):
-        self.perf_patterns = {
-            'bw': sn.extractsingle(r'^4194304\s+(?P<bw>\S+)',
-                                   self.stdout, 'bw', float)
-        }
-        self.perf_patterns = {
-            'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
-                                        self.stdout, 'latency', float)
-        }
-
-
-@rfm.simple_test
-class G2GBandwidthTest(P2PBaseTest):
-    valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn']
-    num_gpus_per_node = 1
-    executable = './p2p_osu_bw'
-    executable_opts = ['-x', '100', '-i', '1000', '-d',
-                       'cuda', 'D', 'D']
-    reference = {
-        'dom:gpu': {
-            'bw': (8813.09, -0.05, None, 'MB/s')
-        },
-        'daint:gpu': {
-            'bw': (8560, -0.10, None, 'MB/s')
-        },
-        '*': {
-            'bw': (0, None, None, 'MB/s')
-        }
-    }
-
-    @run_before('performance')
-    def set_performance_patterns(self):
-        self.perf_patterns = {
-            'bw': sn.extractsingle(r'^4194304\s+(?P<bw>\S+)',
-                                   self.stdout, 'bw', float)
-        }
-
-    @run_before('compile')
-    def set_cpp_flags(self):
-        self.build_system.cppflags = ['-D_ENABLE_CUDA_']
-
-    @run_before('compile')
-    def set_modules(self):
-        if self.current_system.name in ['daint', 'dom']:
-            self.num_gpus_per_node  = 1
-            self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
-            if self.current_environ.name == 'PrgEnv-nvidia':
-                self.modules = ['cudatoolkit/21.3_11.2']
-            else:
-                self.modules = ['craype-accel-nvidia60']
-        elif self.current_system.name in ['arolla', 'tsa']:
-            self.modules = ['cuda/10.1.243']
-            self.build_system.ldflags = ['-L$EBROOTCUDA/lib64',
-                                         '-lcudart', '-lcuda']
-
-
-@rfm.simple_test
-class G2GLatencyTest(P2PBaseTest):
-    valid_systems = ['daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn']
-    num_gpus_per_node = 1
-    executable = './p2p_osu_latency'
-    executable_opts = ['-x', '100', '-i', '1000', '-d',
-                       'cuda', 'D', 'D']
-
-    reference = {
-        'dom:gpu': {
-            'latency': (5.56, None, 0.1, 'us')
-        },
-        'daint:gpu': {
-            'latency': (6.82, None, 0.50, 'us')
-        },
-    }
-
-    @run_before('performance')
-    def set_performance_patterns(self):
-        self.perf_patterns = {
-            'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
-                                        self.stdout, 'latency', float)
-        }
-
-    @run_before('compile')
-    def set_cpp_flags(self):
-        self.build_system.cppflags = ['-D_ENABLE_CUDA_']
-
-    @run_before('compile')
-    def set_modules(self):
-        if self.current_system.name in ['daint', 'dom']:
-            self.num_gpus_per_node  = 1
-            self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
-            if self.current_environ.name == 'PrgEnv-nvidia':
-                self.modules = ['cudatoolkit/21.3_11.2']
-            else:
-                self.modules = ['craype-accel-nvidia60']
-        elif self.current_system.name in ['arolla', 'tsa']:
-            self.modules = ['cuda/10.1.243']
-            self.build_system.ldflags = ['-L$EBROOTCUDA/lib64',
-                                         '-lcudart', '-lcuda']
+        with contextlib.suppress(KeyError):
+            self.reference = self.allref[self.num_nodes]
