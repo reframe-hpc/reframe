@@ -119,7 +119,7 @@ class FixtureRegistry:
         # Store the system name for name-mangling purposes
         self._sys_name = runtime.runtime().system.name
 
-    def add(self, fixture, variant_num, parent_name, partitions, prog_envs):
+    def add(self, fixture, variant_num, parent_test):
         '''Register a fixture.
 
         This method mangles the fixture name, ensuring that different fixture
@@ -161,11 +161,7 @@ class FixtureRegistry:
 
         :param fixture: An instance of :class:`TestFixture`.
         :param variant_num: The variant index for the given ``fixture``.
-        :param parent_name: The full name of the parent test. This argument
-            is used to mangle the fixture name for those with a ``'test'``
-            scope, such that the fixture is private to its parent test.
-        :param partitions: The system partitions supported by the parent test.
-        :param prog_envs: The valid programming environments from the parent.
+        :param parent_test: The parent test.
         '''
 
         cls = fixture.cls
@@ -187,51 +183,65 @@ class FixtureRegistry:
             fname += vname
 
         # Select only the valid partitions
-        valid_partitions = self._filter_valid_partitions(partitions)
+        try:
+            valid_sysenv = runtime.valid_sysenv_comb(
+                parent_test.valid_systems,
+                parent_test.valid_prog_environs
+            )
+        except AttributeError as e:
+            msg = e.args[0] + f' in test {parent_test.display_name!r}'
+            raise ReframeSyntaxError(msg) from None
 
-        # Return if not any valid partition
-        if not valid_partitions:
+        # Return if there are no valid system/environment combinations
+        if not valid_sysenv:
             return []
 
         # Register the fixture
         if scope == 'session':
             # The name is mangled with the system name
-            # Select a valid environment supported by a partition
-            for part in valid_partitions:
-                valid_envs = self._filter_valid_environs(part, prog_envs)
-                if valid_envs:
+            # Pick the first valid system/environment combination
+            pname, ename = None, None
+            for part, environs in valid_sysenv.items():
+                pname = part.fullname
+                for env in environs:
+                    ename = env.name
                     break
-            else:
+
+            if ename is None:
+                # No valid environments found
                 return []
 
             # Register the fixture
-            fixt_data = FixtureData(variant_num, [valid_envs[0]], [part],
+            fixt_data = FixtureData(variant_num, [ename], [pname],
                                     variables, scope, self._sys_name)
             name = f'{cls.__name__}_{fixt_data.mashup()}'
             self._registry[cls][name] = fixt_data
             reg_names.append(name)
         elif scope == 'partition':
-            for part in valid_partitions:
+            for part, environs in valid_sysenv.items():
                 # The mangled name contains the full partition name
-
                 # Select an environment supported by the partition
-                valid_envs = self._filter_valid_environs(part, prog_envs)
-                if not valid_envs:
+                pname = part.fullname
+                try:
+                    ename = environs[0].name
+                except IndexError:
                     continue
 
                 # Register the fixture
-                fixt_data = FixtureData(variant_num, [valid_envs[0]], [part],
-                                        variables, scope, part)
+                fixt_data = FixtureData(variant_num, [ename], [pname],
+                                        variables, scope, pname)
                 name = f'{cls.__name__}_{fixt_data.mashup()}'
                 self._registry[cls][name] = fixt_data
                 reg_names.append(name)
         elif scope == 'environment':
-            for part in valid_partitions:
-                for env in self._filter_valid_environs(part, prog_envs):
+            for part, environs in valid_sysenv.items():
+                for env in environs:
                     # The mangled name contains the full part and env names
                     # Register the fixture
-                    fixt_data = FixtureData(variant_num, [env], [part],
-                                            variables, scope, f'{part}+{env}')
+                    pname, ename = part.fullname, env.name
+                    fixt_data = FixtureData(variant_num, [ename], [pname],
+                                            variables, scope,
+                                            f'{pname}+{ename}')
                     name = f'{cls.__name__}_{fixt_data.mashup()}'
                     self._registry[cls][name] = fixt_data
                     reg_names.append(name)
@@ -239,9 +249,10 @@ class FixtureRegistry:
             # The mangled name contains the parent test name.
 
             # Register the fixture
-            fixt_data = FixtureData(variant_num, list(prog_envs),
-                                    list(valid_partitions),
-                                    variables, scope, parent_name)
+            fixt_data = FixtureData(variant_num,
+                                    list(parent_test.valid_prog_environs),
+                                    list(parent_test.valid_systems),
+                                    variables, scope, parent_test.unique_name)
             name = f'{cls.__name__}_{fixt_data.mashup()}'
             self._registry[cls][name] = fixt_data
             reg_names.append(name)
@@ -986,18 +997,13 @@ class FixtureSpace(namespaces.Namespace):
         # Create the fixture registry
         obj._rfm_fixture_registry = FixtureRegistry()
 
-        # Prepare the partitions and prog_envs
-        part, prog_envs = self._expand_partitions_envs(obj)
-
         # Register the fixtures
         for name, fixture in self.fixtures.items():
             dep_names = []
             for variant in fixture_variants[name]:
                 # Register all the variants and track the fixture names
                 dep_names += obj._rfm_fixture_registry.add(fixture,
-                                                           variant,
-                                                           obj.unique_name,
-                                                           part, prog_envs)
+                                                           variant, obj)
 
             # Add dependencies
             if fixture.scope == 'session':
@@ -1010,38 +1016,6 @@ class FixtureSpace(namespaces.Namespace):
             # Inject the dependency
             for dep_name in dep_names:
                 obj.depends_on(dep_name, dep_kind)
-
-    def _expand_partitions_envs(self, obj):
-        '''Process the partitions and programming environs of the parent.'''
-
-        try:
-            part = tuple(obj.valid_systems)
-        except AttributeError:
-            raise ReframeSyntaxError(
-                f"'valid_systems' is undefined in test {obj.unique_name!r}"
-            )
-        else:
-            rt = runtime.runtime()
-            if '*' in part or rt.system.name in part:
-                part = tuple(p.fullname for p in rt.system.partitions)
-
-        try:
-            prog_envs = tuple(obj.valid_prog_environs)
-        except AttributeError:
-            raise ReframeSyntaxError(
-                f"'valid_prog_environs' is undefined "
-                f"in test {obj.unique_name!r}"
-            )
-        else:
-            if '*' in prog_envs:
-                all_pes = set()
-                for p in runtime.runtime().system.partitions:
-                    for e in p.environs:
-                        all_pes.add(e.name)
-
-                prog_envs = tuple(all_pes)
-
-        return part, prog_envs
 
     def __iter__(self):
         '''Walk through all index combinations for all fixtures.'''
