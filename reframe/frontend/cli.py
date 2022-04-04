@@ -1178,7 +1178,6 @@ def main():
             printer.error("unknown execution policy `%s': Exiting...")
             sys.exit(1)
 
-        exec_policy.skip_system_check = options.skip_system_check
         exec_policy.force_local = options.force_local
         exec_policy.strict_check = options.strict
         exec_policy.skip_sanity_check = options.skip_sanity_check
