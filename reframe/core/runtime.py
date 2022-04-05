@@ -270,7 +270,7 @@ def is_env_loaded(environ):
 def _is_valid_part(part, valid_systems):
     for spec in valid_systems:
         if spec[0] not in ('+', '-', '%'):
-            # This is the classical case
+            # This is the standard case
             sysname, partname = part.fullname.split(':')
             valid_matches = ['*', '*:*', sysname, f'{sysname}:*',
                              f'*:{partname}', f'{part.fullname}']
@@ -298,8 +298,13 @@ def _is_valid_part(part, valid_systems):
                 for ft in minus_feats
             )
             try:
-                have_props = all(part.extras[k] == type(part.extras[k])(v)
-                                 for k, v in props.items())
+                have_props = True
+                for k, v in props.items():
+                    extra_value = part.extras[k]
+                    extra_type  = type(extra_value)
+                    if extra_value != extra_type(v):
+                        have_props = False
+                        break
             except (KeyError, ValueError):
                 have_props = False
 
@@ -315,7 +320,7 @@ def _is_valid_env(env, valid_prog_environs):
 
     for spec in valid_prog_environs:
         if spec[0] not in ('+', '-', '%'):
-            # This is the classical case
+            # This is the standard case
             if env.name == spec:
                 return True
         else:
@@ -335,8 +340,13 @@ def _is_valid_env(env, valid_prog_environs):
             have_minus_feats = any(ft in env.features
                                    for ft in minus_feats)
             try:
-                have_props = all(env.extras[k] == type(env.extras[k])(v)
-                                 for k, v in props.items())
+                have_props = True
+                for k, v in props.items():
+                    extra_value = env.extras[k]
+                    extra_type  = type(extra_value)
+                    if extra_value != extra_type(v):
+                        have_props = False
+                        break
             except (KeyError, ValueError):
                 have_props = False
 

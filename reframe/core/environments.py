@@ -129,7 +129,7 @@ class Environment(jsonext.JSONSerializable):
                 f'name={self._name!r}, '
                 f'modules={self._modules!r}, '
                 f'variables={list(self._variables.items())!r}, '
-                f'extras={self._extras!r}, features={self._features})')
+                f'extras={self._extras!r}, features={self._features!r})')
 
 
 class _EnvironmentSnapshot(Environment):

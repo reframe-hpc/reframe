@@ -431,7 +431,7 @@ System Partition Configuration
 .. js:attribute:: .systems[].partitions[].features
 
    :required: No
-   :default: ``{}``
+   :default: ``[]``
 
    User defined features of the partition. These are accessible through the :attr:`~reframe.core.systems.SystemPartition.features` attribute of the :attr:`~reframe.core.pipeline.RegressionTest.current_partition` and can also be selected through the extended syntax of :attr:`~reframe.core.pipeline.RegressionTest.valid_systems`.
 
@@ -610,7 +610,7 @@ They are associated with `system partitions <#system-partition-configuration>`__
 .. js:attribute:: .environments[].features
 
    :required: No
-   :default: ``{}``
+   :default: ``[]``
 
    User defined features of the environment. These are accessible through the :attr:`~reframe.core.environments.Environment.features` attribute of the :attr:`~reframe.core.pipeline.RegressionTest.current_environ` and can also be selected through the extended syntax of :attr:`~reframe.core.pipeline.RegressionTest.valid_prog_environs`.
 
