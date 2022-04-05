@@ -125,12 +125,6 @@ class RegressionCheckLoader:
         if test_registry is None:
             return
 
-        if self._skip_system_check:
-            self._external_vars['valid_systems'] = '*'
-
-        if self._skip_prgenv_check:
-            self._external_vars['valid_prog_environs'] = '*'
-
         unset_vars = {}
         for test in test_registry:
             for name, val in self._external_vars.items():
