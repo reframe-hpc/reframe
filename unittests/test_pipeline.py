@@ -16,7 +16,6 @@ import reframe.utility.sanity as sn
 import unittests.utility as test_util
 
 from reframe.core.containers import _STAGEDIR_MOUNT
-from reframe.core.environments import ProgEnvironment
 from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
                                      PerformanceError, SanityError,
                                      SkipTestError, ReframeSyntaxError)
