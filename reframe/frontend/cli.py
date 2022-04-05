@@ -949,9 +949,7 @@ def main():
                 testcases = filter(filters.have_not_name(name), testcases)
 
         if options.names:
-            testcases = filter(
-                filters.have_name('|'.join(options.names)), testcases
-            )
+            testcases = filter(filters.have_any_name(options.names), testcases)
 
         testcases = list(testcases)
         printer.verbose(

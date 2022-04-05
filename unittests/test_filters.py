@@ -74,30 +74,45 @@ def sample_param_cases_compat():
             for v in range(_X.num_variants)]
 
 
-def test_have_name(sample_cases):
-    assert 1 == count_checks(filters.have_name('check1'), sample_cases)
-    assert 3 == count_checks(filters.have_name('check'), sample_cases)
-    assert 2 == count_checks(filters.have_name(r'\S*1|\S*3'), sample_cases)
-    assert 0 == count_checks(filters.have_name('Check'), sample_cases)
-    assert 3 == count_checks(filters.have_name('(?i)Check'), sample_cases)
-    assert 2 == count_checks(filters.have_name('(?i)check1|CHECK2'),
+def test_have_any_name(sample_cases):
+    assert 1 == count_checks(filters.have_any_name(['check1']), sample_cases)
+    assert 3 == count_checks(filters.have_any_name(['check']), sample_cases)
+    assert 2 == count_checks(filters.have_any_name([r'\S*1|\S*3']),
+                             sample_cases)
+    assert 0 == count_checks(filters.have_any_name(['Check']), sample_cases)
+    assert 3 == count_checks(filters.have_any_name(['(?i)Check']),
+                             sample_cases)
+    assert 2 == count_checks(filters.have_any_name(['(?i)check1|CHECK2']),
                              sample_cases)
 
 
-def test_have_name_param_test(sample_param_cases):
-    assert 2 == count_checks(filters.have_name('.*%p=1'), sample_param_cases)
-    assert 1 == count_checks(filters.have_name('_X%p=3'), sample_param_cases)
-    assert 1 == count_checks(filters.have_name('_X@2'), sample_param_cases)
+def test_have_any_name_param_test(sample_param_cases):
+    assert 2 == count_checks(filters.have_any_name(['.*%p=1']),
+                             sample_param_cases)
+    assert 1 == count_checks(filters.have_any_name(['_X%p=3']),
+                             sample_param_cases)
+    assert 1 == count_checks(filters.have_any_name(['_X@2']),
+                             sample_param_cases)
+    assert 0 == count_checks(filters.have_any_name(['_X@3']),
+                             sample_param_cases)
+    assert 2 == count_checks(filters.have_any_name(['_X@0', '_X@1']),
+                             sample_param_cases)
+    assert 3 == count_checks(filters.have_any_name(['_X@0', '_X.*']),
+                             sample_param_cases)
 
 
-def test_have_name_param_test_compat(sample_param_cases_compat):
-    assert 0 == count_checks(filters.have_name('.*%p=1'),
+def test_have_any_name_param_test_compat(sample_param_cases_compat):
+    assert 0 == count_checks(filters.have_any_name(['.*%p=1']),
                              sample_param_cases_compat)
-    assert 0 == count_checks(filters.have_name('_X%p=3'),
+    assert 0 == count_checks(filters.have_any_name(['_X%p=3']),
                              sample_param_cases_compat)
-    assert 0 == count_checks(filters.have_name('_X@2'),
+    assert 0 == count_checks(filters.have_any_name(['_X@2']),
                              sample_param_cases_compat)
-    assert 2 == count_checks(filters.have_name('_X_1'),
+    assert 2 == count_checks(filters.have_any_name(['_X_1']),
+                             sample_param_cases_compat)
+    assert 0 == count_checks(filters.have_any_name(['_X@0', '_X@1']),
+                             sample_param_cases_compat)
+    assert 3 == count_checks(filters.have_any_name(['_X@0', '_X.*']),
                              sample_param_cases_compat)
 
 
@@ -142,7 +157,7 @@ def test_invalid_regex(sample_cases):
     # We need to explicitly call `evaluate` to make sure the exception
     # is triggered in all cases
     with pytest.raises(errors.ReframeError):
-        count_checks(filters.have_name('*foo'), sample_cases).evaluate()
+        count_checks(filters.have_any_name(['*foo']), sample_cases).evaluate()
 
     with pytest.raises(errors.ReframeError):
         count_checks(filters.have_not_name('*foo'), sample_cases).evaluate()
