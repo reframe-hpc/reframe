@@ -298,9 +298,9 @@ def _is_valid_part(part, valid_systems):
                 for ft in minus_feats
             )
             try:
-                have_props = all(part.extras[k] == v
+                have_props = all(part.extras[k] == type(part.extras[k])(v)
                                  for k, v in props.items())
-            except KeyError:
+            except (KeyError, ValueError):
                 have_props = False
 
             if have_plus_feats and not have_minus_feats and have_props:
@@ -335,9 +335,9 @@ def _is_valid_env(env, valid_prog_environs):
             have_minus_feats = any(ft in env.features
                                    for ft in minus_feats)
             try:
-                have_props = all(env.extras[k] == v
+                have_props = all(env.extras[k] == type(env.extras[k])(v)
                                  for k, v in props.items())
-            except KeyError:
+            except (KeyError, ValueError):
                 have_props = False
 
             if have_plus_feats and not have_minus_feats and have_props:

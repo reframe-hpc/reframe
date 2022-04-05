@@ -647,9 +647,17 @@ def test_supports_sysenv(testsys_exec_ctx):
     )
     _assert_supported(
         valid_systems=['*'],
-        valid_prog_environs=['%bar=y'],
+        valid_prog_environs=['%foo=2'],
         expected={
             'testsys:gpu': ['PrgEnv-gnu'],
+            'testsys:login': []
+        }
+    )
+    _assert_supported(
+        valid_systems=['*'],
+        valid_prog_environs=['%foo=bar'],
+        expected={
+            'testsys:gpu': [],
             'testsys:login': []
         }
     )
