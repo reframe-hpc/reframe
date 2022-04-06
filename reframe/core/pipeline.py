@@ -622,8 +622,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:   (-100, None, 0.02, 'C')      -100 C        -inf C      -98 C
     #:   ===========================  ============  ==========  ===========
     #:
-    #: More information in the `assert_reference function
-    #: <deferrable_functions_reference.html#reframe.utility.sanity.assert_reference>`__.
+    #: More information in the
+    #: :func:`~reframe.utility.sanity.assert_reference` function.
     #:
     #: :type: A scoped dictionary with system names as scopes or :class:`None`
     #: :default: ``{}``
