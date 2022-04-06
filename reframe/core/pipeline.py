@@ -612,24 +612,18 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: Here are some examples to understand how to set the performance tuple,
     #: in case the expected reference is a negative or a positive number:
     #:
-    #: +-------------------------------+--------------+---------------------+----------------------+  # noqa: E501
-    #: | **Performance Tuple**         | **Expected** | **Lowest accepted** | **Highest accepted** |  # noqa: E501
-    #: +-------------------------------+--------------+---------------------+----------------------+  # noqa: E501
-    #: | (100, -0.01, 0.02, 'unit')    | 100 unit     | 99 unit             | 102 unit             |  # noqa: E501
-    #: +-------------------------------+--------------+---------------------+----------------------+  # noqa: E501
-    #: | (100, -0.01, None, 'unit')    | 100 unit     | 99 unit             | inf unit             |  # noqa: E501
-    #: +-------------------------------+--------------+---------------------+----------------------+  # noqa: E501
-    #: | (100, None, 0.02, 'unit')     | 100 unit     | -inf unit           | 102 unit             |  # noqa: E501
-    #: +-------------------------------+--------------+---------------------+----------------------+  # noqa: E501
-    #: | (-100, -0.01, 0.02, 'unit')   | -100 unit    | -101 unit           | -98 unit             |  # noqa: E501
-    #: +-------------------------------+--------------+---------------------+----------------------+  # noqa: E501
-    #: | (-100, -0.01, None, 'unit')   | -100 unit    | -101 unit           | inf unit             |  # noqa: E501
-    #: +-------------------------------+--------------+---------------------+----------------------+  # noqa: E501
-    #: | (-100, None, 0.02, 'unit')    | -100 unit    | -inf unit           | -98 unit             |  # noqa: E501
-    #: +-------------------------------+--------------+---------------------+----------------------+  # noqa: E501
+    #:   ===========================  ============  ==========  ===========
+    #:   **Performance Tuple**        **Expected**  **Lowest**  **Highest**
+    #:   (100, -0.01, 0.02, 'MB/s')   100 MB/s      99 MB/s     102 MB/s
+    #:   (100, -0.01, None, 'MB/s')   100 MB/s      99 MB/s     inf MB/s
+    #:   (100, None, 0.02, 'MB/s')    100 MB/s      -inf MB/s   102 MB/s
+    #:   (-100, -0.01, 0.02, 'C')     -100 C        -101 C      -98 C
+    #:   (-100, -0.01, None, 'C')     -100 C        -101 C      inf C
+    #:   (-100, None, 0.02, 'C')      -100 C        -inf C      -98 C
+    #:   ===========================  ============  ==========  ===========
     #:
     #: More information in the `assert_reference function
-    #: <deferrable_functions_reference.html#reframe.utility.sanity.assert_reference>`__.  # noqa: E501
+    #: <deferrable_functions_reference.html#reframe.utility.sanity.assert_reference>`__.
     #:
     #: :type: A scoped dictionary with system names as scopes or :class:`None`
     #: :default: ``{}``
