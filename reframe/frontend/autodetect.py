@@ -258,14 +258,15 @@ def getallnodes(state='all', jobs_cli_options=[]):
     for part in rt.system.partitions:
         # This job will not be submitted, it's used only to filter
         # the nodes based on the partition configuration
-        job = Job.create(part.scheduler,
-                         part.launcher_type(),
-                         name='placeholder-job',
-                         sched_access=part.access,
-                         sched_options=jobs_cli_options)
+        dummy_job = Job.create(part.scheduler,
+                               part.launcher_type(),
+                               name='placeholder-job',
+                               sched_access=part.access,
+                               sched_options=jobs_cli_options)
 
         available_nodes = part.scheduler.allnodes()
-        available_nodes = part.scheduler.filternodes(job, available_nodes)
+        available_nodes = part.scheduler.filternodes(dummy_job,
+                                                     available_nodes)
         getlogger().debug(
             f'Total available nodes for {part.name}: {len(available_nodes)}'
         )
