@@ -192,11 +192,16 @@ def distribute_tests(testcases, skip_system_check, skip_prgenv_check,
                      node_map):
     tmp_registry = TestRegistry.create()
     new_checks = []
+    # We don't want to register the same check for every environment
+    # per partition
+    registered_checks = set()
     for tc in testcases:
         check, partition, environ = tc
-        if check.is_fixture():
+        candidate_check = (check.unique_name, partition)
+        if check.is_fixture() or candidate_check in registered_checks:
             continue
 
+        registered_checks.add(candidate_check)
         cls = type(check)
         basename = cls.__name__
         original_var_info = cls.get_variant_info(
@@ -214,24 +219,31 @@ def distribute_tests(testcases, skip_system_check, skip_prgenv_check,
         # We re-set the valid system and environment in a hook to
         # make sure that it will not be overwriten by a parent
         # post-init hook
-        def _rfm_distributed_set_valid_sys_env(obj):
-            obj.valid_systems = [partition.fullname]
-            obj.valid_prog_environs = [environ.name]
+        def _rfm_distributed_set_valid_sys(systems):
+            def _fn(obj):
+                obj.valid_systems = systems
+
+            return _fn
 
         class BaseTest(cls):
             _rfm_nodelist = builtins.parameter(node_map[partition.fullname])
-            valid_systems = [partition.fullname]
-            valid_prog_environs = [environ.name]
 
         nc = make_test(
-            f'_D_{partition.name}_{environ.name}_{basename}',
+            f'_D_{basename}_{partition.fullname.replace(":", "_")}',
             (BaseTest, ),
-            {},
+            {
+                'valid_systems' : [partition.fullname]
+            },
             methods=[
                 builtins.run_before('run')(_rfm_distributed_set_run_nodes),
-                builtins.run_before('compile')(_rfm_distributed_set_build_nodes),
-                # TODO this hook is not working properly
-                # builtins.run_after('init')(_rfm_distributed_set_valid_sys_env),
+                builtins.run_before('compile')(
+                    _rfm_distributed_set_build_nodes
+                ),
+                builtins.run_after('init')(
+                    _rfm_distributed_set_valid_sys(
+                        [partition.fullname]
+                    )
+                ),
             ]
         )
         # We have to set the prefix manually
@@ -247,12 +259,10 @@ def distribute_tests(testcases, skip_system_check, skip_prgenv_check,
                 else:
                     tmp_registry.add(nc, variant_num=i)
 
-    if tmp_registry:
-        new_checks = tmp_registry.instantiate_all()
-        return generate_testcases(new_checks, skip_system_check,
-                                  skip_prgenv_check)
-    else:
-        return []
+    new_checks = tmp_registry.instantiate_all()
+    return generate_testcases(new_checks, skip_system_check,
+                              skip_prgenv_check)
+
 
 def main():
     # Setup command line options

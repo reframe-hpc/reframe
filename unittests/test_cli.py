@@ -928,7 +928,7 @@ def test_dynamic_tests(run_reframe, tmp_path):
         more_options=['-n', 'Complex', '--distribute=idle']
     )
     assert returncode == 0
-    assert 'Ran 10/10 test case(s) from 10 check(s)' in stdout
+    assert 'Ran 10/10 test case(s)' in stdout
     assert 'FAILED' not in stdout
 
 
@@ -942,5 +942,5 @@ def test_dynamic_tests_filtering(run_reframe, tmp_path):
         more_options=['-n', 'Complex@1', '--distribute=idle']
     )
     assert returncode == 0
-    assert 'Ran 7/7 test case(s) from 7 check(s)' in stdout
+    assert 'Ran 7/7 test case(s)' in stdout
     assert 'FAILED' not in stdout
