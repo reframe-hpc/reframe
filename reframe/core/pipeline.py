@@ -297,11 +297,18 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: of the :attr:`valid_systems` list, in which case an AND operation on
     #: these constraints is implied. For example, the test defining the
     #: following will be valid for all systems that have define both ``feat1``
-    #: and ``feat2`` and set ``foo=bar``
+    #: and ``feat2`` and set ``foo=1``
     #:
     #: .. code-block:: python
     #:
-    #:    valid_systems = ['+feat1 +feat2 %foo=bar']
+    #:    valid_systems = ['+feat1 +feat2 %foo=1']
+    #:
+    #: For key/value pairs comparisons, ReFrame will automatically convert the
+    #: value in the key/value spec to the type of the value of the
+    #: corresponding entry in the partitions ``extras`` property. In the above
+    #: example, if the type of ``foo`` property is integer, ``1`` will be
+    #: converted to an integer value. If a conversion to the target type is not
+    #: possible, then the requested key/value pair is not matched.
     #:
     #: Multiple entries in the :attr:`valid_systems` list are implicitly ORed,
     #: such that the following example implies that the test is valid for
