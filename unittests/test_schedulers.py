@@ -658,6 +658,7 @@ def test_cancel_with_grace(minimal_job, scheduler, local_only):
     assert_process_died(sleep_pid)
 
 
+@pytest.mark.flaky(reruns=3)
 def test_cancel_term_ignore(minimal_job, scheduler, local_only):
     # This test emulates a descendant process of the spawned job that
     # ignores the SIGTERM signal:
