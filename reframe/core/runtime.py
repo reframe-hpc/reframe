@@ -32,7 +32,6 @@ class RuntimeContext:
         self._system = System.create(site_config)
         self._current_run = 0
         self._timestamp = datetime.now()
-        self.jobs_cli_options = []
 
     def _makedir(self, *dirs, wipeout=False):
         ret = os.path.join(*dirs)

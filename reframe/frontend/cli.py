@@ -190,62 +190,65 @@ def calc_verbosity(site_config, quiesce):
 
 def distribute_tests(testcases, skip_system_check, skip_prgenv_check,
                      node_map):
-    temporary_registry = None
+    tmp_registry = TestRegistry.create()
     new_checks = []
-    for t in testcases:
-        if not t.check.is_fixture():
-            cls = type(t.check)
-            basename = cls.__name__
-            original_var_info = cls.get_variant_info(
-                t.check.variant_num, recurse=True
-            )
+    for tc in testcases:
+        check, partition, environ = tc
+        if check.is_fixture():
+            continue
 
-            def _rfm_distributed_set_run_nodes(obj):
-                if not obj.local:
-                    obj.job.pin_nodes = obj._rfm_nodelist
+        cls = type(check)
+        basename = cls.__name__
+        original_var_info = cls.get_variant_info(
+            check.variant_num, recurse=True
+        )
 
-            def _rfm_distributed_set_build_nodes(obj):
-                if not obj.local and not obj.build_locally:
-                    obj.build_job.pin_nodes = obj._rfm_nodelist
+        def _rfm_distributed_set_run_nodes(obj):
+            if not obj.local:
+                obj.job.pin_nodes = obj._rfm_nodelist
 
-            # We re-set the valid system and environment in a hook to
-            # make sure that it will not be overwriten by a parent
-            # post-init hook
-            def _rfm_distributed_set_valid_sys_env(obj):
-                obj.valid_systems = [t._partition.fullname]
-                obj.valid_prog_environs = [t._environ.name]
+        def _rfm_distributed_set_build_nodes(obj):
+            if not obj.local and not obj.build_locally:
+                obj.build_job.pin_nodes = obj._rfm_nodelist
 
-            class BaseTest(t.check.__class__):
-                _rfm_nodelist = builtins.parameter(node_map[t._partition.fullname])
-                valid_systems = [t._partition.fullname]
-                valid_prog_environs = [t._environ.name]
+        # We re-set the valid system and environment in a hook to
+        # make sure that it will not be overwriten by a parent
+        # post-init hook
+        def _rfm_distributed_set_valid_sys_env(obj):
+            obj.valid_systems = [partition.fullname]
+            obj.valid_prog_environs = [environ.name]
 
-            nc = make_test(
-                f'__D_{t._partition.name}_{t._environ.name}_{basename}',
-                (BaseTest, ),
-                {},
-                methods=[
-                    builtins.run_before('run')(_rfm_distributed_set_run_nodes),
-                    builtins.run_before('compile')(_rfm_distributed_set_build_nodes),
-                    # TODO this hook is not working properly
-                    # builtins.run_after('init')(_rfm_distributed_set_valid_sys_env),
-                ]
-            )
-            # We have to set the prefix manually
-            nc._rfm_dynamic_test_prefix = t.check.prefix
+        class BaseTest(cls):
+            _rfm_nodelist = builtins.parameter(node_map[partition.fullname])
+            valid_systems = [partition.fullname]
+            valid_prog_environs = [environ.name]
 
-            for i in range(nc.num_variants):
-                # Check if this variant should be instantiated
-                var_info = copy.deepcopy(nc.get_variant_info(i, recurse=True))
-                var_info['params'].pop('_rfm_nodelist')
-                if var_info == original_var_info:
-                    if temporary_registry is None:
-                        temporary_registry = TestRegistry.create(nc, variant_num=i)
-                    else:
-                        temporary_registry.add(nc, variant_num=i)
+        nc = make_test(
+            f'_D_{partition.name}_{environ.name}_{basename}',
+            (BaseTest, ),
+            {},
+            methods=[
+                builtins.run_before('run')(_rfm_distributed_set_run_nodes),
+                builtins.run_before('compile')(_rfm_distributed_set_build_nodes),
+                # TODO this hook is not working properly
+                # builtins.run_after('init')(_rfm_distributed_set_valid_sys_env),
+            ]
+        )
+        # We have to set the prefix manually
+        nc._rfm_custom_prefix = check.prefix
 
-    if temporary_registry:
-        new_checks = temporary_registry.instantiate_all()
+        for i in range(nc.num_variants):
+            # Check if this variant should be instantiated
+            var_info = copy.deepcopy(nc.get_variant_info(i, recurse=True))
+            var_info['params'].pop('_rfm_nodelist')
+            if var_info == original_var_info:
+                if tmp_registry is None:
+                    tmp_registry = TestRegistry.create(nc, variant_num=i)
+                else:
+                    tmp_registry.add(nc, variant_num=i)
+
+    if tmp_registry:
+        new_checks = tmp_registry.instantiate_all()
         return generate_testcases(new_checks, skip_system_check,
                                   skip_prgenv_check)
     else:
@@ -449,8 +452,8 @@ def main():
     )
     # TODO Decide the exact functionality of the option
     run_options.add_argument(
-        '--flex-alloc-singlenode', action='store', default=None,
-        dest='flex_alloc_singlenode', metavar='{all|STATE}',
+        '--distribute', action='store', default=None,
+        dest='distribute', metavar='{all|STATE}',
         help=('Submit single node jobs automatically on every node of a '
               'partition in STATE')
     )
@@ -960,20 +963,6 @@ def main():
         'workdir': os.getcwd(),
     }
 
-    if options.flex_alloc_singlenode:
-        state, *tests = options.flex_alloc_singlenode.split(':')
-        if len(tests) == 0:
-            rt.flex_alloc_singlenode_state = state
-            rt.flex_alloc_singlenode_tests = None
-        elif len(tests) == 1:
-            rt.flex_alloc_singlenode_state = state
-            rt.flex_alloc_singlenode_tests = tests[0].split(',')
-        else:
-            printer.error(f'argument {options.flex_alloc_singlenode} for '
-                          f'--flex-alloc-singlenode is not in format '
-                          f'{{all|STATE}}[:TEST1,TEST2]')
-            sys.exit(1)
-
     # Print command line
     printer.info(f"[ReFrame Setup]")
     print_infoline('version', session_info['version'])
@@ -1003,8 +992,6 @@ def main():
                 parsed_job_options.append(f'-{optstr} {valstr}')
             else:
                 parsed_job_options.append(f'--{optstr} {valstr}')
-
-        rt.jobs_cli_options = parsed_job_options
 
         # Locate and load checks
         checks_found = loader.load_all()
@@ -1089,8 +1076,9 @@ def main():
                 f'{len(testcases)} remaining'
             )
 
-        if options.flex_alloc_singlenode:
-            node_map = autodetect.getallnodes(options.flex_alloc_singlenode)
+        if options.distribute:
+            node_map = autodetect.getallnodes(options.distribute,
+                                              parsed_job_options)
             testcases = distribute_tests(
                 testcases, options.skip_system_check,
                 options.skip_prgenv_check, node_map
