@@ -254,10 +254,7 @@ def distribute_tests(testcases, skip_system_check, skip_prgenv_check,
             var_info = copy.deepcopy(nc.get_variant_info(i, recurse=True))
             var_info['params'].pop('_rfm_nodelist')
             if var_info == original_var_info:
-                if tmp_registry is None:
-                    tmp_registry = TestRegistry.create(nc, variant_num=i)
-                else:
-                    tmp_registry.add(nc, variant_num=i)
+                tmp_registry.add(nc, variant_num=i)
 
     new_checks = tmp_registry.instantiate_all()
     return generate_testcases(new_checks, skip_system_check,
