@@ -928,5 +928,19 @@ def test_dynamic_tests(run_reframe, tmp_path):
         more_options=['-n', 'Complex', '--flex-alloc-singlenode=idle']
     )
     assert returncode == 0
-    assert 'Ran 5/5 test case(s) from 5 check(s)' in stdout
+    assert 'Ran 10/10 test case(s) from 10 check(s)' in stdout
+    assert 'FAILED' not in stdout
+
+
+def test_dynamic_tests_filtering(run_reframe, tmp_path):
+    # Target sys1 that has compact_test_names==True
+    returncode, stdout, _ = run_reframe(
+        system='sys1',
+        environs=[],
+        checkpath=['unittests/resources/checks_unlisted/alloc_check.py'],
+        action='run',
+        more_options=['-n', 'Complex@1', '--flex-alloc-singlenode=idle']
+    )
+    assert returncode == 0
+    assert 'Ran 7/7 test case(s) from 7 check(s)' in stdout
     assert 'FAILED' not in stdout

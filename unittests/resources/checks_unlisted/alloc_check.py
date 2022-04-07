@@ -17,7 +17,7 @@ class Simple(rfm.RunOnlyRegressionTest):
 
 
 class MyFixture(rfm.RunOnlyRegressionTest):
-    # x = parameter([1, 2])
+    x = parameter([1, 2])
     executable = 'echo hello from fixture'
 
     @sanity_function
