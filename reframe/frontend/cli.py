@@ -209,12 +209,14 @@ def distribute_tests(testcases, skip_system_check, skip_prgenv_check,
         )
 
         def _rfm_distributed_set_run_nodes(obj):
+            pin_nodes = getattr(obj, '$nid')
             if not obj.local:
-                obj.job.pin_nodes = obj._rfm_nodelist
+                obj.job.pin_nodes = pin_nodes
 
         def _rfm_distributed_set_build_nodes(obj):
+            pin_nodes = getattr(obj, '$nid')
             if not obj.local and not obj.build_locally:
-                obj.build_job.pin_nodes = obj._rfm_nodelist
+                obj.build_job.pin_nodes = pin_nodes
 
         # We re-set the valid system and environment in a hook to
         # make sure that it will not be overwriten by a parent
@@ -225,14 +227,12 @@ def distribute_tests(testcases, skip_system_check, skip_prgenv_check,
 
             return _fn
 
-        class BaseTest(cls):
-            _rfm_nodelist = builtins.parameter(node_map[partition.fullname])
-
         nc = make_test(
             f'_D_{basename}_{partition.fullname.replace(":", "_")}',
-            (BaseTest, ),
+            (cls, ),
             {
-                'valid_systems' : [partition.fullname]
+                'valid_systems' : [partition.fullname],
+                '$nid' : builtins.parameter(node_map[partition.fullname])
             },
             methods=[
                 builtins.run_before('run')(_rfm_distributed_set_run_nodes),
@@ -252,7 +252,7 @@ def distribute_tests(testcases, skip_system_check, skip_prgenv_check,
         for i in range(nc.num_variants):
             # Check if this variant should be instantiated
             var_info = copy.deepcopy(nc.get_variant_info(i, recurse=True))
-            var_info['params'].pop('_rfm_nodelist')
+            var_info['params'].pop('$nid')
             if var_info == original_var_info:
                 tmp_registry.add(nc, variant_num=i)
 

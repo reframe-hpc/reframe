@@ -22,7 +22,7 @@ def loader():
     ])
 
 
-def test_dynamic_testcases(loader, default_exec_ctx):
+def test_distribute_testcases(loader, default_exec_ctx):
     testcases = executors.generate_testcases(loader.load_all())
     testcases = filter(
         filters.have_name('Simple'), testcases
@@ -46,7 +46,8 @@ def test_dynamic_testcases(loader, default_exec_ctx):
     count = sum(map(lambda x : x._partition.fullname == 'sys0:p1', new_cases))
     assert count == 2
     for c in new_cases:
+        nodes = getattr(c.check, '$nid')
         if c._partition.fullname == 'sys0:p0':
-            assert c.check._rfm_nodelist in ('n1', 'n2')
+            assert nodes in ('n1', 'n2')
         else:
-            assert c.check._rfm_nodelist == 'n3'
+            assert nodes == 'n3'
