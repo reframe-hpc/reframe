@@ -647,6 +647,61 @@ class TestFixture:
          bar = fixture(MyResource, variables={'b':2, 'a':1})
 
 
+    **Early access to fixture objects**
+
+    The test instance represented by a fixture can be accessed fully from
+    within a test only after the setup stage. The reason for that is that
+    fixtures eventually translate into test dependencies and access to the
+    parent dependencies cannot happen before the this stage.
+
+    However, it is often useful, especially in the case of parameterized
+    fixtures, to be able to access the fixture parameters earlier, e.g., in a
+    post-init hook in order to properly set the
+    :attr:`~reframe.core.pipeline.RegressionTest.valid_systems` and
+    :attr:`~reframe.core.pipeline.RegressionTest.valid_prog_environs` of the
+    test. These attributes cannot be set later than the test's initialization
+    in order to have an effect.
+
+    For this reason, early access to fixture objects is allowed *only* for
+    retrieving their parameters.
+
+    .. code-block:: python
+
+       class Fixture(rfm.RegressionTest):
+           x = parameter([1, 2, 3])
+
+
+       class Test(rfm.RunOnlyRegressionTest):
+           foo = fixture(Fixture)
+           executable = './myexec'
+           valid_prog_environs = ['*']
+
+           @run_after('init')
+           def early_access(self):
+                # Only fixture parameters can be accessed here!
+                if self.foo.x == 1:
+                    self.valid_systems = ['sys1]
+                else:
+                    self.valid_systems = ['sys2']
+
+           @run_after('setup')
+           def normal_access(self):
+               # Any test attribute of the associated fixture test can be
+               # accessed here
+               self.executable_opts = [
+                   '-i', os.path.join(self.foo.stagedir, 'input.txt')
+               ]
+
+
+    During test initialization, ReFrame binds the :attr:`foo` name to a proxy
+    object that holds the parameterization of the target fixture. This proxy
+    object is recursive, so that if fixture :attr:`foo` contained another
+    fixture named :attr:`bar`, it would allow you to access any parameters of
+    that fixture with ``self.foo.bar.param``.
+
+    During the test setup stage, the :attr:`foo`'s binding changes and it is
+    now bound to the exact test instance that was executed for the target test
+    instance.
 
     :param cls: A class derived from
         :class:`~reframe.core.pipeline.RegressionTest` that manages a given
@@ -695,6 +750,8 @@ class TestFixture:
 
 
     .. versionadded:: 3.9.0
+    .. versionchanged:: 3.11.0
+       Allow early access of fixture objects.
 
     '''
 
@@ -822,6 +879,16 @@ class TestFixture:
         return self._variables
 
 
+class FixtureProxy:
+    def __init__(self, fixture_info):
+        for k, v in fixture_info['params'].items():
+            setattr(self, k, v)
+
+        for k, v in fixture_info['fixtures'].items():
+            if not isinstance(v, tuple):
+                setattr(self, k, FixtureProxy(v))
+
+
 class FixtureSpace(namespaces.Namespace):
     '''Regression test fixture space.
 
@@ -929,8 +996,8 @@ class FixtureSpace(namespaces.Namespace):
                 # Register all the variants and track the fixture names
                 dep_names += obj._rfm_fixture_registry.add(fixture,
                                                            variant,
-                                                           obj.name, part,
-                                                           prog_envs)
+                                                           obj.unique_name,
+                                                           part, prog_envs)
 
             # Add dependencies
             if fixture.scope == 'session':
