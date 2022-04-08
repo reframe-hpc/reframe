@@ -32,7 +32,6 @@ import reframe.utility.osext as osext
 import reframe.utility.typecheck as typ
 
 
-
 from reframe.core.decorators import TestRegistry
 from reframe.core.meta import make_test
 from reframe.frontend.printer import PrettyPrinter
@@ -231,8 +230,8 @@ def distribute_tests(testcases, node_map):
             f'_D_{basename}_{partition.fullname.replace(":", "_")}',
             (cls, ),
             {
-                'valid_systems' : [partition.fullname],
-                '$nid' : builtins.parameter(node_map[partition.fullname])
+                'valid_systems': [partition.fullname],
+                '$nid': builtins.parameter(node_map[partition.fullname])
             },
             methods=[
                 builtins.run_before('run')(_rfm_distributed_set_run_nodes),

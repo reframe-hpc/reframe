@@ -15,6 +15,7 @@ from reframe.frontend.loader import RegressionCheckLoader
 def default_exec_ctx(make_exec_ctx_g):
     yield from make_exec_ctx_g(system='sys0')
 
+
 @pytest.fixture
 def loader():
     return RegressionCheckLoader([
@@ -30,9 +31,9 @@ def test_distribute_testcases(loader, default_exec_ctx):
 
     testcases = list(testcases)
     assert len(testcases) == 4
-    count = sum(map(lambda x : x._partition.fullname == 'sys0:p0', testcases))
+    count = sum(map(lambda x: x._partition.fullname == 'sys0:p0', testcases))
     assert count == 2
-    count = sum(map(lambda x : x._partition.fullname == 'sys0:p1', testcases))
+    count = sum(map(lambda x: x._partition.fullname == 'sys0:p1', testcases))
     assert count == 2
 
     node_map = {
@@ -41,9 +42,9 @@ def test_distribute_testcases(loader, default_exec_ctx):
     }
     new_cases = distribute_tests(testcases, node_map)
     assert len(new_cases) == 6
-    count = sum(map(lambda x : x._partition.fullname == 'sys0:p0', new_cases))
+    count = sum(map(lambda x: x._partition.fullname == 'sys0:p0', new_cases))
     assert count == 4
-    count = sum(map(lambda x : x._partition.fullname == 'sys0:p1', new_cases))
+    count = sum(map(lambda x: x._partition.fullname == 'sys0:p1', new_cases))
     assert count == 2
     for c in new_cases:
         nodes = getattr(c.check, '$nid')
