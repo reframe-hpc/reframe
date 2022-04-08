@@ -5,7 +5,11 @@
     "defs": {
         "alphanum_string": {
             "type": "string",
-            "pattern": "([a-zA-Z0-9_]|-)+"
+            "pattern": "([a-zA-Z_][a-zA-Z0-9_]*)"
+        },
+        "alphanum_ext_string": {
+            "type": "string",
+            "pattern": "([a-zA-Z_]([a-zA-Z0-9_]|-)*)"
         },
         "system_ref": {
             "type": "array",
@@ -15,13 +19,7 @@
             "type": "array",
             "items": {
                 "type": "array",
-                "items": [
-                    {
-                        "type": "string",
-                        "pattern": "([a-zA-Z_][a-zA-Z0-9_]*)"
-                    },
-                    {"type": "string"}
-                ],
+                "items": [{"$ref": "#/defs/alphanum_ext_string"}],
                 "additionalProperties": false
             }
         },
@@ -220,7 +218,7 @@
             "items": {
                 "type": "object",
                 "properties": {
-                    "name": {"$ref": "#/defs/alphanum_string"},
+                    "name": {"$ref": "#/defs/alphanum_ext_string"},
                     "descr": {"type": "string"},
                     "hostnames": {
                         "type": "array",
@@ -243,7 +241,7 @@
                         "items": {
                             "type": "object",
                             "properties": {
-                                "name": {"$ref": "#/defs/alphanum_string"},
+                                "name": {"$ref": "#/defs/alphanum_ext_string"},
                                 "descr": {"type": "string"},
                                 "scheduler": {
                                     "type": "string",
@@ -302,9 +300,14 @@
                                 "devices": {"$ref": "#/defs/devices"},
                                 "features": {
                                     "type": "array",
-                                    "items": {"type": "string"}
+                                    "items": {"$ref": "#/defs/alphanum_string"}
                                 },
-                                "extras": {"type": "object"},
+                                "extras": {
+                                    "type": "object",
+                                    "propertyNames": {
+                                        "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$"
+                                    }
+                                },
                                 "resources": {
                                     "type": "array",
                                     "items": {
@@ -336,7 +339,7 @@
             "items": {
                 "type": "object",
                 "properties": {
-                    "name": {"type": "string"},
+                    "name": {"$ref": "#/defs/alphanum_ext_string"},
                     "modules": {"$ref": "#/defs/modules_list"},
                     "variables": {"$ref": "#/defs/envvar_list"},
                     "cc": {"type": "string"},
@@ -362,10 +365,15 @@
                         "type": "array",
                         "items": {"type": "string"}
                     },
-                    "extras": {"type": "object"},
+                    "extras": {
+                        "type": "object",
+                        "propertyNames": {
+                            "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$"
+                        }
+                    },
                     "features": {
                         "type": "array",
-                        "items": {"type": "string"}
+                        "items": {"$ref": "#/defs/alphanum_string"}
                     },
                     "target_systems": {"$ref": "#/defs/system_ref"}
                 },
