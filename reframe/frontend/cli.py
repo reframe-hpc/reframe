@@ -449,6 +449,12 @@ def main():
         default=[], help='Disable a pipeline hook for this run'
     )
     run_options.add_argument(
+        '--distribute', action='store', default=None,
+        dest='distribute', metavar='{all|STATE}',
+        help=('Submit single node jobs automatically on every node of a '
+              'partition in STATE')
+    )
+    run_options.add_argument(
         '--exec-policy', metavar='POLICY', action='store',
         choices=['async', 'serial'], default='async',
         help='Set the execution policy of ReFrame (default: "async")'
@@ -457,13 +463,6 @@ def main():
         '--flex-alloc-nodes', action='store',
         dest='flex_alloc_nodes', metavar='{all|STATE|NUM}', default=None,
         help='Set strategy for the flexible node allocation (default: "idle").'
-    )
-    # TODO Decide the exact functionality of the option
-    run_options.add_argument(
-        '--distribute', action='store', default=None,
-        dest='distribute', metavar='{all|STATE}',
-        help=('Submit single node jobs automatically on every node of a '
-              'partition in STATE')
     )
     run_options.add_argument(
         '--force-local', action='store_true',

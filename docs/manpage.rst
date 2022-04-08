@@ -379,6 +379,22 @@ Options controlling ReFrame execution
 
    .. versionadded:: 3.2
 
+.. option:: --distribute=STATE
+
+   Parameterize and run tests on all the nodes of their partitions.
+   The attribute ``pin_nodes`` will be set in these tests in order to be submitted on the selected nodes.
+
+   Currently this will work correctly only for one-node tests in local or Slurm partitions, and it will take into account the cli jobs options that are passed by the user.
+
+   You can decide the state of the nodes that will be considered:
+
+   - ``all``: Tests will be parameterized over all the nodes of their partitions.
+   - ``STATE``: Tests will run on all the nodes in state ``STATE``, for example ``idle``.
+     The states of the nodes will be determined once, before beginning the
+     execution of the tests so it might be different in the time of the submission of the tests.
+
+   .. versionadded:: 3.11.0
+
 .. option:: --exec-policy=POLICY
 
    The execution policy to be used for running tests.
