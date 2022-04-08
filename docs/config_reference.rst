@@ -433,7 +433,9 @@ System Partition Configuration
    :required: No
    :default: ``[]``
 
-   User defined features of the partition. These are accessible through the :attr:`~reframe.core.systems.SystemPartition.features` attribute of the :attr:`~reframe.core.pipeline.RegressionTest.current_partition` and can also be selected through the extended syntax of :attr:`~reframe.core.pipeline.RegressionTest.valid_systems`.
+   User defined features of the partition.
+   These are accessible through the :attr:`~reframe.core.systems.SystemPartition.features` attribute of the :attr:`~reframe.core.pipeline.RegressionTest.current_partition` and can also be selected through the extended syntax of :attr:`~reframe.core.pipeline.RegressionTest.valid_systems`.
+   The values of this list must be alphanumeric strings starting with a non-digit character and may also contain a ``-``.
 
    .. versionadded:: 3.11.0
 
@@ -443,7 +445,9 @@ System Partition Configuration
    :required: No
    :default: ``{}``
 
-   User defined attributes of the partition. These are accessible through the :attr:`~reframe.core.systems.SystemPartition.extras` attribute of the :attr:`~reframe.core.pipeline.RegressionTest.current_partition` and can also be selected through the extended syntax of :attr:`~reframe.core.pipeline.RegressionTest.valid_systems`.
+   User defined attributes of the partition.
+   These are accessible through the :attr:`~reframe.core.systems.SystemPartition.extras` attribute of the :attr:`~reframe.core.pipeline.RegressionTest.current_partition` and can also be selected through the extended syntax of :attr:`~reframe.core.pipeline.RegressionTest.valid_systems`.
+   The attributes of this object must be alphanumeric strings starting with a non-digit character and their values can be of any type.
 
    .. versionadded:: 3.5.0
 
@@ -612,7 +616,9 @@ They are associated with `system partitions <#system-partition-configuration>`__
    :required: No
    :default: ``[]``
 
-   User defined features of the environment. These are accessible through the :attr:`~reframe.core.environments.Environment.features` attribute of the :attr:`~reframe.core.pipeline.RegressionTest.current_environ` and can also be selected through the extended syntax of :attr:`~reframe.core.pipeline.RegressionTest.valid_prog_environs`.
+   User defined features of the environment.
+   These are accessible through the :attr:`~reframe.core.environments.Environment.features` attribute of the :attr:`~reframe.core.pipeline.RegressionTest.current_environ` and can also be selected through the extended syntax of :attr:`~reframe.core.pipeline.RegressionTest.valid_prog_environs`.
+   The values of this list must be alphanumeric strings starting with a non-digit character and may also contain a ``-``.
 
    .. versionadded:: 3.11.0
 
@@ -622,7 +628,9 @@ They are associated with `system partitions <#system-partition-configuration>`__
    :required: No
    :default: ``{}``
 
-   User defined attributes of the environment. These are accessible through the :attr:`~reframe.core.environments.Environment.extras` attribute of the :attr:`~reframe.core.pipeline.RegressionTest.current_environ` and can also be selected through the extended syntax of :attr:`~reframe.core.pipeline.RegressionTest.valid_prog_environs`.
+   User defined attributes of the environment.
+   These are accessible through the :attr:`~reframe.core.environments.Environment.extras` attribute of the :attr:`~reframe.core.pipeline.RegressionTest.current_environ` and can also be selected through the extended syntax of :attr:`~reframe.core.pipeline.RegressionTest.valid_prog_environs`.
+   The attributes of this object must be alphanumeric strings starting with a non-digit character and their values can be of any type.
 
    .. versionadded:: 3.9.1
 
