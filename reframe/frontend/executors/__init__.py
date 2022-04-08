@@ -97,27 +97,17 @@ class TestCase:
         return TestCase(self._check_orig, self._partition, self._environ)
 
 
-def generate_testcases(checks,
-                       skip_system_check=False,
-                       skip_environ_check=False):
+def generate_testcases(checks):
     '''Generate concrete test cases from checks.'''
-
-    def supports_partition(c, p):
-        return skip_system_check or c.supports_system(p.fullname)
-
-    def supports_environ(c, e):
-        return skip_environ_check or c.supports_environ(e.name)
 
     rt = runtime.runtime()
     cases = []
     for c in checks:
-        for p in rt.system.partitions:
-            if not supports_partition(c, p):
-                continue
-
-            for e in p.environs:
-                if supports_environ(c, e):
-                    cases.append(TestCase(c, p, e))
+        valid_comb = runtime.valid_sysenv_comb(c.valid_systems,
+                                               c.valid_prog_environs)
+        for part, environs in valid_comb.items():
+            for env in environs:
+                cases.append(TestCase(c, part, env))
 
     return cases
 
@@ -549,9 +539,7 @@ class ExecutionPolicy(abc.ABC):
 
     def __init__(self):
         # Options controlling the check execution
-        self.skip_system_check = False
         self.force_local = False
-        self.skip_environ_check = False
         self.skip_sanity_check = False
         self.skip_performance_check = False
         self.keep_stage_files = False

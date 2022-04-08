@@ -58,7 +58,8 @@ site_configuration = {
                     'scheduler': 'local',
                     'launcher': 'local',
                     'environs': ['PrgEnv-cray', 'PrgEnv-gnu'],
-                    'descr': 'Login nodes'
+                    'descr': 'Login nodes',
+                    'features': ['cross_compile']
                 },
                 {
                     'name': 'gpu',
@@ -84,6 +85,10 @@ site_configuration = {
                             ]
                         }
                     ],
+                    'features': ['cuda', 'mpi'],
+                    'extras': {
+                        'gpu_arch': 'a100'
+                    },
                     'environs': ['PrgEnv-gnu', 'builtin'],
                     'max_jobs': 10,
                     'processor': {
@@ -195,6 +200,7 @@ site_configuration = {
             'cc': 'gcc',
             'cxx': 'g++',
             'ftn': 'gfortran',
+            'features': ['cxx14'],
             'extras': {
                 'foo': 1,
                 'bar': 'x'
@@ -204,6 +210,7 @@ site_configuration = {
         {
             'name': 'PrgEnv-cray',
             'modules': ['PrgEnv-cray'],
+            'features': ['cxx14', 'mpi'],
         },
         {
             'name': 'builtin',

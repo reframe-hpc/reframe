@@ -166,7 +166,7 @@ class SystemPartition(jsonext.JSONSerializable):
     def __init__(self, *, parent, name, sched_type, launcher_type,
                  descr, access, container_environs, resources,
                  local_env, environs, max_jobs, prepare_cmds,
-                 processor, devices, extras, time_limit):
+                 processor, devices, extras, features, time_limit):
         getlogger().debug(f'Initializing system partition {name!r}')
         self._parent_system = parent
         self._name = name
@@ -184,6 +184,7 @@ class SystemPartition(jsonext.JSONSerializable):
         self._processor = ProcessorInfo(processor)
         self._devices = [DeviceInfo(d) for d in devices]
         self._extras = extras
+        self._features = features
         self._time_limit = time_limit
 
     @property
@@ -377,13 +378,27 @@ class SystemPartition(jsonext.JSONSerializable):
 
     @property
     def extras(self):
-        '''User defined properties defined in the configuration.
+        '''User defined properties associated with this partition.
+
+        These extras are defined in the configuration.
 
         .. versionadded:: 3.5.0
 
         :type: :class:`Dict[str, object]`
         '''
         return self._extras
+
+    @property
+    def features(self):
+        '''User defined features associated with this partition.
+
+        These features are defined in the configuration.
+
+        .. versionadded:: 3.11.0
+
+        :type: :class:`List[str]`
+        '''
+        return self._features
 
     def __eq__(self, other):
         if not isinstance(other, type(self)):
@@ -492,6 +507,7 @@ class System(jsonext.JSONSerializable):
                     modules=site_config.get(f'environments/@{e}/modules'),
                     variables=site_config.get(f'environments/@{e}/variables'),
                     extras=site_config.get(f'environments/@{e}/extras'),
+                    features=site_config.get(f'environments/@{e}/features'),
                     cc=site_config.get(f'environments/@{e}/cc'),
                     cxx=site_config.get(f'environments/@{e}/cxx'),
                     ftn=site_config.get(f'environments/@{e}/ftn'),
@@ -524,6 +540,7 @@ class System(jsonext.JSONSerializable):
                     processor=site_config.get(f'{partid}/processor'),
                     devices=site_config.get(f'{partid}/devices'),
                     extras=site_config.get(f'{partid}/extras'),
+                    features=site_config.get(f'{partid}/features'),
                     time_limit=site_config.get(f'{partid}/time_limit')
                 )
             )

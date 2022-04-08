@@ -82,6 +82,19 @@ DEPEND_BY_ENV = 2
 DEPEND_FULLY = 3
 
 
+# Valid systems/environments mini-language
+_N = r'(\w[-.\w]*)'         # name
+_NW = rf'(\*|{_N})'         # name or wildcard
+_F = rf'([+-]{_N})'         # feature
+_OP = r'([=<>]|!=|>=|<=)'   # relational operator (unused for the moment)
+_KV = rf'(%{_N}=\S+)'       # key/value pair
+_FKV = rf'({_F}|{_KV})'     # feature | key/value pair
+_VALID_ENV_SYNTAX = rf'^({_NW}|{_FKV}(\s+{_FKV})*)$'
+
+_S = rf'({_NW}(:{_NW})?)'   # system/partition
+_VALID_SYS_SYNTAX = rf'^({_S}|{_FKV}(\s+{_FKV})*)$'
+
+
 _PIPELINE_STAGES = (
     '__init__',
     'setup',
@@ -215,11 +228,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: .. warning::
     #:
-    #:    Setting the name of a test is deprecated and will be disabled in the
-    #:    future. If you were setting the name of a test to circumvent the old
-    #:    long parameterized test names in order to reference them in
-    #:    dependency chains, please refer to :ref:`param_deps` for more details on how
-    #:    to achieve this.
+    #:   Setting the name of a test is deprecated and will be disabled in the
+    #:   future. If you were setting the name of a test to circumvent the old
+    #:   long parameterized test names in order to reference them in
+    #:   dependency chains, please refer to :ref:`param_deps` for more details
+    #:   on how to achieve this.
     #:
     #: .. versionchanged:: 3.10.0
     #:    Setting the :attr:`name` attribute is deprecated.
@@ -229,42 +242,101 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                      "setting the 'name' attribute is deprecated and "
                      "will be disabled in the future", DEPRECATE_WR)
 
-    #: List of programming environments supported by this test.
+    #: List of environments or environment features or environment properties
+    #: required by this test.
     #:
-    #: If ``*`` is in the list then all programming environments are supported
-    #: by this test.
+    #: The syntax of this attribute is exactly the same as of the
+    #: :attr:`valid_systems` except that the ``a:b`` entries are invalid.
     #:
     #: :type: :class:`List[str]`
     #: :default: ``required``
     #:
-    #: .. note::
-    #:     .. versionchanged:: 2.12
-    #:        Programming environments can now be specified using wildcards.
+    #: .. seealso::
+    #:    - `Environment features
+    #:      <config_reference.html#environments-.features>`__
+    #:    - `Environment extras
+    #:      <config_reference.html#environments-.extras>`__
     #:
-    #:     .. versionchanged:: 2.17
-    #:        Support for wildcards is dropped.
+    #: .. versionchanged:: 2.12
+    #:    Programming environments can now be specified using wildcards.
     #:
-    #:     .. versionchanged:: 3.3
-    #:        Default value changed from ``[]`` to ``None``.
+    #: .. versionchanged:: 2.17
+    #:    Support for wildcards is dropped.
     #:
-    #:     .. versionchanged:: 3.6
-    #:        Default value changed from ``None`` to ``required``.
-    valid_prog_environs = variable(typ.List[str], loggable=True)
+    #: .. versionchanged:: 3.3
+    #:    Default value changed from ``[]`` to ``None``.
+    #:
+    #: .. versionchanged:: 3.6
+    #:    Default value changed from ``None`` to ``required``.
+    #:
+    #: .. versionchanged:: 3.11.0
+    #:    Extend syntax to support features and key/value pairs.
+    valid_prog_environs = variable(typ.List[typ.Str[_VALID_ENV_SYNTAX]],
+                                   loggable=True)
 
-    #: List of systems supported by this test.
-    #: The general syntax for systems is ``<sysname>[:<partname>]``.
-    #: Both <sysname> and <partname> accept the value ``*`` to mean any value.
-    #: ``*`` is an alias of ``*:*``
+    #: List of systems or system features or system properties required by this
+    #: test.
+    #:
+    #: Each entry in this list is a requirement and can have one of the
+    #: following forms:
+    #:
+    #: - ``sysname``: The test is valid for system named ``sysname``.
+    #: - ``sysname:partname``: The test is valid for the partition ``partname``
+    #:   of system ``sysname``.
+    #: - ``*``: The test is valid for any system.
+    #: - ``*:partname``: The test is valid for any partition named ``partname``
+    #:   in any system.
+    #: - ``+feat``: The test is valid for all partitions that define feature
+    #:   ``feat`` as a feature.
+    #: - ``-feat``: The test is valid for all partitions that do not define
+    #:   feature ``feat`` as a feature.
+    #: - ``%key=val``: The test is valid for all partitions that define the
+    #:   extra property ``key`` with the value ``val``.
+    #:
+    #: Multiple features and key/value pairs can be included in a single entry
+    #: of the :attr:`valid_systems` list, in which case an AND operation on
+    #: these constraints is implied. For example, the test defining the
+    #: following will be valid for all systems that have define both ``feat1``
+    #: and ``feat2`` and set ``foo=1``
+    #:
+    #: .. code-block:: python
+    #:
+    #:    valid_systems = ['+feat1 +feat2 %foo=1']
+    #:
+    #: For key/value pairs comparisons, ReFrame will automatically convert the
+    #: value in the key/value spec to the type of the value of the
+    #: corresponding entry in the partitions ``extras`` property. In the above
+    #: example, if the type of ``foo`` property is integer, ``1`` will be
+    #: converted to an integer value. If a conversion to the target type is not
+    #: possible, then the requested key/value pair is not matched.
+    #:
+    #: Multiple entries in the :attr:`valid_systems` list are implicitly ORed,
+    #: such that the following example implies that the test is valid for
+    #: either ``sys1`` or for any other system that does not define ``feat``.
+    #:
+    #: .. code-block:: python
+    #:
+    #:    valid_systems = ['sys1', '-feat']
     #:
     #: :type: :class:`List[str]`
     #: :default: ``None``
     #:
-    #:     .. versionchanged:: 3.3
-    #:        Default value changed from ``[]`` to ``None``.
+    #: .. seealso::
+    #:    - `System partition features
+    #:      <config_reference.html#systems-.partitions-.features>`__
+    #:    - `System partition extras
+    #:      <config_reference.html#systems-.partitions-.extras>`__
     #:
-    #:     .. versionchanged:: 3.6
-    #:        Default value changed from ``None`` to ``required``.
-    valid_systems = variable(typ.List[str], loggable=True)
+    #: .. versionchanged:: 3.3
+    #:    Default value changed from ``[]`` to ``None``.
+    #:
+    #: .. versionchanged:: 3.6
+    #:    Default value changed from ``None`` to ``required``.
+    #:
+    #:  .. versionchanged:: 3.11.0
+    #:     Extend syntax to support features and key/value pairs.
+    valid_systems = variable(typ.List[typ.Str[_VALID_SYS_SYNTAX]],
+                             loggable=True)
 
     #: A detailed description of the test.
     #:
@@ -1000,7 +1072,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         '''Process and validate the pipeline hooks.'''
 
         _pipeline_hooks = {}
-        for stage, hooks in cls.pipeline_hooks().items():
+        for stage, hks in cls.pipeline_hooks().items():
             # Pop the stage pre_/post_ prefix
             stage_name = stage.split('_', maxsplit=1)[1]
 
@@ -1020,7 +1092,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             elif stage == 'post_run':
                 stage = 'post_run_wait'
 
-            _pipeline_hooks[stage] = hooks
+            _pipeline_hooks[stage] = hks
 
         return _pipeline_hooks
 
@@ -1380,23 +1452,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             ret += f'+{self.current_environ.name}'
 
         return ret
-
-    def supports_system(self, name):
-        if name.find(':') != -1:
-            system, partition = name.split(':')
-        else:
-            system, partition = self.current_system.name, name
-
-        valid_matches = ['*', '*:*', system, f'{system}:*',
-                         f'*:{partition}', f'{system}:{partition}']
-
-        return any(n in self.valid_systems for n in valid_matches)
-
-    def supports_environ(self, env_name):
-        if '*' in self.valid_prog_environs:
-            return True
-
-        return env_name in self.valid_prog_environs
 
     def is_local(self):
         '''Check if the test will execute locally.

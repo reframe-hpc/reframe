@@ -896,7 +896,9 @@ def main():
 
     loader = RegressionCheckLoader(check_search_path,
                                    check_search_recursive,
-                                   external_vars)
+                                   external_vars,
+                                   options.skip_system_check,
+                                   options.skip_prgenv_check)
 
     def print_infoline(param, value):
         param = param + ':'
@@ -931,15 +933,16 @@ def main():
     print_infoline('output directory', repr(session_info['prefix_output']))
     printer.info('')
     try:
-        # Locate and load checks
-        checks_found = loader.load_all()
+        # Locate and load checks; `force=True` is not needed for normal
+        # invocations from the command line and has practically no effect, but
+        # it is needed to better emulate the behavior of running reframe's CLI
+        # from within the unit tests, which call repeatedly `main()`.
+        checks_found = loader.load_all(force=True)
         printer.verbose(f'Loaded {len(checks_found)} test(s)')
 
         # Generate all possible test cases first; we will need them for
         # resolving dependencies after filtering
-        testcases_all = generate_testcases(checks_found,
-                                           options.skip_system_check,
-                                           options.skip_prgenv_check)
+        testcases_all = generate_testcases(checks_found)
         testcases = testcases_all
         printer.verbose(f'Generated {len(testcases)} test case(s)')
 
@@ -1173,7 +1176,6 @@ def main():
             printer.error("unknown execution policy `%s': Exiting...")
             sys.exit(1)
 
-        exec_policy.skip_system_check = options.skip_system_check
         exec_policy.force_local = options.force_local
         exec_policy.strict_check = options.strict
         exec_policy.skip_sanity_check = options.skip_sanity_check
