@@ -3,6 +3,10 @@
     "$id": "https://raw.githubusercontent.com/eth-cscs/reframe/master/reframe/schemas/config.json",
     "title": "Validation schema for ReFrame's configuration file",
     "defs": {
+        "alphanum_string": {
+            "type": "string",
+            "pattern": "([a-zA-Z_][a-zA-Z0-9_]*)"
+        },
         "alphanum_ext_string": {
             "type": "string",
             "pattern": "([a-zA-Z_]([a-zA-Z0-9_]|-)*)"
@@ -296,7 +300,7 @@
                                 "devices": {"$ref": "#/defs/devices"},
                                 "features": {
                                     "type": "array",
-                                    "items": {"$ref": "#/defs/alphanum_ext_string"}
+                                    "items": {"$ref": "#/defs/alphanum_string"}
                                 },
                                 "extras": {
                                     "type": "object",
@@ -369,7 +373,7 @@
                     },
                     "features": {
                         "type": "array",
-                        "items": {"$ref": "#/defs/alphanum_ext_string"}
+                        "items": {"$ref": "#/defs/alphanum_string"}
                     },
                     "target_systems": {"$ref": "#/defs/system_ref"}
                 },
