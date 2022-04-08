@@ -265,10 +265,12 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
     #: :type: :class:`reframe.core.launchers.JobLauncher`
     launcher = variable(JobLauncher)
 
-    # #: Pin nodes for the job
-    # #:
-    # #: :type: :class:`str` or :class:`None`
-    # #: :default: :class:`None`
+    #: Pin nodes for the job
+    #:
+    #: :type: :class:`str` or :class:`None`
+    #: :default: :class:`None`
+    #:
+    #: .. versionadded:: 3.11.0
     pin_nodes = variable(type(None), str, value=None)
 
     # The sched_* arguments are exposed also to the frontend
