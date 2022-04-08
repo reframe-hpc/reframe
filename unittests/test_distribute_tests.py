@@ -39,7 +39,7 @@ def test_distribute_testcases(loader, default_exec_ctx):
         'sys0:p0': ['n1', 'n2'],
         'sys0:p1': ['n3']
     }
-    new_cases = distribute_tests(testcases, False, False, node_map)
+    new_cases = distribute_tests(testcases, node_map)
     assert len(new_cases) == 6
     count = sum(map(lambda x : x._partition.fullname == 'sys0:p0', new_cases))
     assert count == 4

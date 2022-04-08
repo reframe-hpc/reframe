@@ -189,8 +189,7 @@ def calc_verbosity(site_config, quiesce):
     return curr_verbosity - quiesce
 
 
-def distribute_tests(testcases, skip_system_check, skip_prgenv_check,
-                     node_map):
+def distribute_tests(testcases, node_map):
     tmp_registry = TestRegistry.create()
     new_checks = []
     # We don't want to register the same check for every environment
@@ -258,8 +257,7 @@ def distribute_tests(testcases, skip_system_check, skip_prgenv_check,
                 tmp_registry.add(nc, variant_num=i)
 
     new_checks = tmp_registry.instantiate_all()
-    return generate_testcases(new_checks, skip_system_check,
-                              skip_prgenv_check)
+    return generate_testcases(new_checks)
 
 
 def main():
@@ -1115,10 +1113,7 @@ def main():
         if options.distribute:
             node_map = autodetect.getallnodes(options.distribute,
                                               parsed_job_options)
-            testcases = distribute_tests(
-                testcases, options.skip_system_check,
-                options.skip_prgenv_check, node_map
-            )
+            testcases = distribute_tests(testcases, node_map)
             testcases_all = testcases
 
         # Prepare for running
