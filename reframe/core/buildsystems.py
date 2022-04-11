@@ -897,6 +897,29 @@ class Spack(BuildSystem):
         return cmds
 
 
+class CustomBuild(BuildSystem):
+    '''Custom build system.
+
+    This build system backend allows users to use custom build scripts to
+    build the test code. It does not do any interpretation of the current test
+    environment and it simply runs the supplied :attr:`commands`.
+
+    Users should use this build system with caution, because environment
+    management, reproducibility and any potential side effects are all
+    controlled by the user's custom build system.
+
+    .. versionadded:: 3.11.0
+    '''
+
+    #: The commands to run for building the test code.
+    #:
+    #: :type: :class:`List[str]`
+    commands = variable(typ.List[str])
+
+    def emit_build_commands(self, environ):
+        return self.commands
+
+
 class BuildSystemField(fields.TypedField):
     def __init__(self, fieldname, *other_types):
         super().__init__(fieldname, BuildSystem, *other_types)
