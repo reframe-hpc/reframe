@@ -51,9 +51,9 @@ class build_gpu_bandwidth(rfm.CompileOnlyRegressionTest):
 # rfmdocstart: gpu_bw
 class CudaBandwidthTestBase(rfm.RunOnlyRegressionTest):
     '''Base class for Cuda bandwidth benchmark runtime test'''
-    valid_systems = ['*:gpu']
+    #valid_systems = ['*']
     valid_prog_environs = ['*']
-    #valid_systems = ['ndasr_v4', 'ndamsr_a100_v4']
+    valid_systems = ['ndasr_v4', 'ndamsr_a100_v4']
     #valid_prog_environs = ['gnu']
     # rfmdocstart: cuda_bandwidth_binary
     osu_binaries = fixture(build_gpu_bandwidth, scope='environment')

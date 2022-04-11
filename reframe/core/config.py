@@ -308,7 +308,7 @@ class _SiteConfig:
                         vm_data = {}
                         vm_data = json.load(vm_data_file)
                         for vm in vm_data.keys():
-                            if vm_data[vm]['series'] == vm_series.lower():
+                            if vm_data[vm]['series'] == vm_series.lower() and vm_data[vm]['size'] == vm_size:
                                 vm_data[vm]['vm_series'] = vm_data[vm]['series']
                                 vm_data[vm]['vm_size'] = vm_size
                                 vm_data[vm]['vm_os'] = vm_os

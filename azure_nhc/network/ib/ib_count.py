@@ -22,24 +22,28 @@ class IBCardCheck(rfm.RunOnlyRegressionTest):
     def validate_results(self):
         # Get node_data
         vm_info = self.current_system.node_data
+        if 'runtime_data' not in self.current_system.node_data:
+           self.current_system.node_data['runtime_data'] = {}
+        self.current_system.node_data['runtime_data']['accelnet'] = True
+
 
         # Ideas for refactoring:
         # - get each name from ibstat -l and then check each one with ibstatus
         #   to see if the link_layer is InfiniBand or Ethernet (AccelNet)
-        ib_cards = sn.extractall(
+        ib_count = sn.extractall(
             r'(mlx5_ib[0-9]+)', self.stdout
             #r'(?P<name>\S+)', self.stdout
         )
-        print("IB Cards: {}".format(ib_cards))
-        print("Count: {}".format(sn.count(ib_cards)))
-        #return sn.assert_eq(sn.count(ib_cards), 1 )
+        print("IB Cards: {}".format(ib_count))
+        print("Count: {}".format(sn.count(ib_count)))
+        #return sn.assert_eq(sn.count(ib_count), 1 )
         #print("=====================")
-        #pprint.pprint(vars(self.current_system))
+        pprint.pprint(vars(self.current_system))
         #print("=========------------============")
-        if vm_info != None and 'nhc_values' in vm_info and "ib_cards" in vm_info['nhc_values']:
-            return sn.assert_eq(sn.count(ib_cards), vm_info['nhc_values']['ib_cards'])
+        if vm_info != None and 'nhc_values' in vm_info and "ib_count" in vm_info['nhc_values']:
+            return sn.assert_eq(sn.count(ib_count), vm_info['nhc_values']['ib_count'])
         else:
-            print("ib_cards not found in vm_info['nhc_values']")
-            return sn.assert_eq(sn.count(ib_cards), 0)
+            print("ib_count not found in vm_info['nhc_values']")
+            return sn.assert_eq(sn.count(ib_count), 0)
 
 
