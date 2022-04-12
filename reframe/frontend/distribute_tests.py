@@ -82,16 +82,15 @@ def distribute_tests(testcases, node_map):
     check_part_combs = set()
     for tc in testcases:
         check, partition, _ = tc
-        candidate_check = (check.unique_name, partition.fullname)
-        if check.is_fixture() or candidate_check in check_part_combs:
+        candidate_comb = (check.unique_name, partition.fullname)
+        if check.is_fixture() or candidate_comb in check_part_combs:
             continue
 
-        check_part_combs.add(candidate_check)
+        check_part_combs.add(candidate_comb)
         cls = type(check)
         variant_info = cls.get_variant_info(
             check.variant_num, recurse=True
         )
-
         nc = make_test(
             f'_D_{cls.__name__}_{partition.fullname.replace(":", "_")}',
             (cls,),
