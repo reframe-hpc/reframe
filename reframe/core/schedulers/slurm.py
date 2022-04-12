@@ -19,7 +19,7 @@ from reframe.core.exceptions import (SpawnedProcessError,
                                      JobBlockedError,
                                      JobError,
                                      JobSchedulerError)
-from reframe.utility import seconds_to_hms
+from reframe.utility import nodelist_abbrev, seconds_to_hms
 
 
 def slurm_state_completed(state):
@@ -194,7 +194,10 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         if job.pin_nodes:
             preamble.append(
-                self._format_option(job.pin_nodes, '--nodelist={0}')
+                self._format_option(
+                    nodelist_abbrev(job.pin_nodes),
+                    '--nodelist={0}'
+                )
             )
 
         for opt in job.sched_access:

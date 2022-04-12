@@ -923,7 +923,7 @@ def test_dynamic_tests(run_reframe, tmp_path):
     returncode, stdout, _ = run_reframe(
         system='sys0',
         environs=[],
-        checkpath=['unittests/resources/checks_unlisted/alloc_check.py'],
+        checkpath=['unittests/resources/checks_unlisted/distribute.py'],
         action='run',
         more_options=['-n', 'Complex', '--distribute=idle']
     )
@@ -937,7 +937,7 @@ def test_dynamic_tests_filtering(run_reframe, tmp_path):
     returncode, stdout, _ = run_reframe(
         system='sys1',
         environs=[],
-        checkpath=['unittests/resources/checks_unlisted/alloc_check.py'],
+        checkpath=['unittests/resources/checks_unlisted/distribute.py'],
         action='run',
         more_options=['-n', 'Complex@1', '--distribute=idle']
     )

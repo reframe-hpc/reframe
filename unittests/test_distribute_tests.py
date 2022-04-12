@@ -19,7 +19,7 @@ def default_exec_ctx(make_exec_ctx_g):
 @pytest.fixture
 def loader():
     return RegressionCheckLoader([
-        'unittests/resources/checks_unlisted/alloc_check.py'
+        'unittests/resources/checks_unlisted/distribute.py'
     ])
 
 
@@ -49,6 +49,6 @@ def test_distribute_testcases(loader, default_exec_ctx):
     for c in new_cases:
         nodes = getattr(c.check, '$nid')
         if c._partition.fullname == 'sys0:p0':
-            assert nodes in ('n1', 'n2')
+            assert nodes in (['n1'], ['n2'])
         else:
-            assert nodes == 'n3'
+            assert nodes == ['n3']

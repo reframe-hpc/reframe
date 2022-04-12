@@ -379,17 +379,21 @@ Options controlling ReFrame execution
 
    .. versionadded:: 3.2
 
-.. option:: --distribute=STATE
+.. option:: --distribute=NODESTATE
 
-   Parameterize and run tests on all the nodes of their partitions.
-   The attribute ``pin_nodes`` will be set in these tests in order to be submitted on the selected nodes.
+   Distribute the tests on all the nodes in state ``NODESTATE`` in their respective valid partitions.
+
+   ReFrame will parameterize and run the tests on the selected nodes.
+   In order to do that, it will dynamically create new tests that will inherit all the attributes of the original tests and contain one more parameter, ``$nid``, with the node that it will run on.
+   The new ReFrame classes are named ``_D_{basetest}_{partition}``.
 
    Currently this will work correctly only for one-node tests in local or Slurm partitions, and it will take into account the cli jobs options that are passed by the user.
+   Dependendecies will also be affected, since the names of the tests will be changed.
 
    You can decide the state of the nodes that will be considered:
 
    - ``all``: Tests will be parameterized over all the nodes of their partitions.
-   - ``STATE``: Tests will run on all the nodes in state ``STATE``, for example ``idle``.
+   - ``NODESTATE``: Tests will run on all the nodes in state ``NODESTATE``, for example ``idle``.
      The states of the nodes will be determined once, before beginning the
      execution of the tests so it might be different in the time of the submission of the tests.
 

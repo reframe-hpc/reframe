@@ -50,10 +50,9 @@ class TestRegistry:
         self._skip_tests = set()
 
     @classmethod
-    def create(cls, test=None, *args, **kwargs):
+    def create(cls, test, *args, **kwargs):
         obj = cls()
-        if test:
-            obj.add(test, *args, **kwargs)
+        obj.add(test, *args, **kwargs)
 
         return obj
 
