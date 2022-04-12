@@ -379,7 +379,7 @@ Options controlling ReFrame execution
 
    .. versionadded:: 3.2
 
-.. option:: --distribute=NODESTATE
+.. option:: --distribute[=NODESTATE]
 
    Distribute the selected tests on all the nodes in state ``NODESTATE`` in their respective valid partitions.
 
@@ -396,6 +396,8 @@ Options controlling ReFrame execution
    - ``NODESTATE``: Tests will run on all the nodes in state ``NODESTATE``, for example ``idle``.
      The states of the nodes will be determined once, before beginning the
      execution of the tests so it might be different in the time of the submission of the tests.
+
+   If ``NODESTATE`` is not passed it will take ``idle`` as default.
 
    .. versionadded:: 3.11.0
 

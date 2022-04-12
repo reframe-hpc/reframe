@@ -372,9 +372,10 @@ def main():
         default=[], help='Disable a pipeline hook for this run'
     )
     run_options.add_argument(
-        '--distribute', action='store', default=None, metavar='{all|STATE}',
+        '--distribute', action='store', metavar='{all|STATE}',
+        nargs='?', const='idle',
         help=('Distribute the selected single-node jobs on every node that'
-              'is in STATE')
+              'is in STATE (default: "idle"')
     )
     run_options.add_argument(
         '--exec-policy', metavar='POLICY', action='store',
