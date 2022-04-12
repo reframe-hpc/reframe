@@ -6,6 +6,7 @@
 
 import reframe.core.builtins as builtins
 import reframe.core.runtime as runtime
+import reframe.utility as util
 
 from reframe.core.decorators import TestRegistry
 from reframe.core.logging import getlogger
@@ -97,7 +98,8 @@ def distribute_tests(testcases, node_map):
             {
                 'valid_systems': [partition.fullname],
                 '$nid': builtins.parameter(
-                    [[n] for n in node_map[partition.fullname]]
+                    [[n] for n in node_map[partition.fullname]],
+                    fmt=util.nodelist_abbrev
                 )
             },
             methods=[
