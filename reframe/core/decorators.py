@@ -53,7 +53,6 @@ class TestRegistry:
     def create(cls, test, *args, **kwargs):
         obj = cls()
         obj.add(test, *args, **kwargs)
-
         return obj
 
     def add(self, test, *args, **kwargs):
