@@ -7,7 +7,7 @@ import pytest
 
 import reframe.frontend.executors as executors
 import reframe.frontend.filters as filters
-from reframe.frontend.cli import distribute_tests
+from reframe.frontend.distribute_tests import distribute_tests
 from reframe.frontend.loader import RegressionCheckLoader
 
 

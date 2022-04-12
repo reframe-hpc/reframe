@@ -15,7 +15,6 @@ import time
 import traceback
 
 import reframe
-import reframe.core.builtins as builtins
 import reframe.core.config as config
 import reframe.core.exceptions as errors
 import reframe.core.logging as logging
@@ -32,8 +31,7 @@ import reframe.utility.osext as osext
 import reframe.utility.typecheck as typ
 
 
-from reframe.core.decorators import TestRegistry
-from reframe.core.meta import make_test
+from reframe.frontend.distribute_tests import distribute_tests, getallnodes
 from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
@@ -186,79 +184,6 @@ def logfiles_message():
 def calc_verbosity(site_config, quiesce):
     curr_verbosity = site_config.get('general/0/verbose')
     return curr_verbosity - quiesce
-
-
-def distribute_tests(testcases, node_map):
-    tmp_registry = TestRegistry()
-    new_checks = []
-    # We don't want to register the same check for every environment
-    # per partition
-    check_part_combs = set()
-    for tc in testcases:
-        check, partition, _ = tc
-        candidate_check = (check.unique_name, partition.fullname)
-        if check.is_fixture() or candidate_check in check_part_combs:
-            continue
-
-        check_part_combs.add(candidate_check)
-        cls = type(check)
-        variant_info = cls.get_variant_info(
-            check.variant_num, recurse=True
-        )
-
-        def _rfm_pin_run_nodes(obj):
-            nodelist = getattr(obj, '$nid')
-            if not obj.local:
-                obj.job.pin_nodes = nodelist
-
-        def _rfm_pin_build_nodes(obj):
-            pin_nodes = getattr(obj, '$nid')
-            if not obj.local and not obj.build_locally:
-                obj.build_job.pin_nodes = pin_nodes
-
-        def make_valid_systems_hook(systems):
-            '''Returns a function to be used as a hook that sets the
-            valid systems.
-
-            Since valid_systems change for each generated test, we need to
-            generate different post-init hooks for each one of them.
-            '''
-            def _rfm_set_valid_systems(obj):
-                obj.valid_systems = systems
-
-            return _rfm_set_valid_systems
-
-        nc = make_test(
-            f'_D_{cls.__name__}_{partition.fullname.replace(":", "_")}',
-            (cls,),
-            {
-                'valid_systems': [partition.fullname],
-                '$nid': builtins.parameter(
-                    [[n] for n in node_map[partition.fullname]]
-                )
-            },
-            methods=[
-                builtins.run_before('run')(_rfm_pin_run_nodes),
-                builtins.run_before('compile')(_rfm_pin_build_nodes),
-                # We re-set the valid system in a hook to make sure that it
-                # will not be overwriten by a parent post-init hook
-                builtins.run_after('init')(
-                    make_valid_systems_hook([partition.fullname])
-                ),
-            ]
-        )
-        # We have to set the prefix manually
-        nc._rfm_custom_prefix = check.prefix
-
-        for i in range(nc.num_variants):
-            # Check if this variant should be instantiated
-            vinfo = nc.get_variant_info(i, recurse=True)
-            vinfo['params'].pop('$nid')
-            if vinfo == variant_info:
-                tmp_registry.add(nc, variant_num=i)
-
-    new_checks = tmp_registry.instantiate_all()
-    return generate_testcases(new_checks)
 
 
 def main():
@@ -1111,8 +1036,7 @@ def main():
             )
 
         if options.distribute:
-            node_map = autodetect.getallnodes(options.distribute,
-                                              parsed_job_options)
+            node_map = getallnodes(options.distribute, parsed_job_options)
             testcases = distribute_tests(testcases, node_map)
             testcases_all = testcases
 
