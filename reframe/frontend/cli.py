@@ -1248,7 +1248,7 @@ def main():
             success = True
             if runner.stats.failed():
                 success = False
-                runner.stats.print_failure_report(printer)
+                runner.stats.print_failure_report(printer, options.distribute)
                 if options.failure_stats:
                     runner.stats.print_failure_stats(printer)
 
