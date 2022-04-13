@@ -264,10 +264,10 @@ class Make(BuildSystem):
     def emit_build_commands(self, environ):
         cmd_parts = ['make']
         if self.makefile:
-            cmd_parts += ['-f %s' % self.makefile]
+            cmd_parts += [f'-f {self.makefile}']
 
         if self.srcdir:
-            cmd_parts += ['-C %s' % self.srcdir]
+            cmd_parts += [f'-C {self.srcdir}']
 
         cmd_parts += ['-j']
         if self.max_concurrency is not None:
@@ -283,31 +283,36 @@ class Make(BuildSystem):
         fflags   = self._fflags(environ)
         ldflags  = self._ldflags(environ)
         if cc:
-            cmd_parts += ['CC="%s"' % cc]
+            cmd_parts += [f'CC="{cc}"']
 
         if cxx:
-            cmd_parts += ['CXX="%s"' % cxx]
+            cmd_parts += [f'CXX="{cxx}"']
 
         if ftn:
-            cmd_parts += ['FC="%s"' % ftn]
+            cmd_parts += [f'FC="{ftn}"']
 
         if nvcc:
-            cmd_parts += ['NVCC="%s"' % nvcc]
+            cmd_parts += [f'NVCC="{nvcc}"']
 
         if cppflags:
-            cmd_parts += ['CPPFLAGS="%s"' % ' '.join(cppflags)]
+            flags = ' '.join(cppflags)
+            cmd_parts += [f'CPPFLAGS="{flags}"']
 
         if cflags:
-            cmd_parts += ['CFLAGS="%s"' % ' '.join(cflags)]
+            flags = ' '.join(cflags)
+            cmd_parts += [f'CFLAGS="{flags}"']
 
         if cxxflags:
-            cmd_parts += ['CXXFLAGS="%s"' % ' '.join(cxxflags)]
+            flags = ' '.join(cxxflags)
+            cmd_parts += [f'CXXFLAGS="{flags}"']
 
         if fflags:
-            cmd_parts += ['FCFLAGS="%s"' % ' '.join(fflags)]
+            flags = ' '.join(fflags)
+            cmd_parts += [f'FCFLAGS="{flags}"']
 
         if ldflags:
-            cmd_parts += ['LDFLAGS="%s"' % ' '.join(ldflags)]
+            flags = ' '.join(ldflags)
+            cmd_parts += [f'LDFLAGS="{flags}"']
 
         if self.options:
             cmd_parts += self.options
@@ -384,13 +389,13 @@ class SingleSource(BuildSystem):
     lang = variable(str, type(None), value=None)
 
     def _auto_exec_name(self):
-        return '%s.x' % os.path.splitext(self.srcfile)[0]
+        return os.path.splitext(self.srcfile)[0] + '.x'
 
     def emit_build_commands(self, environ):
         if not self.srcfile:
-            raise BuildSystemError(
-                'a source file is required when using the %s build system' %
-                type(self).__name__)
+            bname = type(self).__name__
+            raise BuildSystemError(f'a source file is required when using '
+                                   f'the {bname!r} build system')
 
         cc = self._cc(environ)
         cxx = self._cxx(environ)
@@ -527,11 +532,11 @@ class CMake(ConfigureBasedBuildSystem):
     def emit_build_commands(self, environ):
         prepare_cmd = []
         if self.srcdir:
-            prepare_cmd += ['cd %s' % self.srcdir]
+            prepare_cmd += [f'cd {self.srcdir}']
 
         if self.builddir:
-            prepare_cmd += ['mkdir -p %s' % self.builddir,
-                            'cd %s' % self.builddir]
+            prepare_cmd += [f'mkdir -p {self.builddir}',
+                            f'cd {self.builddir}']
 
         cmake_cmd = ['cmake']
         cc = self._cc(environ)
@@ -544,28 +549,32 @@ class CMake(ConfigureBasedBuildSystem):
         fflags   = self._combine_flags(cppflags, self._fflags(environ))
         ldflags  = self._ldflags(environ)
         if cc:
-            cmake_cmd += ['-DCMAKE_C_COMPILER="%s"' % cc]
+            cmake_cmd += [f'-DCMAKE_C_COMPILER="{cc}"']
 
         if cxx:
-            cmake_cmd += ['-DCMAKE_CXX_COMPILER="%s"' % cxx]
+            cmake_cmd += [f'-DCMAKE_CXX_COMPILER="{cxx}"']
 
         if ftn:
-            cmake_cmd += ['-DCMAKE_Fortran_COMPILER="%s"' % ftn]
+            cmake_cmd += [f'-DCMAKE_Fortran_COMPILER="{ftn}"']
 
         if nvcc:
-            cmake_cmd += ['-DCMAKE_CUDA_COMPILER="%s"' % nvcc]
+            cmake_cmd += [f'-DCMAKE_CUDA_COMPILER="{nvcc}"']
 
         if cflags:
-            cmake_cmd += ['-DCMAKE_C_FLAGS="%s"' % ' '.join(cflags)]
+            flags = ' '.join(cflags)
+            cmake_cmd += [f'-DCMAKE_C_FLAGS="{flags}"']
 
         if cxxflags:
-            cmake_cmd += ['-DCMAKE_CXX_FLAGS="%s"' % ' '.join(cxxflags)]
+            flags = ' '.join(cxxflags)
+            cmake_cmd += [f'-DCMAKE_CXX_FLAGS="{flags}"']
 
         if fflags:
-            cmake_cmd += ['-DCMAKE_Fortran_FLAGS="%s"' % ' '.join(fflags)]
+            flags = ' '.join(fflags)
+            cmake_cmd += [f'-DCMAKE_Fortran_FLAGS="{flags}"']
 
         if ldflags:
-            cmake_cmd += ['-DCMAKE_EXE_LINKER_FLAGS="%s"' % ' '.join(ldflags)]
+            flags = ' '.join(ldflags)
+            cmake_cmd += [f'-DCMAKE_EXE_LINKER_FLAGS="{flags}"']
 
         if self.config_opts:
             cmake_cmd += self.config_opts
@@ -609,11 +618,11 @@ class Autotools(ConfigureBasedBuildSystem):
     def emit_build_commands(self, environ):
         prepare_cmd = []
         if self.srcdir:
-            prepare_cmd += ['cd %s' % self.srcdir]
+            prepare_cmd += [f'cd {self.srcdir}']
 
         if self.builddir:
-            prepare_cmd += ['mkdir -p %s' % self.builddir,
-                            'cd %s' % self.builddir]
+            prepare_cmd += [f'mkdir -p {self.builddir}',
+                            f'cd {self.builddir}']
 
         if self.builddir:
             configure_cmd = [os.path.join(
@@ -631,28 +640,33 @@ class Autotools(ConfigureBasedBuildSystem):
         fflags   = self._fflags(environ)
         ldflags  = self._ldflags(environ)
         if cc:
-            configure_cmd += ['CC="%s"' % cc]
+            configure_cmd += [f'CC="{cc}"']
 
         if cxx:
-            configure_cmd += ['CXX="%s"' % cxx]
+            configure_cmd += [f'CXX="{cxx}"']
 
         if ftn:
-            configure_cmd += ['FC="%s"' % ftn]
+            configure_cmd += [f'FC="{ftn}"']
 
         if cppflags:
-            configure_cmd += ['CPPFLAGS="%s"' % ' '.join(cppflags)]
+            flags = ' '.join(cppflags)
+            configure_cmd += [f'CPPFLAGS="{flags}"']
 
         if cflags:
-            configure_cmd += ['CFLAGS="%s"' % ' '.join(cflags)]
+            flags = ' '.join(cflags)
+            configure_cmd += [f'CFLAGS="{flags}"']
 
         if cxxflags:
-            configure_cmd += ['CXXFLAGS="%s"' % ' '.join(cxxflags)]
+            flags = ' '.join(cxxflags)
+            configure_cmd += [f'CXXFLAGS="{flags}"']
 
         if fflags:
-            configure_cmd += ['FCFLAGS="%s"' % ' '.join(fflags)]
+            flags = ' '.join(fflags)
+            configure_cmd += [f'FCFLAGS="{flags}"']
 
         if ldflags:
-            configure_cmd += ['LDFLAGS="%s"' % ' '.join(ldflags)]
+            flags = ' '.join(ldflags)
+            configure_cmd += [f'LDFLAGS="{flags}"']
 
         if self.config_opts:
             configure_cmd += self.config_opts
@@ -897,6 +911,29 @@ class Spack(BuildSystem):
         return cmds
 
 
+class CustomBuild(BuildSystem):
+    '''Custom build system.
+
+    This build system backend allows users to use custom build scripts to
+    build the test code. It does not do any interpretation of the current test
+    environment and it simply runs the supplied :attr:`commands`.
+
+    Users should use this build system with caution, because environment
+    management, reproducibility and any potential side effects are all
+    controlled by the user's custom build system.
+
+    .. versionadded:: 3.11.0
+    '''
+
+    #: The commands to run for building the test code.
+    #:
+    #: :type: :class:`List[str]`
+    commands = variable(typ.List[str])
+
+    def emit_build_commands(self, environ):
+        return self.commands
+
+
 class BuildSystemField(fields.TypedField):
     def __init__(self, fieldname, *other_types):
         super().__init__(fieldname, BuildSystem, *other_types)
@@ -906,6 +943,6 @@ class BuildSystemField(fields.TypedField):
             try:
                 value = globals()[value]()
             except KeyError:
-                raise ValueError('unknown build system: %s' % value) from None
+                raise ValueError(f'unknown build system: {value}') from None
 
         super().__set__(obj, value)

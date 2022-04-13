@@ -1037,6 +1037,14 @@ def main():
 
         if options.distribute:
             node_map = getallnodes(options.distribute, parsed_job_options)
+            # In the distribute option we need to remove the cli options that
+            # begin with '--nodelist' and '-w', so that we don't include them
+            # in the job scripts
+            parsed_job_options = list(
+                filter(lambda x: (not x.startswith('-w') and
+                                  not x.startswith('--nodelist')),
+                       parsed_job_options)
+            )
             testcases = distribute_tests(testcases, node_map)
             testcases_all = testcases
 
@@ -1249,7 +1257,9 @@ def main():
             success = True
             if runner.stats.failed():
                 success = False
-                runner.stats.print_failure_report(printer, not options.distribute)
+                runner.stats.print_failure_report(
+                    printer, not options.distribute
+                )
                 if options.failure_stats:
                     runner.stats.print_failure_stats(printer)
 

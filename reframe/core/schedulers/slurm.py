@@ -7,6 +7,7 @@ import functools
 import glob
 import itertools
 import re
+import shlex
 import time
 from argparse import ArgumentParser
 from contextlib import suppress
@@ -305,6 +306,8 @@ class SlurmJobScheduler(sched.JobScheduler):
         # create a mutable list out of the immutable SequenceView that
         # sched_access is
         options = job.sched_access + job.options + job.cli_options
+        options = list(itertools.chain.from_iterable(shlex.split(opt)
+                                                     for opt in options))
         option_parser = ArgumentParser()
         option_parser.add_argument('--reservation')
         option_parser.add_argument('-p', '--partition')
