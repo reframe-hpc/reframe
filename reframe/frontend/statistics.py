@@ -203,7 +203,7 @@ class TestStats:
 
         return self._run_data
 
-    def print_failure_report(self, printer, distribute_run=None):
+    def print_failure_report(self, printer, rerun_info=True):
         line_width = 78
         printer.info(line_width * '=')
         printer.info('SUMMARY OF FAILURES')
@@ -234,7 +234,7 @@ class TestStats:
                          f"{r['dependencies_actual']}")
             printer.info(f"  * Maintainers: {r['maintainers']}")
             printer.info(f"  * Failing phase: {r['fail_phase']}")
-            if not distribute_run:
+            if rerun_info:
                 if rt.runtime().get_option('general/0/compact_test_names'):
                     cls = r['display_name'].split(' ')[0]
                     variant = r['unique_name'].replace(cls, '')
