@@ -306,6 +306,9 @@ class SlurmJobScheduler(sched.JobScheduler):
         # create a mutable list out of the immutable SequenceView that
         # sched_access is
         options = job.sched_access + job.options + job.cli_options
+
+        # Properly split lexically all the arguments in the options list so as
+        # to treat correctly entries such as '--option foo'.
         options = list(itertools.chain.from_iterable(shlex.split(opt)
                                                      for opt in options))
         option_parser = ArgumentParser()

@@ -1037,14 +1037,17 @@ def main():
 
         if options.distribute:
             node_map = getallnodes(options.distribute, parsed_job_options)
-            # In the distribute option we need to remove the cli options that
-            # begin with '--nodelist' and '-w', so that we don't include them
-            # in the job scripts
-            parsed_job_options = list(
-                filter(lambda x: (not x.startswith('-w') and
-                                  not x.startswith('--nodelist')),
-                       parsed_job_options)
-            )
+
+            # Remove the job options that begin with '--nodelist' and '-w', so
+            # that they do not override those set from the distribute feature.
+            #
+            # NOTE: This is Slurm-specific. When support of distributing tests
+            # is added to other scheduler backends, this needs to be updated,
+            # too.
+            parsed_job_options = [
+                for x in parsed_job_options
+                if (not x.startswith('-w') and not x.startswith('--nodelist'))
+            ]
             testcases = distribute_tests(testcases, node_map)
             testcases_all = testcases
 
