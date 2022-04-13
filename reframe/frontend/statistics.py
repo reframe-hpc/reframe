@@ -203,7 +203,7 @@ class TestStats:
 
         return self._run_data
 
-    def print_failure_report(self, printer):
+    def print_failure_report(self, printer, rerun_info=True):
         line_width = 78
         printer.info(line_width * '=')
         printer.info('SUMMARY OF FAILURES')
@@ -227,7 +227,6 @@ class TestStats:
                 f"  * Node list: {util.nodelist_abbrev(r['nodelist'])}"
             )
             job_type = 'local' if r['scheduler'] == 'local' else 'batch job'
-            jobid = r['jobid']
             printer.info(f"  * Job type: {job_type} (id={r['jobid']})")
             printer.info(f"  * Dependencies (conceptual): "
                          f"{r['dependencies_conceptual']}")
@@ -235,15 +234,19 @@ class TestStats:
                          f"{r['dependencies_actual']}")
             printer.info(f"  * Maintainers: {r['maintainers']}")
             printer.info(f"  * Failing phase: {r['fail_phase']}")
-            if rt.runtime().get_option('general/0/compact_test_names'):
-                cls = r['display_name'].split(' ')[0]
-                variant = r['unique_name'].replace(cls, '').replace('_', '@')
-                nameoptarg = cls + variant
-            else:
-                nameoptarg = r['unique_name']
+            if rerun_info:
+                if rt.runtime().get_option('general/0/compact_test_names'):
+                    cls = r['display_name'].split(' ')[0]
+                    variant = r['unique_name'].replace(cls, '')
+                    variant = variant.replace('_', '@')
+                    nameoptarg = cls + variant
+                else:
+                    nameoptarg = r['unique_name']
 
-            printer.info(f"  * Rerun with '-n {nameoptarg}"
-                         f" -p {r['environment']} --system {r['system']} -r'")
+                printer.info(f"  * Rerun with '-n {nameoptarg}"
+                             f" -p {r['environment']} --system "
+                             f"{r['system']} -r'")
+
             printer.info(f"  * Reason: {r['fail_reason']}")
 
             tb = ''.join(traceback.format_exception(*r['fail_info'].values()))

@@ -30,11 +30,12 @@ import reframe.utility.osext as osext
 import reframe.utility.typecheck as typ
 
 
-from reframe.frontend.printer import PrettyPrinter
-from reframe.frontend.loader import RegressionCheckLoader
+from reframe.frontend.distribute import distribute_tests, getallnodes
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
 from reframe.frontend.executors import Runner, generate_testcases
+from reframe.frontend.loader import RegressionCheckLoader
+from reframe.frontend.printer import PrettyPrinter
 
 
 def format_env(envvars):
@@ -369,6 +370,12 @@ def main():
     run_options.add_argument(
         '--disable-hook', action='append', metavar='NAME', dest='hooks',
         default=[], help='Disable a pipeline hook for this run'
+    )
+    run_options.add_argument(
+        '--distribute', action='store', metavar='{all|STATE}',
+        nargs='?', const='idle',
+        help=('Distribute the selected single-node jobs on every node that'
+              'is in STATE (default: "idle"')
     )
     run_options.add_argument(
         '--exec-policy', metavar='POLICY', action='store',
@@ -933,6 +940,19 @@ def main():
     print_infoline('output directory', repr(session_info['prefix_output']))
     printer.info('')
     try:
+        # Need to parse the cli options before loading the tests
+        parsed_job_options = []
+        for opt in options.job_options:
+            opt_split = opt.split('=', maxsplit=1)
+            optstr = opt_split[0]
+            valstr = opt_split[1] if len(opt_split) > 1 else ''
+            if opt.startswith('-') or opt.startswith('#'):
+                parsed_job_options.append(opt)
+            elif len(optstr) == 1:
+                parsed_job_options.append(f'-{optstr} {valstr}')
+            else:
+                parsed_job_options.append(f'--{optstr} {valstr}')
+
         # Locate and load checks; `force=True` is not needed for normal
         # invocations from the command line and has practically no effect, but
         # it is needed to better emulate the behavior of running reframe's CLI
@@ -1014,6 +1034,22 @@ def main():
                 f'Filtering successful test case(s): '
                 f'{len(testcases)} remaining'
             )
+
+        if options.distribute:
+            node_map = getallnodes(options.distribute, parsed_job_options)
+
+            # Remove the job options that begin with '--nodelist' and '-w', so
+            # that they do not override those set from the distribute feature.
+            #
+            # NOTE: This is Slurm-specific. When support of distributing tests
+            # is added to other scheduler backends, this needs to be updated,
+            # too.
+            parsed_job_options = [
+                x for x in parsed_job_options
+                if (not x.startswith('-w') and not x.startswith('--nodelist'))
+            ]
+            testcases = distribute_tests(testcases, node_map)
+            testcases_all = testcases
 
         # Prepare for running
         printer.debug('Building and validating the full test DAG')
@@ -1194,18 +1230,6 @@ def main():
             sched_flex_alloc_nodes = options.flex_alloc_nodes
 
         exec_policy.sched_flex_alloc_nodes = sched_flex_alloc_nodes
-        parsed_job_options = []
-        for opt in options.job_options:
-            opt_split = opt.split('=', maxsplit=1)
-            optstr = opt_split[0]
-            valstr = opt_split[1] if len(opt_split) > 1 else ''
-            if opt.startswith('-') or opt.startswith('#'):
-                parsed_job_options.append(opt)
-            elif len(optstr) == 1:
-                parsed_job_options.append(f'-{optstr} {valstr}')
-            else:
-                parsed_job_options.append(f'--{optstr} {valstr}')
-
         exec_policy.sched_options = parsed_job_options
         if options.maxfail < 0:
             raise errors.ConfigError(
@@ -1236,7 +1260,9 @@ def main():
             success = True
             if runner.stats.failed():
                 success = False
-                runner.stats.print_failure_report(printer)
+                runner.stats.print_failure_report(
+                    printer, not options.distribute
+                )
                 if options.failure_stats:
                     runner.stats.print_failure_stats(printer)
 

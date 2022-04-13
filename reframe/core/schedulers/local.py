@@ -202,5 +202,9 @@ class _LocalNode(sched.Node):
     def __init__(self, name):
         self._name = name
 
+    @property
+    def name(self):
+        return self._name
+
     def in_state(self, state):
         return state.casefold() == 'idle'

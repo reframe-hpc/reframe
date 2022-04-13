@@ -917,3 +917,30 @@ def test_fixture_resolution(run_reframe):
         action='run'
     )
     assert returncode == 0
+
+
+def test_dynamic_tests(run_reframe, tmp_path):
+    returncode, stdout, _ = run_reframe(
+        system='sys0',
+        environs=[],
+        checkpath=['unittests/resources/checks_unlisted/distribute.py'],
+        action='run',
+        more_options=['-n', 'Complex', '--distribute=idle']
+    )
+    assert returncode == 0
+    assert 'Ran 10/10 test case(s)' in stdout
+    assert 'FAILED' not in stdout
+
+
+def test_dynamic_tests_filtering(run_reframe, tmp_path):
+    # Target sys1 that has compact_test_names==True
+    returncode, stdout, _ = run_reframe(
+        system='sys1',
+        environs=[],
+        checkpath=['unittests/resources/checks_unlisted/distribute.py'],
+        action='run',
+        more_options=['-n', 'Complex@1', '--distribute=idle']
+    )
+    assert returncode == 0
+    assert 'Ran 7/7 test case(s)' in stdout
+    assert 'FAILED' not in stdout

@@ -705,7 +705,7 @@ class RegressionTestMeta(type):
               ...
 
           # Get the raw info for variant 0
-          MyTest.get_variant_info(0, recursive=True)
+          MyTest.get_variant_info(0, recurse=True)
           # {
           #     'params': {'p1': 'a'},
           #     'fixtures': {
@@ -846,7 +846,7 @@ def make_test(name, bases, body, methods=None, **kwargs):
        class HelloTest(rfm.RunOnlyRegressionTest):
            valid_systems = ['*']
            valid_prog_environs = ['*']
-           executable = 'echo',
+           executable = 'echo'
            sanity_patterns: sn.assert_true(1)
 
        hello_cls = HelloTest

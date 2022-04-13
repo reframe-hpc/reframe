@@ -265,6 +265,18 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
     #: :type: :class:`reframe.core.launchers.JobLauncher`
     launcher = variable(JobLauncher)
 
+    #: Pin the jobs on the given nodes.
+    #:
+    #: The list of nodes will be transformed to a suitable string and be
+    #: passed to the scheduler's options. Currently it will have an effect
+    #: only for the Slurm scheduler.
+    #:
+    #: :type: :class:`List[str]`
+    #: :default: ``[]``
+    #:
+    #: .. versionadded:: 3.11.0
+    pin_nodes = variable(typ.List[str], value=[])
+
     # The sched_* arguments are exposed also to the frontend
     def __init__(self,
                  name,
