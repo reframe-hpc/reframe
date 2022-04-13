@@ -15,7 +15,7 @@ from reframe.core.schedulers import Job
 from reframe.frontend.executors import generate_testcases
 
 
-def getallnodes(state='all', jobs_cli_options=[]):
+def getallnodes(state='all', jobs_cli_options=None):
     rt = runtime.runtime()
     nodes = {}
     for part in rt.system.partitions:
