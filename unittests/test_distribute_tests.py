@@ -46,9 +46,19 @@ def test_distribute_testcases(loader, default_exec_ctx):
     assert count == 4
     count = sum(map(lambda x: x.partition.fullname == 'sys0:p1', new_cases))
     assert count == 2
+
+    def sys0p0_nodes():
+        for nodelist in (['n2'], ['n2'], ['n1'], ['n1']):
+            yield nodelist
+
+    nodelist_iter = sys0p0_nodes()
     for tc in new_cases:
         nodes = getattr(tc.check, '$nid')
         if tc.partition.fullname == 'sys0:p0':
-            assert nodes in (['n1'], ['n2'])
+            assert nodes == next(nodelist_iter)
         else:
             assert nodes == ['n3']
+
+    # Make sure we have consumed all the elements from nodelist_iter
+    with pytest.raises(StopIteration):
+        next(nodelist_iter)
