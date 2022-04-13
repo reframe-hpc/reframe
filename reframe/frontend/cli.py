@@ -30,12 +30,12 @@ import reframe.utility.osext as osext
 import reframe.utility.typecheck as typ
 
 
-from reframe.frontend.distribute_tests import distribute_tests, getallnodes
-from reframe.frontend.printer import PrettyPrinter
-from reframe.frontend.loader import RegressionCheckLoader
+from reframe.frontend.distribute import distribute_tests, getallnodes
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
 from reframe.frontend.executors import Runner, generate_testcases
+from reframe.frontend.loader import RegressionCheckLoader
+from reframe.frontend.printer import PrettyPrinter
 
 
 def format_env(envvars):
@@ -1045,7 +1045,7 @@ def main():
             # is added to other scheduler backends, this needs to be updated,
             # too.
             parsed_job_options = [
-                for x in parsed_job_options
+                x for x in parsed_job_options
                 if (not x.startswith('-w') and not x.startswith('--nodelist'))
             ]
             testcases = distribute_tests(testcases, node_map)
