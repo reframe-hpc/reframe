@@ -384,20 +384,28 @@ Options controlling ReFrame execution
    Distribute the selected tests on all the nodes in state ``NODESTATE`` in their respective valid partitions.
 
    ReFrame will parameterize and run the tests on the selected nodes.
-   In order to do that, it will dynamically create new tests that will inherit all the attributes of the original tests and contain one more parameter, ``$nid``, with the node that it will run on.
-   The new ReFrame classes are named ``{basetest}_{partition}``.
+   Effectively, it will dynamically create new tests that inherit from the original tests and add a new parameter named ``$nid`` which contains the list of nodes that the test must run on.
+   The new tests are named with the following pattern  ``{orig_test_basename}_{partition_fullname}``.
 
-   Currently this will work correctly only for one-node tests in local or Slurm partitions, and it will take into account the cli jobs options that are passed by the user.
-   This feature will not work with dependencies, since the names of the tests will be changed, but it will work with fixtures.
+   When determining the list of nodes to distribute the selected tests, ReFrame will take into account any job options passed through the :option:`-J` option.
 
-   You can decide the state of the nodes that will be considered:
+   You can optionally specify the state of the nodes to consider when distributing the test through the ``NODESTATE`` argument:
 
-   - ``all``: Tests will be parameterized over all the nodes of their partitions.
-   - ``NODESTATE``: Tests will run on all the nodes in state ``NODESTATE``, for example ``idle``.
-     The states of the nodes will be determined once, before beginning the
-     execution of the tests so it might be different in the time of the submission of the tests.
+   - ``all``: Tests will run on all the nodes of their respective valid partitions regardless of the nodes' state.
+   - ``idle``: Tests will run on all *idle* nodes of their respective valid partitions.
+   - ``NODESTATE``: Tests will run on all the nodes in state ``NODESTATE`` of their respective valid partitions.
+     If ``NODESTATE`` is not specified, ``idle`` will be assumed.
 
-   If ``NODESTATE`` is not passed it will take ``idle`` as default.
+   The state of the nodes will be determined once, before beginning the
+   execution of the tests, so it might be different at the time the tests are actually submitted.
+
+   .. note::
+      Currently, only single-node jobs can be distributed and only local or the Slurm-based backends support this feature.
+
+   .. note::
+      Distributing tests with dependencies is not supported.
+      However, you can distribute tests that use fixtures.
+
 
    .. versionadded:: 3.11.0
 
