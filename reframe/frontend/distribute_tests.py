@@ -93,7 +93,7 @@ def distribute_tests(testcases, node_map):
             check.variant_num, recurse=True
         )
         nc = make_test(
-            f'_D_{cls.__name__}_{partition.fullname.replace(":", "_")}',
+            f'{cls.__name__}_{partition.fullname.replace(":", "_")}',
             (cls,),
             {
                 'valid_systems': [partition.fullname],

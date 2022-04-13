@@ -385,7 +385,7 @@ Options controlling ReFrame execution
 
    ReFrame will parameterize and run the tests on the selected nodes.
    In order to do that, it will dynamically create new tests that will inherit all the attributes of the original tests and contain one more parameter, ``$nid``, with the node that it will run on.
-   The new ReFrame classes are named ``_D_{basetest}_{partition}``.
+   The new ReFrame classes are named ``{basetest}_{partition}``.
 
    Currently this will work correctly only for one-node tests in local or Slurm partitions, and it will take into account the cli jobs options that are passed by the user.
    This feature will not work with dependencies, since the names of the tests will be changed, but it will work with fixtures.
