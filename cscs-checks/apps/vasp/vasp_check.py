@@ -23,31 +23,31 @@ class VASPCheck(rfm.RunOnlyRegressionTest):
     maintainers = ['LM']
 
     num_nodes = parameter([6, 16], loggable=True)
-    references = {
+    allref = {
         6: {
             'sm_60': {
-                'dom:gpu': {'time': (56.0, None, 0.10, 's')},
-                'daint:gpu': {'time': (65.0, None, 0.15, 's')},
+                'dom:gpu': {'elapsed_time': (56.0, None, 0.10, 's')},
+                'daint:gpu': {'elapsed_time': (65.0, None, 0.15, 's')},
             },
             'broadwell': {
-                'dom:mc': {'time': (58.0, None, 0.10, 's')},
-                'daint:mc': {'time': (65.0, None, 0.15, 's')},
+                'dom:mc': {'elapsed_time': (58.0, None, 0.10, 's')},
+                'daint:mc': {'elapsed_time': (65.0, None, 0.15, 's')},
             },
             'zen2': {
-                'eiger:mc': {'time': (100.0, None, 0.10, 's')},
-                'pilatus:mc': {'time': (100.0, None, 0.10, 's')},
+                'eiger:mc': {'elapsed_time': (100.0, None, 0.10, 's')},
+                'pilatus:mc': {'elapsed_time': (100.0, None, 0.10, 's')},
             },
         },
         16: {
             'sm_60': {
-                'daint:gpu': {'time': (55.0, None, 0.15, 's')},
+                'daint:gpu': {'elapsed_time': (55.0, None, 0.15, 's')},
             },
             'broadwell': {
-                'daint:mc': {'time': (55.0, None, 0.15, 's')},
+                'daint:mc': {'elapsed_time': (55.0, None, 0.15, 's')},
             },
             'zen2': {
-                'eiger:mc': {'time': (100.0, None, 0.10, 's')},
-                'pilatus:mc': {'time': (100.0, None, 0.10, 's')}
+                'eiger:mc': {'elapsed_time': (100.0, None, 0.10, 's')},
+                'pilatus:mc': {'elapsed_time': (100.0, None, 0.10, 's')}
             }
         }
     }
@@ -85,7 +85,6 @@ class VASPCheck(rfm.RunOnlyRegressionTest):
         else:
             self.valid_prog_environs = ['builtin']
 
-
     @run_before('run')
     def setup_run(self):
         # set auto-detected architecture
@@ -98,7 +97,7 @@ class VASPCheck(rfm.RunOnlyRegressionTest):
             arch = 'sm_60'
 
         try:
-            found = self.references[self.num_nodes][arch]
+            found = self.allref[self.num_nodes][arch]
         except KeyError:
             self.skip(f'Configuration with {self.num_nodes} node(s) '
                       f'is not supported on {arch!r}')
@@ -122,4 +121,4 @@ class VASPCheck(rfm.RunOnlyRegressionTest):
             })
 
         # setup performance references
-        self.reference = self.references[self.num_nodes][arch]
+        self.reference = self.allref[self.num_nodes][arch]
