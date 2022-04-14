@@ -26,8 +26,8 @@ class CPMDCheck(rfm.RunOnlyRegressionTest):
     allref = {
         6: {
             'sm_60': {
-                'dom:gpu': {'elapsed_time': (120, None, 0.15, 's')},
-                'daint:gpu': {'elapsed_time': (120, None, 0.15, 's')},
+                'dom:gpu': {'elapsed_time': (120.0, None, 0.15, 's')},
+                'daint:gpu': {'elapsed_time': (120.0, None, 0.15, 's')},
             },
             'broadwell': {
                 'dom:mc': {'elapsed_time': (150.0, None, 0.15, 's')},
@@ -36,7 +36,7 @@ class CPMDCheck(rfm.RunOnlyRegressionTest):
         },
         16: {
             'sm_60': {
-                'daint:gpu': {'elapsed_time': (120, None, 0.15, 's')}
+                'daint:gpu': {'elapsed_time': (120.0, None, 0.15, 's')}
             },
             'broadwell': {
                 'daint:mc': {'elapsed_time': (150.0, None, 0.15, 's')},
