@@ -23,23 +23,23 @@ class CPMDCheck(rfm.RunOnlyRegressionTest):
     maintainers = ['AJ', 'LM']
 
     num_nodes = parameter([6, 16], loggable=True)
-    references = {
+    allref = {
         6: {
             'sm_60': {
-                'dom:gpu': {'time': (120, None, 0.15, 's')},
-                'daint:gpu': {'time': (120, None, 0.15, 's')},
+                'dom:gpu': {'elapsed_time': (120.0, None, 0.15, 's')},
+                'daint:gpu': {'elapsed_time': (120.0, None, 0.15, 's')},
             },
             'broadwell': {
-                'dom:mc': {'time': (150.0, None, 0.15, 's')},
-                'daint:mc': {'time': (150.0, None, 0.15, 's')},
+                'dom:mc': {'elapsed_time': (150.0, None, 0.15, 's')},
+                'daint:mc': {'elapsed_time': (150.0, None, 0.15, 's')},
             },
         },
         16: {
             'sm_60': {
-                'daint:gpu': {'time': (120, None, 0.15, 's')}
+                'daint:gpu': {'elapsed_time': (120.0, None, 0.15, 's')}
             },
             'broadwell': {
-                'daint:mc': {'time': (150.0, None, 0.15, 's')},
+                'daint:mc': {'elapsed_time': (150.0, None, 0.15, 's')},
             },
         }
     }
@@ -93,16 +93,17 @@ class CPMDCheck(rfm.RunOnlyRegressionTest):
         # common setup for every architecture
         self.job.launcher.options = ['--cpu-bind=cores']
         self.job.options = ['--distribution=block:block']
+
         # FIXME: the current test case does not scale beyond 72 MPI tasks
         # and needs to be updated (see the warning about XC_DRIVER IN &DFT)
         self.num_tasks_per_node = 72 // self.num_nodes
         self.num_tasks = self.num_nodes * self.num_tasks_per_node
 
         try:
-            found = self.references[self.num_nodes][arch]
+            found = self.allref[self.num_nodes][arch]
         except KeyError:
             self.skip(f'Configuration with {self.num_nodes} node(s) '
                       f'is not supported on {arch!r}')
 
         # setup performance references
-        self.reference = self.references[self.num_nodes][arch]
+        self.reference = self.allref[self.num_nodes][arch]
