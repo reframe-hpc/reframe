@@ -14,7 +14,7 @@ import cscstests.microbenchmarks.gpu.hooks as hooks
 
 
 @rfm.simple_test
-class gpu_burn_check(GpuBurn):
+class cscs_gpu_burn_check(GpuBurn):
     valid_systems = [
         'daint:gpu', 'dom:gpu', 'arolla:cn', 'tsa:cn', 'ault:amdv100',
         'ault:intelv100', 'ault:amda100', 'ault:amdvega'
@@ -84,4 +84,3 @@ class gpu_burn_check(GpuBurn):
                         sn.assert_reference(val, ref, lt, ut).evaluate()
                     except SanityError:
                         self.perf_variables[nid] = node_perf
-

@@ -3,15 +3,54 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import os
 
 import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-__all__ = ['GpuBurn']
+class gpu_burn_build(rfm.CompileOnlyRegressionTest, pin_prefix=True):
+    # FIXME: We set a default value to the following variable due to:
+    # https://github.com/eth-cscs/reframe/issues/2477
+
+    #: Set the build option to either ``'cuda'`` or ``'hip'``.
+    #:
+    #: :default: ``required``
+    gpu_build = variable(str, value='cuda')
+
+    #: Set the GPU architecture.
+    #:
+    #: This variable will be passed to the compiler to generate the
+    #: arch-specific code.
+    #:
+    #: :default: ``None``
+    gpu_arch = variable(str, type(None), value=None)
+    descr = 'GPU burn test build fixture'
+    build_system = 'Make'
+
+    @run_after('init')
+    def setup_build(self):
+        if self.gpu_build == 'cuda':
+            self.build_system.makefile = 'makefile.cuda'
+            if self.gpu_arch:
+                self.build_system.cxxflags = [f'-arch=compute_{self.gpu_arch}',
+                                              f'-code=sm_{self.gpu_arch}']
+        elif self.gpu_build == 'hip':
+            self.build_system.makefile = 'makefile.hip'
+            if self.gpu_arch:
+                self.build_system.cxxflags = [
+                    f'--amdgpu-target={self.gpu_arch}'
+                ]
+        else:
+            raise ValueError(f'unknown build variant: {self.gpu_build!r}')
+
+    @sanity_function
+    def valid_build(self):
+        return True
 
 
-class GpuBurn(rfm.RegressionTest, pin_prefix=True):
+@rfm.simple_test
+class gpu_burn_check(rfm.RunOnlyRegressionTest):
     '''Base class for the GPU Burn test.
 
     The test sources can be compiled for both CUDA and HIP. This is set with
@@ -43,80 +82,45 @@ class GpuBurn(rfm.RegressionTest, pin_prefix=True):
     #: :default: ``None``
     gpu_arch = variable(str, type(None), value=None)
 
-    # Required variables
-    num_tasks = required
-    num_gpus_per_node = required
+    num_tasks = 1
+    num_tasks_per_node = 1
 
     descr = 'GPU burn test'
     build_system = 'Make'
-    executable = './gpu_burn.x'
-    num_tasks_per_node = 1
+    executable = 'gpu_burn.x'
+    gpu_burn_binaries = fixture(gpu_burn_build, scope='environment')
 
-    @run_before('compile')
-    def set_gpu_build(self):
-        '''Set the build options [pre-compile hook].
-
-        This hook requires the ``gpu_build`` variable to be set.
-        The supported options are ``'cuda'`` and ``'hip'``. See the
-        vendor-specific docs for the supported options for the ``gpu_arch``
-        variable.
-        '''
-
-        if self.gpu_build == 'cuda':
-            self.build_system.makefile = 'makefile.cuda'
-            if self.gpu_arch:
-                self.build_system.cxxflags = [f'-arch=compute_{self.gpu_arch}',
-                                              f'-code=sm_{self.gpu_arch}']
-        elif self.gpu_build == 'hip':
-            self.build_system.makefile = 'makefile.hip'
-            if self.gpu_arch:
-                self.build_system.cxxflags = [
-                    f'--amdgpu-target={self.gpu_arch}'
-                ]
-        else:
-            raise ValueError('unknown gpu_build option')
-
-    @property
-    def num_tasks_assigned(self):
-        '''Total number of times the gpu burn will run.
-
-        The GPU burn app is multi-threaded and will run in all the gpus present
-        in the node. Thus, the total number of times the gpu burn runs is the
-        product of the number of nodes (``self.job.num_tasks``) and the number
-        of gpus per node.
-        '''
-
-        return self.job.num_tasks * self.num_gpus_per_node
+    @run_before('run')
+    def add_exec_prefix(self):
+        self.executable = os.path.join(self.gpu_burn_binaries.stagedir,
+                                       self.executable)
 
     @sanity_function
-    def count_successful_burns(self):
-        '''Set the sanity patterns to count the number of successful burns.'''
+    def assert_sanity(self):
+        num_gpus_detected = sn.extractsingle(
+            r'Found (\d+) device\(s\)', self.stdout, 1, int
+        )
+        return sn.assert_eq(
+            sn.count(sn.findall(r'GPU\s+\d+\(OK\)', self.stdout)),
+            num_gpus_detected
+        )
 
-        return sn.assert_eq(sn.count(sn.findall(
-            r'^\s*\[[^\]]*\]\s*GPU\s*\d+\(OK\)', self.stdout)
-        ), self.num_tasks_assigned)
-
-    def _extract_perf_metric(self, metric, nid=None):
+    def _extract_metric(self, metric):
         '''Utility to extract performance metrics.'''
 
-        if metric not in {'perf', 'temp'}:
-            raise ValueError(
-                f"unsupported value in 'metric' argument: {metric!r}"
-            )
+        # [nid00001] GPU  0(OK): 4193 GF/s  52 Celsius
 
-        if nid is None:
-            nid = r'[^\]]*'
-
-        patt = (rf'^\s*\[{nid}\]\s*GPU\s+\d+\(\S*\):\s+(?P<perf>\S*)\s+GF\/s'
-                rf'\s+(?P<temp>\S*)\s+Celsius')
-        return sn.extractall(patt, self.stdout, metric, float)
+        return sn.extractall(
+            r'GPU\s+\d+\(OK\):\s+(?P<perf>\S+)\s+GF/s\s+'
+            r'(?P<temp>\S+)\s+Celsius', self.stdout, metric, float
+        )
 
     @performance_function('Gflop/s')
-    def min_perf(self, nid=None):
+    def gpu_perf_min(self):
         '''Lowest performance recorded.'''
-        return sn.min(self._extract_perf_metric('perf', nid))
+        return sn.min(self._extract_metric('perf'))
 
     @performance_function('degC')
-    def max_temp(self, nid=None):
+    def gpu_temp_max(self, nid=None):
         '''Maximum temperature recorded.'''
-        return sn.max(self._extract_perf_metric('temp', nid))
+        return sn.max(self._extract_metric('temp'))
