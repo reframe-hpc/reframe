@@ -106,10 +106,6 @@ class gpu_burn_check(rfm.RunOnlyRegressionTest):
         )
 
     def _extract_metric(self, metric):
-        '''Utility to extract performance metrics.'''
-
-        # [nid00001] GPU  0(OK): 4193 GF/s  52 Celsius
-
         return sn.extractall(
             r'GPU\s+\d+\(OK\):\s+(?P<perf>\S+)\s+GF/s\s+'
             r'(?P<temp>\S+)\s+Celsius', self.stdout, metric, float
