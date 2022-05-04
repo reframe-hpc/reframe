@@ -1,10 +1,11 @@
 /*
- * Modified for CSCS by Javier Otero (javier.otero@cscs.ch) to
- * support both HIP and CUDA.
+ * Modified for CSCS by
  *
- * Modifications for CSCS by Mark Klein (klein@cscs.ch)
- * - NVML bindings
- * - Reduced output
+ * - Mark Klein (kleinm@cscs.ch) for adding support of NVML bindings and reduced
+ *   output
+ * - Javier Otero (javier.otero@cscs.ch) to support both HIP and CUDA.
+ * - Vasileios Karakasis (vasileios.karakasis@cscs.ch) to support selection of
+ *   the devices to be burnt.
  *
  * original gpu_burn
  * Copyright (c) 2016, Ville Timonen
@@ -424,7 +425,8 @@ template<class T> void launch(int duration, const std::vector<int> &devices)
     {
         double flops = trackThreads[i]->read();
         float devTemp = trackThreads[i]->getTemp();
-        printf("GPU %2d(%s): %4.0f GF/s  %d Celsius\n", i, flops < 0.0 ? "FAULTY" : "OK", flops, (int)devTemp);
+        printf("GPU %2d(%s): %4.0f GF/s  %d Celsius\n", devices[i],
+               flops < 0.0 ? "FAULTY" : "OK", flops, (int) devTemp);
     }
 
     // Join all threads
@@ -481,7 +483,6 @@ int main(int argc, char **argv)
             print_usage();
             exit(0);
         case 'D':
-
             for (char *tok = std::strtok(optarg, ","); tok != nullptr;
                  tok = std::strtok(nullptr, ",")) {
                 devices.push_back(std::atoi(tok));

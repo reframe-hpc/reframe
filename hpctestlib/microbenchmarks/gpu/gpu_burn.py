@@ -6,6 +6,7 @@
 import os
 
 import reframe as rfm
+import reframe.utility.typecheck as typ
 import reframe.utility.sanity as sn
 
 
@@ -25,7 +26,9 @@ class gpu_burn_build(rfm.CompileOnlyRegressionTest, pin_prefix=True):
     #:
     #: :default: ``None``
     gpu_arch = variable(str, type(None), value=None)
+
     descr = 'GPU burn test build fixture'
+    sourcesdir = 'src/gpu_burn'
     build_system = 'Make'
 
     @run_after('init')
@@ -70,17 +73,9 @@ class gpu_burn_check(rfm.RunOnlyRegressionTest):
     temperatures recorded for each device after the burn.
     '''
 
-    #: Set the build option to either ``'cuda'`` or ``'hip'``.
-    #:
-    #: :default: ``required``
-    gpu_build = variable(str)
-
-    #: Set the GPU architecture.
-    #: This variable will be passed to the compiler to generate the
-    #: arch-specific code.
-    #:
-    #: :default: ``None``
-    gpu_arch = variable(str, type(None), value=None)
+    use_dp = variable(typ.Bool, value=True)
+    duration = variable(int, value=10)
+    devices = variable(typ.List[int], value=[])
 
     num_tasks = 1
     num_tasks_per_node = 1
@@ -90,6 +85,17 @@ class gpu_burn_check(rfm.RunOnlyRegressionTest):
     executable = 'gpu_burn.x'
     gpu_burn_binaries = fixture(gpu_burn_build, scope='environment')
 
+    @run_after('init')
+    def set_exec_opts(self):
+        if self.use_dp:
+            self.executable_opts += ['-d']
+
+        if self.devices:
+            self.executable_opts += ['-D',
+                                     ','.join(str(x) for x in self.devices)]
+
+        self.executable_opts += [str(self.duration)]
+
     @run_before('run')
     def add_exec_prefix(self):
         self.executable = os.path.join(self.gpu_burn_binaries.stagedir,
@@ -98,7 +104,7 @@ class gpu_burn_check(rfm.RunOnlyRegressionTest):
     @sanity_function
     def assert_sanity(self):
         num_gpus_detected = sn.extractsingle(
-            r'Found (\d+) device\(s\)', self.stdout, 1, int
+            r'==> devices selected \((\d+)\)', self.stdout, 1, int
         )
         return sn.assert_eq(
             sn.count(sn.findall(r'GPU\s+\d+\(OK\)', self.stdout)),
