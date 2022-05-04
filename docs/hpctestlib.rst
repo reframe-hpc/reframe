@@ -47,6 +47,13 @@ Build and run the CUDA-aware version of the allreduce benchmark.
    :show-inheritance:
 
 
+GPU benchmarks
+--------------
+
+.. automodule:: hpctestlib.microbenchmarks.gpu.gpu_burn
+   :members:
+   :show-inheritance:
+
 
 Scientific Applications
 =======================

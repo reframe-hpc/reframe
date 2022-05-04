@@ -11,12 +11,28 @@ import reframe.utility.sanity as sn
 
 
 class gpu_burn_build(rfm.CompileOnlyRegressionTest, pin_prefix=True):
+    '''Fixture for building the GPU burn benchmark.
+
+    .. list-table:: Summary
+       :widths: 20 40 40
+       :header-rows: 1
+
+       * - Variables
+         - Parameters
+         - Fixtures
+       * - - :attr:`gpu_arch`
+           - :attr:`gpu_build`
+         - *None*
+         - *None*
+    '''
+
     # FIXME: We set a default value to the following variable due to:
     # https://github.com/eth-cscs/reframe/issues/2477
 
     #: Set the build option to either ``'cuda'`` or ``'hip'``.
     #:
-    #: :default: ``required``
+    #: :type: :class:`str`
+    #: :default: ``'cuda'``
     gpu_build = variable(str, value='cuda')
 
     #: Set the GPU architecture.
@@ -24,6 +40,7 @@ class gpu_burn_build(rfm.CompileOnlyRegressionTest, pin_prefix=True):
     #: This variable will be passed to the compiler to generate the
     #: arch-specific code.
     #:
+    #: :type: :class:`str` or :obj:`None`
     #: :default: ``None``
     gpu_arch = variable(str, type(None), value=None)
 
@@ -54,27 +71,58 @@ class gpu_burn_build(rfm.CompileOnlyRegressionTest, pin_prefix=True):
 
 @rfm.simple_test
 class gpu_burn_check(rfm.RunOnlyRegressionTest):
-    '''Base class for the GPU Burn test.
+    '''GPU burn benchmark.
 
-    The test sources can be compiled for both CUDA and HIP. This is set with
-    the ``gpu_build`` variable, which must be set by a derived class to either
-    ``'cuda'`` or ``'hip'``. This source code can also be compiled for a
-    specific device architecture by setting the ``gpu_arch`` variable to an
-    AMD or NVIDIA supported architecture code. For the run stage, this test
-    requires that derived classes set the variables, num_tasks and
-    num_gpus_per_node.
+    This benchmark runs continuously GEMM, either single or double precision,
+    on a selected set of GPUs on the node that it runs.
 
-    The duration of the run can be changed by passing the value (in seconds) of
-    the desired run length. If this value is prepended with ``-d``, the matrix
-    operations will take place using double precision. By default, the code
-    will run for 10s in single precision mode.
+    The floating point precision of the computations, the duration of the
+    benchmark as well as the list of GPU devices that the benchmark will run
+    on can be controlled through test variables.
 
-    The performance stage of this test assesses the Gflops/s and the
-    temperatures recorded for each device after the burn.
+    This benchmark tries to build the benchmark code through the
+    :class:`gpu_burn_build` fixture.
+
+    This benchmark does not require and it does not set the
+    :attr:`~reframe.core.pipeline.RegressionTest.num_gpus_per_node` test attribute.
+    This is left to the site-specific tests to set it, if required.
+
+    .. list-table:: Summary
+       :widths: 10 30 30 30
+       :header-rows: 1
+
+       * - Variables
+         - Parameters
+         - Metrics
+         - Fixtures
+       * - - :attr:`use_dp`
+           - :attr:`duration`
+           - :attr:`devices`
+         - *None*
+         - - :obj:`gpu_perf_min`
+           - :obj:`gpu_temp_max`
+         - - :class:`gpu_burn_build` :obj:`[E]`
+
     '''
 
+    #: Use double-precision arithmetic when running the benchmark.
+    #:
+    #: :type: :class:`bool`
+    #: :default: ``True``
     use_dp = variable(typ.Bool, value=True)
+
+    #: Duration of the benchmark in seconds.
+    #:
+    #: :type: :class:`int`
+    #: :default: ``10``
     duration = variable(int, value=10)
+
+    #: List of device IDs to run the benchmark on.
+    #:
+    #: If empty, the benchmark will run on all the available devices.
+    #:
+    #: :type: :class:`List[int]`
+    #: :default: ``[]``
     devices = variable(typ.List[int], value=[])
 
     num_tasks = 1
@@ -83,6 +131,11 @@ class gpu_burn_check(rfm.RunOnlyRegressionTest):
     descr = 'GPU burn test'
     build_system = 'Make'
     executable = 'gpu_burn.x'
+
+    # The fixture to build the benchmark
+    #
+    # :type: :class:`gpu_burn_build`
+    # :scope: *environment*
     gpu_burn_binaries = fixture(gpu_burn_build, scope='environment')
 
     @run_after('init')
@@ -119,10 +172,10 @@ class gpu_burn_check(rfm.RunOnlyRegressionTest):
 
     @performance_function('Gflop/s')
     def gpu_perf_min(self):
-        '''Lowest performance recorded.'''
+        '''Lowest performance recorded among all the selected devices.'''
         return sn.min(self._extract_metric('perf'))
 
     @performance_function('degC')
-    def gpu_temp_max(self, nid=None):
-        '''Maximum temperature recorded.'''
+    def gpu_temp_max(self):
+        '''Maximum temperature recorded among all the selected devices.'''
         return sn.max(self._extract_metric('temp'))
