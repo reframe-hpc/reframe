@@ -152,6 +152,9 @@ site_configuration = {
                         }
                     ],
                     'launcher': 'srun'
+                    'extras': {
+                        'gpu_arch': 'sm_60'
+                    }
                 },
                 {
                     'name': 'mc',

@@ -33,7 +33,7 @@ class gpu_burn_build(rfm.CompileOnlyRegressionTest, pin_prefix=True):
     #:
     #: :type: :class:`str`
     #: :default: ``'cuda'``
-    gpu_build = variable(str, value='cuda')
+    gpu_build = variable(str, type(None), value=None)
 
     #: Set the GPU architecture.
     #:
@@ -48,13 +48,25 @@ class gpu_burn_build(rfm.CompileOnlyRegressionTest, pin_prefix=True):
     sourcesdir = 'src/gpu_burn'
     build_system = 'Make'
 
-    @run_after('init')
+    @run_before('compile')
     def setup_build(self):
+        cp = self.current_partition
+        if self.gpu_build is None:
+            # Try to set the build type from the partition features
+            if 'cuda' in cp.features:
+                self.gpu_build = 'cuda'
+            elif 'hip' in cp.features:
+                self.gpu_build = 'hip'
+
+        if self.gpu_arch is None:
+            # Try to set the gpu arch from the partition extras
+            self.gpu_arch = cp.extras.get('gpu_arch', None)
+
         if self.gpu_build == 'cuda':
             self.build_system.makefile = 'makefile.cuda'
             if self.gpu_arch:
                 self.build_system.cxxflags = [f'-arch=compute_{self.gpu_arch}',
-                                              f'-code=sm_{self.gpu_arch}']
+                                              f'-code={self.gpu_arch}']
         elif self.gpu_build == 'hip':
             self.build_system.makefile = 'makefile.hip'
             if self.gpu_arch:
@@ -88,13 +100,15 @@ class gpu_burn_check(rfm.RunOnlyRegressionTest):
     This is left to the site-specific tests to set it, if required.
 
     .. list-table:: Summary
-       :widths: 10 30 30 30
+       :widths: 10 10 10 10 20 20
        :header-rows: 1
 
        * - Variables
          - Parameters
          - Metrics
          - Fixtures
+         - System features
+         - Environment features
        * - - :attr:`use_dp`
            - :attr:`duration`
            - :attr:`devices`
@@ -102,6 +116,8 @@ class gpu_burn_check(rfm.RunOnlyRegressionTest):
          - - :obj:`gpu_perf_min`
            - :obj:`gpu_temp_max`
          - - :class:`gpu_burn_build` :obj:`[E]`
+         - ``+gpu``
+         - ``+cuda`` OR ``+hip``
 
     '''
 
@@ -137,6 +153,9 @@ class gpu_burn_check(rfm.RunOnlyRegressionTest):
     # :type: :class:`gpu_burn_build`
     # :scope: *environment*
     gpu_burn_binaries = fixture(gpu_burn_build, scope='environment')
+
+    valid_systems = ['+gpu']
+    valid_prog_environs = ['+cuda', '+hip']
 
     @run_after('init')
     def set_exec_opts(self):
