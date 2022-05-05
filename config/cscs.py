@@ -151,7 +151,13 @@ site_configuration = {
                             'options': ['--gres={gres}']
                         }
                     ],
-                    'launcher': 'srun'
+                    'devices': [
+                        # This will be auto-detected in the future
+                        'type': 'gpu',
+                        'arch': 'sm_60',
+                        'num_devices': 1
+                     ]
+                    'launcher': 'srun',
                     'extras': {
                         'gpu_arch': 'sm_60'
                     }
@@ -293,7 +299,13 @@ site_configuration = {
                             'name': 'gres',
                             'options': ['--gres={gres}']
                         }
-                    ]
+                    ],
+                    'devices': [
+                        # This will be auto-detected in the future
+                        'type': 'gpu',
+                        'arch': 'sm_60',
+                        'num_devices': 1
+                     ]
                 },
                 {
                     'name': 'mc',
@@ -862,7 +874,7 @@ site_configuration = {
         {
             'name': 'PrgEnv-nvidia',
             'modules': ['PrgEnv-nvidia'],
-            'features': ['cuda']
+            'features': ['cuda'],
             'target_systems': ['daint', 'dom'],
         },
         {

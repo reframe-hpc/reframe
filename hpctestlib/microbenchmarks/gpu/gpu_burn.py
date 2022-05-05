@@ -50,22 +50,25 @@ class gpu_burn_build(rfm.CompileOnlyRegressionTest, pin_prefix=True):
 
     @run_before('compile')
     def setup_build(self):
-        cp = self.current_partition
+        curr_part = self.current_partition
+        curr_env = self.current_environ
+
         if self.gpu_build is None:
             # Try to set the build type from the partition features
-            if 'cuda' in cp.features:
+            if 'cuda' in curr_env.features:
                 self.gpu_build = 'cuda'
-            elif 'hip' in cp.features:
+            elif 'hip' in curr_env.features:
                 self.gpu_build = 'hip'
 
         if self.gpu_arch is None:
             # Try to set the gpu arch from the partition extras
-            self.gpu_arch = cp.extras.get('gpu_arch', None)
+            self.gpu_arch = curr_part.extras.get('gpu_arch', None)
 
         if self.gpu_build == 'cuda':
             self.build_system.makefile = 'makefile.cuda'
             if self.gpu_arch:
-                self.build_system.cxxflags = [f'-arch=compute_{self.gpu_arch}',
+                cc = self.gpu_arch.replace('sm_', 'compute_')
+                self.build_system.cxxflags = [f'-arch={cc}',
                                               f'-code={self.gpu_arch}']
         elif self.gpu_build == 'hip':
             self.build_system.makefile = 'makefile.hip'
