@@ -21,7 +21,7 @@ site_configuration = {
                 {
                     'name': 'login',
                     'scheduler': 'local',
-                    'environs': ['builtin', 'PrgEnv-gnu'],
+                    'environs': ['gnu'],
                     'descr': 'Login nodes',
                     'max_jobs': 4,
                     'launcher': 'local'
@@ -30,7 +30,7 @@ site_configuration = {
                     'name': 'a64fx',
                     'scheduler': 'slurm',
                     'access': ['-pa64fx'],
-                    'environs': ['builtin', 'PrgEnv-gnu'],
+                    'environs': ['gnu'],
                     'descr': 'Fujitsu A64FX CPUs',
                     'max_jobs': 100,
                     'launcher': 'srun'
@@ -39,43 +39,51 @@ site_configuration = {
                     'name': 'amda100',
                     'scheduler': 'slurm',
                     'access': ['-pamda100'],
-                    'environs': ['builtin', 'PrgEnv-gnu'],
+                    'environs': ['gnu', 'cuda'],
                     'descr': 'AMD Naples 32c + 4x NVIDIA A100',
                     'max_jobs': 100,
-                    'launcher': 'srun'
+                    'launcher': 'srun',
+                    'features': ['gpu'],
+                    'extras': {'gpu_arch': 'sm_80'}
                 },
                 {
                     'name': 'amdv100',
                     'scheduler': 'slurm',
                     'access': ['-pamdv100'],
-                    'environs': ['builtin', 'PrgEnv-gnu'],
+                    'environs': ['gnu', 'cuda'],
                     'descr': 'AMD Naples 32c + 2x NVIDIA V100',
                     'max_jobs': 100,
-                    'launcher': 'srun'
+                    'launcher': 'srun',
+                    'features': ['gpu'],
+                    'extras': {'gpu_arch': 'sm_70'}
                 },
                 {
                     'name': 'amdvega',
                     'scheduler': 'slurm',
                     'access': ['-pamdvega'],
-                    'environs': ['builtin', 'PrgEnv-gnu'],
+                    'environs': ['gnu', 'rcom'],
                     'descr': 'AMD Naples 32c + 3x AMD GFX900',
                     'max_jobs': 100,
-                    'launcher': 'srun'
+                    'launcher': 'srun',
+                    'features': ['gpu'],
+                    'extras': {'gpu_arch': 'gfx900,gfx906'}
                 },
                 {
                     'name': 'intelv100',
                     'scheduler': 'slurm',
                     'access': ['-pintelv100'],
-                    'environs': ['builtin', 'PrgEnv-gnu'],
+                    'environs': ['gnu', 'cuda'],
                     'descr': 'Intel Skylake 36c + 4x NVIDIA V100',
                     'max_jobs': 100,
-                    'launcher': 'srun'
+                    'launcher': 'srun',
+                    'features': ['gpu'],
+                    'extras': {'gpu_arch': 'sm_70'}
                 },
                 {
                     'name': 'intel',
                     'scheduler': 'slurm',
                     'access': ['-pintel'],
-                    'environs': ['builtin', 'PrgEnv-gnu'],
+                    'environs': ['gnu'],
                     'descr': 'Intel Skylake 36c',
                     'max_jobs': 100,
                     'launcher': 'srun'
@@ -131,6 +139,8 @@ site_configuration = {
                     ],
                     'descr': 'Hybrid nodes (Haswell/P100)',
                     'max_jobs': 100,
+                    'features': ['gpu'],
+                    'extras': {'gpu_arch': 'sm_60'},
                     'resources': [
                         {
                             'name': 'switches',
@@ -141,8 +151,7 @@ site_configuration = {
                             'options': ['--gres={gres}']
                         }
                     ],
-                    'launcher': 'srun',
-                    'features': ['gpu']
+                    'launcher': 'srun'
                 },
                 {
                     'name': 'mc',
@@ -275,6 +284,7 @@ site_configuration = {
                     'max_jobs': 100,
                     'launcher': 'srun',
                     'features': ['gpu'],
+                    'extras': {'gpu_arch': 'sm_60'},
                     'resources': [
                         {
                             'name': 'gres',
@@ -409,6 +419,8 @@ site_configuration = {
                         'PrgEnv-pgi-nompi-nocuda'
                     ],
                     'descr': 'Arolla compute nodes',
+                    'features': ['gpu'],
+                    'extras': {'gpu_arch': 'sm_70'},
                     'resources': [
                         {
                             'name': '_rfm_gpu',
@@ -478,6 +490,8 @@ site_configuration = {
                     ],
                     'descr': 'Tsa compute nodes',
                     'max_jobs': 20,
+                    'features': ['gpu'],
+                    'extras': {'gpu_arch': 'sm_70'},
                     'resources': [
                         {
                             'name': '_rfm_gpu',
@@ -650,26 +664,30 @@ site_configuration = {
     ],
     'environments': [
         {
-            'name': 'PrgEnv-gnu',
-            'target_systems': ['ault'],
-            'modules': ['openmpi'],
-            'cc': 'mpicc',
-            'cxx': 'mpicxx',
-            'ftn': 'mpif90'
-        },
-        {
-            'name': 'builtin',
-            'target_systems': ['ault'],
-            'cc': 'cc',
-            'cxx': '',
-            'ftn': ''
-        },
-        {
-            'name': 'builtin-gcc',
-            'target_systems': ['ault'],
+            'name': 'gnu',
+            'modules': ['gcc'],
             'cc': 'gcc',
             'cxx': 'g++',
-            'ftn': 'gfortran'
+            'ftn': 'gfortran',
+            'target_systems': ['ault']
+        },
+        {
+            'name': 'cuda',
+            'modules': ['gcc', 'cuda'],
+            'cc': 'gcc',
+            'cxx': 'g++',
+            'ftn': 'gfortran',
+            'target_systems': ['ault'],
+            'features': ['cuda']
+        },
+        {
+            'name': 'rocm',
+            'modules': ['gcc', 'rocm'],
+            'cc': 'gcc',
+            'cxx': 'g++',
+            'ftn': 'gfortran',
+            'target_systems': ['ault'],
+            'features': ['hip']
         },
         {
             'name': 'PrgEnv-pgi-nompi-nocuda',
@@ -691,6 +709,7 @@ site_configuration = {
             'name': 'PrgEnv-pgi-nompi',
             'target_systems': ['arolla'],
             'modules': ['PrgEnv-pgi/19.9'],
+            'features': ['cuda'],
             'cc': 'pgcc',
             'cxx': 'pgc++',
             'ftn': 'pgf90'
@@ -699,6 +718,7 @@ site_configuration = {
             'name': 'PrgEnv-pgi-nompi',
             'target_systems': ['tsa'],
             'modules': ['PrgEnv-pgi/20.4'],
+            'features': ['cuda'],
             'cc': 'pgcc',
             'cxx': 'pgc++',
             'ftn': 'pgf90'
@@ -707,6 +727,7 @@ site_configuration = {
             'name': 'PrgEnv-pgi',
             'target_systems': ['arolla'],
             'modules': ['PrgEnv-pgi/19.9'],
+            'features': ['cuda'],
             'cc': 'mpicc',
             'cxx': 'mpicxx',
             'ftn': 'mpifort'
@@ -715,6 +736,7 @@ site_configuration = {
             'name': 'PrgEnv-pgi',
             'target_systems': ['tsa'],
             'modules': ['PrgEnv-pgi/20.4'],
+            'features': ['cuda'],
             'cc': 'mpicc',
             'cxx': 'mpicxx',
             'ftn': 'mpifort'
@@ -739,6 +761,7 @@ site_configuration = {
             'name': 'PrgEnv-gnu',
             'target_systems': ['arolla', 'tsa'],
             'modules': ['PrgEnv-gnu/19.2'],
+            'features': ['cuda'],
             'cc': 'mpicc',
             'cxx': 'mpicxx',
             'ftn': 'mpifort'
@@ -755,6 +778,7 @@ site_configuration = {
             'name': 'PrgEnv-gnu-nompi',
             'target_systems': ['arolla', 'tsa'],
             'modules': ['PrgEnv-gnu/19.2'],
+            'features': ['cuda'],
             'cc': 'gcc',
             'cxx': 'g++',
             'ftn': 'gfortran'
