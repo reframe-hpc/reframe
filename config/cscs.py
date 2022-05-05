@@ -83,42 +83,6 @@ site_configuration = {
             ]
         },
         {
-            'name': 'tave',
-            'descr': 'Grand Tave',
-            'hostnames': ['tave'],
-            'modules_system': 'tmod',
-            'resourcesdir': '/apps/common/UES/reframe/resources',
-            'partitions': [
-                {
-                    'name': 'login',
-                    'scheduler': 'local',
-                    'environs': [
-                        'builtin',
-                        'PrgEnv-cray',
-                        'PrgEnv-gnu',
-                        'PrgEnv-intel',
-                        'PrgEnv-pgi'
-                    ],
-                    'descr': 'Login nodes',
-                    'max_jobs': 4,
-                    'launcher': 'local'
-                },
-                {
-                    'name': 'compute',
-                    'scheduler': 'slurm',
-                    'environs': [
-                        'PrgEnv-cray',
-                        'PrgEnv-gnu',
-                        'PrgEnv-intel',
-                        'PrgEnv-pgi'
-                    ],
-                    'descr': 'Intel Xeon Phi',
-                    'max_jobs': 100,
-                    'launcher': 'srun'
-                }
-            ]
-        },
-        {
             'name': 'daint',
             'descr': 'Piz Daint',
             'hostnames': ['daint'],
@@ -177,7 +141,8 @@ site_configuration = {
                             'options': ['--gres={gres}']
                         }
                     ],
-                    'launcher': 'srun'
+                    'launcher': 'srun',
+                    'features': ['gpu']
                 },
                 {
                     'name': 'mc',
@@ -309,6 +274,7 @@ site_configuration = {
                     'descr': 'Hybrid nodes (Haswell/P100)',
                     'max_jobs': 100,
                     'launcher': 'srun',
+                    'features': ['gpu'],
                     'resources': [
                         {
                             'name': 'gres',
@@ -388,46 +354,6 @@ site_configuration = {
                     ],
                     'descr': 'Dedicated nodes for internal transfers',
                     'max_jobs': 10,
-                    'launcher': 'srun'
-                }
-            ]
-        },
-        {
-            'name': 'fulen',
-            'descr': 'Fulen',
-            'hostnames': [r'fulen-ln\d+'],
-            'modules_system': 'tmod',
-            'resourcesdir': '/apps/common/UES/reframe/resources',
-            'partitions': [
-                {
-                    'name': 'login',
-                    'scheduler': 'local',
-                    'environs': ['PrgEnv-gnu'],
-                    'descr': 'Login nodes',
-                    'max_jobs': 1,
-                    'launcher': 'local'
-                },
-                {
-                    'name': 'normal',
-                    'scheduler': 'slurm',
-                    'environs': ['PrgEnv-gnu'],
-                    'descr': 'Compute nodes - default partition',
-                    'launcher': 'srun'
-                },
-                {
-                    'name': 'fat',
-                    'scheduler': 'slurm',
-                    'environs': ['PrgEnv-gnu'],
-                    'access': ['--partition fat'],
-                    'descr': 'High-memory compute nodes',
-                    'launcher': 'srun'
-                },
-                {
-                    'name': 'gpu',
-                    'scheduler': 'slurm',
-                    'environs': ['PrgEnv-gnu'],
-                    'access': ['--partition gpu'],
-                    'descr': 'Hybrid compute nodes',
                     'launcher': 'srun'
                 }
             ]
@@ -908,10 +834,9 @@ site_configuration = {
         },
         {
             'name': 'PrgEnv-nvidia',
+            'modules': ['PrgEnv-nvidia'],
+            'features': ['cuda']
             'target_systems': ['daint', 'dom'],
-            'modules': [
-                'PrgEnv-nvidia',
-            ]
         },
         {
             'name': 'builtin',
