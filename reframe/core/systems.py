@@ -400,6 +400,14 @@ class SystemPartition(jsonext.JSONSerializable):
         '''
         return self._features
 
+    def select_devices(devtype):
+        '''Return all devices of the requested type:
+
+        :arg devtype: The type of the device info objects to return.
+        :returns: A list of :class:`DeviceInfo` objects of the specified type.
+        '''
+        return [d for d in self.devices if d.device_type == devtype]
+
     def __eq__(self, other):
         if not isinstance(other, type(self)):
             return NotImplemented

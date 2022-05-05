@@ -60,9 +60,11 @@ class gpu_burn_build(rfm.CompileOnlyRegressionTest, pin_prefix=True):
             elif 'hip' in curr_env.features:
                 self.gpu_build = 'hip'
 
-        if self.gpu_arch is None:
-            # Try to set the gpu arch from the partition extras
-            self.gpu_arch = curr_part.extras.get('gpu_arch', None)
+        gpu_devices = curr_part.select_devices('gpu')
+        if self.gpu_arch is None and gpu_devices:
+            # Try to set the gpu arch from the partition's devices; we assume
+            # all devices are of the same architecture
+            self.gpu_arch = gpu_devices[0].arch
 
         if self.gpu_build == 'cuda':
             self.build_system.makefile = 'makefile.cuda'
@@ -175,6 +177,15 @@ class gpu_burn_check(rfm.RunOnlyRegressionTest):
     def add_exec_prefix(self):
         self.executable = os.path.join(self.gpu_burn_binaries.stagedir,
                                        self.executable)
+
+    @run_before('run')
+    def set_num_gpus_per_node(self):
+        if self.num_gpus_per_node is not None:
+            return
+
+        gpu_devices = self.current_partition.select_devices('gpu')
+        if gpu_devices:
+            self.num_gpus_per_node = len(gpu_devices)
 
     @sanity_function
     def assert_sanity(self):

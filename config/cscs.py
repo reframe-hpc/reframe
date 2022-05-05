@@ -44,7 +44,13 @@ site_configuration = {
                     'max_jobs': 100,
                     'launcher': 'srun',
                     'features': ['gpu'],
-                    'extras': {'gpu_arch': 'sm_80'}
+                    'devices': [
+                        {
+                            'type': 'gpu',
+                            'arch': 'sm_80',
+                            'num_devices': 4
+                        }
+                    ]
                 },
                 {
                     'name': 'amdv100',
@@ -55,7 +61,13 @@ site_configuration = {
                     'max_jobs': 100,
                     'launcher': 'srun',
                     'features': ['gpu'],
-                    'extras': {'gpu_arch': 'sm_70'}
+                    'devices': [
+                        {
+                            'type': 'gpu',
+                            'arch': 'sm_70',
+                            'num_devices': 2
+                        }
+                    ]
                 },
                 {
                     'name': 'amdvega',
@@ -66,7 +78,13 @@ site_configuration = {
                     'max_jobs': 100,
                     'launcher': 'srun',
                     'features': ['gpu'],
-                    'extras': {'gpu_arch': 'gfx900,gfx906'}
+                    'devices': [
+                        {
+                            'type': 'gpu',
+                            'arch': 'gfx900,gfx906',
+                            'num_devices': 3
+                        }
+                    ]
                 },
                 {
                     'name': 'intelv100',
@@ -77,7 +95,13 @@ site_configuration = {
                     'max_jobs': 100,
                     'launcher': 'srun',
                     'features': ['gpu'],
-                    'extras': {'gpu_arch': 'sm_70'}
+                    'devices': [
+                        {
+                            'type': 'gpu',
+                            'arch': 'sm_70',
+                            'num_devices': 4
+                        }
+                    ]
                 },
                 {
                     'name': 'intel',
@@ -140,7 +164,6 @@ site_configuration = {
                     'descr': 'Hybrid nodes (Haswell/P100)',
                     'max_jobs': 100,
                     'features': ['gpu'],
-                    'extras': {'gpu_arch': 'sm_60'},
                     'resources': [
                         {
                             'name': 'switches',
@@ -152,15 +175,13 @@ site_configuration = {
                         }
                     ],
                     'devices': [
-                        # This will be auto-detected in the future
-                        'type': 'gpu',
-                        'arch': 'sm_60',
-                        'num_devices': 1
-                     ]
+                        {
+                            'type': 'gpu',
+                            'arch': 'sm_60',
+                            'num_devices': 1
+                        }
+                     ],
                     'launcher': 'srun',
-                    'extras': {
-                        'gpu_arch': 'sm_60'
-                    }
                 },
                 {
                     'name': 'mc',
@@ -293,7 +314,6 @@ site_configuration = {
                     'max_jobs': 100,
                     'launcher': 'srun',
                     'features': ['gpu'],
-                    'extras': {'gpu_arch': 'sm_60'},
                     'resources': [
                         {
                             'name': 'gres',
@@ -301,11 +321,12 @@ site_configuration = {
                         }
                     ],
                     'devices': [
-                        # This will be auto-detected in the future
-                        'type': 'gpu',
-                        'arch': 'sm_60',
-                        'num_devices': 1
-                     ]
+                        {
+                            'type': 'gpu',
+                            'arch': 'sm_60',
+                            'num_devices': 1
+                        }
+                    ]
                 },
                 {
                     'name': 'mc',
@@ -435,7 +456,13 @@ site_configuration = {
                     ],
                     'descr': 'Arolla compute nodes',
                     'features': ['gpu'],
-                    'extras': {'gpu_arch': 'sm_70'},
+                    'devices': [
+                        {
+                            'type': 'gpu',
+                            'arch': 'sm_70',
+                            'num_devices': 8
+                        }
+                    ],
                     'resources': [
                         {
                             'name': '_rfm_gpu',
@@ -511,6 +538,13 @@ site_configuration = {
                         {
                             'name': '_rfm_gpu',
                             'options': ['--gres=gpu:{num_gpus_per_node}']
+                        }
+                    ],
+                    'devices': [
+                        {
+                            'type': 'gpu',
+                            'arch': 'sm_70',
+                            'num_devices': 8
                         }
                     ],
                     'launcher': 'srun'
