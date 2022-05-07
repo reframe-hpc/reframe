@@ -533,7 +533,6 @@ site_configuration = {
                     'descr': 'Tsa compute nodes',
                     'max_jobs': 20,
                     'features': ['gpu'],
-                    'extras': {'gpu_arch': 'sm_70'},
                     'resources': [
                         {
                             'name': '_rfm_gpu',

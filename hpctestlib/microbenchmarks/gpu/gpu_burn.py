@@ -185,7 +185,7 @@ class gpu_burn_check(rfm.RunOnlyRegressionTest):
 
         gpu_devices = self.current_partition.select_devices('gpu')
         if gpu_devices:
-            self.num_gpus_per_node = len(gpu_devices)
+            self.num_gpus_per_node = gpu_devices[0].num_devices
 
     @sanity_function
     def assert_sanity(self):

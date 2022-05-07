@@ -400,7 +400,7 @@ class SystemPartition(jsonext.JSONSerializable):
         '''
         return self._features
 
-    def select_devices(devtype):
+    def select_devices(self, devtype):
         '''Return all devices of the requested type:
 
         :arg devtype: The type of the device info objects to return.
