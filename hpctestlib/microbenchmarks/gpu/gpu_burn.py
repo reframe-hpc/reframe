@@ -100,12 +100,15 @@ class gpu_burn_check(rfm.RunOnlyRegressionTest):
     This benchmark tries to build the benchmark code through the
     :class:`gpu_burn_build` fixture.
 
-    This benchmark does not require and it does not set the
-    :attr:`~reframe.core.pipeline.RegressionTest.num_gpus_per_node` test attribute.
-    This is left to the site-specific tests to set it, if required.
+    This benchmark does sets the
+    :attr:`~reframe.core.pipeline.RegressionTest.num_gpus_per_node` test
+    attribute, if not already set, based on the number devices with ``type ==
+    'gpu'`` defined in the corresponding partition configuration. Similarly,
+    this benchmark will use the ``arch`` device configuration attribute to set
+    the :attr:`gpu_arch` variable, if this is not already set by the user.
 
     .. list-table:: Summary
-       :widths: 10 10 10 10 20 20
+       :widths: 10 10 20 20 20 20
        :header-rows: 1
 
        * - Variables
