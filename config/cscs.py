@@ -73,7 +73,7 @@ site_configuration = {
                     'name': 'amdvega',
                     'scheduler': 'slurm',
                     'access': ['-pamdvega'],
-                    'environs': ['gnu', 'rcom'],
+                    'environs': ['gnu', 'rocm'],
                     'descr': 'AMD Naples 32c + 3x AMD GFX900',
                     'max_jobs': 100,
                     'launcher': 'srun',
