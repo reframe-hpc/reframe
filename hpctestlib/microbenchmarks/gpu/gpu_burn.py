@@ -91,7 +91,7 @@ class gpu_burn_check(rfm.RunOnlyRegressionTest):
     '''GPU burn benchmark.
 
     This benchmark runs continuously GEMM, either single or double precision,
-    on a selected set of GPUs on the node that it runs.
+    on a selected set of GPUs on the node where the benchmark runs.
 
     The floating point precision of the computations, the duration of the
     benchmark as well as the list of GPU devices that the benchmark will run
@@ -100,12 +100,13 @@ class gpu_burn_check(rfm.RunOnlyRegressionTest):
     This benchmark tries to build the benchmark code through the
     :class:`gpu_burn_build` fixture.
 
-    This benchmark does sets the
+    This benchmark sets the
     :attr:`~reframe.core.pipeline.RegressionTest.num_gpus_per_node` test
-    attribute, if not already set, based on the number devices with ``type ==
-    'gpu'`` defined in the corresponding partition configuration. Similarly,
-    this benchmark will use the ``arch`` device configuration attribute to set
-    the :attr:`gpu_arch` variable, if this is not already set by the user.
+    attribute, if not already set, based on the number of devices with ``type
+    == 'gpu'`` defined in the corresponding partition configuration.
+    Similarly, this benchmark will use the ``arch`` device configuration
+    attribute to set the :attr:`gpu_arch` variable, if this is not already set
+    by the user.
 
     .. list-table:: Summary
        :widths: 10 10 20 20 20 20
