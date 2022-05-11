@@ -59,10 +59,10 @@ class LAMMPSGPUCheck(LAMMPSCheck):
     refs_by_scale = {
         'small': {
             'dom:gpu': {'perf': (3132, -0.05, None, 'timesteps/s')},
-            'daint:gpu': {'perf': (2660, -0.35, None, 'timesteps/s')}
+            'daint:gpu': {'perf': (1463, -0.10, None, 'timesteps/s')}
         },
         'large': {
-            'daint:gpu': {'perf': (3430, -0.50, None, 'timesteps/s')}
+            'daint:gpu': {'perf': (1702, -0.10, None, 'timesteps/s')}
         }
     }
 
@@ -86,12 +86,12 @@ class LAMMPSCPUCheck(LAMMPSCheck):
     refs_by_scale = {
         'small': {
             'dom:mc': {'perf': (4394, -0.05, None, 'timesteps/s')},
-            'daint:mc': {'perf': (3350, -0.30, None, 'timesteps/s')},
+            'daint:mc': {'perf': (2348, -0.10, None, 'timesteps/s')},
             'eiger:mc': {'perf': (4500, -0.10, None, 'timesteps/s')},
             'pilatus:mc': {'perf': (5000, -0.10, None, 'timesteps/s')}
         },
         'large': {
-            'daint:mc': {'perf': (5360, -0.30, None, 'timesteps/s')},
+            'daint:mc': {'perf': (2075, -0.10, None, 'timesteps/s')},
             'eiger:mc': {'perf': (6500, -0.10, None, 'timesteps/s')},
             'pilatus:mc': {'perf': (7500, -0.10, None, 'timesteps/s')}
         }
