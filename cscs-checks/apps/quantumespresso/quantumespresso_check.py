@@ -98,12 +98,12 @@ class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
         references = {
             'small': {
                 'dom:mc': {'time': (110.0, None, 0.05, 's')},
-                'daint:mc': {'time': (110.0, None, 0.20, 's')},
+                'daint:mc': {'time': (127.0, None, 0.10, 's')},
                 'eiger:mc': {'time': (66.0, None, 0.10, 's')},
                 'pilatus:mc': {'time': (66.0, None, 0.10, 's')}
             },
             'large': {
-                'daint:mc': {'time': (145.0, None, 0.30, 's')},
+                'daint:mc': {'time': (171.0, None, 0.10, 's')},
                 'eiger:mc': {'time': (53.0, None, 0.10, 's')},
                 'pilatus:mc': {'time': (53.0, None, 0.10, 's')}
             }
@@ -147,7 +147,7 @@ class QuantumESPRESSOGpuCheck(QuantumESPRESSOCheck):
                 'daint:gpu': {'time': (59.0, None, 0.05, 's')}
             },
             'large': {
-                'daint:gpu': {'time': (39.0, None, 0.05, 's')}
+                'daint:gpu': {'time': (40.0, None, 0.05, 's')}
             }
         }
         self.reference = references[self.scale]
