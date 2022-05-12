@@ -845,8 +845,9 @@ def test_external_vars(run_reframe):
                       '-S', 'foolist=3,4',
                       '-S', 'bar=@none']
     )
+    assert 'PASSED' in stdout
+    assert 'Ran 6/6 test case(s)' in stdout
     assert 'Traceback' not in stdout
-    assert 'Ran 2/2 test case(s)' in stdout
     assert 'Traceback' not in stderr
     assert returncode == 0
 
