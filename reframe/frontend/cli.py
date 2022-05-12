@@ -406,7 +406,8 @@ def main():
         help='Exit after first NUM failures', type=int
     )
     run_options.add_argument(
-        '--mode', action='store', help='Execution mode to use'
+        '--mode', action='store', configvar='general/mode',
+        help='Execution mode to use'
     )
     run_options.add_argument(
         '--restore-session', action='store', nargs='?', const='',

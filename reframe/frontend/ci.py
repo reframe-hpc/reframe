@@ -20,6 +20,7 @@ def _emit_gitlab_pipeline(testcases):
     checkpath = config.get('general/0/check_search_path')
     recurse = config.get('general/0/check_search_recursive')
     verbosity = 'v' * config.get('general/0/verbose')
+    mode = config.get('general/0/mode')
 
     def rfm_command(testcase):
         if config.filename != '<builtin>':
@@ -40,6 +41,7 @@ def _emit_gitlab_pipeline(testcases):
             f'--prefix={prefix}', config_opt,
             f'{" ".join("-c " + c for c in checkpath)}',
             f'-R' if recurse else '',
+            f'--mode={mode}',
             f'--report-file={report_file}',
             f'--restore-session={restore_files}' if restore_files else '',
             f'--report-junit={testcase.check.unique_name}-report.xml',
