@@ -8,11 +8,11 @@ import reframe.utility.sanity as sn
 import time
 
 from reframe.core.exceptions import SanityError
-from hpctestlib.microbenchmarks.gpu.gpu_burn import GpuBurn
+from hpctestlib.microbenchmarks.gpu.gpu_burn import gpu_burn_check 
 
 
 @rfm.simple_test
-class gpu_usage_report_check(GpuBurn):
+class gpu_usage_report_check(gpu_burn_check):
     '''Check the output from the job report.
 
     This check uses the gpu burn app and checks that the job report produces
@@ -23,14 +23,11 @@ class gpu_usage_report_check(GpuBurn):
     '''
 
     valid_systems = ['daint:gpu', 'dom:gpu']
-    valid_prog_environs = ['PrgEnv-gnu']
+    valid_prog_environs = ['PrgEnv-nvidia']
     descr = 'Check GPU usage from job report'
     gpu_build = 'cuda'
-    modules = ['craype-accel-nvidia60', 'cdt-cuda']
     num_tasks = 0
     num_gpus_per_node = 1
-    burn_time = variable(int, value=10)
-    executable_opts = ['-d', f'{burn_time}']
     perf_floor = variable(float, value=-0.2)
     tags = {'production'}
 
@@ -44,7 +41,7 @@ class gpu_usage_report_check(GpuBurn):
         self.job.launcher.options = ['-u']
 
     @sanity_function
-    def set_sanity_patterns(self):
+    def assert_jobreport_success(self):
         '''Extend sanity and wait for the jobreport.
 
         If a large number of nodes is used, the final jobreport output happens
@@ -67,31 +64,32 @@ class gpu_usage_report_check(GpuBurn):
     def gpu_usage_sanity(self):
         '''Verify that the jobreport output has sensible numbers.
 
-        This function asserts that the nodes reported are at least a subset of
-        all nodes used by the gpu burn app. Also, the GPU usage is verified by
-        assuming that in the worst case scenario, the usage is near 100% during
-        the burn, and 0% outside the burn period. Lastly, the GPU usage time
-        for each node is also asserted to be greater or equal than the burn
-        time.
+        The GPU usage is verified by assuming that in the worst case scenario,
+        the usage is near 100% during the burn, and 0% outside the burn period.
+        Lastly, the GPU usage time for each node is also asserted to be greater
+        or equal than the burn time.
         '''
-
-        # Get set with all nodes
-        patt = r'^\s*\[([^\]]*)\]\s*GPU\s*\d+\(OK\)'
-        full_node_set = set(sn.extractall(patt, self.stdout, 1))
 
         # Parse job report data
         patt = r'^\s*(\w*)\s*(\d+)\s*%\s*\d+\s*MiB\s*\d+:\d+:(\d+)'
         self.nodes_reported = sn.extractall(patt, self.stdout, 1)
+        self.num_tasks_assigned = self.job.num_tasks * self.num_gpus_per_node
         usage = sn.extractall(patt, self.stdout, 2, int)
         time_reported = sn.extractall(patt, self.stdout, 3, int)
         return sn.all([
             sn.assert_ge(sn.count(self.nodes_reported), 1),
-            set(self.nodes_reported).issubset(full_node_set),
             sn.all(
-                map(lambda x, y: self.burn_time/x <= y, time_reported, usage)
+                map(lambda x, y: self.duration/x <= y/100, time_reported, usage)
             ),
-            sn.assert_ge(sn.min(time_reported), self.burn_time)
+            sn.assert_ge(sn.min(time_reported), self.duration)
         ])
+
+    @deferrable
+    def count_successful_burns(self):
+        '''Set the sanity patterns to count the number of successful burns.'''
+        return sn.assert_eq(sn.count(sn.findall(r'^GPU\s*\d+\(OK\)',
+                                                self.stdout)),
+                            self.num_tasks_assigned)
 
     @performance_function('nodes')
     def total_nodes_reported(self):
