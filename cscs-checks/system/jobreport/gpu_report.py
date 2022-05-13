@@ -23,10 +23,9 @@ class gpu_usage_report_check(gpu_burn_check):
     '''
 
     valid_systems = ['daint:gpu', 'dom:gpu']
-    valid_prog_environs = ['PrgEnv-nvidia']
     descr = 'Check GPU usage from job report'
     gpu_build = 'cuda'
-    num_tasks = 0
+    num_tasks = 2
     num_gpus_per_node = 1
     perf_floor = variable(float, value=-0.2)
     tags = {'production'}
@@ -57,7 +56,7 @@ class gpu_usage_report_check(gpu_burn_check):
             time.sleep(25)
 
         return sn.all([
-            self.count_successful_burns(), self.gpu_usage_sanity()
+            self.assert_successful_burn_count(), self.gpu_usage_sanity()
         ])
 
     @deferrable
@@ -73,7 +72,7 @@ class gpu_usage_report_check(gpu_burn_check):
         # Parse job report data
         patt = r'^\s*(\w*)\s*(\d+)\s*%\s*\d+\s*MiB\s*\d+:\d+:(\d+)'
         self.nodes_reported = sn.extractall(patt, self.stdout, 1)
-        self.num_tasks_assigned = self.job.num_tasks * self.num_gpus_per_node
+        self.num_tasks_assigned = self.num_tasks * self.num_gpus_per_node
         usage = sn.extractall(patt, self.stdout, 2, int)
         time_reported = sn.extractall(patt, self.stdout, 3, int)
         return sn.all([
@@ -85,29 +84,8 @@ class gpu_usage_report_check(gpu_burn_check):
         ])
 
     @deferrable
-    def count_successful_burns(self):
-        '''Set the sanity patterns to count the number of successful burns.'''
+    def assert_successful_burn_count(self):
+        '''Assert that the expected successful burn count is reported.'''
         return sn.assert_eq(sn.count(sn.findall(r'^GPU\s*\d+\(OK\)',
                                                 self.stdout)),
                             self.num_tasks_assigned)
-
-    @performance_function('nodes')
-    def total_nodes_reported(self):
-        return sn.count(self.nodes_reported)
-
-    @run_before('performance')
-    def set_perf_variables(self):
-        '''The number of reported nodes can be used as a perf metric.
-
-        For now, the low limit can go to zero, but this can be set to a more
-        restrictive value.
-        '''
-
-        self.reference = {
-            '*': {
-                'nodes_reported': (self.num_tasks, self.perf_floor, 0)
-            },
-        }
-        self.perf_variables = {
-            'nodes_reported': self.total_nodes_reported()
-        }
