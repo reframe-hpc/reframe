@@ -8,7 +8,7 @@ import reframe.utility.sanity as sn
 import time
 
 from reframe.core.exceptions import SanityError
-from hpctestlib.microbenchmarks.gpu.gpu_burn import gpu_burn_check 
+from hpctestlib.microbenchmarks.gpu.gpu_burn import gpu_burn_check
 
 
 @rfm.simple_test
@@ -55,9 +55,7 @@ class gpu_usage_report_check(gpu_burn_check):
         except SanityError:
             time.sleep(25)
 
-        return sn.all([
-            self.assert_successful_burn_count(), self.gpu_usage_sanity()
-        ])
+        return self.assert_successful_burn_count(), self.gpu_usage_sanity()
 
     @deferrable
     def gpu_usage_sanity(self):
