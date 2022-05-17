@@ -484,6 +484,10 @@ Options controlling ReFrame execution
 
    Set variable ``VAR`` in all tests or optionally only in test ``TEST`` to ``VAL``.
 
+   ``TEST`` can have the form ``[TEST.][FIXT.]*``, in which case ``VAR`` will be set in fixture ``FIXT`` of ``TEST``.
+   Note that this syntax is recursive on fixtures, so that a variable can be set in a fixture arbitrarily deep.
+   ``TEST`` prefix refers to the test class name, *not* the test name, but ``FIXT`` refers to the fixture name *inside* the referenced test.
+
    Multiple variables can be set at the same time by passing this option multiple times.
    This option *cannot* change arbitrary test attributes, but only test variables declared with the :attr:`~reframe.core.pipeline.RegressionMixin.variable` built-in.
    If an attempt is made to change an inexistent variable or a test parameter, a warning will be issued.
@@ -510,8 +514,6 @@ Options controlling ReFrame execution
 
    Conversions to arbitrary objects are also supported.
    See :class:`~reframe.utility.typecheck.ConvertibleType` for more details.
-
-   The optional ``TEST.`` prefix refers to the test class name, *not* the test name.
 
    Variable assignments passed from the command line happen *before* the test is instantiated and is the exact equivalent of assigning a new value to the variable *at the end* of the test class body.
    This has a number of implications that users of this feature should be aware of:
@@ -560,6 +562,10 @@ Options controlling ReFrame execution
    .. versionchanged:: 3.9.3
 
       Proper handling of boolean variables.
+
+   .. versionchanged:: 3.11.1
+
+      Allow setting variables in fixtures.
 
 
 .. option:: --skip-performance-check

@@ -535,6 +535,17 @@ class RegressionTestMeta(type):
 
         '''
 
+        if '.' in name:
+            # `name` refers to a fixture variable
+            fixtname, varname = name.split('.', maxsplit=1)
+            try:
+                fixt_space = super().__getattribute__('_rfm_fixture_space')
+            except AttributeError:
+                '''Catch early access attempt to the variable space.'''
+
+            if fixtname in fixt_space:
+                return fixt_space[fixtname].cls.setvar(varname, value)
+
         try:
             var_space = super().__getattribute__('_rfm_var_space')
             if name in var_space:

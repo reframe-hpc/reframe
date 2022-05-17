@@ -281,7 +281,7 @@ class TestVar:
     def _check_is_defined(self):
         if not self.is_defined():
             raise ReframeSyntaxError(
-                f'variable {self._name} is not assigned a value'
+                f'variable {self._name!r} is not assigned a value'
             )
 
     def __repr__(self):

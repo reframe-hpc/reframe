@@ -837,13 +837,17 @@ def test_detect_host_topology_file(run_reframe, tmp_path):
 def test_external_vars(run_reframe):
     returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks_unlisted/externalvars.py'],
-        more_options=['-S', 'external_x.foo=3', '-S', 'external_y.foo=2',
-                      '-S', 'foolist=3,4', '-S', 'bar=@none',
+        more_options=['-S', 'external_x.foo=3',
                       '-S', 'external_x.ham=true',
-                      '-S', 'external_y.baz=false']
+                      '-S', 'external_x.spam.eggs.bacon=10',
+                      '-S', 'external_y.foo=2',
+                      '-S', 'external_y.baz=false',
+                      '-S', 'foolist=3,4',
+                      '-S', 'bar=@none']
     )
+    assert 'PASSED' in stdout
+    assert 'Ran 6/6 test case(s)' in stdout
     assert 'Traceback' not in stdout
-    assert 'Ran 2/2 test case(s)' in stdout
     assert 'Traceback' not in stderr
     assert returncode == 0
 
