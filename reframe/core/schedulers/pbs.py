@@ -181,6 +181,13 @@ class PbsJobScheduler(sched.JobScheduler):
         job._nodelist.sort()
 
     def poll(self, *jobs):
+        def out_ready(job):
+            # We report a job as finished only when its stdout/stderr are
+            # written back to the working directory
+            stdout = os.path.join(job.workdir, job.stdout)
+            stderr = os.path.join(job.workdir, job.stderr)
+            return os.path.exists(stdout) and os.path.exists(stderr)
+
         if jobs:
             # Filter out non-jobs
             jobs = [job for job in jobs if job is not None]
@@ -202,7 +209,12 @@ class PbsJobScheduler(sched.JobScheduler):
                      f'assuming all jobs completed')
             for job in jobs:
                 job._state = 'COMPLETED'
-                job._completed = True
+                if job.cancelled or out_ready(job):
+                    job._completed = True
+                else:
+                    self.log(f'Job {job.jobid} output has not been written '
+                             f'back to working directory yet; will poll '
+                             f'again later')
 
             return
 
@@ -227,7 +239,13 @@ class PbsJobScheduler(sched.JobScheduler):
                 self.log(f'Job {job.jobid} not known to scheduler, '
                          f'assuming job completed')
                 job._state = 'COMPLETED'
-                job._completed = True
+                if job.cancelled or out_ready(job):
+                    job._completed = True
+                else:
+                    self.log(f'Job {job.jobid} output has not been written '
+                             f'back to working directory yet; will poll '
+                             f'again later')
+
                 continue
 
             info = jobinfo[job.jobid]
@@ -259,10 +277,7 @@ class PbsJobScheduler(sched.JobScheduler):
 
                 # We report a job as finished only when its stdout/stderr are
                 # written back to the working directory
-                stdout = os.path.join(job.workdir, job.stdout)
-                stderr = os.path.join(job.workdir, job.stderr)
-                out_ready = os.path.exists(stdout) and os.path.exists(stderr)
-                done = job.cancelled or out_ready
+                done = job.cancelled or out_ready(job)
                 if done:
                     job._completed = True
             elif (job.state in ['QUEUED', 'HELD', 'WAITING'] and
