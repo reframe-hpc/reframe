@@ -205,16 +205,12 @@ class PbsJobScheduler(sched.JobScheduler):
         # Otherwise, it will return with return code 0 and print information
         # only for the jobs it could find.
         if completed.returncode in (153, 35):
-            self.log(f'Return code is {completed.returncode}: '
-                     f'assuming all jobs completed')
+            self.log(f'Return code is {completed.returncode}')
             for job in jobs:
                 job._state = 'COMPLETED'
                 if job.cancelled or output_ready(job):
+                    self.log(f'Assuming job {job.jobid} completed')
                     job._completed = True
-                else:
-                    self.log(f'Job {job.jobid} output has not been written '
-                             f'back to working directory yet; will poll '
-                             f'again later')
 
             return
 
@@ -236,15 +232,11 @@ class PbsJobScheduler(sched.JobScheduler):
 
         for job in jobs:
             if job.jobid not in jobinfo:
-                self.log(f'Job {job.jobid} not known to scheduler, '
-                         f'assuming job completed')
+                self.log(f'Job {job.jobid} not known to scheduler')
                 job._state = 'COMPLETED'
                 if job.cancelled or output_ready(job):
+                    self.log(f'Assuming job {job.jobid} completed')
                     job._completed = True
-                else:
-                    self.log(f'Job {job.jobid} output has not been written '
-                             f'back to working directory yet; will poll '
-                             f'again later')
 
                 continue
 
