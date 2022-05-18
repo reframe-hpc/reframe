@@ -181,7 +181,7 @@ class PbsJobScheduler(sched.JobScheduler):
         job._nodelist.sort()
 
     def poll(self, *jobs):
-        def out_ready(job):
+        def output_ready(job):
             # We report a job as finished only when its stdout/stderr are
             # written back to the working directory
             stdout = os.path.join(job.workdir, job.stdout)
@@ -209,7 +209,7 @@ class PbsJobScheduler(sched.JobScheduler):
                      f'assuming all jobs completed')
             for job in jobs:
                 job._state = 'COMPLETED'
-                if job.cancelled or out_ready(job):
+                if job.cancelled or output_ready(job):
                     job._completed = True
                 else:
                     self.log(f'Job {job.jobid} output has not been written '
@@ -239,7 +239,7 @@ class PbsJobScheduler(sched.JobScheduler):
                 self.log(f'Job {job.jobid} not known to scheduler, '
                          f'assuming job completed')
                 job._state = 'COMPLETED'
-                if job.cancelled or out_ready(job):
+                if job.cancelled or output_ready(job):
                     job._completed = True
                 else:
                     self.log(f'Job {job.jobid} output has not been written '
@@ -277,7 +277,7 @@ class PbsJobScheduler(sched.JobScheduler):
 
                 # We report a job as finished only when its stdout/stderr are
                 # written back to the working directory
-                done = job.cancelled or out_ready(job)
+                done = job.cancelled or output_ready(job)
                 if done:
                     job._completed = True
             elif (job.state in ['QUEUED', 'HELD', 'WAITING'] and
