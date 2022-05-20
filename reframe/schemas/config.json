@@ -474,7 +474,6 @@
                     "git_timeout": {"type": "number"},
                     "ignore_check_conflicts": {"type": "boolean"},
                     "keep_stage_files": {"type": "boolean"},
-                    "mode": {"type": "string"},
                     "module_map_file": {"type": "string"},
                     "module_mappings": {
                         "type": "array",
@@ -528,7 +527,6 @@
         "general/git_timeout": 5,
         "general/ignore_check_conflicts": false,
         "general/keep_stage_files": false,
-        "general/mode": "",
         "general/module_map_file": "",
         "general/module_mappings": [],
         "general/non_default_craype": false,

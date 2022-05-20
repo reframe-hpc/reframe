@@ -406,8 +406,7 @@ def main():
         help='Exit after first NUM failures', type=int
     )
     run_options.add_argument(
-        '--mode', action='store', configvar='general/mode',
-        help='Execution mode to use'
+        '--mode', action='store', help='Execution mode to use'
     )
     run_options.add_argument(
         '--restore-session', action='store', nargs='?', const='',
@@ -1111,7 +1110,11 @@ def main():
             list_checks(testcases, printer)
             printer.info('[Generate CI]')
             with open(options.ci_generate, 'wt') as fp:
-                ci.emit_pipeline(fp, testcases)
+                child_pipeline_opts = []
+                if options.mode:
+                    child_pipeline_opts.append(f'--mode={options.mode}')
+
+                ci.emit_pipeline(fp, testcases, child_pipeline_opts)
 
             printer.info(
                 f'  Gitlab pipeline generated successfully '
