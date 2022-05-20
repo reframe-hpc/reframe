@@ -47,14 +47,6 @@ run_tutorial_checks()
     checked_exec $cmd
 }
 
-run_user_checks()
-{
-    cmd="./bin/reframe -C config/cscs.py --save-log-files \
--r --flex-alloc-nodes=2 -t production|benchmark $@"
-    echo "[INFO] Running user checks with \`$cmd'"
-    checked_exec $cmd
-}
-
 ### Main script ###
 
 shortopts="h,g,t,f:,i:,l:,m:"
@@ -185,26 +177,6 @@ else
 
     if [ $CI_EXITCODE -eq 0 ]; then
         /bin/rm -rf $tempdir
-    fi
-
-    # Find modified or added user checks
-    userchecks=( $(git diff origin/master...HEAD --name-only --oneline --no-merges | \
-                   grep -e '^cscs-checks/.*\.py') )
-    if [ ${#userchecks[@]} -ne 0 ]; then
-        userchecks_path=""
-        for check in ${userchecks[@]}; do
-            userchecks_path="${userchecks_path} -c ${check}"
-        done
-
-        echo "[INFO] Modified user checks"
-        echo ${userchecks_path}
-
-        #
-        # Running the user checks
-        #
-        for i in ${!invocations[@]}; do
-            run_user_checks ${userchecks_path} ${invocations[i]}
-        done
     fi
 fi
 exit $CI_EXITCODE
