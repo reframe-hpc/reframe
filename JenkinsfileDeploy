@@ -18,6 +18,18 @@ stage('Deploy Tests') {
                           """)
             deleteDir()
         }
+        dir('cscs_tests') {
+            sh(returnStatus: true,
+               script: """#!/bin/bash -l
+                          git clone git@github.com:eth-cscs/cscs-reframe-tests.git
+                          cd cscs-reframe-tests
+                          git tag -a -m "ReFrame CSCS tests ${version} release" -f ${tag}
+                          git archive --format=tar.gz --prefix=cscs-reframe-tests-${version}/ ${tag} -o cscs-reframe-tests-${version}.tar.gz
+                          git push origin -f ${tag}
+                          cp cscs-reframe-tests-${version}.tar.gz /apps/common/easybuild/sources/r/reframe
+                          """)
+            deleteDir()
+        }
     }
 }
 
