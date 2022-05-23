@@ -26,7 +26,7 @@ def test_ci_gitlab_pipeline():
         )[0]
     )
     with io.StringIO() as fp:
-        ci.emit_pipeline(fp, cases, [])
+        ci.emit_pipeline(fp, cases)
         pipeline = fp.getvalue()
 
     # Fetch the latest Gitlab CI JSON schema

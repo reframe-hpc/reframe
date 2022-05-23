@@ -78,7 +78,7 @@ def _emit_gitlab_pipeline(testcases, child_pipeline_opts):
     return json
 
 
-def emit_pipeline(fp, testcases, child_pipeline_opts, backend='gitlab'):
+def emit_pipeline(fp, testcases, child_pipeline_opts=[], backend='gitlab'):
     if backend != 'gitlab':
         raise errors.ReframeError(f'unknown CI backend {backend!r}')
 
